@@ -6,19 +6,18 @@ import { useEffect } from 'react'
 
 export default function AppLayout() {
   const { theme } = useAppStore()
-
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
   return (
-    <div id="app" style={{ display: 'flex' }}>
+    <div className="app-shell">
       <Sidebar />
-      <div id="main">
+      <div className="main-content">
         <Header />
-        <div id="content">
+        <main className="page-content">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   )

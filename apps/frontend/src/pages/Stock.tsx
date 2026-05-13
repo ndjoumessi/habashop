@@ -1,191 +1,203 @@
 import { useState } from 'react'
 import { useAppStore, formatCurrency } from '@/stores/appStore'
+import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const PRODUCTS = [
-  { sku: 'PRD-001', name: '🌾 Riz parfumé 5kg', category: 'Céréales', priceBuy: 3200, priceSell: 4500, stock: 12, threshold: 20, status: 'red', statusLabel: 'Rupture' },
-  { sku: 'PRD-002', name: '🫙 Huile palme 1L', category: 'Corps gras', priceBuy: 1200, priceSell: 1800, stock: 18, threshold: 25, status: 'amber', statusLabel: 'Bas' },
-  { sku: 'PRD-003', name: '🍚 Sucre 1kg', category: 'Épicerie', priceBuy: 600, priceSell: 850, stock: 245, threshold: 50, status: 'green', statusLabel: 'OK' },
-  { sku: 'PRD-004', name: '🌾 Farine blé 1kg', category: 'Céréales', priceBuy: 400, priceSell: 650, stock: 89, threshold: 30, status: 'green', statusLabel: 'OK' },
-  { sku: 'PRD-005', name: '🧼 Savon 500g', category: 'Hygiène', priceBuy: 320, priceSell: 500, stock: 5, threshold: 10, status: 'red', statusLabel: 'Rupture' },
-  { sku: 'PRD-006', name: '🥛 Lait poudre 400g', category: 'Laitiers', priceBuy: 1500, priceSell: 2200, stock: 67, threshold: 20, status: 'green', statusLabel: 'OK' },
-  { sku: 'PRD-007', name: '🫒 Huile végétale 5L', category: 'Corps gras', priceBuy: 6500, priceSell: 8500, stock: 34, threshold: 15, status: 'green', statusLabel: 'OK' },
-  { sku: 'PRD-008', name: '🍅 Tomate concentrée 800g', category: 'Conserves', priceBuy: 900, priceSell: 1400, stock: 112, threshold: 30, status: 'green', statusLabel: 'OK' },
+const PRODUCTS_INIT = [
+  { sku: 'PRD-001', name: '🌾 Riz parfumé 5kg',       category: 'Céréales',  buy: 3200,  sell: 4500,  stock: 12,  threshold: 20, supplier: 'SENRIZ'        },
+  { sku: 'PRD-002', name: '🫙 Huile palme 1L',          category: 'Corps gras',buy: 1200,  sell: 1800,  stock: 18,  threshold: 25, supplier: 'SONACO'        },
+  { sku: 'PRD-003', name: '🍚 Sucre 1kg',               category: 'Épicerie',  buy: 600,   sell: 850,   stock: 245, threshold: 50, supplier: 'CSS'           },
+  { sku: 'PRD-004', name: '🌾 Farine blé 1kg',          category: 'Céréales',  buy: 400,   sell: 650,   stock: 89,  threshold: 30, supplier: 'GRANDS MOULINS'},
+  { sku: 'PRD-005', name: '🧼 Savon OMO 500g',          category: 'Hygiène',   buy: 320,   sell: 500,   stock: 5,   threshold: 10, supplier: 'UNILEVER'      },
+  { sku: 'PRD-006', name: '🥛 Lait poudre 400g',        category: 'Laitiers',  buy: 1500,  sell: 2200,  stock: 67,  threshold: 20, supplier: 'NESTLÉ'        },
+  { sku: 'PRD-007', name: '🫒 Huile végétale 5L',       category: 'Corps gras',buy: 6500,  sell: 8500,  stock: 34,  threshold: 15, supplier: 'SONACO'        },
+  { sku: 'PRD-008', name: '🍅 Tomate concentrée 800g',  category: 'Conserves', buy: 900,   sell: 1400,  stock: 112, threshold: 30, supplier: 'TOMAPOR'       },
 ]
+
+function statusOf(stock: number, threshold: number) {
+  if (stock === 0)            return { label: 'Rupture', cls: 'badge-red' }
+  if (stock <= threshold)     return { label: 'Bas',     cls: 'badge-amber' }
+  return                             { label: 'OK',      cls: 'badge-green' }
+}
 
 export default function Stock() {
   const { currency } = useAppStore()
+  const [products, setProducts] = useState(PRODUCTS_INIT)
   const [search, setSearch] = useState('')
-  const [filterCat, setFilterCat] = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
+  const [cat, setCat] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [products, setProducts] = useState(PRODUCTS)
-  const [form, setForm] = useState({ sku: '', name: '', category: 'Céréales', priceBuy: 0, priceSell: 0, stock: 0, threshold: 5 })
+  const [form, setForm] = useState({ sku: '', name: '', category: 'Céréales', buy: 0, sell: 0, stock: 0, threshold: 5, supplier: '' })
+
+  const cats = ['', ...Array.from(new Set(products.map(p => p.category)))]
 
   const filtered = products.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())
-    const matchCat = !filterCat || p.category === filterCat
-    const matchStatus = !filterStatus || p.statusLabel === filterStatus
-    return matchSearch && matchCat && matchStatus
+    const s = statusOf(p.stock, p.threshold)
+    return (
+      (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())) &&
+      (!cat || p.category === cat) &&
+      (!statusFilter || s.label === statusFilter)
+    )
   })
 
-  const ruptures = products.filter(p => p.status === 'red')
-  const stockValue = products.reduce((s, p) => s + p.stock * p.priceSell, 0)
+  const ruptures = products.filter(p => p.stock <= p.threshold)
+  const totalValue = products.reduce((s, p) => s + p.stock * p.sell, 0)
 
   const addProduct = () => {
-    const status = form.stock === 0 ? 'red' : form.stock <= form.threshold ? 'amber' : 'green'
-    const statusLabel = form.stock === 0 ? 'Rupture' : form.stock <= form.threshold ? 'Bas' : 'OK'
-    setProducts(prev => [...prev, { ...form, status, statusLabel }])
+    setProducts(prev => [...prev, form])
     setShowModal(false)
-    setForm({ sku: '', name: '', category: 'Céréales', priceBuy: 0, priceSell: 0, stock: 0, threshold: 5 })
-    toast.success('Produit ajouté !')
+    setForm({ sku: '', name: '', category: 'Céréales', buy: 0, sell: 0, stock: 0, threshold: 5, supplier: '' })
+    toast.success('✅ Produit ajouté !')
   }
 
   return (
-    <div className="page active" id="page-stock">
+    <div className="space-y-5 animate-in">
+      {/* Alert rupture */}
+      {ruptures.length > 0 && (
+        <div className="flex items-center gap-3 p-4 rounded-2xl"
+          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.20)' }}>
+          <AlertTriangle size={18} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+          <div className="flex-1">
+            <p className="text-sm font-bold" style={{ color: 'var(--danger)' }}>
+              {ruptures.length} article{ruptures.length > 1 ? 's' : ''} en rupture ou stock faible
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{ruptures.map(p => p.name).join(' · ')}</p>
+          </div>
+          <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)' }}
+            onClick={() => toast('📦 Bon de commande groupé créé')}>Commander</button>
+        </div>
+      )}
+
       {/* KPIs */}
-      <div className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-icon">📋</div>
-          <div className="kpi-label">Total articles</div>
-          <div className="kpi-value">{products.length}</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-icon">💎</div>
-          <div className="kpi-label">Valeur stock</div>
-          <div className="kpi-value">{formatCurrency(stockValue, currency)}</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-icon">⚠️</div>
-          <div className="kpi-label">Alertes rupture</div>
-          <div className="kpi-value" style={{ color: 'var(--danger)' }}>{ruptures.length}</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-icon">📁</div>
-          <div className="kpi-label">Catégories</div>
-          <div className="kpi-value">{new Set(products.map(p => p.category)).size}</div>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total articles', value: products.length.toString(), color: 'var(--primary2)', icon: '📋' },
+          { label: 'Valeur du stock', value: formatCurrency(totalValue, currency), color: 'var(--teal)', icon: '💎' },
+          { label: 'Ruptures / Bas', value: ruptures.length.toString(), color: 'var(--danger)', icon: '⚠️' },
+          { label: 'Catégories', value: String(new Set(products.map(p => p.category)).size), color: 'var(--amber)', icon: '📁' },
+        ].map(k => (
+          <div key={k.label} className="kpi-card">
+            <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
+            <div className="kpi-label">{k.label}</div>
+            <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Tableau inventaire */}
+      {/* Panel inventaire */}
       <div className="panel">
-        <div className="panel-h">
-          <div className="panel-t">🗄️ Inventaire Produits</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="topbar-btn" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
-              onClick={() => toast('📊 Export CSV stock')}>📊 CSV</button>
-            <button className="topbar-btn" onClick={() => setShowModal(true)}>＋ Ajouter produit</button>
+        <div className="panel-head">
+          <span className="panel-title">🗄️ Inventaire Produits</span>
+          <div className="flex items-center gap-2">
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV en cours…')}>
+              <Download size={13} /> CSV
+            </button>
+            <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowModal(true)}>
+              <Plus size={13} /> Ajouter
+            </button>
           </div>
         </div>
 
         {/* Filtres */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-          <input
-            className="form-input"
-            style={{ width: 200, fontSize: 12 }}
-            placeholder="🔍 Produit, référence…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          <select className="form-input" style={{ width: 'auto', fontSize: 12 }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <div className="search-box flex-1 min-w-40">
+            <Search size={13} className="search-icon" />
+            <input className="input pl-8 py-2 text-sm w-full" placeholder="🔍 Produit, référence…"
+              value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <select className="input py-2 text-sm w-auto" value={cat} onChange={e => setCat(e.target.value)}>
             <option value="">Toutes catégories</option>
-            <option>Céréales</option><option>Corps gras</option><option>Épicerie</option>
-            <option>Hygiène</option><option>Laitiers</option><option>Conserves</option>
+            {cats.filter(Boolean).map(c => <option key={c}>{c}</option>)}
           </select>
-          <select className="form-input" style={{ width: 'auto', fontSize: 12 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <select className="input py-2 text-sm w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="">Tous les statuts</option>
             <option>Rupture</option><option>Bas</option><option>OK</option>
           </select>
         </div>
 
-        <div className="scroll-x">
-          <table id="stockTable">
+        {/* Table */}
+        <div className="table-wrap">
+          <table>
             <thead>
               <tr>
                 <th>Réf.</th><th>Produit</th><th>Catégorie</th>
                 <th>Prix achat</th><th>Prix vente</th>
-                <th>Stock</th><th>Seuil</th><th>Statut</th><th>Actions</th>
+                <th>Stock</th><th>Seuil</th><th>Fournisseur</th>
+                <th>Statut</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
-                <tr key={p.sku}>
-                  <td style={{ color: 'var(--text2)', fontFamily: 'var(--mono)' }}>{p.sku}</td>
-                  <td className="td-bold">{p.name}</td>
-                  <td>{p.category}</td>
-                  <td className="cv">{formatCurrency(p.priceBuy, currency)}</td>
-                  <td className="cv">{formatCurrency(p.priceSell, currency)}</td>
-                  <td>
-                    <span style={{
-                      color: p.status === 'red' ? 'var(--danger)' : p.status === 'amber' ? 'var(--acc)' : 'inherit',
-                      fontWeight: p.status !== 'green' ? 700 : 'normal'
-                    }}>{p.stock}</span>
-                  </td>
-                  <td>{p.threshold}</td>
-                  <td><span className={`pill ${p.status}`}>{p.statusLabel}</span></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      {p.status !== 'green' && (
-                        <button className="mini-btn" onClick={() => toast.success(`📦 Bon de commande créé`)}>📦 Commander</button>
-                      )}
-                      <button className="mini-btn" onClick={() => toast(`✏️ Modifier ${p.sku}`)}>✏️ Modifier</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map(p => {
+                const st = statusOf(p.stock, p.threshold)
+                return (
+                  <tr key={p.sku}>
+                    <td className="td-mono">{p.sku}</td>
+                    <td className="td-bold">{p.name}</td>
+                    <td><span className="badge badge-teal">{p.category}</span></td>
+                    <td className="td-num">{formatCurrency(p.buy, currency)}</td>
+                    <td className="td-num" style={{ color: 'var(--teal)' }}>{formatCurrency(p.sell, currency)}</td>
+                    <td>
+                      <span className="td-num" style={{
+                        color: st.label === 'Rupture' ? 'var(--danger)' : st.label === 'Bas' ? 'var(--amber)' : 'var(--green)',
+                        fontWeight: 700
+                      }}>{p.stock}</span>
+                    </td>
+                    <td className="td-num" style={{ color: 'var(--text3)' }}>{p.threshold}</td>
+                    <td className="text-xs" style={{ color: 'var(--text2)' }}>{p.supplier}</td>
+                    <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
+                    <td>
+                      <div className="flex gap-1.5">
+                        {st.label !== 'OK' && (
+                          <button className="btn btn-sm btn-ghost gap-1" onClick={() => toast.success('📦 Bon créé')}>📦</button>
+                        )}
+                        <button className="btn btn-sm btn-ghost" onClick={() => toast(`✏️ ${p.sku}`)}>✏️</button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Modal ajout */}
+      {/* Modal */}
       {showModal && (
-        <div className="modal-overlay show">
-          <div className="modal">
-            <div className="modal-h">
-              <div className="modal-t">➕ Ajouter un produit</div>
-              <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
+          <div className="modal-box">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ Nouveau produit</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>✕</button>
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Référence (SKU)</label>
-                <input className="form-input" value={form.sku} onChange={e => setForm(p => ({ ...p, sku: e.target.value }))} placeholder="PRD-XXX" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Catégorie</label>
-                <select className="form-input" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}>
-                  <option>Céréales</option><option>Corps gras</option><option>Épicerie</option>
-                  <option>Hygiène</option><option>Laitiers</option><option>Conserves</option>
-                </select>
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'SKU', key: 'sku', type: 'text', span: false },
+                { label: 'Catégorie', key: 'category', type: 'select', span: false },
+                { label: 'Nom du produit', key: 'name', type: 'text', span: true },
+                { label: 'Fournisseur', key: 'supplier', type: 'text', span: true },
+                { label: 'Prix achat', key: 'buy', type: 'number', span: false },
+                { label: 'Prix vente', key: 'sell', type: 'number', span: false },
+                { label: 'Stock initial', key: 'stock', type: 'number', span: false },
+                { label: 'Seuil alerte', key: 'threshold', type: 'number', span: false },
+              ].map(f => (
+                <div key={f.key} className={f.span ? 'col-span-2' : ''}>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
+                  {f.type === 'select' ? (
+                    <select className="input text-sm" value={(form as any)[f.key]}
+                      onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
+                      {['Céréales','Corps gras','Épicerie','Hygiène','Laitiers','Conserves'].map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  ) : (
+                    <input className="input text-sm" type={f.type}
+                      value={(form as any)[f.key]}
+                      onChange={e => setForm(p => ({ ...p, [f.key]: f.type === 'number' ? +e.target.value : e.target.value }))} />
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="form-group">
-              <label className="form-label">Nom du produit</label>
-              <input className="form-input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Nom du produit…" />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Prix achat (F CFA)</label>
-                <input className="form-input" type="number" value={form.priceBuy} onChange={e => setForm(p => ({ ...p, priceBuy: +e.target.value }))} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Prix vente (F CFA)</label>
-                <input className="form-input" type="number" value={form.priceSell} onChange={e => setForm(p => ({ ...p, priceSell: +e.target.value }))} />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Stock initial</label>
-                <input className="form-input" type="number" value={form.stock} onChange={e => setForm(p => ({ ...p, stock: +e.target.value }))} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Seuil d'alerte</label>
-                <input className="form-input" type="number" value={form.threshold} onChange={e => setForm(p => ({ ...p, threshold: +e.target.value }))} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              <button className="topbar-btn" style={{ flex: 1 }} onClick={addProduct}>✅ Ajouter le produit</button>
-              <button className="topbar-btn" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} onClick={() => setShowModal(false)}>Annuler</button>
+            <div className="flex gap-2 mt-5">
+              <button className="btn btn-primary flex-1 justify-center" onClick={addProduct}>✅ Ajouter le produit</button>
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Annuler</button>
             </div>
           </div>
         </div>
