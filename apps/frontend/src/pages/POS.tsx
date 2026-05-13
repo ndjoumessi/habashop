@@ -1,287 +1,248 @@
 import { useState } from 'react'
-import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Smartphone, Printer, X } from 'lucide-react'
 import { useAppStore, formatCurrency } from '@/stores/appStore'
 import toast from 'react-hot-toast'
-import clsx from 'clsx'
 
-interface Product {
-  id: number; name: string; price: number; category: string; stock: number; sku: string
-}
-
-interface CartItem extends Product { qty: number }
-
-const PRODUCTS: Product[] = [
-  { id: 1, name: 'Huile Palme 5L', price: 8500, category: 'Corps gras', stock: 45, sku: 'HU-PAL-5L' },
-  { id: 2, name: 'Riz Parfumé 25kg', price: 24500, category: 'Céréales', stock: 120, sku: 'RI-PAR-25' },
-  { id: 3, name: 'Sucre 50kg', price: 32000, category: 'Épicerie', stock: 80, sku: 'SU-BLC-50' },
-  { id: 4, name: 'Lait Poudre 2.5kg', price: 18500, category: 'Laitiers', stock: 32, sku: 'LA-POU-25' },
-  { id: 5, name: 'Savon OMO 1kg', price: 2800, category: 'Hygiène', stock: 200, sku: 'SA-OMO-1K' },
-  { id: 6, name: 'Tomate Concentrée 850g', price: 1200, category: 'Conserves', stock: 150, sku: 'TO-CON-85' },
-  { id: 7, name: 'Farine de blé 50kg', price: 28000, category: 'Céréales', stock: 60, sku: 'FA-BLE-50' },
-  { id: 8, name: 'Savon de ménage 400g', price: 650, category: 'Hygiène', stock: 400, sku: 'SA-MEN-40' },
-  { id: 9, name: 'Sardines 155g x12', price: 7200, category: 'Conserves', stock: 96, sku: 'SA-CON-12' },
-  { id: 10, name: 'Beurre de Karité 1kg', price: 4500, category: 'Corps gras', stock: 70, sku: 'BK-KAR-1K' },
-  { id: 11, name: 'Café Soluble 500g', price: 6800, category: 'Épicerie', stock: 42, sku: 'CA-SOL-50' },
-  { id: 12, name: 'Lait Concentré 397g x24', price: 14400, category: 'Laitiers', stock: 48, sku: 'LC-CON-24' },
+const PRODUCTS = [
+  { id: 1, name: 'Riz parfumé 5kg', price: 4500, category: 'cereals', emoji: '🌾', stock: 120 },
+  { id: 2, name: 'Huile palme 1L', price: 1800, category: 'fat', emoji: '🫙', stock: 18 },
+  { id: 3, name: 'Sucre 1kg', price: 850, category: 'grocery', emoji: '🍚', stock: 245 },
+  { id: 4, name: 'Farine blé 1kg', price: 650, category: 'cereals', emoji: '🌾', stock: 89 },
+  { id: 5, name: 'Savon OMO 500g', price: 500, category: 'hygiene', emoji: '🧼', stock: 150 },
+  { id: 6, name: 'Lait poudre 400g', price: 2200, category: 'dairy', emoji: '🥛', stock: 67 },
+  { id: 7, name: 'Tomate concentrée 800g', price: 1400, category: 'canned', emoji: '🍅', stock: 112 },
+  { id: 8, name: 'Huile végétale 5L', price: 8500, category: 'fat', emoji: '🫒', stock: 34 },
+  { id: 9, name: 'Café soluble 200g', price: 2800, category: 'grocery', emoji: '☕', stock: 55 },
+  { id: 10, name: 'Sardines 155g', price: 900, category: 'canned', emoji: '🐟', stock: 200 },
+  { id: 11, name: 'Savon de ménage 400g', price: 350, category: 'hygiene', emoji: '🫧', stock: 180 },
+  { id: 12, name: 'Lait concentré 397g', price: 1100, category: 'dairy', emoji: '🥤', stock: 95 },
 ]
 
-const CATEGORIES = ['Tous', 'Céréales', 'Corps gras', 'Épicerie', 'Laitiers', 'Hygiène', 'Conserves']
+const CATS = [
+  { id: 'all', label: 'Tous' },
+  { id: 'cereals', label: '🌾 Céréales' },
+  { id: 'canned', label: '🫙 Conserves' },
+  { id: 'fat', label: '🫒 Corps gras' },
+  { id: 'hygiene', label: '🧼 Hygiène' },
+  { id: 'dairy', label: '🥛 Laitiers' },
+  { id: 'grocery', label: '🛒 Épicerie' },
+]
+
+interface CartItem { id: number; name: string; price: number; qty: number; emoji: string }
 
 export default function POS() {
   const { currency } = useAppStore()
   const [cart, setCart] = useState<CartItem[]>([])
+  const [activeCat, setActiveCat] = useState('all')
   const [search, setSearch] = useState('')
-  const [activeCategory, setActiveCategory] = useState('Tous')
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mobile'>('cash')
-  const [showReceipt, setShowReceipt] = useState(false)
+  const [payMode, setPayMode] = useState<'cash' | 'card' | 'mobile'>('cash')
   const [cashGiven, setCashGiven] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [sessionTx, setSessionTx] = useState(42)
+  const [sessionCA, setSessionCA] = useState(842500)
 
   const filtered = PRODUCTS.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())
-    const matchCat = activeCategory === 'Tous' || p.category === activeCategory
-    return matchSearch && matchCat
+    const matchCat = activeCat === 'all' || p.category === activeCat
+    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase())
+    return matchCat && matchSearch
   })
 
-  const addToCart = (product: Product) => {
+  const addToCart = (p: typeof PRODUCTS[0]) => {
     setCart(prev => {
-      const existing = prev.find(i => i.id === product.id)
-      if (existing) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i)
-      return [...prev, { ...product, qty: 1 }]
+      const ex = prev.find(i => i.id === p.id)
+      if (ex) return prev.map(i => i.id === p.id ? { ...i, qty: i.qty + 1 } : i)
+      return [...prev, { id: p.id, name: p.name, price: p.price, qty: 1, emoji: p.emoji }]
     })
   }
 
   const updateQty = (id: number, delta: number) => {
-    setCart(prev => prev
-      .map(i => i.id === id ? { ...i, qty: i.qty + delta } : i)
-      .filter(i => i.qty > 0)
-    )
+    setCart(prev => prev.map(i => i.id === id ? { ...i, qty: i.qty + delta } : i).filter(i => i.qty > 0))
   }
 
-  const removeItem = (id: number) => setCart(prev => prev.filter(i => i.id !== id))
-
-  const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0)
-  const vatRate = 0.18
-  const totalHT = total / (1 + vatRate)
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0)
+  const totalHT = total / 1.18
   const tva = total - totalHT
   const monnaie = cashGiven ? parseInt(cashGiven) - total : 0
 
   const validateSale = () => {
-    if (cart.length === 0) { toast.error('Panier vide !'); return }
-    setShowReceipt(true)
+    if (!cart.length) { toast.error('Panier vide !'); return }
+    setShowModal(true)
   }
 
   const confirmSale = () => {
-    toast.success(`Vente validée — ${formatCurrency(total, currency)}`)
+    setSessionTx(t => t + 1)
+    setSessionCA(c => c + total)
+    toast.success(`✅ Vente encaissée — ${formatCurrency(total, currency)}`)
     setCart([])
-    setShowReceipt(false)
+    setShowModal(false)
     setCashGiven('')
   }
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-8rem)] animate-fade-in">
-      {/* Catalogue */}
-      <div className="flex-1 flex flex-col gap-3 min-w-0">
-        {/* Recherche + filtres */}
-        <div className="space-y-2">
-          <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text3)' }} />
+    <div className="page active" id="page-pos">
+      <div className="pos-wrap">
+        {/* Catalogue */}
+        <div className="pos-items">
+          <div className="pos-filters" id="posFilters">
+            {CATS.map(c => (
+              <button
+                key={c.id}
+                className={`pos-filter-btn${activeCat === c.id ? ' active' : ''}`}
+                onClick={() => setActiveCat(c.id)}
+              >{c.label}</button>
+            ))}
             <input
-              className="input pl-9 w-full"
-              placeholder="Rechercher un produit ou scanner SKU..."
+              className="form-input"
+              style={{ marginLeft: 'auto', width: 180, fontSize: 12 }}
+              placeholder="🔍 Rechercher…"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={clsx(
-                  'px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border',
-                  activeCategory === cat ? 'text-white border-transparent' : 'border-current'
-                )}
-                style={{
-                  background: activeCategory === cat ? 'linear-gradient(135deg, var(--p), var(--p2))' : 'var(--bg3)',
-                  color: activeCategory === cat ? '#fff' : 'var(--text2)',
-                  boxShadow: activeCategory === cat ? '0 4px 14px rgba(91,78,232,0.35)' : 'none',
-                }}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Grille produits */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="product-grid">
             {filtered.map(p => (
-              <button
+              <div
                 key={p.id}
+                className={`product-tile${cart.find(i => i.id === p.id) ? ' selected' : ''}`}
                 onClick={() => addToCart(p)}
-                className="card text-left transition-all hover:-translate-y-0.5 hover:border-purple-500 active:scale-95"
-                style={{ borderColor: cart.find(i => i.id === p.id) ? 'var(--p)' : 'var(--border)' }}
               >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2"
-                  style={{ background: 'var(--bg3)' }}
-                >
-                  📦
+                <div className="pt-emoji">{p.emoji}</div>
+                <div className="pt-name">{p.name}</div>
+                <div className="pt-price">{formatCurrency(p.price, currency)}</div>
+                <div className="pt-stock" style={{ color: p.stock < 20 ? 'var(--danger)' : 'var(--text3)' }}>
+                  Stock: {p.stock}
                 </div>
-                <p className="text-xs font-bold leading-tight mb-1" style={{ color: 'var(--text)' }}>{p.name}</p>
-                <p className="text-xs mb-2" style={{ color: 'var(--text3)' }}>{p.sku}</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-black" style={{ color: 'var(--p2)' }}>
-                    {formatCurrency(p.price, currency)}
-                  </p>
-                  <span className={clsx('badge text-xs', p.stock < 10 ? 'badge-red' : 'badge-green')}>
-                    {p.stock}
-                  </span>
-                </div>
-              </button>
+              </div>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Panier */}
-      <div
-        className="w-80 flex-shrink-0 flex flex-col rounded-xl overflow-hidden"
-        style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
-      >
-        <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-          <ShoppingCart size={18} style={{ color: 'var(--p)' }} />
-          <span className="font-bold" style={{ color: 'var(--text)' }}>Panier</span>
-          <span className="ml-auto badge badge-purple">{cart.length} article{cart.length > 1 ? 's' : ''}</span>
-        </div>
+        {/* Panier */}
+        <div className="cart-panel">
+          <div className="cart-h">
+            <div className="cart-title">🛒 Panier</div>
+            <div style={{ fontSize: 11, color: 'var(--text2)' }}>{cart.length} article{cart.length > 1 ? 's' : ''}</div>
+          </div>
 
-        {/* Items */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {cart.length === 0 ? (
-            <div className="text-center py-12" style={{ color: 'var(--text3)' }}>
-              <ShoppingCart size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Panier vide</p>
-            </div>
-          ) : cart.map(item => (
-            <div key={item.id} className="flex items-center gap-2 p-2 rounded-xl" style={{ background: 'var(--bg3)' }}>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold truncate" style={{ color: 'var(--text)' }}>{item.name}</p>
-                <p className="text-xs" style={{ color: 'var(--p2)' }}>{formatCurrency(item.price * item.qty, currency)}</p>
+          <div className="cart-items">
+            {cart.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text3)' }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🛒</div>
+                <div style={{ fontSize: 13 }}>Panier vide</div>
+                <div style={{ fontSize: 11, marginTop: 4 }}>Cliquez sur un produit pour l'ajouter</div>
               </div>
-              <div className="flex items-center gap-1">
-                <button onClick={() => updateQty(item.id, -1)} className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg4)', color: 'var(--text2)' }}>
-                  <Minus size={11} />
-                </button>
-                <span className="w-6 text-center text-xs font-bold" style={{ color: 'var(--text)' }}>{item.qty}</span>
-                <button onClick={() => updateQty(item.id, 1)} className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg4)', color: 'var(--text2)' }}>
-                  <Plus size={11} />
-                </button>
+            ) : cart.map(item => (
+              <div key={item.id} className="cart-item">
+                <div className="ci-emoji">{item.emoji}</div>
+                <div className="ci-info">
+                  <div className="ci-name">{item.name}</div>
+                  <div className="ci-price">{formatCurrency(item.price, currency)}</div>
+                </div>
+                <div className="ci-qty">
+                  <button className="qty-btn" onClick={() => updateQty(item.id, -1)}>−</button>
+                  <span className="qty-val">{item.qty}</span>
+                  <button className="qty-btn" onClick={() => updateQty(item.id, 1)}>+</button>
+                </div>
+                <div className="ci-total">{formatCurrency(item.price * item.qty, currency)}</div>
               </div>
-              <button onClick={() => removeItem(item.id)} style={{ color: 'var(--danger)' }}>
-                <Trash2 size={13} />
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Totaux + Paiement */}
-        <div className="p-3 border-t space-y-3" style={{ borderColor: 'var(--border)' }}>
-          <div className="space-y-1.5 text-xs" style={{ color: 'var(--text2)' }}>
-            <div className="flex justify-between">
-              <span>Sous-total HT</span>
-              <span>{formatCurrency(totalHT, currency)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>TVA (18%)</span>
-              <span>{formatCurrency(tva, currency)}</span>
-            </div>
-            <div className="flex justify-between text-base font-black pt-1" style={{ color: 'var(--text)' }}>
-              <span>TOTAL TTC</span>
-              <span style={{ color: 'var(--p)' }}>{formatCurrency(total, currency)}</span>
-            </div>
+          {/* Totaux */}
+          <div className="cart-summary">
+            <div className="summary-row"><span>Sous-total HT</span><span>{formatCurrency(totalHT, currency)}</span></div>
+            <div className="summary-row"><span>TVA (18%)</span><span>{formatCurrency(tva, currency)}</span></div>
+            <div className="summary-total"><span>TOTAL TTC</span><span>{formatCurrency(total, currency)}</span></div>
           </div>
 
           {/* Mode de paiement */}
-          <div className="flex gap-2">
+          <div className="pay-modes">
             {[
-              { id: 'cash', icon: <Banknote size={14} />, label: 'Espèces' },
-              { id: 'card', icon: <CreditCard size={14} />, label: 'Carte' },
-              { id: 'mobile', icon: <Smartphone size={14} />, label: 'Mobile' },
+              { id: 'cash', label: '💵 Espèces' },
+              { id: 'card', label: '💳 Carte' },
+              { id: 'mobile', label: '📲 Mobile' },
             ].map(m => (
               <button
                 key={m.id}
-                onClick={() => setPaymentMethod(m.id as any)}
-                className={clsx('flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-semibold transition-all border')}
-                style={{
-                  background: paymentMethod === m.id ? 'rgba(91,78,232,0.15)' : 'var(--bg3)',
-                  borderColor: paymentMethod === m.id ? 'var(--p)' : 'transparent',
-                  color: paymentMethod === m.id ? 'var(--p2)' : 'var(--text2)',
-                }}
-              >
-                {m.icon}
-                {m.label}
-              </button>
+                className={`pay-mode-btn${payMode === m.id ? ' active' : ''}`}
+                onClick={() => setPayMode(m.id as any)}
+              >{m.label}</button>
             ))}
           </div>
 
-          {paymentMethod === 'cash' && (
+          {payMode === 'cash' && (
             <input
-              className="input text-sm"
-              placeholder="Montant reçu..."
+              className="form-input"
+              type="number"
+              placeholder="Montant reçu (F CFA)…"
+              style={{ marginBottom: 8 }}
               value={cashGiven}
               onChange={e => setCashGiven(e.target.value)}
-              type="number"
             />
           )}
           {cashGiven && monnaie >= 0 && (
-            <div className="flex justify-between text-sm font-bold" style={{ color: 'var(--acc2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13, fontWeight: 700, color: 'var(--acc2)' }}>
               <span>Monnaie à rendre</span>
               <span>{formatCurrency(monnaie, currency)}</span>
             </div>
           )}
 
-          <button
-            onClick={validateSale}
-            className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-sm"
-          >
-            <ShoppingCart size={16} />
-            Encaisser {cart.length > 0 ? formatCurrency(total, currency) : ''}
+          <button className="pay-btn" onClick={validateSale}>
+            🧾 Encaisser {cart.length > 0 ? formatCurrency(total, currency) : ''}
           </button>
-        </div>
-      </div>
 
-      {/* Modal ticket */}
-      {showReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="card w-80 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold" style={{ color: 'var(--text)' }}>Confirmer la vente</h3>
-              <button onClick={() => setShowReceipt(false)} style={{ color: 'var(--text3)' }}>
-                <X size={18} />
-              </button>
+          {/* Résumé session */}
+          <div className="session-summary">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: 700, color: 'var(--text2)', letterSpacing: '.6px' }}>📊 Résumé session</div>
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--p2)', background: 'rgba(91,78,232,.12)', padding: '3px 8px', borderRadius: 20 }}>
+                {new Date().toLocaleDateString('fr')}
+              </div>
             </div>
-            <div className="space-y-2 text-sm" style={{ color: 'var(--text2)' }}>
-              {cart.map(i => (
-                <div key={i.id} className="flex justify-between">
-                  <span>{i.name} x{i.qty}</span>
-                  <span>{formatCurrency(i.price * i.qty, currency)}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(14,196,126,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>🧾</div>
+                  <div style={{ fontSize: 10, color: 'var(--text2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px' }}>Transactions</div>
                 </div>
-              ))}
-              <div className="border-t pt-2" style={{ borderColor: 'var(--border)' }}>
-                <div className="flex justify-between font-black text-base" style={{ color: 'var(--text)' }}>
-                  <span>Total TTC</span>
-                  <span style={{ color: 'var(--p)' }}>{formatCurrency(total, currency)}</span>
+                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--acc2)', lineHeight: 1 }}>{sessionTx}</div>
+              </div>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 12px', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(240,165,0,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>💰</div>
+                  <div style={{ fontSize: 10, color: 'var(--text2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px' }}>CA encaissé</div>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--acc)', lineHeight: 1, fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {formatCurrency(sessionCA, currency)}
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button onClick={confirmSale} className="btn-primary flex-1 flex items-center justify-center gap-2 py-2.5 text-sm">
-                <ShoppingCart size={15} /> Valider
-              </button>
-              <button onClick={confirmSale} className="btn-ghost flex items-center gap-1 px-3 py-2.5 text-sm">
-                <Printer size={15} /> Ticket
-              </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal confirmation */}
+      {showModal && (
+        <div className="modal-overlay show">
+          <div className="modal">
+            <div className="modal-h">
+              <div className="modal-t">🧾 Confirmer la vente</div>
+              <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              {cart.map(i => (
+                <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                  <span style={{ color: 'var(--text2)' }}>{i.emoji} {i.name} × {i.qty}</span>
+                  <span style={{ fontWeight: 700 }}>{formatCurrency(i.price * i.qty, currency)}</span>
+                </div>
+              ))}
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800 }}>
+                <span>Total TTC</span>
+                <span style={{ color: 'var(--acc2)' }}>{formatCurrency(total, currency)}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="topbar-btn" style={{ flex: 1 }} onClick={confirmSale}>✅ Valider & Encaisser</button>
+              <button className="topbar-btn" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} onClick={confirmSale}>🖨️ Imprimer ticket</button>
             </div>
           </div>
         </div>
