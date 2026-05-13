@@ -35,6 +35,15 @@ async function bootstrap() {
     secret: process.env.JWT_SECRET || 'habashop-dev-secret',
   })
 
+  // Décorateur authenticate — doit être enregistré AVANT les routes
+  app.decorate('authenticate', async (req: any, reply: any) => {
+    try {
+      await req.jwtVerify()
+    } catch (err) {
+      reply.code(401).send({ error: 'Token invalide ou expiré' })
+    }
+  })
+
   // Swagger docs
   await app.register(swagger, {
     openapi: {

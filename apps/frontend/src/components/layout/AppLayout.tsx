@@ -5,27 +5,20 @@ import { useAppStore } from '@/stores/appStore'
 import { useEffect } from 'react'
 
 export default function AppLayout() {
-  const { theme, sidebarOpen } = useAppStore()
+  const { theme } = useAppStore()
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
+    <div id="app" style={{ display: 'flex' }}>
       <Sidebar />
-      <div
-        className="flex flex-col flex-1 overflow-hidden transition-all duration-300"
-        style={{ marginLeft: sidebarOpen ? 'var(--sidebar)' : '72px' }}
-      >
+      <div id="main">
         <Header />
-        <main
-          id="main"
-          className="flex-1 overflow-y-auto p-6"
-          style={{ background: 'var(--bg)' }}
-        >
+        <div id="content">
           <Outlet />
-        </main>
+        </div>
       </div>
     </div>
   )

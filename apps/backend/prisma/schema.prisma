@@ -3,77 +3,55 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = env("DB_PROVIDER")
   url      = env("DATABASE_URL")
 }
 
-// ─── TENANT (boutique) ───────────────────────────────────────────────
 model Tenant {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  currency    Currency @default(XOF)
-  language    String   @default("fr")
-  vatRate     Float    @default(0.18)
-  address     String?
-  phone       String?
-  email       String?
-  logoUrl     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  users       User[]
-  products    Product[]
-  sales       Sale[]
-  orders      Order[]
-  suppliers   Supplier[]
-  customers   Customer[]
-  employees   Employee[]
-  expenses    Expense[]
-  auditLogs   AuditLog[]
-
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  currency  String   @default("XOF")
+  language  String   @default("fr")
+  vatRate   Float    @default(0.18)
+  address   String?
+  phone     String?
+  email     String?
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users      User[]
+  products   Product[]
+  sales      Sale[]
+  orders     Order[]
+  suppliers  Supplier[]
+  customers  Customer[]
+  employees  Employee[]
+  expenses   Expense[]
+  auditLogs  AuditLog[]
   @@map("tenants")
 }
 
-enum Currency {
-  XOF
-  EUR
-  USD
-  CAD
-}
-
-// ─── USERS & AUTH ────────────────────────────────────────────────────
 model User {
-  id            String    @id @default(cuid())
-  tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id])
-  name          String
-  email         String
-  passwordHash  String
-  role          UserRole  @default(CASHIER)
-  totpSecret    String?
-  totpEnabled   Boolean   @default(false)
-  active        Boolean   @default(true)
-  lastLoginAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  sales         Sale[]
-  auditLogs     AuditLog[]
-
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  name         String
+  email        String
+  passwordHash String
+  role         String    @default("CASHIER")
+  totpSecret   String?
+  totpEnabled  Boolean   @default(false)
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  sales     Sale[]
+  auditLogs AuditLog[]
   @@unique([tenantId, email])
   @@map("users")
 }
 
-enum UserRole {
-  ADMIN
-  MANAGER
-  CASHIER
-  ACCOUNTANT
-  HR
-}
-
-// ─── PRODUCTS & STOCK ────────────────────────────────────────────────
 model Product {
   id          String    @id @default(cuid())
   tenantId    String
@@ -92,48 +70,30 @@ model Product {
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  saleItems   SaleItem[]
-  orderItems  OrderItem[]
-
+  saleItems  SaleItem[]
+  orderItems OrderItem[]
   @@unique([tenantId, sku])
   @@map("products")
 }
 
-// ─── SALES (POS) ─────────────────────────────────────────────────────
 model Sale {
-  id            String       @id @default(cuid())
+  id            String    @id @default(cuid())
   tenantId      String
-  tenant        Tenant       @relation(fields: [tenantId], references: [id])
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
   userId        String
-  user          User         @relation(fields: [userId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
   customerId    String?
-  customer      Customer?    @relation(fields: [customerId], references: [id])
+  customer      Customer? @relation(fields: [customerId], references: [id])
   reference     String
   totalHT       Float
   vatAmount     Float
   totalTTC      Float
-  paymentMethod PaymentMethod @default(CASH)
-  status        SaleStatus   @default(COMPLETED)
+  paymentMethod String    @default("CASH")
+  status        String    @default("COMPLETED")
   notes         String?
-  createdAt     DateTime     @default(now())
-
-  items         SaleItem[]
-
+  createdAt     DateTime  @default(now())
+  items SaleItem[]
   @@map("sales")
-}
-
-enum PaymentMethod {
-  CASH
-  CARD
-  MOBILE_MONEY
-  CREDIT
-}
-
-enum SaleStatus {
-  COMPLETED
-  REFUNDED
-  PARTIAL_REFUND
 }
 
 model SaleItem {
@@ -145,39 +105,26 @@ model SaleItem {
   qty        Int
   unitPrice  Float
   totalPrice Float
-
   @@map("sale_items")
 }
 
-// ─── ORDERS (fournisseurs) ───────────────────────────────────────────
 model Order {
-  id          String      @id @default(cuid())
-  tenantId    String
-  tenant      Tenant      @relation(fields: [tenantId], references: [id])
-  supplierId  String
-  supplier    Supplier    @relation(fields: [supplierId], references: [id])
-  reference   String
-  status      OrderStatus @default(DRAFT)
-  totalHT     Float       @default(0)
-  totalTTC    Float       @default(0)
-  expectedAt  DateTime?
-  receivedAt  DateTime?
-  notes       String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  items       OrderItem[]
-
+  id         String    @id @default(cuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  supplierId String
+  supplier   Supplier  @relation(fields: [supplierId], references: [id])
+  reference  String
+  status     String    @default("DRAFT")
+  totalHT    Float     @default(0)
+  totalTTC   Float     @default(0)
+  expectedAt DateTime?
+  receivedAt DateTime?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  items OrderItem[]
   @@map("orders")
-}
-
-enum OrderStatus {
-  DRAFT
-  SENT
-  CONFIRMED
-  PARTIAL
-  RECEIVED
-  CANCELLED
 }
 
 model OrderItem {
@@ -189,11 +136,9 @@ model OrderItem {
   qty        Int
   unitPrice  Float
   totalPrice Float
-
   @@map("order_items")
 }
 
-// ─── SUPPLIERS ───────────────────────────────────────────────────────
 model Supplier {
   id        String   @id @default(cuid())
   tenantId  String
@@ -207,86 +152,63 @@ model Supplier {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  products  Product[]
-  orders    Order[]
-
+  products Product[]
+  orders   Order[]
   @@map("suppliers")
 }
 
-// ─── CUSTOMERS (CRM) ─────────────────────────────────────────────────
 model Customer {
-  id         String       @id @default(cuid())
-  tenantId   String
-  tenant     Tenant       @relation(fields: [tenantId], references: [id])
-  name       String
-  email      String?
-  phone      String?
-  address    String?
-  type       CustomerType @default(RETAIL)
-  loyalty    Int          @default(0)
-  balance    Float        @default(0)
-  active     Boolean      @default(true)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-
-  sales      Sale[]
-
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  type      String   @default("RETAIL")
+  loyalty   Int      @default(0)
+  balance   Float    @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales Sale[]
   @@map("customers")
 }
 
-enum CustomerType {
-  RETAIL
-  WHOLESALE
-  SEMI_WHOLESALE
-  VIP
-}
-
-// ─── EMPLOYEES & RH ──────────────────────────────────────────────────
 model Employee {
-  id          String          @id @default(cuid())
-  tenantId    String
-  tenant      Tenant          @relation(fields: [tenantId], references: [id])
-  name        String
-  email       String?
-  phone       String?
-  position    String
-  department  String?
-  salary      Float
-  hiredAt     DateTime
-  active      Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  name       String
+  email      String?
+  phone      String?
+  position   String
+  department String?
+  salary     Float
+  hiredAt    DateTime
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   @@map("employees")
 }
 
-// ─── EXPENSES ────────────────────────────────────────────────────────
 model Expense {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   tenantId    String
-  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
   date        DateTime
   label       String
   category    String
   amountHT    Float
-  vat         Float       @default(0)
+  vat         Float    @default(0)
   amountTTC   Float
-  paymentMode PaymentMethod @default(CASH)
-  status      ExpenseStatus @default(PENDING)
+  paymentMode String   @default("CASH")
+  status      String   @default("PENDING")
   notes       String?
-  createdAt   DateTime    @default(now())
-
+  createdAt   DateTime @default(now())
   @@map("expenses")
 }
 
-enum ExpenseStatus {
-  PENDING
-  PAID
-  CANCELLED
-}
-
-// ─── AUDIT LOG ───────────────────────────────────────────────────────
 model AuditLog {
   id          String   @id @default(cuid())
   tenantId    String
@@ -298,6 +220,5 @@ model AuditLog {
   description String
   ip          String?
   createdAt   DateTime @default(now())
-
   @@map("audit_logs")
 }
