@@ -3,14 +3,14 @@ import { useAuthStore } from '@/stores/authStore'
 import { Search, Bell, Plus } from 'lucide-react'
 
 const TITLES: Record<string, string> = {
-  '/dashboard': 'Tableau de bord', '/pos': 'Point de vente',
-  '/stock': 'Stock & Produits', '/orders': 'Commandes',
-  '/suppliers': 'Fournisseurs', '/customers': 'Clients',
-  '/reports': 'Rapports', '/hr': 'Employés',
-  '/planning': 'Planning', '/payroll': 'Paie',
-  '/expenses': 'Dépenses', '/forecasts': 'Prévisions',
-  '/users': 'Utilisateurs', '/activity': 'Journal d\'activité',
-  '/notifications': 'Notifications', '/settings': 'Paramètres',
+  '/app/dashboard': 'Tableau de bord', '/app/pos': 'Point de vente',
+  '/app/stock': 'Stock & Produits', '/app/orders': 'Commandes',
+  '/app/suppliers': 'Fournisseurs', '/app/customers': 'Clients',
+  '/app/reports': 'Rapports', '/app/hr': 'Employés',
+  '/app/planning': 'Planning', '/app/payroll': 'Paie',
+  '/app/expenses': 'Dépenses', '/app/forecasts': 'Prévisions',
+  '/app/users': 'Utilisateurs', '/app/activity': 'Journal d\'activité',
+  '/app/notifications': 'Notifications', '/app/settings': 'Paramètres',
 }
 
 export default function Header() {

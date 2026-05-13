@@ -21,7 +21,7 @@ export default function LoginPage() {
     if (email && password) {
       login({ id: '1', name: 'Nelson Djoumessi', email, role: 'admin', shopName: 'HabaShop — Dakar Central' }, 'demo-token')
       toast.success('Connexion réussie !')
-      navigate('/dashboard')
+      navigate('/app/dashboard')
     } else {
       setError('Identifiants incorrects. Vérifiez votre email et mot de passe.')
     }
