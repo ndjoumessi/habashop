@@ -31,19 +31,15 @@ export default function Sidebar() {
   const navigate = useNavigate()
 
   return (
-    <aside className="sidebar">
+    <div id="sidebar">
       {/* Logo */}
       <div className="sidebar-logo">
         <div className="logo-icon">H</div>
         <div className="logo-text">Haba<em>Shop</em></div>
-        <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-bold"
-          style={{ background: 'rgba(20,184,166,0.15)', color: 'var(--teal)' }}>
-          v2.0
-        </span>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-2 pb-4">
+      {/* Navigation */}
+      <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
         {NAV.map((item, i) => {
           if ('section' in item) {
             return <div key={i} className="nav-section">{item.section}</div>
@@ -55,14 +51,9 @@ export default function Sidebar() {
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             >
               <span className="nav-icon">{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
+              <span style={{ flex: 1 }}>{item.label}</span>
               {item.badge && (
-                <span
-                  className="nav-badge"
-                  style={item.badgeTeal
-                    ? { background: 'rgba(20,184,166,0.2)', color: 'var(--teal)' }
-                    : undefined}
-                >
+                <span className="nav-badge" style={item.badgeTeal ? { background: 'rgba(91,78,232,.2)', color: 'var(--p2)' } : undefined}>
                   {item.badge}
                 </span>
               )}
@@ -71,32 +62,26 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Footer user */}
-      <div className="mx-2 mb-2 p-3 rounded-xl" style={{ background: 'rgba(148,163,184,0.06)', border: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-2.5 mb-2">
-          <div className="avatar w-8 h-8 text-xs">{user?.name?.charAt(0) || 'U'}</div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold truncate" style={{ color: 'var(--text)' }}>{user?.name || 'Utilisateur'}</div>
-            <div className="text-xs truncate" style={{ color: 'var(--text3)' }}>{user?.role || 'Admin'}</div>
-          </div>
+      {/* Footer */}
+      <div className="sidebar-footer">
+        <div className="avatar">{user?.name?.charAt(0) || 'U'}</div>
+        <div className="user-info" style={{ flex: 1, minWidth: 0 }}>
+          <div className="user-name">{user?.name || 'Utilisateur'}</div>
+          <div className="user-role">{user?.role || 'Admin'}</div>
         </div>
-        <div className="flex gap-1">
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="flex-1 py-1 rounded-lg text-xs font-medium transition-all"
-            style={{ background: 'var(--bg4)', color: 'var(--text2)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            {theme === 'dark' ? '☀️ Clair' : '🌙 Sombre'}
-          </button>
-          <button
-            onClick={() => { logout(); navigate('/login') }}
-            className="py-1 px-2 rounded-lg text-xs transition-all"
-            style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--danger)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            ⏻
-          </button>
-        </div>
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: 4 }}
+          title="Changer le thème"
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
+        <span
+          style={{ color: 'var(--text2)', cursor: 'pointer', fontSize: 16, padding: 4 }}
+          onClick={() => { logout(); navigate('/login') }}
+          title="Déconnexion"
+        >⏻</span>
       </div>
-    </aside>
+    </div>
   )
 }
