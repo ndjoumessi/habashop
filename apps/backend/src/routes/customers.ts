@@ -1,0 +1,1 @@
+export { customersRoutes } from './stubs'

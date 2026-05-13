@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --p: #5B4EE8;
+    --p2: #7C6FF0;
+    --p3: #A89CF5;
+    --acc: #F0A500;
+    --acc2: #0EC47E;
+    --danger: #E8404A;
+    --bg: #0C0B14;
+    --bg2: #13121F;
+    --bg3: #1C1A2E;
+    --bg4: #252340;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #EEEDF8;
+    --text2: #8886A8;
+    --text3: #5A5878;
+    --card: #181628;
+    --card2: #201E34;
+    --sidebar: 220px;
+    --r: 12px;
+  }
+
+  [data-theme="light"] {
+    --bg: #F2F0FF;
+    --bg2: #FFFFFF;
+    --bg3: #EBE9FA;
+    --bg4: #DDD9F5;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text: #1A1830;
+    --text2: #5A587A;
+    --text3: #8886A8;
+    --card: #FFFFFF;
+    --card2: #F7F5FF;
+  }
+
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 99px; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 rounded-xl font-semibold text-white transition-all;
+    background: linear-gradient(135deg, var(--p), var(--p2));
+    box-shadow: 0 4px 14px rgba(91,78,232,0.35);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 26px rgba(91,78,232,0.45);
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 rounded-xl font-semibold transition-all;
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--bg4); color: var(--text); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.25rem;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 rounded-lg outline-none transition-all text-sm;
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .input:focus { border-color: var(--p); box-shadow: 0 0 0 3px rgba(91,78,232,0.15); }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-green { background: rgba(14,196,126,0.15); color: var(--acc2); }
+  .badge-orange { background: rgba(240,165,0,0.15); color: var(--acc); }
+  .badge-red { background: rgba(232,64,74,0.15); color: var(--danger); }
+  .badge-purple { background: rgba(91,78,232,0.15); color: var(--p2); }
+}
