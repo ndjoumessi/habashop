@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
-import { ShoppingCart, FileText, Send, Download, AlertTriangle, TrendingDown, Package, DollarSign, Zap } from 'lucide-react'
+import { AlertTriangle, TrendingDown, Package, DollarSign } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type Priority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'OK'
@@ -22,76 +22,56 @@ const FORECAST_ITEMS: ForecastItem[] = [
   { id:8, sku:'PRD-008', name:'🍅 Tomate concentrée 800g',  category:'Conserves',  currentStock:112, minStock:30, avgSales:25, leadTime:2, unitPrice:900,  supplier:'TOMAPOR',        priority:'OK'       },
 ]
 
-const PRIORITY_CFG: Record<Priority, { cls: string; label: string }> = {
-  CRITIQUE: { cls:'badge-red',    label:'⚡ Critique' },
-  URGENT:   { cls:'badge-amber',  label:'🔶 Urgent'   },
-  NORMAL:   { cls:'badge-violet', label:'📦 Normal'   },
-  OK:       { cls:'badge-green',  label:'✅ OK'        },
+const PRIORITY_CFG: Record<Priority, { color: string; bg: string; border: string; label: string }> = {
+  CRITIQUE: { color:'var(--danger)', bg:'rgba(232,64,74,.15)',  border:'rgba(232,64,74,.3)',  label:'⚡ Critique' },
+  URGENT:   { color:'var(--acc)',    bg:'rgba(240,165,0,.15)',  border:'rgba(240,165,0,.3)',  label:'🔶 Urgent'   },
+  NORMAL:   { color:'#A78BFA',      bg:'rgba(139,92,246,.15)', border:'rgba(139,92,246,.3)', label:'📦 Normal'   },
+  OK:       { color:'var(--acc2)',   bg:'rgba(14,196,126,.15)', border:'rgba(14,196,126,.3)', label:'✅ OK'        },
 }
 
-function calcItem(item: ForecastItem) {
-  const joursRestants = Math.floor(item.currentStock / item.avgSales)
-  const qtyToOrder    = Math.max(0, item.avgSales * (item.leadTime + 7) - item.currentStock)
-  const totalCost     = qtyToOrder * item.unitPrice
-  return { joursRestants, qtyToOrder, totalCost }
+const FILTER_MAP: Record<string, Priority | null> = {
+  'Toutes':   null,
+  'Critique': 'CRITIQUE',
+  'Urgent':   'URGENT',
+  'Normal':   'NORMAL',
+  'OK':       'OK',
 }
 
-type Tab = 'analyse' | 'bons'
+function joursRestants(item: ForecastItem) { return Math.floor(item.currentStock / item.avgSales) }
+function qtyToOrder(item: ForecastItem)    { return Math.max(0, item.avgSales * (item.leadTime + 7) - item.currentStock) }
+function totalCost(item: ForecastItem)     { return qtyToOrder(item) * item.unitPrice }
+
+type ActiveTab = 'analyse' | 'bons'
 
 export default function Forecasts() {
   const { lang } = useAppStore()
   void lang
   const fmt = useFormatAmount()
 
-  const [tab, setTab]                       = useState<Tab>('analyse')
-  const [priorityFilter, setPriorityFilter] = useState('')
-  const [catFilter, setCatFilter]           = useState('')
-  const [supplierFilter, setSupplierFilter] = useState('')
-  const [cart, setCart]                     = useState<Set<number>>(new Set())
-  const [validated, setValidated]           = useState<Set<string>>(new Set())
+  const [activeTab, setActiveTab]       = useState<ActiveTab>('analyse')
+  const [activeFilter, setActiveFilter] = useState('Toutes')
+  const [validated, setValidated]       = useState<Set<string>>(new Set())
 
-  const enriched      = FORECAST_ITEMS.map(item => ({ ...item, ...calcItem(item) }))
-  const allCategories = Array.from(new Set(FORECAST_ITEMS.map(i => i.category)))
-  const allSuppliers  = Array.from(new Set(FORECAST_ITEMS.map(i => i.supplier)))
+  const enriched = FORECAST_ITEMS.map(item => ({
+    ...item,
+    joursRestants: joursRestants(item),
+    qtyToOrder:    qtyToOrder(item),
+    totalCost:     totalCost(item),
+  }))
 
-  const filtered = enriched.filter(item => {
-    if (priorityFilter && item.priority !== priorityFilter) return false
-    if (catFilter && item.category !== catFilter) return false
-    if (supplierFilter && item.supplier !== supplierFilter) return false
-    return true
-  })
+  const critiques    = enriched.filter(i => i.priority === 'CRITIQUE').length
+  const urgents      = enriched.filter(i => i.priority === 'URGENT').length
+  const totalCostAll = enriched.reduce((s, i) => s + i.totalCost, 0)
+  const avgJours     = Math.round(enriched.reduce((s, i) => s + i.joursRestants, 0) / enriched.length)
+  const totalToOrder = FORECAST_ITEMS.filter(i => qtyToOrder(i) > 0).length
 
-  const critiques = enriched.filter(i => i.priority === 'CRITIQUE').length
-  const urgents   = enriched.filter(i => i.priority === 'URGENT').length
-  const totalCost = enriched.reduce((s, i) => s + i.totalCost, 0)
-  const avgJours  = Math.round(enriched.reduce((s, i) => s + i.joursRestants, 0) / enriched.length)
+  const priorityKey   = FILTER_MAP[activeFilter]
+  const filteredItems = priorityKey ? enriched.filter(i => i.priority === priorityKey) : enriched
 
+  const allSuppliers   = Array.from(new Set(FORECAST_ITEMS.map(i => i.supplier)))
   const supplierGroups = allSuppliers
     .map(supplier => ({ supplier, items: enriched.filter(i => i.supplier === supplier && i.qtyToOrder > 0) }))
     .filter(g => g.items.length > 0)
-
-  function addToCart(id: number) {
-    setCart(prev => new Set([...prev, id]))
-    toast.success('Ajouté au bon de commande')
-  }
-
-  function orderAllCritiques() {
-    const ids = enriched.filter(i => i.priority === 'CRITIQUE').map(i => i.id)
-    setCart(prev => new Set([...prev, ...ids]))
-    toast.success(`${ids.length} article(s) critique(s) ajouté(s) au bon de commande`)
-  }
-
-  function joursColor(j: number) {
-    if (j < 5)  return 'var(--danger)'
-    if (j < 10) return 'var(--acc)'
-    return 'var(--acc2)'
-  }
-
-  function stockBar(current: number, min: number) {
-    const pct = Math.min(100, Math.round(current / min * 100))
-    const color = pct < 50 ? 'var(--danger)' : pct < 80 ? 'var(--acc)' : 'var(--acc2)'
-    return { pct, color }
-  }
 
   return (
     <div className="space-y-5 animate-in">
@@ -99,10 +79,10 @@ export default function Forecasts() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Articles critiques',  value:String(critiques), color:'var(--danger)', icon:<AlertTriangle size={20}/> },
-          { label:'Articles urgents',    value:String(urgents),   color:'var(--acc)',    icon:<TrendingDown size={20}/> },
-          { label:'Valeur à commander', value:fmt(totalCost),    color:'var(--p2)',     icon:<DollarSign size={20}/> },
-          { label:'Jours stock moyen',  value:`${avgJours}j`,    color:'var(--acc2)',   icon:<Package size={20}/> },
+          { label:'Articles critiques',  value:String(critiques),  color:'var(--danger)', icon:<AlertTriangle size={20}/> },
+          { label:'Articles urgents',    value:String(urgents),    color:'var(--acc)',    icon:<TrendingDown size={20}/> },
+          { label:'Valeur à commander', value:fmt(totalCostAll),  color:'var(--p2)',     icon:<DollarSign size={20}/> },
+          { label:'Jours stock moyen',  value:`${avgJours}j`,     color:'var(--acc2)',   icon:<Package size={20}/> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color:k.color }}>{k.icon}</div>
@@ -112,62 +92,51 @@ export default function Forecasts() {
         ))}
       </div>
 
-      {/* Tabs */}
+      {/* Onglets */}
       <div style={{ display:'flex', gap:6 }}>
         {([
-          { id:'analyse', label:'📊 Analyse & Prévisions' },
-          { id:'bons',    label:'📋 Bons de commande'     },
-        ] as { id:Tab; label:string }[]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+          { id:'analyse', label:'📊 Analyse & Prévisions stock' },
+          { id:'bons',    label:'📋 Bons de commande auto'      },
+        ] as { id:ActiveTab; label:string }[]).map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
             padding:'8px 18px', borderRadius:10, fontSize:13, fontWeight:700,
             fontFamily:'inherit', cursor:'pointer', transition:'all .15s',
-            background: tab === t.id ? 'var(--p)' : 'var(--card)',
-            color:      tab === t.id ? '#fff'     : 'var(--text2)',
-            border:     tab === t.id ? 'none'     : '1px solid var(--border)',
-            boxShadow:  tab === t.id ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
+            background: activeTab === t.id ? 'var(--p)' : 'var(--card)',
+            color:      activeTab === t.id ? '#fff'     : 'var(--text2)',
+            border:     activeTab === t.id ? 'none'     : '1px solid var(--border)',
+            boxShadow:  activeTab === t.id ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
           }}>{t.label}</button>
         ))}
       </div>
 
-      {/* ── ONGLET 1 — Analyse & Prévisions ── */}
-      {tab === 'analyse' && (
+      {/* ── ONGLET A — Analyse & Prévisions stock ── */}
+      {activeTab === 'analyse' && (
         <div className="panel" style={{ marginBottom:0 }}>
           <div className="panel-head">
             <span className="panel-title">📊 Analyse des stocks & Prévisions</span>
-            <div style={{ display:'flex', gap:8 }}>
-              <button className="btn btn-ghost btn-sm gap-1.5" onClick={orderAllCritiques}>
-                <Zap size={13} /> Commander tout le critique
-              </button>
-              <button className="btn btn-primary btn-sm gap-1.5"
-                onClick={() => { toast.success('Bons générés !'); setTab('bons') }}>
-                <FileText size={13} /> Générer bons auto
-              </button>
-            </div>
           </div>
 
-          {/* Filtres */}
-          <div style={{ display:'flex', gap:9, marginBottom:14, flexWrap:'wrap' }}>
-            <select className="input" value={priorityFilter}
-              onChange={e => setPriorityFilter(e.target.value)}
-              style={{ width:'auto', minWidth:150 }}>
-              <option value="">Toutes priorités</option>
-              <option value="CRITIQUE">Critique</option>
-              <option value="URGENT">Urgent</option>
-              <option value="NORMAL">Normal</option>
-              <option value="OK">OK</option>
-            </select>
-            <select className="input" value={catFilter}
-              onChange={e => setCatFilter(e.target.value)}
-              style={{ width:'auto', minWidth:140 }}>
-              <option value="">Toutes catégories</option>
-              {allCategories.map(c => <option key={c}>{c}</option>)}
-            </select>
-            <select className="input" value={supplierFilter}
-              onChange={e => setSupplierFilter(e.target.value)}
-              style={{ width:'auto', minWidth:150 }}>
-              <option value="">Tous fournisseurs</option>
-              {allSuppliers.map(s => <option key={s}>{s}</option>)}
-            </select>
+          {/* Filtres priorité + actions */}
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:14, alignItems:'center' }}>
+            {['Toutes', 'Critique', 'Urgent', 'Normal', 'OK'].map(p => (
+              <button key={p} onClick={() => setActiveFilter(p)} style={{
+                padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:600,
+                cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
+                background: activeFilter === p ? 'var(--p)' : 'var(--bg3)',
+                color:      activeFilter === p ? '#fff'     : 'var(--text2)',
+                border:'none',
+              }}>{p}</button>
+            ))}
+            <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+              <button className="mini-btn" style={{ color:'var(--danger)' }}
+                onClick={() => toast('⚡ Bons critiques générés !')}>
+                ⚡ Commander critique
+              </button>
+              <button className="topbar-btn"
+                onClick={() => { setActiveTab('bons'); toast('📋 Tous les bons générés !') }}>
+                📋 Générer tous les bons
+              </button>
+            </div>
           </div>
 
           <div className="table-wrap">
@@ -178,9 +147,9 @@ export default function Forecasts() {
                   <th>Catégorie</th>
                   <th>Stock / Seuil</th>
                   <th>Ventes/j</th>
-                  <th>Jours rest.</th>
-                  <th>Délai liv.</th>
-                  <th>Qté à cmd.</th>
+                  <th>Jours restants</th>
+                  <th>Délai livraison</th>
+                  <th>Qté à commander</th>
                   <th>Coût estimé</th>
                   <th>Fournisseur</th>
                   <th>Priorité</th>
@@ -188,57 +157,76 @@ export default function Forecasts() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(item => {
-                  const bar    = stockBar(item.currentStock, item.minStock)
-                  const inCart = cart.has(item.id)
+                {filteredItems.map(item => {
+                  const j    = item.joursRestants
+                  const qty  = item.qtyToOrder
+                  const cost = item.totalCost
+                  const prio = PRIORITY_CFG[item.priority]
+                  const barPct   = Math.min(100, Math.round(item.currentStock / item.minStock * 100))
+                  const barColor = item.currentStock < item.minStock * 0.3 ? 'var(--danger)'
+                    : item.currentStock < item.minStock ? 'var(--acc)' : 'var(--acc2)'
+                  const jColor = j <= 2 ? 'var(--danger)' : j <= 7 ? 'var(--acc)' : 'var(--acc2)'
                   return (
                     <tr key={item.id}>
                       <td>
-                        <div className="td-bold" style={{ fontSize:13 }}>{item.name}</div>
-                        <div className="td-mono" style={{ fontSize:10, marginTop:2 }}>{item.sku}</div>
+                        <div className="td-bold">{item.name}</div>
+                        <div className="td-mono" style={{ fontSize:10 }}>{item.sku}</div>
                       </td>
-                      <td><span className="badge badge-teal">{item.category}</span></td>
-                      <td style={{ minWidth:130 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-                          <div style={{ flex:1, height:6, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
-                            <div style={{ width:`${bar.pct}%`, height:'100%', background:bar.color, borderRadius:99 }} />
+                      <td>
+                        <span style={{
+                          display:'inline-block', padding:'2px 9px', borderRadius:20,
+                          fontSize:11, fontWeight:600,
+                          background:'rgba(124,111,240,.15)', color:'#A89CF5',
+                        }}>{item.category}</span>
+                      </td>
+                      <td>
+                        <div style={{ minWidth:90 }}>
+                          <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:4 }}>
+                            <span style={{ fontWeight:700, fontFamily:'var(--mono)',
+                              color: item.currentStock === 0 ? 'var(--danger)'
+                                : item.currentStock < item.minStock ? 'var(--acc)' : 'var(--text)' }}>
+                              {item.currentStock}
+                            </span>
+                            <span style={{ color:'var(--text3)', fontFamily:'var(--mono)' }}>/{item.minStock}</span>
                           </div>
-                          <span style={{ fontFamily:'var(--mono)', fontSize:11, color:'var(--text2)', whiteSpace:'nowrap' }}>
-                            {item.currentStock}/{item.minStock}
-                          </span>
+                          <div style={{ height:4, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
+                            <div style={{ height:'100%', width:`${barPct}%`, background:barColor, borderRadius:99, transition:'width .3s' }} />
+                          </div>
                         </div>
                       </td>
-                      <td className="td-mono" style={{ fontSize:12 }}>{item.avgSales}</td>
+                      <td className="td-mono" style={{ color:'var(--text2)' }}>{item.avgSales}/j</td>
                       <td>
-                        <span style={{ fontFamily:'var(--mono)', fontWeight:700, fontSize:12, color:joursColor(item.joursRestants) }}>
-                          {item.joursRestants}j
+                        <span style={{ fontFamily:'var(--mono)', fontWeight:700, fontSize:13, color:jColor }}>
+                          {j}j
                         </span>
                       </td>
-                      <td className="td-mono" style={{ fontSize:12, color:'var(--text3)' }}>{item.leadTime}j</td>
+                      <td className="td-mono" style={{ color:'var(--text3)' }}>{item.leadTime}j</td>
                       <td>
-                        <span style={{ fontFamily:'var(--mono)', fontWeight:700, fontSize:12,
-                          color: item.qtyToOrder > 0 ? 'var(--text)' : 'var(--text3)' }}>
-                          {item.qtyToOrder > 0 ? item.qtyToOrder : '—'}
+                        <span style={{ fontFamily:'var(--mono)', fontWeight:700, color: qty > 0 ? 'var(--p2)' : 'var(--text3)' }}>
+                          {qty > 0 ? qty : '—'}
                         </span>
                       </td>
-                      <td className="td-num" style={{ fontSize:12, color: item.totalCost > 0 ? 'var(--acc)' : 'var(--text3)' }}>
-                        {item.totalCost > 0 ? fmt(item.totalCost) : '—'}
+                      <td>
+                        <span style={{ fontFamily:'var(--mono)', fontWeight:700, color: qty > 0 ? 'var(--acc)' : 'var(--text3)' }}>
+                          {qty > 0 ? fmt(cost) : '—'}
+                        </span>
                       </td>
                       <td style={{ fontSize:12, color:'var(--text2)' }}>{item.supplier}</td>
                       <td>
-                        <span className={`badge ${PRIORITY_CFG[item.priority].cls}`}>
-                          {PRIORITY_CFG[item.priority].label}
-                        </span>
+                        <span style={{
+                          display:'inline-flex', alignItems:'center', gap:4,
+                          background:prio.bg, border:`1px solid ${prio.border}`,
+                          color:prio.color, borderRadius:20,
+                          padding:'3px 10px', fontSize:11, fontWeight:700, whiteSpace:'nowrap',
+                        }}>{prio.label}</span>
                       </td>
                       <td>
-                        <div style={{ display:'flex', gap:5 }}>
-                          <button className="mini-btn gap-1"
-                            onClick={() => addToCart(item.id)}
-                            style={{ color: inCart ? 'var(--acc2)' : undefined }}>
-                            <ShoppingCart size={11} /> {inCart ? 'Ajouté' : 'Commander'}
+                        {qty > 0 && (
+                          <button className="mini-btn" style={{ color:'var(--p2)', fontSize:11 }}
+                            onClick={() => toast.success(`🛒 ${item.name} ajouté au bon`)}>
+                            🛒 Commander
                           </button>
-                          <button className="mini-btn" onClick={() => toast(`👁 ${item.sku}`)}>👁</button>
-                        </div>
+                        )}
                       </td>
                     </tr>
                   )
@@ -247,35 +235,41 @@ export default function Forecasts() {
             </table>
           </div>
 
-          {/* Résumé panier */}
-          {cart.size > 0 && (
-            <div style={{
-              marginTop:16, padding:'14px 18px',
-              background:'rgba(91,78,232,.08)', border:'1px solid rgba(91,78,232,.2)',
-              borderRadius:12, display:'flex', alignItems:'center', justifyContent:'space-between',
-            }}>
+          {/* Résumé total */}
+          <div style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'14px 16px', marginTop:12,
+            background:'var(--bg3)', borderRadius:12,
+            border:'1px solid var(--border)',
+          }}>
+            <div style={{ display:'flex', gap:24 }}>
               <div>
-                <span style={{ fontWeight:700, color:'var(--text)' }}>
-                  {cart.size} article{cart.size > 1 ? 's' : ''} sélectionné{cart.size > 1 ? 's' : ''}
-                </span>
-                <span style={{ fontSize:12, color:'var(--text3)', marginLeft:10 }}>
-                  Coût estimé :&nbsp;
-                  <strong style={{ color:'var(--acc)', fontFamily:'var(--mono)' }}>
-                    {fmt(enriched.filter(i => cart.has(i.id)).reduce((s, i) => s + i.totalCost, 0))}
-                  </strong>
-                </span>
+                <div style={{ fontSize:10, color:'var(--text3)', marginBottom:3, textTransform:'uppercase', letterSpacing:'.5px' }}>
+                  ARTICLES À COMMANDER
+                </div>
+                <div style={{ fontSize:20, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>
+                  {totalToOrder}
+                </div>
               </div>
-              <button className="btn btn-primary btn-sm gap-1.5"
-                onClick={() => { toast.success('Bons de commande générés !'); setTab('bons') }}>
-                <FileText size={13} /> Générer tous les bons
-              </button>
+              <div>
+                <div style={{ fontSize:10, color:'var(--text3)', marginBottom:3, textTransform:'uppercase', letterSpacing:'.5px' }}>
+                  COÛT TOTAL ESTIMÉ
+                </div>
+                <div style={{ fontSize:20, fontWeight:900, color:'var(--acc)', fontFamily:'var(--mono)' }}>
+                  {fmt(totalCostAll)}
+                </div>
+              </div>
             </div>
-          )}
+            <button className="topbar-btn"
+              onClick={() => { setActiveTab('bons'); toast('📋 Bons générés !') }}>
+              📤 Générer tous les bons de commande
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ── ONGLET 2 — Bons de commande ── */}
-      {tab === 'bons' && (
+      {/* ── ONGLET B — Bons de commande ── */}
+      {activeTab === 'bons' && (
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
           {supplierGroups.length === 0 ? (
             <div className="panel" style={{ textAlign:'center', color:'var(--text3)', padding:'40px 0', marginBottom:0 }}>
@@ -283,37 +277,49 @@ export default function Forecasts() {
               Aucun article à commander
             </div>
           ) : supplierGroups.map(({ supplier, items }) => {
-            const total       = items.reduce((s, i) => s + i.totalCost, 0)
+            const groupTotal  = items.reduce((s, i) => s + i.totalCost, 0)
             const isValidated = validated.has(supplier)
             return (
-              <div key={supplier} className="panel" style={{ marginBottom:0 }}>
-                <div className="panel-head">
-                  <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div key={supplier} style={{
+                background:'var(--card)', border:'1px solid var(--border)',
+                borderRadius:14, overflow:'hidden',
+              }}>
+                {/* Header fournisseur */}
+                <div style={{
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'14px 18px',
+                  background:'linear-gradient(135deg, rgba(91,78,232,.1), rgba(124,111,240,.06))',
+                  borderBottom:'1px solid var(--border)',
+                }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                     <div style={{
-                      width:38, height:38, borderRadius:10, flexShrink:0,
-                      background:'linear-gradient(135deg, var(--p), var(--p2))',
+                      width:36, height:36, borderRadius:9,
+                      background:'rgba(91,78,232,.15)',
                       display:'flex', alignItems:'center', justifyContent:'center',
-                    }}>
-                      <Send size={16} style={{ color:'#fff' }} />
-                    </div>
+                      fontSize:18,
+                    }}>🚚</div>
                     <div>
-                      <div style={{ fontWeight:800, fontSize:14, color:'var(--text)' }}>🚚 {supplier}</div>
-                      <div style={{ fontSize:11, color:'var(--text3)', marginTop:1 }}>
-                        {items.length} article{items.length > 1 ? 's' : ''} · {fmt(total)} estimé
+                      <div style={{ fontSize:14, fontWeight:800, color:'var(--text)' }}>{supplier}</div>
+                      <div style={{ fontSize:11, color:'var(--text3)' }}>
+                        {items.length} article{items.length > 1 ? 's' : ''} · {fmt(groupTotal)} estimé
                       </div>
                     </div>
                   </div>
                   <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                    <button className="mini-btn gap-1" onClick={() => toast(`📤 Email envoyé à ${supplier}`)}>
-                      <Send size={11} /> Email
+                    <button className="mini-btn" onClick={() => toast(`📥 PDF ${supplier}...`)}>
+                      📥 PDF
                     </button>
-                    <button className="mini-btn gap-1" onClick={() => toast(`📥 PDF ${supplier}`)}>
-                      <Download size={11} /> PDF
+                    <button className="mini-btn" onClick={() => toast(`📤 Email envoyé à ${supplier}`)}>
+                      📤 Email
                     </button>
                     {!isValidated ? (
-                      <button className="btn btn-primary btn-sm"
-                        onClick={() => { setValidated(v => new Set([...v, supplier])); toast.success(`Bon ${supplier} validé`) }}>
-                        ✅ Valider bon
+                      <button style={{
+                        background:'linear-gradient(135deg, var(--p), var(--p2))',
+                        border:'none', borderRadius:8, padding:'6px 14px',
+                        fontSize:12, fontWeight:700, color:'#fff',
+                        cursor:'pointer', fontFamily:'var(--font)',
+                      }} onClick={() => { setValidated(v => new Set([...v, supplier])); toast.success(`✅ Bon ${supplier} validé !`) }}>
+                        ✅ Valider
                       </button>
                     ) : (
                       <span className="badge badge-green">✅ Envoyé</span>
@@ -321,30 +327,49 @@ export default function Forecasts() {
                   </div>
                 </div>
 
+                {/* Lignes bon */}
                 <div className="table-wrap">
                   <table>
                     <thead>
                       <tr>
                         <th>Produit</th>
-                        <th style={{ textAlign:'center' }}>Qté</th>
-                        <th style={{ textAlign:'right' }}>PU</th>
-                        <th style={{ textAlign:'right' }}>Total</th>
+                        <th>Qté à commander</th>
+                        <th>Prix unitaire</th>
+                        <th>Total estimé</th>
+                        <th>Délai</th>
+                        <th>Priorité</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {items.map(item => (
-                        <tr key={item.id}>
-                          <td className="td-bold" style={{ fontSize:13 }}>{item.name}</td>
-                          <td className="td-mono" style={{ textAlign:'center' }}>{item.qtyToOrder}</td>
-                          <td className="td-num" style={{ textAlign:'right', color:'var(--text2)', fontSize:12 }}>{fmt(item.unitPrice)}</td>
-                          <td className="td-num" style={{ textAlign:'right', color:'var(--acc)', fontSize:12 }}>{fmt(item.totalCost)}</td>
-                        </tr>
-                      ))}
-                      <tr style={{ background:'rgba(91,78,232,.06)' }}>
-                        <td colSpan={3} style={{ fontWeight:800, fontSize:13, color:'var(--text)', padding:'10px 9px' }}>TOTAL</td>
-                        <td style={{ textAlign:'right', fontWeight:900, fontSize:14, fontFamily:'var(--mono)', color:'var(--p2)', padding:'10px 9px' }}>
-                          {fmt(total)}
+                      {items.map(item => {
+                        const prio = PRIORITY_CFG[item.priority]
+                        return (
+                          <tr key={item.id}>
+                            <td className="td-bold">{item.name}</td>
+                            <td className="td-num" style={{ color:'var(--p2)' }}>{item.qtyToOrder}</td>
+                            <td className="td-num">{fmt(item.unitPrice)}</td>
+                            <td className="td-num" style={{ color:'var(--acc)' }}>{fmt(item.totalCost)}</td>
+                            <td style={{ fontSize:12, color:'var(--text3)' }}>{item.leadTime} jours</td>
+                            <td>
+                              <span style={{
+                                display:'inline-flex', alignItems:'center', gap:4,
+                                background:prio.bg, color:prio.color,
+                                border:`1px solid ${prio.border}`,
+                                borderRadius:20, padding:'2px 9px',
+                                fontSize:10, fontWeight:700, whiteSpace:'nowrap',
+                              }}>{prio.label}</span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      <tr style={{ background:'var(--bg3)' }}>
+                        <td colSpan={3} style={{ textAlign:'right', fontWeight:800, fontSize:13, padding:'10px 9px', color:'var(--text)' }}>
+                          TOTAL
                         </td>
+                        <td className="td-num" style={{ color:'var(--p2)', fontSize:14, fontWeight:900 }}>
+                          {fmt(groupTotal)}
+                        </td>
+                        <td colSpan={2} />
                       </tr>
                     </tbody>
                   </table>
