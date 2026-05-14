@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAppStore, formatCurrency } from '@/stores/appStore'
+import { useConfig, t } from '@/stores/appStore'
 import { Search, Plus, Shield, X, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -36,6 +36,8 @@ const PERMISSIONS: Record<Role, string[]> = {
 }
 
 export default function Users() {
+  const { lang } = useConfig()
+  void lang
   const [users, setUsers] = useState<User[]>(USERS_INIT)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<Role | ''>('')
@@ -85,10 +87,10 @@ export default function Users() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total utilisateurs', value: stats.total,   color: 'var(--primary2)', icon: '👥' },
-          { label: 'Comptes actifs',      value: stats.active,  color: 'var(--green)',    icon: '✅' },
-          { label: '2FA activé',          value: stats.with2FA, color: 'var(--teal)',     icon: '🔐' },
-          { label: 'Administrateurs',     value: stats.admins,  color: 'var(--danger)',   icon: '🛡️' },
+          { label: 'Total utilisateurs', value: stats.total,   color: 'var(--p2)',     icon: '👥' },
+          { label: 'Comptes actifs',      value: stats.active,  color: 'var(--acc2)',   icon: '✅' },
+          { label: '2FA activé',          value: stats.with2FA, color: 'var(--p3)',     icon: '🔐' },
+          { label: 'Administrateurs',     value: stats.admins,  color: 'var(--danger)', icon: '🛡️' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -119,7 +121,7 @@ export default function Users() {
                 }}
                 onClick={() => setShowPerms(showPerms === role ? null : role)}
               >
-                <Shield size={16} style={{ color: 'var(--primary2)', flexShrink: 0 }} />
+                <Shield size={16} style={{ color: 'var(--p2)', flexShrink: 0 }} />
                 <div>
                   <div className="text-xs font-bold" style={{ color: 'var(--text)' }}>{cfg.label}</div>
                   <div className="text-xs" style={{ color: 'var(--text3)' }}>{cfg.desc}</div>
@@ -169,8 +171,8 @@ export default function Users() {
           <table>
             <thead>
               <tr>
-                <th>Utilisateur</th><th>Rôle</th><th>Dernière connexion</th>
-                <th>2FA</th><th>Statut</th><th>Actions</th>
+                <th>{t('col_name')}</th><th>{t('col_role')}</th><th>{t('col_last_login')}</th>
+                <th>{t('col_2fa')}</th><th>{t('col_status')}</th><th>{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -194,17 +196,17 @@ export default function Users() {
                         className="px-2 py-1 rounded-lg text-xs font-semibold transition-all"
                         style={{
                           background: u.twoFA ? 'rgba(20,184,166,0.12)' : 'var(--bg3)',
-                          color: u.twoFA ? 'var(--teal)' : 'var(--text3)',
+                          color: u.twoFA ? 'var(--p3)' : 'var(--text3)',
                           border: 'none', cursor: 'pointer', fontFamily: 'inherit'
                         }}
                         onClick={() => toggle2FA(u.id)}
                       >
-                        {u.twoFA ? '🔐 Actif' : '🔓 Inactif'}
+                        {u.twoFA ? `🔐 ${t('status_active')}` : `🔓 ${t('status_inactive')}`}
                       </button>
                     </td>
                     <td>
                       <span className={`badge ${u.active ? 'badge-green' : 'badge-gray'}`}>
-                        {u.active ? 'Actif' : 'Inactif'}
+                        {u.active ? t('status_active') : t('status_inactive')}
                       </span>
                     </td>
                     <td>
@@ -214,7 +216,7 @@ export default function Users() {
                           className="btn btn-sm"
                           style={{
                             background: u.active ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
-                            color: u.active ? 'var(--danger)' : 'var(--green)',
+                            color: u.active ? 'var(--danger)' : 'var(--acc2)',
                             border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px',
                             fontSize: 11, fontFamily: 'inherit'
                           }}
@@ -297,7 +299,7 @@ export default function Users() {
               {/* Aperçu permissions */}
               {form.role && (
                 <div className="p-3 rounded-xl" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
-                  <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--primary2)' }}>
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--p2)' }}>
                     🛡️ Accès — {ROLE_CONFIG[form.role].label}
                   </p>
                   <div className="flex flex-wrap gap-1">

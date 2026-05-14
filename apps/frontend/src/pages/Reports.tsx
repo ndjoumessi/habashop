@@ -5,14 +5,6 @@ import toast from 'react-hot-toast'
 
 type Period = 'today' | '7days' | '30days' | '3months' | 'year'
 
-const PERIOD_LABELS: Record<Period, string> = {
-  today:    "Aujourd'hui",
-  '7days':  '7 jours',
-  '30days': '30 jours',
-  '3months':'3 mois',
-  year:     'Année',
-}
-
 const PERIOD_DATA: Record<Period, {
   ca: number; margin: number; transactions: number; avgCart: number
   caEvol: number; marginEvol: number; txEvol: number; cartEvol: number
@@ -73,6 +65,14 @@ export default function Reports() {
   const [period, setPeriod] = useState<Period>('30days')
   const data = PERIOD_DATA[period]
 
+  const PERIOD_LABELS: Record<Period, string> = {
+    today:    t('reports_today'),
+    '7days':  t('reports_7days'),
+    '30days': t('reports_30days'),
+    '3months':t('reports_3months'),
+    year:     t('reports_year'),
+  }
+
   return (
     <div className="space-y-5 animate-in">
 
@@ -103,10 +103,10 @@ export default function Reports() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Chiffre d'affaires", value: fmt(data.ca),       evol: data.caEvol,     color: 'var(--p2)',   icon: '💰' },
-          { label: 'Marge brute',        value: fmt(data.margin),    evol: data.marginEvol, color: 'var(--acc2)', icon: '📈' },
-          { label: 'Transactions',       value: data.transactions.toLocaleString('fr-FR'),evol: data.txEvol,     color: 'var(--acc)',  icon: '🧾' },
-          { label: 'Panier moyen',       value: fmt(data.avgCart),   evol: data.cartEvol,   color: 'var(--p3)',   icon: '🛒' },
+          { label: t('reports_revenue'),      value: fmt(data.ca),       evol: data.caEvol,     color: 'var(--p2)',   icon: '💰' },
+          { label: t('reports_margin'),       value: fmt(data.margin),    evol: data.marginEvol, color: 'var(--acc2)', icon: '📈' },
+          { label: t('reports_transactions'), value: data.transactions.toLocaleString('fr-FR'),evol: data.txEvol,     color: 'var(--acc)',  icon: '🧾' },
+          { label: t('reports_avg_cart'),     value: fmt(data.avgCart),   evol: data.cartEvol,   color: 'var(--p3)',   icon: '🛒' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -142,7 +142,7 @@ export default function Reports() {
         {/* Modes paiement */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">💳 Modes de paiement</span>
+            <span className="panel-title">💳 {t('reports_payment_breakdown')}</span>
           </div>
           <div className="space-y-4">
             {PAYMENT_MODES.map(m => (
@@ -171,7 +171,7 @@ export default function Reports() {
         {/* Top 5 */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">🏆 Top 5 produits du mois</span>
+            <span className="panel-title">🏆 {t('reports_top_products')}</span>
           </div>
           <div className="space-y-1">
             {TOP_PRODUCTS.map(p => (
@@ -202,7 +202,7 @@ export default function Reports() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Référence</th><th>Client</th><th>Mode</th><th>Montant</th></tr>
+                <tr><th>{t('col_ref')}</th><th>{t('col_client')}</th><th>Mode</th><th>{t('col_amount')}</th></tr>
               </thead>
               <tbody>
                 {RECENT_SALES.map(s => (

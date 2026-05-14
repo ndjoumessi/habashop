@@ -74,10 +74,10 @@ export default function Dashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('kpi_sales_today'),     value: fmt(842000),  sub: '▲ 12% vs hier',              up: true,  icon: <DollarSign size={18} /> },
-          { label: t('kpi_stock'),           value: '3 248',                            sub: '▼ 8 alertes rupture',        up: false, icon: <Package size={18} />    },
-          { label: t('kpi_employees'),       value: '18/21',                            sub: '3 absents aujourd\'hui',     up: null,  icon: <Users size={18} />      },
-          { label: t('kpi_monthly_revenue'), value: fmt(2650000), sub: '▲ 7% vs mois dernier',       up: true,  icon: <TrendingUp size={18} /> },
+          { label: t('kpi_sales_today'),     value: fmt(842000),  sub: `▲ 12% ${t('dash_vs_yesterday')}`,   up: true,  icon: <DollarSign size={18} /> },
+          { label: t('kpi_stock'),           value: '3 248',      sub: '▼ 8 alertes rupture',                up: false, icon: <Package size={18} />    },
+          { label: t('kpi_employees'),       value: '18/21',      sub: "3 absents aujourd'hui",              up: null,  icon: <Users size={18} />      },
+          { label: t('kpi_monthly_revenue'), value: fmt(2650000), sub: `▲ 7% ${t('dash_vs_last_month')}`,   up: true,  icon: <TrendingUp size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: 'var(--p2)' }}>{k.icon}</div>
@@ -97,7 +97,7 @@ export default function Dashboard() {
         {/* Bar chart */}
         <div className="panel lg:col-span-2">
           <div className="panel-head">
-            <span className="panel-title">📈 Ventes — 7 derniers jours</span>
+            <span className="panel-title">📈 {t('dash_sales_chart')}</span>
             <span className="badge badge-teal">Cette semaine</span>
           </div>
           <div className="flex items-end gap-2" style={{ height: 140 }}>
@@ -127,7 +127,7 @@ export default function Dashboard() {
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Produit</th><th>Stock</th><th>Statut</th></tr></thead>
+              <thead><tr><th>{t('col_product')}</th><th>{t('col_stock')}</th><th>{t('col_status')}</th></tr></thead>
               <tbody>
                 {ALERTS.map(a => (
                   <tr key={a.name}>
@@ -169,7 +169,7 @@ export default function Dashboard() {
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>#</th><th>Produit</th><th>Qté</th><th>CA</th></tr></thead>
+              <thead><tr><th>#</th><th>{t('col_product')}</th><th>{t('col_qty')}</th><th>{t('col_revenue')}</th></tr></thead>
               <tbody>
                 {TOP_PRODUCTS.map(p => (
                   <tr key={p.name}>

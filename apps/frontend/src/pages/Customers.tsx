@@ -152,10 +152,10 @@ export default function Customers() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total clients',   value: customers.length.toString(),           color: 'var(--p2)',   icon: '👥' },
-          { label: 'Actifs ce mois',  value: activeThisMonth.toString(),             color: 'var(--acc2)', icon: '🟢' },
-          { label: 'Panier moyen',    value: fmt(avgCart),      color: 'var(--acc)',  icon: '🛒' },
-          { label: 'Taux rétention',  value: `${retentionRate}%`,                   color: 'var(--p3)',   icon: '🔄' },
+          { label: 'Total clients',            value: customers.length.toString(), color: 'var(--p2)',   icon: '👥' },
+          { label: t('customers_active'),    value: activeThisMonth.toString(),  color: 'var(--acc2)', icon: '🟢' },
+          { label: t('customers_avg_cart'),  value: fmt(avgCart),                color: 'var(--acc)',  icon: '🛒' },
+          { label: t('customers_retention'), value: `${retentionRate}%`,         color: 'var(--p3)',   icon: '🔄' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -168,7 +168,7 @@ export default function Customers() {
       {/* Panel */}
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">👥 CRM Clients</span>
+          <span className="panel-title">👥 {t('customers_title')}</span>
           <div className="flex items-center gap-2">
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV…')}>
               <Download size={13} /> {t('btn_export')}
@@ -188,7 +188,7 @@ export default function Customers() {
           </div>
           <select className="input py-2 text-sm w-auto" value={typeFilter}
             onChange={e => setTypeFilter(e.target.value as any)}>
-            <option value="">Tous les types</option>
+            <option value="">{t('pos_all')} {t('col_type').toLowerCase()}</option>
             <option>Grossiste</option><option>Semi-gros</option><option>Fidèle</option><option>Détail</option>
           </select>
         </div>
@@ -198,8 +198,8 @@ export default function Customers() {
           <table>
             <thead>
               <tr>
-                <th>Client</th><th>Type</th><th>Téléphone</th>
-                <th>Achats/mois</th><th>CA total</th><th>Fidélité</th><th>Actions</th>
+                <th>{t('col_client')}</th><th>{t('col_type')}</th><th>{t('col_phone')}</th>
+                <th>{t('customers_purchases')}</th><th>{t('customers_total_revenue')}</th><th>{t('col_loyalty')}</th><th>{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody>

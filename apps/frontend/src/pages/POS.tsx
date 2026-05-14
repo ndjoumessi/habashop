@@ -19,13 +19,13 @@ const PRODUCTS = [
 ]
 
 const CATS = [
-  { id:'all',     label:'Tous'        },
-  { id:'cereals', label:'🌾 Céréales'  },
-  { id:'canned',  label:'🫙 Conserves' },
-  { id:'fat',     label:'🫒 Corps gras' },
-  { id:'hygiene', label:'🧼 Hygiène'   },
-  { id:'dairy',   label:'🥛 Laitiers'  },
-  { id:'grocery', label:'🛒 Épicerie'  },
+  { id:'all',     label: () => t('pos_all') },
+  { id:'cereals', label: () => '🌾 Céréales'  },
+  { id:'canned',  label: () => '🫙 Conserves' },
+  { id:'fat',     label: () => '🫒 Corps gras' },
+  { id:'hygiene', label: () => '🧼 Hygiène'   },
+  { id:'dairy',   label: () => '🥛 Laitiers'  },
+  { id:'grocery', label: () => '🛒 Épicerie'  },
 ]
 
 interface CartItem { id:number; name:string; price:number; qty:number; emoji:string }
@@ -98,7 +98,7 @@ export default function POS() {
                   boxShadow: cat === c.id ? '0 4px 14px rgba(99,102,241,0.3)' : 'none',
                   fontFamily: 'inherit',
                 }}>
-                {c.label}
+                {c.label()}
               </button>
             ))}
             <div className="search-wrap ml-auto">
@@ -156,7 +156,7 @@ export default function POS() {
               <div className="flex flex-col items-center justify-center h-32 gap-2"
                 style={{ color: 'var(--text3)' }}>
                 <ShoppingCart size={28} style={{ opacity: 0.3 }} />
-                <p className="text-sm">{t('pos_cart')} vide</p>
+                <p className="text-sm">{t('pos_empty')}</p>
               </div>
             ) : cart.map(item => (
               <div key={item.id} className="cart-item">
@@ -212,7 +212,7 @@ export default function POS() {
                 value={cashGiven} onChange={e => setCashGiven(e.target.value)} />
               {cashGiven && change >= 0 && (
                 <div className="flex justify-between text-xs font-bold mt-1.5" style={{ color: 'var(--acc2)' }}>
-                  <span>Monnaie à rendre</span>
+                  <span>{t('pos_change')}</span>
                   <span style={{ fontFamily: 'var(--mono)' }}>{formatCurrency(change, currency)}</span>
                 </div>
               )}
@@ -236,11 +236,11 @@ export default function POS() {
           <div className="px-3 pb-3 flex-shrink-0">
             <div className="rounded-xl p-3 grid grid-cols-2 gap-2" style={{ background: 'var(--bg3)' }}>
               <div className="rounded-lg p-2.5" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-                <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text3)' }}>Transactions</div>
+                <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text3)' }}>{t('pos_transactions')}</div>
                 <div className="text-xl font-black" style={{ color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{sessionTx}</div>
               </div>
               <div className="rounded-lg p-2.5" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-                <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text3)' }}>CA session</div>
+                <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text3)' }}>{t('pos_session_revenue')}</div>
                 <div className="text-xs font-black truncate" style={{ color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{fmt(sessionCA)}</div>
               </div>
             </div>

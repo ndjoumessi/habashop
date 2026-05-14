@@ -31,7 +31,8 @@ const NAV: NavEntry[] = [
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
-  const { theme, sidebarCollapsed, updateConfig } = useConfig()
+  const { theme, sidebarCollapsed, updateConfig, lang } = useConfig()
+  void lang
   const navigate = useNavigate()
 
   const collapsed = sidebarCollapsed

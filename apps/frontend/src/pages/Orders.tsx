@@ -148,10 +148,10 @@ export default function Orders() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Montant engagé',   value: fmt(totalEngaged), color: 'var(--p2)',    icon: '💰' },
-          { label: 'En transit',        value: String(pending),                         color: 'var(--acc)',   icon: '🚚' },
-          { label: 'Reçues ce mois',    value: String(receivedMonth),                   color: 'var(--acc2)', icon: '✅' },
-          { label: 'Brouillons',         value: String(drafts),                          color: 'var(--text3)',icon: '📝' },
+          { label: 'Montant engagé',      value: fmt(totalEngaged),      color: 'var(--p2)',    icon: '💰' },
+          { label: t('status_transit'), value: String(pending),        color: 'var(--acc)',   icon: '🚚' },
+          { label: 'Reçues ce mois',    value: String(receivedMonth),  color: 'var(--acc2)', icon: '✅' },
+          { label: t('status_draft'),   value: String(drafts),         color: 'var(--text3)',icon: '📝' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -164,7 +164,7 @@ export default function Orders() {
       {/* Panel commandes */}
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">📦 Commandes Fournisseurs</span>
+          <span className="panel-title">📦 {t('orders_title')}</span>
           <div className="flex items-center gap-2">
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV…')}>
               <Download size={13} /> {t('btn_export')}
@@ -183,11 +183,11 @@ export default function Orders() {
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="input py-2 text-sm w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
-            <option value="">Tous les statuts</option>
+            <option value="">{t('pos_all')} {t('col_status').toLowerCase()}</option>
             {STATUSES.map(s => <option key={s}>{s}</option>)}
           </select>
           <select className="input py-2 text-sm w-auto" value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)}>
-            <option value="">Tous fournisseurs</option>
+            <option value="">{t('pos_all')} {t('col_supplier').toLowerCase()}</option>
             {suppliers.map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
@@ -202,7 +202,7 @@ export default function Orders() {
               border: 'none', cursor: 'pointer', fontFamily: 'inherit'
             }}
             onClick={() => setStatusFilter('')}
-          >Toutes ({orders.length})</button>
+          >{t('pos_all')} ({orders.length})</button>
           {STATUSES.map(s => {
             const count = orders.filter(o => o.status === s).length
             const cfg = STATUS_CONFIG[s]
@@ -228,14 +228,14 @@ export default function Orders() {
           <table>
             <thead>
               <tr>
-                <th>Référence</th>
-                <th>Fournisseur</th>
-                <th>Date commande</th>
-                <th>Livraison prévue</th>
-                <th>Articles</th>
-                <th>Montant TTC</th>
-                <th>Statut</th>
-                <th>Actions</th>
+                <th>{t('col_ref')}</th>
+                <th>{t('col_supplier')}</th>
+                <th>{t('orders_date')}</th>
+                <th>{t('orders_expected')}</th>
+                <th>{t('orders_articles')}</th>
+                <th>{t('col_amount')}</th>
+                <th>{t('col_status')}</th>
+                <th>{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody>

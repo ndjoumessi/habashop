@@ -138,10 +138,10 @@ export default function Suppliers() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total fournisseurs',  value: suppliers.length.toString(), color: 'var(--p2)',   icon: '🏭' },
-          { label: 'Actifs',              value: actifs.toString(),            color: 'var(--acc2)', icon: '✅' },
-          { label: 'Commandes en cours',  value: enCours.toString(),           color: 'var(--acc)',  icon: '🚚' },
-          { label: 'Note moyenne',        value: `${avgRating} ★`,            color: 'var(--acc)',  icon: '⭐' },
+          { label: 'Total fournisseurs',            value: suppliers.length.toString(), color: 'var(--p2)',   icon: '🏭' },
+          { label: t('suppliers_active'),          value: actifs.toString(),            color: 'var(--acc2)', icon: '✅' },
+          { label: t('suppliers_pending_orders'),  value: enCours.toString(),           color: 'var(--acc)',  icon: '🚚' },
+          { label: t('suppliers_avg_rating'),      value: `${avgRating} ★`,            color: 'var(--acc)',  icon: '⭐' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -154,7 +154,7 @@ export default function Suppliers() {
       {/* Panel */}
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">🏭 Fournisseurs</span>
+          <span className="panel-title">🏭 {t('suppliers_title')}</span>
           <div className="flex items-center gap-2">
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV…')}>
               <Download size={13} /> {t('btn_export')}
@@ -174,12 +174,12 @@ export default function Suppliers() {
           </div>
           <select className="input py-2 text-sm w-auto" value={statusFilter}
             onChange={e => setStatusFilter(e.target.value as any)}>
-            <option value="">Tous statuts</option>
+            <option value="">{t('pos_all')} {t('col_status').toLowerCase()}</option>
             <option>Actif</option><option>Pause</option><option>Inactif</option>
           </select>
           <select className="input py-2 text-sm w-auto" value={catFilter}
             onChange={e => setCatFilter(e.target.value)}>
-            <option value="">Toutes catégories</option>
+            <option value="">{t('pos_all')} {t('col_category').toLowerCase()}</option>
             {allCats.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
@@ -189,8 +189,8 @@ export default function Suppliers() {
           <table>
             <thead>
               <tr>
-                <th>Fournisseur</th><th>Catégories</th><th>Téléphone</th>
-                <th>Délai</th><th>Note</th><th>Statut</th><th>Actions</th>
+                <th>{t('col_supplier')}</th><th>{t('col_category')}</th><th>{t('col_phone')}</th>
+                <th>{t('col_delivery')}</th><th>{t('col_rating')}</th><th>{t('col_status')}</th><th>{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody>

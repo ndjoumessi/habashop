@@ -81,10 +81,10 @@ export default function Stock() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total articles',  value: products.length.toString(),          color: 'var(--p2)',    icon: '📋' },
-          { label: 'Valeur du stock', value: fmt(totalValue), color: 'var(--acc2)', icon: '💎' },
-          { label: 'Ruptures / Bas',  value: ruptures.length.toString(),           color: 'var(--danger)',icon: '⚠️' },
-          { label: 'Catégories',      value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', icon: '📁' },
+          { label: t('stock_total'),    value: products.length.toString(),          color: 'var(--p2)',    icon: '📋' },
+          { label: t('stock_value'),   value: fmt(totalValue), color: 'var(--acc2)', icon: '💎' },
+          { label: t('stock_ruptures'),value: ruptures.length.toString(),           color: 'var(--danger)',icon: '⚠️' },
+          { label: t('stock_categories'),value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', icon: '📁' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -97,7 +97,7 @@ export default function Stock() {
       {/* Panel inventaire */}
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">🗄️ Inventaire Produits</span>
+          <span className="panel-title">🗄️ {t('stock_title')}</span>
           <div className="flex items-center gap-2">
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV en cours…')}>
               <Download size={13} /> {t('btn_export')}
@@ -116,11 +116,11 @@ export default function Stock() {
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="input py-2 text-sm w-auto" value={cat} onChange={e => setCat(e.target.value)}>
-            <option value="">Toutes catégories</option>
+            <option value="">{t('pos_all')} {t('col_category').toLowerCase()}</option>
             {cats.filter(Boolean).map(c => <option key={c}>{c}</option>)}
           </select>
           <select className="input py-2 text-sm w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            <option value="">Tous les statuts</option>
+            <option value="">{t('pos_all')} {t('col_status').toLowerCase()}</option>
             <option>{t('status_out')}</option>
             <option>{t('status_low')}</option>
             <option>OK</option>
@@ -132,11 +132,11 @@ export default function Stock() {
           <table>
             <thead>
               <tr>
-                {stockShowSKU && <th>Réf.</th>}
-                <th>Produit</th><th>Catégorie</th>
-                <th>Prix achat</th><th>Prix vente</th>
-                <th>Stock</th><th>Seuil</th><th>Fournisseur</th>
-                <th>Statut</th><th>Actions</th>
+                {stockShowSKU && <th>{t('col_ref')}</th>}
+                <th>{t('col_product')}</th><th>{t('col_category')}</th>
+                <th>{t('col_buy_price')}</th><th>{t('col_sell_price')}</th>
+                <th>{t('col_stock')}</th><th>{t('col_threshold')}</th><th>{t('col_supplier')}</th>
+                <th>{t('col_status')}</th><th>{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody>
