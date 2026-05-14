@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
-import { Download, Eye, X, Check, Zap } from 'lucide-react'
+import { Download, Eye, Check, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type PayStatus = 'PAYÉ' | 'EN ATTENTE' | 'SUSPENDU' | 'GÉNÉRÉ'
@@ -70,164 +70,226 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
   onPay: (id: number) => void
   fmt: (n: number) => string
 }) {
-  const brut = calcBrut(record)
-  const cnss = Math.round(record.baseSalary * 0.056)
-  const impot = record.deductions - cnss
   const absencePenalty = Math.round(record.absences * record.baseSalary / 26)
   const totalRetenues = record.deductions + absencePenalty
-  const net = calcNet(record)
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:540 }}>
-        {/* Header bulletin */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
-          <div>
-            <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:4 }}>
+    <div style={{
+      position:'fixed', inset:0, zIndex:50,
+      background:'rgba(0,0,0,.7)', backdropFilter:'blur(6px)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      padding:20, overflowY:'auto',
+    }} onClick={onClose}>
+      <div style={{
+        width:'100%', maxWidth:620,
+        background:'var(--bg2)', border:'1px solid var(--border)',
+        borderRadius:20, overflow:'hidden',
+        boxShadow:'0 40px 100px rgba(0,0,0,.6)',
+      }} onClick={e => e.stopPropagation()}>
+
+        {/* ── HEADER ── */}
+        <div style={{
+          background:'linear-gradient(135deg, var(--p), var(--p2))',
+          padding:'24px 28px', display:'flex',
+          alignItems:'center', justifyContent:'space-between',
+        }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+            <div style={{
+              width:44, height:44, borderRadius:12,
+              background:'rgba(255,255,255,.2)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:22, fontWeight:900, color:'#fff',
+            }}>H</div>
+            <div>
+              <div style={{ fontSize:16, fontWeight:800, color:'#fff' }}>
+                HabaShop — Dakar Central
+              </div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginTop:2 }}>
+                Bulletin de Paie — {record.month}
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{
+            background:'rgba(255,255,255,.15)',
+            border:'1px solid rgba(255,255,255,.25)',
+            borderRadius:9, padding:'6px 10px',
+            cursor:'pointer', color:'#fff', fontSize:14,
+          }}>✕</button>
+        </div>
+
+        {/* ── INFOS EMPLOYÉ ── */}
+        <div style={{ padding:'20px 28px', borderBottom:'1px solid var(--border)' }}>
+          <div style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            background:'var(--bg3)', border:'1px solid var(--border)',
+            borderRadius:14, padding:'16px 18px',
+          }}>
+            <div style={{ display:'flex', alignItems:'center', gap:14 }}>
               <div style={{
-                width:32, height:32, borderRadius:8,
-                background:'linear-gradient(135deg, var(--p), var(--p2))',
+                width:48, height:48, borderRadius:'50%',
+                background:record.color,
                 display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:15, fontWeight:900, color:'#fff',
-              }}>H</div>
-              <span style={{ fontWeight:800, fontSize:15, color:'var(--text)' }}>HabaShop — Dakar Central</span>
+                fontSize:18, fontWeight:800, color:'#fff',
+                boxShadow:`0 4px 14px ${record.color}44`,
+              }}>{record.avatar}</div>
+              <div>
+                <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
+                  {record.employee}
+                </div>
+                <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>
+                  {record.role} · Contrat CDI
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize:11, color:'var(--text3)', marginLeft:41 }}>Rue 10 × 23, Dakar, Sénégal</div>
-          </div>
-          <div style={{ textAlign:'right' }}>
-            <div style={{ fontWeight:800, fontSize:14, color:'var(--p2)' }}>BULLETIN DE PAIE</div>
-            <div style={{ fontSize:12, color:'var(--text3)', marginTop:2 }}>{record.month}</div>
+            <span style={{
+              background: record.status === 'PAYÉ' ? 'rgba(14,196,126,.15)' : 'rgba(240,165,0,.15)',
+              color: record.status === 'PAYÉ' ? 'var(--acc2)' : 'var(--acc)',
+              border: `1px solid ${record.status === 'PAYÉ' ? 'rgba(14,196,126,.3)' : 'rgba(240,165,0,.3)'}`,
+              borderRadius:20, padding:'5px 14px',
+              fontSize:12, fontWeight:700,
+            }}>{record.status}</span>
           </div>
         </div>
 
-        {/* Employé info */}
-        <div style={{
-          padding:'12px 14px', background:'var(--bg3)', borderRadius:10, marginBottom:18,
-          display:'flex', alignItems:'center', gap:14,
-        }}>
-          <EmpAvatar r={record} size={44} />
-          <div style={{ flex:1 }}>
-            <div style={{ fontWeight:800, fontSize:14, color:'var(--text)' }}>{record.employee}</div>
-            <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>
-              {record.role} · Contrat CDI
+        {/* ── CORPS ── */}
+        <div style={{ padding:'0 28px 24px' }}>
+
+          {/* GAINS */}
+          <div style={{ marginTop:20 }}>
+            <div style={{
+              fontSize:10.5, fontWeight:700, textTransform:'uppercase',
+              letterSpacing:'1px', color:'var(--text3)',
+              marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border)',
+            }}>GAINS</div>
+            <div style={{
+              display:'grid', gridTemplateColumns:'1fr 80px 80px 100px',
+              gap:8, marginBottom:6, fontSize:10, fontWeight:700,
+              color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.5px',
+            }}>
+              <span>Libellé</span>
+              <span style={{ textAlign:'center' }}>Base</span>
+              <span style={{ textAlign:'center' }}>Taux</span>
+              <span style={{ textAlign:'right' }}>Montant</span>
+            </div>
+            {([
+              { label:'Salaire de base',        base:'26j', taux:'100 %', montant:record.baseSalary, show:true },
+              { label:'Prime de performance',   base:'',    taux:'',      montant:record.bonus,       show:record.bonus > 0 },
+              { label:'Heures supplémentaires', base:`${Math.round(record.overtime / record.baseSalary * 26 * 8)}h`, taux:'25 %', montant:record.overtime, show:record.overtime > 0 },
+            ] as { label:string; base:string; taux:string; montant:number; show:boolean }[])
+              .filter(r => r.show && r.montant > 0)
+              .map((row, i) => (
+                <div key={i} style={{
+                  display:'grid', gridTemplateColumns:'1fr 80px 80px 100px',
+                  gap:8, padding:'9px 0',
+                  borderBottom:'1px solid var(--border)', alignItems:'center',
+                }}>
+                  <span style={{ fontSize:13, color:'var(--text)' }}>{row.label}</span>
+                  <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.base}</span>
+                  <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.taux}</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:'var(--text)', textAlign:'right', fontFamily:'var(--mono)' }}>
+                    {fmt(row.montant)}
+                  </span>
+                </div>
+              ))
+            }
+            <div style={{
+              display:'flex', justifyContent:'space-between',
+              padding:'11px 12px', marginTop:8,
+              background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)',
+              borderRadius:10,
+            }}>
+              <span style={{ fontSize:13, fontWeight:800, color:'var(--acc2)', letterSpacing:'.3px' }}>TOTAL BRUT</span>
+              <span style={{ fontSize:14, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
+                {fmt(record.baseSalary + record.bonus + record.overtime)}
+              </span>
             </div>
           </div>
-          <span className={`badge ${STATUS_CFG[record.status].cls}`}>{record.status}</span>
-        </div>
 
-        {/* Tableau gains */}
-        <div style={{ marginBottom:14 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:8 }}>
-            Gains
+          {/* RETENUES */}
+          <div style={{ marginTop:20 }}>
+            <div style={{
+              fontSize:10.5, fontWeight:700, textTransform:'uppercase',
+              letterSpacing:'1px', color:'var(--text3)',
+              marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border)',
+            }}>RETENUES</div>
+            {([
+              { label:'CNSS employé (5,6 %)',     taux:'5,6 %', montant: Math.round(record.baseSalary * 0.056) },
+              { label:'Impôt sur salaire (IRPP)', taux:'',      montant: Math.round(record.deductions - record.baseSalary * 0.056 - (record.absences * record.baseSalary / 26)) },
+              ...(record.absences > 0 ? [{ label:`Absence (${record.absences}j)`, taux:'', montant: Math.round(record.absences * record.baseSalary / 26) }] : []),
+            ] as { label:string; taux:string; montant:number }[])
+              .filter(r => r.montant > 0)
+              .map((row, i) => (
+                <div key={i} style={{
+                  display:'grid', gridTemplateColumns:'1fr 80px 100px',
+                  gap:8, padding:'9px 0',
+                  borderBottom:'1px solid var(--border)', alignItems:'center',
+                }}>
+                  <span style={{ fontSize:13, color:'var(--text)' }}>{row.label}</span>
+                  <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.taux}</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:'var(--danger)', textAlign:'right', fontFamily:'var(--mono)' }}>
+                    − {fmt(row.montant)}
+                  </span>
+                </div>
+              ))
+            }
+            <div style={{
+              display:'flex', justifyContent:'space-between',
+              padding:'11px 12px', marginTop:8,
+              background:'rgba(232,64,74,.08)', border:'1px solid rgba(232,64,74,.2)',
+              borderRadius:10,
+            }}>
+              <span style={{ fontSize:13, fontWeight:800, color:'var(--danger)', letterSpacing:'.3px' }}>TOTAL RETENUES</span>
+              <span style={{ fontSize:14, fontWeight:900, color:'var(--danger)', fontFamily:'var(--mono)' }}>
+                − {fmt(totalRetenues)}
+              </span>
+            </div>
           </div>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-            <thead>
-              <tr>
-                {['Libellé','Base','Taux','Montant'].map(h => (
-                  <th key={h} style={{ padding:'5px 8px', textAlign: h === 'Montant' ? 'right' : 'left', color:'var(--text3)', fontWeight:600, borderBottom:'1px solid var(--border)', fontSize:10.5 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ padding:'7px 8px', color:'var(--text)' }}>Salaire de base</td>
-                <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>26j</td>
-                <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>100 %</td>
-                <td style={{ padding:'7px 8px', textAlign:'right', fontWeight:600, fontFamily:'var(--mono)' }}>{fmt(record.baseSalary)}</td>
-              </tr>
-              {record.bonus > 0 && (
-                <tr>
-                  <td style={{ padding:'7px 8px', color:'var(--text)' }}>Prime de performance</td>
-                  <td style={{ padding:'7px 8px' }} /><td style={{ padding:'7px 8px' }} />
-                  <td style={{ padding:'7px 8px', textAlign:'right', fontWeight:600, fontFamily:'var(--mono)' }}>{fmt(record.bonus)}</td>
-                </tr>
-              )}
-              {record.overtime > 0 && (
-                <tr>
-                  <td style={{ padding:'7px 8px', color:'var(--text)' }}>Heures supplémentaires</td>
-                  <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>+H</td>
-                  <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>25 %</td>
-                  <td style={{ padding:'7px 8px', textAlign:'right', fontWeight:600, fontFamily:'var(--mono)' }}>{fmt(record.overtime)}</td>
-                </tr>
-              )}
-              <tr style={{ background:'rgba(14,196,126,.07)', borderTop:'1px solid var(--border)' }}>
-                <td colSpan={3} style={{ padding:'8px 8px', fontWeight:700, color:'var(--acc2)' }}>TOTAL BRUT</td>
-                <td style={{ padding:'8px 8px', textAlign:'right', fontWeight:800, fontFamily:'var(--mono)', color:'var(--acc2)', fontSize:13 }}>{fmt(brut)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
 
-        {/* Tableau retenues */}
-        <div style={{ marginBottom:18 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:8 }}>
-            Retenues
+          {/* NET À PAYER */}
+          <div style={{
+            display:'flex', justifyContent:'space-between', alignItems:'center',
+            padding:'18px 20px', marginTop:16,
+            background:'linear-gradient(135deg, rgba(91,78,232,.15), rgba(124,111,240,.08))',
+            border:'2px solid rgba(91,78,232,.35)', borderRadius:14,
+          }}>
+            <div>
+              <div style={{ fontSize:11, color:'var(--text3)', marginBottom:4, letterSpacing:'.5px' }}>NET À PAYER</div>
+              <div style={{ fontSize:12, color:'var(--text2)' }}>Virement bancaire</div>
+            </div>
+            <div style={{ fontSize:28, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1.5px' }}>
+              {fmt(record.baseSalary + record.bonus + record.overtime - record.deductions - (record.absences * Math.round(record.baseSalary / 26)))}
+            </div>
           </div>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-            <tbody>
-              <tr>
-                <td style={{ padding:'7px 8px', color:'var(--text)' }}>CNSS employé (5,6 %)</td>
-                <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>5,6 %</td>
-                <td style={{ padding:'7px 8px', textAlign:'right', fontWeight:600, fontFamily:'var(--mono)', color:'var(--danger)' }}>{fmt(cnss)}</td>
-              </tr>
-              <tr>
-                <td style={{ padding:'7px 8px', color:'var(--text)' }}>Impôt sur salaire (IRPP)</td>
-                <td style={{ padding:'7px 8px' }} />
-                <td style={{ padding:'7px 8px', textAlign:'right', fontWeight:600, fontFamily:'var(--mono)', color:'var(--danger)' }}>{fmt(Math.max(0, impot))}</td>
-              </tr>
-              {record.absences > 0 && (
-                <tr>
-                  <td style={{ padding:'7px 8px', color:'var(--text)' }}>Absence ({record.absences}j)</td>
-                  <td style={{ padding:'7px 8px' }} />
-                  <td style={{ padding:'7px 8px', textAlign:'right', fontWeight:600, fontFamily:'var(--mono)', color:'var(--danger)' }}>{fmt(absencePenalty)}</td>
-                </tr>
-              )}
-              <tr style={{ background:'rgba(232,64,74,.07)', borderTop:'1px solid var(--border)' }}>
-                <td colSpan={2} style={{ padding:'8px 8px', fontWeight:700, color:'var(--danger)' }}>TOTAL RETENUES</td>
-                <td style={{ padding:'8px 8px', textAlign:'right', fontWeight:800, fontFamily:'var(--mono)', color:'var(--danger)', fontSize:13 }}>{fmt(totalRetenues)}</td>
-              </tr>
-            </tbody>
-          </table>
+
         </div>
 
-        {/* NET À PAYER */}
+        {/* ── FOOTER ── */}
         <div style={{
-          padding:'14px 16px', background:'rgba(14,196,126,.1)',
-          border:'1.5px solid rgba(14,196,126,.3)', borderRadius:10,
-          display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20,
+          padding:'16px 28px', borderTop:'1px solid var(--border)',
+          display:'flex', gap:10, background:'var(--bg3)',
         }}>
-          <span style={{ fontWeight:800, fontSize:15, color:'var(--acc2)' }}>NET À PAYER</span>
-          <span style={{ fontWeight:900, fontSize:22, color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(net)}</span>
+          <button
+            onClick={() => { onPay(record.id); onClose() }}
+            style={{
+              flex:1, background:'linear-gradient(135deg, var(--acc2), #059669)',
+              border:'none', borderRadius:10, padding:'11px',
+              fontSize:13, fontWeight:700, color:'#fff',
+              cursor:'pointer', fontFamily:'inherit',
+              boxShadow:'0 4px 14px rgba(14,196,126,.3)',
+            }}
+          >✅ Marquer comme payé</button>
+          <button
+            className="mini-btn"
+            onClick={() => toast('🖨️ Impression...')}
+            style={{ padding:'11px 16px', fontSize:13 }}
+          >🖨️ Imprimer</button>
+          <button
+            className="mini-btn"
+            onClick={() => toast('📥 Téléchargement PDF...')}
+            style={{ padding:'11px 16px', fontSize:13 }}
+          >📥 PDF</button>
         </div>
 
-        {/* Footer */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20, fontSize:12 }}>
-          <div style={{ padding:'10px 12px', background:'var(--bg3)', borderRadius:8 }}>
-            <div style={{ color:'var(--text3)', fontSize:11, marginBottom:3 }}>Mode de paiement</div>
-            <div style={{ fontWeight:600, color:'var(--text)' }}>Virement bancaire</div>
-          </div>
-          <div style={{ padding:'10px 12px', background:'var(--bg3)', borderRadius:8 }}>
-            <div style={{ color:'var(--text3)', fontSize:11, marginBottom:3 }}>Date de paiement</div>
-            <div style={{ fontWeight:600, color:'var(--text)' }}>{record.paidAt ?? 'En attente'}</div>
-          </div>
-        </div>
-
-        {/* Boutons */}
-        <div style={{ display:'flex', gap:8 }}>
-          <button className="btn btn-ghost btn-sm gap-1.5" style={{ flex:1 }} onClick={() => toast('🖨️ Impression…')}>
-            🖨️ Imprimer
-          </button>
-          <button className="btn btn-ghost btn-sm gap-1.5" style={{ flex:1 }} onClick={() => toast('📥 Téléchargement PDF…')}>
-            <Download size={12} /> PDF
-          </button>
-          {(record.status === 'EN ATTENTE' || record.status === 'GÉNÉRÉ') && (
-            <button className="btn btn-primary btn-sm gap-1.5" style={{ flex:1 }}
-              onClick={() => { onPay(record.id); onClose() }}>
-              <Check size={12} /> Marquer payé
-            </button>
-          )}
-          <button className="mini-btn" onClick={onClose}><X size={14} /></button>
-        </div>
       </div>
     </div>
   )
