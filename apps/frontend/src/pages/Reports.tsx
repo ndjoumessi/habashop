@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, formatCurrency, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Download, TrendingUp, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -67,8 +67,9 @@ function Trend({ evol }: { evol: number }) {
 }
 
 export default function Reports() {
-  const { currency, lang } = useConfig()
+  const { lang } = useConfig()
   void lang
+  const fmt = useFormatAmount()
   const [period, setPeriod] = useState<Period>('30days')
   const data = PERIOD_DATA[period]
 
@@ -102,10 +103,10 @@ export default function Reports() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Chiffre d'affaires", value: formatCurrency(data.ca, currency),       evol: data.caEvol,     color: 'var(--p2)',   icon: '💰' },
-          { label: 'Marge brute',        value: formatCurrency(data.margin, currency),    evol: data.marginEvol, color: 'var(--acc2)', icon: '📈' },
+          { label: "Chiffre d'affaires", value: fmt(data.ca),       evol: data.caEvol,     color: 'var(--p2)',   icon: '💰' },
+          { label: 'Marge brute',        value: fmt(data.margin),    evol: data.marginEvol, color: 'var(--acc2)', icon: '📈' },
           { label: 'Transactions',       value: data.transactions.toLocaleString('fr-FR'),evol: data.txEvol,     color: 'var(--acc)',  icon: '🧾' },
-          { label: 'Panier moyen',       value: formatCurrency(data.avgCart, currency),   evol: data.cartEvol,   color: 'var(--p3)',   icon: '🛒' },
+          { label: 'Panier moyen',       value: fmt(data.avgCart),   evol: data.cartEvol,   color: 'var(--p3)',   icon: '🛒' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -128,7 +129,7 @@ export default function Reports() {
             {CHART_DATA.map(d => (
               <div key={d.day} className="bar-group">
                 <div className="bar" style={{ height: `${d.h}%` }}
-                  data-val={formatCurrency(d.val, currency)} />
+                  data-val={fmt(d.val)} />
                 <div className="bar-label">{d.day}</div>
               </div>
             ))}
@@ -150,7 +151,7 @@ export default function Reports() {
                   <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{m.label}</span>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold" style={{ color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
-                      {formatCurrency(m.amount, currency)}
+                      {fmt(m.amount)}
                     </span>
                     <span className="text-xs font-black" style={{ color: m.color, fontFamily: 'var(--mono)', minWidth: 32 }}>{m.pct}%</span>
                   </div>
@@ -187,7 +188,7 @@ export default function Reports() {
                   <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</div>
                   <div className="text-xs" style={{ color: 'var(--text3)' }}>{p.qty.toLocaleString('fr-FR')} unités vendues</div>
                 </div>
-                <div className="td-num text-sm" style={{ color: 'var(--acc2)' }}>{formatCurrency(p.ca, currency)}</div>
+                <div className="td-num text-sm" style={{ color: 'var(--acc2)' }}>{fmt(p.ca)}</div>
               </div>
             ))}
           </div>
@@ -219,7 +220,7 @@ export default function Reports() {
                         s.mode === 'Mobile'  ? 'badge-violet' : 'badge-blue'
                       }`}>{s.mode}</span>
                     </td>
-                    <td className="td-num text-sm" style={{ color: 'var(--acc2)' }}>{formatCurrency(s.total, currency)}</td>
+                    <td className="td-num text-sm" style={{ color: 'var(--acc2)' }}>{fmt(s.total)}</td>
                   </tr>
                 ))}
               </tbody>

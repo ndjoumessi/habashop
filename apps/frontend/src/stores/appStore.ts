@@ -190,20 +190,39 @@ export function useConfig() {
   return useAppStore()
 }
 
-const SYMBOLS: Record<Currency, string> = {
-  XOF: 'F CFA', XAF: 'F CFA', EUR: '€', USD: '$', CAD: 'CA$',
-}
-
 export function formatCurrency(amount: number, currency?: Currency): string {
   const curr = currency ?? useAppStore.getState().currency
-  const sym  = SYMBOLS[curr]
   if (curr === 'XOF' || curr === 'XAF') {
-    return `${Math.round(amount).toLocaleString('fr-FR')} ${sym}`
+    return `${Math.round(amount).toLocaleString('fr-FR')} FCFA`
   }
-  return `${sym}${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  if (curr === 'EUR') {
+    return `${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+  }
+  if (curr === 'USD') {
+    return `$ ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+  return `CA$ ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 export function t(key: string): string {
   const { lang } = useAppStore.getState()
   return translations[lang]?.[key] ?? translations.fr[key] ?? key
+}
+
+const RATES_TO_XOF: Record<Currency, number> = {
+  XOF: 1, XAF: 1, EUR: 655.957, USD: 600, CAD: 440,
+}
+
+export function convertCurrency(amount: number, from: Currency, to: Currency): number {
+  if (from === to) return amount
+  const inXOF = from === 'XOF' ? amount : amount * RATES_TO_XOF[from]
+  return to === 'XOF' ? inXOF : inXOF / RATES_TO_XOF[to]
+}
+
+export function useFormatAmount() {
+  const { currency } = useAppStore()
+  return (amountInXOF: number) => {
+    const converted = convertCurrency(amountInXOF, 'XOF', currency)
+    return formatCurrency(converted, currency)
+  }
 }

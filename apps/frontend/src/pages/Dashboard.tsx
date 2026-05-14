@@ -1,4 +1,4 @@
-import { useConfig, formatCurrency, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useNavigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, Package, Users, DollarSign } from 'lucide-react'
@@ -34,7 +34,8 @@ const ALERTS = [
 ]
 
 export default function Dashboard() {
-  const { currency, lang } = useConfig()
+  const { lang } = useConfig()
+  const fmt = useFormatAmount()
   const { user } = useAuthStore()
   const navigate = useNavigate()
   void lang // subscribe for t() reactivity
@@ -73,10 +74,10 @@ export default function Dashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('kpi_sales_today'),     value: formatCurrency(842000, currency),  sub: '▲ 12% vs hier',              up: true,  icon: <DollarSign size={18} /> },
+          { label: t('kpi_sales_today'),     value: fmt(842000),  sub: '▲ 12% vs hier',              up: true,  icon: <DollarSign size={18} /> },
           { label: t('kpi_stock'),           value: '3 248',                            sub: '▼ 8 alertes rupture',        up: false, icon: <Package size={18} />    },
           { label: t('kpi_employees'),       value: '18/21',                            sub: '3 absents aujourd\'hui',     up: null,  icon: <Users size={18} />      },
-          { label: t('kpi_monthly_revenue'), value: formatCurrency(2650000, currency), sub: '▲ 7% vs mois dernier',       up: true,  icon: <TrendingUp size={18} /> },
+          { label: t('kpi_monthly_revenue'), value: fmt(2650000), sub: '▲ 7% vs mois dernier',       up: true,  icon: <TrendingUp size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: 'var(--p2)' }}>{k.icon}</div>
@@ -175,7 +176,7 @@ export default function Dashboard() {
                     <td>{p.rank}</td>
                     <td className="td-bold text-xs">{p.name}</td>
                     <td className="td-num text-xs">{p.qty}</td>
-                    <td className="td-num text-xs" style={{ color: 'var(--acc)' }}>{formatCurrency(p.ca, currency)}</td>
+                    <td className="td-num text-xs" style={{ color: 'var(--acc)' }}>{fmt(p.ca)}</td>
                   </tr>
                 ))}
               </tbody>

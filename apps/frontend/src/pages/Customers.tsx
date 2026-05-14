@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, formatCurrency, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -103,8 +103,9 @@ function LoyaltyBar({ points, max }: { points: number; max: number }) {
 }
 
 export default function Customers() {
-  const { currency, lang } = useConfig()
+  const { lang } = useConfig()
   void lang
+  const fmt = useFormatAmount()
   const [customers, setCustomers] = useState(CUSTOMERS_INIT)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<ClientType | ''>('')
@@ -153,7 +154,7 @@ export default function Customers() {
         {[
           { label: 'Total clients',   value: customers.length.toString(),           color: 'var(--p2)',   icon: '👥' },
           { label: 'Actifs ce mois',  value: activeThisMonth.toString(),             color: 'var(--acc2)', icon: '🟢' },
-          { label: 'Panier moyen',    value: formatCurrency(avgCart, currency),      color: 'var(--acc)',  icon: '🛒' },
+          { label: 'Panier moyen',    value: fmt(avgCart),      color: 'var(--acc)',  icon: '🛒' },
           { label: 'Taux rétention',  value: `${retentionRate}%`,                   color: 'var(--p3)',   icon: '🔄' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
@@ -213,7 +214,7 @@ export default function Customers() {
                   <td><span className={`badge ${TYPE_CFG[c.type].cls}`}>{c.type}</span></td>
                   <td className="td-mono">{c.phone}</td>
                   <td className="td-num" style={{ color: 'var(--text2)' }}>{c.purchasesPerMonth}×</td>
-                  <td className="td-num" style={{ color: 'var(--acc2)' }}>{formatCurrency(c.totalCA, currency)}</td>
+                  <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(c.totalCA)}</td>
                   <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} max={c.maxLoyalty} /></td>
                   <td>
                     <div className="flex gap-1.5">
@@ -258,7 +259,7 @@ export default function Customers() {
               {[
                 { label: 'Téléphone',    value: viewCustomer.phone || '—' },
                 { label: 'Email',        value: viewCustomer.email || '—' },
-                { label: 'CA total',     value: formatCurrency(viewCustomer.totalCA, currency) },
+                { label: 'CA total',     value: fmt(viewCustomer.totalCA) },
                 { label: 'Achats/mois',  value: `${viewCustomer.purchasesPerMonth} commandes` },
               ].map(f => (
                 <div key={f.label} className="p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
@@ -290,7 +291,7 @@ export default function Customers() {
                         <td className="td-mono text-xs">{p.ref}</td>
                         <td className="td-mono text-xs">{new Date(p.date).toLocaleDateString('fr-FR')}</td>
                         <td className="text-xs" style={{ color: 'var(--text2)' }}>{p.items} art.</td>
-                        <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{formatCurrency(p.total, currency)}</td>
+                        <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{fmt(p.total)}</td>
                       </tr>
                     ))}
                     {viewCustomer.purchases.length === 0 && (

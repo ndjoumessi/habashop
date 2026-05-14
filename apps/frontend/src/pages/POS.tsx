@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, formatCurrency, t } from '@/stores/appStore'
+import { useConfig, formatCurrency, convertCurrency, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Minus, Plus, Trash2, ShoppingCart, Banknote, CreditCard, Smartphone, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -33,6 +33,7 @@ interface CartItem { id:number; name:string; price:number; qty:number; emoji:str
 export default function POS() {
   const { currency, posDefaultPayment, posShowStockOnTile, posTaxRate, lang } = useConfig()
   void lang // for t() reactivity
+  const fmt = useFormatAmount()
 
   const [cart, setCart]         = useState<CartItem[]>([])
   const [cat, setCat]           = useState('all')
@@ -61,12 +62,13 @@ export default function POS() {
   const taxRate = posTaxRate / 100
   const totalHT = total / (1 + taxRate)
   const tva     = total - totalHT
-  const change  = cashGiven ? +cashGiven - total : 0
+  const totalInCurrency = convertCurrency(total, 'XOF', currency)
+  const change  = cashGiven ? +cashGiven - totalInCurrency : 0
 
   const confirmSale = () => {
     setSessionTx(n => n + 1)
     setSessionCA(n => n + total)
-    toast.success(`✅ ${formatCurrency(total, currency)} encaissé`)
+    toast.success(`✅ ${fmt(total)} encaissé`)
     setCart([])
     setShowModal(false)
     setCashGiven('')
@@ -119,7 +121,7 @@ export default function POS() {
                     <div style={{ fontSize: 28, marginBottom: 4 }}>{p.emoji}</div>
                     <div className="text-xs font-semibold leading-tight mb-1" style={{ color: 'var(--text)' }}>{p.name}</div>
                     <div className="text-sm font-black" style={{ color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
-                      {formatCurrency(p.price, currency)}
+                      {fmt(p.price)}
                     </div>
                     {posShowStockOnTile && (
                       <div className="text-xs mt-1" style={{ color: lowStock ? 'var(--danger)' : 'var(--text3)' }}>
@@ -162,7 +164,7 @@ export default function POS() {
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold truncate" style={{ color: 'var(--text)' }}>{item.name}</div>
                   <div className="text-xs" style={{ color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
-                    {formatCurrency(item.price, currency)}
+                    {fmt(item.price)}
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -171,7 +173,7 @@ export default function POS() {
                   <button className="qty-btn" onClick={() => updQty(item.id, +1)}><Plus size={10} /></button>
                 </div>
                 <div className="text-xs font-bold ml-1" style={{ color: 'var(--acc)', fontFamily: 'var(--mono)', minWidth: 60, textAlign: 'right' }}>
-                  {formatCurrency(item.price * item.qty, currency)}
+                  {fmt(item.price * item.qty)}
                 </div>
                 <button onClick={() => updQty(item.id, -999)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
                   <Trash2 size={12} />
@@ -183,14 +185,14 @@ export default function POS() {
           {/* Totaux */}
           <div className="px-4 py-3 space-y-1.5 flex-shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
             <div className="flex justify-between text-xs" style={{ color: 'var(--text2)' }}>
-              <span>{t('pos_subtotal')}</span><span>{formatCurrency(totalHT, currency)}</span>
+              <span>{t('pos_subtotal')}</span><span>{fmt(totalHT)}</span>
             </div>
             <div className="flex justify-between text-xs" style={{ color: 'var(--text2)' }}>
-              <span>{t('pos_vat')} {posTaxRate}%</span><span>{formatCurrency(tva, currency)}</span>
+              <span>{t('pos_vat')} {posTaxRate}%</span><span>{fmt(tva)}</span>
             </div>
             <div className="flex justify-between font-black text-sm pt-1" style={{ borderTop: '1px solid var(--border)', paddingTop: 6 }}>
               <span style={{ color: 'var(--text)' }}>{t('pos_total')}</span>
-              <span style={{ color: 'var(--p2)', fontFamily: 'var(--mono)' }}>{formatCurrency(total, currency)}</span>
+              <span style={{ color: 'var(--p2)', fontFamily: 'var(--mono)' }}>{fmt(total)}</span>
             </div>
           </div>
 
@@ -226,7 +228,7 @@ export default function POS() {
                 boxShadow: cart.length ? '0 6px 20px rgba(99,102,241,0.3)' : 'none',
               }}
               onClick={() => cart.length ? setShowModal(true) : toast.error('Panier vide !')}>
-              🧾 {t('pos_pay')} {cart.length > 0 ? formatCurrency(total, currency) : ''}
+              🧾 {t('pos_pay')} {cart.length > 0 ? fmt(total) : ''}
             </button>
           </div>
 
@@ -239,7 +241,7 @@ export default function POS() {
               </div>
               <div className="rounded-lg p-2.5" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
                 <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text3)' }}>CA session</div>
-                <div className="text-xs font-black truncate" style={{ color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{formatCurrency(sessionCA, currency)}</div>
+                <div className="text-xs font-black truncate" style={{ color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{fmt(sessionCA)}</div>
               </div>
             </div>
           </div>
@@ -258,12 +260,12 @@ export default function POS() {
               {cart.map(i => (
                 <div key={i.id} className="flex justify-between text-sm">
                   <span style={{ color: 'var(--text2)' }}>{i.emoji} {i.name} ×{i.qty}</span>
-                  <span className="font-bold" style={{ fontFamily: 'var(--mono)' }}>{formatCurrency(i.price * i.qty, currency)}</span>
+                  <span className="font-bold" style={{ fontFamily: 'var(--mono)' }}>{fmt(i.price * i.qty)}</span>
                 </div>
               ))}
               <div className="flex justify-between font-black text-base pt-3" style={{ borderTop: '1px solid var(--border)' }}>
                 <span>{t('pos_total')}</span>
-                <span style={{ color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{formatCurrency(total, currency)}</span>
+                <span style={{ color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(total)}</span>
               </div>
             </div>
             <div className="flex gap-2">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, formatCurrency, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -80,8 +80,9 @@ const ORDERS_INIT: Order[] = [
 const STATUSES: OrderStatus[] = ['BROUILLON','ENVOYÉE','CONFIRMÉE','EN TRANSIT','REÇUE','ANNULÉE']
 
 export default function Orders() {
-  const { currency, lang } = useConfig()
+  const { lang } = useConfig()
   void lang
+  const fmt = useFormatAmount()
   const [orders, setOrders] = useState<Order[]>(ORDERS_INIT)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
@@ -147,7 +148,7 @@ export default function Orders() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Montant engagé',   value: formatCurrency(totalEngaged, currency), color: 'var(--p2)',    icon: '💰' },
+          { label: 'Montant engagé',   value: fmt(totalEngaged), color: 'var(--p2)',    icon: '💰' },
           { label: 'En transit',        value: String(pending),                         color: 'var(--acc)',   icon: '🚚' },
           { label: 'Reçues ce mois',    value: String(receivedMonth),                   color: 'var(--acc2)', icon: '✅' },
           { label: 'Brouillons',         value: String(drafts),                          color: 'var(--text3)',icon: '📝' },
@@ -257,7 +258,7 @@ export default function Orders() {
                     <td>
                       <span className="badge badge-gray">{o.items.length} article{o.items.length > 1 ? 's' : ''}</span>
                     </td>
-                    <td className="td-num" style={{ color: 'var(--acc2)' }}>{formatCurrency(o.total, currency)}</td>
+                    <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(o.total)}</td>
                     <td>
                       <span className={`badge ${cfg.cls} flex items-center gap-1 w-fit`}>
                         {cfg.icon} {o.status}
@@ -331,7 +332,7 @@ export default function Orders() {
               {[
                 { label: 'Fournisseur', value: viewOrder.supplier },
                 { label: 'Livraison prévue', value: new Date(viewOrder.expectedAt).toLocaleDateString('fr-FR') },
-                { label: 'Montant total', value: formatCurrency(viewOrder.total, currency) },
+                { label: 'Montant total', value: fmt(viewOrder.total) },
                 { label: 'Nb articles', value: `${viewOrder.items.length} ligne${viewOrder.items.length > 1 ? 's' : ''}` },
               ].map(f => (
                 <div key={f.label} className="p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
@@ -353,13 +354,13 @@ export default function Orders() {
                       <td className="td-bold text-xs">{item.product}</td>
                       <td className="td-num text-xs">{item.qty}</td>
                       <td className="text-xs" style={{ color: 'var(--text2)' }}>{item.unit}</td>
-                      <td className="td-num text-xs">{formatCurrency(item.unitPrice, currency)}</td>
-                      <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{formatCurrency(item.qty * item.unitPrice, currency)}</td>
+                      <td className="td-num text-xs">{fmt(item.unitPrice)}</td>
+                      <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{fmt(item.qty * item.unitPrice)}</td>
                     </tr>
                   ))}
                   <tr style={{ background: 'var(--bg3)' }}>
                     <td colSpan={4} className="text-xs font-bold text-right px-4 py-2">TOTAL</td>
-                    <td className="td-num font-black" style={{ color: 'var(--p2)' }}>{formatCurrency(viewOrder.total, currency)}</td>
+                    <td className="td-num font-black" style={{ color: 'var(--p2)' }}>{fmt(viewOrder.total)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -450,7 +451,7 @@ export default function Orders() {
               </div>
               {/* Total */}
               <div className="flex justify-end mt-2 text-sm font-black" style={{ color: 'var(--p2)' }}>
-                Total : {formatCurrency(form.items.reduce((s, i) => s + i.qty * i.unitPrice, 0), currency)}
+                Total : {fmt(form.items.reduce((s, i) => s + i.qty * i.unitPrice, 0))}
               </div>
             </div>
 

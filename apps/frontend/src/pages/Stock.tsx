@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, formatCurrency, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -21,7 +21,8 @@ function statusOf(stock: number, threshold: number) {
 }
 
 export default function Stock() {
-  const { currency, stockLowThreshold, stockShowSKU, lang } = useConfig()
+  const { stockLowThreshold, stockShowSKU, lang } = useConfig()
+  const fmt = useFormatAmount()
   void lang // for t() reactivity
 
   const [products, setProducts] = useState(PRODUCTS_INIT)
@@ -81,7 +82,7 @@ export default function Stock() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total articles',  value: products.length.toString(),          color: 'var(--p2)',    icon: '📋' },
-          { label: 'Valeur du stock', value: formatCurrency(totalValue, currency), color: 'var(--acc2)', icon: '💎' },
+          { label: 'Valeur du stock', value: fmt(totalValue), color: 'var(--acc2)', icon: '💎' },
           { label: 'Ruptures / Bas',  value: ruptures.length.toString(),           color: 'var(--danger)',icon: '⚠️' },
           { label: 'Catégories',      value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', icon: '📁' },
         ].map(k => (
@@ -146,8 +147,8 @@ export default function Stock() {
                     {stockShowSKU && <td className="td-mono">{p.sku}</td>}
                     <td className="td-bold">{p.name}</td>
                     <td><span className="badge badge-teal">{p.category}</span></td>
-                    <td className="td-num">{formatCurrency(p.buy, currency)}</td>
-                    <td className="td-num" style={{ color: 'var(--acc2)' }}>{formatCurrency(p.sell, currency)}</td>
+                    <td className="td-num">{fmt(p.buy)}</td>
+                    <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(p.sell)}</td>
                     <td>
                       <span className="td-num" style={{
                         color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)',

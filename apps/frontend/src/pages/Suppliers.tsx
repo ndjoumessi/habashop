@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, formatCurrency, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -91,8 +91,9 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function Suppliers() {
-  const { currency, lang } = useConfig()
+  const { lang } = useConfig()
   void lang
+  const fmt = useFormatAmount()
   const [suppliers, setSuppliers] = useState(SUPPLIERS_INIT)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<SupplierStatus | ''>('')
@@ -275,7 +276,7 @@ export default function Suppliers() {
                       <tr key={o.ref}>
                         <td className="td-mono text-xs">{o.ref}</td>
                         <td className="td-mono text-xs">{new Date(o.date).toLocaleDateString('fr-FR')}</td>
-                        <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{formatCurrency(o.total, currency)}</td>
+                        <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{fmt(o.total)}</td>
                         <td>
                           <span className={`badge ${
                             o.status === 'REÇUE'      ? 'badge-green'  :
