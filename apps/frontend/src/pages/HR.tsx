@@ -1,182 +1,123 @@
 import { useState } from 'react'
-import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { Search, Download, Plus, Eye, X } from 'lucide-react'
+import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { Download, Plus, Eye, X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-type EmployeeStatus = 'Actif' | 'Congé' | 'Absent'
-type Role = 'Gérant' | 'Caissier' | 'Magasinier' | 'Livreur' | 'Agent'
-type AttStatus = 'P' | 'A' | 'C' | 'F' | ''
-
-interface AttRecord { date: string; status: AttStatus }
-
 interface Employee {
-  id: string; name: string; role: Role; phone: string; email: string
-  hireDate: string; salary: number; status: EmployeeStatus
-  attendance: AttRecord[]; leaveBalance: number; notes: string
+  id: number; name: string; role: string; dept: string; salary: number
+  type: 'CDI' | 'CDD'; hiredAt: string; endAt?: string
+  avatar: string; color: string; active: boolean
+  phone: string; email: string
 }
 
-const ROLES: Role[] = ['Gérant', 'Caissier', 'Magasinier', 'Livreur', 'Agent']
-
-const STATUS_CFG: Record<EmployeeStatus, { cls: string }> = {
-  Actif:  { cls: 'badge-green'  },
-  Congé:  { cls: 'badge-violet' },
-  Absent: { cls: 'badge-red'    },
+interface LeaveRequest {
+  id: number; empId: number; type: string; from: string; to: string
+  days: number; motif: string; status: 'pending' | 'approved' | 'refused'
 }
 
-const ATT_CFG: Record<AttStatus, { cls: string; label: string }> = {
-  P:  { cls: 'badge-green',  label: 'P' },
-  A:  { cls: 'badge-red',    label: 'A' },
-  C:  { cls: 'badge-violet', label: 'C' },
-  F:  { cls: 'badge-gray',   label: 'F' },
-  '': { cls: 'badge-gray',   label: '–' },
-}
-
-const ATT_CYCLE: AttStatus[] = ['P', 'A', 'C', '']
-
-const WEEK: { date: string; label: string }[] = [
-  { date: '2026-05-11', label: 'Lun 11' },
-  { date: '2026-05-12', label: 'Mar 12' },
-  { date: '2026-05-13', label: 'Mer 13' },
-  { date: '2026-05-14', label: 'Jeu 14' },
-  { date: '2026-05-15', label: 'Ven 15' },
-  { date: '2026-05-16', label: 'Sam 16' },
+const EMPLOYEES: Employee[] = [
+  { id:1, name:'Marie Bakayoko',   role:'Caissière',   dept:'Ventes',     salary:350000, type:'CDI', hiredAt:'01/03/2023',                    avatar:'MB', color:'#6C3FD6', active:true,  phone:'+221 77 111 22 33', email:'marie@shop.com' },
+  { id:2, name:'Kofi Diallo',      role:'Magasinier',  dept:'Stock',      salary:420000, type:'CDI', hiredAt:'15/06/2024',                    avatar:'KD', color:'#F59E0B', active:true,  phone:'+221 77 222 33 44', email:'kofi@shop.com' },
+  { id:3, name:'Aminata Touré',    role:'Comptable',   dept:'Finance',    salary:280000, type:'CDD', hiredAt:'01/09/2025', endAt:'31/08/2026', avatar:'AT', color:'#10B981', active:true,  phone:'+221 77 333 44 55', email:'aminata@shop.com' },
+  { id:4, name:'Seydou Koné',      role:'Caissier',    dept:'Ventes',     salary:310000, type:'CDI', hiredAt:'10/05/2025',                    avatar:'SK', color:'#EF4444', active:true,  phone:'+221 77 444 55 66', email:'seydou@shop.com' },
+  { id:5, name:'Fatoumata Ndiaye', role:'Responsable', dept:'Direction',  salary:480000, type:'CDI', hiredAt:'01/01/2022',                    avatar:'FN', color:'#3B82F6', active:true,  phone:'+221 77 555 66 77', email:'fatou@shop.com' },
+  { id:6, name:'Ibrahim Sow',      role:'Livreur',     dept:'Logistique', salary:220000, type:'CDD', hiredAt:'01/02/2026', endAt:'31/07/2026', avatar:'IS', color:'#8B5CF6', active:false, phone:'+221 77 666 77 88', email:'ibrahim@shop.com' },
 ]
 
-const TODAY = '2026-05-14'
+type AttCell = '✅' | '⚠️' | '❌' | '🏖️' | '—'
+const WEEK_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
-const EMPLOYEES_INIT: Employee[] = [
-  {
-    id: '1', name: 'Mamadou Diallo', role: 'Gérant',
-    phone: '+221 77 123 45 67', email: 'mamadou.diallo@habashop.sn',
-    hireDate: '2022-03-01', salary: 450000, status: 'Actif', leaveBalance: 15,
-    attendance: [
-      { date: '2026-05-11', status: 'P' }, { date: '2026-05-12', status: 'P' },
-      { date: '2026-05-13', status: 'P' }, { date: '2026-05-14', status: 'P' },
-    ],
-    notes: 'Responsable général de la boutique',
-  },
-  {
-    id: '2', name: 'Fatou Ndiaye', role: 'Caissier',
-    phone: '+221 76 234 56 78', email: 'fatou.ndiaye@habashop.sn',
-    hireDate: '2023-01-15', salary: 220000, status: 'Actif', leaveBalance: 12,
-    attendance: [
-      { date: '2026-05-11', status: 'P' }, { date: '2026-05-12', status: 'P' },
-      { date: '2026-05-13', status: 'P' }, { date: '2026-05-14', status: 'P' },
-    ],
-    notes: '',
-  },
-  {
-    id: '3', name: 'Ibrahima Mbaye', role: 'Magasinier',
-    phone: '+221 78 345 67 89', email: 'ibrahima.mbaye@habashop.sn',
-    hireDate: '2023-06-01', salary: 180000, status: 'Actif', leaveBalance: 8,
-    attendance: [
-      { date: '2026-05-11', status: 'P' }, { date: '2026-05-12', status: 'A' },
-      { date: '2026-05-13', status: 'P' }, { date: '2026-05-14', status: 'P' },
-    ],
-    notes: 'Gère le stock principal',
-  },
-  {
-    id: '4', name: 'Aminata Sow', role: 'Caissier',
-    phone: '+221 70 456 78 90', email: 'aminata.sow@habashop.sn',
-    hireDate: '2024-02-01', salary: 200000, status: 'Congé', leaveBalance: 3,
-    attendance: [
-      { date: '2026-05-11', status: 'C' }, { date: '2026-05-12', status: 'C' },
-      { date: '2026-05-13', status: 'C' }, { date: '2026-05-14', status: 'C' },
-    ],
-    notes: 'Congé annuel du 11 au 18 mai',
-  },
-  {
-    id: '5', name: 'Moussa Thiam', role: 'Livreur',
-    phone: '+221 77 567 89 01', email: 'moussa.thiam@habashop.sn',
-    hireDate: '2023-09-15', salary: 160000, status: 'Actif', leaveBalance: 10,
-    attendance: [
-      { date: '2026-05-11', status: 'P' }, { date: '2026-05-12', status: 'P' },
-      { date: '2026-05-13', status: 'P' }, { date: '2026-05-14', status: 'P' },
-    ],
-    notes: '',
-  },
-  {
-    id: '6', name: 'Cheikh Fall', role: 'Magasinier',
-    phone: '+221 76 678 90 12', email: 'cheikh.fall@habashop.sn',
-    hireDate: '2024-05-01', salary: 165000, status: 'Absent', leaveBalance: 18,
-    attendance: [
-      { date: '2026-05-11', status: 'P' }, { date: '2026-05-12', status: 'P' },
-      { date: '2026-05-13', status: 'P' }, { date: '2026-05-14', status: 'A' },
-    ],
-    notes: 'Absent sans justificatif',
-  },
-  {
-    id: '7', name: 'Aïda Ba', role: 'Agent',
-    phone: '+221 78 789 01 23', email: 'aida.ba@habashop.sn',
-    hireDate: '2025-01-10', salary: 120000, status: 'Actif', leaveBalance: 22,
-    attendance: [
-      { date: '2026-05-11', status: 'P' }, { date: '2026-05-12', status: 'P' },
-      { date: '2026-05-13', status: 'P' }, { date: '2026-05-14', status: 'P' },
-    ],
-    notes: '',
-  },
+const ATTENDANCE: Record<number, { cells: AttCell[]; total: string }> = {
+  1: { cells: ['✅','✅','⚠️','✅','✅','—','—'], total: '39h' },
+  2: { cells: ['✅','✅','✅','✅','✅','✅','—'], total: '48h' },
+  3: { cells: ['✅','❌','✅','✅','✅','—','—'], total: '32h' },
+  4: { cells: ['✅','✅','✅','⚠️','✅','—','—'], total: '38h30' },
+  5: { cells: ['🏖️','🏖️','🏖️','🏖️','🏖️','—','—'], total: 'Congé' },
+  6: { cells: ['—','—','—','—','—','—','—'], total: 'Inactif' },
+}
+
+const LEAVE_HISTORY: LeaveRequest[] = [
+  { id:10, empId:5, type:'Congé annuel',    from:'2026-05-11', to:'2026-05-17', days:5, motif:'Repos annuel planifié',     status:'approved' },
+  { id:11, empId:1, type:'Congé maladie',   from:'2026-04-02', to:'2026-04-03', days:2, motif:'Grippe',                    status:'approved' },
+  { id:12, empId:3, type:'Congé annuel',    from:'2026-03-15', to:'2026-03-19', days:3, motif:'Voyage familial',           status:'approved' },
+  { id:13, empId:6, type:'Congé sans solde',from:'2026-02-20', to:'2026-02-21', days:1, motif:'Démarches administratives', status:'refused'  },
 ]
 
-const BLANK_FORM = {
-  name: '', role: 'Caissier' as Role, phone: '', email: '',
-  hireDate: '', salary: 150000, notes: '',
+const LEAVE_PENDING_INIT: LeaveRequest[] = [
+  { id:20, empId:2, type:'Congé annuel',  from:'2026-05-20', to:'2026-05-24', days:5, motif:'Vacances famille', status:'pending' },
+  { id:21, empId:4, type:'Congé maladie', from:'2026-05-16', to:'2026-05-16', days:1, motif:'Visite médicale',  status:'pending' },
+]
+
+function Avatar({ emp, size = 36 }: { emp: Employee; size?: number }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: emp.color, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', color: '#fff',
+      fontSize: size * 0.36, fontWeight: 800, letterSpacing: '-0.5px',
+    }}>{emp.avatar}</div>
+  )
 }
 
-function getAtt(emp: Employee, date: string): AttStatus {
-  return emp.attendance.find(a => a.date === date)?.status ?? ''
+function ContractStatus({ emp }: { emp: Employee }) {
+  if (!emp.active) return <span className="badge badge-gray">Inactif</span>
+  if (!emp.endAt) return <span className="badge badge-green">Actif</span>
+  const [d, m, y] = emp.endAt.split('/')
+  const end = new Date(+y, +m - 1, +d)
+  const now = new Date('2026-05-14')
+  const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30))
+  if (diff <= 2) return <span className="badge badge-red">Expire {m}/{y.slice(2)}</span>
+  if (diff <= 4) return <span className="badge badge-amber">Expire {m}/{y.slice(2)}</span>
+  return <span className="badge badge-green">Actif</span>
 }
+
+const WEEK_OFFSETS = [
+  { label: 'Semaine du 7 au 13 mai 2026',   start: '07/05' },
+  { label: 'Semaine du 14 au 20 mai 2026',  start: '14/05' },
+  { label: 'Semaine du 21 au 27 mai 2026',  start: '21/05' },
+]
 
 export default function HR() {
   const { lang } = useConfig()
   void lang
   const fmt = useFormatAmount()
-  const [employees, setEmployees] = useState<Employee[]>(EMPLOYEES_INIT)
-  const [tab, setTab] = useState<'equipe' | 'presences'>('equipe')
-  const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState<Role | ''>('')
-  const [statusFilter, setStatusFilter] = useState<EmployeeStatus | ''>('')
+
+  const [tab, setTab] = useState<'team' | 'contracts' | 'attendance' | 'leaves'>('team')
   const [viewEmp, setViewEmp] = useState<Employee | null>(null)
-  const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState(BLANK_FORM)
+  const [addOpen, setAddOpen] = useState(false)
+  const [weekIdx, setWeekIdx] = useState(1)
+  const [pending, setPending] = useState<LeaveRequest[]>(LEAVE_PENDING_INIT)
+  const [leaveOpen, setLeaveOpen] = useState(false)
 
-  const filtered = employees.filter(e =>
-    (!search || e.name.toLowerCase().includes(search.toLowerCase()) || e.role.toLowerCase().includes(search.toLowerCase())) &&
-    (!roleFilter   || e.role   === roleFilter) &&
-    (!statusFilter || e.status === statusFilter)
-  )
+  // New employee form
+  const [newEmp, setNewEmp] = useState({ name: '', role: '', dept: '', salary: '', type: 'CDI', phone: '', email: '' })
 
-  const totalSalary = employees.reduce((s, e) => s + e.salary, 0)
-  const presentToday = employees.filter(e => getAtt(e, TODAY) === 'P').length
-  const onLeave = employees.filter(e => e.status === 'Congé').length
-  const absent  = employees.filter(e => e.status === 'Absent').length
+  // New leave form
+  const [newLeave, setNewLeave] = useState({ empId: '1', type: 'Congé annuel', from: '', to: '', motif: '' })
 
-  const cycleAtt = (empId: string, date: string) => {
-    setEmployees(prev => prev.map(e => {
-      if (e.id !== empId) return e
-      const cur = getAtt(e, date)
-      const next = ATT_CYCLE[(ATT_CYCLE.indexOf(cur) + 1) % ATT_CYCLE.length]
-      const existing = e.attendance.findIndex(a => a.date === date)
-      const attendance = existing >= 0
-        ? e.attendance.map((a, i) => i === existing ? { ...a, status: next } : a)
-        : [...e.attendance, { date, status: next }]
-      return { ...e, attendance }
-    }))
+  const activeCount = EMPLOYEES.filter(e => e.active).length
+  const masseSalariale = EMPLOYEES.reduce((s, e) => s + e.salary, 0)
+
+  const TABS = [
+    { id: 'team',       label: '👥 Équipe' },
+    { id: 'contracts',  label: '📄 Contrats' },
+    { id: 'attendance', label: '📅 Pointage' },
+    { id: 'leaves',     label: '🏖️ Congés' },
+  ] as const
+
+  const leaveDays = (from: string, to: string) => {
+    if (!from || !to) return 0
+    const d1 = new Date(from), d2 = new Date(to)
+    return Math.max(1, Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) + 1)
   }
 
-  const addEmployee = () => {
-    if (!form.name.trim() || !form.phone.trim()) {
-      toast.error('Nom et téléphone requis'); return
-    }
-    const newE: Employee = {
-      id: String(Date.now()),
-      name: form.name, role: form.role, phone: form.phone, email: form.email,
-      hireDate: form.hireDate, salary: form.salary, status: 'Actif',
-      attendance: [], leaveBalance: 22, notes: form.notes,
-    }
-    setEmployees(prev => [newE, ...prev])
-    setShowCreate(false)
-    setForm(BLANK_FORM)
-    toast.success(`✅ ${newE.name} ajouté à l'équipe`)
+  function handleApprove(id: number) {
+    setPending(p => p.filter(r => r.id !== id))
+    toast.success('Congé approuvé')
+  }
+  function handleRefuse(id: number) {
+    setPending(p => p.filter(r => r.id !== id))
+    toast.error('Congé refusé')
   }
 
   return (
@@ -185,344 +126,474 @@ export default function HR() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total employés',       value: employees.length.toString(),                    color: 'var(--p2)',   icon: '👥' },
-          { label: 'Présents aujourd\'hui', value: `${presentToday} / ${employees.length}`,        color: 'var(--acc2)', icon: '✅' },
-          { label: 'En congé',             value: onLeave.toString(),                             color: 'var(--p3)',   icon: '🏖️' },
-          { label: 'Masse salariale',       value: fmt(totalSalary),                               color: 'var(--acc)',  icon: '💰' },
+          { label: 'Total employés',  value: EMPLOYEES.length, sub: `${activeCount} actifs`, color: 'var(--p2)', icon: '👥' },
+          { label: 'Actifs',          value: activeCount,       sub: '1 absent',              color: 'var(--acc2)', icon: '✅' },
+          { label: 'Masse salariale', value: fmt(masseSalariale), sub: 'Ce mois',             color: 'var(--acc)', icon: '💰' },
+          { label: 'Congés en cours', value: 2,                 sub: '1 en attente',          color: 'var(--p3)',  icon: '🏖️' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
             <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
+            <div className="kpi-sub">{k.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
-        {(['equipe', 'presences'] as const).map(tb => (
-          <button key={tb}
-            className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {TABS.map(tb => (
+          <button key={tb.id} onClick={() => setTab(tb.id)}
             style={{
-              background: tab === tb ? 'var(--p)' : 'var(--card)',
-              color: tab === tb ? '#fff' : 'var(--text2)',
-              border: tab === tb ? 'none' : '1px solid var(--border)',
-              cursor: 'pointer', fontFamily: 'inherit',
-              boxShadow: tab === tb ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
+              padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700,
+              fontFamily: 'inherit', cursor: 'pointer', transition: 'all .15s',
+              background: tab === tb.id ? 'var(--p)' : 'var(--card)',
+              color: tab === tb.id ? '#fff' : 'var(--text2)',
+              border: tab === tb.id ? 'none' : '1px solid var(--border)',
+              boxShadow: tab === tb.id ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
             }}
-            onClick={() => setTab(tb)}
-          >
-            {tb === 'equipe' ? '👥 Équipe' : '📅 Présences'}
-          </button>
+          >{tb.label}</button>
         ))}
       </div>
 
-      {/* ── Onglet Équipe ── */}
-      {tab === 'equipe' && (
-        <div className="panel">
+      {/* ── TAB ÉQUIPE ── */}
+      {tab === 'team' && (
+        <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
             <span className="panel-title">👥 Équipe</span>
-            <div className="flex items-center gap-2">
-              <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV…')}>
-                <Download size={13} /> {t('btn_export')}
-              </button>
-              <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreate(true)}>
-                <Plus size={13} /> {t('btn_add')}
-              </button>
-            </div>
+            <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setAddOpen(true)}>
+              <Plus size={13} /> Nouvel employé
+            </button>
           </div>
-
-          {/* Filtres */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <div className="search-box flex-1 min-w-40">
-              <Search size={13} className="search-icon" />
-              <input className="input pl-8 py-2 text-sm w-full" placeholder="🔍 Nom, rôle…"
-                value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-            <select className="input py-2 text-sm w-auto" value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value as any)}>
-              <option value="">Tous rôles</option>
-              {ROLES.map(r => <option key={r}>{r}</option>)}
-            </select>
-            <select className="input py-2 text-sm w-auto" value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value as any)}>
-              <option value="">Tous statuts</option>
-              <option>Actif</option><option>Congé</option><option>Absent</option>
-            </select>
-          </div>
-
-          {/* Tableau */}
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Employé</th><th>Rôle</th><th>Téléphone</th>
-                  <th>Ancienneté</th><th>Salaire</th><th>Statut</th><th>Actions</th>
+                  <th>Employé</th><th>Département</th><th>Contrat</th>
+                  <th>Salaire</th><th>Statut</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(e => {
-                  const years = Math.floor((new Date(TODAY).getTime() - new Date(e.hireDate).getTime()) / (365.25 * 24 * 3600 * 1000))
-                  return (
-                    <tr key={e.id}>
-                      <td>
-                        <div className="td-bold">{e.name}</div>
-                        <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{e.email}</div>
-                      </td>
-                      <td><span className="badge badge-teal">{e.role}</span></td>
-                      <td className="td-mono text-xs">{e.phone}</td>
-                      <td className="text-xs" style={{ color: 'var(--text2)' }}>
-                        {years > 0 ? `${years} an${years > 1 ? 's' : ''}` : '< 1 an'}
-                      </td>
-                      <td className="td-num text-sm" style={{ color: 'var(--acc2)' }}>
-                        {fmt(e.salary)}
-                      </td>
-                      <td><span className={`badge ${STATUS_CFG[e.status].cls}`}>{e.status}</span></td>
-                      <td>
-                        <button className="btn btn-sm btn-ghost" title="Voir fiche" onClick={() => setViewEmp(e)}>
-                          <Eye size={12} />
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>Aucun employé trouvé</td></tr>
-                )}
+                {EMPLOYEES.map(e => (
+                  <tr key={e.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Avatar emp={e} size={34} />
+                        <div>
+                          <div className="td-bold text-sm">{e.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text3)' }}>{e.role}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="text-xs" style={{ color: 'var(--text2)' }}>{e.dept}</td>
+                    <td>
+                      <span className={`badge ${e.type === 'CDI' ? 'badge-violet' : 'badge-amber'}`}>
+                        {e.type}
+                      </span>
+                    </td>
+                    <td className="td-num text-sm" style={{ color: 'var(--acc2)' }}>{fmt(e.salary)}</td>
+                    <td>
+                      <span className={`badge ${e.active ? 'badge-green' : 'badge-gray'}`}>
+                        {e.active ? 'Actif' : 'Inactif'}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="mini-btn gap-1" onClick={() => setViewEmp(e)}>
+                        <Eye size={12} /> Voir
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* ── Onglet Présences ── */}
-      {tab === 'presences' && (
-        <div className="panel">
+      {/* ── TAB CONTRATS ── */}
+      {tab === 'contracts' && (
+        <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">📅 Présences — semaine du 11 au 16 mai 2026</span>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text3)' }}>
-                <span className="badge badge-green">P</span> Présent
-                <span className="badge badge-red">A</span> Absent
-                <span className="badge badge-violet">C</span> Congé
-                <span className="badge badge-gray">F</span> Férié
-              </div>
-              <span className="text-xs" style={{ color: 'var(--text3)' }}>Cliquer pour modifier</span>
-            </div>
+            <span className="panel-title">📄 Contrats</span>
           </div>
-
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th style={{ minWidth: 160 }}>Employé</th>
-                  {WEEK.map(d => (
-                    <th key={d.date} style={{
-                      textAlign: 'center',
-                      color: d.date === TODAY ? 'var(--p2)' : undefined,
-                      fontWeight: d.date === TODAY ? 800 : undefined,
-                    }}>
-                      {d.label}
-                      {d.date === TODAY && <div style={{ fontSize: 9, color: 'var(--p3)', marginTop: 1 }}>AUJOURD'HUI</div>}
-                    </th>
-                  ))}
-                  <th style={{ textAlign: 'center' }}>Total P</th>
+                  <th>Employé</th><th>Type</th><th>Début</th>
+                  <th>Fin</th><th>Salaire</th><th>Statut</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {employees.map(e => {
-                  const totalP = WEEK.filter(d => getAtt(e, d.date) === 'P').length
+                {EMPLOYEES.map(e => (
+                  <tr key={e.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                        <Avatar emp={e} size={28} />
+                        <span className="td-bold text-xs">{e.name}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`badge ${e.type === 'CDI' ? 'badge-violet' : 'badge-amber'}`}>
+                        {e.type}
+                      </span>
+                    </td>
+                    <td className="td-mono text-xs">{e.hiredAt}</td>
+                    <td className="td-mono text-xs" style={{ color: e.endAt ? 'var(--acc)' : 'var(--text3)' }}>
+                      {e.endAt ?? '—'}
+                    </td>
+                    <td className="td-num text-sm" style={{ color: 'var(--acc2)' }}>{fmt(e.salary)}</td>
+                    <td><ContractStatus emp={e} /></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 5 }}>
+                        <button className="mini-btn gap-1" onClick={() => toast('📥 Téléchargement contrat…')}>
+                          <Download size={11} />
+                        </button>
+                        {e.type === 'CDD' && e.active && (
+                          <button className="mini-btn gap-1" onClick={() => toast.success('Renouvellement initié')}>
+                            🔄
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB POINTAGE ── */}
+      {tab === 'attendance' && (
+        <div className="panel" style={{ marginBottom: 0 }}>
+          <div className="panel-head">
+            <span className="panel-title">📅 Pointage</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button className="mini-btn" onClick={() => setWeekIdx(i => Math.max(0, i - 1))}
+                style={{ padding: '4px 7px' }}>
+                <ChevronLeft size={14} />
+              </button>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', minWidth: 200, textAlign: 'center' }}>
+                {WEEK_OFFSETS[weekIdx]?.label}
+              </span>
+              <button className="mini-btn" onClick={() => setWeekIdx(i => Math.min(WEEK_OFFSETS.length - 1, i + 1))}
+                style={{ padding: '4px 7px' }}>
+                <ChevronRight size={14} />
+              </button>
+              <button className="btn btn-ghost btn-sm gap-1" onClick={() => toast('📊 Export pointage…')}>
+                <Download size={12} /> Export
+              </button>
+            </div>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ minWidth: 150 }}>Employé</th>
+                  {WEEK_DAYS.map(d => <th key={d} style={{ textAlign: 'center', minWidth: 50 }}>{d}</th>)}
+                  <th style={{ textAlign: 'center' }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {EMPLOYEES.map(e => {
+                  const att = ATTENDANCE[e.id]
                   return (
                     <tr key={e.id}>
                       <td>
-                        <div className="td-bold text-xs">{e.name}</div>
-                        <div style={{ color: 'var(--text3)', fontSize: 11 }}>{e.role}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Avatar emp={e} size={28} />
+                          <span className="td-bold text-xs">{e.name}</span>
+                        </div>
                       </td>
-                      {WEEK.map(d => {
-                        const st = getAtt(e, d.date)
-                        const cfg = ATT_CFG[st]
-                        return (
-                          <td key={d.date} style={{ textAlign: 'center', padding: '8px 4px' }}>
-                            <button
-                              className={`badge ${cfg.cls}`}
-                              style={{ cursor: 'pointer', minWidth: 28, border: 'none', fontFamily: 'inherit' }}
-                              title="Cliquer pour changer"
-                              onClick={() => cycleAtt(e.id, d.date)}
-                            >
-                              {cfg.label}
-                            </button>
-                          </td>
-                        )
-                      })}
+                      {att.cells.map((cell, ci) => (
+                        <td key={ci} style={{ textAlign: 'center', fontSize: 16 }}>{cell}</td>
+                      ))}
                       <td style={{ textAlign: 'center' }}>
-                        <span className="badge badge-green font-black">{totalP}/6</span>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700,
+                          color: att.total === 'Inactif' ? 'var(--text3)' : att.total === 'Congé' ? 'var(--p2)' : 'var(--acc2)',
+                          fontFamily: 'var(--mono)',
+                        }}>{att.total}</span>
                       </td>
                     </tr>
                   )
                 })}
               </tbody>
-              <tfoot>
-                <tr style={{ background: 'var(--bg3)' }}>
-                  <td className="text-xs font-bold" style={{ color: 'var(--text2)', padding: '8px 12px' }}>Présents</td>
-                  {WEEK.map(d => {
-                    const count = employees.filter(e => getAtt(e, d.date) === 'P').length
-                    return (
-                      <td key={d.date} style={{ textAlign: 'center', padding: '8px 4px' }}>
-                        <span className={`badge ${count === employees.length ? 'badge-green' : count >= employees.length * 0.7 ? 'badge-amber' : 'badge-red'} font-black`}>
-                          {count}
-                        </span>
-                      </td>
-                    )
-                  })}
-                  <td />
-                </tr>
-              </tfoot>
             </table>
           </div>
-
-          {(absent > 0 || onLeave > 0) && (
-            <div className="mt-4 p-3 rounded-xl text-xs"
-              style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: 'var(--acc)' }}>
-              ⚠️ {absent > 0 && `${absent} absent${absent > 1 ? 's' : ''} non justifié${absent > 1 ? 's' : ''}`}
-              {absent > 0 && onLeave > 0 && ' · '}
-              {onLeave > 0 && `${onLeave} en congé${onLeave > 1 ? 's' : ''}`}
-            </div>
-          )}
+          <div style={{ marginTop: 14, display: 'flex', gap: 18, flexWrap: 'wrap', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+            {[['✅','Présent'],['⚠️','Retard'],['❌','Absent'],['🏖️','Congé'],['—','Repos']].map(([ic, lb]) => (
+              <div key={lb} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text2)' }}>
+                <span style={{ fontSize: 15 }}>{ic}</span> {lb}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* ── Modal fiche employé ── */}
-      {viewEmp && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setViewEmp(null)}>
-          <div className="modal-box" style={{ maxWidth: 560 }}>
-            <div className="flex items-start justify-between mb-5">
-              <div>
-                <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>
-                  👤 {viewEmp.name}
-                </h3>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
-                  {viewEmp.role} · En poste depuis {new Date(viewEmp.hireDate).toLocaleDateString('fr-FR')}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`badge ${STATUS_CFG[viewEmp.status].cls}`}>{viewEmp.status}</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setViewEmp(null)}><X size={14} /></button>
+      {/* ── TAB CONGÉS ── */}
+      {tab === 'leaves' && (
+        <div className="space-y-4">
+          {/* Demandes en attente */}
+          <div className="panel" style={{ marginBottom: 0 }}>
+            <div className="panel-head">
+              <span className="panel-title">⏳ Demandes en attente</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {pending.length > 0 && (
+                  <span className="badge badge-amber">{pending.length}</span>
+                )}
+                <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setLeaveOpen(true)}>
+                  <Plus size={13} /> Nouvelle demande
+                </button>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {[
-                { label: 'Téléphone', value: viewEmp.phone },
-                { label: 'Email',     value: viewEmp.email },
-                { label: 'Salaire',   value: fmt(viewEmp.salary) },
-                { label: 'Congés restants', value: `${viewEmp.leaveBalance} jours` },
-              ].map(f => (
-                <div key={f.label} className="p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
-                  <div className="text-xs uppercase tracking-wide font-semibold mb-1" style={{ color: 'var(--text3)' }}>{f.label}</div>
-                  <div className="text-sm font-bold" style={{ color: 'var(--text)' }}>{f.value}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mb-4">
-              <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text3)' }}>
-                Présences cette semaine
+            {pending.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text3)', fontSize: 13 }}>
+                Aucune demande en attente
               </div>
-              <div className="flex gap-2 flex-wrap">
-                {WEEK.map(d => {
-                  const st = getAtt(viewEmp, d.date)
-                  const cfg = ATT_CFG[st]
+            ) : (
+              <div className="space-y-3">
+                {pending.map(req => {
+                  const emp = EMPLOYEES.find(e => e.id === req.empId)!
                   return (
-                    <div key={d.date} className="flex flex-col items-center gap-1">
-                      <span className="text-xs" style={{ color: 'var(--text3)' }}>{d.label.split(' ')[0]}</span>
-                      <span className={`badge ${cfg.cls}`}>{cfg.label}</span>
+                    <div key={req.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      padding: '13px 15px', borderRadius: 12,
+                      background: 'var(--bg3)', border: '1px solid var(--border)',
+                    }}>
+                      <Avatar emp={emp} size={36} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>{emp.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                          {req.type} · {req.from} → {req.to} · {req.days} jour{req.days > 1 ? 's' : ''}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 1 }}>{req.motif}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 7 }}>
+                        <button
+                          onClick={() => handleApprove(req.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px',
+                            borderRadius: 8, background: 'rgba(16,185,129,.15)', color: '#10B981',
+                            border: '1px solid rgba(16,185,129,.3)', fontWeight: 700, fontSize: 12,
+                            cursor: 'pointer', fontFamily: 'inherit',
+                          }}>
+                          <Check size={13} /> Approuver
+                        </button>
+                        <button
+                          onClick={() => handleRefuse(req.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px',
+                            borderRadius: 8, background: 'rgba(239,68,68,.12)', color: '#F87171',
+                            border: '1px solid rgba(239,68,68,.25)', fontWeight: 700, fontSize: 12,
+                            cursor: 'pointer', fontFamily: 'inherit',
+                          }}>
+                          <X size={13} /> Refuser
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
               </div>
-            </div>
-
-            {/* Barre congés */}
-            <div className="mb-4 p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
-              <div className="flex justify-between text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>
-                <span>Solde de congés</span>
-                <span style={{ color: 'var(--p2)', fontFamily: 'var(--mono)' }}>
-                  {viewEmp.leaveBalance} / 30 jours
-                </span>
-              </div>
-              <div style={{ height: 8, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{
-                  width: `${(viewEmp.leaveBalance / 30) * 100}%`,
-                  height: '100%', borderRadius: 99, transition: 'width .4s',
-                  background: viewEmp.leaveBalance <= 5 ? 'var(--danger)' : viewEmp.leaveBalance <= 10 ? 'var(--acc)' : 'var(--acc2)',
-                }} />
-              </div>
-            </div>
-
-            {viewEmp.notes && (
-              <div className="p-3 rounded-xl text-xs mb-4"
-                style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: 'var(--acc)' }}>
-                📝 {viewEmp.notes}
-              </div>
             )}
+          </div>
 
-            <div className="flex gap-2">
-              <button className="btn btn-primary flex-1 justify-center"
-                onClick={() => { toast.success(`✉️ Message envoyé à ${viewEmp.name}`); setViewEmp(null) }}>
-                ✉️ Contacter
-              </button>
-              <button className="btn btn-ghost"
-                onClick={() => { toast(`🏖️ Demande de congé créée pour ${viewEmp.name}`); setViewEmp(null) }}>
-                🏖️ Poser congé
-              </button>
-              <button className="btn btn-ghost" onClick={() => setViewEmp(null)}>Fermer</button>
+          {/* Historique */}
+          <div className="panel" style={{ marginBottom: 0 }}>
+            <div className="panel-head">
+              <span className="panel-title">📋 Historique des congés</span>
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Employé</th><th>Type</th><th>Période</th><th>Durée</th><th>Statut</th></tr>
+                </thead>
+                <tbody>
+                  {LEAVE_HISTORY.map(h => {
+                    const emp = EMPLOYEES.find(e => e.id === h.empId)!
+                    return (
+                      <tr key={h.id}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Avatar emp={emp} size={26} />
+                            <span className="td-bold text-xs">{emp.name}</span>
+                          </div>
+                        </td>
+                        <td className="text-xs" style={{ color: 'var(--text2)' }}>{h.type}</td>
+                        <td className="td-mono text-xs">{h.from} → {h.to}</td>
+                        <td className="td-num text-xs">{h.days}j</td>
+                        <td>
+                          <span className={`badge ${h.status === 'approved' ? 'badge-green' : h.status === 'refused' ? 'badge-red' : 'badge-amber'}`}>
+                            {h.status === 'approved' ? 'Approuvé' : h.status === 'refused' ? 'Refusé' : 'En attente'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Modal nouvel employé ── */}
-      {showCreate && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
-          <div className="modal-box" style={{ maxWidth: 520 }}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ Nouvel employé</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowCreate(false)}><X size={14} /></button>
+      {/* ── MODAL Voir employé ── */}
+      {viewEmp && (
+        <div className="modal-backdrop" onClick={() => setViewEmp(null)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)' }}>Fiche employé</span>
+              <button className="mini-btn" onClick={() => setViewEmp(null)}><X size={15} /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {([
-                { label: 'Nom complet',         key: 'name',     type: 'text',   span: true  },
-                { label: 'Téléphone',            key: 'phone',    type: 'text',   span: false },
-                { label: 'Email',                key: 'email',    type: 'email',  span: false },
-                { label: 'Date d\'embauche',     key: 'hireDate', type: 'date',   span: false },
-                { label: 'Salaire mensuel (XOF)',key: 'salary',   type: 'number', span: false },
-              ] as const).map(f => (
-                <div key={f.key} className={f.span ? 'col-span-2' : ''}>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
-                    style={{ color: 'var(--text3)' }}>{f.label}</label>
-                  <input className="input text-sm" type={f.type}
-                    value={(form as any)[f.key]}
-                    onChange={e => setForm(p => ({ ...p, [f.key]: f.type === 'number' ? +e.target.value : e.target.value }))} />
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 22 }}>
+              <Avatar emp={viewEmp} size={60} />
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text)' }}>{viewEmp.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 3 }}>{viewEmp.role} · {viewEmp.dept}</div>
+                <div style={{ marginTop: 6, display: 'flex', gap: 6 }}>
+                  <span className={`badge ${viewEmp.type === 'CDI' ? 'badge-violet' : 'badge-amber'}`}>{viewEmp.type}</span>
+                  <span className={`badge ${viewEmp.active ? 'badge-green' : 'badge-gray'}`}>{viewEmp.active ? 'Actif' : 'Inactif'}</span>
+                </div>
+              </div>
+            </div>
+            {[
+              ['📞 Téléphone', viewEmp.phone],
+              ['✉️ Email', viewEmp.email],
+              ['📅 Embauché le', viewEmp.hiredAt],
+              ...(viewEmp.endAt ? [['🗓️ Fin de contrat', viewEmp.endAt]] : []),
+              ['💰 Salaire', fmt(viewEmp.salary)],
+            ].map(([lb, val]) => (
+              <div key={lb as string} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 0', borderBottom: '1px solid var(--border)',
+              }}>
+                <span style={{ fontSize: 13, color: 'var(--text3)' }}>{lb}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: lb === '💰 Salaire' ? 'var(--mono)' : 'inherit' }}>{val}</span>
+              </div>
+            ))}
+            <button className="btn btn-ghost btn-sm" style={{ marginTop: 18, width: '100%' }} onClick={() => setViewEmp(null)}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL Nouvel employé ── */}
+      {addOpen && (
+        <div className="modal-backdrop" onClick={() => setAddOpen(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)' }}>Nouvel employé</span>
+              <button className="mini-btn" onClick={() => setAddOpen(false)}><X size={15} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { label: 'Nom complet', key: 'name', type: 'text', placeholder: 'Ex: Awa Diallo' },
+                { label: 'Poste', key: 'role', type: 'text', placeholder: 'Ex: Caissière' },
+                { label: 'Département', key: 'dept', type: 'text', placeholder: 'Ex: Ventes' },
+                { label: 'Salaire (F CFA)', key: 'salary', type: 'number', placeholder: '350000' },
+                { label: 'Téléphone', key: 'phone', type: 'text', placeholder: '+221 77 …' },
+                { label: 'Email', key: 'email', type: 'email', placeholder: 'nom@shop.com' },
+              ].map(f => (
+                <div key={f.key}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>{f.label}</label>
+                  <input className="input" type={f.type} placeholder={f.placeholder}
+                    value={(newEmp as Record<string, string>)[f.key]}
+                    onChange={ev => setNewEmp(p => ({ ...p, [f.key]: ev.target.value }))}
+                    style={{ width: '100%', boxSizing: 'border-box' }} />
                 </div>
               ))}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Rôle</label>
-                <select className="input text-sm" value={form.role}
-                  onChange={e => setForm(p => ({ ...p, role: e.target.value as Role }))}>
-                  {ROLES.map(r => <option key={r}>{r}</option>)}
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>Type de contrat</label>
+                <select className="input" value={newEmp.type} onChange={e => setNewEmp(p => ({ ...p, type: e.target.value }))}
+                  style={{ width: '100%', boxSizing: 'border-box' }}>
+                  <option>CDI</option><option>CDD</option>
                 </select>
               </div>
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
-                <textarea className="input text-sm" rows={2} value={form.notes}
-                  onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => setAddOpen(false)}>Annuler</button>
+              <button className="btn btn-primary btn-sm" style={{ flex: 1 }}
+                onClick={() => { toast.success('Employé ajouté (demo)'); setAddOpen(false) }}>
+                Ajouter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL Nouvelle demande congé ── */}
+      {leaveOpen && (
+        <div className="modal-backdrop" onClick={() => setLeaveOpen(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)' }}>Nouvelle demande de congé</span>
+              <button className="mini-btn" onClick={() => setLeaveOpen(false)}><X size={15} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>Employé</label>
+                <select className="input" value={newLeave.empId} onChange={e => setNewLeave(p => ({ ...p, empId: e.target.value }))}
+                  style={{ width: '100%', boxSizing: 'border-box' }}>
+                  {EMPLOYEES.filter(e => e.active).map(e => (
+                    <option key={e.id} value={e.id}>{e.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>Type</label>
+                <select className="input" value={newLeave.type} onChange={e => setNewLeave(p => ({ ...p, type: e.target.value }))}
+                  style={{ width: '100%', boxSizing: 'border-box' }}>
+                  {['Congé annuel','Congé maladie','Congé maternité','Congé sans solde','Autre'].map(t => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>Du</label>
+                  <input className="input" type="date" value={newLeave.from}
+                    onChange={e => setNewLeave(p => ({ ...p, from: e.target.value }))}
+                    style={{ width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>Au</label>
+                  <input className="input" type="date" value={newLeave.to}
+                    onChange={e => setNewLeave(p => ({ ...p, to: e.target.value }))}
+                    style={{ width: '100%', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+              {newLeave.from && newLeave.to && (
+                <div style={{ fontSize: 12, color: 'var(--acc2)', fontWeight: 700, fontFamily: 'var(--mono)' }}>
+                  Durée : {leaveDays(newLeave.from, newLeave.to)} jour(s)
+                </div>
+              )}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>Motif</label>
+                <input className="input" type="text" placeholder="Ex: Voyage familial"
+                  value={newLeave.motif} onChange={e => setNewLeave(p => ({ ...p, motif: e.target.value }))}
+                  style={{ width: '100%', boxSizing: 'border-box' }} />
               </div>
             </div>
-            <div className="flex gap-2 mt-5">
-              <button className="btn btn-primary flex-1 justify-center" onClick={addEmployee}>
-                ✅ {t('btn_add')} l'employé
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => setLeaveOpen(false)}>Annuler</button>
+              <button className="btn btn-primary btn-sm" style={{ flex: 1 }}
+                onClick={() => {
+                  if (!newLeave.from || !newLeave.to) { toast.error('Sélectionnez les dates'); return }
+                  const days = leaveDays(newLeave.from, newLeave.to)
+                  const emp = EMPLOYEES.find(e => e.id === +newLeave.empId)!
+                  setPending(p => [...p, {
+                    id: Date.now(), empId: emp.id, type: newLeave.type,
+                    from: newLeave.from, to: newLeave.to, days,
+                    motif: newLeave.motif || '—', status: 'pending',
+                  }])
+                  setNewLeave({ empId: '1', type: 'Congé annuel', from: '', to: '', motif: '' })
+                  setLeaveOpen(false)
+                  toast.success('Demande soumise')
+                }}>
+                Soumettre
               </button>
-              <button className="btn btn-ghost" onClick={() => setShowCreate(false)}>{t('btn_cancel')}</button>
             </div>
           </div>
         </div>
