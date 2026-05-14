@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useConfig, formatCurrency, convertCurrency, useFormatAmount, t } from '@/stores/appStore'
-import { Search, Minus, Plus, Trash2, ShoppingCart, Banknote, CreditCard, Smartphone, X } from 'lucide-react'
+import { Minus, Plus, Trash2, ShoppingCart, Banknote, CreditCard, Smartphone, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+/* ─── Données démo ─── */
 const PRODUCTS = [
   { id:1,  name:'Riz parfumé 5kg',       price:4500,  cat:'cereals', emoji:'🌾', stock:120 },
   { id:2,  name:'Huile palme 1L',         price:1800,  cat:'fat',     emoji:'🫙', stock:18  },
   { id:3,  name:'Sucre 1kg',              price:850,   cat:'grocery', emoji:'🍚', stock:245 },
   { id:4,  name:'Farine blé 1kg',         price:650,   cat:'cereals', emoji:'🌾', stock:89  },
-  { id:5,  name:'Savon OMO 500g',         price:500,   cat:'hygiene', emoji:'🧼', stock:5   },
+  { id:5,  name:'Savon OMO 500g',         price:500,   cat:'hygiene', emoji:'🧼', stock:150 },
   { id:6,  name:'Lait poudre 400g',       price:2200,  cat:'dairy',   emoji:'🥛', stock:67  },
-  { id:7,  name:'Tomate concentrée 800g', price:1400,  cat:'canned',  emoji:'🍅', stock:112 },
+  { id:7,  name:'Tomate conc. 800g',      price:1400,  cat:'canned',  emoji:'🍅', stock:112 },
   { id:8,  name:'Huile végétale 5L',      price:8500,  cat:'fat',     emoji:'🫒', stock:34  },
   { id:9,  name:'Café soluble 200g',      price:2800,  cat:'grocery', emoji:'☕', stock:55  },
   { id:10, name:'Sardines 155g',          price:900,   cat:'canned',  emoji:'🐟', stock:200 },
@@ -19,16 +20,52 @@ const PRODUCTS = [
 ]
 
 const CATS = [
-  { id:'all',     label: () => t('pos_all')   },
-  { id:'cereals', label: () => '🌾 Céréales'  },
-  { id:'canned',  label: () => '🫙 Conserves' },
-  { id:'fat',     label: () => '🫒 Corps gras' },
-  { id:'hygiene', label: () => '🧼 Hygiène'   },
-  { id:'dairy',   label: () => '🥛 Laitiers'  },
-  { id:'grocery', label: () => '🛒 Épicerie'  },
+  { id:'all',     label: 'Tous'       },
+  { id:'cereals', label: '🌾 Céréales'  },
+  { id:'canned',  label: '🫙 Conserves' },
+  { id:'fat',     label: '🫒 Corps gras' },
+  { id:'hygiene', label: '🧼 Hygiène'   },
+  { id:'dairy',   label: '🥛 Laitiers'  },
+  { id:'grocery', label: '🛒 Épicerie'  },
 ]
 
 interface CartItem { id:number; name:string; price:number; qty:number; emoji:string }
+
+/* ─── Styles inline réutilisables ─── */
+const S = {
+  qtyBtn: (hovered: boolean): React.CSSProperties => ({
+    width: 21, height: 21,
+    background: hovered ? 'var(--p)' : 'var(--bg3)',
+    border: `1px solid ${hovered ? 'var(--p)' : 'var(--border)'}`,
+    borderRadius: 5,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', color: hovered ? '#fff' : 'var(--text)',
+    transition: 'all .12s', fontFamily: 'var(--font)',
+  }),
+  payBtn: (active: boolean): React.CSSProperties => ({
+    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+    padding: '8px 4px', borderRadius: 9, fontSize: 11, fontWeight: 600,
+    cursor: 'pointer', transition: 'all .15s', fontFamily: 'var(--font)',
+    background: active ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
+    border: `1px solid ${active ? 'var(--p2)' : 'var(--border)'}`,
+    color: active ? 'var(--p2)' : 'var(--text2)',
+  }),
+}
+
+/* ─── Bouton qty avec hover ─── */
+function QtyBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      style={S.qtyBtn(hov)}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  )
+}
 
 export default function POS() {
   const { currency, posDefaultPayment, posShowStockOnTile, posTaxRate, lang } = useConfig()
@@ -75,213 +112,315 @@ export default function POS() {
   }
 
   return (
-    <div className="animate-in" style={{ height: 'calc(100vh - 112px)' }}>
-      <div className="pos-wrap h-full">
+    <div
+      className="animate-in"
+      style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 12, height: 'calc(100vh - 112px)' }}
+    >
 
-        {/* ── Catalogue ── */}
-        <div className="flex flex-col gap-3 min-w-0 overflow-hidden">
-          {/* Filtres catégories */}
-          <div className="flex flex-wrap gap-2">
-            {CATS.map(c => (
-              <button key={c.id}
-                onClick={() => setCat(c.id)}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                style={{
-                  background: cat === c.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg3)',
-                  color: cat === c.id ? '#fff' : 'var(--text2)',
-                  border: 'none',
-                  boxShadow: cat === c.id ? '0 4px 14px rgba(99,102,241,0.3)' : 'none',
-                  fontFamily: 'inherit',
-                }}>
-                {c.label()}
-              </button>
-            ))}
-            <div className="search-wrap ml-auto">
-              <span className="search-icon"><Search size={13} /></span>
-              <input className="input pl-8 py-1.5 text-sm w-44" placeholder="Rechercher…"
-                value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-          </div>
+      {/* ══ COLONNE GAUCHE — Catalogue ══ */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, overflow: 'hidden' }}>
 
-          {/* Grille produits */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
-              {filtered.map(p => {
-                const inCart = cart.find(i => i.id === p.id)
-                const lowStock = p.stock < 20
-                return (
-                  <div key={p.id}
-                    className={`product-tile${inCart ? ' in-cart' : ''}`}
-                    onClick={() => addItem(p)}>
-                    <div style={{ fontSize: 28, marginBottom: 4 }}>{p.emoji}</div>
-                    <div className="text-xs font-semibold leading-tight mb-1" style={{ color: 'var(--text)' }}>{p.name}</div>
-                    <div className="text-sm font-black" style={{ color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
-                      {fmt(p.price)}
-                    </div>
-                    {posShowStockOnTile && (
-                      <div className="text-xs mt-1" style={{ color: lowStock ? 'var(--danger)' : 'var(--text3)' }}>
-                        Stock : {p.stock}
-                      </div>
-                    )}
-                    {inCart && (
-                      <span className="badge badge-violet text-xs mt-1">×{inCart.qty}</span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+        {/* Filtres catégories + recherche */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+          {CATS.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setCat(c.id)}
+              style={{
+                padding: '6px 13px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+                cursor: 'pointer', transition: 'all .15s', fontFamily: 'var(--font)',
+                border: 'none',
+                background: cat === c.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg3)',
+                color: cat === c.id ? '#fff' : 'var(--text2)',
+                boxShadow: cat === c.id ? '0 4px 14px rgba(91,78,232,.3)' : 'none',
+              }}
+            >
+              {c.id === 'all' ? t('pos_all') : c.label}
+            </button>
+          ))}
+          <div style={{ position: 'relative', marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+            <span style={{ position: 'absolute', left: 10, color: 'var(--text3)', fontSize: 13, pointerEvents: 'none' }}>🔍</span>
+            <input
+              className="input"
+              style={{ paddingLeft: 32, paddingTop: 6, paddingBottom: 6, fontSize: 13, width: 180 }}
+              placeholder="Rechercher…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
         </div>
 
-        {/* ── Panier ── */}
-        <div className="cart-box">
-
-          {/* Header */}
-          <div className="cart-h">
-            <div className="flex items-center gap-2">
-              <ShoppingCart size={16} style={{ color: 'var(--p2)' }} />
-              <span>{t('pos_cart')}</span>
-            </div>
-            <span className="badge badge-violet">{cart.length} article{cart.length > 1 ? 's' : ''}</span>
-          </div>
-
-          {/* Liste items */}
-          <div className="cart-items">
-            {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 gap-2"
-                style={{ color: 'var(--text3)' }}>
-                <ShoppingCart size={28} style={{ opacity: 0.3 }} />
-                <p className="text-sm">{t('pos_empty')}</p>
-              </div>
-            ) : cart.map(item => (
-              <div key={item.id} className="cart-item">
-                <span className="text-base flex-shrink-0">{item.emoji}</span>
-                <div className="ci-info">
-                  <div className="ci-name truncate">{item.name}</div>
-                  <div className="ci-price">{fmt(item.price)}</div>
+        {/* Grille produits */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 9 }}>
+            {filtered.map(p => {
+              const inCart = cart.find(i => i.id === p.id)
+              const lowStock = p.stock < 20
+              return (
+                <div
+                  key={p.id}
+                  className={`product-tile${inCart ? ' in-cart' : ''}`}
+                  onClick={() => addItem(p)}
+                >
+                  <div style={{ fontSize: 28, marginBottom: 4 }}>{p.emoji}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.3, marginBottom: 4, color: 'var(--text)' }}>
+                    {p.name}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
+                    {fmt(p.price)}
+                  </div>
+                  {posShowStockOnTile && (
+                    <div style={{ fontSize: 10, marginTop: 3, color: lowStock ? 'var(--danger)' : 'var(--text3)' }}>
+                      Stock : {p.stock}
+                    </div>
+                  )}
+                  {inCart && (
+                    <span className="badge badge-violet" style={{ marginTop: 4, fontSize: 11 }}>×{inCart.qty}</span>
+                  )}
                 </div>
-                <div className="ci-qty">
-                  <button className="qty-btn" onClick={() => updQty(item.id, -1)}><Minus size={10} /></button>
-                  <span className="text-xs font-bold w-5 text-center" style={{ color: 'var(--text)' }}>{item.qty}</span>
-                  <button className="qty-btn" onClick={() => updQty(item.id, +1)}><Plus size={10} /></button>
-                </div>
-                <div className="ci-total">{fmt(item.price * item.qty)}</div>
-                <button onClick={() => updQty(item.id, -999)}
-                  style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
+        </div>
+      </div>
 
-          {/* Totaux */}
-          <div className="cart-footer">
-            <div className="summary-row">
-              <span>{t('pos_subtotal')}</span>
-              <span style={{ fontFamily: 'var(--mono)' }}>{fmt(totalHT)}</span>
-            </div>
-            <div className="summary-row">
-              <span>{t('pos_vat')} {posTaxRate}%</span>
-              <span style={{ fontFamily: 'var(--mono)' }}>{fmt(tva)}</span>
-            </div>
-            <div className="summary-total">
-              <span>{t('pos_total')}</span>
-              <span style={{ fontFamily: 'var(--mono)' }}>{fmt(total)}</span>
-            </div>
+      {/* ══ COLONNE DROITE — Panier ══ */}
+      <div style={{
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 14,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}>
+
+        {/* Header */}
+        <div style={{
+          padding: '14px 15px',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>
+            <ShoppingCart size={16} style={{ color: 'var(--p2)' }} />
+            {t('pos_cart')}
           </div>
+          <span className="badge badge-violet">
+            {cart.length} article{cart.length > 1 ? 's' : ''}
+          </span>
+        </div>
 
-          {/* Modes paiement */}
-          <div className="pay-modes">
-            {([
-              { id: 'cash'   as const, label: t('pos_cash'),   icon: <Banknote size={14} />   },
-              { id: 'card'   as const, label: t('pos_card'),   icon: <CreditCard size={14} /> },
-              { id: 'mobile' as const, label: t('pos_mobile'), icon: <Smartphone size={14} /> },
-            ]).map(m => (
-              <button key={m.id}
-                className={`pay-mode${pay === m.id ? ' active' : ''}`}
-                onClick={() => setPay(m.id)}>
-                {m.icon}
-                <span>{m.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Montant espèces */}
-          {pay === 'cash' && (
-            <div style={{ padding: '0 15px 10px' }}>
-              <input className="input text-sm py-2 w-full" type="number"
-                placeholder={t('pos_received') + '…'}
-                value={cashGiven} onChange={e => setCashGiven(e.target.value)} />
-              {cashGiven && change >= 0 && (
-                <div className="flex justify-between text-xs font-bold mt-2" style={{ color: 'var(--acc2)' }}>
-                  <span>{t('pos_change')}</span>
-                  <span style={{ fontFamily: 'var(--mono)' }}>{formatCurrency(change, currency)}</span>
-                </div>
-              )}
+        {/* Liste items */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 14px' }}>
+          {cart.length === 0 ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', height: '100%', gap: 8, color: 'var(--text3)',
+            }}>
+              <ShoppingCart size={32} style={{ opacity: 0.2 }} />
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{t('pos_empty')}</span>
+              <span style={{ fontSize: 11 }}>Cliquez sur un produit</span>
             </div>
-          )}
-
-          {/* Bouton encaisser */}
-          <div style={{ padding: '0 15px 12px' }}>
-            <button className="pay-btn"
+          ) : cart.map(item => (
+            <div
+              key={item.id}
               style={{
-                background: cart.length ? undefined : 'var(--bg4)',
-                boxShadow: cart.length ? undefined : 'none',
-                opacity: 1,
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '8px 0', borderBottom: '1px solid var(--border)',
               }}
-              onClick={() => cart.length ? setShowModal(true) : toast.error(t('pos_empty'))}>
-              🧾 {t('pos_pay')} {cart.length > 0 ? fmt(total) : ''}
-            </button>
-          </div>
-
-          {/* Résumé session */}
-          <div style={{ padding: '0 15px 15px' }}>
-            <div className="rounded-xl p-3 grid grid-cols-2 gap-2" style={{ background: 'var(--bg3)' }}>
-              <div className="rounded-lg p-2.5" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-                <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text3)' }}>
-                  {t('pos_transactions')}
+            >
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{item.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 12.5, fontWeight: 600, color: 'var(--text)',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {item.name}
                 </div>
-                <div className="text-xl font-black" style={{ color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
-                  {sessionTx}
+                <div style={{ fontSize: 11, color: 'var(--acc)', fontFamily: 'var(--mono)' }}>
+                  {fmt(item.price)}
                 </div>
               </div>
-              <div className="rounded-lg p-2.5" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-                <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text3)' }}>
-                  {t('pos_session_revenue')}
-                </div>
-                <div className="text-xs font-black truncate" style={{ color: 'var(--acc)', fontFamily: 'var(--mono)' }}>
-                  {fmt(sessionCA)}
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <QtyBtn onClick={() => updQty(item.id, -1)}><Minus size={9} /></QtyBtn>
+                <span style={{ fontSize: 12, fontWeight: 700, width: 18, textAlign: 'center', color: 'var(--text)' }}>
+                  {item.qty}
+                </span>
+                <QtyBtn onClick={() => updQty(item.id, +1)}><Plus size={9} /></QtyBtn>
+              </div>
+              <div style={{
+                fontSize: 12.5, fontWeight: 700, color: 'var(--acc)',
+                fontFamily: 'var(--mono)', minWidth: 62, textAlign: 'right',
+              }}>
+                {fmt(item.price * item.qty)}
+              </div>
+              <button
+                onClick={() => updQty(item.id, -999)}
+                style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 2, flexShrink: 0 }}
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Totaux */}
+        <div style={{ padding: '12px 15px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text2)', marginBottom: 4 }}>
+            <span>{t('pos_subtotal')}</span>
+            <span style={{ fontFamily: 'var(--mono)' }}>{fmt(totalHT)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text2)', marginBottom: 4 }}>
+            <span>{t('pos_vat')} {posTaxRate}%</span>
+            <span style={{ fontFamily: 'var(--mono)' }}>{fmt(tva)}</span>
+          </div>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between',
+            fontSize: 15, fontWeight: 800, color: 'var(--p2)',
+            paddingTop: 8, marginTop: 6, borderTop: '1px solid var(--border)',
+            fontFamily: 'var(--mono)',
+          }}>
+            <span>{t('pos_total')}</span>
+            <span>{fmt(total)}</span>
+          </div>
+        </div>
+
+        {/* Modes paiement */}
+        <div style={{ display: 'flex', gap: 6, padding: '10px 15px 8px' }}>
+          {([
+            { id: 'cash'   as const, label: t('pos_cash'),   icon: <Banknote size={15} />   },
+            { id: 'card'   as const, label: t('pos_card'),   icon: <CreditCard size={15} /> },
+            { id: 'mobile' as const, label: t('pos_mobile'), icon: <Smartphone size={15} /> },
+          ]).map(m => (
+            <button key={m.id} style={S.payBtn(pay === m.id)} onClick={() => setPay(m.id)}>
+              {m.icon}
+              <span>{m.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Input montant reçu (espèces) */}
+        {pay === 'cash' && (
+          <div style={{ margin: '0 15px 8px' }}>
+            <input
+              className="input"
+              style={{ width: '100%', fontSize: 13, padding: '8px 10px' }}
+              type="number"
+              placeholder={t('pos_received') + '…'}
+              value={cashGiven}
+              onChange={e => setCashGiven(e.target.value)}
+            />
+            {cashGiven && change >= 0 && (
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                fontSize: 13, fontWeight: 700, color: 'var(--acc2)', marginTop: 6,
+              }}>
+                <span>{t('pos_change')}</span>
+                <span style={{ fontFamily: 'var(--mono)' }}>{formatCurrency(change, currency)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Bouton encaisser */}
+        <div style={{ margin: '0 12px 12px' }}>
+          <button
+            style={{
+              width: '100%',
+              background: cart.length ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg4)',
+              border: 'none', color: '#fff', borderRadius: 10, padding: 12,
+              fontSize: 14, fontWeight: 700, cursor: 'pointer',
+              fontFamily: 'var(--font)',
+              boxShadow: cart.length ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
+              transition: 'opacity .2s',
+            }}
+            onClick={() => cart.length ? setShowModal(true) : toast.error(t('pos_empty'))}
+          >
+            🧾 {t('pos_pay')} {cart.length > 0 ? fmt(total) : ''}
+          </button>
+        </div>
+
+        {/* Résumé session */}
+        <div style={{ padding: '12px 15px', borderTop: '1px solid var(--border)' }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+            letterSpacing: '0.8px', color: 'var(--text3)', marginBottom: 8,
+          }}>
+            Résumé session
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div style={{
+              background: 'var(--card2)', border: '1px solid var(--border)',
+              borderRadius: 10, padding: '10px 12px',
+            }}>
+              <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'var(--mono)', color: 'var(--acc2)' }}>
+                {sessionTx}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 3 }}>
+                {t('pos_transactions')}
+              </div>
+            </div>
+            <div style={{
+              background: 'var(--card2)', border: '1px solid var(--border)',
+              borderRadius: 10, padding: '10px 12px',
+            }}>
+              <div style={{
+                fontSize: 13, fontWeight: 800, fontFamily: 'var(--mono)', color: 'var(--acc)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {fmt(sessionCA)}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 3 }}>
+                {t('pos_session_revenue')}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Modal confirmation vente ── */}
+      {/* ══ Modal confirmation vente ══ */}
       {showModal && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal-box">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-bold text-base" style={{ color: 'var(--text)' }}>🧾 Confirmer la vente</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}><X size={14} /></button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>🧾 Confirmer la vente</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>
+                <X size={14} />
+              </button>
             </div>
-            <div className="space-y-2 mb-5">
+
+            <div style={{ marginBottom: 20 }}>
               {cart.map(i => (
-                <div key={i.id} className="flex justify-between text-sm">
-                  <span style={{ color: 'var(--text2)' }}>{i.emoji} {i.name} ×{i.qty}</span>
-                  <span className="font-bold" style={{ fontFamily: 'var(--mono)' }}>{fmt(i.price * i.qty)}</span>
+                <div key={i.id} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: 13,
+                }}>
+                  <span style={{ color: 'var(--text2)' }}>
+                    {i.emoji} {i.name} <span style={{ color: 'var(--text3)' }}>×{i.qty}</span>
+                  </span>
+                  <span style={{ fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--text)' }}>
+                    {fmt(i.price * i.qty)}
+                  </span>
                 </div>
               ))}
-              <div className="flex justify-between font-black text-base pt-3"
-                style={{ borderTop: '1px solid var(--border)' }}>
-                <span>{t('pos_total')}</span>
-                <span style={{ color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(total)}</span>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                paddingTop: 12, marginTop: 4, fontSize: 16, fontWeight: 800,
+                color: 'var(--acc2)', fontFamily: 'var(--mono)',
+              }}>
+                <span style={{ color: 'var(--text)' }}>{t('pos_total')}</span>
+                <span>{fmt(total)}</span>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button className="btn btn-primary flex-1 justify-center py-3" onClick={confirmSale}>
-                ✅ {t('btn_confirm')}
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center', padding: '12px' }}
+                onClick={confirmSale}
+              >
+                ✅ {t('pos_validate')}
               </button>
               <button className="btn btn-ghost" onClick={confirmSale}>
                 🖨️ {t('btn_print')}
