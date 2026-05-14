@@ -74,10 +74,10 @@ export default function Dashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('kpi_sales_today'),     value: fmt(842000),  sub: `▲ 12% ${t('dash_vs_yesterday')}`,   up: true,  icon: <DollarSign size={18} /> },
+          { label: t('kpi_sales_today'),     value: fmt(842000),  sub: `▲ 12 % ${t('dash_vs_yesterday')}`,   up: true,  icon: <DollarSign size={18} /> },
           { label: t('kpi_stock'),           value: '3 248',      sub: '▼ 8 alertes rupture',                up: false, icon: <Package size={18} />    },
           { label: t('kpi_employees'),       value: '18/21',      sub: "3 absents aujourd'hui",              up: null,  icon: <Users size={18} />      },
-          { label: t('kpi_monthly_revenue'), value: fmt(2650000), sub: `▲ 7% ${t('dash_vs_last_month')}`,   up: true,  icon: <TrendingUp size={18} /> },
+          { label: t('kpi_monthly_revenue'), value: fmt(2650000), sub: `▲ 7 % ${t('dash_vs_last_month')}`,   up: true,  icon: <TrendingUp size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: 'var(--p2)' }}>{k.icon}</div>

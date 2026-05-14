@@ -235,7 +235,7 @@ export default function Settings() {
                     <Label>Taux TVA</Label>
                     <select className="input text-sm" value={shopForm.shopVatRate}
                       onChange={e => setShopForm(s => ({ ...s, shopVatRate: +e.target.value }))}>
-                      {VAT_OPTIONS.map(v => <option key={v} value={v}>{v}%</option>)}
+                      {VAT_OPTIONS.map(v => <option key={v} value={v}>{v} %</option>)}
                     </select>
                   </div>
                 </div>
@@ -554,7 +554,7 @@ export default function Settings() {
                   <Label>Taux de taxe POS (%)</Label>
                   <select className="input text-sm" value={cfg.posTaxRate}
                     onChange={e => cfg.updateConfig({ posTaxRate: +e.target.value })}>
-                    {VAT_OPTIONS.map(v => <option key={v} value={v}>{v}%</option>)}
+                    {VAT_OPTIONS.map(v => <option key={v} value={v}>{v} %</option>)}
                   </select>
                 </div>
 

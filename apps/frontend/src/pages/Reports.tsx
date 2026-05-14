@@ -53,7 +53,7 @@ function Trend({ evol }: { evol: number }) {
   return (
     <div className={up ? 'trend-up' : 'trend-down'}>
       {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-      {up ? '+' : ''}{evol}%
+      {up ? '+' : ''}{evol} %
     </div>
   )
 }
@@ -153,7 +153,7 @@ export default function Reports() {
                     <span className="text-xs font-bold" style={{ color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
                       {fmt(m.amount)}
                     </span>
-                    <span className="text-xs font-black" style={{ color: m.color, fontFamily: 'var(--mono)', minWidth: 32 }}>{m.pct}%</span>
+                    <span className="text-xs font-black" style={{ color: m.color, fontFamily: 'var(--mono)', minWidth: 32 }}>{m.pct} %</span>
                   </div>
                 </div>
                 <div style={{ height: 8, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>

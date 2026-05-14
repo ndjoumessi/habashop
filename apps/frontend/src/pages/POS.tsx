@@ -272,7 +272,7 @@ export default function POS() {
             <span style={{ fontFamily: 'var(--mono)' }}>{fmt(totalHT)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text2)', marginBottom: 4 }}>
-            <span>{t('pos_vat')} {posTaxRate}%</span>
+            <span>{t('pos_vat')} {posTaxRate} %</span>
             <span style={{ fontFamily: 'var(--mono)' }}>{fmt(tva)}</span>
           </div>
           <div style={{

@@ -158,7 +158,7 @@ export default function Planning() {
           { label:'Semaine',            value:`Semaine ${weekNum}`, sub:`${formatDate(weekDays[0])} — ${formatDate(weekDays[6])}`, color:'var(--p2)',   icon:'📅' },
           { label:'Employés planifiés', value:`${plannedCount}/6`,  sub:'1 en congé',                                              color:'var(--acc2)', icon:'👥' },
           { label:'Heures totales',     value:`${totalHoursAll}h`,  sub:'Cette semaine',                                           color:'var(--acc)',  icon:'⏱️' },
-          { label:'Taux de couverture', value:`${coveragePct}%`,    sub:'Objectif : 100%',                                         color:'var(--p3)',   icon:'📊' },
+          { label:'Taux de couverture', value:`${coveragePct} %`,    sub:'Objectif : 100 %',                                         color:'var(--p3)',   icon:'📊' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color:k.color }}>{k.icon}</div>

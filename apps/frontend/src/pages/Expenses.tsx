@@ -230,7 +230,7 @@ export default function Expenses() {
                     <td className="td-bold text-xs">{e.label}</td>
                     <td><CatPill cat={e.category} /></td>
                     <td className="td-num text-sm">{fmt(e.amount)}</td>
-                    <td style={{ fontSize:12, color:'var(--text3)' }}>{e.vat}%</td>
+                    <td style={{ fontSize:12, color:'var(--text3)' }}>{e.vat} %</td>
                     <td className="td-num text-sm" style={{ color:'var(--acc2)' }}>{fmt(ttcAmount(e))}</td>
                     <td>
                       <span className="badge badge-gray">{e.mode}</span>
@@ -305,7 +305,7 @@ export default function Expenses() {
                     }} />
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
-                    <span style={{ fontWeight:700, color: barColor, fontFamily:'var(--mono)' }}>{pct}%</span>
+                    <span style={{ fontWeight:700, color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
                     <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:600 }}>
                       {over ? `Dépassé de ${fmt(spent - budget)}` : `Restant : ${fmt(budget - spent)} ✅`}
                     </span>
@@ -327,7 +327,7 @@ export default function Expenses() {
               { label:'Budget total mensuel',  value:fmt(totalBudget),            color:'var(--text2)' },
               { label:'Total dépensé',          value:fmt(Object.values(catSpent).reduce((s,v) => s+v, 0)), color:'var(--acc)' },
               { label:'Écart',                  value:fmt(Math.abs(budgetLeft)),   color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', prefix: budgetLeft >= 0 ? '▲ +' : '▼ -' },
-              { label:'Taux d\'utilisation',    value:`${Math.round(Object.values(catSpent).reduce((s,v)=>s+v,0)/totalBudget*100)}%`, color: 'var(--p2)' },
+              { label:'Taux d\'utilisation',    value:`${Math.round(Object.values(catSpent).reduce((s,v)=>s+v,0)/totalBudget*100)} %`, color: 'var(--p2)' },
             ].map(r => (
               <div key={r.label} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontSize:13, color:'var(--text3)' }}>{r.label}</span>
@@ -380,7 +380,7 @@ export default function Expenses() {
                   <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Taux TVA</label>
                   <select className="input" value={nVat} onChange={e => setNVat(+e.target.value)}
                     style={{ width:'100%', boxSizing:'border-box' }}>
-                    {VAT_RATES.map(v => <option key={v} value={v}>{v}%</option>)}
+                    {VAT_RATES.map(v => <option key={v} value={v}>{v} %</option>)}
                   </select>
                 </div>
               </div>

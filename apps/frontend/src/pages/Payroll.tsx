@@ -132,7 +132,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
               <tr>
                 <td style={{ padding:'7px 8px', color:'var(--text)' }}>Salaire de base</td>
                 <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>26j</td>
-                <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>100%</td>
+                <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>100 %</td>
                 <td style={{ padding:'7px 8px', textAlign:'right', fontWeight:600, fontFamily:'var(--mono)' }}>{fmt(record.baseSalary)}</td>
               </tr>
               {record.bonus > 0 && (
@@ -146,7 +146,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
                 <tr>
                   <td style={{ padding:'7px 8px', color:'var(--text)' }}>Heures supplémentaires</td>
                   <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>+H</td>
-                  <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>25%</td>
+                  <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>25 %</td>
                   <td style={{ padding:'7px 8px', textAlign:'right', fontWeight:600, fontFamily:'var(--mono)' }}>{fmt(record.overtime)}</td>
                 </tr>
               )}
@@ -166,8 +166,8 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
           <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
             <tbody>
               <tr>
-                <td style={{ padding:'7px 8px', color:'var(--text)' }}>CNSS employé (5,6%)</td>
-                <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>5,6%</td>
+                <td style={{ padding:'7px 8px', color:'var(--text)' }}>CNSS employé (5,6 %)</td>
+                <td style={{ padding:'7px 8px', color:'var(--text3)', fontSize:11 }}>5,6 %</td>
                 <td style={{ padding:'7px 8px', textAlign:'right', fontWeight:600, fontFamily:'var(--mono)', color:'var(--danger)' }}>{fmt(cnss)}</td>
               </tr>
               <tr>

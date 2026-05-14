@@ -51,7 +51,7 @@ const PRICING = [
       { ok: true, text: 'Utilisateurs illimités' },
       { ok: true, text: 'API dédiée' },
       { ok: true, text: 'Onboarding sur site' },
-      { ok: true, text: 'SLA garanti 99.9%' },
+      { ok: true, text: 'SLA garanti 99.9 %' },
     ],
     btn: 'outline', btnText: 'Nous contacter',
   },
@@ -276,7 +276,7 @@ export default function LandingPage() {
       }}>
         {[
           { v: '16', l: 'Modules intégrés' },
-          { v: '100%', l: 'Offline-ready' },
+          { v: '100 %', l: 'Offline-ready' },
           { v: '4+', l: 'Devises supportées' },
           { v: '5+', l: 'Pays cibles' },
         ].map((s, i) => (
