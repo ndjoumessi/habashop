@@ -49,6 +49,68 @@ const OBJECTIFS = [
   { label:'Taux rupture',     target:2,       current:8,  unit:'%'       },
 ]
 
+const TRESORERIE = [
+  { month:'Mai 2026', encaissements:2650000, decaissements:1890000, solde:760000,  cumul:3840000  },
+  { month:'Jun 2026', encaissements:2850000, decaissements:2050000, solde:800000,  cumul:4640000  },
+  { month:'Jul 2026', encaissements:3100000, decaissements:2200000, solde:900000,  cumul:5540000  },
+  { month:'Aoû 2026', encaissements:3350000, decaissements:2380000, solde:970000,  cumul:6510000  },
+  { month:'Sep 2026', encaissements:3200000, decaissements:2250000, solde:950000,  cumul:7460000  },
+  { month:'Oct 2026', encaissements:3500000, decaissements:2450000, solde:1050000, cumul:8510000  },
+]
+
+const CATEGORY_FORECAST = [
+  { category:'Céréales',   currentCA:3800000, forecastCA:4940000, growth:30, share:28, color:'#818CF8' },
+  { category:'Corps gras', currentCA:2350000, forecastCA:2820000, growth:20, share:18, color:'#F59E0B' },
+  { category:'Épicerie',   currentCA:2100000, forecastCA:2310000, growth:10, share:15, color:'#34D399' },
+  { category:'Hygiène',    currentCA:1650000, forecastCA:1980000, growth:20, share:12, color:'#F472B6' },
+  { category:'Laitiers',   currentCA:1450000, forecastCA:1740000, growth:20, share:11, color:'#60A5FA' },
+  { category:'Conserves',  currentCA:1200000, forecastCA:1440000, growth:20, share:10, color:'#A78BFA' },
+]
+
+const CLIENT_FORECAST = [
+  { metric:'Nouveaux clients/mois',  current:12,     forecast:24,     growth:100, unit:'clients' },
+  { metric:'Panier moyen',           current:125000, forecast:150000, growth:20,  unit:'FCFA'    },
+  { metric:'Taux de rétention',      current:68,     forecast:78,     growth:15,  unit:'%'       },
+  { metric:'Clients grossistes',     current:45,     forecast:60,     growth:33,  unit:'clients' },
+  { metric:'CA client moyen/mois',   current:350000, forecast:420000, growth:20,  unit:'FCFA'    },
+  { metric:'Délai paiement moyen',   current:12,     forecast:8,      growth:-33, unit:'jours'   },
+]
+
+const RECOMMANDATIONS = [
+  {
+    type:'danger'  as const,
+    icon:'⚡',
+    title:'Commander immédiatement',
+    message:'2 articles en rupture critique (Riz 5kg, Savon OMO). Perte de CA estimée à 450 000 FCFA/semaine si non commandés.',
+    action:'Générer les bons',
+    actionColor:'var(--danger)',
+  },
+  {
+    type:'warning' as const,
+    icon:'📈',
+    title:'Opportunité de croissance',
+    message:'Les céréales représentent 28 % du CA avec +30 % de croissance prévue. Augmenter les stocks de sécurité de 40 %.',
+    action:'Voir les prévisions',
+    actionColor:'var(--acc)',
+  },
+  {
+    type:'success' as const,
+    icon:'💰',
+    title:'Trésorerie solide',
+    message:"Solde cumulé prévu à 8 510 000 FCFA en octobre. Capacité d'investissement disponible pour expansion.",
+    action:'Voir trésorerie',
+    actionColor:'var(--acc2)',
+  },
+  {
+    type:'info'    as const,
+    icon:'👥',
+    title:"Renforcer l'équipe commerciale",
+    message:'Avec +30 % de nouveaux clients prévus, recruter 1 commercial dès juillet. ROI estimé en 3 mois.',
+    action:'Voir RH',
+    actionColor:'var(--p2)',
+  },
+]
+
 type Priority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'OK'
 
 interface ForecastItem {
@@ -611,6 +673,281 @@ export default function Forecasts() {
           })}
         </div>
       )}
+
+      {/* ── Section A — Recommandations intelligentes ─────────────── */}
+      <div className="panel" style={{ marginBottom:0 }}>
+        <div className="panel-head">
+          <span className="panel-title">🧠 Recommandations intelligentes</span>
+          <span style={{
+            fontSize:10, color:'var(--p2)',
+            background:'rgba(91,78,232,.12)',
+            border:'1px solid rgba(91,78,232,.2)',
+            borderRadius:20, padding:'3px 10px',
+          }}>IA · Mis à jour il y a 2h</span>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          {RECOMMANDATIONS.map((rec, i) => {
+            const borderColor = rec.type === 'danger'  ? 'rgba(232,64,74,.25)'  :
+                                rec.type === 'warning' ? 'rgba(240,165,0,.25)'  :
+                                rec.type === 'success' ? 'rgba(14,196,126,.25)' : 'rgba(91,78,232,.25)'
+            const accentColor = rec.type === 'danger'  ? 'var(--danger)' :
+                                rec.type === 'warning' ? 'var(--acc)'    :
+                                rec.type === 'success' ? 'var(--acc2)'   : 'var(--p2)'
+            const iconBg      = rec.type === 'danger'  ? 'rgba(232,64,74,.15)'  :
+                                rec.type === 'warning' ? 'rgba(240,165,0,.15)'  :
+                                rec.type === 'success' ? 'rgba(14,196,126,.15)' : 'rgba(91,78,232,.15)'
+            return (
+              <div key={i} style={{
+                display:'flex', gap:14, padding:16,
+                background:'var(--bg3)',
+                border:`1px solid ${borderColor}`,
+                borderLeft:`3px solid ${accentColor}`,
+                borderRadius:14,
+              }}>
+                <div style={{
+                  width:40, height:40, borderRadius:10, flexShrink:0,
+                  background:iconBg,
+                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:20,
+                }}>{rec.icon}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:800, color:'var(--text)', marginBottom:5 }}>{rec.title}</div>
+                  <div style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, marginBottom:10 }}>{rec.message}</div>
+                  <button style={{
+                    background:'none', border:`1px solid ${rec.actionColor}`,
+                    borderRadius:7, padding:'4px 12px',
+                    fontSize:11, fontWeight:700, color:rec.actionColor,
+                    cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
+                  }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLButtonElement
+                      el.style.background = rec.actionColor
+                      el.style.color = '#fff'
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLButtonElement
+                      el.style.background = 'none'
+                      el.style.color = rec.actionColor
+                    }}
+                    onClick={() => toast(rec.action)}
+                  >→ {rec.action}</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Section B — Prévisions trésorerie ────────────────────── */}
+      <div className="panel" style={{ marginBottom:0 }}>
+        <div className="panel-head">
+          <span className="panel-title">💳 Prévisions de trésorerie — 6 mois</span>
+          <span style={{ fontSize:11, fontWeight:600, color:'var(--acc2)' }}>
+            Solde cumulé : {fmt(8510000)}
+          </span>
+        </div>
+        <div style={{ overflowX:'auto' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', minWidth:700 }}>
+            <thead>
+              <tr>
+                {['Mois','Encaissements','Décaissements','Solde mensuel','Solde cumulé','Santé'].map(h => (
+                  <th key={h} style={{
+                    textAlign:'left', padding:'8px 12px', fontSize:11, color:'var(--text3)',
+                    fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px',
+                    borderBottom:'1px solid var(--border)',
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {TRESORERIE.map((t, i) => {
+                const ratio      = t.decaissements / t.encaissements
+                const sante      = ratio < 0.7 ? 'Excellente' : ratio < 0.8 ? 'Bonne' : 'Correcte'
+                const santeColor = ratio < 0.7 ? 'var(--acc2)' : ratio < 0.8 ? 'var(--p2)' : 'var(--acc)'
+                const santeBg    = ratio < 0.7 ? 'rgba(14,196,126,.12)' : ratio < 0.8 ? 'rgba(91,78,232,.12)' : 'rgba(240,165,0,.12)'
+                const soldePct   = Math.round((t.solde / t.encaissements) * 100)
+                return (
+                  <tr key={i} style={{ borderBottom:'1px solid var(--border)' }}>
+                    <td style={{ padding:'12px', fontSize:13, fontWeight:700, color:'var(--text)' }}>{t.month}</td>
+                    <td style={{ padding:'12px', color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:600, fontSize:13 }}>
+                      + {fmt(t.encaissements)}
+                    </td>
+                    <td style={{ padding:'12px', color:'var(--danger)', fontFamily:'var(--mono)', fontWeight:600, fontSize:13 }}>
+                      − {fmt(t.decaissements)}
+                    </td>
+                    <td style={{ padding:'12px' }}>
+                      <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                        <span style={{ color:'var(--p2)', fontFamily:'var(--mono)', fontWeight:800, fontSize:13 }}>
+                          {fmt(t.solde)}
+                        </span>
+                        <div style={{ height:4, background:'var(--bg4)', borderRadius:99, width:80 }}>
+                          <div style={{
+                            height:'100%', width:`${soldePct}%`,
+                            background:'linear-gradient(90deg, var(--p), var(--p2))',
+                            borderRadius:99,
+                          }} />
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding:'12px', fontFamily:'var(--mono)', fontWeight:800, fontSize:13, color:'var(--text)' }}>
+                      {fmt(t.cumul)}
+                    </td>
+                    <td style={{ padding:'12px' }}>
+                      <span style={{ background:santeBg, color:santeColor, borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:700 }}>
+                        {sante}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Section C — Catégories + Clients ─────────────────────── */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+
+        {/* Panel gauche : CA par catégorie */}
+        <div className="panel" style={{ marginBottom:0 }}>
+          <div className="panel-head">
+            <span className="panel-title">📦 Prévisions CA par catégorie</span>
+            <span style={{ fontSize:11, color:'var(--text3)' }}>vs mois actuel</span>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {CATEGORY_FORECAST.map((cat, i) => (
+              <div key={i}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ width:10, height:10, borderRadius:'50%', background:cat.color, flexShrink:0 }} />
+                    <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{cat.category}</span>
+                    <span style={{ fontSize:10, color:'var(--text3)', background:'var(--bg3)', borderRadius:20, padding:'1px 7px' }}>
+                      {cat.share} % du CA
+                    </span>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontSize:12, fontWeight:800, color:cat.color, fontFamily:'var(--mono)' }}>{fmt(cat.forecastCA)}</div>
+                    <div style={{ fontSize:10, color:'var(--acc2)', fontWeight:600 }}>▲ +{cat.growth} %</div>
+                  </div>
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    <span style={{ fontSize:9, color:'var(--text3)', width:50 }}>Actuel</span>
+                    <div style={{ flex:1, height:6, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
+                      <div style={{
+                        height:'100%',
+                        width:`${Math.round((cat.currentCA / 4000000) * 100)}%`,
+                        background:'var(--bg4)',
+                        borderRadius:99,
+                        border:`2px solid ${cat.color}`,
+                      }} />
+                    </div>
+                    <span style={{ fontSize:9, color:'var(--text3)', fontFamily:'var(--mono)', width:60, textAlign:'right' }}>
+                      {fmt(cat.currentCA)}
+                    </span>
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    <span style={{ fontSize:9, color:'var(--text3)', width:50 }}>Prévu</span>
+                    <div style={{ flex:1, height:6, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
+                      <div style={{
+                        height:'100%',
+                        width:`${Math.round((cat.forecastCA / 5000000) * 100)}%`,
+                        background:cat.color,
+                        borderRadius:99, opacity:.85,
+                      }} />
+                    </div>
+                    <span style={{ fontSize:9, color:cat.color, fontFamily:'var(--mono)', fontWeight:700, width:60, textAlign:'right' }}>
+                      {fmt(cat.forecastCA)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Panel droit : Prévisions clients */}
+        <div className="panel" style={{ marginBottom:0 }}>
+          <div className="panel-head">
+            <span className="panel-title">👥 Prévisions clients & CRM</span>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {CLIENT_FORECAST.map((c, i) => {
+              const isBetter = c.metric.includes('Délai') ? c.forecast < c.current : c.forecast > c.current
+              const displayCurrent  = c.unit === 'FCFA' ? fmt(c.current)  : `${c.current} ${c.unit}`
+              const displayForecast = c.unit === 'FCFA' ? fmt(c.forecast) : `${c.forecast} ${c.unit}`
+              return (
+                <div key={i} style={{
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'12px 14px',
+                  background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10,
+                }}>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:600, color:'var(--text)', marginBottom:3 }}>{c.metric}</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11 }}>
+                      <span style={{ color:'var(--text3)', fontFamily:'var(--mono)' }}>{displayCurrent}</span>
+                      <span style={{ color:'var(--text3)' }}>→</span>
+                      <span style={{ color: isBetter ? 'var(--acc2)' : 'var(--danger)', fontFamily:'var(--mono)', fontWeight:700 }}>
+                        {displayForecast}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{
+                    display:'flex', alignItems:'center', gap:4,
+                    background: isBetter ? 'rgba(14,196,126,.12)' : 'rgba(232,64,74,.12)',
+                    border:`1px solid ${isBetter ? 'rgba(14,196,126,.25)' : 'rgba(232,64,74,.25)'}`,
+                    borderRadius:20, padding:'5px 12px',
+                  }}>
+                    <span style={{ fontSize:12, fontWeight:800, color: isBetter ? 'var(--acc2)' : 'var(--danger)' }}>
+                      {c.growth > 0 ? '▲' : '▼'} {Math.abs(c.growth)} %
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section D — Synthèse annuelle ────────────────────────── */}
+      <div className="panel" style={{
+        marginBottom:0,
+        background:'linear-gradient(135deg, rgba(91,78,232,.12), rgba(124,111,240,.06))',
+        border:'1px solid rgba(91,78,232,.25)',
+      }}>
+        <div className="panel-head">
+          <span className="panel-title" style={{ fontSize:15 }}>🏆 Synthèse prévisionnelle — Année 2026</span>
+          <button className="mini-btn" onClick={() => toast('📥 Export rapport prévisionnel...')}>
+            📥 Exporter le rapport
+          </button>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:14 }}>
+          {[
+            { label:'CA total 2026',        value:fmt(33750000), sub:'+18 % vs 2025', color:'var(--p2)',   icon:'💰' },
+            { label:'Marge brute moyenne',  value:'36 %',        sub:'+4 pts vs 2025',color:'var(--acc2)', icon:'📊' },
+            { label:'Coût achats stock',    value:fmt(21600000), sub:'64 % du CA',    color:'var(--acc)',  icon:'📦' },
+            { label:'Masse salariale',      value:fmt(3120000),  sub:'+2 ETP prévus', color:'#A78BFA',     icon:'👥' },
+            { label:'Résultat net prévu',   value:fmt(4230000),  sub:'+22 % vs 2025', color:'var(--acc2)', icon:'🏆' },
+          ].map((s, i) => (
+            <div key={i} style={{
+              textAlign:'center', padding:'18px 12px',
+              background:'rgba(255,255,255,.03)',
+              borderRadius:14, border:'1px solid rgba(255,255,255,.08)',
+            }}>
+              <div style={{ fontSize:24, marginBottom:8 }}>{s.icon}</div>
+              <div style={{
+                fontSize:9.5, fontWeight:700, textTransform:'uppercase',
+                letterSpacing:'.8px', color:'var(--text3)', marginBottom:8,
+              }}>{s.label}</div>
+              <div style={{
+                fontSize:18, fontWeight:900, color:s.color,
+                fontFamily:'var(--mono)', letterSpacing:'-1px', marginBottom:4,
+              }}>{s.value}</div>
+              <div style={{ fontSize:10.5, color:'var(--acc2)', fontWeight:600 }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   )
 }
