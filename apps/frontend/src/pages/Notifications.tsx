@@ -1,274 +1,257 @@
 import { useState } from 'react'
-import { useAppStore } from '@/stores/appStore'
+import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type NotifType = 'danger' | 'warning' | 'success' | 'info'
+type TabType   = 'all' | 'unread' | 'danger'
 
 interface Notification {
   id: number; type: NotifType; module: string; title: string
-  message: string; read: boolean; createdAt: string; action: string | null
+  message: string; read: boolean; time: string; action: string | null
 }
 
-const NOTIFICATIONS_INIT: Notification[] = [
-  { id:1,  type:'danger',  module:'STOCK',     title:'Rupture de stock critique',        message:'Riz parfumé 5kg — Stock: 12 (seuil: 20). Commander immédiatement.',            read:false, createdAt:'il y a 5 min',  action:'Voir le stock'  },
-  { id:2,  type:'danger',  module:'STOCK',     title:'Rupture de stock critique',        message:"Savon OMO 500g — Stock: 5 (seuil: 10). Risque de rupture aujourd'hui.",       read:false, createdAt:'il y a 12 min', action:'Voir le stock'  },
-  { id:3,  type:'warning', module:'AUTH',      title:'Tentative de connexion suspecte',  message:'3 tentatives échouées depuis IP 41.82.100.24. Compte temporairement bloqué.',  read:false, createdAt:'il y a 1h',     action:'Voir activité'  },
-  { id:4,  type:'success', module:'POS',       title:'Objectif journalier atteint',      message:'CA du jour: 842 000 FCFA — Objectif 800 000 FCFA dépassé de 5,25 % !',         read:false, createdAt:'il y a 2h',     action:'Voir rapports'  },
-  { id:5,  type:'info',    module:'PAIE',      title:'Bulletins de paie générés',        message:'6 bulletins Mai 2026 générés. Total net: 2 060 000 FCFA. En attente.',          read:true,  createdAt:'il y a 3h',     action:'Voir paie'      },
-  { id:6,  type:'info',    module:'RH',        title:'Congé approuvé',                   message:'Congé de Fatoumata Ndiaye approuvé du 12/05 au 23/05. Planning mis à jour.',    read:true,  createdAt:'il y a 4h',     action:'Voir planning'  },
-  { id:7,  type:'warning', module:'STOCK',     title:'Stock faible',                     message:'Huile palme 1L — Stock: 18 (seuil: 25). À commander cette semaine.',            read:true,  createdAt:'hier 18:30',    action:'Commander'      },
-  { id:8,  type:'info',    module:'COMMANDES', title:'Commande reçue',                   message:'CMD-2026-088 SENRIZ — Réception confirmée. 200 sacs riz + 500 farines.',        read:true,  createdAt:'hier 14:15',    action:'Voir commandes' },
-  { id:9,  type:'success', module:'CLIENTS',   title:'Nouveau client enregistré',        message:'Mamadou Diallo (Grossiste) ajouté. Premier achat: 450 000 FCFA.',               read:true,  createdAt:'hier 11:00',    action:'Voir clients'   },
-  { id:10, type:'info',    module:'SYSTEME',   title:'Sauvegarde automatique effectuée', message:'Backup quotidien réalisé avec succès. 847 MB archivés.',                        read:true,  createdAt:'hier 03:00',    action:null             },
+const NOTIFS_INIT: Notification[] = [
+  { id:1,  type:'danger',  module:'STOCK',    title:'Rupture stock critique',         message:'Riz parfumé 5kg — Stock: 12 / Seuil: 20. Commander immédiatement pour éviter une rupture.',         read:false, time:'il y a 5 min',  action:'Voir le stock'  },
+  { id:2,  type:'danger',  module:'STOCK',    title:'Rupture stock critique',         message:'Savon OMO 500g — Stock: 5 / Seuil: 10. Risque de rupture totale avant ce soir.',                    read:false, time:'il y a 12 min', action:'Commander'      },
+  { id:3,  type:'danger',  module:'AUTH',     title:'Tentative connexion suspecte',   message:'3 tentatives échouées depuis IP 41.82.100.24. Le compte a été temporairement bloqué.',              read:false, time:'il y a 1h',     action:'Voir activité'  },
+  { id:4,  type:'success', module:'POS',      title:'Objectif journalier dépassé',    message:'CA du jour: 842 000 FCFA — Objectif 800 000 FCFA dépassé de 5,25 % ! Félicitations.',               read:false, time:'il y a 2h',     action:'Voir rapports'  },
+  { id:5,  type:'info',    module:'PAIE',     title:'Bulletins de paie générés',      message:'6 bulletins Mai 2026 prêts. Total net: 2 060 000 FCFA. En attente de validation et paiement.',      read:true,  time:'il y a 3h',     action:'Voir la paie'   },
+  { id:6,  type:'info',    module:'RH',       title:'Congé approuvé',                 message:'Congé annuel de Fatoumata Ndiaye approuvé du 12/05 au 23/05. Planning automatiquement mis à jour.', read:true,  time:'il y a 4h',     action:'Voir planning'  },
+  { id:7,  type:'warning', module:'STOCK',    title:'Stock faible',                   message:'Huile palme 1L — Stock: 18 / Seuil: 25. Penser à commander avant la fin de semaine.',               read:true,  time:'hier 18:30',    action:'Commander'      },
+  { id:8,  type:'info',    module:'COMMANDES',title:'Commande reçue',                 message:'CMD-2026-088 SENRIZ confirmée. 200 sacs riz + 500 farines reçus et enregistrés en stock.',          read:true,  time:'hier 14:15',    action:'Voir commandes' },
+  { id:9,  type:'success', module:'CLIENTS',  title:'Nouveau client enregistré',      message:'Mamadou Diallo (Grossiste) ajouté au CRM. Premier achat: 450 000 FCFA. Programme fidélité activé.',read:true,  time:'hier 11:00',    action:'Voir clients'   },
+  { id:10, type:'info',    module:'SYSTÈME',  title:'Sauvegarde automatique réussie', message:'Backup quotidien effectué avec succès. 847 MB archivés. Prochain backup: demain 03:00.',           read:true,  time:'hier 03:00',    action:null             },
 ]
 
-const ICONS: Record<NotifType, JSX.Element> = {
-  danger: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-    </svg>
-  ),
-  warning: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-  ),
-  success: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-    </svg>
-  ),
-  info: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-    </svg>
-  ),
+const TYPE_CONFIG: Record<NotifType, { color: string; bg: string; border: string }> = {
+  danger:  { color:'var(--danger)', bg:'rgba(232,64,74,.1)',  border:'rgba(232,64,74,.25)'  },
+  warning: { color:'var(--acc)',    bg:'rgba(240,165,0,.1)',  border:'rgba(240,165,0,.25)'  },
+  success: { color:'var(--acc2)',   bg:'rgba(14,196,126,.1)', border:'rgba(14,196,126,.25)' },
+  info:    { color:'var(--p2)',     bg:'rgba(91,78,232,.1)',  border:'rgba(91,78,232,.25)'  },
 }
 
-const TYPE_CFG: Record<NotifType, { bg: string; border: string; color: string }> = {
-  danger:  { bg:'rgba(232,64,74,.12)',  border:'rgba(232,64,74,.25)',  color:'var(--danger)' },
-  warning: { bg:'rgba(240,165,0,.12)',  border:'rgba(240,165,0,.25)',  color:'var(--acc)'    },
-  success: { bg:'rgba(14,196,126,.12)', border:'rgba(14,196,126,.25)', color:'var(--acc2)'   },
-  info:    { bg:'rgba(91,78,232,.12)',  border:'rgba(91,78,232,.25)',  color:'var(--p2)'     },
+const NOTIF_ICON: Record<NotifType, string> = {
+  danger:'🚨', warning:'⚠️', success:'✅', info:'ℹ️',
 }
 
-interface PrefState {
-  emailStock: boolean; emailSales: boolean; emailLogin: boolean; emailPayroll: boolean; emailOrders: boolean
-  smsStock:   boolean; smsSales:   boolean; smsLogin:   boolean; smsPayroll:   boolean; smsOrders:   boolean
-  pushStock:  boolean; pushSales:  boolean; pushLogin:  boolean; pushPayroll:  boolean; pushOrders:  boolean
-}
-
-function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-  return (
-    <div onClick={onToggle} style={{
-      width:40, height:22, borderRadius:11, cursor:'pointer',
-      background: on ? 'var(--p2)' : 'var(--bg4)',
-      position:'relative', transition:'background .2s', flexShrink:0,
-    }}>
-      <div style={{
-        position:'absolute', top:2, left: on ? 20 : 2, width:18, height:18,
-        borderRadius:'50%', background:'#fff', transition:'left .2s',
-        boxShadow:'0 1px 4px rgba(0,0,0,.3)',
-      }} />
-    </div>
-  )
-}
-
-type TabFilter = 'all' | 'unread' | 'critical'
+const PREF_ROWS = [
+  { key:'stock',     label:'Alertes de stock',         desc:'Ruptures et stocks faibles'    },
+  { key:'ventes',    label:'Récap ventes',             desc:'Résumé journalier des ventes'  },
+  { key:'auth',      label:'Sécurité & connexions',    desc:'Tentatives suspectes'          },
+  { key:'paie',      label:'Bulletins de paie',        desc:'Génération et validation'      },
+  { key:'commandes', label:'Commandes fournisseurs',   desc:'Réceptions et retards'         },
+]
 
 export default function Notifications() {
   const { lang } = useAppStore()
   void lang
+  const fmt = useFormatAmount()
+  void fmt
 
-  const [notifs, setNotifs] = useState<Notification[]>(NOTIFICATIONS_INIT)
-  const [tab, setTab]       = useState<TabFilter>('all')
-  const [prefs, setPrefs]   = useState<PrefState>({
-    emailStock:true,  emailSales:true,  emailLogin:true,  emailPayroll:false, emailOrders:true,
-    smsStock:true,    smsSales:false,   smsLogin:false,   smsPayroll:false,   smsOrders:false,
-    pushStock:true,   pushSales:true,   pushLogin:true,   pushPayroll:true,   pushOrders:true,
+  const [notifs,     setNotifs]     = useState<Notification[]>(NOTIFS_INIT)
+  const [activeTab,  setActiveTab]  = useState<TabType>('all')
+  const [prefs,      setPrefs]      = useState({
+    email_stock:true,  email_ventes:true,  email_auth:true,  email_paie:false, email_commandes:true,
+    sms_stock:true,    sms_ventes:false,   sms_auth:true,    sms_paie:false,   sms_commandes:false,
+    push_stock:true,   push_ventes:true,   push_auth:true,   push_paie:true,   push_commandes:true,
   })
 
-  const unreadCount   = notifs.filter(n => !n.read).length
-  const criticalCount = notifs.filter(n => n.type === 'danger').length
-  const todayCount    = notifs.filter(n => n.createdAt.startsWith('il y a')).length
+  const unreadCount = notifs.filter(n => !n.read).length
+  const dangerCount = notifs.filter(n => n.type === 'danger').length
 
-  const displayed = notifs.filter(n => {
-    if (tab === 'unread')   return !n.read
-    if (tab === 'critical') return n.type === 'danger'
-    return true
-  })
+  const filtered = notifs.filter(n =>
+    activeTab === 'unread' ? !n.read :
+    activeTab === 'danger' ? n.type === 'danger' : true
+  )
 
-  function markRead(id: number) {
-    setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
-  }
-
-  function markAllRead() {
-    setNotifs(prev => prev.map(n => ({ ...n, read: true })))
-    toast.success('Toutes les notifications marquées comme lues')
-  }
-
-  function deleteRead() {
-    setNotifs(prev => prev.filter(n => !n.read))
-    toast.success('Notifications lues supprimées')
-  }
-
-  function togglePref(key: keyof PrefState) {
-    setPrefs(p => ({ ...p, [key]: !p[key] }))
-  }
-
-  const prefRows: { label: string; keys: (keyof PrefState)[] }[] = [
-    { label:'Alertes de stock',                keys:['emailStock','smsStock','pushStock']         },
-    { label:'Récapitulatif ventes (quotidien)', keys:['emailSales','smsSales','pushSales']         },
-    { label:'Tentatives de connexion suspectes',keys:['emailLogin','smsLogin','pushLogin']         },
-    { label:'Bulletins de paie',               keys:['emailPayroll','smsPayroll','pushPayroll']   },
-    { label:'Commandes reçues',                keys:['emailOrders','smsOrders','pushOrders']      },
-  ]
+  const markRead    = (id: number) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, read:true } : n))
+  const markAllRead = () => { setNotifs(prev => prev.map(n => ({ ...n, read:true }))); toast.success('Toutes les notifications marquées comme lues') }
+  const deleteRead  = () => { setNotifs(prev => prev.filter(n => !n.read)); toast.success('Notifications lues supprimées') }
+  const deleteNotif = (id: number) => setNotifs(prev => prev.filter(n => n.id !== id))
 
   return (
     <div className="space-y-5 animate-in">
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="kpi-grid">
         {[
-          { label:'Total notifications', value:`${notifs.length}`, color:'var(--p2)'    },
-          { label:'Non lues',            value:`${unreadCount}`,   color:'var(--danger)'},
-          { label:'Critiques',           value:`${criticalCount}`, color:'var(--acc)'   },
-          { label:"Aujourd'hui",         value:`${todayCount}`,    color:'var(--acc2)'  },
+          { label:'Total',      value:notifs.length, color:'var(--text)'   },
+          { label:'Non lues',   value:unreadCount,   color:'var(--danger)' },
+          { label:'Critiques',  value:dangerCount,   color:'var(--danger)' },
+          { label:'Ce jour',    value:4,             color:'var(--acc2)'   },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-label">{k.label}</div>
-            <div className="kpi-value" style={{ color:k.color, fontSize:26 }}>{k.value}</div>
+            <div className="kpi-value" style={{ color:k.color, fontSize:28 }}>{k.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Tabs + actions */}
-      <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-        <div style={{ display:'flex', gap:4 }}>
+      {/* Onglets + actions */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ display:'flex', gap:4, background:'var(--bg3)', borderRadius:10, padding:4 }}>
           {([
-            { id:'all',      label:`Toutes (${notifs.length})`    },
-            { id:'unread',   label:`Non lues (${unreadCount})`    },
-            { id:'critical', label:`Critiques (${criticalCount})` },
-          ] as { id:TabFilter; label:string }[]).map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding:'8px 14px', borderRadius:10, fontSize:13, fontWeight:700,
-              fontFamily:'inherit', cursor:'pointer', transition:'all .15s',
-              background: tab === t.id ? 'var(--p)' : 'var(--card)',
-              color:      tab === t.id ? '#fff'     : 'var(--text2)',
-              border:     tab === t.id ? 'none'     : '1px solid var(--border)',
-            }}>{t.label}</button>
+            { id:'all',    label:`Toutes (${notifs.length})`    },
+            { id:'unread', label:`Non lues (${unreadCount})`    },
+            { id:'danger', label:`Critiques (${dangerCount})`   },
+          ] as { id:TabType; label:string }[]).map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+              padding:'7px 16px', borderRadius:8, fontSize:13, fontWeight:600,
+              cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
+              background: activeTab === tab.id
+                ? 'linear-gradient(135deg, var(--p), var(--p2))' : 'transparent',
+              color:     activeTab === tab.id ? '#fff' : 'var(--text2)',
+              border:'none',
+              boxShadow: activeTab === tab.id ? '0 4px 14px rgba(91,78,232,.3)' : 'none',
+            }}>{tab.label}</button>
           ))}
         </div>
-        <div style={{ flex:1 }} />
-        <button className="btn btn-ghost btn-sm" onClick={markAllRead}>✅ Tout marquer comme lu</button>
-        <button className="btn btn-ghost btn-sm" onClick={deleteRead}>🗑 Supprimer les lues</button>
+        <div style={{ display:'flex', gap:8 }}>
+          <button className="mini-btn" onClick={markAllRead}>✅ Tout marquer lu</button>
+          <button className="mini-btn" style={{ color:'var(--danger)' }} onClick={deleteRead}>
+            🗑 Supprimer les lues
+          </button>
+        </div>
       </div>
 
       {/* Liste notifications */}
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-        {displayed.length === 0 && (
-          <div className="panel" style={{ textAlign:'center', color:'var(--text3)', padding:'40px 0', marginBottom:0 }}>
-            Aucune notification dans cette catégorie
-          </div>
-        )}
-        {displayed.map(n => {
-          const cfg = TYPE_CFG[n.type]
+        {filtered.map(notif => {
+          const cfg = TYPE_CONFIG[notif.type]
           return (
-            <div key={n.id} style={{
-              position:'relative',
-              background:  !n.read ? cfg.bg   : 'var(--card)',
-              border:      `1px solid ${!n.read ? cfg.border : 'var(--border)'}`,
-              borderLeft:  !n.read ? `3px solid ${cfg.color}` : '1px solid var(--border)',
-              borderRadius:14, padding:'16px 18px',
-              opacity:  n.read ? 0.75 : 1,
-              transition:'all .2s',
+            <div key={notif.id} style={{
+              display:'flex', gap:16, padding:'18px 20px',
+              background:  notif.read ? 'var(--card)' : cfg.bg,
+              border:     `1px solid ${notif.read ? 'var(--border)' : cfg.border}`,
+              borderLeft: `4px solid ${notif.read ? 'var(--border)' : cfg.color}`,
+              borderRadius:14,
+              opacity: notif.read ? .8 : 1,
+              transition:'all .2s', position:'relative',
             }}>
-              {!n.read && (
+              {/* Indicateur non lu */}
+              {!notif.read && (
                 <div style={{
-                  position:'absolute', top:12, right:12,
+                  position:'absolute', top:14, right:14,
                   width:8, height:8, borderRadius:'50%',
-                  background:'var(--acc)', boxShadow:'0 0 6px var(--acc)',
+                  background:'var(--danger)',
+                  boxShadow:'0 0 8px var(--danger)',
                 }} />
               )}
-              <div style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
-                <div style={{
-                  width:40, height:40, borderRadius:12, flexShrink:0,
-                  background:cfg.bg, border:`1px solid ${cfg.border}`,
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  color:cfg.color,
-                }}>{ICONS[n.type]}</div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
-                    <span style={{ fontWeight:800, fontSize:14, color:'var(--text)' }}>{n.title}</span>
-                    <span style={{ fontSize:11, color:'var(--text3)' }}>{n.createdAt}</span>
-                  </div>
-                  <div style={{ marginBottom:6 }}>
+
+              {/* Icône type */}
+              <div style={{
+                width:44, height:44, borderRadius:12, flexShrink:0,
+                background:cfg.bg, border:`1px solid ${cfg.border}`,
+                display:'flex', alignItems:'center', justifyContent:'center', fontSize:20,
+              }}>{NOTIF_ICON[notif.type]}</div>
+
+              {/* Contenu */}
+              <div style={{ flex:1 }}>
+                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
+                  <div>
+                    <span style={{ fontSize:14, fontWeight:800, color:'var(--text)' }}>{notif.title}</span>
                     <span style={{
-                      display:'inline-block', padding:'1px 8px', borderRadius:20,
-                      fontSize:10, fontWeight:700, background:cfg.bg, color:cfg.color,
-                    }}>{n.module}</span>
+                      marginLeft:10, fontSize:10, fontWeight:700,
+                      background:'var(--bg3)', color:'var(--text3)',
+                      borderRadius:20, padding:'2px 8px',
+                    }}>{notif.module}</span>
                   </div>
-                  <p style={{ fontSize:13, color:'var(--text2)', marginBottom:10, lineHeight:1.5 }}>
-                    {n.message}
-                  </p>
-                  <div style={{ display:'flex', gap:8 }}>
-                    {n.action && (
-                      <button className="mini-btn" onClick={() => toast(`→ ${n.action}`)}>
-                        → {n.action}
-                      </button>
-                    )}
-                    {!n.read && (
-                      <button className="mini-btn" onClick={() => markRead(n.id)}>
-                        ✓ Marquer lu
-                      </button>
-                    )}
-                  </div>
+                  <span style={{ fontSize:11, color:'var(--text3)', whiteSpace:'nowrap', marginLeft:12 }}>
+                    {notif.time}
+                  </span>
+                </div>
+                <p style={{ fontSize:13, color:'var(--text2)', lineHeight:1.65, marginBottom:12 }}>
+                  {notif.message}
+                </p>
+                <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                  {notif.action && (
+                    <button style={{
+                      background:cfg.bg, border:`1px solid ${cfg.border}`,
+                      borderRadius:8, padding:'5px 14px',
+                      fontSize:12, fontWeight:700, color:cfg.color,
+                      cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
+                    }} onClick={() => toast(`→ ${notif.action}`)}>
+                      → {notif.action}
+                    </button>
+                  )}
+                  {!notif.read && (
+                    <button className="mini-btn" onClick={() => markRead(notif.id)}>
+                      ✓ Marquer comme lu
+                    </button>
+                  )}
+                  <button className="mini-btn"
+                    style={{ color:'var(--danger)', marginLeft:'auto' }}
+                    onClick={() => deleteNotif(notif.id)}>
+                    🗑
+                  </button>
                 </div>
               </div>
             </div>
           )
         })}
+
+        {filtered.length === 0 && (
+          <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text3)' }}>
+            <Bell size={40} style={{ margin:'0 auto 12px', display:'block', opacity:.3 }} />
+            <div style={{ fontSize:14, fontWeight:600 }}>Aucune notification</div>
+          </div>
+        )}
       </div>
 
-      {/* Préférences */}
+      {/* Section préférences */}
       <div className="panel" style={{ marginBottom:0 }}>
-        <div className="panel-head">
-          <span className="panel-title">⚙️ Préférences de notifications</span>
+        <div className="panel-h">
+          <span className="panel-t">⚙️ Préférences de notifications</span>
         </div>
         <div style={{ overflowX:'auto' }}>
-          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+          <table style={{ minWidth:600 }}>
             <thead>
               <tr>
-                <th style={{
-                  textAlign:'left', padding:'8px 12px', fontSize:11, color:'var(--text3)',
-                  fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px',
-                  borderBottom:'1px solid var(--border)', minWidth:220,
-                }}>Notification</th>
-                {['Email', 'SMS', 'Push'].map(ch => (
-                  <th key={ch} style={{
-                    textAlign:'center', padding:'8px 24px', fontSize:11, color:'var(--text3)',
-                    fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px',
-                    borderBottom:'1px solid var(--border)',
-                  }}>{ch}</th>
-                ))}
+                <th style={{ width:220 }}>Type de notification</th>
+                <th style={{ textAlign:'center' }}>📧 Email</th>
+                <th style={{ textAlign:'center' }}>💬 SMS</th>
+                <th style={{ textAlign:'center' }}>🔔 Push</th>
               </tr>
             </thead>
             <tbody>
-              {prefRows.map(row => (
-                <tr key={row.label} style={{ borderBottom:'1px solid var(--border)' }}>
-                  <td style={{ padding:'12px', fontSize:13, color:'var(--text)' }}>{row.label}</td>
-                  {row.keys.map(key => (
-                    <td key={key} style={{ textAlign:'center', padding:'12px' }}>
-                      <div style={{ display:'flex', justifyContent:'center' }}>
-                        <Toggle on={prefs[key]} onToggle={() => togglePref(key)} />
-                      </div>
-                    </td>
-                  ))}
+              {PREF_ROWS.map(row => (
+                <tr key={row.key} style={{ borderBottom:'1px solid var(--border)' }}>
+                  <td style={{ padding:'14px 9px' }}>
+                    <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{row.label}</div>
+                    <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>{row.desc}</div>
+                  </td>
+                  {(['email','sms','push'] as const).map(canal => {
+                    const key = `${canal}_${row.key}` as keyof typeof prefs
+                    const isOn = prefs[key]
+                    return (
+                      <td key={canal} style={{ textAlign:'center', padding:'14px 9px' }}>
+                        <button onClick={() => setPrefs(p => ({ ...p, [key]: !p[key] }))} style={{
+                          width:48, height:26, borderRadius:99,
+                          background: isOn ? 'var(--p2)' : 'var(--bg4)',
+                          border:'none', cursor:'pointer',
+                          position:'relative', transition:'background .2s',
+                        }}>
+                          <div style={{
+                            position:'absolute', top:3,
+                            left: isOn ? 25 : 3,
+                            width:20, height:20, borderRadius:'50%',
+                            background:'#fff', transition:'left .2s',
+                            boxShadow:'0 2px 4px rgba(0,0,0,.2)',
+                          }} />
+                        </button>
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+        <div style={{ display:'flex', justifyContent:'flex-end', marginTop:16 }}>
+          <button className="topbar-btn" onClick={() => toast.success('✅ Préférences sauvegardées !')}>
+            💾 Sauvegarder les préférences
+          </button>
         </div>
       </div>
     </div>
