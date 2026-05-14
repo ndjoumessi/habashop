@@ -24,8 +24,5 @@ export function HR()            { return <ComingSoon title="Équipe RH"         
 export function Planning()      { return <ComingSoon title="Planning"            description="Calendrier hebdomadaire et créneaux de travail."                     sprint="Sprint 3" /> }
 export function Payroll()       { return <ComingSoon title="Paie"                description="Bulletins de salaire et calcul automatique."                        sprint="Sprint 3" /> }
 export function Expenses()      { return <ComingSoon title="Dépenses"            description="Journal des dépenses, catégories et budget vs réel."                sprint="Sprint 3" /> }
-export function Forecasts()     { return <ComingSoon title="Prévisions"          description="Articles à commander et bons automatiques."                         sprint="Sprint 4" /> }
 export function Users()         { return <ComingSoon title="Utilisateurs"        description="Gestion RBAC, invitations et 2FA."                                  sprint="Sprint 1" /> }
-export function Activity()      { return <ComingSoon title="Journal d'activité"  description="Audit trail complet avec filtres avancés."                          sprint="Sprint 4" /> }
-export function Notifications() { return <ComingSoon title="Notifications"       description="Canaux Email, SMS, Push et préférences personnalisées."              sprint="Sprint 4" /> }
 export function Settings()      { return <ComingSoon title="Paramètres"          description="Configuration boutique, langue, devise et thème."                   sprint="Sprint 1" /> }
