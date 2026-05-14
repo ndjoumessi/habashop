@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, formatCurrency, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -127,8 +127,9 @@ function getAtt(emp: Employee, date: string): AttStatus {
 }
 
 export default function HR() {
-  const { currency, lang } = useConfig()
+  const { lang } = useConfig()
   void lang
+  const fmt = useFormatAmount()
   const [employees, setEmployees] = useState<Employee[]>(EMPLOYEES_INIT)
   const [tab, setTab] = useState<'equipe' | 'presences'>('equipe')
   const [search, setSearch] = useState('')
@@ -187,7 +188,7 @@ export default function HR() {
           { label: 'Total employés',       value: employees.length.toString(),                    color: 'var(--p2)',   icon: '👥' },
           { label: 'Présents aujourd\'hui', value: `${presentToday} / ${employees.length}`,        color: 'var(--acc2)', icon: '✅' },
           { label: 'En congé',             value: onLeave.toString(),                             color: 'var(--p3)',   icon: '🏖️' },
-          { label: 'Masse salariale',       value: formatCurrency(totalSalary, currency),           color: 'var(--acc)',  icon: '💰' },
+          { label: 'Masse salariale',       value: fmt(totalSalary),                               color: 'var(--acc)',  icon: '💰' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -274,7 +275,7 @@ export default function HR() {
                         {years > 0 ? `${years} an${years > 1 ? 's' : ''}` : '< 1 an'}
                       </td>
                       <td className="td-num text-sm" style={{ color: 'var(--acc2)' }}>
-                        {formatCurrency(e.salary, currency)}
+                        {fmt(e.salary)}
                       </td>
                       <td><span className={`badge ${STATUS_CFG[e.status].cls}`}>{e.status}</span></td>
                       <td>
@@ -413,7 +414,7 @@ export default function HR() {
               {[
                 { label: 'Téléphone', value: viewEmp.phone },
                 { label: 'Email',     value: viewEmp.email },
-                { label: 'Salaire',   value: formatCurrency(viewEmp.salary, currency) },
+                { label: 'Salaire',   value: fmt(viewEmp.salary) },
                 { label: 'Congés restants', value: `${viewEmp.leaveBalance} jours` },
               ].map(f => (
                 <div key={f.label} className="p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
