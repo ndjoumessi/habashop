@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAppStore, formatCurrency } from '@/stores/appStore'
+import { useConfig, formatCurrency, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -15,9 +15,9 @@ interface Order {
 const STATUS_CONFIG: Record<OrderStatus, { cls: string; icon: React.ReactNode; color: string }> = {
   'BROUILLON':  { cls: 'badge-gray',   icon: <FileText size={11}/>,    color: 'var(--text3)'  },
   'ENVOYÉE':    { cls: 'badge-blue',   icon: <Clock size={11}/>,        color: '#60A5FA'       },
-  'CONFIRMÉE':  { cls: 'badge-violet', icon: <CheckCircle size={11}/>,  color: 'var(--violet)' },
-  'EN TRANSIT': { cls: 'badge-amber',  icon: <Truck size={11}/>,        color: 'var(--amber)'  },
-  'REÇUE':      { cls: 'badge-green',  icon: <CheckCircle size={11}/>,  color: 'var(--green)'  },
+  'CONFIRMÉE':  { cls: 'badge-violet', icon: <CheckCircle size={11}/>,  color: 'var(--p3)'    },
+  'EN TRANSIT': { cls: 'badge-amber',  icon: <Truck size={11}/>,        color: 'var(--acc)'   },
+  'REÇUE':      { cls: 'badge-green',  icon: <CheckCircle size={11}/>,  color: 'var(--acc2)'  },
   'ANNULÉE':    { cls: 'badge-red',    icon: <XCircle size={11}/>,      color: 'var(--danger)' },
 }
 
@@ -80,7 +80,8 @@ const ORDERS_INIT: Order[] = [
 const STATUSES: OrderStatus[] = ['BROUILLON','ENVOYÉE','CONFIRMÉE','EN TRANSIT','REÇUE','ANNULÉE']
 
 export default function Orders() {
-  const { currency } = useAppStore()
+  const { currency, lang } = useConfig()
+  void lang
   const [orders, setOrders] = useState<Order[]>(ORDERS_INIT)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
@@ -146,10 +147,10 @@ export default function Orders() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Montant engagé',   value: formatCurrency(totalEngaged, currency), color: 'var(--primary2)', icon: '💰' },
-          { label: 'En transit',        value: String(pending),                         color: 'var(--amber)',    icon: '🚚' },
-          { label: 'Reçues ce mois',    value: String(receivedMonth),                   color: 'var(--green)',    icon: '✅' },
-          { label: 'Brouillons',         value: String(drafts),                          color: 'var(--text3)',    icon: '📝' },
+          { label: 'Montant engagé',   value: formatCurrency(totalEngaged, currency), color: 'var(--p2)',    icon: '💰' },
+          { label: 'En transit',        value: String(pending),                         color: 'var(--acc)',   icon: '🚚' },
+          { label: 'Reçues ce mois',    value: String(receivedMonth),                   color: 'var(--acc2)', icon: '✅' },
+          { label: 'Brouillons',         value: String(drafts),                          color: 'var(--text3)',icon: '📝' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -165,10 +166,10 @@ export default function Orders() {
           <span className="panel-title">📦 Commandes Fournisseurs</span>
           <div className="flex items-center gap-2">
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV…')}>
-              <Download size={13} /> CSV
+              <Download size={13} /> {t('btn_export')}
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreateModal(true)}>
-              <Plus size={13} /> Nouvelle commande
+              <Plus size={13} /> {t('btn_new')} commande
             </button>
           </div>
         </div>
@@ -195,7 +196,7 @@ export default function Orders() {
           <button
             className="px-3 py-1 rounded-xl text-xs font-semibold transition-all"
             style={{
-              background: !statusFilter ? 'var(--primary)' : 'var(--bg3)',
+              background: !statusFilter ? 'var(--p)' : 'var(--bg3)',
               color: !statusFilter ? '#fff' : 'var(--text2)',
               border: 'none', cursor: 'pointer', fontFamily: 'inherit'
             }}
@@ -256,7 +257,7 @@ export default function Orders() {
                     <td>
                       <span className="badge badge-gray">{o.items.length} article{o.items.length > 1 ? 's' : ''}</span>
                     </td>
-                    <td className="td-num" style={{ color: 'var(--teal)' }}>{formatCurrency(o.total, currency)}</td>
+                    <td className="td-num" style={{ color: 'var(--acc2)' }}>{formatCurrency(o.total, currency)}</td>
                     <td>
                       <span className={`badge ${cfg.cls} flex items-center gap-1 w-fit`}>
                         {cfg.icon} {o.status}
@@ -268,25 +269,25 @@ export default function Orders() {
                           <Eye size={12} />
                         </button>
                         {o.status === 'BROUILLON' && (
-                          <button className="btn btn-sm" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--primary2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
+                          <button className="btn btn-sm" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                             onClick={() => changeStatus(o.id, 'ENVOYÉE')}>
                             📤 Envoyer
                           </button>
                         )}
                         {o.status === 'ENVOYÉE' && (
-                          <button className="btn btn-sm" style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--violet)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
+                          <button className="btn btn-sm" style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--p3)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                             onClick={() => changeStatus(o.id, 'CONFIRMÉE')}>
                             ✓ Confirmer
                           </button>
                         )}
                         {o.status === 'CONFIRMÉE' && (
-                          <button className="btn btn-sm" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--amber)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
+                          <button className="btn btn-sm" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--acc)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                             onClick={() => changeStatus(o.id, 'EN TRANSIT')}>
                             🚚 Transit
                           </button>
                         )}
                         {o.status === 'EN TRANSIT' && (
-                          <button className="btn btn-sm" style={{ background: 'rgba(16,185,129,0.15)', color: 'var(--green)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
+                          <button className="btn btn-sm" style={{ background: 'rgba(16,185,129,0.15)', color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                             onClick={() => changeStatus(o.id, 'REÇUE')}>
                             📥 Réceptionner
                           </button>
@@ -353,19 +354,19 @@ export default function Orders() {
                       <td className="td-num text-xs">{item.qty}</td>
                       <td className="text-xs" style={{ color: 'var(--text2)' }}>{item.unit}</td>
                       <td className="td-num text-xs">{formatCurrency(item.unitPrice, currency)}</td>
-                      <td className="td-num text-xs" style={{ color: 'var(--teal)' }}>{formatCurrency(item.qty * item.unitPrice, currency)}</td>
+                      <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{formatCurrency(item.qty * item.unitPrice, currency)}</td>
                     </tr>
                   ))}
                   <tr style={{ background: 'var(--bg3)' }}>
                     <td colSpan={4} className="text-xs font-bold text-right px-4 py-2">TOTAL</td>
-                    <td className="td-num font-black" style={{ color: 'var(--primary2)' }}>{formatCurrency(viewOrder.total, currency)}</td>
+                    <td className="td-num font-black" style={{ color: 'var(--p2)' }}>{formatCurrency(viewOrder.total, currency)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
             {viewOrder.notes && (
-              <div className="p-3 rounded-xl text-xs mb-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: 'var(--amber)' }}>
+              <div className="p-3 rounded-xl text-xs mb-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: 'var(--acc)' }}>
                 📝 {viewOrder.notes}
               </div>
             )}
@@ -380,7 +381,7 @@ export default function Orders() {
               )}
               {viewOrder.status === 'EN TRANSIT' && (
                 <button className="btn btn-primary flex-1 justify-center"
-                  style={{ background: 'linear-gradient(135deg,var(--green),#059669)' }}
+                  style={{ background: 'linear-gradient(135deg,var(--acc2),#059669)' }}
                   onClick={() => changeStatus(viewOrder.id, 'REÇUE')}>
                   📥 Confirmer la réception
                 </button>
@@ -448,7 +449,7 @@ export default function Orders() {
                 ))}
               </div>
               {/* Total */}
-              <div className="flex justify-end mt-2 text-sm font-black" style={{ color: 'var(--primary2)' }}>
+              <div className="flex justify-end mt-2 text-sm font-black" style={{ color: 'var(--p2)' }}>
                 Total : {formatCurrency(form.items.reduce((s, i) => s + i.qty * i.unitPrice, 0), currency)}
               </div>
             </div>

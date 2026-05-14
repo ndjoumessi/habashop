@@ -5,7 +5,7 @@ function ComingSoon({ title, description, sprint }: { title: string; description
     <div className="animate-in flex flex-col items-center justify-center py-20 space-y-4">
       <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
         style={{ background: 'rgba(99,102,241,0.10)' }}>
-        <Construction size={28} style={{ color: 'var(--primary2)' }} />
+        <Construction size={28} style={{ color: 'var(--p2)' }} />
       </div>
       <div className="text-center">
         <h2 className="text-xl font-black mb-2 tracking-tight" style={{ color: 'var(--text)' }}>{title}</h2>
