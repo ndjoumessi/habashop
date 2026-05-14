@@ -1,167 +1,144 @@
 import { useState } from 'react'
-import { useConfig, t } from '@/stores/appStore'
-import { ChevronLeft, ChevronRight, Plus, X, Trash2 } from 'lucide-react'
+import { useConfig } from '@/stores/appStore'
+import { ChevronLeft, ChevronRight, Plus, X, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-type Role = 'Gérant' | 'Caissier' | 'Magasinier' | 'Livreur' | 'Agent'
+interface EmpBasic { id: number; name: string; role: string; avatar: string; color: string }
+type ShiftType = 'J' | 'M' | 'S' | 'N' | 'R' | 'C'
 
-interface EmpRef { id: string; name: string; role: Role }
-interface Shift   { id: string; empId: string; day: string; start: string; end: string; note: string }
-interface EditTarget { empId: string; day: string; shift: Shift | null }
-
-const EMPLOYEES: EmpRef[] = [
-  { id: '1', name: 'Mamadou Diallo',  role: 'Gérant'     },
-  { id: '2', name: 'Fatou Ndiaye',    role: 'Caissier'   },
-  { id: '3', name: 'Ibrahima Mbaye',  role: 'Magasinier' },
-  { id: '4', name: 'Aminata Sow',     role: 'Caissier'   },
-  { id: '5', name: 'Moussa Thiam',    role: 'Livreur'    },
-  { id: '6', name: 'Cheikh Fall',     role: 'Magasinier' },
-  { id: '7', name: 'Aïda Ba',         role: 'Agent'      },
+const EMPLOYEES: EmpBasic[] = [
+  { id:1, name:'Marie Bakayoko',   role:'Caissière',   avatar:'MB', color:'#6C3FD6' },
+  { id:2, name:'Kofi Diallo',      role:'Magasinier',  avatar:'KD', color:'#F59E0B' },
+  { id:3, name:'Aminata Touré',    role:'Comptable',   avatar:'AT', color:'#10B981' },
+  { id:4, name:'Seydou Koné',      role:'Caissier',    avatar:'SK', color:'#EF4444' },
+  { id:5, name:'Fatoumata Ndiaye', role:'Responsable', avatar:'FN', color:'#3B82F6' },
+  { id:6, name:'Ibrahim Sow',      role:'Livreur',     avatar:'IS', color:'#8B5CF6' },
 ]
 
-const ROLE_STYLE: Record<Role, { bg: string; color: string }> = {
-  'Gérant':     { bg: 'rgba(91,78,232,0.13)',  color: 'var(--p2)'   },
-  'Caissier':   { bg: 'rgba(14,196,126,0.13)', color: 'var(--acc2)' },
-  'Magasinier': { bg: 'rgba(240,165,0,0.13)',  color: 'var(--acc)'  },
-  'Livreur':    { bg: 'rgba(139,92,246,0.13)', color: 'var(--p3)'   },
-  'Agent':      { bg: 'rgba(136,134,168,0.13)',color: 'var(--text2)'},
+const SHIFT_CFG: Record<ShiftType, { full: string; hours: string; bg: string; color: string }> = {
+  M: { full:'Matin',      hours:'08:00–13:00', bg:'rgba(91,78,232,.2)',   color:'var(--p2)'    },
+  S: { full:'Après-midi', hours:'13:00–18:00', bg:'rgba(240,165,0,.2)',  color:'var(--acc)'   },
+  J: { full:'Journée',    hours:'08:00–18:00', bg:'rgba(14,196,126,.2)', color:'var(--acc2)'  },
+  N: { full:'Nuit',       hours:'20:00–06:00', bg:'rgba(139,92,246,.2)', color:'#A78BFA'      },
+  R: { full:'Repos',      hours:'—',           bg:'var(--bg3)',           color:'var(--text3)' },
+  C: { full:'Congé',      hours:'—',           bg:'rgba(59,130,246,.2)', color:'#60A5FA'      },
 }
 
-let _uid = 100
-const uid = () => String(++_uid)
+const DEFAULT_HOURS: Record<ShiftType, { start: string; end: string }> = {
+  M: { start:'08:00', end:'13:00' }, S: { start:'13:00', end:'18:00' },
+  J: { start:'08:00', end:'18:00' }, N: { start:'20:00', end:'06:00' },
+  R: { start:'—',     end:'—'     }, C: { start:'—',     end:'—'     },
+}
 
-const SHIFTS_INIT: Shift[] = [
-  // Mamadou — Gérant, Mon-Sat
-  { id: uid(), empId: '1', day: '2026-05-11', start: '08:00', end: '17:00', note: '' },
-  { id: uid(), empId: '1', day: '2026-05-12', start: '08:00', end: '17:00', note: '' },
-  { id: uid(), empId: '1', day: '2026-05-13', start: '08:00', end: '17:00', note: '' },
-  { id: uid(), empId: '1', day: '2026-05-14', start: '08:00', end: '17:00', note: '' },
-  { id: uid(), empId: '1', day: '2026-05-15', start: '08:00', end: '17:00', note: '' },
-  { id: uid(), empId: '1', day: '2026-05-16', start: '09:00', end: '14:00', note: 'Demi-journée' },
-  // Fatou — Caissier, alternance matin/après-midi
-  { id: uid(), empId: '2', day: '2026-05-11', start: '08:00', end: '16:00', note: '' },
-  { id: uid(), empId: '2', day: '2026-05-12', start: '12:00', end: '20:00', note: '' },
-  { id: uid(), empId: '2', day: '2026-05-13', start: '08:00', end: '16:00', note: '' },
-  { id: uid(), empId: '2', day: '2026-05-14', start: '12:00', end: '20:00', note: '' },
-  { id: uid(), empId: '2', day: '2026-05-15', start: '08:00', end: '16:00', note: '' },
-  { id: uid(), empId: '2', day: '2026-05-16', start: '08:00', end: '14:00', note: '' },
-  // Ibrahima — Magasinier, tôt le matin
-  { id: uid(), empId: '3', day: '2026-05-11', start: '07:00', end: '15:00', note: '' },
-  { id: uid(), empId: '3', day: '2026-05-12', start: '07:00', end: '15:00', note: '' },
-  { id: uid(), empId: '3', day: '2026-05-13', start: '07:00', end: '15:00', note: '' },
-  { id: uid(), empId: '3', day: '2026-05-14', start: '07:00', end: '15:00', note: '' },
-  { id: uid(), empId: '3', day: '2026-05-15', start: '07:00', end: '15:00', note: '' },
-  { id: uid(), empId: '3', day: '2026-05-16', start: '07:00', end: '12:00', note: '' },
-  // Aminata — congé, pas de créneau
-  // Moussa — Livreur, journée
-  { id: uid(), empId: '5', day: '2026-05-11', start: '09:00', end: '18:00', note: '' },
-  { id: uid(), empId: '5', day: '2026-05-12', start: '09:00', end: '18:00', note: '' },
-  { id: uid(), empId: '5', day: '2026-05-13', start: '09:00', end: '18:00', note: '' },
-  { id: uid(), empId: '5', day: '2026-05-14', start: '09:00', end: '18:00', note: '' },
-  { id: uid(), empId: '5', day: '2026-05-15', start: '09:00', end: '18:00', note: '' },
-  { id: uid(), empId: '5', day: '2026-05-16', start: '09:00', end: '14:00', note: '' },
-  // Cheikh — Magasinier, absent Jeu-Ven
-  { id: uid(), empId: '6', day: '2026-05-11', start: '07:00', end: '15:00', note: '' },
-  { id: uid(), empId: '6', day: '2026-05-12', start: '07:00', end: '15:00', note: '' },
-  { id: uid(), empId: '6', day: '2026-05-13', start: '07:00', end: '15:00', note: '' },
-  { id: uid(), empId: '6', day: '2026-05-16', start: '07:00', end: '12:00', note: '' },
-  // Aïda — Agent, très tôt
-  { id: uid(), empId: '7', day: '2026-05-11', start: '06:00', end: '12:00', note: '' },
-  { id: uid(), empId: '7', day: '2026-05-12', start: '06:00', end: '12:00', note: '' },
-  { id: uid(), empId: '7', day: '2026-05-13', start: '06:00', end: '12:00', note: '' },
-  { id: uid(), empId: '7', day: '2026-05-14', start: '06:00', end: '12:00', note: '' },
-  { id: uid(), empId: '7', day: '2026-05-15', start: '06:00', end: '12:00', note: '' },
-  { id: uid(), empId: '7', day: '2026-05-16', start: '06:00', end: '10:00', note: '' },
+const WEEK_DAYS = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
+
+const SCHEDULE_INIT: Record<number, ShiftType[]> = {
+  1: ['J','M','S','J','M','R','R'],
+  2: ['J','J','J','M','S','J','R'],
+  3: ['M','S','R','M','S','R','R'],
+  4: ['S','M','J','S','M','R','R'],
+  5: ['C','C','C','C','C','R','R'],
+  6: ['R','R','R','R','R','R','R'],
+}
+
+const EMP_TOTALS: Record<number, string> = { 1:'40h', 2:'50h', 3:'30h', 4:'40h', 5:'Congé', 6:'Repos' }
+
+const WEEKS = [
+  { num:19, label:'Semaine 19 — 7 au 13 Mai 2026',  days:['Lun 7','Mar 8','Mer 9','Jeu 10','Ven 11','Sam 12','Dim 13'] },
+  { num:20, label:'Semaine 20 — 14 au 20 Mai 2026', days:['Lun 14','Mar 15','Mer 16','Jeu 17','Ven 18','Sam 19','Dim 20'] },
+  { num:21, label:'Semaine 21 — 21 au 27 Mai 2026', days:['Lun 21','Mar 22','Mer 23','Jeu 24','Ven 25','Sam 26','Dim 27'] },
 ]
 
-const TODAY = '2026-05-14'
-const MONTHS = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc']
-const DAY_NAMES = ['Lun','Mar','Mer','Jeu','Ven','Sam']
-
-function getWeekDays(offset: number) {
-  const base = new Date('2026-05-11T00:00:00')
-  return [0,1,2,3,4,5].map(i => {
-    const d = new Date(base)
-    d.setDate(d.getDate() + offset * 7 + i)
-    const iso = d.toISOString().split('T')[0]
-    return { date: iso, label: `${DAY_NAMES[i]} ${d.getDate()}`, short: DAY_NAMES[i], dayNum: d.getDate(), month: d.getMonth() }
-  })
+function AvatarBadge({ emp, size = 30 }: { emp: EmpBasic; size?: number }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: emp.color, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', color: '#fff', fontSize: size * 0.36, fontWeight: 800,
+    }}>{emp.avatar}</div>
+  )
 }
 
-function weekLabel(days: ReturnType<typeof getWeekDays>) {
-  const f = days[0], l = days[5]
-  if (f.month === l.month)
-    return `${f.dayNum} – ${l.dayNum} ${MONTHS[f.month]} ${new Date(f.date).getFullYear()}`
-  return `${f.dayNum} ${MONTHS[f.month]} – ${l.dayNum} ${MONTHS[l.month]} ${new Date(f.date).getFullYear()}`
+function ShiftPicker({ value, onChange }: { value: ShiftType; onChange: (s: ShiftType) => void }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+      {(Object.keys(SHIFT_CFG) as ShiftType[]).map(key => {
+        const cfg = SHIFT_CFG[key]
+        return (
+          <button key={key} onClick={() => onChange(key)} style={{
+            padding: '8px 5px', borderRadius: 8, fontWeight: 700, fontSize: 11.5,
+            cursor: 'pointer', fontFamily: 'var(--mono)', transition: 'all .15s',
+            background: value === key ? cfg.bg : 'var(--bg3)',
+            color: value === key ? cfg.color : 'var(--text2)',
+            border: `1.5px solid ${value === key ? cfg.color : 'var(--border)'}`,
+          }}>{key} · {cfg.full}</button>
+        )
+      })}
+    </div>
+  )
 }
-
-function duration(start: string, end: string): number {
-  const [sh, sm] = start.split(':').map(Number)
-  const [eh, em] = end.split(':').map(Number)
-  return (eh * 60 + em - sh * 60 - sm) / 60
-}
-
-function fmtH(h: number) {
-  const hrs = Math.floor(h)
-  const min = Math.round((h - hrs) * 60)
-  return min > 0 ? `${hrs}h${String(min).padStart(2,'0')}` : `${hrs}h`
-}
-
-const BLANK_SHIFT = { start: '08:00', end: '17:00', note: '' }
 
 export default function Planning() {
   const { lang } = useConfig()
   void lang
-  const [shifts, setShifts]       = useState<Shift[]>(SHIFTS_INIT)
-  const [weekOffset, setWeekOff]  = useState(0)
-  const [editTarget, setEdit]     = useState<EditTarget | null>(null)
-  const [form, setForm]           = useState(BLANK_SHIFT)
 
-  const weekDays   = getWeekDays(weekOffset)
-  const weekDates  = new Set(weekDays.map(d => d.date))
-  const weekShifts = shifts.filter(s => weekDates.has(s.day))
+  const [weekIdx, setWeekIdx]     = useState(1)
+  const [schedule, setSchedule]   = useState<Record<number, ShiftType[]>>(SCHEDULE_INIT)
+  const [editModal, setEditModal] = useState<{ empId: number; dayIdx: number } | null>(null)
+  const [editShift, setEditShift] = useState<ShiftType>('J')
+  const [editStart, setEditStart] = useState('08:00')
+  const [editEnd,   setEditEnd]   = useState('18:00')
+  const [newModal,  setNewModal]  = useState(false)
+  const [newEmpId,  setNewEmpId]  = useState<number>(1)
+  const [newDayIdx, setNewDayIdx] = useState(0)
+  const [newShift,  setNewShift]  = useState<ShiftType>('J')
+  const [newStart,  setNewStart]  = useState('08:00')
+  const [newEnd,    setNewEnd]    = useState('18:00')
+  const [newNotes,  setNewNotes]  = useState('')
 
-  const totalHours  = weekShifts.reduce((acc, s) => acc + duration(s.start, s.end), 0)
-  const todayEmpIds = new Set(shifts.filter(s => s.day === TODAY).map(s => s.empId))
-  const coverageSlots = EMPLOYEES.length * 6
-  const coveredSlots  = weekShifts.length
+  const week    = WEEKS[weekIdx]
+  const editEmp = editModal ? EMPLOYEES.find(e => e.id === editModal.empId)! : null
 
-  function openAdd(empId: string, day: string) {
-    setForm(BLANK_SHIFT)
-    setEdit({ empId, day, shift: null })
+  function openEdit(empId: number, dayIdx: number) {
+    const sh = schedule[empId][dayIdx]
+    setEditShift(sh); setEditStart(DEFAULT_HOURS[sh].start); setEditEnd(DEFAULT_HOURS[sh].end)
+    setEditModal({ empId, dayIdx })
+  }
+  function handleEditShift(type: ShiftType) {
+    setEditShift(type); setEditStart(DEFAULT_HOURS[type].start); setEditEnd(DEFAULT_HOURS[type].end)
+  }
+  function handleNewShift(type: ShiftType) {
+    setNewShift(type); setNewStart(DEFAULT_HOURS[type].start); setNewEnd(DEFAULT_HOURS[type].end)
+  }
+  function saveEdit() {
+    if (!editModal) return
+    setSchedule(s => {
+      const next = { ...s, [editModal.empId]: [...s[editModal.empId]] }
+      next[editModal.empId][editModal.dayIdx] = editShift
+      return next
+    })
+    toast.success('Créneau mis à jour')
+    setEditModal(null)
+  }
+  function saveNew() {
+    setSchedule(s => {
+      const next = { ...s, [newEmpId]: [...s[newEmpId]] }
+      next[newEmpId][newDayIdx] = newShift
+      return next
+    })
+    toast.success('Créneau ajouté')
+    setNewModal(false); setNewNotes('')
   }
 
-  function openEdit(shift: Shift) {
-    setForm({ start: shift.start, end: shift.end, note: shift.note })
-    setEdit({ empId: shift.empId, day: shift.day, shift })
-  }
+  const summaryCounts = (Object.keys(SHIFT_CFG) as ShiftType[]).reduce((acc, sh) => {
+    acc[sh] = Object.values(schedule).reduce((s, days) => s + days.filter(d => d === sh).length, 0)
+    return acc
+  }, {} as Record<ShiftType, number>)
 
-  function saveShift() {
-    if (!editTarget) return
-    if (duration(form.start, form.end) <= 0) {
-      toast.error('L\'heure de fin doit être après le début'); return
-    }
-    if (editTarget.shift) {
-      setShifts(prev => prev.map(s =>
-        s.id === editTarget.shift!.id ? { ...s, ...form } : s
-      ))
-      toast.success('✅ Créneau mis à jour')
-    } else {
-      const emp = EMPLOYEES.find(e => e.id === editTarget.empId)!
-      setShifts(prev => [...prev, { id: uid(), empId: editTarget.empId, day: editTarget.day, ...form }])
-      toast.success(`✅ Créneau ajouté pour ${emp.name}`)
-    }
-    setEdit(null)
-  }
+  const planned = EMPLOYEES.filter(e => schedule[e.id].some(s => s !== 'R')).length
 
-  function deleteShift(shiftId: string) {
-    setShifts(prev => prev.filter(s => s.id !== shiftId))
-    setEdit(null)
-    toast('🗑️ Créneau supprimé')
-  }
-
-  const editEmp = editTarget ? EMPLOYEES.find(e => e.id === editTarget.empId) : null
-  const editDay = editTarget ? weekDays.find(d => d.date === editTarget.day) : null
+  const timeCols = editShift !== 'R' && editShift !== 'C'
+  const newTimeCols = newShift !== 'R' && newShift !== 'C'
 
   return (
     <div className="space-y-5 animate-in">
@@ -169,236 +146,235 @@ export default function Planning() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Créneaux cette semaine', value: weekShifts.length.toString(),               color: 'var(--p2)',   icon: '📅' },
-          { label: 'Heures planifiées',      value: fmtH(totalHours),                           color: 'var(--acc2)', icon: '⏱️' },
-          { label: 'Présents aujourd\'hui',  value: `${todayEmpIds.size} / ${EMPLOYEES.length}`, color: 'var(--acc)',  icon: '✅' },
-          { label: 'Taux de couverture',     value: `${Math.round((coveredSlots/coverageSlots)*100)}%`, color: 'var(--p3)', icon: '📊' },
+          { label:'Semaine courante',    value:`Sem. ${week.num}`, sub: week.label.split('—')[1]?.trim() ?? '', color:'var(--p2)',   icon:'📅' },
+          { label:'Employés planifiés',  value:`${planned}/6`,     sub:'1 en congé',                            color:'var(--acc2)', icon:'👥' },
+          { label:'Heures totales',      value:'248h',              sub:'Cette semaine',                         color:'var(--acc)',  icon:'⏱️' },
+          { label:'Taux de couverture',  value:'92%',               sub:'Objectif : 100%',                       color:'var(--p3)',   icon:'📊' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
-            <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
+            <div className="kpi-value" style={{ color: k.color, fontSize: 20 }}>{k.value}</div>
+            <div className="kpi-sub">{k.sub}</div>
           </div>
         ))}
       </div>
 
-      {/* Navigation semaine */}
+      {/* Planning */}
       <div className="panel" style={{ marginBottom: 0 }}>
-        <div className="panel-head" style={{ flexWrap: 'wrap', gap: 8 }}>
-          <div className="flex items-center gap-3">
-            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOff(w => w - 1)}>
-              <ChevronLeft size={16} />
+        <div className="panel-head">
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <button className="mini-btn" style={{ padding:'6px 10px' }}
+              onClick={() => setWeekIdx(i => Math.max(0, i - 1))} disabled={weekIdx === 0}>
+              <ChevronLeft size={14} />
             </button>
-            <span className="text-sm font-bold" style={{ color: 'var(--text)', minWidth: 180, textAlign: 'center' }}>
-              📅 {weekLabel(weekDays)}
+            <span style={{ fontWeight:700, fontSize:14, color:'var(--text)', minWidth:290, textAlign:'center' }}>
+              {week.label}
             </span>
-            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOff(w => w + 1)}>
-              <ChevronRight size={16} />
+            <button className="mini-btn" style={{ padding:'6px 10px' }}
+              onClick={() => setWeekIdx(i => Math.min(WEEKS.length - 1, i + 1))} disabled={weekIdx === WEEKS.length - 1}>
+              <ChevronRight size={14} />
             </button>
-            {weekOffset !== 0 && (
-              <button className="btn btn-ghost btn-sm text-xs" onClick={() => setWeekOff(0)}
-                style={{ color: 'var(--p2)' }}>
-                Semaine actuelle
-              </button>
-            )}
+            <button className="btn btn-ghost btn-sm" onClick={() => setWeekIdx(1)}>Aujourd'hui</button>
           </div>
-
-          {/* Légende rôles */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {(Object.entries(ROLE_STYLE) as [Role, { bg: string; color: string }][]).map(([role, s]) => (
-              <span key={role} className="flex items-center gap-1 px-2 py-1 rounded-lg"
-                style={{ background: s.bg, color: s.color, fontWeight: 600 }}>
-                {role}
-              </span>
-            ))}
+          <div style={{ display:'flex', gap:8 }}>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export planning…')}>
+              <Download size={12} /> Exporter
+            </button>
+            <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setNewModal(true)}>
+              <Plus size={12} /> Nouveau créneau
+            </button>
           </div>
         </div>
 
-        {/* Grille planning */}
-        <div className="table-wrap" style={{ marginTop: 0 }}>
-          <table style={{ tableLayout: 'fixed' }}>
-            <colgroup>
-              <col style={{ width: 160 }} />
-              {weekDays.map(d => <col key={d.date} />)}
-            </colgroup>
+        <div className="table-wrap">
+          <table>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left' }}>Employé</th>
-                {weekDays.map(d => (
-                  <th key={d.date} style={{
-                    textAlign: 'center',
-                    color:      d.date === TODAY ? 'var(--p2)' : 'var(--text2)',
-                    fontWeight: d.date === TODAY ? 900 : 600,
-                    background: d.date === TODAY ? 'rgba(91,78,232,0.06)' : undefined,
-                  }}>
-                    <div>{d.label}</div>
-                    {d.date === TODAY && (
-                      <div style={{ fontSize: 9, color: 'var(--p3)', marginTop: 1, fontWeight: 700 }}>
-                        AUJOURD'HUI
-                      </div>
-                    )}
-                  </th>
-                ))}
+                <th style={{ minWidth:170 }}>Employé</th>
+                {week.days.map(d => <th key={d} style={{ textAlign:'center', minWidth:64 }}>{d}</th>)}
+                <th style={{ textAlign:'center', minWidth:56 }}>Total</th>
               </tr>
             </thead>
             <tbody>
-              {EMPLOYEES.map(emp => {
-                const style = ROLE_STYLE[emp.role]
-                return (
-                  <tr key={emp.id}>
-                    <td style={{ padding: '6px 12px' }}>
-                      <div className="text-sm font-bold" style={{ color: 'var(--text)' }}>{emp.name}</div>
-                      <div className="text-xs mt-0.5 font-semibold" style={{ color: style.color }}>{emp.role}</div>
-                    </td>
-                    {weekDays.map(d => {
-                      const shift = shifts.find(s => s.empId === emp.id && s.day === d.date)
-                      const isToday = d.date === TODAY
-                      return (
-                        <td key={d.date} style={{
-                          padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle',
-                          background: isToday ? 'rgba(91,78,232,0.04)' : undefined,
-                        }}>
-                          {shift ? (
-                            <button
-                              onClick={() => openEdit(shift)}
-                              style={{
-                                background: style.bg, color: style.color,
-                                border: `1.5px solid ${style.color}`,
-                                borderRadius: 10, padding: '5px 6px', cursor: 'pointer',
-                                fontFamily: 'inherit', width: '100%',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
-                              }}
-                              title="Modifier le créneau"
-                            >
-                              <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--mono)' }}>
-                                {shift.start} – {shift.end}
-                              </span>
-                              <span style={{ fontSize: 10, opacity: 0.75 }}>
-                                {fmtH(duration(shift.start, shift.end))}
-                              </span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => openAdd(emp.id, d.date)}
-                              style={{
-                                background: 'transparent',
-                                border: '1.5px dashed var(--border)',
-                                borderRadius: 10, padding: '8px 6px', cursor: 'pointer',
-                                color: 'var(--text3)', fontFamily: 'inherit', width: '100%',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                opacity: 0.5, transition: 'opacity .2s',
-                              }}
-                              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                              onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
-                              title="Ajouter un créneau"
-                            >
-                              <Plus size={12} />
-                            </button>
-                          )}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                )
-              })}
+              {EMPLOYEES.map(emp => (
+                <tr key={emp.id}>
+                  <td>
+                    <div style={{ display:'flex', alignItems:'center', gap:9 }}>
+                      <AvatarBadge emp={emp} size={30} />
+                      <div>
+                        <div className="td-bold" style={{ fontSize:12 }}>{emp.name}</div>
+                        <div style={{ fontSize:10, color:'var(--text3)' }}>{emp.role}</div>
+                      </div>
+                    </div>
+                  </td>
+                  {schedule[emp.id].map((sh, di) => {
+                    const cfg = SHIFT_CFG[sh]
+                    return (
+                      <td key={di} style={{ textAlign:'center', padding:'6px 3px' }}>
+                        <button onClick={() => openEdit(emp.id, di)}
+                          title={`${cfg.full}${cfg.hours !== '—' ? ' · ' + cfg.hours : ''}`}
+                          style={{
+                            width:44, height:28, borderRadius:7, border:'none',
+                            background:cfg.bg, color:cfg.color,
+                            fontWeight:800, fontSize:12, fontFamily:'var(--mono)',
+                            cursor:'pointer', transition:'all .15s',
+                          }}>{sh}</button>
+                      </td>
+                    )
+                  })}
+                  <td style={{ textAlign:'center' }}>
+                    <span style={{
+                      fontSize:11, fontWeight:700, fontFamily:'var(--mono)',
+                      color: EMP_TOTALS[emp.id] === 'Repos' ? 'var(--text3)'
+                           : EMP_TOTALS[emp.id] === 'Congé' ? '#60A5FA' : 'var(--acc2)',
+                    }}>{EMP_TOTALS[emp.id]}</span>
+                  </td>
+                </tr>
+              ))}
             </tbody>
-            <tfoot>
-              <tr style={{ background: 'var(--bg3)' }}>
-                <td style={{ padding: '8px 12px' }}>
-                  <span className="text-xs font-bold" style={{ color: 'var(--text2)' }}>
-                    Total heures
-                  </span>
-                </td>
-                {weekDays.map(d => {
-                  const dayShifts = shifts.filter(s => s.day === d.date)
-                  const dayHours  = dayShifts.reduce((acc, s) => acc + duration(s.start, s.end), 0)
-                  const isToday   = d.date === TODAY
-                  return (
-                    <td key={d.date} style={{
-                      textAlign: 'center', padding: '8px 4px',
-                      background: isToday ? 'rgba(91,78,232,0.08)' : undefined,
-                    }}>
-                      {dayHours > 0 ? (
-                        <span className="badge badge-blue font-black" style={{ fontFamily: 'var(--mono)' }}>
-                          {fmtH(dayHours)}
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text3)', fontSize: 12 }}>–</span>
-                      )}
-                    </td>
-                  )
-                })}
-              </tr>
-            </tfoot>
           </table>
+        </div>
+
+        {/* Légende */}
+        <div style={{ marginTop:14, paddingTop:12, borderTop:'1px solid var(--border)', display:'flex', gap:16, flexWrap:'wrap' }}>
+          {(Object.entries(SHIFT_CFG) as [ShiftType, typeof SHIFT_CFG[ShiftType]][]).map(([key, cfg]) => (
+            <div key={key} style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <div style={{
+                width:26, height:18, borderRadius:5, background:cfg.bg, color:cfg.color,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontWeight:800, fontSize:11, fontFamily:'var(--mono)',
+              }}>{key}</div>
+              <span style={{ fontSize:12, color:'var(--text2)' }}>
+                {cfg.full}{cfg.hours !== '—' ? ` (${cfg.hours})` : ''}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ── Modal créneau ── */}
-      {editTarget && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setEdit(null)}>
-          <div className="modal-box" style={{ maxWidth: 440 }}>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>
-                  {editTarget.shift ? '✏️ Modifier le créneau' : '➕ Nouveau créneau'}
-                </h3>
-                {editEmp && editDay && (
-                  <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>
-                    <span style={{ color: ROLE_STYLE[editEmp.role].color, fontWeight: 700 }}>{editEmp.name}</span>
-                    {' · '}{editDay.label}
-                  </p>
-                )}
+      {/* Récapitulatif */}
+      <div className="panel" style={{ marginBottom:0 }}>
+        <div className="panel-head">
+          <span className="panel-title">📋 Récapitulatif hebdomadaire</span>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6, 1fr)', gap:10 }}>
+          {(Object.entries(SHIFT_CFG) as [ShiftType, typeof SHIFT_CFG[ShiftType]][]).map(([key, cfg]) => (
+            <div key={key} style={{
+              background:cfg.bg, borderRadius:10, padding:'13px',
+              display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+            }}>
+              <div style={{ fontSize:24, fontWeight:800, color:cfg.color, fontFamily:'var(--mono)' }}>
+                {summaryCounts[key]}
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => setEdit(null)}><X size={14} /></button>
+              <div style={{ fontSize:11, fontWeight:600, color:cfg.color }}>{cfg.full}</div>
             </div>
+          ))}
+        </div>
+      </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
+      {/* ── MODAL Modifier créneau ── */}
+      {editModal && editEmp && (
+        <div className="modal-backdrop" onClick={() => setEditModal(null)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:430 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
+              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>Modifier le créneau</span>
+              <button className="mini-btn" onClick={() => setEditModal(null)}><X size={15} /></button>
+            </div>
+            <div style={{ padding:'10px 14px', background:'var(--bg3)', borderRadius:10, display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+              <AvatarBadge emp={editEmp} size={34} />
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
-                  style={{ color: 'var(--text3)' }}>Heure de début</label>
-                <input className="input text-sm" type="time" value={form.start}
-                  onChange={e => setForm(p => ({ ...p, start: e.target.value }))} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
-                  style={{ color: 'var(--text3)' }}>Heure de fin</label>
-                <input className="input text-sm" type="time" value={form.end}
-                  onChange={e => setForm(p => ({ ...p, end: e.target.value }))} />
+                <div style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>{editEmp.name}</div>
+                <div style={{ fontSize:12, color:'var(--text3)' }}>
+                  {WEEK_DAYS[editModal.dayIdx]} · {week.days[editModal.dayIdx]} Mai 2026
+                </div>
               </div>
             </div>
-
-            {form.start && form.end && duration(form.start, form.end) > 0 && (
-              <div className="mb-3 p-3 rounded-xl flex items-center gap-3"
-                style={{ background: 'var(--bg3)' }}>
-                <span className="text-xs" style={{ color: 'var(--text3)' }}>Durée</span>
-                <span className="badge badge-blue font-black" style={{ fontFamily: 'var(--mono)' }}>
-                  {fmtH(duration(form.start, form.end))}
-                </span>
-                <span className="text-xs" style={{ color: 'var(--text3)', marginLeft: 'auto' }}>
-                  {form.start} → {form.end}
-                </span>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:7 }}>
+                  Type de créneau
+                </label>
+                <ShiftPicker value={editShift} onChange={handleEditShift} />
               </div>
-            )}
-
-            <div className="mb-5">
-              <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
-                style={{ color: 'var(--text3)' }}>Note (optionnelle)</label>
-              <input className="input text-sm" type="text" placeholder="ex : Demi-journée, Fermeture…"
-                value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} />
-            </div>
-
-            <div className="flex gap-2">
-              <button className="btn btn-primary flex-1 justify-center" onClick={saveShift}>
-                ✅ {editTarget.shift ? 'Enregistrer' : t('btn_add')}
-              </button>
-              {editTarget.shift && (
-                <button className="btn btn-ghost" style={{ color: 'var(--danger)' }}
-                  onClick={() => deleteShift(editTarget.shift!.id)}>
-                  <Trash2 size={14} />
-                </button>
+              {timeCols && (
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Début</label>
+                    <input className="input" type="time" value={editStart}
+                      onChange={e => setEditStart(e.target.value)}
+                      style={{ width:'100%', boxSizing:'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Fin</label>
+                    <input className="input" type="time" value={editEnd}
+                      onChange={e => setEditEnd(e.target.value)}
+                      style={{ width:'100%', boxSizing:'border-box' }} />
+                  </div>
+                </div>
               )}
-              <button className="btn btn-ghost" onClick={() => setEdit(null)}>{t('btn_cancel')}</button>
+            </div>
+            <div style={{ display:'flex', gap:10, marginTop:20 }}>
+              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setEditModal(null)}>Annuler</button>
+              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={saveEdit}>Sauvegarder</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL Nouveau créneau ── */}
+      {newModal && (
+        <div className="modal-backdrop" onClick={() => setNewModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
+              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>Nouveau créneau</span>
+              <button className="mini-btn" onClick={() => setNewModal(false)}><X size={15} /></button>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Employé</label>
+                <select className="input" value={newEmpId} onChange={e => setNewEmpId(+e.target.value)}
+                  style={{ width:'100%', boxSizing:'border-box' }}>
+                  {EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} — {e.role}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Jour</label>
+                <select className="input" value={newDayIdx} onChange={e => setNewDayIdx(+e.target.value)}
+                  style={{ width:'100%', boxSizing:'border-box' }}>
+                  {WEEK_DAYS.map((d, i) => <option key={i} value={i}>{d} ({week.days[i]})</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:7 }}>Type de créneau</label>
+                <ShiftPicker value={newShift} onChange={handleNewShift} />
+              </div>
+              {newTimeCols && (
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Début</label>
+                    <input className="input" type="time" value={newStart}
+                      onChange={e => setNewStart(e.target.value)}
+                      style={{ width:'100%', boxSizing:'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Fin</label>
+                    <input className="input" type="time" value={newEnd}
+                      onChange={e => setNewEnd(e.target.value)}
+                      style={{ width:'100%', boxSizing:'border-box' }} />
+                  </div>
+                </div>
+              )}
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Notes (optionnel)</label>
+                <input className="input" type="text" placeholder="Ex: Remplacement congé"
+                  value={newNotes} onChange={e => setNewNotes(e.target.value)}
+                  style={{ width:'100%', boxSizing:'border-box' }} />
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:10, marginTop:20 }}>
+              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setNewModal(false)}>Annuler</button>
+              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={saveNew}>Enregistrer</button>
             </div>
           </div>
         </div>
