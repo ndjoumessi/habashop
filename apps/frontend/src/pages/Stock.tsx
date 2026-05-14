@@ -1,35 +1,42 @@
 import { useState } from 'react'
-import { useAppStore, formatCurrency } from '@/stores/appStore'
+import { useConfig, formatCurrency, t } from '@/stores/appStore'
 import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const PRODUCTS_INIT = [
-  { sku: 'PRD-001', name: '🌾 Riz parfumé 5kg',       category: 'Céréales',  buy: 3200,  sell: 4500,  stock: 12,  threshold: 20, supplier: 'SENRIZ'        },
-  { sku: 'PRD-002', name: '🫙 Huile palme 1L',          category: 'Corps gras',buy: 1200,  sell: 1800,  stock: 18,  threshold: 25, supplier: 'SONACO'        },
-  { sku: 'PRD-003', name: '🍚 Sucre 1kg',               category: 'Épicerie',  buy: 600,   sell: 850,   stock: 245, threshold: 50, supplier: 'CSS'           },
-  { sku: 'PRD-004', name: '🌾 Farine blé 1kg',          category: 'Céréales',  buy: 400,   sell: 650,   stock: 89,  threshold: 30, supplier: 'GRANDS MOULINS'},
-  { sku: 'PRD-005', name: '🧼 Savon OMO 500g',          category: 'Hygiène',   buy: 320,   sell: 500,   stock: 5,   threshold: 10, supplier: 'UNILEVER'      },
-  { sku: 'PRD-006', name: '🥛 Lait poudre 400g',        category: 'Laitiers',  buy: 1500,  sell: 2200,  stock: 67,  threshold: 20, supplier: 'NESTLÉ'        },
-  { sku: 'PRD-007', name: '🫒 Huile végétale 5L',       category: 'Corps gras',buy: 6500,  sell: 8500,  stock: 34,  threshold: 15, supplier: 'SONACO'        },
-  { sku: 'PRD-008', name: '🍅 Tomate concentrée 800g',  category: 'Conserves', buy: 900,   sell: 1400,  stock: 112, threshold: 30, supplier: 'TOMAPOR'       },
+  { sku: 'PRD-001', name: '🌾 Riz parfumé 5kg',       category: 'Céréales',   buy: 3200, sell: 4500, stock: 12,  threshold: 20, supplier: 'SENRIZ'         },
+  { sku: 'PRD-002', name: '🫙 Huile palme 1L',          category: 'Corps gras', buy: 1200, sell: 1800, stock: 18,  threshold: 25, supplier: 'SONACO'         },
+  { sku: 'PRD-003', name: '🍚 Sucre 1kg',               category: 'Épicerie',   buy: 600,  sell: 850,  stock: 245, threshold: 50, supplier: 'CSS'            },
+  { sku: 'PRD-004', name: '🌾 Farine blé 1kg',          category: 'Céréales',   buy: 400,  sell: 650,  stock: 89,  threshold: 30, supplier: 'GRANDS MOULINS' },
+  { sku: 'PRD-005', name: '🧼 Savon OMO 500g',          category: 'Hygiène',    buy: 320,  sell: 500,  stock: 5,   threshold: 10, supplier: 'UNILEVER'       },
+  { sku: 'PRD-006', name: '🥛 Lait poudre 400g',        category: 'Laitiers',   buy: 1500, sell: 2200, stock: 67,  threshold: 20, supplier: 'NESTLÉ'         },
+  { sku: 'PRD-007', name: '🫒 Huile végétale 5L',       category: 'Corps gras', buy: 6500, sell: 8500, stock: 34,  threshold: 15, supplier: 'SONACO'         },
+  { sku: 'PRD-008', name: '🍅 Tomate concentrée 800g',  category: 'Conserves',  buy: 900,  sell: 1400, stock: 112, threshold: 30, supplier: 'TOMAPOR'        },
 ]
 
 function statusOf(stock: number, threshold: number) {
-  if (stock === 0)            return { label: 'Rupture', cls: 'badge-red' }
-  if (stock <= threshold)     return { label: 'Bas',     cls: 'badge-amber' }
-  return                             { label: 'OK',      cls: 'badge-green' }
+  if (stock === 0)        return { label: t('status_out'), cls: 'badge-red'   }
+  if (stock <= threshold) return { label: t('status_low'), cls: 'badge-amber' }
+  return                         { label: 'OK',             cls: 'badge-green' }
 }
 
 export default function Stock() {
-  const { currency } = useAppStore()
+  const { currency, stockLowThreshold, stockShowSKU, lang } = useConfig()
+  void lang // for t() reactivity
+
   const [products, setProducts] = useState(PRODUCTS_INIT)
-  const [search, setSearch] = useState('')
-  const [cat, setCat] = useState('')
+  const [search, setSearch]     = useState('')
+  const [cat, setCat]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ sku: '', name: '', category: 'Céréales', buy: 0, sell: 0, stock: 0, threshold: 5, supplier: '' })
+  const [form, setForm] = useState({
+    sku: '', name: '', category: 'Céréales', buy: 0, sell: 0,
+    stock: 0, threshold: stockLowThreshold, supplier: '',
+  })
 
-  const cats = ['', ...Array.from(new Set(products.map(p => p.category)))]
+  const cats     = ['', ...Array.from(new Set(products.map(p => p.category)))]
+  const ruptures = products.filter(p => p.stock <= p.threshold)
+  const totalValue = products.reduce((s, p) => s + p.stock * p.sell, 0)
 
   const filtered = products.filter(p => {
     const s = statusOf(p.stock, p.threshold)
@@ -40,13 +47,10 @@ export default function Stock() {
     )
   })
 
-  const ruptures = products.filter(p => p.stock <= p.threshold)
-  const totalValue = products.reduce((s, p) => s + p.stock * p.sell, 0)
-
   const addProduct = () => {
     setProducts(prev => [...prev, form])
     setShowModal(false)
-    setForm({ sku: '', name: '', category: 'Céréales', buy: 0, sell: 0, stock: 0, threshold: 5, supplier: '' })
+    setForm({ sku: '', name: '', category: 'Céréales', buy: 0, sell: 0, stock: 0, threshold: stockLowThreshold, supplier: '' })
     toast.success('✅ Produit ajouté !')
   }
 
@@ -61,20 +65,25 @@ export default function Stock() {
             <p className="text-sm font-bold" style={{ color: 'var(--danger)' }}>
               {ruptures.length} article{ruptures.length > 1 ? 's' : ''} en rupture ou stock faible
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{ruptures.map(p => p.name).join(' · ')}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
+              {ruptures.map(p => p.name).join(' · ')}
+            </p>
           </div>
-          <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)' }}
-            onClick={() => toast('📦 Bon de commande groupé créé')}>Commander</button>
+          <button className="btn btn-sm"
+            style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)' }}
+            onClick={() => toast('📦 Bon de commande groupé créé')}>
+            Commander
+          </button>
         </div>
       )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total articles', value: products.length.toString(), color: 'var(--primary2)', icon: '📋' },
-          { label: 'Valeur du stock', value: formatCurrency(totalValue, currency), color: 'var(--teal)', icon: '💎' },
-          { label: 'Ruptures / Bas', value: ruptures.length.toString(), color: 'var(--danger)', icon: '⚠️' },
-          { label: 'Catégories', value: String(new Set(products.map(p => p.category)).size), color: 'var(--amber)', icon: '📁' },
+          { label: 'Total articles',  value: products.length.toString(),          color: 'var(--p2)',    icon: '📋' },
+          { label: 'Valeur du stock', value: formatCurrency(totalValue, currency), color: 'var(--acc2)', icon: '💎' },
+          { label: 'Ruptures / Bas',  value: ruptures.length.toString(),           color: 'var(--danger)',icon: '⚠️' },
+          { label: 'Catégories',      value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', icon: '📁' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -90,18 +99,18 @@ export default function Stock() {
           <span className="panel-title">🗄️ Inventaire Produits</span>
           <div className="flex items-center gap-2">
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV en cours…')}>
-              <Download size={13} /> CSV
+              <Download size={13} /> {t('btn_export')}
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowModal(true)}>
-              <Plus size={13} /> Ajouter
+              <Plus size={13} /> {t('btn_add')}
             </button>
           </div>
         </div>
 
         {/* Filtres */}
         <div className="flex flex-wrap gap-2 mb-4">
-          <div className="search-box flex-1 min-w-40">
-            <Search size={13} className="search-icon" />
+          <div className="search-wrap flex-1 min-w-40">
+            <span className="search-icon"><Search size={13} /></span>
             <input className="input pl-8 py-2 text-sm w-full" placeholder="🔍 Produit, référence…"
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
@@ -111,7 +120,9 @@ export default function Stock() {
           </select>
           <select className="input py-2 text-sm w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="">Tous les statuts</option>
-            <option>Rupture</option><option>Bas</option><option>OK</option>
+            <option>{t('status_out')}</option>
+            <option>{t('status_low')}</option>
+            <option>OK</option>
           </select>
         </div>
 
@@ -120,7 +131,8 @@ export default function Stock() {
           <table>
             <thead>
               <tr>
-                <th>Réf.</th><th>Produit</th><th>Catégorie</th>
+                {stockShowSKU && <th>Réf.</th>}
+                <th>Produit</th><th>Catégorie</th>
                 <th>Prix achat</th><th>Prix vente</th>
                 <th>Stock</th><th>Seuil</th><th>Fournisseur</th>
                 <th>Statut</th><th>Actions</th>
@@ -131,15 +143,15 @@ export default function Stock() {
                 const st = statusOf(p.stock, p.threshold)
                 return (
                   <tr key={p.sku}>
-                    <td className="td-mono">{p.sku}</td>
+                    {stockShowSKU && <td className="td-mono">{p.sku}</td>}
                     <td className="td-bold">{p.name}</td>
                     <td><span className="badge badge-teal">{p.category}</span></td>
                     <td className="td-num">{formatCurrency(p.buy, currency)}</td>
-                    <td className="td-num" style={{ color: 'var(--teal)' }}>{formatCurrency(p.sell, currency)}</td>
+                    <td className="td-num" style={{ color: 'var(--acc2)' }}>{formatCurrency(p.sell, currency)}</td>
                     <td>
                       <span className="td-num" style={{
-                        color: st.label === 'Rupture' ? 'var(--danger)' : st.label === 'Bas' ? 'var(--amber)' : 'var(--green)',
-                        fontWeight: 700
+                        color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)',
+                        fontWeight: 700,
                       }}>{p.stock}</span>
                     </td>
                     <td className="td-num" style={{ color: 'var(--text3)' }}>{p.threshold}</td>
@@ -147,7 +159,7 @@ export default function Stock() {
                     <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
                     <td>
                       <div className="flex gap-1.5">
-                        {st.label !== 'OK' && (
+                        {st.cls !== 'badge-green' && (
                           <button className="btn btn-sm btn-ghost gap-1" onClick={() => toast.success('📦 Bon créé')}>📦</button>
                         )}
                         <button className="btn btn-sm btn-ghost" onClick={() => toast(`✏️ ${p.sku}`)}>✏️</button>
@@ -166,38 +178,38 @@ export default function Stock() {
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal-box">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ Nouveau produit</h3>
+              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ {t('btn_new')} produit</h3>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>✕</button>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: 'SKU', key: 'sku', type: 'text', span: false },
-                { label: 'Catégorie', key: 'category', type: 'select', span: false },
-                { label: 'Nom du produit', key: 'name', type: 'text', span: true },
-                { label: 'Fournisseur', key: 'supplier', type: 'text', span: true },
-                { label: 'Prix achat', key: 'buy', type: 'number', span: false },
-                { label: 'Prix vente', key: 'sell', type: 'number', span: false },
-                { label: 'Stock initial', key: 'stock', type: 'number', span: false },
-                { label: 'Seuil alerte', key: 'threshold', type: 'number', span: false },
-              ].map(f => (
+              {([
+                { label: 'SKU',             key: 'sku',       type: 'text',   span: false },
+                { label: 'Catégorie',       key: 'category',  type: 'select', span: false },
+                { label: 'Nom du produit',  key: 'name',      type: 'text',   span: true  },
+                { label: 'Fournisseur',     key: 'supplier',  type: 'text',   span: true  },
+                { label: 'Prix achat',      key: 'buy',       type: 'number', span: false },
+                { label: 'Prix vente',      key: 'sell',      type: 'number', span: false },
+                { label: 'Stock initial',   key: 'stock',     type: 'number', span: false },
+                { label: 'Seuil alerte',    key: 'threshold', type: 'number', span: false },
+              ] as { label: string; key: keyof typeof form; type: string; span: boolean }[]).map(f => (
                 <div key={f.key} className={f.span ? 'col-span-2' : ''}>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
                   {f.type === 'select' ? (
-                    <select className="input text-sm" value={(form as any)[f.key]}
+                    <select className="input text-sm" value={String(form[f.key])}
                       onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
                       {['Céréales','Corps gras','Épicerie','Hygiène','Laitiers','Conserves'].map(c => <option key={c}>{c}</option>)}
                     </select>
                   ) : (
                     <input className="input text-sm" type={f.type}
-                      value={(form as any)[f.key]}
+                      value={String(form[f.key])}
                       onChange={e => setForm(p => ({ ...p, [f.key]: f.type === 'number' ? +e.target.value : e.target.value }))} />
                   )}
                 </div>
               ))}
             </div>
             <div className="flex gap-2 mt-5">
-              <button className="btn btn-primary flex-1 justify-center" onClick={addProduct}>✅ Ajouter le produit</button>
-              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Annuler</button>
+              <button className="btn btn-primary flex-1 justify-center" onClick={addProduct}>✅ {t('btn_add')} le produit</button>
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>{t('btn_cancel')}</button>
             </div>
           </div>
         </div>

@@ -1,58 +1,75 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
-import { useAppStore } from '@/stores/appStore'
+import { useConfig, t } from '@/stores/appStore'
 
-const NAV = [
+type NavSection = { section: string }
+type NavItem    = { path: string; key: string; icon: string; badge?: string; badgeTeal?: boolean }
+type NavEntry   = NavSection | NavItem
+
+const NAV: NavEntry[] = [
   { section: 'Principal' },
-  { path: '/app/dashboard', label: 'Tableau de bord', icon: '🏠' },
-  { path: '/app/pos',       label: 'Point de vente',  icon: '🛒' },
-  { path: '/app/orders',    label: 'Commandes',        icon: '📦', badge: '4' },
+  { path: '/app/dashboard', key: 'nav_dashboard', icon: '🏠' },
+  { path: '/app/pos',       key: 'nav_pos',       icon: '🛒' },
+  { path: '/app/orders',    key: 'nav_orders',    icon: '📦', badge: '4' },
   { section: 'Gestion' },
-  { path: '/app/stock',     label: 'Stock & Produits', icon: '🗄️' },
-  { path: '/app/suppliers', label: 'Fournisseurs',     icon: '🚚' },
-  { path: '/app/customers', label: 'Clients',          icon: '👥' },
+  { path: '/app/stock',     key: 'nav_stock',     icon: '🗄️' },
+  { path: '/app/suppliers', key: 'nav_suppliers', icon: '🚚' },
+  { path: '/app/customers', key: 'nav_customers', icon: '👥' },
   { section: 'RH' },
-  { path: '/app/hr',        label: 'Employés',         icon: '🧑‍💼' },
-  { path: '/app/planning',  label: 'Planning',         icon: '📅' },
-  { path: '/app/payroll',   label: 'Paie',             icon: '💰' },
-  { path: '/app/expenses',  label: 'Dépenses',         icon: '🧾' },
+  { path: '/app/hr',        key: 'nav_hr',        icon: '🧑‍💼' },
+  { path: '/app/planning',  key: 'nav_planning',  icon: '📅' },
+  { path: '/app/payroll',   key: 'nav_payroll',   icon: '💰' },
+  { path: '/app/expenses',  key: 'nav_expenses',  icon: '🧾' },
   { section: 'Analyse' },
-  { path: '/app/forecasts', label: 'Prévisions',       icon: '🔮' },
-  { path: '/app/reports',   label: 'Rapports',         icon: '📊' },
-  { path: '/app/settings',  label: 'Paramètres',       icon: '⚙️' },
+  { path: '/app/forecasts', key: 'nav_forecasts', icon: '🔮' },
+  { path: '/app/reports',   key: 'nav_reports',   icon: '📊' },
+  { path: '/app/settings',  key: 'nav_settings',  icon: '⚙️' },
   { section: 'Administration' },
-  { path: '/app/users',     label: 'Utilisateurs',     icon: '🔐' },
-  { path: '/app/activity',  label: 'Journal activités',icon: '📋', badge: '12', badgeTeal: true },
+  { path: '/app/users',     key: 'nav_users',     icon: '🔐' },
+  { path: '/app/activity',  key: 'nav_activity',  icon: '📋', badge: '12', badgeTeal: true },
 ]
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
-  const { theme, setTheme } = useAppStore()
+  const { theme, sidebarCollapsed, updateConfig } = useConfig()
   const navigate = useNavigate()
 
+  const collapsed = sidebarCollapsed
+
   return (
-    <div id="sidebar">
+    <div
+      id="sidebar"
+      style={{
+        width: collapsed ? 60 : 'var(--sidebar)',
+        transition: 'width .2s',
+        overflow: 'hidden',
+      }}
+    >
       {/* Logo */}
-      <div className="sidebar-logo">
+      <div className="sidebar-logo" style={{ justifyContent: collapsed ? 'center' : undefined }}>
         <div className="logo-icon">H</div>
-        <div className="logo-text">Haba<em>Shop</em></div>
+        {!collapsed && <div className="logo-text">Haba<em>Shop</em></div>}
       </div>
 
       {/* Navigation */}
       <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
         {NAV.map((item, i) => {
           if ('section' in item) {
-            return <div key={i} className="nav-section">{item.section}</div>
+            return collapsed ? null : (
+              <div key={i} className="nav-section">{item.section}</div>
+            )
           }
           return (
             <NavLink
               key={item.path}
-              to={item.path!}
+              to={item.path}
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              title={collapsed ? t(item.key) : undefined}
+              style={collapsed ? { justifyContent: 'center', padding: '8px 0' } : undefined}
             >
               <span className="nav-icon">{item.icon}</span>
-              <span style={{ flex: 1 }}>{item.label}</span>
-              {item.badge && (
+              {!collapsed && <span style={{ flex: 1 }}>{t(item.key)}</span>}
+              {!collapsed && item.badge && (
                 <span className="nav-badge" style={item.badgeTeal ? { background: 'rgba(91,78,232,.2)', color: 'var(--p2)' } : undefined}>
                   {item.badge}
                 </span>
@@ -63,24 +80,35 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="sidebar-footer">
+      <div className="sidebar-footer" style={collapsed ? { flexDirection: 'column', gap: 8, padding: '8px 0', alignItems: 'center' } : undefined}>
         <div className="avatar">{user?.name?.charAt(0) || 'U'}</div>
-        <div className="user-info" style={{ flex: 1, minWidth: 0 }}>
-          <div className="user-name">{user?.name || 'Utilisateur'}</div>
-          <div className="user-role">{user?.role || 'Admin'}</div>
-        </div>
+        {!collapsed && (
+          <div className="user-info" style={{ flex: 1, minWidth: 0 }}>
+            <div className="user-name">{user?.name || 'Utilisateur'}</div>
+            <div className="user-role">{user?.role || 'Admin'}</div>
+          </div>
+        )}
         <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onClick={() => updateConfig({ sidebarCollapsed: !collapsed })}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: 4, color: 'var(--text3)' }}
+          title={collapsed ? 'Étendre' : 'Réduire'}
+        >
+          {collapsed ? '▶' : '◀'}
+        </button>
+        <button
+          onClick={() => updateConfig({ theme: theme === 'dark' ? 'light' : 'dark' })}
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: 4 }}
           title="Changer le thème"
         >
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
-        <span
-          style={{ color: 'var(--text2)', cursor: 'pointer', fontSize: 16, padding: 4 }}
-          onClick={() => { logout(); navigate('/login') }}
-          title="Déconnexion"
-        >⏻</span>
+        {!collapsed && (
+          <span
+            style={{ color: 'var(--text2)', cursor: 'pointer', fontSize: 16, padding: 4 }}
+            onClick={() => { logout(); navigate('/login') }}
+            title="Déconnexion"
+          >⏻</span>
+        )}
       </div>
     </div>
   )

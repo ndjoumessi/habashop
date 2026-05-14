@@ -1,172 +1,358 @@
-import { useState } from 'react'
-import { useAppStore } from '@/stores/appStore'
+import { useState, useRef } from 'react'
+import { useConfig, formatCurrency, t, ACCENT_PAIRS } from '@/stores/appStore'
+import type { Currency, Lang } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import { Store, User, Globe, Palette, Bell, Shield, Save } from 'lucide-react'
+import {
+  Store, User, Globe, Palette, ShoppingCart, Package, Bell, Shield, Cog,
+  Save, Upload, Download, X, RefreshCw, AlertTriangle,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 
-type Tab = 'boutique' | 'compte' | 'langue' | 'apparence' | 'notifications' | 'securite'
+type Tab = 'boutique' | 'compte' | 'langue' | 'apparence' | 'pos' | 'stock' | 'notifications' | 'securite' | 'avance'
 
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'boutique',       label: 'Boutique',       icon: <Store size={15} />    },
-  { id: 'compte',         label: 'Mon compte',     icon: <User size={15} />     },
-  { id: 'langue',         label: 'Langue & Devise', icon: <Globe size={15} />   },
-  { id: 'apparence',      label: 'Apparence',      icon: <Palette size={15} />  },
-  { id: 'notifications',  label: 'Notifications',  icon: <Bell size={15} />     },
-  { id: 'securite',       label: 'Sécurité',       icon: <Shield size={15} />   },
+// Fake QR code pattern (12×12)
+const STATIC_QR = [
+  1,1,1,1,1,1,1,0,0,1,0,1,
+  1,0,0,0,0,0,1,0,1,0,0,1,
+  1,0,1,1,1,0,1,1,0,1,0,0,
+  1,0,1,1,1,0,1,0,0,0,1,0,
+  1,0,1,1,1,0,1,1,0,0,0,1,
+  1,0,0,0,0,0,1,0,1,0,1,0,
+  1,1,1,1,1,1,1,0,0,1,0,0,
+  0,0,0,0,0,0,0,1,0,1,1,0,
+  1,0,1,1,0,1,1,0,0,1,0,1,
+  0,1,0,0,1,0,0,1,0,0,1,0,
+  1,1,0,1,0,1,0,0,1,0,0,1,
+  0,0,1,0,1,0,0,1,0,1,0,1,
 ]
 
-const CURRENCIES = [
-  { code: 'XOF', label: 'Franc CFA (XOF)', symbol: 'F CFA' },
-  { code: 'EUR', label: 'Euro (EUR)',        symbol: '€'     },
-  { code: 'USD', label: 'Dollar US (USD)',   symbol: '$'     },
-  { code: 'CAD', label: 'Dollar CA (CAD)',   symbol: 'CA$'   },
+// Conversion rates (indicative, XOF base)
+const RATES: Partial<Record<Currency, Partial<Record<Currency, number>>>> = {
+  XOF: { XAF: 1,       EUR: 1/655.957, USD: 1/609,   CAD: 1/445 },
+  XAF: { XOF: 1,       EUR: 1/655.957, USD: 1/609,   CAD: 1/445 },
+  EUR: { XOF: 655.957, XAF: 655.957,  USD: 1.08,    CAD: 1.47 },
+  USD: { XOF: 609,     XAF: 609,      EUR: 0.926,   CAD: 1.36 },
+  CAD: { XOF: 445,     XAF: 445,      EUR: 0.680,   USD: 0.735 },
+}
+
+const CURRENCY_META: { code: Currency; flag: string; symbol: string; descKey: string }[] = [
+  { code: 'XOF', flag: '🇸🇳', symbol: 'F CFA', descKey: 'currency_xof' },
+  { code: 'XAF', flag: '🇨🇲', symbol: 'F CFA', descKey: 'currency_xaf' },
+  { code: 'EUR', flag: '🇪🇺', symbol: '€',     descKey: 'currency_eur' },
+  { code: 'USD', flag: '🇺🇸', symbol: '$',     descKey: 'currency_usd' },
+  { code: 'CAD', flag: '🇨🇦', symbol: 'CA$',   descKey: 'currency_cad' },
+]
+
+const LANG_META: { code: Lang; flag: string; name: string; native: string }[] = [
+  { code: 'fr', flag: '🇫🇷', name: 'Français',  native: 'Langue officielle' },
+  { code: 'en', flag: '🇬🇧', name: 'English',   native: 'International' },
+  { code: 'es', flag: '🇪🇸', name: 'Español',   native: 'Iberoamérica' },
+  { code: 'it', flag: '🇮🇹', name: 'Italiano',  native: 'Europa' },
+]
+
+const ACCENT_COLORS = Object.entries(ACCENT_PAIRS).map(([hex, pair]) => ({
+  hex,
+  name: hex === '#5B4EE8' ? 'Violet' :
+        hex === '#3B82F6' ? 'Bleu' :
+        hex === '#10B981' ? 'Vert' :
+        hex === '#F59E0B' ? 'Orange' :
+        hex === '#EF4444' ? 'Rouge' : 'Rose',
+  p2: pair.p2,
+}))
+
+const VAT_OPTIONS = [0, 5, 10, 18, 20]
+
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!value)}
+      style={{
+        position: 'relative', width: 44, height: 24, borderRadius: 99,
+        border: 'none', cursor: 'pointer', flexShrink: 0,
+        background: value ? 'var(--acc2)' : 'var(--bg4)',
+        transition: 'background .2s',
+      }}
+    >
+      <div style={{
+        position: 'absolute', width: 16, height: 16, borderRadius: '50%',
+        background: '#fff', top: 4, transition: 'left .15s',
+        left: value ? 24 : 4,
+      }} />
+    </button>
+  )
+}
+
+function ToggleRow({ label, sub, value, onChange }: { label: string; sub?: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
+      <div>
+        <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{label}</div>
+        {sub && <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{sub}</div>}
+      </div>
+      <Toggle value={value} onChange={onChange} />
+    </div>
+  )
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>
+      {children}
+    </label>
+  )
+}
+
+const TABS: { id: Tab; key: string; icon: React.ReactNode }[] = [
+  { id: 'boutique',       key: 'settings_shop',           icon: <Store size={14} />     },
+  { id: 'compte',         key: 'settings_account',        icon: <User size={14} />      },
+  { id: 'langue',         key: 'settings_language',       icon: <Globe size={14} />     },
+  { id: 'apparence',      key: 'settings_appearance',     icon: <Palette size={14} />   },
+  { id: 'pos',            key: 'settings_pos',            icon: <ShoppingCart size={14} /> },
+  { id: 'stock',          key: 'settings_stock',          icon: <Package size={14} />   },
+  { id: 'notifications',  key: 'settings_notifications',  icon: <Bell size={14} />      },
+  { id: 'securite',       key: 'settings_security',       icon: <Shield size={14} />    },
+  { id: 'avance',         key: 'settings_advanced',       icon: <Cog size={14} />       },
 ]
 
 export default function Settings() {
-  const { theme, setTheme, lang, setLang, currency, setCurrency } = useAppStore()
+  const cfg = useConfig()
   const { user, updateUser } = useAuthStore()
   const [tab, setTab] = useState<Tab>('boutique')
+  const [showReset, setShowReset] = useState(false)
+  const importRef = useRef<HTMLInputElement>(null)
 
-  // Boutique
-  const [shop, setShop] = useState({
-    name: user?.shopName || 'Mon Commerce',
-    email: 'contact@moncommerce.sn',
-    phone: '+221 77 000 00 00',
-    address: 'Dakar, Sénégal',
-    vatRate: '18',
-    siret: 'SN-2026-001234',
+  // Local forms (boutique & compte save on button click)
+  const [shopForm, setShopForm] = useState({
+    shopName: cfg.shopName, shopSlogan: cfg.shopSlogan,
+    shopAddress: cfg.shopAddress, shopPhone: cfg.shopPhone,
+    shopEmail: cfg.shopEmail, shopCountry: cfg.shopCountry,
+    shopSiret: cfg.shopSiret, shopVatRate: cfg.shopVatRate,
   })
-
-  // Compte
-  const [account, setAccount] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: '',
-    currentPwd: '',
-    newPwd: '',
-    confirmPwd: '',
-  })
-
-  // Notifs
-  const [notifs, setNotifs] = useState({
-    emailSales: true, emailStock: true, emailPayroll: false,
-    smsSales: false,  smsStock: true,   smsPayroll: false,
-    pushAll: true,
+  const [accountForm, setAccountForm] = useState({
+    name: user?.name || '', email: user?.email || '', phone: '',
+    currentPwd: '', newPwd: '', confirmPwd: '',
   })
 
   const save = (section: string) => toast.success(`✅ ${section} sauvegardé`)
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => cfg.updateConfig({ shopLogo: ev.target?.result as string })
+    reader.readAsDataURL(file)
+  }
+
+  const handleExportConfig = () => {
+    const json = cfg.exportConfig()
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `habashop-config-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Configuration exportée !')
+  }
+
+  const handleImportConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      try {
+        cfg.importConfig(ev.target?.result as string)
+        toast.success('Configuration importée !')
+      } catch {
+        toast.error('Fichier de configuration invalide')
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  const activeTabStyle = {
+    background: 'linear-gradient(135deg,rgba(99,102,241,0.18),rgba(20,184,166,0.12))',
+    color: 'var(--text)' as const,
+    border: '1px solid rgba(20,184,166,0.25)',
+  }
+  const inactiveTabStyle = {
+    background: 'transparent', color: 'var(--text2)' as const,
+    border: '1px solid transparent',
+  }
+
   return (
     <div className="animate-in">
+      <input ref={importRef} type="file" accept=".json" onChange={handleImportConfig} style={{ display: 'none' }} />
+
       <div className="flex gap-5">
-        {/* Sidebar tabs */}
-        <div className="w-52 flex-shrink-0">
-          <div className="panel p-2">
-            {TABS.map(t => (
-              <button key={t.id}
+        {/* ── Sidebar tabs ── */}
+        <div style={{ width: 200, flexShrink: 0 }}>
+          <div className="panel p-2" style={{ marginBottom: 0 }}>
+            {TABS.map(tb => (
+              <button key={tb.id}
                 className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all mb-0.5"
-                style={{
-                  background: tab === t.id ? 'linear-gradient(135deg,rgba(99,102,241,0.18),rgba(20,184,166,0.12))' : 'transparent',
-                  color: tab === t.id ? 'var(--text)' : 'var(--text2)',
-                  border: tab === t.id ? '1px solid rgba(20,184,166,0.25)' : '1px solid transparent',
-                  cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-                }}
-                onClick={() => setTab(t.id)}
+                style={{ ...(tab === tb.id ? activeTabStyle : inactiveTabStyle), cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}
+                onClick={() => setTab(tb.id)}
               >
-                <span style={{ color: tab === t.id ? 'var(--primary2)' : 'var(--text3)' }}>{t.icon}</span>
-                {t.label}
+                <span style={{ color: tab === tb.id ? 'var(--p2)' : 'var(--text3)' }}>{tb.icon}</span>
+                {t(tb.key)}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Contenu */}
+        {/* ── Contenu ── */}
         <div className="flex-1 min-w-0">
 
-          {/* ── Boutique ── */}
+          {/* ════ BOUTIQUE ════ */}
           {tab === 'boutique' && (
-            <div className="panel space-y-4">
-              <div className="panel-head">
-                <span className="panel-title">🏪 Informations boutique</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: 'Nom de la boutique', key: 'name',    type: 'text' },
-                  { label: 'Email',               key: 'email',   type: 'email' },
-                  { label: 'Téléphone',           key: 'phone',   type: 'text' },
-                  { label: 'N° SIRET / RCCM',     key: 'siret',   type: 'text' },
-                  { label: 'Taux TVA (%)',         key: 'vatRate', type: 'number' },
-                ].map(f => (
-                  <div key={f.key} className={f.key === 'name' ? 'col-span-2' : ''}>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
-                    <input className="input text-sm" type={f.type}
-                      value={(shop as any)[f.key]}
-                      onChange={e => setShop(s => ({ ...s, [f.key]: e.target.value }))} />
+            <div className="space-y-4">
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">🏪 Informations boutique</span></div>
+                <div className="grid grid-cols-2 gap-4">
+                  {([
+                    { label: 'Nom de la boutique', key: 'shopName', type: 'text', span: true },
+                    { label: 'Slogan',              key: 'shopSlogan', type: 'text', span: true },
+                    { label: 'Pays',                key: 'shopCountry', type: 'text', span: false },
+                    { label: 'N° SIRET / RCCM',    key: 'shopSiret', type: 'text', span: false },
+                    { label: 'Téléphone',           key: 'shopPhone', type: 'text', span: false },
+                    { label: 'Email',               key: 'shopEmail', type: 'email', span: false },
+                  ] as { label: string; key: keyof typeof shopForm; type: string; span: boolean }[]).map(f => (
+                    <div key={f.key} className={f.span ? 'col-span-2' : ''}>
+                      <Label>{f.label}</Label>
+                      <input className="input text-sm" type={f.type}
+                        value={String(shopForm[f.key])}
+                        onChange={e => setShopForm(s => ({ ...s, [f.key]: e.target.value }))} />
+                    </div>
+                  ))}
+                  <div className="col-span-2">
+                    <Label>Adresse</Label>
+                    <textarea className="input text-sm" rows={2} value={shopForm.shopAddress}
+                      onChange={e => setShopForm(s => ({ ...s, shopAddress: e.target.value }))} />
                   </div>
-                ))}
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Adresse</label>
-                  <textarea className="input text-sm" rows={2} value={shop.address}
-                    onChange={e => setShop(s => ({ ...s, address: e.target.value }))} />
+                  <div>
+                    <Label>Taux TVA</Label>
+                    <select className="input text-sm" value={shopForm.shopVatRate}
+                      onChange={e => setShopForm(s => ({ ...s, shopVatRate: +e.target.value }))}>
+                      {VAT_OPTIONS.map(v => <option key={v} value={v}>{v}%</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <button className="btn btn-primary gap-2" onClick={() => {
+                    cfg.updateConfig(shopForm)
+                    updateUser({ shopName: shopForm.shopName })
+                    save('Boutique')
+                  }}>
+                    <Save size={14} /> {t('btn_save')}
+                  </button>
                 </div>
               </div>
-              <div className="flex justify-end">
-                <button className="btn btn-primary gap-2" onClick={() => { updateUser({ shopName: shop.name }); save('Boutique') }}>
-                  <Save size={14} /> Sauvegarder
-                </button>
+
+              {/* Logo */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">🖼️ Logo de la boutique</span></div>
+                <div className="flex items-center gap-5">
+                  <div style={{
+                    width: 80, height: 80, borderRadius: 16, overflow: 'hidden',
+                    background: 'var(--bg3)', border: '2px dashed var(--border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    {cfg.shopLogo
+                      ? <img src={cfg.shopLogo} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 32 }}>🏪</span>
+                    }
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>
+                      {cfg.shopLogo ? 'Logo actuel — cliquez pour remplacer' : 'Aucun logo — formats PNG, JPG, SVG recommandés'}
+                    </p>
+                    <label className="btn btn-ghost gap-2 cursor-pointer" style={{ display: 'inline-flex' }}>
+                      <Upload size={14} /> Choisir une image
+                      <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
+                    </label>
+                    {cfg.shopLogo && (
+                      <button className="btn btn-ghost gap-2 ml-2" style={{ color: 'var(--danger)' }}
+                        onClick={() => { cfg.updateConfig({ shopLogo: null }); toast.success('Logo supprimé') }}>
+                        <X size={14} /> Supprimer
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* ── Compte ── */}
+          {/* ════ COMPTE ════ */}
           {tab === 'compte' && (
             <div className="space-y-4">
-              <div className="panel space-y-4">
+              <div className="panel">
                 <div className="panel-head"><span className="panel-title">👤 Informations personnelles</span></div>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="avatar w-16 h-16 text-2xl">{user?.name?.charAt(0)}</div>
+                <div className="flex items-center gap-4 mb-5">
+                  <div style={{
+                    width: 64, height: 64, borderRadius: '50%', flexShrink: 0,
+                    background: 'linear-gradient(135deg, var(--p), var(--acc))',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 26, fontWeight: 700, color: '#fff',
+                  }}>
+                    {user?.name?.charAt(0) || 'U'}
+                  </div>
                   <div>
-                    <div className="font-bold" style={{ color: 'var(--text)' }}>{user?.name}</div>
+                    <div className="font-bold text-base" style={{ color: 'var(--text)' }}>{user?.name}</div>
                     <div className="text-sm" style={{ color: 'var(--text3)' }}>{user?.email}</div>
-                    <span className="badge badge-red mt-1">Administrateur</span>
+                    <span className="badge badge-red mt-1" style={{ fontSize: 10 }}>Administrateur</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { label: 'Nom complet', key: 'name',  type: 'text'  },
-                    { label: 'Téléphone',   key: 'phone', type: 'text'  },
-                    { label: 'Email',       key: 'email', type: 'email' },
-                  ].map(f => (
-                    <div key={f.key} className={f.key === 'email' ? 'col-span-2' : ''}>
-                      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
+                  {([
+                    { label: 'Nom complet', key: 'name',  type: 'text',  span: false },
+                    { label: 'Téléphone',   key: 'phone', type: 'text',  span: false },
+                    { label: 'Email',       key: 'email', type: 'email', span: true  },
+                  ] as { label: string; key: keyof typeof accountForm; type: string; span: boolean }[]).map(f => (
+                    <div key={f.key} className={f.span ? 'col-span-2' : ''}>
+                      <Label>{f.label}</Label>
                       <input className="input text-sm" type={f.type}
-                        value={(account as any)[f.key]}
-                        onChange={e => setAccount(a => ({ ...a, [f.key]: e.target.value }))} />
+                        value={accountForm[f.key]}
+                        onChange={e => setAccountForm(a => ({ ...a, [f.key]: e.target.value }))} />
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-end">
-                  <button className="btn btn-primary gap-2" onClick={() => { updateUser({ name: account.name, email: account.email }); save('Compte') }}>
-                    <Save size={14} /> Sauvegarder
+                <div className="flex justify-end mt-4">
+                  <button className="btn btn-primary gap-2" onClick={() => {
+                    updateUser({ name: accountForm.name, email: accountForm.email })
+                    save('Compte')
+                  }}>
+                    <Save size={14} /> {t('btn_save')}
                   </button>
                 </div>
               </div>
-              <div className="panel space-y-4">
+
+              <div className="panel">
                 <div className="panel-head"><span className="panel-title">🔑 Changer le mot de passe</span></div>
-                {[
-                  { label: 'Mot de passe actuel', key: 'currentPwd' },
-                  { label: 'Nouveau mot de passe', key: 'newPwd' },
-                  { label: 'Confirmer',            key: 'confirmPwd' },
-                ].map(f => (
-                  <div key={f.key}>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
-                    <input className="input text-sm" type="password" placeholder="••••••••"
-                      value={(account as any)[f.key]}
-                      onChange={e => setAccount(a => ({ ...a, [f.key]: e.target.value }))} />
-                  </div>
-                ))}
-                <div className="flex justify-end">
-                  <button className="btn btn-primary gap-2" onClick={() => save('Mot de passe')}>
+                <div className="space-y-3">
+                  {([
+                    { label: 'Mot de passe actuel', key: 'currentPwd' },
+                    { label: 'Nouveau mot de passe', key: 'newPwd'    },
+                    { label: 'Confirmer le nouveau', key: 'confirmPwd' },
+                  ] as { label: string; key: keyof typeof accountForm }[]).map(f => (
+                    <div key={f.key}>
+                      <Label>{f.label}</Label>
+                      <input className="input text-sm" type="password" placeholder="••••••••"
+                        value={accountForm[f.key]}
+                        onChange={e => setAccountForm(a => ({ ...a, [f.key]: e.target.value }))} />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end mt-4">
+                  <button className="btn btn-primary gap-2" onClick={() => {
+                    if (accountForm.newPwd !== accountForm.confirmPwd) {
+                      toast.error('Les mots de passe ne correspondent pas')
+                      return
+                    }
+                    setAccountForm(a => ({ ...a, currentPwd: '', newPwd: '', confirmPwd: '' }))
+                    save('Mot de passe')
+                  }}>
                     <Save size={14} /> Mettre à jour
                   </button>
                 </div>
@@ -174,173 +360,513 @@ export default function Settings() {
             </div>
           )}
 
-          {/* ── Langue & Devise ── */}
+          {/* ════ LANGUE & DEVISE ════ */}
           {tab === 'langue' && (
-            <div className="panel space-y-6">
-              <div className="panel-head"><span className="panel-title">🌍 Langue & Devise</span></div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text3)' }}>Langue de l'interface</label>
-                <div className="flex gap-3">
-                  {[{ code: 'fr', flag: '🇫🇷', label: 'Français' }, { code: 'en', flag: '🇬🇧', label: 'English' }].map(l => (
-                    <div key={l.code}
-                      className="flex items-center gap-3 p-4 rounded-xl cursor-pointer flex-1 transition-all"
-                      style={{
-                        background: lang === l.code ? 'rgba(99,102,241,0.1)' : 'var(--bg3)',
-                        border: `1px solid ${lang === l.code ? 'rgba(99,102,241,0.3)' : 'var(--border)'}`,
-                      }}
-                      onClick={() => { setLang(l.code as any); save('Langue') }}
-                    >
-                      <span className="text-2xl">{l.flag}</span>
-                      <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{l.label}</span>
-                      {lang === l.code && <span className="badge badge-teal ml-auto">Actif</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text3)' }}>Devise principale</label>
+            <div className="space-y-5">
+              {/* Langue */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">🌍 Langue de l'interface</span></div>
                 <div className="grid grid-cols-2 gap-3">
-                  {CURRENCIES.map(c => (
-                    <div key={c.code}
+                  {LANG_META.map(l => (
+                    <div key={l.code}
                       className="flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all"
                       style={{
-                        background: currency === c.code ? 'rgba(20,184,166,0.1)' : 'var(--bg3)',
-                        border: `1px solid ${currency === c.code ? 'rgba(20,184,166,0.3)' : 'var(--border)'}`,
+                        background: cfg.lang === l.code ? 'rgba(99,102,241,0.10)' : 'var(--bg3)',
+                        border: `1px solid ${cfg.lang === l.code ? 'rgba(99,102,241,0.35)' : 'var(--border)'}`,
                       }}
-                      onClick={() => { setCurrency(c.code as any); save('Devise') }}
+                      onClick={() => { cfg.updateConfig({ lang: l.code }); toast.success(`Langue : ${l.name}`) }}
                     >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm"
-                        style={{ background: 'var(--bg4)', color: 'var(--primary2)' }}>{c.symbol}</div>
-                      <div>
-                        <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{c.label}</div>
+                      <span style={{ fontSize: 28 }}>{l.flag}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{l.name}</div>
+                        <div className="text-xs" style={{ color: 'var(--text3)' }}>{l.native}</div>
                       </div>
-                      {currency === c.code && <span className="badge badge-teal ml-auto">Actif</span>}
+                      {cfg.lang === l.code && <span className="badge badge-teal">Actif</span>}
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Devise */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">💱 Devise principale</span></div>
+                <div className="grid grid-cols-1 gap-2 mb-4">
+                  {CURRENCY_META.map(c => (
+                    <div key={c.code}
+                      className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
+                      style={{
+                        background: cfg.currency === c.code ? 'rgba(14,196,126,0.10)' : 'var(--bg3)',
+                        border: `1px solid ${cfg.currency === c.code ? 'rgba(14,196,126,0.35)' : 'var(--border)'}`,
+                      }}
+                      onClick={() => { cfg.updateConfig({ currency: c.code }); toast.success(`Devise : ${c.code}`) }}
+                    >
+                      <span style={{ fontSize: 24 }}>{c.flag}</span>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                        background: 'var(--bg4)', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', fontWeight: 700, fontSize: 11, color: 'var(--p2)',
+                        fontFamily: 'var(--mono)',
+                      }}>
+                        {c.symbol}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{c.code}</div>
+                        <div className="text-xs" style={{ color: 'var(--text3)' }}>{t(c.descKey)}</div>
+                      </div>
+                      {cfg.currency === c.code && <span className="badge badge-teal">Actif</span>}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Conversion preview */}
+                <div className="p-4 rounded-xl" style={{ background: 'var(--bg3)' }}>
+                  <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>
+                    Taux de conversion indicatifs (base : 1 000 {cfg.currency})
+                  </div>
+                  <div className="space-y-2">
+                    {CURRENCY_META.filter(c => c.code !== cfg.currency).map(c => {
+                      const rate = RATES[cfg.currency]?.[c.code] ?? 1
+                      return (
+                        <div key={c.code} className="flex justify-between items-center text-sm">
+                          <span style={{ color: 'var(--text2)' }}>{c.flag} {c.code}</span>
+                          <span className="font-bold" style={{ color: 'var(--p2)', fontFamily: 'var(--mono)' }}>
+                            {formatCurrency(1000 * rate, c.code)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ── Apparence ── */}
+          {/* ════ APPARENCE ════ */}
           {tab === 'apparence' && (
-            <div className="panel space-y-6">
-              <div className="panel-head"><span className="panel-title">🎨 Apparence</span></div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text3)' }}>Thème</label>
+            <div className="space-y-4">
+              {/* Thème */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">🎨 Thème</span></div>
                 <div className="flex gap-3">
                   {[
-                    { id: 'dark',  label: '🌙 Sombre', desc: 'Thème sombre — recommandé' },
-                    { id: 'light', label: '☀️ Clair',   desc: 'Thème clair' },
-                  ].map(t => (
-                    <div key={t.id}
+                    { id: 'dark',  label: 'Sombre', emoji: '🌙', desc: 'Recommandé — réduit la fatigue visuelle' },
+                    { id: 'light', label: 'Clair',   emoji: '☀️', desc: 'Adapté aux environnements lumineux' },
+                  ].map(th => (
+                    <div key={th.id}
                       className="flex-1 p-4 rounded-xl cursor-pointer transition-all"
                       style={{
-                        background: theme === t.id ? 'rgba(99,102,241,0.1)' : 'var(--bg3)',
-                        border: `1px solid ${theme === t.id ? 'rgba(99,102,241,0.3)' : 'var(--border)'}`,
+                        background: cfg.theme === th.id ? 'rgba(99,102,241,0.10)' : 'var(--bg3)',
+                        border: `1px solid ${cfg.theme === th.id ? 'rgba(99,102,241,0.35)' : 'var(--border)'}`,
                       }}
-                      onClick={() => setTheme(t.id as any)}
+                      onClick={() => cfg.updateConfig({ theme: th.id as 'dark' | 'light' })}
                     >
-                      <div className="text-2xl mb-2">{t.id === 'dark' ? '🌙' : '☀️'}</div>
-                      <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{t.label}</div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{t.desc}</div>
-                      {theme === t.id && <span className="badge badge-teal mt-2">Actif</span>}
+                      <div style={{ fontSize: 28, marginBottom: 6 }}>{th.emoji}</div>
+                      <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{th.label}</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{th.desc}</div>
+                      {cfg.theme === th.id && <span className="badge badge-teal mt-2" style={{ display: 'block', marginTop: 8 }}>Actif</span>}
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Couleur d'accent */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">🖌️ Couleur d'accent</span></div>
+                <div className="flex gap-3 flex-wrap">
+                  {ACCENT_COLORS.map(ac => (
+                    <div key={ac.hex}
+                      className="flex flex-col items-center gap-2 cursor-pointer"
+                      onClick={() => cfg.updateConfig({ accentColor: ac.hex })}
+                    >
+                      <div style={{
+                        width: 42, height: 42, borderRadius: 12,
+                        background: ac.hex,
+                        border: cfg.accentColor === ac.hex ? `3px solid ${ac.p2}` : '3px solid transparent',
+                        outline: cfg.accentColor === ac.hex ? `2px solid var(--border2)` : 'none',
+                        boxShadow: cfg.accentColor === ac.hex ? `0 0 0 2px ${ac.hex}44` : 'none',
+                        transition: 'all .15s',
+                      }} />
+                      <span className="text-xs font-medium" style={{ color: cfg.accentColor === ac.hex ? 'var(--text)' : 'var(--text3)' }}>
+                        {ac.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Options avancées */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">⚙️ Options d'affichage</span></div>
+                <div className="space-y-3">
+                  <ToggleRow label="Mode compact" sub="Réduit l'espacement dans les tableaux"
+                    value={cfg.compactMode} onChange={v => cfg.updateConfig({ compactMode: v })} />
+                  <ToggleRow label="Animations" sub="Transitions et effets visuels"
+                    value={cfg.showAnimations} onChange={v => cfg.updateConfig({ showAnimations: v })} />
+                  <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
+                    <div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>Lignes par page</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>Nombre de lignes dans les tableaux</div>
+                    </div>
+                    <select className="input text-sm" style={{ width: 'auto', padding: '6px 10px' }}
+                      value={cfg.tableRowsPerPage}
+                      onChange={e => cfg.updateConfig({ tableRowsPerPage: +e.target.value })}>
+                      {[10, 25, 50, 100].map(n => <option key={n} value={n}>{n} lignes</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ── Notifications ── */}
-          {tab === 'notifications' && (
-            <div className="panel space-y-5">
-              <div className="panel-head"><span className="panel-title">🔔 Préférences de notifications</span></div>
-              {[
-                { section: 'Email', items: [
-                  { key: 'emailSales', label: 'Récapitulatif ventes journalier' },
-                  { key: 'emailStock', label: 'Alertes rupture de stock' },
-                  { key: 'emailPayroll', label: 'Rappels bulletins de paie' },
-                ]},
-                { section: 'SMS', items: [
-                  { key: 'smsSales', label: 'Ventes importantes (> 100k F CFA)' },
-                  { key: 'smsStock', label: 'Ruptures critiques' },
-                  { key: 'smsPayroll', label: 'Validation paie' },
-                ]},
-              ].map(group => (
-                <div key={group.section}>
-                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>{group.section}</h4>
-                  <div className="space-y-3">
-                    {group.items.map(item => (
-                      <div key={item.key} className="flex items-center justify-between p-3 rounded-xl"
-                        style={{ background: 'var(--bg3)' }}>
-                        <span className="text-sm" style={{ color: 'var(--text)' }}>{item.label}</span>
-                        <button
-                          className="w-11 h-6 rounded-full transition-all relative flex-shrink-0"
-                          style={{
-                            background: (notifs as any)[item.key] ? 'var(--teal)' : 'var(--bg4)',
-                            border: 'none', cursor: 'pointer',
-                          }}
-                          onClick={() => setNotifs(n => ({ ...n, [item.key]: !(n as any)[item.key] }))}
-                        >
-                          <div className="absolute w-4 h-4 rounded-full bg-white transition-all top-1"
-                            style={{ left: (notifs as any)[item.key] ? '24px' : '4px' }} />
-                        </button>
-                      </div>
+          {/* ════ POS ════ */}
+          {tab === 'pos' && (
+            <div className="panel">
+              <div className="panel-head"><span className="panel-title">🛒 Configuration POS</span></div>
+              <div className="space-y-4">
+                {/* Mode paiement par défaut */}
+                <div>
+                  <Label>Mode de paiement par défaut</Label>
+                  <div className="flex gap-3">
+                    {[
+                      { id: 'cash',   label: '💵 Espèces' },
+                      { id: 'card',   label: '💳 Carte' },
+                      { id: 'mobile', label: '📲 Mobile' },
+                    ].map(m => (
+                      <button key={m.id}
+                        className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all"
+                        style={{
+                          background: cfg.posDefaultPayment === m.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg3)',
+                          color: cfg.posDefaultPayment === m.id ? '#fff' : 'var(--text2)',
+                          border: `1px solid ${cfg.posDefaultPayment === m.id ? 'transparent' : 'var(--border)'}`,
+                          cursor: 'pointer', fontFamily: 'inherit',
+                          boxShadow: cfg.posDefaultPayment === m.id ? '0 4px 14px rgba(91,78,232,.3)' : 'none',
+                        }}
+                        onClick={() => cfg.updateConfig({ posDefaultPayment: m.id as 'cash' | 'card' | 'mobile' })}
+                      >
+                        {m.label}
+                      </button>
                     ))}
                   </div>
                 </div>
-              ))}
-              <div className="flex justify-end">
-                <button className="btn btn-primary gap-2" onClick={() => save('Notifications')}>
-                  <Save size={14} /> Sauvegarder
-                </button>
+
+                {/* Taux TVA */}
+                <div>
+                  <Label>Taux de taxe POS (%)</Label>
+                  <select className="input text-sm" value={cfg.posTaxRate}
+                    onChange={e => cfg.updateConfig({ posTaxRate: +e.target.value })}>
+                    {VAT_OPTIONS.map(v => <option key={v} value={v}>{v}%</option>)}
+                  </select>
+                </div>
+
+                <div className="space-y-3">
+                  <ToggleRow label="Afficher le stock sur les tuiles" sub="Affiche la quantité disponible sous chaque produit"
+                    value={cfg.posShowStockOnTile} onChange={v => cfg.updateConfig({ posShowStockOnTile: v })} />
+                  <ToggleRow label="Impression automatique du ticket"
+                    value={cfg.posAutoprint} onChange={v => cfg.updateConfig({ posAutoprint: v })} />
+                  <ToggleRow label="TVA incluse dans les prix affichés"
+                    value={cfg.posVatIncluded} onChange={v => cfg.updateConfig({ posVatIncluded: v })} />
+                </div>
+
+                <div className="flex justify-end">
+                  <button className="btn btn-primary gap-2" onClick={() => save('Config POS')}>
+                    <Save size={14} /> {t('btn_save')}
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* ── Sécurité ── */}
+          {/* ════ STOCK ════ */}
+          {tab === 'stock' && (
+            <div className="panel">
+              <div className="panel-head"><span className="panel-title">📦 Configuration Stock</span></div>
+              <div className="space-y-4">
+                <div>
+                  <Label>Seuil d'alerte par défaut (unités)</Label>
+                  <input className="input text-sm" type="number" min={0}
+                    value={cfg.stockLowThreshold}
+                    onChange={e => cfg.updateConfig({ stockLowThreshold: +e.target.value })} />
+                  <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>
+                    Une alerte est déclenchée quand le stock descend sous ce seuil
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <ToggleRow label="Commande automatique à la rupture"
+                    sub="Crée automatiquement un bon de commande fournisseur"
+                    value={cfg.stockAutoOrder} onChange={v => cfg.updateConfig({ stockAutoOrder: v })} />
+                  <ToggleRow label="Afficher le SKU dans les tableaux"
+                    sub="Colonne référence produit"
+                    value={cfg.stockShowSKU} onChange={v => cfg.updateConfig({ stockShowSKU: v })} />
+                </div>
+                <div className="flex justify-end">
+                  <button className="btn btn-primary gap-2" onClick={() => save('Config Stock')}>
+                    <Save size={14} /> {t('btn_save')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════ NOTIFICATIONS ════ */}
+          {tab === 'notifications' && (
+            <div className="panel">
+              <div className="panel-head"><span className="panel-title">🔔 Préférences de notifications</span></div>
+              <div className="space-y-5">
+                {/* Email */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>📧 Email</h4>
+                  <div className="space-y-2">
+                    <ToggleRow label="Récapitulatif ventes journalier"
+                      value={cfg.notifEmailSales} onChange={v => cfg.updateConfig({ notifEmailSales: v })} />
+                    <ToggleRow label="Alertes rupture de stock"
+                      value={cfg.notifEmailStock} onChange={v => cfg.updateConfig({ notifEmailStock: v })} />
+                    <ToggleRow label="Rappels bulletins de paie"
+                      value={cfg.notifEmailPayroll} onChange={v => cfg.updateConfig({ notifEmailPayroll: v })} />
+                  </div>
+                  {cfg.notifEmailStock && (
+                    <div className="mt-3">
+                      <Label>Email de destination pour les alertes stock</Label>
+                      <input className="input text-sm" type="email"
+                        value={cfg.notifStockEmail}
+                        onChange={e => cfg.updateConfig({ notifStockEmail: e.target.value })}
+                        placeholder="alerte@moncommerce.com" />
+                    </div>
+                  )}
+                </div>
+
+                {/* SMS */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>📱 SMS</h4>
+                  <div className="space-y-2">
+                    <ToggleRow label="Ventes importantes (> 100 000 F CFA)"
+                      value={cfg.notifSmsSales} onChange={v => cfg.updateConfig({ notifSmsSales: v })} />
+                    <ToggleRow label="Ruptures critiques"
+                      value={cfg.notifSmsStock} onChange={v => cfg.updateConfig({ notifSmsStock: v })} />
+                  </div>
+                </div>
+
+                {/* Push */}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>🔔 Push</h4>
+                  <div className="space-y-2">
+                    <ToggleRow label="Toutes les notifications"
+                      sub="Notifications dans le navigateur"
+                      value={cfg.notifPushAll} onChange={v => cfg.updateConfig({ notifPushAll: v })} />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button className="btn btn-primary gap-2" onClick={() => save('Notifications')}>
+                    <Save size={14} /> {t('btn_save')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ════ SÉCURITÉ ════ */}
           {tab === 'securite' && (
             <div className="space-y-4">
-              <div className="panel space-y-4">
+              {/* 2FA */}
+              <div className="panel">
                 <div className="panel-head"><span className="panel-title">🔐 Authentification à deux facteurs (2FA)</span></div>
-                <div className="flex items-center gap-4 p-4 rounded-xl" style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.2)' }}>
-                  <div className="text-3xl">🔐</div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>2FA via TOTP activé</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>Google Authenticator ou Authy — codes de 6 chiffres</div>
+                <ToggleRow label="Activer le 2FA"
+                  sub="Code TOTP — Google Authenticator ou Authy"
+                  value={cfg.twoFAEnabled}
+                  onChange={v => { cfg.updateConfig({ twoFAEnabled: v }); toast.success(v ? '2FA activé' : '2FA désactivé') }} />
+                {cfg.twoFAEnabled && (
+                  <div className="mt-4 flex items-start gap-5 p-4 rounded-xl"
+                    style={{ background: 'rgba(14,196,126,.06)', border: '1px solid rgba(14,196,126,.2)' }}>
+                    {/* Fake QR code */}
+                    <div style={{
+                      display: 'grid', gridTemplateColumns: 'repeat(12,1fr)', gap: 2,
+                      width: 100, height: 100, padding: 6,
+                      background: 'white', borderRadius: 8, flexShrink: 0,
+                    }}>
+                      {STATIC_QR.map((b, i) => (
+                        <div key={i} style={{ background: b ? '#111' : 'transparent', borderRadius: 1 }} />
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>
+                        Scannez ce QR code
+                      </p>
+                      <p className="text-xs mb-2" style={{ color: 'var(--text3)' }}>
+                        Utilisez Google Authenticator, Authy ou toute app TOTP compatible
+                      </p>
+                      <code className="text-xs font-mono px-2 py-1 rounded" style={{ background: 'var(--bg4)', color: 'var(--p2)' }}>
+                        HABA-XXXX-XXXX-XXXX
+                      </code>
+                    </div>
                   </div>
-                  <span className="badge badge-green">Actif</span>
-                </div>
-                <button className="btn btn-ghost gap-2 w-full justify-center"
-                  onClick={() => toast('📱 QR Code affiché — scannez avec votre app')}>
-                  🔄 Reconfigurer le 2FA
-                </button>
+                )}
               </div>
-              <div className="panel space-y-4">
+
+              {/* Session */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">⏱️ Paramètres de session</span></div>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Timeout de session automatique</Label>
+                    <select className="input text-sm" value={cfg.sessionTimeout}
+                      onChange={e => cfg.updateConfig({ sessionTimeout: +e.target.value })}>
+                      <option value={15}>15 minutes</option>
+                      <option value={30}>30 minutes</option>
+                      <option value={60}>1 heure</option>
+                      <option value={240}>4 heures</option>
+                      <option value={0}>Jamais</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Tentatives de connexion max</Label>
+                    <select className="input text-sm" value={cfg.maxLoginAttempts}
+                      onChange={e => cfg.updateConfig({ maxLoginAttempts: +e.target.value })}>
+                      <option value={3}>3 tentatives</option>
+                      <option value={5}>5 tentatives</option>
+                      <option value={10}>10 tentatives</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sessions actives */}
+              <div className="panel">
                 <div className="panel-head"><span className="panel-title">🛡️ Sessions actives</span></div>
                 {[
                   { device: '💻 MacBook Pro', location: 'Dakar, Sénégal', time: 'Maintenant', current: true },
                   { device: '📱 iPhone 15',    location: 'Dakar, Sénégal', time: 'Il y a 2h',  current: false },
                 ].map((s, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
+                  <div key={i} className="flex items-center justify-between p-3 rounded-xl mb-2"
+                    style={{ background: 'var(--bg3)' }}>
                     <div>
                       <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{s.device}</div>
                       <div className="text-xs" style={{ color: 'var(--text3)' }}>{s.location} · {s.time}</div>
                     </div>
                     {s.current
                       ? <span className="badge badge-green">Session actuelle</span>
-                      : <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--danger)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
+                      : <button className="mini-btn" style={{ color: 'var(--danger)' }}
                           onClick={() => toast.success('Session révoquée')}>Révoquer</button>
                     }
                   </div>
                 ))}
               </div>
+
+              {/* Export/Import */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">📁 Configuration</span></div>
+                <div className="flex gap-3">
+                  <button className="btn btn-ghost gap-2" onClick={handleExportConfig}>
+                    <Download size={14} /> Exporter la config
+                  </button>
+                  <button className="btn btn-ghost gap-2" onClick={() => importRef.current?.click()}>
+                    <Upload size={14} /> Importer une config
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
+          {/* ════ AVANCÉ ════ */}
+          {tab === 'avance' && (
+            <div className="space-y-4">
+              {/* Export / Import */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">📦 Configuration complète</span></div>
+                <div className="space-y-3">
+                  <p className="text-sm" style={{ color: 'var(--text2)' }}>
+                    Exportez votre configuration pour la sauvegarder ou la transférer vers un autre poste.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <button className="btn btn-ghost gap-2" onClick={handleExportConfig}>
+                      <Download size={14} /> Exporter la configuration
+                    </button>
+                    <button className="btn btn-ghost gap-2" onClick={() => importRef.current?.click()}>
+                      <Upload size={14} /> Importer une configuration
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Réinitialiser */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">🔄 Réinitialisation</span></div>
+                <div className="flex items-start gap-3 p-4 rounded-xl mb-4"
+                  style={{ background: 'rgba(232,64,74,.07)', border: '1px solid rgba(232,64,74,.2)' }}>
+                  <AlertTriangle size={18} style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 2 }} />
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--danger)' }}>Action irréversible</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
+                      Toutes vos préférences seront remises aux valeurs par défaut. Vos données métier ne seront pas affectées.
+                    </p>
+                  </div>
+                </div>
+                <button className="btn gap-2"
+                  style={{ background: 'rgba(232,64,74,.12)', color: 'var(--danger)', border: '1px solid rgba(232,64,74,.25)' }}
+                  onClick={() => setShowReset(true)}>
+                  <RefreshCw size={14} /> Réinitialiser les paramètres
+                </button>
+              </div>
+
+              {/* Informations système */}
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title">ℹ️ Informations système</span></div>
+                <div className="space-y-2">
+                  {[
+                    { label: 'Version',           value: 'v1.0.0-beta' },
+                    { label: 'Environnement',     value: 'Production' },
+                    { label: 'Dernière mise à jour', value: '14 mai 2026' },
+                    { label: 'Navigateur',        value: navigator.userAgent.split(' ').slice(-1)[0] || '—' },
+                    { label: 'Stockage utilisé',  value: `${(JSON.stringify(localStorage).length / 1024).toFixed(1)} Ko` },
+                  ].map(row => (
+                    <div key={row.label} className="flex justify-between items-center py-2"
+                      style={{ borderBottom: '1px solid var(--border)' }}>
+                      <span className="text-sm" style={{ color: 'var(--text2)' }}>{row.label}</span>
+                      <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text)' }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* ── Modal confirmation reset ── */}
+      {showReset && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowReset(false)}>
+          <div className="modal-box" style={{ maxWidth: 420 }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-base" style={{ color: 'var(--text)' }}>⚠️ Confirmer la réinitialisation</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowReset(false)}><X size={14} /></button>
+            </div>
+            <p className="text-sm mb-5" style={{ color: 'var(--text2)' }}>
+              Toutes vos préférences (thème, langue, devise, POS, stock, notifications, sécurité) seront remises aux valeurs par défaut.
+              <br /><br />
+              Cette action est <strong style={{ color: 'var(--danger)' }}>irréversible</strong>. Exportez d'abord votre configuration si vous souhaitez la conserver.
+            </p>
+            <div className="flex gap-2">
+              <button className="btn btn-ghost flex-1 justify-center" onClick={() => setShowReset(false)}>
+                {t('btn_cancel')}
+              </button>
+              <button className="btn flex-1 justify-center"
+                style={{ background: 'var(--danger)', color: '#fff', border: 'none' }}
+                onClick={() => {
+                  cfg.resetConfig()
+                  setShowReset(false)
+                  setShopForm({
+                    shopName: cfg.shopName, shopSlogan: cfg.shopSlogan,
+                    shopAddress: cfg.shopAddress, shopPhone: cfg.shopPhone,
+                    shopEmail: cfg.shopEmail, shopCountry: cfg.shopCountry,
+                    shopSiret: cfg.shopSiret, shopVatRate: cfg.shopVatRate,
+                  })
+                  toast.success('Paramètres réinitialisés')
+                }}>
+                Réinitialiser
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

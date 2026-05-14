@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { useConfig, t } from '@/stores/appStore'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
-  const navigate = useNavigate()
-  const { login } = useAuthStore()
-  const [email, setEmail] = useState('')
+  const navigate   = useNavigate()
+  const { login }  = useAuthStore()
+  const { lang }   = useConfig()
+  void lang // for t() reactivity
+
+  const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [showPwd, setShowPwd] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [showPwd,  setShowPwd]  = useState(false)
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState('')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,7 +26,7 @@ export default function LoginPage() {
       toast.success('Connexion réussie !')
       navigate('/app/dashboard')
     } else {
-      setError('Identifiants incorrects. Vérifiez votre email et mot de passe.')
+      setError(t('login_error'))
     }
     setLoading(false)
   }
@@ -38,18 +42,18 @@ export default function LoginPage() {
           <div className="li">H</div>
           <div className="login-logo-txt">Haba<em>Shop</em></div>
         </div>
-        <div className="login-h">Connexion</div>
-        <div className="login-sub">Accédez à votre espace de gestion</div>
+        <div className="login-h">{t('login_title')}</div>
+        <div className="login-sub">{t('login_subtitle')}</div>
 
         <div className={`err${error ? ' show' : ''}`}>{error}</div>
 
         <form onSubmit={handleLogin}>
-          <label className="fl">Email</label>
+          <label className="fl">{t('login_email')}</label>
           <input
             className="fi" type="email" placeholder="admin@habashop.com"
             value={email} onChange={e => setEmail(e.target.value)} required
           />
-          <label className="fl">Mot de passe</label>
+          <label className="fl">{t('login_password')}</label>
           <div style={{ position: 'relative' }}>
             <input
               className="fi" type={showPwd ? 'text' : 'password'} placeholder="••••••••"
@@ -62,24 +66,24 @@ export default function LoginPage() {
             >{showPwd ? '🙈' : '👁'}</button>
           </div>
           <button className="lbtn" type="submit" disabled={loading}>
-            {loading ? '⏳ Connexion...' : '🔐 Se connecter'}
+            {loading ? `⏳ ${t('login_loading')}` : `🔐 ${t('login_submit')}`}
           </button>
         </form>
 
         <div className="demo-box">
-          <strong>Compte démo :</strong> admin@habashop.com / demo1234
+          <strong>{t('login_demo')} :</strong> admin@habashop.com / demo1234
           <br />
           <span
             style={{ color: 'var(--p2)', cursor: 'pointer', fontSize: 12 }}
             onClick={() => { setEmail('admin@habashop.com'); setPassword('demo1234') }}
-          >→ Remplir automatiquement</span>
+          >{t('login_autofill')}</span>
         </div>
 
         <div style={{ marginTop: 12, textAlign: 'center' }}>
           <span
             style={{ fontSize: 12, color: 'var(--text2)', cursor: 'pointer' }}
             onClick={() => navigate('/')}
-          >← Retour à l'accueil</span>
+          >{t('login_back')}</span>
         </div>
       </div>
     </div>

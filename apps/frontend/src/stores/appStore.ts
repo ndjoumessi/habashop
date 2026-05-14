@@ -1,33 +1,209 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { translations } from '@/i18n'
 
-type Theme    = 'dark' | 'light'
-type Lang     = 'fr' | 'en'
-type Currency = 'XOF' | 'EUR' | 'USD' | 'CAD'
+export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD'
+export type Lang     = 'fr' | 'en' | 'es' | 'it'
+export type Theme    = 'dark' | 'light'
 
-interface AppState {
-  theme: Theme; lang: Lang; currency: Currency;
-  setTheme: (t: Theme) => void
-  setLang:  (l: Lang)  => void
+export interface AppConfig {
+  // Identité boutique
+  shopName: string
+  shopSlogan: string
+  shopAddress: string
+  shopPhone: string
+  shopEmail: string
+  shopLogo: string | null
+  shopCountry: string
+  shopCurrency: Currency
+  shopVatRate: number
+  shopSiret: string
+
+  // Interface
+  lang: Lang
+  theme: Theme
+  sidebarCollapsed: boolean
+
+  // Devises
+  currency: Currency
+  showCurrencyConverter: boolean
+
+  // POS
+  posDefaultPayment: 'cash' | 'card' | 'mobile'
+  posShowStockOnTile: boolean
+  posAutoprint: boolean
+  posVatIncluded: boolean
+  posTaxRate: number
+
+  // Stock
+  stockLowThreshold: number
+  stockAutoOrder: boolean
+  stockShowSKU: boolean
+
+  // Notifications
+  notifEmailSales: boolean
+  notifEmailStock: boolean
+  notifEmailPayroll: boolean
+  notifSmsSales: boolean
+  notifSmsStock: boolean
+  notifPushAll: boolean
+  notifStockEmail: string
+
+  // Sécurité
+  twoFAEnabled: boolean
+  sessionTimeout: number
+  maxLoginAttempts: number
+
+  // Apparence avancée
+  accentColor: string
+  compactMode: boolean
+  showAnimations: boolean
+  tableRowsPerPage: number
+}
+
+export const DEFAULT_CONFIG: AppConfig = {
+  shopName: 'HabaShop — Dakar Central',
+  shopSlogan: 'Votre commerce, géré simplement',
+  shopAddress: 'Rue 10 × 23, Dakar, Sénégal',
+  shopPhone: '+221 77 000 00 00',
+  shopEmail: 'contact@habashop.com',
+  shopLogo: null,
+  shopCountry: 'Sénégal',
+  shopCurrency: 'XOF',
+  shopVatRate: 18,
+  shopSiret: 'SN-2026-001234',
+
+  lang: 'fr',
+  theme: 'dark',
+  sidebarCollapsed: false,
+
+  currency: 'XOF',
+  showCurrencyConverter: true,
+
+  posDefaultPayment: 'cash',
+  posShowStockOnTile: true,
+  posAutoprint: false,
+  posVatIncluded: true,
+  posTaxRate: 18,
+
+  stockLowThreshold: 10,
+  stockAutoOrder: false,
+  stockShowSKU: true,
+
+  notifEmailSales: true,
+  notifEmailStock: true,
+  notifEmailPayroll: false,
+  notifSmsSales: false,
+  notifSmsStock: true,
+  notifPushAll: true,
+  notifStockEmail: 'contact@habashop.com',
+
+  twoFAEnabled: false,
+  sessionTimeout: 30,
+  maxLoginAttempts: 5,
+
+  accentColor: '#5B4EE8',
+  compactMode: false,
+  showAnimations: true,
+  tableRowsPerPage: 25,
+}
+
+export const ACCENT_PAIRS: Record<string, { p: string; p2: string; p3: string }> = {
+  '#5B4EE8': { p: '#5B4EE8', p2: '#7C6FF0', p3: '#A89CF5' },
+  '#3B82F6': { p: '#3B82F6', p2: '#60A5FA', p3: '#93C5FD' },
+  '#10B981': { p: '#10B981', p2: '#34D399', p3: '#6EE7B7' },
+  '#F59E0B': { p: '#F59E0B', p2: '#FCD34D', p3: '#FDE68A' },
+  '#EF4444': { p: '#EF4444', p2: '#F87171', p3: '#FCA5A5' },
+  '#EC4899': { p: '#EC4899', p2: '#F472B6', p3: '#F9A8D4' },
+}
+
+function applyAccentColor(color: string) {
+  const pair = ACCENT_PAIRS[color]
+  if (!pair) return
+  const root = document.documentElement
+  root.style.setProperty('--p',  pair.p)
+  root.style.setProperty('--p2', pair.p2)
+  root.style.setProperty('--p3', pair.p3)
+}
+
+interface AppStore extends AppConfig {
+  updateConfig: (partial: Partial<AppConfig>) => void
+  resetConfig:  () => void
+  exportConfig: () => string
+  importConfig: (json: string) => void
+  // backward-compat setters
+  setTheme:    (t: Theme)    => void
+  setLang:     (l: Lang)     => void
   setCurrency: (c: Currency) => void
 }
 
-export const useAppStore = create<AppState>()(
+export const useAppStore = create<AppStore>()(
   persist(
-    (set) => ({
-      theme: 'dark', lang: 'fr', currency: 'XOF',
-      setTheme: (theme) => { set({ theme }); document.documentElement.setAttribute('data-theme', theme) },
-      setLang:  (lang)  => set({ lang }),
+    (set, get) => ({
+      ...DEFAULT_CONFIG,
+
+      updateConfig: (partial) => {
+        set(partial as Partial<AppStore>)
+        if (partial.theme)       document.documentElement.setAttribute('data-theme', partial.theme)
+        if (partial.accentColor) applyAccentColor(partial.accentColor)
+      },
+
+      resetConfig: () => {
+        set({ ...(DEFAULT_CONFIG as Partial<AppStore>) })
+        document.documentElement.setAttribute('data-theme', DEFAULT_CONFIG.theme)
+        applyAccentColor(DEFAULT_CONFIG.accentColor)
+      },
+
+      exportConfig: () => {
+        const s = get()
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { updateConfig, resetConfig, exportConfig, importConfig, setTheme, setLang, setCurrency, ...cfg } = s
+        return JSON.stringify(cfg, null, 2)
+      },
+
+      importConfig: (json: string) => {
+        try {
+          const cfg = JSON.parse(json) as Partial<AppConfig>
+          set(cfg as Partial<AppStore>)
+          if (cfg.theme)       document.documentElement.setAttribute('data-theme', cfg.theme)
+          if (cfg.accentColor) applyAccentColor(cfg.accentColor)
+        } catch {
+          // silently fail — caller should show error
+        }
+      },
+
+      setTheme:    (theme)    => { set({ theme });    document.documentElement.setAttribute('data-theme', theme) },
+      setLang:     (lang)     => set({ lang }),
       setCurrency: (currency) => set({ currency }),
     }),
-    { name: 'habashop-app' }
+    {
+      name: 'habashop-config',
+      onRehydrateStorage: () => (state) => {
+        if (state?.theme)       document.documentElement.setAttribute('data-theme', state.theme)
+        if (state?.accentColor) applyAccentColor(state.accentColor)
+      },
+    }
   )
 )
 
-const SYMBOLS: Record<Currency, string> = { XOF: 'F CFA', EUR: '€', USD: '$', CAD: 'CA$' }
+export function useConfig() {
+  return useAppStore()
+}
 
-export function formatCurrency(amount: number, currency: Currency): string {
-  const sym = SYMBOLS[currency]
-  if (currency === 'XOF') return `${Math.round(amount).toLocaleString('fr-FR')} ${sym}`
+const SYMBOLS: Record<Currency, string> = {
+  XOF: 'F CFA', XAF: 'F CFA', EUR: '€', USD: '$', CAD: 'CA$',
+}
+
+export function formatCurrency(amount: number, currency?: Currency): string {
+  const curr = currency ?? useAppStore.getState().currency
+  const sym  = SYMBOLS[curr]
+  if (curr === 'XOF' || curr === 'XAF') {
+    return `${Math.round(amount).toLocaleString('fr-FR')} ${sym}`
+  }
   return `${sym}${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+export function t(key: string): string {
+  const { lang } = useAppStore.getState()
+  return translations[lang]?.[key] ?? translations.fr[key] ?? key
 }
