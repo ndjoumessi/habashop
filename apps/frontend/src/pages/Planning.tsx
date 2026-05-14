@@ -15,14 +15,72 @@ const EMPLOYEES: EmpBasic[] = [
   { id:6, name:'Ibrahim Sow',      role:'Livreur',     avatar:'IS', color:'#8B5CF6' },
 ]
 
-const SHIFTS: Record<ShiftKey, { label: string; hours: string; bg: string; color: string; border: string; emoji: string; short: string }> = {
-  M: { label:'Matin',      hours:'08:00–13:00', bg:'rgba(99,102,241,.18)',  color:'#818CF8', border:'rgba(99,102,241,.35)',  emoji:'🌅', short:'M' },
-  S: { label:'Après-midi', hours:'13:00–18:00', bg:'rgba(245,158,11,.18)',  color:'#FCD34D', border:'rgba(245,158,11,.35)',  emoji:'☀️', short:'S' },
-  J: { label:'Journée',    hours:'08:00–18:00', bg:'rgba(16,185,129,.18)',  color:'#34D399', border:'rgba(16,185,129,.35)',  emoji:'🌞', short:'J' },
-  N: { label:'Nuit',       hours:'20:00–06:00', bg:'rgba(139,92,246,.18)',  color:'#A78BFA', border:'rgba(139,92,246,.35)',  emoji:'🌙', short:'N' },
-  R: { label:'Repos',      hours:'—',           bg:'rgba(148,163,184,.08)', color:'#64748B', border:'rgba(148,163,184,.15)', emoji:'💤', short:'R' },
-  C: { label:'Congé',      hours:'—',           bg:'rgba(59,130,246,.18)',  color:'#60A5FA', border:'rgba(59,130,246,.35)',  emoji:'🏖️', short:'C' },
-}
+const SHIFTS = {
+  M: {
+    label:'Matin', hours:'08:00–13:00',
+    bg:'rgba(99,102,241,.15)', color:'#818CF8',
+    border:'rgba(99,102,241,.3)', short:'M',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+      </svg>
+    ),
+  },
+  S: {
+    label:'Après-midi', hours:'13:00–18:00',
+    bg:'rgba(245,158,11,.15)', color:'#FCD34D',
+    border:'rgba(245,158,11,.3)', short:'AM',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <path d="M17 12a5 5 0 1 1-10 0"/>
+        <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2"/>
+      </svg>
+    ),
+  },
+  J: {
+    label:'Journée', hours:'08:00–18:00',
+    bg:'rgba(16,185,129,.15)', color:'#34D399',
+    border:'rgba(16,185,129,.3)', short:'J',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <path d="M16 2v4M8 2v4M3 10h18"/>
+      </svg>
+    ),
+  },
+  N: {
+    label:'Nuit', hours:'20:00–06:00',
+    bg:'rgba(139,92,246,.15)', color:'#A78BFA',
+    border:'rgba(139,92,246,.3)', short:'N',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    ),
+  },
+  R: {
+    label:'Repos', hours:'—',
+    bg:'rgba(148,163,184,.08)', color:'#64748B',
+    border:'rgba(148,163,184,.15)', short:'R',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/>
+      </svg>
+    ),
+  },
+  C: {
+    label:'Congé', hours:'—',
+    bg:'rgba(59,130,246,.15)', color:'#60A5FA',
+    border:'rgba(59,130,246,.3)', short:'C',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2M12 12h.01"/>
+      </svg>
+    ),
+  },
+} satisfies Record<ShiftKey, { label:string; hours:string; bg:string; color:string; border:string; short:string; icon:JSX.Element }>
 
 const SHIFT_HOURS: Record<ShiftKey, { start: string; end: string }> = {
   M: { start:'08:00', end:'13:00' }, S: { start:'13:00', end:'18:00' },
@@ -158,7 +216,7 @@ export default function Planning() {
           { label:'Semaine',            value:`Semaine ${weekNum}`, sub:`${formatDate(weekDays[0])} — ${formatDate(weekDays[6])}`, color:'var(--p2)',   icon:'📅' },
           { label:'Employés planifiés', value:`${plannedCount}/6`,  sub:'1 en congé',                                              color:'var(--acc2)', icon:'👥' },
           { label:'Heures totales',     value:`${totalHoursAll}h`,  sub:'Cette semaine',                                           color:'var(--acc)',  icon:'⏱️' },
-          { label:'Taux de couverture', value:`${coveragePct} %`,    sub:'Objectif : 100 %',                                         color:'var(--p3)',   icon:'📊' },
+          { label:'Taux de couverture', value:`${coveragePct} %`,   sub:'Objectif : 100 %',                                        color:'var(--p3)',   icon:'📊' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color:k.color }}>{k.icon}</div>
@@ -206,7 +264,7 @@ export default function Planning() {
         </div>
       </div>
 
-      {/* Légende */}
+      {/* Légende — icônes SVG */}
       <div style={{
         display:'flex', gap:8, flexWrap:'wrap',
         background:'var(--card)', border:'1px solid var(--border)',
@@ -217,7 +275,7 @@ export default function Planning() {
             display:'flex', alignItems:'center', gap:6,
             background:s.bg, border:`1px solid ${s.border}`, borderRadius:8, padding:'5px 12px',
           }}>
-            <span style={{ fontSize:13 }}>{s.emoji}</span>
+            <div style={{ color:s.color }}>{s.icon}</div>
             <span style={{ fontSize:11, fontWeight:700, color:s.color }}>{s.label}</span>
             {s.hours !== '—' && <span style={{ fontSize:10, color:'var(--text3)' }}>{s.hours}</span>}
           </div>
@@ -312,7 +370,7 @@ export default function Planning() {
                       </div>
                     </td>
 
-                    {/* Shift cells */}
+                    {/* Shift cells — icônes SVG */}
                     {weekDays.map((day, dayIdx) => {
                       const sk    = (empSch[dayIdx] ?? 'R') as ShiftKey
                       const shift = SHIFTS[sk]
@@ -326,13 +384,14 @@ export default function Planning() {
                             borderLeft: isToday ? '2px solid rgba(91,78,232,.2)' : '1px solid var(--border)',
                           }}>
                           <div style={{
-                            display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2,
+                            display:'inline-flex', flexDirection:'column', alignItems:'center', gap:3,
                             background:shift.bg, border:`1px solid ${shift.border}`,
-                            borderRadius:9, padding:'6px 8px', minWidth:58, transition:'all .15s',
+                            borderRadius:9, padding:'7px 10px', minWidth:58, transition:'all .15s',
+                            cursor:'pointer',
                           }}>
-                            <span style={{ fontSize:14 }}>{shift.emoji}</span>
+                            <div style={{ color:shift.color }}>{shift.icon}</div>
                             <span style={{ fontSize:10, fontWeight:800, color:shift.color }}>{shift.short}</span>
-                            <span style={{ fontSize:9, color:'var(--text3)', whiteSpace:'nowrap' }}>
+                            <span style={{ fontSize:8.5, color:'var(--text3)', whiteSpace:'nowrap' }}>
                               {sk !== 'R' && sk !== 'C' ? shift.hours.split('–')[0] : '—'}
                             </span>
                           </div>
@@ -356,7 +415,7 @@ export default function Planning() {
           </table>
         </div>
 
-        {/* Footer résumé */}
+        {/* Footer résumé — icônes SVG */}
         <div style={{
           padding:'14px 20px', borderTop:'1px solid var(--border)',
           background:'var(--bg3)', display:'flex', gap:8, flexWrap:'wrap',
@@ -366,7 +425,7 @@ export default function Planning() {
               display:'flex', alignItems:'center', gap:7,
               background:s.bg, border:`1px solid ${s.border}`, borderRadius:8, padding:'6px 12px',
             }}>
-              <span style={{ fontSize:14 }}>{s.emoji}</span>
+              <div style={{ color:s.color }}>{s.icon}</div>
               <span style={{ fontSize:11, fontWeight:700, color:s.color }}>{s.label}</span>
               <span style={{
                 background:'rgba(255,255,255,.15)', borderRadius:20,
@@ -415,10 +474,11 @@ export default function Planning() {
                   boxShadow: editShift === key ? `0 6px 20px ${s.color}44` : 'none',
                   transform: editShift === key ? 'scale(1.04)' : 'scale(1)',
                   transition:'all .2s',
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:6,
                 }}>
-                  <div style={{ fontSize:22, marginBottom:5 }}>{s.emoji}</div>
+                  <div style={{ color:s.color }}>{s.icon}</div>
                   <div style={{ fontSize:12, fontWeight:800, color:s.color }}>{s.label}</div>
-                  <div style={{ fontSize:10, color:'var(--text3)', marginTop:2 }}>{s.hours}</div>
+                  <div style={{ fontSize:10, color:'var(--text3)' }}>{s.hours}</div>
                 </div>
               ))}
             </div>
@@ -504,7 +564,7 @@ export default function Planning() {
                 </div>
               </div>
 
-              {/* Type créneau */}
+              {/* Type créneau — icônes SVG */}
               <div>
                 <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:8 }}>Type de créneau</label>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8 }}>
@@ -515,10 +575,11 @@ export default function Planning() {
                       boxShadow: newShift === key ? `0 6px 20px ${s.color}44` : 'none',
                       transform: newShift === key ? 'scale(1.04)' : 'scale(1)',
                       transition:'all .2s',
+                      display:'flex', flexDirection:'column', alignItems:'center', gap:5,
                     }}>
-                      <div style={{ fontSize:20, marginBottom:3 }}>{s.emoji}</div>
+                      <div style={{ color:s.color }}>{s.icon}</div>
                       <div style={{ fontSize:11, fontWeight:800, color:s.color }}>{s.label}</div>
-                      <div style={{ fontSize:9.5, color:'var(--text3)', marginTop:1 }}>{s.hours}</div>
+                      <div style={{ fontSize:9.5, color:'var(--text3)' }}>{s.hours}</div>
                     </div>
                   ))}
                 </div>
