@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { Download, Eye, Check, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 
 type PayStatus = 'PAYÉ' | 'EN ATTENTE' | 'SUSPENDU' | 'GÉNÉRÉ'
 
@@ -38,6 +38,62 @@ const MONTHS = [
   'Juin 2026','Juillet 2026','Août 2026','Septembre 2026','Octobre 2026',
   'Novembre 2026','Décembre 2026',
 ]
+
+function printBulletin(bulletin: PayRecord) {
+  const absencePenalty = Math.round(bulletin.absences * bulletin.baseSalary / 26)
+  const brut = bulletin.baseSalary + bulletin.bonus + bulletin.overtime
+  const net  = brut - bulletin.deductions - absencePenalty
+  const cnss = Math.round(bulletin.baseSalary * 0.056)
+  const irpp = Math.round(bulletin.deductions - cnss - absencePenalty)
+
+  const gainsRows: string[][] = [
+    ['Salaire de base', '26 jours', '100 %', bulletin.baseSalary.toLocaleString('fr-FR') + ' FCFA'],
+    ...(bulletin.bonus > 0 ? [['Prime de performance', '', '', bulletin.bonus.toLocaleString('fr-FR') + ' FCFA']] : []),
+    ...(bulletin.overtime > 0 ? [['Heures supplémentaires', '', '25 %', bulletin.overtime.toLocaleString('fr-FR') + ' FCFA']] : []),
+  ]
+  const retenuesRows: string[][] = [
+    ['CNSS employé', '5,6 %', cnss.toLocaleString('fr-FR') + ' FCFA'],
+    ...(irpp > 0 ? [['Impôt sur salaire (IRPP)', '', irpp.toLocaleString('fr-FR') + ' FCFA']] : []),
+    ...(bulletin.absences > 0 ? [[`Retenue absences (${bulletin.absences}j)`, '', absencePenalty.toLocaleString('fr-FR') + ' FCFA']] : []),
+  ]
+
+  const body = `
+    ${htmlInfoGrid([
+      { label: 'EMPLOYÉ',  value: `<span style="font-size:16px;font-weight:900;">${bulletin.employee}</span><br><span style="font-size:12px;color:#888;">${bulletin.role}</span>` },
+      { label: 'PÉRIODE',  value: `${bulletin.month}<br><span style="font-size:11px;color:#888;">Statut : <strong style="color:${bulletin.status === 'PAYÉ' ? '#059669' : '#d97706'}">${bulletin.status}</strong></span>` },
+    ])}
+
+    <h2>Éléments de salaire — Gains</h2>
+    ${htmlTable(
+      ['Libellé', 'Base', 'Taux', 'Montant'],
+      gainsRows,
+      ['', '', '<strong>TOTAL BRUT</strong>', `<strong>${brut.toLocaleString('fr-FR')} FCFA</strong>`]
+    )}
+
+    <h2>Retenues</h2>
+    ${htmlTable(
+      ['Libellé', 'Taux', 'Montant'],
+      retenuesRows,
+      ['', '<strong>TOTAL RETENUES</strong>', `<strong style="color:#dc2626;">- ${bulletin.deductions.toLocaleString('fr-FR')} FCFA</strong>`]
+    )}
+
+    <div class="net-payer">
+      <div>
+        <div class="net-label">NET À PAYER</div>
+        <div style="font-size:12px;color:#666;margin-top:4px;">
+          Virement bancaire · ${bulletin.status === 'PAYÉ' ? bulletin.paidAt ?? '' : 'En attente'}
+        </div>
+      </div>
+      <div class="net-value">${net.toLocaleString('fr-FR')} FCFA</div>
+    </div>
+
+    <div class="signature-block">
+      <div><div class="signature-line">Signature employeur</div></div>
+      <div><div class="signature-line">Signature employé (lu et approuvé)</div></div>
+    </div>
+  `
+  openPDF(`Bulletin de paie — ${bulletin.employee} — ${bulletin.month}`, body)
+}
 
 const STATUS_CFG: Record<PayStatus, { cls: string; label: string }> = {
   'PAYÉ':       { cls:'badge-green',  label:'PAYÉ'       },
@@ -281,12 +337,12 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
           >✅ Marquer comme payé</button>
           <button
             className="mini-btn"
-            onClick={() => toast('🖨️ Impression...')}
+            onClick={() => { printBulletin(record); toast.success('📄 PDF ouvert !') }}
             style={{ padding:'11px 16px', fontSize:13 }}
           >🖨️ Imprimer</button>
           <button
             className="mini-btn"
-            onClick={() => toast('📥 Téléchargement PDF...')}
+            onClick={() => { printBulletin(record); toast.success('📄 PDF ouvert !') }}
             style={{ padding:'11px 16px', fontSize:13 }}
           >📥 PDF</button>
         </div>
@@ -432,7 +488,7 @@ export default function Payroll() {
                             <Check size={11} /> Payer
                           </button>
                         )}
-                        <button className="mini-btn gap-1" onClick={() => toast('📥 Téléchargement…')}>
+                        <button className="mini-btn gap-1" onClick={() => { printBulletin(r); toast.success('📄 PDF ouvert !') }}>
                           <Download size={11} />
                         </button>
                       </div>

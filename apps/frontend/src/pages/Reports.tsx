@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Download, TrendingUp, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV, exportPDF, tableToHTML } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 
 type Period = 'today' | '7days' | '30days' | '3months' | 'year'
 
@@ -103,10 +103,31 @@ export default function Reports() {
           <Download size={13} /> {t('btn_export')} CSV
         </button>
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
-          exportPDF(`Rapport ${PERIOD_LABELS[period]}`, tableToHTML(
-            ['Période','CA','Marge','Transactions','Panier moyen'],
-            [[PERIOD_LABELS[period], data.ca + ' FCFA', data.margin + ' FCFA', data.transactions, data.avgCart + ' FCFA']]
-          ))
+          const body = `
+            ${htmlKPIs([
+              { label: "Chiffre d'affaires", value: fmt(data.ca) },
+              { label: 'Marge brute',        value: fmt(data.margin) },
+              { label: 'Transactions',       value: data.transactions.toLocaleString('fr-FR') },
+              { label: 'Panier moyen',       value: fmt(data.avgCart) },
+            ])}
+            <h2>Répartition par mode de paiement</h2>
+            ${htmlTable(
+              ['Mode de paiement','Transactions','Montant','Part'],
+              [
+                ['Espèces', '724', '1 540 000 FCFA', '58 %'],
+                ['Carte',   '312', '665 000 FCFA',   '25 %'],
+                ['Mobile',  '211', '445 000 FCFA',   '17 %'],
+              ],
+              ['TOTAL', '1 247', '2 650 000 FCFA', '100 %']
+            )}
+            <h2>Top 5 produits</h2>
+            ${htmlTable(
+              ['#','Produit','Quantité vendue','Chiffre d\'affaires'],
+              TOP_PRODUCTS.map(p => [String(p.rank), p.name, String(p.qty) + ' unités', fmt(p.ca)])
+            )}
+          `
+          openPDF(`Rapport ${PERIOD_LABELS[period]}`, body)
+          toast.success('📄 PDF ouvert !')
         }}>
           <Download size={13} /> {t('btn_export')} PDF
         </button>

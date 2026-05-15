@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { Download, Plus, X, Search, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 
 type Category = 'Loyer' | 'Énergie' | 'Transport' | 'Maintenance' | 'Fournitures' | 'Marketing' | 'Formation' | 'Autre'
 type ExpStatus = 'PAYÉ' | 'EN ATTENTE'
@@ -107,6 +107,36 @@ export default function Expenses() {
 
   function ttcAmount(e: Expense) { return Math.round(e.amount * (1 + e.vat / 100)) }
 
+  const printExpensesPDF = () => {
+    const total = expenses.reduce((s, e) => s + ttcAmount(e), 0)
+    const paid  = expenses.filter(e => e.status === 'PAYÉ').reduce((s, e) => s + ttcAmount(e), 0)
+    const body = `
+      ${htmlKPIs([
+        { label: 'Total dépenses', value: total.toLocaleString('fr-FR') + ' FCFA' },
+        { label: 'Payées',         value: paid.toLocaleString('fr-FR') + ' FCFA'  },
+        { label: 'En attente',     value: (total - paid).toLocaleString('fr-FR') + ' FCFA' },
+        { label: 'Récurrentes',    value: String(expenses.filter(e => e.recurrent).length) },
+      ])}
+      <h2>Journal des dépenses</h2>
+      ${htmlTable(
+        ['Date','Libellé','Catégorie','Montant HT','TVA','TTC','Mode','Statut'],
+        expenses.map(e => [
+          e.date, e.label, e.category,
+          e.amount.toLocaleString('fr-FR') + ' F',
+          e.vat + ' %',
+          ttcAmount(e).toLocaleString('fr-FR') + ' F',
+          e.mode,
+          e.status === 'PAYÉ'
+            ? '<span class="badge badge-green">Payé</span>'
+            : '<span class="badge badge-amber">En attente</span>',
+        ]),
+        ['','','','','',
+         '<strong>' + total.toLocaleString('fr-FR') + ' FCFA</strong>','','']
+      )}
+    `
+    openPDF('Journal des dépenses', body)
+  }
+
   function markPaid(id: number) {
     setExpenses(prev => prev.map(e => e.id === id ? { ...e, status: 'PAYÉ' } : e))
     toast.success('Dépense marquée comme payée')
@@ -209,6 +239,9 @@ export default function Expenses() {
               <option value="PAYÉ">PAYÉ</option>
               <option value="EN ATTENTE">EN ATTENTE</option>
             </select>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printExpensesPDF(); toast.success('📄 PDF ouvert !') }}>
+              <Download size={12} /> PDF
+            </button>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
               exportCSV('habashop_depenses',
                 ['Date','Libellé','Catégorie','Montant HT','TVA','TTC','Mode','Récurrent','Statut'],

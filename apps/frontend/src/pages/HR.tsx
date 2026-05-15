@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
-import { exportCSV } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
 import { Download, Plus, Eye, X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -255,6 +255,64 @@ export default function HR() {
   const [expandedEmp, setExpandedEmp] = useState<number | null>(null)
 
   // ── Dérivés ──
+  const printEmployeesPDF = () => {
+    const body = `
+      ${htmlKPIs([
+        { label: 'Total employés',  value: String(employees.length) },
+        { label: 'Actifs',          value: String(employees.filter(e => e.active).length) },
+        { label: 'Masse salariale', value: employees.reduce((s,e) => s+e.salary, 0).toLocaleString('fr-FR') + ' FCFA' },
+        { label: 'Contrats CDI',    value: String(employees.filter(e => e.type === 'CDI').length) },
+      ])}
+      <h2>Liste du personnel</h2>
+      ${htmlTable(
+        ['Nom','Poste','Département','Contrat','Date embauche','Salaire base','Statut'],
+        employees.map(e => [
+          e.name, e.role, e.dept, e.type, e.hiredAt,
+          e.salary.toLocaleString('fr-FR') + ' FCFA',
+          e.active ? '<span class="badge badge-green">Actif</span>' : '<span class="badge badge-red">Inactif</span>',
+        ]),
+        ['','','','','',
+         '<strong>' + employees.reduce((s,e) => s+e.salary, 0).toLocaleString('fr-FR') + ' FCFA</strong>',
+         '<strong>MASSE SALARIALE</strong>']
+      )}
+    `
+    openPDF('Liste du personnel', body)
+  }
+
+  const printEmployeeFichePDF = (emp: Employee) => {
+    const history = salaryHistory[emp.id] ?? []
+    const body = `
+      ${htmlInfoGrid([
+        { label: 'NOM COMPLET',   value: emp.name    },
+        { label: 'POSTE',         value: emp.role     },
+        { label: 'DÉPARTEMENT',   value: emp.dept     },
+        { label: 'TYPE CONTRAT',  value: emp.type     },
+        { label: 'DATE EMBAUCHE', value: emp.hiredAt  },
+        { label: 'TÉLÉPHONE',     value: emp.phone    },
+        { label: 'EMAIL',         value: emp.email    },
+        { label: 'SALAIRE BASE',  value: emp.salary.toLocaleString('fr-FR') + ' FCFA' },
+      ])}
+      ${history.length > 0 ? `
+        <h2>Historique de rémunération</h2>
+        ${htmlTable(
+          ['Date','Type','Ancien salaire','Nouveau salaire','Évolution','Motif'],
+          history.map(h => {
+            const pct = h.oldSalary > 0
+              ? '+' + ((h.newSalary - h.oldSalary) / h.oldSalary * 100).toFixed(1) + ' %'
+              : '—'
+            return [
+              h.date, h.type,
+              h.oldSalary > 0 ? h.oldSalary.toLocaleString('fr-FR') + ' FCFA' : '—',
+              h.newSalary.toLocaleString('fr-FR') + ' FCFA',
+              pct, h.motif,
+            ]
+          })
+        )}
+      ` : ''}
+    `
+    openPDF(`Fiche employé — ${emp.name}`, body)
+  }
+
   const activeCount    = employees.filter(e => e.active).length
   const masseSalariale = employees.reduce((s, e) => s + e.salary, 0)
   const salaireMoyen   = Math.round(masseSalariale / employees.length)
@@ -365,7 +423,10 @@ export default function HR() {
                 )
                 toast.success('📊 Export CSV téléchargé !')
               }}>
-                <Download size={13} /> Export
+                <Download size={13} /> CSV
+              </button>
+              <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printEmployeesPDF(); toast.success('📄 PDF ouvert !') }}>
+                <Download size={13} /> PDF
               </button>
               <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setAddOpen(true)}>
                 <Plus size={13} /> Nouvel employé
@@ -1123,6 +1184,15 @@ export default function HR() {
                 cursor:'pointer', fontFamily:'var(--font)',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:6,
               }}>✏️ Modifier salaire</button>
+
+              <button onClick={() => { printEmployeeFichePDF(viewEmp); toast.success('📄 PDF ouvert !') }} style={{
+                gridColumn:'1 / -1',
+                background:'var(--bg4)', border:'1px solid var(--border)',
+                borderRadius:10, padding:'10px',
+                fontSize:13, fontWeight:700, color:'var(--text)',
+                cursor:'pointer', fontFamily:'var(--font)',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+              }}>📄 Fiche PDF</button>
             </div>
           </div>
         </div>

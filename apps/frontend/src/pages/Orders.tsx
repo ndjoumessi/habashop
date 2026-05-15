@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
 
 type OrderStatus = 'BROUILLON' | 'ENVOYÉE' | 'CONFIRMÉE' | 'EN TRANSIT' | 'REÇUE' | 'ANNULÉE'
 
@@ -134,6 +134,65 @@ export default function Orders() {
     toast.success(`✅ Commande ${newOrder.ref} créée !`)
   }
 
+  const printOrderPDF = (order: Order) => {
+    const body = `
+      ${htmlInfoGrid([
+        { label: 'RÉFÉRENCE',        value: order.ref },
+        { label: 'FOURNISSEUR',      value: order.supplier },
+        { label: 'DATE COMMANDE',    value: new Date(order.date).toLocaleDateString('fr-FR') },
+        { label: 'LIVRAISON PRÉVUE', value: new Date(order.expectedAt).toLocaleDateString('fr-FR') },
+        { label: 'STATUT',           value: order.status },
+        { label: 'NB ARTICLES',      value: String(order.items.length) + ' ligne(s)' },
+      ])}
+      <h2>Détail des articles commandés</h2>
+      ${htmlTable(
+        ['Produit','Quantité','Unité','Prix unitaire','Total'],
+        order.items.map(item => [
+          item.product, String(item.qty), item.unit,
+          item.unitPrice.toLocaleString('fr-FR') + ' FCFA',
+          (item.qty * item.unitPrice).toLocaleString('fr-FR') + ' FCFA',
+        ]),
+        ['','','','<strong>TOTAL COMMANDE</strong>', `<strong>${order.total.toLocaleString('fr-FR')} FCFA</strong>`]
+      )}
+      ${order.notes ? `
+        <h2>Notes</h2>
+        <div style="padding:12px;background:#f8f7ff;border-radius:8px;font-size:12px;">${order.notes}</div>
+      ` : ''}
+      <div class="signature-block">
+        <div><div class="signature-line">Signature acheteur</div></div>
+        <div><div class="signature-line">Signature fournisseur</div></div>
+      </div>
+    `
+    openPDF(`Bon de commande — ${order.ref}`, body)
+  }
+
+  const printOrdersListPDF = () => {
+    const body = `
+      ${htmlKPIs([
+        { label: 'Total commandes', value: String(orders.length) },
+        { label: 'En transit',      value: String(orders.filter(o => o.status === 'EN TRANSIT').length) },
+        { label: 'Reçues',          value: String(orders.filter(o => o.status === 'REÇUE').length) },
+        { label: 'Montant total',   value: orders.reduce((s,o) => s+o.total, 0).toLocaleString('fr-FR') + ' FCFA' },
+      ])}
+      <h2>Liste des commandes</h2>
+      ${htmlTable(
+        ['Référence','Fournisseur','Date','Livraison prévue','Articles','Montant','Statut'],
+        orders.map(o => {
+          const cls = o.status === 'REÇUE' ? 'badge-green' : o.status === 'EN TRANSIT' ? 'badge-amber' : o.status === 'ANNULÉE' ? 'badge-red' : 'badge-blue'
+          return [
+            o.ref, o.supplier,
+            new Date(o.date).toLocaleDateString('fr-FR'),
+            new Date(o.expectedAt).toLocaleDateString('fr-FR'),
+            String(o.items.length),
+            o.total.toLocaleString('fr-FR') + ' FCFA',
+            `<span class="badge ${cls}">${o.status}</span>`,
+          ]
+        })
+      )}
+    `
+    openPDF('Liste des commandes', body)
+  }
+
   const addFormItem = () =>
     setForm(f => ({ ...f, items: [...f.items, { product: '', qty: 1, unit: 'unité', unitPrice: 0 }] }))
 
@@ -175,6 +234,9 @@ export default function Orders() {
               toast.success('📊 Export CSV téléchargé !')
             }}>
               <Download size={13} /> {t('btn_export')}
+            </button>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printOrdersListPDF(); toast.success('📄 PDF ouvert !') }}>
+              <Download size={13} /> PDF
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreateModal(true)}>
               <Plus size={13} /> {t('btn_new')} commande
@@ -400,7 +462,7 @@ export default function Orders() {
                   🗑️ Annuler
                 </button>
               )}
-              <button className="btn btn-ghost" onClick={() => toast('🖨️ Impression PDF…')}>🖨️ PDF</button>
+              <button className="btn btn-ghost" onClick={() => { printOrderPDF(viewOrder); toast.success('📄 PDF ouvert !') }}>🖨️ PDF</button>
             </div>
           </div>
         </div>

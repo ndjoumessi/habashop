@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 
 type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
@@ -132,6 +132,24 @@ export default function Customers() {
   )
   const retentionRate = Math.round((customers.filter(c => c.purchasesPerMonth >= 3).length / customers.length) * 100)
 
+  const printCustomersPDF = () => {
+    const body = `
+      <h2>Base clients</h2>
+      ${htmlTable(
+        ['Nom','Type','Téléphone','Achats/mois','CA total','Fidélité'],
+        customers.map(c => [
+          c.name,
+          `<span class="badge badge-purple">${c.type}</span>`,
+          c.phone,
+          String(c.purchasesPerMonth),
+          c.totalCA.toLocaleString('fr-FR') + ' FCFA',
+          c.loyaltyPoints + ' pts',
+        ])
+      )}
+    `
+    openPDF('Base clients', body)
+  }
+
   const addCustomer = () => {
     const newC: Customer = {
       id: String(Date.now()), name: form.name, type: form.type, phone: form.phone,
@@ -179,6 +197,9 @@ export default function Customers() {
               toast.success('📊 Export CSV téléchargé !')
             }}>
               <Download size={13} /> {t('btn_export')}
+            </button>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printCustomersPDF(); toast.success('📄 PDF ouvert !') }}>
+              <Download size={13} /> PDF
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreate(true)}>
               <Plus size={13} /> {t('btn_new')} client

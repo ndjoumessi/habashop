@@ -83,6 +83,71 @@ export default function POS() {
   const tva      = total - totalHT
   const monnaie  = cashGiven ? parseFloat(cashGiven) * (total > 100 ? 1 : 655.957) - total : 0
 
+  const printTicket = () => {
+    const win = window.open('', '_blank', 'width=400,height=600')
+    if (!win) return
+    const now = new Date()
+    const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket de caisse</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Courier New',monospace; font-size:12px; color:#000; padding:10px; max-width:300px; margin:0 auto; }
+    .center { text-align:center; }
+    .bold { font-weight:bold; }
+    .big { font-size:16px; font-weight:900; }
+    .divider { border-top:1px dashed #000; margin:8px 0; }
+    .row { display:flex; justify-content:space-between; margin:4px 0; }
+    .total { font-size:15px; font-weight:900; }
+    .footer { margin-top:12px; font-size:10px; }
+    @media print { @page { size:80mm auto; margin:0; } }
+  </style>
+</head>
+<body>
+  <div class="center">
+    <div class="big">HabaShop</div>
+    <div style="font-size:10px;color:#555;">Logiciel de gestion commerciale</div>
+    <div style="font-size:10px;margin-top:4px;">Dakar, Sénégal</div>
+  </div>
+  <div class="divider"></div>
+  <div class="row"><span>Date:</span><span>${now.toLocaleDateString('fr-FR')}</span></div>
+  <div class="row"><span>Heure:</span><span>${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span></div>
+  <div class="row"><span>Caisse:</span><span>Caisse 1</span></div>
+  <div class="row"><span>N° ticket:</span><span>#V${Date.now().toString().slice(-6)}</span></div>
+  <div class="divider"></div>
+  <div class="bold" style="margin-bottom:6px;">ARTICLES</div>
+  ${cart.map(item => `
+    <div class="row">
+      <span style="flex:1;">${item.name}</span>
+      <span style="margin:0 8px;">x${item.qty}</span>
+      <span>${(item.price * item.qty).toLocaleString('fr-FR')} F</span>
+    </div>
+  `).join('')}
+  <div class="divider"></div>
+  <div class="row"><span>Sous-total HT:</span><span>${Math.round(totalHT).toLocaleString('fr-FR')} FCFA</span></div>
+  <div class="row"><span>TVA (18 %):</span><span>${Math.round(tva).toLocaleString('fr-FR')} FCFA</span></div>
+  <div class="divider"></div>
+  <div class="row total"><span>TOTAL TTC:</span><span>${total.toLocaleString('fr-FR')} FCFA</span></div>
+  <div class="row" style="margin-top:6px;"><span>Mode paiement:</span><span>${payMode === 'cash' ? 'Espèces' : payMode === 'card' ? 'Carte' : 'Mobile'}</span></div>
+  ${cashGiven ? `
+    <div class="row"><span>Reçu:</span><span>${parseFloat(cashGiven).toLocaleString('fr-FR')} FCFA</span></div>
+    <div class="row bold"><span>Monnaie rendue:</span><span>${monnaie.toLocaleString('fr-FR')} FCFA</span></div>
+  ` : ''}
+  <div class="divider"></div>
+  <div class="center footer">
+    <div>Merci de votre achat !</div>
+    <div style="margin-top:4px;">Conservez ce ticket</div>
+    <div style="margin-top:8px;font-size:9px;">HabaShop — ${now.toLocaleDateString('fr-FR')}</div>
+  </div>
+  <script>window.onload=function(){setTimeout(function(){window.print();window.close();},300);}<\/script>
+</body>
+</html>`
+    win.document.write(html)
+    win.document.close()
+  }
+
   const confirmSale = () => {
     setSessionTx(n => n + 1)
     setSessionCA(n => n + total)
@@ -830,7 +895,7 @@ export default function POS() {
                 }}
               >✅ Valider & Encaisser</button>
               <button
-                onClick={confirmSale}
+                onClick={() => { printTicket(); confirmSale() }}
                 className="mini-btn"
                 style={{ padding: '12px 16px', fontSize: 13 }}
               >🖨️ Ticket</button>

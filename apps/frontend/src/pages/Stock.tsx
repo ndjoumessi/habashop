@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV, exportPDF, tableToHTML } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 
 const PRODUCTS_INIT = [
   { sku: 'PRD-001', name: '🌾 Riz parfumé 5kg',       category: 'Céréales',   buy: 3200, sell: 4500, stock: 12,  threshold: 20, supplier: 'SENRIZ'         },
@@ -110,10 +110,38 @@ export default function Stock() {
               <Download size={13} /> {t('btn_export')}
             </button>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
-              exportPDF('Inventaire Stock', tableToHTML(
-                ['SKU','Produit','Catégorie','Stock','Seuil','Prix vente','Statut'],
-                products.map(p => [p.sku, p.name, p.category, p.stock, p.threshold, p.sell + ' FCFA', statusOf(p.stock,p.threshold).label])
-              ))
+              const lowStock = products.filter(p => p.stock <= p.threshold)
+              const body = `
+                ${htmlKPIs([
+                  { label: 'Total articles',  value: String(products.length) },
+                  { label: 'Valeur du stock', value: products.reduce((s,p) => s+p.stock*p.sell, 0).toLocaleString('fr-FR') + ' FCFA' },
+                  { label: 'Ruptures / Bas',  value: String(lowStock.length) },
+                  { label: 'Catégories',      value: String(new Set(products.map(p => p.category)).size) },
+                ])}
+                ${lowStock.length > 0 ? `
+                  <h2 style="color:#dc2626;">⚠️ Articles en alerte (${lowStock.length})</h2>
+                  ${htmlTable(
+                    ['SKU','Produit','Stock actuel','Seuil','Fournisseur'],
+                    lowStock.map(p => [p.sku, p.name, String(p.stock), String(p.threshold), p.supplier])
+                  )}
+                ` : ''}
+                <h2>Inventaire complet</h2>
+                ${htmlTable(
+                  ['SKU','Produit','Catégorie','Prix achat','Prix vente','Stock','Seuil','Fournisseur','Statut'],
+                  products.map(p => {
+                    const st = statusOf(p.stock, p.threshold)
+                    const cls = st.cls === 'badge-red' ? 'badge-red' : st.cls === 'badge-amber' ? 'badge-amber' : 'badge-green'
+                    return [p.sku, p.name, p.category,
+                      p.buy.toLocaleString('fr-FR') + ' F', p.sell.toLocaleString('fr-FR') + ' F',
+                      String(p.stock), String(p.threshold), p.supplier,
+                      `<span class="badge ${cls}">${st.label}</span>`]
+                  }),
+                  ['','','','','<strong>VALEUR TOTALE</strong>','',
+                   `<strong>${products.reduce((s,p) => s+p.stock*p.sell,0).toLocaleString('fr-FR')} FCFA</strong>`,'','']
+                )}
+              `
+              openPDF('Inventaire Stock', body)
+              toast.success('📄 PDF ouvert !')
             }}>
               <Download size={13} /> PDF
             </button>

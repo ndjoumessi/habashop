@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 
 type SupplierStatus = 'Actif' | 'Pause' | 'Inactif'
 
@@ -118,6 +118,28 @@ export default function Suppliers() {
   const enCours   = suppliers.flatMap(s => s.orders).filter(o => ['ENVOYÉE', 'CONFIRMÉE', 'EN TRANSIT'].includes(o.status)).length
   const avgRating = (suppliers.reduce((s, sup) => s + sup.rating, 0) / suppliers.length).toFixed(1)
 
+  const printSuppliersPDF = () => {
+    const body = `
+      <h2>Annuaire fournisseurs</h2>
+      ${htmlTable(
+        ['Nom','Catégories','Téléphone','Délai livraison','Note','Statut'],
+        suppliers.map(s => [
+          s.name,
+          s.categories.join(', '),
+          s.phone,
+          s.leadTime + ' j',
+          '⭐'.repeat(s.rating) + ' (' + s.rating + '/5)',
+          s.status === 'Actif'
+            ? '<span class="badge badge-green">Actif</span>'
+            : s.status === 'Pause'
+            ? '<span class="badge badge-amber">Pause</span>'
+            : '<span class="badge badge-red">Inactif</span>',
+        ])
+      )}
+    `
+    openPDF('Annuaire fournisseurs', body)
+  }
+
   const addSupplier = () => {
     const newS: Supplier = {
       id: String(Date.now()),
@@ -165,6 +187,9 @@ export default function Suppliers() {
               toast.success('📊 Export CSV téléchargé !')
             }}>
               <Download size={13} /> {t('btn_export')}
+            </button>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printSuppliersPDF(); toast.success('📄 PDF ouvert !') }}>
+              <Download size={13} /> PDF
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreate(true)}>
               <Plus size={13} /> {t('btn_add')}
