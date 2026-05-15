@@ -192,16 +192,6 @@ function calcAnciennete(hiredAt: string): string {
   return `${months} mois`
 }
 
-function todayBadge(emp: Employee): { label: string; cls: string } {
-  if (!emp.active) return { label: 'Inactif', cls: 'badge-gray' }
-  const p = POINTAGE_DATA[emp.id]?.[3]
-  if (!p) return { label: '—', cls: 'badge-gray' }
-  if (p.status === 'present') return { label: 'Présent',   cls: 'badge-green' }
-  if (p.status === 'retard')  return { label: 'En retard', cls: 'badge-amber' }
-  if (p.status === 'absent')  return { label: 'Absent',    cls: 'badge-red'   }
-  if (p.status === 'conge')   return { label: 'En congé',  cls: 'badge-blue'  }
-  return { label: 'Repos', cls: 'badge-gray' }
-}
 
 // ── Composants ────────────────────────────────────────────────────────────────
 
@@ -242,7 +232,6 @@ export default function HR() {
 
   // ── Fiche employé ──
   const [viewEmp,      setViewEmp]      = useState<Employee | null>(null)
-  const [editMode,     setEditMode]     = useState(false)
 
   // ── Ajout employé ──
   const [addOpen,      setAddOpen]      = useState(false)
@@ -408,7 +397,7 @@ export default function HR() {
                     <td className="td-num text-sm" style={{ color:'var(--acc2)' }}>{fmt(e.salary)}</td>
                     <td><span className={`badge ${e.active ? 'badge-green' : 'badge-gray'}`}>{e.active ? 'Actif' : 'Inactif'}</span></td>
                     <td>
-                      <button className="mini-btn gap-1" onClick={() => { setViewEmp(e); setEditMode(false) }}>
+                      <button className="mini-btn gap-1" onClick={() => setViewEmp(e)}>
                         <Eye size={12} /> Voir
                       </button>
                     </td>
@@ -888,115 +877,252 @@ export default function HR() {
 
       {/* ── MODAL Fiche employé ── */}
       {viewEmp && (
-        <div className="modal-backdrop" onClick={() => setViewEmp(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
+        <div className="modal-backdrop"
+          style={{ alignItems:'flex-start', paddingTop:'5vh', paddingBottom:'5vh', overflowY:'auto' }}
+          onClick={e => e.target === e.currentTarget && setViewEmp(null)}
+        >
+          <div className="modal-box" style={{ maxWidth:640, width:'100%', padding:0, overflow:'hidden' }}>
 
-            {/* Header */}
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:22 }}>
-              <div style={{ display:'flex', gap:16, alignItems:'center' }}>
+            {/* ── HEADER ── */}
+            <div style={{
+              background:'linear-gradient(135deg, rgba(91,78,232,.2), rgba(124,111,240,.1))',
+              padding:'24px 28px',
+              borderBottom:'1px solid var(--border)',
+              display:'flex', alignItems:'center',
+              justifyContent:'space-between', gap:16,
+            }}>
+              <div style={{ display:'flex', alignItems:'center', gap:16 }}>
                 <div style={{
-                  width:68, height:68, borderRadius:18, flexShrink:0,
+                  width:72, height:72, borderRadius:'50%',
                   background:viewEmp.color, display:'flex', alignItems:'center',
-                  justifyContent:'center', color:'#fff', fontSize:24, fontWeight:800,
-                  boxShadow:`0 8px 24px ${viewEmp.color}55`,
+                  justifyContent:'center', fontSize:28, fontWeight:900, color:'#fff',
+                  flexShrink:0, boxShadow:`0 8px 24px ${viewEmp.color}55`,
                 }}>{viewEmp.avatar}</div>
                 <div>
-                  <div style={{ fontSize:18, fontWeight:800, color:'var(--text)' }}>{viewEmp.name}</div>
-                  <div style={{ fontSize:13, color:'var(--text2)', marginTop:3 }}>{viewEmp.role} · {viewEmp.dept}</div>
-                  <div style={{ marginTop:8, display:'flex', gap:6, flexWrap:'wrap' }}>
-                    <span className={`badge ${viewEmp.type==='CDI'?'badge-violet':'badge-amber'}`}>{viewEmp.type}</span>
-                    {(() => { const tb = todayBadge(viewEmp); return <span className={`badge ${tb.cls}`}>{tb.label}</span> })()}
+                  <h2 style={{ fontSize:20, fontWeight:900, color:'var(--text)', marginBottom:4, letterSpacing:'-0.5px' }}>
+                    {viewEmp.name}
+                  </h2>
+                  <p style={{ fontSize:13, color:'var(--text2)', marginBottom:8 }}>
+                    {viewEmp.role} · {viewEmp.dept}
+                  </p>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <span style={{
+                      background:'rgba(148,163,184,.15)', color:'var(--text2)',
+                      border:'1px solid var(--border)', borderRadius:20,
+                      padding:'3px 12px', fontSize:11, fontWeight:700,
+                    }}>{viewEmp.type}</span>
+                    <span style={{
+                      background: viewEmp.active ? 'rgba(14,196,126,.15)' : 'rgba(148,163,184,.15)',
+                      color: viewEmp.active ? 'var(--acc2)' : 'var(--text3)',
+                      border: `1px solid ${viewEmp.active ? 'rgba(14,196,126,.3)' : 'var(--border)'}`,
+                      borderRadius:20, padding:'3px 12px', fontSize:11, fontWeight:700,
+                    }}>{viewEmp.active ? '● Actif' : '○ Inactif'}</span>
                   </div>
                 </div>
               </div>
-              <button className="mini-btn" style={{ display:'flex', alignItems:'center', gap:4 }} onClick={() => setViewEmp(null)}>
-                <X size={14} /> Fermer
-              </button>
+              <button onClick={() => setViewEmp(null)} style={{
+                background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.2)',
+                borderRadius:9, padding:'7px 14px', cursor:'pointer',
+                color:'var(--text)', fontSize:13, fontWeight:600,
+                fontFamily:'var(--font)', display:'flex', alignItems:'center', gap:6,
+              }}>✕ Fermer</button>
             </div>
 
-            {/* Grille 2×2 */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
-              {[
-                { label:'CONTRAT',     value:viewEmp.type },
-                { label:'ANCIENNETÉ',  value:calcAnciennete(viewEmp.hiredAt) },
-                { label:'SALAIRE BASE',value:fmt(viewEmp.salary) },
-                { label:'PERFORMANCE', value:'⭐'.repeat(viewEmp.perf ?? 3) },
-              ].map(f => (
-                <div key={f.label} style={{ padding:'12px 14px', borderRadius:12, background:'var(--bg3)', border:'1px solid var(--border)' }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.8px', marginBottom:6 }}>{f.label}</div>
-                  <div style={{ fontSize:14, fontWeight:700, color:'var(--text)' }}>{f.value}</div>
-                </div>
-              ))}
-            </div>
+            {/* ── CORPS SCROLLABLE ── */}
+            <div style={{ maxHeight:'calc(90vh - 180px)', overflowY:'auto', padding:'20px 28px' }}>
 
-            {/* Performance ce mois */}
-            <div style={{ marginBottom:18 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.8px', marginBottom:10 }}>
-                Performance ce mois
-              </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                {(() => {
-                  const ponct  = calcPonctualite(viewEmp.id)
-                  const ponctBg    = ponct >= 90 ? 'rgba(14,196,126,.15)' : ponct >= 70 ? 'rgba(240,165,0,.15)' : 'rgba(232,64,74,.15)'
-                  const ponctColor = ponct >= 90 ? 'var(--acc2)' : ponct >= 70 ? 'var(--acc)' : 'var(--danger)'
-                  const absences   = calcAbsences(viewEmp.id)
-                  const congesRestants = 25 - (LEAVES_TAKEN[viewEmp.id] ?? 0)
-                  return [
-                    { label:'Ponctualité',       value:`${ponct} %`,                  bg:ponctBg,                                                  color:ponctColor   },
-                    { label:'Heures travaillées', value:calcHeures(viewEmp.id),        bg:'var(--bg3)',                                             color:'var(--p2)'  },
-                    { label:'Absences',           value:`${absences} jour${absences > 1 ? 's' : ''}`, bg:absences > 0 ? 'rgba(232,64,74,.1)' : 'var(--bg3)', color:absences > 0 ? 'var(--danger)' : 'var(--acc2)' },
-                    { label:'Congés restants',    value:`${congesRestants} j / 25`,    bg:'var(--bg3)',                                             color:'var(--p3)'  },
-                  ]
-                })().map(m => (
-                  <div key={m.label} style={{ padding:'10px 12px', borderRadius:10, background:m.bg, border:'1px solid var(--border)' }}>
-                    <div style={{ fontSize:10, color:'var(--text3)', marginBottom:5 }}>{m.label}</div>
-                    <div style={{ fontSize:15, fontWeight:800, color:m.color, fontFamily:'var(--mono)' }}>{m.value}</div>
+              {/* Infos 2×2 */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20 }}>
+                {[
+                  {
+                    label:'CONTRAT', icon:'📄',
+                    value: viewEmp.type,
+                    color: viewEmp.type === 'CDI' ? 'var(--p2)' : 'var(--acc)',
+                    mono: false,
+                  },
+                  {
+                    label:'ANCIENNETÉ', icon:'📅',
+                    value: calcAnciennete(viewEmp.hiredAt),
+                    color:'var(--text)',
+                    mono: false,
+                  },
+                  {
+                    label:'SALAIRE DE BASE', icon:'💰',
+                    value: fmt(viewEmp.salary),
+                    color:'var(--acc2)',
+                    mono: true,
+                  },
+                  {
+                    label:'PERFORMANCE', icon:'🏆',
+                    value: '⭐'.repeat(viewEmp.perf ?? 4) + '☆'.repeat(5 - (viewEmp.perf ?? 4)),
+                    color:'var(--acc)',
+                    mono: false,
+                  },
+                ].map(info => (
+                  <div key={info.label} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
+                    <div style={{
+                      fontSize:10, fontWeight:700, textTransform:'uppercase',
+                      letterSpacing:'.8px', color:'var(--text3)', marginBottom:8,
+                      display:'flex', alignItems:'center', gap:6,
+                    }}>
+                      <span>{info.icon}</span> {info.label}
+                    </div>
+                    <div style={{
+                      fontSize:16, fontWeight:800, color:info.color,
+                      fontFamily: info.mono ? 'var(--mono)' : 'inherit',
+                      letterSpacing: info.mono ? '-0.5px' : 'normal',
+                    }}>{info.value}</div>
                   </div>
                 ))}
               </div>
-            </div>
 
-            {/* Formulaire inline */}
-            {editMode && (
-              <div style={{ padding:'14px', borderRadius:12, background:'var(--bg3)', border:'1px solid var(--border)', marginBottom:16 }}>
-                <div style={{ fontSize:12, fontWeight:700, color:'var(--text2)', marginBottom:10 }}>✏️ Modifier la fiche</div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                  {[{ label:'Poste', val:viewEmp.role }, { label:'Téléphone', val:viewEmp.phone }].map(f => (
-                    <div key={f.label}>
-                      <div style={{ fontSize:11, color:'var(--text3)', marginBottom:4 }}>{f.label}</div>
-                      <input className="input" defaultValue={f.val} style={{ width:'100%', fontSize:12, boxSizing:'border-box' }} />
+              {/* Contact */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:20 }}>
+                {[
+                  { icon:'📞', label:'TÉLÉPHONE', value:viewEmp.phone, truncate:false },
+                  { icon:'📧', label:'EMAIL',      value:viewEmp.email, truncate:true  },
+                ].map(c => (
+                  <div key={c.label} style={{
+                    background:'var(--bg3)', border:'1px solid var(--border)',
+                    borderRadius:10, padding:'10px 14px',
+                    display:'flex', alignItems:'center', gap:10,
+                  }}>
+                    <span style={{ fontSize:16 }}>{c.icon}</span>
+                    <div style={{ minWidth:0 }}>
+                      <div style={{ fontSize:10, color:'var(--text3)', marginBottom:2 }}>{c.label}</div>
+                      <div style={{
+                        fontSize: c.truncate ? 12 : 13, fontWeight:600, color:'var(--text)',
+                        ...(c.truncate ? { overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' } : {}),
+                      }}>{c.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Performance ce mois */}
+              <div style={{ marginBottom:20 }}>
+                <div style={{
+                  fontSize:10.5, fontWeight:700, textTransform:'uppercase',
+                  letterSpacing:'.8px', color:'var(--text3)', marginBottom:12,
+                }}>PERFORMANCE CE MOIS</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  {(() => {
+                    const ponct    = calcPonctualite(viewEmp.id)
+                    const absences = calcAbsences(viewEmp.id)
+                    const congesRestants = 25 - (LEAVES_TAKEN[viewEmp.id] ?? 0)
+                    return [
+                      {
+                        label:'Ponctualité', value:`${ponct} %`,
+                        color: ponct >= 90 ? 'var(--acc2)' : ponct >= 70 ? 'var(--acc)' : 'var(--danger)',
+                        bg:    ponct >= 90 ? 'rgba(14,196,126,.12)' : ponct >= 70 ? 'rgba(240,165,0,.12)' : 'rgba(232,64,74,.12)',
+                      },
+                      {
+                        label:'Heures travaillées', value:calcHeures(viewEmp.id),
+                        color:'var(--p2)', bg:'rgba(91,78,232,.12)',
+                      },
+                      {
+                        label:'Absences', value:`${absences} jour${absences > 1 ? 's' : ''}`,
+                        color: absences === 0 ? 'var(--acc2)' : absences <= 2 ? 'var(--acc)' : 'var(--danger)',
+                        bg:    absences === 0 ? 'rgba(14,196,126,.12)' : absences <= 2 ? 'rgba(240,165,0,.12)' : 'rgba(232,64,74,.12)',
+                      },
+                      {
+                        label:'Congés restants', value:`${congesRestants} j / 25`,
+                        color:'var(--acc)', bg:'rgba(240,165,0,.12)',
+                      },
+                    ]
+                  })().map(stat => (
+                    <div key={stat.label} style={{ background:stat.bg, border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
+                      <div style={{ fontSize:10.5, color:'var(--text3)', marginBottom:8, fontWeight:500 }}>{stat.label}</div>
+                      <div style={{ fontSize:22, fontWeight:900, color:stat.color, fontFamily:'var(--mono)', letterSpacing:'-1px' }}>{stat.value}</div>
                     </div>
                   ))}
                 </div>
-                <button className="btn btn-primary btn-sm" style={{ marginTop:10 }}
-                  onClick={() => { toast.success('Fiche mise à jour (demo)'); setEditMode(false) }}>
-                  Sauvegarder
-                </button>
               </div>
-            )}
 
-            {/* Boutons d'action */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => { navigate('/app/payroll'); setViewEmp(null) }}>
-                💰 Bulletin de paie
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => { navigate('/app/planning'); setViewEmp(null) }}>
-                📅 Voir planning
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => toast(`📞 Appel ${viewEmp.phone}`)}>
-                📞 Contacter
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setEditMode(v => !v)}>
-                ✏️ Modifier la fiche
-              </button>
-              <button className="btn btn-primary btn-sm" style={{ gridColumn:'1 / -1' }}
-                onClick={() => {
-                  const id = viewEmp.id
-                  setViewEmp(null)
-                  openSalaryModal(id)
-                }}>
-                💰 Modifier salaire
-              </button>
+              {/* Historique rémunération rapide */}
+              {(salaryHistory[viewEmp.id] ?? []).length > 0 && (
+                <div style={{ marginBottom:20 }}>
+                  <div style={{
+                    fontSize:10.5, fontWeight:700, textTransform:'uppercase',
+                    letterSpacing:'.8px', color:'var(--text3)', marginBottom:12,
+                  }}>HISTORIQUE RÉMUNÉRATION</div>
+                  <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden' }}>
+                    {(salaryHistory[viewEmp.id] ?? []).slice(-3).map((entry, i, arr) => {
+                      const cfg = TYPE_SALAIRE_CONFIG[entry.type]
+                      const pct = entry.oldSalary > 0
+                        ? ((entry.newSalary - entry.oldSalary) / entry.oldSalary * 100).toFixed(1)
+                        : null
+                      return (
+                        <div key={i} style={{
+                          display:'flex', alignItems:'center', justifyContent:'space-between',
+                          padding:'10px 14px',
+                          borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                        }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                            <span style={{ background:cfg.bg, color:cfg.color, borderRadius:20, padding:'2px 9px', fontSize:10, fontWeight:700 }}>
+                              {cfg.label}
+                            </span>
+                            <span style={{ fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>{entry.date}</span>
+                          </div>
+                          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                            <span style={{ fontSize:13, fontWeight:700, color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(entry.newSalary)}</span>
+                            {pct && (
+                              <span style={{ fontSize:11, fontWeight:700, color: parseFloat(pct) >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
+                                {parseFloat(pct) >= 0 ? '▲' : '▼'} {Math.abs(parseFloat(pct))} %
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── FOOTER BOUTONS ── */}
+            <div style={{
+              padding:'16px 28px', borderTop:'1px solid var(--border)',
+              background:'var(--bg3)', display:'grid',
+              gridTemplateColumns:'1fr 1fr', gap:8,
+            }}>
+              <button onClick={() => { navigate('/app/payroll'); setViewEmp(null) }} style={{
+                background:'linear-gradient(135deg, var(--p), var(--p2))',
+                border:'none', borderRadius:10, padding:'10px',
+                fontSize:13, fontWeight:700, color:'#fff',
+                cursor:'pointer', fontFamily:'var(--font)',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+              }}>💰 Bulletin de paie</button>
+
+              <button onClick={() => { navigate('/app/planning'); setViewEmp(null) }} style={{
+                background:'var(--bg4)', border:'1px solid var(--border)',
+                borderRadius:10, padding:'10px',
+                fontSize:13, fontWeight:700, color:'var(--text)',
+                cursor:'pointer', fontFamily:'var(--font)',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+              }}>📅 Voir planning</button>
+
+              <button onClick={() => toast(`📞 ${viewEmp.phone}`)} style={{
+                background:'var(--bg4)', border:'1px solid var(--border)',
+                borderRadius:10, padding:'10px',
+                fontSize:13, fontWeight:700, color:'var(--text)',
+                cursor:'pointer', fontFamily:'var(--font)',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+              }}>📞 Contacter</button>
+
+              <button onClick={() => {
+                setSelectedEmpSalary(viewEmp.id)
+                setSalaryForm(f => ({ ...f, newSalary: viewEmp.salary }))
+                setShowSalaryModal(true)
+                setViewEmp(null)
+              }} style={{
+                background:'rgba(14,196,126,.12)',
+                border:'1px solid rgba(14,196,126,.25)',
+                borderRadius:10, padding:'10px',
+                fontSize:13, fontWeight:700, color:'var(--acc2)',
+                cursor:'pointer', fontFamily:'var(--font)',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+              }}>✏️ Modifier salaire</button>
             </div>
           </div>
         </div>
