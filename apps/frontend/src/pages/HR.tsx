@@ -260,7 +260,7 @@ export default function HR() {
       ${htmlKPIs([
         { label: 'Total employés',  value: String(employees.length) },
         { label: 'Actifs',          value: String(employees.filter(e => e.active).length) },
-        { label: 'Masse salariale', value: employees.reduce((s,e) => s+e.salary, 0).toLocaleString('fr-FR') + ' FCFA' },
+        { label: 'Masse salariale', value: fmt(employees.reduce((s,e) => s+e.salary, 0)) },
         { label: 'Contrats CDI',    value: String(employees.filter(e => e.type === 'CDI').length) },
       ])}
       <h2>Liste du personnel</h2>
@@ -268,11 +268,11 @@ export default function HR() {
         ['Nom','Poste','Département','Contrat','Date embauche','Salaire base','Statut'],
         employees.map(e => [
           e.name, e.role, e.dept, e.type, e.hiredAt,
-          e.salary.toLocaleString('fr-FR') + ' FCFA',
+          fmt(e.salary),
           e.active ? '<span class="badge badge-green">Actif</span>' : '<span class="badge badge-red">Inactif</span>',
         ]),
         ['','','','','',
-         '<strong>' + employees.reduce((s,e) => s+e.salary, 0).toLocaleString('fr-FR') + ' FCFA</strong>',
+         '<strong>' + fmt(employees.reduce((s,e) => s+e.salary, 0)) + '</strong>',
          '<strong>MASSE SALARIALE</strong>']
       )}
     `
@@ -290,7 +290,7 @@ export default function HR() {
         { label: 'DATE EMBAUCHE', value: emp.hiredAt  },
         { label: 'TÉLÉPHONE',     value: emp.phone    },
         { label: 'EMAIL',         value: emp.email    },
-        { label: 'SALAIRE BASE',  value: emp.salary.toLocaleString('fr-FR') + ' FCFA' },
+        { label: 'SALAIRE BASE',  value: fmt(emp.salary) },
       ])}
       ${history.length > 0 ? `
         <h2>Historique de rémunération</h2>
@@ -302,8 +302,8 @@ export default function HR() {
               : '—'
             return [
               h.date, h.type,
-              h.oldSalary > 0 ? h.oldSalary.toLocaleString('fr-FR') + ' FCFA' : '—',
-              h.newSalary.toLocaleString('fr-FR') + ' FCFA',
+              h.oldSalary > 0 ? fmt(h.oldSalary) : '—',
+              fmt(h.newSalary),
               pct, h.motif,
             ]
           })

@@ -112,9 +112,9 @@ export default function Expenses() {
     const paid  = expenses.filter(e => e.status === 'PAYÉ').reduce((s, e) => s + ttcAmount(e), 0)
     const body = `
       ${htmlKPIs([
-        { label: 'Total dépenses', value: total.toLocaleString('fr-FR') + ' FCFA' },
-        { label: 'Payées',         value: paid.toLocaleString('fr-FR') + ' FCFA'  },
-        { label: 'En attente',     value: (total - paid).toLocaleString('fr-FR') + ' FCFA' },
+        { label: 'Total dépenses', value: fmt(total) },
+        { label: 'Payées',         value: fmt(paid)  },
+        { label: 'En attente',     value: fmt(total - paid) },
         { label: 'Récurrentes',    value: String(expenses.filter(e => e.recurrent).length) },
       ])}
       <h2>Journal des dépenses</h2>
@@ -122,16 +122,16 @@ export default function Expenses() {
         ['Date','Libellé','Catégorie','Montant HT','TVA','TTC','Mode','Statut'],
         expenses.map(e => [
           e.date, e.label, e.category,
-          e.amount.toLocaleString('fr-FR') + ' F',
+          fmt(e.amount),
           e.vat + ' %',
-          ttcAmount(e).toLocaleString('fr-FR') + ' F',
+          fmt(ttcAmount(e)),
           e.mode,
           e.status === 'PAYÉ'
             ? '<span class="badge badge-green">Payé</span>'
             : '<span class="badge badge-amber">En attente</span>',
         ]),
         ['','','','','',
-         '<strong>' + total.toLocaleString('fr-FR') + ' FCFA</strong>','','']
+         '<strong>' + fmt(total) + '</strong>','','']
       )}
     `
     openPDF('Journal des dépenses', body)

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Minus, Plus, Trash2, ShoppingCart, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -164,7 +164,7 @@ export default function POS() {
       <div style={{
         display: 'flex',
         gap: 14,
-        height: 'calc(100vh - 112px)',
+        height: 'calc(100vh - 54px)',
         overflow: 'hidden',
       }}>
 
@@ -209,7 +209,7 @@ export default function POS() {
                     ? '0 4px 14px rgba(91,78,232,.35)'
                     : 'none',
                 }}
-              >{c.label}</button>
+              >{c.id === 'all' ? t('pos_all') : c.label}</button>
             ))}
 
             {/* Recherche */}
@@ -222,7 +222,7 @@ export default function POS() {
               <input
                 className="input"
                 style={{ paddingLeft: 34, width: 200, fontSize: 13 }}
-                placeholder="Rechercher..."
+                placeholder={t('pos_search')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -381,11 +381,11 @@ export default function POS() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <ShoppingCart size={18} style={{ color: 'var(--p2)' }} />
               <span style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>
-                Panier
+                {t('pos_cart')}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, color: 'var(--text3)' }}>Caisse 1</span>
+              <span style={{ fontSize: 11, color: 'var(--text3)' }}>{t('pos_cashier')}</span>
               <div style={{
                 background: cart.length ? 'var(--p)' : 'var(--bg4)',
                 color: cart.length ? '#fff' : 'var(--text3)',
@@ -424,10 +424,10 @@ export default function POS() {
                   fontSize: 26,
                 }}>🛒</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>
-                  Panier vide
+                  {t('pos_empty')}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.6 }}>
-                  Cliquez sur un produit<br />pour l'ajouter
+                  {t('pos_empty_sub')}
                 </div>
               </div>
             ) : (
@@ -602,8 +602,8 @@ export default function POS() {
             background: 'rgba(255,255,255,.02)',
           }}>
             {[
-              { label: 'Sous-total HT', value: fmt(totalHT) },
-              { label: 'TVA (18 %)',    value: fmt(tva) },
+              { label: t('pos_subtotal'), value: fmt(totalHT) },
+              { label: `${t('pos_vat')} (18 %)`, value: fmt(tva) },
             ].map(row => (
               <div key={row.label} style={{
                 display: 'flex',
@@ -623,7 +623,7 @@ export default function POS() {
                 fontWeight: 700,
                 color: 'var(--text2)',
                 letterSpacing: '.5px',
-              }}>TOTAL TTC</span>
+              }}>{t('pos_total')}</span>
               <span style={{
                 fontSize: 22,
                 fontWeight: 900,
@@ -637,9 +637,9 @@ export default function POS() {
           {/* Modes de paiement */}
           <div style={{ flexShrink: 0, display: 'flex', gap: 7, padding: '10px 14px 8px' }}>
             {[
-              { id: 'cash',   label: 'Espèces', icon: '💵' },
-              { id: 'card',   label: 'Carte',   icon: '💳' },
-              { id: 'mobile', label: 'Mobile',  icon: '📲' },
+              { id: 'cash',   label: t('pos_cash'),   icon: '💵' },
+              { id: 'card',   label: t('pos_card'),   icon: '💳' },
+              { id: 'mobile', label: t('pos_mobile'), icon: '📲' },
             ].map(m => (
               <button
                 key={m.id}
@@ -675,7 +675,7 @@ export default function POS() {
               <input
                 className="input"
                 type="number"
-                placeholder="Montant reçu..."
+                placeholder={`${t('pos_received')}...`}
                 value={cashGiven}
                 onChange={e => setCashGiven(e.target.value)}
                 style={{ fontSize: 13 }}
@@ -692,7 +692,7 @@ export default function POS() {
                   borderRadius: 9,
                 }}>
                   <span style={{ fontSize: 11, color: 'var(--acc2)', fontWeight: 600 }}>
-                    💚 Monnaie à rendre
+                    💚 {t('pos_change')}
                   </span>
                   <span style={{
                     fontSize: 14,
@@ -730,7 +730,7 @@ export default function POS() {
                 gap: 8,
               }}
             >
-              🧾 {cart.length ? `Encaisser ${fmt(total)}` : 'Panier vide'}
+              🧾 {cart.length ? `${t('pos_pay')} ${fmt(total)}` : t('pos_empty')}
             </button>
           </div>
 
@@ -748,7 +748,7 @@ export default function POS() {
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
                 color: 'var(--text3)',
-              }}>📊 Résumé session</span>
+              }}>📊 {t('pos_session')}</span>
               <span style={{
                 background: 'rgba(91,78,232,.1)',
                 color: 'var(--p2)',
@@ -760,8 +760,8 @@ export default function POS() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
               {[
-                { label: 'Transactions', value: sessionTx,      color: 'var(--acc2)', icon: '🧾', isNumber: true  },
-                { label: 'CA session',   value: fmt(sessionCA), color: 'var(--acc)',  icon: '💰', isNumber: false },
+                { label: t('pos_transactions'),    value: sessionTx,      color: 'var(--acc2)', icon: '🧾', isNumber: true  },
+                { label: t('pos_session_revenue'), value: fmt(sessionCA), color: 'var(--acc)',  icon: '💰', isNumber: false },
               ].map(s => (
                 <div key={s.label} style={{
                   background: 'var(--bg3)',
@@ -823,7 +823,7 @@ export default function POS() {
                 }}>✅</div>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
-                    Confirmer la vente
+                    {t('pos_confirm_sale')}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>
                     {cart.length} article{cart.length > 1 ? 's' : ''}
@@ -893,7 +893,7 @@ export default function POS() {
                   fontFamily: 'inherit',
                   boxShadow: '0 4px 16px rgba(14,196,126,.35)',
                 }}
-              >✅ Valider & Encaisser</button>
+              >✅ {t('pos_validate')}</button>
               <button
                 onClick={() => { printTicket(); confirmSale() }}
                 className="mini-btn"

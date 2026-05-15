@@ -1,3 +1,21 @@
+import { useAppStore } from '@/stores/appStore'
+
+const LOCALES: Record<string, string> = {
+  fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT',
+}
+
+const PDF_STR: Record<string, Record<string, string>> = {
+  edited_on:    { fr: 'Édité le',                        en: 'Generated on',               es: 'Editado el',                   it: 'Generato il'              },
+  at:           { fr: 'à',                               en: 'at',                          es: 'a las',                        it: 'alle'                     },
+  confidential: { fr: 'Document confidentiel',           en: 'Confidential document',       es: 'Documento confidencial',       it: 'Documento riservato'      },
+  auto_gen:     { fr: 'Généré automatiquement',          en: 'Auto-generated',              es: 'Generado automáticamente',     it: 'Generato automaticamente' },
+  software:     { fr: 'Logiciel de gestion commerciale', en: 'Business management software', es: 'Software de gestión comercial', it: 'Software di gestione commerciale' },
+}
+
+function ps(key: string, lang: string): string {
+  return PDF_STR[key]?.[lang] ?? PDF_STR[key]?.['fr'] ?? key
+}
+
 export const HABASHOP_STYLES = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -101,16 +119,24 @@ export const HABASHOP_STYLES = `
 
 // ─── FONCTION GÉNÉRIQUE PDF ───────────────────────────
 export function openPDF(title: string, bodyHTML: string) {
+  const { lang, currency, shopName } = useAppStore.getState()
+  const locale = LOCALES[lang] ?? 'fr-FR'
+  const now = new Date()
+  const dateStr = now.toLocaleDateString(locale)
+  const timeStr = now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+  const name = shopName || 'HabaShop'
+  const currLabel = currency !== 'XOF' ? ` · ${currency}` : ''
+
   const win = window.open('', '_blank', 'width=900,height=700')
   if (!win) {
     alert('Veuillez autoriser les popups pour ce site')
     return
   }
   win.document.write(`<!DOCTYPE html>
-<html lang="fr">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
-  <title>HabaShop — ${title}</title>
+  <title>${name} — ${title}</title>
   <style>${HABASHOP_STYLES}</style>
 </head>
 <body>
@@ -118,22 +144,21 @@ export function openPDF(title: string, bodyHTML: string) {
     <div class="logo">
       <div class="logo-icon">H</div>
       <div>
-        <div class="logo-name">HabaShop</div>
-        <div style="font-size:11px;color:#888;">Logiciel de gestion commerciale</div>
+        <div class="logo-name">${name}</div>
+        <div style="font-size:11px;color:#888;">${ps('software', lang)}</div>
       </div>
     </div>
     <div class="doc-info">
       <div class="doc-title">${title}</div>
       <div class="doc-date">
-        Édité le ${new Date().toLocaleDateString('fr-FR')}
-        à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+        ${ps('edited_on', lang)} ${dateStr} ${ps('at', lang)} ${timeStr}${currLabel}
       </div>
     </div>
   </div>
   ${bodyHTML}
   <div class="footer">
-    <span>HabaShop © ${new Date().getFullYear()} — Document confidentiel</span>
-    <span>Généré automatiquement</span>
+    <span>${name} © ${now.getFullYear()} — ${ps('confidential', lang)}</span>
+    <span>${ps('auto_gen', lang)}</span>
   </div>
   <script>
     window.onload = function() {

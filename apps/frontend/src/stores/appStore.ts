@@ -209,6 +209,12 @@ export function t(key: string): string {
   return translations[lang]?.[key] ?? translations.fr[key] ?? key
 }
 
+export function useT() {
+  const { lang } = useAppStore()
+  void lang
+  return t
+}
+
 const RATES_TO_XOF: Record<Currency, number> = {
   XOF: 1, XAF: 1, EUR: 655.957, USD: 600, CAD: 440,
 }
@@ -218,6 +224,8 @@ export function convertCurrency(amount: number, from: Currency, to: Currency): n
   const inXOF = from === 'XOF' ? amount : amount * RATES_TO_XOF[from]
   return to === 'XOF' ? inXOF : inXOF / RATES_TO_XOF[to]
 }
+
+export const convertAmount = convertCurrency
 
 export function useFormatAmount() {
   const { currency } = useAppStore()

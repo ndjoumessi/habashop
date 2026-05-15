@@ -211,6 +211,33 @@ const fr: TranslationMap = {
   recent_activity: 'Activité récente',
   top_products: 'Top produits du mois',
   stock_alerts: 'Alertes Rupture',
+
+  // Documents PDF
+  doc_edited_on: 'Édité le',
+  doc_at: 'à',
+  doc_confidential: 'Document confidentiel',
+  doc_auto_generated: 'Généré automatiquement',
+  doc_software: 'Logiciel de gestion commerciale',
+
+  // POS — clés manquantes
+  pos_cashier: 'Caisse 1',
+  pos_empty_sub: "Cliquez sur un produit pour l'ajouter",
+  pos_confirm_sale: 'Confirmer la vente',
+  pos_search: 'Rechercher...',
+  pos_not_found: 'Aucun produit trouvé',
+
+  // RH
+  hr_payroll_mass: 'Masse salariale',
+  hr_base_salary: 'Salaire de base',
+
+  // Dépenses
+  expense_total: 'Total dépenses',
+  expense_paid: 'Payées',
+  expense_pending: 'En attente',
+
+  // Rapports
+  report_chart_week: 'CA 7 derniers jours',
+  report_recent_sales: 'Ventes récentes',
 }
 
 const en: TranslationMap = {
@@ -303,6 +330,28 @@ const en: TranslationMap = {
   hello: 'Hello', today: 'Your activity summary',
   quick_actions: 'Quick actions', recent_activity: 'Recent activity',
   top_products: 'Top products this month', stock_alerts: 'Stock Alerts',
+
+  doc_edited_on: 'Generated on',
+  doc_at: 'at',
+  doc_confidential: 'Confidential document',
+  doc_auto_generated: 'Auto-generated',
+  doc_software: 'Business management software',
+
+  pos_cashier: 'Register 1',
+  pos_empty_sub: 'Click on a product to add it',
+  pos_confirm_sale: 'Confirm sale',
+  pos_search: 'Search...',
+  pos_not_found: 'No products found',
+
+  hr_payroll_mass: 'Payroll mass',
+  hr_base_salary: 'Base salary',
+
+  expense_total: 'Total expenses',
+  expense_paid: 'Paid',
+  expense_pending: 'Pending',
+
+  report_chart_week: 'Revenue — last 7 days',
+  report_recent_sales: 'Recent sales',
 }
 
 const es: TranslationMap = {
@@ -397,6 +446,15 @@ const es: TranslationMap = {
   hello: 'Hola', today: 'Resumen de tu actividad',
   quick_actions: 'Acciones rápidas', recent_activity: 'Actividad reciente',
   top_products: 'Productos más vendidos', stock_alerts: 'Alertas de stock',
+
+  doc_edited_on: 'Editado el', doc_at: 'a las',
+  doc_confidential: 'Documento confidencial', doc_auto_generated: 'Generado automáticamente',
+  doc_software: 'Software de gestión comercial',
+  pos_cashier: 'Caja 1', pos_empty_sub: 'Haga clic en un producto para añadirlo',
+  pos_confirm_sale: 'Confirmar venta', pos_search: 'Buscar...', pos_not_found: 'Sin resultados',
+  hr_payroll_mass: 'Masa salarial', hr_base_salary: 'Salario base',
+  expense_total: 'Total gastos', expense_paid: 'Pagados', expense_pending: 'Pendientes',
+  report_chart_week: 'CA — 7 últimos días', report_recent_sales: 'Ventas recientes',
 }
 
 const it: TranslationMap = {
@@ -491,6 +549,15 @@ const it: TranslationMap = {
   hello: 'Ciao', today: 'Riepilogo della tua attività',
   quick_actions: 'Azioni rapide', recent_activity: 'Attività recente',
   top_products: 'Prodotti più venduti', stock_alerts: 'Avvisi di stock',
+
+  doc_edited_on: 'Generato il', doc_at: 'alle',
+  doc_confidential: 'Documento riservato', doc_auto_generated: 'Generato automaticamente',
+  doc_software: 'Software di gestione commerciale',
+  pos_cashier: 'Cassa 1', pos_empty_sub: 'Clicca su un prodotto per aggiungerlo',
+  pos_confirm_sale: 'Conferma vendita', pos_search: 'Cerca...', pos_not_found: 'Nessun risultato',
+  hr_payroll_mass: 'Massa salariale', hr_base_salary: 'Stipendio base',
+  expense_total: 'Totale spese', expense_paid: 'Pagate', expense_pending: 'In attesa',
+  report_chart_week: 'FA — 7 ultimi giorni', report_recent_sales: 'Vendite recenti',
 }
 
 export const translations: Record<Lang, TranslationMap> = { fr, en, es, it }

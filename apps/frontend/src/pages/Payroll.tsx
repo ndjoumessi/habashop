@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { useConfig, useFormatAmount, useAppStore, formatCurrency, convertCurrency } from '@/stores/appStore'
 import { Download, Eye, Check, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
@@ -40,6 +40,9 @@ const MONTHS = [
 ]
 
 function printBulletin(bulletin: PayRecord) {
+  const { currency } = useAppStore.getState()
+  const fmtP = (n: number) => formatCurrency(convertCurrency(n, 'XOF', currency), currency)
+
   const absencePenalty = Math.round(bulletin.absences * bulletin.baseSalary / 26)
   const brut = bulletin.baseSalary + bulletin.bonus + bulletin.overtime
   const net  = brut - bulletin.deductions - absencePenalty
@@ -47,14 +50,14 @@ function printBulletin(bulletin: PayRecord) {
   const irpp = Math.round(bulletin.deductions - cnss - absencePenalty)
 
   const gainsRows: string[][] = [
-    ['Salaire de base', '26 jours', '100 %', bulletin.baseSalary.toLocaleString('fr-FR') + ' FCFA'],
-    ...(bulletin.bonus > 0 ? [['Prime de performance', '', '', bulletin.bonus.toLocaleString('fr-FR') + ' FCFA']] : []),
-    ...(bulletin.overtime > 0 ? [['Heures supplémentaires', '', '25 %', bulletin.overtime.toLocaleString('fr-FR') + ' FCFA']] : []),
+    ['Salaire de base', '26 jours', '100 %', fmtP(bulletin.baseSalary)],
+    ...(bulletin.bonus > 0 ? [['Prime de performance', '', '', fmtP(bulletin.bonus)]] : []),
+    ...(bulletin.overtime > 0 ? [['Heures supplémentaires', '', '25 %', fmtP(bulletin.overtime)]] : []),
   ]
   const retenuesRows: string[][] = [
-    ['CNSS employé', '5,6 %', cnss.toLocaleString('fr-FR') + ' FCFA'],
-    ...(irpp > 0 ? [['Impôt sur salaire (IRPP)', '', irpp.toLocaleString('fr-FR') + ' FCFA']] : []),
-    ...(bulletin.absences > 0 ? [[`Retenue absences (${bulletin.absences}j)`, '', absencePenalty.toLocaleString('fr-FR') + ' FCFA']] : []),
+    ['CNSS employé', '5,6 %', fmtP(cnss)],
+    ...(irpp > 0 ? [['Impôt sur salaire (IRPP)', '', fmtP(irpp)]] : []),
+    ...(bulletin.absences > 0 ? [[`Retenue absences (${bulletin.absences}j)`, '', fmtP(absencePenalty)]] : []),
   ]
 
   const body = `
@@ -67,14 +70,14 @@ function printBulletin(bulletin: PayRecord) {
     ${htmlTable(
       ['Libellé', 'Base', 'Taux', 'Montant'],
       gainsRows,
-      ['', '', '<strong>TOTAL BRUT</strong>', `<strong>${brut.toLocaleString('fr-FR')} FCFA</strong>`]
+      ['', '', '<strong>TOTAL BRUT</strong>', `<strong>${fmtP(brut)}</strong>`]
     )}
 
     <h2>Retenues</h2>
     ${htmlTable(
       ['Libellé', 'Taux', 'Montant'],
       retenuesRows,
-      ['', '<strong>TOTAL RETENUES</strong>', `<strong style="color:#dc2626;">- ${bulletin.deductions.toLocaleString('fr-FR')} FCFA</strong>`]
+      ['', '<strong>TOTAL RETENUES</strong>', `<strong style="color:#dc2626;">- ${fmtP(bulletin.deductions)}</strong>`]
     )}
 
     <div class="net-payer">
@@ -84,7 +87,7 @@ function printBulletin(bulletin: PayRecord) {
           Virement bancaire · ${bulletin.status === 'PAYÉ' ? bulletin.paidAt ?? '' : 'En attente'}
         </div>
       </div>
-      <div class="net-value">${net.toLocaleString('fr-FR')} FCFA</div>
+      <div class="net-value">${fmtP(net)}</div>
     </div>
 
     <div class="signature-block">
