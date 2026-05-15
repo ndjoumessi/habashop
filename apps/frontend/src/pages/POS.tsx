@@ -15,18 +15,18 @@ const CATS = [
 ]
 
 const PRODUCTS = [
-  { id:1,  name:'Riz parfumé 5kg',       price:4500,  cat:'cereals', emoji:'🌾', stock:120 },
-  { id:2,  name:'Huile palme 1L',         price:1800,  cat:'fat',     emoji:'🫙', stock:18  },
-  { id:3,  name:'Sucre 1kg',              price:850,   cat:'grocery', emoji:'🍚', stock:245 },
-  { id:4,  name:'Farine blé 1kg',         price:650,   cat:'cereals', emoji:'🌾', stock:89  },
-  { id:5,  name:'Savon OMO 500g',         price:500,   cat:'hygiene', emoji:'🧼', stock:150 },
-  { id:6,  name:'Lait poudre 400g',       price:2200,  cat:'dairy',   emoji:'🥛', stock:67  },
-  { id:7,  name:'Tomate concentrée 800g', price:1400,  cat:'canned',  emoji:'🍅', stock:112 },
-  { id:8,  name:'Huile végétale 5L',      price:8500,  cat:'fat',     emoji:'🫒', stock:34  },
-  { id:9,  name:'Café soluble 200g',      price:2800,  cat:'grocery', emoji:'☕', stock:55  },
-  { id:10, name:'Sardines 155g',          price:900,   cat:'canned',  emoji:'🐟', stock:200 },
-  { id:11, name:'Savon ménage 400g',      price:350,   cat:'hygiene', emoji:'🫧', stock:180 },
-  { id:12, name:'Lait concentré 397g',    price:1100,  cat:'dairy',   emoji:'🥤', stock:95  },
+  { id:1,  name:'Riz parfumé 5kg',        price:4500,  priceWholesale:3800, priceSemiWholesale:4100, cat:'cereals', emoji:'🌾', stock:120, promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:2,  name:'Huile palme 1L',          price:1800,  priceWholesale:1400, priceSemiWholesale:1600, cat:'fat',     emoji:'🫙', stock:18,  promotion:true,  promotionPrice:1500, promotionEnd:'2026-05-31' },
+  { id:3,  name:'Sucre 1kg',               price:850,   priceWholesale:700,  priceSemiWholesale:780,  cat:'grocery', emoji:'🍚', stock:245, promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:4,  name:'Farine blé 1kg',          price:650,   priceWholesale:520,  priceSemiWholesale:590,  cat:'cereals', emoji:'🌾', stock:89,  promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:5,  name:'Savon OMO 500g',          price:500,   priceWholesale:380,  priceSemiWholesale:430,  cat:'hygiene', emoji:'🧼', stock:150, promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:6,  name:'Lait poudre 400g',        price:2200,  priceWholesale:1800, priceSemiWholesale:2000, cat:'dairy',   emoji:'🥛', stock:67,  promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:7,  name:'Tomate conc. 800g',       price:1400,  priceWholesale:1100, priceSemiWholesale:1250, cat:'canned',  emoji:'🍅', stock:112, promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:8,  name:'Huile végétale 5L',       price:8500,  priceWholesale:7000, priceSemiWholesale:7800, cat:'fat',     emoji:'🫒', stock:34,  promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:9,  name:'Café soluble 200g',       price:2800,  priceWholesale:2200, priceSemiWholesale:2500, cat:'grocery', emoji:'☕', stock:55,  promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:10, name:'Sardines 155g',           price:900,   priceWholesale:700,  priceSemiWholesale:800,  cat:'canned',  emoji:'🐟', stock:200, promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:11, name:'Savon ménage 400g',       price:350,   priceWholesale:270,  priceSemiWholesale:310,  cat:'hygiene', emoji:'🫧', stock:180, promotion:false, promotionPrice:0,    promotionEnd:'' },
+  { id:12, name:'Lait concentré 397g',     price:1100,  priceWholesale:880,  priceSemiWholesale:990,  cat:'dairy',   emoji:'🥤', stock:95,  promotion:false, promotionPrice:0,    promotionEnd:'' },
 ]
 
 interface CartItem {
@@ -53,6 +53,17 @@ export default function POS() {
   const [showModal, setShowModal] = useState(false)
   const [sessionTx, setSessionTx] = useState(42)
   const [sessionCA, setSessionCA] = useState(842500)
+  const [clientType, setClientType] = useState<'retail'|'wholesale'|'semi'>('retail')
+  const [discount, setDiscount] = useState<{ type:'percent'|'amount'; value:number; reason:string } | null>(null)
+  const [showDiscountModal, setShowDiscountModal] = useState(false)
+  const [discountForm, setDiscountForm] = useState({ type:'percent' as 'percent'|'amount', value:0, reason:'' })
+
+  // Prix selon type client
+  const getPrice = (p: typeof PRODUCTS[0]) => {
+    if (clientType === 'wholesale') return p.priceWholesale
+    if (clientType === 'semi')      return p.priceSemiWholesale
+    return p.promotion ? p.promotionPrice || p.price : p.price
+  }
 
   // Filtrage produits
   const filtered = PRODUCTS.filter(p =>
@@ -62,10 +73,11 @@ export default function POS() {
 
   // Actions panier
   const addItem = (p: typeof PRODUCTS[0]) => {
+    const price = getPrice(p)
     setCart(prev => {
       const ex = prev.find(i => i.id === p.id)
       if (ex) return prev.map(i => i.id === p.id ? { ...i, qty: i.qty + 1 } : i)
-      return [...prev, { id: p.id, name: p.name, price: p.price, qty: 1, emoji: p.emoji }]
+      return [...prev, { id: p.id, name: p.name, price, qty: 1, emoji: p.emoji }]
     })
   }
 
@@ -80,10 +92,16 @@ export default function POS() {
 
   // Calculs
   const VAT_RATE = 0.18
-  const total    = cart.reduce((s, i) => s + i.price * i.qty, 0)
-  const totalHT  = total / (1 + VAT_RATE)
-  const tva      = total - totalHT
-  const monnaie  = cashGiven ? parseFloat(cashGiven) * (total > 100 ? 1 : 655.957) - total : 0
+  const subtotalBeforeDiscount = cart.reduce((s, i) => s + i.price * i.qty, 0)
+  const discountAmount = discount
+    ? discount.type === 'percent'
+      ? subtotalBeforeDiscount * discount.value / 100
+      : Math.min(discount.value, subtotalBeforeDiscount)
+    : 0
+  const total   = subtotalBeforeDiscount - discountAmount
+  const totalHT = total / (1 + VAT_RATE)
+  const tva     = total - totalHT
+  const monnaie = cashGiven ? parseFloat(cashGiven) - total : 0
 
   const printTicket = () => {
     const win = window.open('', '_blank', 'width=400,height=600')
@@ -127,6 +145,7 @@ export default function POS() {
     </div>
   `).join('')}
   <div class="divider"></div>
+  ${discount && discountAmount > 0 ? `<div class="row" style="color:green;font-weight:bold;"><span>${discount.type === 'percent' ? `Remise (${discount.value} %)` : 'Remise'} :</span><span>− ${fmt(discountAmount)}</span></div>` : ''}
   <div class="row"><span>${t('pos_subtotal')} :</span><span>${fmt(Math.round(totalHT))}</span></div>
   <div class="row"><span>${t('pos_vat')} (18 %) :</span><span>${fmt(Math.round(tva))}</span></div>
   <div class="divider"></div>
@@ -156,6 +175,7 @@ export default function POS() {
     setCart([])
     setShowModal(false)
     setCashGiven('')
+    setDiscount(null)
   }
 
   // ─── RENDER ──────────────────────────────
@@ -230,6 +250,47 @@ export default function POS() {
             </div>
           </div>
 
+          {/* Barre type client + remise */}
+          <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+            {([
+              { id:'retail',    label:'Détail',   icon:'👤' },
+              { id:'wholesale', label:'Grossiste', icon:'🏭' },
+              { id:'semi',      label:'Demi-gros', icon:'📦' },
+            ] as { id:'retail'|'wholesale'|'semi'; label:string; icon:string }[]).map(ct => (
+              <button key={ct.id} onClick={() => setClientType(ct.id)} style={{
+                padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:600,
+                cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
+                background: clientType === ct.id ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
+                border:`1px solid ${clientType === ct.id ? 'var(--p2)' : 'var(--border)'}`,
+                color: clientType === ct.id ? 'var(--p2)' : 'var(--text2)',
+                display:'flex', alignItems:'center', gap:5,
+              }}><span>{ct.icon}</span>{ct.label}</button>
+            ))}
+            <div style={{ width:1, height:20, background:'var(--border)', margin:'0 4px' }} />
+            <button onClick={() => setShowDiscountModal(true)} style={{
+              padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:600,
+              cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
+              background: discount ? 'rgba(14,196,126,.15)' : 'var(--bg3)',
+              border:`1px solid ${discount ? 'rgba(14,196,126,.3)' : 'var(--border)'}`,
+              color: discount ? 'var(--acc2)' : 'var(--text2)',
+              display:'flex', alignItems:'center', gap:6,
+            }}>
+              🏷️ {discount
+                ? `Remise: ${discount.type === 'percent' ? discount.value + ' %' : fmt(discount.value)}`
+                : 'Appliquer une remise'}
+            </button>
+            {discount && (
+              <button onClick={() => setDiscount(null)} style={{
+                padding:'6px 8px', borderRadius:8, fontSize:11,
+                background:'rgba(232,64,74,.1)', border:'1px solid rgba(232,64,74,.2)',
+                color:'var(--danger)', cursor:'pointer', fontFamily:'var(--font)',
+              }}>✕ Annuler remise</button>
+            )}
+            <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:600 }}>
+              🏷️ {PRODUCTS.filter(p => p.promotion).length} promotions actives
+            </div>
+          </div>
+
           {/* Grille produits — SCROLL ICI */}
           <div style={{
             flex: 1,
@@ -284,6 +345,15 @@ export default function POS() {
                       }
                     }}
                   >
+                    {/* Badge promo */}
+                    {p.promotion && clientType === 'retail' && (
+                      <div style={{
+                        position:'absolute', top:6, left:6,
+                        background:'var(--danger)', color:'#fff',
+                        borderRadius:6, padding:'2px 6px',
+                        fontSize:9, fontWeight:800,
+                      }}>PROMO</div>
+                    )}
                     {/* Badge quantité si dans panier */}
                     {inCart && (
                       <div style={{
@@ -320,12 +390,22 @@ export default function POS() {
                     }}>{p.name}</div>
 
                     {/* Prix */}
+                    {clientType !== 'retail' && (
+                      <div style={{ fontSize:9, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
+                        {fmt(p.price)}
+                      </div>
+                    )}
+                    {p.promotion && clientType === 'retail' && (
+                      <div style={{ fontSize:9, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
+                        {fmt(p.price)}
+                      </div>
+                    )}
                     <div style={{
                       fontSize: 14,
                       fontWeight: 800,
-                      color: 'var(--acc)',
+                      color: p.promotion && clientType === 'retail' ? 'var(--danger)' : 'var(--acc)',
                       fontFamily: 'var(--mono)',
-                    }}>{fmt(p.price)}</div>
+                    }}>{fmt(getPrice(p))}</div>
 
                     {/* Stock */}
                     <div style={{
@@ -602,36 +682,28 @@ export default function POS() {
             borderTop: '1px solid var(--border)',
             background: 'rgba(255,255,255,.02)',
           }}>
-            {[
-              { label: t('pos_subtotal'), value: fmt(totalHT) },
-              { label: `${t('pos_vat')} (18 %)`, value: fmt(tva) },
-            ].map(row => (
-              <div key={row.label} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: 12,
-                color: 'var(--text2)',
-                marginBottom: 5,
-              }}>
-                <span>{row.label}</span>
-                <span style={{ fontFamily: 'var(--mono)' }}>{row.value}</span>
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text2)', marginBottom:4 }}>
+              <span>Sous-total brut</span>
+              <span style={{ fontFamily:'var(--mono)' }}>{fmt(subtotalBeforeDiscount)}</span>
+            </div>
+            {discount && discountAmount > 0 && (
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:4, color:'var(--acc2)', fontWeight:600 }}>
+                <span>🏷️ Remise {discount.type === 'percent' ? `(${discount.value} %)` : ''}{discount.reason ? ` — ${discount.reason}` : ''}</span>
+                <span style={{ fontFamily:'var(--mono)' }}>− {fmt(discountAmount)}</span>
               </div>
-            ))}
-            <div style={{ height: 1, background: 'var(--border)', margin: '8px 0' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: 'var(--text2)',
-                letterSpacing: '.5px',
-              }}>{t('pos_total')}</span>
-              <span style={{
-                fontSize: 22,
-                fontWeight: 900,
-                color: 'var(--p2)',
-                fontFamily: 'var(--mono)',
-                letterSpacing: '-1px',
-              }}>{fmt(total)}</span>
+            )}
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text2)', marginBottom:4 }}>
+              <span>{t('pos_subtotal')}</span>
+              <span style={{ fontFamily:'var(--mono)' }}>{fmt(totalHT)}</span>
+            </div>
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text2)', marginBottom:4 }}>
+              <span>{t('pos_vat')} (18 %)</span>
+              <span style={{ fontFamily:'var(--mono)' }}>{fmt(tva)}</span>
+            </div>
+            <div style={{ height:1, background:'var(--border)', margin:'8px 0' }} />
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <span style={{ fontSize:12, fontWeight:700, color:'var(--text2)', letterSpacing:'.5px' }}>{t('pos_total')}</span>
+              <span style={{ fontSize:22, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>{fmt(total)}</span>
             </div>
           </div>
 
@@ -796,6 +868,109 @@ export default function POS() {
           </div>
         </div>
       </div>
+
+      {/* ════════════════════════════════
+          MODAL REMISE
+      ════════════════════════════════ */}
+      {showDiscountModal && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowDiscountModal(false)}>
+          <div className="modal-box" style={{ maxWidth:420 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
+              <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>🏷️ Appliquer une remise</h3>
+              <button className="mini-btn" onClick={() => setShowDiscountModal(false)}>✕</button>
+            </div>
+
+            {/* Type */}
+            <div style={{ marginBottom:16 }}>
+              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Type de remise</label>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                {([
+                  { type:'percent', label:'Pourcentage (%)', icon:'%' },
+                  { type:'amount',  label:'Montant fixe',    icon:'F' },
+                ] as { type:'percent'|'amount'; label:string; icon:string }[]).map(rt => (
+                  <button key={rt.type} onClick={() => setDiscountForm(f => ({...f, type:rt.type}))} style={{
+                    padding:'12px', borderRadius:10, cursor:'pointer', fontFamily:'var(--font)',
+                    fontSize:13, fontWeight:600, transition:'all .15s',
+                    background: discountForm.type === rt.type ? 'rgba(91,78,232,.15)' : 'var(--bg3)',
+                    border:`1.5px solid ${discountForm.type === rt.type ? 'var(--p2)' : 'var(--border)'}`,
+                    color: discountForm.type === rt.type ? 'var(--p2)' : 'var(--text2)',
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:6,
+                  }}>
+                    <span style={{ fontSize:22, fontWeight:900 }}>{rt.icon}</span>
+                    {rt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Remises rapides % */}
+            {discountForm.type === 'percent' && (
+              <div style={{ marginBottom:14 }}>
+                <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Remise rapide</label>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                  {[5,10,15,20,25,30].map(pct => (
+                    <button key={pct} onClick={() => setDiscountForm(f => ({...f, value:pct}))} style={{
+                      padding:'7px 14px', borderRadius:8, fontSize:13, fontWeight:700,
+                      cursor:'pointer', fontFamily:'var(--font)', border:'none', transition:'all .15s',
+                      background: discountForm.value === pct ? 'var(--p)' : 'var(--bg3)',
+                      color: discountForm.value === pct ? '#fff' : 'var(--text2)',
+                    }}>{pct} %</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Valeur personnalisée */}
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+                {discountForm.type === 'percent' ? 'Pourcentage personnalisé' : 'Montant de la remise'}
+              </label>
+              <div style={{ position:'relative' }}>
+                <input className="input" type="number"
+                  placeholder={discountForm.type === 'percent' ? 'Ex: 12' : 'Ex: 5000'}
+                  value={discountForm.value || ''}
+                  onChange={e => setDiscountForm(f => ({...f, value:+e.target.value}))}
+                  style={{ paddingRight:50 }} />
+                <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:700, color:'var(--text3)' }}>
+                  {discountForm.type === 'percent' ? '%' : 'F'}
+                </span>
+              </div>
+              {discountForm.value > 0 && (
+                <div style={{ marginTop:8, padding:'8px 12px', background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)', borderRadius:8, fontSize:12, display:'flex', justifyContent:'space-between' }}>
+                  <span style={{ color:'var(--text2)' }}>Remise sur {fmt(subtotalBeforeDiscount)}</span>
+                  <span style={{ color:'var(--acc2)', fontWeight:700, fontFamily:'var(--mono)' }}>
+                    − {discountForm.type === 'percent'
+                      ? fmt(subtotalBeforeDiscount * discountForm.value / 100)
+                      : fmt(discountForm.value)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Motif */}
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>Motif (optionnel)</label>
+              <input className="input" placeholder="Ex: Client fidèle, promotion du jour..."
+                value={discountForm.reason}
+                onChange={e => setDiscountForm(f => ({...f, reason:e.target.value}))} />
+            </div>
+
+            <div style={{ display:'flex', gap:8 }}>
+              <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }}
+                onClick={() => {
+                  if (!discountForm.value) { toast.error('Entrez une valeur'); return }
+                  if (discountForm.type === 'percent' && discountForm.value > 100) { toast.error('Max 100 %'); return }
+                  setDiscount(discountForm)
+                  setShowDiscountModal(false)
+                  toast.success(`🏷️ Remise de ${discountForm.type === 'percent' ? discountForm.value + ' %' : fmt(discountForm.value)} appliquée`)
+                }}>
+                ✅ Appliquer la remise
+              </button>
+              <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowDiscountModal(false)}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ════════════════════════════════
           MODAL CONFIRMATION

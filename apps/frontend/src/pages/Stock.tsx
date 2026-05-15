@@ -15,6 +15,15 @@ const PRODUCTS_INIT = [
   { sku: 'PRD-008', name: '🍅 Tomate concentrée 800g',  category: 'Conserves',  buy: 900,  sell: 1400, stock: 112, threshold: 30, supplier: 'TOMAPOR'        },
 ]
 
+const CATEGORIES_INIT = [
+  { id:1, name:'Céréales',   color:'#818CF8', icon:'🌾', productsCount:3, description:'Riz, farine, semoule...'     },
+  { id:2, name:'Corps gras', color:'#F59E0B', icon:'🫙', productsCount:2, description:'Huiles, beurre de karité...' },
+  { id:3, name:'Épicerie',   color:'#34D399', icon:'🍚', productsCount:2, description:'Sucre, café, condiments...'  },
+  { id:4, name:'Hygiène',    color:'#F472B6', icon:'🧼', productsCount:2, description:'Savons, détergents...'       },
+  { id:5, name:'Laitiers',   color:'#60A5FA', icon:'🥛', productsCount:2, description:'Lait, fromage, yaourt...'   },
+  { id:6, name:'Conserves',  color:'#A78BFA', icon:'🍅', productsCount:2, description:'Tomates, sardines, thon...' },
+]
+
 function statusOf(stock: number, threshold: number) {
   if (stock === 0)        return { label: t('status_out'), cls: 'badge-red'   }
   if (stock <= threshold) return { label: t('status_low'), cls: 'badge-amber' }
@@ -31,10 +40,19 @@ export default function Stock() {
   const [cat, setCat]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [modalTab, setModalTab] = useState<'general'|'prix'|'avance'>('general')
   const [form, setForm] = useState({
-    sku: '', name: '', category: 'Céréales', buy: 0, sell: 0,
+    sku: '', name: '', description: '', category: 'Céréales', unit: 'unité',
+    buy: 0, sell: 0, priceWholesale: 0, priceSemiWholesale: 0,
     stock: 0, threshold: stockLowThreshold, supplier: '',
+    barcode: '', taxRate: 18, isActive: true,
+    hasPromotion: false, promotionPrice: 0, promotionEnd: '',
+    image: '📦', notes: '',
   })
+  const [categories, setCategories] = useState(CATEGORIES_INIT)
+  const [showCatModal, setShowCatModal] = useState(false)
+  const [editCat, setEditCat] = useState<typeof CATEGORIES_INIT[0] | null>(null)
+  const [catForm, setCatForm] = useState({ name:'', color:'#818CF8', icon:'📦', description:'' })
 
   const cats     = ['', ...Array.from(new Set(products.map(p => p.category)))]
   const ruptures = products.filter(p => p.stock <= p.threshold)
@@ -50,9 +68,11 @@ export default function Stock() {
   })
 
   const addProduct = () => {
-    setProducts(prev => [...prev, form])
+    const sku = form.sku || `PRD-${String(Date.now()).slice(-4)}`
+    setProducts(prev => [...prev, { ...form, sku, name: form.image + ' ' + form.name }])
     setShowModal(false)
-    setForm({ sku: '', name: '', category: 'Céréales', buy: 0, sell: 0, stock: 0, threshold: stockLowThreshold, supplier: '' })
+    setForm({ sku:'', name:'', description:'', category:'Céréales', unit:'unité', buy:0, sell:0, priceWholesale:0, priceSemiWholesale:0, stock:0, threshold:stockLowThreshold, supplier:'', barcode:'', taxRate:18, isActive:true, hasPromotion:false, promotionPrice:0, promotionEnd:'', image:'📦', notes:'' })
+    setModalTab('general')
     toast.success('✅ Produit ajouté !')
   }
 
@@ -217,43 +237,323 @@ export default function Stock() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* ── Panel Catégories ── */}
+      <div className="panel">
+        <div className="panel-head">
+          <span className="panel-title">🏷️ Gestion des catégories</span>
+          <button className="topbar-btn" onClick={() => { setEditCat(null); setCatForm({ name:'', color:'#818CF8', icon:'📦', description:'' }); setShowCatModal(true) }}>
+            + Nouvelle catégorie
+          </button>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px,1fr))', gap:12 }}>
+          {categories.map(cat => (
+            <div key={cat.id} style={{
+              background:'var(--bg3)', border:'1px solid var(--border)',
+              borderRadius:12, padding:16, borderLeft:`4px solid ${cat.color}`,
+              display:'flex', flexDirection:'column', gap:8, transition:'all .2s',
+            }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = `0 6px 20px ${cat.color}33` }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.boxShadow = 'none' }}
+            >
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <div style={{ width:36, height:36, borderRadius:10, background:`${cat.color}22`, border:`1px solid ${cat.color}44`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{cat.icon}</div>
+                  <div>
+                    <div style={{ fontSize:14, fontWeight:700, color:'var(--text)' }}>{cat.name}</div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>{cat.productsCount} produits</div>
+                  </div>
+                </div>
+                <div style={{ display:'flex', gap:4 }}>
+                  <button className="mini-btn" onClick={() => { setEditCat(cat); setCatForm({ name:cat.name, color:cat.color, icon:cat.icon, description:cat.description }); setShowCatModal(true) }}>✏️</button>
+                  <button className="mini-btn" style={{ color:'var(--danger)' }} onClick={() => {
+                    if (cat.productsCount > 0) { toast.error('Catégorie non vide !'); return }
+                    setCategories(prev => prev.filter(c => c.id !== cat.id))
+                    toast.success('Catégorie supprimée')
+                  }}>🗑</button>
+                </div>
+              </div>
+              <div style={{ fontSize:12, color:'var(--text2)' }}>{cat.description}</div>
+              <div style={{ height:4, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
+                <div style={{ height:'100%', borderRadius:99, width:`${Math.min(100,(cat.productsCount/10)*100)}%`, background:cat.color, transition:'width .3s' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Modal produit enrichi ── */}
       {showModal && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal-box">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ {t('btn_new')} produit</h3>
+          <div className="modal-box" style={{ maxWidth:560 }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>➕ {t('btn_new')} produit</h3>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>✕</button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+
+            {/* Onglets */}
+            <div style={{ display:'flex', gap:4, marginBottom:20, background:'var(--bg3)', borderRadius:10, padding:4 }}>
               {([
-                { label: 'SKU',             key: 'sku',       type: 'text',   span: false },
-                { label: 'Catégorie',       key: 'category',  type: 'select', span: false },
-                { label: 'Nom du produit',  key: 'name',      type: 'text',   span: true  },
-                { label: 'Fournisseur',     key: 'supplier',  type: 'text',   span: true  },
-                { label: 'Prix achat',      key: 'buy',       type: 'number', span: false },
-                { label: 'Prix vente',      key: 'sell',      type: 'number', span: false },
-                { label: 'Stock initial',   key: 'stock',     type: 'number', span: false },
-                { label: 'Seuil alerte',    key: 'threshold', type: 'number', span: false },
-              ] as { label: string; key: keyof typeof form; type: string; span: boolean }[]).map(f => (
-                <div key={f.key} className={f.span ? 'col-span-2' : ''}>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
-                  {f.type === 'select' ? (
-                    <select className="input text-sm" value={String(form[f.key])}
-                      onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}>
-                      {['Céréales','Corps gras','Épicerie','Hygiène','Laitiers','Conserves'].map(c => <option key={c}>{c}</option>)}
-                    </select>
-                  ) : (
-                    <input className="input text-sm" type={f.type}
-                      value={String(form[f.key])}
-                      onChange={e => setForm(p => ({ ...p, [f.key]: f.type === 'number' ? +e.target.value : e.target.value }))} />
-                  )}
-                </div>
+                { id:'general', label:'ℹ️ Général' },
+                { id:'prix',    label:'💰 Prix & Stock' },
+                { id:'avance',  label:'📋 Avancé' },
+              ] as { id:'general'|'prix'|'avance'; label:string }[]).map(tb => (
+                <button key={tb.id} onClick={() => setModalTab(tb.id)} style={{
+                  flex:1, padding:'7px 12px', borderRadius:8, fontSize:12, fontWeight:600,
+                  cursor:'pointer', fontFamily:'var(--font)', border:'none', transition:'all .15s',
+                  background: modalTab === tb.id ? 'linear-gradient(135deg, var(--p), var(--p2))' : 'transparent',
+                  color: modalTab === tb.id ? '#fff' : 'var(--text2)',
+                }}>{tb.label}</button>
               ))}
             </div>
+
+            {/* ── Onglet Général ── */}
+            {modalTab === 'general' && (
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                {/* Image + nom */}
+                <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Image</label>
+                    <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
+                      {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','📦'].map(em => (
+                        <button key={em} onClick={() => setForm(f => ({...f, image:em}))} style={{
+                          width:32, height:32, borderRadius:8, fontSize:16,
+                          background: form.image === em ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
+                          border:`1.5px solid ${form.image === em ? 'var(--p2)' : 'var(--border)'}`,
+                          cursor:'pointer',
+                        }}>{em}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom du produit *</label>
+                    <input className="input text-sm" placeholder="Ex: Riz parfumé 5kg"
+                      value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>SKU (auto si vide)</label>
+                    <input className="input text-sm" placeholder="PRD-001" value={form.sku} onChange={e => setForm(f => ({...f, sku:e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Catégorie</label>
+                    <select className="input text-sm" value={form.category} onChange={e => setForm(f => ({...f, category:e.target.value}))}>
+                      {categories.map(c => <option key={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Unité</label>
+                    <select className="input text-sm" value={form.unit} onChange={e => setForm(f => ({...f, unit:e.target.value}))}>
+                      {['unité','kg','litre','carton','sac','boîte','palette'].map(u => <option key={u}>{u}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Fournisseur</label>
+                    <input className="input text-sm" placeholder="SENRIZ, SONACO..." value={form.supplier} onChange={e => setForm(f => ({...f, supplier:e.target.value}))} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Code-barres</label>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <input className="input text-sm" style={{ flex:1 }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
+                    <button className="mini-btn" onClick={() => toast('📷 Scanner non disponible en démo')}>📷</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Description</label>
+                  <textarea className="input text-sm" rows={2} placeholder="Description courte..."
+                    value={form.description} onChange={e => setForm(f => ({...f, description:e.target.value}))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Notes internes</label>
+                  <input className="input text-sm" placeholder="Remarques..." value={form.notes} onChange={e => setForm(f => ({...f, notes:e.target.value}))} />
+                </div>
+              </div>
+            )}
+
+            {/* ── Onglet Prix & Stock ── */}
+            {modalTab === 'prix' && (
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix achat HT *</label>
+                    <input className="input text-sm" type="number" value={form.buy || ''} onChange={e => setForm(f => ({...f, buy:+e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix vente TTC *</label>
+                    <input className="input text-sm" type="number" value={form.sell || ''} onChange={e => setForm(f => ({...f, sell:+e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix grossiste</label>
+                    <input className="input text-sm" type="number" value={form.priceWholesale || ''} onChange={e => setForm(f => ({...f, priceWholesale:+e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix demi-grossiste</label>
+                    <input className="input text-sm" type="number" value={form.priceSemiWholesale || ''} onChange={e => setForm(f => ({...f, priceSemiWholesale:+e.target.value}))} />
+                  </div>
+                </div>
+                {/* Marge calculée */}
+                {form.buy > 0 && form.sell > 0 && (
+                  <div style={{ padding:'10px 14px', background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)', borderRadius:10, fontSize:13 }}>
+                    Marge : <strong style={{ color:'var(--acc2)' }}>{((form.sell - form.buy) / form.buy * 100).toFixed(1)} %</strong>
+                    <span style={{ color:'var(--text3)', marginLeft:12 }}>({fmt(form.sell - form.buy)} / unité)</span>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Stock initial *</label>
+                    <input className="input text-sm" type="number" value={form.stock || ''} onChange={e => setForm(f => ({...f, stock:+e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Seuil alerte *</label>
+                    <input className="input text-sm" type="number" value={form.threshold || ''} onChange={e => setForm(f => ({...f, threshold:+e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Taux TVA</label>
+                    <select className="input text-sm" value={form.taxRate} onChange={e => setForm(f => ({...f, taxRate:+e.target.value}))}>
+                      {[0,5,10,18,20].map(r => <option key={r} value={r}>{r} %</option>)}
+                    </select>
+                  </div>
+                </div>
+                {/* Toggle promotion */}
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Produit en promotion</div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>Affiche un badge PROMO au POS</div>
+                  </div>
+                  <button onClick={() => setForm(f => ({...f, hasPromotion:!f.hasPromotion}))} style={{
+                    width:48, height:26, borderRadius:99, position:'relative',
+                    background: form.hasPromotion ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor:'pointer',
+                  }}>
+                    <div style={{ position:'absolute', top:3, left: form.hasPromotion ? 25 : 3, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
+                  </button>
+                </div>
+                {form.hasPromotion && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix promotion</label>
+                      <input className="input text-sm" type="number" value={form.promotionPrice || ''} onChange={e => setForm(f => ({...f, promotionPrice:+e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Date fin promo</label>
+                      <input className="input text-sm" type="date" value={form.promotionEnd} onChange={e => setForm(f => ({...f, promotionEnd:e.target.value}))} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Onglet Avancé ── */}
+            {modalTab === 'avance' && (
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                {[
+                  { label:'Produit actif', sub:'Visible dans les listes', key:'isActive' as const },
+                ].map(tog => (
+                  <div key={tog.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{tog.label}</div>
+                      <div style={{ fontSize:11, color:'var(--text3)' }}>{tog.sub}</div>
+                    </div>
+                    <button onClick={() => setForm(f => ({...f, [tog.key]:!f[tog.key]}))} style={{
+                      width:48, height:26, borderRadius:99, position:'relative',
+                      background: form[tog.key] ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor:'pointer',
+                    }}>
+                      <div style={{ position:'absolute', top:3, left: form[tog.key] ? 25 : 3, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
+                    </button>
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Référence interne</label>
+                  <input className="input text-sm" placeholder="Référence optionnelle..." />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Poids (g)</label>
+                    <input className="input text-sm" type="number" placeholder="Ex: 500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Dimensions</label>
+                    <input className="input text-sm" placeholder="L × l × h cm" />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2 mt-5">
               <button className="btn btn-primary flex-1 justify-center" onClick={addProduct}>✅ {t('btn_add')} le produit</button>
               <button className="btn btn-ghost" onClick={() => setShowModal(false)}>{t('btn_cancel')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Catégorie ── */}
+      {showCatModal && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowCatModal(false)}>
+          <div className="modal-box" style={{ maxWidth:440 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
+              <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
+                {editCat ? '✏️ Modifier la catégorie' : '➕ Nouvelle catégorie'}
+              </h3>
+              <button className="mini-btn" onClick={() => setShowCatModal(false)}>✕</button>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom de la catégorie</label>
+                <input className="input" value={catForm.name} onChange={e => setCatForm(f => ({...f, name:e.target.value}))} placeholder="Ex: Céréales" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Icône (emoji)</label>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
+                  {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🥤','🍫','🌽','🫚'].map(emoji => (
+                    <button key={emoji} onClick={() => setCatForm(f => ({...f, icon:emoji}))} style={{
+                      width:36, height:36, borderRadius:8, fontSize:18, cursor:'pointer',
+                      background: catForm.icon === emoji ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
+                      border:`1.5px solid ${catForm.icon === emoji ? 'var(--p2)' : 'var(--border)'}`,
+                    }}>{emoji}</button>
+                  ))}
+                </div>
+                <input className="input" value={catForm.icon} onChange={e => setCatForm(f => ({...f, icon:e.target.value}))} placeholder="Ou tapez un emoji..." style={{ fontSize:20 }} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Couleur</label>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:8 }}>
+                  {['#818CF8','#F59E0B','#34D399','#F472B6','#60A5FA','#A78BFA','#EF4444','#14B8A6','#F97316','#84CC16'].map(color => (
+                    <button key={color} onClick={() => setCatForm(f => ({...f, color}))} style={{
+                      width:28, height:28, borderRadius:'50%', background:color, border:'none', cursor:'pointer',
+                      boxShadow: catForm.color === color ? `0 0 0 3px white, 0 0 0 5px ${color}` : 'none', transition:'box-shadow .15s',
+                    }} />
+                  ))}
+                </div>
+                <input type="color" value={catForm.color} onChange={e => setCatForm(f => ({...f, color:e.target.value}))}
+                  style={{ width:'100%', height:36, borderRadius:8, border:'1px solid var(--border)', cursor:'pointer', background:'none' }} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Description</label>
+                <textarea className="input" rows={2} value={catForm.description} onChange={e => setCatForm(f => ({...f, description:e.target.value}))} placeholder="Description courte..." />
+              </div>
+              {/* Preview */}
+              <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', borderLeft:`4px solid ${catForm.color}` }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:`${catForm.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>{catForm.icon}</div>
+                <div>
+                  <div style={{ fontWeight:700, color:'var(--text)' }}>{catForm.name || 'Nom catégorie'}</div>
+                  <div style={{ fontSize:11, color:'var(--text3)' }}>{catForm.description || 'Description...'}</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:20 }}>
+              <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }} onClick={() => {
+                if (!catForm.name) { toast.error('Nom requis'); return }
+                if (editCat) {
+                  setCategories(prev => prev.map(c => c.id === editCat.id ? {...c, ...catForm} : c))
+                  toast.success(`✅ Catégorie "${catForm.name}" modifiée`)
+                } else {
+                  setCategories(prev => [...prev, { id:Date.now(), ...catForm, productsCount:0 }])
+                  toast.success(`✅ Catégorie "${catForm.name}" créée`)
+                }
+                setShowCatModal(false)
+              }}>{editCat ? '✅ Modifier' : '✅ Créer'}</button>
+              <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowCatModal(false)}>Annuler</button>
             </div>
           </div>
         </div>
