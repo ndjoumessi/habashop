@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { exportCSV } from '@/utils/export'
 
 type SupplierStatus = 'Actif' | 'Pause' | 'Inactif'
 
@@ -156,7 +157,13 @@ export default function Suppliers() {
         <div className="panel-head">
           <span className="panel-title">🏭 {t('suppliers_title')}</span>
           <div className="flex items-center gap-2">
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV…')}>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+              exportCSV('habashop_fournisseurs',
+                ['Nom','Catégories','Téléphone','Délai','Note','Statut'],
+                suppliers.map(s => [s.name, s.categories.join(', '), s.phone, s.leadTime + 'j', s.rating + '/5', s.status])
+              )
+              toast.success('📊 Export CSV téléchargé !')
+            }}>
               <Download size={13} /> {t('btn_export')}
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreate(true)}>

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { Search, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { exportCSV } from '@/utils/export'
 
 type Severity = 'success' | 'info' | 'warning' | 'danger'
 
@@ -112,7 +113,13 @@ export default function Activity() {
         {/* Header */}
         <div className="panel-h" style={{ padding:'16px 20px', marginBottom:0 }}>
           <span className="panel-t">📋 Journal d'activité</span>
-          <button className="topbar-btn" onClick={() => toast('📥 Export CSV en cours...')}>
+          <button className="topbar-btn" onClick={() => {
+            exportCSV('habashop_activite',
+              ['Horodatage','Module','Action','Utilisateur','Description','IP','Sévérité'],
+              filtered.map(log => [log.date + ' ' + log.time, log.module, log.action, log.user, log.description, log.ip, log.severity])
+            )
+            toast.success('📊 Export activités téléchargé !')
+          }}>
             <Download size={14} /> Exporter CSV
           </button>
         </div>

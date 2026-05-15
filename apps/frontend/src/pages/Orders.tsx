@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { exportCSV } from '@/utils/export'
 
 type OrderStatus = 'BROUILLON' | 'ENVOYÉE' | 'CONFIRMÉE' | 'EN TRANSIT' | 'REÇUE' | 'ANNULÉE'
 
@@ -166,7 +167,13 @@ export default function Orders() {
         <div className="panel-head">
           <span className="panel-title">📦 {t('orders_title')}</span>
           <div className="flex items-center gap-2">
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV…')}>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+              exportCSV('habashop_commandes',
+                ['Référence','Fournisseur','Date','Livraison prévue','Articles','Montant','Statut'],
+                orders.map(o => [o.ref, o.supplier, o.date, o.expectedAt, o.items.length, o.total, o.status])
+              )
+              toast.success('📊 Export CSV téléchargé !')
+            }}>
               <Download size={13} /> {t('btn_export')}
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreateModal(true)}>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Download, TrendingUp, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { exportCSV, exportPDF, tableToHTML } from '@/utils/export'
 
 type Period = 'today' | '7days' | '30days' | '3months' | 'year'
 
@@ -92,10 +93,21 @@ export default function Reports() {
           >{PERIOD_LABELS[p]}</button>
         ))}
         <div className="flex-1" />
-        <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV en cours…')}>
+        <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+          exportCSV('habashop_rapports',
+            ['Période','CA','Marge','Transactions','Panier moyen'],
+            [[PERIOD_LABELS[period], data.ca, data.margin, data.transactions, data.avgCart]]
+          )
+          toast.success('📊 Export CSV téléchargé !')
+        }}>
           <Download size={13} /> {t('btn_export')} CSV
         </button>
-        <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('🖨️ Export PDF en cours…')}>
+        <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+          exportPDF(`Rapport ${PERIOD_LABELS[period]}`, tableToHTML(
+            ['Période','CA','Marge','Transactions','Panier moyen'],
+            [[PERIOD_LABELS[period], data.ca + ' FCFA', data.margin + ' FCFA', data.transactions, data.avgCart + ' FCFA']]
+          ))
+        }}>
           <Download size={13} /> {t('btn_export')} PDF
         </button>
       </div>

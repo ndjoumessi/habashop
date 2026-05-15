@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { TrendingUp, Package, Users, Calendar, ShoppingCart } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { exportCSV } from '@/utils/export'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -916,7 +917,14 @@ export default function Forecasts() {
       }}>
         <div className="panel-head">
           <span className="panel-title" style={{ fontSize:15 }}>🏆 Synthèse prévisionnelle — Année 2026</span>
-          <button className="mini-btn" onClick={() => toast('📥 Export rapport prévisionnel...')}>
+          <button className="mini-btn" onClick={() => {
+            const items = FORECAST_ITEMS.filter(i => qtyToOrder(i) > 0)
+            exportCSV('habashop_bons_commande',
+              ['SKU','Produit','Fournisseur','Qté à commander','Prix unitaire','Total estimé','Priorité'],
+              items.map(i => [i.sku, i.name, i.supplier, qtyToOrder(i), i.unitPrice, totalCost(i), i.priority])
+            )
+            toast.success('📊 Bons de commande exportés !')
+          }}>
             📥 Exporter le rapport
           </button>
         </div>

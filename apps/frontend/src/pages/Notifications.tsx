@@ -1,7 +1,20 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+const NOTIF_ROUTES: Record<string, string> = {
+  'STOCK':      '/app/stock',
+  'AUTH':       '/app/activity',
+  'POS':        '/app/reports',
+  'PAIE':       '/app/payroll',
+  'RH':         '/app/hr',
+  'COMMANDES':  '/app/orders',
+  'CLIENTS':    '/app/customers',
+  'SYSTÈME':    '/app/settings',
+  'PARAMÈTRES': '/app/settings',
+}
 
 type NotifType = 'danger' | 'warning' | 'success' | 'info'
 type TabType   = 'all' | 'unread' | 'danger'
@@ -48,6 +61,7 @@ export default function Notifications() {
   void lang
   const fmt = useFormatAmount()
   void fmt
+  const navigate = useNavigate()
 
   const [notifs,     setNotifs]     = useState<Notification[]>(NOTIFS_INIT)
   const [activeTab,  setActiveTab]  = useState<TabType>('all')
@@ -171,7 +185,11 @@ export default function Notifications() {
                       borderRadius:8, padding:'5px 14px',
                       fontSize:12, fontWeight:700, color:cfg.color,
                       cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
-                    }} onClick={() => toast(`→ ${notif.action}`)}>
+                    }} onClick={() => {
+                      const route = NOTIF_ROUTES[notif.module] ?? '/app/dashboard'
+                      navigate(route)
+                      toast(`→ Redirection vers ${notif.module}`)
+                    }}>
                       → {notif.action}
                     </button>
                   )}

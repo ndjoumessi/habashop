@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { Download, Plus, X, Search, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { exportCSV } from '@/utils/export'
 
 type Category = 'Loyer' | 'Énergie' | 'Transport' | 'Maintenance' | 'Fournitures' | 'Marketing' | 'Formation' | 'Autre'
 type ExpStatus = 'PAYÉ' | 'EN ATTENTE'
@@ -208,7 +209,13 @@ export default function Expenses() {
               <option value="PAYÉ">PAYÉ</option>
               <option value="EN ATTENTE">EN ATTENTE</option>
             </select>
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV…')}>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+              exportCSV('habashop_depenses',
+                ['Date','Libellé','Catégorie','Montant HT','TVA','TTC','Mode','Récurrent','Statut'],
+                expenses.map(e => [e.date, e.label, e.category, e.amount, e.vat + ' %', Math.round(e.amount * (1 + e.vat / 100)), e.mode, e.recurrent ? 'Oui' : 'Non', e.status])
+              )
+              toast.success('📊 Export dépenses téléchargé !')
+            }}>
               <Download size={12} /> Export
             </button>
           </div>

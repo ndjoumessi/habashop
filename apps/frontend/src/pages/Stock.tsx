@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { exportCSV, exportPDF, tableToHTML } from '@/utils/export'
 
 const PRODUCTS_INIT = [
   { sku: 'PRD-001', name: '🌾 Riz parfumé 5kg',       category: 'Céréales',   buy: 3200, sell: 4500, stock: 12,  threshold: 20, supplier: 'SENRIZ'         },
@@ -99,8 +100,22 @@ export default function Stock() {
         <div className="panel-head">
           <span className="panel-title">🗄️ {t('stock_title')}</span>
           <div className="flex items-center gap-2">
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📊 Export CSV en cours…')}>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+              exportCSV('habashop_stock',
+                ['SKU','Produit','Catégorie','Prix achat','Prix vente','Stock','Seuil','Fournisseur','Statut'],
+                products.map(p => [p.sku, p.name, p.category, p.buy, p.sell, p.stock, p.threshold, p.supplier, statusOf(p.stock,p.threshold).label])
+              )
+              toast.success('📊 Export CSV téléchargé !')
+            }}>
               <Download size={13} /> {t('btn_export')}
+            </button>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+              exportPDF('Inventaire Stock', tableToHTML(
+                ['SKU','Produit','Catégorie','Stock','Seuil','Prix vente','Statut'],
+                products.map(p => [p.sku, p.name, p.category, p.stock, p.threshold, p.sell + ' FCFA', statusOf(p.stock,p.threshold).label])
+              ))
+            }}>
+              <Download size={13} /> PDF
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowModal(true)}>
               <Plus size={13} /> {t('btn_add')}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { Download, Eye, Check, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { exportCSV } from '@/utils/export'
 
 type PayStatus = 'PAYÉ' | 'EN ATTENTE' | 'SUSPENDU' | 'GÉNÉRÉ'
 
@@ -354,7 +355,16 @@ export default function Payroll() {
           {MONTHS.map(m => <option key={m}>{m}</option>)}
         </select>
         <div style={{ flex:1 }} />
-        <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => toast('📥 Export CSV paie…')}>
+        <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+          exportCSV('habashop_paie',
+            ['Employé','Poste','Salaire base','Primes','Heures sup','Retenues','Absences','Net','Statut'],
+            records.map(r => {
+              const net = r.baseSalary + r.bonus + r.overtime - r.deductions - (r.absences * Math.round(r.baseSalary / 26))
+              return [r.employee, r.role, r.baseSalary, r.bonus, r.overtime, r.deductions, r.absences, net, r.status]
+            })
+          )
+          toast.success('📊 Export CSV téléchargé !')
+        }}>
           <Download size={13} /> Export CSV
         </button>
         <button className="btn btn-primary btn-sm gap-1.5" onClick={generatePayroll}>

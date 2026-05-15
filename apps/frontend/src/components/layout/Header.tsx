@@ -131,12 +131,24 @@ const DEFAULT_ITEMS = [
 // ── Notifications récentes ─────────────────────────────────────────────────────
 
 const RECENT_NOTIFS = [
-  { id:1, type:'danger',  title:'Rupture stock critique',       message:'Riz parfumé 5kg — Stock: 12',   time:'il y a 5 min',  read:false },
-  { id:2, type:'danger',  title:'Rupture stock critique',       message:'Savon OMO 500g — Stock: 5',     time:'il y a 12 min', read:false },
-  { id:3, type:'warning', title:'Tentative connexion suspecte', message:'3 tentatives IP: 41.82.100.24', time:'il y a 1h',     read:false },
-  { id:4, type:'success', title:'Objectif journalier dépassé',  message:'CA: 842 000 FCFA — +5,25 %',   time:'il y a 2h',     read:false },
-  { id:5, type:'info',    title:'Bulletins de paie générés',    message:'6 bulletins Mai 2026 prêts',    time:'il y a 3h',     read:true  },
+  { id:1, type:'danger',  module:'STOCK', title:'Rupture stock critique',       message:'Riz parfumé 5kg — Stock: 12',   time:'il y a 5 min',  read:false },
+  { id:2, type:'danger',  module:'STOCK', title:'Rupture stock critique',       message:'Savon OMO 500g — Stock: 5',     time:'il y a 12 min', read:false },
+  { id:3, type:'warning', module:'AUTH',  title:'Tentative connexion suspecte', message:'3 tentatives IP: 41.82.100.24', time:'il y a 1h',     read:false },
+  { id:4, type:'success', module:'POS',   title:'Objectif journalier dépassé',  message:'CA: 842 000 FCFA — +5,25 %',   time:'il y a 2h',     read:false },
+  { id:5, type:'info',    module:'PAIE',  title:'Bulletins de paie générés',    message:'6 bulletins Mai 2026 prêts',    time:'il y a 3h',     read:true  },
 ]
+
+const NOTIF_ROUTES: Record<string, string> = {
+  'STOCK':      '/app/stock',
+  'AUTH':       '/app/activity',
+  'POS':        '/app/reports',
+  'PAIE':       '/app/payroll',
+  'RH':         '/app/hr',
+  'COMMANDES':  '/app/orders',
+  'CLIENTS':    '/app/customers',
+  'SYSTÈME':    '/app/settings',
+  'PARAMÈTRES': '/app/settings',
+}
 
 const TYPE_COLORS: Record<string, string> = {
   danger:'var(--danger)', warning:'var(--acc)', success:'var(--acc2)', info:'var(--p2)',
@@ -484,6 +496,11 @@ export default function Header() {
                       : `3px solid ${TYPE_COLORS[notif.type] ?? 'var(--p2)'}`,
                     cursor:'pointer', transition:'background .12s',
                   }}
+                    onClick={() => {
+                      const route = NOTIF_ROUTES[notif.module] ?? '/app/dashboard'
+                      navigate(route)
+                      setShowNotifs(false)
+                    }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.025)'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = notif.read ? 'transparent' : `rgba(${rgb},.05)`}
                   >
