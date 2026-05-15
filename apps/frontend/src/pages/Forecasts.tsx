@@ -77,40 +77,7 @@ const CLIENT_FORECAST = [
   { metric:'Délai paiement moyen',   current:12,     forecast:8,      growth:-33, unit:'jours'   },
 ]
 
-const RECOMMANDATIONS = [
-  {
-    type:'danger'  as const,
-    icon:'⚡',
-    title:'Commander immédiatement',
-    message:'2 articles en rupture critique (Riz 5kg, Savon OMO). Perte de CA estimée à 450 000 FCFA/semaine si non commandés.',
-    action:'Générer les bons',
-    actionColor:'var(--danger)',
-  },
-  {
-    type:'warning' as const,
-    icon:'📈',
-    title:'Opportunité de croissance',
-    message:'Les céréales représentent 28 % du CA avec +30 % de croissance prévue. Augmenter les stocks de sécurité de 40 %.',
-    action:'Voir les prévisions',
-    actionColor:'var(--acc)',
-  },
-  {
-    type:'success' as const,
-    icon:'💰',
-    title:'Trésorerie solide',
-    message:"Solde cumulé prévu à 8 510 000 FCFA en octobre. Capacité d'investissement disponible pour expansion.",
-    action:'Voir trésorerie',
-    actionColor:'var(--acc2)',
-  },
-  {
-    type:'info'    as const,
-    icon:'👥',
-    title:"Renforcer l'équipe commerciale",
-    message:'Avec +30 % de nouveaux clients prévus, recruter 1 commercial dès juillet. ROI estimé en 3 mois.',
-    action:'Voir RH',
-    actionColor:'var(--p2)',
-  },
-]
+// RECOMMANDATIONS is built inside the component to use fmt() for amounts
 
 type Priority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'OK'
 
@@ -159,9 +126,44 @@ type ActiveTab = 'analyse' | 'bons'
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Forecasts() {
-  const { lang } = useAppStore()
-  void lang
+  const { lang, currency } = useAppStore()
+  void lang; void currency
   const fmt = useFormatAmount()
+
+  const RECOMMANDATIONS = [
+    {
+      type:'danger'  as const,
+      icon:'⚡',
+      title:'Commander immédiatement',
+      message:`2 articles en rupture critique (Riz 5kg, Savon OMO). Perte de CA estimée à ${fmt(450000)}/semaine si non commandés.`,
+      action:'Générer les bons',
+      actionColor:'var(--danger)',
+    },
+    {
+      type:'warning' as const,
+      icon:'📈',
+      title:'Opportunité de croissance',
+      message:'Les céréales représentent 28 % du CA avec +30 % de croissance prévue. Augmenter les stocks de sécurité de 40 %.',
+      action:'Voir les prévisions',
+      actionColor:'var(--acc)',
+    },
+    {
+      type:'success' as const,
+      icon:'💰',
+      title:'Trésorerie solide',
+      message:`Solde cumulé prévu à ${fmt(8510000)} en octobre. Capacité d'investissement disponible pour expansion.`,
+      action:'Voir trésorerie',
+      actionColor:'var(--acc2)',
+    },
+    {
+      type:'info'    as const,
+      icon:'👥',
+      title:"Renforcer l'équipe commerciale",
+      message:'Avec +30 % de nouveaux clients prévus, recruter 1 commercial dès juillet. ROI estimé en 3 mois.',
+      action:'Voir RH',
+      actionColor:'var(--p2)',
+    },
+  ]
 
   const [activeTab, setActiveTab]       = useState<ActiveTab>('analyse')
   const [activeFilter, setActiveFilter] = useState('Toutes')
@@ -194,7 +196,7 @@ export default function Forecasts() {
       {/* ── Section 1 — KPIs ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Meilleure semaine',    value:'842 000 FCFA',    sub:'sem. 19 — +5,25 % vs objectif', color:'var(--acc2)', icon:<TrendingUp size={20}/> },
+          { label:'Meilleure semaine',    value:fmt(842000),       sub:'sem. 19 — +5,25 % vs objectif', color:'var(--acc2)', icon:<TrendingUp size={20}/> },
           { label:'Stock à commander',    value:fmt(totalCostAll), sub:`${totalToOrder} articles en déficit`,  color:'var(--danger)', icon:<Package size={20}/> },
           { label:'Besoin RH (3 mois)',   value:'3 agents',        sub:'Juin–Août 2026',                 color:'var(--p2)',    icon:<Users size={20}/> },
           { label:'CA Q3 prévu',          value:fmt(9300000),      sub:'Marge estimée 38 %',             color:'var(--acc)',   icon:<Calendar size={20}/> },
