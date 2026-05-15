@@ -82,15 +82,23 @@ export default function Users() {
     admins:  users.filter(u => u.role === 'ADMIN').length,
   }
 
+  const ROLE_LABELS: Record<Role, string> = {
+    ADMIN:      t('users_role_admin'),
+    MANAGER:    t('users_role_manager'),
+    CASHIER:    t('users_role_cashier'),
+    ACCOUNTANT: t('users_role_accountant'),
+    HR:         t('users_role_hr'),
+  }
+
   return (
     <div className="space-y-5 animate-in">
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total utilisateurs', value: stats.total,   color: 'var(--p2)',     icon: '👥' },
-          { label: 'Comptes actifs',      value: stats.active,  color: 'var(--acc2)',   icon: '✅' },
-          { label: '2FA activé',          value: stats.with2FA, color: 'var(--p3)',     icon: '🔐' },
-          { label: 'Administrateurs',     value: stats.admins,  color: 'var(--danger)', icon: '🛡️' },
+          { label: t('users_total'),    value: stats.total,   color: 'var(--p2)',     icon: '👥' },
+          { label: t('users_active'),   value: stats.active,  color: 'var(--acc2)',   icon: '✅' },
+          { label: t('users_2fa_enabled'), value: stats.with2FA, color: 'var(--p3)',   icon: '🔐' },
+          { label: t('users_admins'),   value: stats.admins,  color: 'var(--danger)', icon: '🛡️' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -123,7 +131,7 @@ export default function Users() {
               >
                 <Shield size={16} style={{ color: 'var(--p2)', flexShrink: 0 }} />
                 <div>
-                  <div className="text-xs font-bold" style={{ color: 'var(--text)' }}>{cfg.label}</div>
+                  <div className="text-xs font-bold" style={{ color: 'var(--text)' }}>{ROLE_LABELS[role]}</div>
                   <div className="text-xs" style={{ color: 'var(--text3)' }}>{cfg.desc}</div>
                 </div>
                 <span className={`badge ${cfg.cls} ml-auto`}>{users.filter(u => u.role === role).length}</span>
@@ -134,7 +142,7 @@ export default function Users() {
         {showPerms && (
           <div className="mt-4 p-4 rounded-xl" style={{ background: 'var(--bg3)' }}>
             <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text3)' }}>
-              Modules accessibles — {ROLE_CONFIG[showPerms].label}
+              {t('users_permissions')} — {ROLE_LABELS[showPerms]}
             </p>
             <div className="flex flex-wrap gap-2">
               {PERMISSIONS[showPerms].map(p => (

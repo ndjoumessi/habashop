@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV } from '@/utils/export'
@@ -95,10 +95,10 @@ export default function Activity() {
       {/* KPIs */}
       <div className="kpi-grid">
         {[
-          { label:'Total événements', value:ACTIVITY_LOG.length, color:'var(--p2)'    },
-          { label:"Aujourd'hui",      value:todayCount,          color:'var(--acc2)'  },
-          { label:'Alertes sécurité', value:dangerCount,         color:'var(--danger)'},
-          { label:'Modules actifs',   value:activeModules,       color:'var(--acc)'   },
+          { label:t('activity_total'),    value:ACTIVITY_LOG.length, color:'var(--p2)'    },
+          { label:t('activity_today'),    value:todayCount,          color:'var(--acc2)'  },
+          { label:t('activity_security'), value:dangerCount,         color:'var(--danger)'},
+          { label:t('activity_modules'),  value:activeModules,       color:'var(--acc)'   },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-label">{k.label}</div>
@@ -137,16 +137,16 @@ export default function Activity() {
           </div>
           <select className="input" style={{ width:'auto', fontSize:13 }}
             value={moduleFilter} onChange={e => { setModuleFilter(e.target.value); resetPage() }}>
-            <option value="">Tous les modules</option>
+            <option value="">{t('activity_filter_module')}</option>
             {Object.keys(MODULE_CONFIG).map(m => <option key={m}>{m}</option>)}
           </select>
           <select className="input" style={{ width:'auto', fontSize:13 }}
             value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); resetPage() }}>
-            <option value="">Toutes sévérités</option>
-            <option value="success">Succès</option>
-            <option value="info">Info</option>
-            <option value="warning">Avertissement</option>
-            <option value="danger">Danger</option>
+            <option value="">{t('activity_all')}</option>
+            <option value="success">{t('activity_severity_success')}</option>
+            <option value="info">{t('activity_severity_info')}</option>
+            <option value="warning">{t('activity_severity_warning')}</option>
+            <option value="danger">{t('activity_severity_danger')}</option>
           </select>
           <select className="input" style={{ width:'auto', fontSize:13 }}
             value={dateFilter} onChange={e => { setDateFilter(e.target.value); resetPage() }}>
@@ -270,7 +270,7 @@ export default function Activity() {
                         display:'inline-flex', alignItems:'center', gap:4,
                         whiteSpace:'nowrap',
                       }}>
-                        {SEV_ICON[log.severity]} {sev.label}
+                        {SEV_ICON[log.severity]} {t(`activity_severity_${log.severity}`)}
                       </span>
                     </td>
                   </tr>

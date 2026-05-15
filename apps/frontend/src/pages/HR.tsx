@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
 import { Download, Plus, Eye, X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -258,44 +258,44 @@ export default function HR() {
   const printEmployeesPDF = () => {
     const body = `
       ${htmlKPIs([
-        { label: 'Total employés',  value: String(employees.length) },
-        { label: 'Actifs',          value: String(employees.filter(e => e.active).length) },
-        { label: 'Masse salariale', value: fmt(employees.reduce((s,e) => s+e.salary, 0)) },
-        { label: 'Contrats CDI',    value: String(employees.filter(e => e.type === 'CDI').length) },
+        { label: t('kpi_employees'),      value: String(employees.length) },
+        { label: t('hr_active_count'),    value: String(employees.filter(e => e.active).length) },
+        { label: t('hr_payroll_mass'),    value: fmt(employees.reduce((s,e) => s+e.salary, 0)) },
+        { label: t('hr_contract_cdi'),    value: String(employees.filter(e => e.type === 'CDI').length) },
       ])}
-      <h2>Liste du personnel</h2>
+      <h2>${t('hr_pdf_title')}</h2>
       ${htmlTable(
-        ['Nom','Poste','Département','Contrat','Date embauche','Salaire base','Statut'],
+        [t('col_name'), t('col_role'), t('hr_dept'), t('col_type'), t('hr_hired_at'), t('hr_base_salary'), t('col_status')],
         employees.map(e => [
           e.name, e.role, e.dept, e.type, e.hiredAt,
           fmt(e.salary),
-          e.active ? '<span class="badge badge-green">Actif</span>' : '<span class="badge badge-red">Inactif</span>',
+          e.active ? `<span class="badge badge-green">${t('status_active')}</span>` : `<span class="badge badge-red">${t('status_inactive')}</span>`,
         ]),
         ['','','','','',
          '<strong>' + fmt(employees.reduce((s,e) => s+e.salary, 0)) + '</strong>',
-         '<strong>MASSE SALARIALE</strong>']
+         `<strong>${t('hr_pdf_payroll_total')}</strong>`]
       )}
     `
-    openPDF('Liste du personnel', body)
+    openPDF(t('hr_pdf_title'), body)
   }
 
   const printEmployeeFichePDF = (emp: Employee) => {
     const history = salaryHistory[emp.id] ?? []
     const body = `
       ${htmlInfoGrid([
-        { label: 'NOM COMPLET',   value: emp.name    },
-        { label: 'POSTE',         value: emp.role     },
-        { label: 'DÉPARTEMENT',   value: emp.dept     },
-        { label: 'TYPE CONTRAT',  value: emp.type     },
-        { label: 'DATE EMBAUCHE', value: emp.hiredAt  },
-        { label: 'TÉLÉPHONE',     value: emp.phone    },
-        { label: 'EMAIL',         value: emp.email    },
-        { label: 'SALAIRE BASE',  value: fmt(emp.salary) },
+        { label: t('col_name'),      value: emp.name    },
+        { label: t('col_role'),      value: emp.role    },
+        { label: t('hr_dept'),       value: emp.dept    },
+        { label: t('col_type'),      value: emp.type    },
+        { label: t('hr_hired_at'),   value: emp.hiredAt },
+        { label: t('col_phone'),     value: emp.phone   },
+        { label: t('settings_email'),value: emp.email   },
+        { label: t('hr_base_salary'),value: fmt(emp.salary) },
       ])}
       ${history.length > 0 ? `
-        <h2>Historique de rémunération</h2>
+        <h2>${t('hr_pdf_salary_history')}</h2>
         ${htmlTable(
-          ['Date','Type','Ancien salaire','Nouveau salaire','Évolution','Motif'],
+          [t('col_date'), t('col_type'), t('hr_salary'), t('hr_base_salary'), '%', t('order_pdf_notes')],
           history.map(h => {
             const pct = h.oldSalary > 0
               ? '+' + ((h.newSalary - h.oldSalary) / h.oldSalary * 100).toFixed(1) + ' %'
@@ -310,7 +310,7 @@ export default function HR() {
         )}
       ` : ''}
     `
-    openPDF(`Fiche employé — ${emp.name}`, body)
+    openPDF(`${t('hr_pdf_fiche')} — ${emp.name}`, body)
   }
 
   const activeCount    = employees.filter(e => e.active).length
@@ -318,11 +318,11 @@ export default function HR() {
   const salaireMoyen   = Math.round(masseSalariale / employees.length)
 
   const TABS = [
-    { id: 'team',       label: '👥 Équipe'       },
-    { id: 'contracts',  label: '📄 Contrats'     },
-    { id: 'attendance', label: '📅 Pointage'     },
-    { id: 'leaves',     label: '🏖️ Congés'      },
-    { id: 'salary',     label: '💰 Rémunération' },
+    { id: 'team',       label: `👥 ${t('hr_team')}`       },
+    { id: 'contracts',  label: `📄 ${t('hr_contracts')}`  },
+    { id: 'attendance', label: `📅 ${t('hr_attendance')}` },
+    { id: 'leaves',     label: `🏖️ ${t('hr_leaves')}`    },
+    { id: 'salary',     label: `💰 ${t('hr_salary')}`     },
   ] as const
 
   const leaveDays = (from: string, to: string) => {
@@ -380,10 +380,10 @@ export default function HR() {
       {/* ── KPIs ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Total employés',  value:employees.length, sub:`${activeCount} actifs`, color:'var(--p2)',  icon:'👥' },
-          { label:'Actifs',          value:activeCount,       sub:'1 absent',              color:'var(--acc2)', icon:'✅' },
-          { label:'Masse salariale', value:fmt(masseSalariale), sub:'Ce mois',             color:'var(--acc)', icon:'💰' },
-          { label:'Congés en cours', value:2,                 sub:'1 en attente',          color:'var(--p3)',  icon:'🏖️' },
+          { label:t('kpi_employees'),    value:employees.length,    sub:`${activeCount} ${t('status_active').toLowerCase()}`, color:'var(--p2)',   icon:'👥' },
+          { label:t('hr_active_count'), value:activeCount,          sub:'1 absent',                                              color:'var(--acc2)', icon:'✅' },
+          { label:t('hr_payroll_mass'), value:fmt(masseSalariale),  sub:t('common_month'),                                      color:'var(--acc)',  icon:'💰' },
+          { label:t('hr_leave_count'),  value:2,                    sub:'1 en attente',                                          color:'var(--p3)',   icon:'🏖️' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color:k.color }}>{k.icon}</div>

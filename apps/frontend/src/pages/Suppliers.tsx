@@ -120,9 +120,9 @@ export default function Suppliers() {
 
   const printSuppliersPDF = () => {
     const body = `
-      <h2>Annuaire fournisseurs</h2>
+      <h2>${t('suppliers_pdf_title')}</h2>
       ${htmlTable(
-        ['Nom','Catégories','Téléphone','Délai livraison','Note','Statut'],
+        [t('col_name'), t('col_category'), t('col_phone'), t('col_delivery'), t('col_rating'), t('col_status')],
         suppliers.map(s => [
           s.name,
           s.categories.join(', '),
@@ -130,14 +130,14 @@ export default function Suppliers() {
           s.leadTime + ' j',
           '⭐'.repeat(s.rating) + ' (' + s.rating + '/5)',
           s.status === 'Actif'
-            ? '<span class="badge badge-green">Actif</span>'
+            ? `<span class="badge badge-green">${t('status_active')}</span>`
             : s.status === 'Pause'
-            ? '<span class="badge badge-amber">Pause</span>'
-            : '<span class="badge badge-red">Inactif</span>',
+            ? `<span class="badge badge-amber">${t('status_pending')}</span>`
+            : `<span class="badge badge-red">${t('status_inactive')}</span>`,
         ])
       )}
     `
-    openPDF('Annuaire fournisseurs', body)
+    openPDF(t('suppliers_pdf_title'), body)
   }
 
   const addSupplier = () => {
@@ -161,7 +161,7 @@ export default function Suppliers() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total fournisseurs',            value: suppliers.length.toString(), color: 'var(--p2)',   icon: '🏭' },
+          { label: t('suppliers_total'),            value: suppliers.length.toString(), color: 'var(--p2)',   icon: '🏭' },
           { label: t('suppliers_active'),          value: actifs.toString(),            color: 'var(--acc2)', icon: '✅' },
           { label: t('suppliers_pending_orders'),  value: enCours.toString(),           color: 'var(--acc)',  icon: '🚚' },
           { label: t('suppliers_avg_rating'),      value: `${avgRating} ★`,            color: 'var(--acc)',  icon: '⭐' },

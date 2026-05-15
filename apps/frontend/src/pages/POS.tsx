@@ -42,6 +42,8 @@ export default function POS() {
   const { lang } = useAppStore()
   void lang
   const fmt = useFormatAmount()
+  const LOCALE_MAP: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
+  const locale = LOCALE_MAP[lang] ?? 'fr-FR'
 
   const [cart, setCart]           = useState<CartItem[]>([])
   const [activeCat, setActiveCat] = useState('all')
@@ -88,10 +90,10 @@ export default function POS() {
     if (!win) return
     const now = new Date()
     const html = `<!DOCTYPE html>
-<html lang="fr">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
-  <title>Ticket de caisse</title>
+  <title>${t('pos_print_ticket')}</title>
   <style>
     * { box-sizing:border-box; margin:0; padding:0; }
     body { font-family:'Courier New',monospace; font-size:12px; color:#000; padding:10px; max-width:300px; margin:0 auto; }
@@ -108,38 +110,37 @@ export default function POS() {
 <body>
   <div class="center">
     <div class="big">HabaShop</div>
-    <div style="font-size:10px;color:#555;">Logiciel de gestion commerciale</div>
-    <div style="font-size:10px;margin-top:4px;">Dakar, Sénégal</div>
+    <div style="font-size:10px;color:#555;">${t('pos_ticket_subtitle')}</div>
   </div>
   <div class="divider"></div>
-  <div class="row"><span>Date:</span><span>${now.toLocaleDateString('fr-FR')}</span></div>
-  <div class="row"><span>Heure:</span><span>${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span></div>
-  <div class="row"><span>Caisse:</span><span>Caisse 1</span></div>
-  <div class="row"><span>N° ticket:</span><span>#V${Date.now().toString().slice(-6)}</span></div>
+  <div class="row"><span>${t('pos_ticket_date')}</span><span>${now.toLocaleDateString(locale)}</span></div>
+  <div class="row"><span>${t('pos_ticket_time')}</span><span>${now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</span></div>
+  <div class="row"><span>${t('pos_ticket_cashier_label')}</span><span>${t('pos_cashier')} 1</span></div>
+  <div class="row"><span>${t('pos_ticket_number')}</span><span>#V${Date.now().toString().slice(-6)}</span></div>
   <div class="divider"></div>
-  <div class="bold" style="margin-bottom:6px;">ARTICLES</div>
+  <div class="bold" style="margin-bottom:6px;">${t('pos_ticket_articles')}</div>
   ${cart.map(item => `
     <div class="row">
       <span style="flex:1;">${item.name}</span>
       <span style="margin:0 8px;">x${item.qty}</span>
-      <span>${(item.price * item.qty).toLocaleString('fr-FR')} F</span>
+      <span>${fmt(item.price * item.qty)}</span>
     </div>
   `).join('')}
   <div class="divider"></div>
-  <div class="row"><span>Sous-total HT:</span><span>${Math.round(totalHT).toLocaleString('fr-FR')} FCFA</span></div>
-  <div class="row"><span>TVA (18 %):</span><span>${Math.round(tva).toLocaleString('fr-FR')} FCFA</span></div>
+  <div class="row"><span>${t('pos_subtotal')} :</span><span>${fmt(Math.round(totalHT))}</span></div>
+  <div class="row"><span>${t('pos_vat')} (18 %) :</span><span>${fmt(Math.round(tva))}</span></div>
   <div class="divider"></div>
-  <div class="row total"><span>TOTAL TTC:</span><span>${total.toLocaleString('fr-FR')} FCFA</span></div>
-  <div class="row" style="margin-top:6px;"><span>Mode paiement:</span><span>${payMode === 'cash' ? 'Espèces' : payMode === 'card' ? 'Carte' : 'Mobile'}</span></div>
+  <div class="row total"><span>${t('pos_total')} :</span><span>${fmt(total)}</span></div>
+  <div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span>${payMode === 'cash' ? t('pos_cash') : payMode === 'card' ? t('pos_card') : t('pos_mobile')}</span></div>
   ${cashGiven ? `
-    <div class="row"><span>Reçu:</span><span>${parseFloat(cashGiven).toLocaleString('fr-FR')} FCFA</span></div>
-    <div class="row bold"><span>Monnaie rendue:</span><span>${monnaie.toLocaleString('fr-FR')} FCFA</span></div>
+    <div class="row"><span>${t('pos_ticket_received')}</span><span>${fmt(parseFloat(cashGiven))}</span></div>
+    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${fmt(monnaie)}</span></div>
   ` : ''}
   <div class="divider"></div>
   <div class="center footer">
-    <div>Merci de votre achat !</div>
-    <div style="margin-top:4px;">Conservez ce ticket</div>
-    <div style="margin-top:8px;font-size:9px;">HabaShop — ${now.toLocaleDateString('fr-FR')}</div>
+    <div>${t('pos_ticket_thanks')}</div>
+    <div style="margin-top:4px;">${t('pos_ticket_keep')}</div>
+    <div style="margin-top:8px;font-size:9px;">HabaShop — ${now.toLocaleDateString(locale)}</div>
   </div>
   <script>window.onload=function(){setTimeout(function(){window.print();window.close();},300);}<\/script>
 </body>
@@ -346,7 +347,7 @@ export default function POS() {
                   color: 'var(--text3)',
                   fontSize: 14,
                 }}>
-                  Aucun produit trouvé
+                  {t('pos_not_found')}
                 </div>
               )}
             </div>
@@ -586,7 +587,7 @@ export default function POS() {
                         (e.currentTarget as HTMLElement).style.color = 'var(--text3)'
                       }
                     >
-                      <Trash2 size={10} /> Retirer
+                      <Trash2 size={10} /> {t('pos_remove')}
                     </button>
                   </div>
                 </div>
@@ -756,7 +757,7 @@ export default function POS() {
                 padding: '2px 8px',
                 fontSize: 9,
                 fontWeight: 700,
-              }}>{new Date().toLocaleDateString('fr-FR')}</span>
+              }}>{new Date().toLocaleDateString(locale)}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
               {[
@@ -867,7 +868,7 @@ export default function POS() {
               borderRadius: 10,
               marginBottom: 16,
             }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>TOTAL TTC</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t('pos_total')}</span>
               <span style={{
                 fontSize: 20,
                 fontWeight: 900,

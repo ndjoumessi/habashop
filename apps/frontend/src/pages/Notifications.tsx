@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, t } from '@/stores/appStore'
 import { Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -74,6 +74,14 @@ export default function Notifications() {
   const unreadCount = notifs.filter(n => !n.read).length
   const dangerCount = notifs.filter(n => n.type === 'danger').length
 
+  const prefRows = [
+    { key:'stock',     label:t('notif_stock_alert'), desc:PREF_ROWS[0].desc },
+    { key:'ventes',    label:t('notif_sales_recap'),  desc:PREF_ROWS[1].desc },
+    { key:'auth',      label:t('notif_security'),     desc:PREF_ROWS[2].desc },
+    { key:'paie',      label:t('notif_payroll'),      desc:PREF_ROWS[3].desc },
+    { key:'commandes', label:t('notif_orders'),       desc:PREF_ROWS[4].desc },
+  ]
+
   const filtered = notifs.filter(n =>
     activeTab === 'unread' ? !n.read :
     activeTab === 'danger' ? n.type === 'danger' : true
@@ -90,10 +98,10 @@ export default function Notifications() {
       {/* KPIs */}
       <div className="kpi-grid">
         {[
-          { label:'Total',      value:notifs.length, color:'var(--text)'   },
-          { label:'Non lues',   value:unreadCount,   color:'var(--danger)' },
-          { label:'Critiques',  value:dangerCount,   color:'var(--danger)' },
-          { label:'Ce jour',    value:4,             color:'var(--acc2)'   },
+          { label:t('common_total'),    value:notifs.length, color:'var(--text)'   },
+          { label:t('notif_unread'),   value:unreadCount,   color:'var(--danger)' },
+          { label:t('notif_critical'), value:dangerCount,   color:'var(--danger)' },
+          { label:t('activity_today'), value:4,             color:'var(--acc2)'   },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-label">{k.label}</div>
@@ -106,9 +114,9 @@ export default function Notifications() {
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div style={{ display:'flex', gap:4, background:'var(--bg3)', borderRadius:10, padding:4 }}>
           {([
-            { id:'all',    label:`Toutes (${notifs.length})`    },
-            { id:'unread', label:`Non lues (${unreadCount})`    },
-            { id:'danger', label:`Critiques (${dangerCount})`   },
+            { id:'all',    label:`${t('notif_all')} (${notifs.length})`      },
+            { id:'unread', label:`${t('notif_unread')} (${unreadCount})`     },
+            { id:'danger', label:`${t('notif_critical')} (${dangerCount})`   },
           ] as { id:TabType; label:string }[]).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
               padding:'7px 16px', borderRadius:8, fontSize:13, fontWeight:600,
@@ -122,9 +130,9 @@ export default function Notifications() {
           ))}
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          <button className="mini-btn" onClick={markAllRead}>✅ Tout marquer lu</button>
+          <button className="mini-btn" onClick={markAllRead}>✅ {t('notif_mark_all_read')}</button>
           <button className="mini-btn" style={{ color:'var(--danger)' }} onClick={deleteRead}>
-            🗑 Supprimer les lues
+            🗑 {t('notif_delete_read')}
           </button>
         </div>
       </div>
@@ -233,7 +241,7 @@ export default function Notifications() {
               </tr>
             </thead>
             <tbody>
-              {PREF_ROWS.map(row => (
+              {prefRows.map(row => (
                 <tr key={row.key} style={{ borderBottom:'1px solid var(--border)' }}>
                   <td style={{ padding:'14px 9px' }}>
                     <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{row.label}</div>

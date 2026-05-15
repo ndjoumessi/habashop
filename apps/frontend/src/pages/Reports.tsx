@@ -74,6 +74,21 @@ export default function Reports() {
     year:     t('reports_year'),
   }
 
+  const paymentModes = [
+    { label: t('reports_cash'),   pct: PAYMENT_MODES[0].pct, color: PAYMENT_MODES[0].color, amount: PAYMENT_MODES[0].amount },
+    { label: t('reports_mobile'), pct: PAYMENT_MODES[1].pct, color: PAYMENT_MODES[1].color, amount: PAYMENT_MODES[1].amount },
+    { label: t('reports_card'),   pct: PAYMENT_MODES[2].pct, color: PAYMENT_MODES[2].color, amount: PAYMENT_MODES[2].amount },
+  ]
+
+  const WEEK_ABBR: Record<string, string[]> = {
+    fr: ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
+    en: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    es: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+    it: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],
+  }
+  const weekAbbr = WEEK_ABBR[lang] ?? WEEK_ABBR.fr
+  const chartData = CHART_DATA.map((d, i) => ({ ...d, day: weekAbbr[i] }))
+
   return (
     <div className="space-y-5 animate-in">
 
@@ -105,28 +120,24 @@ export default function Reports() {
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
           const body = `
             ${htmlKPIs([
-              { label: "Chiffre d'affaires", value: fmt(data.ca) },
-              { label: 'Marge brute',        value: fmt(data.margin) },
-              { label: 'Transactions',       value: data.transactions.toLocaleString('fr-FR') },
-              { label: 'Panier moyen',       value: fmt(data.avgCart) },
+              { label: t('reports_revenue'),      value: fmt(data.ca) },
+              { label: t('reports_margin'),       value: fmt(data.margin) },
+              { label: t('reports_transactions'), value: String(data.transactions) },
+              { label: t('reports_avg_cart'),     value: fmt(data.avgCart) },
             ])}
-            <h2>Répartition par mode de paiement</h2>
+            <h2>${t('report_pdf_payment')}</h2>
             ${htmlTable(
-              ['Mode de paiement','Transactions','Montant','Part'],
-              [
-                ['Espèces', '724', '1 540 000 FCFA', '58 %'],
-                ['Carte',   '312', '665 000 FCFA',   '25 %'],
-                ['Mobile',  '211', '445 000 FCFA',   '17 %'],
-              ],
-              ['TOTAL', '1 247', '2 650 000 FCFA', '100 %']
+              [t('expenses_mode'), t('reports_transactions'), t('col_amount'), '%'],
+              paymentModes.map(m => [m.label, '—', fmt(m.amount), m.pct + ' %']),
+              [`<strong>${t('common_total')}</strong>`, '—', `<strong>${fmt(paymentModes.reduce((s,m) => s + m.amount, 0))}</strong>`, '100 %']
             )}
-            <h2>Top 5 produits</h2>
+            <h2>${t('report_pdf_top')}</h2>
             ${htmlTable(
-              ['#','Produit','Quantité vendue','Chiffre d\'affaires'],
-              TOP_PRODUCTS.map(p => [String(p.rank), p.name, String(p.qty) + ' unités', fmt(p.ca)])
+              ['#', t('col_product'), t('col_qty'), t('reports_revenue')],
+              TOP_PRODUCTS.map(p => [String(p.rank), p.name, String(p.qty), fmt(p.ca)])
             )}
           `
-          openPDF(`Rapport ${PERIOD_LABELS[period]}`, body)
+          openPDF(`${t('report_pdf_title')} — ${PERIOD_LABELS[period]}`, body)
           toast.success('📄 PDF ouvert !')
         }}>
           <Download size={13} /> {t('btn_export')} PDF
@@ -156,10 +167,10 @@ export default function Reports() {
         {/* Bar chart 7 jours */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">📊 CA 7 derniers jours</span>
+            <span className="panel-title">📊 {t('reports_chart_week')}</span>
           </div>
           <div className="bar-chart" style={{ height: 140 }}>
-            {CHART_DATA.map(d => (
+            {chartData.map(d => (
               <div key={d.day} className="bar-group">
                 <div className="bar" style={{ height: `${d.h}%` }}
                   data-val={fmt(d.val)} />
@@ -178,7 +189,7 @@ export default function Reports() {
             <span className="panel-title">💳 {t('reports_payment_breakdown')}</span>
           </div>
           <div className="space-y-4">
-            {PAYMENT_MODES.map(m => (
+            {paymentModes.map(m => (
               <div key={m.label}>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{m.label}</span>

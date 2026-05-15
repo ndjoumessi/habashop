@@ -113,34 +113,34 @@ export default function Stock() {
               const lowStock = products.filter(p => p.stock <= p.threshold)
               const body = `
                 ${htmlKPIs([
-                  { label: 'Total articles',  value: String(products.length) },
-                  { label: 'Valeur du stock', value: products.reduce((s,p) => s+p.stock*p.sell, 0).toLocaleString('fr-FR') + ' FCFA' },
-                  { label: 'Ruptures / Bas',  value: String(lowStock.length) },
-                  { label: 'Catégories',      value: String(new Set(products.map(p => p.category)).size) },
+                  { label: t('stock_total'),      value: String(products.length) },
+                  { label: t('stock_value'),      value: fmt(products.reduce((s,p) => s+p.stock*p.sell, 0)) },
+                  { label: t('stock_ruptures'),   value: String(lowStock.length) },
+                  { label: t('stock_categories'), value: String(new Set(products.map(p => p.category)).size) },
                 ])}
                 ${lowStock.length > 0 ? `
-                  <h2 style="color:#dc2626;">⚠️ Articles en alerte (${lowStock.length})</h2>
+                  <h2 style="color:#dc2626;">⚠️ ${t('stock_pdf_alert_title')} (${lowStock.length})</h2>
                   ${htmlTable(
-                    ['SKU','Produit','Stock actuel','Seuil','Fournisseur'],
+                    ['SKU', t('col_product'), t('col_stock'), t('col_threshold'), t('col_supplier')],
                     lowStock.map(p => [p.sku, p.name, String(p.stock), String(p.threshold), p.supplier])
                   )}
                 ` : ''}
-                <h2>Inventaire complet</h2>
+                <h2>${t('stock_pdf_full_title')}</h2>
                 ${htmlTable(
-                  ['SKU','Produit','Catégorie','Prix achat','Prix vente','Stock','Seuil','Fournisseur','Statut'],
+                  ['SKU', t('col_product'), t('col_category'), t('col_buy_price'), t('col_sell_price'), t('col_stock'), t('col_threshold'), t('col_supplier'), t('col_status')],
                   products.map(p => {
                     const st = statusOf(p.stock, p.threshold)
                     const cls = st.cls === 'badge-red' ? 'badge-red' : st.cls === 'badge-amber' ? 'badge-amber' : 'badge-green'
                     return [p.sku, p.name, p.category,
-                      p.buy.toLocaleString('fr-FR') + ' F', p.sell.toLocaleString('fr-FR') + ' F',
+                      fmt(p.buy), fmt(p.sell),
                       String(p.stock), String(p.threshold), p.supplier,
                       `<span class="badge ${cls}">${st.label}</span>`]
                   }),
-                  ['','','','','<strong>VALEUR TOTALE</strong>','',
-                   `<strong>${products.reduce((s,p) => s+p.stock*p.sell,0).toLocaleString('fr-FR')} FCFA</strong>`,'','']
+                  ['','','','',`<strong>${t('stock_pdf_total_value')}</strong>`,'',
+                   `<strong>${fmt(products.reduce((s,p) => s+p.stock*p.sell,0))}</strong>`,'','']
                 )}
               `
-              openPDF('Inventaire Stock', body)
+              openPDF(t('stock_pdf_title'), body)
               toast.success('📄 PDF ouvert !')
             }}>
               <Download size={13} /> PDF

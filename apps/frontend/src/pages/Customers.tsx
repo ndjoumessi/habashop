@@ -134,20 +134,20 @@ export default function Customers() {
 
   const printCustomersPDF = () => {
     const body = `
-      <h2>Base clients</h2>
+      <h2>${t('customers_pdf_title')}</h2>
       ${htmlTable(
-        ['Nom','Type','Téléphone','Achats/mois','CA total','Fidélité'],
+        [t('col_name'), t('col_type'), t('col_phone'), t('customers_purchases'), t('customers_total_revenue'), t('col_loyalty')],
         customers.map(c => [
           c.name,
           `<span class="badge badge-purple">${c.type}</span>`,
           c.phone,
           String(c.purchasesPerMonth),
-          c.totalCA.toLocaleString('fr-FR') + ' FCFA',
+          fmt(c.totalCA),
           c.loyaltyPoints + ' pts',
         ])
       )}
     `
-    openPDF('Base clients', body)
+    openPDF(t('customers_pdf_title'), body)
   }
 
   const addCustomer = () => {
@@ -171,7 +171,7 @@ export default function Customers() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total clients',            value: customers.length.toString(), color: 'var(--p2)',   icon: '👥' },
+          { label: t('customers_total'),       value: customers.length.toString(), color: 'var(--p2)',   icon: '👥' },
           { label: t('customers_active'),    value: activeThisMonth.toString(),  color: 'var(--acc2)', icon: '🟢' },
           { label: t('customers_avg_cart'),  value: fmt(avgCart),                color: 'var(--acc)',  icon: '🛒' },
           { label: t('customers_retention'), value: `${retentionRate}%`,         color: 'var(--p3)',   icon: '🔄' },

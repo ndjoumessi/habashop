@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, useFormatAmount, useAppStore, formatCurrency, convertCurrency } from '@/stores/appStore'
+import { useConfig, useFormatAmount, useAppStore, formatCurrency, convertCurrency, t } from '@/stores/appStore'
 import { Download, Eye, Check, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
@@ -50,52 +50,52 @@ function printBulletin(bulletin: PayRecord) {
   const irpp = Math.round(bulletin.deductions - cnss - absencePenalty)
 
   const gainsRows: string[][] = [
-    ['Salaire de base', '26 jours', '100 %', fmtP(bulletin.baseSalary)],
-    ...(bulletin.bonus > 0 ? [['Prime de performance', '', '', fmtP(bulletin.bonus)]] : []),
-    ...(bulletin.overtime > 0 ? [['Heures supplémentaires', '', '25 %', fmtP(bulletin.overtime)]] : []),
+    [t('payslip_base_salary'), '26 j', '100 %', fmtP(bulletin.baseSalary)],
+    ...(bulletin.bonus > 0 ? [[t('payslip_bonus'), '', '', fmtP(bulletin.bonus)]] : []),
+    ...(bulletin.overtime > 0 ? [[t('payslip_overtime'), '', '25 %', fmtP(bulletin.overtime)]] : []),
   ]
   const retenuesRows: string[][] = [
-    ['CNSS employé', '5,6 %', fmtP(cnss)],
-    ...(irpp > 0 ? [['Impôt sur salaire (IRPP)', '', fmtP(irpp)]] : []),
-    ...(bulletin.absences > 0 ? [[`Retenue absences (${bulletin.absences}j)`, '', fmtP(absencePenalty)]] : []),
+    [t('payslip_cnss'), '5,6 %', fmtP(cnss)],
+    ...(irpp > 0 ? [[t('payslip_tax'), '', fmtP(irpp)]] : []),
+    ...(bulletin.absences > 0 ? [[`${t('payslip_absence_deduction')} (${bulletin.absences}j)`, '', fmtP(absencePenalty)]] : []),
   ]
 
   const body = `
     ${htmlInfoGrid([
-      { label: 'EMPLOYÉ',  value: `<span style="font-size:16px;font-weight:900;">${bulletin.employee}</span><br><span style="font-size:12px;color:#888;">${bulletin.role}</span>` },
-      { label: 'PÉRIODE',  value: `${bulletin.month}<br><span style="font-size:11px;color:#888;">Statut : <strong style="color:${bulletin.status === 'PAYÉ' ? '#059669' : '#d97706'}">${bulletin.status}</strong></span>` },
+      { label: t('hr_new_employee').toUpperCase(), value: `<span style="font-size:16px;font-weight:900;">${bulletin.employee}</span><br><span style="font-size:12px;color:#888;">${bulletin.role}</span>` },
+      { label: t('doc_period').toUpperCase(),      value: `${bulletin.month}<br><span style="font-size:11px;color:#888;">Statut : <strong style="color:${bulletin.status === 'PAYÉ' ? '#059669' : '#d97706'}">${bulletin.status}</strong></span>` },
     ])}
 
-    <h2>Éléments de salaire — Gains</h2>
+    <h2>${t('payslip_gains')}</h2>
     ${htmlTable(
-      ['Libellé', 'Base', 'Taux', 'Montant'],
+      [t('expenses_label'), t('payroll_base'), '%', t('col_amount')],
       gainsRows,
-      ['', '', '<strong>TOTAL BRUT</strong>', `<strong>${fmtP(brut)}</strong>`]
+      ['', '', `<strong>${t('payslip_gross')}</strong>`, `<strong>${fmtP(brut)}</strong>`]
     )}
 
-    <h2>Retenues</h2>
+    <h2>${t('payslip_deductions')}</h2>
     ${htmlTable(
-      ['Libellé', 'Taux', 'Montant'],
+      [t('expenses_label'), '%', t('col_amount')],
       retenuesRows,
-      ['', '<strong>TOTAL RETENUES</strong>', `<strong style="color:#dc2626;">- ${fmtP(bulletin.deductions)}</strong>`]
+      ['', `<strong>${t('payslip_total_deductions')}</strong>`, `<strong style="color:#dc2626;">- ${fmtP(bulletin.deductions)}</strong>`]
     )}
 
     <div class="net-payer">
       <div>
-        <div class="net-label">NET À PAYER</div>
+        <div class="net-label">${t('doc_net')}</div>
         <div style="font-size:12px;color:#666;margin-top:4px;">
-          Virement bancaire · ${bulletin.status === 'PAYÉ' ? bulletin.paidAt ?? '' : 'En attente'}
+          ${t('doc_payment_mode')} · ${bulletin.status === 'PAYÉ' ? bulletin.paidAt ?? '' : t('status_pending')}
         </div>
       </div>
       <div class="net-value">${fmtP(net)}</div>
     </div>
 
     <div class="signature-block">
-      <div><div class="signature-line">Signature employeur</div></div>
-      <div><div class="signature-line">Signature employé (lu et approuvé)</div></div>
+      <div><div class="signature-line">${t('doc_signature_employer')}</div></div>
+      <div><div class="signature-line">${t('doc_signature_employee')}</div></div>
     </div>
   `
-  openPDF(`Bulletin de paie — ${bulletin.employee} — ${bulletin.month}`, body)
+  openPDF(`${t('payslip_title')} — ${bulletin.employee} — ${bulletin.month}`, body)
 }
 
 const STATUS_CFG: Record<PayStatus, { cls: string; label: string }> = {

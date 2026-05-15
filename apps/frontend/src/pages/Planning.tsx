@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig } from '@/stores/appStore'
+import { useConfig, t } from '@/stores/appStore'
 import { X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -97,7 +97,19 @@ const SCHEDULE_INIT: Record<number, Record<number, ShiftKey>> = {
   6: { 0:'R', 1:'R', 2:'R', 3:'R', 4:'R', 5:'R', 6:'R' },
 }
 
-const DAY_LABELS = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
+const WEEK_DAYS = {
+  fr: ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
+  en: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  es: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+  it: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],
+}
+
+const SHIFT_LABELS = {
+  fr: { M:'Matin', S:'Après-midi', J:'Journée', N:'Nuit', R:'Repos', C:'Congé' },
+  en: { M:'Morning', S:'Afternoon', J:'Full day', N:'Night', R:'Rest', C:'Leave' },
+  es: { M:'Mañana', S:'Tarde', J:'Jornada', N:'Noche', R:'Descanso', C:'Permiso' },
+  it: { M:'Mattina', S:'Pomeriggio', J:'Giornata', N:'Notte', R:'Riposo', C:'Ferie' },
+}
 
 function getWeekDays(baseDate: Date): Date[] {
   const monday = new Date(baseDate)
@@ -149,6 +161,9 @@ export default function Planning() {
   const [newShift,  setNewShift]  = useState<ShiftKey>('J')
   const [newStart,  setNewStart]  = useState('08:00')
   const [newEnd,    setNewEnd]    = useState('18:00')
+
+  const dayNames    = WEEK_DAYS[lang as keyof typeof WEEK_DAYS] ?? WEEK_DAYS.fr
+  const shiftLabels = SHIFT_LABELS[lang as keyof typeof SHIFT_LABELS] ?? SHIFT_LABELS.fr
 
   const weekDays = getWeekDays(currentDate)
   const prevWeek = () => { const d = new Date(currentDate); d.setDate(d.getDate() - 7); setCurrentDate(d) }
@@ -213,10 +228,10 @@ export default function Planning() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Semaine',            value:`Semaine ${weekNum}`, sub:`${formatDate(weekDays[0])} — ${formatDate(weekDays[6])}`, color:'var(--p2)',   icon:'📅' },
-          { label:'Employés planifiés', value:`${plannedCount}/6`,  sub:'1 en congé',                                              color:'var(--acc2)', icon:'👥' },
-          { label:'Heures totales',     value:`${totalHoursAll}h`,  sub:'Cette semaine',                                           color:'var(--acc)',  icon:'⏱️' },
-          { label:'Taux de couverture', value:`${coveragePct} %`,   sub:'Objectif : 100 %',                                        color:'var(--p3)',   icon:'📊' },
+          { label:t('planning_week'),      value:`${t('planning_week')} ${weekNum}`, sub:`${formatDate(weekDays[0])} — ${formatDate(weekDays[6])}`, color:'var(--p2)',   icon:'📅' },
+          { label:t('planning_scheduled'),value:`${plannedCount}/6`,               sub:'1 en congé',                                                    color:'var(--acc2)', icon:'👥' },
+          { label:t('planning_total_hours'),value:`${totalHoursAll}h`,             sub:t('planning_week'),                                              color:'var(--acc)',  icon:'⏱️' },
+          { label:t('planning_coverage'), value:`${coveragePct} %`,               sub:'Objectif : 100 %',                                              color:'var(--p3)',   icon:'📊' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color:k.color }}>{k.icon}</div>
@@ -238,11 +253,11 @@ export default function Planning() {
           background:'var(--bg3)', border:'1px solid var(--border)',
           borderRadius:9, padding:'8px 14px', cursor:'pointer',
           color:'var(--text2)', fontSize:13, fontWeight:600, fontFamily:'var(--font)', transition:'all .15s',
-        }}>← Précédente</button>
+        }}>← {t('planning_previous')}</button>
 
         <div style={{ textAlign:'center' }}>
           <div style={{ fontSize:16, fontWeight:800, color:'var(--text)', letterSpacing:'-.3px' }}>
-            Semaine {weekNum}
+            {t('planning_week')} {weekNum}
           </div>
           <div style={{ fontSize:12, color:'var(--text3)', marginTop:2 }}>
             {formatDate(weekDays[0])} — {formatDate(weekDays[6])}
@@ -254,13 +269,13 @@ export default function Planning() {
             background:'rgba(91,78,232,.15)', border:'1px solid rgba(91,78,232,.3)',
             borderRadius:9, padding:'8px 14px', cursor:'pointer',
             color:'var(--p2)', fontSize:13, fontWeight:600, fontFamily:'var(--font)',
-          }}>📅 Aujourd'hui</button>
+          }}>📅 {t('planning_today')}</button>
           <button onClick={nextWeek} style={{
             display:'flex', alignItems:'center', gap:6,
             background:'var(--bg3)', border:'1px solid var(--border)',
             borderRadius:9, padding:'8px 14px', cursor:'pointer',
             color:'var(--text2)', fontSize:13, fontWeight:600, fontFamily:'var(--font)', transition:'all .15s',
-          }}>Suivante →</button>
+          }}>{t('planning_next')} →</button>
         </div>
       </div>
 
@@ -276,7 +291,7 @@ export default function Planning() {
             background:s.bg, border:`1px solid ${s.border}`, borderRadius:8, padding:'5px 12px',
           }}>
             <div style={{ color:s.color }}>{s.icon}</div>
-            <span style={{ fontSize:11, fontWeight:700, color:s.color }}>{s.label}</span>
+            <span style={{ fontSize:11, fontWeight:700, color:s.color }}>{shiftLabels[key]}</span>
             {s.hours !== '—' && <span style={{ fontSize:10, color:'var(--text3)' }}>{s.hours}</span>}
           </div>
         ))}
@@ -288,10 +303,10 @@ export default function Planning() {
           display:'flex', alignItems:'center', justifyContent:'space-between',
           padding:'16px 20px', borderBottom:'1px solid var(--border)',
         }}>
-          <span className="panel-t">📅 Planning Hebdomadaire</span>
+          <span className="panel-t">📅 {t('planning_week')}</span>
           <div style={{ display:'flex', gap:8 }}>
-            <button className="mini-btn" onClick={() => toast('📊 Export planning…')}>📊 Exporter</button>
-            <button className="topbar-btn" onClick={() => setNewModal(true)}>+ Nouveau créneau</button>
+            <button className="mini-btn" onClick={() => toast('📊 Export planning…')}>📊 {t('btn_export')}</button>
+            <button className="topbar-btn" onClick={() => setNewModal(true)}>+ {t('planning_new_shift')}</button>
           </div>
         </div>
 
@@ -319,7 +334,7 @@ export default function Planning() {
                       borderLeft: isToday ? '2px solid var(--p2)' : '1px solid var(--border)',
                       background: isToday ? 'rgba(91,78,232,.08)' : 'var(--bg3)',
                     }}>
-                      <div>{DAY_LABELS[i]}</div>
+                      <div>{dayNames[i]}</div>
                       <div style={{ fontSize:14, fontWeight:800, marginTop:2, color: isToday ? 'var(--p2)' : 'var(--text)' }}>
                         {day.getDate()}
                       </div>
@@ -426,7 +441,7 @@ export default function Planning() {
               background:s.bg, border:`1px solid ${s.border}`, borderRadius:8, padding:'6px 12px',
             }}>
               <div style={{ color:s.color }}>{s.icon}</div>
-              <span style={{ fontSize:11, fontWeight:700, color:s.color }}>{s.label}</span>
+              <span style={{ fontSize:11, fontWeight:700, color:s.color }}>{shiftLabels[key]}</span>
               <span style={{
                 background:'rgba(255,255,255,.15)', borderRadius:20,
                 padding:'1px 8px', fontSize:11, fontWeight:800, color:s.color,
@@ -441,7 +456,7 @@ export default function Planning() {
         <div className="modal-backdrop" onClick={() => setEditModal(null)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:490 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>Modifier le créneau</span>
+              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>{t('planning_modify_shift')}</span>
               <button className="mini-btn" onClick={() => setEditModal(null)}><X size={15} /></button>
             </div>
 
@@ -477,7 +492,7 @@ export default function Planning() {
                   display:'flex', flexDirection:'column', alignItems:'center', gap:6,
                 }}>
                   <div style={{ color:s.color }}>{s.icon}</div>
-                  <div style={{ fontSize:12, fontWeight:800, color:s.color }}>{s.label}</div>
+                  <div style={{ fontSize:12, fontWeight:800, color:s.color }}>{shiftLabels[key]}</div>
                   <div style={{ fontSize:10, color:'var(--text3)' }}>{s.hours}</div>
                 </div>
               ))}
@@ -486,12 +501,12 @@ export default function Planning() {
             {showEditTimes && (
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Début</label>
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{t('hr_arrival')}</label>
                   <input className="input" type="time" value={editStart}
                     onChange={e => setEditStart(e.target.value)} style={{ width:'100%', boxSizing:'border-box' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Fin</label>
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{t('hr_depart')}</label>
                   <input className="input" type="time" value={editEnd}
                     onChange={e => setEditEnd(e.target.value)} style={{ width:'100%', boxSizing:'border-box' }} />
                 </div>
@@ -499,8 +514,8 @@ export default function Planning() {
             )}
 
             <div style={{ display:'flex', gap:10 }}>
-              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setEditModal(null)}>Annuler</button>
-              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={saveEdit}>✅ Sauvegarder</button>
+              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setEditModal(null)}>{t('btn_cancel')}</button>
+              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={saveEdit}>✅ {t('btn_save')}</button>
             </div>
           </div>
         </div>
@@ -511,14 +526,14 @@ export default function Planning() {
         <div className="modal-backdrop" onClick={() => setNewModal(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:520 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
-              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>Nouveau créneau</span>
+              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>{t('planning_new_shift')}</span>
               <button className="mini-btn" onClick={() => setNewModal(false)}><X size={15} /></button>
             </div>
 
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
               {/* Employé */}
               <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:8 }}>Employé</label>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:8 }}>{t('kpi_employees')}</label>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:7 }}>
                   {EMPLOYEES.map(emp => (
                     <div key={emp.id} onClick={() => setNewEmpId(emp.id)} style={{
@@ -543,7 +558,7 @@ export default function Planning() {
 
               {/* Jour */}
               <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:8 }}>Jour</label>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:8 }}>{t('col_date')}</label>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                   {weekDays.map((day, i) => {
                     const isWeekend = i >= 5
@@ -556,7 +571,7 @@ export default function Planning() {
                         background: sel ? 'rgba(91,78,232,.18)' : isWeekend ? 'rgba(148,163,184,.06)' : 'var(--bg3)',
                         color: sel ? 'var(--p2)' : isWeekend ? 'var(--text3)' : 'var(--text2)',
                       }}>
-                        <div>{DAY_LABELS[i]}</div>
+                        <div>{dayNames[i]}</div>
                         <div style={{ fontSize:10, marginTop:1 }}>{day.getDate()}</div>
                       </button>
                     )
@@ -566,7 +581,7 @@ export default function Planning() {
 
               {/* Type créneau — icônes SVG */}
               <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:8 }}>Type de créneau</label>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:8 }}>{t('planning_new_shift')}</label>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8 }}>
                   {(Object.entries(SHIFTS) as [ShiftKey, typeof SHIFTS[ShiftKey]][]).map(([key, s]) => (
                     <div key={key} onClick={() => handleNewShift(key)} style={{
@@ -578,7 +593,7 @@ export default function Planning() {
                       display:'flex', flexDirection:'column', alignItems:'center', gap:5,
                     }}>
                       <div style={{ color:s.color }}>{s.icon}</div>
-                      <div style={{ fontSize:11, fontWeight:800, color:s.color }}>{s.label}</div>
+                      <div style={{ fontSize:11, fontWeight:800, color:s.color }}>{shiftLabels[key]}</div>
                       <div style={{ fontSize:9.5, color:'var(--text3)' }}>{s.hours}</div>
                     </div>
                   ))}
@@ -589,12 +604,12 @@ export default function Planning() {
               {showNewTimes && (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                   <div>
-                    <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Début</label>
+                    <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{t('hr_arrival')}</label>
                     <input className="input" type="time" value={newStart}
                       onChange={e => setNewStart(e.target.value)} style={{ width:'100%', boxSizing:'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Fin</label>
+                    <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{t('hr_depart')}</label>
                     <input className="input" type="time" value={newEnd}
                       onChange={e => setNewEnd(e.target.value)} style={{ width:'100%', boxSizing:'border-box' }} />
                   </div>
@@ -603,8 +618,8 @@ export default function Planning() {
             </div>
 
             <div style={{ display:'flex', gap:10, marginTop:20 }}>
-              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setNewModal(false)}>Annuler</button>
-              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={saveNew}>✅ Créer le créneau</button>
+              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setNewModal(false)}>{t('btn_cancel')}</button>
+              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={saveNew}>✅ {t('planning_new_shift')}</button>
             </div>
           </div>
         </div>

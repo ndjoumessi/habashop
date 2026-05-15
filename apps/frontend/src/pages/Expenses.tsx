@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Download, Plus, X, Search, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
@@ -112,14 +112,14 @@ export default function Expenses() {
     const paid  = expenses.filter(e => e.status === 'PAYÉ').reduce((s, e) => s + ttcAmount(e), 0)
     const body = `
       ${htmlKPIs([
-        { label: 'Total dépenses', value: fmt(total) },
-        { label: 'Payées',         value: fmt(paid)  },
-        { label: 'En attente',     value: fmt(total - paid) },
-        { label: 'Récurrentes',    value: String(expenses.filter(e => e.recurrent).length) },
+        { label: t('expense_pdf_total'),   value: fmt(total) },
+        { label: t('expense_pdf_paid'),    value: fmt(paid)  },
+        { label: t('expense_pdf_pending'), value: fmt(total - paid) },
+        { label: t('expenses_recurrent'),  value: String(expenses.filter(e => e.recurrent).length) },
       ])}
-      <h2>Journal des dépenses</h2>
+      <h2>${t('expense_pdf_title')}</h2>
       ${htmlTable(
-        ['Date','Libellé','Catégorie','Montant HT','TVA','TTC','Mode','Statut'],
+        [t('col_date'), t('expenses_label'), t('col_category'), t('expenses_amount_ht'), t('expenses_tva'), t('expenses_ttc'), t('expenses_mode'), t('col_status')],
         expenses.map(e => [
           e.date, e.label, e.category,
           fmt(e.amount),
@@ -127,14 +127,14 @@ export default function Expenses() {
           fmt(ttcAmount(e)),
           e.mode,
           e.status === 'PAYÉ'
-            ? '<span class="badge badge-green">Payé</span>'
-            : '<span class="badge badge-amber">En attente</span>',
+            ? `<span class="badge badge-green">${t('status_paid')}</span>`
+            : `<span class="badge badge-amber">${t('status_pending')}</span>`,
         ]),
         ['','','','','',
          '<strong>' + fmt(total) + '</strong>','','']
       )}
     `
-    openPDF('Journal des dépenses', body)
+    openPDF(t('expense_pdf_title'), body)
   }
 
   function markPaid(id: number) {
@@ -196,17 +196,17 @@ export default function Expenses() {
       {/* Tabs */}
       <div style={{ display:'flex', gap:6 }}>
         {[
-          { id:'journal', label:'📋 Journal' },
-          { id:'budget',  label:'📊 Budget vs Réel' },
-        ].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id as typeof tab)} style={{
+          { id:'journal', label:`📋 ${t('expenses_journal')}` },
+          { id:'budget',  label:`📊 ${t('expenses_budget')}` },
+        ].map(tb => (
+          <button key={tb.id} onClick={() => setTab(tb.id as typeof tab)} style={{
             padding:'8px 18px', borderRadius:10, fontSize:13, fontWeight:700,
             fontFamily:'inherit', cursor:'pointer', transition:'all .15s',
-            background: tab === t.id ? 'var(--p)' : 'var(--card)',
-            color: tab === t.id ? '#fff' : 'var(--text2)',
-            border: tab === t.id ? 'none' : '1px solid var(--border)',
-            boxShadow: tab === t.id ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
-          }}>{t.label}</button>
+            background: tab === tb.id ? 'var(--p)' : 'var(--card)',
+            color: tab === tb.id ? '#fff' : 'var(--text2)',
+            border: tab === tb.id ? 'none' : '1px solid var(--border)',
+            boxShadow: tab === tb.id ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
+          }}>{tb.label}</button>
         ))}
       </div>
 

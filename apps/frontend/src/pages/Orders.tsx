@@ -137,60 +137,60 @@ export default function Orders() {
   const printOrderPDF = (order: Order) => {
     const body = `
       ${htmlInfoGrid([
-        { label: 'RÉFÉRENCE',        value: order.ref },
-        { label: 'FOURNISSEUR',      value: order.supplier },
-        { label: 'DATE COMMANDE',    value: new Date(order.date).toLocaleDateString('fr-FR') },
-        { label: 'LIVRAISON PRÉVUE', value: new Date(order.expectedAt).toLocaleDateString('fr-FR') },
-        { label: 'STATUT',           value: order.status },
-        { label: 'NB ARTICLES',      value: String(order.items.length) + ' ligne(s)' },
+        { label: t('col_ref'),         value: order.ref },
+        { label: t('col_supplier'),    value: order.supplier },
+        { label: t('orders_date'),     value: new Date(order.date).toLocaleDateString() },
+        { label: t('orders_expected'), value: new Date(order.expectedAt).toLocaleDateString() },
+        { label: t('col_status'),      value: order.status },
+        { label: t('orders_articles'), value: String(order.items.length) },
       ])}
-      <h2>Détail des articles commandés</h2>
+      <h2>${t('order_pdf_detail')}</h2>
       ${htmlTable(
-        ['Produit','Quantité','Unité','Prix unitaire','Total'],
+        [t('col_product'), t('col_qty'), 'Unité', t('col_price'), t('col_amount')],
         order.items.map(item => [
           item.product, String(item.qty), item.unit,
-          item.unitPrice.toLocaleString('fr-FR') + ' FCFA',
-          (item.qty * item.unitPrice).toLocaleString('fr-FR') + ' FCFA',
+          fmt(item.unitPrice),
+          fmt(item.qty * item.unitPrice),
         ]),
-        ['','','','<strong>TOTAL COMMANDE</strong>', `<strong>${order.total.toLocaleString('fr-FR')} FCFA</strong>`]
+        ['','','',`<strong>${t('order_pdf_total')}</strong>`, `<strong>${fmt(order.total)}</strong>`]
       )}
       ${order.notes ? `
-        <h2>Notes</h2>
+        <h2>${t('order_pdf_notes')}</h2>
         <div style="padding:12px;background:#f8f7ff;border-radius:8px;font-size:12px;">${order.notes}</div>
       ` : ''}
       <div class="signature-block">
-        <div><div class="signature-line">Signature acheteur</div></div>
-        <div><div class="signature-line">Signature fournisseur</div></div>
+        <div><div class="signature-line">${t('doc_signature_buyer')}</div></div>
+        <div><div class="signature-line">${t('doc_signature_supplier')}</div></div>
       </div>
     `
-    openPDF(`Bon de commande — ${order.ref}`, body)
+    openPDF(`${t('order_pdf_title')} — ${order.ref}`, body)
   }
 
   const printOrdersListPDF = () => {
     const body = `
       ${htmlKPIs([
-        { label: 'Total commandes', value: String(orders.length) },
-        { label: 'En transit',      value: String(orders.filter(o => o.status === 'EN TRANSIT').length) },
-        { label: 'Reçues',          value: String(orders.filter(o => o.status === 'REÇUE').length) },
-        { label: 'Montant total',   value: orders.reduce((s,o) => s+o.total, 0).toLocaleString('fr-FR') + ' FCFA' },
+        { label: t('order_pdf_total_orders'), value: String(orders.length) },
+        { label: t('order_pdf_in_transit'),   value: String(orders.filter(o => o.status === 'EN TRANSIT').length) },
+        { label: t('order_pdf_received'),     value: String(orders.filter(o => o.status === 'REÇUE').length) },
+        { label: t('order_pdf_total_amount'), value: fmt(orders.reduce((s,o) => s+o.total, 0)) },
       ])}
-      <h2>Liste des commandes</h2>
+      <h2>${t('order_pdf_list_title')}</h2>
       ${htmlTable(
-        ['Référence','Fournisseur','Date','Livraison prévue','Articles','Montant','Statut'],
+        [t('col_ref'), t('col_supplier'), t('col_date'), t('orders_expected'), t('orders_articles'), t('col_amount'), t('col_status')],
         orders.map(o => {
           const cls = o.status === 'REÇUE' ? 'badge-green' : o.status === 'EN TRANSIT' ? 'badge-amber' : o.status === 'ANNULÉE' ? 'badge-red' : 'badge-blue'
           return [
             o.ref, o.supplier,
-            new Date(o.date).toLocaleDateString('fr-FR'),
-            new Date(o.expectedAt).toLocaleDateString('fr-FR'),
+            new Date(o.date).toLocaleDateString(),
+            new Date(o.expectedAt).toLocaleDateString(),
             String(o.items.length),
-            o.total.toLocaleString('fr-FR') + ' FCFA',
+            fmt(o.total),
             `<span class="badge ${cls}">${o.status}</span>`,
           ]
         })
       )}
     `
-    openPDF('Liste des commandes', body)
+    openPDF(t('order_pdf_list_title'), body)
   }
 
   const addFormItem = () =>
@@ -208,9 +208,9 @@ export default function Orders() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Montant engagé',      value: fmt(totalEngaged),      color: 'var(--p2)',    icon: '💰' },
-          { label: t('status_transit'), value: String(pending),        color: 'var(--acc)',   icon: '🚚' },
-          { label: 'Reçues ce mois',    value: String(receivedMonth),  color: 'var(--acc2)', icon: '✅' },
+          { label: t('orders_engaged'),       value: fmt(totalEngaged),      color: 'var(--p2)',    icon: '💰' },
+          { label: t('status_transit'),     value: String(pending),        color: 'var(--acc)',   icon: '🚚' },
+          { label: t('orders_received_month'), value: String(receivedMonth), color: 'var(--acc2)', icon: '✅' },
           { label: t('status_draft'),   value: String(drafts),         color: 'var(--text3)',icon: '📝' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
@@ -341,25 +341,25 @@ export default function Orders() {
                         {o.status === 'BROUILLON' && (
                           <button className="btn btn-sm" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                             onClick={() => changeStatus(o.id, 'ENVOYÉE')}>
-                            📤 Envoyer
+                            📤 {t('btn_send')}
                           </button>
                         )}
                         {o.status === 'ENVOYÉE' && (
                           <button className="btn btn-sm" style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--p3)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                             onClick={() => changeStatus(o.id, 'CONFIRMÉE')}>
-                            ✓ Confirmer
+                            ✓ {t('btn_confirm')}
                           </button>
                         )}
                         {o.status === 'CONFIRMÉE' && (
                           <button className="btn btn-sm" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--acc)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                             onClick={() => changeStatus(o.id, 'EN TRANSIT')}>
-                            🚚 Transit
+                            🚚 {t('status_transit')}
                           </button>
                         )}
                         {o.status === 'EN TRANSIT' && (
                           <button className="btn btn-sm" style={{ background: 'rgba(16,185,129,0.15)', color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                             onClick={() => changeStatus(o.id, 'REÇUE')}>
-                            📥 Réceptionner
+                            📥 {t('status_received')}
                           </button>
                         )}
                       </div>

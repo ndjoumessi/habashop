@@ -60,7 +60,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-4 gap-3">
         {[
           { icon: '🛒', label: t('nav_pos'),       path: '/app/pos',     color: 'rgba(99,102,241,0.12)'  },
-          { icon: '📥', label: 'Réception stock',  path: '/app/stock',   color: 'rgba(20,184,166,0.12)'  },
+          { icon: '📥', label: t('dash_receive_stock'), path: '/app/stock',   color: 'rgba(20,184,166,0.12)'  },
           { icon: '➕', label: t('btn_add'),        path: '/app/stock',   color: 'rgba(245,158,11,0.12)'  },
           { icon: '📤', label: t('btn_export'),     path: '/app/reports', color: 'rgba(139,92,246,0.12)'  },
         ].map(a => (
