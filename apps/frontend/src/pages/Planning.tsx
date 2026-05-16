@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useConfig, t } from '@/stores/appStore'
+import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 import { X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -305,7 +306,53 @@ export default function Planning() {
         }}>
           <span className="panel-t">📅 {t('planning_week')}</span>
           <div style={{ display:'flex', gap:8 }}>
-            <button className="mini-btn" onClick={() => toast('📊 Export planning…')}>📊 {t('btn_export')}</button>
+            <button className="mini-btn" onClick={() => {
+              const headers = ['Employé', 'Poste',
+                ...weekDays.map((day, i) => `${dayNames[i]} ${day.getDate()}/${day.getMonth()+1}`),
+                'Total heures'
+              ]
+              const LABELS: Record<string,string> = { M:'Matin(08-13)', S:'AM(13-18)', J:'Journée(08-18)', N:'Nuit(20-06)', R:'Repos', C:'Congé' }
+              exportCSV('habashop_planning', headers,
+                EMPLOYEES.map(emp => {
+                  const empSch = schedule[emp.id] ?? {}
+                  const days = weekDays.map((_, i) => LABELS[empSch[i] ?? 'R'] ?? 'Repos')
+                  return [emp.name, emp.role, ...days, calculateTotalHours(empSch) + 'h']
+                })
+              )
+              toast.success('📊 Planning exporté en CSV')
+            }}>📊 {t('btn_export')}</button>
+            <button className="mini-btn" onClick={() => {
+              const SHIFT_BG: Record<string,string> = { M:'#e0e7ff', S:'#fef3c7', J:'#d1fae5', N:'#ede9fe', R:'#f1f5f9', C:'#dbeafe' }
+              const SHIFT_LABEL: Record<string,string> = { M:'Matin', S:'Après-midi', J:'Journée', N:'Nuit', R:'Repos', C:'Congé' }
+              const headers = ['Employé', 'Poste',
+                ...weekDays.map((day, i) => `${dayNames[i]} ${day.getDate()}/${day.getMonth()+1}`),
+                'Total'
+              ]
+              const rows = EMPLOYEES.map(emp => {
+                const empSch = schedule[emp.id] ?? {}
+                const days = weekDays.map((_, i) => {
+                  const sh = (empSch[i] ?? 'R') as string
+                  return `<span style="background:${SHIFT_BG[sh]};padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">${SHIFT_LABEL[sh] ?? sh}</span>`
+                })
+                return [emp.name, emp.role, ...days, calculateTotalHours(empSch) + 'h']
+              })
+              const legend = Object.entries(SHIFT_LABEL).map(([k, lbl]) =>
+                `<div style="display:inline-flex;align-items:center;gap:6px;margin:0 8px 6px 0;">
+                  <span style="background:${SHIFT_BG[k]};padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;">${lbl}</span>
+                </div>`
+              ).join('')
+              const body = `
+                <div style="margin-bottom:16px;">
+                  <div style="font-size:14px;font-weight:800;">Planning — Semaine ${weekNum}</div>
+                  <div style="font-size:12px;color:#666;">${formatDate(weekDays[0])} au ${formatDate(weekDays[6])}</div>
+                </div>
+                ${htmlTable(headers, rows)}
+                <h2>Légende</h2>
+                <div style="margin-top:8px;">${legend}</div>
+              `
+              openPDF(`Planning Semaine ${weekNum}`, body)
+              toast.success('📄 Planning PDF ouvert')
+            }}>📄 PDF</button>
             <button className="topbar-btn" onClick={() => setNewModal(true)}>+ {t('planning_new_shift')}</button>
           </div>
         </div>

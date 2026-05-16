@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { TrendingUp, Package, Users, Calendar, ShoppingCart } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -129,6 +130,9 @@ export default function Forecasts() {
   const { lang, currency } = useAppStore()
   void lang; void currency
   const fmt = useFormatAmount()
+  const navigate = useNavigate()
+
+  const [activeTab, setActiveTab]       = useState<ActiveTab>('analyse')
 
   const RECOMMANDATIONS = [
     {
@@ -138,6 +142,7 @@ export default function Forecasts() {
       message:`2 articles en rupture critique (Riz 5kg, Savon OMO). Perte de CA estimée à ${fmt(450000)}/semaine si non commandés.`,
       action:'Générer les bons',
       actionColor:'var(--danger)',
+      onClick: () => setActiveTab('bons'),
     },
     {
       type:'warning' as const,
@@ -146,6 +151,7 @@ export default function Forecasts() {
       message:'Les céréales représentent 28 % du CA avec +30 % de croissance prévue. Augmenter les stocks de sécurité de 40 %.',
       action:'Voir les prévisions',
       actionColor:'var(--acc)',
+      onClick: () => document.getElementById('section-ca')?.scrollIntoView({ behavior:'smooth' }),
     },
     {
       type:'success' as const,
@@ -154,6 +160,7 @@ export default function Forecasts() {
       message:`Solde cumulé prévu à ${fmt(8510000)} en octobre. Capacité d'investissement disponible pour expansion.`,
       action:'Voir trésorerie',
       actionColor:'var(--acc2)',
+      onClick: () => document.getElementById('section-tresorerie')?.scrollIntoView({ behavior:'smooth' }),
     },
     {
       type:'info'    as const,
@@ -162,10 +169,9 @@ export default function Forecasts() {
       message:'Avec +30 % de nouveaux clients prévus, recruter 1 commercial dès juillet. ROI estimé en 3 mois.',
       action:'Voir RH',
       actionColor:'var(--p2)',
+      onClick: () => navigate('/app/hr'),
     },
   ]
-
-  const [activeTab, setActiveTab]       = useState<ActiveTab>('analyse')
   const [activeFilter, setActiveFilter] = useState('Toutes')
   const [validated, setValidated]       = useState<Set<string>>(new Set())
 
@@ -214,7 +220,7 @@ export default function Forecasts() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         {/* Bar chart 12 mois */}
-        <div className="panel" style={{ gridColumn:'span 2', marginBottom:0 }}>
+        <div id="section-ca" className="panel" style={{ gridColumn:'span 2', marginBottom:0 }}>
           <div className="panel-head">
             <span className="panel-title">📈 CA mensuel 2026 — Réel vs Prévu</span>
           </div>
@@ -731,7 +737,7 @@ export default function Forecasts() {
                       el.style.background = 'none'
                       el.style.color = rec.actionColor
                     }}
-                    onClick={() => toast(rec.action)}
+                    onClick={rec.onClick}
                   >→ {rec.action}</button>
                 </div>
               </div>
@@ -741,7 +747,7 @@ export default function Forecasts() {
       </div>
 
       {/* ── Section B — Prévisions trésorerie ────────────────────── */}
-      <div className="panel" style={{ marginBottom:0 }}>
+      <div id="section-tresorerie" className="panel" style={{ marginBottom:0 }}>
         <div className="panel-head">
           <span className="panel-title">💳 Prévisions de trésorerie — 6 mois</span>
           <span style={{ fontSize:11, fontWeight:600, color:'var(--acc2)' }}>

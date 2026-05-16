@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
 import { Download, Plus, Eye, X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import PhoneInput from '@/components/ui/PhoneInput'
 import toast from 'react-hot-toast'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -146,12 +147,28 @@ const LEAVES_TAKEN: Record<number, number> = { 1: 2, 2: 0, 3: 3, 4: 0, 5: 5, 6: 
 
 // ── Pointage semaines ─────────────────────────────────────────────────────────
 
-const WEEK_DAYS    = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-const WEEK_OFFSETS = [
-  { label: 'Semaine du 7 au 13 mai 2026',  start: '07/05' },
-  { label: 'Semaine du 14 au 20 mai 2026', start: '14/05' },
-  { label: 'Semaine du 21 au 27 mai 2026', start: '21/05' },
-]
+const WEEK_DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+
+function getWeekDays(baseDate: Date): Date[] {
+  const monday = new Date(baseDate)
+  const day = monday.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  monday.setDate(monday.getDate() + diff)
+  monday.setHours(0, 0, 0, 0)
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    return d
+  })
+}
+
+function getWeekNumber(date: Date): number {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7)
+  const week1 = new Date(d.getFullYear(), 0, 4)
+  return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7)
+}
 
 // ── Fonctions utilitaires ─────────────────────────────────────────────────────
 
@@ -238,7 +255,9 @@ export default function HR() {
   const [newEmp,       setNewEmp]       = useState({ name:'', role:'', dept:'', salary:'', type:'CDI', phone:'', email:'' })
 
   // ── Pointage ──
-  const [weekIdx,      setWeekIdx]      = useState(1)
+  const [currentWeek,    setCurrentWeek]    = useState(new Date())
+  const [editPointage,   setEditPointage]   = useState<{ empId:number; dayIndex:number; day:Date } | null>(null)
+  const [pointageEdits,  setPointageEdits]  = useState<Record<string, { status:string; arrive?:string; depart?:string }>>({})
 
   // ── Congés ──
   const [pending,      setPending]      = useState<LeaveRequest[]>(LEAVE_PENDING_INIT)
@@ -253,6 +272,76 @@ export default function HR() {
     type: 'AUGMENTATION', newSalary: 0, motif: '', effectiveDate: new Date().toISOString().split('T')[0],
   })
   const [expandedEmp, setExpandedEmp] = useState<number | null>(null)
+
+  // ── Pointage helpers ──
+  const weekDays  = getWeekDays(currentWeek)
+  const prevWeek  = () => { const d = new Date(currentWeek); d.setDate(d.getDate()-7); setCurrentWeek(d) }
+  const nextWeek  = () => { const d = new Date(currentWeek); d.setDate(d.getDate()+7); setCurrentWeek(d) }
+
+  const getPointageKey = (empId: number, dayIndex: number) => `${empId}_${dayIndex}`
+  const getPointage    = (empId: number, dayIndex: number) => {
+    const key = getPointageKey(empId, dayIndex)
+    return pointageEdits[key] ?? POINTAGE_DATA[empId]?.[dayIndex]
+  }
+
+  // ── Contrats ──
+  const generateContract = (emp: Employee) => {
+    const history    = salaryHistory[emp.id] ?? []
+    const lastSalary = history[history.length-1]?.newSalary ?? emp.salary
+    const body = `
+      <div style="text-align:center;margin-bottom:30px;">
+        <div style="font-size:18px;font-weight:900;color:#5B4EE8;margin-bottom:8px;">
+          CONTRAT DE TRAVAIL — ${emp.type}
+        </div>
+        <div style="font-size:13px;color:#666;">Entre HabaShop (l'Employeur) et ${emp.name} (l'Employé)</div>
+      </div>
+      <h2>Article 1 — Parties</h2>
+      ${htmlInfoGrid([
+        { label:'EMPLOYEUR',    value:'HabaShop — Dakar Central' },
+        { label:'EMPLOYÉ',      value:emp.name },
+        { label:'POSTE',        value:emp.role },
+        { label:'DÉPARTEMENT',  value:emp.dept },
+      ])}
+      <h2>Article 2 — Durée et type de contrat</h2>
+      ${htmlInfoGrid([
+        { label:'TYPE',             value: emp.type === 'CDI' ? 'Contrat à Durée Indéterminée (CDI)' : 'Contrat à Durée Déterminée (CDD)' },
+        { label:'DATE DE DÉBUT',    value: emp.hiredAt },
+        { label:'DATE DE FIN',      value: emp.endAt ?? (emp.type === 'CDI' ? 'Indéterminée' : 'À définir') },
+        { label:"PÉRIODE D'ESSAI",  value: emp.type === 'CDI' ? '3 mois renouvelable une fois' : "Sans période d'essai" },
+      ])}
+      <h2>Article 3 — Rémunération</h2>
+      ${htmlInfoGrid([
+        { label:'SALAIRE DE BASE',  value: lastSalary.toLocaleString('fr-FR') + ' FCFA / mois' },
+        { label:'MODE DE PAIEMENT', value:'Virement bancaire' },
+        { label:'PÉRIODICITÉ',      value:'Mensuelle (fin de mois)' },
+        { label:'AVANTAGES',        value:'CNSS, assurance maladie' },
+      ])}
+      <h2>Article 4 — Conditions de travail</h2>
+      ${htmlInfoGrid([
+        { label:'HORAIRES',          value:'8h00 – 18h00 (selon planning)' },
+        { label:'JOURS TRAVAILLÉS',  value:'Lundi au Samedi' },
+        { label:'CONGÉS ANNUELS',    value:'25 jours ouvrables / an' },
+        { label:'LIEU DE TRAVAIL',   value:'HabaShop — Dakar, Sénégal' },
+      ])}
+      <h2>Article 5 — Contact</h2>
+      ${htmlInfoGrid([
+        { label:'TÉLÉPHONE', value: emp.phone },
+        { label:'EMAIL',     value: emp.email ?? '' },
+      ])}
+      <div class="signature-block" style="margin-top:40px;">
+        <div>
+          <div style="font-size:12px;color:#666;margin-bottom:40px;">Fait à Dakar, le ${new Date().toLocaleDateString('fr-FR')}</div>
+          <div class="signature-line">Pour HabaShop — L'Employeur</div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:#666;margin-bottom:40px;">Lu et approuvé par l'employé</div>
+          <div class="signature-line">${emp.name} — L'Employé</div>
+        </div>
+      </div>
+    `
+    openPDF(`Contrat ${emp.type} — ${emp.name}`, body)
+    toast.success(`📄 Contrat de ${emp.name} généré`)
+  }
 
   // ── Dérivés ──
   const printEmployeesPDF = () => {
@@ -497,11 +586,12 @@ export default function HR() {
                     <td><ContractStatus emp={e} /></td>
                     <td>
                       <div style={{ display:'flex', gap:5 }}>
-                        <button className="mini-btn gap-1" onClick={() => toast('📥 Téléchargement contrat…')}>
-                          <Download size={11} />
+                        <button className="mini-btn gap-1" onClick={() => generateContract(e)}>
+                          <Download size={11} /> PDF
                         </button>
                         {e.type === 'CDD' && e.active && (
-                          <button className="mini-btn" onClick={() => toast.success('Renouvellement initié')}>🔄</button>
+                          <button className="mini-btn" style={{ color:'var(--acc)' }}
+                            onClick={() => toast.success(`🔄 Renouvellement de ${e.name} initié`)}>🔄 Renouveler</button>
                         )}
                       </div>
                     </td>
@@ -519,30 +609,34 @@ export default function HR() {
           <div className="panel-head">
             <span className="panel-title">📅 Pointage</span>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <button className="mini-btn" onClick={() => setWeekIdx(i => Math.max(0, i-1))} style={{ padding:'4px 7px' }}>
+              <button className="mini-btn" onClick={prevWeek} style={{ padding:'4px 7px' }}>
                 <ChevronLeft size={14} />
               </button>
-              <span style={{ fontSize:12, fontWeight:600, color:'var(--text2)', minWidth:200, textAlign:'center' }}>
-                {WEEK_OFFSETS[weekIdx]?.label}
-              </span>
-              <button className="mini-btn" onClick={() => setWeekIdx(i => Math.min(WEEK_OFFSETS.length-1, i+1))} style={{ padding:'4px 7px' }}>
+              <div style={{ textAlign:'center', minWidth:200 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:'var(--text)' }}>
+                  Semaine {getWeekNumber(weekDays[0])}
+                </div>
+                <div style={{ fontSize:10, color:'var(--text3)' }}>
+                  {weekDays[0].toLocaleDateString('fr-FR')} — {weekDays[6].toLocaleDateString('fr-FR')}
+                </div>
+              </div>
+              <button className="mini-btn" onClick={nextWeek} style={{ padding:'4px 7px' }}>
                 <ChevronRight size={14} />
               </button>
               <button className="btn btn-ghost btn-sm gap-1" onClick={() => {
                 exportCSV('habashop_pointage',
-                  ['Employé','Lun','Mar','Mer','Jeu','Ven','Sam','Dim','Total heures'],
-                  employees.map(e => {
-                    const data = POINTAGE_DATA[e.id] ?? {}
-                    const days = Array.from({ length:7 }, (_, i) => {
-                      const p = data[i]
+                  ['Employé', ...weekDays.map(d => d.toLocaleDateString('fr-FR')), 'Total'],
+                  employees.map(emp => {
+                    const days = weekDays.map((_, i) => {
+                      const p = getPointage(emp.id, i)
                       if (!p) return '—'
                       if (p.arrive) return `${p.arrive}-${p.depart}`
-                      return STATUS_CONFIG[p.status].label
+                      return STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG]?.label ?? p.status
                     })
-                    return [e.name, ...days, calcHeures(e.id)]
+                    return [emp.name, ...days, calcHeures(emp.id)]
                   })
                 )
-                toast.success('📊 Export pointage téléchargé !')
+                toast.success('📊 Pointage exporté')
               }}>
                 <Download size={12} /> Export
               </button>
@@ -553,7 +647,19 @@ export default function HR() {
               <thead>
                 <tr>
                   <th style={{ minWidth:160 }}>Employé</th>
-                  {WEEK_DAYS.map(d => <th key={d} style={{ textAlign:'center', minWidth:88 }}>{d}</th>)}
+                  {weekDays.map((day, i) => {
+                    const isToday = day.toDateString() === new Date().toDateString()
+                    return (
+                      <th key={i} style={{
+                        textAlign:'center', minWidth:88,
+                        color: isToday ? 'var(--p2)' : 'var(--text3)',
+                        background: isToday ? 'rgba(91,78,232,.08)' : 'transparent',
+                      }}>
+                        <div>{WEEK_DAY_NAMES[i]}</div>
+                        <div style={{ fontSize:10, fontWeight:600 }}>{day.getDate()}/{day.getMonth()+1}</div>
+                      </th>
+                    )
+                  })}
                   <th style={{ textAlign:'center', minWidth:80 }}>Total</th>
                 </tr>
               </thead>
@@ -567,21 +673,27 @@ export default function HR() {
                       </div>
                     </td>
                     {Array.from({ length:7 }, (_, dayIndex) => {
-                      const p   = POINTAGE_DATA[e.id]?.[dayIndex]
+                      const p   = getPointage(e.id, dayIndex)
                       if (!p) return (
-                        <td key={dayIndex} style={{ padding:'8px 6px', textAlign:'center' }}>
+                        <td key={dayIndex} style={{ padding:'8px 6px', textAlign:'center', cursor:'pointer' }}
+                          onClick={() => setEditPointage({ empId:e.id, dayIndex, day:weekDays[dayIndex] })}>
                           <span style={{ color:'var(--text3)', fontSize:12 }}>—</span>
                         </td>
                       )
-                      const cfg = STATUS_CONFIG[p.status]
+                      const cfg = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG]
                       return (
-                        <td key={dayIndex} style={{ padding:'8px 6px', textAlign:'center' }}>
+                        <td key={dayIndex} style={{ padding:'8px 6px', textAlign:'center', cursor:'pointer' }}
+                          onClick={() => setEditPointage({ empId:e.id, dayIndex, day:weekDays[dayIndex] })}>
                           <div style={{
                             display:'inline-flex', flexDirection:'column',
                             alignItems:'center', gap:2,
                             background:cfg.bg, border:`1px solid ${cfg.border}`,
                             borderRadius:9, padding:'6px 8px', minWidth:72,
-                          }}>
+                            transition:'opacity .15s',
+                          }}
+                            onMouseEnter={el => (el.currentTarget as HTMLElement).style.opacity = '.75'}
+                            onMouseLeave={el => (el.currentTarget as HTMLElement).style.opacity = '1'}
+                          >
                             <span style={{ fontSize:10, fontWeight:700, color:cfg.color }}>{cfg.label}</span>
                             {p.arrive && (
                               <span style={{ fontSize:9, color:'var(--text3)', fontFamily:'var(--mono)' }}>
@@ -609,6 +721,70 @@ export default function HR() {
                 {cfg.label}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL Modifier pointage ── */}
+      {editPointage && (
+        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget && setEditPointage(null)}>
+          <div className="modal-box" style={{ maxWidth:380 }}>
+            <h3 style={{ fontSize:15, fontWeight:800, marginBottom:12, color:'var(--text)' }}>⏱️ Modifier le pointage</h3>
+            <div style={{ marginBottom:14, fontSize:13, color:'var(--text2)' }}>
+              {employees.find(e=>e.id===editPointage.empId)?.name} — {editPointage.day.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})}
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7, marginBottom:16 }}>
+              {(['present','retard','absent','conge','repos'] as const).map(st => {
+                const current = getPointage(editPointage.empId, editPointage.dayIndex)?.status
+                const isSelected = current === st
+                return (
+                  <button key={st}
+                    onClick={() => {
+                      const key = getPointageKey(editPointage.empId, editPointage.dayIndex)
+                      setPointageEdits(prev => ({ ...prev, [key]: { ...(prev[key] ?? {}), status:st } }))
+                    }}
+                    style={{
+                      padding:'8px 4px', borderRadius:8, fontSize:11, fontWeight:700,
+                      cursor:'pointer', fontFamily:'var(--font)',
+                      background: isSelected ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
+                      border:`1px solid ${isSelected ? 'var(--p2)' : 'var(--border)'}`,
+                      color: isSelected ? 'var(--p2)' : 'var(--text2)',
+                    }}>
+                    {st==='present'?'✅ Présent':st==='retard'?'⚠️ Retard':st==='absent'?'❌ Absent':st==='conge'?'🏖️ Congé':'💤 Repos'}
+                  </button>
+                )
+              })}
+            </div>
+            {['present','retard'].includes(getPointage(editPointage.empId, editPointage.dayIndex)?.status ?? '') && (
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+                <div>
+                  <label style={{ display:'block', fontSize:10, color:'var(--text3)', marginBottom:4, fontWeight:700, textTransform:'uppercase' }}>Arrivée</label>
+                  <input className="input" type="time"
+                    value={getPointage(editPointage.empId, editPointage.dayIndex)?.arrive ?? '08:00'}
+                    onChange={e => {
+                      const key = getPointageKey(editPointage.empId, editPointage.dayIndex)
+                      setPointageEdits(prev => ({ ...prev, [key]: { ...(prev[key] ?? {}), arrive:e.target.value } }))
+                    }} />
+                </div>
+                <div>
+                  <label style={{ display:'block', fontSize:10, color:'var(--text3)', marginBottom:4, fontWeight:700, textTransform:'uppercase' }}>Départ</label>
+                  <input className="input" type="time"
+                    value={getPointage(editPointage.empId, editPointage.dayIndex)?.depart ?? '17:00'}
+                    onChange={e => {
+                      const key = getPointageKey(editPointage.empId, editPointage.dayIndex)
+                      setPointageEdits(prev => ({ ...prev, [key]: { ...(prev[key] ?? {}), depart:e.target.value } }))
+                    }} />
+                </div>
+              </div>
+            )}
+            <div style={{ display:'flex', gap:8 }}>
+              <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }}
+                onClick={() => { toast.success('✅ Pointage mis à jour'); setEditPointage(null) }}>
+                ✅ Enregistrer
+              </button>
+              <button className="mini-btn" style={{ padding:'10px 14px' }}
+                onClick={() => setEditPointage(null)}>Annuler</button>
+            </div>
           </div>
         </div>
       )}
@@ -730,6 +906,34 @@ export default function HR() {
           <div className="panel" style={{ marginBottom:0 }}>
             <div className="panel-head">
               <span className="panel-title">💰 Grille des salaires</span>
+              <div style={{ display:'flex', gap:8 }}>
+              <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+                const totalMasse = employees.reduce((s,e) => s+e.salary, 0)
+                const body = `
+                  ${htmlKPIs([
+                    { label:'MASSE SALARIALE', value:fmt(totalMasse) },
+                    { label:'SALAIRE MOYEN',   value:fmt(Math.round(totalMasse/employees.length)) },
+                    { label:'NB EMPLOYÉS',     value:String(employees.length) },
+                    { label:'CONTRATS CDI',    value:String(employees.filter(e=>e.type==='CDI').length) },
+                  ])}
+                  <h2>Grille des salaires</h2>
+                  ${htmlTable(
+                    ['Employé','Poste','Contrat','Embauche','Salaire actuel','Évolution'],
+                    employees.map(emp => {
+                      const hist  = salaryHistory[emp.id] ?? []
+                      const first = hist[0]?.newSalary ?? emp.salary
+                      const pct   = first > 0 && emp.salary !== first
+                        ? '+' + ((emp.salary-first)/first*100).toFixed(1) + ' %' : '—'
+                      return [emp.name, emp.role, emp.type, emp.hiredAt, fmt(emp.salary), pct]
+                    }),
+                    ['','','','',`<strong>${fmt(totalMasse)}</strong>`,'<strong>MASSE SALARIALE</strong>']
+                  )}
+                `
+                openPDF('Grille des salaires', body)
+                toast.success('📄 PDF grille des salaires ouvert')
+              }}>
+                <Download size={13} /> PDF
+              </button>
               <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
                 exportCSV('habashop_remuneration',
                   ['Employé','Poste','Contrat','Date embauche','Salaire actuel','Évolution','Dernière révision'],
@@ -747,6 +951,7 @@ export default function HR() {
               }}>
                 <Download size={13} /> Export CSV
               </button>
+              </div>
             </div>
             <div className="table-wrap">
               <table>
@@ -852,6 +1057,17 @@ export default function HR() {
                     {/* Timeline */}
                     {isOpen && (
                       <div style={{ padding:'16px 20px', background:'var(--card)' }}>
+                        <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+                          <button className="mini-btn" style={{ flex:1, justifyContent:'center' }}
+                            onClick={() => {
+                              setSelectedEmpSalary(emp.id)
+                              setSalaryForm(f => ({ ...f, newSalary:emp.salary }))
+                              setShowSalaryModal(true)
+                            }}>✏️ Modifier salaire</button>
+                          <button className="mini-btn" style={{ flex:1, justifyContent:'center' }}
+                            onClick={() => { printEmployeeFichePDF(emp); toast.success('📄 PDF ouvert !') }}>
+                            📄 Fiche PDF</button>
+                        </div>
                         <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
                           {history.map((entry, i) => {
                             const cfg = TYPE_SALAIRE_CONFIG[entry.type]
@@ -1346,12 +1562,11 @@ export default function HR() {
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
               {[
-                { label:'Nom complet',     key:'name',   type:'text',   placeholder:'Ex: Awa Diallo'  },
-                { label:'Poste',           key:'role',   type:'text',   placeholder:'Ex: Caissière'   },
-                { label:'Département',     key:'dept',   type:'text',   placeholder:'Ex: Ventes'      },
-                { label:'Salaire (F CFA)', key:'salary', type:'number', placeholder:'350000'          },
-                { label:'Téléphone',       key:'phone',  type:'text',   placeholder:'+221 77 …'       },
-                { label:'Email',           key:'email',  type:'email',  placeholder:'nom@shop.com'    },
+                { label:'Nom complet',     key:'name',   type:'text',   placeholder:'Ex: Awa Diallo' },
+                { label:'Poste',           key:'role',   type:'text',   placeholder:'Ex: Caissière'  },
+                { label:'Département',     key:'dept',   type:'text',   placeholder:'Ex: Ventes'     },
+                { label:'Salaire (F CFA)', key:'salary', type:'number', placeholder:'350000'         },
+                { label:'Email',           key:'email',  type:'email',  placeholder:'nom@shop.com'   },
               ].map(f => (
                 <div key={f.key}>
                   <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{f.label}</label>
@@ -1361,6 +1576,10 @@ export default function HR() {
                     style={{ width:'100%', boxSizing:'border-box' }} />
                 </div>
               ))}
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Téléphone</label>
+                <PhoneInput value={newEmp.phone} onChange={phone => setNewEmp(p => ({ ...p, phone }))} />
+              </div>
               <div>
                 <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Type de contrat</label>
                 <select className="input" value={newEmp.type} onChange={e => setNewEmp(p => ({ ...p, type:e.target.value }))}

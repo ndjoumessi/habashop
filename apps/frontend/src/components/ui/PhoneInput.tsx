@@ -1,0 +1,170 @@
+import { useState } from 'react'
+
+const COUNTRY_CODES = [
+  { code:'+221', flag:'🇸🇳', country:'Sénégal',       iso:'SN' },
+  { code:'+225', flag:'🇨🇮', country:"Côte d'Ivoire",  iso:'CI' },
+  { code:'+223', flag:'🇲🇱', country:'Mali',            iso:'ML' },
+  { code:'+237', flag:'🇨🇲', country:'Cameroun',        iso:'CM' },
+  { code:'+242', flag:'🇨🇬', country:'Congo',           iso:'CG' },
+  { code:'+243', flag:'🇨🇩', country:'RD Congo',        iso:'CD' },
+  { code:'+241', flag:'🇬🇦', country:'Gabon',           iso:'GA' },
+  { code:'+226', flag:'🇧🇫', country:'Burkina Faso',    iso:'BF' },
+  { code:'+227', flag:'🇳🇪', country:'Niger',           iso:'NE' },
+  { code:'+228', flag:'🇹🇬', country:'Togo',            iso:'TG' },
+  { code:'+229', flag:'🇧🇯', country:'Bénin',           iso:'BJ' },
+  { code:'+224', flag:'🇬🇳', country:'Guinée',          iso:'GN' },
+  { code:'+233', flag:'🇬🇭', country:'Ghana',           iso:'GH' },
+  { code:'+234', flag:'🇳🇬', country:'Nigeria',         iso:'NG' },
+  { code:'+212', flag:'🇲🇦', country:'Maroc',           iso:'MA' },
+  { code:'+213', flag:'🇩🇿', country:'Algérie',         iso:'DZ' },
+  { code:'+216', flag:'🇹🇳', country:'Tunisie',         iso:'TN' },
+  { code:'+33',  flag:'🇫🇷', country:'France',          iso:'FR' },
+  { code:'+32',  flag:'🇧🇪', country:'Belgique',        iso:'BE' },
+  { code:'+41',  flag:'🇨🇭', country:'Suisse',          iso:'CH' },
+  { code:'+1',   flag:'🇺🇸', country:'États-Unis',      iso:'US' },
+  { code:'+1',   flag:'🇨🇦', country:'Canada',          iso:'CA' },
+]
+
+interface PhoneInputProps {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  className?: string
+}
+
+export default function PhoneInput({
+  value, onChange, placeholder = '77 000 00 00',
+}: PhoneInputProps) {
+  const [selectedCode, setSelectedCode] = useState(COUNTRY_CODES[0])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filtered = COUNTRY_CODES.filter(c =>
+    c.country.toLowerCase().includes(search.toLowerCase()) ||
+    c.code.includes(search)
+  )
+
+  const phoneNumber = value.startsWith('+')
+    ? value.replace(/^\+\d+\s?/, '')
+    : value
+
+  return (
+    <div style={{ position:'relative', display:'flex', gap:0 }}>
+
+      {/* Sélecteur indicatif */}
+      <button
+        type="button"
+        onClick={() => setShowDropdown(!showDropdown)}
+        style={{
+          display:'flex', alignItems:'center', gap:6,
+          padding:'10px 10px',
+          background:'var(--bg3)',
+          border:'1.5px solid var(--border)',
+          borderRight:'none',
+          borderRadius:'10px 0 0 10px',
+          cursor:'pointer', fontFamily:'var(--font)',
+          fontSize:13, color:'var(--text)',
+          whiteSpace:'nowrap', flexShrink:0,
+          transition:'border-color .15s',
+        }}
+      >
+        <span style={{ fontSize:16 }}>{selectedCode.flag}</span>
+        <span style={{ fontWeight:600 }}>{selectedCode.code}</span>
+        <span style={{ fontSize:10, color:'var(--text3)' }}>▼</span>
+      </button>
+
+      {/* Input numéro */}
+      <input
+        type="tel"
+        placeholder={placeholder}
+        value={phoneNumber}
+        onChange={e => onChange(`${selectedCode.code} ${e.target.value}`)}
+        className="input"
+        style={{
+          flex:1, minWidth:0,
+          padding:'10px 13px',
+          borderLeft:'1px solid var(--border)',
+          borderRadius:'0 10px 10px 0',
+          fontSize:14,
+        }}
+        onFocus={e => (e.target as HTMLElement).style.borderColor = 'var(--p2)'}
+        onBlur={e  => (e.target as HTMLElement).style.borderColor = 'var(--border)'}
+      />
+
+      {/* Dropdown pays */}
+      {showDropdown && (
+        <div style={{
+          position:'absolute', top:'calc(100% + 6px)', left:0,
+          background:'var(--card)',
+          border:'1px solid var(--border2)',
+          borderRadius:12,
+          boxShadow:'0 20px 60px rgba(0,0,0,.4)',
+          width:280, zIndex:999,
+          overflow:'hidden',
+        }}>
+          <div style={{ padding:'10px 12px', borderBottom:'1px solid var(--border)' }}>
+            <input
+              autoFocus
+              type="text"
+              placeholder="🔍 Pays ou indicatif..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                width:'100%', padding:'7px 10px',
+                background:'var(--bg3)',
+                border:'1px solid var(--border)',
+                borderRadius:8, fontSize:12,
+                color:'var(--text)', fontFamily:'var(--font)',
+                outline:'none',
+              }}
+            />
+          </div>
+          <div style={{ maxHeight:220, overflowY:'auto' }}>
+            {filtered.map((c, i) => (
+              <button key={i}
+                type="button"
+                onClick={() => {
+                  setSelectedCode(c)
+                  setShowDropdown(false)
+                  setSearch('')
+                  onChange(`${c.code} ${phoneNumber}`)
+                }}
+                style={{
+                  display:'flex', alignItems:'center', gap:10,
+                  width:'100%', padding:'9px 14px',
+                  background: selectedCode.code === c.code && selectedCode.iso === c.iso
+                    ? 'rgba(91,78,232,.1)' : 'none',
+                  border:'none',
+                  borderBottom:'1px solid var(--border)',
+                  cursor:'pointer', fontFamily:'var(--font)',
+                  fontSize:13, color:'var(--text)',
+                  textAlign:'left',
+                }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background =
+                  selectedCode.code === c.code && selectedCode.iso === c.iso
+                    ? 'rgba(91,78,232,.1)' : 'none'
+                }
+              >
+                <span style={{ fontSize:18, flexShrink:0 }}>{c.flag}</span>
+                <span style={{ flex:1 }}>{c.country}</span>
+                <span style={{
+                  fontSize:12, fontWeight:700,
+                  color:'var(--p2)', fontFamily:'var(--mono)',
+                }}>{c.code}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Overlay pour fermer */}
+      {showDropdown && (
+        <div
+          style={{ position:'fixed', inset:0, zIndex:998 }}
+          onClick={() => setShowDropdown(false)}
+        />
+      )}
+    </div>
+  )
+}

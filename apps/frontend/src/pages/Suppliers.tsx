@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { Search, Download, Plus, Eye, X } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Phone } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 
@@ -92,6 +93,7 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function Suppliers() {
+  const navigate = useNavigate()
   const { lang } = useConfig()
   void lang
   const fmt = useFormatAmount()
@@ -246,9 +248,13 @@ export default function Suppliers() {
                       <button className="btn btn-sm btn-ghost" title="Voir fiche" onClick={() => setViewSupplier(s)}>
                         <Eye size={12} />
                       </button>
+                      <button className="btn btn-sm btn-ghost" title={`Appeler ${s.phone}`}
+                        onClick={() => toast.success(`📞 ${s.phone}`)}>
+                        <Phone size={12} />
+                      </button>
                       <button className="btn btn-sm"
                         style={{ background: 'rgba(91,78,232,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
-                        onClick={() => toast.success(`📦 Commande vers ${s.name} créée`)}>
+                        onClick={() => navigate('/app/orders')}>
                         📦 Commander
                       </button>
                     </div>
@@ -336,7 +342,7 @@ export default function Suppliers() {
 
             <div className="flex gap-2">
               <button className="btn btn-primary flex-1 justify-center"
-                onClick={() => { toast.success(`📦 Commande vers ${viewSupplier.name} créée`); setViewSupplier(null) }}>
+                onClick={() => { setViewSupplier(null); navigate('/app/orders') }}>
                 📦 Nouvelle commande
               </button>
               <button className="btn btn-ghost" onClick={() => setViewSupplier(null)}>Fermer</button>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -33,6 +34,7 @@ function statusOf(stock: number, threshold: number) {
 export default function Stock() {
   const { stockLowThreshold, stockShowSKU, lang } = useConfig()
   const fmt = useFormatAmount()
+  const navigate = useNavigate()
   void lang // for t() reactivity
 
   const [products, setProducts] = useState(PRODUCTS_INIT)
@@ -224,9 +226,20 @@ export default function Stock() {
                     <td>
                       <div className="flex gap-1.5">
                         {st.cls !== 'badge-green' && (
-                          <button className="btn btn-sm btn-ghost gap-1" onClick={() => toast.success('📦 Bon créé')}>📦</button>
+                          <button className="btn btn-sm btn-ghost gap-1" title="Commander"
+                            onClick={() => navigate('/app/orders')}>📦</button>
                         )}
-                        <button className="btn btn-sm btn-ghost" onClick={() => toast(`✏️ ${p.sku}`)}>✏️</button>
+                        <button className="btn btn-sm btn-ghost" title="Modifier"
+                          onClick={() => {
+                            setForm(f => ({ ...f,
+                              sku: p.sku, name: p.name.replace(/^\S+\s/, ''),
+                              category: p.category, buy: p.buy, sell: p.sell,
+                              stock: p.stock, threshold: p.threshold, supplier: p.supplier,
+                              image: p.name.match(/^\S+/)?.[0] ?? '📦',
+                            }))
+                            setModalTab('general')
+                            setShowModal(true)
+                          }}>✏️</button>
                       </div>
                     </td>
                   </tr>

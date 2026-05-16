@@ -58,6 +58,13 @@ export default function POS() {
   const [showDiscountModal, setShowDiscountModal] = useState(false)
   const [discountForm, setDiscountForm] = useState({ type:'percent' as 'percent'|'amount', value:0, reason:'' })
 
+  // ─── CAISSE ────────────────────────────────
+  const [cashierOpen, setCashierOpen]         = useState(false)
+  const [openingFund, setOpeningFund]         = useState(0)
+  const [openingFundInput, setOpeningFundInput] = useState('')
+  const [showCloseModal, setShowCloseModal]   = useState(false)
+  const [openedAt, setOpenedAt]               = useState<Date | null>(null)
+
   // Prix selon type client
   const getPrice = (p: typeof PRODUCTS[0]) => {
     if (clientType === 'wholesale') return p.priceWholesale
@@ -179,6 +186,98 @@ export default function POS() {
   }
 
   // ─── RENDER ──────────────────────────────
+
+  if (!cashierOpen) {
+    return (
+      <div style={{
+        display:'flex', alignItems:'center', justifyContent:'center',
+        height:'calc(100vh - 54px)', background:'var(--bg)',
+      }}>
+        <div style={{
+          background:'var(--card)', border:'1px solid var(--border)',
+          borderRadius:20, padding:'40px 48px',
+          maxWidth:480, width:'100%', textAlign:'center',
+          boxShadow:'0 20px 60px rgba(0,0,0,.3)',
+        }}>
+          <div style={{
+            width:80, height:80, borderRadius:'50%',
+            background:'rgba(91,78,232,.12)', border:'2px solid rgba(91,78,232,.25)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize:36, margin:'0 auto 20px',
+          }}>🔐</div>
+          <h2 style={{ fontSize:22, fontWeight:900, color:'var(--text)', marginBottom:8, letterSpacing:'-0.5px' }}>
+            Caisse fermée
+          </h2>
+          <p style={{ fontSize:13, color:'var(--text2)', marginBottom:28, lineHeight:1.6 }}>
+            Ouvrez la caisse pour commencer les ventes. Entrez le fond de caisse initial.
+          </p>
+          <div style={{ marginBottom:20, textAlign:'left' }}>
+            <label style={{
+              display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase',
+              letterSpacing:'.5px', color:'var(--text3)', marginBottom:6,
+            }}>Fond de caisse initial</label>
+            <div style={{ position:'relative' }}>
+              <input
+                className="input"
+                type="number"
+                placeholder="Ex: 50 000"
+                value={openingFundInput}
+                onChange={e => setOpeningFundInput(e.target.value)}
+                style={{ fontSize:16, textAlign:'right', paddingRight:60 }}
+              />
+              <span style={{
+                position:'absolute', right:12, top:'50%', transform:'translateY(-50%)',
+                fontSize:12, fontWeight:700, color:'var(--text3)',
+              }}>FCFA</span>
+            </div>
+            {openingFundInput && (
+              <div style={{ marginTop:6, fontSize:12, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:600 }}>
+                = {fmt(parseFloat(openingFundInput) || 0)}
+              </div>
+            )}
+          </div>
+          <div style={{
+            padding:'12px 16px', borderRadius:10,
+            background:'var(--bg3)', border:'1px solid var(--border)',
+            display:'flex', alignItems:'center', gap:12,
+            marginBottom:24, textAlign:'left',
+          }}>
+            <div style={{
+              width:36, height:36, borderRadius:'50%',
+              background:'linear-gradient(135deg,var(--p),var(--p2))',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              color:'#fff', fontSize:14, fontWeight:800, flexShrink:0,
+            }}>N</div>
+            <div>
+              <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Nelson Djoumessi</div>
+              <div style={{ fontSize:11, color:'var(--text3)' }}>
+                Caisse 1 · {new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const fund = parseFloat(openingFundInput) || 0
+              setOpeningFund(fund)
+              setOpenedAt(new Date())
+              setCashierOpen(true)
+              toast.success(`✅ Caisse ouverte — Fond: ${fmt(fund)}`)
+            }}
+            style={{
+              width:'100%',
+              background:'linear-gradient(135deg,var(--p),var(--p2))',
+              border:'none', borderRadius:12, padding:'14px',
+              fontSize:15, fontWeight:800, color:'#fff',
+              cursor:'pointer', fontFamily:'var(--font)',
+              boxShadow:'0 6px 20px rgba(91,78,232,.4)',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            }}
+          >🔓 Ouvrir la caisse</button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
       {/* PAGE WRAPPER */}
@@ -475,6 +574,16 @@ export default function POS() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 11, fontWeight: 800,
               }}>{cart.length}</div>
+              <button
+                onClick={() => setShowCloseModal(true)}
+                style={{
+                  fontSize:11, color:'var(--danger)',
+                  background:'rgba(232,64,74,.1)',
+                  border:'1px solid rgba(232,64,74,.2)',
+                  borderRadius:7, padding:'4px 10px',
+                  cursor:'pointer', fontFamily:'var(--font)', fontWeight:600,
+                }}
+              >🔒 Fermer</button>
             </div>
           </div>
 
@@ -975,6 +1084,92 @@ export default function POS() {
       {/* ════════════════════════════════
           MODAL CONFIRMATION
       ════════════════════════════════ */}
+      {/* ════════════════════════════════
+          MODAL FERMETURE CAISSE
+      ════════════════════════════════ */}
+      {showCloseModal && (
+        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget && setShowCloseModal(false)}>
+          <div className="modal-box" style={{ maxWidth:480 }}>
+            <h3 style={{ fontSize:16, fontWeight:800, color:'var(--text)', marginBottom:20 }}>
+              🔒 Fermeture de caisse
+            </h3>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:20 }}>
+              {[
+                { label:'Heure ouverture', value: openedAt?.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) ?? '--:--' },
+                { label:'Heure fermeture', value: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) },
+                { label:'Fond de caisse',  value: fmt(openingFund) },
+                { label:'Transactions',    value: String(sessionTx) },
+                { label:'CA encaissé',     value: fmt(sessionCA) },
+                { label:'Total en caisse', value: fmt(openingFund + sessionCA) },
+              ].map(s => (
+                <div key={s.label} style={{
+                  background:'var(--bg3)', border:'1px solid var(--border)',
+                  borderRadius:10, padding:'10px 14px',
+                }}>
+                  <div style={{ fontSize:10, color:'var(--text3)', marginBottom:4, textTransform:'uppercase', letterSpacing:'.5px' }}>{s.label}</div>
+                  <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', fontFamily:'var(--mono)' }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+                Montant compté en caisse
+              </label>
+              <input className="input" type="number"
+                placeholder="Entrez le montant physique compté..."
+                id="counted-amount"
+                style={{ fontSize:14 }} />
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button
+                onClick={() => {
+                  const counted = parseFloat((document.getElementById('counted-amount') as HTMLInputElement)?.value || '0')
+                  const expected = openingFund + sessionCA
+                  const diff = counted - expected
+                  const win = window.open('', '_blank', 'width=400,height=600')
+                  if (win) {
+                    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rapport fermeture caisse</title>
+                    <style>body{font-family:'Courier New',monospace;font-size:12px;padding:20px;max-width:300px;margin:0 auto;}
+                    .center{text-align:center;}.bold{font-weight:bold;}.big{font-size:16px;font-weight:900;}
+                    .divider{border-top:1px dashed #000;margin:8px 0;}.row{display:flex;justify-content:space-between;margin:4px 0;}
+                    .ok{color:green;}.err{color:red;}</style></head><body>
+                    <div class="center"><div class="big">HabaShop</div><div>RAPPORT FERMETURE CAISSE</div>
+                    <div>Caisse 1 — ${new Date().toLocaleDateString('fr-FR')}</div></div>
+                    <div class="divider"></div>
+                    <div class="row"><span>Ouverture:</span><span>${openedAt?.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
+                    <div class="row"><span>Fermeture:</span><span>${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
+                    <div class="row"><span>Caissier:</span><span>Nelson D.</span></div>
+                    <div class="divider"></div>
+                    <div class="row"><span>Fond initial:</span><span>${openingFund.toLocaleString('fr-FR')} F</span></div>
+                    <div class="row"><span>Transactions:</span><span>${sessionTx}</span></div>
+                    <div class="row bold"><span>CA encaissé:</span><span>${sessionCA.toLocaleString('fr-FR')} F</span></div>
+                    <div class="divider"></div>
+                    <div class="row bold"><span>Attendu:</span><span>${expected.toLocaleString('fr-FR')} F</span></div>
+                    <div class="row bold"><span>Compté:</span><span>${counted.toLocaleString('fr-FR')} F</span></div>
+                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${diff.toLocaleString('fr-FR')} F</span></div>
+                    <div class="divider"></div>
+                    <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
+                    <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>
+                    </body></html>`)
+                    win.document.close()
+                  }
+                  setCashierOpen(false)
+                  setSessionTx(0)
+                  setSessionCA(0)
+                  setOpeningFundInput('')
+                  setShowCloseModal(false)
+                  toast.success('✅ Caisse fermée — Rapport imprimé')
+                }}
+                className="topbar-btn"
+                style={{ flex:1, justifyContent:'center', background:'linear-gradient(135deg,var(--danger),#dc2626)' }}
+              >🔒 Confirmer la fermeture</button>
+              <button className="mini-btn" style={{ padding:'10px 16px' }}
+                onClick={() => setShowCloseModal(false)}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showModal && (
         <div
           className="modal-backdrop"
