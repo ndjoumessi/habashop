@@ -278,7 +278,12 @@ export default function Header() {
           <input
             className="input"
             style={{ paddingLeft:34, width:240, fontSize:13 }}
-            placeholder="Rechercher produit, client..."
+            placeholder={
+              lang === 'fr' ? 'Rechercher produit, client...' :
+              lang === 'en' ? 'Search product, client...' :
+              lang === 'es' ? 'Buscar producto, cliente...' :
+              'Cerca prodotto, cliente...'
+            }
             value={searchQuery}
             onChange={e => handleSearch(e.target.value)}
             onFocus={() => { if (searchQuery.length >= 2) setShowResults(true) }}

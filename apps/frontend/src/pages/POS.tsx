@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useAppStore, useFormatAmount, t } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, t, convertAmount } from '@/stores/appStore'
+import type { Currency } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
 import { Search, Minus, Plus, Trash2, ShoppingCart, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -155,6 +156,19 @@ export default function POS() {
   // ─── CAISSE (état local uniquement pour l'input) ─
   const [openingFundInput, setOpeningFundInput] = useState('')
   const [showCloseModal, setShowCloseModal]     = useState(false)
+
+  // Fond de caisse : l'input est dans la devise active, on stocke en XOF
+  const inputValue  = parseFloat(openingFundInput) || 0
+  const fundInXOF   = convertAmount(inputValue, currency as Currency, 'XOF')
+  const displayFund = (() => {
+    if (['XOF', 'XAF'].includes(currency as string)) return `${inputValue.toLocaleString('fr-FR')} FCFA`
+    if (currency === 'EUR') return `${inputValue.toFixed(2)} €`
+    if (currency === 'USD') return `$ ${inputValue.toFixed(2)}`
+    return `CA$ ${inputValue.toFixed(2)}`
+  })()
+  const fundPreview = ['XOF', 'XAF'].includes(currency as string)
+    ? null
+    : `≈ ${Math.round(fundInXOF).toLocaleString('fr-FR')} FCFA`
 
   // Prix selon type client
   const getPrice = (p: typeof PRODUCTS[0]) => {
@@ -338,7 +352,7 @@ export default function POS() {
             </div>
             {openingFundInput && (
               <div style={{ marginTop:6, fontSize:12, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:600 }}>
-                = {fmt(parseFloat(openingFundInput) || 0)}
+                {fundPreview ?? displayFund}
               </div>
             )}
           </div>
@@ -363,9 +377,8 @@ export default function POS() {
           </div>
           <button
             onClick={() => {
-              const fund = parseFloat(openingFundInput) || 0
-              openCashier(fund)
-              toast.success(`✅ ${ct.cashier_label} ouverte — Fond: ${fmt(fund)}`)
+              openCashier(fundInXOF)
+              toast.success(`✅ ${ct.cashier_label} ouverte — Fond: ${displayFund}`)
             }}
             style={{
               width:'100%',
