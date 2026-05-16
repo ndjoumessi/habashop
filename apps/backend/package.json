@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate deploy",
     "db:seed": "ts-node --transpile-only prisma/seed.ts",
     "db:studio": "prisma studio",
     "lint": "eslint src --ext .ts",
