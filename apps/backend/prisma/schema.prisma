@@ -3,222 +3,231 @@ generator client {
 }
 
 datasource db {
-  provider = env("DB_PROVIDER")
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Tenant {
   id        String   @id @default(cuid())
   name      String
-  slug      String   @unique
   currency  String   @default("XOF")
-  language  String   @default("fr")
-  vatRate   Float    @default(0.18)
+  country   String   @default("SN")
+  plan      String   @default("starter")
+  vatRate   Float    @default(18)
   address   String?
   phone     String?
   email     String?
-  logoUrl   String?
+  logo      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  users      User[]
-  products   Product[]
-  sales      Sale[]
-  orders     Order[]
-  suppliers  Supplier[]
-  customers  Customer[]
-  employees  Employee[]
-  expenses   Expense[]
-  auditLogs  AuditLog[]
-  @@map("tenants")
+
+  users          User[]
+  products       Product[]
+  sales          Sale[]
+  customers      Customer[]
+  suppliers      Supplier[]
+  purchaseOrders PurchaseOrder[]
+  employees      Employee[]
+  expenses       Expense[]
+  auditLogs      AuditLog[]
 }
 
 model User {
   id           String    @id @default(cuid())
   tenantId     String
-  tenant       Tenant    @relation(fields: [tenantId], references: [id])
   name         String
-  email        String
+  email        String    @unique
   passwordHash String
   role         String    @default("CASHIER")
-  totpSecret   String?
-  totpEnabled  Boolean   @default(false)
-  active       Boolean   @default(true)
+  twoFASecret  String?
+  twoFAEnabled Boolean   @default(false)
+  isActive     Boolean   @default(true)
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  sales     Sale[]
-  auditLogs AuditLog[]
-  @@unique([tenantId, email])
-  @@map("users")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  sales          Sale[]          @relation("SaleCashier")
+  purchaseOrders PurchaseOrder[] @relation("OrderCreator")
+  auditLogs      AuditLog[]
 }
 
 model Product {
-  id          String    @id @default(cuid())
-  tenantId    String
-  tenant      Tenant    @relation(fields: [tenantId], references: [id])
-  sku         String
-  name        String
-  description String?
-  category    String
-  unit        String    @default("unité")
-  priceBuy    Float
-  priceSell   Float
-  stock       Int       @default(0)
-  threshold   Int       @default(5)
-  supplierId  String?
-  supplier    Supplier? @relation(fields: [supplierId], references: [id])
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  saleItems  SaleItem[]
-  orderItems OrderItem[]
-  @@unique([tenantId, sku])
-  @@map("products")
+  id                 String    @id @default(cuid())
+  tenantId           String
+  sku                String
+  name               String
+  description        String?
+  category           String
+  unit               String    @default("unité")
+  buyPrice           Float
+  sellPrice          Float
+  wholesalePrice     Float?
+  semiWholesalePrice Float?
+  stockQty           Int       @default(0)
+  stockMin           Int       @default(5)
+  supplierId         String?
+  barcode            String?
+  taxRate            Float     @default(18)
+  isActive           Boolean   @default(true)
+  hasPromotion       Boolean   @default(false)
+  promotionPrice     Float?
+  promotionEnd       DateTime?
+  emoji              String    @default("📦")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  saleItems SaleItem[]
 }
 
 model Sale {
-  id            String    @id @default(cuid())
-  tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id])
-  userId        String
-  user          User      @relation(fields: [userId], references: [id])
-  customerId    String?
-  customer      Customer? @relation(fields: [customerId], references: [id])
-  reference     String
-  totalHT       Float
-  vatAmount     Float
-  totalTTC      Float
-  paymentMethod String    @default("CASH")
-  status        String    @default("COMPLETED")
-  notes         String?
-  createdAt     DateTime  @default(now())
-  items SaleItem[]
-  @@map("sales")
+  id             String   @id @default(cuid())
+  tenantId       String
+  cashierId      String
+  total          Float
+  paymentMode    String   @default("cash")
+  discountAmount Float    @default(0)
+  discountType   String?
+  discountReason String?
+  clientType     String   @default("retail")
+  customerId     String?
+  createdAt      DateTime @default(now())
+
+  tenant  Tenant     @relation(fields: [tenantId], references: [id])
+  cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
+  items   SaleItem[]
 }
 
 model SaleItem {
-  id         String  @id @default(cuid())
-  saleId     String
-  sale       Sale    @relation(fields: [saleId], references: [id])
-  productId  String
-  product    Product @relation(fields: [productId], references: [id])
-  qty        Int
-  unitPrice  Float
-  totalPrice Float
-  @@map("sale_items")
-}
+  id        String @id @default(cuid())
+  saleId    String
+  productId String
+  qty       Int
+  unitPrice Float
+  total     Float
 
-model Order {
-  id         String    @id @default(cuid())
-  tenantId   String
-  tenant     Tenant    @relation(fields: [tenantId], references: [id])
-  supplierId String
-  supplier   Supplier  @relation(fields: [supplierId], references: [id])
-  reference  String
-  status     String    @default("DRAFT")
-  totalHT    Float     @default(0)
-  totalTTC   Float     @default(0)
-  expectedAt DateTime?
-  receivedAt DateTime?
-  notes      String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  items OrderItem[]
-  @@map("orders")
-}
-
-model OrderItem {
-  id         String  @id @default(cuid())
-  orderId    String
-  order      Order   @relation(fields: [orderId], references: [id])
-  productId  String
-  product    Product @relation(fields: [productId], references: [id])
-  qty        Int
-  unitPrice  Float
-  totalPrice Float
-  @@map("order_items")
-}
-
-model Supplier {
-  id        String   @id @default(cuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  name      String
-  email     String?
-  phone     String?
-  address   String?
-  country   String?
-  rating    Int      @default(3)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  products Product[]
-  orders   Order[]
-  @@map("suppliers")
+  sale    Sale    @relation(fields: [saleId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  name      String
-  email     String?
-  phone     String?
-  address   String?
-  type      String   @default("RETAIL")
-  loyalty   Int      @default(0)
-  balance   Float    @default(0)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  sales Sale[]
-  @@map("customers")
+  id            String   @id @default(cuid())
+  tenantId      String
+  name          String
+  type          String   @default("retail")
+  phone         String?
+  email         String?
+  address       String?
+  loyaltyPoints Int      @default(0)
+  totalRevenue  Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+model Supplier {
+  id         String   @id @default(cuid())
+  tenantId   String
+  name       String
+  categories String?
+  phone      String?
+  email      String?
+  address    String?
+  leadTime   Int      @default(3)
+  rating     Int      @default(3)
+  status     String   @default("Actif")
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id          String    @id @default(cuid())
+  tenantId    String
+  ref         String
+  supplierId  String
+  createdById String
+  status      String    @default("DRAFT")
+  total       Float
+  expectedAt  DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant    Tenant              @relation(fields: [tenantId], references: [id])
+  supplier  Supplier            @relation(fields: [supplierId], references: [id])
+  createdBy User                @relation("OrderCreator", fields: [createdById], references: [id])
+  items     PurchaseOrderItem[]
+}
+
+model PurchaseOrderItem {
+  id          String @id @default(cuid())
+  orderId     String
+  productName String
+  qty         Int
+  unitPrice   Float
+  total       Float
+
+  order PurchaseOrder @relation(fields: [orderId], references: [id])
 }
 
 model Employee {
-  id         String   @id @default(cuid())
-  tenantId   String
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
-  name       String
-  email      String?
-  phone      String?
-  position   String
-  department String?
-  salary     Float
-  hiredAt    DateTime
-  active     Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  @@map("employees")
+  id        String    @id @default(cuid())
+  tenantId  String
+  name      String
+  role      String
+  dept      String
+  type      String    @default("CDI")
+  salary    Float
+  phone     String?
+  email     String?
+  hiredAt   DateTime
+  endAt     DateTime?
+  isActive  Boolean   @default(true)
+  perf      Int       @default(3)
+  avatar    String
+  color     String    @default("#6C3FD6")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 }
 
 model Expense {
-  id          String   @id @default(cuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  date        DateTime
-  label       String
-  category    String
-  amountHT    Float
-  vat         Float    @default(0)
-  amountTTC   Float
-  paymentMode String   @default("CASH")
-  status      String   @default("PENDING")
-  notes       String?
-  createdAt   DateTime @default(now())
-  @@map("expenses")
+  id        String   @id @default(cuid())
+  tenantId  String
+  date      DateTime
+  label     String
+  category  String
+  amountHT  Float
+  vat       Float    @default(18)
+  amountTTC Float
+  mode      String
+  recurrent Boolean  @default(false)
+  status    String   @default("EN ATTENTE")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 }
 
 model AuditLog {
   id          String   @id @default(cuid())
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
+  userId      String
   module      String
   action      String
   description String
   ip          String?
+  severity    String   @default("info")
   createdAt   DateTime @default(now())
-  @@map("audit_logs")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 }

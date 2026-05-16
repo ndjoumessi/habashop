@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useNavigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, Package, Users, DollarSign } from 'lucide-react'
+import { dashboardApi } from '@/lib/api'
 
 const WEEK_BARS = [
   { label: 'Lun', h: 55, val: '520K' }, { label: 'Mar', h: 72, val: '680K' },
@@ -40,6 +42,24 @@ export default function Dashboard() {
   const navigate = useNavigate()
   void lang // subscribe for t() reactivity
 
+  const [stats, setStats] = useState({
+    salesToday: 842000,
+    transactionsToday: 47,
+    salesMonth: 2650000,
+    totalProducts: 248,
+    lowStockProducts: 3,
+    activeEmployees: 18,
+    pendingOrders: 4,
+  })
+
+  useEffect(() => {
+    dashboardApi.stats()
+      .then(data => setStats(data))
+      .catch(() => {
+        // Garde les données statiques si API non disponible
+      })
+  }, [])
+
   const dateStr = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
@@ -74,10 +94,10 @@ export default function Dashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('kpi_sales_today'),     value: fmt(842000),  sub: `▲ 12 % ${t('dash_vs_yesterday')}`,   up: true,  icon: <DollarSign size={18} /> },
-          { label: t('kpi_stock'),           value: '3 248',      sub: '▼ 8 alertes rupture',                up: false, icon: <Package size={18} />    },
-          { label: t('kpi_employees'),       value: '18/21',      sub: "3 absents aujourd'hui",              up: null,  icon: <Users size={18} />      },
-          { label: t('kpi_monthly_revenue'), value: fmt(2650000), sub: `▲ 7 % ${t('dash_vs_last_month')}`,   up: true,  icon: <TrendingUp size={18} /> },
+          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),  sub: `${stats.transactionsToday} transactions`,      up: true,  icon: <DollarSign size={18} /> },
+          { label: t('kpi_stock'),           value: String(stats.totalProducts), sub: `▼ ${stats.lowStockProducts} alertes rupture`, up: false, icon: <Package size={18} />    },
+          { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} commandes en attente`, up: null, icon: <Users size={18} />      },
+          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth), sub: `▲ 7 % ${t('dash_vs_last_month')}`,                  up: true,  icon: <TrendingUp size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: 'var(--p2)' }}>{k.icon}</div>

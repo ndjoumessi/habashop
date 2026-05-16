@@ -1,0 +1,13 @@
+{
+  "name": "HabaShop",
+  "short_name": "HabaShop",
+  "start_url": "/app/pos",
+  "display": "standalone",
+  "theme_color": "#5B4EE8",
+  "background_color": "#0C0B14",
+  "description": "Logiciel de gestion commerciale pour l'Afrique",
+  "icons": [
+    { "src": "/pwa-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/pwa-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

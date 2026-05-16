@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/stores/appStore'
 import type { Lang, Currency } from '@/stores/appStore'
+import { useAuthStore } from '@/stores/authStore'
 import PhoneInput from '@/components/ui/PhoneInput'
+import toast from 'react-hot-toast'
 
 const BUSINESS_TYPES: Record<Lang, string[]> = {
   fr: ['Commerce de détail', 'Grossiste / Semi-grossiste', 'Restauration & Alimentation', 'Supérette / Épicerie', 'Mode & Textile', 'Pharmacie & Santé', 'Électronique & Informatique', 'Autre'],
@@ -143,6 +145,7 @@ function SLabel({ children }: { children: React.ReactNode }) {
 export default function SignupPage() {
   const navigate = useNavigate()
   const { lang } = useAppStore()
+  const { register } = useAuthStore()
   const tx = SIGNUP_TEXTS[lang] ?? SIGNUP_TEXTS.fr
   const types = BUSINESS_TYPES[lang] ?? BUSINESS_TYPES.fr
 
@@ -187,9 +190,22 @@ export default function SignupPage() {
     if (form.password !== form.confirm) { setError(tx.errPassword); return }
     if (!form.acceptTerms) { setError(tx.errTerms); return }
     setLoading(true)
-    await new Promise(r => setTimeout(r, 1200))
-    setLoading(false)
-    navigate('/login')
+    try {
+      await register({
+        name: `${form.firstname} ${form.lastname}`,
+        email: form.email,
+        password: form.password,
+        shopName: form.shopName,
+        currency: form.currency,
+        country: form.country,
+      })
+      toast.success('✅ Compte créé ! Bienvenue sur HabaShop')
+      navigate('/app/dashboard')
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

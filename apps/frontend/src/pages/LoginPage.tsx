@@ -5,30 +5,25 @@ import { useConfig, t } from '@/stores/appStore'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
-  const navigate   = useNavigate()
-  const { login }  = useAuthStore()
-  const { lang }   = useConfig()
+  const navigate = useNavigate()
+  const { login, isLoading, error, clearError } = useAuthStore()
+  const { lang } = useConfig()
   void lang // for t() reactivity
 
-  const [email,    setEmail]    = useState('')
+  const [email,   setEmail]   = useState('')
   const [password, setPassword] = useState('')
-  const [showPwd,  setShowPwd]  = useState(false)
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
+  const [showPwd, setShowPwd] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    setLoading(true)
-    await new Promise(r => setTimeout(r, 700))
-    if (email && password) {
-      login({ id: '1', name: 'Nelson Djoumessi', email, role: 'admin', shopName: 'HabaShop — Dakar Central' }, 'demo-token')
+    clearError()
+    try {
+      await login(email, password)
       toast.success('Connexion réussie !')
       navigate('/app/dashboard')
-    } else {
-      setError(t('login_error'))
+    } catch {
+      // error already set in store
     }
-    setLoading(false)
   }
 
   return (
@@ -65,8 +60,8 @@ export default function LoginPage() {
               style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-60%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text2)', fontSize: 15 }}
             >{showPwd ? '🙈' : '👁'}</button>
           </div>
-          <button className="lbtn" type="submit" disabled={loading}>
-            {loading ? `⏳ ${t('login_loading')}` : `🔐 ${t('login_submit')}`}
+          <button className="lbtn" type="submit" disabled={isLoading}>
+            {isLoading ? `⏳ ${t('login_loading')}` : `🔐 ${t('login_submit')}`}
           </button>
         </form>
 
