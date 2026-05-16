@@ -107,6 +107,12 @@ export default function Suppliers() {
     name: '', categories: '', phone: '', email: '', address: '',
     contact: '', leadTime: 5, rating: 4, status: 'Actif' as SupplierStatus, notes: '',
   })
+  const [editSupplier,     setEditSupplier]     = useState<Supplier | null>(null)
+  const [showEditSuppModal, setShowEditSuppModal] = useState(false)
+  const [editSuppForm,     setEditSuppForm]     = useState({
+    name: '', categories: '', phone: '', email: '', address: '',
+    contact: '', leadTime: 5, rating: 4, status: 'Actif' as SupplierStatus, notes: '',
+  })
 
   const allCats = Array.from(new Set(suppliers.flatMap(s => s.categories)))
 
@@ -252,6 +258,16 @@ export default function Suppliers() {
                         onClick={() => toast.success(`📞 ${s.phone}`)}>
                         <Phone size={12} />
                       </button>
+                      <button className="btn btn-sm btn-ghost" title="Modifier" onClick={() => {
+                        setEditSupplier(s)
+                        setEditSuppForm({
+                          name: s.name, categories: s.categories.join(', '), phone: s.phone,
+                          email: s.email ?? '', address: s.address ?? '', contact: s.contact ?? '',
+                          leadTime: s.leadTime ?? 3, rating: s.rating ?? 3,
+                          status: s.status ?? 'Actif', notes: s.notes ?? '',
+                        })
+                        setShowEditSuppModal(true)
+                      }}>✏️</button>
                       <button className="btn btn-sm"
                         style={{ background: 'rgba(91,78,232,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                         onClick={() => navigate('/app/orders')}>
@@ -346,6 +362,74 @@ export default function Suppliers() {
                 📦 Nouvelle commande
               </button>
               <button className="btn btn-ghost" onClick={() => setViewSupplier(null)}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal modifier fournisseur ── */}
+      {showEditSuppModal && editSupplier && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowEditSuppModal(false)}>
+          <div className="modal-box" style={{ maxWidth: 540 }}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>✏️ Modifier — {editSupplier.name}</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowEditSuppModal(false)}><X size={14} /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label:'Nom / Raison sociale', key:'name',       span:true  },
+                { label:'Contact principal',     key:'contact',    span:false },
+                { label:'Email',                 key:'email',      span:false },
+                { label:'Adresse',               key:'address',    span:true  },
+                { label:'Catégories (séparées par ,)', key:'categories', span:true },
+              ].map(f => (
+                <div key={f.key} className={f.span ? 'col-span-2' : ''}>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
+                  <input className="input text-sm"
+                    value={(editSuppForm as Record<string,string|number>)[f.key] as string}
+                    onChange={e => setEditSuppForm(p => ({...p, [f.key]:e.target.value}))} />
+                </div>
+              ))}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Téléphone</label>
+                <input className="input text-sm" value={editSuppForm.phone}
+                  onChange={e => setEditSuppForm(p => ({...p, phone:e.target.value}))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Délai livraison (jours)</label>
+                <input className="input text-sm" type="number" value={editSuppForm.leadTime}
+                  onChange={e => setEditSuppForm(p => ({...p, leadTime:+e.target.value}))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Note (1-5)</label>
+                <input className="input text-sm" type="number" min={1} max={5} value={editSuppForm.rating}
+                  onChange={e => setEditSuppForm(p => ({...p, rating:+e.target.value}))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Statut</label>
+                <select className="input text-sm" value={editSuppForm.status}
+                  onChange={e => setEditSuppForm(p => ({...p, status:e.target.value as SupplierStatus}))}>
+                  <option>Actif</option><option>Pause</option><option>Inactif</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
+                <textarea className="input text-sm" rows={2} value={editSuppForm.notes}
+                  onChange={e => setEditSuppForm(p => ({...p, notes:e.target.value}))} />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button className="btn btn-ghost" onClick={() => setShowEditSuppModal(false)}>{t('btn_cancel')}</button>
+              <button className="btn btn-primary flex-1 justify-center" onClick={() => {
+                if (!editSuppForm.name) { toast.error('Nom requis'); return }
+                setSuppliers(prev => prev.map(s =>
+                  s.id === editSupplier.id
+                    ? { ...s, ...editSuppForm, categories: editSuppForm.categories.split(',').map(c => c.trim()).filter(Boolean) }
+                    : s
+                ))
+                setShowEditSuppModal(false)
+                toast.success(`✅ ${editSuppForm.name} mis à jour`)
+              }}>✅ Enregistrer</button>
             </div>
           </div>
         </div>

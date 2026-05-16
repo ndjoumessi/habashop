@@ -77,6 +77,15 @@ export default function Expenses() {
   const [budgetOpen, setBudgetOpen]       = useState(false)
   const [editBudgets, setEditBudgets]     = useState<Record<Category, number>>(BUDGETS_INIT)
 
+  // Modifier dépense
+  const [editExpense, setEditExpense]     = useState<Expense | null>(null)
+  const [showEditExpModal, setShowEditExpModal] = useState(false)
+  const [editExpForm, setEditExpForm]     = useState({
+    date: '', label: '', category: 'Loyer' as Category,
+    amountHT: 0, vat: 0, mode: '', recurrent: false, notes: '',
+  })
+  const editExpTTC = Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100))
+
   // New expense form
   const [nDate,      setNDate]      = useState('2026-05-14')
   const [nLabel,     setNLabel]     = useState('')
@@ -286,7 +295,20 @@ export default function Expenses() {
                         {e.status === 'EN ATTENTE' && (
                           <button className="mini-btn" title="Marquer payé" onClick={() => markPaid(e.id)}>✅</button>
                         )}
-                        <button className="mini-btn" title="Modifier" onClick={() => toast('✏️ Modification (demo)')}>✏️</button>
+                        <button className="mini-btn" title="Modifier" onClick={() => {
+                          setEditExpense(e)
+                          setEditExpForm({
+                            date: e.date,
+                            label: e.label,
+                            category: e.category,
+                            amountHT: e.amount,
+                            vat: e.vat,
+                            mode: e.mode,
+                            recurrent: e.recurrent,
+                            notes: '',
+                          })
+                          setShowEditExpModal(true)
+                        }}>✏️</button>
                         <button className="mini-btn" title="Supprimer" onClick={() => deleteExpense(e.id)}>🗑</button>
                       </div>
                     </td>
@@ -461,6 +483,110 @@ export default function Expenses() {
             <div style={{ display:'flex', gap:10, marginTop:20 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setAddOpen(false)}>Annuler</button>
               <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={addExpense}>✅ Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL Modifier dépense ── */}
+      {showEditExpModal && editExpense && (
+        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget && setShowEditExpModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>✏️ Modifier la dépense</span>
+              <button className="mini-btn" onClick={() => setShowEditExpModal(false)}><X size={15} /></button>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                <div>
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Date</label>
+                  <input className="input" type="date" value={editExpForm.date}
+                    onChange={e => setEditExpForm(f => ({...f, date:e.target.value}))}
+                    style={{ width:'100%', boxSizing:'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Catégorie</label>
+                  <select className="input" value={editExpForm.category}
+                    onChange={e => setEditExpForm(f => ({...f, category:e.target.value as Category}))}
+                    style={{ width:'100%', boxSizing:'border-box' }}>
+                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Libellé *</label>
+                <input className="input" value={editExpForm.label}
+                  onChange={e => setEditExpForm(f => ({...f, label:e.target.value}))}
+                  placeholder="Description de la dépense..."
+                  style={{ width:'100%', boxSizing:'border-box' }} />
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
+                <div>
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Montant HT</label>
+                  <input className="input" type="number" value={editExpForm.amountHT || ''}
+                    onChange={e => setEditExpForm(f => ({...f, amountHT:+e.target.value}))}
+                    style={{ width:'100%', boxSizing:'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>TVA (%)</label>
+                  <select className="input" value={editExpForm.vat}
+                    onChange={e => setEditExpForm(f => ({...f, vat:+e.target.value}))}
+                    style={{ width:'100%', boxSizing:'border-box' }}>
+                    {VAT_RATES.map(v => <option key={v} value={v}>{v} %</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>TTC</label>
+                  <div style={{
+                    padding:'10px 13px', background:'var(--bg4)',
+                    border:'1px solid var(--border)', borderRadius:10,
+                    fontSize:13, fontWeight:700, color:'var(--acc2)', fontFamily:'var(--mono)',
+                  }}>{fmt(editExpTTC)}</div>
+                </div>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                <div>
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Mode de paiement</label>
+                  <select className="input" value={editExpForm.mode}
+                    onChange={e => setEditExpForm(f => ({...f, mode:e.target.value}))}
+                    style={{ width:'100%', boxSizing:'border-box' }}>
+                    {MODES.map(m => <option key={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+                  <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}>
+                    <button type="button" onClick={() => setEditExpForm(f => ({...f, recurrent:!f.recurrent}))}
+                      style={{
+                        width:44, height:24, borderRadius:99,
+                        background: editExpForm.recurrent ? 'var(--p2)' : 'var(--bg4)',
+                        border:'none', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0,
+                      }}>
+                      <div style={{
+                        position:'absolute', top:2,
+                        left: editExpForm.recurrent ? 22 : 2,
+                        width:20, height:20, borderRadius:'50%',
+                        background:'#fff', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)',
+                      }} />
+                    </button>
+                    <span style={{ fontSize:13, color:'var(--text2)' }}>Dépense récurrente</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:10, marginTop:20 }}>
+              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setShowEditExpModal(false)}>Annuler</button>
+              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={() => {
+                if (!editExpForm.label || !editExpForm.amountHT) { toast.error('Libellé et montant requis'); return }
+                setExpenses(prev => prev.map(e =>
+                  e.id === editExpense.id
+                    ? { ...e, date:editExpForm.date, label:editExpForm.label, category:editExpForm.category,
+                        amount:editExpForm.amountHT, vat:editExpForm.vat, mode:editExpForm.mode,
+                        recurrent:editExpForm.recurrent }
+                    : e
+                ))
+                setShowEditExpModal(false)
+                toast.success(`✅ Dépense "${editExpForm.label}" modifiée`)
+              }}>✅ Enregistrer</button>
             </div>
           </div>
         </div>

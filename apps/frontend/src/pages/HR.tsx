@@ -273,6 +273,15 @@ export default function HR() {
   })
   const [expandedEmp, setExpandedEmp] = useState<number | null>(null)
 
+  // ── Modifier employé ──
+  const [editEmployee,     setEditEmployee]     = useState<Employee | null>(null)
+  const [showEditEmpModal, setShowEditEmpModal] = useState(false)
+  const [editEmpForm,      setEditEmpForm]      = useState({
+    name: '', role: '', dept: '', phone: '',
+    email: '', salary: 0, type: 'CDI' as 'CDI' | 'CDD',
+    hiredAt: '', active: true,
+  })
+
   // ── Pointage helpers ──
   const weekDays  = getWeekDays(currentWeek)
   const prevWeek  = () => { const d = new Date(currentWeek); d.setDate(d.getDate()-7); setCurrentWeek(d) }
@@ -547,9 +556,20 @@ export default function HR() {
                     <td className="td-num text-sm" style={{ color:'var(--acc2)' }}>{fmt(e.salary)}</td>
                     <td><span className={`badge ${e.active ? 'badge-green' : 'badge-gray'}`}>{e.active ? 'Actif' : 'Inactif'}</span></td>
                     <td>
-                      <button className="mini-btn gap-1" onClick={() => setViewEmp(e)}>
-                        <Eye size={12} /> Voir
-                      </button>
+                      <div style={{ display:'flex', gap:5 }}>
+                        <button className="mini-btn gap-1" onClick={() => setViewEmp(e)}>
+                          <Eye size={12} /> Voir
+                        </button>
+                        <button className="mini-btn" onClick={() => {
+                          setEditEmployee(e)
+                          setEditEmpForm({
+                            name: e.name, role: e.role, dept: e.dept, phone: e.phone,
+                            email: e.email ?? '', salary: e.salary, type: e.type as 'CDI' | 'CDD',
+                            hiredAt: e.hiredAt, active: e.active,
+                          })
+                          setShowEditEmpModal(true)
+                        }}>✏️</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1594,6 +1614,73 @@ export default function HR() {
                 onClick={() => { toast.success('Employé ajouté (demo)'); setAddOpen(false) }}>
                 Ajouter
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL Modifier employé ── */}
+      {showEditEmpModal && editEmployee && (
+        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget && setShowEditEmpModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:540 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+              <div>
+                <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>✏️ Modifier — {editEmployee.name}</h3>
+                <p style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>Modifiez les informations de l'employé</p>
+              </div>
+              <button className="mini-btn" onClick={() => setShowEditEmpModal(false)}><X size={15} /></button>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              {[
+                { label:'Nom complet *',  key:'name',  type:'text'  },
+                { label:'Poste *',        key:'role',  type:'text'  },
+                { label:'Email',          key:'email', type:'email' },
+              ].map(f => (
+                <div key={f.key} className={f.key === 'email' ? 'col-span-2' : ''}>
+                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{f.label}</label>
+                  <input className="input" type={f.type}
+                    value={(editEmpForm as Record<string,string|number|boolean>)[f.key] as string}
+                    onChange={e => setEditEmpForm(f2 => ({...f2, [f.key]:e.target.value}))} />
+                </div>
+              ))}
+              <div>
+                <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>Département</label>
+                <select className="input" value={editEmpForm.dept}
+                  onChange={e => setEditEmpForm(f => ({...f, dept:e.target.value}))}>
+                  {['Ventes','Stock','Finance','Direction','Logistique','RH'].map(d => <option key={d}>{d}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>Type contrat</label>
+                <select className="input" value={editEmpForm.type}
+                  onChange={e => setEditEmpForm(f => ({...f, type:e.target.value as 'CDI'|'CDD'}))}>
+                  <option value="CDI">CDI</option><option value="CDD">CDD</option>
+                  <option value="Intérim">Intérim</option><option value="Stage">Stage</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>Téléphone</label>
+                <PhoneInput value={editEmpForm.phone} onChange={phone => setEditEmpForm(f => ({...f, phone}))} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>Statut</label>
+                <select className="input" value={editEmpForm.active ? 'active' : 'inactive'}
+                  onChange={e => setEditEmpForm(f => ({...f, active:e.target.value==='active'}))}>
+                  <option value="active">Actif</option><option value="inactive">Inactif</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:20 }}>
+              <button className="btn btn-ghost btn-sm" style={{ flex:0 }} onClick={() => setShowEditEmpModal(false)}>Annuler</button>
+              <button className="btn btn-primary btn-sm" style={{ flex:1, justifyContent:'center' }}
+                onClick={() => {
+                  if (!editEmpForm.name || !editEmpForm.role) { toast.error('Nom et poste requis'); return }
+                  setEmployees(prev => prev.map(e =>
+                    e.id === editEmployee.id ? { ...e, ...editEmpForm } : e
+                  ))
+                  setShowEditEmpModal(false)
+                  toast.success(`✅ ${editEmpForm.name} mis à jour`)
+                }}>✅ Enregistrer les modifications</button>
             </div>
           </div>
         </div>

@@ -115,6 +115,11 @@ export default function Customers() {
   const [form, setForm] = useState({
     name: '', type: 'Détail' as ClientType, phone: '', email: '', address: '', notes: '',
   })
+  const [editCustomer,     setEditCustomer]     = useState<Customer | null>(null)
+  const [showEditCustModal, setShowEditCustModal] = useState(false)
+  const [editCustForm,     setEditCustForm]     = useState({
+    name: '', type: 'Détail' as ClientType, phone: '', email: '', address: '', notes: '',
+  })
 
   const filtered = customers.filter(c =>
     (!search || c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)) &&
@@ -249,6 +254,11 @@ export default function Customers() {
                       <button className="btn btn-sm btn-ghost" title="Voir fiche" onClick={() => setViewCustomer(c)}>
                         <Eye size={12} />
                       </button>
+                      <button className="btn btn-sm btn-ghost" title="Modifier" onClick={() => {
+                        setEditCustomer(c)
+                        setEditCustForm({ name:c.name, type:c.type, phone:c.phone, email:c.email??'', address:c.address??'', notes:c.notes??'' })
+                        setShowEditCustModal(true)
+                      }}>✏️</button>
                       <button className="btn btn-sm"
                         style={{ background: 'rgba(14,196,126,0.12)', color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                         onClick={() => toast.success(`🛒 Vente pour ${c.name}`)}>
@@ -343,6 +353,63 @@ export default function Customers() {
                 🛒 Nouvelle vente
               </button>
               <button className="btn btn-ghost" onClick={() => setViewCustomer(null)}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal modifier client ── */}
+      {showEditCustModal && editCustomer && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowEditCustModal(false)}>
+          <div className="modal-box" style={{ maxWidth: 480 }}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>✏️ Modifier — {editCustomer.name}</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowEditCustModal(false)}><X size={14} /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Nom / Enseigne</label>
+                <input className="input text-sm" value={editCustForm.name}
+                  onChange={e => setEditCustForm(f => ({...f, name:e.target.value}))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Type</label>
+                <select className="input text-sm" value={editCustForm.type}
+                  onChange={e => setEditCustForm(f => ({...f, type:e.target.value as ClientType}))}>
+                  <option>Grossiste</option><option>Semi-gros</option><option>Fidèle</option><option>Détail</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Téléphone</label>
+                <input className="input text-sm" value={editCustForm.phone}
+                  onChange={e => setEditCustForm(f => ({...f, phone:e.target.value}))} />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Email</label>
+                <input className="input text-sm" type="email" value={editCustForm.email}
+                  onChange={e => setEditCustForm(f => ({...f, email:e.target.value}))} />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Adresse</label>
+                <input className="input text-sm" value={editCustForm.address}
+                  onChange={e => setEditCustForm(f => ({...f, address:e.target.value}))} />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
+                <textarea className="input text-sm" rows={2} value={editCustForm.notes}
+                  onChange={e => setEditCustForm(f => ({...f, notes:e.target.value}))} />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button className="btn btn-ghost" onClick={() => setShowEditCustModal(false)}>{t('btn_cancel')}</button>
+              <button className="btn btn-primary flex-1 justify-center" onClick={() => {
+                if (!editCustForm.name) { toast.error('Nom requis'); return }
+                setCustomers(prev => prev.map(c =>
+                  c.id === editCustomer.id ? { ...c, ...editCustForm } : c
+                ))
+                setShowEditCustModal(false)
+                toast.success(`✅ ${editCustForm.name} mis à jour`)
+              }}>✅ Enregistrer</button>
             </div>
           </div>
         </div>

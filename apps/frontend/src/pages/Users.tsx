@@ -45,6 +45,9 @@ export default function Users() {
   const [showPerms, setShowPerms] = useState<Role | null>(null)
   const [form, setForm] = useState({ name: '', email: '', role: 'CASHIER' as Role, password: '', confirm: '' })
   const [showPwd, setShowPwd] = useState(false)
+  const [editUser,      setEditUser]      = useState<User | null>(null)
+  const [showEditUserModal, setShowEditUserModal] = useState(false)
+  const [editUserForm,  setEditUserForm]  = useState({ name: '', email: '', role: 'CASHIER' as Role, active: true, twoFA: false })
 
   const filtered = users.filter(u =>
     (!search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())) &&
@@ -219,7 +222,11 @@ export default function Users() {
                     </td>
                     <td>
                       <div className="flex gap-1.5">
-                        <button className="btn btn-sm btn-ghost" onClick={() => toast(`✏️ Modifier ${u.name}`)}>✏️</button>
+                        <button className="btn btn-sm btn-ghost" onClick={() => {
+                          setEditUser(u)
+                          setEditUserForm({ name:u.name, email:u.email, role:u.role, active:u.active, twoFA:u.twoFA })
+                          setShowEditUserModal(true)
+                        }}>✏️</button>
                         <button
                           className="btn btn-sm"
                           style={{
@@ -241,6 +248,86 @@ export default function Users() {
           </table>
         </div>
       </div>
+
+      {/* Modal modifier utilisateur */}
+      {showEditUserModal && editUser && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowEditUserModal(false)}>
+          <div className="modal-box" style={{ maxWidth: 480 }}>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>✏️ Modifier — {editUser.name}</h3>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>Modifier les informations de l'utilisateur</p>
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowEditUserModal(false)}><X size={14} /></button>
+            </div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Nom complet</label>
+                  <input className="input text-sm" value={editUserForm.name}
+                    onChange={e => setEditUserForm(f => ({...f, name:e.target.value}))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Rôle</label>
+                  <select className="input text-sm" value={editUserForm.role}
+                    onChange={e => setEditUserForm(f => ({...f, role:e.target.value as Role}))}>
+                    {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
+                      <option key={r} value={r}>{ROLE_CONFIG[r].label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Email</label>
+                <div className="relative">
+                  <Mail size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text3)' }} />
+                  <input className="input text-sm pl-8" type="email" value={editUserForm.email}
+                    onChange={e => setEditUserForm(f => ({...f, email:e.target.value}))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Statut</label>
+                  <select className="input text-sm" value={editUserForm.active ? 'active' : 'inactive'}
+                    onChange={e => setEditUserForm(f => ({...f, active:e.target.value==='active'}))}>
+                    <option value="active">Actif</option><option value="inactive">Inactif</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>2FA</label>
+                  <select className="input text-sm" value={editUserForm.twoFA ? 'enabled' : 'disabled'}
+                    onChange={e => setEditUserForm(f => ({...f, twoFA:e.target.value==='enabled'}))}>
+                    <option value="enabled">Activé</option><option value="disabled">Désactivé</option>
+                  </select>
+                </div>
+              </div>
+              {editUserForm.role && (
+                <div className="p-3 rounded-xl" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--p2)' }}>
+                    🛡️ Accès — {ROLE_CONFIG[editUserForm.role].label}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {PERMISSIONS[editUserForm.role].map(p => (
+                      <span key={p} className="badge badge-teal" style={{ fontSize: 10 }}>{p}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button className="btn btn-ghost" onClick={() => setShowEditUserModal(false)}>Annuler</button>
+              <button className="btn btn-primary flex-1 justify-center" onClick={() => {
+                if (!editUserForm.name || !editUserForm.email) { toast.error('Nom et email requis'); return }
+                setUsers(prev => prev.map(u =>
+                  u.id === editUser.id ? { ...u, ...editUserForm } : u
+                ))
+                setShowEditUserModal(false)
+                toast.success(`✅ ${editUserForm.name} mis à jour`)
+              }}>✅ Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal invitation */}
       {showModal && (

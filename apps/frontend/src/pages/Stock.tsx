@@ -42,6 +42,7 @@ export default function Stock() {
   const [cat, setCat]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [editingSku, setEditingSku] = useState<string | null>(null)
   const [modalTab, setModalTab] = useState<'general'|'prix'|'avance'>('general')
   const [form, setForm] = useState({
     sku: '', name: '', description: '', category: 'Céréales', unit: 'unité',
@@ -69,13 +70,25 @@ export default function Stock() {
     )
   })
 
-  const addProduct = () => {
-    const sku = form.sku || `PRD-${String(Date.now()).slice(-4)}`
-    setProducts(prev => [...prev, { ...form, sku, name: form.image + ' ' + form.name }])
-    setShowModal(false)
+  const resetForm = () => {
     setForm({ sku:'', name:'', description:'', category:'Céréales', unit:'unité', buy:0, sell:0, priceWholesale:0, priceSemiWholesale:0, stock:0, threshold:stockLowThreshold, supplier:'', barcode:'', taxRate:18, isActive:true, hasPromotion:false, promotionPrice:0, promotionEnd:'', image:'📦', notes:'' })
     setModalTab('general')
-    toast.success('✅ Produit ajouté !')
+    setEditingSku(null)
+  }
+
+  const saveProduct = () => {
+    if (editingSku) {
+      setProducts(prev => prev.map(p =>
+        p.sku === editingSku ? { ...p, name: form.image + ' ' + form.name, category: form.category, buy: form.buy, sell: form.sell, stock: form.stock, threshold: form.threshold, supplier: form.supplier } : p
+      ))
+      toast.success(`✅ ${form.name} mis à jour !`)
+    } else {
+      const sku = form.sku || `PRD-${String(Date.now()).slice(-4)}`
+      setProducts(prev => [...prev, { ...form, sku, name: form.image + ' ' + form.name }])
+      toast.success('✅ Produit ajouté !')
+    }
+    setShowModal(false)
+    resetForm()
   }
 
   return (
@@ -237,6 +250,7 @@ export default function Stock() {
                               stock: p.stock, threshold: p.threshold, supplier: p.supplier,
                               image: p.name.match(/^\S+/)?.[0] ?? '📦',
                             }))
+                            setEditingSku(p.sku)
                             setModalTab('general')
                             setShowModal(true)
                           }}>✏️</button>
@@ -299,8 +313,10 @@ export default function Stock() {
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal-box" style={{ maxWidth:560 }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>➕ {t('btn_new')} produit</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>✕</button>
+              <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>
+                {editingSku ? `✏️ Modifier — ${form.name || editingSku}` : `➕ ${t('btn_new')} produit`}
+              </h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setShowModal(false); resetForm() }}>✕</button>
             </div>
 
             {/* Onglets */}
@@ -493,8 +509,10 @@ export default function Stock() {
             )}
 
             <div className="flex gap-2 mt-5">
-              <button className="btn btn-primary flex-1 justify-center" onClick={addProduct}>✅ {t('btn_add')} le produit</button>
-              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>{t('btn_cancel')}</button>
+              <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct}>
+                ✅ {editingSku ? 'Enregistrer les modifications' : `${t('btn_add')} le produit`}
+              </button>
+              <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>{t('btn_cancel')}</button>
             </div>
           </div>
         </div>

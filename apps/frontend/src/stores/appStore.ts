@@ -135,6 +135,15 @@ interface AppStore extends AppConfig {
   setTheme:    (t: Theme)    => void
   setLang:     (l: Lang)     => void
   setCurrency: (c: Currency) => void
+  // Caisse persistante
+  cashierOpen: boolean
+  cashierOpenedAt: string | null
+  cashierOpeningFund: number
+  cashierSessionTx: number
+  cashierSessionCA: number
+  openCashier: (fund: number) => void
+  closeCashier: () => void
+  addCashierSale: (amount: number) => void
 }
 
 export const useAppStore = create<AppStore>()(
@@ -175,6 +184,34 @@ export const useAppStore = create<AppStore>()(
       setTheme:    (theme)    => { set({ theme });    document.documentElement.setAttribute('data-theme', theme) },
       setLang:     (lang)     => set({ lang }),
       setCurrency: (currency) => set({ currency }),
+
+      // Caisse persistante
+      cashierOpen:        false,
+      cashierOpenedAt:    null,
+      cashierOpeningFund: 0,
+      cashierSessionTx:   0,
+      cashierSessionCA:   0,
+
+      openCashier: (fund) => set({
+        cashierOpen:        true,
+        cashierOpenedAt:    new Date().toISOString(),
+        cashierOpeningFund: fund,
+        cashierSessionTx:   0,
+        cashierSessionCA:   0,
+      }),
+
+      closeCashier: () => set({
+        cashierOpen:        false,
+        cashierOpenedAt:    null,
+        cashierOpeningFund: 0,
+        cashierSessionTx:   0,
+        cashierSessionCA:   0,
+      }),
+
+      addCashierSale: (amount) => set(state => ({
+        cashierSessionTx: state.cashierSessionTx + 1,
+        cashierSessionCA: state.cashierSessionCA + amount,
+      })),
     }),
     {
       name: 'habashop-config',

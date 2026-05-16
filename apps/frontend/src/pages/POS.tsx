@@ -37,13 +37,107 @@ interface CartItem {
   emoji: string
 }
 
+// ─── TEXTES CAISSE i18n ─────────────────────
+const CASHIER_TEXTS = {
+  fr: {
+    closed_title: 'Caisse fermée',
+    closed_sub: 'Ouvrez la caisse pour commencer les ventes.',
+    fund_label: 'Fond de caisse initial',
+    fund_placeholder: 'Ex: 50 000',
+    cashier_label: 'Caisse 1',
+    open_btn: '🔓 Ouvrir la caisse',
+    close_btn: '🔒 Fermer',
+    close_title: 'Fermeture de caisse',
+    open_time: 'Heure ouverture',
+    close_time: 'Heure fermeture',
+    initial_fund: 'Fond de caisse',
+    transactions: 'Transactions',
+    ca_cashed: 'CA encaissé',
+    total_cash: 'Total en caisse',
+    counted_label: 'Montant compté en caisse',
+    counted_placeholder: 'Entrez le montant physique compté...',
+    confirm_close: '🔒 Confirmer la fermeture',
+    cancel: 'Annuler',
+    opened_on: 'Caisse ouverte le',
+  },
+  en: {
+    closed_title: 'Cash register closed',
+    closed_sub: 'Open the register to start sales.',
+    fund_label: 'Opening float',
+    fund_placeholder: 'Ex: 50,000',
+    cashier_label: 'Register 1',
+    open_btn: '🔓 Open register',
+    close_btn: '🔒 Close',
+    close_title: 'Close register',
+    open_time: 'Opening time',
+    close_time: 'Closing time',
+    initial_fund: 'Opening float',
+    transactions: 'Transactions',
+    ca_cashed: 'Revenue',
+    total_cash: 'Total in register',
+    counted_label: 'Counted amount',
+    counted_placeholder: 'Enter the physically counted amount...',
+    confirm_close: '🔒 Confirm closing',
+    cancel: 'Cancel',
+    opened_on: 'Register opened on',
+  },
+  es: {
+    closed_title: 'Caja cerrada',
+    closed_sub: 'Abra la caja para comenzar las ventas.',
+    fund_label: 'Fondo de caja inicial',
+    fund_placeholder: 'Ej: 50,000',
+    cashier_label: 'Caja 1',
+    open_btn: '🔓 Abrir caja',
+    close_btn: '🔒 Cerrar',
+    close_title: 'Cierre de caja',
+    open_time: 'Hora apertura',
+    close_time: 'Hora cierre',
+    initial_fund: 'Fondo inicial',
+    transactions: 'Transacciones',
+    ca_cashed: 'Ingresos',
+    total_cash: 'Total en caja',
+    counted_label: 'Importe contado',
+    counted_placeholder: 'Ingrese el importe contado físicamente...',
+    confirm_close: '🔒 Confirmar cierre',
+    cancel: 'Cancelar',
+    opened_on: 'Caja abierta el',
+  },
+  it: {
+    closed_title: 'Cassa chiusa',
+    closed_sub: 'Apri la cassa per iniziare le vendite.',
+    fund_label: 'Fondo cassa iniziale',
+    fund_placeholder: 'Es: 50.000',
+    cashier_label: 'Cassa 1',
+    open_btn: '🔓 Apri cassa',
+    close_btn: '🔒 Chiudi',
+    close_title: 'Chiusura cassa',
+    open_time: 'Ora apertura',
+    close_time: 'Ora chiusura',
+    initial_fund: 'Fondo iniziale',
+    transactions: 'Transazioni',
+    ca_cashed: 'Incasso',
+    total_cash: 'Totale in cassa',
+    counted_label: 'Importo contato',
+    counted_placeholder: 'Inserire l\'importo contato fisicamente...',
+    confirm_close: '🔒 Conferma chiusura',
+    cancel: 'Annulla',
+    opened_on: 'Cassa aperta il',
+  },
+}
+
 // ─── COMPOSANT ─────────────────────────────
 export default function POS() {
-  const { lang } = useAppStore()
-  void lang
+  const {
+    lang, currency,
+    cashierOpen, cashierOpenedAt,
+    cashierOpeningFund, cashierSessionTx, cashierSessionCA,
+    openCashier, closeCashier, addCashierSale,
+  } = useAppStore()
   const fmt = useFormatAmount()
   const LOCALE_MAP: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
   const locale = LOCALE_MAP[lang] ?? 'fr-FR'
+  const ct = CASHIER_TEXTS[lang as keyof typeof CASHIER_TEXTS] ?? CASHIER_TEXTS.fr
+  const currencySymbol = ({ XOF:'FCFA', XAF:'FCFA', EUR:'€', USD:'$', CAD:'CA$' } as Record<string, string>)[currency as string] ?? 'FCFA'
 
   const [cart, setCart]           = useState<CartItem[]>([])
   const [activeCat, setActiveCat] = useState('all')
@@ -51,19 +145,14 @@ export default function POS() {
   const [payMode, setPayMode]     = useState<'cash'|'card'|'mobile'>('cash')
   const [cashGiven, setCashGiven] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [sessionTx, setSessionTx] = useState(42)
-  const [sessionCA, setSessionCA] = useState(842500)
   const [clientType, setClientType] = useState<'retail'|'wholesale'|'semi'>('retail')
   const [discount, setDiscount] = useState<{ type:'percent'|'amount'; value:number; reason:string } | null>(null)
   const [showDiscountModal, setShowDiscountModal] = useState(false)
   const [discountForm, setDiscountForm] = useState({ type:'percent' as 'percent'|'amount', value:0, reason:'' })
 
-  // ─── CAISSE ────────────────────────────────
-  const [cashierOpen, setCashierOpen]         = useState(false)
-  const [openingFund, setOpeningFund]         = useState(0)
+  // ─── CAISSE (état local uniquement pour l'input) ─
   const [openingFundInput, setOpeningFundInput] = useState('')
-  const [showCloseModal, setShowCloseModal]   = useState(false)
-  const [openedAt, setOpenedAt]               = useState<Date | null>(null)
+  const [showCloseModal, setShowCloseModal]     = useState(false)
 
   // Prix selon type client
   const getPrice = (p: typeof PRODUCTS[0]) => {
@@ -176,8 +265,7 @@ export default function POS() {
   }
 
   const confirmSale = () => {
-    setSessionTx(n => n + 1)
-    setSessionCA(n => n + total)
+    addCashierSale(total)
     toast.success('✅ Vente encaissée !')
     setCart([])
     setShowModal(false)
@@ -206,21 +294,21 @@ export default function POS() {
             fontSize:36, margin:'0 auto 20px',
           }}>🔐</div>
           <h2 style={{ fontSize:22, fontWeight:900, color:'var(--text)', marginBottom:8, letterSpacing:'-0.5px' }}>
-            Caisse fermée
+            {ct.closed_title}
           </h2>
           <p style={{ fontSize:13, color:'var(--text2)', marginBottom:28, lineHeight:1.6 }}>
-            Ouvrez la caisse pour commencer les ventes. Entrez le fond de caisse initial.
+            {ct.closed_sub}
           </p>
           <div style={{ marginBottom:20, textAlign:'left' }}>
             <label style={{
               display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase',
               letterSpacing:'.5px', color:'var(--text3)', marginBottom:6,
-            }}>Fond de caisse initial</label>
+            }}>{ct.fund_label}</label>
             <div style={{ position:'relative' }}>
               <input
                 className="input"
                 type="number"
-                placeholder="Ex: 50 000"
+                placeholder={ct.fund_placeholder}
                 value={openingFundInput}
                 onChange={e => setOpeningFundInput(e.target.value)}
                 style={{ fontSize:16, textAlign:'right', paddingRight:60 }}
@@ -228,7 +316,7 @@ export default function POS() {
               <span style={{
                 position:'absolute', right:12, top:'50%', transform:'translateY(-50%)',
                 fontSize:12, fontWeight:700, color:'var(--text3)',
-              }}>FCFA</span>
+              }}>{currencySymbol}</span>
             </div>
             {openingFundInput && (
               <div style={{ marginTop:6, fontSize:12, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:600 }}>
@@ -251,17 +339,15 @@ export default function POS() {
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Nelson Djoumessi</div>
               <div style={{ fontSize:11, color:'var(--text3)' }}>
-                Caisse 1 · {new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })}
+                {ct.cashier_label} · {new Date().toLocaleDateString(locale, { weekday:'long', day:'numeric', month:'long' })}
               </div>
             </div>
           </div>
           <button
             onClick={() => {
               const fund = parseFloat(openingFundInput) || 0
-              setOpeningFund(fund)
-              setOpenedAt(new Date())
-              setCashierOpen(true)
-              toast.success(`✅ Caisse ouverte — Fond: ${fmt(fund)}`)
+              openCashier(fund)
+              toast.success(`✅ ${ct.cashier_label} ouverte — Fond: ${fmt(fund)}`)
             }}
             style={{
               width:'100%',
@@ -272,7 +358,7 @@ export default function POS() {
               boxShadow:'0 6px 20px rgba(91,78,232,.4)',
               display:'flex', alignItems:'center', justifyContent:'center', gap:8,
             }}
-          >🔓 Ouvrir la caisse</button>
+          >{ct.open_btn}</button>
         </div>
       </div>
     )
@@ -583,7 +669,7 @@ export default function POS() {
                   borderRadius:7, padding:'4px 10px',
                   cursor:'pointer', fontFamily:'var(--font)', fontWeight:600,
                 }}
-              >🔒 Fermer</button>
+              >{ct.close_btn}</button>
             </div>
           </div>
 
@@ -942,8 +1028,8 @@ export default function POS() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
               {[
-                { label: t('pos_transactions'),    value: sessionTx,      color: 'var(--acc2)', icon: '🧾', isNumber: true  },
-                { label: t('pos_session_revenue'), value: fmt(sessionCA), color: 'var(--acc)',  icon: '💰', isNumber: false },
+                { label: t('pos_transactions'),    value: cashierSessionTx,      color: 'var(--acc2)', icon: '🧾', isNumber: true  },
+                { label: t('pos_session_revenue'), value: fmt(cashierSessionCA), color: 'var(--acc)',  icon: '💰', isNumber: false },
               ].map(s => (
                 <div key={s.label} style={{
                   background: 'var(--bg3)',
@@ -1091,16 +1177,16 @@ export default function POS() {
         <div className="modal-backdrop" onClick={e => e.target===e.currentTarget && setShowCloseModal(false)}>
           <div className="modal-box" style={{ maxWidth:480 }}>
             <h3 style={{ fontSize:16, fontWeight:800, color:'var(--text)', marginBottom:20 }}>
-              🔒 Fermeture de caisse
+              {ct.close_title}
             </h3>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:20 }}>
               {[
-                { label:'Heure ouverture', value: openedAt?.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) ?? '--:--' },
-                { label:'Heure fermeture', value: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) },
-                { label:'Fond de caisse',  value: fmt(openingFund) },
-                { label:'Transactions',    value: String(sessionTx) },
-                { label:'CA encaissé',     value: fmt(sessionCA) },
-                { label:'Total en caisse', value: fmt(openingFund + sessionCA) },
+                { label: ct.open_time,    value: cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--' },
+                { label: ct.close_time,   value: new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) },
+                { label: ct.initial_fund, value: fmt(cashierOpeningFund) },
+                { label: ct.transactions, value: String(cashierSessionTx) },
+                { label: ct.ca_cashed,    value: fmt(cashierSessionCA) },
+                { label: ct.total_cash,   value: fmt(cashierOpeningFund + cashierSessionCA) },
               ].map(s => (
                 <div key={s.label} style={{
                   background:'var(--bg3)', border:'1px solid var(--border)',
@@ -1113,10 +1199,10 @@ export default function POS() {
             </div>
             <div style={{ marginBottom:20 }}>
               <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
-                Montant compté en caisse
+                {ct.counted_label}
               </label>
               <input className="input" type="number"
-                placeholder="Entrez le montant physique compté..."
+                placeholder={ct.counted_placeholder}
                 id="counted-amount"
                 style={{ fontSize:14 }} />
             </div>
@@ -1124,47 +1210,46 @@ export default function POS() {
               <button
                 onClick={() => {
                   const counted = parseFloat((document.getElementById('counted-amount') as HTMLInputElement)?.value || '0')
-                  const expected = openingFund + sessionCA
+                  const expected = cashierOpeningFund + cashierSessionCA
                   const diff = counted - expected
+                  const openedTime = cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--'
                   const win = window.open('', '_blank', 'width=400,height=600')
                   if (win) {
-                    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rapport fermeture caisse</title>
+                    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${ct.close_title}</title>
                     <style>body{font-family:'Courier New',monospace;font-size:12px;padding:20px;max-width:300px;margin:0 auto;}
                     .center{text-align:center;}.bold{font-weight:bold;}.big{font-size:16px;font-weight:900;}
                     .divider{border-top:1px dashed #000;margin:8px 0;}.row{display:flex;justify-content:space-between;margin:4px 0;}
                     .ok{color:green;}.err{color:red;}</style></head><body>
-                    <div class="center"><div class="big">HabaShop</div><div>RAPPORT FERMETURE CAISSE</div>
-                    <div>Caisse 1 — ${new Date().toLocaleDateString('fr-FR')}</div></div>
+                    <div class="center"><div class="big">HabaShop</div><div>${ct.close_title.toUpperCase()}</div>
+                    <div>${ct.cashier_label} — ${new Date().toLocaleDateString(locale)}</div></div>
                     <div class="divider"></div>
-                    <div class="row"><span>Ouverture:</span><span>${openedAt?.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
-                    <div class="row"><span>Fermeture:</span><span>${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
+                    <div class="row"><span>${ct.open_time}:</span><span>${openedTime}</span></div>
+                    <div class="row"><span>${ct.close_time}:</span><span>${new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'})}</span></div>
                     <div class="row"><span>Caissier:</span><span>Nelson D.</span></div>
                     <div class="divider"></div>
-                    <div class="row"><span>Fond initial:</span><span>${openingFund.toLocaleString('fr-FR')} F</span></div>
-                    <div class="row"><span>Transactions:</span><span>${sessionTx}</span></div>
-                    <div class="row bold"><span>CA encaissé:</span><span>${sessionCA.toLocaleString('fr-FR')} F</span></div>
+                    <div class="row"><span>${ct.initial_fund}:</span><span>${cashierOpeningFund.toLocaleString(locale)} ${currencySymbol}</span></div>
+                    <div class="row"><span>${ct.transactions}:</span><span>${cashierSessionTx}</span></div>
+                    <div class="row bold"><span>${ct.ca_cashed}:</span><span>${cashierSessionCA.toLocaleString(locale)} ${currencySymbol}</span></div>
                     <div class="divider"></div>
-                    <div class="row bold"><span>Attendu:</span><span>${expected.toLocaleString('fr-FR')} F</span></div>
-                    <div class="row bold"><span>Compté:</span><span>${counted.toLocaleString('fr-FR')} F</span></div>
-                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${diff.toLocaleString('fr-FR')} F</span></div>
+                    <div class="row bold"><span>Attendu:</span><span>${expected.toLocaleString(locale)} ${currencySymbol}</span></div>
+                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${counted.toLocaleString(locale)} ${currencySymbol}</span></div>
+                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${diff.toLocaleString(locale)} ${currencySymbol}</span></div>
                     <div class="divider"></div>
                     <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
                     <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>
                     </body></html>`)
                     win.document.close()
                   }
-                  setCashierOpen(false)
-                  setSessionTx(0)
-                  setSessionCA(0)
+                  closeCashier()
                   setOpeningFundInput('')
                   setShowCloseModal(false)
                   toast.success('✅ Caisse fermée — Rapport imprimé')
                 }}
                 className="topbar-btn"
                 style={{ flex:1, justifyContent:'center', background:'linear-gradient(135deg,var(--danger),#dc2626)' }}
-              >🔒 Confirmer la fermeture</button>
+              >{ct.confirm_close}</button>
               <button className="mini-btn" style={{ padding:'10px 16px' }}
-                onClick={() => setShowCloseModal(false)}>Annuler</button>
+                onClick={() => setShowCloseModal(false)}>{ct.cancel}</button>
             </div>
           </div>
         </div>
