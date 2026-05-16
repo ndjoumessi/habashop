@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore, useFormatAmount, formatCurrency, t, convertAmount } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
-import { salesApi } from '@/lib/api'
+import { salesApi, productsApi } from '@/lib/api'
 import { Search, Minus, Plus, Trash2, ShoppingCart, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -31,8 +31,10 @@ const PRODUCTS = [
   { id:12, name:'Lait concentré 397g',     price:1100,  priceWholesale:880,  priceSemiWholesale:990,  cat:'dairy',   emoji:'🥤', stock:95,  promotion:false, promotionPrice:0,    promotionEnd:'' },
 ]
 
+type PosProduct = typeof PRODUCTS[0] & { id: number | string }
+
 interface CartItem {
-  id: number
+  id: number | string
   name: string
   price: number
   qty: number
@@ -141,6 +143,26 @@ export default function POS() {
   const ct = CASHIER_TEXTS[lang as keyof typeof CASHIER_TEXTS] ?? CASHIER_TEXTS.fr
   const currencySymbol = ({ XOF:'FCFA', XAF:'FCFA', EUR:'€', USD:'$', CAD:'CA$' } as Record<string, string>)[currency as string] ?? 'FCFA'
 
+  const [posProducts, setPosProducts] = useState<PosProduct[]>(PRODUCTS)
+
+  useEffect(() => {
+    productsApi.list()
+      .then(data => setPosProducts(data.map((p: any): PosProduct => ({
+        id: p.id,
+        name: p.name,
+        price: p.sellPrice ?? 0,
+        priceWholesale: p.wholesalePrice ?? p.sellPrice ?? 0,
+        priceSemiWholesale: p.semiWholesalePrice ?? p.sellPrice ?? 0,
+        cat: (p.category || 'grocery').toLowerCase().replace(/[éè]/g, 'e').replace(/\s+/g, ''),
+        emoji: p.emoji || '📦',
+        stock: p.stockQty ?? 0,
+        promotion: p.hasPromotion ?? false,
+        promotionPrice: p.promotionPrice ?? 0,
+        promotionEnd: p.promotionEnd?.split('T')[0] ?? '',
+      }))))
+      .catch(() => {})
+  }, [])
+
   const [cart, setCart]           = useState<CartItem[]>([])
   const [activeCat, setActiveCat] = useState('all')
   const [search, setSearch]       = useState('')
@@ -171,20 +193,20 @@ export default function POS() {
     : `≈ ${Math.round(fundInXOF).toLocaleString('fr-FR')} FCFA`
 
   // Prix selon type client
-  const getPrice = (p: typeof PRODUCTS[0]) => {
+  const getPrice = (p: PosProduct) => {
     if (clientType === 'wholesale') return p.priceWholesale
     if (clientType === 'semi')      return p.priceSemiWholesale
     return p.promotion ? p.promotionPrice || p.price : p.price
   }
 
   // Filtrage produits
-  const filtered = PRODUCTS.filter(p =>
+  const filtered = posProducts.filter(p =>
     (activeCat === 'all' || p.cat === activeCat) &&
     p.name.toLowerCase().includes(search.toLowerCase())
   )
 
   // Actions panier
-  const addItem = (p: typeof PRODUCTS[0]) => {
+  const addItem = (p: PosProduct) => {
     const price = getPrice(p)
     setCart(prev => {
       const ex = prev.find(i => i.id === p.id)
@@ -193,14 +215,14 @@ export default function POS() {
     })
   }
 
-  const updateQty = (id: number, delta: number) => {
+  const updateQty = (id: number | string, delta: number) => {
     setCart(prev =>
       prev.map(i => i.id === id ? { ...i, qty: i.qty + delta } : i)
           .filter(i => i.qty > 0)
     )
   }
 
-  const removeItem = (id: number) => setCart(prev => prev.filter(i => i.id !== id))
+  const removeItem = (id: number | string) => setCart(prev => prev.filter(i => i.id !== id))
 
   // Calculs
   const VAT_RATE = 0.18
@@ -285,7 +307,9 @@ export default function POS() {
     try {
       await salesApi.create({
         items: cart.map(i => ({
-          productId: `demo-PRD-${String(i.id).padStart(3, '0')}`,
+          productId: /^\d+$/.test(String(i.id))
+            ? `demo-PRD-${String(i.id).padStart(3, '0')}`
+            : String(i.id),
           qty: i.qty,
           price: i.price,
         })),

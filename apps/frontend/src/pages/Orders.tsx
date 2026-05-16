@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { ordersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
@@ -80,11 +81,40 @@ const ORDERS_INIT: Order[] = [
 
 const STATUSES: OrderStatus[] = ['BROUILLON','ENVOYÉE','CONFIRMÉE','EN TRANSIT','REÇUE','ANNULÉE']
 
+const API_TO_LOCAL_STATUS: Record<string, OrderStatus> = {
+  DRAFT: 'BROUILLON', SENT: 'ENVOYÉE', CONFIRMED: 'CONFIRMÉE',
+  IN_TRANSIT: 'EN TRANSIT', RECEIVED: 'REÇUE', CANCELLED: 'ANNULÉE',
+}
+const LOCAL_TO_API_STATUS: Record<string, string> = {
+  BROUILLON: 'DRAFT', ENVOYÉE: 'SENT', CONFIRMÉE: 'CONFIRMED',
+  'EN TRANSIT': 'IN_TRANSIT', REÇUE: 'RECEIVED', ANNULÉE: 'CANCELLED',
+}
+
+function mapApiOrder(o: any): Order {
+  return {
+    id: o.id,
+    ref: o.ref,
+    supplier: o.supplier?.name || o.supplierId || '',
+    date: o.createdAt?.split('T')[0] ?? '',
+    expectedAt: o.expectedAt?.split('T')[0] ?? '',
+    status: (API_TO_LOCAL_STATUS[o.status] ?? 'BROUILLON') as OrderStatus,
+    total: o.total ?? 0,
+    items: (o.items || []).map((i: any) => ({ product: i.productName, qty: i.qty, unit: 'unité', unitPrice: i.unitPrice })),
+    notes: o.notes || '',
+  }
+}
+
 export default function Orders() {
   const { lang } = useConfig()
   void lang
   const fmt = useFormatAmount()
   const [orders, setOrders] = useState<Order[]>(ORDERS_INIT)
+
+  useEffect(() => {
+    ordersApi.list()
+      .then(data => setOrders(data.map(mapApiOrder)))
+      .catch(() => {})
+  }, [])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
   const [supplierFilter, setSupplierFilter] = useState('')
@@ -109,7 +139,8 @@ export default function Orders() {
   const receivedMonth = orders.filter(o => o.status === 'REÇUE').length
   const drafts        = orders.filter(o => o.status === 'BROUILLON').length
 
-  const changeStatus = (id: string, status: OrderStatus) => {
+  const changeStatus = async (id: string, status: OrderStatus) => {
+    try { await ordersApi.updateStatus(id, LOCAL_TO_API_STATUS[status] ?? status) } catch {}
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
     setViewOrder(prev => prev?.id === id ? { ...prev, status } : prev)
     toast.success(`Statut mis à jour → ${status}`)

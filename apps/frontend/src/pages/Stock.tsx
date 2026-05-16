@@ -1,11 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
+import { productsApi } from '@/lib/api'
 
-const PRODUCTS_INIT = [
+type ProductItem = {
+  _id?: string; sku: string; name: string; category: string
+  buy: number; sell: number; stock: number; threshold: number; supplier: string
+}
+
+const PRODUCTS_INIT: ProductItem[] = [
   { sku: 'PRD-001', name: '🌾 Riz parfumé 5kg',       category: 'Céréales',   buy: 3200, sell: 4500, stock: 12,  threshold: 20, supplier: 'SENRIZ'         },
   { sku: 'PRD-002', name: '🫙 Huile palme 1L',          category: 'Corps gras', buy: 1200, sell: 1800, stock: 18,  threshold: 25, supplier: 'SONACO'         },
   { sku: 'PRD-003', name: '🍚 Sucre 1kg',               category: 'Épicerie',   buy: 600,  sell: 850,  stock: 245, threshold: 50, supplier: 'CSS'            },
@@ -37,12 +43,13 @@ export default function Stock() {
   const navigate = useNavigate()
   void lang // for t() reactivity
 
-  const [products, setProducts] = useState(PRODUCTS_INIT)
+  const [products, setProducts] = useState<ProductItem[]>(PRODUCTS_INIT)
   const [search, setSearch]     = useState('')
   const [cat, setCat]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingSku, setEditingSku] = useState<string | null>(null)
+  const [editingId,  setEditingId]  = useState<string | null>(null)
   const [modalTab, setModalTab] = useState<'general'|'prix'|'avance'>('general')
   const [form, setForm] = useState({
     sku: '', name: '', description: '', category: 'Céréales', unit: 'unité',
@@ -74,17 +81,54 @@ export default function Stock() {
     setForm({ sku:'', name:'', description:'', category:'Céréales', unit:'unité', buy:0, sell:0, priceWholesale:0, priceSemiWholesale:0, stock:0, threshold:stockLowThreshold, supplier:'', barcode:'', taxRate:18, isActive:true, hasPromotion:false, promotionPrice:0, promotionEnd:'', image:'📦', notes:'' })
     setModalTab('general')
     setEditingSku(null)
+    setEditingId(null)
   }
 
-  const saveProduct = () => {
+  useEffect(() => {
+    productsApi.list()
+      .then(data => setProducts(data.map((p: any): ProductItem => ({
+        _id: p.id,
+        sku: p.sku || p.id.slice(-8),
+        name: `${p.emoji || '📦'} ${p.name}`,
+        category: p.category || 'Épicerie',
+        buy: p.buyPrice ?? 0,
+        sell: p.sellPrice ?? 0,
+        stock: p.stockQty ?? 0,
+        threshold: p.stockMin ?? 5,
+        supplier: '',
+      }))))
+      .catch(() => {})
+  }, [])
+
+  const saveProduct = async () => {
+    const sku = form.sku || `PRD-${String(Date.now()).slice(-4)}`
+    const apiBody = {
+      sku,
+      name: form.name,
+      emoji: form.image,
+      category: form.category,
+      buyPrice: form.buy,
+      sellPrice: form.sell,
+      stockQty: form.stock,
+      stockMin: form.threshold,
+      unit: form.unit,
+      taxRate: form.taxRate,
+      isActive: form.isActive,
+      hasPromotion: form.hasPromotion,
+      promotionPrice: form.promotionPrice || null,
+    }
     if (editingSku) {
+      if (editingId) {
+        try { await productsApi.update(editingId, apiBody) } catch {}
+      }
       setProducts(prev => prev.map(p =>
         p.sku === editingSku ? { ...p, name: form.image + ' ' + form.name, category: form.category, buy: form.buy, sell: form.sell, stock: form.stock, threshold: form.threshold, supplier: form.supplier } : p
       ))
       toast.success(`✅ ${form.name} mis à jour !`)
     } else {
-      const sku = form.sku || `PRD-${String(Date.now()).slice(-4)}`
-      setProducts(prev => [...prev, { ...form, sku, name: form.image + ' ' + form.name }])
+      let apiId: string | undefined
+      try { const created = await productsApi.create(apiBody); apiId = created.id } catch {}
+      setProducts(prev => [...prev, { _id: apiId, ...form, sku, name: form.image + ' ' + form.name }])
       toast.success('✅ Produit ajouté !')
     }
     setShowModal(false)
@@ -251,6 +295,7 @@ export default function Stock() {
                               image: p.name.match(/^\S+/)?.[0] ?? '📦',
                             }))
                             setEditingSku(p.sku)
+                            setEditingId(p._id ?? null)
                             setModalTab('general')
                             setShowModal(true)
                           }}>✏️</button>

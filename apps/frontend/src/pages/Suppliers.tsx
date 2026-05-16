@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { suppliersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Phone } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
@@ -92,12 +93,35 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
+function mapApiSupplier(s: any): Supplier {
+  return {
+    id: s.id,
+    name: s.name,
+    categories: s.categories ? s.categories.split(',').map((c: string) => c.trim()).filter(Boolean) : [],
+    phone: s.phone || '',
+    email: s.email || '',
+    address: s.address || '',
+    contact: '',
+    leadTime: s.leadTime ?? 3,
+    rating: s.rating ?? 3,
+    status: (s.status || 'Actif') as SupplierStatus,
+    orders: [],
+    notes: s.notes || '',
+  }
+}
+
 export default function Suppliers() {
   const navigate = useNavigate()
   const { lang } = useConfig()
   void lang
   const fmt = useFormatAmount()
   const [suppliers, setSuppliers] = useState(SUPPLIERS_INIT)
+
+  useEffect(() => {
+    suppliersApi.list()
+      .then(data => setSuppliers(data.map(mapApiSupplier)))
+      .catch(() => {})
+  }, [])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<SupplierStatus | ''>('')
   const [catFilter, setCatFilter] = useState('')
@@ -148,7 +172,7 @@ export default function Suppliers() {
     openPDF(t('suppliers_pdf_title'), body)
   }
 
-  const addSupplier = () => {
+  const addSupplier = async () => {
     const newS: Supplier = {
       id: String(Date.now()),
       name: form.name,
@@ -157,6 +181,10 @@ export default function Suppliers() {
       contact: form.contact, leadTime: form.leadTime, rating: form.rating,
       status: form.status, orders: [], notes: form.notes,
     }
+    try {
+      const created = await suppliersApi.create({ name: form.name, categories: form.categories, phone: form.phone, email: form.email, address: form.address, leadTime: form.leadTime, rating: form.rating, status: form.status, notes: form.notes })
+      newS.id = created.id
+    } catch {}
     setSuppliers(prev => [newS, ...prev])
     setShowCreate(false)
     setForm({ name: '', categories: '', phone: '', email: '', address: '', contact: '', leadTime: 5, rating: 4, status: 'Actif', notes: '' })
@@ -420,8 +448,9 @@ export default function Suppliers() {
             </div>
             <div className="flex gap-2 mt-5">
               <button className="btn btn-ghost" onClick={() => setShowEditSuppModal(false)}>{t('btn_cancel')}</button>
-              <button className="btn btn-primary flex-1 justify-center" onClick={() => {
+              <button className="btn btn-primary flex-1 justify-center" onClick={async () => {
                 if (!editSuppForm.name) { toast.error('Nom requis'); return }
+                try { await suppliersApi.update(editSupplier.id, { name: editSuppForm.name, categories: editSuppForm.categories, phone: editSuppForm.phone, email: editSuppForm.email, address: editSuppForm.address, leadTime: editSuppForm.leadTime, rating: editSuppForm.rating, status: editSuppForm.status, notes: editSuppForm.notes }) } catch {}
                 setSuppliers(prev => prev.map(s =>
                   s.id === editSupplier.id
                     ? { ...s, ...editSuppForm, categories: editSuppForm.categories.split(',').map(c => c.trim()).filter(Boolean) }

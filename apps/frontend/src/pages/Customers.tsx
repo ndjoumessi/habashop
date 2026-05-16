@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
@@ -103,11 +104,36 @@ function LoyaltyBar({ points, max }: { points: number; max: number }) {
   )
 }
 
+function mapApiCustomer(c: any): Customer {
+  return {
+    id: c.id,
+    name: c.name,
+    type: (c.type === 'wholesale' ? 'Grossiste' : c.type === 'semi-wholesale' ? 'Semi-gros' : c.type === 'loyal' ? 'Fidèle' : 'Détail') as ClientType,
+    phone: c.phone || '',
+    email: c.email || '',
+    address: c.address || '',
+    purchasesPerMonth: 0,
+    totalCA: c.totalRevenue ?? 0,
+    loyaltyPoints: c.loyaltyPoints ?? 0,
+    maxLoyalty: 1000,
+    since: c.createdAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],
+    lastPurchase: c.updatedAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],
+    purchases: [],
+    notes: c.notes || '',
+  }
+}
+
 export default function Customers() {
   const { lang } = useConfig()
   void lang
   const fmt = useFormatAmount()
   const [customers, setCustomers] = useState(CUSTOMERS_INIT)
+
+  useEffect(() => {
+    customersApi.list()
+      .then(data => setCustomers(data.map(mapApiCustomer)))
+      .catch(() => {})
+  }, [])
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<ClientType | ''>('')
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null)
@@ -155,7 +181,7 @@ export default function Customers() {
     openPDF(t('customers_pdf_title'), body)
   }
 
-  const addCustomer = () => {
+  const addCustomer = async () => {
     const newC: Customer = {
       id: String(Date.now()), name: form.name, type: form.type, phone: form.phone,
       email: form.email, address: form.address, purchasesPerMonth: 0, totalCA: 0,
@@ -164,6 +190,10 @@ export default function Customers() {
       lastPurchase: new Date().toISOString().split('T')[0],
       purchases: [], notes: form.notes,
     }
+    try {
+      const created = await customersApi.create({ name: form.name, phone: form.phone, email: form.email, address: form.address, notes: form.notes, type: form.type })
+      newC.id = created.id
+    } catch {}
     setCustomers(prev => [newC, ...prev])
     setShowCreate(false)
     setForm({ name: '', type: 'Détail', phone: '', email: '', address: '', notes: '' })
@@ -402,8 +432,9 @@ export default function Customers() {
             </div>
             <div className="flex gap-2 mt-5">
               <button className="btn btn-ghost" onClick={() => setShowEditCustModal(false)}>{t('btn_cancel')}</button>
-              <button className="btn btn-primary flex-1 justify-center" onClick={() => {
+              <button className="btn btn-primary flex-1 justify-center" onClick={async () => {
                 if (!editCustForm.name) { toast.error('Nom requis'); return }
+                try { await customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, notes: editCustForm.notes, type: editCustForm.type }) } catch {}
                 setCustomers(prev => prev.map(c =>
                   c.id === editCustomer.id ? { ...c, ...editCustForm } : c
                 ))

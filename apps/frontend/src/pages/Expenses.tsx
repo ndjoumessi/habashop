@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { expensesApi } from '@/lib/api'
 import { Download, Plus, X, Search, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
@@ -8,7 +9,7 @@ type Category = 'Loyer' | 'Énergie' | 'Transport' | 'Maintenance' | 'Fourniture
 type ExpStatus = 'PAYÉ' | 'EN ATTENTE'
 
 interface Expense {
-  id: number; date: string; label: string; category: Category
+  id: number; _apiId?: string; date: string; label: string; category: Category
   amount: number; vat: number; mode: string
   status: ExpStatus; recurrent: boolean
 }
@@ -58,12 +59,35 @@ function CatPill({ cat }: { cat: Category }) {
   )
 }
 
+let _expIdCounter = 1000
+
+function mapApiExpense(e: any): Expense {
+  return {
+    id: ++_expIdCounter,
+    _apiId: e.id,
+    date: e.date?.split('T')[0] ?? e.createdAt?.split('T')[0] ?? '',
+    label: e.label,
+    category: (e.category || 'Autre') as Category,
+    amount: e.amountHT ?? 0,
+    vat: e.vat ?? 0,
+    mode: e.mode || 'Espèces',
+    status: (e.status === 'PAYÉ' ? 'PAYÉ' : 'EN ATTENTE') as ExpStatus,
+    recurrent: e.recurrent ?? false,
+  }
+}
+
 export default function Expenses() {
   const { lang } = useConfig()
   void lang
   const fmt = useFormatAmount()
 
   const [expenses, setExpenses] = useState<Expense[]>(EXPENSES_INIT)
+
+  useEffect(() => {
+    expensesApi.list()
+      .then(data => setExpenses(data.map(mapApiExpense)))
+      .catch(() => {})
+  }, [])
   const [budgets, setBudgets]   = useState<Record<Category, number>>(BUDGETS_INIT)
   const [tab, setTab]           = useState<'journal' | 'budget'>('journal')
 
@@ -146,23 +170,31 @@ export default function Expenses() {
     openPDF(t('expense_pdf_title'), body)
   }
 
-  function markPaid(id: number) {
+  async function markPaid(id: number) {
+    const exp = expenses.find(e => e.id === id)
+    if (exp?._apiId) { try { await expensesApi.update(exp._apiId, { status: 'PAYÉ' }) } catch {} }
     setExpenses(prev => prev.map(e => e.id === id ? { ...e, status: 'PAYÉ' } : e))
     toast.success('Dépense marquée comme payée')
   }
 
-  function deleteExpense(id: number) {
+  async function deleteExpense(id: number) {
+    const exp = expenses.find(e => e.id === id)
+    if (exp?._apiId) { try { await expensesApi.delete(exp._apiId) } catch {} }
     setExpenses(prev => prev.filter(e => e.id !== id))
     toast.success('Dépense supprimée')
   }
 
-  function addExpense() {
+  async function addExpense() {
     if (!nLabel.trim() || !nHT) { toast.error('Libellé et montant requis'); return }
+    const ht = Math.round(parseFloat(nHT))
     const newExp: Expense = {
-      id: Date.now(), date: nDate, label: nLabel.trim(), category: nCat,
-      amount: Math.round(parseFloat(nHT)), vat: nVat,
-      mode: nMode, status: 'EN ATTENTE', recurrent: nRecurrent,
+      id: ++_expIdCounter, date: nDate, label: nLabel.trim(), category: nCat,
+      amount: ht, vat: nVat, mode: nMode, status: 'EN ATTENTE', recurrent: nRecurrent,
     }
+    try {
+      const created = await expensesApi.create({ date: new Date(nDate).toISOString(), label: nLabel.trim(), category: nCat, amountHT: ht, vat: nVat, amountTTC: nTTC, mode: nMode, recurrent: nRecurrent, notes: nNotes, status: 'EN ATTENTE' })
+      newExp._apiId = created.id
+    } catch {}
     setExpenses(prev => [newExp, ...prev])
     toast.success('Dépense enregistrée')
     setAddOpen(false)
@@ -575,8 +607,11 @@ export default function Expenses() {
             </div>
             <div style={{ display:'flex', gap:10, marginTop:20 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setShowEditExpModal(false)}>Annuler</button>
-              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={() => {
+              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={async () => {
                 if (!editExpForm.label || !editExpForm.amountHT) { toast.error('Libellé et montant requis'); return }
+                if (editExpense._apiId) {
+                  try { await expensesApi.update(editExpense._apiId, { date: new Date(editExpForm.date).toISOString(), label: editExpForm.label, category: editExpForm.category, amountHT: editExpForm.amountHT, vat: editExpForm.vat, amountTTC: Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100)), mode: editExpForm.mode, recurrent: editExpForm.recurrent }) } catch {}
+                }
                 setExpenses(prev => prev.map(e =>
                   e.id === editExpense.id
                     ? { ...e, date:editExpForm.date, label:editExpForm.label, category:editExpForm.category,

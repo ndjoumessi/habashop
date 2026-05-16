@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { employeesApi } from '@/lib/api'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
 import { Download, Plus, Eye, X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import PhoneInput from '@/components/ui/PhoneInput'
@@ -9,7 +10,7 @@ import toast from 'react-hot-toast'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Employee {
-  id: number; name: string; role: string; dept: string; salary: number
+  id: number; _apiId?: string; name: string; role: string; dept: string; salary: number
   type: 'CDI' | 'CDD'; hiredAt: string; endAt?: string
   avatar: string; color: string; active: boolean
   phone: string; email: string; perf?: number
@@ -233,6 +234,30 @@ function ContractStatus({ emp }: { emp: Employee }) {
   return <span className="badge badge-green">Actif</span>
 }
 
+let _empIdCounter = 100
+
+function mapApiEmployee(e: any): Employee {
+  const colors = ['#6C3FD6','#F59E0B','#10B981','#EF4444','#3B82F6','#8B5CF6','#EC4899','#14B8A6']
+  const avatar = (e.name || '??').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+  return {
+    id: ++_empIdCounter,
+    _apiId: e.id,
+    name: e.name,
+    role: e.role || '',
+    dept: e.dept || 'Ventes',
+    salary: e.salary ?? 0,
+    type: (e.type === 'CDD' ? 'CDD' : 'CDI') as 'CDI' | 'CDD',
+    hiredAt: e.hiredAt ? new Date(e.hiredAt).toLocaleDateString('fr-FR') : '',
+    endAt: e.endAt ? new Date(e.endAt).toLocaleDateString('fr-FR') : undefined,
+    avatar,
+    color: e.color || colors[_empIdCounter % colors.length],
+    active: e.isActive ?? true,
+    phone: e.phone || '',
+    email: e.email || '',
+    perf: e.perf ?? 3,
+  }
+}
+
 // ── Module principal ──────────────────────────────────────────────────────────
 
 export default function HR() {
@@ -243,6 +268,12 @@ export default function HR() {
 
   // ── État employés (mutable) ──
   const [employees,    setEmployees]    = useState<Employee[]>(EMPLOYEES_INIT)
+
+  useEffect(() => {
+    employeesApi.list()
+      .then(data => setEmployees(data.map(mapApiEmployee)))
+      .catch(() => {})
+  }, [])
 
   // ── Navigation ──
   const [tab,          setTab]          = useState<'team'|'contracts'|'attendance'|'leaves'|'salary'>('team')
@@ -1611,7 +1642,27 @@ export default function HR() {
             <div style={{ display:'flex', gap:10, marginTop:20 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setAddOpen(false)}>Annuler</button>
               <button className="btn btn-primary btn-sm" style={{ flex:1 }}
-                onClick={() => { toast.success('Employé ajouté (demo)'); setAddOpen(false) }}>
+                onClick={async () => {
+                  if (!newEmp.name || !newEmp.role) { toast.error('Nom et poste requis'); return }
+                  const colors = ['#6C3FD6','#F59E0B','#10B981','#EF4444','#3B82F6','#8B5CF6']
+                  const avatar = newEmp.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()
+                  const localEmp: Employee = {
+                    id: ++_empIdCounter,
+                    name: newEmp.name, role: newEmp.role, dept: newEmp.dept || 'Ventes',
+                    salary: Number(newEmp.salary) || 0, type: newEmp.type as 'CDI'|'CDD',
+                    hiredAt: new Date().toLocaleDateString('fr-FR'),
+                    avatar, color: colors[_empIdCounter % colors.length],
+                    active: true, phone: newEmp.phone, email: newEmp.email,
+                  }
+                  try {
+                    const created = await employeesApi.create({ name: newEmp.name, role: newEmp.role, dept: newEmp.dept || 'Ventes', salary: Number(newEmp.salary) || 0, type: newEmp.type, phone: newEmp.phone, email: newEmp.email, hiredAt: new Date().toISOString(), isActive: true, avatar, color: localEmp.color, perf: 3 })
+                    localEmp._apiId = created.id
+                  } catch {}
+                  setEmployees(prev => [...prev, localEmp])
+                  setNewEmp({ name:'', role:'', dept:'', salary:'', type:'CDI', phone:'', email:'' })
+                  setAddOpen(false)
+                  toast.success(`✅ ${localEmp.name} ajouté !`)
+                }}>
                 Ajouter
               </button>
             </div>
@@ -1673,8 +1724,11 @@ export default function HR() {
             <div style={{ display:'flex', gap:8, marginTop:20 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex:0 }} onClick={() => setShowEditEmpModal(false)}>Annuler</button>
               <button className="btn btn-primary btn-sm" style={{ flex:1, justifyContent:'center' }}
-                onClick={() => {
+                onClick={async () => {
                   if (!editEmpForm.name || !editEmpForm.role) { toast.error('Nom et poste requis'); return }
+                  if (editEmployee._apiId) {
+                    try { await employeesApi.update(editEmployee._apiId, { name: editEmpForm.name, role: editEmpForm.role, dept: editEmpForm.dept, salary: editEmpForm.salary, type: editEmpForm.type, phone: editEmpForm.phone, email: editEmpForm.email, isActive: editEmpForm.active }) } catch {}
+                  }
                   setEmployees(prev => prev.map(e =>
                     e.id === editEmployee.id ? { ...e, ...editEmpForm } : e
                   ))

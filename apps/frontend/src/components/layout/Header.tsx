@@ -203,6 +203,14 @@ export default function Header() {
   const [searchQuery,    setSearchQuery]    = useState('')
   const [searchResults,  setSearchResults]  = useState<typeof SEARCH_INDEX>([])
   const [showResults,    setShowResults]    = useState(false)
+  const [apiStatus,      setApiStatus]      = useState<'online'|'offline'|'checking'>('checking')
+
+  useEffect(() => {
+    const BASE = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:3001'
+    fetch(`${BASE}/health`, { signal: AbortSignal.timeout(4000) })
+      .then(r => setApiStatus(r.ok ? 'online' : 'offline'))
+      .catch(() => setApiStatus('offline'))
+  }, [])
 
   const newMenuRef = useRef<HTMLDivElement>(null)
   const notifsRef  = useRef<HTMLDivElement>(null)
@@ -380,6 +388,24 @@ export default function Header() {
             <div style={{ fontSize:11, color:'var(--text3)' }}>Aucun résultat pour « {searchQuery} »</div>
           </div>
         )}
+      </div>
+
+      {/* ── Indicateur API ── */}
+      <div title={apiStatus === 'online' ? 'API connectée' : apiStatus === 'offline' ? 'API hors ligne' : 'Connexion…'}
+        style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 8px', borderRadius:20,
+          background: apiStatus === 'online' ? 'rgba(14,196,126,.12)' : apiStatus === 'offline' ? 'rgba(239,68,68,.12)' : 'rgba(240,165,0,.12)',
+          border: `1px solid ${apiStatus === 'online' ? 'rgba(14,196,126,.3)' : apiStatus === 'offline' ? 'rgba(239,68,68,.3)' : 'rgba(240,165,0,.3)'}`,
+          cursor:'default',
+        }}>
+        <span style={{ width:7, height:7, borderRadius:'50%',
+          background: apiStatus === 'online' ? 'var(--acc2)' : apiStatus === 'offline' ? 'var(--danger)' : 'var(--acc)',
+          display:'inline-block',
+          boxShadow: apiStatus === 'online' ? '0 0 6px var(--acc2)' : undefined,
+          animation: apiStatus === 'checking' ? 'pulse 1.4s ease-in-out infinite' : undefined,
+        }} />
+        <span style={{ fontSize:10, fontWeight:600, color: apiStatus === 'online' ? 'var(--acc2)' : apiStatus === 'offline' ? 'var(--danger)' : 'var(--acc)' }}>
+          {apiStatus === 'online' ? 'Live' : apiStatus === 'offline' ? 'Hors ligne' : '…'}
+        </span>
       </div>
 
       <LanguageSwitcher />
