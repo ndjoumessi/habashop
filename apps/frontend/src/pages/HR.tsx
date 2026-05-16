@@ -783,7 +783,7 @@ export default function HR() {
                     value={getPointage(editPointage.empId, editPointage.dayIndex)?.arrive ?? '08:00'}
                     onChange={e => {
                       const key = getPointageKey(editPointage.empId, editPointage.dayIndex)
-                      setPointageEdits(prev => ({ ...prev, [key]: { ...(prev[key] ?? {}), arrive:e.target.value } }))
+                      setPointageEdits(prev => ({ ...prev, [key]: { ...(prev[key] ?? {}), arrive:e.target.value } } as any))
                     }} />
                 </div>
                 <div>
@@ -792,7 +792,7 @@ export default function HR() {
                     value={getPointage(editPointage.empId, editPointage.dayIndex)?.depart ?? '17:00'}
                     onChange={e => {
                       const key = getPointageKey(editPointage.empId, editPointage.dayIndex)
-                      setPointageEdits(prev => ({ ...prev, [key]: { ...(prev[key] ?? {}), depart:e.target.value } }))
+                      setPointageEdits(prev => ({ ...prev, [key]: { ...(prev[key] ?? {}), depart:e.target.value } } as any))
                     }} />
                 </div>
               </div>
