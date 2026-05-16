@@ -1,15 +1,14 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "nodePackages.npm"]
+nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm install --ignore-scripts"]
 
 [phases.build]
 cmds = [
   "npx prisma generate",
-  "npx prisma migrate deploy",
-  "npm run build"
+  "npx tsc"
 ]
 
 [start]
-cmd = "node dist/server.js"
+cmd = "npx prisma migrate deploy && node dist/server.js"
