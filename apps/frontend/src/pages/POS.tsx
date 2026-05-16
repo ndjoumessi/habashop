@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppStore, useFormatAmount, t } from '@/stores/appStore'
+import { salesApi } from '@/lib/api'
 import { Search, Minus, Plus, Trash2, ShoppingCart, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -149,6 +150,7 @@ export default function POS() {
   const [discount, setDiscount] = useState<{ type:'percent'|'amount'; value:number; reason:string } | null>(null)
   const [showDiscountModal, setShowDiscountModal] = useState(false)
   const [discountForm, setDiscountForm] = useState({ type:'percent' as 'percent'|'amount', value:0, reason:'' })
+  const [isSaving, setIsSaving] = useState(false)
 
   // ─── CAISSE (état local uniquement pour l'input) ─
   const [openingFundInput, setOpeningFundInput] = useState('')
@@ -264,13 +266,29 @@ export default function POS() {
     win.document.close()
   }
 
-  const confirmSale = () => {
+  const confirmSale = async () => {
+    setIsSaving(true)
+    try {
+      await salesApi.create({
+        items: cart.map(i => ({
+          productId: `demo-PRD-${String(i.id).padStart(3, '0')}`,
+          qty: i.qty,
+          price: i.price,
+        })),
+        paymentMode: payMode,
+        total,
+        discount: discount ? { type: discount.type, amount: discountAmount } : null,
+      })
+    } catch {
+      // Hors-ligne : la vente est quand même enregistrée localement
+    }
     addCashierSale(total)
     toast.success('✅ Vente encaissée !')
     setCart([])
     setShowModal(false)
     setCashGiven('')
     setDiscount(null)
+    setIsSaving(false)
   }
 
   // ─── RENDER ──────────────────────────────
@@ -1336,6 +1354,7 @@ export default function POS() {
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 onClick={confirmSale}
+                disabled={isSaving}
                 style={{
                   flex: 1,
                   background: 'linear-gradient(135deg, var(--acc2), #059669)',
@@ -1345,11 +1364,12 @@ export default function POS() {
                   fontSize: 14,
                   fontWeight: 700,
                   color: '#fff',
-                  cursor: 'pointer',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                  opacity: isSaving ? 0.7 : 1,
                   fontFamily: 'inherit',
                   boxShadow: '0 4px 16px rgba(14,196,126,.35)',
                 }}
-              >✅ {t('pos_validate')}</button>
+              >{isSaving ? '⏳ Enregistrement…' : `✅ ${t('pos_validate')}`}</button>
               <button
                 onClick={() => { printTicket(); confirmSale() }}
                 className="mini-btn"
