@@ -20,8 +20,16 @@ async function start() {
   const app = Fastify({ logger: true })
 
   // ─── PLUGINS ────────────────────────────
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'https://habashop.vercel.app',
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  ]
   await app.register(cors, {
-    origin: ['http://localhost:5173', process.env.FRONTEND_URL ?? '*'],
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
+      cb(new Error('CORS not allowed'), false)
+    },
     credentials: true,
   })
 
