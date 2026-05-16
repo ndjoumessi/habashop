@@ -79,13 +79,17 @@ export default function PhoneInput({
         placeholder={placeholder}
         value={phoneNumber}
         onChange={e => onChange(`${selectedCode.code} ${e.target.value}`)}
-        className="input"
         style={{
           flex:1, minWidth:0,
-          padding:'10px 13px',
+          padding:'11px 14px',
+          background:'var(--bg3)',
+          border:'1.5px solid var(--border)',
           borderLeft:'1px solid var(--border)',
           borderRadius:'0 10px 10px 0',
-          fontSize:14,
+          fontSize:14, color:'var(--text)',
+          fontFamily:'var(--font)',
+          outline:'none',
+          transition:'border-color .15s',
         }}
         onFocus={e => (e.target as HTMLElement).style.borderColor = 'var(--p2)'}
         onBlur={e  => (e.target as HTMLElement).style.borderColor = 'var(--border)'}
