@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, convertAmount } from '@/stores/appStore'
 import type { Lang, Currency } from '@/stores/appStore'
@@ -439,27 +438,14 @@ export default function LandingPage() {
   const { lang, setLang, currency, setCurrency } = useAppStore()
   const lp = (LANDING_TRANSLATIONS as Record<string, typeof LANDING_TRANSLATIONS.fr>)[lang] ?? LANDING_TRANSLATIONS.fr
 
-  const [showSignupModal, setShowSignupModal] = useState(false)
-  const [signupForm, setSignupForm] = useState({
-    shopName: '', name: '', email: '',
-    password: '', confirm: '', country: 'SN',
-    currency: 'XOF' as Currency,
-    plan: 'starter' as 'starter' | 'business',
-  })
-  const [signupStep, setSignupStep] = useState(1)
-
-  const sym = currency === 'XOF' || currency === 'XAF' ? 'FCFA' :
-              currency === 'EUR' ? '€' :
-              currency === 'USD' ? '$' : 'CA$'
-  const symBefore = ['USD', 'CAD'].includes(currency)
-
-  const convertedPrice = (amountInXOF: number): string => {
-    const converted = convertAmount(amountInXOF, 'XOF', currency as Currency)
-    const isAnglo = ['USD', 'CAD'].includes(currency)
-    return new Intl.NumberFormat(isAnglo ? 'en-US' : 'fr-FR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(converted)
+  const formatPlanPrice = (amountXOF: number): string => {
+    const converted = convertAmount(amountXOF, 'XOF', currency as Currency)
+    const rounded = Math.round(converted)
+    if (currency === 'XOF' || currency === 'XAF') return new Intl.NumberFormat('fr-FR').format(rounded) + ' FCFA'
+    if (currency === 'EUR') return new Intl.NumberFormat('fr-FR').format(rounded) + ' €'
+    if (currency === 'USD') return '$ ' + new Intl.NumberFormat('en-US').format(rounded)
+    if (currency === 'CAD') return 'CA$ ' + new Intl.NumberFormat('en-US').format(rounded)
+    return rounded.toString()
   }
 
   const features = [
@@ -690,7 +676,7 @@ export default function LandingPage() {
         </p>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 72 }}>
-          <button onClick={() => { setSignupForm(f => ({...f, plan:'starter'})); setShowSignupModal(true) }} style={{
+          <button onClick={() => navigate('/signup')} style={{
             background: `linear-gradient(135deg,${S.lp},${S.lp2})`, color: '#fff', border: 'none',
             borderRadius: 13, padding: '15px 36px', fontSize: 15, fontWeight: 700, cursor: 'pointer',
             boxShadow: '0 10px 32px rgba(91,78,232,.4)', transition: 'all .22s', fontFamily: 'inherit',
@@ -870,27 +856,21 @@ export default function LandingPage() {
                 <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: '#fff', color: S.lp, fontSize: 10, fontWeight: 800, padding: '4px 14px', borderRadius: 100, whiteSpace: 'nowrap', border: `1.5px solid ${S.lborder2}`, boxShadow: '0 2px 8px rgba(91,78,232,.15)' }}>{p.tag}</div>
               )}
               <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: p.pop ? 'rgba(255,255,255,.75)' : S.ltext2, marginBottom: 12 }}>{p.name}</div>
-              <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: p.pop ? '#fff' : S.ltext }}>
-                {p.price !== lp.on_estimate ? (
-                  <>
-                    {symBefore && (
-                      <span style={{ fontSize: 20, fontWeight: 600, opacity: .7 }}>{sym}{' '}</span>
-                    )}
-                    {p.name === 'Starter' ? convertedPrice(14410) : p.name === 'Business' ? convertedPrice(34750) : ''}
-                    {!symBefore && (
-                      <span style={{ fontSize: 18, fontWeight: 600, opacity: .65 }}>{' '}{sym}{p.period}</span>
-                    )}
-                    {symBefore && p.period && (
-                      <span style={{ fontSize: 18, fontWeight: 600, opacity: .65 }}>{p.period}</span>
-                    )}
-                  </>
-                ) : (
+              <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: p.pop ? '#fff' : S.ltext }}>
+                {p.name === 'Enterprise' ? (
                   <span style={{ fontSize: 28 }}>{lp.on_estimate}</span>
+                ) : (
+                  formatPlanPrice(p.name === 'Starter' ? 14410 : 34750)
                 )}
               </div>
-              {p.price !== lp.on_estimate && (
-                <div style={{ fontSize: 11, color: p.pop ? 'rgba(255,255,255,.6)' : S.ltext3, marginTop: 4, marginBottom: 12 }}>
-                  {currency !== 'XOF' && `≈ ${p.name === 'Starter' ? '14 410' : '34 750'} FCFA / ${lang === 'fr' ? 'mois' : lang === 'en' ? 'month' : lang === 'es' ? 'mes' : 'mese'}`}
+              {p.name !== 'Enterprise' && (
+                <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.65)' : S.ltext2, marginTop: 2 }}>
+                  {lp.per_month}
+                </div>
+              )}
+              {p.name !== 'Enterprise' && currency !== 'XOF' && currency !== 'XAF' && (
+                <div style={{ fontSize: 11, color: p.pop ? 'rgba(255,255,255,.5)' : S.ltext3, marginTop: 4, marginBottom: 4 }}>
+                  ≈ {new Intl.NumberFormat('fr-FR').format(p.name === 'Starter' ? 14410 : 34750)} FCFA
                 </div>
               )}
               <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.65)' : S.ltext2, marginBottom: 24 }}>{p.sub}</div>
@@ -905,8 +885,7 @@ export default function LandingPage() {
               </div>
               <button
                 onClick={() => {
-                  if (p.name === 'Starter') { setSignupForm(f => ({...f, plan:'starter'})); setShowSignupModal(true) }
-                  else if (p.name === 'Business') { setSignupForm(f => ({...f, plan:'business'})); setShowSignupModal(true) }
+                  if (p.name === 'Starter' || p.name === 'Business') navigate('/signup')
                   else navigate('/login')
                 }}
                 style={{
@@ -953,7 +932,7 @@ export default function LandingPage() {
         <p style={{ color: 'rgba(255,255,255,.8)', fontSize: 17, marginBottom: 36, maxWidth: 520, margin: '0 auto 36px', position: 'relative' }}>
           {lp.cta_sub}
         </p>
-        <button onClick={() => { setSignupForm(f => ({...f, plan:'starter'})); setShowSignupModal(true) }} style={{
+        <button onClick={() => navigate('/signup')} style={{
           background: '#fff', color: S.lp, border: 'none', borderRadius: 13,
           padding: '15px 40px', fontSize: 15, fontWeight: 800, cursor: 'pointer',
           boxShadow: '0 12px 36px rgba(0,0,0,.2)', position: 'relative', fontFamily: 'inherit',
@@ -968,266 +947,6 @@ export default function LandingPage() {
           {lp.cta_note}
         </div>
       </section>
-
-      {/* ── SIGNUP MODAL ── */}
-      {showSignupModal && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(0,0,0,.5)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'center', padding: 20,
-        }}
-          onClick={e => e.target === e.currentTarget && setShowSignupModal(false)}
-        >
-          <div style={{
-            background: '#fff', borderRadius: 20,
-            padding: '36px 40px', width: '100%',
-            maxWidth: 480, position: 'relative',
-            boxShadow: '0 40px 100px rgba(0,0,0,.25)',
-          }}>
-            <button onClick={() => setShowSignupModal(false)}
-              style={{
-                position: 'absolute', top: 16, right: 16,
-                background: '#f0effe', border: 'none',
-                borderRadius: '50%', width: 32, height: 32,
-                cursor: 'pointer', fontSize: 16, color: '#5B4EE8',
-              }}>✕</button>
-
-            <div style={{ textAlign: 'center', marginBottom: 28 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 14,
-                background: 'linear-gradient(135deg,#5B4EE8,#7C6FF0)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 24, fontWeight: 900, color: '#fff',
-                margin: '0 auto 12px',
-                boxShadow: '0 8px 24px rgba(91,78,232,.35)',
-              }}>H</div>
-              <h2 style={{ fontSize: 20, fontWeight: 900, color: '#1a1a2e', marginBottom: 4 }}>
-                {signupStep === 1 ? 'Créer votre compte' : 'Votre boutique'}
-              </h2>
-              <p style={{ fontSize: 13, color: '#888' }}>
-                {signupStep === 1
-                  ? 'Plan ' + (signupForm.plan === 'business' ? 'Business' : 'Starter') + ' · 14 jours gratuits'
-                  : 'Configurez votre espace commercial'}
-              </p>
-              <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 14 }}>
-                {[1, 2].map(step => (
-                  <div key={step} style={{
-                    height: 4, width: 40, borderRadius: 99,
-                    background: step <= signupStep ? '#5B4EE8' : '#e5e7eb',
-                    transition: 'background .3s',
-                  }} />
-                ))}
-              </div>
-            </div>
-
-            {signupStep === 1 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {[
-                  { label: 'Nom complet *', key: 'name', type: 'text', placeholder: 'Prénom Nom' },
-                  { label: 'Email *', key: 'email', type: 'email', placeholder: 'vous@email.com' },
-                  { label: 'Mot de passe *', key: 'password', type: 'password', placeholder: 'Min. 8 caractères' },
-                  { label: 'Confirmer le mot de passe *', key: 'confirm', type: 'password', placeholder: 'Répétez le mot de passe' },
-                ].map(f => (
-                  <div key={f.key}>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
-                      {f.label}
-                    </label>
-                    <input
-                      type={f.type}
-                      style={{
-                        width: '100%', padding: '11px 14px',
-                        border: '1.5px solid #e5e7eb', borderRadius: 10,
-                        fontSize: 14, fontFamily: 'inherit', outline: 'none',
-                        transition: 'border-color .15s', boxSizing: 'border-box',
-                      }}
-                      placeholder={f.placeholder}
-                      value={(signupForm as Record<string, string>)[f.key]}
-                      onChange={e => setSignupForm(form => ({ ...form, [f.key]: e.target.value }))}
-                      onFocus={e => (e.target as HTMLElement).style.borderColor = '#5B4EE8'}
-                      onBlur={e => (e.target as HTMLElement).style.borderColor = '#e5e7eb'}
-                    />
-                  </div>
-                ))}
-                <button
-                  onClick={() => {
-                    if (!signupForm.name || !signupForm.email || !signupForm.password) {
-                      alert('Veuillez remplir tous les champs')
-                      return
-                    }
-                    if (signupForm.password !== signupForm.confirm) {
-                      alert('Les mots de passe ne correspondent pas')
-                      return
-                    }
-                    if (signupForm.password.length < 8) {
-                      alert('Le mot de passe doit contenir au moins 8 caractères')
-                      return
-                    }
-                    setSignupStep(2)
-                  }}
-                  style={{
-                    width: '100%', padding: '13px',
-                    background: 'linear-gradient(135deg,#5B4EE8,#7C6FF0)',
-                    border: 'none', borderRadius: 12,
-                    fontSize: 15, fontWeight: 800, color: '#fff',
-                    cursor: 'pointer', fontFamily: 'inherit',
-                    boxShadow: '0 6px 20px rgba(91,78,232,.38)',
-                    marginTop: 4,
-                  }}
-                >Continuer →</button>
-                <p style={{ textAlign: 'center', fontSize: 12, color: '#888', margin: 0 }}>
-                  Déjà un compte ?{' '}
-                  <span
-                    onClick={() => { setShowSignupModal(false); navigate('/login') }}
-                    style={{ color: '#5B4EE8', fontWeight: 700, cursor: 'pointer' }}
-                  >Se connecter</span>
-                </p>
-              </div>
-            )}
-
-            {signupStep === 2 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
-                    Nom de votre boutique *
-                  </label>
-                  <input
-                    style={{
-                      width: '100%', padding: '11px 14px',
-                      border: '1.5px solid #e5e7eb', borderRadius: 10,
-                      fontSize: 14, fontFamily: 'inherit', outline: 'none',
-                      transition: 'border-color .15s', boxSizing: 'border-box',
-                    }}
-                    placeholder="Ex: Supermarché Central"
-                    value={signupForm.shopName}
-                    onChange={e => setSignupForm(f => ({ ...f, shopName: e.target.value }))}
-                    onFocus={e => (e.target as HTMLElement).style.borderColor = '#5B4EE8'}
-                    onBlur={e => (e.target as HTMLElement).style.borderColor = '#e5e7eb'}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
-                    Pays
-                  </label>
-                  <select
-                    value={signupForm.country}
-                    onChange={e => setSignupForm(f => ({ ...f, country: e.target.value }))}
-                    style={{
-                      width: '100%', padding: '11px 14px',
-                      border: '1.5px solid #e5e7eb', borderRadius: 10,
-                      fontSize: 14, fontFamily: 'inherit', outline: 'none',
-                      background: '#fff', cursor: 'pointer', boxSizing: 'border-box',
-                    }}
-                  >
-                    <option value="SN">🇸🇳 Sénégal</option>
-                    <option value="CI">🇨🇮 Côte d'Ivoire</option>
-                    <option value="ML">🇲🇱 Mali</option>
-                    <option value="BF">🇧🇫 Burkina Faso</option>
-                    <option value="CM">🇨🇲 Cameroun</option>
-                    <option value="CG">🇨🇬 Congo</option>
-                    <option value="CD">🇨🇩 RD Congo</option>
-                    <option value="GA">🇬🇦 Gabon</option>
-                    <option value="NE">🇳🇪 Niger</option>
-                    <option value="TG">🇹🇬 Togo</option>
-                    <option value="BJ">🇧🇯 Bénin</option>
-                    <option value="GN">🇬🇳 Guinée</option>
-                    <option value="FR">🇫🇷 France</option>
-                    <option value="BE">🇧🇪 Belgique</option>
-                    <option value="CA">🇨🇦 Canada</option>
-                    <option value="US">🇺🇸 États-Unis</option>
-                    <option value="OTHER">🌍 Autre</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
-                    Devise principale
-                  </label>
-                  <select
-                    value={signupForm.currency}
-                    onChange={e => setSignupForm(f => ({ ...f, currency: e.target.value as Currency }))}
-                    style={{
-                      width: '100%', padding: '11px 14px',
-                      border: '1.5px solid #e5e7eb', borderRadius: 10,
-                      fontSize: 14, fontFamily: 'inherit', outline: 'none',
-                      background: '#fff', cursor: 'pointer', boxSizing: 'border-box',
-                    }}
-                  >
-                    <option value="XOF">🌍 Franc CFA BCEAO (XOF)</option>
-                    <option value="XAF">🌍 Franc CFA BEAC (XAF)</option>
-                    <option value="EUR">🇪🇺 Euro (EUR)</option>
-                    <option value="USD">🇺🇸 Dollar US (USD)</option>
-                    <option value="CAD">🇨🇦 Dollar Canadien (CAD)</option>
-                  </select>
-                </div>
-                <div style={{
-                  padding: '12px 16px', borderRadius: 10,
-                  background: 'rgba(91,78,232,.06)',
-                  border: '1px solid rgba(91,78,232,.2)',
-                  display: 'flex', justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>
-                      Plan {signupForm.plan === 'business' ? 'Business' : 'Starter'}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#888' }}>
-                      14 jours gratuits · Sans carte bancaire
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSignupForm(f => ({ ...f, plan: f.plan === 'business' ? 'starter' : 'business' }))}
-                    style={{
-                      fontSize: 11, color: '#5B4EE8', background: 'none',
-                      border: 'none', cursor: 'pointer', fontWeight: 700,
-                      fontFamily: 'inherit',
-                    }}
-                  >Changer</button>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={() => setSignupStep(1)}
-                    style={{
-                      padding: '12px 20px',
-                      background: '#f0effe',
-                      border: 'none', borderRadius: 12,
-                      fontSize: 14, fontWeight: 700,
-                      color: '#5B4EE8', cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >← Retour</button>
-                  <button
-                    onClick={() => {
-                      if (!signupForm.shopName) {
-                        alert('Nom de boutique requis')
-                        return
-                      }
-                      setCurrency(signupForm.currency)
-                      setShowSignupModal(false)
-                      setSignupStep(1)
-                      navigate('/login')
-                    }}
-                    style={{
-                      flex: 1, padding: '12px',
-                      background: 'linear-gradient(135deg,#5B4EE8,#7C6FF0)',
-                      border: 'none', borderRadius: 12,
-                      fontSize: 14, fontWeight: 800, color: '#fff',
-                      cursor: 'pointer', fontFamily: 'inherit',
-                      boxShadow: '0 6px 20px rgba(91,78,232,.38)',
-                    }}
-                  >🚀 Créer mon compte gratuitement</button>
-                </div>
-                <p style={{ textAlign: 'center', fontSize: 11, color: '#aaa', margin: 0 }}>
-                  En créant un compte vous acceptez nos{' '}
-                  <span style={{ color: '#5B4EE8', cursor: 'pointer' }}>CGU</span>
-                  {' '}et notre{' '}
-                  <span style={{ color: '#5B4EE8', cursor: 'pointer' }}>politique de confidentialité</span>
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* ── FOOTER ── */}
       <footer style={{ background: '#0f0e1a', color: 'rgba(255,255,255,.45)', padding: '36px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, fontSize: 12.5 }}>

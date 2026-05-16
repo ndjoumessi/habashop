@@ -50,15 +50,17 @@ const LANG_META: { code: Lang; flag: string; name: string; native: string }[] = 
   { code: 'it', flag: '🇮🇹', name: 'Italiano',  native: 'Europa' },
 ]
 
-const ACCENT_COLORS = Object.entries(ACCENT_PAIRS).map(([hex, pair]) => ({
-  hex,
-  name: hex === '#5B4EE8' ? 'Violet' :
-        hex === '#3B82F6' ? 'Bleu' :
-        hex === '#10B981' ? 'Vert' :
-        hex === '#F59E0B' ? 'Orange' :
-        hex === '#EF4444' ? 'Rouge' : 'Rose',
-  p2: pair.p2,
-}))
+function getAccentColors() {
+  return Object.entries(ACCENT_PAIRS).map(([hex, pair]) => ({
+    hex,
+    nameKey: hex === '#5B4EE8' ? 'color_violet' :
+             hex === '#3B82F6' ? 'color_blue' :
+             hex === '#10B981' ? 'color_green' :
+             hex === '#F59E0B' ? 'color_orange' :
+             hex === '#EF4444' ? 'color_red' : 'color_pink',
+    p2: pair.p2,
+  }))
+}
 
 const VAT_OPTIONS = [0, 5, 10, 18, 20]
 
@@ -162,9 +164,9 @@ export default function Settings() {
     reader.onload = ev => {
       try {
         cfg.importConfig(ev.target?.result as string)
-        toast.success('Configuration importée !')
+        toast.success(t('settings_import_success'))
       } catch {
-        toast.error('Fichier de configuration invalide')
+        toast.error(t('settings_import_error'))
       }
     }
     reader.readAsText(file)
@@ -252,7 +254,7 @@ export default function Settings() {
 
               {/* Logo */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🖼️ Logo de la boutique</span></div>
+                <div className="panel-head"><span className="panel-title">🖼️ {t('settings_logo')}</span></div>
                 <div className="flex items-center gap-5">
                   <div style={{
                     width: 80, height: 80, borderRadius: 16, overflow: 'hidden',
@@ -265,17 +267,18 @@ export default function Settings() {
                     }
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>
-                      {cfg.shopLogo ? 'Logo actuel — cliquez pour remplacer' : 'Aucun logo — formats PNG, JPG, SVG recommandés'}
+                    <p className="text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
+                      {cfg.shopLogo ? t('settings_logo_change') : t('settings_logo_none')}
                     </p>
+                    <p className="text-xs mb-2" style={{ color: 'var(--text3)' }}>{t('settings_logo_formats')}</p>
                     <label className="btn btn-ghost gap-2 cursor-pointer" style={{ display: 'inline-flex' }}>
-                      <Upload size={14} /> Choisir une image
+                      <Upload size={14} /> {t('settings_logo_upload')}
                       <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
                     </label>
                     {cfg.shopLogo && (
                       <button className="btn btn-ghost gap-2 ml-2" style={{ color: 'var(--danger)' }}
-                        onClick={() => { cfg.updateConfig({ shopLogo: null }); toast.success('Logo supprimé') }}>
-                        <X size={14} /> Supprimer
+                        onClick={() => { cfg.updateConfig({ shopLogo: null }); toast.success(t('settings_saved')) }}>
+                        <X size={14} /> {t('btn_delete')}
                       </button>
                     )}
                   </div>
@@ -449,8 +452,8 @@ export default function Settings() {
                 <div className="panel-head"><span className="panel-title">🎨 {t('settings_theme')}</span></div>
                 <div className="flex gap-3">
                   {[
-                    { id: 'dark',  label: t('settings_dark'),  emoji: '🌙', desc: 'Recommandé — réduit la fatigue visuelle' },
-                    { id: 'light', label: t('settings_light'), emoji: '☀️', desc: 'Adapté aux environnements lumineux' },
+                    { id: 'dark',  label: t('settings_dark'),  emoji: '🌙', desc: t('settings_dark_desc') },
+                    { id: 'light', label: t('settings_light'), emoji: '☀️', desc: t('settings_light_desc') },
                   ].map(th => (
                     <div key={th.id}
                       className="flex-1 p-4 rounded-xl cursor-pointer transition-all"
@@ -473,7 +476,7 @@ export default function Settings() {
               <div className="panel">
                 <div className="panel-head"><span className="panel-title">🖌️ {t('settings_accent_color')}</span></div>
                 <div className="flex gap-3 flex-wrap">
-                  {ACCENT_COLORS.map(ac => (
+                  {getAccentColors().map(ac => (
                     <div key={ac.hex}
                       className="flex flex-col items-center gap-2 cursor-pointer"
                       onClick={() => cfg.updateConfig({ accentColor: ac.hex })}
@@ -487,25 +490,25 @@ export default function Settings() {
                         transition: 'all .15s',
                       }} />
                       <span className="text-xs font-medium" style={{ color: cfg.accentColor === ac.hex ? 'var(--text)' : 'var(--text3)' }}>
-                        {ac.name}
+                        {t(ac.nameKey)}
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Options avancées */}
+              {/* Options d'affichage */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">⚙️ Options d'affichage</span></div>
+                <div className="panel-head"><span className="panel-title">⚙️ {t('settings_display_options')}</span></div>
                 <div className="space-y-3">
-                  <ToggleRow label={t('settings_compact')} sub="Réduit l'espacement dans les tableaux"
+                  <ToggleRow label={t('settings_compact')} sub={t('settings_compact_desc')}
                     value={cfg.compactMode} onChange={v => cfg.updateConfig({ compactMode: v })} />
-                  <ToggleRow label={t('settings_animations')} sub="Transitions et effets visuels"
+                  <ToggleRow label={t('settings_animations')} sub={t('settings_animations_desc')}
                     value={cfg.showAnimations} onChange={v => cfg.updateConfig({ showAnimations: v })} />
                   <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
                     <div>
                       <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{t('settings_rows_per_page')}</div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>Nombre de lignes dans les tableaux</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{t('settings_rows_per_page_desc')}</div>
                     </div>
                     <select className="input text-sm" style={{ width: 'auto', padding: '6px 10px' }}
                       value={cfg.tableRowsPerPage}
@@ -777,7 +780,7 @@ export default function Settings() {
                 <div className="panel-head"><span className="panel-title">📦 Configuration complète</span></div>
                 <div className="space-y-3">
                   <p className="text-sm" style={{ color: 'var(--text2)' }}>
-                    Exportez votre configuration pour la sauvegarder ou la transférer vers un autre poste.
+                    {t('settings_export_config_desc')}
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <button className="btn btn-ghost gap-2" onClick={handleExportConfig}>
@@ -816,7 +819,7 @@ export default function Settings() {
                 <div className="space-y-2">
                   {[
                     { label: t('settings_version'),     value: 'v1.0.0-beta' },
-                    { label: t('settings_environment'), value: 'Production' },
+                    { label: t('settings_environment'), value: (import.meta as { env?: { MODE?: string } }).env?.MODE === 'production' ? 'Production' : t('settings_development') },
                     { label: t('settings_last_update'),  value: '14 mai 2026' },
                     { label: 'Navigateur',              value: navigator.userAgent.split(' ').slice(-1)[0] || '—' },
                     { label: 'Stockage utilisé',        value: `${(JSON.stringify(localStorage).length / 1024).toFixed(1)} Ko` },
@@ -843,9 +846,9 @@ export default function Settings() {
               <button className="btn btn-ghost btn-sm" onClick={() => setShowReset(false)}><X size={14} /></button>
             </div>
             <p className="text-sm mb-5" style={{ color: 'var(--text2)' }}>
-              Toutes vos préférences (thème, langue, devise, POS, stock, notifications, sécurité) seront remises aux valeurs par défaut.
+              {t('settings_reset_warning')}
               <br /><br />
-              Cette action est <strong style={{ color: 'var(--danger)' }}>irréversible</strong>. Exportez d'abord votre configuration si vous souhaitez la conserver.
+              {t('settings_reset_desc')}
             </p>
             <div className="flex gap-2">
               <button className="btn btn-ghost flex-1 justify-center" onClick={() => setShowReset(false)}>

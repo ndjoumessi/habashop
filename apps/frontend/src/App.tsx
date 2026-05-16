@@ -19,6 +19,7 @@ import Users from '@/pages/Users'
 import Activity from '@/pages/Activity'
 import Notifications from '@/pages/Notifications'
 import Settings from '@/pages/Settings'
+import SignupPage from '@/pages/SignupPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -30,6 +31,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route
         path="/app"
         element={
