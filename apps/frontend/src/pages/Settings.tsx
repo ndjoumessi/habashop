@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useConfig, formatCurrency, t, ACCENT_PAIRS } from '@/stores/appStore'
+import { useConfig, formatCurrency, t, ACCENT_PAIRS, useFormatAmount } from '@/stores/appStore'
 import type { Currency, Lang } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import {
@@ -30,17 +30,17 @@ const STATIC_QR = [
 const RATES: Partial<Record<Currency, Partial<Record<Currency, number>>>> = {
   XOF: { XAF: 1,       EUR: 1/655.957, USD: 1/609,   CAD: 1/445 },
   XAF: { XOF: 1,       EUR: 1/655.957, USD: 1/609,   CAD: 1/445 },
-  EUR: { XOF: 655.957, XAF: 655.957,  USD: 1.08,    CAD: 1.47 },
-  USD: { XOF: 609,     XAF: 609,      EUR: 0.926,   CAD: 1.36 },
-  CAD: { XOF: 445,     XAF: 445,      EUR: 0.680,   USD: 0.735 },
+  EUR: { XOF: 655.957, XAF: 655.957,   USD: 1.08,    CAD: 1.47 },
+  USD: { XOF: 609,     XAF: 609,       EUR: 0.926,   CAD: 1.36 },
+  CAD: { XOF: 445,     XAF: 445,       EUR: 0.680,   USD: 0.735 },
 }
 
-const CURRENCY_META: { code: Currency; flag: string; symbol: string; descKey: string }[] = [
-  { code: 'XOF', flag: '🇸🇳', symbol: 'F CFA', descKey: 'currency_xof' },
-  { code: 'XAF', flag: '🇨🇲', symbol: 'F CFA', descKey: 'currency_xaf' },
-  { code: 'EUR', flag: '🇪🇺', symbol: '€',     descKey: 'currency_eur' },
-  { code: 'USD', flag: '🇺🇸', symbol: '$',     descKey: 'currency_usd' },
-  { code: 'CAD', flag: '🇨🇦', symbol: 'CA$',   descKey: 'currency_cad' },
+const CURRENCY_META: { code: Currency; flag: string; symbol: string; descKey: string; regionKey: string }[] = [
+  { code: 'XOF', flag: '🇸🇳', symbol: 'F CFA', descKey: 'currency_xof', regionKey: 'settings_west_africa' },
+  { code: 'XAF', flag: '🇨🇲', symbol: 'F CFA', descKey: 'currency_xaf', regionKey: 'settings_central_africa' },
+  { code: 'EUR', flag: '🇪🇺', symbol: '€',     descKey: 'currency_eur', regionKey: 'settings_europe' },
+  { code: 'USD', flag: '🇺🇸', symbol: '$',     descKey: 'currency_usd', regionKey: 'settings_usa' },
+  { code: 'CAD', flag: '🇨🇦', symbol: 'CA$',   descKey: 'currency_cad', regionKey: 'settings_canada' },
 ]
 
 const LANG_META: { code: Lang; flag: string; name: string; native: string }[] = [
@@ -103,25 +103,25 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 const TABS: { id: Tab; key: string; icon: React.ReactNode }[] = [
-  { id: 'boutique',       key: 'settings_shop',           icon: <Store size={14} />     },
-  { id: 'compte',         key: 'settings_account',        icon: <User size={14} />      },
-  { id: 'langue',         key: 'settings_language',       icon: <Globe size={14} />     },
-  { id: 'apparence',      key: 'settings_appearance',     icon: <Palette size={14} />   },
+  { id: 'boutique',       key: 'settings_shop',           icon: <Store size={14} />        },
+  { id: 'compte',         key: 'settings_account',        icon: <User size={14} />         },
+  { id: 'langue',         key: 'settings_language',       icon: <Globe size={14} />        },
+  { id: 'apparence',      key: 'settings_appearance',     icon: <Palette size={14} />      },
   { id: 'pos',            key: 'settings_pos',            icon: <ShoppingCart size={14} /> },
-  { id: 'stock',          key: 'settings_stock',          icon: <Package size={14} />   },
-  { id: 'notifications',  key: 'settings_notifications',  icon: <Bell size={14} />      },
-  { id: 'securite',       key: 'settings_security',       icon: <Shield size={14} />    },
-  { id: 'avance',         key: 'settings_advanced',       icon: <Cog size={14} />       },
+  { id: 'stock',          key: 'settings_stock',          icon: <Package size={14} />      },
+  { id: 'notifications',  key: 'settings_notifications',  icon: <Bell size={14} />         },
+  { id: 'securite',       key: 'settings_security',       icon: <Shield size={14} />       },
+  { id: 'avance',         key: 'settings_advanced',       icon: <Cog size={14} />          },
 ]
 
 export default function Settings() {
   const cfg = useConfig()
+  const fmt = useFormatAmount()
   const { user, updateUser } = useAuthStore()
   const [tab, setTab] = useState<Tab>('boutique')
   const [showReset, setShowReset] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
 
-  // Local forms (boutique & compte save on button click)
   const [shopForm, setShopForm] = useState({
     shopName: cfg.shopName, shopSlogan: cfg.shopSlogan,
     shopAddress: cfg.shopAddress, shopPhone: cfg.shopPhone,
@@ -133,7 +133,7 @@ export default function Settings() {
     currentPwd: '', newPwd: '', confirmPwd: '',
   })
 
-  const save = (section: string) => toast.success(`✅ ${section} sauvegardé`)
+  const save = () => toast.success(t('settings_saved'))
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -152,7 +152,7 @@ export default function Settings() {
     a.download = `habashop-config-${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
-    toast.success('Configuration exportée !')
+    toast.success(t('settings_config_exported'))
   }
 
   const handleImportConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,12 +212,12 @@ export default function Settings() {
                 <div className="panel-head"><span className="panel-title">🏪 Informations boutique</span></div>
                 <div className="grid grid-cols-2 gap-4">
                   {([
-                    { label: 'Nom de la boutique', key: 'shopName', type: 'text', span: true },
-                    { label: 'Slogan',              key: 'shopSlogan', type: 'text', span: true },
-                    { label: 'Pays',                key: 'shopCountry', type: 'text', span: false },
-                    { label: 'N° SIRET / RCCM',    key: 'shopSiret', type: 'text', span: false },
-                    { label: 'Téléphone',           key: 'shopPhone', type: 'text', span: false },
-                    { label: 'Email',               key: 'shopEmail', type: 'email', span: false },
+                    { label: t('settings_shop_name'), key: 'shopName',    type: 'text',  span: true },
+                    { label: t('settings_slogan'),    key: 'shopSlogan',  type: 'text',  span: true },
+                    { label: t('settings_country'),   key: 'shopCountry', type: 'text',  span: false },
+                    { label: t('settings_siret'),     key: 'shopSiret',   type: 'text',  span: false },
+                    { label: t('settings_phone'),     key: 'shopPhone',   type: 'text',  span: false },
+                    { label: t('settings_email'),     key: 'shopEmail',   type: 'email', span: false },
                   ] as { label: string; key: keyof typeof shopForm; type: string; span: boolean }[]).map(f => (
                     <div key={f.key} className={f.span ? 'col-span-2' : ''}>
                       <Label>{f.label}</Label>
@@ -227,12 +227,12 @@ export default function Settings() {
                     </div>
                   ))}
                   <div className="col-span-2">
-                    <Label>Adresse</Label>
+                    <Label>{t('settings_address')}</Label>
                     <textarea className="input text-sm" rows={2} value={shopForm.shopAddress}
                       onChange={e => setShopForm(s => ({ ...s, shopAddress: e.target.value }))} />
                   </div>
                   <div>
-                    <Label>Taux TVA</Label>
+                    <Label>{t('settings_vat')}</Label>
                     <select className="input text-sm" value={shopForm.shopVatRate}
                       onChange={e => setShopForm(s => ({ ...s, shopVatRate: +e.target.value }))}>
                       {VAT_OPTIONS.map(v => <option key={v} value={v}>{v} %</option>)}
@@ -243,7 +243,7 @@ export default function Settings() {
                   <button className="btn btn-primary gap-2" onClick={() => {
                     cfg.updateConfig(shopForm)
                     updateUser({ shopName: shopForm.shopName })
-                    save('Boutique')
+                    save()
                   }}>
                     <Save size={14} /> {t('btn_save')}
                   </button>
@@ -288,7 +288,7 @@ export default function Settings() {
           {tab === 'compte' && (
             <div className="space-y-4">
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">👤 Informations personnelles</span></div>
+                <div className="panel-head"><span className="panel-title">👤 {t('settings_personal_info')}</span></div>
                 <div className="flex items-center gap-4 mb-5">
                   <div style={{
                     width: 64, height: 64, borderRadius: '50%', flexShrink: 0,
@@ -306,9 +306,9 @@ export default function Settings() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   {([
-                    { label: 'Nom complet', key: 'name',  type: 'text',  span: false },
-                    { label: 'Téléphone',   key: 'phone', type: 'text',  span: false },
-                    { label: 'Email',       key: 'email', type: 'email', span: true  },
+                    { label: t('col_name'),       key: 'name',  type: 'text',  span: false },
+                    { label: t('settings_phone'), key: 'phone', type: 'text',  span: false },
+                    { label: t('settings_email'), key: 'email', type: 'email', span: true  },
                   ] as { label: string; key: keyof typeof accountForm; type: string; span: boolean }[]).map(f => (
                     <div key={f.key} className={f.span ? 'col-span-2' : ''}>
                       <Label>{f.label}</Label>
@@ -321,7 +321,7 @@ export default function Settings() {
                 <div className="flex justify-end mt-4">
                   <button className="btn btn-primary gap-2" onClick={() => {
                     updateUser({ name: accountForm.name, email: accountForm.email })
-                    save('Compte')
+                    save()
                   }}>
                     <Save size={14} /> {t('btn_save')}
                   </button>
@@ -329,12 +329,12 @@ export default function Settings() {
               </div>
 
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🔑 Changer le mot de passe</span></div>
+                <div className="panel-head"><span className="panel-title">🔑 {t('settings_change_password')}</span></div>
                 <div className="space-y-3">
                   {([
-                    { label: 'Mot de passe actuel', key: 'currentPwd' },
-                    { label: 'Nouveau mot de passe', key: 'newPwd'    },
-                    { label: 'Confirmer le nouveau', key: 'confirmPwd' },
+                    { label: t('settings_current_pwd'), key: 'currentPwd' },
+                    { label: t('settings_new_pwd'),     key: 'newPwd'     },
+                    { label: t('settings_confirm_pwd'), key: 'confirmPwd' },
                   ] as { label: string; key: keyof typeof accountForm }[]).map(f => (
                     <div key={f.key}>
                       <Label>{f.label}</Label>
@@ -351,9 +351,9 @@ export default function Settings() {
                       return
                     }
                     setAccountForm(a => ({ ...a, currentPwd: '', newPwd: '', confirmPwd: '' }))
-                    save('Mot de passe')
+                    save()
                   }}>
-                    <Save size={14} /> Mettre à jour
+                    <Save size={14} /> {t('settings_update')}
                   </button>
                 </div>
               </div>
@@ -365,7 +365,7 @@ export default function Settings() {
             <div className="space-y-5">
               {/* Langue */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🌍 Langue de l'interface</span></div>
+                <div className="panel-head"><span className="panel-title">🌍 {t('settings_language_label')}</span></div>
                 <div className="grid grid-cols-2 gap-3">
                   {LANG_META.map(l => (
                     <div key={l.code}
@@ -381,7 +381,7 @@ export default function Settings() {
                         <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{l.name}</div>
                         <div className="text-xs" style={{ color: 'var(--text3)' }}>{l.native}</div>
                       </div>
-                      {cfg.lang === l.code && <span className="badge badge-teal">Actif</span>}
+                      {cfg.lang === l.code && <span className="badge badge-teal">{t('status_active')}</span>}
                     </div>
                   ))}
                 </div>
@@ -389,7 +389,7 @@ export default function Settings() {
 
               {/* Devise */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">💱 Devise principale</span></div>
+                <div className="panel-head"><span className="panel-title">💱 {t('settings_currency_label')}</span></div>
                 <div className="grid grid-cols-1 gap-2 mb-4">
                   {CURRENCY_META.map(c => (
                     <div key={c.code}
@@ -411,9 +411,9 @@ export default function Settings() {
                       </div>
                       <div className="flex-1">
                         <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{c.code}</div>
-                        <div className="text-xs" style={{ color: 'var(--text3)' }}>{t(c.descKey)}</div>
+                        <div className="text-xs" style={{ color: 'var(--text3)' }}>{t(c.descKey)} — {t(c.regionKey)}</div>
                       </div>
-                      {cfg.currency === c.code && <span className="badge badge-teal">Actif</span>}
+                      {cfg.currency === c.code && <span className="badge badge-teal">{t('status_active')}</span>}
                     </div>
                   ))}
                 </div>
@@ -421,7 +421,7 @@ export default function Settings() {
                 {/* Conversion preview */}
                 <div className="p-4 rounded-xl" style={{ background: 'var(--bg3)' }}>
                   <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>
-                    Taux de conversion indicatifs (base : 1 000 {cfg.currency})
+                    {t('settings_conversion_preview')} — 1 000 {cfg.currency}
                   </div>
                   <div className="space-y-2">
                     {CURRENCY_META.filter(c => c.code !== cfg.currency).map(c => {
@@ -446,11 +446,11 @@ export default function Settings() {
             <div className="space-y-4">
               {/* Thème */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🎨 Thème</span></div>
+                <div className="panel-head"><span className="panel-title">🎨 {t('settings_theme')}</span></div>
                 <div className="flex gap-3">
                   {[
-                    { id: 'dark',  label: 'Sombre', emoji: '🌙', desc: 'Recommandé — réduit la fatigue visuelle' },
-                    { id: 'light', label: 'Clair',   emoji: '☀️', desc: 'Adapté aux environnements lumineux' },
+                    { id: 'dark',  label: t('settings_dark'),  emoji: '🌙', desc: 'Recommandé — réduit la fatigue visuelle' },
+                    { id: 'light', label: t('settings_light'), emoji: '☀️', desc: 'Adapté aux environnements lumineux' },
                   ].map(th => (
                     <div key={th.id}
                       className="flex-1 p-4 rounded-xl cursor-pointer transition-all"
@@ -463,7 +463,7 @@ export default function Settings() {
                       <div style={{ fontSize: 28, marginBottom: 6 }}>{th.emoji}</div>
                       <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{th.label}</div>
                       <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{th.desc}</div>
-                      {cfg.theme === th.id && <span className="badge badge-teal mt-2" style={{ display: 'block', marginTop: 8 }}>Actif</span>}
+                      {cfg.theme === th.id && <span className="badge badge-teal mt-2" style={{ display: 'block', marginTop: 8 }}>{t('status_active')}</span>}
                     </div>
                   ))}
                 </div>
@@ -471,7 +471,7 @@ export default function Settings() {
 
               {/* Couleur d'accent */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🖌️ Couleur d'accent</span></div>
+                <div className="panel-head"><span className="panel-title">🖌️ {t('settings_accent_color')}</span></div>
                 <div className="flex gap-3 flex-wrap">
                   {ACCENT_COLORS.map(ac => (
                     <div key={ac.hex}
@@ -498,13 +498,13 @@ export default function Settings() {
               <div className="panel">
                 <div className="panel-head"><span className="panel-title">⚙️ Options d'affichage</span></div>
                 <div className="space-y-3">
-                  <ToggleRow label="Mode compact" sub="Réduit l'espacement dans les tableaux"
+                  <ToggleRow label={t('settings_compact')} sub="Réduit l'espacement dans les tableaux"
                     value={cfg.compactMode} onChange={v => cfg.updateConfig({ compactMode: v })} />
-                  <ToggleRow label="Animations" sub="Transitions et effets visuels"
+                  <ToggleRow label={t('settings_animations')} sub="Transitions et effets visuels"
                     value={cfg.showAnimations} onChange={v => cfg.updateConfig({ showAnimations: v })} />
                   <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
                     <div>
-                      <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>Lignes par page</div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{t('settings_rows_per_page')}</div>
                       <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>Nombre de lignes dans les tableaux</div>
                     </div>
                     <select className="input text-sm" style={{ width: 'auto', padding: '6px 10px' }}
@@ -521,11 +521,10 @@ export default function Settings() {
           {/* ════ POS ════ */}
           {tab === 'pos' && (
             <div className="panel">
-              <div className="panel-head"><span className="panel-title">🛒 Configuration POS</span></div>
+              <div className="panel-head"><span className="panel-title">🛒 {t('settings_pos_config')}</span></div>
               <div className="space-y-4">
-                {/* Mode paiement par défaut */}
                 <div>
-                  <Label>Mode de paiement par défaut</Label>
+                  <Label>{t('settings_pos_default_payment')}</Label>
                   <div className="flex gap-3">
                     {[
                       { id: 'cash',   label: '💵 Espèces' },
@@ -549,9 +548,8 @@ export default function Settings() {
                   </div>
                 </div>
 
-                {/* Taux TVA */}
                 <div>
-                  <Label>Taux de taxe POS (%)</Label>
+                  <Label>{t('settings_pos_tax_rate')}</Label>
                   <select className="input text-sm" value={cfg.posTaxRate}
                     onChange={e => cfg.updateConfig({ posTaxRate: +e.target.value })}>
                     {VAT_OPTIONS.map(v => <option key={v} value={v}>{v} %</option>)}
@@ -559,16 +557,16 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-3">
-                  <ToggleRow label="Afficher le stock sur les tuiles" sub="Affiche la quantité disponible sous chaque produit"
+                  <ToggleRow label={t('settings_pos_show_stock')} sub="Affiche la quantité disponible sous chaque produit"
                     value={cfg.posShowStockOnTile} onChange={v => cfg.updateConfig({ posShowStockOnTile: v })} />
-                  <ToggleRow label="Impression automatique du ticket"
+                  <ToggleRow label={t('settings_pos_autoprint')}
                     value={cfg.posAutoprint} onChange={v => cfg.updateConfig({ posAutoprint: v })} />
-                  <ToggleRow label="TVA incluse dans les prix affichés"
+                  <ToggleRow label={t('settings_pos_vat_included')}
                     value={cfg.posVatIncluded} onChange={v => cfg.updateConfig({ posVatIncluded: v })} />
                 </div>
 
                 <div className="flex justify-end">
-                  <button className="btn btn-primary gap-2" onClick={() => save('Config POS')}>
+                  <button className="btn btn-primary gap-2" onClick={() => save()}>
                     <Save size={14} /> {t('btn_save')}
                   </button>
                 </div>
@@ -579,27 +577,27 @@ export default function Settings() {
           {/* ════ STOCK ════ */}
           {tab === 'stock' && (
             <div className="panel">
-              <div className="panel-head"><span className="panel-title">📦 Configuration Stock</span></div>
+              <div className="panel-head"><span className="panel-title">📦 {t('settings_stock_config')}</span></div>
               <div className="space-y-4">
                 <div>
-                  <Label>Seuil d'alerte par défaut (unités)</Label>
+                  <Label>{t('settings_stock_threshold')}</Label>
                   <input className="input text-sm" type="number" min={0}
                     value={cfg.stockLowThreshold}
                     onChange={e => cfg.updateConfig({ stockLowThreshold: +e.target.value })} />
                   <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>
-                    Une alerte est déclenchée quand le stock descend sous ce seuil
+                    {t('settings_stock_threshold_desc')}
                   </p>
                 </div>
                 <div className="space-y-3">
-                  <ToggleRow label="Commande automatique à la rupture"
-                    sub="Crée automatiquement un bon de commande fournisseur"
+                  <ToggleRow label={t('settings_stock_auto_order')}
+                    sub={t('settings_stock_auto_order_desc')}
                     value={cfg.stockAutoOrder} onChange={v => cfg.updateConfig({ stockAutoOrder: v })} />
-                  <ToggleRow label="Afficher le SKU dans les tableaux"
-                    sub="Colonne référence produit"
+                  <ToggleRow label={t('settings_stock_show_sku')}
+                    sub={t('settings_stock_show_sku_desc')}
                     value={cfg.stockShowSKU} onChange={v => cfg.updateConfig({ stockShowSKU: v })} />
                 </div>
                 <div className="flex justify-end">
-                  <button className="btn btn-primary gap-2" onClick={() => save('Config Stock')}>
+                  <button className="btn btn-primary gap-2" onClick={() => save()}>
                     <Save size={14} /> {t('btn_save')}
                   </button>
                 </div>
@@ -610,17 +608,20 @@ export default function Settings() {
           {/* ════ NOTIFICATIONS ════ */}
           {tab === 'notifications' && (
             <div className="panel">
-              <div className="panel-head"><span className="panel-title">🔔 Préférences de notifications</span></div>
+              <div className="panel-head"><span className="panel-title">🔔 {t('notif_preferences')}</span></div>
               <div className="space-y-5">
                 {/* Email */}
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>📧 Email</h4>
                   <div className="space-y-2">
-                    <ToggleRow label="Récapitulatif ventes journalier"
+                    <ToggleRow label={t('notif_sales_recap')}
+                      sub={t('notif_sales_recap_desc')}
                       value={cfg.notifEmailSales} onChange={v => cfg.updateConfig({ notifEmailSales: v })} />
-                    <ToggleRow label="Alertes rupture de stock"
+                    <ToggleRow label={t('notif_stock_alert')}
+                      sub={t('notif_stock_alert_desc')}
                       value={cfg.notifEmailStock} onChange={v => cfg.updateConfig({ notifEmailStock: v })} />
-                    <ToggleRow label="Rappels bulletins de paie"
+                    <ToggleRow label={t('notif_payroll')}
+                      sub={t('notif_payroll_desc')}
                       value={cfg.notifEmailPayroll} onChange={v => cfg.updateConfig({ notifEmailPayroll: v })} />
                   </div>
                   {cfg.notifEmailStock && (
@@ -638,9 +639,11 @@ export default function Settings() {
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>📱 SMS</h4>
                   <div className="space-y-2">
-                    <ToggleRow label="Ventes importantes (> 100 000 F CFA)"
+                    <ToggleRow label={`${t('notif_big_sales')} (> ${fmt(100000)})`}
+                      sub={t('notif_big_sales_desc')}
                       value={cfg.notifSmsSales} onChange={v => cfg.updateConfig({ notifSmsSales: v })} />
-                    <ToggleRow label="Ruptures critiques"
+                    <ToggleRow label={t('notif_critical_stock')}
+                      sub={t('notif_critical_stock_desc')}
                       value={cfg.notifSmsStock} onChange={v => cfg.updateConfig({ notifSmsStock: v })} />
                   </div>
                 </div>
@@ -649,14 +652,14 @@ export default function Settings() {
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>🔔 Push</h4>
                   <div className="space-y-2">
-                    <ToggleRow label="Toutes les notifications"
-                      sub="Notifications dans le navigateur"
+                    <ToggleRow label={t('notif_push_all')}
+                      sub={t('notif_push_all_desc')}
                       value={cfg.notifPushAll} onChange={v => cfg.updateConfig({ notifPushAll: v })} />
                   </div>
                 </div>
 
                 <div className="flex justify-end">
-                  <button className="btn btn-primary gap-2" onClick={() => save('Notifications')}>
+                  <button className="btn btn-primary gap-2" onClick={() => save()}>
                     <Save size={14} /> {t('btn_save')}
                   </button>
                 </div>
@@ -670,8 +673,8 @@ export default function Settings() {
               {/* 2FA */}
               <div className="panel">
                 <div className="panel-head"><span className="panel-title">🔐 Authentification à deux facteurs (2FA)</span></div>
-                <ToggleRow label="Activer le 2FA"
-                  sub="Code TOTP — Google Authenticator ou Authy"
+                <ToggleRow label={t('settings_2fa_active')}
+                  sub={t('settings_2fa_desc')}
                   value={cfg.twoFAEnabled}
                   onChange={v => { cfg.updateConfig({ twoFAEnabled: v }); toast.success(v ? '2FA activé' : '2FA désactivé') }} />
                 {cfg.twoFAEnabled && (
@@ -707,7 +710,7 @@ export default function Settings() {
                 <div className="panel-head"><span className="panel-title">⏱️ Paramètres de session</span></div>
                 <div className="space-y-4">
                   <div>
-                    <Label>Timeout de session automatique</Label>
+                    <Label>{t('settings_session_timeout')}</Label>
                     <select className="input text-sm" value={cfg.sessionTimeout}
                       onChange={e => cfg.updateConfig({ sessionTimeout: +e.target.value })}>
                       <option value={15}>15 minutes</option>
@@ -718,7 +721,7 @@ export default function Settings() {
                     </select>
                   </div>
                   <div>
-                    <Label>Tentatives de connexion max</Label>
+                    <Label>{t('settings_max_attempts')}</Label>
                     <select className="input text-sm" value={cfg.maxLoginAttempts}
                       onChange={e => cfg.updateConfig({ maxLoginAttempts: +e.target.value })}>
                       <option value={3}>3 tentatives</option>
@@ -731,10 +734,10 @@ export default function Settings() {
 
               {/* Sessions actives */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🛡️ Sessions actives</span></div>
+                <div className="panel-head"><span className="panel-title">🛡️ {t('settings_active_sessions')}</span></div>
                 {[
                   { device: '💻 MacBook Pro', location: 'Dakar, Sénégal', time: 'Maintenant', current: true },
-                  { device: '📱 iPhone 15',    location: 'Dakar, Sénégal', time: 'Il y a 2h',  current: false },
+                  { device: '📱 iPhone 15',   location: 'Dakar, Sénégal', time: 'Il y a 2h',  current: false },
                 ].map((s, i) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-xl mb-2"
                     style={{ background: 'var(--bg3)' }}>
@@ -743,9 +746,9 @@ export default function Settings() {
                       <div className="text-xs" style={{ color: 'var(--text3)' }}>{s.location} · {s.time}</div>
                     </div>
                     {s.current
-                      ? <span className="badge badge-green">Session actuelle</span>
+                      ? <span className="badge badge-green">{t('settings_current_session')}</span>
                       : <button className="mini-btn" style={{ color: 'var(--danger)' }}
-                          onClick={() => toast.success('Session révoquée')}>Révoquer</button>
+                          onClick={() => toast.success('Session révoquée')}>{t('settings_revoke')}</button>
                     }
                   </div>
                 ))}
@@ -756,10 +759,10 @@ export default function Settings() {
                 <div className="panel-head"><span className="panel-title">📁 Configuration</span></div>
                 <div className="flex gap-3">
                   <button className="btn btn-ghost gap-2" onClick={handleExportConfig}>
-                    <Download size={14} /> Exporter la config
+                    <Download size={14} /> {t('settings_export_config')}
                   </button>
                   <button className="btn btn-ghost gap-2" onClick={() => importRef.current?.click()}>
-                    <Upload size={14} /> Importer une config
+                    <Upload size={14} /> {t('settings_import_config')}
                   </button>
                 </div>
               </div>
@@ -778,10 +781,10 @@ export default function Settings() {
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <button className="btn btn-ghost gap-2" onClick={handleExportConfig}>
-                      <Download size={14} /> Exporter la configuration
+                      <Download size={14} /> {t('settings_export_config')}
                     </button>
                     <button className="btn btn-ghost gap-2" onClick={() => importRef.current?.click()}>
-                      <Upload size={14} /> Importer une configuration
+                      <Upload size={14} /> {t('settings_import_config')}
                     </button>
                   </div>
                 </div>
@@ -803,20 +806,20 @@ export default function Settings() {
                 <button className="btn gap-2"
                   style={{ background: 'rgba(232,64,74,.12)', color: 'var(--danger)', border: '1px solid rgba(232,64,74,.25)' }}
                   onClick={() => setShowReset(true)}>
-                  <RefreshCw size={14} /> Réinitialiser les paramètres
+                  <RefreshCw size={14} /> {t('settings_reset')}
                 </button>
               </div>
 
               {/* Informations système */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">ℹ️ Informations système</span></div>
+                <div className="panel-head"><span className="panel-title">ℹ️ {t('settings_system_info')}</span></div>
                 <div className="space-y-2">
                   {[
-                    { label: 'Version',           value: 'v1.0.0-beta' },
-                    { label: 'Environnement',     value: 'Production' },
-                    { label: 'Dernière mise à jour', value: '14 mai 2026' },
-                    { label: 'Navigateur',        value: navigator.userAgent.split(' ').slice(-1)[0] || '—' },
-                    { label: 'Stockage utilisé',  value: `${(JSON.stringify(localStorage).length / 1024).toFixed(1)} Ko` },
+                    { label: t('settings_version'),     value: 'v1.0.0-beta' },
+                    { label: t('settings_environment'), value: 'Production' },
+                    { label: t('settings_last_update'),  value: '14 mai 2026' },
+                    { label: 'Navigateur',              value: navigator.userAgent.split(' ').slice(-1)[0] || '—' },
+                    { label: 'Stockage utilisé',        value: `${(JSON.stringify(localStorage).length / 1024).toFixed(1)} Ko` },
                   ].map(row => (
                     <div key={row.label} className="flex justify-between items-center py-2"
                       style={{ borderBottom: '1px solid var(--border)' }}>
@@ -859,9 +862,9 @@ export default function Settings() {
                     shopEmail: cfg.shopEmail, shopCountry: cfg.shopCountry,
                     shopSiret: cfg.shopSiret, shopVatRate: cfg.shopVatRate,
                   })
-                  toast.success('Paramètres réinitialisés')
+                  toast.success(t('settings_config_reset'))
                 }}>
-                Réinitialiser
+                {t('settings_reset')}
               </button>
             </div>
           </div>
