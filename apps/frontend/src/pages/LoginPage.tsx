@@ -26,6 +26,18 @@ export default function LoginPage() {
     }
   }
 
+  const handleDemoLogin = async () => {
+    clearError()
+    try {
+      await login('admin@habashop.com', 'demo1234')
+      toast.success('✅ Connexion réussie !')
+      navigate('/app/dashboard')
+    } catch {
+      // Le fallback démo est géré dans authStore
+      navigate('/app/dashboard')
+    }
+  }
+
   return (
     <div
       id="loginScreen"
@@ -69,9 +81,13 @@ export default function LoginPage() {
           <strong>{t('login_demo')} :</strong> admin@habashop.com / demo1234
           <br />
           <span
-            style={{ color: 'var(--p2)', cursor: 'pointer', fontSize: 12 }}
+            style={{ color: 'var(--p2)', cursor: 'pointer', fontSize: 12, marginRight: 10 }}
             onClick={() => { setEmail('admin@habashop.com'); setPassword('demo1234') }}
           >{t('login_autofill')}</span>
+          <span
+            style={{ color: 'var(--acc2)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+            onClick={handleDemoLogin}
+          >🚀 Connexion directe</span>
         </div>
 
         <div style={{ marginTop: 12, textAlign: 'center' }}>

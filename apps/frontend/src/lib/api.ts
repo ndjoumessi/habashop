@@ -1,7 +1,18 @@
 const BASE_URL: string = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:3001'
 
 function getToken(): string | null {
-  return localStorage.getItem('habashop_token')
+  const direct = localStorage.getItem('habashop_token')
+  if (direct) return direct
+  // Fallback : token dans le store Zustand persisté
+  try {
+    const stored = localStorage.getItem('habashop-auth')
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      const t = parsed?.state?.token
+      if (t) return t
+    }
+  } catch {}
+  return null
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {

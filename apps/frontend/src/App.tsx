@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { authApi } from '@/lib/api'
 import AppLayout from '@/components/layout/AppLayout'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
@@ -27,6 +29,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const { token, logout, updateUser } = useAuthStore()
+
+  useEffect(() => {
+    if (token && token !== 'demo-token-local') {
+      authApi.me()
+        .then(user => updateUser(user))
+        .catch(() => logout())
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />

@@ -44,11 +44,14 @@ export const useAuthStore = create<AuthState>()(
         } catch (err: any) {
           // Fallback démo sans backend
           if (email === 'admin@habashop.com' && password === 'demo1234') {
+            const demoToken = 'demo-token-local'
+            localStorage.setItem('habashop_token', demoToken)
             set({
-              user: { id: 'demo', name: 'Nelson Djoumessi', email, role: 'admin', shopName: 'HabaShop — Dakar Central' },
-              token: 'demo-token',
+              user: { id: 'demo', name: 'Nelson Djoumessi', email, role: 'ADMIN', shopName: 'HabaShop — Dakar Central' },
+              token: demoToken,
               isAuthenticated: true,
               isLoading: false,
+              error: null,
             })
             return
           }
