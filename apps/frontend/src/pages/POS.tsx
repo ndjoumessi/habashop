@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAppStore, useFormatAmount, t, convertAmount } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, formatCurrency, t, convertAmount } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
 import { Search, Minus, Plus, Trash2, ShoppingCart, X } from 'lucide-react'
@@ -1240,9 +1240,11 @@ export default function POS() {
             <div style={{ display:'flex', gap:8 }}>
               <button
                 onClick={() => {
+                  // counted est saisi dans la devise active
                   const counted = parseFloat((document.getElementById('counted-amount') as HTMLInputElement)?.value || '0')
-                  const expected = cashierOpeningFund + cashierSessionCA
-                  const diff = counted - expected
+                  const expected = cashierOpeningFund + cashierSessionCA  // en XOF
+                  const expectedInCurrency = convertAmount(expected, 'XOF', currency as Currency)
+                  const diff = counted - expectedInCurrency  // comparaison dans la même devise
                   const openedTime = cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--'
                   const win = window.open('', '_blank', 'width=400,height=600')
                   if (win) {
@@ -1258,13 +1260,13 @@ export default function POS() {
                     <div class="row"><span>${ct.close_time}:</span><span>${new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'})}</span></div>
                     <div class="row"><span>Caissier:</span><span>Nelson D.</span></div>
                     <div class="divider"></div>
-                    <div class="row"><span>${ct.initial_fund}:</span><span>${cashierOpeningFund.toLocaleString(locale)} ${currencySymbol}</span></div>
+                    <div class="row"><span>${ct.initial_fund}:</span><span>${fmt(cashierOpeningFund)}</span></div>
                     <div class="row"><span>${ct.transactions}:</span><span>${cashierSessionTx}</span></div>
-                    <div class="row bold"><span>${ct.ca_cashed}:</span><span>${cashierSessionCA.toLocaleString(locale)} ${currencySymbol}</span></div>
+                    <div class="row bold"><span>${ct.ca_cashed}:</span><span>${fmt(cashierSessionCA)}</span></div>
                     <div class="divider"></div>
-                    <div class="row bold"><span>Attendu:</span><span>${expected.toLocaleString(locale)} ${currencySymbol}</span></div>
-                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${counted.toLocaleString(locale)} ${currencySymbol}</span></div>
-                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${diff.toLocaleString(locale)} ${currencySymbol}</span></div>
+                    <div class="row bold"><span>Attendu:</span><span>${fmt(expected)}</span></div>
+                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${formatCurrency(counted, currency as Currency)}</span></div>
+                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${formatCurrency(Math.abs(diff), currency as Currency)}</span></div>
                     <div class="divider"></div>
                     <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
                     <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>
