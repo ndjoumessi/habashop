@@ -8,26 +8,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'HabaShop',
-        short_name: 'HabaShop',
-        description: 'Logiciel de gestion commerciale',
-        theme_color: '#5B4EE8',
-        background_color: '#0C0B14',
-        display: 'standalone',
-        orientation: 'portrait',
-        start_url: '/app/pos',
-        icons: [
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-        ],
-      },
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      manifest: false, // use public/manifest.json
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/api\.habashop\.com\/api\//,
+            urlPattern: /^https:\/\/habashop-production\.up\.railway\.app\/api\//,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
@@ -51,10 +38,22 @@ export default defineConfig({
           },
         ],
       },
+      devOptions: { enabled: false },
     }),
   ],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['lucide-react', 'react-hot-toast'],
+          charts: ['recharts'],
+        },
+      },
+    },
   },
   server: {
     port: 5173,

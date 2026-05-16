@@ -10,16 +10,16 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
+    "axios": "^1.7.2",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "lucide-react": "^0.400.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.24.0",
-    "zustand": "^4.5.4",
-    "axios": "^1.7.2",
-    "recharts": "^2.12.7",
     "react-hot-toast": "^2.4.1",
-    "lucide-react": "^0.400.0",
-    "date-fns": "^3.6.0",
-    "clsx": "^2.1.1"
+    "react-router-dom": "^6.24.0",
+    "recharts": "^2.12.7",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
@@ -29,6 +29,7 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "postcss": "^8.4.39",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.5.3",
     "vite": "^5.3.3",
