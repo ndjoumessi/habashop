@@ -921,84 +921,66 @@ export default function POS() {
           overflow: 'hidden',
         }}>
 
-          {/* ── HEADER ── */}
+          {/* ── HEADER PANIER UNIQUE ── */}
           <div style={{
             flexShrink: 0,
-            padding: '10px 14px',
+            padding: '12px 14px',
             borderBottom: '1px solid var(--border)',
-            background: 'linear-gradient(135deg,rgba(91,78,232,.08),rgba(124,111,240,.04))',
+            background: 'linear-gradient(135deg,rgba(91,78,232,.1),rgba(124,111,240,.05))',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
-            <span style={{ fontSize: 18 }}>🛒</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', flex: 1 }}>
+            <div style={{
+              width:32, height:32, borderRadius:9,
+              background:'linear-gradient(135deg,var(--p),var(--p2))',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:15, flexShrink:0,
+            }}>🛒</div>
+            <span style={{ fontSize:15, fontWeight:800, color:'var(--text)', flex:1 }}>
               {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
             </span>
             {cart.length > 0 && (
-              <span style={{
-                background: 'var(--p)', color: '#fff',
-                borderRadius: 20, padding: '2px 8px',
-                fontSize: 11, fontWeight: 800,
-              }}>{cart.reduce((s, i) => s + i.qty, 0)} art.</span>
+              <div style={{
+                background:'linear-gradient(135deg,var(--p),var(--p2))',
+                color:'#fff', borderRadius:20,
+                padding:'3px 10px', fontSize:11,
+                fontWeight:800, fontFamily:'var(--mono)',
+                boxShadow:'0 2px 8px rgba(91,78,232,.4)',
+              }}>
+                {cart.reduce((s,i) => s+i.qty, 0)} {lang === 'fr' ? 'art.' : 'items'}
+              </div>
             )}
-            <span style={{
-              fontSize: 10, color: 'var(--acc2)',
-              background: 'rgba(14,196,126,.1)',
-              borderRadius: 20, padding: '2px 8px',
-              fontFamily: 'var(--mono)', fontWeight: 600,
-            }}>{cashierSessionTx} tx</span>
+            {cashierSessionTx > 0 && (
+              <div style={{
+                background:'rgba(14,196,126,.15)',
+                border:'1px solid rgba(14,196,126,.25)',
+                color:'var(--acc2)', borderRadius:20,
+                padding:'3px 8px', fontSize:10,
+                fontWeight:700, fontFamily:'var(--mono)',
+                display:'flex', alignItems:'center', gap:3,
+              }}>
+                <div style={{ width:5, height:5, borderRadius:'50%', background:'var(--acc2)', boxShadow:'0 0 4px var(--acc2)' }}/>
+                {cashierSessionTx} tx
+              </div>
+            )}
             {cart.length > 0 && (
-              <button type="button" onClick={() => setCart([])}
+              <button type="button"
+                onClick={() => { if (window.confirm(lang === 'fr' ? 'Vider le panier ?' : 'Clear cart?')) setCart([]) }}
                 title={lang === 'fr' ? 'Vider le panier' : 'Clear cart'}
-                style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, color:'var(--text3)', padding:2 }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text3)'}
-              >🗑</button>
+                style={{
+                  width:28, height:28, borderRadius:7,
+                  background:'rgba(232,64,74,.1)', border:'1px solid rgba(232,64,74,.2)',
+                  cursor:'pointer', fontSize:13, color:'var(--danger)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  transition:'all .15s', flexShrink:0,
+                }}>🗑</button>
             )}
             <button type="button" onClick={() => setShowCloseModal(true)} style={{
               fontSize:11, color:'var(--danger)',
-              background:'rgba(232,64,74,.1)', border:'1px solid rgba(232,64,74,.2)',
-              borderRadius:7, padding:'4px 8px', cursor:'pointer',
+              background:'rgba(232,64,74,.12)', border:'1px solid rgba(232,64,74,.25)',
+              borderRadius:8, padding:'5px 10px', cursor:'pointer',
               fontFamily:'var(--font)', fontWeight:700, flexShrink:0,
-            }}>🔒</button>
-          </div>
-
-          {/* Header panier */}
-          <div style={{
-            flexShrink: 0,
-            padding: '14px 16px',
-            borderBottom: '1px solid var(--border)',
-            background: 'linear-gradient(135deg, rgba(91,78,232,.12), rgba(124,111,240,.06))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <ShoppingCart size={18} style={{ color: 'var(--p2)' }} />
-              <span style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>
-                {t('pos_cart')}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, color: 'var(--text3)' }}>{t('pos_cashier')}</span>
-              <div style={{
-                background: cart.length ? 'var(--p)' : 'var(--bg4)',
-                color: cart.length ? '#fff' : 'var(--text3)',
-                borderRadius: '50%',
-                width: 24, height: 24,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 800,
-              }}>{cart.length}</div>
-              <button
-                onClick={() => setShowCloseModal(true)}
-                style={{
-                  fontSize:11, color:'var(--danger)',
-                  background:'rgba(232,64,74,.1)',
-                  border:'1px solid rgba(232,64,74,.2)',
-                  borderRadius:7, padding:'4px 10px',
-                  cursor:'pointer', fontFamily:'var(--font)', fontWeight:600,
-                }}
-              >{ct.close_btn}</button>
-            </div>
+              display:'flex', alignItems:'center', gap:4,
+            }}>🔒 {lang === 'fr' ? 'Fermer' : 'Close'}</button>
           </div>
 
           {/* ── LISTE ITEMS — ZONE SCROLLABLE ── */}
@@ -1028,59 +1010,65 @@ export default function POS() {
               <div style={{ padding:'6px 8px' }}>
                 {cart.map((item, idx) => (
                   <div key={item.id} style={{
-                    display:'flex', alignItems:'center', gap:8, padding:'8px 6px',
-                    borderBottom: idx < cart.length - 1 ? '1px solid var(--border)' : 'none',
-                    transition:'background .1s', borderRadius:8,
+                    display:'flex', alignItems:'center', gap:8, padding:'9px 10px',
+                    borderBottom: idx < cart.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                    borderRadius:10, transition:'background .1s',
                   }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.03)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'none'}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(91,78,232,.06)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                   >
                     <div style={{
-                      width:34, height:34, borderRadius:9, background:'var(--bg3)',
+                      width:36, height:36, borderRadius:10,
+                      background:'linear-gradient(135deg,rgba(91,78,232,.12),rgba(124,111,240,.08))',
+                      border:'1px solid rgba(91,78,232,.15)',
                       display:'flex', alignItems:'center', justifyContent:'center',
-                      fontSize:17, flexShrink:0,
-                    }}>{item.emoji}</div>
+                      fontSize:18, flexShrink:0,
+                    }}>{item.emoji ?? '📦'}</div>
 
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{
-                        fontSize:12, fontWeight:600, color:'var(--text)',
+                        fontSize:12, fontWeight:700, color:'var(--text)', lineHeight:1.3,
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                       }}>{item.name}</div>
-                      <div style={{ fontSize:10, color:'var(--text3)', marginTop:1 }}>
-                        {fmt(item.price)} × {item.qty}
+                      <div style={{ fontSize:10, color:'var(--text3)', marginTop:1, fontFamily:'var(--mono)' }}>
+                        {fmt(item.price)} / unité
                       </div>
                     </div>
 
-                    <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+                    <div style={{
+                      display:'flex', alignItems:'center', gap:3, flexShrink:0,
+                      background:'var(--bg3)', border:'1px solid var(--border)',
+                      borderRadius:8, padding:3,
+                    }}>
                       <button type="button"
                         onClick={() => updateQty(item.id, -1)}
                         style={{
                           width:22, height:22, borderRadius:6,
-                          background: item.qty === 1 ? 'rgba(232,64,74,.15)' : 'var(--bg3)',
-                          border:`1px solid ${item.qty === 1 ? 'rgba(232,64,74,.3)' : 'var(--border)'}`,
-                          cursor:'pointer', fontSize:13,
+                          background: item.qty === 1 ? 'rgba(232,64,74,.2)' : 'transparent',
+                          border:'none', cursor:'pointer', fontSize:12,
                           color: item.qty === 1 ? 'var(--danger)' : 'var(--text2)',
-                          display:'flex', alignItems:'center', justifyContent:'center',
+                          display:'flex', alignItems:'center', justifyContent:'center', transition:'all .1s',
                         }}>
-                        {item.qty === 1 ? '🗑' : '−'}
+                        {item.qty === 1 ? '×' : '−'}
                       </button>
                       <span style={{
-                        fontSize:13, fontWeight:800, color:'var(--text)',
-                        fontFamily:'var(--mono)', minWidth:18, textAlign:'center',
+                        fontSize:13, fontWeight:900, color:'var(--text)',
+                        fontFamily:'var(--mono)', minWidth:20, textAlign:'center', lineHeight:1,
                       }}>{item.qty}</span>
                       <button type="button"
                         onClick={() => updateQty(item.id, +1)}
                         style={{
                           width:22, height:22, borderRadius:6,
-                          background:'var(--p)', border:'none',
-                          cursor:'pointer', fontSize:14, color:'#fff',
-                          display:'flex', alignItems:'center', justifyContent:'center',
+                          background:'var(--p)', border:'none', cursor:'pointer',
+                          fontSize:14, color:'#fff',
+                          display:'flex', alignItems:'center', justifyContent:'center', transition:'all .1s',
+                          boxShadow:'0 2px 6px rgba(91,78,232,.3)',
                         }}>+</button>
                     </div>
 
                     <div style={{
-                      fontSize:12, fontWeight:800, color:'var(--p2)',
-                      fontFamily:'var(--mono)', minWidth:58, textAlign:'right', flexShrink:0,
+                      fontSize:13, fontWeight:900, color:'var(--p2)',
+                      fontFamily:'var(--mono)', minWidth:62, textAlign:'right', flexShrink:0,
                     }}>{fmt(item.price * item.qty)}</div>
                   </div>
                 ))}
@@ -1088,31 +1076,43 @@ export default function POS() {
             )}
           </div>
 
-          {/* ── TOTAUX CONDENSÉS ── */}
+          {/* ── TOTAUX ── */}
           {cart.length > 0 && (
             <div style={{
               flexShrink:0, padding:'10px 14px',
-              borderTop:'1px solid var(--border)', background:'var(--bg3)',
+              borderTop:'1px solid var(--border)',
+              background:'linear-gradient(180deg,var(--bg3),var(--bg4))',
             }}>
               {discount && discountAmount > 0 && (
                 <div style={{
-                  display:'flex', justifyContent:'space-between',
-                  fontSize:11, color:'var(--acc2)', fontWeight:600, marginBottom:3,
+                  display:'flex', justifyContent:'space-between', alignItems:'center',
+                  padding:'4px 8px', marginBottom:6,
+                  background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.15)',
+                  borderRadius:8,
                 }}>
-                  <span>🏷️ {lang === 'fr' ? 'Remise' : 'Discount'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}</span>
-                  <span style={{ fontFamily:'var(--mono)' }}>− {fmt(discountAmount)}</span>
+                  <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600 }}>
+                    🏷️ {lang === 'fr' ? 'Remise' : 'Discount'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}
+                  </span>
+                  <span style={{ fontSize:11, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
+                    − {fmt(discountAmount)}
+                  </span>
                 </div>
               )}
               <div style={{
                 display:'flex', justifyContent:'space-between',
-                fontSize:10, color:'var(--text3)', marginBottom:4,
+                fontSize:10, color:'var(--text3)', marginBottom:6, padding:'0 2px',
               }}>
-                <span>HT {fmt(Math.round(totalHT))}</span>
-                <span>TVA 18% {fmt(Math.round(tva))}</span>
+                <span>HT : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(totalHT))}</span></span>
+                <span>TVA 18% : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(tva))}</span></span>
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ fontSize:11, fontWeight:700, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>TOTAL TTC</span>
-                <span style={{ fontSize:24, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>{fmt(total)}</span>
+              <div style={{
+                display:'flex', justifyContent:'space-between', alignItems:'center',
+                padding:'8px 10px',
+                background:'rgba(91,78,232,.08)', border:'1px solid rgba(91,78,232,.15)',
+                borderRadius:10,
+              }}>
+                <span style={{ fontSize:11, fontWeight:800, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>TOTAL TTC</span>
+                <span style={{ fontSize:26, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>{fmt(total)}</span>
               </div>
             </div>
           )}
