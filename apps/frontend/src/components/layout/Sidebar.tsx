@@ -80,6 +80,19 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* Admin Panel (SUPER_ADMIN only) */}
+      {user?.role === 'SUPER_ADMIN' && (
+        <div
+          className="nav-item"
+          onClick={() => navigate('/admin')}
+          style={{ cursor: 'pointer', ...(collapsed ? { justifyContent: 'center', padding: '8px 0' } : {}) }}
+          title={collapsed ? 'Admin Panel' : undefined}
+        >
+          <span className="nav-icon">🏪</span>
+          {!collapsed && <span style={{ flex: 1 }}>Admin Panel</span>}
+        </div>
+      )}
+
       {/* Footer */}
       <div className="sidebar-footer" style={collapsed ? { flexDirection: 'column', gap: 8, padding: '8px 0', alignItems: 'center' } : undefined}>
         <div className="avatar">{user?.name?.charAt(0) || 'U'}</div>

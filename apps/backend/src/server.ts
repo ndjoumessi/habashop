@@ -3,14 +3,30 @@ import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import Twilio from 'twilio'
 import 'dotenv/config'
 
 const prisma = new PrismaClient()
+
+const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
+  ? Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null
 
 // ─── MIDDLEWARE AUTH ──────────────────
 async function authenticate(request: any, reply: any) {
   try {
     await request.jwtVerify()
+  } catch {
+    reply.code(401).send({ error: 'Non autorisé' })
+  }
+}
+
+async function authenticateAdmin(request: any, reply: any) {
+  try {
+    await request.jwtVerify()
+    if ((request.user as any).role !== 'SUPER_ADMIN') {
+      return reply.code(403).send({ error: 'Accès refusé — SUPER_ADMIN requis' })
+    }
   } catch {
     reply.code(401).send({ error: 'Non autorisé' })
   }
@@ -441,6 +457,105 @@ async function start() {
     }, {} as Record<string, number>)
 
     return { total, count: sales.length, byPayment, sales }
+  })
+
+  // ════════════════════════════════════════
+  // WHATSAPP ROUTES (Twilio)
+  // ════════════════════════════════════════
+
+  app.post('/api/whatsapp/send-ticket', { preHandler: authenticate }, async (request, reply) => {
+    if (!twilioClient) return reply.code(503).send({ error: 'Twilio non configuré' })
+    const { phone, ticket, shopName, lang } = request.body as any
+    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`
+
+    const messages: Record<string, string> = {
+      fr: `🛒 *${shopName}*\n\n✅ Merci pour votre achat !\n\n📋 *Ticket #${ticket.ref}*\n${ticket.items.map((i: any) => `• ${i.name} ×${i.qty} — ${i.total} FCFA`).join('\n')}\n\n💰 *Total : ${ticket.total} FCFA*\n💳 Paiement : ${ticket.paymentMode}\n📅 ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\n\n_Merci de votre confiance !_ 🙏`,
+      en: `🛒 *${shopName}*\n\n✅ Thank you for your purchase!\n\n📋 *Receipt #${ticket.ref}*\n${ticket.items.map((i: any) => `• ${i.name} ×${i.qty} — ${i.total} FCFA`).join('\n')}\n\n💰 *Total: ${ticket.total} FCFA*\n💳 Payment: ${ticket.paymentMode}\n📅 ${new Date().toLocaleDateString('en-US')}\n\n_Thank you for your trust!_ 🙏`,
+      es: `🛒 *${shopName}*\n\n✅ ¡Gracias por su compra!\n\n📋 *Ticket #${ticket.ref}*\n${ticket.items.map((i: any) => `• ${i.name} ×${i.qty} — ${i.total} FCFA`).join('\n')}\n\n💰 *Total: ${ticket.total} FCFA*\n💳 Pago: ${ticket.paymentMode}\n📅 ${new Date().toLocaleDateString('es-ES')}\n\n_¡Gracias por su confianza!_ 🙏`,
+      it: `🛒 *${shopName}*\n\n✅ Grazie per il suo acquisto!\n\n📋 *Scontrino #${ticket.ref}*\n${ticket.items.map((i: any) => `• ${i.name} ×${i.qty} — ${i.total} FCFA`).join('\n')}\n\n💰 *Totale: ${ticket.total} FCFA*\n💳 Pagamento: ${ticket.paymentMode}\n📅 ${new Date().toLocaleDateString('it-IT')}\n\n_Grazie per la sua fiducia!_ 🙏`,
+    }
+
+    try {
+      await twilioClient.messages.create({
+        from: process.env.TWILIO_WHATSAPP_FROM ?? 'whatsapp:+14155238886',
+        to:   `whatsapp:${formattedPhone}`,
+        body: messages[lang] ?? messages.fr,
+      })
+      return { success: true, message: 'WhatsApp envoyé !' }
+    } catch (err: any) {
+      console.error('Twilio error:', err.message)
+      return reply.code(500).send({ error: 'Échec envoi WhatsApp', details: err.message })
+    }
+  })
+
+  app.post('/api/whatsapp/send-alert', { preHandler: authenticate }, async (request, reply) => {
+    if (!twilioClient) return reply.code(503).send({ error: 'Twilio non configuré' })
+    const { phone, alertType, data, lang } = request.body as any
+    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`
+
+    let message = ''
+    if (alertType === 'low_stock') {
+      message = lang === 'fr'
+        ? `⚠️ *HabaShop — Alerte Stock*\n\n🔴 *Rupture critique :*\n${data.products.map((p: any) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Commander immédiatement pour éviter la rupture.`
+        : `⚠️ *HabaShop — Stock Alert*\n\n🔴 *Critical stock:*\n${data.products.map((p: any) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Order immediately to avoid stockout.`
+    }
+
+    try {
+      await twilioClient.messages.create({
+        from: process.env.TWILIO_WHATSAPP_FROM ?? 'whatsapp:+14155238886',
+        to:   `whatsapp:${formattedPhone}`,
+        body: message,
+      })
+      return { success: true }
+    } catch (err: any) {
+      return reply.code(500).send({ error: err.message })
+    }
+  })
+
+  // ════════════════════════════════════════
+  // ADMIN ROUTES (SUPER_ADMIN uniquement)
+  // ════════════════════════════════════════
+
+  app.get('/api/admin/tenants', { preHandler: authenticateAdmin }, async () => {
+    return prisma.tenant.findMany({
+      include: { _count: { select: { users: true, products: true, sales: true } } },
+      orderBy: { createdAt: 'desc' },
+    })
+  })
+
+  app.get('/api/admin/stats', { preHandler: authenticateAdmin }, async () => {
+    const [tenants, users, sales, products] = await Promise.all([
+      prisma.tenant.count(),
+      prisma.user.count(),
+      prisma.sale.aggregate({ _sum: { total: true }, _count: true }),
+      prisma.product.count(),
+    ])
+    return {
+      totalTenants: tenants,
+      totalUsers: users,
+      totalSales: (sales as any)._count,
+      totalRevenue: (sales as any)._sum.total ?? 0,
+      totalProducts: products,
+    }
+  })
+
+  app.post('/api/admin/tenants', { preHandler: authenticateAdmin }, async (request) => {
+    const { name, currency, country, plan, adminEmail, adminPassword } = request.body as any
+    const tenant = await prisma.tenant.create({
+      data: { name, currency: currency ?? 'XOF', country: country ?? 'SN', plan: plan ?? 'starter' },
+    })
+    if (adminEmail && adminPassword) {
+      await prisma.user.create({
+        data: {
+          name: `Admin ${name}`,
+          email: adminEmail,
+          passwordHash: await bcrypt.hash(adminPassword, 12),
+          role: 'ADMIN',
+          tenantId: tenant.id,
+        },
+      })
+    }
+    return tenant
   })
 
   // ─── DÉMARRAGE ────────────────────────

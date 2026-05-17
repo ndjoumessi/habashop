@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAppStore, useFormatAmount, formatCurrency, t, convertAmount } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
-import { salesApi, productsApi } from '@/lib/api'
+import { salesApi, productsApi, whatsappApi } from '@/lib/api'
+import PhoneInput from '@/components/ui/PhoneInput'
 import { Search, Minus, Plus, Trash2, ShoppingCart, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -166,7 +167,10 @@ export default function POS() {
   const [cart, setCart]           = useState<CartItem[]>([])
   const [activeCat, setActiveCat] = useState('all')
   const [search, setSearch]       = useState('')
-  const [payMode, setPayMode]     = useState<'cash'|'card'|'mobile'>('cash')
+  const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mobile'>('cash')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [sendWhatsApp, setSendWhatsApp]   = useState(false)
+  const [sendingWA, setSendingWA]         = useState(false)
   const [cashGiven, setCashGiven] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [clientType, setClientType] = useState<'retail'|'wholesale'|'semi'>('retail')
@@ -339,12 +343,42 @@ export default function POS() {
     } catch {
       // Hors-ligne : la vente est quand même enregistrée localement
     }
+
+    // Envoi WhatsApp si activé
+    if (sendWhatsApp && customerPhone) {
+      setSendingWA(true)
+      try {
+        const ticketRef = `V${Date.now().toString().slice(-6)}`
+        await whatsappApi.sendTicket({
+          phone: customerPhone,
+          ticket: {
+            ref: ticketRef,
+            items: cart.map(item => ({ name: item.name, qty: item.qty, total: Math.round(item.price * item.qty) })),
+            total: Math.round(total),
+            paymentMode: payMode === 'cash' ? (lang === 'fr' ? 'Espèces' : 'Cash')
+              : payMode === 'card' ? (lang === 'fr' ? 'Carte' : 'Card')
+              : payMode === 'wave' ? 'Wave'
+              : payMode === 'orange' ? 'Orange Money' : 'Mobile',
+          },
+          shopName: 'HabaShop — Dakar Central',
+          lang,
+        })
+        toast.success('📱 Ticket WhatsApp envoyé !')
+      } catch {
+        toast.error('❌ Échec envoi WhatsApp')
+      } finally {
+        setSendingWA(false)
+      }
+    }
+
     addCashierSale(total)
     toast.success('✅ Vente encaissée !')
     setCart([])
     setShowModal(false)
     setCashGiven('')
     setDiscount(null)
+    setSendWhatsApp(false)
+    setCustomerPhone('')
     setIsSaving(false)
   }
 
@@ -1071,17 +1105,19 @@ export default function POS() {
           </div>
 
           {/* Modes de paiement */}
-          <div style={{ flexShrink: 0, display: 'flex', gap: 7, padding: '10px 14px 8px' }}>
-            {[
-              { id: 'cash',   label: t('pos_cash'),   icon: '💵' },
-              { id: 'card',   label: t('pos_card'),   icon: '💳' },
-              { id: 'mobile', label: t('pos_mobile'), icon: '📲' },
-            ].map(m => (
+          <div style={{ flexShrink: 0, display: 'flex', flexWrap:'wrap', gap: 6, padding: '10px 14px 8px' }}>
+            {([
+              { id:'cash',   label:t('pos_cash'),                                               icon:'💵', color:'#10B981' },
+              { id:'card',   label:t('pos_card'),                                               icon:'💳', color:'#5B4EE8' },
+              { id:'wave',   label:'Wave',                                                      icon:'🌊', color:'#1B9AF5' },
+              { id:'orange', label:'Orange Money',                                              icon:'🟠', color:'#FF6600' },
+              { id:'mobile', label:lang === 'fr' ? 'Autre mobile' : 'Other mobile',            icon:'📲', color:'#F59E0B' },
+            ] as { id:'cash'|'card'|'wave'|'orange'|'mobile'; label:string; icon:string; color:string }[]).map(m => (
               <button
                 key={m.id}
-                onClick={() => setPayMode(m.id as 'cash' | 'card' | 'mobile')}
+                onClick={() => setPayMode(m.id)}
                 style={{
-                  flex: 1,
+                  flex:'1 1 calc(33% - 4px)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -1093,10 +1129,10 @@ export default function POS() {
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   transition: 'all .18s',
-                  background: payMode === m.id ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
-                  border: payMode === m.id ? '1.5px solid var(--p2)' : '1px solid var(--border)',
-                  color: payMode === m.id ? 'var(--p2)' : 'var(--text2)',
-                  boxShadow: payMode === m.id ? '0 4px 14px rgba(91,78,232,.2)' : 'none',
+                  background: payMode === m.id ? `${m.color}22` : 'var(--bg3)',
+                  border: payMode === m.id ? `1.5px solid ${m.color}` : '1px solid var(--border)',
+                  color: payMode === m.id ? m.color : 'var(--text2)',
+                  boxShadow: payMode === m.id ? `0 4px 14px ${m.color}33` : 'none',
                 }}
               >
                 <span style={{ fontSize: 18 }}>{m.icon}</span>
@@ -1104,6 +1140,58 @@ export default function POS() {
               </button>
             ))}
           </div>
+
+          {/* QR Code Wave / Orange Money */}
+          {(payMode === 'wave' || payMode === 'orange') && (
+            <div style={{
+              margin:'0 14px 8px',
+              padding:'16px',
+              background: payMode === 'wave' ? 'rgba(27,154,245,.08)' : 'rgba(255,102,0,.08)',
+              border:`1px solid ${payMode === 'wave' ? 'rgba(27,154,245,.25)' : 'rgba(255,102,0,.25)'}`,
+              borderRadius:12, textAlign:'center', flexShrink:0,
+            }}>
+              <div style={{ width:100, height:100, margin:'0 auto 10px', background:'#fff', borderRadius:10, padding:6, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 12px rgba(0,0,0,.15)' }}>
+                <svg viewBox="0 0 100 100" width="88" height="88">
+                  <rect width="100" height="100" fill="white"/>
+                  <rect x="5" y="5" width="30" height="30" fill="none" stroke="black" strokeWidth="4"/>
+                  <rect x="10" y="10" width="20" height="20" fill="black"/>
+                  <rect x="65" y="5" width="30" height="30" fill="none" stroke="black" strokeWidth="4"/>
+                  <rect x="70" y="10" width="20" height="20" fill="black"/>
+                  <rect x="5" y="65" width="30" height="30" fill="none" stroke="black" strokeWidth="4"/>
+                  <rect x="10" y="70" width="20" height="20" fill="black"/>
+                  <rect x="45" y="5" width="5" height="5" fill="black"/>
+                  <rect x="55" y="5" width="5" height="5" fill="black"/>
+                  <rect x="45" y="15" width="5" height="5" fill="black"/>
+                  <rect x="5" y="45" width="5" height="5" fill="black"/>
+                  <rect x="15" y="45" width="5" height="5" fill="black"/>
+                  <rect x="25" y="55" width="5" height="5" fill="black"/>
+                  <rect x="45" y="45" width="5" height="5" fill="black"/>
+                  <rect x="55" y="55" width="5" height="5" fill="black"/>
+                  <rect x="65" y="45" width="5" height="5" fill="black"/>
+                  <rect x="75" y="55" width="5" height="5" fill="black"/>
+                  <rect x="85" y="45" width="5" height="5" fill="black"/>
+                  <circle cx="50" cy="50" r="8" fill={payMode === 'wave' ? '#1B9AF5' : '#FF6600'}/>
+                  <text x="50" y="54" textAnchor="middle" fontSize="8" fill="white" fontWeight="bold">{payMode === 'wave' ? 'W' : 'O'}</text>
+                </svg>
+              </div>
+              <div style={{ fontSize:12, fontWeight:800, color: payMode === 'wave' ? '#1B9AF5' : '#FF6600', marginBottom:4 }}>
+                {payMode === 'wave' ? '🌊 Wave' : '🟠 Orange Money'}
+              </div>
+              <div style={{ fontSize:19, fontWeight:900, color:'var(--text)', fontFamily:'var(--mono)', marginBottom:6 }}>{fmt(total)}</div>
+              <div style={{ fontSize:11, color:'var(--text3)', marginBottom:10 }}>
+                {lang === 'fr' ? `Demandez au client de scanner avec ${payMode === 'wave' ? 'Wave' : 'Orange Money'}` : `Ask customer to scan with ${payMode === 'wave' ? 'Wave' : 'Orange Money'}`}
+              </div>
+              <button type="button" onClick={() => {
+                toast.success(lang === 'fr' ? `✅ Paiement ${payMode === 'wave' ? 'Wave' : 'Orange Money'} confirmé !` : `✅ ${payMode === 'wave' ? 'Wave' : 'Orange Money'} payment confirmed!`)
+                confirmSale()
+              }} style={{
+                background: payMode === 'wave' ? '#1B9AF5' : '#FF6600',
+                border:'none', borderRadius:10, padding:'8px 20px',
+                fontSize:12, fontWeight:700, color:'#fff',
+                cursor:'pointer', fontFamily:'var(--font)',
+              }}>✅ {lang === 'fr' ? 'Confirmer le paiement' : 'Confirm payment'}</button>
+            </div>
+          )}
 
           {/* Input espèces */}
           {payMode === 'cash' && (
@@ -1502,26 +1590,62 @@ export default function POS() {
               }}>{fmt(total)}</span>
             </div>
 
+            {/* WhatsApp toggle */}
+            <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: sendWhatsApp ? 12 : 0 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <span style={{ fontSize:20 }}>📱</span>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>
+                      {lang === 'fr' ? 'Envoyer le ticket WhatsApp' : lang === 'en' ? 'Send WhatsApp receipt' : lang === 'es' ? 'Enviar ticket WhatsApp' : 'Invia scontrino WhatsApp'}
+                    </div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>
+                      {lang === 'fr' ? 'Le client recevra son reçu sur WhatsApp' : 'Customer receives receipt on WhatsApp'}
+                    </div>
+                  </div>
+                </div>
+                <button type="button" onClick={() => setSendWhatsApp(!sendWhatsApp)} style={{
+                  width:44, height:24, borderRadius:99, flexShrink:0,
+                  background: sendWhatsApp ? '#25D366' : 'var(--bg4)',
+                  border:'none', cursor:'pointer', position:'relative', transition:'background .2s',
+                }}>
+                  <div style={{
+                    position:'absolute', top:2, width:20, height:20,
+                    left: sendWhatsApp ? 22 : 2,
+                    borderRadius:'50%', background:'#fff', transition:'left .2s',
+                    boxShadow:'0 2px 4px rgba(0,0,0,.2)',
+                  }} />
+                </button>
+              </div>
+              {sendWhatsApp && (
+                <div>
+                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+                    {lang === 'fr' ? 'Numéro WhatsApp du client' : 'Customer WhatsApp number'}
+                  </label>
+                  <PhoneInput value={customerPhone} onChange={setCustomerPhone} placeholder="77 000 00 00" />
+                </div>
+              )}
+            </div>
+
             {/* Boutons */}
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 onClick={confirmSale}
-                disabled={isSaving}
+                disabled={isSaving || sendingWA}
                 style={{
                   flex: 1,
-                  background: 'linear-gradient(135deg, var(--acc2), #059669)',
+                  background: (isSaving || sendingWA) ? 'var(--bg4)' : 'linear-gradient(135deg, var(--acc2), #059669)',
                   border: 'none',
                   borderRadius: 10,
                   padding: '12px',
                   fontSize: 14,
                   fontWeight: 700,
-                  color: '#fff',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  opacity: isSaving ? 0.7 : 1,
+                  color: (isSaving || sendingWA) ? 'var(--text3)' : '#fff',
+                  cursor: (isSaving || sendingWA) ? 'not-allowed' : 'pointer',
                   fontFamily: 'inherit',
-                  boxShadow: '0 4px 16px rgba(14,196,126,.35)',
+                  boxShadow: (isSaving || sendingWA) ? 'none' : '0 4px 16px rgba(14,196,126,.35)',
                 }}
-              >{isSaving ? '⏳ Enregistrement…' : `✅ ${t('pos_validate')}`}</button>
+              >{sendingWA ? '📱 Envoi WhatsApp…' : isSaving ? '⏳ Enregistrement…' : `✅ ${t('pos_validate')}`}</button>
               <button
                 onClick={() => { printTicket(); confirmSale() }}
                 className="mini-btn"

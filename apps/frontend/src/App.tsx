@@ -22,6 +22,7 @@ import Activity from '@/pages/Activity'
 import Notifications from '@/pages/Notifications'
 import Settings from '@/pages/Settings'
 import SignupPage from '@/pages/SignupPage'
+import AdminDashboard from '@/pages/AdminDashboard'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -70,6 +71,11 @@ export default function App() {
         <Route path="notifications" element={<Notifications />} />
         <Route path="settings" element={<Settings />} />
       </Route>
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

@@ -108,3 +108,25 @@ export const tenantApi = {
   get:    ()         => api.get<any>('/api/tenant'),
   update: (data:any) => api.put<any>('/api/tenant', data),
 }
+
+export const whatsappApi = {
+  sendTicket: (data: {
+    phone: string
+    ticket: { ref: string; items: { name:string; qty:number; total:number }[]; total: number; paymentMode: string }
+    shopName: string
+    lang: string
+  }) => api.post<any>('/api/whatsapp/send-ticket', data),
+
+  sendAlert: (data: {
+    phone: string
+    alertType: string
+    data: any
+    lang: string
+  }) => api.post<any>('/api/whatsapp/send-alert', data),
+}
+
+export const adminApi = {
+  tenants:      ()         => api.get<any[]>('/api/admin/tenants'),
+  stats:        ()         => api.get<any>('/api/admin/stats'),
+  createTenant: (data:any) => api.post<any>('/api/admin/tenants', data),
+}
