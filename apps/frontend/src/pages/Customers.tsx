@@ -148,6 +148,7 @@ export default function Customers() {
     name: '', type: 'Détail' as ClientType, phone: '', email: '', address: '', notes: '',
   })
   const [loyaltyCustomer, setLoyaltyCustomer] = useState<Customer | null>(null)
+  const [customersTab, setCustomersTab] = useState<'list' | 'map' | 'stats'>('list')
 
   const filtered = customers.filter(c =>
     (!search || c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)) &&
@@ -223,8 +224,34 @@ export default function Customers() {
         ))}
       </div>
 
+      {/* Onglets */}
+      <div style={{
+        display: 'flex', gap: 4,
+        background: 'var(--bg3)', borderRadius: 10, padding: 4,
+      }}>
+        {[
+          { id: 'list',  label: lang === 'fr' ? '📋 Liste'        : '📋 List'       },
+          { id: 'map',   label: lang === 'fr' ? '🗺️ Carte'        : '🗺️ Map'        },
+          { id: 'stats', label: lang === 'fr' ? '📊 Statistiques' : '📊 Statistics'  },
+        ].map(tab => (
+          <button key={tab.id} type="button"
+            onClick={() => setCustomersTab(tab.id as any)}
+            style={{
+              flex: 1, padding: '8px', borderRadius: 8,
+              fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'var(--font)',
+              background: customersTab === tab.id
+                ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
+              color: customersTab === tab.id ? '#fff' : 'var(--text2)',
+              border: 'none', transition: 'all .15s',
+            }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Panel */}
-      <div className="panel">
+      {customersTab === 'list' && <div className="panel">
         <div className="panel-head">
           <span className="panel-title">👥 {t('customers_title')}</span>
           <div className="flex items-center gap-2">
@@ -325,7 +352,193 @@ export default function Customers() {
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
+
+      {/* ── Onglet Carte ── */}
+      {customersTab === 'map' && (
+        <div className="panel">
+          <div className="panel-h">
+            <span className="panel-t">🗺️ {lang === 'fr' ? 'Carte des clients' : 'Customer map'}</span>
+          </div>
+          <div style={{
+            position: 'relative',
+            background: 'linear-gradient(135deg,rgba(59,130,246,.05),rgba(91,78,232,.05))',
+            border: '1px solid var(--border)',
+            borderRadius: 12, overflow: 'hidden',
+            height: 400,
+          }}>
+            <svg viewBox="0 0 800 400" style={{ width: '100%', height: '100%' }}>
+              <rect width="800" height="400" fill="var(--bg3)" rx="12"/>
+              <ellipse cx="200" cy="200" rx="150" ry="120" fill="rgba(59,130,246,.08)" stroke="rgba(59,130,246,.2)" strokeWidth="1"/>
+              <ellipse cx="500" cy="150" rx="120" ry="90" fill="rgba(91,78,232,.08)" stroke="rgba(91,78,232,.2)" strokeWidth="1"/>
+              <ellipse cx="600" cy="300" rx="100" ry="80" fill="rgba(14,196,126,.08)" stroke="rgba(14,196,126,.2)" strokeWidth="1"/>
+              <ellipse cx="350" cy="320" rx="80" ry="60" fill="rgba(240,165,0,.08)" stroke="rgba(240,165,0,.2)" strokeWidth="1"/>
+              <text x="200" y="180" textAnchor="middle" fontSize="12" fill="#3B82F6" fontWeight="600">Zone Centre</text>
+              <text x="500" y="130" textAnchor="middle" fontSize="12" fill="#5B4EE8" fontWeight="600">Zone Nord</text>
+              <text x="600" y="280" textAnchor="middle" fontSize="12" fill="#10B981" fontWeight="600">Zone Est</text>
+              <text x="350" y="310" textAnchor="middle" fontSize="12" fill="#F59E0B" fontWeight="600">Zone Sud</text>
+              {customers.slice(0, 20).map((customer, i) => {
+                const zones = [
+                  { cx: 200, cy: 200, r: 120 },
+                  { cx: 500, cy: 150, r: 90 },
+                  { cx: 600, cy: 300, r: 80 },
+                  { cx: 350, cy: 320, r: 60 },
+                ]
+                const zone = zones[i % 4]
+                const angle = (i / 5) * Math.PI * 2
+                const radius = (i % 3 + 1) * (zone.r / 3)
+                const x = zone.cx + Math.cos(angle) * radius
+                const y = zone.cy + Math.sin(angle) * radius
+                const colorMap: Record<string, string> = {
+                  'Grossiste': '#5B4EE8', 'Semi-gros': '#F59E0B',
+                  'Fidèle': '#10B981', 'Détail': '#3B82F6',
+                }
+                const color = colorMap[customer.type] ?? '#3B82F6'
+                return (
+                  <g key={customer.id}>
+                    <circle cx={x} cy={y} r={14} fill={color} opacity={0.15}/>
+                    <circle cx={x} cy={y} r={8} fill={color} opacity={0.85} style={{ cursor: 'pointer' }}>
+                      <title>{customer.name} — {customer.type}</title>
+                    </circle>
+                  </g>
+                )
+              })}
+              {[
+                { color: '#5B4EE8', label: 'Grossiste' },
+                { color: '#F59E0B', label: 'Semi-gros' },
+                { color: '#10B981', label: 'Fidèle' },
+                { color: '#3B82F6', label: 'Détail' },
+              ].map((l, i) => (
+                <g key={l.label}>
+                  <circle cx={20} cy={20 + i * 22} r={6} fill={l.color}/>
+                  <text x={32} y={25 + i * 22} fontSize="11" fill="var(--text3)">{l.label}</text>
+                </g>
+              ))}
+            </svg>
+            <div style={{
+              position: 'absolute', bottom: 12, right: 12,
+              background: 'rgba(255,255,255,.9)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: 10, padding: '10px 14px',
+              fontSize: 12,
+            }}>
+              <div style={{ fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }}>
+                📍 {customers.length} {lang === 'fr' ? 'clients au total' : 'total customers'}
+              </div>
+              {[
+                { type: 'Grossiste', color: '#5B4EE8' },
+                { type: 'Semi-gros', color: '#F59E0B' },
+                { type: 'Fidèle',    color: '#10B981' },
+              ].map(t => (
+                <div key={t.type} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, color: '#666', marginBottom: 2 }}>
+                  <span style={{ color: t.color, fontWeight: 600 }}>● {t.type}</span>
+                  <span>{customers.filter(c => c.type === t.type).length}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
+              📋 {lang === 'fr' ? 'Clients par zone' : 'Customers by zone'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+              {['Zone Centre', 'Zone Nord', 'Zone Est', 'Zone Sud'].map((zone, i) => {
+                const zoneCustomers = customers.filter((_, idx) => idx % 4 === i)
+                const zoneCA = zoneCustomers.reduce((s, c) => s + (c.totalCA ?? 0), 0)
+                return (
+                  <div key={zone} style={{
+                    background: 'var(--bg3)', border: '1px solid var(--border)',
+                    borderRadius: 10, padding: '12px 14px',
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>📍 {zone}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                      {zoneCustomers.length} {lang === 'fr' ? 'clients' : 'customers'}
+                      {' · '}
+                      <span style={{ color: 'var(--p2)', fontWeight: 600 }}>{fmt(zoneCA)}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Onglet Stats ── */}
+      {customersTab === 'stats' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="panel">
+            <div className="panel-h">
+              <span className="panel-t">📊 {lang === 'fr' ? 'Répartition par type' : 'Distribution by type'}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {(['Grossiste', 'Semi-gros', 'Fidèle', 'Détail'] as const).map(type => {
+                const count = customers.filter(c => c.type === type).length
+                const ca = customers.filter(c => c.type === type).reduce((s, c) => s + (c.totalCA ?? 0), 0)
+                const pct = customers.length > 0 ? Math.round(count / customers.length * 100) : 0
+                const colors: Record<string, string> = {
+                  'Grossiste': 'var(--p2)', 'Semi-gros': 'var(--acc)',
+                  'Fidèle': 'var(--acc2)', 'Détail': '#60A5FA',
+                }
+                const color = colors[type] ?? 'var(--p2)'
+                return (
+                  <div key={type}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{type}</span>
+                      <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
+                        <span style={{ color: 'var(--text3)' }}>{count} clients</span>
+                        <span style={{ color, fontWeight: 700 }}>{fmt(ca)}</span>
+                        <span style={{ color: 'var(--text3)' }}>{pct} %</span>
+                      </div>
+                    </div>
+                    <div style={{ height: 8, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width .5s ease' }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-h">
+              <span className="panel-t">🏆 {lang === 'fr' ? 'Top 5 clients' : 'Top 5 customers'}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[...customers]
+                .sort((a, b) => (b.totalCA ?? 0) - (a.totalCA ?? 0))
+                .slice(0, 5)
+                .map((c, i) => (
+                <div key={c.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px', background: 'var(--bg3)',
+                  border: '1px solid var(--border)', borderRadius: 10,
+                }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                    background: i === 0 ? 'linear-gradient(135deg,#F59E0B,#FCD34D)'
+                      : i === 1 ? 'linear-gradient(135deg,#9CA3AF,#D1D5DB)'
+                      : i === 2 ? 'linear-gradient(135deg,#D97706,#F59E0B)'
+                      : 'var(--bg4)',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#fff',
+                  }}>
+                    {i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{c.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{c.type} · {c.loyaltyPoints} pts</div>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--p2)', fontFamily: 'var(--mono)' }}>
+                    {fmt(c.totalCA ?? 0)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal fiche client ── */}
       {viewCustomer && (

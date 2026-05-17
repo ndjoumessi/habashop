@@ -21,6 +21,9 @@ const fr: TranslationMap = {
   nav_activity: "Journal d'activités",
   nav_notifications: 'Notifications',
   nav_marketing: 'Marketing WhatsApp',
+  nav_ai: 'Assistant IA',
+  nav_goals: 'Objectifs & KPIs',
+  nav_api_docs: 'API & Intégrations',
 
   // KPIs (compat)
   kpi_sales_today: 'Ventes du jour',
@@ -643,6 +646,9 @@ const en: TranslationMap = {
   nav_settings: 'Settings', nav_users: 'Users', nav_activity: 'Activity Log',
   nav_notifications: 'Notifications',
   nav_marketing: 'WhatsApp Marketing',
+  nav_ai: 'AI Assistant',
+  nav_goals: 'Goals & KPIs',
+  nav_api_docs: 'API & Integrations',
 
   kpi_sales_today: "Today's Sales", kpi_monthly_revenue: 'Monthly Revenue',
   kpi_employees: 'Active Employees', kpi_stock: 'Items in Stock',
@@ -969,6 +975,9 @@ const es: TranslationMap = {
   nav_settings: 'Ajustes', nav_users: 'Usuarios', nav_activity: 'Registro de actividad',
   nav_notifications: 'Notificaciones',
   nav_marketing: 'Marketing WhatsApp',
+  nav_ai: 'Asistente IA',
+  nav_goals: 'Objetivos & KPIs',
+  nav_api_docs: 'API & Integraciones',
 
   kpi_sales_today: 'Ventas del día', kpi_monthly_revenue: 'Ingresos mensuales',
   kpi_employees: 'Empleados activos', kpi_stock: 'Artículos en stock',
@@ -1296,6 +1305,9 @@ const it: TranslationMap = {
   nav_settings: 'Impostazioni', nav_users: 'Utenti', nav_activity: 'Registro attività',
   nav_notifications: 'Notifiche',
   nav_marketing: 'Marketing WhatsApp',
+  nav_ai: 'Assistente IA',
+  nav_goals: 'Obiettivi & KPI',
+  nav_api_docs: 'API & Integrazioni',
 
   kpi_sales_today: 'Vendite oggi', kpi_monthly_revenue: 'Fatturato mensile',
   kpi_employees: 'Dipendenti attivi', kpi_stock: 'Articoli in stock',

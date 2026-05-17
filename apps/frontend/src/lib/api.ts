@@ -134,6 +134,8 @@ export const adminApi = {
 export const aiApi = {
   analyze: (type: 'full' | 'stock' | 'revenue' | 'hr', lang: string) =>
     api.post<{ success: boolean; analysis: string; data: any }>('/api/ai/analyze', { type, lang }),
+  chat: (messages: { role: string; content: string }[], lang: string) =>
+    api.post<{ response: string }>('/api/ai/chat', { messages, lang }),
 }
 
 export const loyaltyApi = {
