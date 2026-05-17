@@ -1,10 +1,12 @@
 import { useState } from 'react'
 
 const COUNTRY_CODES = [
-  { code:'+221', flag:'🇸🇳', country:'Sénégal',       iso:'SN' },
-  { code:'+225', flag:'🇨🇮', country:"Côte d'Ivoire",  iso:'CI' },
-  { code:'+223', flag:'🇲🇱', country:'Mali',            iso:'ML' },
+  { code:'+39',  flag:'🇮🇹', country:'Italia',          iso:'IT' },
+  { code:'+33',  flag:'🇫🇷', country:'France',          iso:'FR' },
+  { code:'+221', flag:'🇸🇳', country:'Sénégal',         iso:'SN' },
+  { code:'+225', flag:'🇨🇮', country:"Côte d'Ivoire",   iso:'CI' },
   { code:'+237', flag:'🇨🇲', country:'Cameroun',        iso:'CM' },
+  { code:'+223', flag:'🇲🇱', country:'Mali',            iso:'ML' },
   { code:'+242', flag:'🇨🇬', country:'Congo',           iso:'CG' },
   { code:'+243', flag:'🇨🇩', country:'RD Congo',        iso:'CD' },
   { code:'+241', flag:'🇬🇦', country:'Gabon',           iso:'GA' },
@@ -18,9 +20,13 @@ const COUNTRY_CODES = [
   { code:'+212', flag:'🇲🇦', country:'Maroc',           iso:'MA' },
   { code:'+213', flag:'🇩🇿', country:'Algérie',         iso:'DZ' },
   { code:'+216', flag:'🇹🇳', country:'Tunisie',         iso:'TN' },
-  { code:'+33',  flag:'🇫🇷', country:'France',          iso:'FR' },
   { code:'+32',  flag:'🇧🇪', country:'Belgique',        iso:'BE' },
   { code:'+41',  flag:'🇨🇭', country:'Suisse',          iso:'CH' },
+  { code:'+34',  flag:'🇪🇸', country:'Espagne',         iso:'ES' },
+  { code:'+44',  flag:'🇬🇧', country:'Royaume-Uni',     iso:'GB' },
+  { code:'+49',  flag:'🇩🇪', country:'Allemagne',       iso:'DE' },
+  { code:'+351', flag:'🇵🇹', country:'Portugal',        iso:'PT' },
+  { code:'+352', flag:'🇱🇺', country:'Luxembourg',      iso:'LU' },
   { code:'+1',   flag:'🇺🇸', country:'États-Unis',      iso:'US' },
   { code:'+1',   flag:'🇨🇦', country:'Canada',          iso:'CA' },
 ]

@@ -91,6 +91,8 @@ const SIGNUP_TEXTS: Record<Lang, ST> = {
 }
 
 const COUNTRIES = [
+  { code: 'IT', flag: '🇮🇹', name: 'Italia' },
+  { code: 'FR', flag: '🇫🇷', name: 'France' },
   { code: 'SN', flag: '🇸🇳', name: 'Sénégal' },
   { code: 'CI', flag: '🇨🇮', name: "Côte d'Ivoire" },
   { code: 'ML', flag: '🇲🇱', name: 'Mali' },
@@ -108,9 +110,13 @@ const COUNTRIES = [
   { code: 'MA', flag: '🇲🇦', name: 'Maroc' },
   { code: 'DZ', flag: '🇩🇿', name: 'Algérie' },
   { code: 'TN', flag: '🇹🇳', name: 'Tunisie' },
-  { code: 'FR', flag: '🇫🇷', name: 'France' },
   { code: 'BE', flag: '🇧🇪', name: 'Belgique' },
   { code: 'CH', flag: '🇨🇭', name: 'Suisse' },
+  { code: 'ES', flag: '🇪🇸', name: 'España' },
+  { code: 'GB', flag: '🇬🇧', name: 'United Kingdom' },
+  { code: 'DE', flag: '🇩🇪', name: 'Deutschland' },
+  { code: 'PT', flag: '🇵🇹', name: 'Portugal' },
+  { code: 'LU', flag: '🇱🇺', name: 'Luxembourg' },
   { code: 'CA', flag: '🇨🇦', name: 'Canada' },
   { code: 'US', flag: '🇺🇸', name: 'États-Unis' },
   { code: 'OTHER', flag: '🌍', name: 'Autre' },
