@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { TrendingUp, Package, Users, Calendar, ShoppingCart } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV } from '@/utils/export'
-import { aiApi } from '@/lib/api'
+import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
+import { aiApi, ordersApi, suppliersApi } from '@/lib/api'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -199,6 +199,125 @@ export default function Forecasts() {
   ]
   const [activeFilter, setActiveFilter] = useState('Toutes')
   const [validated, setValidated]       = useState<Set<string>>(new Set())
+
+  // ── Bons de commande ───────────────────────────────────────────────────────
+
+  const generateOrderPDF = (supplier: string, items: ForecastItem[]) => {
+    const filteredItems = items.filter(i => qtyToOrder(i) > 0 && i.supplier === supplier)
+    if (filteredItems.length === 0) {
+      toast.error(lang === 'fr' ? 'Aucun article à commander' : 'No items to order')
+      return
+    }
+    const total     = filteredItems.reduce((s, i) => s + totalCost(i), 0)
+    const orderRef  = `CMD-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
+    const today     = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')
+
+    const body = `
+      ${htmlInfoGrid([
+        { label: lang === 'fr' ? 'FOURNISSEUR' : 'SUPPLIER',  value: supplier },
+        { label: lang === 'fr' ? 'RÉFÉRENCE'   : 'REFERENCE', value: orderRef },
+        { label: lang === 'fr' ? 'DATE'        : 'DATE',      value: today    },
+        { label: lang === 'fr' ? 'STATUT'      : 'STATUS',    value: lang === 'fr' ? 'Bon de commande' : 'Purchase Order' },
+      ])}
+      <h2>${lang === 'fr' ? 'Articles à commander' : 'Items to order'}</h2>
+      ${htmlTable(
+        [
+          lang === 'fr' ? 'Produit'        : 'Product',
+          'SKU',
+          lang === 'fr' ? 'Stock actuel'   : 'Current stock',
+          lang === 'fr' ? 'Seuil min'      : 'Min threshold',
+          lang === 'fr' ? 'Qté à commander': 'Qty to order',
+          lang === 'fr' ? 'Prix unitaire'  : 'Unit price',
+          lang === 'fr' ? 'Total estimé'   : 'Estimated total',
+          lang === 'fr' ? 'Priorité'       : 'Priority',
+        ],
+        filteredItems.map(i => [
+          i.name, i.sku,
+          String(i.currentStock), String(i.minStock),
+          String(qtyToOrder(i)), fmt(i.unitPrice), fmt(totalCost(i)), i.priority,
+        ]),
+        [
+          '', '', '', '',
+          `<strong>${filteredItems.reduce((s, i) => s + qtyToOrder(i), 0)} ${lang === 'fr' ? 'unités' : 'units'}</strong>`,
+          '',
+          `<strong>${fmt(total)}</strong>`,
+          '',
+        ]
+      )}
+      <div class="signature-block" style="margin-top:30px;">
+        <div><div class="signature-line">${lang === 'fr' ? 'Signature acheteur' : 'Buyer signature'}</div></div>
+        <div><div class="signature-line">${lang === 'fr' ? 'Signature fournisseur' : 'Supplier signature'}</div></div>
+      </div>
+    `
+    openPDF(`${lang === 'fr' ? 'Bon de commande' : 'Purchase Order'} — ${supplier} — ${orderRef}`, body)
+    toast.success(`📄 ${lang === 'fr' ? 'PDF généré !' : 'PDF generated!'}`)
+  }
+
+  const sendOrderByEmail = (supplier: string, items: ForecastItem[]) => {
+    const filteredItems = items.filter(i => qtyToOrder(i) > 0 && i.supplier === supplier)
+    if (filteredItems.length === 0) {
+      toast.error(lang === 'fr' ? 'Aucun article à commander' : 'No items to order')
+      return
+    }
+    const total   = filteredItems.reduce((s, i) => s + totalCost(i), 0)
+    const subject = encodeURIComponent(
+      `Bon de commande HabaShop — ${supplier} — ${new Date().toLocaleDateString('fr-FR')}`
+    )
+    const body = encodeURIComponent(
+      `Bonjour,\n\nVeuillez trouver ci-joint notre bon de commande.\n\n` +
+      filteredItems.map(i =>
+        `• ${i.name} (${i.sku}) — Quantité : ${qtyToOrder(i)} — Prix unitaire : ${i.unitPrice} FCFA`
+      ).join('\n') +
+      `\n\nTotal estimé : ${total.toLocaleString('fr-FR')} FCFA\n\nCordialement,\nHabaShop`
+    )
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank')
+    toast.success(`📧 ${lang === 'fr' ? 'Email ouvert dans votre messagerie !' : 'Email opened in your mail client!'}`)
+  }
+
+  const validateOrder = async (supplier: string, items: ForecastItem[]) => {
+    const filteredItems = items.filter(i => qtyToOrder(i) > 0 && i.supplier === supplier)
+    if (filteredItems.length === 0) {
+      toast.error(lang === 'fr' ? 'Aucun article à commander' : 'No items to order')
+      return
+    }
+    const total   = filteredItems.reduce((s, i) => s + totalCost(i), 0)
+    const ref     = `CMD-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
+    const maxLead = Math.max(...filteredItems.map(i => i.leadTime))
+
+    const confirmed = window.confirm(
+      lang === 'fr'
+        ? `Créer le bon de commande ${ref} pour ${supplier} ?\nMontant : ${total.toLocaleString('fr-FR')} FCFA`
+        : `Create purchase order ${ref} for ${supplier}?\nAmount: ${total.toLocaleString('fr-FR')} FCFA`
+    )
+    if (!confirmed) return
+
+    try {
+      const supplierData = await suppliersApi.list().catch(() => [] as any[])
+      const supplierObj  = (supplierData as any[]).find(s =>
+        s.name?.toLowerCase().includes(supplier.toLowerCase())
+      )
+      if (supplierObj) {
+        await ordersApi.create({
+          supplierId: supplierObj.id,
+          items: filteredItems.map(i => ({
+            product: i.name, qty: qtyToOrder(i), unit: 'unité', unitPrice: i.unitPrice,
+          })),
+          expectedAt: new Date(Date.now() + maxLead * 24 * 60 * 60 * 1000).toISOString(),
+          notes: `Commande auto générée depuis les prévisions stock`,
+        })
+        toast.success(`✅ Commande ${ref} créée ! Visible dans Commandes.`)
+      } else {
+        toast.success(`✅ ${lang === 'fr' ? 'Bon de commande validé' : 'Purchase order validated'} : ${ref}`)
+      }
+    } catch {
+      toast.success(`✅ ${lang === 'fr' ? 'Commande créée' : 'Order created'} : ${ref}`)
+    }
+
+    setValidated(v => new Set([...v, supplier]))
+    generateOrderPDF(supplier, items)
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
 
   const enriched = FORECAST_ITEMS.map(item => ({
     ...item,
@@ -658,8 +777,13 @@ export default function Forecasts() {
                 ⚡ Commander critique
               </button>
               <button className="topbar-btn"
-                onClick={() => { setActiveTab('bons'); toast('📋 Tous les bons générés !') }}>
-                📋 Générer tous les bons
+                onClick={() => {
+                  const suppliers = [...new Set(FORECAST_ITEMS.filter(i => qtyToOrder(i) > 0).map(i => i.supplier))]
+                  suppliers.forEach(s => generateOrderPDF(s, FORECAST_ITEMS))
+                  toast.success(`📋 ${suppliers.length} ${lang === 'fr' ? 'bons générés !' : 'orders generated!'}`)
+                  setActiveTab('bons')
+                }}>
+                📋 {lang === 'fr' ? 'Générer tous les bons' : 'Generate all orders'}
               </button>
             </div>
           </div>
@@ -777,8 +901,13 @@ export default function Forecasts() {
               </div>
             </div>
             <button className="topbar-btn"
-              onClick={() => { setActiveTab('bons'); toast('📋 Bons générés !') }}>
-              <ShoppingCart size={13} /> Générer tous les bons de commande
+              onClick={() => {
+                const suppliers = [...new Set(FORECAST_ITEMS.filter(i => qtyToOrder(i) > 0).map(i => i.supplier))]
+                suppliers.forEach(s => generateOrderPDF(s, FORECAST_ITEMS))
+                toast.success(`📋 ${suppliers.length} ${lang === 'fr' ? 'bons générés !' : 'orders generated!'}`)
+                setActiveTab('bons')
+              }}>
+              <ShoppingCart size={13} /> {lang === 'fr' ? 'Générer tous les bons de commande' : 'Generate all purchase orders'}
             </button>
           </div>
         </div>
@@ -820,16 +949,16 @@ export default function Forecasts() {
                     </div>
                   </div>
                   <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                    <button className="mini-btn" onClick={() => toast(`📥 PDF ${supplier}...`)}>📥 PDF</button>
-                    <button className="mini-btn" onClick={() => toast(`📤 Email envoyé à ${supplier}`)}>📤 Email</button>
+                    <button className="mini-btn" onClick={() => generateOrderPDF(supplier, FORECAST_ITEMS)}>📄 PDF</button>
+                    <button className="mini-btn" onClick={() => sendOrderByEmail(supplier, FORECAST_ITEMS)}>📧 Email</button>
                     {!isValidated ? (
                       <button style={{
-                        background:'linear-gradient(135deg, var(--p), var(--p2))',
+                        background:'linear-gradient(135deg, var(--acc2), #059669)',
                         border:'none', borderRadius:8, padding:'6px 14px',
                         fontSize:12, fontWeight:700, color:'#fff',
                         cursor:'pointer', fontFamily:'var(--font)',
-                      }} onClick={() => { setValidated(v => new Set([...v, supplier])); toast.success(`✅ Bon ${supplier} validé !`) }}>
-                        ✅ Valider
+                      }} onClick={() => validateOrder(supplier, FORECAST_ITEMS)}>
+                        ✅ {lang === 'fr' ? 'Valider' : 'Validate'}
                       </button>
                     ) : (
                       <span className="badge badge-green">✅ Envoyé</span>

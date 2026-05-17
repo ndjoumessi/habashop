@@ -902,7 +902,7 @@ export default function POS() {
             COLONNE DROITE — PANIER
         ════════════════════════════════ */}
         <div style={{
-          width: isMobile ? '100%' : 320,
+          width: isMobile ? '100%' : 340,
           flexShrink: 0,
           display: isMobile && mobileView === 'products' ? 'none' : 'flex',
           flexDirection: 'column',
@@ -954,9 +954,12 @@ export default function POS() {
 
           {/* Liste articles — ZONE SCROLLABLE */}
           <div style={{
-            flex: 1,
+            flexGrow: 1,
+            flexShrink: 1,
+            flexBasis: 0,
             minHeight: 0,
             overflowY: 'auto',
+            overflowX: 'hidden',
             padding: '8px 12px',
           }}>
             {cart.length === 0 ? (
