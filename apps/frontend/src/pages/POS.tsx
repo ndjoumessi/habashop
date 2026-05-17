@@ -510,9 +510,11 @@ export default function POS() {
       {/* PAGE WRAPPER */}
       <div style={{
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: isMobile ? 'column' : 'row',
         height: 'calc(100vh - 54px)',
         overflow: 'hidden',
+        background: 'var(--bg)',
+        gap: 0,
       }}>
 
         {/* Mobile nav bar */}
@@ -546,15 +548,6 @@ export default function POS() {
           </div>
         )}
 
-        {/* Inner content */}
-        <div style={{
-          display: 'flex',
-          flex: 1,
-          minHeight: 0,
-          gap: isMobile ? 0 : 14,
-          overflow: 'hidden',
-        }}>
-
         {/* ════════════════════════════════
             COLONNE GAUCHE — CATALOGUE
         ════════════════════════════════ */}
@@ -563,15 +556,18 @@ export default function POS() {
           minWidth: 0,
           display: isMobile && mobileView === 'cart' ? 'none' : 'flex',
           flexDirection: 'column',
+          padding: '12px 12px 12px 16px',
           gap: 10,
           overflow: 'hidden',
         }}>
 
           {/* Onglets Caisse / Historique */}
           <div style={{
-            display:'flex', gap:4,
-            background:'var(--bg3)', borderRadius:10, padding:4,
-            flexShrink:0,
+            display: 'flex', gap: 4,
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 12, padding: 5,
+            flexShrink: 0,
           }}>
             {([
               { id:'pos',     label: lang === 'fr' ? '🛒 Caisse'     : lang === 'en' ? '🛒 Register'  : lang === 'es' ? '🛒 Caja'      : '🛒 Cassa'   },
@@ -591,41 +587,45 @@ export default function POS() {
             ))}
           </div>
 
-          {/* Filtres catégories + Recherche */}
-          {posTab === 'pos' && <div style={{
-            flexShrink: 0,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 7,
-            alignItems: 'center',
-          }}>
-            {CATS.map(c => (
-              <button
-                key={c.id}
-                onClick={() => setActiveCat(c.id)}
-                style={{
-                  padding: '7px 15px',
-                  borderRadius: 9,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font)',
-                  transition: 'all .15s',
-                  border: 'none',
-                  background: activeCat === c.id
-                    ? 'linear-gradient(135deg, var(--p), var(--p2))'
-                    : 'var(--bg3)',
-                  color: activeCat === c.id ? '#fff' : 'var(--text2)',
-                  boxShadow: activeCat === c.id
-                    ? '0 4px 14px rgba(91,78,232,.35)'
-                    : 'none',
-                }}
-              >{c.id === 'all' ? t('pos_all') : c.label}</button>
-            ))}
+          {/* Filtres catégories */}
+          {posTab === 'pos' && (
+            <div style={{
+              flexShrink: 0,
+              display: 'flex',
+              gap: 6,
+              overflowX: 'auto',
+              flexWrap: 'nowrap',
+              paddingBottom: 2,
+            }}>
+              {CATS.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setActiveCat(c.id)}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font)',
+                    transition: 'all .15s',
+                    border: 'none',
+                    whiteSpace: 'nowrap',
+                    background: activeCat === c.id
+                      ? 'linear-gradient(135deg, var(--p), var(--p2))'
+                      : 'var(--bg3)',
+                    color: activeCat === c.id ? '#fff' : 'var(--text2)',
+                    boxShadow: activeCat === c.id ? '0 4px 14px rgba(91,78,232,.35)' : 'none',
+                  }}
+                >{c.id === 'all' ? t('pos_all') : c.label}</button>
+              ))}
+            </div>
+          )}
 
-            {/* Recherche + Scan */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-              <div style={{ position: 'relative' }}>
+          {/* Recherche + Scan */}
+          {posTab === 'pos' && (
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ position: 'relative', flex: 1 }}>
                 <Search size={14} style={{
                   position: 'absolute', left: 10,
                   top: '50%', transform: 'translateY(-50%)',
@@ -633,7 +633,7 @@ export default function POS() {
                 }} />
                 <input
                   className="input"
-                  style={{ paddingLeft: 34, width: 180, fontSize: 13 }}
+                  style={{ paddingLeft: 34, width: '100%', fontSize: 13, boxSizing: 'border-box' }}
                   placeholder={t('pos_search')}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
@@ -643,14 +643,15 @@ export default function POS() {
                 onClick={() => setShowScanner(true)}
                 title="Scanner un code-barres"
                 style={{
-                  padding: '7px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700,
+                  width: 40, height: 40, borderRadius: 10, fontSize: 18,
                   cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
                   background: 'var(--bg3)', border: '1px solid var(--border)',
-                  color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: 5,
+                  color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
                 }}
               >📷</button>
             </div>
-          </div>}
+          )}
 
           {/* Barre type client + remise */}
           {posTab === 'pos' && <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
@@ -701,7 +702,7 @@ export default function POS() {
           }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
               gap: 10,
               paddingBottom: 8,
             }}>
@@ -774,13 +775,13 @@ export default function POS() {
 
                     {/* Emoji dans cercle */}
                     <div style={{
-                      width: 52, height: 52,
+                      width: 56, height: 56,
                       borderRadius: '50%',
                       background: 'var(--bg3)',
                       border: '1px solid var(--border)',
                       display: 'flex', alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 26,
+                      fontSize: 28,
                     }}>{p.emoji}</div>
 
                     {/* Nom */}
@@ -906,59 +907,71 @@ export default function POS() {
           )}
         </div>
 
+        {/* Séparateur vertical */}
+        {!isMobile && (
+          <div style={{ width: 1, background: 'var(--border)', margin: '12px 0', flexShrink: 0 }} />
+        )}
+
         {/* ════════════════════════════════
             COLONNE DROITE — PANIER
         ════════════════════════════════ */}
         <div style={{
-          width: isMobile ? '100%' : 340,
+          width: isMobile ? '100%' : 320,
           flexShrink: 0,
           display: isMobile && mobileView === 'products' ? 'none' : 'flex',
           flexDirection: 'column',
-          height: '100%',
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
-          borderRadius: isMobile ? 0 : 14,
+          padding: isMobile ? 0 : '12px 16px 12px 12px',
           overflow: 'hidden',
         }}>
+
+          {/* Cart card */}
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: isMobile ? 0 : 14,
+            overflow: 'hidden',
+          }}>
 
           {/* ── HEADER PANIER UNIQUE ── */}
           <div style={{
             flexShrink: 0,
-            padding: '12px 14px',
+            padding: '10px 14px',
             borderBottom: '1px solid var(--border)',
             background: 'linear-gradient(135deg,rgba(91,78,232,.1),rgba(124,111,240,.05))',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <div style={{
-              width:32, height:32, borderRadius:9,
-              background:'linear-gradient(135deg,var(--p),var(--p2))',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:15, flexShrink:0,
+              width: 30, height: 30, borderRadius: 9,
+              background: 'linear-gradient(135deg,var(--p),var(--p2))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, flexShrink: 0,
             }}>🛒</div>
-            <span style={{ fontSize:15, fontWeight:800, color:'var(--text)', flex:1 }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', flex: 1 }}>
               {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
             </span>
             {cart.length > 0 && (
               <div style={{
-                background:'linear-gradient(135deg,var(--p),var(--p2))',
-                color:'#fff', borderRadius:20,
-                padding:'3px 10px', fontSize:11,
-                fontWeight:800, fontFamily:'var(--mono)',
-                boxShadow:'0 2px 8px rgba(91,78,232,.4)',
+                background: 'linear-gradient(135deg,var(--p),var(--p2))',
+                color: '#fff', borderRadius: 20,
+                padding: '2px 9px', fontSize: 11,
+                fontWeight: 800, fontFamily: 'var(--mono)',
               }}>
-                {cart.reduce((s,i) => s+i.qty, 0)} {lang === 'fr' ? 'art.' : 'items'}
+                {cart.reduce((s, i) => s + i.qty, 0)} {lang === 'fr' ? 'art.' : 'items'}
               </div>
             )}
             {cashierSessionTx > 0 && (
               <div style={{
-                background:'rgba(14,196,126,.15)',
-                border:'1px solid rgba(14,196,126,.25)',
-                color:'var(--acc2)', borderRadius:20,
-                padding:'3px 8px', fontSize:10,
-                fontWeight:700, fontFamily:'var(--mono)',
-                display:'flex', alignItems:'center', gap:3,
+                background: 'rgba(14,196,126,.15)',
+                border: '1px solid rgba(14,196,126,.25)',
+                color: 'var(--acc2)', borderRadius: 20,
+                padding: '2px 8px', fontSize: 10,
+                fontWeight: 700, fontFamily: 'var(--mono)',
+                display: 'flex', alignItems: 'center', gap: 3,
               }}>
-                <div style={{ width:5, height:5, borderRadius:'50%', background:'var(--acc2)', boxShadow:'0 0 4px var(--acc2)' }}/>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)' }}/>
                 {cashierSessionTx} tx
               </div>
             )}
@@ -967,19 +980,19 @@ export default function POS() {
                 onClick={() => { if (window.confirm(lang === 'fr' ? 'Vider le panier ?' : 'Clear cart?')) setCart([]) }}
                 title={lang === 'fr' ? 'Vider le panier' : 'Clear cart'}
                 style={{
-                  width:28, height:28, borderRadius:7,
-                  background:'rgba(232,64,74,.1)', border:'1px solid rgba(232,64,74,.2)',
-                  cursor:'pointer', fontSize:13, color:'var(--danger)',
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  transition:'all .15s', flexShrink:0,
+                  width: 26, height: 26, borderRadius: 7,
+                  background: 'rgba(232,64,74,.1)', border: '1px solid rgba(232,64,74,.2)',
+                  cursor: 'pointer', fontSize: 12, color: 'var(--danger)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all .15s', flexShrink: 0,
                 }}>🗑</button>
             )}
             <button type="button" onClick={() => setShowCloseModal(true)} style={{
-              fontSize:11, color:'var(--danger)',
-              background:'rgba(232,64,74,.12)', border:'1px solid rgba(232,64,74,.25)',
-              borderRadius:8, padding:'5px 10px', cursor:'pointer',
-              fontFamily:'var(--font)', fontWeight:700, flexShrink:0,
-              display:'flex', alignItems:'center', gap:4,
+              fontSize: 10, color: 'var(--danger)',
+              background: 'rgba(232,64,74,.12)', border: '1px solid rgba(232,64,74,.25)',
+              borderRadius: 7, padding: '4px 8px', cursor: 'pointer',
+              fontFamily: 'var(--font)', fontWeight: 700, flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: 3,
             }}>🔒 {lang === 'fr' ? 'Fermer' : 'Close'}</button>
           </div>
 
@@ -1117,36 +1130,20 @@ export default function POS() {
             </div>
           )}
 
-          {/* ── MODES PAIEMENT COMPACT ── */}
-          <div style={{ flexShrink:0, padding:'8px 10px', borderTop:'1px solid var(--border)' }}>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:5, marginBottom:5 }}>
-              {PAY_MODES.slice(0, 3).map(mode => (
+          {/* ── MODES PAIEMENT — 5 colonnes ── */}
+          <div style={{ flexShrink: 0, padding: '8px 10px', borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 4, marginBottom: 6 }}>
+              {PAY_MODES.map(mode => (
                 <button key={mode.id} type="button" onClick={() => setPayMode(mode.id)}
                   style={{
-                    padding:'7px 4px', borderRadius:8, fontSize:10, fontWeight:700,
-                    cursor:'pointer', fontFamily:'var(--font)',
+                    padding: '6px 2px', borderRadius: 8, fontSize: 9, fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'var(--font)',
                     background: payMode === mode.id ? `${mode.color}20` : 'var(--bg3)',
-                    border:`1.5px solid ${payMode === mode.id ? mode.color : 'var(--border)'}`,
+                    border: `1.5px solid ${payMode === mode.id ? mode.color : 'var(--border)'}`,
                     color: payMode === mode.id ? mode.color : 'var(--text3)',
-                    display:'flex', flexDirection:'column', alignItems:'center', gap:2, transition:'all .12s',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, transition: 'all .12s',
                   }}>
-                  <span style={{ fontSize:14 }}>{mode.icon}</span>
-                  {mode.label}
-                </button>
-              ))}
-            </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:5 }}>
-              {PAY_MODES.slice(3).map(mode => (
-                <button key={mode.id} type="button" onClick={() => setPayMode(mode.id)}
-                  style={{
-                    padding:'7px 4px', borderRadius:8, fontSize:10, fontWeight:700,
-                    cursor:'pointer', fontFamily:'var(--font)',
-                    background: payMode === mode.id ? `${mode.color}20` : 'var(--bg3)',
-                    border:`1.5px solid ${payMode === mode.id ? mode.color : 'var(--border)'}`,
-                    color: payMode === mode.id ? mode.color : 'var(--text3)',
-                    display:'flex', flexDirection:'column', alignItems:'center', gap:2, transition:'all .12s',
-                  }}>
-                  <span style={{ fontSize:14 }}>{mode.icon}</span>
+                  <span style={{ fontSize: 14 }}>{mode.icon}</span>
                   {mode.label}
                 </button>
               ))}
@@ -1234,7 +1231,7 @@ export default function POS() {
               </div>
             )}
           </div>
-        </div>
+          </div>
         </div>
       </div>
 
