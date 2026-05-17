@@ -5,6 +5,7 @@ import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 import { productsApi } from '@/lib/api'
+import BarcodeScanner from '@/components/ui/BarcodeScanner'
 
 type ProductItem = {
   _id?: string; sku: string; name: string; category: string
@@ -48,6 +49,7 @@ export default function Stock() {
   const [cat, setCat]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
   const [editingSku, setEditingSku] = useState<string | null>(null)
   const [editingId,  setEditingId]  = useState<string | null>(null)
   const [modalTab, setModalTab] = useState<'general'|'prix'|'avance'>('general')
@@ -383,27 +385,34 @@ export default function Stock() {
             {/* ── Onglet Général ── */}
             {modalTab === 'general' && (
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                {/* Image + nom */}
-                <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Image</label>
-                    <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:6 }}>
-                      {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','📦'].map(em => (
-                        <button key={em} onClick={() => setForm(f => ({...f, image:em}))} style={{
-                          width:32, height:32, borderRadius:8, fontSize:16,
-                          background: form.image === em ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
-                          border:`1.5px solid ${form.image === em ? 'var(--p2)' : 'var(--border)'}`,
-                          cursor:'pointer',
-                        }}>{em}</button>
-                      ))}
-                    </div>
+                {/* ── IMAGE ── */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Image</label>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
+                    {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🫧','📦'].map(em => (
+                      <button key={em} type="button" onClick={() => setForm(f => ({...f, image:em}))} style={{
+                        width:40, height:40, borderRadius:10, fontSize:20,
+                        background: form.image === em ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
+                        border:`1.5px solid ${form.image === em ? 'var(--p2)' : 'var(--border)'}`,
+                        cursor:'pointer', transition:'all .15s',
+                      }}>{em}</button>
+                    ))}
                   </div>
-                  <div style={{ flex:1 }}>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom du produit *</label>
-                    <input className="input text-sm" placeholder="Ex: Riz parfumé 5kg"
-                      value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))} />
-                  </div>
+                  <input className="input text-sm" placeholder="Ou tapez un emoji personnalisé..."
+                    value={form.image} onChange={e => setForm(f => ({...f, image:e.target.value}))}
+                    style={{ fontSize:18, width:220 }} />
                 </div>
+
+                {/* ── NOM PRODUIT — pleine largeur ── */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom du produit *</label>
+                  <input className="input" placeholder="Ex: Riz parfumé 5kg"
+                    value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))}
+                    style={{ width:'100%', fontSize:15, fontWeight:600 }}
+                    autoFocus />
+                </div>
+
+                {/* ── SKU + Catégorie ── */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>SKU (auto si vide)</label>
@@ -412,13 +421,17 @@ export default function Stock() {
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Catégorie</label>
                     <select className="input text-sm" value={form.category} onChange={e => setForm(f => ({...f, category:e.target.value}))}>
-                      {categories.map(c => <option key={c.id}>{c.name}</option>)}
+                      {categories.map(c => <option key={c.id}>{c.icon} {c.name}</option>)}
                     </select>
                   </div>
+                </div>
+
+                {/* ── Unité + Fournisseur ── */}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Unité</label>
                     <select className="input text-sm" value={form.unit} onChange={e => setForm(f => ({...f, unit:e.target.value}))}>
-                      {['unité','kg','litre','carton','sac','boîte','palette'].map(u => <option key={u}>{u}</option>)}
+                      {['unité','kg','g','litre','ml','carton','sac','boîte','palette','douzaine'].map(u => <option key={u}>{u}</option>)}
                     </select>
                   </div>
                   <div>
@@ -426,11 +439,14 @@ export default function Stock() {
                     <input className="input text-sm" placeholder="SENRIZ, SONACO..." value={form.supplier} onChange={e => setForm(f => ({...f, supplier:e.target.value}))} />
                   </div>
                 </div>
+
+                {/* ── Code-barres + scanner ── */}
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Code-barres</label>
                   <div style={{ display:'flex', gap:8 }}>
                     <input className="input text-sm" style={{ flex:1 }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
-                    <button className="mini-btn" onClick={() => toast('📷 Scanner non disponible en démo')}>📷</button>
+                    <button type="button" className="mini-btn" onClick={() => setShowScanner(true)}
+                      title="Scanner un code-barres" style={{ padding:'8px 14px', fontSize:18 }}>📷</button>
                   </div>
                 </div>
                 <div>
@@ -561,6 +577,18 @@ export default function Stock() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Scanner code-barres ── */}
+      {showScanner && (
+        <BarcodeScanner
+          onScan={barcode => {
+            setForm(f => ({ ...f, barcode }))
+            setShowScanner(false)
+            toast.success(`✅ Code-barres : ${barcode}`)
+          }}
+          onClose={() => setShowScanner(false)}
+        />
       )}
 
       {/* ── Modal Catégorie ── */}
