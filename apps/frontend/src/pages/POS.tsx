@@ -285,6 +285,14 @@ export default function POS() {
   const tva     = total - totalHT
   const monnaie = cashGiven ? parseFloat(cashGiven) - total : 0
 
+  const PAY_MODES = [
+    { id: 'cash',   label: t('pos_cash'),                                    icon: '💵', color: '#10B981' },
+    { id: 'card',   label: t('pos_card'),                                    icon: '💳', color: '#5B4EE8' },
+    { id: 'wave',   label: 'Wave',                                           icon: '🌊', color: '#1B9AF5' },
+    { id: 'orange', label: 'Orange Money',                                   icon: '🟠', color: '#FF6600' },
+    { id: 'mobile', label: lang === 'fr' ? 'Autre mobile' : 'Other mobile', icon: '📲', color: '#F59E0B' },
+  ] as { id: 'cash'|'card'|'wave'|'orange'|'mobile'; label: string; icon: string; color: string }[]
+
   const printTicket = () => {
     const win = window.open('', '_blank', 'width=400,height=600')
     if (!win) return
@@ -913,6 +921,47 @@ export default function POS() {
           overflow: 'hidden',
         }}>
 
+          {/* ── HEADER ── */}
+          <div style={{
+            flexShrink: 0,
+            padding: '10px 14px',
+            borderBottom: '1px solid var(--border)',
+            background: 'linear-gradient(135deg,rgba(91,78,232,.08),rgba(124,111,240,.04))',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span style={{ fontSize: 18 }}>🛒</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', flex: 1 }}>
+              {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
+            </span>
+            {cart.length > 0 && (
+              <span style={{
+                background: 'var(--p)', color: '#fff',
+                borderRadius: 20, padding: '2px 8px',
+                fontSize: 11, fontWeight: 800,
+              }}>{cart.reduce((s, i) => s + i.qty, 0)} art.</span>
+            )}
+            <span style={{
+              fontSize: 10, color: 'var(--acc2)',
+              background: 'rgba(14,196,126,.1)',
+              borderRadius: 20, padding: '2px 8px',
+              fontFamily: 'var(--mono)', fontWeight: 600,
+            }}>{cashierSessionTx} tx</span>
+            {cart.length > 0 && (
+              <button type="button" onClick={() => setCart([])}
+                title={lang === 'fr' ? 'Vider le panier' : 'Clear cart'}
+                style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, color:'var(--text3)', padding:2 }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text3)'}
+              >🗑</button>
+            )}
+            <button type="button" onClick={() => setShowCloseModal(true)} style={{
+              fontSize:11, color:'var(--danger)',
+              background:'rgba(232,64,74,.1)', border:'1px solid rgba(232,64,74,.2)',
+              borderRadius:7, padding:'4px 8px', cursor:'pointer',
+              fontFamily:'var(--font)', fontWeight:700, flexShrink:0,
+            }}>🔒</button>
+          </div>
+
           {/* Header panier */}
           <div style={{
             flexShrink: 0,
@@ -952,451 +1001,238 @@ export default function POS() {
             </div>
           </div>
 
-          {/* Liste articles — ZONE SCROLLABLE */}
+          {/* ── LISTE ITEMS — ZONE SCROLLABLE ── */}
           <div style={{
-            flexGrow: 1,
-            flexShrink: 1,
-            flexBasis: 0,
-            minHeight: 0,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            padding: '8px 12px',
+            flexGrow: 1, flexShrink: 1, flexBasis: '0px',
+            overflowY: 'auto', overflowX: 'hidden', minHeight: 0,
           }}>
             {cart.length === 0 ? (
               <div style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 12,
-                padding: '40px 20px',
+                display:'flex', flexDirection:'column', alignItems:'center',
+                justifyContent:'center', height:'100%', color:'var(--text3)',
+                gap:10, padding:20,
               }}>
                 <div style={{
-                  width: 64, height: 64,
-                  borderRadius: '50%',
-                  background: 'rgba(91,78,232,.08)',
-                  border: '2px dashed rgba(91,78,232,.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 26,
+                  width:60, height:60, borderRadius:'50%',
+                  border:'2px dashed var(--border)',
+                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:26,
                 }}>🛒</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>
-                  {t('pos_empty')}
+                <div style={{ fontSize:13, fontWeight:600, textAlign:'center', color:'var(--text2)' }}>
+                  {lang === 'fr' ? 'Panier vide' : lang === 'en' ? 'Empty cart' : lang === 'es' ? 'Carrito vacío' : 'Carrello vuoto'}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.6 }}>
-                  {t('pos_empty_sub')}
+                <div style={{ fontSize:11, color:'var(--text3)', textAlign:'center' }}>
+                  {lang === 'fr' ? 'Cliquez sur un produit' : lang === 'en' ? 'Click on a product' : lang === 'es' ? 'Haga clic en un producto' : 'Clicca su un prodotto'}
                 </div>
               </div>
             ) : (
-              cart.map(item => (
-                <div
-                  key={item.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 9,
-                    padding: '10px 14px',
-                    borderBottom: '1px solid var(--border)',
-                    transition: 'background .12s',
+              <div style={{ padding:'6px 8px' }}>
+                {cart.map((item, idx) => (
+                  <div key={item.id} style={{
+                    display:'flex', alignItems:'center', gap:8, padding:'8px 6px',
+                    borderBottom: idx < cart.length - 1 ? '1px solid var(--border)' : 'none',
+                    transition:'background .1s', borderRadius:8,
                   }}
-                  onMouseEnter={e =>
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.025)'
-                  }
-                  onMouseLeave={e =>
-                    (e.currentTarget as HTMLElement).style.background = 'transparent'
-                  }
-                >
-                  {/* Emoji */}
-                  <div style={{
-                    width: 36, height: 36,
-                    borderRadius: 9,
-                    background: 'var(--bg3)',
-                    border: '1px solid var(--border)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 18,
-                    flexShrink: 0,
-                  }}>{item.emoji}</div>
-
-                  {/* Nom + prix unitaire */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.03)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'none'}
+                  >
                     <div style={{
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: 'var(--text)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}>{item.name}</div>
+                      width:34, height:34, borderRadius:9, background:'var(--bg3)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      fontSize:17, flexShrink:0,
+                    }}>{item.emoji}</div>
+
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{
+                        fontSize:12, fontWeight:600, color:'var(--text)',
+                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                      }}>{item.name}</div>
+                      <div style={{ fontSize:10, color:'var(--text3)', marginTop:1 }}>
+                        {fmt(item.price)} × {item.qty}
+                      </div>
+                    </div>
+
+                    <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+                      <button type="button"
+                        onClick={() => updateQty(item.id, -1)}
+                        style={{
+                          width:22, height:22, borderRadius:6,
+                          background: item.qty === 1 ? 'rgba(232,64,74,.15)' : 'var(--bg3)',
+                          border:`1px solid ${item.qty === 1 ? 'rgba(232,64,74,.3)' : 'var(--border)'}`,
+                          cursor:'pointer', fontSize:13,
+                          color: item.qty === 1 ? 'var(--danger)' : 'var(--text2)',
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                        }}>
+                        {item.qty === 1 ? '🗑' : '−'}
+                      </button>
+                      <span style={{
+                        fontSize:13, fontWeight:800, color:'var(--text)',
+                        fontFamily:'var(--mono)', minWidth:18, textAlign:'center',
+                      }}>{item.qty}</span>
+                      <button type="button"
+                        onClick={() => updateQty(item.id, +1)}
+                        style={{
+                          width:22, height:22, borderRadius:6,
+                          background:'var(--p)', border:'none',
+                          cursor:'pointer', fontSize:14, color:'#fff',
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                        }}>+</button>
+                    </div>
+
                     <div style={{
-                      fontSize: 10.5,
-                      color: 'var(--text3)',
-                      marginTop: 2,
-                      fontFamily: 'var(--mono)',
-                    }}>{fmt(item.price)} / u</div>
+                      fontSize:12, fontWeight:800, color:'var(--p2)',
+                      fontFamily:'var(--mono)', minWidth:58, textAlign:'right', flexShrink:0,
+                    }}>{fmt(item.price * item.qty)}</div>
                   </div>
-
-                  {/* Contrôles quantité */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-                    <button
-                      onClick={() => updateQty(item.id, -1)}
-                      style={{
-                        width: 22, height: 22,
-                        borderRadius: 5,
-                        background: 'var(--bg3)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text2)',
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: 'inherit',
-                        transition: 'all .12s',
-                        padding: 0,
-                      }}
-                      onMouseEnter={e => {
-                        const el = e.currentTarget as HTMLElement
-                        el.style.background = 'var(--p)'
-                        el.style.color = '#fff'
-                        el.style.borderColor = 'var(--p)'
-                      }}
-                      onMouseLeave={e => {
-                        const el = e.currentTarget as HTMLElement
-                        el.style.background = 'var(--bg3)'
-                        el.style.color = 'var(--text2)'
-                        el.style.borderColor = 'var(--border)'
-                      }}
-                    ><Minus size={11} /></button>
-
-                    <span style={{
-                      fontSize: 13,
-                      fontWeight: 800,
-                      color: 'var(--text)',
-                      minWidth: 20,
-                      textAlign: 'center',
-                      fontFamily: 'var(--mono)',
-                    }}>{item.qty}</span>
-
-                    <button
-                      onClick={() => updateQty(item.id, +1)}
-                      style={{
-                        width: 22, height: 22,
-                        borderRadius: 5,
-                        background: 'var(--bg3)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text2)',
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: 'inherit',
-                        transition: 'all .12s',
-                        padding: 0,
-                      }}
-                      onMouseEnter={e => {
-                        const el = e.currentTarget as HTMLElement
-                        el.style.background = 'var(--p)'
-                        el.style.color = '#fff'
-                        el.style.borderColor = 'var(--p)'
-                      }}
-                      onMouseLeave={e => {
-                        const el = e.currentTarget as HTMLElement
-                        el.style.background = 'var(--bg3)'
-                        el.style.color = 'var(--text2)'
-                        el.style.borderColor = 'var(--border)'
-                      }}
-                    ><Plus size={11} /></button>
-                  </div>
-
-                  {/* Total + Supprimer */}
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-end',
-                    gap: 4,
-                    flexShrink: 0,
-                  }}>
-                    <span style={{
-                      fontSize: 13,
-                      fontWeight: 800,
-                      color: 'var(--p2)',
-                      fontFamily: 'var(--mono)',
-                      minWidth: 65,
-                      textAlign: 'right',
-                    }}>{fmt(item.price * item.qty)}</span>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'var(--text3)',
-                        fontSize: 10,
-                        padding: 0,
-                        fontFamily: 'inherit',
-                        transition: 'color .12s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 3,
-                      }}
-                      onMouseEnter={e =>
-                        (e.currentTarget as HTMLElement).style.color = 'var(--danger)'
-                      }
-                      onMouseLeave={e =>
-                        (e.currentTarget as HTMLElement).style.color = 'var(--text3)'
-                      }
-                    >
-                      <Trash2 size={10} /> {t('pos_remove')}
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Totaux */}
-          <div style={{
-            flexShrink: 0,
-            padding: '12px 16px',
-            borderTop: '1px solid var(--border)',
-            background: 'rgba(255,255,255,.02)',
-          }}>
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text2)', marginBottom:4 }}>
-              <span>Sous-total brut</span>
-              <span style={{ fontFamily:'var(--mono)' }}>{fmt(subtotalBeforeDiscount)}</span>
-            </div>
-            {discount && discountAmount > 0 && (
-              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:4, color:'var(--acc2)', fontWeight:600 }}>
-                <span>🏷️ Remise {discount.type === 'percent' ? `(${discount.value} %)` : ''}{discount.reason ? ` — ${discount.reason}` : ''}</span>
-                <span style={{ fontFamily:'var(--mono)' }}>− {fmt(discountAmount)}</span>
+                ))}
               </div>
             )}
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text2)', marginBottom:4 }}>
-              <span>{t('pos_subtotal')}</span>
-              <span style={{ fontFamily:'var(--mono)' }}>{fmt(totalHT)}</span>
-            </div>
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text2)', marginBottom:4 }}>
-              <span>{t('pos_vat')} (18 %)</span>
-              <span style={{ fontFamily:'var(--mono)' }}>{fmt(tva)}</span>
-            </div>
-            <div style={{ height:1, background:'var(--border)', margin:'8px 0' }} />
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ fontSize:12, fontWeight:700, color:'var(--text2)', letterSpacing:'.5px' }}>{t('pos_total')}</span>
-              <span style={{ fontSize:22, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>{fmt(total)}</span>
-            </div>
           </div>
 
-          {/* Modes de paiement */}
-          <div style={{ flexShrink: 0, display: 'flex', flexWrap:'wrap', gap: 6, padding: '10px 14px 8px' }}>
-            {([
-              { id:'cash',   label:t('pos_cash'),                                               icon:'💵', color:'#10B981' },
-              { id:'card',   label:t('pos_card'),                                               icon:'💳', color:'#5B4EE8' },
-              { id:'wave',   label:'Wave',                                                      icon:'🌊', color:'#1B9AF5' },
-              { id:'orange', label:'Orange Money',                                              icon:'🟠', color:'#FF6600' },
-              { id:'mobile', label:lang === 'fr' ? 'Autre mobile' : 'Other mobile',            icon:'📲', color:'#F59E0B' },
-            ] as { id:'cash'|'card'|'wave'|'orange'|'mobile'; label:string; icon:string; color:string }[]).map(m => (
-              <button
-                key={m.id}
-                onClick={() => setPayMode(m.id)}
-                style={{
-                  flex:'1 1 calc(33% - 4px)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '9px 6px',
-                  borderRadius: 10,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  transition: 'all .18s',
-                  background: payMode === m.id ? `${m.color}22` : 'var(--bg3)',
-                  border: payMode === m.id ? `1.5px solid ${m.color}` : '1px solid var(--border)',
-                  color: payMode === m.id ? m.color : 'var(--text2)',
-                  boxShadow: payMode === m.id ? `0 4px 14px ${m.color}33` : 'none',
-                }}
-              >
-                <span style={{ fontSize: 18 }}>{m.icon}</span>
-                <span>{m.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* QR Code Wave / Orange Money */}
-          {(payMode === 'wave' || payMode === 'orange') && (
+          {/* ── TOTAUX CONDENSÉS ── */}
+          {cart.length > 0 && (
             <div style={{
-              margin:'0 14px 8px',
-              padding:'16px',
-              background: payMode === 'wave' ? 'rgba(27,154,245,.08)' : 'rgba(255,102,0,.08)',
-              border:`1px solid ${payMode === 'wave' ? 'rgba(27,154,245,.25)' : 'rgba(255,102,0,.25)'}`,
-              borderRadius:12, textAlign:'center', flexShrink:0,
+              flexShrink:0, padding:'10px 14px',
+              borderTop:'1px solid var(--border)', background:'var(--bg3)',
             }}>
-              <div style={{ width:100, height:100, margin:'0 auto 10px', background:'#fff', borderRadius:10, padding:6, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 12px rgba(0,0,0,.15)' }}>
-                <svg viewBox="0 0 100 100" width="88" height="88">
-                  <rect width="100" height="100" fill="white"/>
-                  <rect x="5" y="5" width="30" height="30" fill="none" stroke="black" strokeWidth="4"/>
-                  <rect x="10" y="10" width="20" height="20" fill="black"/>
-                  <rect x="65" y="5" width="30" height="30" fill="none" stroke="black" strokeWidth="4"/>
-                  <rect x="70" y="10" width="20" height="20" fill="black"/>
-                  <rect x="5" y="65" width="30" height="30" fill="none" stroke="black" strokeWidth="4"/>
-                  <rect x="10" y="70" width="20" height="20" fill="black"/>
-                  <rect x="45" y="5" width="5" height="5" fill="black"/>
-                  <rect x="55" y="5" width="5" height="5" fill="black"/>
-                  <rect x="45" y="15" width="5" height="5" fill="black"/>
-                  <rect x="5" y="45" width="5" height="5" fill="black"/>
-                  <rect x="15" y="45" width="5" height="5" fill="black"/>
-                  <rect x="25" y="55" width="5" height="5" fill="black"/>
-                  <rect x="45" y="45" width="5" height="5" fill="black"/>
-                  <rect x="55" y="55" width="5" height="5" fill="black"/>
-                  <rect x="65" y="45" width="5" height="5" fill="black"/>
-                  <rect x="75" y="55" width="5" height="5" fill="black"/>
-                  <rect x="85" y="45" width="5" height="5" fill="black"/>
-                  <circle cx="50" cy="50" r="8" fill={payMode === 'wave' ? '#1B9AF5' : '#FF6600'}/>
-                  <text x="50" y="54" textAnchor="middle" fontSize="8" fill="white" fontWeight="bold">{payMode === 'wave' ? 'W' : 'O'}</text>
-                </svg>
-              </div>
-              <div style={{ fontSize:12, fontWeight:800, color: payMode === 'wave' ? '#1B9AF5' : '#FF6600', marginBottom:4 }}>
-                {payMode === 'wave' ? '🌊 Wave' : '🟠 Orange Money'}
-              </div>
-              <div style={{ fontSize:19, fontWeight:900, color:'var(--text)', fontFamily:'var(--mono)', marginBottom:6 }}>{fmt(total)}</div>
-              <div style={{ fontSize:11, color:'var(--text3)', marginBottom:10 }}>
-                {lang === 'fr' ? `Demandez au client de scanner avec ${payMode === 'wave' ? 'Wave' : 'Orange Money'}` : `Ask customer to scan with ${payMode === 'wave' ? 'Wave' : 'Orange Money'}`}
-              </div>
-              <button type="button" onClick={() => {
-                toast.success(lang === 'fr' ? `✅ Paiement ${payMode === 'wave' ? 'Wave' : 'Orange Money'} confirmé !` : `✅ ${payMode === 'wave' ? 'Wave' : 'Orange Money'} payment confirmed!`)
-                confirmSale()
-              }} style={{
-                background: payMode === 'wave' ? '#1B9AF5' : '#FF6600',
-                border:'none', borderRadius:10, padding:'8px 20px',
-                fontSize:12, fontWeight:700, color:'#fff',
-                cursor:'pointer', fontFamily:'var(--font)',
-              }}>✅ {lang === 'fr' ? 'Confirmer le paiement' : 'Confirm payment'}</button>
-            </div>
-          )}
-
-          {/* Input espèces */}
-          {payMode === 'cash' && (
-            <div style={{ flexShrink: 0, padding: '0 14px 10px' }}>
-              <input
-                className="input"
-                type="number"
-                placeholder={`${t('pos_received')}...`}
-                value={cashGiven}
-                onChange={e => setCashGiven(e.target.value)}
-                style={{ fontSize: 13 }}
-              />
-              {cashGiven && parseFloat(cashGiven) > 0 && (
+              {discount && discountAmount > 0 && (
                 <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: 7,
-                  padding: '8px 12px',
-                  background: 'rgba(14,196,126,.08)',
-                  border: '1px solid rgba(14,196,126,.2)',
-                  borderRadius: 9,
+                  display:'flex', justifyContent:'space-between',
+                  fontSize:11, color:'var(--acc2)', fontWeight:600, marginBottom:3,
                 }}>
-                  <span style={{ fontSize: 11, color: 'var(--acc2)', fontWeight: 600 }}>
-                    💚 {t('pos_change')}
-                  </span>
-                  <span style={{
-                    fontSize: 14,
-                    fontWeight: 900,
-                    color: 'var(--acc2)',
-                    fontFamily: 'var(--mono)',
-                  }}>{fmt(monnaie)}</span>
+                  <span>🏷️ {lang === 'fr' ? 'Remise' : 'Discount'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}</span>
+                  <span style={{ fontFamily:'var(--mono)' }}>− {fmt(discountAmount)}</span>
                 </div>
               )}
+              <div style={{
+                display:'flex', justifyContent:'space-between',
+                fontSize:10, color:'var(--text3)', marginBottom:4,
+              }}>
+                <span>HT {fmt(Math.round(totalHT))}</span>
+                <span>TVA 18% {fmt(Math.round(tva))}</span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:11, fontWeight:700, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>TOTAL TTC</span>
+                <span style={{ fontSize:24, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>{fmt(total)}</span>
+              </div>
             </div>
           )}
 
-          {/* Bouton Encaisser */}
-          <div style={{ flexShrink: 0, padding: '4px 12px 12px' }}>
-            <button
-              onClick={() => cart.length ? setShowModal(true) : toast.error('Panier vide !')}
-              style={{
-                width: '100%',
-                background: cart.length
-                  ? 'linear-gradient(135deg, var(--p), var(--p2))'
-                  : 'var(--bg4)',
-                border: 'none',
-                borderRadius: 11,
-                padding: '13px',
-                fontSize: 14,
-                fontWeight: 800,
-                color: cart.length ? '#fff' : 'var(--text3)',
-                cursor: cart.length ? 'pointer' : 'not-allowed',
-                fontFamily: 'inherit',
-                boxShadow: cart.length ? '0 6px 20px rgba(91,78,232,.38)' : 'none',
-                transition: 'all .2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
-            >
-              🧾 {cart.length ? `${t('pos_pay')} ${fmt(total)}` : t('pos_empty')}
-            </button>
-          </div>
-
-          {/* Résumé session */}
-          <div style={{ flexShrink: 0, padding: '10px 14px 14px', borderTop: '1px solid var(--border)' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 8,
-            }}>
-              <span style={{
-                fontSize: 9.5,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                color: 'var(--text3)',
-              }}>📊 {t('pos_session')}</span>
-              <span style={{
-                background: 'rgba(91,78,232,.1)',
-                color: 'var(--p2)',
-                borderRadius: 20,
-                padding: '2px 8px',
-                fontSize: 9,
-                fontWeight: 700,
-              }}>{new Date().toLocaleDateString(locale)}</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
-              {[
-                { label: t('pos_transactions'),    value: cashierSessionTx,      color: 'var(--acc2)', icon: '🧾', isNumber: true  },
-                { label: t('pos_session_revenue'), value: fmt(cashierSessionCA), color: 'var(--acc)',  icon: '💰', isNumber: false },
-              ].map(s => (
-                <div key={s.label} style={{
-                  background: 'var(--bg3)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 10,
-                  padding: '9px 11px',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-                    <span style={{ fontSize: 12 }}>{s.icon}</span>
-                    <span style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '.5px',
-                      color: 'var(--text3)',
-                    }}>{s.label}</span>
-                  </div>
-                  <div style={{
-                    fontSize: s.isNumber ? 22 : 12,
-                    fontWeight: 900,
-                    color: s.color,
-                    fontFamily: 'var(--mono)',
-                    letterSpacing: '-1px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}>{s.value}</div>
-                </div>
+          {/* ── MODES PAIEMENT COMPACT ── */}
+          <div style={{ flexShrink:0, padding:'8px 10px', borderTop:'1px solid var(--border)' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:5, marginBottom:5 }}>
+              {PAY_MODES.slice(0, 3).map(mode => (
+                <button key={mode.id} type="button" onClick={() => setPayMode(mode.id)}
+                  style={{
+                    padding:'7px 4px', borderRadius:8, fontSize:10, fontWeight:700,
+                    cursor:'pointer', fontFamily:'var(--font)',
+                    background: payMode === mode.id ? `${mode.color}20` : 'var(--bg3)',
+                    border:`1.5px solid ${payMode === mode.id ? mode.color : 'var(--border)'}`,
+                    color: payMode === mode.id ? mode.color : 'var(--text3)',
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:2, transition:'all .12s',
+                  }}>
+                  <span style={{ fontSize:14 }}>{mode.icon}</span>
+                  {mode.label}
+                </button>
               ))}
             </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:5 }}>
+              {PAY_MODES.slice(3).map(mode => (
+                <button key={mode.id} type="button" onClick={() => setPayMode(mode.id)}
+                  style={{
+                    padding:'7px 4px', borderRadius:8, fontSize:10, fontWeight:700,
+                    cursor:'pointer', fontFamily:'var(--font)',
+                    background: payMode === mode.id ? `${mode.color}20` : 'var(--bg3)',
+                    border:`1.5px solid ${payMode === mode.id ? mode.color : 'var(--border)'}`,
+                    color: payMode === mode.id ? mode.color : 'var(--text3)',
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:2, transition:'all .12s',
+                  }}>
+                  <span style={{ fontSize:14 }}>{mode.icon}</span>
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+
+            {payMode === 'cash' && (
+              <div style={{ marginTop:6 }}>
+                <input className="input" type="number"
+                  placeholder={lang === 'fr' ? 'Montant reçu...' : 'Amount received...'}
+                  value={cashGiven} onChange={e => setCashGiven(e.target.value)}
+                  style={{ textAlign:'right', fontSize:13 }}
+                />
+                {cashGiven && parseFloat(cashGiven) > 0 && (
+                  <div style={{
+                    marginTop:4, display:'flex', justifyContent:'space-between',
+                    fontSize:12, padding:'4px 8px',
+                    background: monnaie >= 0 ? 'rgba(14,196,126,.08)' : 'rgba(232,64,74,.08)',
+                    borderRadius:7,
+                  }}>
+                    <span style={{ color:'var(--text3)' }}>{lang === 'fr' ? 'Monnaie' : 'Change'}</span>
+                    <span style={{ fontWeight:800, fontFamily:'var(--mono)', color: monnaie >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
+                      {fmt(monnaie)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(payMode === 'wave' || payMode === 'orange') && cart.length > 0 && (
+              <div style={{
+                marginTop:6, padding:'8px 10px',
+                background: payMode === 'wave' ? 'rgba(27,154,245,.08)' : 'rgba(255,102,0,.08)',
+                border:`1px solid ${payMode === 'wave' ? 'rgba(27,154,245,.25)' : 'rgba(255,102,0,.25)'}`,
+                borderRadius:8, textAlign:'center',
+              }}>
+                <div style={{ fontSize:14, fontWeight:800, color: payMode === 'wave' ? '#1B9AF5' : '#FF6600', marginBottom:6 }}>
+                  {fmt(total)}
+                </div>
+                <button type="button"
+                  onClick={() => {
+                    toast.success(lang === 'fr'
+                      ? `✅ ${payMode === 'wave' ? 'Wave' : 'Orange Money'} confirmé !`
+                      : `✅ ${payMode === 'wave' ? 'Wave' : 'Orange Money'} confirmed!`)
+                    confirmSale()
+                  }}
+                  style={{
+                    background: payMode === 'wave' ? '#1B9AF5' : '#FF6600',
+                    border:'none', borderRadius:7, padding:'7px 16px',
+                    fontSize:12, fontWeight:700, color:'#fff',
+                    cursor:'pointer', fontFamily:'var(--font)',
+                  }}>
+                  ✅ {lang === 'fr' ? 'Confirmer' : 'Confirm'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ── BOUTON ENCAISSER ── */}
+          <div style={{ flexShrink:0, padding:'8px 10px', borderTop:'1px solid var(--border)' }}>
+            <button type="button"
+              disabled={cart.length === 0}
+              onClick={() => cart.length ? setShowModal(true) : toast.error(lang === 'fr' ? 'Panier vide !' : 'Empty cart!')}
+              style={{
+                width:'100%', padding:'13px',
+                background: cart.length === 0 ? 'var(--bg4)' : 'linear-gradient(135deg,var(--p),var(--p2))',
+                border:'none', borderRadius:11, fontSize:14, fontWeight:800,
+                color: cart.length === 0 ? 'var(--text3)' : '#fff',
+                cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
+                fontFamily:'var(--font)',
+                boxShadow: cart.length === 0 ? 'none' : '0 4px 16px rgba(91,78,232,.4)',
+                transition:'all .2s',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              }}>
+              {cart.length === 0
+                ? (lang === 'fr' ? '🛒 Panier vide' : '🛒 Empty cart')
+                : `✅ ${lang === 'fr' ? 'Encaisser' : lang === 'en' ? 'Checkout' : lang === 'es' ? 'Cobrar' : 'Incassare'} — ${fmt(total)}`}
+            </button>
+            {cashierSessionTx > 0 && (
+              <div style={{
+                display:'flex', justifyContent:'space-between',
+                fontSize:10, color:'var(--text3)', marginTop:5, padding:'0 4px',
+              }}>
+                <span>📊 {cashierSessionTx} tx</span>
+                <span style={{ color:'var(--acc)', fontFamily:'var(--mono)', fontWeight:600 }}>{fmt(cashierSessionCA)}</span>
+              </div>
+            )}
           </div>
         </div>
         </div>
