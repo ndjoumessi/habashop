@@ -358,29 +358,35 @@ export default function Stock() {
       {/* ── Modal produit enrichi ── */}
       {showModal && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal-box" style={{ maxWidth:560 }}>
-            <div className="flex items-center justify-between mb-4">
+          <div className="modal-box" style={{ maxWidth:560, maxHeight:'90vh', display:'flex', flexDirection:'column', padding:0, overflow:'hidden' }}>
+            {/* Fixed header */}
+            <div className="flex items-center justify-between" style={{ padding:'20px 24px 0', flexShrink:0 }}>
               <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>
                 {editingSku ? `✏️ Modifier — ${form.name || editingSku}` : `➕ ${t('btn_new')} produit`}
               </h3>
               <button className="btn btn-ghost btn-sm" onClick={() => { setShowModal(false); resetForm() }}>✕</button>
             </div>
 
-            {/* Onglets */}
-            <div style={{ display:'flex', gap:4, marginBottom:20, background:'var(--bg3)', borderRadius:10, padding:4 }}>
-              {([
-                { id:'general', label:'ℹ️ Général' },
-                { id:'prix',    label:'💰 Prix & Stock' },
-                { id:'avance',  label:'📋 Avancé' },
-              ] as { id:'general'|'prix'|'avance'; label:string }[]).map(tb => (
-                <button key={tb.id} onClick={() => setModalTab(tb.id)} style={{
-                  flex:1, padding:'7px 12px', borderRadius:8, fontSize:12, fontWeight:600,
-                  cursor:'pointer', fontFamily:'var(--font)', border:'none', transition:'all .15s',
-                  background: modalTab === tb.id ? 'linear-gradient(135deg, var(--p), var(--p2))' : 'transparent',
-                  color: modalTab === tb.id ? '#fff' : 'var(--text2)',
-                }}>{tb.label}</button>
-              ))}
+            {/* Fixed tabs */}
+            <div style={{ padding:'16px 24px 0', flexShrink:0 }}>
+              <div style={{ display:'flex', gap:4, background:'var(--bg3)', borderRadius:10, padding:4 }}>
+                {([
+                  { id:'general', label:'ℹ️ Général' },
+                  { id:'prix',    label:'💰 Prix & Stock' },
+                  { id:'avance',  label:'📋 Avancé' },
+                ] as { id:'general'|'prix'|'avance'; label:string }[]).map(tb => (
+                  <button key={tb.id} onClick={() => setModalTab(tb.id)} style={{
+                    flex:1, padding:'7px 12px', borderRadius:8, fontSize:12, fontWeight:600,
+                    cursor:'pointer', fontFamily:'var(--font)', border:'none', transition:'all .15s',
+                    background: modalTab === tb.id ? 'linear-gradient(135deg, var(--p), var(--p2))' : 'transparent',
+                    color: modalTab === tb.id ? '#fff' : 'var(--text2)',
+                  }}>{tb.label}</button>
+                ))}
+              </div>
             </div>
+
+            {/* Scrollable body */}
+            <div style={{ flex:1, overflowY:'auto', padding:'16px 24px 0' }}>
 
             {/* ── Onglet Général ── */}
             {modalTab === 'general' && (
@@ -569,7 +575,10 @@ export default function Stock() {
               </div>
             )}
 
-            <div className="flex gap-2 mt-5">
+            </div>{/* end scrollable body */}
+
+            {/* Fixed footer */}
+            <div className="flex gap-2" style={{ padding:'16px 24px 20px', flexShrink:0, borderTop:'1px solid var(--border)' }}>
               <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct}>
                 ✅ {editingSku ? 'Enregistrer les modifications' : `${t('btn_add')} le produit`}
               </button>

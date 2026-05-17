@@ -12,12 +12,33 @@ const WEEK_BARS = [
   { label: 'Auj', h: 88, val: '842K', highlight: true },
 ]
 
-const ACTIVITY = [
-  { type: 'sale',  icon: '💳', label: 'Vente #2041',      sub: '45 000 F CFA · Il y a 3 min · Caisse 1',   color: 'rgba(16,185,129,0.15)' },
-  { type: 'stock', icon: '📦', label: 'Réception stock',  sub: 'Fournisseur Diallo · Il y a 18 min',        color: 'rgba(245,158,11,0.15)' },
-  { type: 'hr',    icon: '🧑‍💼', label: 'Pointage Marie K.', sub: 'Arrivée 08:02 · Il y a 35 min',          color: 'rgba(139,92,246,0.15)' },
-  { type: 'alert', icon: '⚠️', label: 'Alerte rupture',  sub: 'Sucre 50kg · Il y a 1h · Auto',             color: 'rgba(239,68,68,0.15)'  },
-  { type: 'sale',  icon: '💳', label: 'Vente #2040',      sub: '128 000 F CFA · Il y a 1h 12 · Caisse 2',  color: 'rgba(16,185,129,0.15)' },
+type Lang = 'fr' | 'en' | 'es' | 'it'
+type LangMap = Record<Lang, string>
+const RECENT_ACTIVITY: Array<{
+  type: string; icon: string; color: string
+  title: LangMap
+  getDesc: (fmt: (n: number) => string, lang: string) => string
+}> = [
+  { type:'sale',  icon:'💳', color:'rgba(16,185,129,0.15)',
+    title: { fr:'Vente #2041',       en:'Sale #2041',          es:'Venta #2041',       it:'Vendita #2041'    },
+    getDesc: (f, l) => ({ fr:`${f(45000)} · Il y a 3 min · Caisse 1`, en:`${f(45000)} · 3 min ago · Till 1`, es:`${f(45000)} · Hace 3 min · Caja 1`, it:`${f(45000)} · 3 min fa · Cassa 1` })[l as Lang] ?? `${f(45000)} · Il y a 3 min · Caisse 1`,
+  },
+  { type:'stock', icon:'📦', color:'rgba(245,158,11,0.15)',
+    title: { fr:'Réception stock',   en:'Stock receipt',       es:'Recepción stock',   it:'Ricezione stock'  },
+    getDesc: (_f, l) => ({ fr:'Fournisseur Diallo · Il y a 18 min', en:'Supplier Diallo · 18 min ago', es:'Proveedor Diallo · Hace 18 min', it:'Fornitore Diallo · 18 min fa' })[l as Lang] ?? 'Fournisseur Diallo · Il y a 18 min',
+  },
+  { type:'hr',    icon:'🧑‍💼', color:'rgba(139,92,246,0.15)',
+    title: { fr:'Pointage Marie K.', en:'Clock-in Marie K.',   es:'Fichaje Marie K.',  it:'Timbratura Marie K.' },
+    getDesc: (_f, l) => ({ fr:'Arrivée 08:02 · Il y a 35 min', en:'Arrived 08:02 · 35 min ago', es:'Llegada 08:02 · Hace 35 min', it:'Arrivo 08:02 · 35 min fa' })[l as Lang] ?? 'Arrivée 08:02 · Il y a 35 min',
+  },
+  { type:'alert', icon:'⚠️', color:'rgba(239,68,68,0.15)',
+    title: { fr:'Alerte rupture',    en:'Out-of-stock alert',  es:'Alerta rotura',     it:'Allarme esaurimento' },
+    getDesc: (_f, l) => ({ fr:'Sucre 50kg · Il y a 1h · Auto', en:'Sugar 50kg · 1h ago · Auto', es:'Azúcar 50kg · Hace 1h · Auto', it:'Zucchero 50kg · 1h fa · Auto' })[l as Lang] ?? 'Sucre 50kg · Il y a 1h · Auto',
+  },
+  { type:'sale',  icon:'💳', color:'rgba(16,185,129,0.15)',
+    title: { fr:'Vente #2040',       en:'Sale #2040',          es:'Venta #2040',       it:'Vendita #2040'    },
+    getDesc: (f, l) => ({ fr:`${f(128000)} · Il y a 1h 12 · Caisse 2`, en:`${f(128000)} · 1h 12 ago · Till 2`, es:`${f(128000)} · Hace 1h 12 · Caja 2`, it:`${f(128000)} · 1h 12 fa · Cassa 2` })[l as Lang] ?? `${f(128000)} · Il y a 1h 12 · Caisse 2`,
+  },
 ]
 
 const TOP_PRODUCTS = [
@@ -170,12 +191,16 @@ export default function Dashboard() {
             <span className="panel-title">⚡ {t('recent_activity')}</span>
           </div>
           <div className="space-y-1">
-            {ACTIVITY.map((a, i) => (
+            {RECENT_ACTIVITY.map((a, i) => (
               <div key={i} className="act-item">
                 <div className="act-ic" style={{ background: a.color }}>{a.icon}</div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{a.label}</div>
-                  <div className="text-xs" style={{ color: 'var(--text3)' }}>{a.sub}</div>
+                  <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                    {a.title[lang as Lang] ?? a.title.fr}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--text3)' }}>
+                    {a.getDesc(fmt, lang)}
+                  </div>
                 </div>
               </div>
             ))}

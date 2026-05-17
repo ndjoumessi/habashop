@@ -158,10 +158,12 @@ export default function Customers() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
   }).length
 
-  const avgCart = Math.round(
-    customers.reduce((s, c) => s + c.totalCA / Math.max(1, c.purchasesPerMonth * 12), 0) / customers.length
-  )
-  const retentionRate = Math.round((customers.filter(c => c.purchasesPerMonth >= 3).length / customers.length) * 100)
+  const avgCart = customers.length > 0
+    ? Math.round(customers.reduce((s, c) => s + c.totalCA / Math.max(1, c.purchasesPerMonth * 12), 0) / customers.length)
+    : 0
+  const retentionRate = customers.length > 0
+    ? Math.round((customers.filter(c => c.purchasesPerMonth >= 3).length / customers.length) * 100)
+    : 0
 
   const printCustomersPDF = () => {
     const body = `
