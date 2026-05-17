@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
 import { productsApi } from '@/lib/api'
 import BarcodeScanner from '@/components/ui/BarcodeScanner'
 
@@ -63,6 +63,12 @@ export default function Stock() {
   })
   const [categories, setCategories] = useState(CATEGORIES_INIT)
   const [showCatModal, setShowCatModal] = useState(false)
+  const [showLabelModal, setShowLabelModal] = useState(false)
+  const [labelConfig, setLabelConfig] = useState({
+    size: 'medium' as 'small' | 'medium' | 'large',
+    showPrice: true, showSku: true, showBarcode: true, copies: 1,
+  })
+  const [selectedForLabel, setSelectedForLabel] = useState<string[]>([])
   const [editCat, setEditCat] = useState<typeof CATEGORIES_INIT[0] | null>(null)
   const [catForm, setCatForm] = useState({ name:'', color:'#818CF8', icon:'📦', description:'' })
 
@@ -225,6 +231,9 @@ export default function Stock() {
               toast.success('📄 PDF ouvert !')
             }}>
               <Download size={13} /> PDF
+            </button>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { setSelectedForLabel(products.map(p => p.sku)); setShowLabelModal(true) }}>
+              🏷️ {lang === 'fr' ? 'Étiquettes' : 'Labels'}
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowModal(true)}>
               <Plus size={13} /> {t('btn_add')}
@@ -667,6 +676,147 @@ export default function Stock() {
                 setShowCatModal(false)
               }}>{editCat ? '✅ Modifier' : '✅ Créer'}</button>
               <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowCatModal(false)}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ Modal Étiquettes ══ */}
+      {showLabelModal && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowLabelModal(false)}>
+          <div className="modal-box" style={{ maxWidth: 500 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
+                🏷️ {lang === 'fr' ? 'Imprimer des étiquettes' : 'Print labels'}
+              </h3>
+              <button className="mini-btn" onClick={() => setShowLabelModal(false)}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Taille */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                  {lang === 'fr' ? 'Taille des étiquettes' : 'Label size'}
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  {[
+                    { id: 'small',  label: 'Petite\n150×80px',   icon: '▫️' },
+                    { id: 'medium', label: 'Moyenne\n200×100px', icon: '◾' },
+                    { id: 'large',  label: 'Grande\n280×140px',  icon: '⬛' },
+                  ].map(size => (
+                    <button key={size.id} type="button"
+                      onClick={() => setLabelConfig(f => ({ ...f, size: size.id as any }))}
+                      style={{
+                        padding: '12px 8px', borderRadius: 10,
+                        background: labelConfig.size === size.id ? 'rgba(91,78,232,.15)' : 'var(--bg3)',
+                        border: `1.5px solid ${labelConfig.size === size.id ? 'var(--p2)' : 'var(--border)'}`,
+                        cursor: 'pointer', fontFamily: 'var(--font)',
+                        fontSize: 12, fontWeight: 600,
+                        color: labelConfig.size === size.id ? 'var(--p2)' : 'var(--text2)',
+                        whiteSpace: 'pre-line', transition: 'all .15s',
+                      }}>
+                      {size.icon}{'\n'}{size.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Options */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                  {lang === 'fr' ? 'Informations à afficher' : 'Information to display'}
+                </label>
+                {[
+                  { key: 'showPrice',   label: lang === 'fr' ? 'Prix de vente' : 'Selling price' },
+                  { key: 'showSku',     label: 'SKU / Référence' },
+                  { key: 'showBarcode', label: lang === 'fr' ? 'Code-barres' : 'Barcode' },
+                ].map(opt => (
+                  <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
+                    <input type="checkbox"
+                      checked={(labelConfig as any)[opt.key]}
+                      onChange={e => setLabelConfig(f => ({ ...f, [opt.key]: e.target.checked }))}
+                      style={{ width: 16, height: 16, accentColor: 'var(--p)', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: 13, color: 'var(--text)' }}>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              {/* Copies */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
+                  {lang === 'fr' ? 'Copies par produit' : 'Copies per product'}
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button type="button" className="mini-btn"
+                    onClick={() => setLabelConfig(f => ({ ...f, copies: Math.max(1, f.copies - 1) }))}
+                    style={{ width: 36, height: 36, justifyContent: 'center' }}>−</button>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', minWidth: 40, textAlign: 'center' }}>
+                    {labelConfig.copies}
+                  </span>
+                  <button type="button" className="mini-btn"
+                    onClick={() => setLabelConfig(f => ({ ...f, copies: Math.min(10, f.copies + 1) }))}
+                    style={{ width: 36, height: 36, justifyContent: 'center' }}>+</button>
+                </div>
+              </div>
+
+              {/* Sélection produits */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                  {lang === 'fr' ? 'Produits à étiqueter' : 'Products to label'}
+                </label>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <button type="button" className="mini-btn" onClick={() => setSelectedForLabel(products.map(p => p.sku))}>
+                    {lang === 'fr' ? 'Tout' : 'All'}
+                  </button>
+                  <button type="button" className="mini-btn" onClick={() => setSelectedForLabel([])}>
+                    {lang === 'fr' ? 'Aucun' : 'None'}
+                  </button>
+                </div>
+                <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 10, padding: 8 }}>
+                  {products.map(p => (
+                    <label key={p.sku} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
+                      <input type="checkbox"
+                        checked={selectedForLabel.includes(p.sku)}
+                        onChange={e => {
+                          if (e.target.checked) setSelectedForLabel(prev => [...prev, p.sku])
+                          else setSelectedForLabel(prev => prev.filter(s => s !== p.sku))
+                        }}
+                        style={{ accentColor: 'var(--p)', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: 16 }}>{p.name.split(' ')[0]}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text)', flex: 1 }}>{p.name.split(' ').slice(1).join(' ')}</span>
+                      <span style={{ fontSize: 11, color: 'var(--p2)', fontFamily: 'var(--mono)' }}>{fmt(p.sell)}</span>
+                    </label>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                  {selectedForLabel.length} {lang === 'fr' ? 'sélectionné(s)' : 'selected'}
+                  {' → '}{selectedForLabel.length * labelConfig.copies} {lang === 'fr' ? 'étiquette(s)' : 'label(s)'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+              <button className="topbar-btn" style={{ flex: 1, justifyContent: 'center' }}
+                disabled={selectedForLabel.length === 0}
+                onClick={() => {
+                  const selectedProducts = products
+                    .filter(p => selectedForLabel.includes(p.sku))
+                    .map(p => ({
+                      name: p.name.split(' ').slice(1).join(' ') || p.name,
+                      sku: p.sku,
+                      price: p.sell,
+                      emoji: p.name.split(' ')[0],
+                    }))
+                  printProductLabels(selectedProducts, fmt, { ...labelConfig, shopName: 'HabaShop', lang })
+                  setShowLabelModal(false)
+                }}>
+                🖨️ {lang === 'fr' ? 'Imprimer' : 'Print'}
+              </button>
+              <button className="mini-btn" style={{ padding: '10px 16px' }} onClick={() => setShowLabelModal(false)}>
+                {lang === 'fr' ? 'Annuler' : 'Cancel'}
+              </button>
             </div>
           </div>
         </div>

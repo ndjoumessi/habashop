@@ -381,6 +381,183 @@ export function generateInvoice(opts: InvoiceOptions) {
   openPDF(title, body)
 }
 
+// ─── ÉTIQUETTES PRODUITS ─────────────────────
+export function printProductLabels(
+  products: { name: string; sku: string; price: number; barcode?: string; emoji?: string }[],
+  fmt: (amount: number) => string,
+  options: {
+    size: 'small' | 'medium' | 'large'
+    showPrice: boolean
+    showSku: boolean
+    showBarcode: boolean
+    copies: number
+    shopName: string
+    lang: string
+  }
+) {
+  const SIZES = {
+    small:  { w: 150, h: 80,  fontSize: 10, priceSize: 14 },
+    medium: { w: 200, h: 100, fontSize: 12, priceSize: 18 },
+    large:  { w: 280, h: 140, fontSize: 14, priceSize: 24 },
+  }
+  const s = SIZES[options.size]
+
+  const labelHTML = (product: typeof products[0]) => `
+    <div style="
+      width:${s.w}px; height:${s.h}px;
+      border:1px solid #ddd; border-radius:6px;
+      padding:8px; display:inline-flex;
+      flex-direction:column; justify-content:space-between;
+      margin:4px; background:white;
+      page-break-inside:avoid;
+    ">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:${s.priceSize}px;">${product.emoji ?? '📦'}</span>
+        <div>
+          <div style="font-size:${s.fontSize}px;font-weight:700;line-height:1.2;color:#1a1a2e;">
+            ${product.name.length > 20 ? product.name.slice(0, 20) + '...' : product.name}
+          </div>
+          ${options.showSku ? `<div style="font-size:9px;color:#888;">${product.sku}</div>` : ''}
+        </div>
+      </div>
+      ${options.showPrice ? `
+        <div style="font-size:${s.priceSize}px;font-weight:900;color:#5B4EE8;">
+          ${fmt(product.price)}
+        </div>
+      ` : ''}
+      ${options.showBarcode ? `
+        <div style="font-size:8px;color:#888;text-align:center;
+          border-top:1px solid #eee;padding-top:4px;
+          font-family:monospace;">
+          ${product.barcode ?? product.sku}
+        </div>
+      ` : ''}
+      <div style="font-size:7px;color:#bbb;text-align:right;">
+        ${options.shopName}
+      </div>
+    </div>
+  `
+
+  const allLabels = products
+    .flatMap(p => Array(options.copies).fill(p))
+    .map(labelHTML)
+    .join('')
+
+  const win = window.open('', '_blank', 'width=800,height=600')
+  if (!win) { alert('Autorisez les popups pour imprimer les étiquettes'); return }
+
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Étiquettes produits</title>
+  <style>
+    body { margin:0; padding:10px; background:white; }
+    .labels { display:flex; flex-wrap:wrap; }
+    @media print {
+      body { margin:0; padding:5px; }
+      @page { margin:0.5cm; }
+      button { display:none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div style="margin-bottom:10px;display:flex;gap:8px;">
+    <button onclick="window.print()" style="padding:8px 16px;background:#5B4EE8;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;">
+      🖨️ Imprimer
+    </button>
+    <button onclick="window.close()" style="padding:8px 16px;background:#eee;color:#333;border:none;border-radius:8px;cursor:pointer;font-size:13px;">
+      ✕ Fermer
+    </button>
+    <span style="font-size:12px;color:#888;align-self:center;">
+      ${products.length} produit(s) × ${options.copies} copie(s) = ${products.length * options.copies} étiquette(s)
+    </span>
+  </div>
+  <div class="labels">${allLabels}</div>
+</body>
+</html>`)
+  win.document.close()
+}
+
+// ─── EXPORT COMPTABLE EXCEL (CSV) ────────────
+export function exportAccountingExcel(
+  data: { sales: any[]; expenses: any[]; period: string; shopName: string; currency: string },
+  fmt: (amount: number) => string
+) {
+  const BOM = '﻿'
+  const totalCA = data.sales.reduce((s, sale) => s + (sale.total ?? 0), 0)
+  const totalExpenses = data.expenses.reduce((s, e) => s + (e.amountTTC ?? e.amount ?? 0), 0)
+  const result = totalCA - totalExpenses
+
+  const summary = [
+    ['RAPPORT COMPTABLE — ' + data.shopName],
+    ['Période : ' + data.period],
+    ['Exporté le : ' + new Date().toLocaleDateString('fr-FR')],
+    [],
+    ['RÉSUMÉ'],
+    ["Chiffre d'affaires total", totalCA.toFixed(2)],
+    ['Total dépenses', totalExpenses.toFixed(2)],
+    ['Résultat net', result.toFixed(2)],
+    ['Marge brute (%)', totalCA > 0 ? ((result / totalCA) * 100).toFixed(1) + '%' : '0%'],
+    [],
+  ]
+
+  const salesHeader = ['Date', 'Heure', 'Référence', 'Montant HT', 'TVA', 'Total TTC', 'Mode paiement', 'Nb articles']
+  const salesRows = data.sales.map(s => {
+    const date = new Date(s.createdAt)
+    const ht = (s.total ?? 0) / 1.18
+    const tva = (s.total ?? 0) - ht
+    return [
+      date.toLocaleDateString('fr-FR'),
+      date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      `V-${(s.id ?? '000000').slice(-6).toUpperCase()}`,
+      ht.toFixed(2),
+      tva.toFixed(2),
+      (s.total ?? 0).toFixed(2),
+      s.paymentMode ?? 'cash',
+      s.items?.length ?? 1,
+    ]
+  })
+  const salesTotal = ['', '', 'TOTAL', (totalCA / 1.18).toFixed(2), (totalCA - totalCA / 1.18).toFixed(2), totalCA.toFixed(2), '', '']
+
+  const expHeader = ['Date', 'Libellé', 'Catégorie', 'Montant HT', 'TVA %', 'Montant TTC', 'Mode', 'Statut']
+  const expRows = data.expenses.map(e => [
+    new Date(e.date).toLocaleDateString('fr-FR'),
+    e.label ?? '',
+    e.category ?? '',
+    (e.amount ?? e.amountHT ?? 0).toFixed(2),
+    (e.vat ?? 0) + '%',
+    (e.amountTTC ?? Math.round((e.amount ?? 0) * (1 + (e.vat ?? 0) / 100))).toFixed(2),
+    e.mode ?? '',
+    e.status ?? '',
+  ])
+  const expTotal = ['', 'TOTAL', '', '', '', totalExpenses.toFixed(2), '', '']
+
+  const csvLines = [
+    ...summary.map(row => row.join(';')),
+    ['=== VENTES ==='],
+    salesHeader.join(';'),
+    ...salesRows.map(row => row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';')),
+    salesTotal.map(c => `"${c}"`).join(';'),
+    [],
+    ['=== DÉPENSES ==='],
+    expHeader.join(';'),
+    ...expRows.map(row => row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';')),
+    expTotal.map(c => `"${c}"`).join(';'),
+  ]
+
+  const csv = BOM + csvLines.join('\r\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = `HabaShop_Comptabilite_${data.period.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 export function htmlInfoGrid(items: { label: string; value: string }[]): string {
   return `
     <div class="info-grid">

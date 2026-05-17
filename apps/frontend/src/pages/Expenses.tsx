@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { expensesApi } from '@/lib/api'
+import { expensesApi, salesApi } from '@/lib/api'
 import { Download, Plus, X, Search, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 
 type Category = 'Loyer' | 'Énergie' | 'Transport' | 'Maintenance' | 'Fournitures' | 'Marketing' | 'Formation' | 'Autre'
 type ExpStatus = 'PAYÉ' | 'EN ATTENTE'
@@ -77,9 +77,21 @@ function mapApiExpense(e: any): Expense {
 }
 
 export default function Expenses() {
-  const { lang } = useConfig()
+  const { lang, currency } = useConfig()
   void lang
   const fmt = useFormatAmount()
+
+  const handleAccountingExport = async () => {
+    const period = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })
+    try {
+      const sales = await salesApi.list()
+      exportAccountingExcel({ sales: sales ?? [], expenses, period, shopName: 'HabaShop', currency }, fmt)
+      toast.success('📊 Export comptable téléchargé !')
+    } catch {
+      exportAccountingExcel({ sales: [], expenses, period, shopName: 'HabaShop', currency }, fmt)
+      toast.success('📊 Export téléchargé (dépenses uniquement)')
+    }
+  }
 
   const [expenses, setExpenses] = useState<Expense[]>(EXPENSES_INIT)
 
@@ -280,6 +292,9 @@ export default function Expenses() {
               <option value="PAYÉ">PAYÉ</option>
               <option value="EN ATTENTE">EN ATTENTE</option>
             </select>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleAccountingExport}>
+              📊 {lang === 'fr' ? 'Export comptable' : 'Accounting export'}
+            </button>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printExpensesPDF(); toast.success('📄 PDF ouvert !') }}>
               <Download size={12} /> PDF
             </button>

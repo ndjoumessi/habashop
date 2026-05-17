@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Download, TrendingUp, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
+import { salesApi, expensesApi } from '@/lib/api'
 
 type Period = 'today' | '7days' | '30days' | '3months' | 'year'
 
@@ -60,9 +61,21 @@ function Trend({ evol }: { evol: number }) {
 }
 
 export default function Reports() {
-  const { lang } = useConfig()
+  const { lang, currency } = useConfig()
   void lang
   const fmt = useFormatAmount()
+
+  const handleAccountingExport = async () => {
+    const period2 = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })
+    try {
+      const [sales, expenses] = await Promise.all([salesApi.list(), expensesApi.list()])
+      exportAccountingExcel({ sales: sales ?? [], expenses: expenses ?? [], period: period2, shopName: 'HabaShop', currency }, fmt)
+      toast.success('📊 Export comptable téléchargé !')
+    } catch {
+      exportAccountingExcel({ sales: [], expenses: [], period: period2, shopName: 'HabaShop', currency }, fmt)
+      toast.success('📊 Export téléchargé')
+    }
+  }
   const [period, setPeriod] = useState<Period>('30days')
   const data = PERIOD_DATA[period]
 
@@ -108,6 +121,9 @@ export default function Reports() {
           >{PERIOD_LABELS[p]}</button>
         ))}
         <div className="flex-1" />
+        <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleAccountingExport}>
+          📊 {lang === 'fr' ? 'Excel comptable' : 'Accounting Excel'}
+        </button>
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
           exportCSV('habashop_rapports',
             ['Période','CA','Marge','Transactions','Panier moyen'],

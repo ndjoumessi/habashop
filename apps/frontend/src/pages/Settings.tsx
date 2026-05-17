@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useConfig, formatCurrency, t, ACCENT_PAIRS, useFormatAmount } from '@/stores/appStore'
 import type { Currency, Lang } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import { tenantApi } from '@/lib/api'
+import { tenantApi, cronApi } from '@/lib/api'
 import {
   Store, User, Globe, Palette, ShoppingCart, Package, Bell, Shield, Cog,
   Save, Upload, Download, X, RefreshCw, AlertTriangle,
@@ -695,6 +695,68 @@ export default function Settings() {
                     <Save size={14} /> {t('btn_save')}
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* WhatsApp automatiques */}
+            <div className="panel" style={{ marginTop: 16 }}>
+              <div className="panel-head"><span className="panel-title">📱 Alertes WhatsApp automatiques</span></div>
+              <div className="space-y-3">
+                {[
+                  {
+                    icon: '🌅',
+                    title: cfg.lang === 'fr' ? 'Alerte stock — 8h00' : 'Stock alert — 8:00 AM',
+                    desc: cfg.lang === 'fr'
+                      ? 'Reçoit une alerte WhatsApp si des produits sont en rupture'
+                      : 'Receives a WhatsApp alert if products are out of stock',
+                    key: 'morning' as const,
+                  },
+                  {
+                    icon: '🌙',
+                    title: cfg.lang === 'fr' ? 'Résumé des ventes — 20h00' : 'Sales summary — 8:00 PM',
+                    desc: cfg.lang === 'fr'
+                      ? 'Reçoit un résumé WhatsApp des ventes de la journée'
+                      : 'Receives a WhatsApp sales summary for the day',
+                    key: 'evening' as const,
+                  },
+                ].map(alert => (
+                  <div key={alert.key} style={{
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '14px 16px',
+                    background: 'var(--bg3)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 12,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 24 }}>{alert.icon}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{alert.title}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{alert.desc}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <button className="mini-btn"
+                        onClick={async () => {
+                          try {
+                            if (alert.key === 'morning') await cronApi.testMorning()
+                            else await cronApi.testEvening()
+                            toast.success('📱 Message de test envoyé !')
+                          } catch {
+                            toast.error('Erreur envoi test')
+                          }
+                        }}>
+                        🧪 Tester
+                      </button>
+                      <div style={{
+                        fontSize: 11, fontWeight: 700,
+                        color: 'var(--acc2)',
+                        background: 'rgba(14,196,126,.12)',
+                        borderRadius: 20, padding: '3px 10px',
+                      }}>✅ Actif</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

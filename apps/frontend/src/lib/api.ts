@@ -146,3 +146,8 @@ export const marketingApi = {
   broadcast: (data: { phones: string[]; message: string; lang: string }) =>
     api.post<{ sent: number; failed: number }>('/api/whatsapp/broadcast', data),
 }
+
+export const cronApi = {
+  testEvening: () => api.post<{ success: boolean; message: string }>('/api/whatsapp/test-evening', {}),
+  testMorning: () => api.post<{ success: boolean; message: string }>('/api/whatsapp/test-morning', {}),
+}

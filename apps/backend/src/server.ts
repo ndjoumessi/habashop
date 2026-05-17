@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import twilio from 'twilio'
 import Anthropic from '@anthropic-ai/sdk'
+import { CronJob } from 'cron'
 import 'dotenv/config'
 
 const prisma = new PrismaClient()
@@ -15,6 +16,88 @@ const getTwilioClient = () => {
   if (!accountSid || !authToken) throw new Error('Twilio credentials manquants')
   return twilio(accountSid, authToken)
 }
+
+// ─── CRON: RÉSUMÉ SOIR ────────────────
+async function sendEveningReport() {
+  try {
+    const tenants = await prisma.tenant.findMany()
+    for (const tenant of tenants) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const [sales, allProducts] = await Promise.all([
+        prisma.sale.findMany({
+          where: { tenantId: tenant.id, createdAt: { gte: today } },
+          include: { items: true },
+        }),
+        prisma.product.findMany({ where: { tenantId: tenant.id, isActive: true } }),
+      ])
+      const lowStock = allProducts.filter(p => p.stockQty <= p.stockMin)
+      const totalCA = sales.reduce((s, sale) => s + sale.total, 0)
+      const ownerPhone = process.env.OWNER_PHONE ?? '+393275469250'
+      const message =
+        `📊 *HabaShop — Résumé du ${today.toLocaleDateString('fr-FR')}*\n\n` +
+        `💰 CA du jour : *${totalCA.toLocaleString('fr-FR')} FCFA*\n` +
+        `🛒 Transactions : *${sales.length}*\n` +
+        `💵 Panier moyen : *${sales.length > 0 ? Math.round(totalCA / sales.length).toLocaleString('fr-FR') : 0} FCFA*\n\n` +
+        (lowStock.length > 0
+          ? `⚠️ *${lowStock.length} produit(s) en rupture :*\n${lowStock.slice(0, 5).map(p => `• ${p.name} (${p.stockQty}/${p.stockMin})`).join('\n')}\n\n`
+          : `✅ Aucune rupture de stock\n\n`) +
+        `_Bonne soirée !_ 🌙`
+      try {
+        const client = getTwilioClient()
+        await client.messages.create({
+          from: process.env.TWILIO_WHATSAPP_FROM ?? 'whatsapp:+14155238886',
+          to: `whatsapp:${ownerPhone}`,
+          body: message,
+        })
+        console.log(`✅ Résumé soir envoyé pour ${tenant.name}`)
+      } catch (err: any) {
+        console.error(`❌ Erreur envoi résumé: ${err.message}`)
+      }
+    }
+  } catch (err: any) {
+    console.error('Cron evening error:', err.message)
+  }
+}
+
+// ─── CRON: ALERTE MATIN ───────────────
+async function sendMorningStockAlert() {
+  try {
+    const tenants = await prisma.tenant.findMany()
+    for (const tenant of tenants) {
+      const allProducts = await prisma.product.findMany({ where: { tenantId: tenant.id, isActive: true } })
+      const lowStock = allProducts.filter(p => p.stockQty <= p.stockMin)
+      if (lowStock.length === 0) continue
+      const ownerPhone = process.env.OWNER_PHONE ?? '+393275469250'
+      const message =
+        `🌅 *HabaShop — Alerte stock du matin*\n\n` +
+        `⚠️ *${lowStock.length} produit(s) nécessitent une commande :*\n\n` +
+        lowStock.map(p => {
+          const status = p.stockQty === 0 ? '🔴 RUPTURE' : '🟡 BAS'
+          return `${status} ${p.name}\n   Stock: ${p.stockQty} / Seuil: ${p.stockMin}`
+        }).join('\n') +
+        `\n\n💡 Pensez à commander dès aujourd'hui !\n📦 Gérez votre stock sur HabaShop`
+      try {
+        const client = getTwilioClient()
+        await client.messages.create({
+          from: process.env.TWILIO_WHATSAPP_FROM ?? 'whatsapp:+14155238886',
+          to: `whatsapp:${ownerPhone}`,
+          body: message,
+        })
+        console.log(`✅ Alerte matin envoyée pour ${tenant.name}`)
+      } catch (err: any) {
+        console.error(`❌ Erreur alerte matin: ${err.message}`)
+      }
+    }
+  } catch (err: any) {
+    console.error('Cron morning error:', err.message)
+  }
+}
+
+// Résumé soir tous les jours à 20h00, alerte matin à 8h00
+new CronJob('0 20 * * *', sendEveningReport, null, true, 'Africa/Dakar')
+new CronJob('0 8 * * *', sendMorningStockAlert, null, true, 'Africa/Dakar')
+console.log('⏰ Cron jobs planifiés : résumé 20h + alertes 8h')
 
 // ─── MIDDLEWARE AUTH ──────────────────
 async function authenticate(request: any, reply: any) {
@@ -710,6 +793,17 @@ En ${langLabel}, analyse :
       console.error('Claude AI error:', err.message)
       return reply.code(500).send({ error: 'Analyse IA non disponible', details: err.message })
     }
+  })
+
+  // ─── CRON TEST ROUTES ─────────────────
+  app.post('/api/whatsapp/test-evening', { preHandler: authenticate }, async () => {
+    await sendEveningReport()
+    return { success: true, message: 'Résumé soir envoyé !' }
+  })
+
+  app.post('/api/whatsapp/test-morning', { preHandler: authenticate }, async () => {
+    await sendMorningStockAlert()
+    return { success: true, message: 'Alerte matin envoyée !' }
   })
 
   // ─── WHATSAPP BROADCAST ───────────────
