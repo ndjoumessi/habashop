@@ -123,7 +123,7 @@ export default function Expenses() {
   const editExpTTC = Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100))
 
   // New expense form
-  const [nDate,      setNDate]      = useState('2026-05-14')
+  const [nDate,      setNDate]      = useState(new Date().toISOString().split('T')[0])
   const [nLabel,     setNLabel]     = useState('')
   const [nCat,       setNCat]       = useState<Category>('Loyer')
   const [nHT,        setNHT]        = useState('')

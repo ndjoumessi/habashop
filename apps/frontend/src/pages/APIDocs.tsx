@@ -1,8 +1,28 @@
+import { useState } from 'react'
 import { useAppStore } from '@/stores/appStore'
+import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
+
+const TESTER_ENDPOINTS = [
+  'GET /api/dashboard/stats',
+  'GET /api/products',
+  'GET /api/customers',
+  'GET /api/sales',
+  'GET /api/orders',
+  'GET /api/suppliers',
+  'GET /api/employees',
+  'GET /api/expenses',
+  'GET /health',
+  'POST /api/ai/analyze',
+  'POST /api/ai/chat',
+]
 
 export default function APIDocs() {
   const { lang } = useAppStore()
+  const [testerEndpoint, setTesterEndpoint] = useState('GET /api/dashboard/stats')
+  const [testerBody, setTesterBody]         = useState('')
+  const [testerLoading, setTesterLoading]   = useState(false)
+  const [testerResult, setTesterResult]     = useState<string | null>(null)
 
   return (
     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -222,6 +242,78 @@ async function main() {
 
 main().catch(console.error)`}
         </pre>
+      </div>
+      {/* Testeur interactif */}
+      <div className="panel">
+        <div className="panel-h">
+          <span className="panel-t">🧪 {lang === 'fr' ? 'Testeur interactif' : 'Interactive tester'}</span>
+        </div>
+        <div style={{ display:'flex', gap:10, marginBottom:12 }}>
+          <select className="input text-sm" style={{ flex:1 }} value={testerEndpoint}
+            onChange={e => { setTesterEndpoint(e.target.value); setTesterResult(null) }}>
+            {TESTER_ENDPOINTS.map(ep => <option key={ep}>{ep}</option>)}
+          </select>
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={testerLoading}
+            style={{ minWidth:90 }}
+            onClick={async () => {
+              setTesterLoading(true)
+              setTesterResult(null)
+              try {
+                const spaceIdx = testerEndpoint.indexOf(' ')
+                const method = testerEndpoint.slice(0, spaceIdx)
+                const path   = testerEndpoint.slice(spaceIdx + 1)
+                let data: unknown
+                if (method === 'GET') {
+                  data = await api.get(path)
+                } else {
+                  const body = testerBody.trim() ? JSON.parse(testerBody) : {}
+                  data = await api.post(path, body)
+                }
+                setTesterResult(JSON.stringify(data, null, 2))
+              } catch (err: any) {
+                setTesterResult(`❌ ${err.message}`)
+              } finally {
+                setTesterLoading(false)
+              }
+            }}
+          >
+            {testerLoading ? '⏳' : '▶ Tester'}
+          </button>
+        </div>
+
+        {testerEndpoint.startsWith('POST') && (
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+              {lang === 'fr' ? 'Corps JSON' : 'JSON body'}
+            </div>
+            <textarea
+              className="input"
+              style={{ width:'100%', fontFamily:'var(--mono)', fontSize:12, minHeight:80, resize:'vertical', boxSizing:'border-box' }}
+              placeholder={testerEndpoint.includes('ai/analyze') ? '{"type": "full", "lang": "fr"}' : '{"messages": [{"role":"user","content":"?"}], "lang":"fr"}'}
+              value={testerBody}
+              onChange={e => setTesterBody(e.target.value)}
+            />
+          </div>
+        )}
+
+        {testerResult && (
+          <pre style={{
+            background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10,
+            padding:14, margin:0, fontSize:12, lineHeight:1.7, overflow:'auto', maxHeight:340,
+            color: testerResult.startsWith('❌') ? 'var(--danger)' : 'var(--acc2)',
+            fontFamily:'var(--mono)',
+          }}>
+            {testerResult}
+          </pre>
+        )}
+
+        {!testerResult && !testerLoading && (
+          <div style={{ padding:'20px 0', textAlign:'center', fontSize:12, color:'var(--text3)' }}>
+            {lang === 'fr' ? 'Sélectionnez un endpoint et cliquez Tester' : 'Select an endpoint and click Test'}
+          </div>
+        )}
       </div>
     </div>
   )

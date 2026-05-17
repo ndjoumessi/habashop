@@ -124,8 +124,10 @@ export default function Orders() {
   const prevMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
   const nextMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const TODAY = new Date().toISOString().split('T')[0]
+  const DEFAULT_EXPECTED = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0] })()
   const [form, setForm] = useState({
-    supplier: '', expectedAt: '', notes: '',
+    supplier: '', expectedAt: DEFAULT_EXPECTED, notes: '',
     items: [{ product: '', qty: 1, unit: 'unité', unitPrice: 0 }]
   })
 
@@ -165,7 +167,7 @@ export default function Orders() {
     }
     setOrders(prev => [newOrder, ...prev])
     setShowCreateModal(false)
-    setForm({ supplier: '', expectedAt: '', notes: '', items: [{ product: '', qty: 1, unit: 'unité', unitPrice: 0 }] })
+    setForm({ supplier: '', expectedAt: (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0] })(), notes: '', items: [{ product: '', qty: 1, unit: 'unité', unitPrice: 0 }] })
     toast.success(`✅ Commande ${newOrder.ref} créée !`)
   }
 

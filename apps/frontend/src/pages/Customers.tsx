@@ -5,6 +5,7 @@ import { Search, Download, Plus, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
+import PhoneInput from '@/components/ui/PhoneInput'
 
 type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
@@ -645,8 +646,7 @@ export default function Customers() {
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Téléphone</label>
-                <input className="input text-sm" value={editCustForm.phone}
-                  onChange={e => setEditCustForm(f => ({...f, phone:e.target.value}))} />
+                <PhoneInput value={editCustForm.phone} onChange={v => setEditCustForm(f => ({...f, phone:v}))} />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Email</label>
@@ -703,8 +703,7 @@ export default function Customers() {
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Téléphone</label>
-                <input className="input text-sm" placeholder="+221 77…" value={form.phone}
-                  onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
+                <PhoneInput value={form.phone} onChange={v => setForm(p => ({ ...p, phone: v }))} />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Email</label>

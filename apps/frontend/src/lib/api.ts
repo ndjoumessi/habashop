@@ -2,14 +2,13 @@ const BASE_URL: string = (import.meta as any).env?.VITE_API_URL ?? 'http://local
 
 function getToken(): string | null {
   const direct = localStorage.getItem('habashop_token')
-  if (direct) return direct
-  // Fallback : token dans le store Zustand persisté
+  if (direct && direct !== 'demo-token-local') return direct
   try {
     const stored = localStorage.getItem('habashop-auth')
     if (stored) {
       const parsed = JSON.parse(stored)
       const t = parsed?.state?.token
-      if (t) return t
+      if (t && t !== 'demo-token-local') return t
     }
   } catch {}
   return null
@@ -25,6 +24,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     headers,
     body: body ? JSON.stringify(body) : undefined,
   })
+
+  if (res.status === 401) {
+    localStorage.removeItem('habashop_token')
+    window.location.href = '/login'
+    return undefined as T
+  }
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Erreur réseau' }))

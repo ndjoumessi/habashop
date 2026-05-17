@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { suppliersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Phone } from 'lucide-react'
+import PhoneInput from '@/components/ui/PhoneInput'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 
@@ -420,8 +421,7 @@ export default function Suppliers() {
               ))}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Téléphone</label>
-                <input className="input text-sm" value={editSuppForm.phone}
-                  onChange={e => setEditSuppForm(p => ({...p, phone:e.target.value}))} />
+                <PhoneInput value={editSuppForm.phone} onChange={v => setEditSuppForm(p => ({...p, phone:v}))} />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Délai livraison (jours)</label>
@@ -476,8 +476,7 @@ export default function Suppliers() {
               {[
                 { label: 'Nom / Raison sociale',         key: 'name',       type: 'text',   span: true  },
                 { label: 'Contact principal',             key: 'contact',    type: 'text',   span: false },
-                { label: 'Téléphone',                     key: 'phone',      type: 'text',   span: false },
-                { label: 'Email',                         key: 'email',      type: 'email',  span: true  },
+                { label: 'Email',                         key: 'email',      type: 'email',  span: false },
                 { label: 'Adresse',                       key: 'address',    type: 'text',   span: true  },
                 { label: 'Catégories (séparées par , )',  key: 'categories', type: 'text',   span: true  },
                 { label: 'Délai livraison (jours)',       key: 'leadTime',   type: 'number', span: false },
@@ -491,6 +490,11 @@ export default function Suppliers() {
                     onChange={e => setForm(p => ({ ...p, [f.key]: f.type === 'number' ? +e.target.value : e.target.value }))} />
                 </div>
               ))}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
+                  style={{ color: 'var(--text3)' }}>Téléphone</label>
+                <PhoneInput value={form.phone} onChange={v => setForm(p => ({ ...p, phone: v }))} />
+              </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Statut</label>
                 <select className="input text-sm" value={form.status}
