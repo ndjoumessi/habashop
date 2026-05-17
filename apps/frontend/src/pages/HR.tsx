@@ -6,6 +6,7 @@ import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/e
 import { Download, Plus, Eye, X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import PhoneInput from '@/components/ui/PhoneInput'
 import toast from 'react-hot-toast'
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -258,9 +259,30 @@ function mapApiEmployee(e: any): Employee {
   }
 }
 
-// ── Module principal ──────────────────────────────────────────────────────────
+// ── Error boundary ────────────────────────────────────────────────────────────
+
+function HRErrorFallback({ error }: FallbackProps) {
+  return (
+    <div style={{ padding:40, textAlign:'center', color:'var(--text)' }}>
+      <div style={{ fontSize:40, marginBottom:16 }}>⚠️</div>
+      <h2 style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>Erreur sur la page RH</h2>
+      <p style={{ color:'var(--text3)', marginBottom:16 }}>{(error as any)?.message ?? 'Erreur inconnue'}</p>
+      <button className="topbar-btn" onClick={() => window.location.reload()}>🔄 Recharger la page</button>
+    </div>
+  )
+}
 
 export default function HR() {
+  return (
+    <ErrorBoundary FallbackComponent={HRErrorFallback}>
+      <HRContent />
+    </ErrorBoundary>
+  )
+}
+
+// ── Module principal ──────────────────────────────────────────────────────────
+
+function HRContent() {
   const { lang } = useConfig()
   void lang
   const fmt      = useFormatAmount()
@@ -444,7 +466,7 @@ export default function HR() {
 
   const activeCount    = employees.filter(e => e.active).length
   const masseSalariale = employees.reduce((s, e) => s + e.salary, 0)
-  const salaireMoyen   = Math.round(masseSalariale / employees.length)
+  const salaireMoyen   = employees.length > 0 ? Math.round(masseSalariale / employees.length) : 0
 
   const TABS = [
     { id: 'team',       label: `👥 ${t('hr_team')}`       },
@@ -858,7 +880,8 @@ export default function HR() {
             ) : (
               <div className="space-y-3">
                 {pending.map(req => {
-                  const emp = employees.find(e => e.id === req.empId)!
+                  const emp = employees.find(e => e.id === req.empId)
+                  if (!emp) return null
                   return (
                     <div key={req.id} style={{
                       display:'flex', alignItems:'center', gap:14,
@@ -907,7 +930,8 @@ export default function HR() {
                 <thead><tr><th>Employé</th><th>Type</th><th>Période</th><th>Durée</th><th>Statut</th></tr></thead>
                 <tbody>
                   {LEAVE_HISTORY.map(h => {
-                    const emp = employees.find(e => e.id === h.empId)!
+                    const emp = employees.find(e => e.id === h.empId)
+                    if (!emp) return null
                     return (
                       <tr key={h.id}>
                         <td>
@@ -963,7 +987,7 @@ export default function HR() {
                 const body = `
                   ${htmlKPIs([
                     { label:'MASSE SALARIALE', value:fmt(totalMasse) },
-                    { label:'SALAIRE MOYEN',   value:fmt(Math.round(totalMasse/employees.length)) },
+                    { label:'SALAIRE MOYEN',   value:fmt(employees.length > 0 ? Math.round(totalMasse/employees.length) : 0) },
                     { label:'NB EMPLOYÉS',     value:String(employees.length) },
                     { label:'CONTRATS CDI',    value:String(employees.filter(e=>e.type==='CDI').length) },
                   ])}
