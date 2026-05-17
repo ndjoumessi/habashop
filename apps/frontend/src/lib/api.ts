@@ -130,3 +130,8 @@ export const adminApi = {
   stats:        ()         => api.get<any>('/api/admin/stats'),
   createTenant: (data:any) => api.post<any>('/api/admin/tenants', data),
 }
+
+export const aiApi = {
+  analyze: (type: 'full' | 'stock' | 'revenue' | 'hr', lang: string) =>
+    api.post<{ success: boolean; analysis: string; data: any }>('/api/ai/analyze', { type, lang }),
+}

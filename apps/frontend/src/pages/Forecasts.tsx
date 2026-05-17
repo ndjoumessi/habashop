@@ -4,6 +4,7 @@ import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { TrendingUp, Package, Users, Calendar, ShoppingCart } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV } from '@/utils/export'
+import { aiApi } from '@/lib/api'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -134,6 +135,30 @@ export default function Forecasts() {
 
   const [activeTab, setActiveTab]       = useState<ActiveTab>('analyse')
 
+  // ── IA Claude ──────────────────────────────────────────────────────────────
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
+  const [aiData,     setAiData]     = useState<any>(null)
+  const [aiLoading,  setAiLoading]  = useState(false)
+  const [aiType,     setAiType]     = useState<'full'|'stock'|'revenue'|'hr'>('full')
+  const [aiError,    setAiError]    = useState<string | null>(null)
+
+  const runAnalysis = async (type: 'full'|'stock'|'revenue'|'hr') => {
+    setAiLoading(true)
+    setAiError(null)
+    setAiType(type)
+    setAiAnalysis(null)
+    try {
+      const result = await aiApi.analyze(type, lang)
+      setAiAnalysis(result.analysis)
+      setAiData(result.data)
+    } catch (err: any) {
+      setAiError(err.message ?? 'Erreur IA')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+  // ───────────────────────────────────────────────────────────────────────────
+
   const RECOMMANDATIONS = [
     {
       type:'danger'  as const,
@@ -198,6 +223,183 @@ export default function Forecasts() {
 
   return (
     <div className="space-y-5 animate-in">
+
+      {/* ── Panel IA Claude ──────────────────────────────────────── */}
+      <div className="panel" style={{
+        background:'linear-gradient(135deg,rgba(91,78,232,.08),rgba(124,111,240,.04))',
+        border:'1px solid rgba(91,78,232,.2)',
+        marginBottom:14,
+      }}>
+        {/* Header */}
+        <div className="panel-head" style={{ marginBottom:16 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{
+              width:36, height:36, borderRadius:10,
+              background:'linear-gradient(135deg,var(--p),var(--p2))',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
+            }}>🤖</div>
+            <div>
+              <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
+                {lang === 'fr' ? 'Analyse IA — Powered by Claude'
+                  : lang === 'en' ? 'AI Analysis — Powered by Claude'
+                  : lang === 'es' ? 'Análisis IA — Powered by Claude'
+                  : 'Analisi IA — Powered by Claude'}
+              </div>
+              <div style={{ fontSize:11, color:'var(--text3)' }}>
+                {lang === 'fr' ? 'Analyse vos données réelles et génère des recommandations'
+                  : lang === 'en' ? 'Analyzes your real data and generates recommendations'
+                  : lang === 'es' ? 'Analiza sus datos reales y genera recomendaciones'
+                  : 'Analizza i dati reali e genera raccomandazioni'}
+              </div>
+            </div>
+          </div>
+          {aiAnalysis && (
+            <button className="mini-btn" onClick={() => { setAiAnalysis(null); setAiData(null) }}>✕ Fermer</button>
+          )}
+        </div>
+
+        {/* Boutons types d'analyse */}
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16 }}>
+          {([
+            { id:'full',    icon:'📊', label: lang === 'fr' ? 'Analyse complète' : lang === 'en' ? 'Full analysis' : lang === 'es' ? 'Análisis completo' : 'Analisi completa' },
+            { id:'stock',   icon:'📦', label: lang === 'fr' ? 'Analyse stock'    : lang === 'en' ? 'Stock analysis' : lang === 'es' ? 'Análisis stock'    : 'Analisi stock'    },
+            { id:'revenue', icon:'💰', label: lang === 'fr' ? 'Analyse financière': lang === 'en' ? 'Financial'     : lang === 'es' ? 'Análisis financiero': 'Analisi finanziaria'},
+            { id:'hr',      icon:'👥', label: lang === 'fr' ? 'Analyse RH'        : lang === 'en' ? 'HR analysis'   : lang === 'es' ? 'Análisis RRHH'     : 'Analisi HR'        },
+          ] as { id: 'full'|'stock'|'revenue'|'hr'; icon: string; label: string }[]).map(btn => (
+            <button key={btn.id}
+              onClick={() => runAnalysis(btn.id)}
+              disabled={aiLoading}
+              style={{
+                display:'flex', alignItems:'center', gap:6,
+                padding:'9px 16px', borderRadius:10,
+                fontSize:13, fontWeight:600,
+                cursor: aiLoading ? 'not-allowed' : 'pointer',
+                fontFamily:'var(--font)', transition:'all .15s',
+                background: aiType === btn.id && aiAnalysis
+                  ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg3)',
+                color: aiType === btn.id && aiAnalysis ? '#fff' : 'var(--text2)',
+                border: `1px solid ${aiType === btn.id && aiAnalysis ? 'transparent' : 'var(--border)'}`,
+                boxShadow: aiType === btn.id && aiAnalysis ? '0 4px 14px rgba(91,78,232,.3)' : 'none',
+                opacity: aiLoading ? .6 : 1,
+              }}>
+              <span>{btn.icon}</span>
+              {btn.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Loading */}
+        {aiLoading && (
+          <div style={{
+            display:'flex', alignItems:'center', gap:14,
+            padding:'24px', background:'var(--bg3)',
+            borderRadius:12, border:'1px solid var(--border)',
+          }}>
+            <div style={{
+              width:40, height:40, borderRadius:'50%',
+              border:'3px solid var(--border)',
+              borderTopColor:'var(--p2)',
+              animation:'spin 1s linear infinite',
+              flexShrink:0,
+            }} />
+            <div>
+              <div style={{ fontSize:14, fontWeight:700, color:'var(--text)', marginBottom:4 }}>
+                {lang === 'fr' ? '🤖 Claude analyse vos données...'
+                  : lang === 'en' ? '🤖 Claude is analyzing your data...'
+                  : lang === 'es' ? '🤖 Claude analiza sus datos...'
+                  : '🤖 Claude analizza i dati...'}
+              </div>
+              <div style={{ fontSize:12, color:'var(--text3)' }}>
+                {lang === 'fr' ? 'Ventes, stock, finances, RH — analyse en cours'
+                  : 'Sales, stock, finances, HR — analysis in progress'}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Erreur */}
+        {aiError && !aiLoading && (
+          <div style={{
+            padding:'14px 16px',
+            background:'rgba(232,64,74,.08)', border:'1px solid rgba(232,64,74,.2)',
+            borderRadius:10, fontSize:13, color:'var(--danger)',
+          }}>
+            ❌ {aiError}
+          </div>
+        )}
+
+        {/* Résultat */}
+        {aiAnalysis && !aiLoading && (
+          <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 24px' }}>
+            {/* KPIs rapides */}
+            {aiData && (
+              <div style={{
+                display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',
+                gap:10, marginBottom:20,
+              }}>
+                {[
+                  { label: lang === 'fr' ? 'CA du mois' : 'Monthly revenue', value:fmt(aiData.totalRevenue), color:'var(--acc2)' },
+                  { label: lang === 'fr' ? 'Transactions' : 'Transactions',   value:aiData.totalSales,        color:'var(--p2)'  },
+                  { label: lang === 'fr' ? 'Marge' : 'Margin',               value:aiData.margin + ' %',     color: parseFloat(aiData.margin) > 20 ? 'var(--acc2)' : 'var(--acc)' },
+                  { label: lang === 'fr' ? 'Ruptures' : 'Low stock',         value:aiData.lowStockCount,     color: aiData.lowStockCount > 0 ? 'var(--danger)' : 'var(--acc2)' },
+                ].map(kpi => (
+                  <div key={kpi.label} style={{
+                    background:'var(--bg4)', border:'1px solid var(--border)',
+                    borderRadius:10, padding:'10px 12px', textAlign:'center',
+                  }}>
+                    <div style={{ fontSize:9.5, fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>{kpi.label}</div>
+                    <div style={{ fontSize:16, fontWeight:900, color:kpi.color, fontFamily:'var(--mono)' }}>{kpi.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Texte analyse */}
+            <div style={{ fontSize:13.5, color:'var(--text)', lineHeight:1.8, whiteSpace:'pre-wrap' }}>
+              {aiAnalysis}
+            </div>
+
+            {/* Actions */}
+            <div style={{ display:'flex', gap:8, marginTop:16, paddingTop:16, borderTop:'1px solid var(--border)' }}>
+              <button className="mini-btn" onClick={() => {
+                navigator.clipboard.writeText(aiAnalysis)
+                toast.success(lang === 'fr' ? '📋 Copié !' : '📋 Copied!')
+              }}>📋 {lang === 'fr' ? 'Copier' : 'Copy'}</button>
+              <button className="mini-btn" onClick={() => runAnalysis(aiType)}>
+                🔄 {lang === 'fr' ? 'Régénérer' : 'Regenerate'}
+              </button>
+              <button className="mini-btn" onClick={() => {
+                const blob = new Blob([aiAnalysis], { type:'text/plain' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `HabaShop-AI-${aiType}-${new Date().toISOString().split('T')[0]}.txt`
+                a.click()
+                URL.revokeObjectURL(url)
+              }}>📥 {lang === 'fr' ? 'Télécharger' : 'Download'}</button>
+            </div>
+          </div>
+        )}
+
+        {/* État initial */}
+        {!aiAnalysis && !aiLoading && !aiError && (
+          <div style={{ textAlign:'center', padding:'24px', color:'var(--text3)' }}>
+            <div style={{ fontSize:32, marginBottom:12 }}>🤖</div>
+            <div style={{ fontSize:14, fontWeight:600, color:'var(--text2)', marginBottom:6 }}>
+              {lang === 'fr' ? "Choisissez un type d'analyse"
+                : lang === 'en' ? 'Choose an analysis type'
+                : lang === 'es' ? 'Elija un tipo de análisis'
+                : 'Scegli un tipo di analisi'}
+            </div>
+            <div style={{ fontSize:12 }}>
+              {lang === 'fr' ? 'Claude analysera vos vraies données PostgreSQL'
+                : lang === 'en' ? 'Claude will analyze your real PostgreSQL data'
+                : lang === 'es' ? 'Claude analizará sus datos reales de PostgreSQL'
+                : 'Claude analizzerà i dati reali PostgreSQL'}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ── Section 1 — KPIs ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

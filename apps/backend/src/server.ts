@@ -4,6 +4,7 @@ import jwt from '@fastify/jwt'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import twilio from 'twilio'
+import Anthropic from '@anthropic-ai/sdk'
 import 'dotenv/config'
 
 const prisma = new PrismaClient()
@@ -566,6 +567,149 @@ async function start() {
       })
     }
     return tenant
+  })
+
+  // ════════════════════════════════════════
+  // AI ROUTES (Claude)
+  // ════════════════════════════════════════
+
+  app.post('/api/ai/analyze', { preHandler: authenticate }, async (request, reply) => {
+    const { type, lang } = request.body as any
+    const { tenantId } = request.user as any
+
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) return reply.code(503).send({ error: 'Clé API Anthropic non configurée' })
+
+    try {
+      const [products, sales, expenses, employees] = await Promise.all([
+        prisma.product.findMany({ where: { tenantId, isActive: true }, take: 50 }),
+        prisma.sale.findMany({
+          where: { tenantId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+          include: { items: { include: { product: true } } },
+          take: 100,
+        }),
+        prisma.expense.findMany({ where: { tenantId }, take: 50 }),
+        prisma.employee.findMany({ where: { tenantId, isActive: true } }),
+      ])
+
+      const totalRevenue  = sales.reduce((s, sale) => s + sale.total, 0)
+      const avgDailySales = totalRevenue / 30
+      const lowStockProducts = products.filter(p => p.stockQty <= p.stockMin)
+      const totalExpenses = expenses.reduce((s, e) => s + e.amountTTC, 0)
+      const totalSalaries = employees.reduce((s, e) => s + e.salary, 0)
+      const margin = totalRevenue > 0
+        ? ((totalRevenue - totalExpenses) / totalRevenue * 100).toFixed(1) : '0'
+
+      const productSales: Record<string, { name: string; qty: number; revenue: number }> = {}
+      sales.forEach(sale => {
+        sale.items.forEach((item: any) => {
+          const id = item.productId
+          if (!productSales[id]) productSales[id] = { name: item.product?.name ?? 'Produit', qty: 0, revenue: 0 }
+          productSales[id].qty     += item.qty
+          productSales[id].revenue += item.total
+        })
+      })
+      const topProducts = Object.values(productSales).sort((a, b) => b.revenue - a.revenue).slice(0, 5)
+
+      const langLabel = lang === 'fr' ? 'français' : lang === 'en' ? 'anglais' : lang === 'es' ? 'espagnol' : 'italien'
+
+      const PROMPTS: Record<string, string> = {
+        full: `Tu es un expert en gestion commerciale pour les commerces africains.
+Analyse ces données réelles d'une boutique et fournis des insights actionnables.
+
+DONNÉES DU MOIS ÉCOULÉ :
+- Chiffre d'affaires : ${totalRevenue.toLocaleString('fr-FR')} FCFA
+- Ventes moyennes/jour : ${avgDailySales.toFixed(0)} FCFA
+- Nombre de ventes : ${sales.length}
+- Marge estimée : ${margin}%
+- Dépenses totales : ${totalExpenses.toLocaleString('fr-FR')} FCFA
+- Masse salariale : ${totalSalaries.toLocaleString('fr-FR')} FCFA/mois
+- Employés actifs : ${employees.length}
+- Produits actifs : ${products.length}
+- Produits en rupture/bas : ${lowStockProducts.length}
+
+TOP 5 PRODUITS (par CA) :
+${topProducts.map((p, i) => `${i+1}. ${p.name} — ${p.revenue.toLocaleString('fr-FR')} FCFA (${p.qty} unités)`).join('\n')}
+
+PRODUITS EN ALERTE STOCK :
+${lowStockProducts.slice(0,5).map(p => `• ${p.name} — Stock: ${p.stockQty}/${p.stockMin}`).join('\n')}
+
+Fournis une analyse STRUCTURÉE en ${langLabel} avec :
+1. 📊 BILAN DU MOIS (2-3 phrases)
+2. 🏆 POINTS FORTS (2-3 points)
+3. ⚠️ POINTS D'ATTENTION (2-3 points)
+4. 📦 RECOMMANDATIONS STOCK
+5. 💰 PRÉVISIONS CA (mois prochain)
+6. 🎯 3 ACTIONS PRIORITAIRES (cette semaine)
+
+Sois précis, concis et orienté vers l'action.`,
+
+        stock: `Tu es expert en gestion de stock pour commerces africains.
+
+STOCK ACTUEL :
+${products.map(p => `• ${p.name} — Stock: ${p.stockQty} / Seuil: ${p.stockMin} / Prix: ${p.sellPrice}`).join('\n')}
+
+VENTES DU MOIS PAR PRODUIT :
+${topProducts.map(p => `• ${p.name} — ${p.qty} unités / ${p.revenue.toLocaleString('fr-FR')} FCFA`).join('\n')}
+
+En ${langLabel}, analyse et recommande :
+1. 🔴 COMMANDES URGENTES (ruptures < 7 jours)
+2. 🟡 COMMANDES PLANIFIÉES (ruptures 7-30 jours)
+3. 📈 PRODUITS À STOCKER PLUS
+4. 📉 PRODUITS À RÉDUIRE
+5. 💡 OPTIMISATION COÛTS D'ACHAT`,
+
+        revenue: `Tu es expert en analyse financière pour commerces africains.
+
+DONNÉES FINANCIÈRES :
+- CA ce mois : ${totalRevenue.toLocaleString('fr-FR')} FCFA
+- Dépenses : ${totalExpenses.toLocaleString('fr-FR')} FCFA
+- Résultat : ${(totalRevenue - totalExpenses).toLocaleString('fr-FR')} FCFA
+- Marge : ${margin}%
+- Masse salariale : ${totalSalaries.toLocaleString('fr-FR')} FCFA
+- Transactions : ${sales.length}
+- Panier moyen : ${sales.length > 0 ? (totalRevenue / sales.length).toFixed(0) : 0} FCFA
+
+En ${langLabel}, fournis :
+1. 📊 ANALYSE DE LA RENTABILITÉ
+2. 📈 PRÉVISIONS SUR 3 MOIS
+3. 💡 LEVIERS DE CROISSANCE (+20% CA)
+4. ✂️ OPTIMISATION DES COÛTS
+5. 🎯 OBJECTIFS MENSUELS RECOMMANDÉS`,
+
+        hr: `Tu es expert RH pour commerces africains.
+
+ÉQUIPE :
+${employees.map(e => `• ${e.name} — ${e.role} — ${e.dept} — Salaire: ${e.salary.toLocaleString('fr-FR')} FCFA`).join('\n')}
+
+CA DU MOIS : ${totalRevenue.toLocaleString('fr-FR')} FCFA
+RATIO MASSE SALARIALE/CA : ${totalRevenue > 0 ? ((totalSalaries / totalRevenue) * 100).toFixed(1) : 0}%
+
+En ${langLabel}, analyse :
+1. 👥 EFFICACITÉ DE L'ÉQUIPE (CA par employé)
+2. 💰 OPTIMISATION MASSE SALARIALE
+3. 📋 BESOINS EN RECRUTEMENT
+4. 🏆 RECOMMANDATIONS RH`,
+      }
+
+      const anthropic = new Anthropic({ apiKey })
+      const message = await anthropic.messages.create({
+        model: 'claude-opus-4-5',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: PROMPTS[type] ?? PROMPTS.full }],
+      })
+
+      const analysis = message.content[0].type === 'text' ? message.content[0].text : 'Analyse non disponible'
+
+      return {
+        success: true,
+        analysis,
+        data: { totalRevenue, avgDailySales, totalSales: sales.length, margin, lowStockCount: lowStockProducts.length, topProducts },
+      }
+    } catch (err: any) {
+      console.error('Claude AI error:', err.message)
+      return reply.code(500).send({ error: 'Analyse IA non disponible', details: err.message })
+    }
   })
 
   // ─── DÉMARRAGE ────────────────────────
