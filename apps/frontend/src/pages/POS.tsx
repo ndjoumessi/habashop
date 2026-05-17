@@ -174,6 +174,25 @@ export default function POS() {
   const [showDiscountModal, setShowDiscountModal] = useState(false)
   const [discountForm, setDiscountForm] = useState({ type:'percent' as 'percent'|'amount', value:0, reason:'' })
   const [isSaving, setIsSaving] = useState(false)
+  const [posTab, setPosTab] = useState<'pos'|'history'>('pos')
+  const [salesHistory, setSalesHistory] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
+  const fetchHistory = async () => {
+    setLoadingHistory(true)
+    try {
+      const data = await salesApi.list()
+      setSalesHistory(data ?? [])
+    } catch {
+      setSalesHistory([{
+        id:'1', createdAt: new Date().toISOString(),
+        total:45000, paymentMode:'cash',
+        items:[{qty:2, unitPrice:4500, total:9000, product:{name:'Riz parfumé 5kg'}}],
+      }])
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
 
   // ─── CAISSE (état local uniquement pour l'input) ─
   const [openingFundInput, setOpeningFundInput] = useState('')
@@ -441,8 +460,32 @@ export default function POS() {
           overflow: 'hidden',
         }}>
 
-          {/* Filtres catégories + Recherche */}
+          {/* Onglets Caisse / Historique */}
           <div style={{
+            display:'flex', gap:4,
+            background:'var(--bg3)', borderRadius:10, padding:4,
+            flexShrink:0,
+          }}>
+            {([
+              { id:'pos',     label: lang === 'fr' ? '🛒 Caisse'     : lang === 'en' ? '🛒 Register'  : lang === 'es' ? '🛒 Caja'      : '🛒 Cassa'   },
+              { id:'history', label: lang === 'fr' ? '📋 Historique' : lang === 'en' ? '📋 History'   : lang === 'es' ? '📋 Historial' : '📋 Storico' },
+            ] as const).map(tab => (
+              <button key={tab.id} type="button"
+                onClick={() => { setPosTab(tab.id); if (tab.id === 'history') fetchHistory() }}
+                style={{
+                  flex:1, padding:'8px', borderRadius:8,
+                  fontSize:13, fontWeight:600,
+                  cursor:'pointer', fontFamily:'var(--font)',
+                  background: posTab === tab.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
+                  color: posTab === tab.id ? '#fff' : 'var(--text2)',
+                  border:'none', transition:'all .15s',
+                }}
+              >{tab.label}</button>
+            ))}
+          </div>
+
+          {/* Filtres catégories + Recherche */}
+          {posTab === 'pos' && <div style={{
             flexShrink: 0,
             display: 'flex',
             flexWrap: 'wrap',
@@ -488,10 +531,10 @@ export default function POS() {
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
-          </div>
+          </div>}
 
           {/* Barre type client + remise */}
-          <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+          {posTab === 'pos' && <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
             {([
               { id:'retail',    label:'Détail',   icon:'👤' },
               { id:'wholesale', label:'Grossiste', icon:'🏭' },
@@ -529,10 +572,10 @@ export default function POS() {
             <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:600 }}>
               🏷️ {PRODUCTS.filter(p => p.promotion).length} promotions actives
             </div>
-          </div>
+          </div>}
 
           {/* Grille produits — SCROLL ICI */}
-          <div style={{
+          {posTab === 'pos' && <div style={{
             flex: 1,
             minHeight: 0,
             overflowY: 'auto',
@@ -671,7 +714,77 @@ export default function POS() {
                 </div>
               )}
             </div>
-          </div>
+          </div>}
+
+          {/* ── Onglet Historique ── */}
+          {posTab === 'history' && (
+            <div style={{ flex:1, overflowY:'auto', minHeight:0 }}>
+              {loadingHistory ? (
+                <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
+                  ⏳ {lang === 'fr' ? 'Chargement...' : 'Loading...'}
+                </div>
+              ) : salesHistory.length === 0 ? (
+                <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>📋</div>
+                  <div>{lang === 'fr' ? 'Aucune vente enregistrée' : lang === 'en' ? 'No sales recorded' : lang === 'es' ? 'Sin ventas registradas' : 'Nessuna vendita registrata'}</div>
+                </div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:8, padding:'0 4px' }}>
+                  {salesHistory.slice(0, 50).map((sale: any, i: number) => {
+                    const date = new Date(sale.createdAt)
+                    const timeAgo = Math.round((Date.now() - date.getTime()) / 60000)
+                    const timeLabel = timeAgo < 60 ? `${timeAgo} min` : `${Math.round(timeAgo / 60)}h`
+                    return (
+                      <div key={sale.id ?? i} style={{
+                        background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, padding:'12px 14px',
+                      }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
+                          <div>
+                            <div style={{ fontSize:13, fontWeight:700, color:'var(--text)', marginBottom:2 }}>
+                              💳 {lang === 'fr' ? 'Vente' : lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : 'Vendita'} #{String(sale.id).slice(-6).toUpperCase()}
+                            </div>
+                            <div style={{ fontSize:11, color:'var(--text3)' }}>
+                              {date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'it-IT')}
+                              {' · '}{date.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}
+                              {' · '}{timeLabel}
+                            </div>
+                          </div>
+                          <div style={{ textAlign:'right' }}>
+                            <div style={{ fontSize:15, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>{fmt(sale.total)}</div>
+                            <span style={{
+                              fontSize:10, fontWeight:700, borderRadius:20, padding:'2px 8px',
+                              background: sale.paymentMode === 'cash' ? 'rgba(14,196,126,.12)' : sale.paymentMode === 'card' ? 'rgba(91,78,232,.12)' : 'rgba(240,165,0,.12)',
+                              color: sale.paymentMode === 'cash' ? 'var(--acc2)' : sale.paymentMode === 'card' ? 'var(--p2)' : 'var(--acc)',
+                            }}>
+                              {sale.paymentMode === 'cash' ? (lang === 'fr' ? 'Espèces' : 'Cash')
+                                : sale.paymentMode === 'card' ? (lang === 'fr' ? 'Carte' : 'Card') : 'Mobile'}
+                            </span>
+                          </div>
+                        </div>
+                        {sale.items?.slice(0, 3).map((item: any, j: number) => (
+                          <div key={j} style={{
+                            fontSize:11, color:'var(--text2)',
+                            display:'flex', justifyContent:'space-between',
+                            padding: j === 0 ? '8px 0 3px' : '3px 0',
+                            borderTop: j === 0 ? '1px solid var(--border)' : 'none',
+                            marginTop: j === 0 ? 6 : 0,
+                          }}>
+                            <span>×{item.qty} {item.product?.name ?? 'Produit'}</span>
+                            <span style={{ fontFamily:'var(--mono)' }}>{fmt(item.total ?? item.qty * item.unitPrice)}</span>
+                          </div>
+                        ))}
+                        {sale.items?.length > 3 && (
+                          <div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>
+                            +{sale.items.length - 3} {lang === 'fr' ? 'autres articles' : 'more items'}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ════════════════════════════════

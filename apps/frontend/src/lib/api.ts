@@ -99,3 +99,12 @@ export const dashboardApi = {
   stats: () => api.get<any>('/api/dashboard/stats'),
   sales: (period: string) => api.get<any>(`/api/reports/sales?period=${period}`),
 }
+
+export const alertsApi = {
+  lowStock: () => api.get<any[]>('/api/products/low-stock'),
+}
+
+export const tenantApi = {
+  get:    ()         => api.get<any>('/api/tenant'),
+  update: (data:any) => api.put<any>('/api/tenant', data),
+}

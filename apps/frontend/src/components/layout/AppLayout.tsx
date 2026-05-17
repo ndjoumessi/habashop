@@ -3,6 +3,7 @@ import Sidebar from './Sidebar'
 import Header from './Header'
 import { useAppStore } from '@/stores/appStore'
 import { useEffect } from 'react'
+import PWAInstallButton from '@/components/ui/PWAInstallButton'
 
 export default function AppLayout() {
   const { theme } = useAppStore()
@@ -19,6 +20,7 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <PWAInstallButton />
     </div>
   )
 }

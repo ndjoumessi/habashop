@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useConfig, formatCurrency, t, ACCENT_PAIRS, useFormatAmount } from '@/stores/appStore'
 import type { Currency, Lang } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
+import { tenantApi } from '@/lib/api'
 import {
   Store, User, Globe, Palette, ShoppingCart, Package, Bell, Shield, Cog,
   Save, Upload, Download, X, RefreshCw, AlertTriangle,
@@ -135,6 +136,22 @@ export default function Settings() {
     currentPwd: '', newPwd: '', confirmPwd: '',
   })
 
+  useEffect(() => {
+    tenantApi.get()
+      .then(data => {
+        if (data) setShopForm(prev => ({
+          ...prev,
+          shopName:    data.name     ?? prev.shopName,
+          shopCountry: data.country  ?? prev.shopCountry,
+          shopPhone:   data.phone    ?? prev.shopPhone,
+          shopEmail:   data.email    ?? prev.shopEmail,
+          shopAddress: data.address  ?? prev.shopAddress,
+          shopVatRate: data.vatRate  ?? prev.shopVatRate,
+        }))
+      })
+      .catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const save = () => toast.success(t('settings_saved'))
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,10 +259,22 @@ export default function Settings() {
                   </div>
                 </div>
                 <div className="flex justify-end mt-4">
-                  <button className="btn btn-primary gap-2" onClick={() => {
+                  <button className="btn btn-primary gap-2" onClick={async () => {
                     cfg.updateConfig(shopForm)
                     updateUser({ shopName: shopForm.shopName })
-                    save()
+                    try {
+                      await tenantApi.update({
+                        name:    shopForm.shopName,
+                        country: shopForm.shopCountry,
+                        phone:   shopForm.shopPhone,
+                        email:   shopForm.shopEmail,
+                        address: shopForm.shopAddress,
+                        vatRate: shopForm.shopVatRate,
+                      })
+                      toast.success('✅ Boutique mise à jour en base !')
+                    } catch {
+                      save()
+                    }
                   }}>
                     <Save size={14} /> {t('btn_save')}
                   </button>

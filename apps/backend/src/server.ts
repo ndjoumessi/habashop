@@ -154,6 +154,38 @@ async function start() {
     return { success: true }
   })
 
+  app.get('/api/products/low-stock', { preHandler: authenticate }, async (request) => {
+    const { tenantId } = request.user as any
+    const products = await prisma.product.findMany({ where: { tenantId, isActive: true } })
+    return products.filter((p: any) => p.stockQty <= p.stockMin)
+  })
+
+  // ════════════════════════════════════════
+  // TENANT ROUTES
+  // ════════════════════════════════════════
+
+  app.get('/api/tenant', { preHandler: authenticate }, async (request) => {
+    const { tenantId } = request.user as any
+    return prisma.tenant.findUnique({ where: { id: tenantId } })
+  })
+
+  app.put('/api/tenant', { preHandler: authenticate }, async (request) => {
+    const { tenantId } = request.user as any
+    const data = request.body as any
+    return prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        name:     data.name,
+        currency: data.currency,
+        country:  data.country,
+        vatRate:  data.vatRate,
+        address:  data.address,
+        phone:    data.phone,
+        email:    data.email,
+      },
+    })
+  })
+
   // ════════════════════════════════════════
   // SALES ROUTES
   // ════════════════════════════════════════

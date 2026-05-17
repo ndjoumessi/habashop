@@ -5,6 +5,7 @@ import { useAppStore, t } from '@/stores/appStore'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import CurrencyBadge from '@/components/ui/CurrencyBadge'
 import toast from 'react-hot-toast'
+import { alertsApi } from '@/lib/api'
 
 // ── Titres multilingues ────────────────────────────────────────────────────────
 
@@ -204,12 +205,24 @@ export default function Header() {
   const [searchResults,  setSearchResults]  = useState<typeof SEARCH_INDEX>([])
   const [showResults,    setShowResults]    = useState(false)
   const [apiStatus,      setApiStatus]      = useState<'online'|'offline'|'checking'>('checking')
+  const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([])
 
   useEffect(() => {
     const BASE = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:3001'
     fetch(`${BASE}/health`, { signal: AbortSignal.timeout(4000) })
       .then(r => setApiStatus(r.ok ? 'online' : 'offline'))
       .catch(() => setApiStatus('offline'))
+  }, [])
+
+  useEffect(() => {
+    const fetchAlerts = () => {
+      alertsApi.lowStock()
+        .then(data => setLowStockAlerts(data ?? []))
+        .catch(() => {})
+    }
+    fetchAlerts()
+    const interval = setInterval(fetchAlerts, 60000)
+    return () => clearInterval(interval)
   }, [])
 
   const newMenuRef = useRef<HTMLDivElement>(null)
@@ -233,7 +246,7 @@ export default function Header() {
     ?? 'HabaShop'
 
   const menuItems   = NEW_MENU_ITEMS[location.pathname] ?? DEFAULT_ITEMS
-  const unreadCount = RECENT_NOTIFS.filter(n => !n.read).length
+  const unreadCount = Math.max(RECENT_NOTIFS.filter(n => !n.read).length, lowStockAlerts.length)
 
   // Recherche globale
   function handleSearch(q: string) {
@@ -514,7 +527,43 @@ export default function Header() {
               )}
             </div>
 
-            <div style={{ maxHeight:320, overflowY:'auto' }}>
+            <div style={{ maxHeight:360, overflowY:'auto' }}>
+              {/* Alertes stock temps réel */}
+              {lowStockAlerts.slice(0,3).map((product) => (
+                <div key={product.id} style={{
+                  display:'flex', gap:12, padding:'10px 16px',
+                  borderBottom:'1px solid var(--border)',
+                  background:'rgba(232,64,74,.05)',
+                  borderLeft:'3px solid var(--danger)',
+                  cursor:'pointer',
+                }}
+                  onClick={() => { navigate('/app/stock'); setShowNotifs(false) }}
+                >
+                  <div style={{
+                    width:32, height:32, borderRadius:8, flexShrink:0,
+                    background:'rgba(232,64,74,.15)',
+                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
+                  }}>⚠️</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', marginBottom:2 }}>
+                      {lang === 'fr' ? 'Rupture stock'
+                        : lang === 'en' ? 'Low stock alert'
+                        : lang === 'es' ? 'Alerta stock'
+                        : 'Allerta stock'} — {product.name}
+                    </div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>
+                      {lang === 'fr'
+                        ? `Stock: ${product.stockQty} / Seuil: ${product.stockMin}`
+                        : `Stock: ${product.stockQty} / Min: ${product.stockMin}`}
+                    </div>
+                  </div>
+                  <div style={{
+                    width:8, height:8, borderRadius:'50%',
+                    background:'var(--danger)', flexShrink:0, marginTop:6,
+                    boxShadow:'0 0 6px var(--danger)',
+                  }} />
+                </div>
+              ))}
               {RECENT_NOTIFS.map(notif => {
                 const rgb = TYPE_RGB[notif.type] ?? '91,78,232'
                 return (

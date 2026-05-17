@@ -4,12 +4,19 @@ import { useAuthStore } from '@/stores/authStore'
 import { useNavigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, Package, Users, DollarSign } from 'lucide-react'
 import { dashboardApi } from '@/lib/api'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid,
+} from 'recharts'
 
-const WEEK_BARS = [
-  { label: 'Lun', h: 55, val: '520K' }, { label: 'Mar', h: 72, val: '680K' },
-  { label: 'Mer', h: 45, val: '430K' }, { label: 'Jeu', h: 83, val: '790K' },
-  { label: 'Ven', h: 97, val: '920K' }, { label: 'Sam', h: 100, val: '1.1M' },
-  { label: 'Auj', h: 88, val: '842K', highlight: true },
+const SALES_CHART_FALLBACK = [
+  { name:'Lun', ventes:320000, transactions:12 },
+  { name:'Mar', ventes:450000, transactions:18 },
+  { name:'Mer', ventes:280000, transactions:10 },
+  { name:'Jeu', ventes:590000, transactions:24 },
+  { name:'Ven', ventes:750000, transactions:31 },
+  { name:'Sam', ventes:890000, transactions:38 },
+  { name:'Dim', ventes:420000, transactions:17 },
 ]
 
 type Lang = 'fr' | 'en' | 'es' | 'it'
@@ -73,13 +80,50 @@ export default function Dashboard() {
     pendingOrders: 4,
   })
 
+  const [salesChart, setSalesChart] = useState<{ name:string; ventes:number; transactions:number }[]>(SALES_CHART_FALLBACK)
+  const [reportPeriod, setReportPeriod] = useState('7days')
+
   useEffect(() => {
     dashboardApi.stats()
-      .then(data => setStats(data))
-      .catch(() => {
-        // Garde les données statiques si API non disponible
+      .then((data: any) => {
+        if (data) setStats({
+          salesToday:        data.salesToday        ?? stats.salesToday,
+          transactionsToday: data.transactionsToday ?? stats.transactionsToday,
+          salesMonth:        data.salesMonth        ?? stats.salesMonth,
+          totalProducts:     data.totalProducts     ?? stats.totalProducts,
+          lowStockProducts:  data.lowStockProducts  ?? stats.lowStockProducts,
+          activeEmployees:   data.activeEmployees   ?? stats.activeEmployees,
+          pendingOrders:     data.pendingOrders     ?? stats.pendingOrders,
+        })
       })
-  }, [])
+      .catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    dashboardApi.sales(reportPeriod)
+      .then((data: any) => {
+        if (data?.sales?.length > 0) {
+          const DAY_LABELS: Record<string,string[]> = {
+            fr: ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],
+            en: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+            es: ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],
+            it: ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'],
+          }
+          const labels = DAY_LABELS[lang] ?? DAY_LABELS.fr
+          const grouped = data.sales.reduce((acc: any, sale: any) => {
+            const d = new Date(sale.createdAt)
+            const key = labels[d.getDay()]
+            if (!acc[key]) acc[key] = { name: key, ventes: 0, transactions: 0 }
+            acc[key].ventes += sale.total
+            acc[key].transactions += 1
+            return acc
+          }, {})
+          const chartData = Object.values(grouped)
+          if (chartData.length > 0) setSalesChart(chartData as any)
+        }
+      })
+      .catch(() => {})
+  }, [reportPeriod, lang]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const dateStr = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -135,29 +179,46 @@ export default function Dashboard() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Bar chart */}
+        {/* Bar chart recharts */}
         <div className="panel lg:col-span-2">
           <div className="panel-head">
-            <span className="panel-title">📈 {t('dash_sales_chart')}</span>
-            <span className="badge badge-teal">Cette semaine</span>
+            <span className="panel-title">
+              {lang === 'fr' ? '📊 Ventes — 7 derniers jours'
+                : lang === 'en' ? '📊 Sales — Last 7 days'
+                : lang === 'es' ? '📊 Ventas — Últimos 7 días'
+                : '📊 Vendite — Ultimi 7 giorni'}
+            </span>
+            <select className="input" style={{ width:'auto', fontSize:12 }}
+              value={reportPeriod} onChange={e => setReportPeriod(e.target.value)}>
+              <option value="7days">{lang === 'fr' ? '7 jours' : '7 days'}</option>
+              <option value="30days">{lang === 'fr' ? '30 jours' : '30 days'}</option>
+              <option value="3months">{lang === 'fr' ? '3 mois' : '3 months'}</option>
+            </select>
           </div>
-          <div className="flex items-end gap-2" style={{ height: 140 }}>
-            {WEEK_BARS.map(b => (
-              <div key={b.label} className="bar-group">
-                <div
-                  className="bar w-full"
-                  style={{
-                    height: `${b.h}%`,
-                    background: b.highlight
-                      ? 'linear-gradient(to top, var(--acc), #FCD34D)'
-                      : 'linear-gradient(to top, var(--p), var(--acc2))',
-                  }}
-                  title={b.val}
-                />
-                <div className="bar-label">{b.label}</div>
-              </div>
-            ))}
-          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={salesChart} margin={{ top:5, right:5, bottom:5, left:5 }}>
+              <defs>
+                <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#5B4EE8" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#7C6FF0" stopOpacity={0.7} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.05)" />
+              <XAxis dataKey="name" tick={{ fontSize:12, fill:'var(--text3)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize:10, fill:'var(--text3)' }} axisLine={false} tickLine={false}
+                tickFormatter={v => fmt(v).replace(/\s?F\s?CFA|€|\$/g, '').trim()} />
+              <Tooltip
+                contentStyle={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, fontSize:12 }}
+                formatter={(value: any, name: string) => [
+                  name === 'ventes' ? fmt(value) : value,
+                  name === 'ventes'
+                    ? (lang === 'fr' ? 'Ventes' : lang === 'en' ? 'Sales' : lang === 'es' ? 'Ventas' : 'Vendite')
+                    : 'Transactions',
+                ]}
+              />
+              <Bar dataKey="ventes" fill="url(#salesGrad)" radius={[6,6,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Alertes */}
