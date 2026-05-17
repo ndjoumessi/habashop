@@ -639,6 +639,7 @@ export default function Settings() {
 
           {/* ════ NOTIFICATIONS ════ */}
           {tab === 'notifications' && (
+            <>
             <div className="panel">
               <div className="panel-head"><span className="panel-title">🔔 {t('notif_preferences')}</span></div>
               <div className="space-y-5">
@@ -759,6 +760,7 @@ export default function Settings() {
                 ))}
               </div>
             </div>
+            </>
           )}
 
           {/* ════ SÉCURITÉ ════ */}
