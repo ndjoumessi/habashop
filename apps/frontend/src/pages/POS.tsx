@@ -542,6 +542,7 @@ export default function POS() {
         <div style={{
           display: 'flex',
           flex: 1,
+          minHeight: 0,
           gap: isMobile ? 0 : 14,
           overflow: 'hidden',
         }}>
@@ -956,6 +957,7 @@ export default function POS() {
             flex: 1,
             minHeight: 0,
             overflowY: 'auto',
+            padding: '8px 12px',
           }}>
             {cart.length === 0 ? (
               <div style={{
