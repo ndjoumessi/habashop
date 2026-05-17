@@ -184,6 +184,14 @@ export default function POS() {
   const [salesHistory, setSalesHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [mobileView, setMobileView] = useState<'products' | 'cart'>('products')
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const fetchHistory = async () => {
     setLoadingHistory(true)
@@ -494,10 +502,49 @@ export default function POS() {
       {/* PAGE WRAPPER */}
       <div style={{
         display: 'flex',
-        gap: 14,
+        flexDirection: 'column',
         height: 'calc(100vh - 54px)',
         overflow: 'hidden',
       }}>
+
+        {/* Mobile nav bar */}
+        {isMobile && (
+          <div style={{
+            display: 'flex',
+            flexShrink: 0,
+            background: 'var(--card)',
+            borderBottom: '1px solid var(--border)',
+          }}>
+            {(['products', 'cart'] as const).map(view => (
+              <button
+                key={view}
+                onClick={() => setMobileView(view)}
+                style={{
+                  flex: 1,
+                  padding: '12px 0',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: mobileView === view ? '3px solid var(--p)' : '3px solid transparent',
+                  color: mobileView === view ? 'var(--p)' : 'var(--text3)',
+                  fontWeight: mobileView === view ? 800 : 500,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {view === 'products' ? `🛒 ${t('pos_products') || 'Produits'}` : `🛍️ ${t('pos_cart')} (${cart.length})`}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Inner content */}
+        <div style={{
+          display: 'flex',
+          flex: 1,
+          gap: isMobile ? 0 : 14,
+          overflow: 'hidden',
+        }}>
 
         {/* ════════════════════════════════
             COLONNE GAUCHE — CATALOGUE
@@ -505,7 +552,7 @@ export default function POS() {
         <div style={{
           flex: 1,
           minWidth: 0,
-          display: 'flex',
+          display: isMobile && mobileView === 'cart' ? 'none' : 'flex',
           flexDirection: 'column',
           gap: 10,
           overflow: 'hidden',
@@ -854,14 +901,14 @@ export default function POS() {
             COLONNE DROITE — PANIER
         ════════════════════════════════ */}
         <div style={{
-          width: 320,
+          width: isMobile ? '100%' : 320,
           flexShrink: 0,
-          display: 'flex',
+          display: isMobile && mobileView === 'products' ? 'none' : 'flex',
           flexDirection: 'column',
           height: '100%',
           background: 'var(--card)',
           border: '1px solid var(--border)',
-          borderRadius: 14,
+          borderRadius: isMobile ? 0 : 14,
           overflow: 'hidden',
         }}>
 
@@ -1347,6 +1394,7 @@ export default function POS() {
             </div>
           </div>
         </div>
+        </div>
       </div>
 
       {/* ════════════════════════════════
@@ -1696,6 +1744,34 @@ export default function POS() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* FAB mobile — voir panier */}
+      {isMobile && mobileView === 'products' && cart.length > 0 && (
+        <button
+          onClick={() => setMobileView('cart')}
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 200,
+            background: 'linear-gradient(135deg, var(--p), var(--p2))',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 99,
+            padding: '14px 22px',
+            fontSize: 15,
+            fontWeight: 800,
+            cursor: 'pointer',
+            boxShadow: '0 8px 24px rgba(91,78,232,.5)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontFamily: 'inherit',
+          }}
+        >
+          🛍️ {t('pos_cart')} · {cart.length}
+        </button>
       )}
 
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
