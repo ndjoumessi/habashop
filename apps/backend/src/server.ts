@@ -471,7 +471,8 @@ async function start() {
 
     try {
       const client = getTwilioClient()
-      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`
+      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
+      const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone.replace(/^0/, '')}`
 
       const messages: Record<string, string> = {
         fr: `🛒 *${shopName}*\n\n✅ Merci pour votre achat !\n\n📋 *Ticket #${ticket.ref}*\n${(ticket.items ?? []).map((i: any) => `• ${i.name} ×${i.qty} — ${i.total} FCFA`).join('\n')}\n\n💰 *Total : ${ticket.total} FCFA*\n💳 Paiement : ${ticket.paymentMode}\n📅 ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\n\n_Merci de votre confiance !_ 🙏`,
@@ -497,7 +498,8 @@ async function start() {
 
     try {
       const client = getTwilioClient()
-      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`
+      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
+      const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone.replace(/^0/, '')}`
 
       let body = ''
       if (alertType === 'low_stock') {
