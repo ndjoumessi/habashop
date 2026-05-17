@@ -3,6 +3,8 @@ import { useAppStore, useFormatAmount, formatCurrency, t, convertAmount } from '
 import type { Currency } from '@/stores/appStore'
 import { salesApi, productsApi, whatsappApi } from '@/lib/api'
 import PhoneInput from '@/components/ui/PhoneInput'
+import BarcodeScanner from '@/components/ui/BarcodeScanner'
+import { generateInvoice } from '@/utils/export'
 import { Search, Minus, Plus, Trash2, ShoppingCart, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -181,6 +183,7 @@ export default function POS() {
   const [posTab, setPosTab] = useState<'pos'|'history'>('pos')
   const [salesHistory, setSalesHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
 
   const fetchHistory = async () => {
     setLoadingHistory(true)
@@ -195,6 +198,20 @@ export default function POS() {
       }])
     } finally {
       setLoadingHistory(false)
+    }
+  }
+
+  const handleScan = (barcode: string) => {
+    setShowScanner(false)
+    const found = PRODUCTS.find(p =>
+      p.name.toLowerCase().includes(barcode.toLowerCase()) ||
+      String(p.id) === barcode
+    )
+    if (found) {
+      addItem(found)
+      toast.success(`📦 ${found.name} scanné`)
+    } else {
+      toast.error(`Produit non trouvé: ${barcode}`)
     }
   }
 
@@ -550,20 +567,32 @@ export default function POS() {
               >{c.id === 'all' ? t('pos_all') : c.label}</button>
             ))}
 
-            {/* Recherche */}
-            <div style={{ position: 'relative', marginLeft: 'auto' }}>
-              <Search size={14} style={{
-                position: 'absolute', left: 10,
-                top: '50%', transform: 'translateY(-50%)',
-                color: 'var(--text3)', pointerEvents: 'none',
-              }} />
-              <input
-                className="input"
-                style={{ paddingLeft: 34, width: 200, fontSize: 13 }}
-                placeholder={t('pos_search')}
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
+            {/* Recherche + Scan */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={14} style={{
+                  position: 'absolute', left: 10,
+                  top: '50%', transform: 'translateY(-50%)',
+                  color: 'var(--text3)', pointerEvents: 'none',
+                }} />
+                <input
+                  className="input"
+                  style={{ paddingLeft: 34, width: 180, fontSize: 13 }}
+                  placeholder={t('pos_search')}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+              <button
+                onClick={() => setShowScanner(true)}
+                title="Scanner un code-barres"
+                style={{
+                  padding: '7px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+                  background: 'var(--bg3)', border: '1px solid var(--border)',
+                  color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: 5,
+                }}
+              >📷</button>
             </div>
           </div>}
 
@@ -1651,10 +1680,25 @@ export default function POS() {
                 className="mini-btn"
                 style={{ padding: '12px 16px', fontSize: 13 }}
               >🖨️ Ticket</button>
+              <button
+                onClick={() => {
+                  generateInvoice({
+                    type: 'facture',
+                    lang,
+                    items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price, emoji: i.emoji })),
+                    discount: discount ?? undefined,
+                    paymentMode: payMode,
+                  })
+                }}
+                className="mini-btn"
+                style={{ padding: '12px 14px', fontSize: 13 }}
+              >📄</button>
             </div>
           </div>
         </div>
       )}
+
+      {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
     </>
   )
 }

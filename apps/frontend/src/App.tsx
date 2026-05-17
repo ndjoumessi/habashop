@@ -23,6 +23,7 @@ import Notifications from '@/pages/Notifications'
 import Settings from '@/pages/Settings'
 import SignupPage from '@/pages/SignupPage'
 import AdminDashboard from '@/pages/AdminDashboard'
+import Marketing from '@/pages/Marketing'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="activity" element={<Activity />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="marketing" element={<Marketing />} />
       </Route>
       <Route path="/admin" element={
         <ProtectedRoute>

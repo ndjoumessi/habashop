@@ -226,6 +226,161 @@ export function htmlKPIs(items: { label: string; value: string }[]): string {
   `
 }
 
+// ─── DEVIS / FACTURE PDF ─────────────────────
+const INV_STR: Record<string, Record<string, string>> = {
+  devis:        { fr: 'DEVIS',          en: 'QUOTE',        es: 'PRESUPUESTO',  it: 'PREVENTIVO'  },
+  facture:      { fr: 'FACTURE',        en: 'INVOICE',      es: 'FACTURA',      it: 'FATTURA'     },
+  ref:          { fr: 'Référence',      en: 'Reference',    es: 'Referencia',   it: 'Riferimento' },
+  client:       { fr: 'Client',         en: 'Customer',     es: 'Cliente',      it: 'Cliente'     },
+  date:         { fr: 'Date',           en: 'Date',         es: 'Fecha',        it: 'Data'        },
+  valid_until:  { fr: "Valable jusqu'au", en: 'Valid until', es: 'Válido hasta', it: 'Valido fino' },
+  description:  { fr: 'Description',   en: 'Description',  es: 'Descripción',  it: 'Descrizione' },
+  qty:          { fr: 'Qté',           en: 'Qty',          es: 'Cant.',        it: 'Qtà'         },
+  unit_price:   { fr: 'Prix unitaire', en: 'Unit price',   es: 'Precio unit.', it: 'Prezzo unit.'  },
+  total:        { fr: 'Total',         en: 'Total',        es: 'Total',        it: 'Totale'      },
+  subtotal:     { fr: 'Sous-total',    en: 'Subtotal',     es: 'Subtotal',     it: 'Subtotale'   },
+  vat:          { fr: 'TVA (18 %)',    en: 'VAT (18 %)',   es: 'IVA (18 %)',   it: 'IVA (18 %)'  },
+  discount:     { fr: 'Remise',        en: 'Discount',     es: 'Descuento',    it: 'Sconto'      },
+  net_total:    { fr: 'NET À PAYER',   en: 'TOTAL DUE',    es: 'TOTAL A PAGAR', it: 'TOTALE DA PAGARE' },
+  payment:      { fr: 'Mode de règlement', en: 'Payment method', es: 'Método de pago', it: 'Metodo pagamento' },
+  thanks:       { fr: 'Merci pour votre confiance !', en: 'Thank you for your business!', es: '¡Gracias por su confianza!', it: 'Grazie per la fiducia!' },
+  sign_client:  { fr: 'Signature client', en: 'Customer signature', es: 'Firma del cliente', it: 'Firma cliente' },
+  sign_seller:  { fr: 'Signature vendeur', en: 'Seller signature',  es: 'Firma del vendedor', it: 'Firma venditore' },
+}
+
+function is(key: string, lang: string): string {
+  return INV_STR[key]?.[lang] ?? INV_STR[key]?.['fr'] ?? key
+}
+
+export interface InvoiceItem {
+  name: string
+  qty: number
+  price: number
+  emoji?: string
+}
+
+export interface InvoiceOptions {
+  type: 'devis' | 'facture'
+  lang: string
+  customer?: { name?: string; phone?: string; email?: string; address?: string }
+  items: InvoiceItem[]
+  discount?: { type: 'percent' | 'amount'; value: number }
+  paymentMode?: string
+  ref?: string
+}
+
+export function generateInvoice(opts: InvoiceOptions) {
+  const { type, lang, customer, items, discount, paymentMode, ref } = opts
+  const { currency, shopName } = useAppStore.getState()
+  const locale = LOCALES[lang] ?? 'fr-FR'
+  const now = new Date()
+  const dateStr = now.toLocaleDateString(locale)
+  const refStr = ref ?? `${type === 'devis' ? 'D' : 'F'}${Date.now().toString().slice(-6)}`
+  const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(locale)
+
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0)
+  let discountAmt = 0
+  if (discount) {
+    discountAmt = discount.type === 'percent'
+      ? Math.round(subtotal * discount.value / 100)
+      : discount.value
+  }
+  const afterDiscount = subtotal - discountAmt
+  const tva = Math.round(afterDiscount * 0.18)
+  const netTotal = afterDiscount + tva
+
+  const fmt = (v: number) => new Intl.NumberFormat(locale, { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v) + ' ' + (currency ?? 'XOF')
+
+  const itemRows = items.map(i => `
+    <tr>
+      <td>${i.emoji ?? '📦'} ${i.name}</td>
+      <td style="text-align:center">${i.qty}</td>
+      <td style="text-align:right;font-family:monospace">${fmt(i.price)}</td>
+      <td style="text-align:right;font-family:monospace;font-weight:700">${fmt(i.price * i.qty)}</td>
+    </tr>
+  `).join('')
+
+  const body = `
+    ${customer?.name ? `
+    <div class="info-grid" style="margin-bottom:20px">
+      <div class="info-item">
+        <div class="info-label">${is('ref', lang)}</div>
+        <div class="info-value" style="font-family:monospace;font-size:15px;font-weight:900;color:#5B4EE8">${refStr}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">${is('date', lang)}</div>
+        <div class="info-value">${dateStr}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">${is('client', lang)}</div>
+        <div class="info-value">${customer.name}${customer.phone ? ' · ' + customer.phone : ''}</div>
+      </div>
+      ${type === 'devis' ? `<div class="info-item">
+        <div class="info-label">${is('valid_until', lang)}</div>
+        <div class="info-value">${validUntil}</div>
+      </div>` : `<div class="info-item">
+        <div class="info-label">${is('payment', lang)}</div>
+        <div class="info-value">${paymentMode ?? '—'}</div>
+      </div>`}
+    </div>` : `
+    <div class="info-grid" style="margin-bottom:20px">
+      <div class="info-item">
+        <div class="info-label">${is('ref', lang)}</div>
+        <div class="info-value" style="font-family:monospace;font-size:15px;font-weight:900;color:#5B4EE8">${refStr}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">${is('date', lang)}</div>
+        <div class="info-value">${dateStr}</div>
+      </div>
+    </div>`}
+
+    <table>
+      <thead>
+        <tr>
+          <th>${is('description', lang)}</th>
+          <th style="text-align:center;width:60px">${is('qty', lang)}</th>
+          <th style="text-align:right;width:110px">${is('unit_price', lang)}</th>
+          <th style="text-align:right;width:110px">${is('total', lang)}</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemRows}
+      </tbody>
+    </table>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <div style="min-width:280px">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#666;border-bottom:1px solid #f0f0f0">
+          <span>${is('subtotal', lang)}</span>
+          <span style="font-family:monospace">${fmt(subtotal)}</span>
+        </div>
+        ${discountAmt > 0 ? `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#059669;border-bottom:1px solid #f0f0f0">
+          <span>${is('discount', lang)} ${discount?.type === 'percent' ? '(' + discount.value + '%)' : ''}</span>
+          <span style="font-family:monospace">− ${fmt(discountAmt)}</span>
+        </div>` : ''}
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#666;border-bottom:1px solid #f0f0f0">
+          <span>${is('vat', lang)}</span>
+          <span style="font-family:monospace">${fmt(tva)}</span>
+        </div>
+        <div class="net-payer" style="margin-top:8px">
+          <span class="net-label">${is('net_total', lang)}</span>
+          <span class="net-value">${fmt(netTotal)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="signature-block" style="margin-top:30px">
+      <div class="signature-line">${is('sign_client', lang)}</div>
+      <div class="signature-line">${is('sign_seller', lang)}</div>
+    </div>
+
+    <div style="margin-top:24px;text-align:center;font-size:13px;color:#5B4EE8;font-weight:700">${is('thanks', lang)}</div>
+  `
+
+  const title = `${is(type, lang)} ${refStr}`
+  openPDF(title, body)
+}
+
 export function htmlInfoGrid(items: { label: string; value: string }[]): string {
   return `
     <div class="info-grid">

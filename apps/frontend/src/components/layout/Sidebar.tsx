@@ -23,6 +23,7 @@ const NAV: NavEntry[] = [
   { section: 'Analyse' },
   { path: '/app/forecasts', key: 'nav_forecasts', icon: '🔮' },
   { path: '/app/reports',   key: 'nav_reports',   icon: '📊' },
+  { path: '/app/marketing', key: 'nav_marketing', icon: '📣' },
   { path: '/app/settings',  key: 'nav_settings',  icon: '⚙️' },
   { section: 'Administration' },
   { path: '/app/users',     key: 'nav_users',     icon: '🔐' },

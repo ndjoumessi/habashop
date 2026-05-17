@@ -3,7 +3,8 @@ import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV, openPDF, htmlTable } from '@/utils/export'
+import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
+import LoyaltyCard from '@/components/ui/LoyaltyCard'
 
 type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
@@ -146,6 +147,7 @@ export default function Customers() {
   const [editCustForm,     setEditCustForm]     = useState({
     name: '', type: 'Détail' as ClientType, phone: '', email: '', address: '', notes: '',
   })
+  const [loyaltyCustomer, setLoyaltyCustomer] = useState<Customer | null>(null)
 
   const filtered = customers.filter(c =>
     (!search || c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)) &&
@@ -295,6 +297,23 @@ export default function Customers() {
                         style={{ background: 'rgba(14,196,126,0.12)', color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
                         onClick={() => toast.success(`🛒 Vente pour ${c.name}`)}>
                         🛒 Vente
+                      </button>
+                      <button className="btn btn-sm"
+                        style={{ background: 'rgba(255,215,0,0.12)', color: '#B8860B', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
+                        title="Carte fidélité"
+                        onClick={() => setLoyaltyCustomer(c)}>
+                        🎁
+                      </button>
+                      <button className="btn btn-sm"
+                        style={{ background: 'rgba(91,78,232,0.12)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
+                        title="Générer un devis PDF"
+                        onClick={() => generateInvoice({
+                          type: 'devis',
+                          lang: 'fr',
+                          customer: { name: c.name, phone: c.phone },
+                          items: [{ name: 'Article', qty: 1, price: 0 }],
+                        })}>
+                        📄
                       </button>
                     </div>
                   </td>
@@ -496,6 +515,10 @@ export default function Customers() {
             </div>
           </div>
         </div>
+      )}
+
+      {loyaltyCustomer && (
+        <LoyaltyCard customer={loyaltyCustomer} onClose={() => setLoyaltyCustomer(null)} />
       )}
     </div>
   )

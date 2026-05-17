@@ -135,3 +135,14 @@ export const aiApi = {
   analyze: (type: 'full' | 'stock' | 'revenue' | 'hr', lang: string) =>
     api.post<{ success: boolean; analysis: string; data: any }>('/api/ai/analyze', { type, lang }),
 }
+
+export const loyaltyApi = {
+  get:    (customerId: string) => api.get<{ points: number; tier: string; history: any[] }>(`/api/customers/${customerId}/loyalty`),
+  add:    (customerId: string, points: number, reason: string) =>
+    api.post<{ points: number }>(`/api/customers/${customerId}/loyalty`, { points, reason }),
+}
+
+export const marketingApi = {
+  broadcast: (data: { phones: string[]; message: string; lang: string }) =>
+    api.post<{ sent: number; failed: number }>('/api/whatsapp/broadcast', data),
+}

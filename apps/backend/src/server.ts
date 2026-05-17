@@ -712,6 +712,70 @@ En ${langLabel}, analyse :
     }
   })
 
+  // ─── WHATSAPP BROADCAST ───────────────
+  app.post('/api/whatsapp/broadcast', { preHandler: authenticate }, async (request, reply) => {
+    const { phones, message, lang } = request.body as { phones: string[]; message: string; lang: string }
+    if (!phones?.length || !message?.trim()) {
+      return reply.code(400).send({ error: 'Paramètres manquants' })
+    }
+    if (phones.length > 20) {
+      return reply.code(400).send({ error: 'Maximum 20 destinataires par envoi' })
+    }
+
+    let sent = 0
+    let failed = 0
+
+    for (const phone of phones) {
+      try {
+        const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
+        const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone.replace(/^0/, '')}`
+        const client = getTwilioClient()
+        await client.messages.create({
+          from: process.env.TWILIO_WHATSAPP_FROM ?? 'whatsapp:+14155238886',
+          to: `whatsapp:${formattedPhone}`,
+          body: message,
+        })
+        sent++
+        await new Promise(resolve => setTimeout(resolve, 500))
+      } catch {
+        failed++
+      }
+    }
+
+    return { sent, failed }
+  })
+
+  // ─── LOYALTY ──────────────────────────
+  app.get('/api/customers/:id/loyalty', { preHandler: authenticate }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    try {
+      const customer = await prisma.customer.findUnique({ where: { id } })
+      if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+      const points = (customer as any).loyaltyPoints ?? 0
+      const tier = points >= 5000 ? 'Gold' : points >= 2000 ? 'Silver' : 'Bronze'
+      return { points, tier, history: [] }
+    } catch {
+      return { points: 0, tier: 'Bronze', history: [] }
+    }
+  })
+
+  app.post('/api/customers/:id/loyalty', { preHandler: authenticate }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const { points } = request.body as { points: number; reason: string }
+    try {
+      const customer = await prisma.customer.findUnique({ where: { id } })
+      if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+      const current = (customer as any).loyaltyPoints ?? 0
+      const updated = await prisma.customer.update({
+        where: { id },
+        data: { loyaltyPoints: current + points } as any,
+      })
+      return { points: (updated as any).loyaltyPoints ?? current + points }
+    } catch {
+      return { points: points }
+    }
+  })
+
   // ─── DÉMARRAGE ────────────────────────
   try {
     await prisma.$connect()
