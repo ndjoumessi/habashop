@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { Download, TrendingUp, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
@@ -29,10 +30,32 @@ const CHART_DATA = [
 ]
 
 const PAYMENT_MODES = [
-  { label: 'Espèces', pct: 62, color: 'var(--acc2)', amount: 7812000 },
-  { label: 'Mobile',  pct: 28, color: 'var(--p2)',   amount: 3528000 },
-  { label: 'Carte',   pct: 10, color: 'var(--acc)',  amount: 1260000 },
+  { label: 'Espèces',      pct: 62, color: 'var(--acc2)', amount: 7812000 },
+  { label: 'Mobile',       pct: 28, color: 'var(--p2)',   amount: 3528000 },
+  { label: 'Carte',        pct: 10, color: 'var(--acc)',  amount: 1260000 },
 ]
+
+const PAYMENT_DONUT = [
+  { name: 'Espèces',      value: 62, color: '#10B981', amount: 7812000 },
+  { name: 'Mobile',       value: 28, color: '#6C47FF', amount: 3528000 },
+  { name: 'Wave',         value: 20, color: '#1B9AF5', amount: 2520000 },
+  { name: 'Orange Money', value:  5, color: '#FF6600', amount:  630000 },
+  { name: 'Carte',        value: 10, color: '#F59E0B', amount: 1260000 },
+]
+
+const RADIAN = Math.PI / 180
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  if (percent < 0.06) return null
+  const r  = innerRadius + (outerRadius - innerRadius) * 0.55
+  const x  = cx + r * Math.cos(-midAngle * RADIAN)
+  const y  = cy + r * Math.sin(-midAngle * RADIAN)
+  return (
+    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central"
+      style={{ fontSize: 11, fontWeight: 800 }}>
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  )
+}
 
 const TOP_PRODUCTS = [
   { rank: 1, name: '🌾 Riz parfumé 5kg',        ca: 1840000, qty: 408  },
@@ -199,28 +222,62 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Modes paiement */}
+        {/* Modes paiement — donut */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
             <span className="panel-title">💳 {t('reports_payment_breakdown')}</span>
           </div>
-          <div className="space-y-4">
-            {paymentModes.map(m => (
-              <div key={m.label}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{m.label}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold" style={{ color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
-                      {fmt(m.amount)}
-                    </span>
-                    <span className="text-xs font-black" style={{ color: m.color, fontFamily: 'var(--mono)', minWidth: 32 }}>{m.pct} %</span>
-                  </div>
-                </div>
-                <div style={{ height: 8, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{ width: `${m.pct}%`, height: '100%', background: m.color, borderRadius: 99, transition: 'width .4s' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ position: 'relative', width: 200, height: 200, flexShrink: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={PAYMENT_DONUT}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={95}
+                    paddingAngle={3}
+                    dataKey="value"
+                    labelLine={false}
+                    label={renderCustomLabel}
+                  >
+                    {PAYMENT_DONUT.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: any, name: any) => [`${value}%`, name]}
+                    contentStyle={{
+                      background: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                transform: 'translate(-50%,-50%)',
+                textAlign: 'center', pointerEvents: 'none',
+              }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>100%</div>
+                <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  Répartition
                 </div>
               </div>
-            ))}
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {PAYMENT_DONUT.map(m => (
+                <div key={m.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: m.color, flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>{m.name}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(m.amount)}</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: m.color, fontFamily: 'var(--mono)', minWidth: 34, textAlign: 'right' }}>{m.value}%</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

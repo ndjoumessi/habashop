@@ -284,7 +284,10 @@ export default function POS() {
   const totalHT = total / (1 + VAT_RATE)
   const tva     = total - totalHT
   const cashGivenAmount = parseFloat(cashGiven) || 0
-  const monnaie = cashGivenAmount - total
+  const totalInActiveCurrency = ['XOF', 'XAF'].includes(currency as string)
+    ? total
+    : convertAmount(total, 'XOF', currency as Currency)
+  const monnaie = cashGivenAmount - totalInActiveCurrency
 
   const PAY_MODES = [
     { id: 'cash',   label: t('pos_cash'),                                    icon: '💵', color: '#10B981' },
@@ -343,8 +346,8 @@ export default function POS() {
   <div class="row total"><span>${t('pos_total')} :</span><span>${fmt(total)}</span></div>
   <div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span>${payMode === 'cash' ? t('pos_cash') : payMode === 'card' ? t('pos_card') : t('pos_mobile')}</span></div>
   ${cashGiven ? `
-    <div class="row"><span>${t('pos_ticket_received')}</span><span>${fmt(parseFloat(cashGiven))}</span></div>
-    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${fmt(monnaie)}</span></div>
+    <div class="row"><span>${t('pos_ticket_received')}</span><span>${formatCurrency(parseFloat(cashGiven), currency as Currency)}</span></div>
+    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${formatCurrency(Math.max(monnaie, 0), currency as Currency)}</span></div>
   ` : ''}
   <div class="divider"></div>
   <div class="center footer">
@@ -1175,14 +1178,19 @@ export default function POS() {
                 </div>
                 {cashGiven && parseFloat(cashGiven) > 0 && (
                   <div style={{
-                    marginTop:4, display:'flex', justifyContent:'space-between',
-                    fontSize:12, padding:'4px 8px',
-                    background: monnaie >= 0 ? 'rgba(14,196,126,.08)' : 'rgba(232,64,74,.08)',
-                    borderRadius:7,
+                    marginTop:6, display:'flex', justifyContent:'space-between',
+                    alignItems:'center', fontSize:13, padding:'8px 12px',
+                    background: monnaie >= 0 ? 'rgba(0,208,132,.08)' : 'rgba(255,59,92,.08)',
+                    border:`1px solid ${monnaie >= 0 ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
+                    borderRadius:10,
                   }}>
-                    <span style={{ color:'var(--text3)' }}>{lang === 'fr' ? 'Monnaie' : 'Change'}</span>
-                    <span style={{ fontWeight:800, fontFamily:'var(--mono)', color: monnaie >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
-                      {monnaie >= 0 ? fmt(monnaie) : fmt(0)}
+                    <span style={{ color:'var(--text2)', fontWeight:600 }}>
+                      {lang === 'fr' ? 'Monnaie à rendre' : 'Change'}
+                    </span>
+                    <span style={{ fontWeight:900, fontFamily:'var(--mono)', fontSize:16, color: monnaie >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
+                      {monnaie >= 0
+                        ? formatCurrency(monnaie, currency as Currency)
+                        : `− ${formatCurrency(Math.abs(monnaie), currency as Currency)}`}
                     </span>
                   </div>
                 )}
