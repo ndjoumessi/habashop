@@ -558,6 +558,178 @@ export function exportAccountingExcel(
   URL.revokeObjectURL(url)
 }
 
+// ─── CAHIER DES CHARGES PDF ───────────────────
+export function generateCDC() {
+  const { shopName } = useAppStore.getState()
+  const now = new Date()
+  const dateStr = now.toLocaleDateString('fr-FR')
+  const version = 'v2.0'
+
+  const modules = [
+    { id: 'M01', name: 'Point de Vente (POS)', desc: 'Encaissement rapide, catalogue filtrable, multi-modes de paiement (espèces, mobile money, Wave, Orange Money, carte), ticket imprimable ou WhatsApp, mode offline PWA.', status: 'Livré' },
+    { id: 'M02', name: 'Gestion des Stocks', desc: "CRUD produits avec photo/emoji, alertes rupture configurables, bon de commande automatique, historique des mouvements, export CSV.", status: 'Livré' },
+    { id: 'M03', name: 'Tableau de Bord', desc: "KPIs temps réel (CA, ventes, stock, RH), graphiques recharts interactifs, alertes critiques, activité récente.", status: 'Livré' },
+    { id: 'M04', name: 'CRM Clients', desc: "Fiches clients, catégories (gros/semi-gros/fidèle), programme de fidélité, historique des achats, import/export CSV.", status: 'Livré' },
+    { id: 'M05', name: 'Fournisseurs & Commandes', desc: "Fiches fournisseurs, bons de commande PDF, suivi des livraisons, balance fournisseur.", status: 'Livré' },
+    { id: 'M06', name: 'Rapports & Analytics', desc: "Rapports par période, donut paiements, top produits, marges, exports PDF/CSV. Support multi-devises.", status: 'Livré' },
+    { id: 'M07', name: 'RH & Équipe', desc: "Fiches employés, contrats CDI/CDD, salaires, planning hebdomadaire, gestion des congés, présences.", status: 'Livré' },
+    { id: 'M08', name: 'Planning & Pointage', desc: "Planning hebdomadaire visuel, drag & drop, statuts de présence (présent/retard/absent/congé).", status: 'Livré' },
+    { id: 'M09', name: 'Paie', desc: "Bulletin de paie PDF, cotisations CNSS/IPRES configurables, avances sur salaire, export comptable.", status: 'Livré' },
+    { id: 'M10', name: 'Dépenses', desc: "Gestion des dépenses par catégorie, TVA, statut de paiement, export comptable Excel/CSV.", status: 'Livré' },
+    { id: 'M11', name: 'Prévisions & Objectifs', desc: "Bons de commande fournisseurs, prévisions de stock, alertes de réapprovisionnement.", status: 'Livré' },
+    { id: 'M12', name: 'Marketing & SMS', desc: "Campagnes SMS/WhatsApp en masse, segmentation clients, suivi des envois.", status: 'Livré' },
+    { id: 'M13', name: 'Intelligence Artificielle', desc: "Assistant IA Claude Sonnet, analyse financière, conseils business, chat conversationnel.", status: 'Livré' },
+    { id: 'M14', name: 'Notifications Push', desc: "Alertes stock, confirmations de vente, rappels RH via l'API Web Push + Service Worker PWA.", status: 'Livré' },
+    { id: 'M15', name: 'Gestion des Utilisateurs', desc: "RBAC granulaire, rôles (admin/manager/caissier), authentification JWT, session timeout.", status: 'Livré' },
+    { id: 'M16', name: 'API REST & Intégrations', desc: "API Fastify documentée, authentification Bearer JWT, webhooks, support Swagger/OpenAPI.", status: 'Livré' },
+  ]
+
+  const techStack = [
+    { cat: 'Frontend',   items: 'React 18, TypeScript, Vite, Zustand (persist), Recharts, React Router v6' },
+    { cat: 'CSS',        items: "CSS Variables design system, Plus Jakarta Sans, JetBrains Mono, PWA (Service Worker)" },
+    { cat: 'Backend',    items: 'Node.js 20, Fastify 4, Prisma ORM, PostgreSQL, JWT Auth, Zod validation' },
+    { cat: 'Infra',      items: 'Railway (backend), Vercel (frontend), GitHub CI/CD, Sentry (logs)' },
+    { cat: 'Devises',    items: 'XOF, XAF, EUR, USD, CAD — conversion en temps réel' },
+    { cat: 'Langues',    items: 'Français, English, Español, Italiano — i18n complet' },
+  ]
+
+  const modulesHTML = modules.map(m => `
+    <tr>
+      <td style="font-family:monospace;font-weight:700;color:#5B4EE8">${m.id}</td>
+      <td style="font-weight:700">${m.name}</td>
+      <td style="font-size:11px;color:#555">${m.desc}</td>
+      <td><span class="badge badge-green">${m.status}</span></td>
+    </tr>
+  `).join('')
+
+  const techHTML = techStack.map(t => `
+    <tr>
+      <td style="font-weight:700;color:#5B4EE8;width:120px">${t.cat}</td>
+      <td style="font-size:12px">${t.items}</td>
+    </tr>
+  `).join('')
+
+  const body = `
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Modules</div>
+        <div class="kpi-value">16</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Stack technique</div>
+        <div class="kpi-value">React + Fastify</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Version</div>
+        <div class="kpi-value">${version}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Date</div>
+        <div class="kpi-value">${dateStr}</div>
+      </div>
+    </div>
+
+    <h2>1. Présentation du logiciel</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Nom du produit</div>
+        <div class="info-value">HabaShop ${version}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Boutique configurée</div>
+        <div class="info-value">${shopName || 'HabaShop Demo'}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Type de solution</div>
+        <div class="info-value">SaaS — Logiciel de gestion commerciale</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Cible principale</div>
+        <div class="info-value">Commerces africains (TPE / PME)</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Déploiement</div>
+        <div class="info-value">Web + PWA (offline-ready)</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">API publique</div>
+        <div class="info-value">REST — Bearer JWT — Swagger</div>
+      </div>
+    </div>
+
+    <h2>2. Modules fonctionnels (${modules.length} livrés)</h2>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Module</th><th>Description</th><th>Statut</th></tr>
+      </thead>
+      <tbody>${modulesHTML}</tbody>
+    </table>
+
+    <h2>3. Stack technique</h2>
+    <table>
+      <thead>
+        <tr><th>Catégorie</th><th>Technologies</th></tr>
+      </thead>
+      <tbody>${techHTML}</tbody>
+    </table>
+
+    <h2>4. Architecture</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Pattern frontend</div>
+        <div class="info-value">SPA — React 18 + Zustand + React Router v6</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Pattern backend</div>
+        <div class="info-value">REST API — Fastify + Prisma + PostgreSQL</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Authentification</div>
+        <div class="info-value">JWT Bearer — localStorage — 2FA TOTP</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Offline / PWA</div>
+        <div class="info-value">Service Worker — Cache First assets, Network First API</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Multi-devises</div>
+        <div class="info-value">XOF base — conversion temps réel (EUR/USD/CAD/XAF)</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Internationalisation</div>
+        <div class="info-value">i18n complet — fr/en/es/it — store Zustand persist</div>
+      </div>
+    </div>
+
+    <h2>5. Sécurité & conformité</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Chiffrement</div>
+        <div class="info-value">HTTPS obligatoire — JWT signé HS256</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">RBAC</div>
+        <div class="info-value">Rôles admin / manager / caissier — permissions granulaires</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Journalisation</div>
+        <div class="info-value">Journal d'audit immuable — toutes les actions critiques</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Données</div>
+        <div class="info-value">Hébergement Europe — RGPD — backups quotidiens</div>
+      </div>
+    </div>
+
+    <div class="signature-block">
+      <div class="signature-line">Responsable technique</div>
+      <div class="signature-line">Responsable boutique</div>
+    </div>
+  `
+
+  openPDF(`HabaShop — Cahier des Charges ${version}`, body)
+}
+
 export function htmlInfoGrid(items: { label: string; value: string }[]): string {
   return `
     <div class="info-grid">

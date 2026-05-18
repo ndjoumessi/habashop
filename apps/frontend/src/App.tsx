@@ -27,6 +27,7 @@ import Marketing from '@/pages/Marketing'
 import AIAssistant from '@/pages/AIAssistant'
 import Goals from '@/pages/Goals'
 import APIDocs from '@/pages/APIDocs'
+import Onboarding from '@/pages/Onboarding'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -49,6 +50,7 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/onboarding" element={<Onboarding />} />
       <Route
         path="/app"
         element={

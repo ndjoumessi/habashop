@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { api } from '@/lib/api'
+import { generateCDC } from '@/utils/export'
 import toast from 'react-hot-toast'
 
 const TESTER_ENDPOINTS = [
@@ -37,6 +38,27 @@ export default function APIDocs() {
           {lang === 'fr' ? 'Intégrez HabaShop dans vos applications via notre API REST'
             : 'Integrate HabaShop into your applications via our REST API'}
         </p>
+      </div>
+
+      {/* CDC PDF */}
+      <div className="panel">
+        <div className="panel-h">
+          <span className="panel-t">📋 {lang === 'fr' ? 'Cahier des charges' : 'Specification document'}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ fontSize: 13, color: 'var(--text2)', flex: 1 }}>
+            {lang === 'fr'
+              ? 'Document complet HabaShop v2.0 — 16 modules, stack technique, architecture, sécurité.'
+              : 'Full HabaShop v2.0 document — 16 modules, tech stack, architecture, security.'}
+          </div>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => generateCDC()}
+            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            📄 {lang === 'fr' ? 'Générer le PDF' : 'Generate PDF'}
+          </button>
+        </div>
       </div>
 
       {/* Base URL */}

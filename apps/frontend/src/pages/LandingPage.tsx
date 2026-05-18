@@ -449,12 +449,12 @@ export default function LandingPage() {
   }
 
   const features = [
-    { icon: '🛒', title: lp.feature1_title, desc: lp.feature1_desc },
-    { icon: '📦', title: lp.feature2_title, desc: lp.feature2_desc },
-    { icon: '📊', title: lp.feature3_title, desc: lp.feature3_desc },
-    { icon: '👥', title: lp.feature4_title, desc: lp.feature4_desc },
-    { icon: '🧑‍💼', title: lp.feature5_title, desc: lp.feature5_desc },
-    { icon: '🔐', title: lp.feature6_title, desc: lp.feature6_desc },
+    { icon: '🛒', color: '#6C47FF', title: lp.feature1_title, desc: lp.feature1_desc },
+    { icon: '📦', color: '#00D084', title: lp.feature2_title, desc: lp.feature2_desc },
+    { icon: '📊', color: '#00B8FF', title: lp.feature3_title, desc: lp.feature3_desc },
+    { icon: '👥', color: '#F59E0B', title: lp.feature4_title, desc: lp.feature4_desc },
+    { icon: '🧑‍💼', color: '#EC4899', title: lp.feature5_title, desc: lp.feature5_desc },
+    { icon: '🔐', color: '#EF4444', title: lp.feature6_title, desc: lp.feature6_desc },
   ]
 
   const steps = [
@@ -660,9 +660,30 @@ export default function LandingPage() {
           width: 900, height: 900, borderRadius: '50%', pointerEvents: 'none',
           background: 'radial-gradient(circle,rgba(91,78,232,.12) 0%,transparent 70%)',
         }} />
+        <div style={{
+          position: 'absolute', top: 80, right: '10%',
+          width: 320, height: 320, borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle,rgba(0,212,132,.07) 0%,transparent 70%)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: 40, left: '8%',
+          width: 260, height: 260, borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle,rgba(0,184,255,.06) 0%,transparent 70%)',
+        }} />
+        {/* Badge */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: 'rgba(91,78,232,.08)', border: '1.5px solid rgba(91,78,232,.2)',
+          borderRadius: 100, padding: '6px 16px 6px 8px', marginBottom: 24, position: 'relative', zIndex: 1,
+        }}>
+          <span style={{ background: `linear-gradient(135deg,${S.lp},${S.lp2})`, color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: .8 }}>Nouveau</span>
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: S.lp }}>{lp.badge}</span>
+        </div>
+
         <h1 style={{
           fontSize: 'clamp(36px,5.8vw,76px)', fontWeight: 900, lineHeight: 1.04,
           maxWidth: 900, marginBottom: 22, letterSpacing: '-3px', color: S.ltext,
+          position: 'relative', zIndex: 1,
         }}>
           {lp.h1a}{' '}
           <span style={{
@@ -781,13 +802,20 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, maxWidth: 1060, margin: '0 auto' }}>
           {features.map(f => (
             <div key={f.title}
-              style={{ background: '#fff', border: `1px solid ${S.lborder}`, borderRadius: 18, padding: 28, transition: 'all .25s', cursor: 'default', boxShadow: '0 2px 12px rgba(91,78,232,.05)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = S.lborder2; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 60px rgba(91,78,232,.14)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = S.lborder; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(91,78,232,.05)'; }}
+              style={{ background: '#fff', border: `1px solid ${S.lborder}`, borderRadius: 20, padding: 28, transition: 'all .28s', cursor: 'default', boxShadow: '0 2px 12px rgba(91,78,232,.05)', borderTop: `3px solid ${f.color}` }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-5px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 24px 64px ${f.color}22, 0 0 0 1px ${f.color}22`; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(91,78,232,.05)'; }}
             >
-              <div style={{ width: 48, height: 48, borderRadius: 13, background: 'linear-gradient(135deg,rgba(91,78,232,.12),rgba(124,111,240,.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 16, border: `1px solid ${S.lborder2}` }}>{f.icon}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: S.ltext }}>{f.title}</div>
-              <div style={{ color: S.ltext2, fontSize: 13.5, lineHeight: 1.7 }}>{f.desc}</div>
+              <div style={{
+                width: 52, height: 52, borderRadius: 15,
+                background: `linear-gradient(135deg,${f.color}22,${f.color}10)`,
+                border: `1.5px solid ${f.color}33`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 24, marginBottom: 18,
+                boxShadow: `0 4px 16px ${f.color}18`,
+              }}>{f.icon}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 8, color: S.ltext }}>{f.title}</div>
+              <div style={{ color: S.ltext2, fontSize: 13.5, lineHeight: 1.72 }}>{f.desc}</div>
             </div>
           ))}
         </div>
@@ -840,61 +868,74 @@ export default function LandingPage() {
           <h2 style={{ fontSize: 'clamp(26px,3.2vw,44px)', fontWeight: 900, margin: '12px 0', letterSpacing: -2, color: S.ltext }}>{lp.pricing_title}</h2>
           <p style={{ color: S.ltext2, fontSize: 16 }}>{lp.pricing_sub}</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, maxWidth: 980, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, maxWidth: 980, margin: '0 auto', alignItems: 'start' }}>
           {pricing.map(p => (
             <div key={p.name}
               style={{
-                background: p.pop ? `linear-gradient(135deg,${S.lp},${S.lp2})` : '#fff',
+                background: p.pop ? `linear-gradient(145deg,${S.lp},${S.lp2} 70%,#A78BFA)` : '#fff',
                 border: `1.5px solid ${p.pop ? 'transparent' : S.lborder}`,
-                borderRadius: 22, padding: 32, transition: 'all .25s', position: 'relative',
-                boxShadow: p.pop ? '0 20px 60px rgba(91,78,232,.38)' : '0 2px 16px rgba(91,78,232,.06)',
+                borderRadius: 24, padding: 32, transition: 'all .28s', position: 'relative',
+                boxShadow: p.pop ? `0 24px 72px rgba(91,78,232,.42), 0 0 0 1px rgba(91,78,232,.12)` : '0 2px 16px rgba(91,78,232,.06)',
+                transform: p.pop ? 'scale(1.03)' : 'none',
               }}
-              onMouseEnter={e => { if (!p.pop) { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 24px 70px rgba(91,78,232,.14)'; } }}
+              onMouseEnter={e => { if (!p.pop) { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 28px 72px rgba(91,78,232,.16)'; } }}
               onMouseLeave={e => { if (!p.pop) { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px rgba(91,78,232,.06)'; } }}
             >
               {p.tag && (
-                <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: '#fff', color: S.lp, fontSize: 10, fontWeight: 800, padding: '4px 14px', borderRadius: 100, whiteSpace: 'nowrap', border: `1.5px solid ${S.lborder2}`, boxShadow: '0 2px 8px rgba(91,78,232,.15)' }}>{p.tag}</div>
+                <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: `linear-gradient(135deg,${S.lp},${S.lp2})`, color: '#fff', fontSize: 10, fontWeight: 800, padding: '5px 16px', borderRadius: 100, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(91,78,232,.4)', letterSpacing: .5 }}>{p.tag}</div>
               )}
-              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: p.pop ? 'rgba(255,255,255,.75)' : S.ltext2, marginBottom: 12 }}>{p.name}</div>
-              <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: p.pop ? '#fff' : S.ltext }}>
-                {p.name === 'Enterprise' ? (
-                  <span style={{ fontSize: 28 }}>{lp.on_estimate}</span>
-                ) : (
-                  formatPlanPrice(p.name === 'Starter' ? 14410 : 34750)
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2, color: p.pop ? 'rgba(255,255,255,.7)' : S.ltext3, marginBottom: 6 }}>{p.name}</div>
+              <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.65)' : S.ltext2, marginBottom: 16 }}>{p.sub}</div>
+
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: p.name === 'Enterprise' ? 26 : 40, fontWeight: 900, letterSpacing: -1.5, lineHeight: 1, color: p.pop ? '#fff' : S.ltext }}>
+                  {p.name === 'Enterprise' ? lp.on_estimate : formatPlanPrice(p.name === 'Starter' ? 14410 : 34750)}
+                </div>
+                {p.name !== 'Enterprise' && (
+                  <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.6)' : S.ltext2, marginTop: 3 }}>{lp.per_month}</div>
+                )}
+                {p.name !== 'Enterprise' && currency !== 'XOF' && currency !== 'XAF' && (
+                  <div style={{ fontSize: 10.5, color: p.pop ? 'rgba(255,255,255,.45)' : S.ltext3, marginTop: 3 }}>
+                    ≈ {new Intl.NumberFormat('fr-FR').format(p.name === 'Starter' ? 14410 : 34750)} FCFA
+                  </div>
                 )}
               </div>
-              {p.name !== 'Enterprise' && (
-                <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.65)' : S.ltext2, marginTop: 2 }}>
-                  {lp.per_month}
-                </div>
-              )}
-              {p.name !== 'Enterprise' && currency !== 'XOF' && currency !== 'XAF' && (
-                <div style={{ fontSize: 11, color: p.pop ? 'rgba(255,255,255,.5)' : S.ltext3, marginTop: 4, marginBottom: 4 }}>
-                  ≈ {new Intl.NumberFormat('fr-FR').format(p.name === 'Starter' ? 14410 : 34750)} FCFA
-                </div>
-              )}
-              <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.65)' : S.ltext2, marginBottom: 24 }}>{p.sub}</div>
-              <div style={{ height: 1, background: 'currentColor', opacity: .1, marginBottom: 20 }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+
+              <div style={{ height: 1, background: p.pop ? 'rgba(255,255,255,.15)' : S.lborder, marginBottom: 20 }} />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 28 }}>
                 {p.features.map(f => (
-                  <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: p.pop ? 'rgba(255,255,255,.9)' : (f.ok ? S.ltext : S.ltext3) }}>
-                    <span style={{ fontSize: 14, color: p.pop ? '#fff' : (f.ok ? S.lp : S.ltext3) }}>{f.ok ? '✓' : '✗'}</span>
-                    {f.text}
+                  <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5 }}>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
+                      background: p.pop ? (f.ok ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.08)') : (f.ok ? `${S.green}18` : S.lbg3),
+                      color: p.pop ? (f.ok ? '#fff' : 'rgba(255,255,255,.3)') : (f.ok ? S.green : S.ltext3),
+                      fontWeight: 800,
+                    }}>{f.ok ? '✓' : '–'}</div>
+                    <span style={{ color: p.pop ? (f.ok ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.4)') : (f.ok ? S.ltext : S.ltext3) }}>
+                      {f.text}
+                    </span>
                   </div>
                 ))}
               </div>
+
               <button
                 onClick={() => {
                   if (p.name === 'Starter' || p.name === 'Business') navigate('/signup')
                   else navigate('/login')
                 }}
                 style={{
-                  width: '100%', border: p.btn === 'outline' ? `1.5px solid ${S.lborder2}` : 'none',
-                  borderRadius: 12, padding: 13, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s',
+                  width: '100%',
+                  border: p.btn === 'outline' ? `1.5px solid ${S.lborder2}` : 'none',
+                  borderRadius: 13, padding: '13px 0', fontSize: 14, fontWeight: 800,
+                  cursor: 'pointer', fontFamily: 'inherit', transition: 'all .22s',
                   background: p.btn === 'light' ? `linear-gradient(135deg,${S.lp},${S.lp2})` : p.btn === 'white' ? '#fff' : 'transparent',
                   color: p.btn === 'light' ? '#fff' : p.btn === 'white' ? S.lp : S.lp,
-                  boxShadow: p.btn === 'light' ? '0 6px 20px rgba(91,78,232,.3)' : p.btn === 'white' ? '0 4px 16px rgba(0,0,0,.12)' : 'none',
+                  boxShadow: p.btn === 'light' ? '0 6px 20px rgba(91,78,232,.32)' : p.btn === 'white' ? '0 4px 16px rgba(0,0,0,.12)' : 'none',
                 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; }}
               >{p.btnText}</button>
             </div>
           ))}

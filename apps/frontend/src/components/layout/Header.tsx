@@ -4,6 +4,7 @@ import { Search } from 'lucide-react'
 import { useAppStore, t } from '@/stores/appStore'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import CurrencyBadge from '@/components/ui/CurrencyBadge'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import toast from 'react-hot-toast'
 import { alertsApi } from '@/lib/api'
 
@@ -199,6 +200,7 @@ export default function Header() {
   const navigate  = useNavigate()
   const { lang }  = useAppStore()
 
+  const isOnline = useOnlineStatus()
   const [showNewMenu,    setShowNewMenu]    = useState(false)
   const [showNotifs,     setShowNotifs]     = useState(false)
   const [searchQuery,    setSearchQuery]    = useState('')
@@ -286,6 +288,20 @@ export default function Header() {
   }
 
   return (
+    <>
+    {!isOnline && (
+      <div style={{
+        background: 'rgba(240,165,0,.12)',
+        border: '1px solid rgba(240,165,0,.3)',
+        borderLeft: 'none', borderRight: 'none',
+        padding: '8px 20px',
+        display: 'flex', alignItems: 'center', gap: 10,
+        fontSize: 13, fontWeight: 600, color: 'var(--acc)',
+      }}>
+        <span>📡</span>
+        <span>{lang === 'fr' ? 'Mode hors-ligne — Les données seront synchronisées au retour de la connexion' : 'Offline mode — Data will sync when connection is restored'}</span>
+      </div>
+    )}
     <div className="topbar">
       <div className="page-title" style={{
         background: 'linear-gradient(135deg, var(--text) 40%, var(--p3))',
@@ -632,5 +648,6 @@ export default function Header() {
         )}
       </div>
     </div>
+    </>
   )
 }
