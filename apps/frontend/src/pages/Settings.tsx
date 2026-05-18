@@ -437,7 +437,15 @@ export default function Settings() {
                         background: cfg.currency === c.code ? 'rgba(14,196,126,0.10)' : 'var(--bg3)',
                         border: `1px solid ${cfg.currency === c.code ? 'rgba(14,196,126,0.35)' : 'var(--border)'}`,
                       }}
-                      onClick={() => { cfg.updateConfig({ currency: c.code }); toast.success(`Devise : ${c.code}`) }}
+                      onClick={() => {
+                        cfg.updateConfig({ currency: c.code })
+                        tenantApi.update({ currency: c.code }).catch(() => {})
+                        toast.success(
+                          cfg.lang === 'fr'
+                            ? `✅ Devise changée : ${c.code}`
+                            : `✅ Currency changed: ${c.code}`
+                        )
+                      }}
                     >
                       <span style={{ fontSize: 24 }}>{c.flag}</span>
                       <div style={{

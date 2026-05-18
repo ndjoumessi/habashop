@@ -239,9 +239,51 @@ async function start() {
     return prisma.product.findMany({ where: { tenantId }, orderBy: { name: 'asc' } })
   })
 
-  app.post('/api/products', { preHandler: authenticate }, async (request) => {
+  app.post('/api/products', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user as any
-    return prisma.product.create({ data: { ...(request.body as any), tenantId } })
+    const {
+      sku, name, category, buyPrice, sellPrice,
+      stockQty, stockMin, unit, emoji, taxRate,
+      description, barcode, isActive,
+      wholesalePrice, semiWholesalePrice,
+      hasPromotion, promotionPrice,
+    } = request.body as any
+
+    if (!name?.trim()) {
+      return reply.code(400).send({ error: 'Nom requis' })
+    }
+
+    try {
+      const product = await prisma.product.create({
+        data: {
+          tenantId,
+          sku: sku || `PRD-${Date.now()}`,
+          name: name.trim(),
+          category: category || 'Général',
+          buyPrice: buyPrice || 0,
+          sellPrice: sellPrice || 0,
+          stockQty: stockQty || 0,
+          stockMin: stockMin || 5,
+          unit: unit || 'unité',
+          emoji: emoji || '📦',
+          taxRate: taxRate || 18,
+          description: description || '',
+          barcode: barcode || '',
+          isActive: isActive !== false,
+          wholesalePrice: wholesalePrice || null,
+          semiWholesalePrice: semiWholesalePrice || null,
+          hasPromotion: hasPromotion || false,
+          promotionPrice: promotionPrice || null,
+        }
+      })
+      return product
+    } catch (err: any) {
+      console.error('Create product error:', err)
+      return reply.code(500).send({
+        error: 'Erreur création produit',
+        details: err.message,
+      })
+    }
   })
 
   app.put('/api/products/:id', { preHandler: authenticate }, async (request) => {
@@ -347,18 +389,70 @@ async function start() {
 
   app.get('/api/customers', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user as any
-    return prisma.customer.findMany({ where: { tenantId }, orderBy: { name: 'asc' } })
+    try {
+      return await prisma.customer.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: 'desc' },
+      })
+    } catch (err: any) {
+      console.error('Get customers error:', err)
+      return []
+    }
   })
 
-  app.post('/api/customers', { preHandler: authenticate }, async (request) => {
+  app.post('/api/customers', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user as any
-    return prisma.customer.create({ data: { ...(request.body as any), tenantId } })
+    const {
+      name, type, phone, email, address,
+      loyaltyPoints, totalRevenue, purchaseCount,
+    } = request.body as any
+
+    if (!name || !name.trim()) {
+      return reply.code(400).send({ error: 'Le nom est requis' })
+    }
+
+    try {
+      const customer = await prisma.customer.create({
+        data: {
+          tenantId,
+          name: name.trim(),
+          type: type ?? 'retail',
+          phone: phone ?? '',
+          email: email ?? '',
+          address: address ?? '',
+          loyaltyPoints: loyaltyPoints ?? 0,
+          totalRevenue: totalRevenue ?? 0,
+          purchaseCount: purchaseCount ?? 0,
+        }
+      })
+      return customer
+    } catch (err: any) {
+      console.error('Create customer error:', err)
+      return reply.code(500).send({
+        error: 'Erreur création client',
+        details: err.message,
+      })
+    }
   })
 
-  app.put('/api/customers/:id', { preHandler: authenticate }, async (request) => {
+  app.put('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user as any
     const { id } = request.params as any
-    return prisma.customer.update({ where: { id, tenantId }, data: request.body as any })
+    const data = request.body as any
+    try {
+      return await prisma.customer.update({
+        where: { id, tenantId },
+        data: {
+          name: data.name,
+          type: data.type,
+          phone: data.phone,
+          email: data.email,
+          address: data.address,
+        }
+      })
+    } catch (err: any) {
+      return reply.code(500).send({ error: err.message })
+    }
   })
 
   // ════════════════════════════════════════

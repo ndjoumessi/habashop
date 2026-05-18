@@ -283,7 +283,8 @@ export default function POS() {
   const total   = subtotalBeforeDiscount - discountAmount
   const totalHT = total / (1 + VAT_RATE)
   const tva     = total - totalHT
-  const monnaie = cashGiven ? parseFloat(cashGiven) - total : 0
+  const cashGivenAmount = parseFloat(cashGiven) || 0
+  const monnaie = cashGivenAmount - total
 
   const PAY_MODES = [
     { id: 'cash',   label: t('pos_cash'),                                    icon: '💵', color: '#10B981' },
@@ -699,6 +700,7 @@ export default function POS() {
             flex: 1,
             minHeight: 0,
             overflowY: 'auto',
+            paddingTop: 8,
           }}>
             <div style={{
               display: 'grid',
@@ -944,10 +946,12 @@ export default function POS() {
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <div style={{
-              width: 30, height: 30, borderRadius: 9,
+              width: 32, height: 32, borderRadius: 10,
               background: 'linear-gradient(135deg,var(--p),var(--p2))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 14, flexShrink: 0,
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 16,
+              flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(108,71,255,.4)',
             }}>🛒</div>
             <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', flex: 1 }}>
               {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
@@ -963,17 +967,22 @@ export default function POS() {
               </div>
             )}
             {cashierSessionTx > 0 && (
-              <div style={{
-                background: 'rgba(14,196,126,.15)',
-                border: '1px solid rgba(14,196,126,.25)',
+              <span style={{
+                background: 'rgba(0,208,132,.15)',
+                border: '1px solid rgba(0,208,132,.25)',
                 color: 'var(--acc2)', borderRadius: 20,
-                padding: '2px 8px', fontSize: 10,
+                padding: '3px 10px', fontSize: 11,
                 fontWeight: 700, fontFamily: 'var(--mono)',
-                display: 'flex', alignItems: 'center', gap: 3,
+                display: 'flex', alignItems: 'center', gap: 4,
+                flexShrink: 0,
               }}>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)' }}/>
+                <div style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: 'var(--acc2)',
+                  boxShadow: '0 0 6px var(--acc2)',
+                }}/>
                 {cashierSessionTx} tx
-              </div>
+              </span>
             )}
             {cart.length > 0 && (
               <button type="button"
@@ -1151,11 +1160,19 @@ export default function POS() {
 
             {payMode === 'cash' && (
               <div style={{ marginTop:6 }}>
-                <input className="input" type="number"
-                  placeholder={lang === 'fr' ? 'Montant reçu...' : 'Amount received...'}
-                  value={cashGiven} onChange={e => setCashGiven(e.target.value)}
-                  style={{ textAlign:'right', fontSize:13 }}
-                />
+                <div style={{ position:'relative' }}>
+                  <input className="input" type="number"
+                    placeholder={lang === 'fr' ? 'Montant reçu...' : 'Amount received...'}
+                    value={cashGiven} onChange={e => setCashGiven(e.target.value)}
+                    style={{ textAlign:'right', paddingRight:50, fontSize:13 }}
+                  />
+                  <span style={{
+                    position:'absolute', right:12, top:'50%',
+                    transform:'translateY(-50%)',
+                    fontSize:11, fontWeight:700, color:'var(--text3)',
+                    pointerEvents:'none',
+                  }}>{currencySymbol}</span>
+                </div>
                 {cashGiven && parseFloat(cashGiven) > 0 && (
                   <div style={{
                     marginTop:4, display:'flex', justifyContent:'space-between',
@@ -1165,7 +1182,7 @@ export default function POS() {
                   }}>
                     <span style={{ color:'var(--text3)' }}>{lang === 'fr' ? 'Monnaie' : 'Change'}</span>
                     <span style={{ fontWeight:800, fontFamily:'var(--mono)', color: monnaie >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
-                      {fmt(monnaie)}
+                      {monnaie >= 0 ? fmt(monnaie) : fmt(0)}
                     </span>
                   </div>
                 )}

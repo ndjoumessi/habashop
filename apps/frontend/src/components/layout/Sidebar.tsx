@@ -52,8 +52,29 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div className="sidebar-logo" style={{ justifyContent: collapsed ? 'center' : undefined }}>
-        <div className="logo-icon">H</div>
-        {!collapsed && <div className="logo-text">Haba<em>Shop</em></div>}
+        <div style={{
+          width: 38, height: 38, borderRadius: 12,
+          background: 'linear-gradient(135deg,#6C47FF,#8B6FFF)',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 20, fontWeight: 900, color: '#fff',
+          boxShadow: '0 4px 12px rgba(108,71,255,.4)',
+          flexShrink: 0,
+        }}>H</div>
+        {!collapsed && (
+          <div>
+            <div style={{
+              fontSize: 16, fontWeight: 900, color: 'var(--text)',
+              letterSpacing: '-.3px',
+            }}>HabaShop</div>
+            <div style={{
+              fontSize: 9, color: 'var(--text3)', fontWeight: 600,
+              textTransform: 'uppercase', letterSpacing: '.5px',
+            }}>
+              {lang === 'fr' ? 'Gestion commerciale' : 'Commerce Suite'}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
