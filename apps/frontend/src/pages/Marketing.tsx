@@ -51,7 +51,7 @@ export default function Marketing() {
   const [selected,      setSelected]      = useState<Set<string>>(new Set())
   const [message,       setMessage]       = useState('')
   const [sending,       setSending]       = useState(false)
-  const [result,        setResult]        = useState<{ sent: number; failed: number } | null>(null)
+  const [result,        setResult]        = useState<{ sent: number; failed: number; errors?: string[] } | null>(null)
 
   useEffect(() => {
     customersApi.list()
@@ -98,7 +98,7 @@ export default function Marketing() {
     setSending(true)
     setResult(null)
     try {
-      const res = await marketingApi.broadcast({ phones, message, lang })
+      const res = await marketingApi.broadcast({ phones, message, lang }) as { sent: number; failed: number; errors?: string[] }
       setResult(res)
       toast.success(`✅ ${res.sent} message${res.sent > 1 ? 's' : ''} envoyé${res.sent > 1 ? 's' : ''} !`)
       setSelected(new Set())
