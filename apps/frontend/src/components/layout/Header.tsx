@@ -287,7 +287,11 @@ export default function Header() {
 
   return (
     <div className="topbar">
-      <div className="page-title">{title}</div>
+      <div className="page-title" style={{
+        background: 'linear-gradient(135deg, var(--text) 40%, var(--p3))',
+        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }}>{title}</div>
 
       {/* ── Recherche globale ── */}
       <div ref={searchRef} style={{ position:'relative' }}>

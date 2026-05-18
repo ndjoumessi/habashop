@@ -114,6 +114,7 @@
   @keyframes slideUp { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
   @keyframes fadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:translateY(0) } }
   @keyframes spin    { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
+  @keyframes pulse   { 0%,100% { opacity:.5; transform:scale(1) } 50% { opacity:1; transform:scale(1.25) } }
 }
 
 @layer components {
@@ -210,6 +211,16 @@
     background: linear-gradient(180deg, #6C47FF, #8B6FFF);
     border-radius: 0 3px 3px 0;
   }
+  .nav-icon-wrap {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .nav-item.active .nav-icon-wrap {
+    background: rgba(108,71,255,.18);
+    box-shadow: 0 0 0 1px rgba(108,71,255,.2);
+  }
+  .nav-item:hover .nav-icon-wrap { background: rgba(255,255,255,.04); }
   .nav-icon { font-size: 14px; width: 18px; text-align: center; }
   .nav-badge {
     margin-left: auto; background: var(--danger); color: #fff;

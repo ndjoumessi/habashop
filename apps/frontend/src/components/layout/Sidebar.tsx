@@ -64,8 +64,10 @@ export default function Sidebar() {
         {!collapsed && (
           <div>
             <div style={{
-              fontSize: 16, fontWeight: 900, color: 'var(--text)',
-              letterSpacing: '-.3px',
+              fontSize: 16, fontWeight: 900, letterSpacing: '-.3px',
+              background: 'linear-gradient(135deg, #A991FF, #7C6FF0)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
             }}>HabaShop</div>
             <div style={{
               fontSize: 9, color: 'var(--text3)', fontWeight: 600,
@@ -82,7 +84,10 @@ export default function Sidebar() {
         {NAV.map((item, i) => {
           if ('section' in item) {
             return collapsed ? null : (
-              <div key={i} className="nav-section">{item.section}</div>
+              <div key={i} className="nav-section" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>{item.section}</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              </div>
             )
           }
           return (
@@ -93,7 +98,9 @@ export default function Sidebar() {
               title={collapsed ? t(item.key) : undefined}
               style={collapsed ? { justifyContent: 'center', padding: '8px 0' } : undefined}
             >
-              <span className="nav-icon">{item.icon}</span>
+              <div className="nav-icon-wrap">
+                <span className="nav-icon">{item.icon}</span>
+              </div>
               {!collapsed && <span style={{ flex: 1 }}>{t(item.key)}</span>}
               {!collapsed && item.badge && (
                 <span className="nav-badge" style={item.badgeTeal ? { background: 'rgba(91,78,232,.2)', color: 'var(--p2)' } : undefined}>

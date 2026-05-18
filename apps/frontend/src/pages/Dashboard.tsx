@@ -159,20 +159,35 @@ export default function Dashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),  sub: `${stats.transactionsToday} transactions`,      up: true,  icon: <DollarSign size={18} /> },
-          { label: t('kpi_stock'),           value: String(stats.totalProducts), sub: `▼ ${stats.lowStockProducts} alertes rupture`, up: false, icon: <Package size={18} />    },
-          { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} commandes en attente`, up: null, icon: <Users size={18} />      },
-          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth), sub: `▲ 7 % ${t('dash_vs_last_month')}`,                  up: true,  icon: <TrendingUp size={18} /> },
+          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),          sub: `${stats.transactionsToday} tx`,          up: true  as const, evol: '+12%', icon: <DollarSign size={18} />, color: 'var(--p2)',   bg: 'rgba(108,71,255,.12)' },
+          { label: t('kpi_stock'),           value: String(stats.totalProducts),    sub: `${stats.lowStockProducts} alertes`,      up: false as const, evol: '−3',   icon: <Package    size={18} />, color: 'var(--acc)',  bg: 'rgba(240,165,0,.12)'  },
+          { label: t('kpi_employees'),       value: String(stats.activeEmployees),  sub: `${stats.pendingOrders} cmd. en attente`, up: null,           evol: '',     icon: <Users      size={18} />, color: 'var(--acc2)', bg: 'rgba(0,208,132,.12)'  },
+          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),          sub: `vs mois dernier`,                        up: true  as const, evol: '+7%',  icon: <TrendingUp size={18} />, color: 'var(--info)', bg: 'rgba(27,154,245,.12)' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
-            <div className="kpi-icon-w" style={{ color: 'var(--p2)' }}>{k.icon}</div>
-            <div className="kpi-label">{k.label}</div>
-            <div className="kpi-value">{k.value}</div>
-            <div className={k.up === true ? 'trend-up' : k.up === false ? 'trend-down' : 'kpi-sub'}>
-              {k.up === true  && <TrendingUp   size={11} />}
-              {k.up === false && <TrendingDown  size={11} />}
-              <span>{k.sub}</span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                background: k.bg, color: k.color,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>{k.icon}</div>
+              {k.up !== null && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 3,
+                  padding: '3px 8px', borderRadius: 20,
+                  fontSize: 11, fontWeight: 700,
+                  background: k.up ? 'rgba(0,208,132,.1)' : 'rgba(255,59,92,.1)',
+                  color: k.up ? 'var(--acc2)' : 'var(--danger)',
+                  border: `1px solid ${k.up ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
+                }}>
+                  {k.up ? <TrendingUp size={9} /> : <TrendingDown size={9} />}
+                  {k.evol}
+                </span>
+              )}
             </div>
+            <div className="kpi-label">{k.label}</div>
+            <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
+            <div className="kpi-sub" style={{ marginTop: 3 }}>{k.sub}</div>
           </div>
         ))}
       </div>
@@ -224,42 +239,73 @@ export default function Dashboard() {
         {/* Alertes */}
         <div className="panel">
           <div className="panel-head">
-            <span className="panel-title">🔴 {t('stock_alerts')}</span>
-            <span className="badge badge-red">{ALERTS.length}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 9,
+                background: 'rgba(255,59,92,.12)', border: '1px solid rgba(255,59,92,.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+              }}>⚠️</div>
+              <span className="panel-title">{t('stock_alerts')}</span>
+            </div>
+            <span style={{
+              background: 'rgba(255,59,92,.12)', color: 'var(--danger)',
+              border: '1px solid rgba(255,59,92,.25)', borderRadius: 20,
+              padding: '2px 9px', fontSize: 11, fontWeight: 800,
+            }}>{ALERTS.length}</span>
           </div>
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>{t('col_product')}</th><th>{t('col_stock')}</th><th>{t('col_status')}</th></tr></thead>
-              <tbody>
-                {ALERTS.map(a => (
-                  <tr key={a.name}>
-                    <td className="td-bold text-xs">{a.name}</td>
-                    <td className="td-num text-xs">{a.stock}<span className="text-xs" style={{ color: 'var(--text3)' }}>/{a.threshold}</span></td>
-                    <td><span className={`badge ${a.status}`}>{a.label}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {ALERTS.map(a => (
+              <div key={a.name} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 10px', borderRadius: 10,
+                background: a.status === 'badge-red' ? 'rgba(255,59,92,.05)' : 'rgba(240,165,0,.05)',
+                border: `1px solid ${a.status === 'badge-red' ? 'rgba(255,59,92,.12)' : 'rgba(240,165,0,.12)'}`,
+              }}>
+                <div style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{a.name}</div>
+                <span style={{
+                  fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700,
+                  color: a.status === 'badge-red' ? 'var(--danger)' : 'var(--acc)',
+                }}>{a.stock}<span style={{ color: 'var(--text3)', fontWeight: 400 }}>/{a.threshold}</span></span>
+                <span style={{
+                  padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 700,
+                  background: a.status === 'badge-red' ? 'rgba(255,59,92,.12)' : 'rgba(240,165,0,.12)',
+                  color: a.status === 'badge-red' ? 'var(--danger)' : 'var(--acc)',
+                  border: `1px solid ${a.status === 'badge-red' ? 'rgba(255,59,92,.2)' : 'rgba(240,165,0,.2)'}`,
+                }}>{a.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Activity + Top products */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Activity */}
+        {/* Activity timeline */}
         <div className="panel">
           <div className="panel-head">
             <span className="panel-title">⚡ {t('recent_activity')}</span>
           </div>
-          <div className="space-y-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {RECENT_ACTIVITY.map((a, i) => (
-              <div key={i} className="act-item">
-                <div className="act-ic" style={{ background: a.color }}>{a.icon}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              <div key={i} style={{
+                display: 'flex', gap: 12, alignItems: 'flex-start',
+                padding: '10px 4px',
+                borderBottom: i < RECENT_ACTIVITY.length - 1 ? '1px solid var(--border)' : 'none',
+                transition: 'background .12s',
+              }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.02)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+              >
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                  background: a.color, border: '1px solid rgba(255,255,255,.07)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+                }}>{a.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                     {a.title[lang as Lang] ?? a.title.fr}
                   </div>
-                  <div className="text-xs" style={{ color: 'var(--text3)' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>
                     {a.getDesc(fmt, lang)}
                   </div>
                 </div>

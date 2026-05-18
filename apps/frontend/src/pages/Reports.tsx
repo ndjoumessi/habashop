@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from 'recharts'
 import { Download, TrendingUp, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
@@ -35,27 +35,7 @@ const PAYMENT_MODES = [
   { label: 'Carte',        pct: 10, color: 'var(--acc)',  amount: 1260000 },
 ]
 
-const PAYMENT_DONUT = [
-  { name: 'Espèces',      value: 62, color: '#10B981', amount: 7812000 },
-  { name: 'Mobile',       value: 28, color: '#6C47FF', amount: 3528000 },
-  { name: 'Wave',         value: 20, color: '#1B9AF5', amount: 2520000 },
-  { name: 'Orange Money', value:  5, color: '#FF6600', amount:  630000 },
-  { name: 'Carte',        value: 10, color: '#F59E0B', amount: 1260000 },
-]
-
 const RADIAN = Math.PI / 180
-const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-  if (percent < 0.06) return null
-  const r  = innerRadius + (outerRadius - innerRadius) * 0.55
-  const x  = cx + r * Math.cos(-midAngle * RADIAN)
-  const y  = cy + r * Math.sin(-midAngle * RADIAN)
-  return (
-    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central"
-      style={{ fontSize: 11, fontWeight: 800 }}>
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
-  )
-}
 
 const TOP_PRODUCTS = [
   { rank: 1, name: '🌾 Riz parfumé 5kg',        ca: 1840000, qty: 408  },
@@ -87,6 +67,102 @@ export default function Reports() {
   const { lang, currency } = useConfig()
   void lang
   const fmt = useFormatAmount()
+
+  const [activePayIndex, setActivePayIndex] = useState<number | null>(null)
+  const [salesData,      setSalesData]      = useState<any[]>([])
+
+  useEffect(() => {
+    salesApi.list()
+      .then((d: any) => { if (d?.length) setSalesData(d) })
+      .catch(() => {})
+  }, [])
+
+  const paymentData = useMemo(() => {
+    const counts: Record<string, number> = {}
+    const totals: Record<string, number> = {}
+    salesData.forEach((sale: any) => {
+      const mode = sale.paymentMode ?? 'cash'
+      counts[mode] = (counts[mode] ?? 0) + 1
+      totals[mode] = (totals[mode] ?? 0) + (sale.total ?? 0)
+    })
+    const total = Object.values(counts).reduce((s, v) => s + v, 0)
+    if (total === 0) return [
+      { name: lang === 'fr' ? 'Espèces' : 'Cash', value: 62, amount: 0, color: '#00D084' },
+      { name: 'Mobile',                             value: 22, amount: 0, color: '#8B6FFF' },
+      { name: 'Wave',                               value: 16, amount: 0, color: '#00B8FF' },
+      { name: 'Orange Money',                       value:  8, amount: 0, color: '#FF3B5C' },
+      { name: lang === 'fr' ? 'Carte' : 'Card',    value:  5, amount: 0, color: '#FF9500' },
+    ]
+    return [
+      { name: lang === 'fr' ? 'Espèces' : 'Cash', value: Math.round(((counts.cash   ?? 0) / total) * 100), amount: totals.cash   ?? 0, color: '#00D084' },
+      { name: 'Mobile',                            value: Math.round(((counts.mobile ?? 0) / total) * 100), amount: totals.mobile ?? 0, color: '#8B6FFF' },
+      { name: 'Wave',                              value: Math.round(((counts.wave   ?? 0) / total) * 100), amount: totals.wave   ?? 0, color: '#00B8FF' },
+      { name: 'Orange Money',                      value: Math.round(((counts.orange ?? 0) / total) * 100), amount: totals.orange ?? 0, color: '#FF3B5C' },
+      { name: lang === 'fr' ? 'Carte' : 'Card',   value: Math.round(((counts.card   ?? 0) / total) * 100), amount: totals.card   ?? 0, color: '#FF9500' },
+    ].filter(d => d.value > 0)
+  }, [salesData, lang])
+
+  const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props
+    return (
+      <g>
+        <g style={{ filter: `drop-shadow(0 0 12px ${fill}80)` }}>
+          <Sector cx={cx} cy={cy} innerRadius={innerRadius - 4} outerRadius={outerRadius + 8}
+            startAngle={startAngle} endAngle={endAngle} fill={fill} />
+        </g>
+        <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
+          style={{ fontSize: 28, fontWeight: 900, fill, fontFamily: 'JetBrains Mono, monospace' }}>
+          {(percent * 100).toFixed(0)}%
+        </text>
+        <text x={cx} y={cy + 14} textAnchor="middle" dominantBaseline="middle"
+          style={{ fontSize: 12, fontWeight: 700, fill: 'rgba(238,238,255,.6)', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '.5px' }}>
+          {payload.name}
+        </text>
+        {payload.amount > 0 && (
+          <text x={cx} y={cy + 32} textAnchor="middle"
+            style={{ fontSize: 11, fill: 'rgba(238,238,255,.4)', fontFamily: 'JetBrains Mono, monospace' }}>
+            {fmt(payload.amount)}
+          </text>
+        )}
+      </g>
+    )
+  }
+
+  const CustomPayTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null
+    const d = payload[0].payload
+    return (
+      <div style={{
+        background: '#111125', border: `1px solid ${d.color}40`,
+        borderRadius: 12, padding: '10px 14px',
+        boxShadow: `0 8px 24px rgba(0,0,0,.6), 0 0 0 1px ${d.color}20`, minWidth: 140,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, boxShadow: `0 0 8px ${d.color}`, flexShrink: 0 }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#EEEEFF' }}>{d.name}</span>
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 900, color: d.color, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-1px', marginBottom: d.amount > 0 ? 4 : 0 }}>
+          {d.value}%
+        </div>
+        {d.amount > 0 && (
+          <div style={{ fontSize: 11, color: 'rgba(238,238,255,.4)', fontFamily: 'JetBrains Mono, monospace' }}>{fmt(d.amount)}</div>
+        )}
+      </div>
+    )
+  }
+
+  const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    if (percent < 0.08) return null
+    const r = innerRadius + (outerRadius - innerRadius) * 0.5
+    const x = cx + r * Math.cos(-midAngle * RADIAN)
+    const y = cy + r * Math.sin(-midAngle * RADIAN)
+    return (
+      <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
+        style={{ fontSize: 12, fontWeight: 900, fill: '#fff', fontFamily: 'JetBrains Mono, monospace' }}>
+        {(percent * 100).toFixed(0)}%
+      </text>
+    )
+  }
 
   const handleAccountingExport = async () => {
     const period2 = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })
@@ -222,59 +298,102 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Modes paiement — donut */}
-        <div className="panel" style={{ marginBottom: 0 }}>
-          <div className="panel-head">
-            <span className="panel-title">💳 {t('reports_payment_breakdown')}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ position: 'relative', width: 200, height: 200, flexShrink: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={PAYMENT_DONUT}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={95}
-                    paddingAngle={3}
-                    dataKey="value"
-                    labelLine={false}
-                    label={renderCustomLabel}
-                  >
-                    {PAYMENT_DONUT.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: any, name: any) => [`${value}%`, name]}
-                    contentStyle={{
-                      background: 'var(--card)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+        {/* Modes paiement — donut premium */}
+        <div className="panel" style={{ marginBottom: 0, background: 'linear-gradient(160deg,#0D0D1C,#111125)' }}>
+          <div className="panel-h">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
-                position: 'absolute', top: '50%', left: '50%',
-                transform: 'translate(-50%,-50%)',
-                textAlign: 'center', pointerEvents: 'none',
-              }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>100%</div>
-                <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>
-                  Répartition
+                width: 36, height: 36, borderRadius: 10,
+                background: 'rgba(108,71,255,.15)', border: '1px solid rgba(108,71,255,.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+              }}>💳</div>
+              <div>
+                <div className="panel-t">{lang === 'fr' ? 'Répartition paiements' : 'Payment breakdown'}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {salesData.length > 0
+                    ? `${salesData.length} ${lang === 'fr' ? 'transactions' : 'transactions'}`
+                    : lang === 'fr' ? 'Données de démonstration' : 'Demo data'}
                 </div>
               </div>
             </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {PAYMENT_DONUT.map(m => (
-                <div key={m.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: m.color, flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>{m.name}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(m.amount)}</span>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: m.color, fontFamily: 'var(--mono)', minWidth: 34, textAlign: 'right' }}>{m.value}%</span>
+          </div>
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <ResponsiveContainer width={220} height={220}>
+                <PieChart>
+                  <Pie
+                    activeIndex={activePayIndex ?? undefined}
+                    activeShape={renderActiveShape}
+                    data={paymentData}
+                    cx="50%" cy="50%"
+                    innerRadius={68} outerRadius={100}
+                    paddingAngle={2} dataKey="value"
+                    labelLine={false}
+                    label={activePayIndex === null ? renderLabel : undefined}
+                    onMouseEnter={(_: any, index: number) => setActivePayIndex(index)}
+                    onMouseLeave={() => setActivePayIndex(null)}
+                    strokeWidth={0}
+                  >
+                    {paymentData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.color}
+                        opacity={activePayIndex === null || activePayIndex === index ? 1 : 0.35}
+                        style={{ cursor: 'pointer', transition: 'opacity .2s' }}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomPayTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              {activePayIndex === null && (
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%,-50%)',
+                  textAlign: 'center', pointerEvents: 'none',
+                }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px' }}>
+                    {paymentData.length}
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>
+                    {lang === 'fr' ? 'modes' : 'modes'}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {paymentData.map((item, i) => (
+                <div key={i}
+                  onMouseEnter={() => setActivePayIndex(i)}
+                  onMouseLeave={() => setActivePayIndex(null)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '9px 12px',
+                    background: activePayIndex === i ? `${item.color}12` : 'rgba(255,255,255,.02)',
+                    border: `1px solid ${activePayIndex === i ? item.color + '35' : 'rgba(255,255,255,.05)'}`,
+                    borderRadius: 10, cursor: 'pointer', transition: 'all .15s',
+                    transform: activePayIndex === i ? 'translateX(4px)' : 'none',
+                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 10, height: 10, borderRadius: '50%', background: item.color,
+                      boxShadow: activePayIndex === i ? `0 0 8px ${item.color}` : 'none',
+                      flexShrink: 0, transition: 'box-shadow .15s',
+                    }} />
+                    <span style={{
+                      fontSize: 13, fontWeight: 600,
+                      color: activePayIndex === i ? 'var(--text)' : 'var(--text2)',
+                      transition: 'color .15s',
+                    }}>{item.name}</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: item.color, fontFamily: 'var(--mono)', letterSpacing: '-0.5px' }}>
+                      {item.value}%
+                    </div>
+                    {item.amount > 0 && (
+                      <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(item.amount)}</div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
