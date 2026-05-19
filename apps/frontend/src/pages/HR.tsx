@@ -179,6 +179,7 @@ export default function HR() {
 
   // Payroll
   const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [payTab, setPayTab] = useState<'grid'|'payslip'|'bonuses'|'history'>('grid')
   const [bonuses, setBonuses] = useState<Record<string, number>>({})
   const [showSalaryModal, setShowSalaryModal] = useState(false)
   const [salaryTarget, setSalaryTarget] = useState<any>(null)
@@ -243,6 +244,90 @@ export default function HR() {
     d.setDate(weekStart.getDate() + i)
     return d
   })
+
+  const generatePayslipPDF = (
+    emp: any,
+    data: { brut:number; bonus:number; cnss:number; ir:number; net:number; month:string }
+  ) => {
+    const monthLabel = new Date(data.month+'-01')
+      .toLocaleDateString(lang==='fr'?'fr-FR':'en-US', {month:'long', year:'numeric'})
+    const win = window.open('', '_blank', 'width=700,height=900')
+    if (!win) return
+    win.document.write(`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Bulletin — ${emp.name}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;padding:40px;max-width:600px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;margin-bottom:24px;border-bottom:3px solid #6C47FF}
+.logo{font-size:24px;font-weight:900;color:#6C47FF;letter-spacing:-1px}
+.badge{background:#6C47FF;color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700}
+.section{background:#f8f7ff;border-radius:10px;padding:16px;margin-bottom:16px}
+.section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#888;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee}
+.row:last-child{border-bottom:none}
+.label{color:#555}.value{font-weight:700;font-family:monospace}
+.total-box{background:linear-gradient(135deg,#6C47FF,#8B6FFF);color:#fff;border-radius:12px;padding:20px;display:flex;justify-content:space-between;align-items:center;margin-top:20px}
+.total-label{font-size:14px;font-weight:700;opacity:.9}
+.total-value{font-size:28px;font-weight:900;font-family:monospace;letter-spacing:-1px}
+.footer{margin-top:30px;padding-top:16px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:11px;color:#999}
+.sign-box{border:1px solid #ddd;border-radius:8px;padding:10px 16px;text-align:center;min-width:160px;font-size:11px;color:#888}
+@media print{body{padding:20px}button{display:none!important}}
+</style></head><body>
+<button onclick="window.print()" style="position:fixed;top:16px;right:16px;background:#6C47FF;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:700">🖨️ Imprimer</button>
+<div class="header">
+  <div><div class="logo">HabaShop</div>
+  <div style="font-size:12px;color:#888;margin-top:4px;">${lang==='fr'?'Bulletin de paie':'Payslip'} — ${monthLabel}</div></div>
+  <div class="badge">${lang==='fr'?'CONFIDENTIEL':'CONFIDENTIAL'}</div>
+</div>
+<div class="section">
+  <div class="section-title">${lang==='fr'?'INFORMATIONS EMPLOYÉ':'EMPLOYEE INFORMATION'}</div>
+  <div class="row"><span class="label">${lang==='fr'?'Nom':'Name'}</span><span class="value">${emp.name}</span></div>
+  <div class="row"><span class="label">${lang==='fr'?'Poste':'Position'}</span><span class="value">${emp.role}</span></div>
+  <div class="row"><span class="label">${lang==='fr'?'Département':'Department'}</span><span class="value">${emp.dept}</span></div>
+  <div class="row"><span class="label">${lang==='fr'?'Type contrat':'Contract'}</span><span class="value">${emp.type}</span></div>
+  <div class="row"><span class="label">${lang==='fr'?'Date embauche':'Hire date'}</span><span class="value">${emp.hiredAt}</span></div>
+</div>
+<div class="section">
+  <div class="section-title">${lang==='fr'?'DÉTAIL DE LA RÉMUNÉRATION':'COMPENSATION DETAIL'}</div>
+  <div class="row"><span class="label">${lang==='fr'?'Salaire brut de base':'Base gross salary'}</span><span class="value">${fmt(data.brut)}</span></div>
+  ${data.bonus>0?`<div class="row"><span class="label">${lang==='fr'?'Prime du mois':'Monthly bonus'}</span><span class="value" style="color:#00D084;">+ ${fmt(data.bonus)}</span></div>`:''}
+  <div class="row"><span class="label" style="font-weight:700">${lang==='fr'?'Total brut':'Total gross'}</span><span class="value">${fmt(data.brut+data.bonus)}</span></div>
+</div>
+<div class="section">
+  <div class="section-title">${lang==='fr'?'COTISATIONS ET RETENUES':'CONTRIBUTIONS & DEDUCTIONS'}</div>
+  <div class="row"><span class="label">CNSS (8%)</span><span class="value" style="color:#FF3B5C;">− ${fmt(data.cnss)}</span></div>
+  <div class="row"><span class="label">${lang==='fr'?'Impôt sur le revenu (5%)':'Income tax (5%)'}</span><span class="value" style="color:#FFB800;">− ${fmt(data.ir)}</span></div>
+  <div class="row"><span class="label" style="font-weight:700">${lang==='fr'?'Total retenues':'Total deductions'}</span><span class="value" style="color:#FF3B5C;">− ${fmt(data.cnss+data.ir)}</span></div>
+</div>
+<div class="total-box">
+  <div><div class="total-label">${lang==='fr'?'NET À PAYER':'NET TO PAY'}</div>
+  <div style="font-size:11px;opacity:.7;margin-top:4px;">${monthLabel}</div></div>
+  <div class="total-value">${fmt(data.net)}</div>
+</div>
+<div class="footer">
+  <div><div style="font-weight:700;margin-bottom:4px">HabaShop</div>
+  <div>Document généré le ${new Date().toLocaleDateString('fr-FR')}</div></div>
+  <div><div class="sign-box">${lang==='fr'?'Signature employeur<br/><br/><br/>':'Employer signature<br/><br/><br/>'}</div></div>
+</div>
+</body></html>`)
+    win.document.close()
+  }
+
+  const generateAllPayslips = () => {
+    const actifs = employees.filter(e => e.isActive !== false && e.active !== false)
+    actifs.forEach((emp, i) => {
+      const brut  = Number(emp.salary)||0
+      const bonus = bonuses[String(emp.id)] ?? 0
+      const total = brut + bonus
+      const cnss  = Math.round(total * 0.08)
+      const ir    = Math.round(total * 0.05)
+      const net   = total - cnss - ir
+      setTimeout(() => {
+        generatePayslipPDF(emp, { brut, bonus, cnss, ir, net, month: payrollMonth })
+      }, i * 300)
+    })
+    toast.success(lang==='fr' ? `📄 ${actifs.length} bulletins générés !` : `📄 ${actifs.length} payslips generated!`)
+  }
 
   function handleLeaveAction(id: number, status: 'approved' | 'refused') {
     setLeaves(prev => prev.map(l => l.id === id ? { ...l, status } : l))
@@ -629,165 +714,435 @@ export default function HR() {
       {tab === 'payroll' && (
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
-          {/* Contrôles */}
-          <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-            <input className="input" type="month"
-              style={{ width:'auto' }}
-              value={payrollMonth}
-              onChange={e => setPayrollMonth(e.target.value)} />
-            <button className="btn btn-sm" onClick={() => {
-              const BOM = '﻿'
-              const activeEmps = (employees ?? []).filter(e => e.active)
-              const rows = [
-                ['Employé','Rôle','Brut','Prime','CNSS 8%','IR 5%','Net'],
-                ...activeEmps.map(emp => {
-                  const brut  = emp.salary
+          {/* Sous-onglets */}
+          <div style={{ display:'flex', gap:4, background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:10, padding:4 }}>
+            {([
+              { id:'grid',    label: lang==='fr' ? '💰 Grille'      : '💰 Grid'      },
+              { id:'payslip', label: lang==='fr' ? '📄 Bulletins'   : '📄 Payslips'  },
+              { id:'bonuses', label: lang==='fr' ? '🎁 Primes'      : '🎁 Bonuses'   },
+              { id:'history', label: lang==='fr' ? '📈 Historique'  : '📈 History'   },
+            ] as const).map(t => (
+              <button key={t.id} type="button"
+                onClick={() => setPayTab(t.id)}
+                style={{
+                  flex:1, padding:'7px', borderRadius:8, fontSize:12,
+                  fontWeight:700, cursor:'pointer', fontFamily:'var(--font)', border:'none',
+                  background: payTab===t.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
+                  color: payTab===t.id ? '#fff' : 'var(--text3)',
+                  transition:'all .15s',
+                }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── SOUS-ONGLET GRILLE ── */}
+          {payTab === 'grid' && (
+            <>
+              {/* Contrôles */}
+              <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+                <input className="input" type="month"
+                  style={{ width:'auto' }}
+                  value={payrollMonth}
+                  onChange={e => setPayrollMonth(e.target.value)} />
+                <button className="btn btn-sm" onClick={() => {
+                  const BOM = '﻿'
+                  const activeEmps = (employees ?? []).filter(e => e.active)
+                  const rows = [
+                    ['Employé','Rôle','Brut','Prime','CNSS 8%','IR 5%','Net'],
+                    ...activeEmps.map(emp => {
+                      const brut  = emp.salary
+                      const bonus = bonuses[String(emp.id)] ?? 0
+                      const total = brut + bonus
+                      const cnss  = Math.round(total * 0.08)
+                      const ir    = Math.round(total * 0.05)
+                      const net   = total - cnss - ir
+                      return [emp.name, emp.role, brut, bonus, cnss, ir, net]
+                    }),
+                  ]
+                  const csv = BOM + rows.map(r => r.join(';')).join('\r\n')
+                  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url; a.download = `Paie_${payrollMonth}.csv`; a.click()
+                  URL.revokeObjectURL(url)
+                  toast.success('📊 Export paie téléchargé !')
+                }}><Download size={14} /> CSV</button>
+                <button className="btn btn-primary btn-sm"
+                  onClick={() => generateAllPayslips()}>
+                  📄 {lang === 'fr' ? 'Tous les bulletins' : 'All payslips'}
+                </button>
+              </div>
+
+              {/* KPIs paie */}
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+                {[
+                  { label: lang==='fr' ? 'Masse salariale brute' : 'Gross payroll', value: fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)), color:'var(--p2)' },
+                  { label: 'CNSS (8%)', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08)), color:'var(--danger)' },
+                  { label: lang==='fr' ? 'Net à payer' : 'Net to pay', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.92)), color:'var(--acc2)' },
+                ].map(k => (
+                  <div key={k.label} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
+                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
+                    <div style={{ fontSize:20, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tableau paie */}
+              <div className="panel">
+                <div className="panel-h">
+                  <span className="panel-t">
+                    💰 {lang==='fr' ? 'Détail de la paie' : 'Payroll detail'}{' — '}
+                    {new Date(payrollMonth+'-01').toLocaleDateString(lang==='fr'?'fr-FR':'en-US',{month:'long',year:'numeric'})}
+                  </span>
+                  <button className="btn btn-primary btn-sm"
+                    onClick={() => { setShowSalaryModal(true); setSalaryTarget(null) }}>
+                    + {lang==='fr' ? 'Prime collective' : 'Collective bonus'}
+                  </button>
+                </div>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
+                        <th style={{textAlign:'right'}}>{lang==='fr'?'BRUT':'GROSS'}</th>
+                        <th style={{textAlign:'right'}}>{lang==='fr'?'PRIME':'BONUS'}</th>
+                        <th style={{textAlign:'right'}}>CNSS 8%</th>
+                        <th style={{textAlign:'right'}}>IR 5%</th>
+                        <th style={{textAlign:'right'}}>NET</th>
+                        <th style={{textAlign:'center'}}>ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(employees ?? []).filter(e => e.active).map(emp => {
+                        const empId = String(emp.id)
+                        const brut  = Number(emp.salary)||0
+                        const bonus = bonuses[empId] ?? 0
+                        const total = brut + bonus
+                        const cnss  = Math.round(total * 0.08)
+                        const ir    = Math.round(total * 0.05)
+                        const net   = total - cnss - ir
+                        return (
+                          <tr key={emp.id}>
+                            <td>
+                              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                <EmpAvatar emp={emp} size={32} />
+                                <div>
+                                  <div style={{ fontWeight:700, fontSize:13 }}>{emp.name}</div>
+                                  <div style={{ fontSize:10, color:'var(--text3)' }}>{emp.role}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:700 }}>{fmt(brut)}</td>
+                            <td style={{ textAlign:'right' }}>
+                              <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'flex-end' }}>
+                                <span style={{ fontFamily:'var(--mono)', fontSize:12, color: bonus>0 ? 'var(--acc2)' : 'var(--text3)' }}>
+                                  {bonus>0 ? `+${fmt(bonus)}` : '—'}
+                                </span>
+                                <button type="button"
+                                  onClick={() => { setSalaryTarget(emp); setShowSalaryModal(true) }}
+                                  style={{ width:20, height:20, borderRadius:5, background:'rgba(0,208,132,.1)', border:'1px solid rgba(0,208,132,.2)', cursor:'pointer', fontSize:10, color:'var(--acc2)', display:'flex', alignItems:'center', justifyContent:'center' }}>+</button>
+                              </div>
+                            </td>
+                            <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', fontSize:12 }}>− {fmt(cnss)}</td>
+                            <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', fontSize:12 }}>− {fmt(ir)}</td>
+                            <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:900, color:'var(--acc2)' }}>{fmt(net)}</td>
+                            <td style={{ textAlign:'center' }}>
+                              <button className="btn btn-sm" style={{ fontSize:10, padding:'3px 8px' }}
+                                onClick={() => { setSalaryTarget({...emp, mode:'raise'}); setShowSalaryModal(true) }}>
+                                📈 {lang==='fr'?'Augmenter':'Raise'}
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background:'var(--bg4)' }}>
+                        <td style={{ fontWeight:800, color:'var(--text)', padding:'12px 14px' }}>TOTAL</td>
+                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:800, color:'var(--p2)', padding:'12px 14px' }}>{fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0))}</td>
+                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</td>
+                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08))}</td>
+                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.05))}</td>
+                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:900, fontSize:15, color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.87))}</td>
+                        <td />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── SOUS-ONGLET BULLETINS ── */}
+          {payTab === 'payslip' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                <label style={{ fontSize:12, fontWeight:700, color:'var(--text3)' }}>
+                  {lang==='fr' ? 'Période :' : 'Period:'}
+                </label>
+                <input className="input" type="month"
+                  style={{ width:'auto' }}
+                  value={payrollMonth}
+                  onChange={e => setPayrollMonth(e.target.value)} />
+                <button className="topbar-btn"
+                  style={{ fontSize:12, padding:'7px 14px' }}
+                  onClick={() => generateAllPayslips()}>
+                  📄 {lang==='fr' ? 'Générer tous les bulletins' : 'Generate all payslips'}
+                </button>
+              </div>
+
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:12 }}>
+                {employees.filter(e => e.active !== false).map(emp => {
+                  const brut  = Number(emp.salary)||0
                   const bonus = bonuses[String(emp.id)] ?? 0
                   const total = brut + bonus
                   const cnss  = Math.round(total * 0.08)
                   const ir    = Math.round(total * 0.05)
                   const net   = total - cnss - ir
-                  return [emp.name, emp.role, brut, bonus, cnss, ir, net]
-                }),
-              ]
-              const csv = BOM + rows.map(r => r.join(';')).join('\r\n')
-              const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url; a.download = `Paie_${payrollMonth}.csv`; a.click()
-              URL.revokeObjectURL(url)
-              toast.success('📊 Export paie téléchargé !')
-            }}><Download size={14} /> CSV</button>
-            <button className="btn btn-primary btn-sm"
-              onClick={() => toast.success('📄 Fiches de paie générées !')}>
-              📄 {lang === 'fr' ? 'Fiches PDF' : 'Pay slips'}
-            </button>
-          </div>
-
-          {/* KPIs paie */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
-            {[
-              { label: lang==='fr' ? 'Masse salariale brute' : 'Gross payroll', value: fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)), color:'var(--p2)' },
-              { label: 'CNSS (8%)', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08)), color:'var(--danger)' },
-              { label: lang==='fr' ? 'Net à payer' : 'Net to pay', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.92)), color:'var(--acc2)' },
-            ].map(k => (
-              <div key={k.label} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
-                <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
-                <div style={{ fontSize:20, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.value}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Tableau paie */}
-          <div className="panel">
-            <div className="panel-h">
-              <span className="panel-t">
-                💰 {lang==='fr' ? 'Détail de la paie' : 'Payroll detail'}{' — '}
-                {new Date(payrollMonth+'-01').toLocaleDateString(lang==='fr'?'fr-FR':'en-US',{month:'long',year:'numeric'})}
-              </span>
-              <button className="btn btn-primary btn-sm"
-                onClick={() => { setShowSalaryModal(true); setSalaryTarget(null) }}>
-                + {lang==='fr' ? 'Prime collective' : 'Collective bonus'}
-              </button>
-            </div>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
-                    <th style={{textAlign:'right'}}>{lang==='fr'?'BRUT':'GROSS'}</th>
-                    <th style={{textAlign:'right'}}>{lang==='fr'?'PRIME':'BONUS'}</th>
-                    <th style={{textAlign:'right'}}>CNSS 8%</th>
-                    <th style={{textAlign:'right'}}>IR 5%</th>
-                    <th style={{textAlign:'right'}}>NET</th>
-                    <th style={{textAlign:'center'}}>ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(employees ?? []).filter(e => e.active).map(emp => {
-                    const empId = String(emp.id)
-                    const brut  = Number(emp.salary)||0
-                    const bonus = bonuses[empId] ?? 0
-                    const total = brut + bonus
-                    const cnss  = Math.round(total * 0.08)
-                    const ir    = Math.round(total * 0.05)
-                    const net   = total - cnss - ir
-                    return (
-                      <tr key={emp.id}>
-                        <td>
-                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                            <EmpAvatar emp={emp} size={32} />
-                            <div>
-                              <div style={{ fontWeight:700, fontSize:13 }}>{emp.name}</div>
-                              <div style={{ fontSize:10, color:'var(--text3)' }}>{emp.role}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:700 }}>{fmt(brut)}</td>
-                        <td style={{ textAlign:'right' }}>
-                          <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'flex-end' }}>
-                            <span style={{ fontFamily:'var(--mono)', fontSize:12, color: bonus>0 ? 'var(--acc2)' : 'var(--text3)' }}>
-                              {bonus>0 ? `+${fmt(bonus)}` : '—'}
-                            </span>
-                            <button type="button"
-                              onClick={() => { setSalaryTarget(emp); setShowSalaryModal(true) }}
-                              style={{ width:20, height:20, borderRadius:5, background:'rgba(0,208,132,.1)', border:'1px solid rgba(0,208,132,.2)', cursor:'pointer', fontSize:10, color:'var(--acc2)', display:'flex', alignItems:'center', justifyContent:'center' }}>+</button>
-                          </div>
-                        </td>
-                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', fontSize:12 }}>− {fmt(cnss)}</td>
-                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', fontSize:12 }}>− {fmt(ir)}</td>
-                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:900, color:'var(--acc2)' }}>{fmt(net)}</td>
-                        <td style={{ textAlign:'center' }}>
-                          <button className="btn btn-sm" style={{ fontSize:10, padding:'3px 8px' }}
-                            onClick={() => { setSalaryTarget({...emp, mode:'raise'}); setShowSalaryModal(true) }}>
-                            📈 {lang==='fr'?'Augmenter':'Raise'}
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr style={{ background:'var(--bg4)' }}>
-                    <td style={{ fontWeight:800, color:'var(--text)', padding:'12px 14px' }}>TOTAL</td>
-                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:800, color:'var(--p2)', padding:'12px 14px' }}>{fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0))}</td>
-                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</td>
-                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08))}</td>
-                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.05))}</td>
-                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:900, fontSize:15, color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.87))}</td>
-                    <td />
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          {/* Historique augmentations */}
-          {salaryHistory.length > 0 && (
-            <div className="panel">
-              <div className="panel-h">
-                <span className="panel-t">📈 {lang==='fr' ? 'Historique augmentations' : 'Salary history'}</span>
-              </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                {salaryHistory.map((h, i) => {
-                  const emp = employees.find(e => String(e.id) === h.empId)
-                  const diff = h.newSalary - h.oldSalary
-                  const pct  = h.oldSalary > 0 ? Math.round((diff/h.oldSalary)*100) : 0
                   return (
-                    <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:10 }}>
-                      {emp && <EmpAvatar emp={emp} size={32} />}
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>{emp?.name ?? h.empId}</div>
-                        <div style={{ fontSize:11, color:'var(--text3)' }}>{h.date} · {h.reason}</div>
+                    <div key={emp.id} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:14, padding:18, transition:'all .2s' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, paddingBottom:12, borderBottom:'1px solid var(--border)' }}>
+                        <div style={{ width:40, height:40, borderRadius:11, background:`linear-gradient(135deg,${emp.color??'#6C47FF'},${emp.color??'#6C47FF'}66)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:900, color:'#fff', flexShrink:0 }}>
+                          {emp.avatar ?? '??'}
+                        </div>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>{emp.name}</div>
+                          <div style={{ fontSize:11, color:'var(--text3)' }}>{emp.role} · {emp.dept}</div>
+                        </div>
+                        <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', background:'rgba(0,208,132,.1)', color:'var(--acc2)', border:'1px solid rgba(0,208,132,.2)', borderRadius:20, padding:'2px 8px' }}>
+                          {new Date(payrollMonth+'-01').toLocaleDateString(lang==='fr'?'fr-FR':'en-US', {month:'short', year:'numeric'})}
+                        </div>
                       </div>
-                      <div style={{ textAlign:'right' }}>
-                        <div style={{ fontSize:13, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(h.oldSalary)} → {fmt(h.newSalary)}</div>
-                        <div style={{ fontSize:11, fontWeight:700, color:'var(--acc2)' }}>+{pct}%</div>
+
+                      <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:12 }}>
+                        {[
+                          { label: lang==='fr'?'Salaire brut':'Gross salary', value: fmt(brut), color:'var(--text2)', sign:'' },
+                          ...(bonus > 0 ? [{ label: lang==='fr'?'Prime':'Bonus', value: fmt(bonus), color:'var(--acc2)', sign:'+' }] : []),
+                          { label: 'CNSS (8%)', value: fmt(cnss), color:'var(--danger)', sign:'−' },
+                          { label: 'IR (5%)',   value: fmt(ir),   color:'var(--acc)',    sign:'−' },
+                        ].map((row, i) => (
+                          <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'4px 0', borderBottom:'1px solid rgba(255,255,255,.04)' }}>
+                            <span style={{ color:'var(--text3)' }}>{row.label}</span>
+                            <span style={{ color:row.color, fontFamily:'var(--mono)', fontWeight:600 }}>{row.sign} {row.value}</span>
+                          </div>
+                        ))}
                       </div>
+
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'rgba(0,208,132,.06)', border:'1px solid rgba(0,208,132,.12)', borderRadius:10, marginBottom:12 }}>
+                        <span style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>
+                          {lang==='fr' ? 'NET À PAYER' : 'NET TO PAY'}
+                        </span>
+                        <span style={{ fontSize:20, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>
+                          {fmt(net)}
+                        </span>
+                      </div>
+
+                      <button className="mini-btn"
+                        style={{ width:'100%', justifyContent:'center' }}
+                        onClick={() => generatePayslipPDF(emp, { brut, bonus, cnss, ir, net, month: payrollMonth })}>
+                        📄 {lang==='fr' ? 'Télécharger bulletin' : 'Download payslip'}
+                      </button>
                     </div>
                   )
                 })}
               </div>
+            </div>
+          )}
+
+          {/* ── SOUS-ONGLET PRIMES ── */}
+          {payTab === 'bonuses' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              <div style={{ display:'flex', justifyContent:'flex-end' }}>
+                <button className="topbar-btn"
+                  onClick={() => { setSalaryTarget(null); setShowSalaryModal(true) }}>
+                  + {lang==='fr' ? 'Nouvelle prime' : 'New bonus'}
+                </button>
+              </div>
+
+              <div className="panel">
+                <div className="panel-h">
+                  <span className="panel-t">🎁 {lang==='fr' ? 'Primes du mois' : 'Monthly bonuses'}</span>
+                  <span style={{ fontSize:12, color:'var(--text3)' }}>
+                    {lang==='fr' ? 'Total :' : 'Total:'}{' '}
+                    <strong style={{ color:'var(--acc2)' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</strong>
+                  </span>
+                </div>
+
+                {Object.keys(bonuses).length === 0 ? (
+                  <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text3)' }}>
+                    <div style={{ fontSize:36, marginBottom:12 }}>🎁</div>
+                    <div style={{ fontSize:14, fontWeight:600 }}>
+                      {lang==='fr' ? 'Aucune prime ce mois' : 'No bonuses this month'}
+                    </div>
+                    <div style={{ fontSize:12, marginTop:6 }}>
+                      {lang==='fr' ? 'Cliquez sur "+ Nouvelle prime" pour en ajouter' : 'Click "+ New bonus" to add one'}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
+                          <th>{lang==='fr'?'MONTANT':'AMOUNT'}</th>
+                          <th>{lang==='fr'?'% DU SALAIRE':'% OF SALARY'}</th>
+                          <th>ACTIONS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(bonuses).map(([empId, amount]) => {
+                          const emp = employees.find(e => String(e.id) === empId)
+                          if (!emp) return null
+                          const pct = Number(emp.salary) > 0 ? Math.round((amount/Number(emp.salary))*100) : 0
+                          return (
+                            <tr key={empId}>
+                              <td>
+                                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                  <div style={{ width:30, height:30, borderRadius:8, background:`${emp.color??'#6C47FF'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, color:emp.color??'#6C47FF' }}>
+                                    {emp.avatar ?? '??'}
+                                  </div>
+                                  <span style={{ fontWeight:700, fontSize:13 }}>{emp.name}</span>
+                                </div>
+                              </td>
+                              <td style={{ fontFamily:'var(--mono)', color:'var(--acc2)', fontWeight:800 }}>+{fmt(amount)}</td>
+                              <td>
+                                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                  <div style={{ flex:1, height:6, background:'var(--bg5)', borderRadius:99, overflow:'hidden', maxWidth:100 }}>
+                                    <div style={{ height:'100%', width:`${Math.min(100,pct)}%`, background:'linear-gradient(90deg,var(--acc2),var(--p2))', borderRadius:99 }} />
+                                  </div>
+                                  <span style={{ fontSize:11, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:700 }}>{pct}%</span>
+                                </div>
+                              </td>
+                              <td>
+                                <button className="mini-btn"
+                                  style={{ fontSize:10, padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)' }}
+                                  onClick={() => {
+                                    const nb = {...bonuses}
+                                    delete nb[empId]
+                                    setBonuses(nb)
+                                    toast.success(lang==='fr' ? 'Prime supprimée' : 'Bonus removed')
+                                  }}>
+                                  🗑 {lang==='fr' ? 'Supprimer' : 'Remove'}
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {Object.keys(bonuses).length > 0 && (
+                <div style={{ padding:'14px 18px', background:'rgba(0,208,132,.05)', border:'1px solid rgba(0,208,132,.12)', borderRadius:12, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', marginBottom:4 }}>
+                      📊 {lang==='fr' ? 'Impact sur la masse salariale' : 'Impact on payroll'}
+                    </div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>
+                      {lang==='fr'
+                        ? `${Object.keys(bonuses).length} employé(s) avec prime`
+                        : `${Object.keys(bonuses).length} employee(s) with bonus`}
+                    </div>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontSize:22, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
+                      +{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}
+                    </div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>{lang==='fr' ? 'Total primes' : 'Total bonuses'}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── SOUS-ONGLET HISTORIQUE ── */}
+          {payTab === 'history' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              {salaryHistory.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text3)' }}>
+                  <div style={{ fontSize:40, marginBottom:12 }}>📈</div>
+                  <div style={{ fontSize:14, fontWeight:600 }}>
+                    {lang==='fr' ? 'Aucune révision salariale enregistrée' : 'No salary revision recorded'}
+                  </div>
+                  <div style={{ fontSize:12, marginTop:6 }}>
+                    {lang==='fr' ? 'Les augmentations apparaîtront ici' : 'Salary raises will appear here'}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="panel">
+                    <div className="panel-h">
+                      <span className="panel-t">📈 {lang==='fr' ? 'Historique des révisions salariales' : 'Salary revision history'}</span>
+                    </div>
+                    <div style={{ position:'relative', paddingLeft:28 }}>
+                      <div style={{ position:'absolute', left:10, top:8, bottom:8, width:2, background:'linear-gradient(180deg,var(--p),var(--p2)33)', borderRadius:99 }} />
+                      <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+                        {[...salaryHistory].reverse().map((h, i) => {
+                          const emp   = employees.find(e => String(e.id) === h.empId)
+                          const diff  = h.newSalary - h.oldSalary
+                          const pct   = Number(h.oldSalary) > 0 ? Math.round((diff/Number(h.oldSalary))*100) : 0
+                          const isPos = diff > 0
+                          return (
+                            <div key={i} style={{ position:'relative', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
+                              <div style={{ position:'absolute', left:-22, top:'50%', transform:'translateY(-50%)', width:12, height:12, borderRadius:'50%', background: isPos ? 'var(--acc2)' : 'var(--danger)', border:'2px solid var(--bg)', boxShadow:`0 0 8px ${isPos ? 'rgba(0,208,132,.4)' : 'rgba(255,59,92,.4)'}` }} />
+                              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                                  <div style={{ width:36, height:36, borderRadius:10, background:`${emp?.color??'#6C47FF'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, color:emp?.color??'#6C47FF', flexShrink:0 }}>
+                                    {emp?.avatar ?? '??'}
+                                  </div>
+                                  <div>
+                                    <div style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>{emp?.name ?? h.empId}</div>
+                                    <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>
+                                      {h.date}{h.reason && ` · ${h.reason}`}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div style={{ textAlign:'right' }}>
+                                  <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'flex-end' }}>
+                                    <span style={{ fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)', textDecoration:'line-through' }}>{fmt(h.oldSalary)}</span>
+                                    <span style={{ color:'var(--text3)', fontSize:12 }}>→</span>
+                                    <span style={{ fontSize:14, fontWeight:800, color:'var(--text)', fontFamily:'var(--mono)' }}>{fmt(h.newSalary)}</span>
+                                  </div>
+                                  <div style={{ marginTop:4, display:'flex', alignItems:'center', gap:4, justifyContent:'flex-end' }}>
+                                    <span style={{ fontSize:13, fontWeight:900, color: isPos ? 'var(--acc2)' : 'var(--danger)', fontFamily:'var(--mono)' }}>
+                                      {isPos ? '+' : ''}{pct}%
+                                    </span>
+                                    <span style={{ fontSize:11, color: isPos ? 'var(--acc2)' : 'var(--danger)' }}>
+                                      ({isPos ? '+' : ''}{fmt(Math.abs(diff))})
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+                    {[
+                      { label: lang==='fr' ? 'Total révisions' : 'Total revisions', value: salaryHistory.length, color:'var(--p2)' },
+                      {
+                        label: lang==='fr' ? 'Augmentation moyenne' : 'Avg increase',
+                        value: salaryHistory.length > 0
+                          ? `+${Math.round(salaryHistory.reduce((s,h) => s + (Number(h.oldSalary)>0 ? ((h.newSalary-h.oldSalary)/h.oldSalary)*100 : 0), 0) / salaryHistory.length)}%`
+                          : '—',
+                        color:'var(--acc2)',
+                      },
+                      { label: lang==='fr' ? 'Employés concernés' : 'Employees affected', value: new Set(salaryHistory.map(h=>h.empId)).size, color:'var(--acc)' },
+                    ].map(k => (
+                      <div key={k.label} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:12, padding:14, textAlign:'center' }}>
+                        <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
+                        <div style={{ fontSize:22, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
