@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const COUNTRY_CODES = [
   { code:'+39',  flag:'🇮🇹', country:'Italia',          iso:'IT' },
@@ -33,37 +33,62 @@ const COUNTRY_CODES = [
 
 interface PhoneInputProps {
   value: string
-  onChange: (value: string) => void
+  onChange: (val: string) => void
   placeholder?: string
+  defaultCountry?: string
   className?: string
   readOnly?: boolean
 }
 
 export default function PhoneInput({
-  value, onChange, placeholder = '77 000 00 00', readOnly,
+  value, onChange, placeholder = '77 000 00 00', defaultCountry, readOnly,
 }: PhoneInputProps) {
   if (readOnly) {
     return (
-      <span style={{
-        fontSize: 13, color: 'var(--text2)',
-        fontFamily: 'var(--mono)',
-      }}>
+      <span style={{ fontSize: 13, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
         {value || '—'}
       </span>
     )
   }
-  const [selectedCode, setSelectedCode] = useState(COUNTRY_CODES[0])
+
+  const getDefaultCode = () => {
+    if (defaultCountry) {
+      const found = COUNTRY_CODES.find(c => c.iso === defaultCountry)
+      if (found) return found
+    }
+    return COUNTRY_CODES[0]
+  }
+
+  const [selectedCode, setSelectedCode] = useState(getDefaultCode)
+  const [number, setNumber] = useState(() => {
+    if (value.startsWith('+')) {
+      const match = [...COUNTRY_CODES]
+        .sort((a, b) => b.code.length - a.code.length)
+        .find(c => value.startsWith(c.code))
+      if (match) return value.slice(match.code.length).trim()
+    }
+    return value
+  })
   const [showDropdown, setShowDropdown] = useState(false)
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    if (!value) return
+    if (value.startsWith('+')) {
+      const match = [...COUNTRY_CODES]
+        .sort((a, b) => b.code.length - a.code.length)
+        .find(c => value.startsWith(c.code))
+      if (match) {
+        setSelectedCode(match)
+        setNumber(value.slice(match.code.length).trim())
+      }
+    }
+  }, [value])
 
   const filtered = COUNTRY_CODES.filter(c =>
     c.country.toLowerCase().includes(search.toLowerCase()) ||
     c.code.includes(search)
   )
-
-  const phoneNumber = value.startsWith('+')
-    ? value.replace(/^\+\d+\s?/, '')
-    : value
 
   return (
     <div style={{ position:'relative', display:'flex', gap:0 }}>
@@ -94,8 +119,11 @@ export default function PhoneInput({
       <input
         type="tel"
         placeholder={placeholder}
-        value={phoneNumber}
-        onChange={e => onChange(`${selectedCode.code} ${e.target.value}`)}
+        value={number}
+        onChange={e => {
+          setNumber(e.target.value)
+          onChange(`${selectedCode.code} ${e.target.value}`)
+        }}
         style={{
           flex:1, minWidth:0,
           padding:'11px 14px',
@@ -148,7 +176,7 @@ export default function PhoneInput({
                   setSelectedCode(c)
                   setShowDropdown(false)
                   setSearch('')
-                  onChange(`${c.code} ${phoneNumber}`)
+                  onChange(`${c.code} ${number}`)
                 }}
                 style={{
                   display:'flex', alignItems:'center', gap:10,

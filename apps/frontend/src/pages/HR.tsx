@@ -4,7 +4,6 @@ import { useFormatAmount, useAppStore } from '@/stores/appStore'
 import { employeesApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
 import { Download, Plus, X } from 'lucide-react'
-import PhoneInput from '@/components/ui/PhoneInput'
 import toast from 'react-hot-toast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -166,7 +165,7 @@ const labelStyle: React.CSSProperties = {
 
 export default function HR() {
   const fmt = useFormatAmount()
-  const { lang } = useAppStore()
+  const { lang, currency } = useAppStore()
   const [tab, setTab] = useState<'team'|'contracts'|'attendance'|'leaves'|'payroll'>('team')
   const [viewMode, setViewMode] = useState<'grid'|'table'>('grid')
   const [search, setSearch] = useState('')
@@ -176,6 +175,8 @@ export default function HR() {
   const [leaves, setLeaves] = useState<LeaveRequest[]>(LEAVE_INIT)
   const [showModal, setShowModal] = useState(false)
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null)
+  const [showEditEmpModal, setShowEditEmpModal] = useState(false)
+  const [editEmpForm, setEditEmpForm] = useState<any>({})
 
   // Payroll
   const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -489,7 +490,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       el.style.transform = 'none'
                       el.style.boxShadow = 'none'
                     }}
-                    onClick={() => { setSelectedEmp(emp); setShowModal(true) }}
+                    onClick={() => {
+                      setSelectedEmp(emp)
+                      setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'' })
+                      setShowEditEmpModal(true)
+                    }}
                   >
                     {/* Barre couleur dept */}
                     <div style={{ height:3, background:`linear-gradient(90deg,${deptColor},${deptColor}33)` }} />
@@ -541,7 +546,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                           ))}
                         </div>
                         <button type="button"
-                          onClick={e => { e.stopPropagation(); setSelectedEmp(emp); setShowModal(true) }}
+                          onClick={e => { e.stopPropagation(); setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'' }); setShowEditEmpModal(true) }}
                           style={{
                             width:26, height:26, borderRadius:7,
                             background:'rgba(255,149,0,.1)', border:'1px solid rgba(255,149,0,.2)',
@@ -579,7 +584,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   </thead>
                   <tbody>
                     {filtered.map(emp => (
-                      <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setShowModal(true) }} style={{ cursor: 'pointer' }}>
+                      <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'' }); setShowEditEmpModal(true) }} style={{ cursor: 'pointer' }}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <EmpAvatar emp={emp} size={32} />
@@ -660,7 +665,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       })()
                     : false
                   return (
-                    <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setShowModal(true) }} style={{ cursor: 'pointer' }}>
+                    <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'' }); setShowEditEmpModal(true) }} style={{ cursor: 'pointer' }}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <EmpAvatar emp={emp} size={32} />
@@ -1060,59 +1065,105 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 
           {/* ── SOUS-ONGLET HISTORIQUE ── */}
           {payTab === 'history' && (
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               {salaryHistory.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text3)' }}>
-                  <div style={{ fontSize:40, marginBottom:12 }}>📈</div>
-                  <div style={{ fontSize:14, fontWeight:600 }}>
-                    {lang==='fr' ? 'Aucune révision salariale enregistrée' : 'No salary revision recorded'}
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 20px', textAlign:'center', background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:20 }}>
+                  <div style={{ width:72, height:72, borderRadius:20, background:'rgba(108,71,255,.1)', border:'1px solid rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32, marginBottom:16 }}>📈</div>
+                  <div style={{ fontSize:16, fontWeight:800, color:'var(--text)', marginBottom:8 }}>
+                    {lang==='fr' ? 'Aucune révision salariale' : 'No salary revisions yet'}
                   </div>
-                  <div style={{ fontSize:12, marginTop:6 }}>
-                    {lang==='fr' ? 'Les augmentations apparaîtront ici' : 'Salary raises will appear here'}
+                  <div style={{ fontSize:13, color:'var(--text3)', maxWidth:300, lineHeight:1.6 }}>
+                    {lang==='fr'
+                      ? 'Les augmentations et révisions salariales apparaîtront ici avec leur historique complet.'
+                      : 'Salary increases and revisions will appear here with their complete history.'}
                   </div>
+                  <button className="topbar-btn"
+                    style={{ marginTop:20 }}
+                    onClick={() => {
+                      if (employees.length > 0) {
+                        setSalaryTarget({ ...employees[0], mode:'raise' })
+                        setShowSalaryModal(true)
+                      }
+                    }}>
+                    📈 {lang==='fr' ? 'Première révision salariale' : 'First salary revision'}
+                  </button>
                 </div>
               ) : (
                 <>
-                  <div className="panel">
-                    <div className="panel-h">
-                      <span className="panel-t">📈 {lang==='fr' ? 'Historique des révisions salariales' : 'Salary revision history'}</span>
+                  {/* Stats */}
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:10 }}>
+                    {[
+                      { label:lang==='fr'?'Total révisions':'Total revisions', value:salaryHistory.length, icon:'📋', color:'var(--p2)' },
+                      { label:lang==='fr'?'Employés concernés':'Affected', value:new Set(salaryHistory.map(h=>h.empId)).size, icon:'👥', color:'var(--acc)' },
+                      {
+                        label:lang==='fr'?'Augmentation moy.':'Avg increase',
+                        value:(() => {
+                          const pcts = salaryHistory.map(h => Number(h.oldSalary)>0 ? ((h.newSalary-h.oldSalary)/h.oldSalary)*100 : 0)
+                          return `+${(pcts.reduce((s,v)=>s+v,0)/pcts.length).toFixed(1)}%`
+                        })(),
+                        icon:'📊', color:'var(--acc2)',
+                      },
+                      { label:lang==='fr'?'Impact total':'Total impact', value:fmt(salaryHistory.reduce((s,h)=>s+(h.newSalary-h.oldSalary),0)), icon:'💰', color:'var(--warn)' },
+                    ].map(k => (
+                      <div key={k.label} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:14, padding:'14px 16px', display:'flex', gap:10, alignItems:'center' }}>
+                        <div style={{ width:36, height:36, borderRadius:10, background:'rgba(0,0,0,.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{k.icon}</div>
+                        <div>
+                          <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>{k.label}</div>
+                          <div style={{ fontSize:16, fontWeight:900, color:k.color, fontFamily:'var(--mono)', letterSpacing:'-.5px' }}>{k.value}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Timeline premium */}
+                  <div style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:20, padding:20 }}>
+                    <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', marginBottom:20, display:'flex', alignItems:'center', gap:8 }}>
+                      <span>📈</span>
+                      {lang==='fr' ? 'Timeline des révisions' : 'Revision timeline'}
                     </div>
-                    <div style={{ position:'relative', paddingLeft:28 }}>
+                    <div style={{ position:'relative', paddingLeft:32 }}>
                       <div style={{ position:'absolute', left:10, top:8, bottom:8, width:2, background:'linear-gradient(180deg,var(--p),var(--p2)33)', borderRadius:99 }} />
-                      <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+                      <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                         {[...salaryHistory].reverse().map((h, i) => {
-                          const emp   = employees.find(e => String(e.id) === h.empId)
-                          const diff  = h.newSalary - h.oldSalary
-                          const pct   = Number(h.oldSalary) > 0 ? Math.round((diff/Number(h.oldSalary))*100) : 0
-                          const isPos = diff > 0
+                          const emp  = employees.find(e => String(e.id) === h.empId)
+                          const diff = h.newSalary - h.oldSalary
+                          const pct  = Number(h.oldSalary)>0 ? (diff/Number(h.oldSalary))*100 : 0
+                          const isPos = diff >= 0
                           return (
-                            <div key={i} style={{ position:'relative', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
-                              <div style={{ position:'absolute', left:-22, top:'50%', transform:'translateY(-50%)', width:12, height:12, borderRadius:'50%', background: isPos ? 'var(--acc2)' : 'var(--danger)', border:'2px solid var(--bg)', boxShadow:`0 0 8px ${isPos ? 'rgba(0,208,132,.4)' : 'rgba(255,59,92,.4)'}` }} />
-                              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
-                                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                                  <div style={{ width:36, height:36, borderRadius:10, background:`${emp?.color??'#6C47FF'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, color:emp?.color??'#6C47FF', flexShrink:0 }}>
-                                    {emp?.avatar ?? '??'}
+                            <div key={i} style={{ position:'relative' }}>
+                              <div style={{ position:'absolute', left:-28, top:'50%', transform:'translateY(-50%)', width:16, height:16, borderRadius:'50%', background: isPos ? 'var(--acc2)' : 'var(--danger)', border:'2px solid var(--bg)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8, boxShadow:`0 0 10px ${isPos?'rgba(0,208,132,.5)':'rgba(255,59,92,.5)'}` }}>
+                                {isPos ? '↑' : '↓'}
+                              </div>
+                              <div style={{ background:'var(--bg4)', border:`1px solid ${isPos?'rgba(0,208,132,.12)':'rgba(255,59,92,.12)'}`, borderRadius:14, padding:'14px 16px', borderLeft:`3px solid ${isPos?'var(--acc2)':'var(--danger)'}` }}>
+                                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, flexWrap:'wrap' }}>
+                                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                                    <div style={{ width:38, height:38, borderRadius:11, background:`${emp?.color??'#6C47FF'}22`, border:`1px solid ${emp?.color??'#6C47FF'}30`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, color:emp?.color??'#6C47FF', flexShrink:0 }}>
+                                      {emp?.avatar ?? '??'}
+                                    </div>
+                                    <div>
+                                      <div style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>{emp?.name ?? 'Employé'}</div>
+                                      <div style={{ fontSize:11, color:'var(--text3)', marginTop:1 }}>
+                                        📅 {h.date}
+                                        {h.reason && <span style={{ marginLeft:6, background:'rgba(108,71,255,.1)', color:'var(--p3)', border:'1px solid rgba(108,71,255,.15)', borderRadius:20, padding:'1px 7px', fontSize:10 }}>{h.reason}</span>}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <div style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>{emp?.name ?? h.empId}</div>
-                                    <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>
-                                      {h.date}{h.reason && ` · ${h.reason}`}
+                                  <div style={{ textAlign:'right' }}>
+                                    <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'flex-end', marginBottom:4 }}>
+                                      <span style={{ fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)', textDecoration:'line-through' }}>{fmt(h.oldSalary)}</span>
+                                      <span style={{ fontSize:14, color:'var(--text3)' }}>→</span>
+                                      <span style={{ fontSize:16, fontWeight:900, color:'var(--text)', fontFamily:'var(--mono)' }}>{fmt(h.newSalary)}</span>
+                                    </div>
+                                    <div style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 12px', background: isPos?'rgba(0,208,132,.12)':'rgba(255,59,92,.12)', border:`1px solid ${isPos?'rgba(0,208,132,.2)':'rgba(255,59,92,.2)'}`, borderRadius:99 }}>
+                                      <span style={{ fontSize:12 }}>{isPos?'↗':'↘'}</span>
+                                      <span style={{ fontSize:14, fontWeight:900, color: isPos?'var(--acc2)':'var(--danger)', fontFamily:'var(--mono)' }}>{isPos?'+':''}{pct.toFixed(1)}%</span>
+                                      <span style={{ fontSize:11, color: isPos?'var(--acc2)':'var(--danger)', opacity:.8 }}>({isPos?'+':''}{fmt(Math.abs(diff))})</span>
                                     </div>
                                   </div>
                                 </div>
-                                <div style={{ textAlign:'right' }}>
-                                  <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'flex-end' }}>
-                                    <span style={{ fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)', textDecoration:'line-through' }}>{fmt(h.oldSalary)}</span>
-                                    <span style={{ color:'var(--text3)', fontSize:12 }}>→</span>
-                                    <span style={{ fontSize:14, fontWeight:800, color:'var(--text)', fontFamily:'var(--mono)' }}>{fmt(h.newSalary)}</span>
-                                  </div>
-                                  <div style={{ marginTop:4, display:'flex', alignItems:'center', gap:4, justifyContent:'flex-end' }}>
-                                    <span style={{ fontSize:13, fontWeight:900, color: isPos ? 'var(--acc2)' : 'var(--danger)', fontFamily:'var(--mono)' }}>
-                                      {isPos ? '+' : ''}{pct}%
-                                    </span>
-                                    <span style={{ fontSize:11, color: isPos ? 'var(--acc2)' : 'var(--danger)' }}>
-                                      ({isPos ? '+' : ''}{fmt(Math.abs(diff))})
-                                    </span>
+                                <div style={{ marginTop:10 }}>
+                                  <div style={{ height:5, background:'var(--bg5)', borderRadius:99, overflow:'hidden' }}>
+                                    <div style={{ height:'100%', width:`${Math.min(100,Math.abs(pct)*2)}%`, background: isPos?'linear-gradient(90deg,var(--acc2),var(--p2))':'linear-gradient(90deg,var(--danger),var(--warn))', borderRadius:99, transition:'width .5s ease' }} />
                                   </div>
                                 </div>
                               </div>
@@ -1121,25 +1172,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                         })}
                       </div>
                     </div>
-                  </div>
-
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
-                    {[
-                      { label: lang==='fr' ? 'Total révisions' : 'Total revisions', value: salaryHistory.length, color:'var(--p2)' },
-                      {
-                        label: lang==='fr' ? 'Augmentation moyenne' : 'Avg increase',
-                        value: salaryHistory.length > 0
-                          ? `+${Math.round(salaryHistory.reduce((s,h) => s + (Number(h.oldSalary)>0 ? ((h.newSalary-h.oldSalary)/h.oldSalary)*100 : 0), 0) / salaryHistory.length)}%`
-                          : '—',
-                        color:'var(--acc2)',
-                      },
-                      { label: lang==='fr' ? 'Employés concernés' : 'Employees affected', value: new Set(salaryHistory.map(h=>h.empId)).size, color:'var(--acc)' },
-                    ].map(k => (
-                      <div key={k.label} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:12, padding:14, textAlign:'center' }}>
-                        <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
-                        <div style={{ fontSize:22, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.value}</div>
-                      </div>
-                    ))}
                   </div>
                 </>
               )}
@@ -1350,36 +1382,222 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         </div>
       )}
 
-      {/* ── MODAL EMPLOYEE ── */}
+      {/* ── MODAL EMPLOYEE (ajout) ── */}
       {showModal && (
         <EmpModal
-          emp={selectedEmp}
+          emp={null}
           onClose={() => setShowModal(false)}
           onSave={(data) => {
-            if (selectedEmp) {
-              employeesApi.update(String(selectedEmp.id), data).catch(() => {})
-              setEmployees(prev => prev.map(e => e.id === selectedEmp.id ? { ...e, ...data } : e))
-              toast.success('✅ Employé mis à jour')
-            } else {
-              const newEmp: Employee = {
-                ...data,
-                id: Date.now(),
-                avatar: data.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
-                active: true,
-              }
-              setEmployees(prev => [...prev, newEmp])
-              toast.success('✅ Employé ajouté')
+            const newEmp: Employee = {
+              ...data,
+              id: Date.now(),
+              avatar: data.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
+              active: true,
             }
+            setEmployees(prev => [...prev, newEmp])
+            toast.success('✅ Employé ajouté')
             setShowModal(false)
           }}
-          onDelete={selectedEmp ? (id) => {
-            if (window.confirm(lang === 'fr' ? 'Supprimer cet employé ?' : 'Delete this employee?')) {
-              setEmployees(prev => prev.filter(e => e.id !== id))
-              setShowModal(false)
-              toast.success('✅ Employé supprimé')
-            }
-          } : undefined}
         />
+      )}
+
+      {/* ── MODAL EMPLOYÉ PREMIUM (édition) ── */}
+      {showEditEmpModal && selectedEmp && (
+        <div className="modal-backdrop"
+          onClick={e => e.target===e.currentTarget && setShowEditEmpModal(false)}>
+          <div style={{ background:'#0D0D1C', border:'1px solid rgba(255,255,255,.1)', borderRadius:24, width:'100%', maxWidth:560, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 24px 80px rgba(0,0,0,.8)', position:'relative' }}>
+
+            {/* Ligne décorative */}
+            <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:'40%', height:1, background:`linear-gradient(90deg,transparent,${editEmpForm.color??'#6C47FF'},transparent)` }} />
+
+            {/* HEADER */}
+            <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'}18,${editEmpForm.color??'#6C47FF'}05)`, borderBottom:'1px solid rgba(255,255,255,.06)', flexShrink:0 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:60, height:60, borderRadius:18, background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'},${editEmpForm.color??'#6C47FF'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'#6C47FF'}50`, border:`2px solid ${editEmpForm.color??'#6C47FF'}40`, letterSpacing:'-1px' }}>
+                  {(editEmpForm.name || selectedEmp.name || '??').split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <h3 style={{ fontSize:18, fontWeight:900, color:'var(--text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {editEmpForm.name || selectedEmp.name}
+                  </h3>
+                  <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>
+                    {editEmpForm.role || selectedEmp.role} · {editEmpForm.dept || selectedEmp.dept}
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8 }}>
+                    <button type="button"
+                      onClick={() => setEditEmpForm((f:any) => ({ ...f, isActive:!f.isActive }))}
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 12px', borderRadius:99, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'var(--font)', background: editEmpForm.isActive?'rgba(0,208,132,.15)':'rgba(255,59,92,.15)', color: editEmpForm.isActive?'var(--acc2)':'var(--danger)', transition:'all .15s' }}>
+                      <div style={{ width:6, height:6, borderRadius:'50%', background: editEmpForm.isActive?'var(--acc2)':'var(--danger)', boxShadow: editEmpForm.isActive?'0 0 6px var(--acc2)':'0 0 6px var(--danger)' }} />
+                      {editEmpForm.isActive ? (lang==='fr'?'Employé actif':'Active') : (lang==='fr'?'Inactif':'Inactive')}
+                    </button>
+                  </div>
+                </div>
+                <button type="button" onClick={() => setShowEditEmpModal(false)}
+                  style={{ width:32, height:32, borderRadius:10, background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)', cursor:'pointer', fontSize:16, color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+              </div>
+            </div>
+
+            {/* CORPS */}
+            <div style={{ flex:1, overflowY:'auto', minHeight:0, padding:'20px 24px' }}>
+
+              {/* Identité */}
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+                  <div style={{ width:16, height:16, borderRadius:4, background:`${editEmpForm.color??'#6C47FF'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>👤</div>
+                  {lang==='fr'?'IDENTITÉ':'IDENTITY'}
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Nom complet *':'Full name *'}</label>
+                    <input className="input" placeholder="Aminata Diallo" value={editEmpForm.name??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, name:e.target.value }))} />
+                  </div>
+                  <div>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Poste *':'Position *'}</label>
+                    <input className="input" placeholder={lang==='fr'?'Ex: Caissière':'Ex: Cashier'} value={editEmpForm.role??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, role:e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Contrat */}
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,149,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>📋</div>
+                  {lang==='fr'?'CONTRAT':'CONTRACT'}
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Département':'Department'}</label>
+                    <select className="input" value={editEmpForm.dept??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, dept:e.target.value }))}>
+                      {Object.keys(DEPT_COLORS).map(d => <option key={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Type contrat':'Contract type'}</label>
+                    <select className="input" value={editEmpForm.type??'CDI'} onChange={e => setEditEmpForm((f:any) => ({ ...f, type:e.target.value }))}>
+                      {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Date embauche':'Hire date'}</label>
+                    <input className="input" type="date" value={editEmpForm.hiredAt ?? new Date().toISOString().split('T')[0]} onChange={e => setEditEmpForm((f:any) => ({ ...f, hiredAt:e.target.value }))} />
+                  </div>
+                  {editEmpForm.type === 'CDD' && (
+                    <div>
+                      <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Fin de contrat':'Contract end'}</label>
+                      <input className="input" type="date" value={editEmpForm.contractEnd??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, contractEnd:e.target.value }))} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Rémunération */}
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,208,132,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>💰</div>
+                  {lang==='fr'?'RÉMUNÉRATION':'COMPENSATION'}
+                </div>
+                <div style={{ position:'relative' }}>
+                  <input className="input" type="number" placeholder="150000" value={editEmpForm.salary||''} onChange={e => setEditEmpForm((f:any) => ({ ...f, salary:+e.target.value }))} style={{ paddingRight:60 }} />
+                  <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>
+                    {currency==='EUR'?'€':currency==='USD'?'$':'FCFA'}
+                  </span>
+                </div>
+                {(editEmpForm.salary||0) > 0 && (
+                  <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
+                    <span>CNSS: <strong style={{color:'var(--danger)'}}>− {fmt(Math.round((editEmpForm.salary||0)*0.08))}</strong></span>
+                    <span>Net: <strong style={{color:'var(--acc2)'}}>{fmt(Math.round((editEmpForm.salary||0)*0.87))}</strong></span>
+                  </div>
+                )}
+              </div>
+
+              {/* Contact */}
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,184,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>📞</div>
+                  {lang==='fr'?'CONTACT':'CONTACT'}
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Téléphone':'Phone'}</label>
+                    <input className="input" type="tel" placeholder="+221 77 000 00 00" value={editEmpForm.phone??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, phone:e.target.value }))} />
+                  </div>
+                  <div>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>Email</label>
+                    <input className="input" type="email" placeholder="nom@email.com" value={editEmpForm.email??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, email:e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance */}
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,184,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>⭐</div>
+                  PERFORMANCE
+                </div>
+                <div style={{ display:'flex', gap:4, alignItems:'center' }}>
+                  {[1,2,3,4,5].map(s => (
+                    <button key={s} type="button"
+                      onClick={() => setEditEmpForm((f:any) => ({ ...f, perf:s }))}
+                      style={{ fontSize:28, background:'none', border:'none', cursor:'pointer', padding:'2px', opacity: s<=(editEmpForm.perf??3)?1:.2, transform: s<=(editEmpForm.perf??3)?'scale(1.1)':'scale(1)', transition:'all .1s', lineHeight:1 }}>⭐</button>
+                  ))}
+                  <span style={{ fontSize:12, color:'var(--text3)', marginLeft:6 }}>{editEmpForm.perf??3}/5</span>
+                </div>
+              </div>
+
+              {/* Couleur */}
+              <div>
+                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>🎨</div>
+                  {lang==='fr'?'COULEUR AVATAR':'AVATAR COLOR'}
+                </div>
+                <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                  {['#6C47FF','#00B8FF','#00D084','#FF9500','#FF3B5C','#F472B6','#A991FF','#FFB800'].map(col => (
+                    <button key={col} type="button"
+                      onClick={() => setEditEmpForm((f:any) => ({ ...f, color:col }))}
+                      style={{ width:32, height:32, borderRadius:'50%', background:col, border:'3px solid', borderColor: editEmpForm.color===col?'#fff':'transparent', cursor:'pointer', padding:0, boxShadow: editEmpForm.color===col?`0 0 0 3px ${col}`:'none', transition:'all .15s', transform: editEmpForm.color===col?'scale(1.2)':'scale(1)' }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* FOOTER */}
+            <div style={{ padding:'16px 24px', borderTop:'1px solid rgba(255,255,255,.06)', background:'rgba(0,0,0,.2)', flexShrink:0, display:'flex', gap:8 }}>
+              <button
+                onClick={async () => {
+                  if (!editEmpForm.name?.trim()) { toast.error(lang==='fr'?'Nom requis':'Name required'); return }
+                  const avatar = editEmpForm.name.split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()
+                  const dataToSave = { ...editEmpForm, avatar, active: editEmpForm.isActive }
+                  try {
+                    await employeesApi.update(String(selectedEmp.id), {
+                      ...dataToSave,
+                      hiredAt: dataToSave.hiredAt ? new Date(dataToSave.hiredAt).toISOString() : undefined,
+                    })
+                    toast.success('✅ '+(lang==='fr'?'Employé sauvegardé !':'Employee saved!'))
+                  } catch {
+                    toast.success('✅ '+(lang==='fr'?'Sauvegardé localement':'Saved locally'))
+                  }
+                  setEmployees(prev => prev.map(e => e.id===selectedEmp.id ? {...e, ...dataToSave} : e))
+                  setShowEditEmpModal(false)
+                }}
+                style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'},${editEmpForm.color??'#6C47FF'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', boxShadow:`0 4px 16px ${editEmpForm.color??'#6C47FF'}40`, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                ✅ {lang==='fr'?'Sauvegarder':'Save changes'}
+              </button>
+              <button
+                onClick={() => {
+                  if (window.confirm(lang==='fr'?`Supprimer ${selectedEmp.name} ?`:`Delete ${selectedEmp.name}?`)) {
+                    setEmployees(prev => prev.filter(e=>e.id!==selectedEmp.id))
+                    setShowEditEmpModal(false)
+                    toast.success(lang==='fr'?'🗑 Employé supprimé':'🗑 Employee deleted')
+                  }
+                }}
+                style={{ width:44, padding:'12px', background:'rgba(255,59,92,.1)', border:'1px solid rgba(255,59,92,.2)', borderRadius:12, cursor:'pointer', color:'var(--danger)', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>🗑</button>
+              <button onClick={() => setShowEditEmpModal(false)}
+                style={{ padding:'12px 16px', background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
+                {lang==='fr'?'Annuler':'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── MODAL LEAVE REQUEST ── */}
@@ -1592,7 +1810,7 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
 
           <div>
             <label className="form-label">Téléphone</label>
-            <PhoneInput value={phone} onChange={setPhone} />
+            <input className="input" type="tel" placeholder="+221 77 000 00 00" value={phone} onChange={e => setPhone(e.target.value)} style={{ width:'100%', boxSizing:'border-box' }} />
           </div>
 
           <div>

@@ -7,7 +7,6 @@ import {
   Store, User, Globe, Palette, ShoppingCart, Package, Bell, Shield, Cog,
   Save, Upload, Download, X, RefreshCw, AlertTriangle,
 } from 'lucide-react'
-import PhoneInput from '@/components/ui/PhoneInput'
 import toast from 'react-hot-toast'
 
 type Tab = 'boutique' | 'compte' | 'langue' | 'apparence' | 'pos' | 'stock' | 'notifications' | 'securite' | 'avance'
@@ -242,12 +241,9 @@ export default function Settings() {
                   ] as { label: string; key: keyof typeof shopForm; type: string; span: boolean }[]).map(f => (
                     <div key={f.key} className={f.span ? 'col-span-2' : ''}>
                       <Label>{f.label}</Label>
-                      {f.key === 'shopPhone'
-                        ? <PhoneInput value={String(shopForm[f.key])} onChange={v => setShopForm(s => ({ ...s, shopPhone: v }))} />
-                        : <input className="input text-sm" type={f.type}
-                            value={String(shopForm[f.key])}
-                            onChange={e => setShopForm(s => ({ ...s, [f.key]: e.target.value }))} />
-                      }
+                      <input className="input text-sm" type={f.key === 'shopPhone' ? 'tel' : f.type}
+                        value={String(shopForm[f.key])}
+                        onChange={e => setShopForm(s => ({ ...s, [f.key]: e.target.value }))} />
                     </div>
                   ))}
                   <div className="col-span-2">
@@ -349,12 +345,9 @@ export default function Settings() {
                   ] as { label: string; key: keyof typeof accountForm; type: string; span: boolean }[]).map(f => (
                     <div key={f.key} className={f.span ? 'col-span-2' : ''}>
                       <Label>{f.label}</Label>
-                      {f.key === 'phone'
-                        ? <PhoneInput value={accountForm[f.key]} onChange={v => setAccountForm(a => ({ ...a, phone: v }))} />
-                        : <input className="input text-sm" type={f.type}
-                            value={accountForm[f.key]}
-                            onChange={e => setAccountForm(a => ({ ...a, [f.key]: e.target.value }))} />
-                      }
+                      <input className="input text-sm" type={f.key === 'phone' ? 'tel' : f.type}
+                        value={accountForm[f.key]}
+                        onChange={e => setAccountForm(a => ({ ...a, [f.key]: e.target.value }))} />
                     </div>
                   ))}
                 </div>
