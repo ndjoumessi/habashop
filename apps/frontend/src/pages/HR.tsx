@@ -57,22 +57,21 @@ const POINTAGE: Record<number, Record<number, { status: 'present'|'retard'|'abse
 }
 
 const LEAVE_INIT: LeaveRequest[] = [
-  { id:1, empId:5, type:'Congé annuel',   from:'2026-05-11', to:'2026-05-17', days:5, motif:'Repos annuel planifié',  status:'approved' },
-  { id:2, empId:1, type:'Congé maladie',  from:'2026-04-02', to:'2026-04-03', days:2, motif:'Grippe',                 status:'approved' },
-  { id:3, empId:3, type:'Congé annuel',   from:'2026-03-15', to:'2026-03-19', days:3, motif:'Voyage familial',        status:'approved' },
-  { id:4, empId:2, type:'Congé annuel',   from:'2026-05-20', to:'2026-05-24', days:5, motif:'Vacances famille',       status:'pending'  },
-  { id:5, empId:4, type:'Congé maladie',  from:'2026-05-16', to:'2026-05-16', days:1, motif:'Visite médicale',        status:'pending'  },
+  { id:1, empId:5, type:'Congé annuel',  from:'2026-05-11', to:'2026-05-17', days:5, motif:'Repos annuel planifié', status:'approved' },
+  { id:2, empId:1, type:'Congé maladie', from:'2026-04-02', to:'2026-04-03', days:2, motif:'Grippe',                status:'approved' },
+  { id:3, empId:3, type:'Congé annuel',  from:'2026-03-15', to:'2026-03-19', days:3, motif:'Voyage familial',       status:'approved' },
+  { id:4, empId:2, type:'Congé annuel',  from:'2026-05-20', to:'2026-05-24', days:5, motif:'Vacances famille',      status:'pending'  },
+  { id:5, empId:4, type:'Congé maladie', from:'2026-05-16', to:'2026-05-16', days:1, motif:'Visite médicale',       status:'pending'  },
 ]
 
 const WEEK_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-
 const COLORS = ['#6C3FD6','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#8B5CF6','#F472B6']
 
 const STATUS_CFG = {
-  present: { label:'Présent',  color:'var(--acc2)',   bg:'rgba(14,196,126,.12)'  },
-  retard:  { label:'Retard',   color:'var(--acc)',    bg:'rgba(240,165,0,.12)'   },
-  absent:  { label:'Absent',   color:'var(--danger)', bg:'rgba(232,64,74,.12)'   },
-  conge:   { label:'Congé',    color:'#60A5FA',       bg:'rgba(59,130,246,.12)'  },
+  present: { label:'Présent',  color:'var(--acc2)',    bg:'rgba(14,196,126,.12)'  },
+  retard:  { label:'Retard',   color:'var(--acc)',     bg:'rgba(240,165,0,.12)'   },
+  absent:  { label:'Absent',   color:'var(--danger)',  bg:'rgba(232,64,74,.12)'   },
+  conge:   { label:'Congé',    color:'#60A5FA',        bg:'rgba(59,130,246,.12)'  },
   repos:   { label:'Repos',    color:'var(--text3)',   bg:'var(--bg3)'            },
 }
 
@@ -112,6 +111,14 @@ function calcPonctualite(empId: number): number {
   return work === 0 ? 100 : Math.round((ontime / work) * 100)
 }
 
+function getWeekStart(date: Date): Date {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+  d.setDate(diff)
+  return d
+}
+
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
 function EmpAvatar({ emp, size = 36 }: { emp: Employee; size?: number }) {
@@ -140,6 +147,11 @@ function Stars({ v = 0 }: { v: number }) {
   )
 }
 
+const labelStyle: React.CSSProperties = {
+  fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+  letterSpacing: '.5px', color: 'var(--text3)', display: 'block', marginBottom: 6,
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function HR() {
@@ -154,7 +166,22 @@ export default function HR() {
   const [showModal, setShowModal] = useState(false)
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null)
 
-  // Fetch from API if online
+  // Payroll
+  const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0, 7))
+
+  // Planning
+  const [planningWeek, setPlanningWeek] = useState(new Date())
+
+  // Leave modal
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
+  const [leaveForm, setLeaveForm] = useState({
+    empId: 0,
+    type: 'Congé annuel',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: '',
+    notes: '',
+  })
+
   useEffect(() => {
     employeesApi.list()
       .then((data: any[]) => {
@@ -182,7 +209,7 @@ export default function HR() {
 
   const depts = useMemo(() => ['Tous', ...Array.from(new Set(employees.map(e => e.dept)))], [employees])
 
-  const filtered = useMemo(() => employees.filter(e => {
+  const filtered = useMemo(() => (employees ?? []).filter(e => {
     const q = search.toLowerCase()
     const matchSearch = !q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q)
     const matchDept = deptFilter === 'Tous' || e.dept === deptFilter
@@ -190,9 +217,17 @@ export default function HR() {
     return matchSearch && matchDept && matchType
   }), [employees, search, deptFilter, typeFilter])
 
-  const totalPayroll = useMemo(() => employees.filter(e => e.active).reduce((s, e) => s + e.salary, 0), [employees])
-  const activeCount = useMemo(() => employees.filter(e => e.active).length, [employees])
-  const pendingLeaves = useMemo(() => leaves.filter(l => l.status === 'pending').length, [leaves])
+  const totalPayroll = useMemo(() => (employees ?? []).filter(e => e.active).reduce((s, e) => s + e.salary, 0), [employees])
+  const activeCount  = useMemo(() => (employees ?? []).filter(e => e.active).length, [employees])
+  const pendingLeaves = useMemo(() => (leaves ?? []).filter(l => l.status === 'pending').length, [leaves])
+
+  // Planning week
+  const weekStart = getWeekStart(planningWeek)
+  const weekDays = Array(7).fill(null).map((_, i) => {
+    const d = new Date(weekStart)
+    d.setDate(weekStart.getDate() + i)
+    return d
+  })
 
   function handleLeaveAction(id: number, status: 'approved' | 'refused') {
     setLeaves(prev => prev.map(l => l.id === id ? { ...l, status } : l))
@@ -229,19 +264,14 @@ export default function HR() {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
         {[
-          { icon: '👥', label: 'Effectif total',      value: `${employees.length}`,       color: '#6C47FF', sub: `${activeCount} actifs` },
-          { icon: '💰', label: 'Masse salariale',      value: fmt(totalPayroll),            color: '#00D084', sub: 'Ce mois' },
-          { icon: '📋', label: 'Congés en attente',   value: `${pendingLeaves}`,           color: pendingLeaves > 0 ? '#F0A500' : '#00D084', sub: 'à traiter' },
-          { icon: '🏆', label: 'Performance moy.',    value: `${(employees.filter(e => e.perf).reduce((s, e) => s + (e.perf ?? 0), 0) / employees.filter(e => e.perf).length || 0).toFixed(1)}/5`, color: '#FF9500', sub: 'Top équipe' },
+          { icon: '👥', label: 'Effectif total',    value: `${employees.length}`,    color: '#6C47FF', sub: `${activeCount} actifs` },
+          { icon: '💰', label: 'Masse salariale',   value: fmt(totalPayroll),         color: '#00D084', sub: 'Ce mois' },
+          { icon: '📋', label: 'Congés en attente', value: `${pendingLeaves}`,        color: pendingLeaves > 0 ? '#F0A500' : '#00D084', sub: 'à traiter' },
+          { icon: '🏆', label: 'Performance moy.',  value: `${((employees ?? []).filter(e => e.perf).reduce((s, e) => s + (e.perf ?? 0), 0) / ((employees ?? []).filter(e => e.perf).length || 1)).toFixed(1)}/5`, color: '#FF9500', sub: 'Top équipe' },
         ].map(k => (
           <div key={k.label} className="panel" style={{ padding: '14px 16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: `${k.color}18`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 18,
-              }}>{k.icon}</div>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${k.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{k.icon}</div>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }}>{k.label}</span>
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, color: k.color, lineHeight: 1 }}>{k.value}</div>
@@ -253,10 +283,10 @@ export default function HR() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', borderRadius: 12, padding: 4, border: '1px solid var(--border)' }}>
         {([
-          { id: 'team',     icon: '👥', label: lang === 'fr' ? 'Équipe' : 'Team' },
-          { id: 'payroll',  icon: '💰', label: lang === 'fr' ? 'Paie' : 'Payroll' },
+          { id: 'team',     icon: '👥', label: lang === 'fr' ? 'Équipe'   : 'Team'     },
+          { id: 'payroll',  icon: '💰', label: lang === 'fr' ? 'Paie'     : 'Payroll'  },
           { id: 'schedule', icon: '📅', label: lang === 'fr' ? 'Planning' : 'Schedule' },
-          { id: 'leaves',   icon: '🏖️', label: lang === 'fr' ? 'Congés' : 'Leaves' },
+          { id: 'leaves',   icon: '🏖️', label: lang === 'fr' ? 'Congés'   : 'Leaves'   },
         ] as const).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             flex: 1, padding: '9px 8px', borderRadius: 9,
@@ -282,11 +312,9 @@ export default function HR() {
       {/* ── TAB TEAM ── */}
       {tab === 'team' && (
         <>
-          {/* Filters */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <input className="input" placeholder="🔍 Rechercher..." value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ flex: 1, minWidth: 180 }} />
+              onChange={e => setSearch(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
             <select className="input" value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={{ minWidth: 130 }}>
               {depts.map(d => <option key={d}>{d}</option>)}
             </select>
@@ -296,18 +324,18 @@ export default function HR() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px,1fr))', gap: 14 }}>
-            {filtered.map(emp => (
+            {filtered.map((emp, index) => (
               <div key={emp.id} className="panel" style={{
                 padding: 18, cursor: 'pointer',
-                border: `1px solid ${emp.active ? 'var(--border)' : 'var(--border)'}`,
+                border: '1px solid var(--border)',
                 opacity: emp.active ? 1 : 0.65,
                 transition: 'all .2s',
+                animation: `slideIn ${index * 0.05}s ease both`,
               }}
                 onClick={() => { setSelectedEmp(emp); setShowModal(true) }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--p)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--p)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'none' }}
               >
-                {/* Card header */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
                   <EmpAvatar emp={emp} size={44} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -326,12 +354,11 @@ export default function HR() {
                   </div>
                 </div>
 
-                {/* Stats row */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
                   {[
-                    { label: 'Ancienneté', value: calcAnciennete(emp.hiredAt) },
-                    { label: 'Heures',     value: calcHeures(emp.id) },
-                    { label: 'Ponctualité',value: calcPonctualite(emp.id) + '%' },
+                    { label: 'Ancienneté',  value: calcAnciennete(emp.hiredAt) },
+                    { label: 'Heures',      value: calcHeures(emp.id) },
+                    { label: 'Ponctualité', value: calcPonctualite(emp.id) + '%' },
                   ].map(s => (
                     <div key={s.label} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
                       <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>{s.label}</div>
@@ -340,9 +367,10 @@ export default function HR() {
                   ))}
                 </div>
 
-                {/* Footer */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--p2)' }}>{fmt(emp.salary)}<span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500 }}>/mois</span></span>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--p2)' }}>
+                    {fmt(emp.salary)}<span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500 }}>/mois</span>
+                  </span>
                   {emp.perf != null && <Stars v={emp.perf} />}
                 </div>
               </div>
@@ -360,9 +388,46 @@ export default function HR() {
       {/* ── TAB PAYROLL ── */}
       {tab === 'payroll' && (
         <div className="panel">
-          <div className="panel-h">
-            <span className="panel-t">💰 Masse salariale — Mai 2026</span>
-            <span style={{ fontWeight: 900, color: 'var(--p2)', fontSize: 15 }}>{fmt(totalPayroll)}</span>
+          <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
+            <span className="panel-t">💰 {lang === 'fr' ? 'Masse salariale' : 'Payroll'}</span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input className="input" type="month" style={{ width: 'auto' }}
+                value={payrollMonth}
+                onChange={e => setPayrollMonth(e.target.value)} />
+              <button className="btn btn-sm" onClick={() => {
+                const BOM = '﻿'
+                const activeEmps = (employees ?? []).filter(e => e.active)
+                const rows = [
+                  ['Employé','Rôle','Département','Type','Brut','CNSS 8%','IR 5%','Net','Statut'],
+                  ...activeEmps.map(emp => {
+                    const brut = emp.salary
+                    const cnss = Math.round(brut * 0.08)
+                    const ir   = Math.round(brut * 0.05)
+                    const net  = brut - cnss - ir
+                    return [emp.name, emp.role, emp.dept, emp.type, brut, cnss, ir, net, 'Payé']
+                  }),
+                ]
+                const csv = BOM + rows.map(r => r.join(';')).join('\r\n')
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `Paie_${payrollMonth}.csv`
+                a.click()
+                URL.revokeObjectURL(url)
+                toast.success('📊 Export paie téléchargé !')
+              }}>
+                <Download size={14} /> {lang === 'fr' ? 'Export CSV' : 'Export CSV'}
+              </button>
+              <button className="btn btn-primary btn-sm"
+                onClick={() => toast.success('📄 Fiches de paie générées !')}>
+                📄 {lang === 'fr' ? 'Fiches PDF' : 'Pay slips'}
+              </button>
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, paddingLeft: 2 }}>
+            {new Date(payrollMonth + '-01').toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })}
+            {' · '}<span style={{ fontWeight: 900, color: 'var(--p2)' }}>{fmt(totalPayroll)}</span>
           </div>
           <div className="table-wrap">
             <table>
@@ -372,15 +437,17 @@ export default function HR() {
                   <th>Poste</th>
                   <th>Contrat</th>
                   <th style={{ textAlign: 'right' }}>Salaire brut</th>
-                  <th style={{ textAlign: 'right' }}>CNSS 7 %</th>
+                  <th style={{ textAlign: 'right' }}>CNSS 8%</th>
+                  <th style={{ textAlign: 'right' }}>IR 5%</th>
                   <th style={{ textAlign: 'right' }}>Net à payer</th>
                   <th style={{ textAlign: 'center' }}>Statut</th>
                 </tr>
               </thead>
               <tbody>
-                {employees.filter(e => e.active).map(emp => {
-                  const cnss = Math.round(emp.salary * 0.07)
-                  const net = emp.salary - cnss
+                {(employees ?? []).filter(e => e.active).map(emp => {
+                  const cnss = Math.round(emp.salary * 0.08)
+                  const ir   = Math.round(emp.salary * 0.05)
+                  const net  = emp.salary - cnss - ir
                   return (
                     <tr key={emp.id}>
                       <td>
@@ -399,6 +466,7 @@ export default function HR() {
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700 }}>{fmt(emp.salary)}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--danger)', fontSize: 12 }}>− {fmt(cnss)}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--danger)', fontSize: 12 }}>− {fmt(ir)}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 900, color: 'var(--acc2)' }}>{fmt(net)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(14,196,126,.12)', color: 'var(--acc2)' }}>✓ Payé</span>
@@ -409,8 +477,9 @@ export default function HR() {
                 <tr style={{ background: 'rgba(108,71,255,.06)', fontWeight: 900 }}>
                   <td colSpan={3} style={{ fontWeight: 900, color: 'var(--text)' }}>TOTAL</td>
                   <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 900 }}>{fmt(totalPayroll)}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--danger)' }}>− {fmt(Math.round(totalPayroll * 0.07))}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 900, color: 'var(--p2)' }}>{fmt(totalPayroll - Math.round(totalPayroll * 0.07))}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--danger)' }}>− {fmt(Math.round(totalPayroll * 0.08))}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--danger)' }}>− {fmt(Math.round(totalPayroll * 0.05))}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 900, color: 'var(--p2)' }}>{fmt(totalPayroll - Math.round(totalPayroll * 0.08) - Math.round(totalPayroll * 0.05))}</td>
                   <td />
                 </tr>
               </tbody>
@@ -422,21 +491,42 @@ export default function HR() {
       {/* ── TAB SCHEDULE ── */}
       {tab === 'schedule' && (
         <div className="panel">
-          <div className="panel-h">
-            <span className="panel-t">📅 Planning semaine du 12 au 18 mai 2026</span>
+          <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
+            <span className="panel-t">📅 {lang === 'fr' ? 'Planning semaine' : 'Weekly schedule'}</span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button className="btn btn-sm" onClick={() => { const d = new Date(planningWeek); d.setDate(d.getDate() - 7); setPlanningWeek(d) }}>
+                ← {lang === 'fr' ? 'Préc.' : 'Prev'}
+              </button>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
+                {weekStart.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
+                {' – '}
+                {weekDays[6].toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+              <button className="btn btn-sm" onClick={() => { const d = new Date(planningWeek); d.setDate(d.getDate() + 7); setPlanningWeek(d) }}>
+                {lang === 'fr' ? 'Suiv.' : 'Next'} →
+              </button>
+              <button className="btn btn-sm" onClick={() => setPlanningWeek(new Date())}>
+                {lang === 'fr' ? "Auj." : 'Today'}
+              </button>
+            </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
               <thead>
                 <tr>
                   <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: 'var(--text3)', background: 'var(--bg3)', borderBottom: '1px solid var(--border)', width: 160 }}>Employé</th>
-                  {WEEK_DAYS.map(d => (
-                    <th key={d} style={{ padding: '10px 8px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text3)', background: 'var(--bg3)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '.5px' }}>{d}</th>
+                  {WEEK_DAYS.map((d, di) => (
+                    <th key={d} style={{ padding: '10px 8px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text3)', background: 'var(--bg3)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                      <div>{d}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 400, marginTop: 2 }}>
+                        {weekDays[di].getDate()}/{weekDays[di].getMonth() + 1}
+                      </div>
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {employees.map((emp, ri) => (
+                {(employees ?? []).map((emp, ri) => (
                   <tr key={emp.id} style={{ background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)' }}>
                     <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -452,11 +542,7 @@ export default function HR() {
                       const cfg = STATUS_CFG[pt.status]
                       return (
                         <td key={dayIdx} style={{ padding: '8px 4px', borderBottom: '1px solid var(--border)', textAlign: 'center' }}>
-                          <div style={{
-                            display: 'inline-flex', flexDirection: 'column', alignItems: 'center',
-                            gap: 2, padding: '5px 8px', borderRadius: 8,
-                            background: cfg.bg, minWidth: 60,
-                          }}>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '5px 8px', borderRadius: 8, background: cfg.bg, minWidth: 60 }}>
                             <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
                             {pt.arrive && <span style={{ fontSize: 9, color: 'var(--text3)' }}>{pt.arrive}</span>}
                           </div>
@@ -468,7 +554,6 @@ export default function HR() {
               </tbody>
             </table>
           </div>
-          {/* Legend */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 14, padding: '0 4px' }}>
             {Object.entries(STATUS_CFG).map(([key, cfg]) => (
               <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -494,19 +579,20 @@ export default function HR() {
 
           <div className="panel">
             <div className="panel-h">
-              <span className="panel-t">🏖️ Demandes de congés</span>
+              <span className="panel-t">🏖️ {lang === 'fr' ? 'Demandes de congés' : 'Leave requests'}</span>
+              <button className="btn btn-primary btn-sm" onClick={() => {
+                setLeaveForm({ empId: 0, type: lang === 'fr' ? 'Congé annuel' : 'Annual leave', startDate: new Date().toISOString().split('T')[0], endDate: '', notes: '' })
+                setShowLeaveModal(true)
+              }}>
+                <Plus size={14} /> {lang === 'fr' ? 'Nouvelle demande' : 'New request'}
+              </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {leaves.map(leave => {
-                const emp = employees.find(e => e.id === leave.empId)
+              {(leaves ?? []).map(leave => {
+                const emp = (employees ?? []).find(e => e.id === leave.empId)
                 const statusCfg = LEAVE_STATUS_CFG[leave.status]
                 return (
-                  <div key={leave.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '14px 16px', background: 'var(--bg3)',
-                    border: '1px solid var(--border)', borderRadius: 12,
-                    flexWrap: 'wrap',
-                  }}>
+                  <div key={leave.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, flexWrap: 'wrap' }}>
                     {emp && <EmpAvatar emp={emp} size={38} />}
                     <div style={{ flex: 1, minWidth: 200 }}>
                       <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{emp?.name ?? '—'}</div>
@@ -515,33 +601,42 @@ export default function HR() {
                       </div>
                       {leave.motif && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>"{leave.motif}"</div>}
                     </div>
-                    <span style={{
-                      fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20,
-                      background: statusCfg.bg, color: statusCfg.color, whiteSpace: 'nowrap',
-                    }}>{statusCfg.label}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: statusCfg.bg, color: statusCfg.color, whiteSpace: 'nowrap' }}>
+                      {statusCfg.label}
+                    </span>
                     {leave.status === 'pending' && (
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn-success btn-sm" style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', background: 'rgba(14,196,126,.15)', border: '1px solid rgba(14,196,126,.3)', color: 'var(--acc2)' }}
-                          onClick={() => handleLeaveAction(leave.id, 'approved')}>✓ Approuver</button>
-                        <button className="btn-danger btn-sm" style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', background: 'rgba(232,64,74,.12)', border: '1px solid rgba(232,64,74,.25)', color: 'var(--danger)' }}
-                          onClick={() => handleLeaveAction(leave.id, 'refused')}>✕ Refuser</button>
+                        <button style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', background: 'rgba(14,196,126,.15)', border: '1px solid rgba(14,196,126,.3)', color: 'var(--acc2)' }}
+                          onClick={() => handleLeaveAction(leave.id, 'approved')}>
+                          ✓ {lang === 'fr' ? 'Approuver' : 'Approve'}
+                        </button>
+                        <button style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', background: 'rgba(232,64,74,.12)', border: '1px solid rgba(232,64,74,.25)', color: 'var(--danger)' }}
+                          onClick={() => handleLeaveAction(leave.id, 'refused')}>
+                          ✕ {lang === 'fr' ? 'Refuser' : 'Reject'}
+                        </button>
                       </div>
                     )}
                   </div>
                 )
               })}
+              {(leaves ?? []).length === 0 && (
+                <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)', fontSize: 14 }}>
+                  {lang === 'fr' ? 'Aucune demande de congé' : 'No leave requests'}
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* ── MODAL ADD/EDIT EMPLOYEE ── */}
+      {/* ── MODAL EMPLOYEE ── */}
       {showModal && (
         <EmpModal
           emp={selectedEmp}
           onClose={() => setShowModal(false)}
           onSave={(data) => {
             if (selectedEmp) {
+              employeesApi.update(String(selectedEmp.id), data).catch(() => {})
               setEmployees(prev => prev.map(e => e.id === selectedEmp.id ? { ...e, ...data } : e))
               toast.success('✅ Employé mis à jour')
             } else {
@@ -556,51 +651,154 @@ export default function HR() {
             }
             setShowModal(false)
           }}
+          onDelete={selectedEmp ? (id) => {
+            if (window.confirm(lang === 'fr' ? 'Supprimer cet employé ?' : 'Delete this employee?')) {
+              setEmployees(prev => prev.filter(e => e.id !== id))
+              setShowModal(false)
+              toast.success('✅ Employé supprimé')
+            }
+          } : undefined}
         />
+      )}
+
+      {/* ── MODAL LEAVE REQUEST ── */}
+      {showLeaveModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
+          onClick={e => { if (e.target === e.currentTarget) setShowLeaveModal(false) }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sh-xl)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: 'var(--text)' }}>
+                🌴 {lang === 'fr' ? 'Nouvelle demande' : 'New request'}
+              </h3>
+              <button onClick={() => setShowLeaveModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={labelStyle}>{lang === 'fr' ? 'EMPLOYÉ' : 'EMPLOYEE'}</label>
+                <select className="input" style={{ width: '100%' }}
+                  value={leaveForm.empId}
+                  onChange={e => setLeaveForm(f => ({ ...f, empId: Number(e.target.value) }))}>
+                  <option value={0}>{lang === 'fr' ? 'Sélectionner...' : 'Select...'}</option>
+                  {(employees ?? []).filter(e => e.active).map(e => (
+                    <option key={e.id} value={e.id}>{e.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>{lang === 'fr' ? 'TYPE DE CONGÉ' : 'LEAVE TYPE'}</label>
+                <select className="input" style={{ width: '100%' }}
+                  value={leaveForm.type}
+                  onChange={e => setLeaveForm(f => ({ ...f, type: e.target.value }))}>
+                  {[
+                    lang === 'fr' ? 'Congé annuel'        : 'Annual leave',
+                    lang === 'fr' ? 'Congé maladie'       : 'Sick leave',
+                    lang === 'fr' ? 'Formation'           : 'Training',
+                    lang === 'fr' ? 'Personnel'           : 'Personal',
+                    lang === 'fr' ? 'Maternité/Paternité' : 'Parental leave',
+                  ].map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>{lang === 'fr' ? 'DU' : 'FROM'}</label>
+                  <input className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+                    value={leaveForm.startDate}
+                    onChange={e => setLeaveForm(f => ({ ...f, startDate: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{lang === 'fr' ? 'AU' : 'TO'}</label>
+                  <input className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+                    value={leaveForm.endDate}
+                    onChange={e => setLeaveForm(f => ({ ...f, endDate: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>NOTES / MOTIF</label>
+                <textarea className="input" rows={2} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+                  placeholder={lang === 'fr' ? 'Motif, justificatif...' : 'Reason, justification...'}
+                  value={leaveForm.notes}
+                  onChange={e => setLeaveForm(f => ({ ...f, notes: e.target.value }))} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              <button className="btn" style={{ flex: 1 }} onClick={() => setShowLeaveModal(false)}>
+                {lang === 'fr' ? 'Annuler' : 'Cancel'}
+              </button>
+              <button className="btn btn-primary" style={{ flex: 1 }}
+                onClick={() => {
+                  if (!leaveForm.empId || !leaveForm.endDate) {
+                    toast.error(lang === 'fr' ? 'Employé et dates requis' : 'Employee and dates required')
+                    return
+                  }
+                  const emp = (employees ?? []).find(e => e.id === leaveForm.empId)
+                  const start = new Date(leaveForm.startDate)
+                  const end   = new Date(leaveForm.endDate)
+                  const days  = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+                  setLeaves(prev => [...prev, {
+                    id: Date.now(),
+                    empId: leaveForm.empId,
+                    type: leaveForm.type,
+                    from: leaveForm.startDate,
+                    to: leaveForm.endDate,
+                    days,
+                    motif: leaveForm.notes,
+                    status: 'pending',
+                  }])
+                  toast.success('✅ ' + (lang === 'fr' ? 'Demande soumise !' : 'Request submitted!'))
+                  setShowLeaveModal(false)
+                }}>
+                ✅ {lang === 'fr' ? 'Soumettre' : 'Submit'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
 }
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
+// ─── Modal Employee ───────────────────────────────────────────────────────────
 
-function EmpModal({ emp, onClose, onSave }: {
+function EmpModal({ emp, onClose, onSave, onDelete }: {
   emp: Employee | null
   onClose: () => void
   onSave: (data: any) => void
+  onDelete?: (id: number) => void
 }) {
-  const [name, setName]     = useState(emp?.name ?? '')
-  const [role, setRole]     = useState(emp?.role ?? '')
-  const [dept, setDept]     = useState(emp?.dept ?? '')
-  const [salary, setSalary] = useState(String(emp?.salary ?? ''))
-  const [type, setType]     = useState<'CDI'|'CDD'>(emp?.type ?? 'CDI')
+  const [name, setName]       = useState(emp?.name ?? '')
+  const [role, setRole]       = useState(emp?.role ?? '')
+  const [dept, setDept]       = useState(emp?.dept ?? '')
+  const [salary, setSalary]   = useState(String(emp?.salary ?? ''))
+  const [type, setType]       = useState<'CDI'|'CDD'>(emp?.type ?? 'CDI')
   const [hiredAt, setHiredAt] = useState(emp?.hiredAt ?? '')
-  const [endAt, setEndAt]   = useState(emp?.endAt ?? '')
-  const [phone, setPhone]   = useState(emp?.phone ?? '')
-  const [email, setEmail]   = useState(emp?.email ?? '')
-  const [color, setColor]   = useState(emp?.color ?? COLORS[0])
+  const [endAt, setEndAt]     = useState(emp?.endAt ?? '')
+  const [phone, setPhone]     = useState(emp?.phone ?? '')
+  const [email, setEmail]     = useState(emp?.email ?? '')
+  const [color, setColor]     = useState(emp?.color ?? COLORS[0])
+  const [active, setActive]   = useState(emp?.active ?? true)
+  const [perf, setPerf]       = useState(emp?.perf ?? 3)
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 200, padding: 16,
-    }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div style={{
-        background: 'var(--card)', border: '1px solid var(--border)',
-        borderRadius: 20, padding: 28, width: '100%', maxWidth: 520,
-        maxHeight: '90vh', overflowY: 'auto',
-        boxShadow: 'var(--sh-xl)',
-      }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sh-xl)' }}>
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: 'var(--text)' }}>
             {emp ? '✏️ Modifier l\'employé' : '➕ Nouvel employé'}
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 20, lineHeight: 1 }}>
-            <X size={18} />
-          </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {emp && onDelete && (
+              <button onClick={() => onDelete(emp.id)} style={{ background: 'rgba(232,64,74,.1)', border: '1px solid rgba(232,64,74,.25)', borderRadius: 8, cursor: 'pointer', color: 'var(--danger)', padding: '6px 10px', fontSize: 14 }}>
+                🗑
+              </button>
+            )}
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -658,15 +856,37 @@ function EmpModal({ emp, onClose, onSave }: {
           </div>
 
           <div>
+            <label className="form-label">Performance</label>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {[1,2,3,4,5].map(star => (
+                <button key={star} onClick={() => setPerf(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 24, color: star <= perf ? '#F59E0B' : 'var(--border2)', padding: '2px 3px', lineHeight: 1 }}>★</button>
+              ))}
+              <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 6 }}>{perf}/5</span>
+            </div>
+          </div>
+
+          {emp && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--bg3)', borderRadius: 10, border: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Statut employé</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{active ? 'Employé actif' : 'Employé inactif'}</div>
+              </div>
+              <button onClick={() => setActive(a => !a)} style={{
+                padding: '6px 14px', borderRadius: 20, fontWeight: 700, fontSize: 12, cursor: 'pointer', border: '1px solid',
+                background: active ? 'rgba(14,196,126,.12)' : 'rgba(232,64,74,.1)',
+                color: active ? 'var(--acc2)' : 'var(--danger)',
+                borderColor: active ? 'rgba(14,196,126,.3)' : 'rgba(232,64,74,.25)',
+              }}>
+                {active ? '✓ Actif' : '✗ Inactif'}
+              </button>
+            </div>
+          )}
+
+          <div>
             <label className="form-label">Couleur d'avatar</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {COLORS.map(c => (
-                <button key={c} onClick={() => setColor(c)} style={{
-                  width: 30, height: 30, borderRadius: '50%', background: c, border: 'none',
-                  cursor: 'pointer', outline: color === c ? `3px solid ${c}` : 'none',
-                  outlineOffset: 2, transition: 'all .15s',
-                  transform: color === c ? 'scale(1.2)' : 'none',
-                }} />
+                <button key={c} onClick={() => setColor(c)} style={{ width: 30, height: 30, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', outline: color === c ? `3px solid ${c}` : 'none', outlineOffset: 2, transition: 'all .15s', transform: color === c ? 'scale(1.2)' : 'none' }} />
               ))}
             </div>
           </div>
@@ -677,7 +897,7 @@ function EmpModal({ emp, onClose, onSave }: {
           <button className="btn btn-primary" style={{ flex: 1 }}
             onClick={() => {
               if (!name.trim() || !role.trim()) { toast.error('Nom et poste requis'); return }
-              onSave({ name, role, dept, salary: Number(salary) || 0, type, hiredAt, endAt: endAt || undefined, phone, email, color })
+              onSave({ name, role, dept, salary: Number(salary) || 0, type, hiredAt, endAt: endAt || undefined, phone, email, color, active, perf })
             }}>
             {emp ? '💾 Enregistrer' : '➕ Ajouter'}
           </button>
