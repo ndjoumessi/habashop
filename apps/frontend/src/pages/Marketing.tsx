@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAppStore, t } from '@/stores/appStore'
+import { useAppStore } from '@/stores/appStore'
 import { customersApi, marketingApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { Search, Send, Users, CheckSquare, Square } from 'lucide-react'
@@ -12,39 +12,129 @@ interface Customer {
   loyaltyPoints?: number
 }
 
-const TEMPLATES: { label: string; icon: string; msg: (fr: boolean) => string }[] = [
-  {
-    label: 'Promotion du jour',
-    icon: '🏷️',
-    msg: (fr) => fr
-      ? '🎉 *Promotion spéciale !*\n\nProfitez de nos offres exceptionnelles aujourd\'hui !\n\n👉 Venez nous rendre visite ou contactez-nous pour en savoir plus.\n\n_Votre équipe HabaShop_ 🛒'
-      : '🎉 *Special Offer!*\n\nTake advantage of our exceptional deals today!\n\n👉 Come visit us or contact us for more info.\n\n_Your HabaShop team_ 🛒',
+// ─── i18n ────────────────────────────────────────────────────────────────────
+
+const MK = {
+  fr: {
+    subtitle:          'Envoyez des messages WhatsApp personnalisés à vos clients',
+    select_all:        'Tout sélectionner',
+    search:            'Rechercher un client...',
+    loading:           '⏳ Chargement...',
+    no_customers:      'Aucun client avec numéro WhatsApp',
+    templates_title:   'Modèles rapides',
+    msg_title:         'Message WhatsApp',
+    msg_placeholder:   'Rédigez votre message...\n\n*gras* _italique_',
+    formatting:        '*gras* _italique_ ~barré~',
+    chars:             'caractères',
+    result_ok:         '✅ Envoi réussi !',
+    result_partial:    '⚠️ Envoi partiel',
+    sent_toast:        'envoyé(s)',
+    send:              'Envoyer à',
+    client:            'client',
+    clients:           'clients',
+    select_recipients: 'Sélectionnez des destinataires',
+    sending:           'Envoi en cours...',
+    limit:             '⚠️ Maximum 20 destinataires par envoi · 500 ms entre chaque message',
+    err_msg:           'Écrivez un message avant d\'envoyer',
+    err_recipient:     'Sélectionnez au moins un destinataire',
+    err_max:           'Maximum 20 destinataires par envoi',
+    tpl_promo:   { label: 'Promotion du jour',      msg: '🎉 *Promotion spéciale !*\n\nProfitez de nos offres exceptionnelles aujourd\'hui !\n\n👉 Venez nous rendre visite ou contactez-nous pour en savoir plus.\n\n_Votre équipe HabaShop_ 🛒' },
+    tpl_stock:   { label: 'Nouveau stock',           msg: '📦 *Nouvelle arrivée en stock !*\n\nDe nouveaux produits viennent d\'arriver !\nQuantités limitées — premier arrivé, premier servi.\n\n🏪 Retrouvez-nous en boutique.\n\n_Votre équipe HabaShop_ 🛒' },
+    tpl_loyalty: { label: 'Programme fidélité',      msg: '🎁 *Programme Fidélité HabaShop*\n\nVos achats vous rapportent des points !\n\n🥉 Bronze → 🥈 Silver → 🥇 Gold\n\nCumulez des points à chaque achat et profitez de remises exclusives.\n\n_Votre équipe HabaShop_ 🛒' },
+    tpl_recall:  { label: 'Rappel client inactif',   msg: '💬 *Vous nous manquez !*\n\nCela fait un moment que nous ne vous avons pas vu.\n\nVenez découvrir nos nouveautés et bénéficier d\'une remise de bienvenue de *5 %* sur votre prochain achat.\n\n_Votre équipe HabaShop_ 🛒' },
   },
-  {
-    label: 'Nouveau stock',
-    icon: '📦',
-    msg: (fr) => fr
-      ? '📦 *Nouvelle arrivée en stock !*\n\nDe nouveaux produits viennent d\'arriver !\nQuantités limitées — premier arrivé, premier servi.\n\n🏪 Retrouvez-nous en boutique.\n\n_Votre équipe HabaShop_ 🛒'
-      : '📦 *New Stock Arrival!*\n\nFresh products just arrived!\nLimited quantities — first come, first served.\n\n🏪 Find us in store.\n\n_Your HabaShop team_ 🛒',
+  en: {
+    subtitle:          'Send personalized WhatsApp messages to your customers',
+    select_all:        'Select all',
+    search:            'Search customer...',
+    loading:           '⏳ Loading...',
+    no_customers:      'No customers with WhatsApp number',
+    templates_title:   'Quick templates',
+    msg_title:         'WhatsApp message',
+    msg_placeholder:   'Write your message...\n\n*bold* _italic_',
+    formatting:        '*bold* _italic_ ~strikethrough~',
+    chars:             'characters',
+    result_ok:         '✅ Sent successfully!',
+    result_partial:    '⚠️ Partial send',
+    sent_toast:        'sent',
+    send:              'Send to',
+    client:            'customer',
+    clients:           'customers',
+    select_recipients: 'Select recipients',
+    sending:           'Sending...',
+    limit:             '⚠️ Max 20 recipients per send · 500ms between each message',
+    err_msg:           'Write a message before sending',
+    err_recipient:     'Select at least one recipient',
+    err_max:           'Maximum 20 recipients per send',
+    tpl_promo:   { label: 'Daily promotion',    msg: '🎉 *Special Offer!*\n\nTake advantage of our exceptional deals today!\n\n👉 Come visit us or contact us for more info.\n\n_Your HabaShop team_ 🛒' },
+    tpl_stock:   { label: 'New stock',          msg: '📦 *New Stock Arrival!*\n\nFresh products just arrived!\nLimited quantities — first come, first served.\n\n🏪 Find us in store.\n\n_Your HabaShop team_ 🛒' },
+    tpl_loyalty: { label: 'Loyalty program',    msg: '🎁 *HabaShop Loyalty Program*\n\nYour purchases earn you points!\n\n🥉 Bronze → 🥈 Silver → 🥇 Gold\n\nEarn points with every purchase and enjoy exclusive discounts.\n\n_Your HabaShop team_ 🛒' },
+    tpl_recall:  { label: 'Inactive customer',  msg: '💬 *We miss you!*\n\nIt\'s been a while since your last visit.\n\nCome discover our new products and enjoy a *5% welcome discount* on your next purchase.\n\n_Your HabaShop team_ 🛒' },
   },
-  {
-    label: 'Programme fidélité',
-    icon: '🎁',
-    msg: (fr) => fr
-      ? '🎁 *Programme Fidélité HabaShop*\n\nVos achats vous rapportent des points !\n\n🥉 Bronze → 🥈 Silver → 🥇 Gold\n\nCumulez des points à chaque achat et profitez de remises exclusives.\n\n_Votre équipe HabaShop_ 🛒'
-      : '🎁 *HabaShop Loyalty Program*\n\nYour purchases earn you points!\n\n🥉 Bronze → 🥈 Silver → 🥇 Gold\n\nEarn points with every purchase and enjoy exclusive discounts.\n\n_Your HabaShop team_ 🛒',
+  es: {
+    subtitle:          'Envía mensajes personalizados de WhatsApp a tus clientes',
+    select_all:        'Seleccionar todo',
+    search:            'Buscar cliente...',
+    loading:           '⏳ Cargando...',
+    no_customers:      'Sin clientes con número WhatsApp',
+    templates_title:   'Plantillas rápidas',
+    msg_title:         'Mensaje WhatsApp',
+    msg_placeholder:   'Escribe tu mensaje...\n\n*negrita* _cursiva_',
+    formatting:        '*negrita* _cursiva_ ~tachado~',
+    chars:             'caracteres',
+    result_ok:         '✅ ¡Enviado con éxito!',
+    result_partial:    '⚠️ Envío parcial',
+    sent_toast:        'enviado(s)',
+    send:              'Enviar a',
+    client:            'cliente',
+    clients:           'clientes',
+    select_recipients: 'Selecciona destinatarios',
+    sending:           'Enviando...',
+    limit:             '⚠️ Máx. 20 destinatarios por envío · 500ms entre mensajes',
+    err_msg:           'Escribe un mensaje antes de enviar',
+    err_recipient:     'Selecciona al menos un destinatario',
+    err_max:           'Máximo 20 destinatarios por envío',
+    tpl_promo:   { label: 'Promoción del día',        msg: '🎉 *¡Oferta especial!*\n\n¡Aprovecha nuestras ofertas excepcionales hoy!\n\n👉 Visítanos o contáctanos para más información.\n\n_Tu equipo HabaShop_ 🛒' },
+    tpl_stock:   { label: 'Nuevo stock',              msg: '📦 *¡Nueva llegada de stock!*\n\n¡Productos frescos recién llegados!\nCantidades limitadas — primero en llegar, primero en servirse.\n\n🏪 Encuéntranos en tienda.\n\n_Tu equipo HabaShop_ 🛒' },
+    tpl_loyalty: { label: 'Programa de fidelidad',   msg: '🎁 *Programa Fidelidad HabaShop*\n\n¡Tus compras te dan puntos!\n\n🥉 Bronce → 🥈 Plata → 🥇 Oro\n\nAcumula puntos en cada compra y disfruta de descuentos exclusivos.\n\n_Tu equipo HabaShop_ 🛒' },
+    tpl_recall:  { label: 'Cliente inactivo',         msg: '💬 *¡Te echamos de menos!*\n\nHace tiempo que no te vemos.\n\nVen a descubrir nuestras novedades y disfruta de un *5% de descuento de bienvenida* en tu próxima compra.\n\n_Tu equipo HabaShop_ 🛒' },
   },
-  {
-    label: 'Rappel client inactif',
-    icon: '💬',
-    msg: (fr) => fr
-      ? '💬 *Vous nous manquez !*\n\nCela fait un moment que nous ne vous avons pas vu.\n\nVenez découvrir nos nouveautés et bénéficier d\'une remise de bienvenue de *5 %* sur votre prochain achat.\n\n_Votre équipe HabaShop_ 🛒'
-      : '💬 *We miss you!*\n\nIt\'s been a while since your last visit.\n\nCome discover our new products and enjoy a *5% welcome discount* on your next purchase.\n\n_Your HabaShop team_ 🛒',
+  it: {
+    subtitle:          'Invia messaggi WhatsApp personalizzati ai tuoi clienti',
+    select_all:        'Seleziona tutto',
+    search:            'Cerca cliente...',
+    loading:           '⏳ Caricamento...',
+    no_customers:      'Nessun cliente con numero WhatsApp',
+    templates_title:   'Modelli rapidi',
+    msg_title:         'Messaggio WhatsApp',
+    msg_placeholder:   'Scrivi il tuo messaggio...\n\n*grassetto* _corsivo_',
+    formatting:        '*grassetto* _corsivo_ ~barrato~',
+    chars:             'caratteri',
+    result_ok:         '✅ Inviato con successo!',
+    result_partial:    '⚠️ Invio parziale',
+    sent_toast:        'inviato/i',
+    send:              'Invia a',
+    client:            'cliente',
+    clients:           'clienti',
+    select_recipients: 'Seleziona destinatari',
+    sending:           'Invio in corso...',
+    limit:             '⚠️ Max 20 destinatari per invio · 500ms tra ogni messaggio',
+    err_msg:           'Scrivi un messaggio prima di inviare',
+    err_recipient:     'Seleziona almeno un destinatario',
+    err_max:           'Massimo 20 destinatari per invio',
+    tpl_promo:   { label: 'Promozione del giorno',  msg: '🎉 *Offerta speciale!*\n\nApprofittate delle nostre offerte eccezionali oggi!\n\n👉 Venite a trovarci o contattateci per maggiori informazioni.\n\n_Il tuo team HabaShop_ 🛒' },
+    tpl_stock:   { label: 'Nuovo stock',            msg: '📦 *Nuovo arrivo in magazzino!*\n\nProdotti freschi appena arrivati!\nQuantità limitate — primo arrivato, primo servito.\n\n🏪 Trovaci in negozio.\n\n_Il tuo team HabaShop_ 🛒' },
+    tpl_loyalty: { label: 'Programma fedeltà',      msg: '🎁 *Programma Fedeltà HabaShop*\n\nI tuoi acquisti ti danno punti!\n\n🥉 Bronzo → 🥈 Argento → 🥇 Oro\n\nAccumula punti ad ogni acquisto e goditi sconti esclusivi.\n\n_Il tuo team HabaShop_ 🛒' },
+    tpl_recall:  { label: 'Cliente inattivo',       msg: '💬 *Ci manchi!*\n\nÈ passato un po\' di tempo dall\'ultima tua visita.\n\nVieni a scoprire le nostre novità e goditi uno *sconto del 5%* sul tuo prossimo acquisto.\n\n_Il tuo team HabaShop_ 🛒' },
   },
-]
+}
+
+const TPL_ICONS = ['🏷️', '📦', '🎁', '💬']
 
 export default function Marketing() {
   const { lang } = useAppStore()
+  const mk = MK[lang as keyof typeof MK] ?? MK.fr
+
   const [customers,     setCustomers]     = useState<Customer[]>([])
   const [loading,       setLoading]       = useState(true)
   const [search,        setSearch]        = useState('')
@@ -90,9 +180,9 @@ export default function Marketing() {
   }
 
   const handleSend = async () => {
-    if (!message.trim()) { toast.error('Écrivez un message avant d\'envoyer'); return }
-    if (!selected.size)  { toast.error('Sélectionnez au moins un destinataire'); return }
-    if (selected.size > 20) { toast.error('Maximum 20 destinataires par envoi'); return }
+    if (!message.trim()) { toast.error(mk.err_msg); return }
+    if (!selected.size)  { toast.error(mk.err_recipient); return }
+    if (selected.size > 20) { toast.error(mk.err_max); return }
 
     const phones = customers.filter(c => selected.has(c.id)).map(c => c.phone)
     setSending(true)
@@ -100,7 +190,7 @@ export default function Marketing() {
     try {
       const res = await marketingApi.broadcast({ phones, message, lang }) as { sent: number; failed: number; errors?: string[] }
       setResult(res)
-      toast.success(`✅ ${res.sent} message${res.sent > 1 ? 's' : ''} envoyé${res.sent > 1 ? 's' : ''} !`)
+      toast.success(`✅ ${res.sent} message${res.sent > 1 ? 's' : ''} ${mk.sent_toast} !`)
       setSelected(new Set())
     } catch (err: any) {
       toast.error(err.message ?? 'Erreur envoi')
@@ -109,6 +199,13 @@ export default function Marketing() {
     }
   }
 
+  const templates = [
+    { icon: TPL_ICONS[0], ...mk.tpl_promo },
+    { icon: TPL_ICONS[1], ...mk.tpl_stock },
+    { icon: TPL_ICONS[2], ...mk.tpl_loyalty },
+    { icon: TPL_ICONS[3], ...mk.tpl_recall },
+  ]
+
   const charCount = message.length
 
   return (
@@ -116,13 +213,9 @@ export default function Marketing() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 4 }}>
-          📣 {t('nav_marketing')}
+          📣 Marketing
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--text3)' }}>
-          {lang === 'fr'
-            ? 'Envoyez des messages WhatsApp personnalisés à vos clients'
-            : 'Send personalized WhatsApp messages to your customers'}
-        </p>
+        <p style={{ fontSize: 13, color: 'var(--text3)' }}>{mk.subtitle}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, alignItems: 'start' }}>
@@ -140,12 +233,12 @@ export default function Marketing() {
               {selected.size === filtered.length && filtered.length > 0
                 ? <CheckSquare size={14} style={{ color: 'var(--p2)' }} />
                 : <Square size={14} />}
-              {lang === 'fr' ? 'Tout sélectionner' : 'Select all'}
+              {mk.select_all}
             </button>
             <div style={{ position: 'relative', flex: 1 }}>
               <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
               <input className="input" style={{ paddingLeft: 30, fontSize: 12 }}
-                placeholder={lang === 'fr' ? 'Rechercher un client...' : 'Search customer...'}
+                placeholder={mk.search}
                 value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <div style={{ fontSize: 12, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
@@ -156,9 +249,9 @@ export default function Marketing() {
 
           {/* Customer list */}
           {loading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>⏳ Chargement...</div>
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>{mk.loading}</div>
           ) : filtered.length === 0 ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Aucun client avec numéro WhatsApp</div>
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>{mk.no_customers}</div>
           ) : (
             <div style={{ maxHeight: 480, overflowY: 'auto' }}>
               {filtered.map(c => {
@@ -212,11 +305,11 @@ export default function Marketing() {
           {/* Templates */}
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
-              {lang === 'fr' ? 'Modèles rapides' : 'Quick templates'}
+              {mk.templates_title}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {TEMPLATES.map(tpl => (
-                <button key={tpl.label} onClick={() => setMessage(tpl.msg(lang === 'fr'))} style={{
+              {templates.map(tpl => (
+                <button key={tpl.label} onClick={() => setMessage(tpl.msg)} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   background: 'var(--bg3)', border: '1px solid var(--border)',
                   borderRadius: 8, padding: '8px 12px', cursor: 'pointer',
@@ -233,21 +326,21 @@ export default function Marketing() {
           {/* Message composer */}
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
-              {lang === 'fr' ? 'Message WhatsApp' : 'WhatsApp message'}
+              {mk.msg_title}
             </div>
             <textarea
               className="input"
               style={{ width: '100%', minHeight: 160, resize: 'vertical', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit' }}
-              placeholder={lang === 'fr' ? 'Rédigez votre message...\n\n*gras* _italique_' : 'Write your message...\n\n*bold* _italic_'}
+              placeholder={mk.msg_placeholder}
               value={message}
               onChange={e => setMessage(e.target.value)}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
               <span style={{ fontSize: 11, color: charCount > 1000 ? 'var(--danger)' : 'var(--text3)' }}>
-                {charCount} / 1024 caractères
+                {charCount} / 1024 {mk.chars}
               </span>
               <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                *gras* _italique_ ~barré~
+                {mk.formatting}
               </span>
             </div>
           </div>
@@ -260,10 +353,10 @@ export default function Marketing() {
               borderRadius: 10, padding: '12px 16px',
             }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: result.failed === 0 ? 'var(--acc2)' : 'var(--acc)', marginBottom: 4 }}>
-                {result.failed === 0 ? '✅ Envoi réussi !' : '⚠️ Envoi partiel'}
+                {result.failed === 0 ? mk.result_ok : mk.result_partial}
               </div>
               <div style={{ fontSize: 12, color: 'var(--text2)' }}>
-                {result.sent} envoyé{result.sent > 1 ? 's' : ''}
+                {result.sent} {mk.sent_toast}
                 {result.failed > 0 && ` · ${result.failed} échoué${result.failed > 1 ? 's' : ''}`}
               </div>
             </div>
@@ -289,14 +382,14 @@ export default function Marketing() {
             }}
           >
             {sending
-              ? `⏳ ${lang === 'fr' ? 'Envoi en cours...' : 'Sending...'}`
-              : <><Send size={16} />{selected.size ? `📱 Envoyer à ${selected.size} client${selected.size > 1 ? 's' : ''}` : lang === 'fr' ? 'Sélectionnez des destinataires' : 'Select recipients'}</>}
+              ? `⏳ ${mk.sending}`
+              : selected.size
+                ? <><Send size={16} />{mk.send} {selected.size} {selected.size > 1 ? mk.clients : mk.client}</>
+                : mk.select_recipients}
           </button>
 
           <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.5 }}>
-            {lang === 'fr'
-              ? '⚠️ Maximum 20 destinataires par envoi · 500 ms entre chaque message'
-              : '⚠️ Max 20 recipients per send · 500ms between each message'}
+            {mk.limit}
           </div>
         </div>
       </div>

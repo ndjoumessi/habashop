@@ -139,6 +139,7 @@ export default function POS() {
     cashierOpen, cashierOpenedAt,
     cashierOpeningFund, cashierSessionTx, cashierSessionCA,
     openCashier, closeCashier, addCashierSale,
+    posTaxRate, posShowStockOnTile,
   } = useAppStore()
   const fmt = useFormatAmount()
   const LOCALE_MAP: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
@@ -273,7 +274,7 @@ export default function POS() {
   const removeItem = (id: number | string) => setCart(prev => prev.filter(i => i.id !== id))
 
   // Calculs
-  const VAT_RATE = 0.18
+  const VAT_RATE = posTaxRate / 100
   const subtotalBeforeDiscount = cart.reduce((s, i) => s + i.price * i.qty, 0)
   const discountAmount = discount
     ? discount.type === 'percent'
@@ -816,13 +817,15 @@ export default function POS() {
                     }}>{fmt(getPrice(p))}</div>
 
                     {/* Stock */}
-                    <div style={{
-                      fontSize: 10.5,
-                      color: isLowStock ? 'var(--danger)' : 'var(--text3)',
-                      fontWeight: isLowStock ? 600 : 400,
-                    }}>
-                      {isLowStock ? '⚠️ ' : ''}Stock : {p.stock}
-                    </div>
+                    {posShowStockOnTile && (
+                      <div style={{
+                        fontSize: 10.5,
+                        color: isLowStock ? 'var(--danger)' : 'var(--text3)',
+                        fontWeight: isLowStock ? 600 : 400,
+                      }}>
+                        {isLowStock ? '⚠️ ' : ''}Stock : {p.stock}
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -1562,7 +1565,7 @@ export default function POS() {
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
                     {lang === 'fr' ? 'Numéro WhatsApp du client' : 'Customer WhatsApp number'}
                   </label>
-                  <PhoneInput value={customerPhone} onChange={setCustomerPhone} placeholder="77 000 00 00" />
+                  <input className="input" type="tel" placeholder="+221 77 000 00 00" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
                 </div>
               )}
             </div>

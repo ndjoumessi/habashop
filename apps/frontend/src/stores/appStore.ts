@@ -34,6 +34,10 @@ export interface AppConfig {
   posAutoprint: boolean
   posVatIncluded: boolean
   posTaxRate: number
+  enableLoyalty: boolean
+  requireCashier: boolean
+  priceMode: 'TTC' | 'HT'
+  defaultCashier: number
 
   // Stock
   stockLowThreshold: number
@@ -85,6 +89,10 @@ export const DEFAULT_CONFIG: AppConfig = {
   posAutoprint: false,
   posVatIncluded: true,
   posTaxRate: 18,
+  enableLoyalty: false,
+  requireCashier: false,
+  priceMode: 'TTC',
+  defaultCashier: 0,
 
   stockLowThreshold: 10,
   stockAutoOrder: false,

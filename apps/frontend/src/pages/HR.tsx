@@ -66,6 +66,15 @@ const LEAVE_INIT: LeaveRequest[] = [
 
 const WEEK_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 const COLORS = ['#6C3FD6','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#8B5CF6','#F472B6']
+const DEPT_COLORS: Record<string, string> = {
+  'Ventes':     '#6C3FD6',
+  'Stock':      '#F59E0B',
+  'Finance':    '#10B981',
+  'Direction':  '#3B82F6',
+  'Logistique': '#8B5CF6',
+  'Marketing':  '#EC4899',
+  'RH':         '#EF4444',
+}
 
 const STATUS_CFG = {
   present: { label:'Présent',  color:'var(--acc2)',    bg:'rgba(14,196,126,.12)'  },
@@ -157,7 +166,8 @@ const labelStyle: React.CSSProperties = {
 export default function HR() {
   const fmt = useFormatAmount()
   const { lang } = useAppStore()
-  const [tab, setTab] = useState<'team'|'payroll'|'schedule'|'leaves'>('team')
+  const [tab, setTab] = useState<'team'|'contracts'|'attendance'|'leaves'|'payroll'>('team')
+  const [viewMode, setViewMode] = useState<'grid'|'table'>('grid')
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('Tous')
   const [typeFilter, setTypeFilter] = useState('Tous')
@@ -283,10 +293,11 @@ export default function HR() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', borderRadius: 12, padding: 4, border: '1px solid var(--border)' }}>
         {([
-          { id: 'team',     icon: '👥', label: lang === 'fr' ? 'Équipe'   : 'Team'     },
-          { id: 'payroll',  icon: '💰', label: lang === 'fr' ? 'Paie'     : 'Payroll'  },
-          { id: 'schedule', icon: '📅', label: lang === 'fr' ? 'Planning' : 'Schedule' },
-          { id: 'leaves',   icon: '🏖️', label: lang === 'fr' ? 'Congés'   : 'Leaves'   },
+          { id: 'team',       icon: '👥', label: lang === 'fr' ? 'Équipe'    : 'Team'      },
+          { id: 'contracts',  icon: '📄', label: lang === 'fr' ? 'Contrats'  : 'Contracts' },
+          { id: 'attendance', icon: '📅', label: lang === 'fr' ? 'Pointage'  : 'Attendance'},
+          { id: 'leaves',     icon: '🏖️', label: lang === 'fr' ? 'Congés'    : 'Leaves'    },
+          { id: 'payroll',    icon: '💰', label: lang === 'fr' ? 'Rémunération' : 'Payroll' },
         ] as const).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             flex: 1, padding: '9px 8px', borderRadius: 9,
@@ -312,7 +323,7 @@ export default function HR() {
       {/* ── TAB TEAM ── */}
       {tab === 'team' && (
         <>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <input className="input" placeholder="🔍 Rechercher..." value={search}
               onChange={e => setSearch(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
             <select className="input" value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={{ minWidth: 130 }}>
@@ -321,68 +332,237 @@ export default function HR() {
             <select className="input" value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ minWidth: 110 }}>
               {['Tous','CDI','CDD'].map(t => <option key={t}>{t}</option>)}
             </select>
+            <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 9, padding: 3 }}>
+              {(['grid','table'] as const).map(v => (
+                <button key={v} onClick={() => setViewMode(v)} style={{
+                  padding: '5px 11px', borderRadius: 7, fontSize: 13, border: 'none', cursor: 'pointer',
+                  background: viewMode === v ? 'var(--card)' : 'transparent',
+                  color: viewMode === v ? 'var(--text)' : 'var(--text3)',
+                  boxShadow: viewMode === v ? 'var(--sh-sm)' : 'none',
+                }}>
+                  {v === 'grid' ? '⊞' : '☰'}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px,1fr))', gap: 14 }}>
-            {filtered.map((emp, index) => (
-              <div key={emp.id} className="panel" style={{
-                padding: 18, cursor: 'pointer',
-                border: '1px solid var(--border)',
-                opacity: emp.active ? 1 : 0.65,
-                transition: 'all .2s',
-                animation: `slideIn ${index * 0.05}s ease both`,
-              }}
-                onClick={() => { setSelectedEmp(emp); setShowModal(true) }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--p)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'none' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
-                  <EmpAvatar emp={emp} size={44} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', marginBottom: 2 }}>{emp.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>{emp.role} · {emp.dept}</div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-                      background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
-                      color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
-                    }}>{emp.type}</span>
-                    {!emp.active && (
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'var(--bg3)', color: 'var(--text3)' }}>Inactif</span>
-                    )}
-                  </div>
-                </div>
+          {/* Grid view */}
+          {viewMode === 'grid' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px,1fr))', gap: 14 }}>
+              {filtered.map((emp, index) => {
+                const deptColor = DEPT_COLORS[emp.dept] ?? emp.color
+                return (
+                  <div key={emp.id} className="panel" style={{
+                    padding: 0, cursor: 'pointer', overflow: 'hidden',
+                    border: '1px solid var(--border)',
+                    opacity: emp.active ? 1 : 0.65,
+                    transition: 'all .2s',
+                    animation: `slideIn ${index * 0.05}s ease both`,
+                  }}
+                    onClick={() => { setSelectedEmp(emp); setShowModal(true) }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = deptColor; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'none' }}
+                  >
+                    {/* Dept color band */}
+                    <div style={{ height: 4, background: `linear-gradient(90deg, ${deptColor}, ${deptColor}88)` }} />
+                    <div style={{ padding: 18 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
+                        <EmpAvatar emp={emp} size={44} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', marginBottom: 2 }}>{emp.name}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{emp.role} · <span style={{ color: deptColor, fontWeight: 600 }}>{emp.dept}</span></div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
+                            background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
+                            color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
+                          }}>{emp.type}</span>
+                          {!emp.active && (
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'var(--bg3)', color: 'var(--text3)' }}>Inactif</span>
+                          )}
+                        </div>
+                      </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
-                  {[
-                    { label: 'Ancienneté',  value: calcAnciennete(emp.hiredAt) },
-                    { label: 'Heures',      value: calcHeures(emp.id) },
-                    { label: 'Ponctualité', value: calcPonctualite(emp.id) + '%' },
-                  ].map(s => (
-                    <div key={s.label} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>{s.label}</div>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>{s.value}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+                        {[
+                          { label: 'Ancienneté',  value: calcAnciennete(emp.hiredAt) },
+                          { label: 'Heures',      value: calcHeures(emp.id) },
+                          { label: 'Ponctualité', value: calcPonctualite(emp.id) + '%' },
+                        ].map(s => (
+                          <div key={s.label} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
+                            <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>{s.label}</div>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>{s.value}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--p2)' }}>
+                          {fmt(emp.salary)}<span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500 }}>/mois</span>
+                        </span>
+                        {emp.perf != null && <Stars v={emp.perf} />}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )
+              })}
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--p2)' }}>
-                    {fmt(emp.salary)}<span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500 }}>/mois</span>
-                  </span>
-                  {emp.perf != null && <Stars v={emp.perf} />}
+              {filtered.length === 0 && (
+                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px 0', color: 'var(--text3)', fontSize: 14 }}>
+                  Aucun employé trouvé
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
+          )}
 
-            {filtered.length === 0 && (
-              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px 0', color: 'var(--text3)', fontSize: 14 }}>
-                Aucun employé trouvé
+          {/* Table view */}
+          {viewMode === 'table' && (
+            <div className="panel" style={{ padding: 0 }}>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Employé</th>
+                      <th>Département</th>
+                      <th>Contrat</th>
+                      <th>Ancienneté</th>
+                      <th style={{ textAlign: 'right' }}>Salaire</th>
+                      <th style={{ textAlign: 'center' }}>Perf.</th>
+                      <th style={{ textAlign: 'center' }}>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(emp => (
+                      <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setShowModal(true) }} style={{ cursor: 'pointer' }}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <EmpAvatar emp={emp} size={32} />
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 13 }}>{emp.name}</div>
+                              <div style={{ fontSize: 11, color: 'var(--text3)' }}>{emp.role}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: DEPT_COLORS[emp.dept] ?? 'var(--text2)' }}>
+                            {emp.dept}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{
+                            fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                            background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
+                            color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
+                          }}>{emp.type}</span>
+                        </td>
+                        <td style={{ fontSize: 12, color: 'var(--text2)' }}>{calcAnciennete(emp.hiredAt)}</td>
+                        <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700 }}>{fmt(emp.salary)}</td>
+                        <td style={{ textAlign: 'center' }}>{emp.perf != null && <Stars v={emp.perf} />}</td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
+                            background: emp.active ? 'rgba(14,196,126,.12)' : 'var(--bg3)',
+                            color: emp.active ? 'var(--acc2)' : 'var(--text3)',
+                          }}>
+                            {emp.active ? '● Actif' : '○ Inactif'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {filtered.length === 0 && (
+                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)' }}>Aucun employé trouvé</td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </>
+      )}
+
+      {/* ── TAB CONTRACTS ── */}
+      {tab === 'contracts' && (
+        <div className="panel">
+          <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
+            <span className="panel-t">📄 {lang === 'fr' ? 'Contrats en cours' : 'Active contracts'}</span>
+            <button className="btn btn-primary btn-sm" onClick={() => { setSelectedEmp(null); setShowModal(true) }}>
+              <Plus size={14} /> {lang === 'fr' ? 'Nouveau contrat' : 'New contract'}
+            </button>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employé</th>
+                  <th>Département</th>
+                  <th style={{ textAlign: 'center' }}>Type</th>
+                  <th>Date début</th>
+                  <th>Date fin</th>
+                  <th style={{ textAlign: 'right' }}>Salaire brut</th>
+                  <th style={{ textAlign: 'center' }}>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(employees ?? []).map(emp => {
+                  const deptColor = DEPT_COLORS[emp.dept] ?? emp.color
+                  const isExpiringSoon = emp.type === 'CDD' && emp.endAt
+                    ? (() => {
+                        const [d, m, y] = emp.endAt.split('/')
+                        const end = new Date(+y, +m - 1, +d)
+                        const diff = (end.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                        return diff <= 30 && diff >= 0
+                      })()
+                    : false
+                  return (
+                    <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setShowModal(true) }} style={{ cursor: 'pointer' }}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <EmpAvatar emp={emp} size={32} />
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 13 }}>{emp.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text3)' }}>{emp.role}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: deptColor, flexShrink: 0 }} />
+                          <span style={{ fontSize: 12, color: deptColor, fontWeight: 600 }}>{emp.dept}</span>
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                          background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
+                          color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
+                        }}>{emp.type}</span>
+                      </td>
+                      <td style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>{emp.hiredAt}</td>
+                      <td style={{ fontSize: 12, fontFamily: 'var(--mono)' }}>
+                        {emp.endAt
+                          ? <span style={{ color: isExpiringSoon ? 'var(--danger)' : 'var(--text2)', fontWeight: isExpiringSoon ? 700 : 400 }}>
+                              {isExpiringSoon ? '⚠️ ' : ''}{emp.endAt}
+                            </span>
+                          : <span style={{ color: 'var(--text3)' }}>—</span>}
+                      </td>
+                      <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700 }}>{fmt(emp.salary)}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
+                          background: emp.active ? 'rgba(14,196,126,.12)' : 'var(--bg3)',
+                          color: emp.active ? 'var(--acc2)' : 'var(--text3)',
+                        }}>
+                          {emp.active ? '✓ Actif' : '○ Inactif'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* ── TAB PAYROLL ── */}
@@ -488,11 +668,11 @@ export default function HR() {
         </div>
       )}
 
-      {/* ── TAB SCHEDULE ── */}
-      {tab === 'schedule' && (
+      {/* ── TAB ATTENDANCE ── */}
+      {tab === 'attendance' && (
         <div className="panel">
           <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <span className="panel-t">📅 {lang === 'fr' ? 'Planning semaine' : 'Weekly schedule'}</span>
+            <span className="panel-t">📅 {lang === 'fr' ? 'Pointage semaine' : 'Weekly attendance'}</span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button className="btn btn-sm" onClick={() => { const d = new Date(planningWeek); d.setDate(d.getDate() - 7); setPlanningWeek(d) }}>
                 ← {lang === 'fr' ? 'Préc.' : 'Prev'}
@@ -780,15 +960,37 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
   const [active, setActive]   = useState(emp?.active ?? true)
   const [perf, setPerf]       = useState(emp?.perf ?? 3)
 
+  const deptColor = DEPT_COLORS[dept] ?? color
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sh-xl)' }}>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
-          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: 'var(--text)' }}>
-            {emp ? '✏️ Modifier l\'employé' : '➕ Nouvel employé'}
-          </h3>
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20,
+        width: '100%', maxWidth: 520, maxHeight: '90vh',
+        overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        boxShadow: 'var(--sh-xl)',
+      }}>
+        {/* Fixed header */}
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {emp && (
+              <div style={{
+                width: 40, height: 40, borderRadius: '50%',
+                background: `linear-gradient(135deg, ${color}, ${color}99)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0,
+              }}>
+                {emp.avatar}
+              </div>
+            )}
+            <div>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>
+                {emp ? emp.name : '➕ Nouvel employé'}
+              </h3>
+              {emp && <div style={{ fontSize: 11, color: deptColor, fontWeight: 600, marginTop: 1 }}>{dept || emp.dept}</div>}
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {emp && onDelete && (
               <button onClick={() => onDelete(emp.id)} style={{ background: 'rgba(232,64,74,.1)', border: '1px solid rgba(232,64,74,.25)', borderRadius: 8, cursor: 'pointer', color: 'var(--danger)', padding: '6px 10px', fontSize: 14 }}>
@@ -801,6 +1003,8 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
           </div>
         </div>
 
+        {/* Scrollable body */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
@@ -892,7 +1096,10 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+        </div>
+
+        {/* Fixed footer */}
+        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 10 }}>
           <button className="btn" style={{ flex: 1 }} onClick={onClose}>Annuler</button>
           <button className="btn btn-primary" style={{ flex: 1 }}
             onClick={() => {

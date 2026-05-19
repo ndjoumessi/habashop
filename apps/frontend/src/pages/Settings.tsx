@@ -603,6 +603,26 @@ export default function Settings() {
                   </select>
                 </div>
 
+                <div>
+                  <Label>Mode de prix</Label>
+                  <div className="flex gap-3">
+                    {(['TTC', 'HT'] as const).map(m => (
+                      <button key={m} className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all"
+                        style={{
+                          background: cfg.priceMode === m ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg3)',
+                          color: cfg.priceMode === m ? '#fff' : 'var(--text2)',
+                          border: `1px solid ${cfg.priceMode === m ? 'transparent' : 'var(--border)'}`,
+                          cursor: 'pointer', fontFamily: 'inherit',
+                          boxShadow: cfg.priceMode === m ? '0 4px 14px rgba(91,78,232,.3)' : 'none',
+                        }}
+                        onClick={() => cfg.updateConfig({ priceMode: m })}
+                      >
+                        {m === 'TTC' ? '💰 TTC (toutes taxes)' : '📊 HT (hors taxes)'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="space-y-3">
                   <ToggleRow label={t('settings_pos_show_stock')} sub="Affiche la quantité disponible sous chaque produit"
                     value={cfg.posShowStockOnTile} onChange={v => cfg.updateConfig({ posShowStockOnTile: v })} />
@@ -610,6 +630,10 @@ export default function Settings() {
                     value={cfg.posAutoprint} onChange={v => cfg.updateConfig({ posAutoprint: v })} />
                   <ToggleRow label={t('settings_pos_vat_included')}
                     value={cfg.posVatIncluded} onChange={v => cfg.updateConfig({ posVatIncluded: v })} />
+                  <ToggleRow label="Programme fidélité" sub="Active les points de fidélité à la caisse"
+                    value={cfg.enableLoyalty} onChange={v => cfg.updateConfig({ enableLoyalty: v })} />
+                  <ToggleRow label="Ouverture de caisse obligatoire" sub="Exiger l'ouverture de caisse avant toute vente"
+                    value={cfg.requireCashier} onChange={v => cfg.updateConfig({ requireCashier: v })} />
                 </div>
 
                 <div className="flex justify-end">
