@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/stores/appStore'
 import type { Lang, Currency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import PhoneInput from '@/components/ui/PhoneInput'
 import toast from 'react-hot-toast'
 
 const BUSINESS_TYPES: Record<Lang, string[]> = {
@@ -327,7 +326,7 @@ export default function SignupPage() {
             {/* Téléphone */}
             <div>
               <SLabel>{tx.phone}</SLabel>
-              <PhoneInput value={form.phone} onChange={phone => setForm(f => ({ ...f, phone }))} placeholder="77 000 00 00" />
+              <input className="input" type="tel" placeholder="77 000 00 00" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
             </div>
 
             {/* Mot de passe */}
