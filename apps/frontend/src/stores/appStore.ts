@@ -143,6 +143,10 @@ interface AppStore extends AppConfig {
   setTheme:    (t: Theme)    => void
   setLang:     (l: Lang)     => void
   setCurrency: (c: Currency) => void
+  // Settings lock
+  settingsLocked: boolean
+  lockSettings:   () => void
+  unlockSettings: () => void
   // Caisse persistante
   cashierOpen: boolean
   cashierOpenedAt: string | null
@@ -192,6 +196,11 @@ export const useAppStore = create<AppStore>()(
       setTheme:    (theme)    => { set({ theme });    document.documentElement.setAttribute('data-theme', theme) },
       setLang:     (lang)     => set({ lang }),
       setCurrency: (currency) => set({ currency }),
+
+      // Settings lock
+      settingsLocked: false,
+      lockSettings:   () => set({ settingsLocked: true }),
+      unlockSettings: () => set({ settingsLocked: false }),
 
       // Caisse persistante
       cashierOpen:        false,

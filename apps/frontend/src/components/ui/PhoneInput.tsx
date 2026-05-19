@@ -36,11 +36,22 @@ interface PhoneInputProps {
   onChange: (value: string) => void
   placeholder?: string
   className?: string
+  readOnly?: boolean
 }
 
 export default function PhoneInput({
-  value, onChange, placeholder = '77 000 00 00',
+  value, onChange, placeholder = '77 000 00 00', readOnly,
 }: PhoneInputProps) {
+  if (readOnly) {
+    return (
+      <span style={{
+        fontSize: 13, color: 'var(--text2)',
+        fontFamily: 'var(--mono)',
+      }}>
+        {value || '—'}
+      </span>
+    )
+  }
   const [selectedCode, setSelectedCode] = useState(COUNTRY_CODES[0])
   const [showDropdown, setShowDropdown] = useState(false)
   const [search, setSearch] = useState('')

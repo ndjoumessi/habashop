@@ -16,7 +16,11 @@ interface Customer {
 
 const MK = {
   fr: {
+    title:             'WhatsApp Marketing',
     subtitle:          'Envoyez des messages WhatsApp personnalisés à vos clients',
+    yourMessage:       '✏️ Votre message',
+    preview:           'APERÇU WHATSAPP',
+    warning:           '⚠️ Incluez "Répondez STOP" dans vos messages pour respecter la confidentialité.',
     select_all:        'Tout sélectionner',
     search:            'Rechercher un client...',
     loading:           '⏳ Chargement...',
@@ -44,7 +48,11 @@ const MK = {
     tpl_recall:  { label: 'Rappel client inactif',   msg: '💬 *Vous nous manquez !*\n\nCela fait un moment que nous ne vous avons pas vu.\n\nVenez découvrir nos nouveautés et bénéficier d\'une remise de bienvenue de *5 %* sur votre prochain achat.\n\n_Votre équipe HabaShop_ 🛒' },
   },
   en: {
+    title:             'WhatsApp Marketing',
     subtitle:          'Send personalized WhatsApp messages to your customers',
+    yourMessage:       '✏️ Your message',
+    preview:           'WHATSAPP PREVIEW',
+    warning:           '⚠️ Include "Reply STOP" in your messages to respect privacy.',
     select_all:        'Select all',
     search:            'Search customer...',
     loading:           '⏳ Loading...',
@@ -72,7 +80,11 @@ const MK = {
     tpl_recall:  { label: 'Inactive customer',  msg: '💬 *We miss you!*\n\nIt\'s been a while since your last visit.\n\nCome discover our new products and enjoy a *5% welcome discount* on your next purchase.\n\n_Your HabaShop team_ 🛒' },
   },
   es: {
+    title:             'Marketing WhatsApp',
     subtitle:          'Envía mensajes personalizados de WhatsApp a tus clientes',
+    yourMessage:       '✏️ Su mensaje',
+    preview:           'VISTA PREVIA WHATSAPP',
+    warning:           '⚠️ Incluya "Responda STOP" en sus mensajes.',
     select_all:        'Seleccionar todo',
     search:            'Buscar cliente...',
     loading:           '⏳ Cargando...',
@@ -100,7 +112,11 @@ const MK = {
     tpl_recall:  { label: 'Cliente inactivo',         msg: '💬 *¡Te echamos de menos!*\n\nHace tiempo que no te vemos.\n\nVen a descubrir nuestras novedades y disfruta de un *5% de descuento de bienvenida* en tu próxima compra.\n\n_Tu equipo HabaShop_ 🛒' },
   },
   it: {
+    title:             'Marketing WhatsApp',
     subtitle:          'Invia messaggi WhatsApp personalizzati ai tuoi clienti',
+    yourMessage:       '✏️ Il tuo messaggio',
+    preview:           'ANTEPRIMA WHATSAPP',
+    warning:           '⚠️ Includi "Rispondi STOP" nei tuoi messaggi.',
     select_all:        'Seleziona tutto',
     search:            'Cerca cliente...',
     loading:           '⏳ Caricamento...',
@@ -213,7 +229,7 @@ export default function Marketing() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 4 }}>
-          📣 Marketing
+          📣 {mk.title}
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text3)' }}>{mk.subtitle}</p>
       </div>
@@ -390,6 +406,9 @@ export default function Marketing() {
 
           <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.5 }}>
             {mk.limit}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--acc)', textAlign: 'center', lineHeight: 1.5 }}>
+            {mk.warning}
           </div>
         </div>
       </div>

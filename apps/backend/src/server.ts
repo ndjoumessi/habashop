@@ -404,7 +404,7 @@ async function start() {
     const { tenantId } = request.user as any
     const {
       name, type, phone, email, address,
-      loyaltyPoints, totalRevenue, purchaseCount,
+      loyaltyPoints, totalRevenue,
     } = request.body as any
 
     if (!name || !name.trim()) {
@@ -415,14 +415,13 @@ async function start() {
       const customer = await prisma.customer.create({
         data: {
           tenantId,
-          name: name.trim(),
-          type: type ?? 'retail',
-          phone: phone ?? '',
-          email: email ?? '',
-          address: address ?? '',
+          name:          name?.trim() ?? '',
+          type:          type          ?? 'retail',
+          phone:         phone         ?? '',
+          email:         email         ?? '',
+          address:       address       ?? '',
           loyaltyPoints: loyaltyPoints ?? 0,
-          totalRevenue: totalRevenue ?? 0,
-          purchaseCount: purchaseCount ?? 0,
+          totalRevenue:  totalRevenue  ?? 0,
         }
       })
       return customer

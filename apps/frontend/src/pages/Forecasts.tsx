@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { TrendingUp, Package, Users, Calendar, ShoppingCart } from 'lucide-react'
@@ -124,6 +125,68 @@ function qtyToOrder(item: ForecastItem)    { return Math.max(0, item.avgSales * 
 function totalCost(item: ForecastItem)     { return qtyToOrder(item) * item.unitPrice }
 
 type ActiveTab = 'analyse' | 'bons'
+
+// ── MarkdownText ──────────────────────────────────────────────────────────────
+
+function renderInline(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = []
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g
+  let lastIndex = 0
+  let match
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
+    if (match[2]) {
+      parts.push(<strong key={match.index} style={{ color:'var(--text)', fontWeight:800 }}>{match[2]}</strong>)
+    } else if (match[3]) {
+      parts.push(<em key={match.index} style={{ color:'var(--p3)', fontStyle:'italic' }}>{match[3]}</em>)
+    } else if (match[4]) {
+      parts.push(<code key={match.index} style={{ background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:4, padding:'1px 6px', fontSize:12, fontFamily:'var(--mono)', color:'var(--acc)' }}>{match[4]}</code>)
+    }
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+  return parts.length > 0 ? parts : text
+}
+
+function MarkdownText({ text }: { text: string }) {
+  const lines = text.split('\n')
+  return (
+    <div style={{ fontSize:13.5, lineHeight:1.8, color:'var(--text)' }}>
+      {lines.map((line, i) => {
+        if (line.startsWith('# '))
+          return <h2 key={i} style={{ fontSize:18, fontWeight:900, color:'var(--text)', margin:'20px 0 10px', letterSpacing:'-.3px', borderBottom:'1px solid var(--border)', paddingBottom:8 }}>{line.slice(2)}</h2>
+        if (line.startsWith('## '))
+          return <h3 key={i} style={{ fontSize:15, fontWeight:800, color:'var(--p3)', margin:'16px 0 8px', display:'flex', alignItems:'center', gap:6 }}>{line.slice(3)}</h3>
+        if (line.startsWith('### '))
+          return <h4 key={i} style={{ fontSize:13, fontWeight:700, color:'var(--acc)', margin:'12px 0 6px' }}>{line.slice(4)}</h4>
+        if (!line.trim())
+          return <div key={i} style={{ height:8 }} />
+        if (line.match(/^[-•]\s/))
+          return (
+            <div key={i} style={{ display:'flex', gap:8, padding:'3px 0', alignItems:'flex-start' }}>
+              <span style={{ color:'var(--p2)', fontSize:14, flexShrink:0, marginTop:1 }}>▪</span>
+              <span style={{ color:'var(--text2)' }}>{renderInline(line.slice(2))}</span>
+            </div>
+          )
+        if (line.match(/^- \[[ x]\]/)) {
+          const checked = line.includes('[x]')
+          const content = line.replace(/^- \[[ x]\]\s*/, '')
+          return (
+            <div key={i} style={{ display:'flex', gap:8, padding:'3px 0', alignItems:'center' }}>
+              <span style={{ fontSize:14, color: checked ? 'var(--acc2)' : 'var(--text3)' }}>{checked ? '☑' : '☐'}</span>
+              <span style={{ color: checked ? 'var(--text3)' : 'var(--text2)', textDecoration: checked ? 'line-through' : 'none' }}>{content}</span>
+            </div>
+          )
+        }
+        if (line.match(/^-{3,}$/))
+          return <div key={i} style={{ height:1, background:'var(--border)', margin:'12px 0' }} />
+        if (line.startsWith('```'))
+          return null
+        return <p key={i} style={{ margin:'4px 0', color:'var(--text2)' }}>{renderInline(line)}</p>
+      })}
+    </div>
+  )
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -474,9 +537,7 @@ export default function Forecasts() {
             )}
 
             {/* Texte analyse */}
-            <div style={{ fontSize:13.5, color:'var(--text)', lineHeight:1.8, whiteSpace:'pre-wrap' }}>
-              {aiAnalysis}
-            </div>
+            <MarkdownText text={aiAnalysis} />
 
             {/* Actions */}
             <div style={{ display:'flex', gap:8, marginTop:16, paddingTop:16, borderTop:'1px solid var(--border)' }}>

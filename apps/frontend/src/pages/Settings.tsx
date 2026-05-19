@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useConfig, formatCurrency, t, ACCENT_PAIRS, useFormatAmount } from '@/stores/appStore'
+import { useConfig, formatCurrency, t, ACCENT_PAIRS, useFormatAmount, useAppStore } from '@/stores/appStore'
 import type { Currency, Lang } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { tenantApi, cronApi } from '@/lib/api'
@@ -121,6 +121,7 @@ const TABS: { id: Tab; key: string; icon: React.ReactNode }[] = [
 export default function Settings() {
   const cfg = useConfig()
   const fmt = useFormatAmount()
+  const { settingsLocked, lockSettings, unlockSettings } = useAppStore()
   const { user, updateUser } = useAuthStore()
   const [tab, setTab] = useState<Tab>('boutique')
   const [showReset, setShowReset] = useState(false)
@@ -402,6 +403,29 @@ export default function Settings() {
           {/* ════ LANGUE & DEVISE ════ */}
           {tab === 'langue' && (
             <div className="space-y-5">
+              {/* Banner verrouillage */}
+              {settingsLocked && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px',
+                  background: 'rgba(255,149,0,.08)',
+                  border: '1px solid rgba(255,149,0,.15)',
+                  borderRadius: 10,
+                }}>
+                  <span style={{ fontSize: 13, color: 'var(--acc)', flex: 1 }}>
+                    🔒 {cfg.lang === 'fr'
+                      ? 'Les paramètres langue/devise sont verrouillés'
+                      : 'Language/currency settings are locked'}
+                  </span>
+                  <button className="mini-btn" onClick={() => {
+                    unlockSettings()
+                    toast.success(cfg.lang === 'fr' ? '🔓 Paramètres déverrouillés' : '🔓 Settings unlocked')
+                  }}>
+                    🔓 {cfg.lang === 'fr' ? 'Déverrouiller' : 'Unlock'}
+                  </button>
+                </div>
+              )}
+
               {/* Langue */}
               <div className="panel">
                 <div className="panel-head"><span className="panel-title">🌍 {t('settings_language_label')}</span></div>
@@ -485,6 +509,20 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
+
+              {/* Bouton verrouiller */}
+              {!settingsLocked && (
+                <div className="flex justify-end">
+                  <button className="btn btn-primary gap-2" onClick={() => {
+                    lockSettings()
+                    toast.success(cfg.lang === 'fr'
+                      ? '✅ Paramètres sauvegardés et verrouillés'
+                      : '✅ Settings saved and locked')
+                  }}>
+                    🔒 {cfg.lang === 'fr' ? 'Verrouiller les paramètres' : 'Lock settings'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

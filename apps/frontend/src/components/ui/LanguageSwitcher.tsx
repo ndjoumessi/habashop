@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useConfig } from '@/stores/appStore'
+import { useConfig, useAppStore } from '@/stores/appStore'
 import type { Lang } from '@/stores/appStore'
 
 const LANGS: { code: Lang; flag: string; label: string }[] = [
@@ -11,6 +11,7 @@ const LANGS: { code: Lang; flag: string; label: string }[] = [
 
 export default function LanguageSwitcher() {
   const { lang, updateConfig } = useConfig()
+  const { settingsLocked } = useAppStore()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -28,12 +29,20 @@ export default function LanguageSwitcher() {
     <div ref={ref} style={{ position: 'relative' }}>
       <button
         className="icon-btn"
-        onClick={() => setOpen(o => !o)}
-        title="Changer la langue"
-        style={{ gap: 4, padding: '6px 10px', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)' }}
+        onClick={() => !settingsLocked && setOpen(o => !o)}
+        title={settingsLocked
+          ? (lang === 'fr' ? 'Configuré dans Paramètres' : 'Configured in Settings')
+          : 'Changer la langue'}
+        style={{
+          gap: 4, padding: '6px 10px', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)',
+          opacity: settingsLocked ? 0.5 : 1,
+          cursor: settingsLocked ? 'not-allowed' : 'pointer',
+          pointerEvents: settingsLocked ? 'none' : 'auto',
+        }}
       >
         <span>{current.flag}</span>
         <span style={{ color: 'var(--text2)', fontSize: 11 }}>{current.label}</span>
+        {settingsLocked && <span style={{ fontSize: 9 }}>🔒</span>}
       </button>
 
       {open && (

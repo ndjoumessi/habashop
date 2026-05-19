@@ -963,14 +963,16 @@ export default function POS() {
               {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
             </span>
             {cart.length > 0 && (
-              <div style={{
-                background: 'linear-gradient(135deg,var(--p),var(--p2))',
+              <span style={{
+                background: 'var(--p)',
                 color: '#fff', borderRadius: 20,
-                padding: '2px 9px', fontSize: 11,
+                padding: '2px 8px', fontSize: 11,
                 fontWeight: 800, fontFamily: 'var(--mono)',
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}>
-                {cart.reduce((s, i) => s + i.qty, 0)} {lang === 'fr' ? 'art.' : 'items'}
-              </div>
+                {cart.reduce((s, i) => s + i.qty, 0)}{' '}
+                {lang === 'fr' ? 'art.' : 'items'}
+              </span>
             )}
             {cashierSessionTx > 0 && (
               <span style={{
@@ -1003,11 +1005,12 @@ export default function POS() {
                 }}>🗑</button>
             )}
             <button type="button" onClick={() => setShowCloseModal(true)} style={{
-              fontSize: 10, color: 'var(--danger)',
-              background: 'rgba(232,64,74,.12)', border: '1px solid rgba(232,64,74,.25)',
-              borderRadius: 7, padding: '4px 8px', cursor: 'pointer',
+              fontSize: 11, color: 'var(--danger)',
+              background: 'rgba(232,64,74,.1)', border: '1px solid rgba(232,64,74,.2)',
+              borderRadius: 8, padding: '5px 10px', cursor: 'pointer',
               fontFamily: 'var(--font)', fontWeight: 700, flexShrink: 0,
-              display: 'flex', alignItems: 'center', gap: 3,
+              whiteSpace: 'nowrap',
+              display: 'flex', alignItems: 'center', gap: 4,
             }}>🔒 {lang === 'fr' ? 'Fermer' : 'Close'}</button>
           </div>
 

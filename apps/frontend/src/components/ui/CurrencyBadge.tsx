@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useConfig } from '@/stores/appStore'
+import { useConfig, useAppStore } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 
 const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
@@ -12,6 +12,7 @@ const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
 
 export default function CurrencyBadge() {
   const { currency, updateConfig } = useConfig()
+  const { settingsLocked } = useAppStore()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -29,12 +30,18 @@ export default function CurrencyBadge() {
     <div ref={ref} style={{ position: 'relative' }}>
       <button
         className="icon-btn"
-        onClick={() => setOpen(o => !o)}
-        title="Changer la devise"
-        style={{ gap: 4, padding: '6px 9px', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)' }}
+        onClick={() => !settingsLocked && setOpen(o => !o)}
+        title={settingsLocked ? 'Configuré dans Paramètres' : 'Changer la devise'}
+        style={{
+          gap: 4, padding: '6px 9px', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)',
+          opacity: settingsLocked ? 0.5 : 1,
+          cursor: settingsLocked ? 'not-allowed' : 'pointer',
+          pointerEvents: settingsLocked ? 'none' : 'auto',
+        }}
       >
         <span>{current.flag}</span>
         <span style={{ color: 'var(--acc)', letterSpacing: '-.3px' }}>{current.symbol}</span>
+        {settingsLocked && <span style={{ fontSize: 9 }}>🔒</span>}
       </button>
 
       {open && (

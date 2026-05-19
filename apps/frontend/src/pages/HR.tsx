@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import React from 'react'
 import { useFormatAmount, useAppStore } from '@/stores/appStore'
 import { employeesApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
@@ -169,8 +170,8 @@ export default function HR() {
   const [tab, setTab] = useState<'team'|'contracts'|'attendance'|'leaves'|'payroll'>('team')
   const [viewMode, setViewMode] = useState<'grid'|'table'>('grid')
   const [search, setSearch] = useState('')
-  const [deptFilter, setDeptFilter] = useState('Tous')
-  const [typeFilter, setTypeFilter] = useState('Tous')
+  const [deptFilter, setDeptFilter] = useState('all')
+  const [filterStatus, setFilterStatus] = useState('all')
   const [employees, setEmployees] = useState<Employee[]>(STATIC_EMPLOYEES)
   const [leaves, setLeaves] = useState<LeaveRequest[]>(LEAVE_INIT)
   const [showModal, setShowModal] = useState(false)
@@ -178,6 +179,10 @@ export default function HR() {
 
   // Payroll
   const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [bonuses, setBonuses] = useState<Record<string, number>>({})
+  const [showSalaryModal, setShowSalaryModal] = useState(false)
+  const [salaryTarget, setSalaryTarget] = useState<any>(null)
+  const [salaryHistory, setSalaryHistory] = useState<{empId:string; date:string; oldSalary:number; newSalary:number; reason:string}[]>([])
 
   // Planning
   const [planningWeek, setPlanningWeek] = useState(new Date())
@@ -217,15 +222,15 @@ export default function HR() {
       .catch(() => {})
   }, [])
 
-  const depts = useMemo(() => ['Tous', ...Array.from(new Set(employees.map(e => e.dept)))], [employees])
+  const depts = useMemo(() => Array.from(new Set(employees.map(e => e.dept))), [employees])
 
   const filtered = useMemo(() => (employees ?? []).filter(e => {
     const q = search.toLowerCase()
     const matchSearch = !q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q)
-    const matchDept = deptFilter === 'Tous' || e.dept === deptFilter
-    const matchType = typeFilter === 'Tous' || e.type === typeFilter
-    return matchSearch && matchDept && matchType
-  }), [employees, search, deptFilter, typeFilter])
+    const matchDept = deptFilter === 'all' || e.dept === deptFilter
+    const matchStatus = filterStatus === 'all' || (filterStatus === 'active' ? e.active : !e.active)
+    return matchSearch && matchDept && matchStatus
+  }), [employees, search, deptFilter, filterStatus])
 
   const totalPayroll = useMemo(() => (employees ?? []).filter(e => e.active).reduce((s, e) => s + e.salary, 0), [employees])
   const activeCount  = useMemo(() => (employees ?? []).filter(e => e.active).length, [employees])
@@ -323,94 +328,149 @@ export default function HR() {
       {/* ── TAB TEAM ── */}
       {tab === 'team' && (
         <>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <input className="input" placeholder="🔍 Rechercher..." value={search}
-              onChange={e => setSearch(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
-            <select className="input" value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={{ minWidth: 130 }}>
-              {depts.map(d => <option key={d}>{d}</option>)}
+          {/* Filtres compacts sur une ligne */}
+          <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:4, flexWrap:'wrap' }}>
+            {/* Recherche */}
+            <div style={{ position:'relative', flex:1, minWidth:180 }}>
+              <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>🔍</span>
+              <input className="input"
+                style={{ paddingLeft:32, height:36, fontSize:13 }}
+                placeholder={lang === 'fr' ? 'Rechercher...' : 'Search...'}
+                value={search}
+                onChange={e => setSearch(e.target.value)} />
+            </div>
+            {/* Filtre département */}
+            <select className="input"
+              style={{ width:'auto', height:36, fontSize:12 }}
+              value={deptFilter}
+              onChange={e => setDeptFilter(e.target.value)}>
+              <option value="all">{lang === 'fr' ? 'Tous les depts' : 'All depts'}</option>
+              {depts.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
-            <select className="input" value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ minWidth: 110 }}>
-              {['Tous','CDI','CDD'].map(t => <option key={t}>{t}</option>)}
+            {/* Filtre statut */}
+            <select className="input"
+              style={{ width:'auto', height:36, fontSize:12 }}
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}>
+              <option value="all">{lang === 'fr' ? 'Tous statuts' : 'All status'}</option>
+              <option value="active">{lang === 'fr' ? 'Actif' : 'Active'}</option>
+              <option value="inactive">{lang === 'fr' ? 'Inactif' : 'Inactive'}</option>
             </select>
-            <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 9, padding: 3 }}>
-              {(['grid','table'] as const).map(v => (
-                <button key={v} onClick={() => setViewMode(v)} style={{
-                  padding: '5px 11px', borderRadius: 7, fontSize: 13, border: 'none', cursor: 'pointer',
-                  background: viewMode === v ? 'var(--card)' : 'transparent',
-                  color: viewMode === v ? 'var(--text)' : 'var(--text3)',
-                  boxShadow: viewMode === v ? 'var(--sh-sm)' : 'none',
-                }}>
-                  {v === 'grid' ? '⊞' : '☰'}
-                </button>
+            {/* Toggle vue */}
+            <div style={{ display:'flex', gap:2, background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8, padding:3, flexShrink:0 }}>
+              {[{id:'grid',icon:'⊞'},{id:'table',icon:'☰'}].map(v => (
+                <button key={v.id} type="button"
+                  onClick={() => setViewMode(v.id as any)}
+                  style={{
+                    width:28, height:28, borderRadius:6, border:'none', cursor:'pointer', fontSize:14,
+                    background: viewMode === v.id ? 'var(--p)' : 'transparent',
+                    color: viewMode === v.id ? '#fff' : 'var(--text3)',
+                    transition:'all .15s',
+                  }}>{v.icon}</button>
               ))}
             </div>
+            {/* Bouton ajouter */}
+            <button className="topbar-btn"
+              style={{ height:36, padding:'0 14px', flexShrink:0 }}
+              onClick={() => { setSelectedEmp(null); setShowModal(true) }}>
+              + {lang === 'fr' ? 'Employé' : 'Employee'}
+            </button>
           </div>
 
           {/* Grid view */}
           {viewMode === 'grid' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px,1fr))', gap: 14 }}>
-              {filtered.map((emp, index) => {
-                const deptColor = DEPT_COLORS[emp.dept] ?? emp.color
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:12 }}>
+              {filtered.map(emp => {
+                const deptColor = DEPT_COLORS[emp.dept] ?? '#6C47FF'
+                const isActive  = emp.active
                 return (
-                  <div key={emp.id} className="panel" style={{
-                    padding: 0, cursor: 'pointer', overflow: 'hidden',
-                    border: '1px solid var(--border)',
-                    opacity: emp.active ? 1 : 0.65,
-                    transition: 'all .2s',
-                    animation: `slideIn ${index * 0.05}s ease both`,
+                  <div key={emp.id} style={{
+                    background:'linear-gradient(160deg,#0D0D1C,#111125)',
+                    border:'1px solid var(--border)',
+                    borderRadius:14, padding:0,
+                    overflow:'hidden', cursor:'pointer',
+                    transition:'all .18s',
+                    opacity: isActive ? 1 : .65,
                   }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.borderColor = deptColor + '50'
+                      el.style.transform = 'translateY(-2px)'
+                      el.style.boxShadow = `0 8px 24px ${deptColor}18`
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.borderColor = 'var(--border)'
+                      el.style.transform = 'none'
+                      el.style.boxShadow = 'none'
+                    }}
                     onClick={() => { setSelectedEmp(emp); setShowModal(true) }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = deptColor; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'none' }}
                   >
-                    {/* Dept color band */}
-                    <div style={{ height: 4, background: `linear-gradient(90deg, ${deptColor}, ${deptColor}88)` }} />
-                    <div style={{ padding: 18 }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
-                        <EmpAvatar emp={emp} size={44} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', marginBottom: 2 }}>{emp.name}</div>
-                          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{emp.role} · <span style={{ color: deptColor, fontWeight: 600 }}>{emp.dept}</span></div>
+                    {/* Barre couleur dept */}
+                    <div style={{ height:3, background:`linear-gradient(90deg,${deptColor},${deptColor}33)` }} />
+                    <div style={{ padding:'14px 16px' }}>
+                      {/* Avatar + Nom + Badge statut */}
+                      <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
+                        <div style={{
+                          width:44, height:44, borderRadius:12,
+                          background:`linear-gradient(135deg,${emp.color??'#6C47FF'},${emp.color??'#6C47FF'}66)`,
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                          fontSize:14, fontWeight:900, color:'#fff', flexShrink:0,
+                          boxShadow:`0 3px 10px ${emp.color??'#6C47FF'}35`,
+                        }}>
+                          {emp.avatar}
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                          <span style={{
-                            fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-                            background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
-                            color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
-                          }}>{emp.type}</span>
-                          {!emp.active && (
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'var(--bg3)', color: 'var(--text3)' }}>Inactif</span>
-                          )}
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13, fontWeight:800, color:'var(--text)', lineHeight:1.2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{emp.name}</div>
+                          <div style={{ fontSize:11, color:'var(--text3)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{emp.role}</div>
                         </div>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
-                        {[
-                          { label: 'Ancienneté',  value: calcAnciennete(emp.hiredAt) },
-                          { label: 'Heures',      value: calcHeures(emp.id) },
-                          { label: 'Ponctualité', value: calcPonctualite(emp.id) + '%' },
-                        ].map(s => (
-                          <div key={s.label} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>{s.label}</div>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>{s.value}</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--p2)' }}>
-                          {fmt(emp.salary)}<span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500 }}>/mois</span>
+                        <span style={{
+                          fontSize:9, fontWeight:700, textTransform:'uppercase',
+                          background: isActive ? 'rgba(0,208,132,.1)' : 'rgba(255,59,92,.1)',
+                          color: isActive ? 'var(--acc2)' : 'var(--danger)',
+                          border:`1px solid ${isActive ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
+                          borderRadius:20, padding:'2px 7px', flexShrink:0,
+                        }}>
+                          {isActive ? (lang==='fr'?'Actif':'Active') : (lang==='fr'?'Inactif':'Inactive')}
                         </span>
-                        {emp.perf != null && <Stars v={emp.perf} />}
+                      </div>
+                      {/* Métriques 2 cols */}
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:10 }}>
+                        <div style={{ background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8, padding:'7px 9px' }}>
+                          <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
+                            {lang==='fr'?'Salaire':'Salary'}
+                          </div>
+                          <div style={{ fontSize:12, fontWeight:900, color:'var(--acc)', fontFamily:'var(--mono)' }}>{fmt(Number(emp.salary)||0)}</div>
+                        </div>
+                        <div style={{ background:`${deptColor}0D`, border:`1px solid ${deptColor}1A`, borderRadius:8, padding:'7px 9px' }}>
+                          <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>Dept</div>
+                          <div style={{ fontSize:11, fontWeight:700, color:deptColor, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{emp.dept}</div>
+                        </div>
+                      </div>
+                      {/* Footer card */}
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <span style={{ fontSize:10, fontWeight:600, color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:5, padding:'2px 7px' }}>{emp.type}</span>
+                        <div style={{ display:'flex', gap:1 }}>
+                          {[1,2,3,4,5].map(s => (
+                            <span key={s} style={{ fontSize:9, opacity: s<=(emp.perf??3) ? 1 : .2 }}>⭐</span>
+                          ))}
+                        </div>
+                        <button type="button"
+                          onClick={e => { e.stopPropagation(); setSelectedEmp(emp); setShowModal(true) }}
+                          style={{
+                            width:26, height:26, borderRadius:7,
+                            background:'rgba(255,149,0,.1)', border:'1px solid rgba(255,149,0,.2)',
+                            cursor:'pointer', fontSize:11, color:'var(--acc)',
+                            display:'flex', alignItems:'center', justifyContent:'center',
+                          }}>✏️</button>
                       </div>
                     </div>
                   </div>
                 )
               })}
-
               {filtered.length === 0 && (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px 0', color: 'var(--text3)', fontSize: 14 }}>
-                  Aucun employé trouvé
+                <div style={{ gridColumn:'1/-1', textAlign:'center', padding:'40px 0', color:'var(--text3)', fontSize:14 }}>
+                  {lang==='fr' ? 'Aucun employé trouvé' : 'No employee found'}
                 </div>
               )}
             </div>
@@ -567,103 +627,229 @@ export default function HR() {
 
       {/* ── TAB PAYROLL ── */}
       {tab === 'payroll' && (
-        <div className="panel">
-          <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <span className="panel-t">💰 {lang === 'fr' ? 'Masse salariale' : 'Payroll'}</span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <input className="input" type="month" style={{ width: 'auto' }}
-                value={payrollMonth}
-                onChange={e => setPayrollMonth(e.target.value)} />
-              <button className="btn btn-sm" onClick={() => {
-                const BOM = '﻿'
-                const activeEmps = (employees ?? []).filter(e => e.active)
-                const rows = [
-                  ['Employé','Rôle','Département','Type','Brut','CNSS 8%','IR 5%','Net','Statut'],
-                  ...activeEmps.map(emp => {
-                    const brut = emp.salary
-                    const cnss = Math.round(brut * 0.08)
-                    const ir   = Math.round(brut * 0.05)
-                    const net  = brut - cnss - ir
-                    return [emp.name, emp.role, emp.dept, emp.type, brut, cnss, ir, net, 'Payé']
-                  }),
-                ]
-                const csv = BOM + rows.map(r => r.join(';')).join('\r\n')
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = `Paie_${payrollMonth}.csv`
-                a.click()
-                URL.revokeObjectURL(url)
-                toast.success('📊 Export paie téléchargé !')
-              }}>
-                <Download size={14} /> {lang === 'fr' ? 'Export CSV' : 'Export CSV'}
-              </button>
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+
+          {/* Contrôles */}
+          <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+            <input className="input" type="month"
+              style={{ width:'auto' }}
+              value={payrollMonth}
+              onChange={e => setPayrollMonth(e.target.value)} />
+            <button className="btn btn-sm" onClick={() => {
+              const BOM = '﻿'
+              const activeEmps = (employees ?? []).filter(e => e.active)
+              const rows = [
+                ['Employé','Rôle','Brut','Prime','CNSS 8%','IR 5%','Net'],
+                ...activeEmps.map(emp => {
+                  const brut  = emp.salary
+                  const bonus = bonuses[String(emp.id)] ?? 0
+                  const total = brut + bonus
+                  const cnss  = Math.round(total * 0.08)
+                  const ir    = Math.round(total * 0.05)
+                  const net   = total - cnss - ir
+                  return [emp.name, emp.role, brut, bonus, cnss, ir, net]
+                }),
+              ]
+              const csv = BOM + rows.map(r => r.join(';')).join('\r\n')
+              const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url; a.download = `Paie_${payrollMonth}.csv`; a.click()
+              URL.revokeObjectURL(url)
+              toast.success('📊 Export paie téléchargé !')
+            }}><Download size={14} /> CSV</button>
+            <button className="btn btn-primary btn-sm"
+              onClick={() => toast.success('📄 Fiches de paie générées !')}>
+              📄 {lang === 'fr' ? 'Fiches PDF' : 'Pay slips'}
+            </button>
+          </div>
+
+          {/* KPIs paie */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+            {[
+              { label: lang==='fr' ? 'Masse salariale brute' : 'Gross payroll', value: fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)), color:'var(--p2)' },
+              { label: 'CNSS (8%)', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08)), color:'var(--danger)' },
+              { label: lang==='fr' ? 'Net à payer' : 'Net to pay', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.92)), color:'var(--acc2)' },
+            ].map(k => (
+              <div key={k.label} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
+                <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
+                <div style={{ fontSize:20, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tableau paie */}
+          <div className="panel">
+            <div className="panel-h">
+              <span className="panel-t">
+                💰 {lang==='fr' ? 'Détail de la paie' : 'Payroll detail'}{' — '}
+                {new Date(payrollMonth+'-01').toLocaleDateString(lang==='fr'?'fr-FR':'en-US',{month:'long',year:'numeric'})}
+              </span>
               <button className="btn btn-primary btn-sm"
-                onClick={() => toast.success('📄 Fiches de paie générées !')}>
-                📄 {lang === 'fr' ? 'Fiches PDF' : 'Pay slips'}
+                onClick={() => { setShowSalaryModal(true); setSalaryTarget(null) }}>
+                + {lang==='fr' ? 'Prime collective' : 'Collective bonus'}
               </button>
             </div>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
+                    <th style={{textAlign:'right'}}>{lang==='fr'?'BRUT':'GROSS'}</th>
+                    <th style={{textAlign:'right'}}>{lang==='fr'?'PRIME':'BONUS'}</th>
+                    <th style={{textAlign:'right'}}>CNSS 8%</th>
+                    <th style={{textAlign:'right'}}>IR 5%</th>
+                    <th style={{textAlign:'right'}}>NET</th>
+                    <th style={{textAlign:'center'}}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(employees ?? []).filter(e => e.active).map(emp => {
+                    const empId = String(emp.id)
+                    const brut  = Number(emp.salary)||0
+                    const bonus = bonuses[empId] ?? 0
+                    const total = brut + bonus
+                    const cnss  = Math.round(total * 0.08)
+                    const ir    = Math.round(total * 0.05)
+                    const net   = total - cnss - ir
+                    return (
+                      <tr key={emp.id}>
+                        <td>
+                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                            <EmpAvatar emp={emp} size={32} />
+                            <div>
+                              <div style={{ fontWeight:700, fontSize:13 }}>{emp.name}</div>
+                              <div style={{ fontSize:10, color:'var(--text3)' }}>{emp.role}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:700 }}>{fmt(brut)}</td>
+                        <td style={{ textAlign:'right' }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'flex-end' }}>
+                            <span style={{ fontFamily:'var(--mono)', fontSize:12, color: bonus>0 ? 'var(--acc2)' : 'var(--text3)' }}>
+                              {bonus>0 ? `+${fmt(bonus)}` : '—'}
+                            </span>
+                            <button type="button"
+                              onClick={() => { setSalaryTarget(emp); setShowSalaryModal(true) }}
+                              style={{ width:20, height:20, borderRadius:5, background:'rgba(0,208,132,.1)', border:'1px solid rgba(0,208,132,.2)', cursor:'pointer', fontSize:10, color:'var(--acc2)', display:'flex', alignItems:'center', justifyContent:'center' }}>+</button>
+                          </div>
+                        </td>
+                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', fontSize:12 }}>− {fmt(cnss)}</td>
+                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', fontSize:12 }}>− {fmt(ir)}</td>
+                        <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:900, color:'var(--acc2)' }}>{fmt(net)}</td>
+                        <td style={{ textAlign:'center' }}>
+                          <button className="btn btn-sm" style={{ fontSize:10, padding:'3px 8px' }}
+                            onClick={() => { setSalaryTarget({...emp, mode:'raise'}); setShowSalaryModal(true) }}>
+                            📈 {lang==='fr'?'Augmenter':'Raise'}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background:'var(--bg4)' }}>
+                    <td style={{ fontWeight:800, color:'var(--text)', padding:'12px 14px' }}>TOTAL</td>
+                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:800, color:'var(--p2)', padding:'12px 14px' }}>{fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0))}</td>
+                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</td>
+                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08))}</td>
+                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.05))}</td>
+                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:900, fontSize:15, color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.87))}</td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, paddingLeft: 2 }}>
-            {new Date(payrollMonth + '-01').toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })}
-            {' · '}<span style={{ fontWeight: 900, color: 'var(--p2)' }}>{fmt(totalPayroll)}</span>
-          </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Employé</th>
-                  <th>Poste</th>
-                  <th>Contrat</th>
-                  <th style={{ textAlign: 'right' }}>Salaire brut</th>
-                  <th style={{ textAlign: 'right' }}>CNSS 8%</th>
-                  <th style={{ textAlign: 'right' }}>IR 5%</th>
-                  <th style={{ textAlign: 'right' }}>Net à payer</th>
-                  <th style={{ textAlign: 'center' }}>Statut</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(employees ?? []).filter(e => e.active).map(emp => {
-                  const cnss = Math.round(emp.salary * 0.08)
-                  const ir   = Math.round(emp.salary * 0.05)
-                  const net  = emp.salary - cnss - ir
+
+          {/* Historique augmentations */}
+          {salaryHistory.length > 0 && (
+            <div className="panel">
+              <div className="panel-h">
+                <span className="panel-t">📈 {lang==='fr' ? 'Historique augmentations' : 'Salary history'}</span>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {salaryHistory.map((h, i) => {
+                  const emp = employees.find(e => String(e.id) === h.empId)
+                  const diff = h.newSalary - h.oldSalary
+                  const pct  = h.oldSalary > 0 ? Math.round((diff/h.oldSalary)*100) : 0
                   return (
-                    <tr key={emp.id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <EmpAvatar emp={emp} size={32} />
-                          <span style={{ fontWeight: 700 }}>{emp.name}</span>
-                        </div>
-                      </td>
-                      <td style={{ color: 'var(--text3)', fontSize: 13 }}>{emp.role}</td>
-                      <td>
-                        <span style={{
-                          fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                          background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
-                          color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
-                        }}>{emp.type}</span>
-                      </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700 }}>{fmt(emp.salary)}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--danger)', fontSize: 12 }}>− {fmt(cnss)}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--danger)', fontSize: 12 }}>− {fmt(ir)}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 900, color: 'var(--acc2)' }}>{fmt(net)}</td>
-                      <td style={{ textAlign: 'center' }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(14,196,126,.12)', color: 'var(--acc2)' }}>✓ Payé</span>
-                      </td>
-                    </tr>
+                    <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:10 }}>
+                      {emp && <EmpAvatar emp={emp} size={32} />}
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>{emp?.name ?? h.empId}</div>
+                        <div style={{ fontSize:11, color:'var(--text3)' }}>{h.date} · {h.reason}</div>
+                      </div>
+                      <div style={{ textAlign:'right' }}>
+                        <div style={{ fontSize:13, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(h.oldSalary)} → {fmt(h.newSalary)}</div>
+                        <div style={{ fontSize:11, fontWeight:700, color:'var(--acc2)' }}>+{pct}%</div>
+                      </div>
+                    </div>
                   )
                 })}
-                <tr style={{ background: 'rgba(108,71,255,.06)', fontWeight: 900 }}>
-                  <td colSpan={3} style={{ fontWeight: 900, color: 'var(--text)' }}>TOTAL</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 900 }}>{fmt(totalPayroll)}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--danger)' }}>− {fmt(Math.round(totalPayroll * 0.08))}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', color: 'var(--danger)' }}>− {fmt(Math.round(totalPayroll * 0.05))}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 900, color: 'var(--p2)' }}>{fmt(totalPayroll - Math.round(totalPayroll * 0.08) - Math.round(totalPayroll * 0.05))}</td>
-                  <td />
-                </tr>
-              </tbody>
-            </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── MODAL PRIME / AUGMENTATION ── */}
+      {showSalaryModal && (
+        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget && setShowSalaryModal(false)}>
+          <div className="modal-box" style={{ maxWidth:400 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
+              <h3 style={{ fontSize:15, fontWeight:900, color:'var(--text)', margin:0 }}>
+                {salaryTarget?.mode === 'raise'
+                  ? `📈 ${lang==='fr' ? 'Augmentation salariale' : 'Salary raise'}`
+                  : `🎁 ${lang==='fr' ? 'Ajouter une prime' : 'Add bonus'}${salaryTarget ? ` — ${salaryTarget.name}` : ''}`}
+              </h3>
+              <button className="btn btn-sm" onClick={() => setShowSalaryModal(false)}>✕</button>
+            </div>
+            {salaryTarget?.mode === 'raise' ? (
+              <SalaryRaiseForm
+                emp={salaryTarget}
+                lang={lang}
+                fmt={fmt}
+                onConfirm={(newSalary: number, reason: string) => {
+                  const oldSalary = Number(salaryTarget.salary)||0
+                  setSalaryHistory(prev => [...prev, {
+                    empId: String(salaryTarget.id),
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    oldSalary, newSalary, reason,
+                  }])
+                  setEmployees((prev: Employee[]) => prev.map(e =>
+                    e.id === salaryTarget.id ? {...e, salary:newSalary} : e
+                  ))
+                  employeesApi.update(String(salaryTarget.id), { salary:newSalary }).catch(()=>{})
+                  toast.success(`✅ Salaire mis à jour : ${fmt(newSalary)}`)
+                  setShowSalaryModal(false)
+                }}
+                onClose={() => setShowSalaryModal(false)}
+              />
+            ) : (
+              <BonusForm
+                emp={salaryTarget}
+                employees={(employees ?? []).filter(e => e.active)}
+                lang={lang}
+                fmt={fmt}
+                onConfirm={(empId: string|'all', amount: number) => {
+                  if (empId === 'all') {
+                    const newBonuses: Record<string,number> = {}
+                    employees.filter(e=>e.active).forEach(e => {
+                      newBonuses[String(e.id)] = (bonuses[String(e.id)]??0) + amount
+                    })
+                    setBonuses(prev => ({...prev, ...newBonuses}))
+                    toast.success(`✅ Prime collective ${fmt(amount)} ajoutée`)
+                  } else {
+                    setBonuses(prev => ({...prev, [empId]: (prev[empId]??0)+amount}))
+                    const e = employees.find(e => String(e.id) === empId)
+                    toast.success(`✅ Prime ${fmt(amount)} → ${e?.name}`)
+                  }
+                  setShowSalaryModal(false)
+                }}
+                onClose={() => setShowSalaryModal(false)}
+              />
+            )}
           </div>
         </div>
       )}
@@ -1109,6 +1295,98 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
             {emp ? '💾 Enregistrer' : '➕ Ajouter'}
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── SalaryRaiseForm ──────────────────────────────────────────────────────────
+
+function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
+  const [newSalary, setNewSalary] = useState(emp.salary)
+  const [reason, setReason]       = useState('')
+  const diff = newSalary - (Number(emp.salary)||0)
+  const pct  = Number(emp.salary) > 0 ? Math.round((diff/Number(emp.salary))*100) : 0
+
+  const lbl: React.CSSProperties = { display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+      <div style={{ padding:'12px 16px', background:'rgba(108,71,255,.06)', border:'1px solid rgba(108,71,255,.12)', borderRadius:10, display:'flex', justifyContent:'space-between' }}>
+        <span style={{ fontSize:12, color:'var(--text2)' }}>{lang==='fr' ? 'Salaire actuel' : 'Current salary'}</span>
+        <span style={{ fontFamily:'var(--mono)', fontWeight:800, color:'var(--text)' }}>{fmt(Number(emp.salary)||0)}</span>
+      </div>
+      <div>
+        <label style={lbl}>{lang==='fr' ? 'NOUVEAU SALAIRE' : 'NEW SALARY'}</label>
+        <input className="input" type="number" value={newSalary} onChange={e => setNewSalary(+e.target.value)} />
+        {diff !== 0 && (
+          <div style={{ marginTop:6, fontSize:12, fontWeight:700, color: diff>0 ? 'var(--acc2)' : 'var(--danger)' }}>
+            {diff>0 ? '↑' : '↓'} {fmt(Math.abs(diff))} ({diff>0?'+':''}{pct}%)
+          </div>
+        )}
+      </div>
+      <div>
+        <label style={lbl}>{lang==='fr' ? 'MOTIF' : 'REASON'}</label>
+        <input className="input" placeholder={lang==='fr' ? 'Ex: Promotion, Ancienneté...' : 'Ex: Promotion, Seniority...'} value={reason} onChange={e => setReason(e.target.value)} />
+      </div>
+      <div style={{ display:'flex', gap:8 }}>
+        <button className="btn btn-primary" style={{ flex:1 }} onClick={() => { if (newSalary <= 0) return; onConfirm(newSalary, reason || 'Augmentation') }}>
+          ✅ {lang==='fr' ? 'Confirmer' : 'Confirm'}
+        </button>
+        <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang==='fr' ? 'Annuler' : 'Cancel'}</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── BonusForm ────────────────────────────────────────────────────────────────
+
+function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
+  const [targetEmpId, setTargetEmpId] = useState(emp?.id != null ? String(emp.id) : 'all')
+  const [amount, setAmount]           = useState(0)
+  const [type, setType]               = useState('Performance')
+
+  const BONUS_TYPES: Record<string, string[]> = {
+    fr:['Performance','Ancienneté','Fête','Transport','Logement','Autre'],
+    en:['Performance','Seniority','Holiday','Transport','Housing','Other'],
+    es:['Rendimiento','Antigüedad','Festivo','Transporte','Vivienda','Otro'],
+    it:['Prestazione','Anzianità','Festività','Trasporto','Alloggio','Altro'],
+  }
+  const bTypes = BONUS_TYPES[lang] ?? BONUS_TYPES.fr
+  const lbl: React.CSSProperties = { display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+      <div>
+        <label style={lbl}>{lang==='fr' ? 'BÉNÉFICIAIRE' : 'RECIPIENT'}</label>
+        <select className="input" value={targetEmpId} onChange={e => setTargetEmpId(e.target.value)}>
+          <option value="all">🌍 {lang==='fr' ? "Toute l'équipe" : 'All team'}</option>
+          {employees.map((e: any) => <option key={e.id} value={String(e.id)}>{e.name}</option>)}
+        </select>
+      </div>
+      <div>
+        <label style={lbl}>{lang==='fr' ? 'TYPE DE PRIME' : 'BONUS TYPE'}</label>
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+          {bTypes.map((t: string) => (
+            <button key={t} type="button" onClick={() => setType(t)} style={{
+              padding:'5px 12px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)',
+              background: type===t ? 'rgba(0,208,132,.15)' : 'var(--bg4)',
+              border:`1px solid ${type===t ? 'rgba(0,208,132,.3)' : 'var(--border)'}`,
+              color: type===t ? 'var(--acc2)' : 'var(--text3)',
+              transition:'all .12s',
+            }}>{t}</button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label style={lbl}>{lang==='fr' ? 'MONTANT' : 'AMOUNT'}</label>
+        <input className="input" type="number" placeholder="0" value={amount || ''} onChange={e => setAmount(+e.target.value)} />
+      </div>
+      <div style={{ display:'flex', gap:8 }}>
+        <button className="btn btn-primary" style={{ flex:1 }} onClick={() => { if (amount <= 0) return; onConfirm(targetEmpId, amount) }}>
+          ✅ {lang==='fr' ? 'Ajouter la prime' : 'Add bonus'}
+        </button>
+        <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang==='fr' ? 'Annuler' : 'Cancel'}</button>
       </div>
     </div>
   )
