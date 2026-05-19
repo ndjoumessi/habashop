@@ -654,6 +654,17 @@ export default function Settings() {
                   </div>
                 </div>
 
+                <div>
+                  <Label>Fond de caisse par défaut</Label>
+                  <div style={{ position: 'relative' }}>
+                    <input className="input text-sm" type="number" min={0} step={1000}
+                      value={cfg.posDefaultFund}
+                      onChange={e => cfg.updateConfig({ posDefaultFund: +e.target.value })}
+                      style={{ paddingRight: 60 }} />
+                    <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', pointerEvents: 'none' }}>FCFA</span>
+                  </div>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Montant pré-rempli à l'ouverture de la caisse</p>
+                </div>
                 <div className="space-y-3">
                   <ToggleRow label={t('settings_pos_show_stock')} sub="Affiche la quantité disponible sous chaque produit"
                     value={cfg.posShowStockOnTile} onChange={v => cfg.updateConfig({ posShowStockOnTile: v })} />
@@ -665,6 +676,10 @@ export default function Settings() {
                     value={cfg.enableLoyalty} onChange={v => cfg.updateConfig({ enableLoyalty: v })} />
                   <ToggleRow label="Ouverture de caisse obligatoire" sub="Exiger l'ouverture de caisse avant toute vente"
                     value={cfg.requireCashier} onChange={v => cfg.updateConfig({ requireCashier: v })} />
+                  <ToggleRow label="Scanner codes-barres" sub="Active le scanner de codes-barres intégré"
+                    value={cfg.enableScanner} onChange={v => cfg.updateConfig({ enableScanner: v })} />
+                  <ToggleRow label="WhatsApp automatique" sub="Envoie automatiquement le ticket par WhatsApp"
+                    value={cfg.autoWhatsApp} onChange={v => cfg.updateConfig({ autoWhatsApp: v })} />
                 </div>
 
                 <div className="flex justify-end">

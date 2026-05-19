@@ -138,7 +138,8 @@ export default function POS() {
     cashierOpen, cashierOpenedAt,
     cashierOpeningFund, cashierSessionTx, cashierSessionCA,
     openCashier, closeCashier, addCashierSale,
-    posTaxRate, posShowStockOnTile,
+    posTaxRate, posShowStockOnTile, posDefaultFund,
+    enableScanner: posEnableScanner, autoWhatsApp: posAutoWhatsApp,
   } = useAppStore()
   const fmt = useFormatAmount()
   const LOCALE_MAP: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
@@ -171,7 +172,7 @@ export default function POS() {
   const [search, setSearch]       = useState('')
   const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mobile'>('cash')
   const [customerPhone, setCustomerPhone] = useState('')
-  const [sendWhatsApp, setSendWhatsApp]   = useState(false)
+  const [sendWhatsApp, setSendWhatsApp]   = useState(() => posAutoWhatsApp)
   const [sendingWA, setSendingWA]         = useState(false)
   const [cashGiven, setCashGiven] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -224,7 +225,7 @@ export default function POS() {
   }
 
   // ─── CAISSE (état local uniquement pour l'input) ─
-  const [openingFundInput, setOpeningFundInput] = useState('')
+  const [openingFundInput, setOpeningFundInput] = useState(() => posDefaultFund > 0 ? String(posDefaultFund) : '')
   const [showCloseModal, setShowCloseModal]     = useState(false)
 
   // Fond de caisse : l'input est dans la devise active, on stocke en XOF
@@ -643,17 +644,19 @@ export default function POS() {
                   onChange={e => setSearch(e.target.value)}
                 />
               </div>
-              <button
-                onClick={() => setShowScanner(true)}
-                title="Scanner un code-barres"
-                style={{
-                  width: 40, height: 40, borderRadius: 10, fontSize: 18,
-                  cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
-                  background: 'var(--bg3)', border: '1px solid var(--border)',
-                  color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >📷</button>
+              {posEnableScanner && (
+                <button
+                  onClick={() => setShowScanner(true)}
+                  title="Scanner un code-barres"
+                  style={{
+                    width: 40, height: 40, borderRadius: 10, fontSize: 18,
+                    cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+                    background: 'var(--bg3)', border: '1px solid var(--border)',
+                    color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >📷</button>
+              )}
             </div>
           )}
 

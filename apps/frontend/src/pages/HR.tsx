@@ -5,6 +5,7 @@ import { employeesApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
 import { Download, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +24,8 @@ interface Employee {
   phone: string
   email: string
   perf?: number
+  address?: string
+  photoUrl?: string
 }
 
 interface LeaveRequest {
@@ -178,6 +181,12 @@ export default function HR() {
   const [showEditEmpModal, setShowEditEmpModal] = useState(false)
   const [editEmpForm, setEditEmpForm] = useState<any>({})
 
+  // Contracts
+  const [showNewContractModal, setShowNewContractModal] = useState(false)
+  const [showContractDetailModal, setShowContractDetailModal] = useState(false)
+  const [selectedContract, setSelectedContract] = useState<Employee | null>(null)
+  const [contractForm, setContractForm] = useState({ empId: '', type: 'CDI', hiredAt: new Date().toISOString().split('T')[0], contractEnd: '', salary: 0, role: '', dept: 'Ventes' })
+
   // Payroll
   const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0, 7))
   const [payTab, setPayTab] = useState<'grid'|'payslip'|'bonuses'|'history'>('grid')
@@ -315,7 +324,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
   }
 
   const generateAllPayslips = () => {
-    const actifs = employees.filter(e => e.isActive !== false && e.active !== false)
+    const actifs = employees.filter(e => e.active !== false)
     actifs.forEach((emp, i) => {
       const brut  = Number(emp.salary)||0
       const bonus = bonuses[String(emp.id)] ?? 0
@@ -492,7 +501,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     }}
                     onClick={() => {
                       setSelectedEmp(emp)
-                      setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'' })
+                      setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'', photoUrl:emp.photoUrl??'', address:emp.address??'' })
                       setShowEditEmpModal(true)
                     }}
                   >
@@ -546,7 +555,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                           ))}
                         </div>
                         <button type="button"
-                          onClick={e => { e.stopPropagation(); setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'' }); setShowEditEmpModal(true) }}
+                          onClick={e => { e.stopPropagation(); setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'', photoUrl:emp.photoUrl??'', address:emp.address??'' }); setShowEditEmpModal(true) }}
                           style={{
                             width:26, height:26, borderRadius:7,
                             background:'rgba(255,149,0,.1)', border:'1px solid rgba(255,149,0,.2)',
@@ -584,7 +593,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   </thead>
                   <tbody>
                     {filtered.map(emp => (
-                      <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'' }); setShowEditEmpModal(true) }} style={{ cursor: 'pointer' }}>
+                      <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'', photoUrl:emp.photoUrl??'', address:emp.address??'' }); setShowEditEmpModal(true) }} style={{ cursor: 'pointer' }}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <EmpAvatar emp={emp} size={32} />
@@ -636,7 +645,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         <div className="panel">
           <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
             <span className="panel-t">📄 {lang === 'fr' ? 'Contrats en cours' : 'Active contracts'}</span>
-            <button className="btn btn-primary btn-sm" onClick={() => { setSelectedEmp(null); setShowModal(true) }}>
+            <button className="btn btn-primary btn-sm" onClick={() => { setContractForm({ empId: '', type: 'CDI', hiredAt: new Date().toISOString().split('T')[0], contractEnd: '', salary: 0, role: '', dept: 'Ventes' }); setShowNewContractModal(true) }}>
               <Plus size={14} /> {lang === 'fr' ? 'Nouveau contrat' : 'New contract'}
             </button>
           </div>
@@ -665,7 +674,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       })()
                     : false
                   return (
-                    <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'' }); setShowEditEmpModal(true) }} style={{ cursor: 'pointer' }}>
+                    <tr key={emp.id} onClick={() => { setSelectedContract(emp); setShowContractDetailModal(true) }} style={{ cursor: 'pointer' }}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <EmpAvatar emp={emp} size={32} />
@@ -1413,9 +1422,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             {/* HEADER */}
             <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'}18,${editEmpForm.color??'#6C47FF'}05)`, borderBottom:'1px solid rgba(255,255,255,.06)', flexShrink:0 }}>
               <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                <div style={{ width:60, height:60, borderRadius:18, background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'},${editEmpForm.color??'#6C47FF'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'#6C47FF'}50`, border:`2px solid ${editEmpForm.color??'#6C47FF'}40`, letterSpacing:'-1px' }}>
-                  {(editEmpForm.name || selectedEmp.name || '??').split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()}
+                <div
+                  style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'},${editEmpForm.color??'#6C47FF'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'#6C47FF'}50`, border:`2px solid ${editEmpForm.color??'#6C47FF'}40`, letterSpacing:'-1px', cursor:'pointer', position:'relative' }}
+                  title={lang==='fr'?'Cliquer pour changer la photo':'Click to change photo'}
+                  onClick={() => (document.getElementById('emp-photo-input') as HTMLInputElement)?.click()}>
+                  {editEmpForm.photoUrl
+                    ? <img src={editEmpForm.photoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    : (editEmpForm.name || selectedEmp.name || '??').split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()
+                  }
                 </div>
+                <input id="emp-photo-input" type="file" accept="image/*" style={{ display:'none' }} onChange={e => {
+                  const f = e.target.files?.[0]
+                  if (!f) return
+                  if (f.size > 2 * 1024 * 1024) { toast.error(lang==='fr'?'Photo trop lourde (max 2MB)':'Photo too large (max 2MB)'); return }
+                  const r = new FileReader()
+                  r.onload = ev => setEditEmpForm((fm:any) => ({ ...fm, photoUrl: ev.target?.result as string }))
+                  r.readAsDataURL(f)
+                  e.target.value = ''
+                }} />
                 <div style={{ flex:1, minWidth:0 }}>
                   <h3 style={{ fontSize:18, fontWeight:900, color:'var(--text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                     {editEmpForm.name || selectedEmp.name}
@@ -1525,6 +1549,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>Email</label>
                     <input className="input" type="email" placeholder="nom@email.com" value={editEmpForm.email??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, email:e.target.value }))} />
                   </div>
+                  <div style={{ gridColumn:'1/-1' }}>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Adresse':'Address'}</label>
+                    <AddressAutocomplete
+                      value={editEmpForm.address??''}
+                      onChange={v => setEditEmpForm((f:any) => ({ ...f, address:v }))}
+                      placeholder={lang==='fr'?'Rue 10 × 23, Dakar, Sénégal':'Street address...'}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1601,6 +1633,154 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       )}
 
       {/* ── MODAL LEAVE REQUEST ── */}
+      {/* ── MODAL NOUVEAU CONTRAT ── */}
+      {showNewContractModal && (
+        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
+          <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, padding:28, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--sh-xl)' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
+              <h3 style={{ margin:0, fontSize:17, fontWeight:900, color:'var(--text)' }}>📄 {lang==='fr'?'Nouveau contrat':'New contract'}</h3>
+              <button onClick={()=>setShowNewContractModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)' }}><X size={18}/></button>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div>
+                <label style={labelStyle}>{lang==='fr'?'NOM DE L\'EMPLOYÉ':'EMPLOYEE NAME'}</label>
+                <input className="input" placeholder={lang==='fr'?'Aminata Diallo':'Employee name'} value={contractForm.empId} onChange={e=>setContractForm(f=>({...f,empId:e.target.value}))}/>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div>
+                  <label style={labelStyle}>{lang==='fr'?'POSTE':'POSITION'}</label>
+                  <input className="input" placeholder={lang==='fr'?'Ex: Caissière':'Ex: Cashier'} value={contractForm.role} onChange={e=>setContractForm(f=>({...f,role:e.target.value}))}/>
+                </div>
+                <div>
+                  <label style={labelStyle}>{lang==='fr'?'DÉPARTEMENT':'DEPARTMENT'}</label>
+                  <select className="input" value={contractForm.dept} onChange={e=>setContractForm(f=>({...f,dept:e.target.value}))}>
+                    {Object.keys(DEPT_COLORS).map(d=><option key={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>{lang==='fr'?'TYPE CONTRAT':'CONTRACT TYPE'}</label>
+                  <select className="input" value={contractForm.type} onChange={e=>setContractForm(f=>({...f,type:e.target.value}))}>
+                    {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t=><option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>{lang==='fr'?'DATE DÉBUT':'START DATE'}</label>
+                  <input className="input" type="date" value={contractForm.hiredAt} onChange={e=>setContractForm(f=>({...f,hiredAt:e.target.value}))}/>
+                </div>
+                {contractForm.type==='CDD'&&(
+                  <div style={{ gridColumn:'1/-1' }}>
+                    <label style={labelStyle}>{lang==='fr'?'DATE FIN CONTRAT':'CONTRACT END DATE'}</label>
+                    <input className="input" type="date" value={contractForm.contractEnd} onChange={e=>setContractForm(f=>({...f,contractEnd:e.target.value}))}/>
+                  </div>
+                )}
+                <div style={{ gridColumn:'1/-1' }}>
+                  <label style={labelStyle}>{lang==='fr'?'SALAIRE BRUT':'GROSS SALARY'}</label>
+                  <div style={{ position:'relative' }}>
+                    <input className="input" type="number" placeholder="150000" value={contractForm.salary||''} onChange={e=>setContractForm(f=>({...f,salary:+e.target.value}))} style={{ paddingRight:60 }}/>
+                    <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>FCFA</span>
+                  </div>
+                  {contractForm.salary>0&&(
+                    <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
+                      <span>CNSS: <strong style={{color:'var(--danger)'}}>−{fmt(Math.round(contractForm.salary*0.08))}</strong></span>
+                      <span>Net: <strong style={{color:'var(--acc2)'}}>{fmt(Math.round(contractForm.salary*0.87))}</strong></span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:10, marginTop:24 }}>
+              <button className="btn" style={{ flex:1 }} onClick={()=>setShowNewContractModal(false)}>{lang==='fr'?'Annuler':'Cancel'}</button>
+              <button className="btn btn-primary" style={{ flex:1 }} onClick={()=>{
+                if (!contractForm.empId.trim()||!contractForm.role.trim()) {
+                  toast.error(lang==='fr'?'Nom et poste requis':'Name and position required'); return
+                }
+                const newEmp: Employee = {
+                  id: Date.now(),
+                  name: contractForm.empId.trim(),
+                  role: contractForm.role,
+                  dept: contractForm.dept,
+                  salary: contractForm.salary,
+                  type: contractForm.type as 'CDI'|'CDD',
+                  hiredAt: contractForm.hiredAt ? new Date(contractForm.hiredAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR'),
+                  endAt: contractForm.type==='CDD'&&contractForm.contractEnd ? new Date(contractForm.contractEnd).toLocaleDateString('fr-FR') : undefined,
+                  avatar: contractForm.empId.trim().split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase(),
+                  color: COLORS[employees.length % COLORS.length],
+                  active: true, phone:'', email:'', perf:3,
+                }
+                setEmployees(prev=>[...prev, newEmp])
+                toast.success('✅ '+(lang==='fr'?'Contrat créé !':'Contract created!'))
+                setShowNewContractModal(false)
+              }}>✅ {lang==='fr'?'Créer le contrat':'Create contract'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL DÉTAIL CONTRAT ── */}
+      {showContractDetailModal && selectedContract && (
+        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget&&setShowContractDetailModal(false)}>
+          <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, width:'100%', maxWidth:480, boxShadow:'var(--sh-xl)', overflow:'hidden' }}>
+            <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${selectedContract.color}18,${selectedContract.color}05)`, borderBottom:'1px solid rgba(255,255,255,.06)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:56, height:56, borderRadius:16, overflow:'hidden', background:`linear-gradient(135deg,${selectedContract.color},${selectedContract.color}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 6px 20px ${selectedContract.color}50` }}>
+                  {selectedContract.photoUrl
+                    ? <img src={selectedContract.photoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    : selectedContract.avatar}
+                </div>
+                <div style={{ flex:1 }}>
+                  <h3 style={{ margin:0, fontSize:17, fontWeight:900, color:'var(--text)' }}>{selectedContract.name}</h3>
+                  <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>{selectedContract.role} · {selectedContract.dept}</div>
+                </div>
+                <button onClick={()=>setShowContractDetailModal(false)} style={{ background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)', borderRadius:10, width:32, height:32, cursor:'pointer', color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✕</button>
+              </div>
+            </div>
+            <div style={{ padding:24, display:'flex', flexDirection:'column', gap:16 }}>
+              <div style={{ display:'flex', gap:8 }}>
+                <span style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:20, background:selectedContract.type==='CDI'?'rgba(108,71,255,.15)':'rgba(14,196,126,.12)', color:selectedContract.type==='CDI'?'var(--p2)':'var(--acc2)' }}>{selectedContract.type}</span>
+                <span style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:20, background:selectedContract.active?'rgba(0,208,132,.12)':'var(--bg3)', color:selectedContract.active?'var(--acc2)':'var(--text3)' }}>
+                  {selectedContract.active?(lang==='fr'?'Actif':'Active'):(lang==='fr'?'Inactif':'Inactive')}
+                </span>
+              </div>
+              <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, display:'flex', flexDirection:'column', gap:10 }}>
+                {[
+                  {label:lang==='fr'?'Date d\'embauche':'Hire date', value:selectedContract.hiredAt},
+                  {label:lang==='fr'?'Ancienneté':'Seniority', value:calcAnciennete(selectedContract.hiredAt)},
+                  ...(selectedContract.endAt?[{label:lang==='fr'?'Fin de contrat':'Contract end', value:selectedContract.endAt}]:[]),
+                ].map(row=>(
+                  <div key={row.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <span style={{ fontSize:12, color:'var(--text3)' }}>{row.label}</span>
+                    <span style={{ fontSize:13, fontWeight:700, color:'var(--text)', fontFamily:'var(--mono)' }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background:'var(--bg3)', borderRadius:12, padding:16 }}>
+                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:12 }}>💰 {lang==='fr'?'RÉMUNÉRATION':'COMPENSATION'}</div>
+                {[
+                  {label:lang==='fr'?'Salaire brut':'Gross salary', value:fmt(selectedContract.salary), color:'var(--text)'},
+                  {label:'CNSS (8%)', value:`− ${fmt(Math.round(selectedContract.salary*0.08))}`, color:'var(--danger)'},
+                  {label:'IR (5%)', value:`− ${fmt(Math.round(selectedContract.salary*0.05))}`, color:'var(--acc)'},
+                  {label:lang==='fr'?'Net à payer':'Net salary', value:fmt(Math.round(selectedContract.salary*0.87)), color:'var(--acc2)'},
+                ].map(row=>(
+                  <div key={row.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom:'1px solid var(--border)' }}>
+                    <span style={{ fontSize:12, color:'var(--text3)' }}>{row.label}</span>
+                    <span style={{ fontSize:13, fontWeight:700, color:row.color, fontFamily:'var(--mono)' }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ padding:'16px 24px', borderTop:'1px solid rgba(255,255,255,.06)', background:'rgba(0,0,0,.15)', display:'flex', gap:8 }}>
+              <button className="btn btn-primary" style={{ flex:1 }} onClick={()=>{
+                setSelectedEmp(selectedContract)
+                setEditEmpForm({ name:selectedContract.name, role:selectedContract.role, dept:selectedContract.dept, type:selectedContract.type, salary:selectedContract.salary, phone:selectedContract.phone, email:selectedContract.email, isActive:selectedContract.active, color:selectedContract.color, perf:selectedContract.perf??3, hiredAt:selectedContract.hiredAt, contractEnd:selectedContract.endAt??'', photoUrl:selectedContract.photoUrl??'', address:selectedContract.address??'' })
+                setShowContractDetailModal(false)
+                setShowEditEmpModal(true)
+              }}>✏️ {lang==='fr'?'Modifier':'Edit'}</button>
+              <button className="btn" style={{ padding:'10px 16px' }} onClick={()=>setShowContractDetailModal(false)}>{lang==='fr'?'Fermer':'Close'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showLeaveModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
           onClick={e => { if (e.target === e.currentTarget) setShowLeaveModal(false) }}>

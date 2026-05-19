@@ -38,6 +38,9 @@ export interface AppConfig {
   requireCashier: boolean
   priceMode: 'TTC' | 'HT'
   defaultCashier: number
+  posDefaultFund: number
+  enableScanner: boolean
+  autoWhatsApp: boolean
 
   // Stock
   stockLowThreshold: number
@@ -93,6 +96,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   requireCashier: false,
   priceMode: 'TTC',
   defaultCashier: 0,
+  posDefaultFund: 0,
+  enableScanner: false,
+  autoWhatsApp: false,
 
   stockLowThreshold: 10,
   stockAutoOrder: false,
