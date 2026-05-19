@@ -95,9 +95,31 @@ const LEAVE_STATUS_CFG = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function toInputDate(dateStr: string | undefined | null): string {
+  if (!dateStr) return ''
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr.slice(0, 10)
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) {
+    const [d, m, y] = dateStr.split('/')
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`
+  }
+  try {
+    const date = new Date(dateStr)
+    if (!isNaN(date.getTime())) return date.toISOString().slice(0, 10)
+  } catch {}
+  return ''
+}
+
+function displayDate(dateStr: string | undefined | null, locale: string): string {
+  const iso = toInputDate(dateStr)
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString(locale)
+}
+
 function calcAnciennete(hiredAt: string): string {
-  const [d, m, y] = hiredAt.split('/')
-  const months = Math.floor((new Date('2026-05-18').getTime() - new Date(+y, +m - 1, +d).getTime()) / (1000 * 60 * 60 * 24 * 30))
+  const iso = toInputDate(hiredAt)
+  if (!iso) return '—'
+  const months = Math.floor((new Date('2026-05-18').getTime() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24 * 30))
+  if (months < 0) return '—'
   const years = Math.floor(months / 12), rem = months % 12
   if (years >= 1) return `${years} an${years > 1 ? 's' : ''}${rem > 0 ? ` ${rem} mois` : ''}`
   return `${months} mois`
@@ -208,6 +230,27 @@ export default function HR() {
     notes: '',
   })
 
+  const openEditModal = (emp: Employee) => {
+    setSelectedEmp(emp)
+    setEditEmpForm({
+      name:        emp.name        ?? '',
+      role:        emp.role        ?? '',
+      dept:        emp.dept        ?? 'Ventes',
+      type:        emp.type        ?? 'CDI',
+      salary:      emp.salary      ?? 0,
+      phone:       emp.phone       ?? '',
+      email:       emp.email       ?? '',
+      isActive:    emp.active,
+      perf:        emp.perf        ?? 3,
+      color:       emp.color       ?? '#6C47FF',
+      photoUrl:    emp.photoUrl    ?? '',
+      address:     emp.address     ?? '',
+      hiredAt:     toInputDate(emp.hiredAt),
+      contractEnd: toInputDate(emp.endAt),
+    })
+    setShowEditEmpModal(true)
+  }
+
   useEffect(() => {
     employeesApi.list()
       .then((data: any[]) => {
@@ -219,8 +262,8 @@ export default function HR() {
             dept: e.department ?? e.dept ?? 'Général',
             salary: e.salary ?? e.baseSalary ?? 0,
             type: e.contractType ?? 'CDI',
-            hiredAt: e.hiredAt ?? e.startDate ?? '01/01/2024',
-            endAt: e.endAt,
+            hiredAt: toInputDate(e.hiredAt ?? e.startDate) || '01/01/2024',
+            endAt: toInputDate(e.endAt) || e.endAt,
             avatar: (e.name ?? e.firstName ?? '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
             color: COLORS[i % COLORS.length],
             active: e.active ?? e.status !== 'inactive',
@@ -499,11 +542,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       el.style.transform = 'none'
                       el.style.boxShadow = 'none'
                     }}
-                    onClick={() => {
-                      setSelectedEmp(emp)
-                      setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'', photoUrl:emp.photoUrl??'', address:emp.address??'' })
-                      setShowEditEmpModal(true)
-                    }}
+                    onClick={() => openEditModal(emp)}
                   >
                     {/* Barre couleur dept */}
                     <div style={{ height:3, background:`linear-gradient(90deg,${deptColor},${deptColor}33)` }} />
@@ -555,7 +594,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                           ))}
                         </div>
                         <button type="button"
-                          onClick={e => { e.stopPropagation(); setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'', photoUrl:emp.photoUrl??'', address:emp.address??'' }); setShowEditEmpModal(true) }}
+                          onClick={e => { e.stopPropagation(); openEditModal(emp) }}
                           style={{
                             width:26, height:26, borderRadius:7,
                             background:'rgba(255,149,0,.1)', border:'1px solid rgba(255,149,0,.2)',
@@ -593,7 +632,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   </thead>
                   <tbody>
                     {filtered.map(emp => (
-                      <tr key={emp.id} onClick={() => { setSelectedEmp(emp); setEditEmpForm({ name:emp.name, role:emp.role, dept:emp.dept, type:emp.type, salary:emp.salary, phone:emp.phone, email:emp.email, isActive:emp.active, color:emp.color, perf:emp.perf??3, hiredAt:emp.hiredAt, contractEnd:emp.endAt??'', photoUrl:emp.photoUrl??'', address:emp.address??'' }); setShowEditEmpModal(true) }} style={{ cursor: 'pointer' }}>
+                      <tr key={emp.id} onClick={() => { openEditModal(emp) }} style={{ cursor: 'pointer' }}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <EmpAvatar emp={emp} size={32} />
@@ -667,9 +706,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   const deptColor = DEPT_COLORS[emp.dept] ?? emp.color
                   const isExpiringSoon = emp.type === 'CDD' && emp.endAt
                     ? (() => {
-                        const [d, m, y] = emp.endAt.split('/')
-                        const end = new Date(+y, +m - 1, +d)
-                        const diff = (end.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                        const iso = toInputDate(emp.endAt)
+                        if (!iso) return false
+                        const diff = (new Date(iso).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                         return diff <= 30 && diff >= 0
                       })()
                     : false
@@ -697,13 +736,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                           color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
                         }}>{emp.type}</span>
                       </td>
-                      <td style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>{emp.hiredAt}</td>
-                      <td style={{ fontSize: 12, fontFamily: 'var(--mono)' }}>
-                        {emp.endAt
-                          ? <span style={{ color: isExpiringSoon ? 'var(--danger)' : 'var(--text2)', fontWeight: isExpiringSoon ? 700 : 400 }}>
-                              {isExpiringSoon ? '⚠️ ' : ''}{emp.endAt}
-                            </span>
-                          : <span style={{ color: 'var(--text3)' }}>—</span>}
+                      <td style={{ fontSize: 12, color: 'var(--text2)' }}>
+                        {displayDate(emp.hiredAt, lang==='fr'?'fr-FR':'en-US')}
+                      </td>
+                      <td style={{ fontSize: 12 }}>
+                        {emp.type === 'CDI' ? (
+                          <span style={{ color:'var(--acc2)', fontWeight:600 }}>{lang==='fr'?'Indéterminé':'Permanent'}</span>
+                        ) : emp.endAt ? (
+                          <span style={{ color: isExpiringSoon ? 'var(--danger)' : 'var(--text2)', fontWeight: isExpiringSoon ? 700 : 400 }}>
+                            {isExpiringSoon ? '⚠️ ' : ''}{displayDate(emp.endAt, lang==='fr'?'fr-FR':'en-US')}
+                          </span>
+                        ) : (
+                          <span style={{ color:'var(--acc)', fontWeight:600 }}>{lang==='fr'?'À définir':'To define'}</span>
+                        )}
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700 }}>{fmt(emp.salary)}</td>
                       <td style={{ textAlign: 'center' }}>
@@ -1503,9 +1548,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   </div>
                   <div>
                     <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Date embauche':'Hire date'}</label>
-                    <input className="input" type="date" value={editEmpForm.hiredAt ?? new Date().toISOString().split('T')[0]} onChange={e => setEditEmpForm((f:any) => ({ ...f, hiredAt:e.target.value }))} />
+                    <input className="input" type="date" value={editEmpForm.hiredAt ?? ''} onChange={e => setEditEmpForm((f:any) => ({ ...f, hiredAt:e.target.value }))} />
                   </div>
-                  {editEmpForm.type === 'CDD' && (
+                  {editEmpForm.type === 'CDI' ? (
+                    <div>
+                      <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Fin de contrat':'Contract end'}</label>
+                      <div style={{ padding:'10px 14px', background:'rgba(0,208,132,.06)', border:'1px solid rgba(0,208,132,.12)', borderRadius:12, fontSize:13, color:'var(--acc2)', fontWeight:600 }}>
+                        ∞ {lang==='fr'?'Contrat à durée indéterminée':'Permanent contract'}
+                      </div>
+                    </div>
+                  ) : (
                     <div>
                       <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>{lang==='fr'?'Fin de contrat':'Contract end'}</label>
                       <input className="input" type="date" value={editEmpForm.contractEnd??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, contractEnd:e.target.value }))} />
@@ -1743,9 +1795,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               </div>
               <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, display:'flex', flexDirection:'column', gap:10 }}>
                 {[
-                  {label:lang==='fr'?'Date d\'embauche':'Hire date', value:selectedContract.hiredAt},
+                  {label:lang==='fr'?'Date d\'embauche':'Hire date', value:displayDate(selectedContract.hiredAt, lang==='fr'?'fr-FR':'en-US')},
                   {label:lang==='fr'?'Ancienneté':'Seniority', value:calcAnciennete(selectedContract.hiredAt)},
-                  ...(selectedContract.endAt?[{label:lang==='fr'?'Fin de contrat':'Contract end', value:selectedContract.endAt}]:[]),
+                  ...(selectedContract.type!=='CDI'&&selectedContract.endAt
+                    ? [{label:lang==='fr'?'Fin de contrat':'Contract end', value:displayDate(selectedContract.endAt, lang==='fr'?'fr-FR':'en-US')}]
+                    : selectedContract.type==='CDI'
+                      ? [{label:lang==='fr'?'Fin de contrat':'Contract end', value:lang==='fr'?'∞ Indéterminé':'∞ Permanent'}]
+                      : []
+                  ),
                 ].map(row=>(
                   <div key={row.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <span style={{ fontSize:12, color:'var(--text3)' }}>{row.label}</span>
@@ -1770,10 +1827,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             </div>
             <div style={{ padding:'16px 24px', borderTop:'1px solid rgba(255,255,255,.06)', background:'rgba(0,0,0,.15)', display:'flex', gap:8 }}>
               <button className="btn btn-primary" style={{ flex:1 }} onClick={()=>{
-                setSelectedEmp(selectedContract)
-                setEditEmpForm({ name:selectedContract.name, role:selectedContract.role, dept:selectedContract.dept, type:selectedContract.type, salary:selectedContract.salary, phone:selectedContract.phone, email:selectedContract.email, isActive:selectedContract.active, color:selectedContract.color, perf:selectedContract.perf??3, hiredAt:selectedContract.hiredAt, contractEnd:selectedContract.endAt??'', photoUrl:selectedContract.photoUrl??'', address:selectedContract.address??'' })
+                openEditModal(selectedContract)
                 setShowContractDetailModal(false)
-                setShowEditEmpModal(true)
               }}>✏️ {lang==='fr'?'Modifier':'Edit'}</button>
               <button className="btn" style={{ padding:'10px 16px' }} onClick={()=>setShowContractDetailModal(false)}>{lang==='fr'?'Fermer':'Close'}</button>
             </div>
