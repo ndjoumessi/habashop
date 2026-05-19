@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { suppliersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Phone } from 'lucide-react'
-import PhoneInput from '@/components/ui/PhoneInput'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 
@@ -421,7 +420,7 @@ export default function Suppliers() {
               ))}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Téléphone</label>
-                <PhoneInput value={editSuppForm.phone} onChange={v => setEditSuppForm(p => ({...p, phone:v}))} />
+                <input className="input" type="tel" placeholder="+221 77 000 00 00" value={editSuppForm.phone} onChange={e => setEditSuppForm(p => ({...p, phone:e.target.value}))} />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Délai livraison (jours)</label>
@@ -493,7 +492,7 @@ export default function Suppliers() {
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
                   style={{ color: 'var(--text3)' }}>Téléphone</label>
-                <PhoneInput value={form.phone} onChange={v => setForm(p => ({ ...p, phone: v }))} />
+                <input className="input" type="tel" placeholder="+221 77 000 00 00" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Statut</label>
