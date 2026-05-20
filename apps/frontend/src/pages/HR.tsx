@@ -202,7 +202,7 @@ const labelStyle: React.CSSProperties = {
 export default function HR() {
   const fmt = useFormatAmount()
   const { lang, currency } = useAppStore()
-  const [tab, setTab] = useState<'team'|'contracts'|'attendance'|'leaves'|'payroll'>('team')
+  const [tab, setTab] = useState<'team'|'contracts'|'attendance'|'pointage'|'leaves'|'payroll'>('team')
   const [viewMode, setViewMode] = useState<'grid'|'table'>('grid')
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('all')
@@ -232,6 +232,10 @@ export default function HR() {
   const [planningWeek, setPlanningWeek] = useState(new Date())
   const [shifts, setShifts] = useState<Record<string, Record<number, string>>>({})
   const [activeShiftType, setActiveShiftType] = useState<string>('full')
+
+  // Présences / Pointage
+  const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0])
+  const [attendance, setAttendance] = useState<Record<string, { in: string|null; out: string|null; status: 'present'|'absent'|'late'|'half' }>>({})
 
   // Leave modal
   const [showLeaveModal, setShowLeaveModal] = useState(false)
@@ -449,11 +453,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', borderRadius: 12, padding: 4, border: '1px solid var(--border)' }}>
         {([
-          { id: 'team',       icon: '👥', label: lang === 'fr' ? 'Équipe'    : 'Team'      },
-          { id: 'contracts',  icon: '📄', label: lang === 'fr' ? 'Contrats'  : 'Contracts' },
-          { id: 'attendance', icon: '📅', label: lang === 'fr' ? 'Pointage'  : 'Attendance'},
-          { id: 'leaves',     icon: '🏖️', label: lang === 'fr' ? 'Congés'    : 'Leaves'    },
-          { id: 'payroll',    icon: '💰', label: lang === 'fr' ? 'Rémunération' : 'Payroll' },
+          { id: 'team',       icon: '👥', label: lang === 'fr' ? 'Équipe'       : 'Team'       },
+          { id: 'contracts',  icon: '📄', label: lang === 'fr' ? 'Contrats'     : 'Contracts'  },
+          { id: 'attendance', icon: '📅', label: lang === 'fr' ? 'Planning'     : 'Planning'   },
+          { id: 'pointage',   icon: '⏱️', label: lang === 'fr' ? 'Présences'    : 'Attendance' },
+          { id: 'leaves',     icon: '🏖️', label: lang === 'fr' ? 'Congés'       : 'Leaves'     },
+          { id: 'payroll',    icon: '💰', label: lang === 'fr' ? 'Rémunération' : 'Payroll'    },
         ] as const).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             flex: 1, padding: '9px 8px', borderRadius: 9,
@@ -1469,6 +1474,174 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
           )}
         </div>
       )}
+
+      {/* ── TAB POINTAGE / PRÉSENCES ── */}
+      {tab === 'pointage' && (() => {
+        const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+          present: { label: lang==='fr'?'Présent':'Present',  color:'#00D084', bg:'rgba(0,208,132,.1)',  icon:'✅' },
+          late:    { label: lang==='fr'?'Retard':'Late',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:'⚠️' },
+          absent:  { label: lang==='fr'?'Absent':'Absent',    color:'#EF4444', bg:'rgba(239,68,68,.1)',  icon:'❌' },
+          half:    { label: lang==='fr'?'Mi-temps':'Half',    color:'#3B82F6', bg:'rgba(59,130,246,.1)', icon:'🌗' },
+        }
+
+        const dayEmp = employees.filter(e => e.active !== false)
+        const todayKey = attendanceDate
+
+        const countByStatus = (s: string) => dayEmp.filter(e => (attendance[`${String(e.id)}_${todayKey}`]?.status ?? 'absent') === s).length
+        const presentCount = countByStatus('present') + countByStatus('late') + countByStatus('half')
+
+        const exportAttendanceCSV = () => {
+          const rows = dayEmp.map(e => {
+            const key = `${String(e.id)}_${todayKey}`
+            const a = attendance[key]
+            return [e.name, e.role, a?.status ?? 'absent', a?.in ?? '—', a?.out ?? '—']
+          })
+          const lines = [['Employé','Poste','Statut','Arrivée','Départ'], ...rows]
+          const csv = lines.map(r => r.join(';')).join('\n')
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url; a.download = `pointage_${todayKey}.csv`; a.click()
+          URL.revokeObjectURL(url)
+        }
+
+        const markAllPresent = () => {
+          const now = new Date()
+          const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
+          const updates: typeof attendance = {}
+          dayEmp.forEach(e => {
+            const key = `${String(e.id)}_${todayKey}`
+            updates[key] = { in: hhmm, out: null, status: 'present' }
+          })
+          setAttendance(prev => ({ ...prev, ...updates }))
+        }
+
+        const setEmpField = (empId: string, field: 'in'|'out'|'status', value: string) => {
+          const key = `${empId}_${todayKey}`
+          setAttendance(prev => ({
+            ...prev,
+            [key]: { ...(prev[key] ?? { in: null, out: null, status: 'absent' }), [field]: value },
+          }))
+        }
+
+        return (
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {/* Header toolbar */}
+            <div className="panel" style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+              <span style={{ fontSize:16, fontWeight:800, color:'var(--text)' }}>
+                ⏱️ {lang==='fr'?'Feuille de présence':'Attendance sheet'}
+              </span>
+              <input type="date" className="input" value={attendanceDate}
+                onChange={e => setAttendanceDate(e.target.value)}
+                style={{ width:150, height:34, fontSize:13 }} />
+              <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+                <button className="btn btn-sm" onClick={markAllPresent}>
+                  ✅ {lang==='fr'?'Tous présents':'All present'}
+                </button>
+                <button className="btn btn-sm" onClick={exportAttendanceCSV}>
+                  📥 CSV
+                </button>
+              </div>
+            </div>
+
+            {/* KPI row */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+              {[
+                { icon:'✅', label:lang==='fr'?'Présents':'Present',  count:presentCount,                  color:'#00D084' },
+                { icon:'⚠️', label:lang==='fr'?'Retards':'Late',      count:countByStatus('late'),          color:'#F59E0B' },
+                { icon:'❌', label:lang==='fr'?'Absents':'Absent',    count:countByStatus('absent'),        color:'#EF4444' },
+                { icon:'🌗', label:lang==='fr'?'Mi-temps':'Half-day', count:countByStatus('half'),          color:'#3B82F6' },
+              ].map(k => (
+                <div key={k.label} className="panel" style={{ padding:'12px 14px' }}>
+                  <div style={{ fontSize:20, marginBottom:4 }}>{k.icon}</div>
+                  <div style={{ fontSize:22, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.count}</div>
+                  <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginTop:2 }}>{k.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Employee rows */}
+            <div className="panel" style={{ overflow:'hidden', padding:0 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 90px 90px 110px 110px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
+                <span>{lang==='fr'?'Employé':'Employee'}</span>
+                <span style={{ textAlign:'center' }}>{lang==='fr'?'Statut':'Status'}</span>
+                <span style={{ textAlign:'center' }}>Arrivée</span>
+                <span style={{ textAlign:'center' }}>Départ</span>
+                <span style={{ textAlign:'center' }}>Actions</span>
+              </div>
+              {dayEmp.map((emp, i) => {
+                const key = `${String(emp.id)}_${todayKey}`
+                const a = attendance[key] ?? { in: null, out: null, status: 'absent' as const }
+                const sc = STATUS_CONFIG[a.status]
+                return (
+                  <div key={emp.id} style={{
+                    display:'grid', gridTemplateColumns:'1fr 90px 90px 110px 110px',
+                    alignItems:'center', gap:0,
+                    padding:'10px 16px',
+                    borderBottom: i < dayEmp.length-1 ? '1px solid var(--border)' : 'none',
+                    background: i % 2 === 0 ? 'transparent' : 'var(--bg4)',
+                  }}>
+                    {/* Employé */}
+                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                      <div style={{ width:32, height:32, borderRadius:8, background:`${emp.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, color:emp.color, flexShrink:0 }}>
+                        {emp.avatar}
+                      </div>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>{emp.name.split(' ')[0]}</div>
+                        <div style={{ fontSize:10, color:'var(--text3)' }}>{emp.role}</div>
+                      </div>
+                    </div>
+                    {/* Statut badge */}
+                    <div style={{ display:'flex', justifyContent:'center' }}>
+                      <span style={{ fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:20, background:sc.bg, color:sc.color }}>
+                        {sc.icon} {sc.label}
+                      </span>
+                    </div>
+                    {/* Heure arrivée */}
+                    <div style={{ display:'flex', justifyContent:'center' }}>
+                      <input type="time" className="input" value={a.in ?? ''}
+                        onChange={e => setEmpField(String(emp.id), 'in', e.target.value)}
+                        style={{ width:80, height:30, fontSize:12, textAlign:'center', padding:'0 4px' }} />
+                    </div>
+                    {/* Heure départ */}
+                    <div style={{ display:'flex', justifyContent:'center' }}>
+                      <input type="time" className="input" value={a.out ?? ''}
+                        onChange={e => setEmpField(String(emp.id), 'out', e.target.value)}
+                        style={{ width:80, height:30, fontSize:12, textAlign:'center', padding:'0 4px' }} />
+                    </div>
+                    {/* Boutons statut */}
+                    <div style={{ display:'flex', justifyContent:'center', gap:4 }}>
+                      {(['present','late','absent','half'] as const).map(s => (
+                        <button key={s} type="button"
+                          onClick={() => setEmpField(String(emp.id), 'status', s)}
+                          title={STATUS_CONFIG[s].label}
+                          style={{
+                            width:26, height:26, borderRadius:6, border:'none', cursor:'pointer',
+                            background: a.status === s ? STATUS_CONFIG[s].bg : 'var(--bg3)',
+                            fontSize:12,
+                            outline: a.status === s ? `1.5px solid ${STATUS_CONFIG[s].color}` : 'none',
+                          }}>
+                          {STATUS_CONFIG[s].icon}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Summary footer */}
+            <div className="panel" style={{ padding:'12px 16px', display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
+              <span style={{ fontSize:12, color:'var(--text3)' }}>
+                {lang==='fr'?'Journée du':'Day of'} <strong style={{ color:'var(--text)' }}>{new Date(attendanceDate + 'T00:00:00').toLocaleDateString(lang==='fr'?'fr-FR':'en-US', { weekday:'long', day:'numeric', month:'long' })}</strong>
+              </span>
+              <span style={{ fontSize:12, color:'var(--text3)', marginLeft:'auto' }}>
+                {presentCount}/{dayEmp.length} {lang==='fr'?'présents':'present'} · {dayEmp.length > 0 ? Math.round(presentCount/dayEmp.length*100) : 0}% {lang==='fr'?'de présence':'attendance rate'}
+              </span>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── TAB LEAVES ── */}
       {tab === 'leaves' && (

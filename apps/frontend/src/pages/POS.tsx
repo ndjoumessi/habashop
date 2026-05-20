@@ -344,7 +344,7 @@ export default function POS() {
   <div class="divider"></div>
   ${discount && discountAmount > 0 ? `<div class="row" style="color:green;font-weight:bold;"><span>${discount.type === 'percent' ? `Remise (${discount.value} %)` : 'Remise'} :</span><span>− ${fmt(discountAmount)}</span></div>` : ''}
   <div class="row"><span>${t('pos_subtotal')} :</span><span>${fmt(Math.round(totalHT))}</span></div>
-  <div class="row"><span>${t('pos_vat')} (18 %) :</span><span>${fmt(Math.round(tva))}</span></div>
+  <div class="row"><span>${t('pos_vat')} (${posTaxRate} %) :</span><span>${fmt(Math.round(tva))}</span></div>
   <div class="divider"></div>
   <div class="row total"><span>${t('pos_total')} :</span><span>${fmt(total)}</span></div>
   <div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span>${payMode === 'cash' ? t('pos_cash') : payMode === 'card' ? t('pos_card') : t('pos_mobile')}</span></div>
@@ -1138,7 +1138,7 @@ export default function POS() {
                 fontSize:10, color:'var(--text3)', marginBottom:6, padding:'0 2px',
               }}>
                 <span>HT : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(totalHT))}</span></span>
-                <span>TVA 18% : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(tva))}</span></span>
+                <span>TVA {posTaxRate}% : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(tva))}</span></span>
               </div>
               <div style={{
                 display:'flex', justifyContent:'space-between', alignItems:'center',

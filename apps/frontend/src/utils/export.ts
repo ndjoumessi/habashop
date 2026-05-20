@@ -286,7 +286,8 @@ export function generateInvoice(opts: InvoiceOptions) {
       : discount.value
   }
   const afterDiscount = subtotal - discountAmt
-  const tva = Math.round(afterDiscount * 0.18)
+  const _taxRate = (useAppStore.getState().posTaxRate ?? 18) / 100
+  const tva = Math.round(afterDiscount * _taxRate)
   const netTotal = afterDiscount + tva
 
   const fmt = (v: number) => new Intl.NumberFormat(locale, { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v) + ' ' + (currency ?? 'XOF')
@@ -505,7 +506,8 @@ export function exportAccountingExcel(
   const salesHeader = ['Date', 'Heure', 'Référence', 'Montant HT', 'TVA', 'Total TTC', 'Mode paiement', 'Nb articles']
   const salesRows = data.sales.map(s => {
     const date = new Date(s.createdAt)
-    const ht = (s.total ?? 0) / 1.18
+    const _vatDivisor = 1 + (useAppStore.getState().posTaxRate ?? 18) / 100
+    const ht = (s.total ?? 0) / _vatDivisor
     const tva = (s.total ?? 0) - ht
     return [
       date.toLocaleDateString('fr-FR'),
@@ -518,7 +520,8 @@ export function exportAccountingExcel(
       s.items?.length ?? 1,
     ]
   })
-  const salesTotal = ['', '', 'TOTAL', (totalCA / 1.18).toFixed(2), (totalCA - totalCA / 1.18).toFixed(2), totalCA.toFixed(2), '', '']
+  const _salesVatDiv = 1 + (useAppStore.getState().posTaxRate ?? 18) / 100
+  const salesTotal = ['', '', 'TOTAL', (totalCA / _salesVatDiv).toFixed(2), (totalCA - totalCA / _salesVatDiv).toFixed(2), totalCA.toFixed(2), '', '']
 
   const expHeader = ['Date', 'Libellé', 'Catégorie', 'Montant HT', 'TVA %', 'Montant TTC', 'Mode', 'Statut']
   const expRows = data.expenses.map(e => [
