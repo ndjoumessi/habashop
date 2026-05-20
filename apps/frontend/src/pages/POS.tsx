@@ -139,6 +139,7 @@ export default function POS() {
     cashierOpeningFund, cashierSessionTx, cashierSessionCA,
     openCashier, closeCashier, addCashierSale,
     posTaxRate, posShowStockOnTile, posDefaultFund,
+    posDefaultPayment, priceMode,
     enableScanner: posEnableScanner, autoWhatsApp: posAutoWhatsApp,
   } = useAppStore()
   const fmt = useFormatAmount()
@@ -170,7 +171,8 @@ export default function POS() {
   const [cart, setCart]           = useState<CartItem[]>([])
   const [activeCat, setActiveCat] = useState('all')
   const [search, setSearch]       = useState('')
-  const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mobile'>('cash')
+  const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mobile'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile')
+  useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile') }, [posDefaultPayment])
   const [customerPhone, setCustomerPhone] = useState('')
   const [sendWhatsApp, setSendWhatsApp]   = useState(() => posAutoWhatsApp)
   const [sendingWA, setSendingWA]         = useState(false)

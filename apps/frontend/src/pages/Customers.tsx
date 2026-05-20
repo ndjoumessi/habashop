@@ -141,9 +141,13 @@ export default function Customers() {
   const [typeFilter, setTypeFilter] = useState<ClientType | ''>('')
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null)
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({
-    name: '', type: 'Détail' as ClientType, phone: '', email: '', address: '', notes: '',
-  })
+  const defaultCustForm = {
+    name: '', type: 'Détail' as ClientType,
+    phoneCode: '+221', phoneNumber: '', phone: '',
+    email: '', address: '',
+  }
+  const [form, setForm] = useState(defaultCustForm)
+  const resetCustForm = () => setForm(defaultCustForm)
   const [editCustomer,     setEditCustomer]     = useState<Customer | null>(null)
   const [showEditCustModal, setShowEditCustModal] = useState(false)
   const [editCustForm,     setEditCustForm]     = useState({
@@ -188,23 +192,46 @@ export default function Customers() {
     openPDF(t('customers_pdf_title'), body)
   }
 
-  const addCustomer = async () => {
-    const newC: Customer = {
-      id: String(Date.now()), name: form.name, type: form.type, phone: form.phone,
-      email: form.email, address: form.address, purchasesPerMonth: 0, totalCA: 0,
-      loyaltyPoints: 0, maxLoyalty: 200,
-      since: new Date().toISOString().split('T')[0],
-      lastPurchase: new Date().toISOString().split('T')[0],
-      purchases: [], notes: form.notes,
+  const handleCreateCustomer = async () => {
+    if (!form.name?.trim()) {
+      toast.error(lang === 'fr' ? 'Nom requis' : 'Name required')
+      return
+    }
+    const fullPhone = form.phoneCode && form.phoneNumber
+      ? `${form.phoneCode}${form.phoneNumber.replace(/\s/g, '')}`
+      : form.phone ?? ''
+    const data = {
+      name:    form.name.trim(),
+      type:    form.type    ?? 'retail',
+      phone:   fullPhone,
+      email:   form.email   ?? '',
+      address: form.address ?? '',
     }
     try {
-      const created = await customersApi.create({ name: form.name, phone: form.phone, email: form.email, address: form.address, type: form.type })
-      newC.id = created.id
-    } catch {}
-    setCustomers(prev => [newC, ...prev])
-    setShowCreate(false)
-    setForm({ name: '', type: 'Détail', phone: '', email: '', address: '', notes: '' })
-    toast.success(`✅ Client ${newC.name} ajouté !`)
+      const created = await customersApi.create(data)
+      setCustomers(prev => [...prev, mapApiCustomer(created)])
+      toast.success('✅ ' + (lang === 'fr' ? 'Client créé !' : 'Customer created!'))
+      setShowCreate(false)
+      resetCustForm()
+    } catch {
+      setCustomers(prev => [...prev, {
+        id: Date.now().toString(),
+        name:    data.name,
+        type:    data.type as ClientType,
+        phone:   data.phone,
+        email:   data.email,
+        address: data.address,
+        purchasesPerMonth: 0, totalCA: 0,
+        loyaltyPoints: 0, maxLoyalty: 200,
+        since:        new Date().toISOString().split('T')[0],
+        lastPurchase: new Date().toISOString().split('T')[0],
+        purchases: [],
+        notes: '',
+      }])
+      toast.success('✅ ' + (lang === 'fr' ? 'Client créé (local)' : 'Customer created (local)'))
+      setShowCreate(false)
+      resetCustForm()
+    }
   }
 
   return (
@@ -684,47 +711,143 @@ export default function Customers() {
       {/* ── Modal nouveau client ── */}
       {showCreate && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
-          <div className="modal-box" style={{ maxWidth: 480 }}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ Nouveau client</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowCreate(false)}><X size={14} /></button>
+          <div style={{
+            background:'#0D0D1C',
+            border:'1px solid rgba(255,255,255,.1)',
+            borderRadius:24, width:'100%', maxWidth:480,
+            maxHeight:'90vh', overflow:'hidden',
+            display:'flex', flexDirection:'column',
+            boxShadow:'0 24px 80px rgba(0,0,0,.8)',
+            position:'relative',
+          }}>
+            <div style={{
+              position:'absolute', top:0, left:'50%',
+              transform:'translateX(-50%)',
+              width:'40%', height:1,
+              background:'linear-gradient(90deg,transparent,#F472B6,transparent)',
+            }} />
+            <div style={{
+              padding:'20px 24px 16px',
+              borderBottom:'1px solid rgba(255,255,255,.06)',
+              flexShrink:0, display:'flex', alignItems:'center', gap:12,
+            }}>
+              <div style={{
+                width:44, height:44, borderRadius:13,
+                background:'linear-gradient(135deg,#F472B6,#EC4899)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:22, boxShadow:'0 4px 14px rgba(244,114,182,.4)',
+              }}>👤</div>
+              <div style={{flex:1}}>
+                <h3 style={{ fontSize:17, fontWeight:900, color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
+                  {lang==='fr'?'+ Nouveau client':'+ New customer'}
+                </h3>
+                <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>
+                  {lang==='fr'?'Ajoutez un client à votre CRM':'Add a customer to your CRM'}
+                </div>
+              </div>
+              <button type="button" onClick={()=>setShowCreate(false)} style={{
+                width:30, height:30, borderRadius:9,
+                background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)',
+                cursor:'pointer', fontSize:14, color:'var(--text3)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>✕</button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Nom / Enseigne</label>
-                <input className="input text-sm" placeholder="Nom du client…" value={form.name}
-                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
-              </div>
+
+            <div style={{
+              flex:1, overflowY:'auto', minHeight:0,
+              padding:'20px 24px', display:'flex', flexDirection:'column', gap:14,
+            }}>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Type</label>
-                <select className="input text-sm" value={form.type}
-                  onChange={e => setForm(p => ({ ...p, type: e.target.value as ClientType }))}>
-                  <option>Grossiste</option><option>Semi-gros</option><option>Fidèle</option><option>Détail</option>
-                </select>
+                <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                  {lang==='fr'?'NOM / ENSEIGNE *':'NAME / COMPANY *'}
+                </label>
+                <input className="input" autoFocus
+                  placeholder={lang==='fr'?'Nom du client...':'Customer name...'}
+                  value={form.name}
+                  onChange={e=>setForm(f=>({...f,name:e.target.value}))} />
               </div>
+
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div>
+                  <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>TYPE</label>
+                  <select className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
+                    <option value="Détail">👤 {lang==='fr'?'Détail':'Retail'}</option>
+                    <option value="Grossiste">🏭 {lang==='fr'?'Grossiste':'Wholesale'}</option>
+                    <option value="Semi-gros">📦 {lang==='fr'?'Semi-gros':'Semi-wholesale'}</option>
+                    <option value="Fidèle">⭐ {lang==='fr'?'Fidèle':'Loyal'}</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                    {lang==='fr'?'TÉLÉPHONE':'PHONE'}
+                  </label>
+                  <div style={{
+                    display:'flex', background:'var(--bg4)',
+                    border:'1.5px solid var(--border)', borderRadius:12, overflow:'hidden',
+                  }}
+                    onFocusCapture={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--p)'}}
+                    onBlurCapture={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--border)'}}
+                  >
+                    <select value={form.phoneCode??'+221'} onChange={e=>setForm(f=>({...f,phoneCode:e.target.value}))}
+                      style={{ background:'rgba(108,71,255,.08)', border:'none', borderRight:'1px solid var(--border)', color:'var(--text)', fontSize:12, fontWeight:600, padding:'0 8px', cursor:'pointer', outline:'none', fontFamily:'var(--font)', width:80 }}>
+                      {[
+                        {code:'+221',flag:'🇸🇳'},{code:'+225',flag:'🇨🇮'},{code:'+223',flag:'🇲🇱'},
+                        {code:'+237',flag:'🇨🇲'},{code:'+242',flag:'🇨🇬'},{code:'+241',flag:'🇬🇦'},
+                        {code:'+226',flag:'🇧🇫'},{code:'+229',flag:'🇧🇯'},{code:'+228',flag:'🇹🇬'},
+                        {code:'+224',flag:'🇬🇳'},{code:'+227',flag:'🇳🇪'},{code:'+212',flag:'🇲🇦'},
+                        {code:'+213',flag:'🇩🇿'},{code:'+216',flag:'🇹🇳'},{code:'+33',flag:'🇫🇷'},
+                        {code:'+39',flag:'🇮🇹'},{code:'+32',flag:'🇧🇪'},{code:'+41',flag:'🇨🇭'},
+                        {code:'+34',flag:'🇪🇸'},{code:'+44',flag:'🇬🇧'},{code:'+1',flag:'🇺🇸'},
+                      ].map(c=>(
+                        <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+                      ))}
+                    </select>
+                    <input type="tel" placeholder="77 000 00 00"
+                      value={form.phoneNumber??''}
+                      onChange={e=>setForm(f=>({...f, phoneNumber:e.target.value, phone:`${f.phoneCode??'+221'}${e.target.value.replace(/\s/g,'')}`}))}
+                      style={{ flex:1, background:'transparent', border:'none', outline:'none', color:'var(--text)', fontSize:13, padding:'10px 12px', fontFamily:'var(--font)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Téléphone</label>
-                <PhoneInput value={form.phone} onChange={v => setForm(p => ({ ...p, phone: v }))} />
+                <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>EMAIL</label>
+                <input className="input" type="email" placeholder="email@exemple.com"
+                  value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} />
               </div>
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Email</label>
-                <input className="input text-sm" type="email" placeholder="email@exemple.com" value={form.email}
-                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Adresse</label>
-                <AddressAutocomplete value={form.address}
-                  onChange={v => setForm(p => ({ ...p, address: v }))} />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
-                <textarea className="input text-sm" rows={2} value={form.notes}
-                  onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+
+              <div>
+                <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                  {lang==='fr'?'ADRESSE':'ADDRESS'}
+                </label>
+                <AddressAutocomplete value={form.address} onChange={v=>setForm(f=>({...f,address:v}))}
+                  placeholder={lang==='fr'?'Adresse...':'Address...'} lang={lang} />
               </div>
             </div>
-            <div className="flex gap-2 mt-5">
-              <button className="btn btn-primary flex-1 justify-center" onClick={addCustomer}>✅ {t('btn_add')} le client</button>
-              <button className="btn btn-ghost" onClick={() => setShowCreate(false)}>{t('btn_cancel')}</button>
+
+            <div style={{
+              padding:'16px 24px', borderTop:'1px solid rgba(255,255,255,.06)',
+              flexShrink:0, display:'flex', gap:8,
+            }}>
+              <button onClick={handleCreateCustomer} style={{
+                flex:1, padding:'13px',
+                background:'linear-gradient(135deg,#F472B6,#EC4899)',
+                border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800,
+                cursor:'pointer', fontFamily:'var(--font)',
+                boxShadow:'0 4px 16px rgba(244,114,182,.4)',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              }}>
+                ✅ {lang==='fr'?'Ajouter le client':'Add customer'}
+              </button>
+              <button onClick={()=>{setShowCreate(false);resetCustForm()}} style={{
+                padding:'13px 18px', background:'rgba(255,255,255,.05)',
+                border:'1px solid rgba(255,255,255,.08)', borderRadius:12,
+                cursor:'pointer', color:'var(--text2)', fontSize:13,
+                fontFamily:'var(--font)', fontWeight:600,
+              }}>
+                {lang==='fr'?'Annuler':'Cancel'}
+              </button>
             </div>
           </div>
         </div>

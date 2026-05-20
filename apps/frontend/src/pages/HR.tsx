@@ -31,6 +31,7 @@ interface Employee {
 interface LeaveRequest {
   id: number
   empId: number
+  empName?: string
   type: string
   from: string
   to: string
@@ -60,11 +61,11 @@ const POINTAGE: Record<number, Record<number, { status: 'present'|'retard'|'abse
 }
 
 const LEAVE_INIT: LeaveRequest[] = [
-  { id:1, empId:5, type:'Congé annuel',  from:'2026-05-11', to:'2026-05-17', days:5, motif:'Repos annuel planifié', status:'approved' },
-  { id:2, empId:1, type:'Congé maladie', from:'2026-04-02', to:'2026-04-03', days:2, motif:'Grippe',                status:'approved' },
-  { id:3, empId:3, type:'Congé annuel',  from:'2026-03-15', to:'2026-03-19', days:3, motif:'Voyage familial',       status:'approved' },
-  { id:4, empId:2, type:'Congé annuel',  from:'2026-05-20', to:'2026-05-24', days:5, motif:'Vacances famille',      status:'pending'  },
-  { id:5, empId:4, type:'Congé maladie', from:'2026-05-16', to:'2026-05-16', days:1, motif:'Visite médicale',       status:'pending'  },
+  { id:1, empId:5, empName:'Fatoumata Ndiaye', type:'Congé annuel',  from:'2026-05-11', to:'2026-05-17', days:5, motif:'Repos annuel planifié', status:'approved' },
+  { id:2, empId:1, empName:'Marie Bakayoko',   type:'Congé maladie', from:'2026-04-02', to:'2026-04-03', days:2, motif:'Grippe',                status:'approved' },
+  { id:3, empId:3, empName:'Aminata Touré',    type:'Congé annuel',  from:'2026-03-15', to:'2026-03-19', days:3, motif:'Voyage familial',       status:'approved' },
+  { id:4, empId:2, empName:'Kofi Diallo',      type:'Congé annuel',  from:'2026-05-20', to:'2026-05-24', days:5, motif:'Vacances famille',      status:'pending'  },
+  { id:5, empId:4, empName:'Seydou Koné',      type:'Congé maladie', from:'2026-05-16', to:'2026-05-16', days:1, motif:'Visite médicale',       status:'pending'  },
 ]
 
 const WEEK_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
@@ -77,6 +78,16 @@ const DEPT_COLORS: Record<string, string> = {
   'Logistique': '#8B5CF6',
   'Marketing':  '#EC4899',
   'RH':         '#EF4444',
+}
+
+const SHIFT_TYPES: Record<string, { label:string; hours:string; color:string; icon:string }> = {
+  morning:   { label:'Matin',      hours:'08:00-13:00', color:'#00B8FF', icon:'☀️'  },
+  afternoon: { label:'Après-midi', hours:'13:00-18:00', color:'#FF9500', icon:'🌤️'  },
+  full:      { label:'Journée',    hours:'08:00-18:00', color:'#00D084', icon:'📅'  },
+  night:     { label:'Nuit',       hours:'20:00-06:00', color:'#6C47FF', icon:'🌙'  },
+  rest:      { label:'Repos',      hours:'',            color:'#52527A', icon:'☕'  },
+  leave:     { label:'Congé',      hours:'',            color:'#FF3B5C', icon:'🏖️'  },
+  '':        { label:'—',          hours:'',            color:'transparent', icon:'' },
 }
 
 const STATUS_CFG = {
@@ -219,6 +230,8 @@ export default function HR() {
 
   // Planning
   const [planningWeek, setPlanningWeek] = useState(new Date())
+  const [shifts, setShifts] = useState<Record<string, Record<number, string>>>({})
+  const [activeShiftType, setActiveShiftType] = useState<string>('full')
 
   // Leave modal
   const [showLeaveModal, setShowLeaveModal] = useState(false)
@@ -1295,11 +1308,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         </div>
       )}
 
-      {/* ── TAB ATTENDANCE ── */}
+      {/* ── TAB ATTENDANCE / PLANNING ── */}
       {tab === 'attendance' && (
         <div className="panel">
           <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <span className="panel-t">📅 {lang === 'fr' ? 'Pointage semaine' : 'Weekly attendance'}</span>
+            <span className="panel-t">📅 {lang === 'fr' ? 'Planning semaine' : 'Weekly planning'}</span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button className="btn btn-sm" onClick={() => { const d = new Date(planningWeek); d.setDate(d.getDate() - 7); setPlanningWeek(d) }}>
                 ← {lang === 'fr' ? 'Préc.' : 'Prev'}
@@ -1313,45 +1326,119 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 {lang === 'fr' ? 'Suiv.' : 'Next'} →
               </button>
               <button className="btn btn-sm" onClick={() => setPlanningWeek(new Date())}>
-                {lang === 'fr' ? "Auj." : 'Today'}
+                {lang === 'fr' ? 'Auj.' : 'Today'}
               </button>
             </div>
           </div>
+
+          {/* Sélecteur de type de shift */}
+          <div style={{ display:'flex', gap:6, marginBottom:14, flexWrap:'wrap', alignItems:'center' }}>
+            {Object.entries(SHIFT_TYPES).filter(([k])=>k!=='').map(([key, s]) => (
+              <button key={key} type="button" onClick={() => setActiveShiftType(key)}
+                style={{
+                  display:'flex', alignItems:'center', gap:6,
+                  padding:'8px 14px', borderRadius:10,
+                  border:`1.5px solid ${activeShiftType===key ? s.color : 'var(--border)'}`,
+                  background: activeShiftType===key ? `${s.color}20` : 'var(--bg4)',
+                  cursor:'pointer', fontFamily:'var(--font)',
+                  fontSize:12, fontWeight:700,
+                  color: activeShiftType===key ? s.color : 'var(--text3)',
+                  transition:'all .15s',
+                  boxShadow: activeShiftType===key ? `0 2px 10px ${s.color}30` : 'none',
+                }}>
+                <span>{s.icon}</span>
+                <span>{s.label}</span>
+                {s.hours && <span style={{ fontSize:10, opacity:.7, fontFamily:'var(--mono)' }}>{s.hours}</span>}
+              </button>
+            ))}
+            <div style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)', alignSelf:'center' }}>
+              {lang==='fr' ? '👆 Sélectionnez un type puis cliquez · double-clic pour effacer' : '👆 Select a type then click · double-click to clear'}
+            </div>
+          </div>
+
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+            <table style={{ minWidth:700, borderCollapse:'collapse', width:'100%' }}>
               <thead>
                 <tr>
-                  <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: 'var(--text3)', background: 'var(--bg3)', borderBottom: '1px solid var(--border)', width: 160 }}>Employé</th>
-                  {WEEK_DAYS.map((d, di) => (
-                    <th key={d} style={{ padding: '10px 8px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text3)', background: 'var(--bg3)', borderBottom: '1px solid var(--border)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
-                      <div>{d}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 400, marginTop: 2 }}>
-                        {weekDays[di].getDate()}/{weekDays[di].getMonth() + 1}
-                      </div>
-                    </th>
-                  ))}
+                  <th style={{ padding:'10px 14px', textAlign:'left', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', width:140 }}>
+                    {lang==='fr'?'Employé':'Employee'}
+                  </th>
+                  {weekDays.map((day, di) => {
+                    const isToday = day.toDateString() === new Date().toDateString()
+                    return (
+                      <th key={di} style={{ padding:'8px 6px', textAlign:'center', fontSize:10, fontWeight:700, color: isToday ? 'var(--p3)' : 'var(--text3)' }}>
+                        <div>{WEEK_DAYS[di]}</div>
+                        <div style={{ fontSize:14, fontWeight:900, color: isToday ? 'var(--p2)' : 'var(--text)', marginTop:2 }}>{day.getDate()}</div>
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
               <tbody>
-                {(employees ?? []).map((emp, ri) => (
-                  <tr key={emp.id} style={{ background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)' }}>
-                    <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <EmpAvatar emp={emp} size={28} />
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{emp.name.split(' ')[0]}</div>
-                          <div style={{ fontSize: 10, color: 'var(--text3)' }}>{emp.role}</div>
+                {(employees ?? []).filter(e=>e.active!==false).map(emp => (
+                  <tr key={emp.id}>
+                    <td style={{ padding:'6px 14px' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <div style={{
+                          width:30, height:30, borderRadius:8,
+                          background:`${emp.color??'#6C47FF'}22`,
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                          fontSize:11, fontWeight:800, color:emp.color??'#6C47FF', flexShrink:0,
+                        }}>
+                          {emp.avatar??'??'}
                         </div>
+                        <span style={{ fontSize:12, color:'var(--text)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {emp.name.split(' ')[0]}
+                        </span>
                       </div>
                     </td>
-                    {Array.from({ length: 7 }, (_, dayIdx) => {
-                      const pt = POINTAGE[emp.id]?.[dayIdx] ?? { status: 'repos' as const }
-                      const cfg = STATUS_CFG[pt.status]
+                    {weekDays.map((day, di) => {
+                      const shift = shifts[String(emp.id)]?.[di] ?? ''
+                      const s = SHIFT_TYPES[shift] ?? SHIFT_TYPES['']
+                      const isToday = day.toDateString() === new Date().toDateString()
                       return (
-                        <td key={dayIdx} style={{ padding: '8px 4px', borderBottom: '1px solid var(--border)', textAlign: 'center' }}>
-                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '5px 8px', borderRadius: 8, background: cfg.bg, minWidth: 60 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
-                            {pt.arrive && <span style={{ fontSize: 9, color: 'var(--text3)' }}>{pt.arrive}</span>}
+                        <td key={di} style={{ padding:'4px 3px', textAlign:'center' }}>
+                          <div
+                            onClick={() => setShifts(prev => ({
+                              ...prev,
+                              [String(emp.id)]: { ...(prev[String(emp.id)]??{}), [di]: activeShiftType },
+                            }))}
+                            onDoubleClick={() => setShifts(prev => ({
+                              ...prev,
+                              [String(emp.id)]: { ...(prev[String(emp.id)]??{}), [di]: '' },
+                            }))}
+                            title={`${emp.name} — ${s.label}`}
+                            style={{
+                              minHeight:52, borderRadius:10, cursor:'pointer', transition:'all .15s',
+                              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2,
+                              border:`1px solid ${shift ? `${s.color}30` : 'var(--border)'}`,
+                              background: shift ? `${s.color}15` : isToday ? 'rgba(108,71,255,.04)' : 'var(--bg4)',
+                              boxShadow: shift ? `0 2px 8px ${s.color}20` : 'none',
+                            }}
+                            onMouseEnter={e => {
+                              if (!shift) {
+                                const as = SHIFT_TYPES[activeShiftType]
+                                const el = e.currentTarget as HTMLElement
+                                el.style.background = `${as?.color ?? 'var(--p)'}18`
+                                el.style.borderColor = `${as?.color ?? 'var(--p)'}40`
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (!shift) {
+                                const el = e.currentTarget as HTMLElement
+                                el.style.background = isToday ? 'rgba(108,71,255,.04)' : 'var(--bg4)'
+                                el.style.borderColor = 'var(--border)'
+                              }
+                            }}
+                          >
+                            {shift ? (
+                              <>
+                                <span style={{ fontSize:14 }}>{s.icon}</span>
+                                {s.hours && <span style={{ fontSize:9, fontWeight:700, color:s.color, fontFamily:'var(--mono)' }}>{s.hours}</span>}
+                              </>
+                            ) : (
+                              <span style={{ fontSize:16, opacity:.15 }}>+</span>
+                            )}
                           </div>
                         </td>
                       )
@@ -1361,14 +1448,25 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               </tbody>
             </table>
           </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 14, padding: '0 4px' }}>
-            {Object.entries(STATUS_CFG).map(([key, cfg]) => (
-              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 3, background: cfg.bg, border: `1px solid ${cfg.color}44` }} />
-                <span style={{ fontSize: 11, color: 'var(--text3)' }}>{cfg.label}</span>
-              </div>
-            ))}
-          </div>
+
+          {/* Stats résumé */}
+          {Object.keys(shifts).length > 0 && (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))', gap:8, marginTop:14 }}>
+              {Object.entries(SHIFT_TYPES).filter(([k])=>k!=='').map(([key,s]) => {
+                const count = Object.values(shifts).flatMap(days => Object.values(days)).filter(v=>v===key).length
+                if (count === 0) return null
+                return (
+                  <div key={key} style={{ background:`${s.color}10`, border:`1px solid ${s.color}20`, borderRadius:10, padding:'8px 12px', display:'flex', alignItems:'center', gap:8 }}>
+                    <span style={{fontSize:16}}>{s.icon}</span>
+                    <div>
+                      <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', color:'var(--text3)' }}>{s.label}</div>
+                      <div style={{ fontSize:16, fontWeight:900, color:s.color, fontFamily:'var(--mono)' }}>{count}</div>
+                    </div>
+                  </div>
+                )
+              }).filter(Boolean)}
+            </div>
+          )}
         </div>
       )}
 
@@ -1396,13 +1494,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {(leaves ?? []).map(leave => {
-                const emp = (employees ?? []).find(e => e.id === leave.empId)
+                const emp = (employees ?? []).find(e => e.id === leave.empId || Number(e.id) === leave.empId)
+                const displayName = emp?.name ?? leave.empName ?? '—'
                 const statusCfg = LEAVE_STATUS_CFG[leave.status]
                 return (
                   <div key={leave.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, flexWrap: 'wrap' }}>
                     {emp && <EmpAvatar emp={emp} size={38} />}
+                    {!emp && (
+                      <div style={{ width:38, height:38, borderRadius:'50%', background:'#6C47FF22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:'#6C47FF', flexShrink:0 }}>
+                        {displayName.slice(0,2).toUpperCase()}
+                      </div>
+                    )}
                     <div style={{ flex: 1, minWidth: 200 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{emp?.name ?? '—'}</div>
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{displayName}</div>
                       <div style={{ fontSize: 12, color: 'var(--text3)' }}>
                         {leave.type} · {leave.from} → {leave.to} · <strong>{leave.days}j</strong>
                       </div>

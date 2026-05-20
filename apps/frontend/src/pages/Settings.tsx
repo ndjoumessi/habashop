@@ -602,56 +602,67 @@ export default function Settings() {
             <div className="panel">
               <div className="panel-head"><span className="panel-title">🛒 {t('settings_pos_config')}</span></div>
               <div className="space-y-4">
+                {/* Mode de prix TTC/HT — comparaison visuelle */}
                 <div>
-                  <Label>{t('settings_pos_default_payment')}</Label>
-                  <div className="flex gap-3">
+                  <Label>{cfg.lang === 'fr' ? 'Mode d\'affichage des prix' : 'Price display mode'}</Label>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                     {[
-                      { id: 'cash',   label: '💵 Espèces' },
-                      { id: 'card',   label: '💳 Carte' },
-                      { id: 'mobile', label: '📲 Mobile' },
-                    ].map(m => (
-                      <button key={m.id}
-                        className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all"
+                      { id:'TTC', title:'TTC', subtitle: cfg.lang==='fr'?'Prix avec taxes incluses':'Prices with taxes included', example: cfg.lang==='fr'?'1 000 FCFA (TVA incluse)':'1,000 XOF (tax included)', icon:'💰' },
+                      { id:'HT',  title:'HT',  subtitle: cfg.lang==='fr'?'Prix hors taxes + TVA séparée':'Prices excl. tax + separate VAT', example: cfg.lang==='fr'?'847 FCFA + TVA 153 FCFA':'847 XOF + VAT 153 XOF', icon:'🧾' },
+                    ].map(mode => (
+                      <div key={mode.id} onClick={()=>cfg.updateConfig({priceMode:mode.id as 'TTC'|'HT'})}
                         style={{
-                          background: cfg.posDefaultPayment === m.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg3)',
-                          color: cfg.posDefaultPayment === m.id ? '#fff' : 'var(--text2)',
-                          border: `1px solid ${cfg.posDefaultPayment === m.id ? 'transparent' : 'var(--border)'}`,
-                          cursor: 'pointer', fontFamily: 'inherit',
-                          boxShadow: cfg.posDefaultPayment === m.id ? '0 4px 14px rgba(91,78,232,.3)' : 'none',
-                        }}
-                        onClick={() => cfg.updateConfig({ posDefaultPayment: m.id as 'cash' | 'card' | 'mobile' })}
-                      >
-                        {m.label}
-                      </button>
+                          padding:'16px', borderRadius:14, cursor:'pointer', transition:'all .15s',
+                          background: cfg.priceMode===mode.id ? 'rgba(108,71,255,.1)' : 'var(--bg4)',
+                          border:`2px solid ${cfg.priceMode===mode.id ? 'var(--p)' : 'var(--border)'}`,
+                          boxShadow: cfg.priceMode===mode.id ? '0 4px 14px rgba(108,71,255,.2)' : 'none',
+                        }}>
+                        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                            <span style={{fontSize:20}}>{mode.icon}</span>
+                            <span style={{ fontSize:16, fontWeight:900, color: cfg.priceMode===mode.id ? 'var(--p3)' : 'var(--text)' }}>{mode.title}</span>
+                          </div>
+                          {cfg.priceMode===mode.id && (
+                            <div style={{ width:20, height:20, borderRadius:'50%', background:'var(--p)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'#fff', fontWeight:800 }}>✓</div>
+                          )}
+                        </div>
+                        <div style={{ fontSize:12, color:'var(--text3)', marginBottom:6, lineHeight:1.4 }}>{mode.subtitle}</div>
+                        <div style={{ fontSize:11, fontFamily:'var(--mono)', color: cfg.priceMode===mode.id ? 'var(--p2)' : 'var(--text3)', background: cfg.priceMode===mode.id ? 'rgba(108,71,255,.08)' : 'var(--bg3)', padding:'4px 8px', borderRadius:6 }}>
+                          ex: {mode.example}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
 
-                <div>
-                  <Label>{t('settings_pos_tax_rate')}</Label>
-                  <select className="input text-sm" value={cfg.posTaxRate}
-                    onChange={e => cfg.updateConfig({ posTaxRate: +e.target.value })}>
-                    {VAT_OPTIONS.map(v => <option key={v} value={v}>{v} %</option>)}
+                {/* Mode de paiement par défaut */}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 16px', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:12 }}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>{cfg.lang==='fr'?'Mode de paiement par défaut':'Default payment mode'}</div>
+                    <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{cfg.lang==='fr'?'Pré-sélectionné à l\'ouverture du panier':'Pre-selected when opening cart'}</div>
+                  </div>
+                  <select className="input" style={{width:'auto',minWidth:140}}
+                    value={cfg.posDefaultPayment}
+                    onChange={e=>cfg.updateConfig({posDefaultPayment:e.target.value as 'cash'|'card'|'mobile'})}>
+                    <option value="cash">💵 {cfg.lang==='fr'?'Espèces':'Cash'}</option>
+                    <option value="card">💳 {cfg.lang==='fr'?'Carte':'Card'}</option>
+                    <option value="wave">🌊 Wave</option>
+                    <option value="orange">🟠 Orange Money</option>
+                    <option value="mobile">📱 Mobile</option>
                   </select>
                 </div>
 
-                <div>
-                  <Label>Mode de prix</Label>
-                  <div className="flex gap-3">
-                    {(['TTC', 'HT'] as const).map(m => (
-                      <button key={m} className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all"
-                        style={{
-                          background: cfg.priceMode === m ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg3)',
-                          color: cfg.priceMode === m ? '#fff' : 'var(--text2)',
-                          border: `1px solid ${cfg.priceMode === m ? 'transparent' : 'var(--border)'}`,
-                          cursor: 'pointer', fontFamily: 'inherit',
-                          boxShadow: cfg.priceMode === m ? '0 4px 14px rgba(91,78,232,.3)' : 'none',
-                        }}
-                        onClick={() => cfg.updateConfig({ priceMode: m })}
-                      >
-                        {m === 'TTC' ? '💰 TTC (toutes taxes)' : '📊 HT (hors taxes)'}
-                      </button>
-                    ))}
+                {/* Taux de taxe */}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 16px', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:12 }}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>{cfg.lang==='fr'?'Taux de taxe POS (%)':'POS tax rate (%)'}</div>
+                    <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{cfg.lang==='fr'?'TVA appliquée sur toutes les ventes':'VAT applied to all sales'}</div>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    <input className="input" type="number" style={{width:70,textAlign:'right'}}
+                      value={cfg.posTaxRate} min="0" max="100" step="0.5"
+                      onChange={e=>cfg.updateConfig({posTaxRate:Math.max(0,Math.min(100,+e.target.value))})} />
+                    <span style={{fontSize:13,color:'var(--text3)',fontWeight:600}}>%</span>
                   </div>
                 </div>
 
