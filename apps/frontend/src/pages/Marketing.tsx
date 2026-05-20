@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import React from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { customersApi, marketingApi } from '@/lib/api'
 import toast from 'react-hot-toast'
@@ -20,7 +19,6 @@ const MK = {
     title:             'WhatsApp Marketing',
     subtitle:          'Envoyez des messages WhatsApp personnalisés à vos clients',
     yourMessage:       '✏️ Votre message',
-    preview:           'APERÇU WHATSAPP',
     warning:           '⚠️ Incluez "Répondez STOP" dans vos messages pour respecter la confidentialité.',
     select_all:        'Tout sélectionner',
     search:            'Rechercher un client...',
@@ -52,7 +50,6 @@ const MK = {
     title:             'WhatsApp Marketing',
     subtitle:          'Send personalized WhatsApp messages to your customers',
     yourMessage:       '✏️ Your message',
-    preview:           'WHATSAPP PREVIEW',
     warning:           '⚠️ Include "Reply STOP" in your messages to respect privacy.',
     select_all:        'Select all',
     search:            'Search customer...',
@@ -84,7 +81,6 @@ const MK = {
     title:             'Marketing WhatsApp',
     subtitle:          'Envía mensajes personalizados de WhatsApp a tus clientes',
     yourMessage:       '✏️ Su mensaje',
-    preview:           'VISTA PREVIA WHATSAPP',
     warning:           '⚠️ Incluya "Responda STOP" en sus mensajes.',
     select_all:        'Seleccionar todo',
     search:            'Buscar cliente...',
@@ -116,7 +112,6 @@ const MK = {
     title:             'Marketing WhatsApp',
     subtitle:          'Invia messaggi WhatsApp personalizzati ai tuoi clienti',
     yourMessage:       '✏️ Il tuo messaggio',
-    preview:           'ANTEPRIMA WHATSAPP',
     warning:           '⚠️ Includi "Rispondi STOP" nei tuoi messaggi.',
     select_all:        'Seleziona tutto',
     search:            'Cerca cliente...',
@@ -147,45 +142,6 @@ const MK = {
 }
 
 const TPL_ICONS = ['🏷️', '📦', '🎁', '💬']
-
-// ─── WhatsApp Markdown Renderer ───────────────────────────────────────────────
-
-function WhatsAppRenderer({ text }: { text: string }) {
-  if (!text) return (
-    <span style={{ color:'rgba(255,255,255,.3)', fontSize:13 }}>
-      Votre message apparaîtra ici...
-    </span>
-  )
-
-  const renderLine = (line: string, key: number) => {
-    const parts: React.ReactNode[] = []
-    const regex = /(\*(.+?)\*|_(.+?)_|~(.+?)~|```([\s\S]+?)```|`(.+?)`)/g
-    let last = 0
-    let match: RegExpExecArray | null
-
-    while ((match = regex.exec(line)) !== null) {
-      if (match.index > last) parts.push(line.slice(last, match.index))
-      if (match[2]) {
-        parts.push(<strong key={match.index} style={{ fontWeight:700, color:'#fff' }}>{match[2]}</strong>)
-      } else if (match[3]) {
-        parts.push(<em key={match.index} style={{ fontStyle:'italic', color:'rgba(255,255,255,.9)' }}>{match[3]}</em>)
-      } else if (match[4]) {
-        parts.push(<span key={match.index} style={{ textDecoration:'line-through', color:'rgba(255,255,255,.6)' }}>{match[4]}</span>)
-      } else if (match[5] || match[6]) {
-        parts.push(<code key={match.index} style={{ background:'rgba(0,0,0,.3)', borderRadius:4, padding:'1px 5px', fontSize:12, fontFamily:'monospace', color:'#B5EAD7' }}>{match[5] ?? match[6]}</code>)
-      }
-      last = match.index + match[0].length
-    }
-    if (last < line.length) parts.push(line.slice(last))
-    return (
-      <div key={key} style={{ minHeight: line ? 'auto' : '8px', lineHeight:1.5 }}>
-        {parts.length > 0 ? parts : line || ' '}
-      </div>
-    )
-  }
-
-  return <>{text.split('\n').map((line, i) => renderLine(line, i))}</>
-}
 
 export default function Marketing() {
   const { lang } = useAppStore()
@@ -265,7 +221,7 @@ export default function Marketing() {
   const charCount = message.length
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: '24px 28px', maxWidth: 900, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 4 }}>
@@ -274,9 +230,53 @@ export default function Marketing() {
         <p style={{ fontSize: 13, color: 'var(--text3)' }}>{mk.subtitle}</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* ── Colonne gauche : clients ── */}
+        {/* ── Templates ── */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
+            {mk.templates_title}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+            {templates.map(tpl => (
+              <button key={tpl.label} onClick={() => setMessage(tpl.msg)} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'var(--bg3)', border: '1px solid var(--border)',
+                borderRadius: 8, padding: '8px 12px', cursor: 'pointer',
+                fontSize: 12, fontWeight: 600, color: 'var(--text2)', fontFamily: 'var(--font)',
+                textAlign: 'left', transition: 'all .12s',
+              }}>
+                <span style={{ fontSize: 16 }}>{tpl.icon}</span>
+                {tpl.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Message composer ── */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+            {mk.msg_title}
+          </div>
+          <textarea
+            className="input"
+            rows={8}
+            style={{ width: '100%', resize: 'vertical', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit' }}
+            placeholder={mk.msg_placeholder}
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+            <span style={{ fontSize: 11, color: charCount > 1000 ? 'var(--danger)' : 'var(--text3)' }}>
+              {charCount} / 1024 {mk.chars}
+            </span>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+              {mk.formatting}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Customers ── */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
           {/* Toolbar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
@@ -309,7 +309,7 @@ export default function Marketing() {
           ) : filtered.length === 0 ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>{mk.no_customers}</div>
           ) : (
-            <div style={{ maxHeight: 480, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 360, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
               {filtered.map(c => {
                 const isSelected = selected.has(c.id)
                 return (
@@ -356,195 +356,54 @@ export default function Marketing() {
           )}
         </div>
 
-        {/* ── Colonne droite : message + aperçu ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Templates */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
-              {mk.templates_title}
+        {/* ── Result ── */}
+        {result && (
+          <div style={{
+            background: result.failed === 0 ? 'rgba(14,196,126,.1)' : 'rgba(240,165,0,.1)',
+            border: `1px solid ${result.failed === 0 ? 'rgba(14,196,126,.3)' : 'rgba(240,165,0,.3)'}`,
+            borderRadius: 10, padding: '12px 16px',
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: result.failed === 0 ? 'var(--acc2)' : 'var(--acc)', marginBottom: 4 }}>
+              {result.failed === 0 ? mk.result_ok : mk.result_partial}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {templates.map(tpl => (
-                <button key={tpl.label} onClick={() => setMessage(tpl.msg)} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  background: 'var(--bg3)', border: '1px solid var(--border)',
-                  borderRadius: 8, padding: '8px 12px', cursor: 'pointer',
-                  fontSize: 12, fontWeight: 600, color: 'var(--text2)', fontFamily: 'var(--font)',
-                  textAlign: 'left', transition: 'all .12s',
-                }}>
-                  <span style={{ fontSize: 16 }}>{tpl.icon}</span>
-                  {tpl.label}
-                </button>
-              ))}
+            <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+              {result.sent} {mk.sent_toast}
+              {result.failed > 0 && ` · ${result.failed} échoué${result.failed > 1 ? 's' : ''}`}
             </div>
           </div>
+        )}
 
-          {/* Message composer */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
-              {mk.msg_title}
-            </div>
-            <textarea
-              className="input"
-              style={{ width: '100%', minHeight: 120, resize: 'vertical', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit' }}
-              placeholder={mk.msg_placeholder}
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-              <span style={{ fontSize: 11, color: charCount > 1000 ? 'var(--danger)' : 'var(--text3)' }}>
-                {charCount} / 1024 {mk.chars}
-              </span>
-              <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                {mk.formatting}
-              </span>
-            </div>
-          </div>
+        {/* ── Send button ── */}
+        <button
+          onClick={handleSend}
+          disabled={sending || !selected.size || !message.trim()}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            width: '100%', padding: '13px',
+            background: sending || !selected.size || !message.trim()
+              ? 'var(--bg4)'
+              : 'linear-gradient(135deg, #25D366, #128C7E)',
+            border: 'none', borderRadius: 11,
+            fontSize: 14, fontWeight: 700,
+            color: sending || !selected.size || !message.trim() ? 'var(--text3)' : '#fff',
+            cursor: sending || !selected.size || !message.trim() ? 'not-allowed' : 'pointer',
+            fontFamily: 'inherit',
+            boxShadow: !sending && selected.size && message.trim() ? '0 6px 20px rgba(37,211,102,.35)' : 'none',
+            transition: 'all .2s',
+          }}
+        >
+          {sending
+            ? `⏳ ${mk.sending}`
+            : selected.size
+              ? <><Send size={16} />{mk.send} {selected.size} {selected.size > 1 ? mk.clients : mk.client}</>
+              : mk.select_recipients}
+        </button>
 
-          {/* ── Aperçu WhatsApp smartphone mockup ── */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 14 }}>
-              {mk.preview}
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
-              {/* Mockup smartphone */}
-              <div style={{
-                width:260,
-                background:'#111B21',
-                borderRadius:24, overflow:'hidden',
-                boxShadow:'0 20px 60px rgba(0,0,0,.8), inset 0 0 0 1px rgba(255,255,255,.08)',
-                border:'2px solid rgba(255,255,255,.06)',
-              }}>
-                {/* Status bar */}
-                <div style={{ background:'#1F2C34', padding:'8px 16px', display:'flex', alignItems:'center', gap:10 }}>
-                  <div style={{
-                    width:34, height:34, borderRadius:'50%',
-                    background:'linear-gradient(135deg,#25D366,#128C7E)',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    fontSize:16, flexShrink:0,
-                  }}>🏪</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:13, fontWeight:700, color:'#fff' }}>HabaShop</div>
-                    <div style={{ fontSize:10, color:'#8696A0' }}>
-                      {lang === 'fr' ? 'En ligne' : 'Online'}
-                    </div>
-                  </div>
-                  <div style={{ display:'flex', gap:6 }}>
-                    <span style={{ fontSize:14, opacity:.6 }}>📹</span>
-                    <span style={{ fontSize:14, opacity:.6 }}>📞</span>
-                  </div>
-                </div>
-
-                {/* Zone messages */}
-                <div style={{
-                  background:'#0B141A',
-                  padding:'16px 10px',
-                  minHeight:200,
-                  display:'flex', flexDirection:'column', gap:8,
-                }}>
-                  <div style={{ textAlign:'center', fontSize:10, color:'#8696A0', marginBottom:4 }}>
-                    {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day:'numeric', month:'short' })}
-                  </div>
-
-                  {message ? (
-                    <div style={{ alignSelf:'flex-end', maxWidth:'85%' }}>
-                      <div style={{
-                        background:'#005C4B',
-                        borderRadius:'16px 4px 16px 16px',
-                        padding:'8px 12px',
-                        boxShadow:'0 2px 8px rgba(0,0,0,.3)',
-                        position:'relative',
-                      }}>
-                        <div style={{
-                          position:'absolute', top:0, right:-6,
-                          width:12, height:12,
-                          background:'#005C4B',
-                          clipPath:'polygon(0 0, 100% 0, 0 100%)',
-                        }}/>
-                        <div style={{ fontSize:13, color:'rgba(255,255,255,.95)', lineHeight:1.5, wordBreak:'break-word' }}>
-                          <WhatsAppRenderer text={message} />
-                        </div>
-                        <div style={{ display:'flex', justifyContent:'flex-end', alignItems:'center', gap:3, marginTop:4 }}>
-                          <span style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>
-                            {new Date().toLocaleTimeString(lang === 'fr' ? 'fr-FR' : 'en-US', { hour:'2-digit', minute:'2-digit' })}
-                          </span>
-                          <span style={{ fontSize:11, color:'#53BDEB' }}>✓✓</span>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ textAlign:'center', padding:'20px', color:'#8696A0', fontSize:12 }}>
-                      {lang === 'fr' ? 'Votre message apparaîtra ici' : 'Your message will appear here'}
-                    </div>
-                  )}
-                </div>
-
-                {/* Barre saisie décorative */}
-                <div style={{ background:'#1F2C34', padding:'8px 10px', display:'flex', alignItems:'center', gap:8 }}>
-                  <div style={{ flex:1, background:'#2A3942', borderRadius:20, padding:'8px 14px', fontSize:12, color:'#8696A0' }}>
-                    {lang === 'fr' ? 'Message...' : 'Message...'}
-                  </div>
-                  <div style={{ width:36, height:36, borderRadius:'50%', background:'#00A884', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🎤</div>
-                </div>
-              </div>
-
-              {/* Compteur */}
-              <div style={{ fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
-                <span>{message.length}/1000 {lang === 'fr' ? 'car.' : 'chars'}</span>
-                <span>{Math.ceil(message.length / 160)} SMS {lang === 'fr' ? 'équivalent' : 'equiv.'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Result */}
-          {result && (
-            <div style={{
-              background: result.failed === 0 ? 'rgba(14,196,126,.1)' : 'rgba(240,165,0,.1)',
-              border: `1px solid ${result.failed === 0 ? 'rgba(14,196,126,.3)' : 'rgba(240,165,0,.3)'}`,
-              borderRadius: 10, padding: '12px 16px',
-            }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: result.failed === 0 ? 'var(--acc2)' : 'var(--acc)', marginBottom: 4 }}>
-                {result.failed === 0 ? mk.result_ok : mk.result_partial}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text2)' }}>
-                {result.sent} {mk.sent_toast}
-                {result.failed > 0 && ` · ${result.failed} échoué${result.failed > 1 ? 's' : ''}`}
-              </div>
-            </div>
-          )}
-
-          {/* Send button */}
-          <button
-            onClick={handleSend}
-            disabled={sending || !selected.size || !message.trim()}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              width: '100%', padding: '13px',
-              background: sending || !selected.size || !message.trim()
-                ? 'var(--bg4)'
-                : 'linear-gradient(135deg, #25D366, #128C7E)',
-              border: 'none', borderRadius: 11,
-              fontSize: 14, fontWeight: 700,
-              color: sending || !selected.size || !message.trim() ? 'var(--text3)' : '#fff',
-              cursor: sending || !selected.size || !message.trim() ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: !sending && selected.size && message.trim() ? '0 6px 20px rgba(37,211,102,.35)' : 'none',
-              transition: 'all .2s',
-            }}
-          >
-            {sending
-              ? `⏳ ${mk.sending}`
-              : selected.size
-                ? <><Send size={16} />{mk.send} {selected.size} {selected.size > 1 ? mk.clients : mk.client}</>
-                : mk.select_recipients}
-          </button>
-
-          <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.5 }}>
-            {mk.limit}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--acc)', textAlign: 'center', lineHeight: 1.5 }}>
-            {mk.warning}
-          </div>
+        <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.5 }}>
+          {mk.limit}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--acc)', textAlign: 'center', lineHeight: 1.5 }}>
+          {mk.warning}
         </div>
       </div>
     </div>

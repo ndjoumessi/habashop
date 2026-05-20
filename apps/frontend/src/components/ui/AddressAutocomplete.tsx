@@ -1,12 +1,12 @@
 import { useRef, useEffect, useState } from 'react'
 
 interface AddressDetails {
-  lat: number
-  lng: number
-  city: string
-  country: string
-  postalCode: string
-  formatted: string
+  lat?: number
+  lng?: number
+  city?: string
+  country?: string
+  postalCode?: string
+  formatted?: string
 }
 
 interface AddressAutocompleteProps {
@@ -21,73 +21,79 @@ export default function AddressAutocomplete({
   value, onChange, placeholder, lang = 'fr', disabled,
 }: AddressAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(false)
   const [focused, setFocused] = useState(false)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY as string
 
-  // Charge le script Google Maps
+  // Charge Google Maps en background — n'affecte pas la saisie manuelle
   useEffect(() => {
     if (!apiKey) return
     if ((window as any).google?.maps?.places) { setReady(true); return }
-    if ((window as any)._gmLoading) {
+    // Évite de charger le script deux fois
+    if (document.querySelector('script[data-gm]')) {
       const check = setInterval(() => {
         if ((window as any).google?.maps?.places) {
-          setReady(true); clearInterval(check)
+          setReady(true)
+          clearInterval(check)
         }
-      }, 100)
+      }, 200)
       return () => clearInterval(check)
     }
-    (window as any)._gmLoading = true
     const script = document.createElement('script')
+    script.setAttribute('data-gm', '1')
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=${lang}`
     script.async = true
-    script.onload = () => { setReady(true); (window as any)._gmLoading = false }
-    script.onerror = () => { (window as any)._gmLoading = false }
+    script.onload = () => setReady(true)
+    script.onerror = () => {}
     document.head.appendChild(script)
-  }, [apiKey, lang])
+  }, [])
 
+  // Autocomplete via AutocompleteService (pas de widget)
   useEffect(() => {
     if (!ready || !inputRef.current) return
     const google = (window as any).google
+    if (!google?.maps?.places?.AutocompleteService) return
 
     const service = new google.maps.places.AutocompleteService()
-    let debounceTimer: any
+    let timer: ReturnType<typeof setTimeout>
 
-    const handleInput = (val: string) => {
-      clearTimeout(debounceTimer)
-      if (!val || val.length < 3) { setSuggestions([]); return }
-      debounceTimer = setTimeout(() => {
+    const handleInput = () => {
+      const val = inputRef.current?.value ?? ''
+      clearTimeout(timer)
+      if (val.length < 3) { setSuggestions([]); return }
+      timer = setTimeout(() => {
         service.getPlacePredictions(
           { input: val, types: ['address'], language: lang },
-          (predictions: any[] | null) => { setSuggestions(predictions ?? []) }
+          (preds: any[] | null) => setSuggestions(preds ?? [])
         )
-      }, 300)
+      }, 350)
     }
 
     const input = inputRef.current
-    const handler = () => handleInput(input.value)
-    input.addEventListener('input', handler)
-    return () => { input.removeEventListener('input', handler); clearTimeout(debounceTimer) }
-  }, [ready, lang])
+    input.addEventListener('input', handleInput)
+    return () => { input.removeEventListener('input', handleInput); clearTimeout(timer) }
+  }, [ready])
 
-  const selectSuggestion = (suggestion: any) => {
+  const pickSuggestion = (s: any) => {
     const google = (window as any).google
-    if (!google) return
-
-    const service = new google.maps.places.PlacesService(document.createElement('div'))
-    service.getDetails(
-      { placeId: suggestion.place_id, fields: ['formatted_address', 'geometry', 'address_components'] },
+    if (!google?.maps?.places) {
+      onChange(s.description)
+      setSuggestions([])
+      return
+    }
+    const svc = new google.maps.places.PlacesService(document.createElement('div'))
+    svc.getDetails(
+      { placeId: s.place_id, fields: ['formatted_address', 'geometry', 'address_components'] },
       (place: any) => {
-        if (!place) return
+        if (!place) { onChange(s.description); setSuggestions([]); return }
         const getComp = (type: string) => {
           const c = place.address_components?.find((c: any) => c.types.includes(type))
           return c?.long_name ?? ''
         }
-        onChange(place.formatted_address ?? suggestion.description, {
-          lat: place.geometry?.location.lat(),
-          lng: place.geometry?.location.lng(),
+        onChange(place.formatted_address ?? s.description, {
+          lat: place.geometry?.location?.lat(),
+          lng: place.geometry?.location?.lng(),
           city: getComp('locality'),
           country: getComp('country'),
           postalCode: getComp('postal_code'),
@@ -99,96 +105,97 @@ export default function AddressAutocomplete({
   }
 
   return (
-    <div style={{ position:'relative' }}>
-      {/* Input */}
+    <div style={{ position: 'relative' }}>
+      {/* Input principal — TOUJOURS éditable */}
       <div style={{
-        display:'flex', alignItems:'center',
-        background:'var(--bg4)',
-        border:`1.5px solid ${focused ? 'var(--p)' : 'var(--border)'}`,
-        borderRadius:12,
-        transition:'border-color .15s',
-        overflow:'hidden',
+        display: 'flex', alignItems: 'center',
+        background: 'var(--bg4)',
+        border: `1.5px solid ${focused ? 'var(--p)' : 'var(--border)'}`,
+        borderRadius: 12,
+        transition: 'border-color .15s',
       }}>
-        <div style={{
-          padding:'0 10px 0 12px',
-          fontSize:16, color:'var(--text3)', flexShrink:0,
-          display:'flex', alignItems:'center',
-        }}>📍</div>
+        <span style={{
+          padding: '0 4px 0 12px', fontSize: 15, flexShrink: 0,
+          color: focused ? 'var(--p2)' : 'var(--text3)',
+          pointerEvents: 'none', transition: 'color .15s',
+        }}>📍</span>
         <input
           ref={inputRef}
-          className="input"
           style={{
-            border:'none', background:'transparent',
-            padding:'10px 12px 10px 0',
-            flex:1, outline:'none',
+            flex: 1, background: 'transparent',
+            border: 'none', outline: 'none',
+            color: 'var(--text)', fontSize: 13,
+            padding: '11px 12px 11px 6px',
+            fontFamily: 'var(--font)',
+            cursor: disabled ? 'not-allowed' : 'text',
+            opacity: disabled ? .5 : 1,
           }}
           placeholder={placeholder ?? (lang === 'fr' ? 'Adresse...' : 'Address...')}
           value={value}
-          onChange={e => onChange(e.target.value)}
+          disabled={!!disabled}
+          autoComplete="off"
           onFocus={() => setFocused(true)}
           onBlur={() => { setTimeout(() => setFocused(false), 200) }}
-          disabled={disabled}
-          autoComplete="off"
+          onChange={e => {
+            onChange(e.target.value)
+            if (!e.target.value) setSuggestions([])
+          }}
         />
-        {value && (
+        {value && !disabled && (
           <button type="button"
-            onClick={() => { onChange(''); setSuggestions([]) }}
+            onMouseDown={e => { e.preventDefault(); onChange(''); setSuggestions([]) }}
             style={{
-              padding:'0 12px', background:'none', border:'none',
-              cursor:'pointer', fontSize:12, color:'var(--text3)',
+              padding: '0 10px', background: 'none', border: 'none',
+              cursor: 'pointer', fontSize: 12, color: 'var(--text3)', flexShrink: 0,
             }}>✕</button>
         )}
       </div>
 
-      {!apiKey && (
-        <div style={{ fontSize:9, color:'var(--text4)', marginTop:3, paddingLeft:4 }}>
-          {lang === 'fr' ? '⚠️ Clé Google Maps non configurée' : '⚠️ Google Maps key not configured'}
-        </div>
-      )}
-
-      {/* Dropdown suggestions */}
+      {/* Dropdown suggestions Google Maps */}
       {suggestions.length > 0 && focused && (
-        <div ref={dropdownRef} style={{
-          position:'absolute', top:'calc(100% + 6px)',
-          left:0, right:0, zIndex:1000,
-          background:'#0D0D1C',
-          border:'1px solid rgba(255,255,255,.1)',
-          borderRadius:14, overflow:'hidden',
-          boxShadow:'0 12px 36px rgba(0,0,0,.7)',
-          animation:'slideDown .15s ease',
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)',
+          left: 0, right: 0, zIndex: 9999,
+          background: '#0D0D1C',
+          border: '1px solid rgba(255,255,255,.1)',
+          borderRadius: 12, overflow: 'hidden',
+          boxShadow: '0 12px 40px rgba(0,0,0,.8)',
         }}>
-          {suggestions.map((s, i) => (
-            <button key={s.place_id} type="button"
-              onMouseDown={() => selectSuggestion(s)}
+          {suggestions.slice(0, 5).map((s, i) => (
+            <button key={s.place_id ?? i} type="button"
+              onMouseDown={() => pickSuggestion(s)}
               style={{
-                display:'flex', alignItems:'flex-start',
-                gap:10, width:'100%', padding:'10px 14px',
-                background: i === 0 ? 'rgba(108,71,255,.05)' : 'transparent',
-                border:'none',
-                borderBottom: i < suggestions.length - 1
+                display: 'flex', alignItems: 'flex-start', gap: 8,
+                width: '100%', padding: '10px 14px',
+                background: 'transparent', border: 'none',
+                borderBottom: i < Math.min(suggestions.length, 5) - 1
                   ? '1px solid rgba(255,255,255,.04)' : 'none',
-                cursor:'pointer', textAlign:'left',
-                fontFamily:'var(--font)',
-                transition:'background .1s',
+                cursor: 'pointer', textAlign: 'left',
+                fontFamily: 'var(--font)', transition: 'background .1s',
               }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.1)'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = i === 0 ? 'rgba(108,71,255,.05)' : 'transparent'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
             >
-              <span style={{ fontSize:14, flexShrink:0, marginTop:1 }}>📍</span>
-              <div>
-                <div style={{ fontSize:12, fontWeight:600, color:'var(--text)' }}>
+              <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>📍</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{
+                  fontSize: 12, fontWeight: 600, color: 'var(--text)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
                   {s.structured_formatting?.main_text ?? s.description.split(',')[0]}
                 </div>
-                <div style={{ fontSize:10, color:'var(--text3)', marginTop:2 }}>
+                <div style={{
+                  fontSize: 10, color: 'var(--text3)', marginTop: 2,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
                   {s.structured_formatting?.secondary_text ?? s.description.split(',').slice(1).join(',')}
                 </div>
               </div>
             </button>
           ))}
           <div style={{
-            padding:'6px 14px', fontSize:9,
-            color:'var(--text4)', textAlign:'right',
-            background:'rgba(0,0,0,.2)',
+            padding: '5px 14px', fontSize: 9, color: 'var(--text4)',
+            textAlign: 'right', background: 'rgba(0,0,0,.15)',
           }}>
             Powered by Google
           </div>
