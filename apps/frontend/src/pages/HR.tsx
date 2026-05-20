@@ -1856,14 +1856,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   {lang==='fr'?'RÉMUNÉRATION':'COMPENSATION'}
                 </div>
                 <div style={{ position:'relative' }}>
+                  <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>
+                    {lang==='fr'?`SALAIRE MENSUEL BRUT (${currency})`:`MONTHLY GROSS SALARY (${currency})`}
+                  </label>
                   <input className="input" type="number" placeholder="150000" value={editEmpForm.salary||''} onChange={e => setEditEmpForm((f:any) => ({ ...f, salary:+e.target.value }))} style={{ paddingRight:60 }} />
-                  <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>
+                  <span style={{ position:'absolute', right:12, bottom:10, fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>
                     {currency==='EUR'?'€':currency==='USD'?'$':'FCFA'}
                   </span>
                 </div>
                 {(editEmpForm.salary||0) > 0 && (
-                  <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
-                    <span>CNSS: <strong style={{color:'var(--danger)'}}>− {fmt(Math.round((editEmpForm.salary||0)*0.08))}</strong></span>
+                  <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:16, flexWrap:'wrap' }}>
+                    <span>CNSS (8%): <strong style={{color:'var(--danger)'}}>− {fmt(Math.round((editEmpForm.salary||0)*0.08))}</strong></span>
+                    <span>IR (5%): <strong style={{color:'var(--acc)'}}>− {fmt(Math.round((editEmpForm.salary||0)*0.05))}</strong></span>
                     <span>Net: <strong style={{color:'var(--acc2)'}}>{fmt(Math.round((editEmpForm.salary||0)*0.87))}</strong></span>
                   </div>
                 )}

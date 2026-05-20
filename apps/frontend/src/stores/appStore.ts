@@ -292,26 +292,24 @@ export function useFormatAmount() {
 
   return (amount: number): string => {
     const n = Number(amount) || 0
-
-    const FORMATS: Record<string, { locale: string; options: Intl.NumberFormatOptions }> = {
-      XOF: { locale:'fr-FR', options:{ style:'decimal', minimumFractionDigits:0, maximumFractionDigits:0 } },
-      XAF: { locale:'fr-FR', options:{ style:'decimal', minimumFractionDigits:0, maximumFractionDigits:0 } },
-      EUR: { locale:'fr-FR', options:{ style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2 } },
-      USD: { locale:'en-US', options:{ style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 } },
-      CAD: { locale:'fr-CA', options:{ style:'currency', currency:'CAD', minimumFractionDigits:2, maximumFractionDigits:2 } },
-      GBP: { locale:'en-GB', options:{ style:'currency', currency:'GBP', minimumFractionDigits:2, maximumFractionDigits:2 } },
-    }
-
-    const converted = convertCurrency(n, 'XOF', currency)
-    const fmt = FORMATS[currency] ?? FORMATS.XOF
-
     try {
-      const formatted = new Intl.NumberFormat(fmt.locale, fmt.options).format(converted)
-      if (currency === 'XOF') return `${formatted} FCFA`
-      if (currency === 'XAF') return `${formatted} FCFA`
-      return formatted
+      if (currency === 'EUR') {
+        return new Intl.NumberFormat('fr-FR', { style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n)
+      }
+      if (currency === 'USD') {
+        return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n)
+      }
+      if (currency === 'CAD') {
+        return new Intl.NumberFormat('fr-CA', { style:'currency', currency:'CAD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n)
+      }
+      if (currency === 'GBP') {
+        return new Intl.NumberFormat('en-GB', { style:'currency', currency:'GBP', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n)
+      }
+      // XOF, XAF, default — affichage sans conversion
+      const formatted = new Intl.NumberFormat('fr-FR', { style:'decimal', minimumFractionDigits:0, maximumFractionDigits:0 }).format(n)
+      return `${formatted} FCFA`
     } catch {
-      return `${converted.toLocaleString()} ${currency}`
+      return `${n.toLocaleString('fr-FR')} ${currency}`
     }
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
@@ -6,7 +6,6 @@ import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
 import PhoneInput from '@/components/ui/PhoneInput'
-import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
 
 type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
@@ -93,6 +92,82 @@ const CUSTOMERS_INIT: Customer[] = [
     notes: '',
   },
 ]
+
+function SmartAddressInput({ value, onChange, lang }: { value: string; onChange: (v: string) => void; lang: string }) {
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [showSugg, setShowSugg] = useState(false)
+
+  const fetchSuggestions = useCallback((input: string) => {
+    if (!input || input.length < 3) { setSuggestions([]); return }
+    const google = (window as any).google
+    if (!google?.maps?.places?.AutocompleteService) return
+    const svc = new google.maps.places.AutocompleteService()
+    svc.getPlacePredictions(
+      { input, types: ['address'], language: lang },
+      (preds: any[] | null) => {
+        setSuggestions((preds ?? []).slice(0, 4).map((p: any) => p.description))
+      }
+    )
+  }, [lang])
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        background: 'var(--bg4)',
+        border: '1.5px solid var(--border)',
+        borderRadius: 12, overflow: 'visible',
+      }}>
+        <span style={{ padding: '0 6px 0 12px', fontSize: 14, flexShrink: 0, color: 'var(--text3)' }}>📍</span>
+        <input
+          type="text"
+          className="input"
+          style={{ flex: 1, border: 'none', background: 'transparent', padding: '10px 12px 10px 4px', outline: 'none' }}
+          placeholder={lang === 'fr' ? 'Adresse du client...' : 'Customer address...'}
+          value={value}
+          autoComplete="off"
+          onChange={e => {
+            onChange(e.target.value)
+            fetchSuggestions(e.target.value)
+            setShowSugg(true)
+          }}
+          onFocus={() => setShowSugg(true)}
+          onBlur={() => setTimeout(() => setShowSugg(false), 150)}
+        />
+        {value && (
+          <button type="button"
+            onClick={() => { onChange(''); setSuggestions([]) }}
+            style={{ padding: '0 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--text3)' }}>✕</button>
+        )}
+      </div>
+      {showSugg && suggestions.length > 0 && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 9999,
+          background: '#0D0D1C', border: '1px solid rgba(255,255,255,.1)',
+          borderRadius: 10, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,.8)',
+        }}>
+          {suggestions.map((s, i) => (
+            <button key={i} type="button"
+              onMouseDown={() => { onChange(s); setSuggestions([]); setShowSugg(false) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                padding: '9px 14px', background: 'transparent', border: 'none',
+                borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)',
+                fontSize: 12, color: 'var(--text)',
+              }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.1)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+            >
+              <span style={{ fontSize: 12, flexShrink: 0 }}>📍</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function LoyaltyBar({ points, max }: { points: number; max: number }) {
   const pct = Math.min(100, Math.round((points / max) * 100))
@@ -689,8 +764,8 @@ export default function Customers() {
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Adresse</label>
-                <AddressAutocomplete value={editCustForm.address}
-                  onChange={v => setEditCustForm(f => ({...f, address:v}))} />
+                <SmartAddressInput value={editCustForm.address}
+                  onChange={v => setEditCustForm(f => ({...f, address:v}))} lang={lang} />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
@@ -827,8 +902,7 @@ export default function Customers() {
                 <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
                   {lang==='fr'?'ADRESSE':'ADDRESS'}
                 </label>
-                <AddressAutocomplete value={form.address} onChange={v=>setForm(f=>({...f,address:v}))}
-                  placeholder={lang==='fr'?'Adresse...':'Address...'} lang={lang} />
+                <SmartAddressInput value={form.address} onChange={v=>setForm(f=>({...f,address:v}))} lang={lang} />
               </div>
             </div>
 

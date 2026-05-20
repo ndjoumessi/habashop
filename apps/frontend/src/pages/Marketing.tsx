@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import React from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { customersApi, marketingApi } from '@/lib/api'
 import toast from 'react-hot-toast'
@@ -18,7 +19,6 @@ const MK = {
   fr: {
     title:             'WhatsApp Marketing',
     subtitle:          'Envoyez des messages WhatsApp personnalisés à vos clients',
-    yourMessage:       '✏️ Votre message',
     warning:           '⚠️ Incluez "Répondez STOP" dans vos messages pour respecter la confidentialité.',
     select_all:        'Tout sélectionner',
     search:            'Rechercher un client...',
@@ -41,6 +41,7 @@ const MK = {
     err_msg:           'Écrivez un message avant d\'envoyer',
     err_recipient:     'Sélectionnez au moins un destinataire',
     err_max:           'Maximum 20 destinataires par envoi',
+    wa_render:         'RENDU WHATSAPP',
     tpl_promo:   { label: 'Promotion du jour',      msg: '🎉 *Promotion spéciale !*\n\nProfitez de nos offres exceptionnelles aujourd\'hui !\n\n👉 Venez nous rendre visite ou contactez-nous pour en savoir plus.\n\n_Votre équipe HabaShop_ 🛒' },
     tpl_stock:   { label: 'Nouveau stock',           msg: '📦 *Nouvelle arrivée en stock !*\n\nDe nouveaux produits viennent d\'arriver !\nQuantités limitées — premier arrivé, premier servi.\n\n🏪 Retrouvez-nous en boutique.\n\n_Votre équipe HabaShop_ 🛒' },
     tpl_loyalty: { label: 'Programme fidélité',      msg: '🎁 *Programme Fidélité HabaShop*\n\nVos achats vous rapportent des points !\n\n🥉 Bronze → 🥈 Silver → 🥇 Gold\n\nCumulez des points à chaque achat et profitez de remises exclusives.\n\n_Votre équipe HabaShop_ 🛒' },
@@ -49,7 +50,6 @@ const MK = {
   en: {
     title:             'WhatsApp Marketing',
     subtitle:          'Send personalized WhatsApp messages to your customers',
-    yourMessage:       '✏️ Your message',
     warning:           '⚠️ Include "Reply STOP" in your messages to respect privacy.',
     select_all:        'Select all',
     search:            'Search customer...',
@@ -72,6 +72,7 @@ const MK = {
     err_msg:           'Write a message before sending',
     err_recipient:     'Select at least one recipient',
     err_max:           'Maximum 20 recipients per send',
+    wa_render:         'WHATSAPP RENDER',
     tpl_promo:   { label: 'Daily promotion',    msg: '🎉 *Special Offer!*\n\nTake advantage of our exceptional deals today!\n\n👉 Come visit us or contact us for more info.\n\n_Your HabaShop team_ 🛒' },
     tpl_stock:   { label: 'New stock',          msg: '📦 *New Stock Arrival!*\n\nFresh products just arrived!\nLimited quantities — first come, first served.\n\n🏪 Find us in store.\n\n_Your HabaShop team_ 🛒' },
     tpl_loyalty: { label: 'Loyalty program',    msg: '🎁 *HabaShop Loyalty Program*\n\nYour purchases earn you points!\n\n🥉 Bronze → 🥈 Silver → 🥇 Gold\n\nEarn points with every purchase and enjoy exclusive discounts.\n\n_Your HabaShop team_ 🛒' },
@@ -80,7 +81,6 @@ const MK = {
   es: {
     title:             'Marketing WhatsApp',
     subtitle:          'Envía mensajes personalizados de WhatsApp a tus clientes',
-    yourMessage:       '✏️ Su mensaje',
     warning:           '⚠️ Incluya "Responda STOP" en sus mensajes.',
     select_all:        'Seleccionar todo',
     search:            'Buscar cliente...',
@@ -103,6 +103,7 @@ const MK = {
     err_msg:           'Escribe un mensaje antes de enviar',
     err_recipient:     'Selecciona al menos un destinatario',
     err_max:           'Máximo 20 destinatarios por envío',
+    wa_render:         'VISTA PREVIA',
     tpl_promo:   { label: 'Promoción del día',        msg: '🎉 *¡Oferta especial!*\n\n¡Aprovecha nuestras ofertas excepcionales hoy!\n\n👉 Visítanos o contáctanos para más información.\n\n_Tu equipo HabaShop_ 🛒' },
     tpl_stock:   { label: 'Nuevo stock',              msg: '📦 *¡Nueva llegada de stock!*\n\n¡Productos frescos recién llegados!\nCantidades limitadas — primero en llegar, primero en servirse.\n\n🏪 Encuéntranos en tienda.\n\n_Tu equipo HabaShop_ 🛒' },
     tpl_loyalty: { label: 'Programa de fidelidad',   msg: '🎁 *Programa Fidelidad HabaShop*\n\n¡Tus compras te dan puntos!\n\n🥉 Bronce → 🥈 Plata → 🥇 Oro\n\nAcumula puntos en cada compra y disfruta de descuentos exclusivos.\n\n_Tu equipo HabaShop_ 🛒' },
@@ -111,7 +112,6 @@ const MK = {
   it: {
     title:             'Marketing WhatsApp',
     subtitle:          'Invia messaggi WhatsApp personalizzati ai tuoi clienti',
-    yourMessage:       '✏️ Il tuo messaggio',
     warning:           '⚠️ Includi "Rispondi STOP" nei tuoi messaggi.',
     select_all:        'Seleziona tutto',
     search:            'Cerca cliente...',
@@ -134,6 +134,7 @@ const MK = {
     err_msg:           'Scrivi un messaggio prima di inviare',
     err_recipient:     'Seleziona almeno un destinatario',
     err_max:           'Massimo 20 destinatari per invio',
+    wa_render:         'ANTEPRIMA',
     tpl_promo:   { label: 'Promozione del giorno',  msg: '🎉 *Offerta speciale!*\n\nApprofittate delle nostre offerte eccezionali oggi!\n\n👉 Venite a trovarci o contattateci per maggiori informazioni.\n\n_Il tuo team HabaShop_ 🛒' },
     tpl_stock:   { label: 'Nuovo stock',            msg: '📦 *Nuovo arrivo in magazzino!*\n\nProdotti freschi appena arrivati!\nQuantità limitate — primo arrivato, primo servito.\n\n🏪 Trovaci in negozio.\n\n_Il tuo team HabaShop_ 🛒' },
     tpl_loyalty: { label: 'Programma fedeltà',      msg: '🎁 *Programma Fedeltà HabaShop*\n\nI tuoi acquisti ti danno punti!\n\n🥉 Bronzo → 🥈 Argento → 🥇 Oro\n\nAccumula punti ad ogni acquisto e goditi sconti esclusivi.\n\n_Il tuo team HabaShop_ 🛒' },
@@ -142,6 +143,40 @@ const MK = {
 }
 
 const TPL_ICONS = ['🏷️', '📦', '🎁', '💬']
+
+// ─── WhatsApp Inline Renderer ────────────────────────────────────────────────
+
+function WhatsAppInlineRenderer({ text }: { text: string }) {
+  const renderLine = (line: string, key: number) => {
+    const parts: React.ReactNode[] = []
+    const regex = /(\*\*(.+?)\*\*|\*([^*]+?)\*|_([^_]+?)_|~([^~]+?)~|```([\s\S]+?)```|`([^`]+?)`)/g
+    let last = 0
+    let match: RegExpExecArray | null
+
+    while ((match = regex.exec(line)) !== null) {
+      if (match.index > last) parts.push(line.slice(last, match.index))
+      if (match[2] || match[3]) {
+        parts.push(<strong key={match.index} style={{ fontWeight: 700, color: 'var(--text)' }}>{match[2] ?? match[3]}</strong>)
+      } else if (match[4]) {
+        parts.push(<em key={match.index} style={{ fontStyle: 'italic', color: 'var(--text2)' }}>{match[4]}</em>)
+      } else if (match[5]) {
+        parts.push(<span key={match.index} style={{ textDecoration: 'line-through', color: 'var(--text3)' }}>{match[5]}</span>)
+      } else if (match[6] ?? match[7]) {
+        parts.push(<code key={match.index} style={{ background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 6px', fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--acc)' }}>{match[6] ?? match[7]}</code>)
+      }
+      last = match.index + match[0].length
+    }
+    if (last < line.length) parts.push(line.slice(last))
+    return (
+      <div key={key} style={{ minHeight: line.trim() ? 'auto' : 8 }}>
+        {parts.length > 0 ? parts : (line || ' ')}
+      </div>
+    )
+  }
+  return <>{text.split('\n').map((line, i) => renderLine(line, i))}</>
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
 
 export default function Marketing() {
   const { lang } = useAppStore()
@@ -222,18 +257,54 @@ export default function Marketing() {
 
   return (
     <div style={{ padding: '24px 28px', maxWidth: 900, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 4 }}>
-          📣 {mk.title}
-        </h1>
-        <p style={{ fontSize: 13, color: 'var(--text3)' }}>{mk.subtitle}</p>
+
+      {/* ── Header redesigné ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 20, flexWrap: 'wrap', gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 14,
+            background: 'linear-gradient(135deg,#25D366,#128C7E)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 24, boxShadow: '0 4px 14px rgba(37,211,102,.3)',
+          }}>📱</div>
+          <div>
+            <h1 style={{
+              fontSize: 20, fontWeight: 900, color: 'var(--text)',
+              margin: 0, letterSpacing: '-.3px',
+            }}>
+              {mk.title}
+            </h1>
+            <p style={{ fontSize: 12, color: 'var(--text3)', margin: '3px 0 0' }}>
+              {mk.subtitle}
+            </p>
+          </div>
+        </div>
+        {/* Stats */}
+        <div style={{
+          display: 'flex', gap: 12, padding: '10px 16px',
+          background: 'rgba(37,211,102,.06)',
+          border: '1px solid rgba(37,211,102,.15)', borderRadius: 12,
+        }}>
+          {[
+            { label: lang === 'fr' ? 'Envoyés' : 'Sent',    value: result?.sent   ?? 0, color: 'var(--acc2)' },
+            { label: lang === 'fr' ? 'Échecs'  : 'Failed',  value: result?.failed ?? 0, color: 'var(--danger)' },
+          ].map(s => (
+            <div key={s.label} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: s.color, fontFamily: 'var(--mono)' }}>{s.value}</div>
+              <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         {/* ── Templates ── */}
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
             {mk.templates_title}
           </div>
@@ -254,30 +325,55 @@ export default function Marketing() {
         </div>
 
         {/* ── Message composer ── */}
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
             {mk.msg_title}
           </div>
           <textarea
             className="input"
-            rows={8}
-            style={{ width: '100%', resize: 'vertical', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit' }}
+            style={{
+              width: '100%', resize: 'none', height: 200,
+              overflowY: 'auto', fontSize: 13, lineHeight: 1.6,
+              fontFamily: 'var(--font)',
+            }}
             placeholder={mk.msg_placeholder}
             value={message}
-            onChange={e => setMessage(e.target.value)}
+            onChange={e => setMessage(e.target.value.slice(0, 1000))}
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-            <span style={{ fontSize: 11, color: charCount > 1000 ? 'var(--danger)' : 'var(--text3)' }}>
-              {charCount} / 1024 {mk.chars}
+            <span style={{ fontSize: 11, color: charCount > 900 ? 'var(--danger)' : 'var(--text3)' }}>
+              {charCount} / 1000 {mk.chars}
             </span>
             <span style={{ fontSize: 11, color: 'var(--text3)' }}>
               {mk.formatting}
             </span>
           </div>
+
+          {/* Rendu WhatsApp inline */}
+          {message && (
+            <div style={{
+              marginTop: 10, padding: '14px 16px',
+              background: 'rgba(37,211,102,.04)',
+              border: '1px solid rgba(37,211,102,.15)',
+              borderRadius: 12,
+            }}>
+              <div style={{
+                fontSize: 9, fontWeight: 800, textTransform: 'uppercase',
+                letterSpacing: '.6px', color: 'rgba(37,211,102,.6)',
+                marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span>📱</span>
+                {mk.wa_render}
+              </div>
+              <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text)' }}>
+                <WhatsAppInlineRenderer text={message} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Customers ── */}
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
           {/* Toolbar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
             <button onClick={toggleAll} style={{
@@ -361,7 +457,7 @@ export default function Marketing() {
           <div style={{
             background: result.failed === 0 ? 'rgba(14,196,126,.1)' : 'rgba(240,165,0,.1)',
             border: `1px solid ${result.failed === 0 ? 'rgba(14,196,126,.3)' : 'rgba(240,165,0,.3)'}`,
-            borderRadius: 10, padding: '12px 16px',
+            borderRadius: 12, padding: '12px 16px',
           }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: result.failed === 0 ? 'var(--acc2)' : 'var(--acc)', marginBottom: 4 }}>
               {result.failed === 0 ? mk.result_ok : mk.result_partial}
@@ -383,7 +479,7 @@ export default function Marketing() {
             background: sending || !selected.size || !message.trim()
               ? 'var(--bg4)'
               : 'linear-gradient(135deg, #25D366, #128C7E)',
-            border: 'none', borderRadius: 11,
+            border: 'none', borderRadius: 12,
             fontSize: 14, fontWeight: 700,
             color: sending || !selected.size || !message.trim() ? 'var(--text3)' : '#fff',
             cursor: sending || !selected.size || !message.trim() ? 'not-allowed' : 'pointer',
