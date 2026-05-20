@@ -230,18 +230,10 @@ export default function POS() {
   const [openingFundInput, setOpeningFundInput] = useState(() => posDefaultFund > 0 ? String(posDefaultFund) : '')
   const [showCloseModal, setShowCloseModal]     = useState(false)
 
-  // Fond de caisse : l'input est dans la devise active, on stocke en XOF
+  // Fond de caisse : l'input est dans la devise configurée, stockage direct
   const inputValue  = parseFloat(openingFundInput) || 0
-  const fundInXOF   = convertAmount(inputValue, currency as Currency, 'XOF')
-  const displayFund = (() => {
-    if (['XOF', 'XAF'].includes(currency as string)) return `${inputValue.toLocaleString('fr-FR')} FCFA`
-    if (currency === 'EUR') return `${inputValue.toFixed(2)} €`
-    if (currency === 'USD') return `$ ${inputValue.toFixed(2)}`
-    return `CA$ ${inputValue.toFixed(2)}`
-  })()
-  const fundPreview = ['XOF', 'XAF'].includes(currency as string)
-    ? null
-    : `≈ ${Math.round(fundInXOF).toLocaleString('fr-FR')} FCFA`
+  const displayFund = fmt(inputValue)
+  const fundPreview = null
 
   // Prix selon type client
   const getPrice = (p: PosProduct) => {
@@ -287,10 +279,7 @@ export default function POS() {
   const totalHT = total / (1 + VAT_RATE)
   const tva     = total - totalHT
   const cashGivenAmount = parseFloat(cashGiven) || 0
-  const totalInActiveCurrency = ['XOF', 'XAF'].includes(currency as string)
-    ? total
-    : convertAmount(total, 'XOF', currency as Currency)
-  const monnaie = cashGivenAmount - totalInActiveCurrency
+  const monnaie = cashGivenAmount - total
 
   const PAY_MODES = [
     { id: 'cash',   label: t('pos_cash'),                                    icon: '💵', color: '#10B981' },
@@ -494,7 +483,7 @@ export default function POS() {
           </div>
           <button
             onClick={() => {
-              openCashier(fundInXOF)
+              openCashier(inputValue)
               toast.success(`✅ ${ct.cashier_label} ouverte — Fond: ${displayFund}`)
             }}
             style={{
@@ -1415,11 +1404,10 @@ export default function POS() {
             <div style={{ display:'flex', gap:8 }}>
               <button
                 onClick={() => {
-                  // counted est saisi dans la devise active
+                  // counted et expected sont dans la devise configurée
                   const counted = parseFloat((document.getElementById('counted-amount') as HTMLInputElement)?.value || '0')
-                  const expected = cashierOpeningFund + cashierSessionCA  // en XOF
-                  const expectedInCurrency = convertAmount(expected, 'XOF', currency as Currency)
-                  const diff = counted - expectedInCurrency  // comparaison dans la même devise
+                  const expected = cashierOpeningFund + cashierSessionCA
+                  const diff = counted - expected
                   const openedTime = cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--'
                   const win = window.open('', '_blank', 'width=400,height=600')
                   if (win) {

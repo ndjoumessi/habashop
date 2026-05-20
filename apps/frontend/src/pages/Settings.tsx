@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useConfig, formatCurrency, t, ACCENT_PAIRS, useFormatAmount, useAppStore } from '@/stores/appStore'
+import { useConfig, formatCurrency, t, ACCENT_PAIRS, useFormatAmount, useAppStore, convertCurrency, formatInCurrency } from '@/stores/appStore'
 import type { Currency, Lang } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { tenantApi, cronApi } from '@/lib/api'
@@ -490,12 +490,11 @@ export default function Settings() {
                   </div>
                   <div className="space-y-2">
                     {CURRENCY_META.filter(c => c.code !== cfg.currency).map(c => {
-                      const rate = RATES[cfg.currency]?.[c.code] ?? 1
                       return (
                         <div key={c.code} className="flex justify-between items-center text-sm">
                           <span style={{ color: 'var(--text2)' }}>{c.flag} {c.code}</span>
                           <span className="font-bold" style={{ color: 'var(--p2)', fontFamily: 'var(--mono)' }}>
-                            {formatCurrency(1000 * rate, c.code)}
+                            {formatInCurrency(convertCurrency(1000, cfg.currency as Currency, c.code), c.code)}
                           </span>
                         </div>
                       )

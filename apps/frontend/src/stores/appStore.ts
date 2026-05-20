@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { translations } from '@/i18n'
 
-export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP' | 'MAD' | 'DZD' | 'TND'
+export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP' | 'MAD' | 'DZD' | 'TND' | 'CHF'
 export type Lang     = 'fr' | 'en' | 'es' | 'it'
 export type Theme    = 'dark' | 'light'
 
@@ -18,21 +18,36 @@ export const EXCHANGE_RATES: Record<Currency, number> = {
   MAD: 0.01648,     // 1 XOF ≈ 0.01648 MAD
   DZD: 0.2245,      // 1 XOF ≈ 0.2245 DZD
   TND: 0.005182,    // 1 XOF ≈ 0.005182 TND
+  CHF: 0.001478,    // 1 XOF ≈ 0.001478 CHF
+}
+
+// Taux EUR comme pivot international (1 EUR = X unités de devise)
+export const RATES_PER_EUR: Record<string, number> = {
+  EUR: 1,
+  XOF: 655.957,  // Taux fixe légal CFA
+  XAF: 655.957,  // Taux fixe légal CFA
+  USD: 1.09,
+  CAD: 1.48,
+  GBP: 0.86,
+  MAD: 10.8,
+  DZD: 147.5,
+  TND: 3.35,
+  CHF: 0.97,
 }
 
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   XOF: 'FCFA', XAF: 'FCFA', EUR: '€', USD: '$',
-  CAD: 'CA$',  GBP: '£',    MAD: 'MAD', DZD: 'DA', TND: 'TND',
+  CAD: 'CA$',  GBP: '£',    MAD: 'MAD', DZD: 'DA', TND: 'TND', CHF: 'CHF',
 }
 
 const CURRENCY_LOCALES: Record<Currency, string> = {
   XOF: 'fr-FR', XAF: 'fr-FR', EUR: 'fr-FR', USD: 'en-US',
-  CAD: 'fr-CA', GBP: 'en-GB', MAD: 'fr-MA', DZD: 'fr-DZ', TND: 'fr-TN',
+  CAD: 'fr-CA', GBP: 'en-GB', MAD: 'fr-MA', DZD: 'fr-DZ', TND: 'fr-TN', CHF: 'de-CH',
 }
 
 export const CURRENCY_DECIMALS: Record<Currency, number> = {
   XOF: 0, XAF: 0, MAD: 2, DZD: 0, TND: 3,
-  EUR: 2, USD: 2, CAD: 2, GBP: 2,
+  EUR: 2, USD: 2, CAD: 2, GBP: 2, CHF: 2,
 }
 
 // ─── Conversion ────────────────────────────────────────────────────────────────
@@ -69,11 +84,13 @@ export function formatAmount(amountXOF: number, displayCurrency: Currency): stri
   }
 }
 
-// Backward-compat: convertit entre deux devises quelconques
+// Convertit entre deux devises via EUR comme pivot
 export function convertCurrency(amount: number, from: Currency, to: Currency): number {
   if (from === to) return amount
-  const inXOF = convertToXOF(amount, from)
-  return convertFromXOF(inXOF, to)
+  if (amount === 0) return 0
+  const rateFrom = RATES_PER_EUR[from] ?? RATES_PER_EUR['XOF']
+  const rateTo   = RATES_PER_EUR[to]   ?? RATES_PER_EUR['XOF']
+  return (amount / rateFrom) * rateTo
 }
 export const convertAmount = convertCurrency
 
@@ -357,11 +374,38 @@ export function useConfig() {
 
 // ─── Formatage ─────────────────────────────────────────────────────────────────
 
+// Formate un montant directement dans une devise SANS conversion
+export function formatInCurrency(amount: number, currency: string): string {
+  const n = Number(amount) || 0
+  const configs: Record<string, { locale: string; minimumFractionDigits: number; suffix?: string; prefix?: string }> = {
+    XOF: { locale: 'fr-FR', minimumFractionDigits: 0, suffix: ' FCFA' },
+    XAF: { locale: 'fr-FR', minimumFractionDigits: 0, suffix: ' FCFA' },
+    EUR: { locale: 'fr-FR', minimumFractionDigits: 2, suffix: ' €'    },
+    USD: { locale: 'en-US', minimumFractionDigits: 2, prefix: '$'     },
+    CAD: { locale: 'fr-CA', minimumFractionDigits: 2, suffix: ' CA$'  },
+    GBP: { locale: 'en-GB', minimumFractionDigits: 2, prefix: '£'     },
+    MAD: { locale: 'fr-MA', minimumFractionDigits: 2, suffix: ' MAD'  },
+    DZD: { locale: 'fr-DZ', minimumFractionDigits: 0, suffix: ' DA'   },
+    TND: { locale: 'fr-TN', minimumFractionDigits: 3, suffix: ' TND'  },
+    CHF: { locale: 'de-CH', minimumFractionDigits: 2, suffix: ' CHF'  },
+  }
+  const cfg = configs[currency] ?? configs.XOF
+  try {
+    const str = new Intl.NumberFormat(cfg.locale, {
+      minimumFractionDigits: cfg.minimumFractionDigits,
+      maximumFractionDigits: cfg.minimumFractionDigits,
+    }).format(n)
+    return `${cfg.prefix ?? ''}${str}${cfg.suffix ?? ''}`
+  } catch {
+    return `${n.toFixed(cfg.minimumFractionDigits)} ${currency}`
+  }
+}
+
 // Hook React pour formatage dans les composants
-// Tous les montants sont stockés en XOF — ce hook convertit à l'affichage
+// Les montants sont dans la devise configurée — formate SANS conversion
 export function useFormatAmount() {
   const currency = useAppStore(s => s.currency) as Currency
-  return (amountXOF: number) => formatAmount(amountXOF, currency)
+  return (amount: number): string => formatInCurrency(amount, currency)
 }
 
 // Hook pour conversion avec infos devise

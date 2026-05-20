@@ -68,7 +68,6 @@ const LEAVE_INIT: LeaveRequest[] = [
   { id:5, empId:4, empName:'Seydou Koné',      type:'Congé maladie', from:'2026-05-16', to:'2026-05-16', days:1, motif:'Visite médicale',       status:'pending'  },
 ]
 
-const WEEK_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 const COLORS = ['#6C3FD6','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#8B5CF6','#F472B6']
 const DEPT_COLORS: Record<string, string> = {
   'Ventes':     '#6C3FD6',
@@ -80,15 +79,6 @@ const DEPT_COLORS: Record<string, string> = {
   'RH':         '#EF4444',
 }
 
-const SHIFT_TYPES: Record<string, { label:string; hours:string; color:string; icon:string }> = {
-  morning:   { label:'Matin',      hours:'08:00-13:00', color:'#00B8FF', icon:'☀️'  },
-  afternoon: { label:'Après-midi', hours:'13:00-18:00', color:'#FF9500', icon:'🌤️'  },
-  full:      { label:'Journée',    hours:'08:00-18:00', color:'#00D084', icon:'📅'  },
-  night:     { label:'Nuit',       hours:'20:00-06:00', color:'#6C47FF', icon:'🌙'  },
-  rest:      { label:'Repos',      hours:'',            color:'#52527A', icon:'☕'  },
-  leave:     { label:'Congé',      hours:'',            color:'#FF3B5C', icon:'🏖️'  },
-  '':        { label:'—',          hours:'',            color:'transparent', icon:'' },
-}
 
 const STATUS_CFG = {
   present: { label:'Présent',  color:'var(--acc2)',    bg:'rgba(14,196,126,.12)'  },
@@ -156,13 +146,6 @@ function calcPonctualite(empId: number): number {
   return work === 0 ? 100 : Math.round((ontime / work) * 100)
 }
 
-function getWeekStart(date: Date): Date {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  d.setDate(diff)
-  return d
-}
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
@@ -202,7 +185,7 @@ const labelStyle: React.CSSProperties = {
 export default function HR() {
   const fmt = useFormatAmount()
   const { lang, currency } = useAppStore()
-  const [tab, setTab] = useState<'team'|'contracts'|'attendance'|'pointage'|'leaves'|'payroll'>('team')
+  const [tab, setTab] = useState<'team'|'contracts'|'pointage'|'leaves'|'payroll'>('team')
   const [viewMode, setViewMode] = useState<'grid'|'table'>('grid')
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('all')
@@ -227,11 +210,6 @@ export default function HR() {
   const [showSalaryModal, setShowSalaryModal] = useState(false)
   const [salaryTarget, setSalaryTarget] = useState<any>(null)
   const [salaryHistory, setSalaryHistory] = useState<{empId:string; date:string; oldSalary:number; newSalary:number; reason:string}[]>([])
-
-  // Planning
-  const [planningWeek, setPlanningWeek] = useState(new Date())
-  const [shifts, setShifts] = useState<Record<string, Record<number, string>>>({})
-  const [activeShiftType, setActiveShiftType] = useState<string>('full')
 
   // Présences / Pointage
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0])
@@ -312,14 +290,6 @@ export default function HR() {
   const totalPayroll = useMemo(() => (employees ?? []).filter(e => e.active).reduce((s, e) => s + e.salary, 0), [employees])
   const activeCount  = useMemo(() => (employees ?? []).filter(e => e.active).length, [employees])
   const pendingLeaves = useMemo(() => (leaves ?? []).filter(l => l.status === 'pending').length, [leaves])
-
-  // Planning week
-  const weekStart = getWeekStart(planningWeek)
-  const weekDays = Array(7).fill(null).map((_, i) => {
-    const d = new Date(weekStart)
-    d.setDate(weekStart.getDate() + i)
-    return d
-  })
 
   const generatePayslipPDF = (
     emp: any,
@@ -461,7 +431,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         {([
           { id: 'team',       icon: '👥', label: lang === 'fr' ? 'Équipe'       : 'Team'       },
           { id: 'contracts',  icon: '📄', label: lang === 'fr' ? 'Contrats'     : 'Contracts'  },
-          { id: 'attendance', icon: '📅', label: lang === 'fr' ? 'Planning'     : 'Planning'   },
           { id: 'pointage',   icon: '⏱️', label: lang === 'fr' ? 'Présences'    : 'Attendance' },
           { id: 'leaves',     icon: '🏖️', label: lang === 'fr' ? 'Congés'       : 'Leaves'     },
           { id: 'payroll',    icon: '💰', label: lang === 'fr' ? 'Rémunération' : 'Payroll'    },
@@ -1316,168 +1285,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               />
             )}
           </div>
-        </div>
-      )}
-
-      {/* ── TAB ATTENDANCE / PLANNING ── */}
-      {tab === 'attendance' && (
-        <div className="panel">
-          <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <span className="panel-t">📅 {lang === 'fr' ? 'Planning semaine' : 'Weekly planning'}</span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <button className="btn btn-sm" onClick={() => { const d = new Date(planningWeek); d.setDate(d.getDate() - 7); setPlanningWeek(d) }}>
-                ← {lang === 'fr' ? 'Préc.' : 'Prev'}
-              </button>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
-                {weekStart.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
-                {' – '}
-                {weekDays[6].toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </span>
-              <button className="btn btn-sm" onClick={() => { const d = new Date(planningWeek); d.setDate(d.getDate() + 7); setPlanningWeek(d) }}>
-                {lang === 'fr' ? 'Suiv.' : 'Next'} →
-              </button>
-              <button className="btn btn-sm" onClick={() => setPlanningWeek(new Date())}>
-                {lang === 'fr' ? 'Auj.' : 'Today'}
-              </button>
-            </div>
-          </div>
-
-          {/* Sélecteur de type de shift */}
-          <div style={{ display:'flex', gap:6, marginBottom:14, flexWrap:'wrap', alignItems:'center' }}>
-            {Object.entries(SHIFT_TYPES).filter(([k])=>k!=='').map(([key, s]) => (
-              <button key={key} type="button" onClick={() => setActiveShiftType(key)}
-                style={{
-                  display:'flex', alignItems:'center', gap:6,
-                  padding:'8px 14px', borderRadius:10,
-                  border:`1.5px solid ${activeShiftType===key ? s.color : 'var(--border)'}`,
-                  background: activeShiftType===key ? `${s.color}20` : 'var(--bg4)',
-                  cursor:'pointer', fontFamily:'var(--font)',
-                  fontSize:12, fontWeight:700,
-                  color: activeShiftType===key ? s.color : 'var(--text3)',
-                  transition:'all .15s',
-                  boxShadow: activeShiftType===key ? `0 2px 10px ${s.color}30` : 'none',
-                }}>
-                <span>{s.icon}</span>
-                <span>{s.label}</span>
-                {s.hours && <span style={{ fontSize:10, opacity:.7, fontFamily:'var(--mono)' }}>{s.hours}</span>}
-              </button>
-            ))}
-            <div style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)', alignSelf:'center' }}>
-              {lang==='fr' ? '👆 Sélectionnez un type puis cliquez · double-clic pour effacer' : '👆 Select a type then click · double-click to clear'}
-            </div>
-          </div>
-
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ minWidth:700, borderCollapse:'collapse', width:'100%' }}>
-              <thead>
-                <tr>
-                  <th style={{ padding:'10px 14px', textAlign:'left', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', width:140 }}>
-                    {lang==='fr'?'Employé':'Employee'}
-                  </th>
-                  {weekDays.map((day, di) => {
-                    const isToday = day.toDateString() === new Date().toDateString()
-                    return (
-                      <th key={di} style={{ padding:'8px 6px', textAlign:'center', fontSize:10, fontWeight:700, color: isToday ? 'var(--p3)' : 'var(--text3)' }}>
-                        <div>{WEEK_DAYS[di]}</div>
-                        <div style={{ fontSize:14, fontWeight:900, color: isToday ? 'var(--p2)' : 'var(--text)', marginTop:2 }}>{day.getDate()}</div>
-                      </th>
-                    )
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {(employees ?? []).filter(e=>e.active!==false).map(emp => (
-                  <tr key={emp.id}>
-                    <td style={{ padding:'6px 14px' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <div style={{
-                          width:30, height:30, borderRadius:8,
-                          background:`${emp.color??'#6C47FF'}22`,
-                          display:'flex', alignItems:'center', justifyContent:'center',
-                          fontSize:11, fontWeight:800, color:emp.color??'#6C47FF', flexShrink:0,
-                        }}>
-                          {emp.avatar??'??'}
-                        </div>
-                        <span style={{ fontSize:12, color:'var(--text)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                          {emp.name.split(' ')[0]}
-                        </span>
-                      </div>
-                    </td>
-                    {weekDays.map((day, di) => {
-                      const shift = shifts[String(emp.id)]?.[di] ?? ''
-                      const s = SHIFT_TYPES[shift] ?? SHIFT_TYPES['']
-                      const isToday = day.toDateString() === new Date().toDateString()
-                      return (
-                        <td key={di} style={{ padding:'4px 3px', textAlign:'center' }}>
-                          <div
-                            onClick={() => setShifts(prev => ({
-                              ...prev,
-                              [String(emp.id)]: { ...(prev[String(emp.id)]??{}), [di]: activeShiftType },
-                            }))}
-                            onDoubleClick={() => setShifts(prev => ({
-                              ...prev,
-                              [String(emp.id)]: { ...(prev[String(emp.id)]??{}), [di]: '' },
-                            }))}
-                            title={`${emp.name} — ${s.label}`}
-                            style={{
-                              minHeight:52, borderRadius:10, cursor:'pointer', transition:'all .15s',
-                              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2,
-                              border:`1px solid ${shift ? `${s.color}30` : 'var(--border)'}`,
-                              background: shift ? `${s.color}15` : isToday ? 'rgba(108,71,255,.04)' : 'var(--bg4)',
-                              boxShadow: shift ? `0 2px 8px ${s.color}20` : 'none',
-                            }}
-                            onMouseEnter={e => {
-                              if (!shift) {
-                                const as = SHIFT_TYPES[activeShiftType]
-                                const el = e.currentTarget as HTMLElement
-                                el.style.background = `${as?.color ?? 'var(--p)'}18`
-                                el.style.borderColor = `${as?.color ?? 'var(--p)'}40`
-                              }
-                            }}
-                            onMouseLeave={e => {
-                              if (!shift) {
-                                const el = e.currentTarget as HTMLElement
-                                el.style.background = isToday ? 'rgba(108,71,255,.04)' : 'var(--bg4)'
-                                el.style.borderColor = 'var(--border)'
-                              }
-                            }}
-                          >
-                            {shift ? (
-                              <>
-                                <span style={{ fontSize:14 }}>{s.icon}</span>
-                                {s.hours && <span style={{ fontSize:9, fontWeight:700, color:s.color, fontFamily:'var(--mono)' }}>{s.hours}</span>}
-                              </>
-                            ) : (
-                              <span style={{ fontSize:16, opacity:.15 }}>+</span>
-                            )}
-                          </div>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Stats résumé */}
-          {Object.keys(shifts).length > 0 && (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))', gap:8, marginTop:14 }}>
-              {Object.entries(SHIFT_TYPES).filter(([k])=>k!=='').map(([key,s]) => {
-                const count = Object.values(shifts).flatMap(days => Object.values(days)).filter(v=>v===key).length
-                if (count === 0) return null
-                return (
-                  <div key={key} style={{ background:`${s.color}10`, border:`1px solid ${s.color}20`, borderRadius:10, padding:'8px 12px', display:'flex', alignItems:'center', gap:8 }}>
-                    <span style={{fontSize:16}}>{s.icon}</span>
-                    <div>
-                      <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', color:'var(--text3)' }}>{s.label}</div>
-                      <div style={{ fontSize:16, fontWeight:900, color:s.color, fontFamily:'var(--mono)' }}>{count}</div>
-                    </div>
-                  </div>
-                )
-              }).filter(Boolean)}
-            </div>
-          )}
         </div>
       )}
 
