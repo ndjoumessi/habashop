@@ -1627,3 +1627,11 @@ const it: TranslationMap = {
 }
 
 export const translations: Record<Lang, TranslationMap> = { fr, en, es, it }
+
+export function t(key: string, lang: Lang, fallback?: string): string {
+  return translations[lang]?.[key] ?? translations['fr']?.[key] ?? fallback ?? key
+}
+
+export function useTranslation(lang: Lang) {
+  return (key: string, fallback?: string) => t(key, lang, fallback)
+}

@@ -8,6 +8,7 @@ import {
   Save, Upload, Download, X, RefreshCw, AlertTriangle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
 
 type Tab = 'boutique' | 'compte' | 'langue' | 'apparence' | 'pos' | 'stock' | 'notifications' | 'securite' | 'avance'
 
@@ -248,8 +249,8 @@ export default function Settings() {
                   ))}
                   <div className="col-span-2">
                     <Label>{t('settings_address')}</Label>
-                    <textarea className="input text-sm" rows={2} value={shopForm.shopAddress}
-                      onChange={e => setShopForm(s => ({ ...s, shopAddress: e.target.value }))} />
+                    <AddressAutocomplete value={shopForm.shopAddress}
+                      onChange={v => setShopForm(s => ({ ...s, shopAddress: v }))} />
                   </div>
                   <div>
                     <Label>{t('settings_vat')}</Label>

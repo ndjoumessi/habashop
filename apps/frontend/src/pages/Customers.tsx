@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
 import PhoneInput from '@/components/ui/PhoneInput'
+import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
 
 type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
@@ -197,7 +198,7 @@ export default function Customers() {
       purchases: [], notes: form.notes,
     }
     try {
-      const created = await customersApi.create({ name: form.name, phone: form.phone, email: form.email, address: form.address, notes: form.notes, type: form.type })
+      const created = await customersApi.create({ name: form.name, phone: form.phone, email: form.email, address: form.address, type: form.type })
       newC.id = created.id
     } catch {}
     setCustomers(prev => [newC, ...prev])
@@ -655,8 +656,8 @@ export default function Customers() {
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Adresse</label>
-                <input className="input text-sm" value={editCustForm.address}
-                  onChange={e => setEditCustForm(f => ({...f, address:e.target.value}))} />
+                <AddressAutocomplete value={editCustForm.address}
+                  onChange={v => setEditCustForm(f => ({...f, address:v}))} />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
@@ -712,8 +713,8 @@ export default function Customers() {
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Adresse</label>
-                <input className="input text-sm" placeholder="Adresse…" value={form.address}
-                  onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
+                <AddressAutocomplete value={form.address}
+                  onChange={v => setForm(p => ({ ...p, address: v }))} />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>

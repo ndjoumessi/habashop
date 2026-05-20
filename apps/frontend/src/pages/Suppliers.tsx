@@ -5,6 +5,7 @@ import { suppliersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Phone } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
+import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
 
 type SupplierStatus = 'Actif' | 'Pause' | 'Inactif'
 
@@ -408,7 +409,6 @@ export default function Suppliers() {
                 { label:'Nom / Raison sociale', key:'name',       span:true  },
                 { label:'Contact principal',     key:'contact',    span:false },
                 { label:'Email',                 key:'email',      span:false },
-                { label:'Adresse',               key:'address',    span:true  },
                 { label:'Catégories (séparées par ,)', key:'categories', span:true },
               ].map(f => (
                 <div key={f.key} className={f.span ? 'col-span-2' : ''}>
@@ -418,6 +418,11 @@ export default function Suppliers() {
                     onChange={e => setEditSuppForm(p => ({...p, [f.key]:e.target.value}))} />
                 </div>
               ))}
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Adresse</label>
+                <AddressAutocomplete value={editSuppForm.address}
+                  onChange={v => setEditSuppForm(p => ({...p, address:v}))} />
+              </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Téléphone</label>
                 <input className="input" type="tel" placeholder="+221 77 000 00 00" value={editSuppForm.phone} onChange={e => setEditSuppForm(p => ({...p, phone:e.target.value}))} />
@@ -476,7 +481,6 @@ export default function Suppliers() {
                 { label: 'Nom / Raison sociale',         key: 'name',       type: 'text',   span: true  },
                 { label: 'Contact principal',             key: 'contact',    type: 'text',   span: false },
                 { label: 'Email',                         key: 'email',      type: 'email',  span: false },
-                { label: 'Adresse',                       key: 'address',    type: 'text',   span: true  },
                 { label: 'Catégories (séparées par , )',  key: 'categories', type: 'text',   span: true  },
                 { label: 'Délai livraison (jours)',       key: 'leadTime',   type: 'number', span: false },
                 { label: 'Note (1-5)',                    key: 'rating',     type: 'number', span: false },
@@ -489,6 +493,12 @@ export default function Suppliers() {
                     onChange={e => setForm(p => ({ ...p, [f.key]: f.type === 'number' ? +e.target.value : e.target.value }))} />
                 </div>
               ))}
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
+                  style={{ color: 'var(--text3)' }}>Adresse</label>
+                <AddressAutocomplete value={form.address}
+                  onChange={v => setForm(p => ({ ...p, address: v }))} />
+              </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
                   style={{ color: 'var(--text3)' }}>Téléphone</label>
