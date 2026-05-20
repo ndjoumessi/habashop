@@ -1001,12 +1001,18 @@ INSTRUCTIONS :
       const anthropic = new Anthropic({ apiKey })
 
       // Construit le tableau de messages pour Anthropic
-      const msgsToSend = singleMsg
+      const msgsToSend = singleMsg?.trim()
         ? [{ role: 'user' as const, content: singleMsg.trim() }]
-        : (msgHistory as any[]).slice(-10).map((m: any) => ({
-            role: m.role as 'user' | 'assistant',
-            content: m.content,
-          }))
+        : Array.isArray(msgHistory) && msgHistory.length > 0
+          ? (msgHistory as any[]).slice(-10).map((m: any) => ({
+              role: m.role as 'user' | 'assistant',
+              content: m.content,
+            }))
+          : []
+
+      if (msgsToSend.length === 0) {
+        return reply.code(400).send({ error: 'Message ou historique requis' })
+      }
 
       const message = await anthropic.messages.create({
         model: 'claude-opus-4-5',
