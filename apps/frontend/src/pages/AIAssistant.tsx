@@ -85,11 +85,13 @@ export default function AIAssistant() {
       const data = await aiApi.chat(content, lang)
       resolveMsg(loadingId, data.response ?? '')
     } catch (err: any) {
-      resolveMsg(loadingId,
-        lang === 'fr'
-          ? `❌ **Erreur :** ${err.message}\n\nVérifiez que le backend est connecté.`
-          : `❌ **Error:** ${err.message}\n\nCheck that the backend is connected.`
-      )
+      const msg = err.message ?? ''
+      const friendly = msg.includes('authentication_error') || msg.includes('invalid x-api-key')
+        ? (lang === 'fr' ? '❌ Clé API Anthropic invalide. Vérifiez la configuration du serveur.' : '❌ Invalid Anthropic API key. Check server configuration.')
+        : msg.includes('503') || msg.includes('non configurée')
+          ? (lang === 'fr' ? '❌ Service IA temporairement indisponible.' : '❌ AI service temporarily unavailable.')
+          : (lang === 'fr' ? '❌ Erreur de connexion. Réessayez dans quelques instants.' : '❌ Connection error. Please try again.')
+      resolveMsg(loadingId, friendly)
       toast.error(lang === 'fr' ? 'Erreur assistant IA' : 'AI assistant error')
     } finally {
       setAnalyzing(false)

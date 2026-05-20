@@ -156,9 +156,9 @@ export const tenantApi = {
 export const aiApi = {
   analyze: (type: string, lang: string) =>
     api.post<any>('/api/ai/analyze', { type, lang }),
-  // Envoie un message simple (string) — le backend accepte {message} ou {messages}
+  // Envoie via messages[] pour compatibilité ancienne et nouvelle API
   chat: (message: string, lang: string) =>
-    api.post<any>('/api/ai/chat', { message, lang }),
+    api.post<any>('/api/ai/chat', { messages: [{ role: 'user', content: message }], lang }),
   // Version historique complète (conversation multi-tours)
   chatHistory: (messages: Array<{role:string; content:string}>, lang: string) =>
     api.post<any>('/api/ai/chat', { messages, lang }),
