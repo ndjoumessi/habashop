@@ -2,9 +2,82 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { translations } from '@/i18n'
 
-export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD'
+export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP' | 'MAD' | 'DZD' | 'TND'
 export type Lang     = 'fr' | 'en' | 'es' | 'it'
 export type Theme    = 'dark' | 'light'
+
+// ─── Taux de change : 1 XOF = X devise ────────────────────────────────────────
+// Devise de BASE de stockage : XOF (FCFA)
+export const EXCHANGE_RATES: Record<Currency, number> = {
+  XOF: 1,
+  XAF: 1,           // 1 XOF ≈ 1 XAF (même zone CFA)
+  EUR: 0.001524,    // 1 XOF = 0.001524 EUR (655.957 XOF = 1 EUR)
+  USD: 0.001659,    // 1 XOF ≈ 0.001659 USD
+  CAD: 0.002267,    // 1 XOF ≈ 0.002267 CAD
+  GBP: 0.001312,    // 1 XOF ≈ 0.001312 GBP
+  MAD: 0.01648,     // 1 XOF ≈ 0.01648 MAD
+  DZD: 0.2245,      // 1 XOF ≈ 0.2245 DZD
+  TND: 0.005182,    // 1 XOF ≈ 0.005182 TND
+}
+
+export const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  XOF: 'FCFA', XAF: 'FCFA', EUR: '€', USD: '$',
+  CAD: 'CA$',  GBP: '£',    MAD: 'MAD', DZD: 'DA', TND: 'TND',
+}
+
+const CURRENCY_LOCALES: Record<Currency, string> = {
+  XOF: 'fr-FR', XAF: 'fr-FR', EUR: 'fr-FR', USD: 'en-US',
+  CAD: 'fr-CA', GBP: 'en-GB', MAD: 'fr-MA', DZD: 'fr-DZ', TND: 'fr-TN',
+}
+
+export const CURRENCY_DECIMALS: Record<Currency, number> = {
+  XOF: 0, XAF: 0, MAD: 2, DZD: 0, TND: 3,
+  EUR: 2, USD: 2, CAD: 2, GBP: 2,
+}
+
+// ─── Conversion ────────────────────────────────────────────────────────────────
+
+// Convertit un montant XOF vers la devise cible
+export function convertFromXOF(amountXOF: number, toCurrency: Currency): number {
+  if (toCurrency === 'XOF') return amountXOF
+  const rate = EXCHANGE_RATES[toCurrency] ?? 1
+  return amountXOF * rate
+}
+
+// Convertit vers XOF depuis une devise source
+export function convertToXOF(amount: number, fromCurrency: Currency): number {
+  if (fromCurrency === 'XOF') return amount
+  const rate = EXCHANGE_RATES[fromCurrency] ?? 1
+  return rate > 0 ? amount / rate : amount
+}
+
+// Formate un montant XOF dans la devise d'affichage
+export function formatAmount(amountXOF: number, displayCurrency: Currency): string {
+  const converted = convertFromXOF(amountXOF, displayCurrency)
+  const decimals  = CURRENCY_DECIMALS[displayCurrency] ?? 2
+  const locale    = CURRENCY_LOCALES[displayCurrency]  ?? 'fr-FR'
+  const symbol    = CURRENCY_SYMBOLS[displayCurrency]  ?? displayCurrency
+  try {
+    const numStr = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(converted)
+    if (['USD', 'CAD', 'GBP'].includes(displayCurrency)) return `${symbol}${numStr}`
+    return `${numStr} ${symbol}`
+  } catch {
+    return `${converted.toFixed(decimals)} ${symbol}`
+  }
+}
+
+// Backward-compat: convertit entre deux devises quelconques
+export function convertCurrency(amount: number, from: Currency, to: Currency): number {
+  if (from === to) return amount
+  const inXOF = convertToXOF(amount, from)
+  return convertFromXOF(inXOF, to)
+}
+export const convertAmount = convertCurrency
+
+// ─── AppConfig ─────────────────────────────────────────────────────────────────
 
 export interface AppConfig {
   // Identité boutique
@@ -140,6 +213,8 @@ function applyAccentColor(color: string) {
   root.style.setProperty('--p3', pair.p3)
 }
 
+// ─── Store interface ───────────────────────────────────────────────────────────
+
 interface AppStore extends AppConfig {
   updateConfig: (partial: Partial<AppConfig>) => void
   resetConfig:  () => void
@@ -162,6 +237,9 @@ interface AppStore extends AppConfig {
   openCashier: (fund: number) => void
   closeCashier: () => void
   addCashierSale: (amount: number) => void
+  // Taux de change live (runtime only, non persisté)
+  currencyRates: Record<Currency, number>
+  fetchExchangeRates: () => Promise<void>
 }
 
 export const useAppStore = create<AppStore>()(
@@ -235,9 +313,36 @@ export const useAppStore = create<AppStore>()(
         cashierSessionTx: state.cashierSessionTx + 1,
         cashierSessionCA: state.cashierSessionCA + amount,
       })),
+
+      // Taux de change live
+      currencyRates: { ...EXCHANGE_RATES },
+
+      fetchExchangeRates: async () => {
+        try {
+          const res  = await fetch('https://api.exchangerate-api.com/v4/latest/XOF')
+          const data = await res.json()
+          if (data?.rates) {
+            const newRates: Partial<Record<Currency, number>> = {}
+            ;(['EUR', 'USD', 'CAD', 'GBP', 'MAD', 'DZD', 'TND'] as Currency[]).forEach(c => {
+              if (data.rates[c]) newRates[c] = data.rates[c]
+            })
+            set(state => ({
+              currencyRates: { ...state.currencyRates, ...newRates },
+            }))
+          }
+        } catch {
+          // Silencieux — utilise les taux par défaut
+        }
+      },
     }),
     {
       name: 'habashop-config',
+      partialize: (state) => {
+        // Ne pas persister les taux live (recalculés au démarrage)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { currencyRates, fetchExchangeRates, ...rest } = state
+        return rest
+      },
       onRehydrateStorage: () => (state) => {
         if (state?.theme)       document.documentElement.setAttribute('data-theme', state.theme)
         if (state?.accentColor) applyAccentColor(state.accentColor)
@@ -250,19 +355,34 @@ export function useConfig() {
   return useAppStore()
 }
 
+// ─── Formatage ─────────────────────────────────────────────────────────────────
+
+// Hook React pour formatage dans les composants
+// Tous les montants sont stockés en XOF — ce hook convertit à l'affichage
+export function useFormatAmount() {
+  const currency = useAppStore(s => s.currency) as Currency
+  return (amountXOF: number) => formatAmount(amountXOF, currency)
+}
+
+// Hook pour conversion avec infos devise
+export function useConvertAmount() {
+  const currency = useAppStore(s => s.currency) as Currency
+  return {
+    toDisplay:  (xof: number)    => convertFromXOF(xof, currency),
+    toXOF:      (amount: number) => convertToXOF(amount, currency),
+    currency,
+    symbol:   CURRENCY_SYMBOLS[currency]  ?? currency,
+    decimals: CURRENCY_DECIMALS[currency] ?? 2,
+  }
+}
+
+// Backward-compat (non-hook, éviter dans les composants)
 export function formatCurrency(amount: number, currency?: Currency): string {
   const curr = currency ?? useAppStore.getState().currency
-  if (curr === 'XOF' || curr === 'XAF') {
-    return `${Math.round(amount).toLocaleString('fr-FR')} FCFA`
-  }
-  if (curr === 'EUR') {
-    return `${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
-  }
-  if (curr === 'USD') {
-    return `$ ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  }
-  return `CA$ ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return formatAmount(amount, curr)
 }
+
+// ─── i18n ──────────────────────────────────────────────────────────────────────
 
 export function t(key: string): string {
   const { lang } = useAppStore.getState()
@@ -273,43 +393,4 @@ export function useT() {
   const { lang } = useAppStore()
   void lang
   return t
-}
-
-const RATES_TO_XOF: Record<Currency, number> = {
-  XOF: 1, XAF: 1, EUR: 655.957, USD: 600, CAD: 440,
-}
-
-export function convertCurrency(amount: number, from: Currency, to: Currency): number {
-  if (from === to) return amount
-  const inXOF = from === 'XOF' ? amount : amount * RATES_TO_XOF[from]
-  return to === 'XOF' ? inXOF : inXOF / RATES_TO_XOF[to]
-}
-
-export const convertAmount = convertCurrency
-
-export function useFormatAmount() {
-  const { currency } = useAppStore()
-
-  return (amount: number): string => {
-    const n = Number(amount) || 0
-    try {
-      if (currency === 'EUR') {
-        return new Intl.NumberFormat('fr-FR', { style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n)
-      }
-      if (currency === 'USD') {
-        return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n)
-      }
-      if (currency === 'CAD') {
-        return new Intl.NumberFormat('fr-CA', { style:'currency', currency:'CAD', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n)
-      }
-      if (currency === 'GBP') {
-        return new Intl.NumberFormat('en-GB', { style:'currency', currency:'GBP', minimumFractionDigits:2, maximumFractionDigits:2 }).format(n)
-      }
-      // XOF, XAF, default — affichage sans conversion
-      const formatted = new Intl.NumberFormat('fr-FR', { style:'decimal', minimumFractionDigits:0, maximumFractionDigits:0 }).format(n)
-      return `${formatted} FCFA`
-    } catch {
-      return `${n.toLocaleString('fr-FR')} ${currency}`
-    }
-  }
 }

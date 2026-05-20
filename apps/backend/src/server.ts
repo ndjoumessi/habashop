@@ -949,8 +949,13 @@ En ${langLabel}, analyse :
 
   // ─── AI CHAT ──────────────────────────
   app.post('/api/ai/chat', { preHandler: authenticate }, async (request, reply) => {
-    const { messages, lang } = request.body as any
+    // Accepte {message: string} (simple) ou {messages: array} (historique)
+    const { message: singleMsg, messages: msgHistory, lang } = request.body as any
     const { tenantId } = request.user as any
+
+    if (!singleMsg?.trim() && (!msgHistory || msgHistory.length === 0)) {
+      return reply.code(400).send({ error: 'message ou messages requis' })
+    }
 
     try {
       const [products, sales, employees, expenses] = await Promise.all([
@@ -995,14 +1000,19 @@ INSTRUCTIONS :
       if (!apiKey) return reply.code(503).send({ error: 'Clé API Anthropic non configurée' })
       const anthropic = new Anthropic({ apiKey })
 
+      // Construit le tableau de messages pour Anthropic
+      const msgsToSend = singleMsg
+        ? [{ role: 'user' as const, content: singleMsg.trim() }]
+        : (msgHistory as any[]).slice(-10).map((m: any) => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+          }))
+
       const message = await anthropic.messages.create({
         model: 'claude-opus-4-5',
         max_tokens: 800,
         system: systemPrompt,
-        messages: messages.slice(-10).map((m: any) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })),
+        messages: msgsToSend,
       })
 
       return {

@@ -150,6 +150,7 @@
   @keyframes fadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:translateY(0) } }
   @keyframes spin    { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
   @keyframes pulse   { 0%,100% { opacity:.5; transform:scale(1) } 50% { opacity:1; transform:scale(1.25) } }
+  @keyframes bounce  { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-5px) } }
   /* shadcn light-mode overrides (via [data-theme="light"]) */
   [data-theme="light"] {
     --background: #F0EEF9;

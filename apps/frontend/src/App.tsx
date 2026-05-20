@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/lib/api'
+import { useAppStore } from '@/stores/appStore'
 import AppLayout from '@/components/layout/AppLayout'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
@@ -43,6 +44,8 @@ export default function App() {
         .then(user => updateUser(user))
         .catch(() => logout())
     }
+    // Mise à jour des taux de change au démarrage
+    useAppStore.getState().fetchExchangeRates()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
