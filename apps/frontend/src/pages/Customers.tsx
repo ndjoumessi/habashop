@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X } from 'lucide-react'
@@ -205,6 +206,7 @@ export default function Customers() {
   const { lang } = useConfig()
   void lang
   const fmt = useFormatAmount()
+  const navigate = useNavigate()
   const [customers, setCustomers] = useState(CUSTOMERS_INIT)
 
   useEffect(() => {
@@ -236,6 +238,8 @@ export default function Customers() {
   })
   const [loyaltyCustomer, setLoyaltyCustomer] = useState<Customer | null>(null)
   const [customersTab, setCustomersTab] = useState<'list' | 'map' | 'stats'>('list')
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [detailCustomer, setDetailCustomer]   = useState<Customer | null>(null)
 
   const filtered = customers.filter(c =>
     (!search || c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)) &&
@@ -726,7 +730,19 @@ export default function Customers() {
                 onClick={() => { toast.success(`🛒 Vente pour ${viewCustomer.name}`); setViewCustomer(null) }}>
                 🛒 Nouvelle vente
               </button>
-              <button className="btn btn-ghost" onClick={() => setViewCustomer(null)}>Fermer</button>
+              <button className="btn btn-sm"
+                onClick={() => { setDetailCustomer(viewCustomer); setShowDetailModal(true); setViewCustomer(null) }}
+                style={{
+                  padding: '8px 16px', borderRadius: 10,
+                  background: 'linear-gradient(135deg,var(--p),var(--p2))',
+                  border: 'none', cursor: 'pointer',
+                  color: '#fff', fontSize: 12, fontWeight: 700,
+                  fontFamily: 'var(--font)',
+                  boxShadow: 'var(--sh-p)',
+                }}>
+                📋 {lang === 'fr' ? 'Détail' : 'Detail'}
+              </button>
+              <button className="btn btn-ghost" onClick={() => setViewCustomer(null)}>{lang === 'fr' ? 'Fermer' : 'Close'}</button>
             </div>
           </div>
         </div>
@@ -927,6 +943,255 @@ export default function Customers() {
                 fontFamily:'var(--font)', fontWeight:600,
               }}>
                 {lang==='fr'?'Annuler':'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal détail client ── */}
+      {showDetailModal && detailCustomer && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowDetailModal(false)}>
+          <div style={{
+            background: '#0D0D1C',
+            border: '1px solid rgba(255,255,255,.1)',
+            borderRadius: 24, width: '100%', maxWidth: 600,
+            maxHeight: '92vh', overflow: 'hidden',
+            display: 'flex', flexDirection: 'column',
+            boxShadow: '0 24px 80px rgba(0,0,0,.85)',
+            position: 'relative',
+          }}>
+            {/* Bande déco */}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+              background: (() => {
+                const colors: Record<string, string> = {
+                  Grossiste: 'linear-gradient(90deg,#6C47FF,#A991FF)',
+                  'Semi-gros': 'linear-gradient(90deg,#FF9500,#FFB800)',
+                  Fidèle: 'linear-gradient(90deg,#00D084,#00B8A9)',
+                  Détail: 'linear-gradient(90deg,#00B8FF,#6C47FF)',
+                }
+                return colors[detailCustomer.type] ?? 'linear-gradient(90deg,var(--p),var(--p2))'
+              })(),
+            }} />
+
+            {/* Header */}
+            <div style={{
+              padding: '24px 24px 20px',
+              borderBottom: '1px solid rgba(255,255,255,.06)',
+              flexShrink: 0,
+              background: 'linear-gradient(135deg,rgba(108,71,255,.06),transparent)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                <div style={{
+                  width: 60, height: 60, borderRadius: 18, flexShrink: 0,
+                  background: (() => {
+                    const colors: Record<string, string> = {
+                      Grossiste: 'linear-gradient(135deg,#6C47FF,#A991FF)',
+                      'Semi-gros': 'linear-gradient(135deg,#FF9500,#FFB800)',
+                      Fidèle: 'linear-gradient(135deg,#00D084,#00B8A9)',
+                      Détail: 'linear-gradient(135deg,#00B8FF,#6C47FF)',
+                    }
+                    return colors[detailCustomer.type] ?? 'linear-gradient(135deg,#6C47FF,#A991FF)'
+                  })(),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, fontWeight: 900, color: '#fff',
+                  boxShadow: '0 6px 20px rgba(108,71,255,.35)',
+                }}>
+                  {(detailCustomer.name ?? '?')[0].toUpperCase()}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-.3px' }}>
+                      {detailCustomer.name}
+                    </h2>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px',
+                      padding: '3px 10px', borderRadius: 99,
+                      background: ({ Grossiste: 'rgba(108,71,255,.15)', 'Semi-gros': 'rgba(255,149,0,.15)', Fidèle: 'rgba(0,208,132,.15)', Détail: 'rgba(0,184,255,.15)' } as Record<string,string>)[detailCustomer.type] ?? 'rgba(108,71,255,.15)',
+                      color: ({ Grossiste: 'var(--p3)', 'Semi-gros': 'var(--acc)', Fidèle: 'var(--acc2)', Détail: 'var(--info)' } as Record<string,string>)[detailCustomer.type] ?? 'var(--p3)',
+                    }}>
+                      {detailCustomer.type}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+                    {lang === 'fr' ? 'Depuis le' : 'Since'}{' '}
+                    {new Date(detailCustomer.since).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {detailCustomer.lastPurchase && (
+                      <span style={{ marginLeft: 10 }}>
+                        · {lang === 'fr' ? 'Dernière visite' : 'Last visit'}{' '}
+                        {new Date(detailCustomer.lastPurchase).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button type="button" onClick={() => setShowDetailModal(false)} style={{
+                  width: 32, height: 32, borderRadius: 10,
+                  background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)',
+                  cursor: 'pointer', color: 'var(--text3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 15, flexShrink: 0,
+                }}>✕</button>
+              </div>
+            </div>
+
+            {/* Corps scrollable */}
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              {/* KPIs */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                {[
+                  { label: lang === 'fr' ? 'CA Total' : 'Total Revenue', value: fmt(detailCustomer.totalCA), icon: '💰', color: 'var(--acc)' },
+                  { label: lang === 'fr' ? 'Commandes/mois' : 'Orders/month', value: `${detailCustomer.purchasesPerMonth}`, icon: '🛒', color: 'var(--p2)' },
+                  { label: lang === 'fr' ? 'Points fidélité' : 'Loyalty pts', value: `${detailCustomer.loyaltyPoints} pts`, icon: '⭐', color: 'var(--warn)' },
+                ].map(k => (
+                  <div key={k.label} style={{ background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, marginBottom: 6 }}>{k.icon}</div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: k.color, fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{k.value}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginTop: 4 }}>{k.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Coordonnées */}
+              <div style={{ background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>📋</span>{lang === 'fr' ? 'COORDONNÉES' : 'CONTACT INFO'}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {[
+                    { label: lang === 'fr' ? 'Téléphone' : 'Phone', value: detailCustomer.phone || '—', icon: '📞', full: false },
+                    { label: 'Email', value: detailCustomer.email || '—', icon: '📧', full: false },
+                    { label: lang === 'fr' ? 'Adresse' : 'Address', value: detailCustomer.address || '—', icon: '📍', full: true },
+                  ].map(item => (
+                    <div key={item.label} style={{
+                      gridColumn: item.full ? '1 / -1' : 'auto',
+                      background: 'var(--bg3)', border: '1px solid rgba(255,255,255,.04)', borderRadius: 10, padding: '10px 12px',
+                    }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span>{item.icon}</span>{item.label}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', wordBreak: 'break-all' }}>{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+                {detailCustomer.notes && (
+                  <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 10, background: 'rgba(91,78,232,.08)', border: '1px solid rgba(91,78,232,.2)', fontSize: 12, color: 'var(--p3)' }}>
+                    📝 {detailCustomer.notes}
+                  </div>
+                )}
+              </div>
+
+              {/* Programme fidélité */}
+              <div style={{ background: 'linear-gradient(135deg,rgba(255,184,0,.06),rgba(255,184,0,.02))', border: '1px solid rgba(255,184,0,.15)', borderRadius: 14, padding: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    ⭐ {lang === 'fr' ? 'PROGRAMME FIDÉLITÉ' : 'LOYALTY PROGRAM'}
+                  </div>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>
+                    {detailCustomer.loyaltyPoints} pts
+                  </span>
+                </div>
+                {(() => {
+                  const pts = detailCustomer.loyaltyPoints
+                  const levels = [
+                    { name: 'Bronze',   min: 0,    max: 499,  color: '#CD7F32' },
+                    { name: 'Silver',   min: 500,  max: 999,  color: '#C0C0C0' },
+                    { name: 'Gold',     min: 1000, max: 2499, color: '#FFD700' },
+                    { name: 'Platinum', min: 2500, max: 9999, color: '#E5E4E2' },
+                  ]
+                  const current = [...levels].reverse().find(l => pts >= l.min) ?? levels[0]
+                  const next    = levels.find(l => l.min > pts)
+                  const pct     = next ? Math.round(((pts - current.min) / (next.min - current.min)) * 100) : 100
+                  return (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 6 }}>
+                        <span style={{ fontWeight: 700, color: current.color }}>🏅 {current.name}</span>
+                        {next && <span style={{ color: 'var(--text3)' }}>{next.min - pts} pts → {next.name}</span>}
+                      </div>
+                      <div style={{ height: 8, background: 'var(--bg5,var(--bg4))', borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: `linear-gradient(90deg,${current.color},${next?.color ?? current.color})`, borderRadius: 99, transition: 'width .5s ease' }} />
+                      </div>
+                      <div style={{ textAlign: 'right', fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>{pct}%</div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* Historique achats */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  🛍️ {lang === 'fr' ? 'HISTORIQUE DES ACHATS' : 'PURCHASE HISTORY'}
+                </div>
+                {detailCustomer.purchases.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '28px', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 12, color: 'var(--text3)', fontSize: 13 }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>🛒</div>
+                    {lang === 'fr' ? 'Aucun achat enregistré' : 'No purchases recorded'}
+                  </div>
+                ) : (
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>{lang === 'fr' ? 'RÉFÉRENCE' : 'REF'}</th>
+                          <th>DATE</th>
+                          <th>{lang === 'fr' ? 'ARTICLES' : 'ITEMS'}</th>
+                          <th>{lang === 'fr' ? 'MONTANT' : 'AMOUNT'}</th>
+                          <th>STATUT</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detailCustomer.purchases.map(p => (
+                          <tr key={p.ref}>
+                            <td className="td-mono" style={{ fontSize: 11, color: 'var(--p3)' }}>{p.ref}</td>
+                            <td style={{ fontSize: 11, color: 'var(--text2)' }}>
+                              {new Date(p.date).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
+                            </td>
+                            <td style={{ fontSize: 11, color: 'var(--text2)' }}>{p.items} art.</td>
+                            <td className="td-mono" style={{ color: 'var(--acc2)', fontWeight: 700 }}>{fmt(p.total)}</td>
+                            <td><span className="badge badge-ok">✓ {lang === 'fr' ? 'Payé' : 'Paid'}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,.06)', flexShrink: 0, display: 'flex', gap: 8, background: 'rgba(0,0,0,.15)' }}>
+              <button onClick={() => { setShowDetailModal(false); navigate('/app/pos', { state: { customer: detailCustomer } }) }} style={{
+                flex: 1, padding: '12px',
+                background: 'linear-gradient(135deg,var(--p),var(--p2))',
+                border: 'none', borderRadius: 12, color: '#fff',
+                fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                fontFamily: 'var(--font)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: 'var(--sh-p)',
+              }}>
+                🛒 {lang === 'fr' ? 'Nouvelle vente' : 'New sale'}
+              </button>
+              <button onClick={() => {
+                setShowDetailModal(false)
+                setEditCustomer(detailCustomer)
+                setEditCustForm({ name: detailCustomer.name, type: detailCustomer.type, phone: detailCustomer.phone, email: detailCustomer.email ?? '', address: detailCustomer.address ?? '', notes: detailCustomer.notes ?? '' })
+                setShowEditCustModal(true)
+              }} style={{
+                padding: '12px 16px', background: 'rgba(255,255,255,.05)',
+                border: '1px solid rgba(255,255,255,.08)', borderRadius: 12,
+                cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
+                fontFamily: 'var(--font)', fontWeight: 600,
+              }}>
+                ✏️ {lang === 'fr' ? 'Modifier' : 'Edit'}
+              </button>
+              <button onClick={() => setShowDetailModal(false)} style={{
+                padding: '12px 16px', background: 'rgba(255,255,255,.05)',
+                border: '1px solid rgba(255,255,255,.08)', borderRadius: 12,
+                cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
+                fontFamily: 'var(--font)', fontWeight: 600,
+              }}>
+                {lang === 'fr' ? 'Fermer' : 'Close'}
               </button>
             </div>
           </div>
