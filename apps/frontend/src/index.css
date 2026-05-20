@@ -1,4 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
 
 @tailwind base;
 @tailwind components;
@@ -77,6 +80,38 @@
     --t-base:   all .18s cubic-bezier(.4,0,.2,1);
     --t-slow:   all .28s cubic-bezier(.4,0,.2,1);
     --t-spring: all .22s cubic-bezier(.34,1.56,.64,1);
+
+    /* ── shadcn variables → palette HabaShop (dark par défaut) ── */
+    --background: #080710;
+    --foreground: #F0EEF9;
+    --card-foreground: #F0EEF9;
+    --popover: #13121F;
+    --popover-foreground: #F0EEF9;
+    --primary: #6C47FF;
+    --primary-foreground: #FFFFFF;
+    --secondary: #181628;
+    --secondary-foreground: #F0EEF9;
+    --muted: #211F35;
+    --muted-foreground: #8886A8;
+    --accent: #211F35;
+    --accent-foreground: #F0EEF9;
+    --destructive: #FF3B5C;
+    --destructive-foreground: #FFFFFF;
+    --input: #211F35;
+    --ring: #6C47FF;
+    --chart-1: #6C47FF;
+    --chart-2: #00D084;
+    --chart-3: #F0A500;
+    --chart-4: #FF3B5C;
+    --chart-5: #1B9AF5;
+    --radius: 0.625rem;
+    --sidebar-foreground: #F0EEF9;
+    --sidebar-primary: #6C47FF;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #181628;
+    --sidebar-accent-foreground: #F0EEF9;
+    --sidebar-border: rgba(255,255,255,0.07);
+    --sidebar-ring: #6C47FF;
   }
 
   [data-theme="light"] {
@@ -115,6 +150,41 @@
   @keyframes fadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:translateY(0) } }
   @keyframes spin    { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
   @keyframes pulse   { 0%,100% { opacity:.5; transform:scale(1) } 50% { opacity:1; transform:scale(1.25) } }
+  /* shadcn light-mode overrides (via [data-theme="light"]) */
+  [data-theme="light"] {
+    --background: #F0EEF9;
+    --foreground: #13111E;
+    --card-foreground: #13111E;
+    --popover: #FFFFFF;
+    --popover-foreground: #13111E;
+    --primary: #6C47FF;
+    --primary-foreground: #FFFFFF;
+    --secondary: #E8E5F8;
+    --secondary-foreground: #13111E;
+    --muted: #E8E5F8;
+    --muted-foreground: #5A587A;
+    --accent: #D9D5F2;
+    --accent-foreground: #13111E;
+    --destructive: #FF3B5C;
+    --destructive-foreground: #FFFFFF;
+    --input: #D9D5F2;
+    --ring: #6C47FF;
+    --chart-1: #6C47FF;
+    --chart-2: #00D084;
+    --chart-3: #F0A500;
+    --chart-4: #FF3B5C;
+    --chart-5: #1B9AF5;
+    --sidebar-foreground: #13111E;
+    --sidebar-primary: #6C47FF;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #E8E5F8;
+    --sidebar-accent-foreground: #13111E;
+    --sidebar-border: rgba(0,0,0,0.08);
+    --sidebar-ring: #6C47FF;
+  }
+  html {
+    @apply font-sans;
+  }
 }
 
 @layer components {
