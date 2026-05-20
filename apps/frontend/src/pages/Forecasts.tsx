@@ -346,66 +346,131 @@ export default function Forecasts() {
   return (
     <div className="space-y-5 animate-in">
 
-      {/* ── Panel IA Claude ──────────────────────────────────────── */}
+      {/* ── Panel HabaShop AI ────────────────────────────────────── */}
       <div className="panel" style={{
         background:'linear-gradient(135deg,rgba(91,78,232,.08),rgba(124,111,240,.04))',
         border:'1px solid rgba(91,78,232,.2)',
         marginBottom:14,
+        padding:0, overflow:'hidden',
       }}>
-        {/* Header */}
-        <div className="panel-head" style={{ marginBottom:16 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{
-              width:36, height:36, borderRadius:10,
-              background:'linear-gradient(135deg,var(--p),var(--p2))',
-              display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
-            }}>🤖</div>
-            <div>
-              <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
-                {lang === 'fr' ? 'Analyse IA — Powered by Claude'
-                  : lang === 'en' ? 'AI Analysis — Powered by Claude'
-                  : lang === 'es' ? 'Análisis IA — Powered by Claude'
-                  : 'Analisi IA — Powered by Claude'}
+        {/* Header redesigné */}
+        <div style={{
+          display:'flex', alignItems:'center',
+          gap:14, padding:'20px 24px',
+          borderBottom:'1px solid rgba(108,71,255,.15)',
+          position:'relative', overflow:'hidden',
+        }}>
+          <div style={{
+            position:'absolute', right:-20, top:-20,
+            width:120, height:120, borderRadius:'50%',
+            background:'radial-gradient(circle,rgba(108,71,255,.15),transparent 70%)',
+            pointerEvents:'none',
+          }}/>
+          <div style={{
+            width:56, height:56, borderRadius:16,
+            background:'linear-gradient(135deg,#6C47FF,#A991FF)',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:28,
+            flexShrink:0,
+            boxShadow:'0 8px 24px rgba(108,71,255,.4)',
+            border:'1px solid rgba(255,255,255,.1)',
+          }}>🤖</div>
+          <div style={{ flex:1 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+              <h2 style={{ fontSize:20, fontWeight:900, color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
+                HabaShop
+                <span style={{
+                  background:'linear-gradient(135deg,#6C47FF,#A991FF)',
+                  WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+                  backgroundClip:'text', marginLeft:6,
+                }}>AI</span>
+              </h2>
+              <span style={{
+                fontSize:9, fontWeight:800,
+                background:'rgba(108,71,255,.2)', color:'var(--p3)',
+                border:'1px solid rgba(108,71,255,.3)',
+                borderRadius:99, padding:'2px 8px',
+                textTransform:'uppercase', letterSpacing:'.6px',
+              }}>BETA</span>
+              <div style={{ display:'flex', alignItems:'center', gap:4, marginLeft:'auto' }}>
+                <div style={{
+                  width:6, height:6, borderRadius:'50%',
+                  background:'var(--acc2)', boxShadow:'0 0 8px var(--acc2)',
+                }}/>
+                <span style={{ fontSize:10, color:'var(--acc2)', fontWeight:600 }}>
+                  {lang === 'fr' ? 'En ligne' : 'Online'}
+                </span>
               </div>
-              <div style={{ fontSize:11, color:'var(--text3)' }}>
-                {lang === 'fr' ? 'Analyse vos données réelles et génère des recommandations'
-                  : lang === 'en' ? 'Analyzes your real data and generates recommendations'
-                  : lang === 'es' ? 'Analiza sus datos reales y genera recomendaciones'
-                  : 'Analizza i dati reali e genera raccomandazioni'}
-              </div>
+              {aiAnalysis && (
+                <button className="mini-btn" style={{ marginLeft:8 }} onClick={() => { setAiAnalysis(null); setAiData(null) }}>✕</button>
+              )}
+            </div>
+            <p style={{ fontSize:12, color:'var(--text3)', margin:0, lineHeight:1.5 }}>
+              {lang === 'fr'
+                ? 'Votre assistant commercial intelligent — Analysez vos ventes, stock, finances et obtenez des recommandations personnalisées.'
+                : 'Your intelligent business assistant — Analyze your sales, stock, finances and get personalized recommendations.'}
+            </p>
+            <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap' }}>
+              {[
+                { icon:'📊', label: lang === 'fr' ? 'Analyse ventes' : 'Sales analysis' },
+                { icon:'📦', label: lang === 'fr' ? 'Prévisions stock' : 'Stock forecast' },
+                { icon:'💡', label: lang === 'fr' ? 'Recommandations' : 'Recommendations' },
+                { icon:'💬', label: lang === 'fr' ? 'Chat libre' : 'Free chat' },
+              ].map((cap, i) => (
+                <span key={i} style={{
+                  fontSize:10, fontWeight:600, color:'var(--text3)',
+                  background:'rgba(255,255,255,.04)', border:'1px solid var(--border)',
+                  borderRadius:20, padding:'2px 8px',
+                  display:'flex', alignItems:'center', gap:4,
+                }}>
+                  {cap.icon} {cap.label}
+                </span>
+              ))}
             </div>
           </div>
-          {aiAnalysis && (
-            <button className="mini-btn" onClick={() => { setAiAnalysis(null); setAiData(null) }}>✕ Fermer</button>
-          )}
         </div>
 
-        {/* Boutons types d'analyse */}
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16 }}>
+        {/* Boutons types d'analyse redesignés */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:10, padding:'16px 24px' }}>
           {([
-            { id:'full',    icon:'📊', label: lang === 'fr' ? 'Analyse complète' : lang === 'en' ? 'Full analysis' : lang === 'es' ? 'Análisis completo' : 'Analisi completa' },
-            { id:'stock',   icon:'📦', label: lang === 'fr' ? 'Analyse stock'    : lang === 'en' ? 'Stock analysis' : lang === 'es' ? 'Análisis stock'    : 'Analisi stock'    },
-            { id:'revenue', icon:'💰', label: lang === 'fr' ? 'Analyse financière': lang === 'en' ? 'Financial'     : lang === 'es' ? 'Análisis financiero': 'Analisi finanziaria'},
-            { id:'hr',      icon:'👥', label: lang === 'fr' ? 'Analyse RH'        : lang === 'en' ? 'HR analysis'   : lang === 'es' ? 'Análisis RRHH'     : 'Analisi HR'        },
-          ] as { id: 'full'|'stock'|'revenue'|'hr'; icon: string; label: string }[]).map(btn => (
+            { id:'full',    icon:'📊', color:'#6C47FF', label: lang === 'fr' ? 'Analyse mensuelle' : 'Monthly analysis', desc: lang === 'fr' ? 'Ventes, tendances, top produits' : 'Sales, trends, top products' },
+            { id:'stock',   icon:'📦', color:'#FF9500', label: lang === 'fr' ? 'Analyse stock' : 'Stock analysis', desc: lang === 'fr' ? 'Ruptures, commandes à passer' : 'Stockouts, orders to place' },
+            { id:'revenue', icon:'💰', color:'#00D084', label: lang === 'fr' ? 'Analyse financière' : 'Financial analysis', desc: lang === 'fr' ? 'Revenus, dépenses, trésorerie' : 'Revenue, expenses, cash flow' },
+            { id:'hr',      icon:'👥', color:'#00B8FF', label: lang === 'fr' ? 'Analyse clients' : 'Customer analysis', desc: lang === 'fr' ? 'Fidélité, segments, comportement' : 'Loyalty, segments, behavior' },
+          ] as { id: 'full'|'stock'|'revenue'|'hr'; icon: string; color: string; label: string; desc: string }[]).map(btn => (
             <button key={btn.id}
               onClick={() => runAnalysis(btn.id)}
               disabled={aiLoading}
               style={{
-                display:'flex', alignItems:'center', gap:6,
-                padding:'9px 16px', borderRadius:10,
-                fontSize:13, fontWeight:600,
-                cursor: aiLoading ? 'not-allowed' : 'pointer',
-                fontFamily:'var(--font)', transition:'all .15s',
-                background: aiType === btn.id && aiAnalysis
-                  ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg3)',
-                color: aiType === btn.id && aiAnalysis ? '#fff' : 'var(--text2)',
-                border: `1px solid ${aiType === btn.id && aiAnalysis ? 'transparent' : 'var(--border)'}`,
-                boxShadow: aiType === btn.id && aiAnalysis ? '0 4px 14px rgba(91,78,232,.3)' : 'none',
-                opacity: aiLoading ? .6 : 1,
-              }}>
-              <span>{btn.icon}</span>
-              {btn.label}
+                display:'flex', alignItems:'flex-start', gap:10, padding:'14px',
+                background: aiType === btn.id && aiAnalysis ? `${btn.color}18` : `${btn.color}0D`,
+                border: `1px solid ${aiType === btn.id && aiAnalysis ? `${btn.color}40` : `${btn.color}25`}`,
+                borderRadius:14, cursor: aiLoading ? 'not-allowed' : 'pointer',
+                fontFamily:'var(--font)', transition:'all .15s', textAlign:'left',
+                opacity: aiLoading ? .5 : 1,
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement
+                el.style.background = `${btn.color}18`
+                el.style.borderColor = `${btn.color}40`
+                el.style.transform = 'translateY(-1px)'
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement
+                el.style.background = aiType === btn.id && aiAnalysis ? `${btn.color}18` : `${btn.color}0D`
+                el.style.borderColor = aiType === btn.id && aiAnalysis ? `${btn.color}40` : `${btn.color}25`
+                el.style.transform = 'none'
+              }}
+            >
+              <div style={{
+                width:38, height:38, borderRadius:11,
+                background:`${btn.color}18`, border:`1px solid ${btn.color}25`,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:20, flexShrink:0,
+              }}>{btn.icon}</div>
+              <div>
+                <div style={{ fontSize:13, fontWeight:800, color:'var(--text)', marginBottom:2 }}>{btn.label}</div>
+                <div style={{ fontSize:10, color:'var(--text3)', lineHeight:1.4 }}>{btn.desc}</div>
+              </div>
             </button>
           ))}
         </div>
@@ -414,7 +479,8 @@ export default function Forecasts() {
         {aiLoading && (
           <div style={{
             display:'flex', alignItems:'center', gap:14,
-            padding:'24px', background:'var(--bg3)',
+            padding:'24px', margin:'0 24px 16px',
+            background:'var(--bg3)',
             borderRadius:12, border:'1px solid var(--border)',
           }}>
             <div style={{
@@ -442,7 +508,7 @@ export default function Forecasts() {
         {/* Erreur */}
         {aiError && !aiLoading && (
           <div style={{
-            padding:'14px 16px',
+            padding:'14px 16px', margin:'0 24px 16px',
             background:'rgba(232,64,74,.08)', border:'1px solid rgba(232,64,74,.2)',
             borderRadius:10, fontSize:13, color:'var(--danger)',
           }}>
@@ -452,7 +518,7 @@ export default function Forecasts() {
 
         {/* Résultat */}
         {aiAnalysis && !aiLoading && (
-          <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 24px' }}>
+          <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 24px', margin:'0 24px 24px' }}>
             {/* KPIs rapides */}
             {aiData && (
               <div style={{
@@ -503,7 +569,7 @@ export default function Forecasts() {
 
         {/* État initial */}
         {!aiAnalysis && !aiLoading && !aiError && (
-          <div style={{ textAlign:'center', padding:'24px', color:'var(--text3)' }}>
+          <div style={{ textAlign:'center', padding:'24px 24px 32px', color:'var(--text3)' }}>
             <div style={{ fontSize:32, marginBottom:12 }}>🤖</div>
             <div style={{ fontSize:14, fontWeight:600, color:'var(--text2)', marginBottom:6 }}>
               {lang === 'fr' ? "Choisissez un type d'analyse"

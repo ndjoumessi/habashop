@@ -123,6 +123,12 @@ export default function Suppliers() {
       .then(data => setSuppliers(data.map(mapApiSupplier)))
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    const handler = () => setShowCreate(true)
+    window.addEventListener('habashop:new-supplier', handler)
+    return () => window.removeEventListener('habashop:new-supplier', handler)
+  }, [])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<SupplierStatus | ''>('')
   const [catFilter, setCatFilter] = useState('')

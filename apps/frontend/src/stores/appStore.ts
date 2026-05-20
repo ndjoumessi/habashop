@@ -289,8 +289,29 @@ export const convertAmount = convertCurrency
 
 export function useFormatAmount() {
   const { currency } = useAppStore()
-  return (amountInXOF: number) => {
-    const converted = convertCurrency(amountInXOF, 'XOF', currency)
-    return formatCurrency(converted, currency)
+
+  return (amount: number): string => {
+    const n = Number(amount) || 0
+
+    const FORMATS: Record<string, { locale: string; options: Intl.NumberFormatOptions }> = {
+      XOF: { locale:'fr-FR', options:{ style:'decimal', minimumFractionDigits:0, maximumFractionDigits:0 } },
+      XAF: { locale:'fr-FR', options:{ style:'decimal', minimumFractionDigits:0, maximumFractionDigits:0 } },
+      EUR: { locale:'fr-FR', options:{ style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2 } },
+      USD: { locale:'en-US', options:{ style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits:2 } },
+      CAD: { locale:'fr-CA', options:{ style:'currency', currency:'CAD', minimumFractionDigits:2, maximumFractionDigits:2 } },
+      GBP: { locale:'en-GB', options:{ style:'currency', currency:'GBP', minimumFractionDigits:2, maximumFractionDigits:2 } },
+    }
+
+    const converted = convertCurrency(n, 'XOF', currency)
+    const fmt = FORMATS[currency] ?? FORMATS.XOF
+
+    try {
+      const formatted = new Intl.NumberFormat(fmt.locale, fmt.options).format(converted)
+      if (currency === 'XOF') return `${formatted} FCFA`
+      if (currency === 'XAF') return `${formatted} FCFA`
+      return formatted
+    } catch {
+      return `${converted.toLocaleString()} ${currency}`
+    }
   }
 }

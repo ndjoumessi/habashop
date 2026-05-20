@@ -293,6 +293,12 @@ export default function HR() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    const handler = () => { setSelectedEmp(null); setShowModal(true) }
+    window.addEventListener('habashop:new-employee', handler)
+    return () => window.removeEventListener('habashop:new-employee', handler)
+  }, [])
+
   const depts = useMemo(() => Array.from(new Set(employees.map(e => e.dept))), [employees])
 
   const filtered = useMemo(() => (employees ?? []).filter(e => {

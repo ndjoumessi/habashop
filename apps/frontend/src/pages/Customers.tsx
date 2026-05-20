@@ -137,6 +137,12 @@ export default function Customers() {
       .then(data => setCustomers(data.map(mapApiCustomer)))
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    const handler = () => setShowCreate(true)
+    window.addEventListener('habashop:new-customer', handler)
+    return () => window.removeEventListener('habashop:new-customer', handler)
+  }, [])
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<ClientType | ''>('')
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null)

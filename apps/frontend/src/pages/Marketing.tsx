@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import React from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { customersApi, marketingApi } from '@/lib/api'
 import toast from 'react-hot-toast'
@@ -146,6 +147,45 @@ const MK = {
 }
 
 const TPL_ICONS = ['🏷️', '📦', '🎁', '💬']
+
+// ─── WhatsApp Markdown Renderer ───────────────────────────────────────────────
+
+function WhatsAppRenderer({ text }: { text: string }) {
+  if (!text) return (
+    <span style={{ color:'rgba(255,255,255,.3)', fontSize:13 }}>
+      Votre message apparaîtra ici...
+    </span>
+  )
+
+  const renderLine = (line: string, key: number) => {
+    const parts: React.ReactNode[] = []
+    const regex = /(\*(.+?)\*|_(.+?)_|~(.+?)~|```([\s\S]+?)```|`(.+?)`)/g
+    let last = 0
+    let match: RegExpExecArray | null
+
+    while ((match = regex.exec(line)) !== null) {
+      if (match.index > last) parts.push(line.slice(last, match.index))
+      if (match[2]) {
+        parts.push(<strong key={match.index} style={{ fontWeight:700, color:'#fff' }}>{match[2]}</strong>)
+      } else if (match[3]) {
+        parts.push(<em key={match.index} style={{ fontStyle:'italic', color:'rgba(255,255,255,.9)' }}>{match[3]}</em>)
+      } else if (match[4]) {
+        parts.push(<span key={match.index} style={{ textDecoration:'line-through', color:'rgba(255,255,255,.6)' }}>{match[4]}</span>)
+      } else if (match[5] || match[6]) {
+        parts.push(<code key={match.index} style={{ background:'rgba(0,0,0,.3)', borderRadius:4, padding:'1px 5px', fontSize:12, fontFamily:'monospace', color:'#B5EAD7' }}>{match[5] ?? match[6]}</code>)
+      }
+      last = match.index + match[0].length
+    }
+    if (last < line.length) parts.push(line.slice(last))
+    return (
+      <div key={key} style={{ minHeight: line ? 'auto' : '8px', lineHeight:1.5 }}>
+        {parts.length > 0 ? parts : line || ' '}
+      </div>
+    )
+  }
+
+  return <>{text.split('\n').map((line, i) => renderLine(line, i))}</>
+}
 
 export default function Marketing() {
   const { lang } = useAppStore()
@@ -316,7 +356,7 @@ export default function Marketing() {
           )}
         </div>
 
-        {/* ── Colonne droite : message ── */}
+        {/* ── Colonne droite : message + aperçu ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Templates */}
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
@@ -346,7 +386,7 @@ export default function Marketing() {
             </div>
             <textarea
               className="input"
-              style={{ width: '100%', minHeight: 160, resize: 'vertical', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit' }}
+              style={{ width: '100%', minHeight: 120, resize: 'vertical', fontSize: 13, lineHeight: 1.6, fontFamily: 'inherit' }}
               placeholder={mk.msg_placeholder}
               value={message}
               onChange={e => setMessage(e.target.value)}
@@ -358,6 +398,101 @@ export default function Marketing() {
               <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                 {mk.formatting}
               </span>
+            </div>
+          </div>
+
+          {/* ── Aperçu WhatsApp smartphone mockup ── */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 14 }}>
+              {mk.preview}
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
+              {/* Mockup smartphone */}
+              <div style={{
+                width:260,
+                background:'#111B21',
+                borderRadius:24, overflow:'hidden',
+                boxShadow:'0 20px 60px rgba(0,0,0,.8), inset 0 0 0 1px rgba(255,255,255,.08)',
+                border:'2px solid rgba(255,255,255,.06)',
+              }}>
+                {/* Status bar */}
+                <div style={{ background:'#1F2C34', padding:'8px 16px', display:'flex', alignItems:'center', gap:10 }}>
+                  <div style={{
+                    width:34, height:34, borderRadius:'50%',
+                    background:'linear-gradient(135deg,#25D366,#128C7E)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontSize:16, flexShrink:0,
+                  }}>🏪</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#fff' }}>HabaShop</div>
+                    <div style={{ fontSize:10, color:'#8696A0' }}>
+                      {lang === 'fr' ? 'En ligne' : 'Online'}
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <span style={{ fontSize:14, opacity:.6 }}>📹</span>
+                    <span style={{ fontSize:14, opacity:.6 }}>📞</span>
+                  </div>
+                </div>
+
+                {/* Zone messages */}
+                <div style={{
+                  background:'#0B141A',
+                  padding:'16px 10px',
+                  minHeight:200,
+                  display:'flex', flexDirection:'column', gap:8,
+                }}>
+                  <div style={{ textAlign:'center', fontSize:10, color:'#8696A0', marginBottom:4 }}>
+                    {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day:'numeric', month:'short' })}
+                  </div>
+
+                  {message ? (
+                    <div style={{ alignSelf:'flex-end', maxWidth:'85%' }}>
+                      <div style={{
+                        background:'#005C4B',
+                        borderRadius:'16px 4px 16px 16px',
+                        padding:'8px 12px',
+                        boxShadow:'0 2px 8px rgba(0,0,0,.3)',
+                        position:'relative',
+                      }}>
+                        <div style={{
+                          position:'absolute', top:0, right:-6,
+                          width:12, height:12,
+                          background:'#005C4B',
+                          clipPath:'polygon(0 0, 100% 0, 0 100%)',
+                        }}/>
+                        <div style={{ fontSize:13, color:'rgba(255,255,255,.95)', lineHeight:1.5, wordBreak:'break-word' }}>
+                          <WhatsAppRenderer text={message} />
+                        </div>
+                        <div style={{ display:'flex', justifyContent:'flex-end', alignItems:'center', gap:3, marginTop:4 }}>
+                          <span style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>
+                            {new Date().toLocaleTimeString(lang === 'fr' ? 'fr-FR' : 'en-US', { hour:'2-digit', minute:'2-digit' })}
+                          </span>
+                          <span style={{ fontSize:11, color:'#53BDEB' }}>✓✓</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign:'center', padding:'20px', color:'#8696A0', fontSize:12 }}>
+                      {lang === 'fr' ? 'Votre message apparaîtra ici' : 'Your message will appear here'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Barre saisie décorative */}
+                <div style={{ background:'#1F2C34', padding:'8px 10px', display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{ flex:1, background:'#2A3942', borderRadius:20, padding:'8px 14px', fontSize:12, color:'#8696A0' }}>
+                    {lang === 'fr' ? 'Message...' : 'Message...'}
+                  </div>
+                  <div style={{ width:36, height:36, borderRadius:'50%', background:'#00A884', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🎤</div>
+                </div>
+              </div>
+
+              {/* Compteur */}
+              <div style={{ fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
+                <span>{message.length}/1000 {lang === 'fr' ? 'car.' : 'chars'}</span>
+                <span>{Math.ceil(message.length / 160)} SMS {lang === 'fr' ? 'équivalent' : 'equiv.'}</span>
+              </div>
             </div>
           </div>
 

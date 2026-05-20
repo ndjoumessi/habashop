@@ -88,47 +88,6 @@ const PAGE_TITLES_IT: Record<string, string> = {
 
 const TITLES_MAP = { fr: PAGE_TITLES, en: PAGE_TITLES_EN, es: PAGE_TITLES_ES, it: PAGE_TITLES_IT }
 
-// ── Menu + Nouveau ─────────────────────────────────────────────────────────────
-
-const NEW_MENU_ITEMS: Record<string, { label: string; icon: string }[]> = {
-  '/app/stock':     [
-    { label:'Nouveau produit',     icon:'📦' },
-    { label:'Réception stock',     icon:'📥' },
-    { label:'Bon de commande',     icon:'📋' },
-  ],
-  '/app/orders':    [
-    { label:'Nouvelle commande',   icon:'📦' },
-    { label:'Bon de livraison',    icon:'🚚' },
-  ],
-  '/app/customers': [
-    { label:'Nouveau client',      icon:'👤' },
-    { label:'Nouveau devis',       icon:'📄' },
-  ],
-  '/app/suppliers': [
-    { label:'Nouveau fournisseur', icon:'🏭' },
-    { label:'Nouvelle commande',   icon:'📦' },
-  ],
-  '/app/hr':        [
-    { label:'Nouvel employé',      icon:'👤' },
-    { label:'Nouveau contrat',     icon:'📄' },
-    { label:'Demande de congé',    icon:'🏖️' },
-  ],
-  '/app/expenses':  [
-    { label:'Nouvelle dépense',    icon:'🧾' },
-    { label:'Nouveau budget',      icon:'💰' },
-  ],
-  '/app/pos':       [
-    { label:'Nouvelle vente',      icon:'🛒' },
-    { label:'Nouveau client',      icon:'👤' },
-  ],
-}
-
-const DEFAULT_ITEMS = [
-  { label:'Nouvelle vente',   icon:'🛒' },
-  { label:'Nouveau produit',  icon:'📦' },
-  { label:'Nouveau client',   icon:'👤' },
-  { label:'Nouvelle dépense', icon:'🧾' },
-]
 
 // ── Notifications récentes ─────────────────────────────────────────────────────
 
@@ -208,6 +167,56 @@ export default function Header() {
   const [showResults,    setShowResults]    = useState(false)
   const [apiStatus,      setApiStatus]      = useState<'online'|'offline'|'checking'>('checking')
   const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([])
+  const [swUpdate,       setSwUpdate]       = useState(false)
+
+  // Items du menu Nouveau avec navigation + CustomEvents
+  const NEW_ITEMS = [
+    {
+      icon:'🛒',
+      label: lang === 'fr' ? 'Nouvelle vente' : 'New sale',
+      action: () => navigate('/app/pos'),
+    },
+    {
+      icon:'📦',
+      label: lang === 'fr' ? 'Nouveau produit' : 'New product',
+      action: () => {
+        navigate('/app/stock')
+        setTimeout(() => { window.dispatchEvent(new CustomEvent('habashop:new-product')) }, 300)
+      },
+    },
+    {
+      icon:'👤',
+      label: lang === 'fr' ? 'Nouveau client' : 'New customer',
+      action: () => {
+        navigate('/app/customers')
+        setTimeout(() => { window.dispatchEvent(new CustomEvent('habashop:new-customer')) }, 300)
+      },
+    },
+    {
+      icon:'🧾',
+      label: lang === 'fr' ? 'Nouvelle dépense' : 'New expense',
+      action: () => {
+        navigate('/app/expenses')
+        setTimeout(() => { window.dispatchEvent(new CustomEvent('habashop:new-expense')) }, 300)
+      },
+    },
+    {
+      icon:'👥',
+      label: lang === 'fr' ? 'Nouvel employé' : 'New employee',
+      action: () => {
+        navigate('/app/hr')
+        setTimeout(() => { window.dispatchEvent(new CustomEvent('habashop:new-employee')) }, 300)
+      },
+    },
+    {
+      icon:'🏭',
+      label: lang === 'fr' ? 'Nouveau fournisseur' : 'New supplier',
+      action: () => {
+        navigate('/app/suppliers')
+        setTimeout(() => { window.dispatchEvent(new CustomEvent('habashop:new-supplier')) }, 300)
+      },
+    },
+  ]
 
   useEffect(() => {
     const BASE = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:3001'
@@ -231,6 +240,12 @@ export default function Header() {
   const notifsRef  = useRef<HTMLDivElement>(null)
   const searchRef  = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    const handler = () => setSwUpdate(true)
+    window.addEventListener('sw-update', handler)
+    return () => window.removeEventListener('sw-update', handler)
+  }, [])
+
   // Fermer tous les dropdowns au clic extérieur
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -247,7 +262,6 @@ export default function Header() {
     ?? PAGE_TITLES[location.pathname]
     ?? 'HabaShop'
 
-  const menuItems   = NEW_MENU_ITEMS[location.pathname] ?? DEFAULT_ITEMS
   const unreadCount = Math.max(RECENT_NOTIFS.filter(n => !n.read).length, lowStockAlerts.length)
 
   // Recherche globale
@@ -453,36 +467,56 @@ export default function Header() {
 
         {showNewMenu && (
           <div style={{
-            position:'absolute', top:'calc(100% + 8px)', right:0,
-            background:'var(--card)',
-            border:'1px solid var(--border2)',
-            borderRadius:14,
-            boxShadow:'0 20px 60px rgba(0,0,0,.4)',
-            padding:6, minWidth:210, zIndex:200,
-            animation:'fadeIn .15s ease',
+            position:'absolute', top:'calc(100% + 8px)', right:0, zIndex:1000,
+            background:'#0D0D1C',
+            border:'1px solid rgba(255,255,255,.1)',
+            borderRadius:18, padding:8,
+            boxShadow:'0 16px 48px rgba(0,0,0,.7)',
+            minWidth:220,
+            animation:'slideDown .2s cubic-bezier(.34,1.56,.64,1)',
           }}>
-            {menuItems.map((item, i) => (
-              <button key={i}
-                onClick={() => { toast(`${item.icon} ${item.label}`); setShowNewMenu(false) }}
+            <div style={{
+              position:'absolute', top:0, left:'50%',
+              transform:'translateX(-50%)',
+              width:'60%', height:1,
+              background:'linear-gradient(90deg,transparent,var(--p),transparent)',
+            }}/>
+            <div style={{
+              padding:'6px 10px 8px',
+              fontSize:9, fontWeight:800,
+              textTransform:'uppercase', letterSpacing:'.8px',
+              color:'var(--text3)',
+            }}>
+              {lang === 'fr' ? 'CRÉER RAPIDEMENT' : 'QUICK CREATE'}
+            </div>
+            {NEW_ITEMS.map((item, i) => (
+              <button key={i} type="button"
+                onClick={() => { item.action(); setShowNewMenu(false) }}
                 style={{
-                  display:'flex', alignItems:'center', gap:10,
-                  width:'100%', padding:'9px 12px',
-                  background:'none', border:'none',
-                  borderRadius:9, cursor:'pointer',
-                  fontSize:13, fontWeight:500,
-                  color:'var(--text)', fontFamily:'var(--font)',
-                  transition:'background .12s', textAlign:'left',
+                  display:'flex', alignItems:'center',
+                  gap:12, width:'100%',
+                  padding:'10px 12px', borderRadius:12,
+                  background:'transparent',
+                  border:'none', cursor:'pointer',
+                  fontFamily:'var(--font)',
+                  transition:'background .1s',
+                  textAlign:'left',
                 }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'none'}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.1)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
               >
-                <span style={{
-                  width:30, height:30, borderRadius:8,
-                  background:'rgba(91,78,232,.12)',
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  fontSize:15, flexShrink:0,
-                }}>{item.icon}</span>
-                {item.label}
+                <div style={{
+                  width:36, height:36, borderRadius:10,
+                  background:'rgba(108,71,255,.12)',
+                  border:'1px solid rgba(108,71,255,.2)',
+                  display:'flex', alignItems:'center',
+                  justifyContent:'center', fontSize:18, flexShrink:0,
+                }}>
+                  {item.icon}
+                </div>
+                <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>
+                  {item.label}
+                </span>
               </button>
             ))}
           </div>
@@ -648,6 +682,33 @@ export default function Header() {
         )}
       </div>
     </div>
+
+    {/* ── Banner mise à jour SW ── */}
+    {swUpdate && (
+      <div style={{
+        position:'fixed', bottom:20, right:20, zIndex:9999,
+        background:'var(--p)',
+        border:'1px solid var(--p2)',
+        borderRadius:14, padding:'12px 18px',
+        display:'flex', alignItems:'center', gap:12,
+        boxShadow:'0 8px 24px rgba(108,71,255,.4)',
+        animation:'slideUp .3s ease',
+      }}>
+        <span style={{ fontSize:14, color:'#fff' }}>
+          🔄 {lang === 'fr' ? 'Mise à jour disponible' : 'Update available'}
+        </span>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            background:'#fff', color:'var(--p)',
+            border:'none', borderRadius:8,
+            padding:'5px 12px', fontWeight:800,
+            cursor:'pointer', fontSize:12,
+          }}>
+          {lang === 'fr' ? 'Actualiser' : 'Refresh'}
+        </button>
+      </div>
+    )}
     </>
   )
 }

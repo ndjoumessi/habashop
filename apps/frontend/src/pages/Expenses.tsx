@@ -100,6 +100,12 @@ export default function Expenses() {
       .then(data => setExpenses(data.map(mapApiExpense)))
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    const handler = () => setAddOpen(true)
+    window.addEventListener('habashop:new-expense', handler)
+    return () => window.removeEventListener('habashop:new-expense', handler)
+  }, [])
   const [budgets, setBudgets]   = useState<Record<Category, number>>(BUDGETS_INIT)
   const [tab, setTab]           = useState<'journal' | 'budget'>('journal')
 

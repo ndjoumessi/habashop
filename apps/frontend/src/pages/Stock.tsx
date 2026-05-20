@@ -108,6 +108,12 @@ export default function Stock() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    const handler = () => { resetForm(); setShowModal(true) }
+    window.addEventListener('habashop:new-product', handler)
+    return () => window.removeEventListener('habashop:new-product', handler)
+  }, [])
+
   const saveProduct = async () => {
     const sku = form.sku || `PRD-${String(Date.now()).slice(-4)}`
     const apiBody = {
