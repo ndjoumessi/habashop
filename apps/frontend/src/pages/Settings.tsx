@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useConfig, formatCurrency, t, ACCENT_PAIRS, useFormatAmount, useAppStore, convertCurrency, formatInCurrency } from '@/stores/appStore'
+import { useConfig, formatCurrency, t, ACCENT_PAIRS, useFormatAmount, useAppStore, convertAmount, useCurrencyInfo, formatInCurrency } from '@/stores/appStore'
 import type { Currency, Lang } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { tenantApi, cronApi } from '@/lib/api'
@@ -28,22 +28,20 @@ const STATIC_QR = [
   0,0,1,0,1,0,0,1,0,1,0,1,
 ]
 
-// Conversion rates (indicative, XOF base)
-const RATES: Partial<Record<Currency, Partial<Record<Currency, number>>>> = {
-  XOF: { XAF: 1,       EUR: 1/655.957, USD: 1/609,   CAD: 1/445 },
-  XAF: { XOF: 1,       EUR: 1/655.957, USD: 1/609,   CAD: 1/445 },
-  EUR: { XOF: 655.957, XAF: 655.957,   USD: 1.08,    CAD: 1.47 },
-  USD: { XOF: 609,     XAF: 609,       EUR: 0.926,   CAD: 1.36 },
-  CAD: { XOF: 445,     XAF: 445,       EUR: 0.680,   USD: 0.735 },
-}
-
 const CURRENCY_META: { code: Currency; flag: string; symbol: string; descKey: string; regionKey: string }[] = [
   { code: 'XOF', flag: '🇸🇳', symbol: 'F CFA', descKey: 'currency_xof', regionKey: 'settings_west_africa' },
   { code: 'XAF', flag: '🇨🇲', symbol: 'F CFA', descKey: 'currency_xaf', regionKey: 'settings_central_africa' },
   { code: 'EUR', flag: '🇪🇺', symbol: '€',     descKey: 'currency_eur', regionKey: 'settings_europe' },
   { code: 'USD', flag: '🇺🇸', symbol: '$',     descKey: 'currency_usd', regionKey: 'settings_usa' },
   { code: 'CAD', flag: '🇨🇦', symbol: 'CA$',   descKey: 'currency_cad', regionKey: 'settings_canada' },
+  { code: 'GBP', flag: '🇬🇧', symbol: '£',     descKey: 'currency_gbp', regionKey: 'settings_uk' },
+  { code: 'MAD', flag: '🇲🇦', symbol: 'MAD',   descKey: 'currency_mad', regionKey: 'settings_morocco' },
+  { code: 'DZD', flag: '🇩🇿', symbol: 'DA',    descKey: 'currency_dzd', regionKey: 'settings_algeria' },
+  { code: 'TND', flag: '🇹🇳', symbol: 'TND',   descKey: 'currency_tnd', regionKey: 'settings_tunisia' },
+  { code: 'CHF', flag: '🇨🇭', symbol: 'CHF',   descKey: 'currency_chf', regionKey: 'settings_switzerland' },
 ]
+
+const ALL_CURRENCY_CODES: Currency[] = ['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP', 'MAD', 'DZD', 'TND', 'CHF']
 
 const LANG_META: { code: Lang; flag: string; name: string; native: string }[] = [
   { code: 'fr', flag: '🇫🇷', name: 'Français',  native: 'Langue officielle' },
@@ -121,6 +119,7 @@ const TABS: { id: Tab; key: string; icon: React.ReactNode }[] = [
 export default function Settings() {
   const cfg = useConfig()
   const fmt = useFormatAmount()
+  const { symbol: currencySymbol } = useCurrencyInfo()
   const { settingsLocked, lockSettings, unlockSettings } = useAppStore()
   const { user, updateUser } = useAuthStore()
   const [tab, setTab] = useState<Tab>('boutique')
@@ -488,13 +487,15 @@ export default function Settings() {
                   <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>
                     {t('settings_conversion_preview')} — 1 000 {cfg.currency}
                   </div>
-                  <div className="space-y-2">
-                    {CURRENCY_META.filter(c => c.code !== cfg.currency).map(c => {
+                  <div className="grid grid-cols-2 gap-2">
+                    {ALL_CURRENCY_CODES.filter(code => code !== cfg.currency).map(code => {
+                      const meta = CURRENCY_META.find(m => m.code === code)
+                      const converted = convertAmount(1000, cfg.currency, code)
                       return (
-                        <div key={c.code} className="flex justify-between items-center text-sm">
-                          <span style={{ color: 'var(--text2)' }}>{c.flag} {c.code}</span>
+                        <div key={code} className="flex justify-between items-center text-sm p-2 rounded-lg" style={{ background: 'var(--bg4)' }}>
+                          <span style={{ color: 'var(--text2)' }}>{meta?.flag} {code}</span>
                           <span className="font-bold" style={{ color: 'var(--p2)', fontFamily: 'var(--mono)' }}>
-                            {formatInCurrency(convertCurrency(1000, cfg.currency as Currency, c.code), c.code)}
+                            {formatInCurrency(converted, code)}
                           </span>
                         </div>
                       )
@@ -672,7 +673,7 @@ export default function Settings() {
                       value={cfg.posDefaultFund}
                       onChange={e => cfg.updateConfig({ posDefaultFund: +e.target.value })}
                       style={{ paddingRight: 60 }} />
-                    <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', pointerEvents: 'none' }}>FCFA</span>
+                    <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', pointerEvents: 'none' }}>{currencySymbol}</span>
                   </div>
                   <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Montant pré-rempli à l'ouverture de la caisse</p>
                 </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAppStore, useFormatAmount, formatCurrency, t, convertAmount } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, formatCurrency, t, convertAmount, formatInCurrency } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import { salesApi, productsApi, whatsappApi } from '@/lib/api'
 import BarcodeScanner from '@/components/ui/BarcodeScanner'
@@ -232,7 +232,7 @@ export default function POS() {
 
   // Fond de caisse : l'input est dans la devise configurée, stockage direct
   const inputValue  = parseFloat(openingFundInput) || 0
-  const displayFund = fmt(inputValue)
+  const displayFund = formatInCurrency(inputValue, currency)
   const fundPreview = null
 
   // Prix selon type client
@@ -338,8 +338,8 @@ export default function POS() {
   <div class="row total"><span>${t('pos_total')} :</span><span>${fmt(total)}</span></div>
   <div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span>${payMode === 'cash' ? t('pos_cash') : payMode === 'card' ? t('pos_card') : t('pos_mobile')}</span></div>
   ${cashGiven ? `
-    <div class="row"><span>${t('pos_ticket_received')}</span><span>${formatCurrency(parseFloat(cashGiven), currency as Currency)}</span></div>
-    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${formatCurrency(Math.max(monnaie, 0), currency as Currency)}</span></div>
+    <div class="row"><span>${t('pos_ticket_received')}</span><span>${formatInCurrency(parseFloat(cashGiven), currency)}</span></div>
+    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${formatInCurrency(Math.max(monnaie, 0), currency)}</span></div>
   ` : ''}
   <div class="divider"></div>
   <div class="center footer">
@@ -1188,8 +1188,8 @@ export default function POS() {
                     </span>
                     <span style={{ fontWeight:900, fontFamily:'var(--mono)', fontSize:16, color: monnaie >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
                       {monnaie >= 0
-                        ? formatCurrency(monnaie, currency as Currency)
-                        : `− ${formatCurrency(Math.abs(monnaie), currency as Currency)}`}
+                        ? formatInCurrency(monnaie, currency)
+                        : `− ${formatInCurrency(Math.abs(monnaie), currency)}`}
                     </span>
                   </div>
                 )}
@@ -1428,8 +1428,8 @@ export default function POS() {
                     <div class="row bold"><span>${ct.ca_cashed}:</span><span>${fmt(cashierSessionCA)}</span></div>
                     <div class="divider"></div>
                     <div class="row bold"><span>Attendu:</span><span>${fmt(expected)}</span></div>
-                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${formatCurrency(counted, currency as Currency)}</span></div>
-                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${formatCurrency(Math.abs(diff), currency as Currency)}</span></div>
+                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${formatInCurrency(counted, currency)}</span></div>
+                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${formatInCurrency(Math.abs(diff), currency)}</span></div>
                     <div class="divider"></div>
                     <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
                     <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>
