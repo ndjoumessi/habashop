@@ -184,21 +184,10 @@ export default function Planning() {
       display:'flex', flexDirection:'column', gap:16,
     }}>
       {/* Header */}
-      <div style={{
-        display:'flex', alignItems:'center',
-        justifyContent:'space-between', flexWrap:'wrap', gap:12,
-      }}>
+      <div className="page-header">
         <div>
-          <h1 style={{
-            fontSize:20, fontWeight:900,
-            color:'var(--text)', margin:0, letterSpacing:'-.3px',
-          }}>
-            📅 {T.title}
-          </h1>
-          <p style={{
-            fontSize:12, color:'var(--text3)',
-            margin:'3px 0 0',
-          }}>
+          <h1 className="page-title">{T.title}</h1>
+          <p className="page-subtitle">
             {weekDays[0].toLocaleDateString(lang==='fr'?'fr-FR':'en-US',
               {day:'numeric',month:'long'})}
             {' — '}

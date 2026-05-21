@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from 'recharts'
-import { Download, TrendingUp, TrendingDown } from 'lucide-react'
+import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, BarChart2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 import { salesApi, expensesApi } from '@/lib/api'
@@ -204,6 +204,14 @@ export default function Reports() {
   return (
     <div className="space-y-5 animate-in">
 
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{t('nav_reports')}</h1>
+          <p className="page-subtitle">{PERIOD_LABELS[period]}</p>
+        </div>
+      </div>
+
       {/* Sélecteur période + exports */}
       <div className="flex flex-wrap gap-2 items-center">
         {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
@@ -262,10 +270,10 @@ export default function Reports() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('reports_revenue'),      value: fmt(data.ca),       evol: data.caEvol,     color: 'var(--p2)',   icon: '💰' },
-          { label: t('reports_margin'),       value: fmt(data.margin),    evol: data.marginEvol, color: 'var(--acc2)', icon: '📈' },
-          { label: t('reports_transactions'), value: data.transactions.toLocaleString('fr-FR'),evol: data.txEvol,     color: 'var(--acc)',  icon: '🧾' },
-          { label: t('reports_avg_cart'),     value: fmt(data.avgCart),   evol: data.cartEvol,   color: 'var(--p3)',   icon: '🛒' },
+          { label: t('reports_revenue'),      value: fmt(data.ca),       evol: data.caEvol,     color: 'var(--p2)',   icon: <DollarSign   size={18} /> },
+          { label: t('reports_margin'),       value: fmt(data.margin),    evol: data.marginEvol, color: 'var(--acc2)', icon: <TrendingUp   size={18} /> },
+          { label: t('reports_transactions'), value: data.transactions.toLocaleString('fr-FR'),evol: data.txEvol,     color: 'var(--acc)',  icon: <Receipt      size={18} /> },
+          { label: t('reports_avg_cart'),     value: fmt(data.avgCart),   evol: data.cartEvol,   color: 'var(--p3)',   icon: <ShoppingCart size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -282,7 +290,7 @@ export default function Reports() {
         {/* Bar chart 7 jours */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">📊 {t('reports_chart_week')}</span>
+            <span className="panel-title">{t('reports_chart_week')}</span>
           </div>
           <div className="bar-chart" style={{ height: 140 }}>
             {chartData.map(d => (

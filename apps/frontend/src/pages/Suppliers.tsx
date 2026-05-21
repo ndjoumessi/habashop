@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { suppliersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, Phone } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
@@ -201,13 +201,24 @@ export default function Suppliers() {
   return (
     <div className="space-y-5 animate-in">
 
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{t('nav_suppliers')}</h1>
+          <p className="page-subtitle">{suppliers.length} {lang === 'fr' ? 'fournisseurs enregistrés' : 'registered suppliers'}</p>
+        </div>
+        <button className="topbar-btn" onClick={() => setShowCreate(true)}>
+          <Plus size={14} /> {lang === 'fr' ? 'Nouveau fournisseur' : 'New supplier'}
+        </button>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('suppliers_total'),            value: suppliers.length.toString(), color: 'var(--p2)',   icon: '🏭' },
-          { label: t('suppliers_active'),          value: actifs.toString(),            color: 'var(--acc2)', icon: '✅' },
-          { label: t('suppliers_pending_orders'),  value: enCours.toString(),           color: 'var(--acc)',  icon: '🚚' },
-          { label: t('suppliers_avg_rating'),      value: `${avgRating} ★`,            color: 'var(--acc)',  icon: '⭐' },
+          { label: t('suppliers_total'),            value: suppliers.length.toString(), color: 'var(--p2)',   icon: <Factory       size={18} /> },
+          { label: t('suppliers_active'),          value: actifs.toString(),            color: 'var(--acc2)', icon: <CheckCircle   size={18} /> },
+          { label: t('suppliers_pending_orders'),  value: enCours.toString(),           color: 'var(--acc)',  icon: <Truck         size={18} /> },
+          { label: t('suppliers_avg_rating'),      value: `${avgRating} ★`,            color: 'var(--acc)',  icon: <Star          size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -220,7 +231,7 @@ export default function Suppliers() {
       {/* Panel */}
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">🏭 {t('suppliers_title')}</span>
+          <span className="panel-title">{t('suppliers_title')}</span>
           <div className="flex items-center gap-2">
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
               exportCSV('habashop_fournisseurs',

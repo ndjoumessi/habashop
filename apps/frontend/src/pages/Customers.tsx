@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
@@ -295,7 +295,7 @@ export default function Customers() {
     try {
       const created = await customersApi.create(data)
       setCustomers(prev => [...prev, mapApiCustomer(created)])
-      toast.success('✅ ' + (lang === 'fr' ? 'Client créé !' : 'Customer created!'))
+      toast.success(lang === 'fr' ? 'Client créé' : 'Customer created')
       setShowCreate(false)
       resetCustForm()
     } catch {
@@ -313,7 +313,7 @@ export default function Customers() {
         purchases: [],
         notes: '',
       }])
-      toast.success('✅ ' + (lang === 'fr' ? 'Client créé (local)' : 'Customer created (local)'))
+      toast.success(lang === 'fr' ? 'Client créé (local)' : 'Customer created (local)')
       setShowCreate(false)
       resetCustForm()
     }
@@ -322,13 +322,29 @@ export default function Customers() {
   return (
     <div className="space-y-5 animate-in">
 
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{t('nav_customers')}</h1>
+          <p className="page-subtitle">{customers.length} {lang === 'fr' ? 'clients enregistrés' : 'registered customers'}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => { printCustomersPDF(); toast.success(lang === 'fr' ? 'PDF ouvert' : 'PDF opened') }}>
+            <Download size={14} /> Export
+          </button>
+          <button className="topbar-btn" onClick={() => setShowCreate(true)}>
+            <Plus size={14} /> {lang === 'fr' ? 'Nouveau client' : 'New customer'}
+          </button>
+        </div>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('customers_total'),       value: customers.length.toString(), color: 'var(--p2)',   icon: '👥' },
-          { label: t('customers_active'),    value: activeThisMonth.toString(),  color: 'var(--acc2)', icon: '🟢' },
-          { label: t('customers_avg_cart'),  value: fmt(avgCart),                color: 'var(--acc)',  icon: '🛒' },
-          { label: t('customers_retention'), value: `${retentionRate}%`,         color: 'var(--p3)',   icon: '🔄' },
+          { label: t('customers_total'),       value: customers.length.toString(), color: 'var(--p2)',   icon: <Users size={18} /> },
+          { label: t('customers_active'),    value: activeThisMonth.toString(),  color: 'var(--acc2)', icon: <UserCheck size={18} /> },
+          { label: t('customers_avg_cart'),  value: fmt(avgCart),                color: 'var(--acc)',  icon: <ShoppingCart size={18} /> },
+          { label: t('customers_retention'), value: `${retentionRate}%`,         color: 'var(--p3)',   icon: <TrendingUp size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -344,9 +360,9 @@ export default function Customers() {
         background: 'var(--bg3)', borderRadius: 10, padding: 4,
       }}>
         {[
-          { id: 'list',  label: lang === 'fr' ? '📋 Liste'        : '📋 List'       },
-          { id: 'map',   label: lang === 'fr' ? '🗺️ Carte'        : '🗺️ Map'        },
-          { id: 'stats', label: lang === 'fr' ? '📊 Statistiques' : '📊 Statistics'  },
+          { id: 'list',  label: lang === 'fr' ? 'Liste'        : 'List'       },
+          { id: 'map',   label: lang === 'fr' ? 'Carte'        : 'Map'        },
+          { id: 'stats', label: lang === 'fr' ? 'Statistiques' : 'Statistics'  },
         ].map(tab => (
           <button key={tab.id} type="button"
             onClick={() => setCustomersTab(tab.id as any)}
@@ -367,22 +383,19 @@ export default function Customers() {
       {/* Panel */}
       {customersTab === 'list' && <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">👥 {t('customers_title')}</span>
+          <span className="panel-title">{t('customers_title')}</span>
           <div className="flex items-center gap-2">
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+            <button className="btn btn-ghost btn-sm" onClick={() => {
               exportCSV('habashop_clients',
                 ['Nom','Type','Téléphone','Email','Achats/mois','CA total','Points fidélité'],
                 customers.map(c => [c.name, c.type, c.phone, c.email ?? '', c.purchasesPerMonth, c.totalCA, c.loyaltyPoints])
               )
-              toast.success('📊 Export CSV téléchargé !')
+              toast.success(lang === 'fr' ? 'Export CSV téléchargé' : 'CSV exported')
             }}>
               <Download size={13} /> {t('btn_export')}
             </button>
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printCustomersPDF(); toast.success('📄 PDF ouvert !') }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => { printCustomersPDF(); toast.success(lang === 'fr' ? 'PDF ouvert' : 'PDF opened') }}>
               <Download size={13} /> PDF
-            </button>
-            <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreate(true)}>
-              <Plus size={13} /> {t('btn_new')} client
             </button>
           </div>
         </div>

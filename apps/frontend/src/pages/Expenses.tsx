@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { expensesApi, salesApi } from '@/lib/api'
-import { Download, Plus, X, Search, Settings } from 'lucide-react'
+import { Download, Plus, X, Search, Settings, TrendingDown, Clock, RefreshCw, BarChart2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 
@@ -233,13 +233,24 @@ export default function Expenses() {
   return (
     <div className="space-y-5 animate-in">
 
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{lang === 'fr' ? 'Dépenses' : 'Expenses'}</h1>
+          <p className="page-subtitle">{expenses.length} {lang === 'fr' ? 'dépenses enregistrées' : 'recorded expenses'}</p>
+        </div>
+        <button className="topbar-btn" onClick={() => setAddOpen(true)}>
+          <Plus size={14} /> {lang === 'fr' ? 'Nouvelle dépense' : 'New expense'}
+        </button>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Dépenses (mai)',      value:fmt(totalMay),     sub:'Mai 2026',                color:'var(--danger)', icon:'💸' },
-          { label:'En attente paiement', value:fmt(totalPending), sub:`${expenses.filter(e=>e.status==='EN ATTENTE').length} facture(s)`, color:'var(--acc)', icon:'⏳' },
-          { label:'Dépenses récurrentes',value:recurrentCount,    sub:'Mensuelles / abonnements', color:'var(--p2)',    icon:'🔄' },
-          { label:'Budget restant',      value:fmt(Math.max(0, budgetLeft)), sub:'Sur budget mensuel', color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', icon:'📊' },
+          { label:'Dépenses (mai)',      value:fmt(totalMay),     sub:'Mai 2026',                color:'var(--danger)', icon:<TrendingDown size={18} /> },
+          { label:'En attente paiement', value:fmt(totalPending), sub:`${expenses.filter(e=>e.status==='EN ATTENTE').length} facture(s)`, color:'var(--acc)', icon:<Clock size={18} /> },
+          { label:'Dépenses récurrentes',value:recurrentCount,    sub:'Mensuelles / abonnements', color:'var(--p2)',    icon:<RefreshCw size={18} /> },
+          { label:'Budget restant',      value:fmt(Math.max(0, budgetLeft)), sub:'Sur budget mensuel', color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', icon:<BarChart2 size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color:k.color }}>{k.icon}</div>
@@ -255,8 +266,8 @@ export default function Expenses() {
       {/* Tabs */}
       <div style={{ display:'flex', gap:6 }}>
         {[
-          { id:'journal', label:`📋 ${t('expenses_journal')}` },
-          { id:'budget',  label:`📊 ${t('expenses_budget')}` },
+          { id:'journal', label: t('expenses_journal') },
+          { id:'budget',  label: t('expenses_budget') },
         ].map(tb => (
           <button key={tb.id} onClick={() => setTab(tb.id as typeof tab)} style={{
             padding:'8px 18px', borderRadius:10, fontSize:13, fontWeight:700,
@@ -273,7 +284,7 @@ export default function Expenses() {
       {tab === 'journal' && (
         <div className="panel" style={{ marginBottom:0 }}>
           <div className="panel-head">
-            <span className="panel-title">📋 Journal des dépenses</span>
+            <span className="panel-title">{lang === 'fr' ? 'Journal des dépenses' : 'Expense log'}</span>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setAddOpen(true)}>
               <Plus size={13} /> Ajouter dépense
             </button>
@@ -436,7 +447,7 @@ export default function Expenses() {
             borderRadius:14, padding:'18px 20px',
           }}>
             <div className="panel-head" style={{ marginBottom:16 }}>
-              <span className="panel-title">📊 Résumé mensuel</span>
+              <span className="panel-title">{lang === 'fr' ? 'Résumé mensuel' : 'Monthly summary'}</span>
             </div>
             {[
               { label:'Budget total mensuel',  value:fmt(totalBudget),            color:'var(--text2)' },

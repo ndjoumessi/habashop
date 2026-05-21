@@ -1,36 +1,43 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useConfig, t } from '@/stores/appStore'
+import {
+  LayoutDashboard, ShoppingCart, Package, Archive, Truck, Users,
+  UserCog, Calendar, Wallet, Receipt, TrendingUp, BarChart2,
+  Megaphone, Bot, Target, Code2, Settings, ShieldCheck, Activity,
+  Store, ChevronLeft, ChevronRight, Sun, Moon, LogOut,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 type NavSection = { section: string }
-type NavItem    = { path: string; key: string; icon: string; badge?: string; badgeTeal?: boolean }
+type NavItem    = { path: string; key: string; Icon: LucideIcon; badge?: string; badgeTeal?: boolean }
 type NavEntry   = NavSection | NavItem
 
 const NAV: NavEntry[] = [
   { section: 'Principal' },
-  { path: '/app/dashboard', key: 'nav_dashboard', icon: '🏠' },
-  { path: '/app/pos',       key: 'nav_pos',       icon: '🛒' },
-  { path: '/app/orders',    key: 'nav_orders',    icon: '📦', badge: '4' },
+  { path: '/app/dashboard', key: 'nav_dashboard', Icon: LayoutDashboard },
+  { path: '/app/pos',       key: 'nav_pos',       Icon: ShoppingCart },
+  { path: '/app/orders',    key: 'nav_orders',    Icon: Package, badge: '4' },
   { section: 'Gestion' },
-  { path: '/app/stock',     key: 'nav_stock',     icon: '🗄️' },
-  { path: '/app/suppliers', key: 'nav_suppliers', icon: '🚚' },
-  { path: '/app/customers', key: 'nav_customers', icon: '👥' },
+  { path: '/app/stock',     key: 'nav_stock',     Icon: Archive },
+  { path: '/app/suppliers', key: 'nav_suppliers', Icon: Truck },
+  { path: '/app/customers', key: 'nav_customers', Icon: Users },
   { section: 'RH' },
-  { path: '/app/hr',        key: 'nav_hr',        icon: '🧑‍💼' },
-  { path: '/app/planning',  key: 'nav_planning',  icon: '📅' },
-  { path: '/app/payroll',   key: 'nav_payroll',   icon: '💰' },
-  { path: '/app/expenses',  key: 'nav_expenses',  icon: '🧾' },
+  { path: '/app/hr',        key: 'nav_hr',        Icon: UserCog },
+  { path: '/app/planning',  key: 'nav_planning',  Icon: Calendar },
+  { path: '/app/payroll',   key: 'nav_payroll',   Icon: Wallet },
+  { path: '/app/expenses',  key: 'nav_expenses',  Icon: Receipt },
   { section: 'Analyse' },
-  { path: '/app/forecasts', key: 'nav_forecasts', icon: '🔮' },
-  { path: '/app/reports',   key: 'nav_reports',   icon: '📊' },
-  { path: '/app/marketing', key: 'nav_marketing', icon: '📣' },
-  { path: '/app/ai',       key: 'nav_ai',        icon: '🤖' },
-  { path: '/app/goals',    key: 'nav_goals',     icon: '🎯' },
-  { path: '/app/api-docs', key: 'nav_api_docs',  icon: '🔗' },
-  { path: '/app/settings', key: 'nav_settings',  icon: '⚙️' },
+  { path: '/app/forecasts', key: 'nav_forecasts', Icon: TrendingUp },
+  { path: '/app/reports',   key: 'nav_reports',   Icon: BarChart2 },
+  { path: '/app/marketing', key: 'nav_marketing', Icon: Megaphone },
+  { path: '/app/ai',        key: 'nav_ai',        Icon: Bot },
+  { path: '/app/goals',     key: 'nav_goals',     Icon: Target },
+  { path: '/app/api-docs',  key: 'nav_api_docs',  Icon: Code2 },
+  { path: '/app/settings',  key: 'nav_settings',  Icon: Settings },
   { section: 'Administration' },
-  { path: '/app/users',     key: 'nav_users',     icon: '🔐' },
-  { path: '/app/activity',  key: 'nav_activity',  icon: '📋', badge: '12', badgeTeal: true },
+  { path: '/app/users',     key: 'nav_users',     Icon: ShieldCheck },
+  { path: '/app/activity',  key: 'nav_activity',  Icon: Activity, badge: '12', badgeTeal: true },
 ]
 
 export default function Sidebar() {
@@ -57,9 +64,10 @@ export default function Sidebar() {
           background: 'linear-gradient(135deg,#6C47FF,#8B6FFF)',
           display: 'flex', alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 20, fontWeight: 900, color: '#fff',
+          fontWeight: 900, color: '#fff',
           boxShadow: '0 4px 12px rgba(108,71,255,.4)',
           flexShrink: 0,
+          fontSize: 18,
         }}>H</div>
         {!collapsed && (
           <div>
@@ -73,7 +81,7 @@ export default function Sidebar() {
               fontSize: 9, color: 'var(--text3)', fontWeight: 600,
               textTransform: 'uppercase', letterSpacing: '.5px',
             }}>
-              {lang === 'fr' ? 'Gestion commerciale' : 'Commerce Suite'}
+              {lang === 'fr' ? 'Gestion commerciale' : lang === 'en' ? 'Commerce Suite' : lang === 'es' ? 'Suite comercial' : 'Suite commerciale'}
             </div>
           </div>
         )}
@@ -90,6 +98,7 @@ export default function Sidebar() {
               </div>
             )
           }
+          const { Icon } = item
           return (
             <NavLink
               key={item.path}
@@ -99,7 +108,7 @@ export default function Sidebar() {
               style={collapsed ? { justifyContent: 'center', padding: '8px 0' } : undefined}
             >
               <div className="nav-icon-wrap">
-                <span className="nav-icon">{item.icon}</span>
+                <Icon size={15} />
               </div>
               {!collapsed && <span style={{ flex: 1 }}>{t(item.key)}</span>}
               {!collapsed && item.badge && (
@@ -120,14 +129,26 @@ export default function Sidebar() {
           style={{ cursor: 'pointer', ...(collapsed ? { justifyContent: 'center', padding: '8px 0' } : {}) }}
           title={collapsed ? 'Admin Panel' : undefined}
         >
-          <span className="nav-icon">🏪</span>
+          <div className="nav-icon-wrap">
+            <Store size={15} />
+          </div>
           {!collapsed && <span style={{ flex: 1 }}>Admin Panel</span>}
         </div>
       )}
 
       {/* Footer */}
       <div className="sidebar-footer" style={collapsed ? { flexDirection: 'column', gap: 8, padding: '8px 0', alignItems: 'center' } : undefined}>
-        <div className="avatar">{user?.name?.charAt(0) || 'U'}</div>
+        {/* Online indicator */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div className="avatar">{user?.name?.charAt(0) || 'U'}</div>
+          <div style={{
+            position: 'absolute', bottom: 0, right: 0,
+            width: 10, height: 10, borderRadius: '50%',
+            background: 'var(--acc2)',
+            border: '2px solid var(--bg2)',
+            boxShadow: '0 0 4px var(--acc2)',
+          }} />
+        </div>
         {!collapsed && (
           <div className="user-info" style={{ flex: 1, minWidth: 0 }}>
             <div className="user-name">{user?.name || 'Utilisateur'}</div>
@@ -136,24 +157,26 @@ export default function Sidebar() {
         )}
         <button
           onClick={() => updateConfig({ sidebarCollapsed: !collapsed })}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: 4, color: 'var(--text3)' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text3)', display: 'flex', alignItems: 'center' }}
           title={collapsed ? 'Étendre' : 'Réduire'}
         >
-          {collapsed ? '▶' : '◀'}
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
         <button
           onClick={() => updateConfig({ theme: theme === 'dark' ? 'light' : 'dark' })}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: 4 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', color: 'var(--text3)' }}
           title="Changer le thème"
         >
-          {theme === 'dark' ? '☀️' : '🌙'}
+          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
         </button>
         {!collapsed && (
-          <span
-            style={{ color: 'var(--text2)', cursor: 'pointer', fontSize: 16, padding: 4 }}
+          <button
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text3)', display: 'flex', alignItems: 'center' }}
             onClick={() => { logout(); navigate('/login') }}
             title="Déconnexion"
-          >⏻</span>
+          >
+            <LogOut size={14} />
+          </button>
         )}
       </div>
     </div>

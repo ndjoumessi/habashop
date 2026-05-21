@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { ordersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle, DollarSign, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
 
@@ -242,13 +242,24 @@ export default function Orders() {
   return (
     <div className="space-y-5 animate-in">
 
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{t('nav_orders')}</h1>
+          <p className="page-subtitle">{orders.length} {lang === 'fr' ? 'commandes fournisseurs' : 'purchase orders'}</p>
+        </div>
+        <button className="topbar-btn" onClick={() => setShowCreateModal(true)}>
+          <Plus size={14} /> {lang === 'fr' ? 'Nouvelle commande' : 'New order'}
+        </button>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('orders_engaged'),       value: fmt(totalEngaged),      color: 'var(--p2)',    icon: '💰' },
-          { label: t('status_transit'),     value: String(pending),        color: 'var(--acc)',   icon: '🚚' },
-          { label: t('orders_received_month'), value: String(receivedMonth), color: 'var(--acc2)', icon: '✅' },
-          { label: t('status_draft'),   value: String(drafts),         color: 'var(--text3)',icon: '📝' },
+          { label: t('orders_engaged'),       value: fmt(totalEngaged),      color: 'var(--p2)',    icon: <DollarSign  size={18} /> },
+          { label: t('status_transit'),     value: String(pending),        color: 'var(--acc)',   icon: <Truck       size={18} /> },
+          { label: t('orders_received_month'), value: String(receivedMonth), color: 'var(--acc2)', icon: <CheckCircle size={18} /> },
+          { label: t('status_draft'),   value: String(drafts),         color: 'var(--text3)',icon: <Package     size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp, TrendingDown, Package, Users, DollarSign } from 'lucide-react'
+import { TrendingUp, TrendingDown, Package, Users, DollarSign, ShoppingCart, ShoppingBag, Download, Plus, AlertTriangle, CreditCard, Clock } from 'lucide-react'
 import { dashboardApi } from '@/lib/api'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -22,38 +22,45 @@ const SALES_CHART_FALLBACK = [
 type Lang = 'fr' | 'en' | 'es' | 'it'
 type LangMap = Record<Lang, string>
 const RECENT_ACTIVITY: Array<{
-  type: string; icon: string; color: string
+  type: string; iconType: 'sale'|'stock'|'hr'|'alert'; color: string; iconColor: string
   title: LangMap
   getDesc: (fmt: (n: number) => string, lang: string) => string
 }> = [
-  { type:'sale',  icon:'💳', color:'rgba(16,185,129,0.15)',
+  { type:'sale',  iconType:'sale',  color:'rgba(16,185,129,0.15)',  iconColor:'#10B981',
     title: { fr:'Vente #2041',       en:'Sale #2041',          es:'Venta #2041',       it:'Vendita #2041'    },
     getDesc: (f, l) => ({ fr:`${f(45000)} · Il y a 3 min · Caisse 1`, en:`${f(45000)} · 3 min ago · Till 1`, es:`${f(45000)} · Hace 3 min · Caja 1`, it:`${f(45000)} · 3 min fa · Cassa 1` })[l as Lang] ?? `${f(45000)} · Il y a 3 min · Caisse 1`,
   },
-  { type:'stock', icon:'📦', color:'rgba(245,158,11,0.15)',
+  { type:'stock', iconType:'stock', color:'rgba(245,158,11,0.15)',  iconColor:'#F59E0B',
     title: { fr:'Réception stock',   en:'Stock receipt',       es:'Recepción stock',   it:'Ricezione stock'  },
     getDesc: (_f, l) => ({ fr:'Fournisseur Diallo · Il y a 18 min', en:'Supplier Diallo · 18 min ago', es:'Proveedor Diallo · Hace 18 min', it:'Fornitore Diallo · 18 min fa' })[l as Lang] ?? 'Fournisseur Diallo · Il y a 18 min',
   },
-  { type:'hr',    icon:'🧑‍💼', color:'rgba(139,92,246,0.15)',
+  { type:'hr',    iconType:'hr',    color:'rgba(139,92,246,0.15)',  iconColor:'#8B5CF6',
     title: { fr:'Pointage Marie K.', en:'Clock-in Marie K.',   es:'Fichaje Marie K.',  it:'Timbratura Marie K.' },
     getDesc: (_f, l) => ({ fr:'Arrivée 08:02 · Il y a 35 min', en:'Arrived 08:02 · 35 min ago', es:'Llegada 08:02 · Hace 35 min', it:'Arrivo 08:02 · 35 min fa' })[l as Lang] ?? 'Arrivée 08:02 · Il y a 35 min',
   },
-  { type:'alert', icon:'⚠️', color:'rgba(239,68,68,0.15)',
+  { type:'alert', iconType:'alert', color:'rgba(239,68,68,0.15)',   iconColor:'#EF4444',
     title: { fr:'Alerte rupture',    en:'Out-of-stock alert',  es:'Alerta rotura',     it:'Allarme esaurimento' },
     getDesc: (_f, l) => ({ fr:'Sucre 50kg · Il y a 1h · Auto', en:'Sugar 50kg · 1h ago · Auto', es:'Azúcar 50kg · Hace 1h · Auto', it:'Zucchero 50kg · 1h fa · Auto' })[l as Lang] ?? 'Sucre 50kg · Il y a 1h · Auto',
   },
-  { type:'sale',  icon:'💳', color:'rgba(16,185,129,0.15)',
+  { type:'sale',  iconType:'sale',  color:'rgba(16,185,129,0.15)',  iconColor:'#10B981',
     title: { fr:'Vente #2040',       en:'Sale #2040',          es:'Venta #2040',       it:'Vendita #2040'    },
     getDesc: (f, l) => ({ fr:`${f(128000)} · Il y a 1h 12 · Caisse 2`, en:`${f(128000)} · 1h 12 ago · Till 2`, es:`${f(128000)} · Hace 1h 12 · Caja 2`, it:`${f(128000)} · 1h 12 fa · Cassa 2` })[l as Lang] ?? `${f(128000)} · Il y a 1h 12 · Caisse 2`,
   },
 ]
 
+function ActivityIcon({ type }: { type: 'sale'|'stock'|'hr'|'alert' }) {
+  if (type === 'sale')  return <CreditCard  size={16} />
+  if (type === 'stock') return <Package     size={16} />
+  if (type === 'hr')    return <Clock       size={16} />
+  return <AlertTriangle size={16} />
+}
+
 const TOP_PRODUCTS = [
-  { rank: '🥇', name: 'Riz parfumé 5kg',  qty: 842, ca: 2100000 },
-  { rank: '🥈', name: 'Huile palme 1L',   qty: 612, ca: 1500000 },
-  { rank: '🥉', name: 'Farine blé 25kg',  qty: 430, ca:  980000 },
-  { rank: '4',  name: 'Sucre 50kg',        qty: 318, ca:  720000 },
-  { rank: '5',  name: 'Savon 500g',         qty: 290, ca:  580000 },
+  { rank: '1', name: 'Riz parfumé 5kg',  qty: 842, ca: 2100000, medal: true  },
+  { rank: '2', name: 'Huile palme 1L',   qty: 612, ca: 1500000, medal: true  },
+  { rank: '3', name: 'Farine blé 25kg',  qty: 430, ca:  980000, medal: true  },
+  { rank: '4', name: 'Sucre 50kg',        qty: 318, ca:  720000, medal: false },
+  { rank: '5', name: 'Savon 500g',         qty: 290, ca:  580000, medal: false },
 ]
 
 const ALERTS = [
@@ -132,25 +139,29 @@ export default function Dashboard() {
   return (
     <div className="space-y-5 animate-in">
       {/* Header */}
-      <div>
-        <h2 className="text-xl font-black tracking-tight" style={{ color: 'var(--text)' }}>
-          {t('hello')}, {user?.name?.split(' ')[0]} 👋
-        </h2>
-        <p className="text-sm mt-0.5" style={{ color: 'var(--text3)' }}>
-          {t('today')} — {dateStr}
-        </p>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title" style={{ fontSize: 20 }}>
+            {t('hello')}, {user?.name?.split(' ')[0]}
+          </h1>
+          <p className="page-subtitle">{t('today')} — {dateStr}</p>
+        </div>
+        <button className="topbar-btn" onClick={() => navigate('/app/pos')}>
+          <ShoppingCart size={14} />
+          {lang === 'fr' ? 'Nouvelle vente' : lang === 'en' ? 'New sale' : lang === 'es' ? 'Nueva venta' : 'Nuova vendita'}
+        </button>
       </div>
 
       {/* Quick actions */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { icon: '🛒', label: t('nav_pos'),       path: '/app/pos',     color: 'rgba(99,102,241,0.12)'  },
-          { icon: '📥', label: t('dash_receive_stock'), path: '/app/stock',   color: 'rgba(20,184,166,0.12)'  },
-          { icon: '➕', label: t('btn_add'),        path: '/app/stock',   color: 'rgba(245,158,11,0.12)'  },
-          { icon: '📤', label: t('btn_export'),     path: '/app/reports', color: 'rgba(139,92,246,0.12)'  },
+          { icon: <ShoppingBag size={18} />, label: t('nav_pos'),           path: '/app/pos',     color: 'rgba(99,102,241,0.12)',  iconColor: 'var(--p2)'   },
+          { icon: <Download    size={18} />, label: t('dash_receive_stock'), path: '/app/stock',   color: 'rgba(20,184,166,0.12)',  iconColor: 'var(--acc2)' },
+          { icon: <Plus        size={18} />, label: t('btn_add'),            path: '/app/stock',   color: 'rgba(245,158,11,0.12)',  iconColor: 'var(--acc)'  },
+          { icon: <Download    size={18} />, label: t('btn_export'),         path: '/app/reports', color: 'rgba(139,92,246,0.12)',  iconColor: 'var(--info)' },
         ].map(a => (
           <div key={a.label} className="qa-card" onClick={() => navigate(a.path)}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: a.color }}>{a.icon}</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: a.color, color: a.iconColor }}>{a.icon}</div>
             <span className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>{a.label}</span>
           </div>
         ))}
@@ -198,10 +209,10 @@ export default function Dashboard() {
         <div className="panel lg:col-span-2">
           <div className="panel-head">
             <span className="panel-title">
-              {lang === 'fr' ? '📊 Ventes — 7 derniers jours'
-                : lang === 'en' ? '📊 Sales — Last 7 days'
-                : lang === 'es' ? '📊 Ventas — Últimos 7 días'
-                : '📊 Vendite — Ultimi 7 giorni'}
+              {lang === 'fr' ? 'Ventes — 7 derniers jours'
+                : lang === 'en' ? 'Sales — Last 7 days'
+                : lang === 'es' ? 'Ventas — Últimos 7 días'
+                : 'Vendite — Ultimi 7 giorni'}
             </span>
             <select className="input" style={{ width:'auto', fontSize:12 }}
               value={reportPeriod} onChange={e => setReportPeriod(e.target.value)}>
@@ -243,8 +254,8 @@ export default function Dashboard() {
               <div style={{
                 width: 32, height: 32, borderRadius: 9,
                 background: 'rgba(255,59,92,.12)', border: '1px solid rgba(255,59,92,.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-              }}>⚠️</div>
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)',
+              }}><AlertTriangle size={15} /></div>
               <span className="panel-title">{t('stock_alerts')}</span>
             </div>
             <span style={{
@@ -283,7 +294,7 @@ export default function Dashboard() {
         {/* Activity timeline */}
         <div className="panel">
           <div className="panel-head">
-            <span className="panel-title">⚡ {t('recent_activity')}</span>
+            <span className="panel-title">{t('recent_activity')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {RECENT_ACTIVITY.map((a, i) => (
@@ -299,8 +310,8 @@ export default function Dashboard() {
                 <div style={{
                   width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                   background: a.color, border: '1px solid rgba(255,255,255,.07)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-                }}>{a.icon}</div>
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: a.iconColor,
+                }}><ActivityIcon type={a.iconType} /></div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                     {a.title[lang as Lang] ?? a.title.fr}
@@ -317,7 +328,7 @@ export default function Dashboard() {
         {/* Top products */}
         <div className="panel">
           <div className="panel-head">
-            <span className="panel-title">🏆 {t('top_products')}</span>
+            <span className="panel-title">{t('top_products')}</span>
           </div>
           <div className="table-wrap">
             <table>
@@ -325,7 +336,7 @@ export default function Dashboard() {
               <tbody>
                 {TOP_PRODUCTS.map(p => (
                   <tr key={p.name}>
-                    <td>{p.rank}</td>
+                    <td style={{ color: p.medal ? 'var(--acc)' : 'var(--text3)', fontWeight: 700 }}>{p.rank}</td>
                     <td className="td-bold text-xs">{p.name}</td>
                     <td className="td-num text-xs">{p.qty}</td>
                     <td className="td-num text-xs" style={{ color: 'var(--acc)' }}>{fmt(p.ca)}</td>

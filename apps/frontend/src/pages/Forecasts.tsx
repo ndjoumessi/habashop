@@ -2,7 +2,7 @@ import { useState } from 'react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
-import { TrendingUp, Package, Users, Calendar, ShoppingCart } from 'lucide-react'
+import { TrendingUp, Package, Users, Calendar, ShoppingCart, Zap, DollarSign, Trophy, BarChart2, Lightbulb, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer'
@@ -165,7 +165,7 @@ export default function Forecasts() {
   const RECOMMANDATIONS = [
     {
       type:'danger'  as const,
-      icon:'⚡',
+      Icon: Zap,
       title:'Commander immédiatement',
       message:`2 articles en rupture critique (Riz 5kg, Savon OMO). Perte de CA estimée à ${fmt(450000)}/semaine si non commandés.`,
       action:'Générer les bons',
@@ -174,7 +174,7 @@ export default function Forecasts() {
     },
     {
       type:'warning' as const,
-      icon:'📈',
+      Icon: TrendingUp,
       title:'Opportunité de croissance',
       message:'Les céréales représentent 28 % du CA avec +30 % de croissance prévue. Augmenter les stocks de sécurité de 40 %.',
       action:'Voir les prévisions',
@@ -183,7 +183,7 @@ export default function Forecasts() {
     },
     {
       type:'success' as const,
-      icon:'💰',
+      Icon: DollarSign,
       title:'Trésorerie solide',
       message:`Solde cumulé prévu à ${fmt(8510000)} en octobre. Capacité d'investissement disponible pour expansion.`,
       action:'Voir trésorerie',
@@ -192,7 +192,7 @@ export default function Forecasts() {
     },
     {
       type:'info'    as const,
-      icon:'👥',
+      Icon: Users,
       title:"Renforcer l'équipe commerciale",
       message:'Avec +30 % de nouveaux clients prévus, recruter 1 commercial dès juillet. ROI estimé en 3 mois.',
       action:'Voir RH',
@@ -411,10 +411,10 @@ export default function Forecasts() {
             </p>
             <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap' }}>
               {[
-                { icon:'📊', label: lang === 'fr' ? 'Analyse ventes' : 'Sales analysis' },
-                { icon:'📦', label: lang === 'fr' ? 'Prévisions stock' : 'Stock forecast' },
-                { icon:'💡', label: lang === 'fr' ? 'Recommandations' : 'Recommendations' },
-                { icon:'💬', label: lang === 'fr' ? 'Chat libre' : 'Free chat' },
+                { Icon: BarChart2,   label: lang === 'fr' ? 'Analyse ventes' : 'Sales analysis' },
+                { Icon: Package,     label: lang === 'fr' ? 'Prévisions stock' : 'Stock forecast' },
+                { Icon: Lightbulb,   label: lang === 'fr' ? 'Recommandations' : 'Recommendations' },
+                { Icon: MessageSquare, label: lang === 'fr' ? 'Chat libre' : 'Free chat' },
               ].map((cap, i) => (
                 <span key={i} style={{
                   fontSize:10, fontWeight:600, color:'var(--text3)',
@@ -422,7 +422,7 @@ export default function Forecasts() {
                   borderRadius:20, padding:'2px 8px',
                   display:'flex', alignItems:'center', gap:4,
                 }}>
-                  {cap.icon} {cap.label}
+                  <cap.Icon size={10} /> {cap.label}
                 </span>
               ))}
             </div>
@@ -432,11 +432,11 @@ export default function Forecasts() {
         {/* Boutons types d'analyse redesignés */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:10, padding:'16px 24px' }}>
           {([
-            { id:'full',    icon:'📊', color:'#6C47FF', label: lang === 'fr' ? 'Analyse mensuelle' : 'Monthly analysis', desc: lang === 'fr' ? 'Ventes, tendances, top produits' : 'Sales, trends, top products' },
-            { id:'stock',   icon:'📦', color:'#FF9500', label: lang === 'fr' ? 'Analyse stock' : 'Stock analysis', desc: lang === 'fr' ? 'Ruptures, commandes à passer' : 'Stockouts, orders to place' },
-            { id:'revenue', icon:'💰', color:'#00D084', label: lang === 'fr' ? 'Analyse financière' : 'Financial analysis', desc: lang === 'fr' ? 'Revenus, dépenses, trésorerie' : 'Revenue, expenses, cash flow' },
-            { id:'hr',      icon:'👥', color:'#00B8FF', label: lang === 'fr' ? 'Analyse clients' : 'Customer analysis', desc: lang === 'fr' ? 'Fidélité, segments, comportement' : 'Loyalty, segments, behavior' },
-          ] as { id: 'full'|'stock'|'revenue'|'hr'; icon: string; color: string; label: string; desc: string }[]).map(btn => (
+            { id:'full',    Icon: BarChart2,   color:'#6C47FF', label: lang === 'fr' ? 'Analyse mensuelle' : 'Monthly analysis', desc: lang === 'fr' ? 'Ventes, tendances, top produits' : 'Sales, trends, top products' },
+            { id:'stock',   Icon: Package,     color:'#FF9500', label: lang === 'fr' ? 'Analyse stock' : 'Stock analysis', desc: lang === 'fr' ? 'Ruptures, commandes à passer' : 'Stockouts, orders to place' },
+            { id:'revenue', Icon: DollarSign,  color:'#00D084', label: lang === 'fr' ? 'Analyse financière' : 'Financial analysis', desc: lang === 'fr' ? 'Revenus, dépenses, trésorerie' : 'Revenue, expenses, cash flow' },
+            { id:'hr',      Icon: Users,       color:'#00B8FF', label: lang === 'fr' ? 'Analyse clients' : 'Customer analysis', desc: lang === 'fr' ? 'Fidélité, segments, comportement' : 'Loyalty, segments, behavior' },
+          ] as { id: 'full'|'stock'|'revenue'|'hr'; Icon: typeof BarChart2; color: string; label: string; desc: string }[]).map(btn => (
             <button key={btn.id}
               onClick={() => runAnalysis(btn.id)}
               disabled={aiLoading}
@@ -465,8 +465,8 @@ export default function Forecasts() {
                 width:38, height:38, borderRadius:11,
                 background:`${btn.color}18`, border:`1px solid ${btn.color}25`,
                 display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:20, flexShrink:0,
-              }}>{btn.icon}</div>
+                color: btn.color, flexShrink:0,
+              }}><btn.Icon size={18} /></div>
               <div>
                 <div style={{ fontSize:13, fontWeight:800, color:'var(--text)', marginBottom:2 }}>{btn.label}</div>
                 <div style={{ fontSize:10, color:'var(--text3)', lineHeight:1.4 }}>{btn.desc}</div>
@@ -1114,8 +1114,8 @@ export default function Forecasts() {
                 <div style={{
                   width:40, height:40, borderRadius:10, flexShrink:0,
                   background:iconBg,
-                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:20,
-                }}>{rec.icon}</div>
+                  display:'flex', alignItems:'center', justifyContent:'center', color: accentColor,
+                }}><rec.Icon size={18} /></div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:13, fontWeight:800, color:'var(--text)', marginBottom:5 }}>{rec.title}</div>
                   <div style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, marginBottom:10 }}>{rec.message}</div>
@@ -1336,18 +1336,18 @@ export default function Forecasts() {
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:14 }}>
           {[
-            { label:'CA total 2026',        value:fmt(33750000), sub:'+18 % vs 2025', color:'var(--p2)',   icon:'💰' },
-            { label:'Marge brute moyenne',  value:'36 %',        sub:'+4 pts vs 2025',color:'var(--acc2)', icon:'📊' },
-            { label:'Coût achats stock',    value:fmt(21600000), sub:'64 % du CA',    color:'var(--acc)',  icon:'📦' },
-            { label:'Masse salariale',      value:fmt(3120000),  sub:'+2 ETP prévus', color:'#A78BFA',     icon:'👥' },
-            { label:'Résultat net prévu',   value:fmt(4230000),  sub:'+22 % vs 2025', color:'var(--acc2)', icon:'🏆' },
+            { label:'CA total 2026',        value:fmt(33750000), sub:'+18 % vs 2025', color:'var(--p2)',   Icon: DollarSign  },
+            { label:'Marge brute moyenne',  value:'36 %',        sub:'+4 pts vs 2025',color:'var(--acc2)', Icon: BarChart2   },
+            { label:'Coût achats stock',    value:fmt(21600000), sub:'64 % du CA',    color:'var(--acc)',  Icon: Package     },
+            { label:'Masse salariale',      value:fmt(3120000),  sub:'+2 ETP prévus', color:'#A78BFA',     Icon: Users       },
+            { label:'Résultat net prévu',   value:fmt(4230000),  sub:'+22 % vs 2025', color:'var(--acc2)', Icon: Trophy      },
           ].map((s, i) => (
             <div key={i} style={{
               textAlign:'center', padding:'18px 12px',
               background:'rgba(255,255,255,.03)',
               borderRadius:14, border:'1px solid rgba(255,255,255,.08)',
             }}>
-              <div style={{ fontSize:24, marginBottom:8 }}>{s.icon}</div>
+              <div style={{ display:'flex', justifyContent:'center', marginBottom:8, color:s.color }}><s.Icon size={22} /></div>
               <div style={{
                 fontSize:9.5, fontWeight:700, textTransform:'uppercase',
                 letterSpacing:'.8px', color:'var(--text3)', marginBottom:8,

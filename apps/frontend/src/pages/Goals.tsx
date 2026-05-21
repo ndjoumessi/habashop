@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { dashboardApi } from '@/lib/api'
 import toast from 'react-hot-toast'
+import { Plus } from 'lucide-react'
 
 interface Goal {
   id: string
@@ -95,12 +96,12 @@ export default function Goals() {
     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0 }}>
-            🎯 {lang === 'fr' ? 'Objectifs & KPIs' : lang === 'en' ? 'Goals & KPIs' : lang === 'es' ? 'Objetivos & KPIs' : 'Obiettivi & KPI'}
+          <h1 className="page-title">
+            {lang === 'fr' ? 'Objectifs & KPIs' : lang === 'en' ? 'Goals & KPIs' : lang === 'es' ? 'Objetivos & KPIs' : 'Obiettivi & KPI'}
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text3)', margin: '4px 0 0' }}>
+          <p className="page-subtitle">
             {lang === 'fr' ? 'Suivez vos objectifs mensuels en temps réel'
               : lang === 'en' ? 'Track your monthly goals in real time'
               : lang === 'es' ? 'Siga sus objetivos mensuales en tiempo real'
@@ -108,7 +109,7 @@ export default function Goals() {
           </p>
         </div>
         <button className="topbar-btn" onClick={() => openModal(null)}>
-          + {lang === 'fr' ? 'Nouvel objectif' : 'New goal'}
+          <Plus size={14} /> {lang === 'fr' ? 'Nouvel objectif' : 'New goal'}
         </button>
       </div>
 

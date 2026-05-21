@@ -389,24 +389,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0 }}>
-            👥 {lang === 'fr' ? 'Ressources Humaines' : 'Human Resources'}
+          <h1 className="page-title">
+            {lang === 'fr' ? 'Ressources Humaines' : 'Human Resources'}
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text3)', margin: '3px 0 0' }}>
-            {employees.length} employés · {activeCount} actifs
+          <p className="page-subtitle">
+            {employees.length} {lang === 'fr' ? 'employés' : 'employees'} · {activeCount} {lang === 'fr' ? 'actifs' : 'active'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-sm" onClick={() => {
+          <button className="btn btn-ghost btn-sm" onClick={() => {
             exportCSV('RH', ['Nom','Rôle','Département','Contrat','Salaire','Embauche','Statut'],
               employees.map(e => [e.name, e.role, e.dept, e.type, e.salary, e.hiredAt, e.active ? 'Actif' : 'Inactif']))
             toast.success('CSV exporté')
           }}>
             <Download size={14} /> Export
           </button>
-          <button className="btn btn-primary btn-sm" onClick={() => { setSelectedEmp(null); setShowModal(true) }}>
+          <button className="topbar-btn" onClick={() => { setSelectedEmp(null); setShowModal(true) }}>
             <Plus size={14} /> {lang === 'fr' ? 'Ajouter' : 'Add'}
           </button>
         </div>

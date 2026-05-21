@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useConfig, useFormatAmount, useAppStore, formatCurrency, convertCurrency, t } from '@/stores/appStore'
-import { Download, Eye, Check, Zap } from 'lucide-react'
+import { Download, Eye, Check, Zap, DollarSign, TrendingDown, FileText, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 
@@ -390,13 +390,27 @@ export default function Payroll() {
   return (
     <div className="space-y-5 animate-in">
 
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{lang === 'fr' ? 'Paie & Salaires' : 'Payroll'}</h1>
+          <p className="page-subtitle">{lang === 'fr' ? `Période : ${month}` : `Period: ${month}`}</p>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => {
+          exportCSV('paie_' + month, ['Employé','Brut','Net','Statut'], records.map(r => [r.name, r.brut, r.net, r.status]))
+          toast.success('CSV exporté')
+        }}>
+          <Download size={14} /> Export
+        </button>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Masse salariale brute', value:fmt(totalBrut),  sub:'Tous employés',                      color:'var(--p2)',   icon:'💰' },
-          { label:'Masse salariale nette', value:fmt(totalNet),   sub:'Après retenues',                     color:'var(--acc2)', icon:'💵' },
-          { label:'Bulletins générés',     value:`${generated}/6`,sub:`${records.length - generated} restants`, color:'var(--acc)', icon:'📄' },
-          { label:'Bulletins payés',       value:`${paid}/6`,     sub:`${records.length - paid} non payés`, color:'var(--p3)',   icon:'✅' },
+          { label:'Masse salariale brute', value:fmt(totalBrut),  sub:'Tous employés',                      color:'var(--p2)',   icon:<DollarSign   size={18} /> },
+          { label:'Masse salariale nette', value:fmt(totalNet),   sub:'Après retenues',                     color:'var(--acc2)', icon:<TrendingDown size={18} /> },
+          { label:'Bulletins générés',     value:`${generated}/6`,sub:`${records.length - generated} restants`, color:'var(--acc)', icon:<FileText     size={18} /> },
+          { label:'Bulletins payés',       value:`${paid}/6`,     sub:`${records.length - paid} non payés`, color:'var(--p3)',   icon:<CheckCircle  size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color:k.color }}>{k.icon}</div>
@@ -434,7 +448,7 @@ export default function Payroll() {
       {/* Table */}
       <div className="panel" style={{ marginBottom:0 }}>
         <div className="panel-head">
-          <span className="panel-title">💳 Paie — {month}</span>
+          <span className="panel-title">Paie — {month}</span>
           <span className="badge badge-gray">{filtered.length} employé{filtered.length > 1 ? 's' : ''}</span>
         </div>
         {filtered.length === 0 ? (

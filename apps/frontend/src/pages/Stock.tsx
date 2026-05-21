@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { Search, Download, Plus, AlertTriangle } from 'lucide-react'
+import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
 import { productsApi } from '@/lib/api'
@@ -151,6 +151,17 @@ export default function Stock() {
 
   return (
     <div className="space-y-5 animate-in">
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{t('nav_stock')}</h1>
+          <p className="page-subtitle">{products.length} {lang === 'fr' ? 'articles en catalogue' : 'items in catalog'}</p>
+        </div>
+        <button className="topbar-btn" onClick={() => { setEditingSku(null); setEditingId(null); setShowModal(true) }}>
+          <Plus size={14} /> {lang === 'fr' ? 'Nouveau produit' : 'New product'}
+        </button>
+      </div>
+
       {/* Alert rupture */}
       {ruptures.length > 0 && (
         <div className="flex items-center gap-3 p-4 rounded-2xl"
@@ -175,10 +186,10 @@ export default function Stock() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('stock_total'),    value: products.length.toString(),          color: 'var(--p2)',    icon: '📋' },
-          { label: t('stock_value'),   value: fmt(totalValue), color: 'var(--acc2)', icon: '💎' },
-          { label: t('stock_ruptures'),value: ruptures.length.toString(),           color: 'var(--danger)',icon: '⚠️' },
-          { label: t('stock_categories'),value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', icon: '📁' },
+          { label: t('stock_total'),    value: products.length.toString(),          color: 'var(--p2)',    icon: <List          size={18} /> },
+          { label: t('stock_value'),   value: fmt(totalValue), color: 'var(--acc2)', icon: <Gem           size={18} /> },
+          { label: t('stock_ruptures'),value: ruptures.length.toString(),           color: 'var(--danger)',icon: <AlertTriangle size={18} /> },
+          { label: t('stock_categories'),value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', icon: <FolderOpen    size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
@@ -191,7 +202,7 @@ export default function Stock() {
       {/* Panel inventaire */}
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">🗄️ {t('stock_title')}</span>
+          <span className="panel-title">{t('stock_title')}</span>
           <div className="flex items-center gap-2">
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
               exportCSV('habashop_stock',
