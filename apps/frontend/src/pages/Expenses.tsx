@@ -502,7 +502,7 @@ export default function Expenses() {
                   <ValidatedInput type="amount"
                     value={nHT} onChange={setNHT}
                     placeholder="Ex: 85000"
-                    min={0} required lang={cfg.lang} />
+                    min={0} required lang={lang} />
                 </div>
                 <div>
                   <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Taux TVA</label>

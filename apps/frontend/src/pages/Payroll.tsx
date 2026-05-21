@@ -397,7 +397,7 @@ export default function Payroll() {
           <p className="page-subtitle">{lang === 'fr' ? `Période : ${month}` : `Period: ${month}`}</p>
         </div>
         <button className="btn btn-ghost btn-sm" onClick={() => {
-          exportCSV('paie_' + month, ['Employé','Brut','Net','Statut'], records.map(r => [r.name, r.brut, r.net, r.status]))
+          exportCSV('paie_' + month, ['Employé','Brut','Net','Statut'], records.map(r => [r.employee, calcBrut(r), calcNet(r), r.status]))
           toast.success('CSV exporté')
         }}>
           <Download size={14} /> Export
