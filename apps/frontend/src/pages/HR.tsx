@@ -285,24 +285,30 @@ export default function HR() {
 
     bonusesApi.list()
       .then((data: any[]) => {
-        const list = (data ?? []).map(b => ({ id: b.id, empId: b.employeeId, amount: b.amount, reason: b.reason, date: b.date }))
+        if (!Array.isArray(data)) return
+        const list = data.map(b => ({ id: b.id, empId: b.employeeId, amount: Number(b.amount || 0), reason: b.reason, date: b.date }))
         setBonusList(list)
         const agg: Record<string, number> = {}
-        list.forEach(b => { agg[b.empId] = (agg[b.empId] ?? 0) + b.amount })
+        list.forEach(b => { if (b.empId) agg[b.empId] = (agg[b.empId] ?? 0) + b.amount })
         setBonuses(agg)
+        console.log('✅ Bonuses chargés:', agg)
       })
       .catch(err => console.warn('bonuses load:', err.message))
 
     salaryHistoryApi.list()
       .then((data: any[]) => {
-        setSalaryHistory((data ?? []).map(h => ({
-          id: h.id,
-          empId: h.employeeId,
-          date: h.date ?? h.createdAt,
-          oldSalary: Number(h.oldSalary),
-          newSalary: Number(h.newSalary),
-          reason: h.reason ?? 'Augmentation',
-        })))
+        if (!Array.isArray(data)) return
+        const normalized = data.map(h => ({
+          id:         h.id,
+          empId:      h.employeeId,
+          employeeId: h.employeeId,
+          date:       h.date ?? h.createdAt,
+          oldSalary:  Number(h.oldSalary || 0),
+          newSalary:  Number(h.newSalary || 0),
+          reason:     h.reason ?? 'Augmentation',
+        }))
+        setSalaryHistory(normalized)
+        console.log('✅ Salary history chargé:', normalized.length)
       })
       .catch(err => console.warn('salary-history load:', err.message))
   }, [])
@@ -318,6 +324,56 @@ export default function HR() {
   }, [attendance])
 
   const depts = useMemo(() => Array.from(new Set(employees.map(e => e.dept))), [employees])
+
+  const handleConfirmRaise = async (empId: string, newSalaryXOF: number, reason: string) => {
+    const emp = employees.find(e => String(e.id) === empId)
+    const oldSalaryXOF = Number(emp?.salary) || 0
+
+    setEmployees((prev: Employee[]) => prev.map(e =>
+      String(e.id) === empId ? { ...e, salary: newSalaryXOF } : e
+    ))
+    setSalaryHistory(prev => [{
+      id: `local_${Date.now()}`,
+      empId,
+      employeeId: empId,
+      oldSalary: oldSalaryXOF,
+      newSalary: newSalaryXOF,
+      reason: reason || 'Augmentation',
+      date: new Date().toISOString(),
+    }, ...prev])
+
+    employeesApi.update(empId, { salary: newSalaryXOF })
+      .catch(err => console.warn('employee update:', err.message))
+    salaryHistoryApi.create({ employeeId: empId, oldSalary: oldSalaryXOF, newSalary: newSalaryXOF, reason: reason || 'Augmentation' })
+      .catch(err => console.warn('salary-history create:', err.message))
+
+    toast.success(`✅ Salaire mis à jour : ${fmt(newSalaryXOF)}`)
+    setShowSalaryModal(false)
+  }
+
+  const handleConfirmBonus = (_empId: string | 'all', amountXOF: number, type: string) => {
+    const targets = _empId === 'all'
+      ? employees.filter(e => e.active !== false)
+      : employees.filter(e => String(e.id) === _empId)
+
+    targets.forEach(emp => {
+      const eid = String(emp.id)
+      setBonuses(prev => ({ ...prev, [eid]: (prev[eid] ?? 0) + amountXOF }))
+      bonusesApi.create({ employeeId: eid, amount: amountXOF, reason: type || 'Performance' })
+        .then(b => setBonusList(prev => [...prev, { id: b.id, empId: eid, amount: amountXOF, reason: b.reason, date: b.date }]))
+        .catch(err => {
+          console.warn('bonus create:', err.message)
+          setBonusList(prev => [...prev, { id: `local-${Date.now()}-${eid}`, empId: eid, amount: amountXOF, reason: type || 'Performance', date: new Date().toISOString() }])
+        })
+    })
+
+    if (_empId === 'all') {
+      toast.success(`✅ Prime collective ${fmt(amountXOF)} (${targets.length})`)
+    } else {
+      toast.success(`✅ Prime ${fmt(amountXOF)} → ${targets[0]?.name}`)
+    }
+    setShowSalaryModal(false)
+  }
 
   const filtered = useMemo(() => (employees ?? []).filter(e => {
     const q = search.toLowerCase()
@@ -1514,22 +1570,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 lang={lang}
                 fmt={fmt}
                 onConfirm={(newSalary: number, reason: string) => {
-                  const oldSalary = Number(salaryTarget.salary)||0
-                  const entry = {
-                    id: `local_${Date.now()}`,
-                    empId: String(salaryTarget.id),
-                    date: new Date().toISOString(),
-                    oldSalary, newSalary, reason,
-                  }
-                  setSalaryHistory(prev => [entry, ...prev])
-                  setEmployees((prev: Employee[]) => prev.map(e =>
-                    e.id === salaryTarget.id ? {...e, salary:newSalary} : e
-                  ))
-                  employeesApi.update(String(salaryTarget.id), { salary:newSalary }).catch(err => console.warn('employee update:', err.message))
-                  salaryHistoryApi.create({ employeeId: String(salaryTarget.id), oldSalary, newSalary, reason })
-                    .catch(err => console.warn('salary-history create:', err.message))
-                  toast.success(`✅ Salaire mis à jour : ${fmt(newSalary)}`)
-                  setShowSalaryModal(false)
+                  handleConfirmRaise(String(salaryTarget.id), newSalary, reason)
                 }}
                 onClose={() => setShowSalaryModal(false)}
               />
@@ -1540,25 +1581,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 lang={lang}
                 fmt={fmt}
                 onConfirm={(empId: string|'all', amount: number, reason?: string) => {
-                  const targets = empId === 'all'
-                    ? employees.filter(e => e.active).map(e => String(e.id))
-                    : [empId]
-                  targets.forEach(eid => {
-                    setBonuses(prev => ({ ...prev, [eid]: (prev[eid] ?? 0) + amount }))
-                    bonusesApi.create({ employeeId: eid, amount, reason: reason ?? 'Performance' })
-                      .then(b => setBonusList(prev => [...prev, { id: b.id, empId: eid, amount, reason: b.reason, date: b.date }]))
-                      .catch(err => {
-                        console.warn('bonus create:', err.message)
-                        setBonusList(prev => [...prev, { id: `local-${Date.now()}-${eid}`, empId: eid, amount, reason: reason ?? 'Performance', date: new Date().toISOString() }])
-                      })
-                  })
-                  if (empId === 'all') {
-                    toast.success(`✅ Prime collective ${fmt(amount)} ajoutée`)
-                  } else {
-                    const e = employees.find(e => String(e.id) === empId)
-                    toast.success(`✅ Prime ${fmt(amount)} → ${e?.name}`)
-                  }
-                  setShowSalaryModal(false)
+                  handleConfirmBonus(empId, amount, reason ?? 'Performance')
                 }}
                 onClose={() => setShowSalaryModal(false)}
               />
