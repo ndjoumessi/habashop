@@ -187,6 +187,8 @@ model Employee {
   salary    Float
   phone     String?
   email     String?
+  address   String?
+  photo     String?   @db.Text
   hiredAt   DateTime
   endAt     DateTime?
   isActive  Boolean   @default(true)
@@ -196,7 +198,34 @@ model Employee {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  bonuses       EmployeeBonus[]
+  salaryHistory SalaryHistory[]
+}
+
+model EmployeeBonus {
+  id         String   @id @default(cuid())
+  tenantId   String
+  employeeId String
+  amount     Float
+  reason     String
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model SalaryHistory {
+  id         String   @id @default(cuid())
+  tenantId   String
+  employeeId String
+  oldSalary  Float
+  newSalary  Float
+  reason     String   @default("")
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }
 
 model Expense {

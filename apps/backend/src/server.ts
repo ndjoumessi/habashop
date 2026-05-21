@@ -572,7 +572,7 @@ async function start() {
     const { id } = request.params as any
     const {
       name, role, dept, type, salary,
-      phone, email, isActive, color,
+      phone, email, address, photo, isActive, color,
       hiredAt, perf,
     } = request.body as any
 
@@ -587,6 +587,8 @@ async function start() {
           ...(salary   !== undefined && { salary: Number(salary) }),
           ...(phone    !== undefined && { phone    }),
           ...(email    !== undefined && { email    }),
+          ...(address  !== undefined && { address  }),
+          ...(photo    !== undefined && { photo    }),
           ...(isActive !== undefined && { isActive }),
           ...(color    !== undefined && { color    }),
           ...(hiredAt  !== undefined && { hiredAt: new Date(hiredAt) }),
@@ -597,6 +599,111 @@ async function start() {
     } catch (err: any) {
       console.error('Update employee error:', err.message)
       return reply.code(500).send({ error: 'Erreur mise à jour employé', details: err.message })
+    }
+  })
+
+  app.delete('/api/employees/:id', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user as any
+    const { id } = request.params as any
+    try {
+      await prisma.employee.delete({ where: { id, tenantId } })
+      return { success: true }
+    } catch (err: any) {
+      return reply.code(500).send({ error: err.message })
+    }
+  })
+
+  // ════════════════════════════════════════
+  // EMPLOYEE BONUSES ROUTES
+  // ════════════════════════════════════════
+
+  app.get('/api/bonuses', { preHandler: authenticate }, async (request) => {
+    const { tenantId } = request.user as any
+    return prisma.employeeBonus.findMany({
+      where: { tenantId },
+      orderBy: { date: 'desc' },
+    })
+  })
+
+  app.get('/api/bonuses/employee/:employeeId', { preHandler: authenticate }, async (request) => {
+    const { tenantId } = request.user as any
+    const { employeeId } = request.params as any
+    return prisma.employeeBonus.findMany({
+      where: { tenantId, employeeId },
+      orderBy: { date: 'desc' },
+    })
+  })
+
+  app.post('/api/bonuses', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user as any
+    const { employeeId, amount, reason, date } = request.body as any
+    if (!employeeId || !amount) return reply.code(400).send({ error: 'employeeId et amount requis' })
+    try {
+      const bonus = await prisma.employeeBonus.create({
+        data: {
+          tenantId,
+          employeeId,
+          amount: Number(amount),
+          reason: reason ?? 'Prime',
+          date: date ? new Date(date) : new Date(),
+        }
+      })
+      return bonus
+    } catch (err: any) {
+      return reply.code(500).send({ error: err.message })
+    }
+  })
+
+  app.delete('/api/bonuses/:id', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user as any
+    const { id } = request.params as any
+    try {
+      await prisma.employeeBonus.delete({ where: { id, tenantId } })
+      return { success: true }
+    } catch (err: any) {
+      return reply.code(500).send({ error: err.message })
+    }
+  })
+
+  // ════════════════════════════════════════
+  // SALARY HISTORY ROUTES
+  // ════════════════════════════════════════
+
+  app.get('/api/salary-history', { preHandler: authenticate }, async (request) => {
+    const { tenantId } = request.user as any
+    return prisma.salaryHistory.findMany({
+      where: { tenantId },
+      orderBy: { date: 'desc' },
+    })
+  })
+
+  app.get('/api/salary-history/employee/:employeeId', { preHandler: authenticate }, async (request) => {
+    const { tenantId } = request.user as any
+    const { employeeId } = request.params as any
+    return prisma.salaryHistory.findMany({
+      where: { tenantId, employeeId },
+      orderBy: { date: 'desc' },
+    })
+  })
+
+  app.post('/api/salary-history', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user as any
+    const { employeeId, oldSalary, newSalary, reason, date } = request.body as any
+    if (!employeeId || newSalary === undefined) return reply.code(400).send({ error: 'employeeId et newSalary requis' })
+    try {
+      const entry = await prisma.salaryHistory.create({
+        data: {
+          tenantId,
+          employeeId,
+          oldSalary: Number(oldSalary ?? 0),
+          newSalary: Number(newSalary),
+          reason: reason ?? '',
+          date: date ? new Date(date) : new Date(),
+        }
+      })
+      return entry
+    } catch (err: any) {
+      return reply.code(500).send({ error: err.message })
     }
   })
 

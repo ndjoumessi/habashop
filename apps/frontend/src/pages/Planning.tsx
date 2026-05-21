@@ -26,7 +26,9 @@ export default function Planning() {
   const { lang } = useAppStore()
   const [employees, setEmployees] = useState(STATIC_EMPLOYEES)
   const [activeShift, setActiveShift] = useState<ShiftType>('full')
-  const [shifts, setShifts] = useState<Record<string,Record<number,ShiftType>>>({})
+  const [shifts, setShifts] = useState<Record<string,Record<number,ShiftType>>>(() => {
+    try { return JSON.parse(localStorage.getItem('habashop_shifts') ?? 'null') ?? {} } catch { return {} }
+  })
   const [filterDept, setFilterDept] = useState('all')
   const [filterStatus, setFilterStatus] = useState<ShiftType|'all'>('all')
   const [planningWeek, setPlanningWeek] = useState(new Date())
@@ -41,6 +43,10 @@ export default function Planning() {
       })))
     }).catch(()=>{})
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem('habashop_shifts', JSON.stringify(shifts))
+  }, [shifts])
 
   const weekDays = useMemo(() => {
     const d = new Date(planningWeek)

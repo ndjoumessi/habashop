@@ -133,6 +133,20 @@ export const employeesApi = {
   list:   () => api.get<any[]>('/api/employees'),
   create: (data: any) => api.post<any>('/api/employees', data),
   update: (id: string, data: any) => api.put<any>(`/api/employees/${id}`, data),
+  delete: (id: string) => api.delete<any>(`/api/employees/${id}`),
+}
+
+export const bonusesApi = {
+  list:             () => api.get<any[]>('/api/bonuses'),
+  listByEmployee:   (employeeId: string) => api.get<any[]>(`/api/bonuses/employee/${employeeId}`),
+  create:           (data: any) => api.post<any>('/api/bonuses', data),
+  delete:           (id: string) => api.delete<any>(`/api/bonuses/${id}`),
+}
+
+export const salaryHistoryApi = {
+  list:           () => api.get<any[]>('/api/salary-history'),
+  listByEmployee: (employeeId: string) => api.get<any[]>(`/api/salary-history/employee/${employeeId}`),
+  create:         (data: any) => api.post<any>('/api/salary-history', data),
 }
 
 export const expensesApi = {

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import React from 'react'
 import { useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
-import { employeesApi } from '@/lib/api'
+import { employeesApi, bonusesApi, salaryHistoryApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
 import { Download, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -112,7 +112,7 @@ function toInputDate(dateStr: string | undefined | null): string {
   return ''
 }
 
-function displayDate(dateStr: string | undefined | null, locale: string): string {
+function displayDate(dateStr: string | undefined | null, locale = 'fr-FR'): string {
   const iso = toInputDate(dateStr)
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString(locale)
@@ -214,13 +214,16 @@ export default function HR() {
   const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0, 7))
   const [payTab, setPayTab] = useState<'grid'|'payslip'|'bonuses'|'history'>('grid')
   const [bonuses, setBonuses] = useState<Record<string, number>>({})
+  const [bonusList, setBonusList] = useState<{id:string; empId:string; amount:number; reason:string; date:string}[]>([])
   const [showSalaryModal, setShowSalaryModal] = useState(false)
   const [salaryTarget, setSalaryTarget] = useState<any>(null)
-  const [salaryHistory, setSalaryHistory] = useState<{empId:string; date:string; oldSalary:number; newSalary:number; reason:string}[]>([])
+  const [salaryHistory, setSalaryHistory] = useState<{id?:string; empId:string; date:string; oldSalary:number; newSalary:number; reason:string}[]>([])
 
   // Présences / Pointage
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0])
-  const [attendance, setAttendance] = useState<Record<string, { in: string|null; out: string|null; status: 'present'|'absent'|'late'|'half' }>>({})
+  const [attendance, setAttendance] = useState<Record<string, { in: string|null; out: string|null; status: 'present'|'absent'|'late'|'half' }>>(() => {
+    try { return JSON.parse(localStorage.getItem('habashop_attendance') ?? 'null') ?? {} } catch { return {} }
+  })
 
   // Leave modal
   const [showLeaveModal, setShowLeaveModal] = useState(false)
@@ -270,10 +273,38 @@ export default function HR() {
             endAt: toInputDate(e.endAt) || e.endAt,
             avatar: (e.name ?? e.firstName ?? '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
             color: COLORS[i % COLORS.length],
-            active: e.active ?? e.status !== 'inactive',
+            active: e.active ?? e.isActive ?? e.status !== 'inactive',
             phone: e.phone ?? '',
             email: e.email ?? '',
+            address: e.address ?? '',
             perf: e.perf ?? e.performance,
+          })))
+        }
+      })
+      .catch(() => {})
+
+    bonusesApi.list()
+      .then((data: any[]) => {
+        if (data?.length) {
+          const list = data.map(b => ({ id: b.id, empId: b.employeeId, amount: b.amount, reason: b.reason, date: b.date }))
+          setBonusList(list)
+          const agg: Record<string, number> = {}
+          list.forEach(b => { agg[b.empId] = (agg[b.empId] ?? 0) + b.amount })
+          setBonuses(agg)
+        }
+      })
+      .catch(() => {})
+
+    salaryHistoryApi.list()
+      .then((data: any[]) => {
+        if (data?.length) {
+          setSalaryHistory(data.map(h => ({
+            id: h.id,
+            empId: h.employeeId,
+            date: new Date(h.date).toLocaleDateString('fr-FR'),
+            oldSalary: h.oldSalary,
+            newSalary: h.newSalary,
+            reason: h.reason,
           })))
         }
       })
@@ -285,6 +316,10 @@ export default function HR() {
     window.addEventListener('habashop:new-employee', handler)
     return () => window.removeEventListener('habashop:new-employee', handler)
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem('habashop_attendance', JSON.stringify(attendance))
+  }, [attendance])
 
   const depts = useMemo(() => Array.from(new Set(employees.map(e => e.dept))), [employees])
 
@@ -1082,6 +1117,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                                     const nb = {...bonuses}
                                     delete nb[empId]
                                     setBonuses(nb)
+                                    const ids = bonusList.filter(b => b.empId === empId).map(b => b.id)
+                                    setBonusList(prev => prev.filter(b => b.empId !== empId))
+                                    ids.forEach(id => { if (!id.startsWith('local-')) bonusesApi.delete(id).catch(()=>{}) })
                                     toast.success(lang==='fr' ? 'Prime supprimée' : 'Bonus removed')
                                   }}>
                                   🗑 {lang==='fr' ? 'Supprimer' : 'Remove'}
@@ -1255,15 +1293,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 fmt={fmt}
                 onConfirm={(newSalary: number, reason: string) => {
                   const oldSalary = Number(salaryTarget.salary)||0
-                  setSalaryHistory(prev => [...prev, {
-                    empId: String(salaryTarget.id),
-                    date: new Date().toLocaleDateString('fr-FR'),
-                    oldSalary, newSalary, reason,
-                  }])
+                  const entry = { empId: String(salaryTarget.id), date: new Date().toLocaleDateString('fr-FR'), oldSalary, newSalary, reason }
+                  setSalaryHistory(prev => [entry, ...prev])
                   setEmployees((prev: Employee[]) => prev.map(e =>
                     e.id === salaryTarget.id ? {...e, salary:newSalary} : e
                   ))
                   employeesApi.update(String(salaryTarget.id), { salary:newSalary }).catch(()=>{})
+                  salaryHistoryApi.create({ employeeId: String(salaryTarget.id), oldSalary, newSalary, reason }).catch(()=>{})
                   toast.success(`✅ Salaire mis à jour : ${fmt(newSalary)}`)
                   setShowSalaryModal(false)
                 }}
@@ -1275,16 +1311,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 employees={(employees ?? []).filter(e => e.active)}
                 lang={lang}
                 fmt={fmt}
-                onConfirm={(empId: string|'all', amount: number) => {
+                onConfirm={(empId: string|'all', amount: number, reason?: string) => {
+                  const targets = empId === 'all'
+                    ? employees.filter(e => e.active).map(e => String(e.id))
+                    : [empId]
+                  targets.forEach(eid => {
+                    setBonuses(prev => ({ ...prev, [eid]: (prev[eid] ?? 0) + amount }))
+                    bonusesApi.create({ employeeId: eid, amount, reason: reason ?? 'Prime' })
+                      .then(b => setBonusList(prev => [...prev, { id: b.id, empId: eid, amount, reason: b.reason, date: b.date }]))
+                      .catch(() => setBonusList(prev => [...prev, { id: `local-${Date.now()}-${eid}`, empId: eid, amount, reason: reason ?? 'Prime', date: new Date().toISOString() }]))
+                  })
                   if (empId === 'all') {
-                    const newBonuses: Record<string,number> = {}
-                    employees.filter(e=>e.active).forEach(e => {
-                      newBonuses[String(e.id)] = (bonuses[String(e.id)]??0) + amount
-                    })
-                    setBonuses(prev => ({...prev, ...newBonuses}))
                     toast.success(`✅ Prime collective ${fmt(amount)} ajoutée`)
                   } else {
-                    setBonuses(prev => ({...prev, [empId]: (prev[empId]??0)+amount}))
                     const e = employees.find(e => String(e.id) === empId)
                     toast.success(`✅ Prime ${fmt(amount)} → ${e?.name}`)
                   }
