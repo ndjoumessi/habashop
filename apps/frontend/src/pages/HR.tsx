@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import React from 'react'
-import { useFormatAmount, useAppStore } from '@/stores/appStore'
+import { useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
 import { employeesApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
 import { Download, Plus, X } from 'lucide-react'
@@ -183,8 +183,12 @@ const labelStyle: React.CSSProperties = {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function HR() {
-  const fmt = useFormatAmount()
+  const fmt    = useFormatAmount()
+  const toXOF  = useConvertToXOF()
+  const fromXOF = useConvertFromXOF()
+  const { symbol: currencySymbol, decimals: currencyDecimals } = useCurrencyInfo()
   const { lang, currency } = useAppStore()
+  const [salaryInput, setSalaryInput] = useState('')
   const [tab, setTab] = useState<'team'|'contracts'|'pointage'|'leaves'|'payroll'>('team')
   const [viewMode, setViewMode] = useState<'grid'|'table'>('grid')
   const [search, setSearch] = useState('')
@@ -227,12 +231,13 @@ export default function HR() {
 
   const openEditModal = (emp: Employee) => {
     setSelectedEmp(emp)
+    // emp.salary est en XOF → convertir en devise courante pour l'input
+    setSalaryInput(fromXOF(emp.salary || 0).toFixed(currencyDecimals))
     setEditEmpForm({
       name:        emp.name        ?? '',
       role:        emp.role        ?? '',
       dept:        emp.dept        ?? 'Ventes',
       type:        emp.type        ?? 'CDI',
-      salary:      emp.salary      ?? 0,
       phone:       emp.phone       ?? '',
       email:       emp.email       ?? '',
       isActive:    emp.active,
@@ -1666,18 +1671,27 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', marginBottom:5, textTransform:'uppercase', letterSpacing:'.4px' }}>
                     {lang==='fr'?`SALAIRE MENSUEL BRUT (${currency})`:`MONTHLY GROSS SALARY (${currency})`}
                   </label>
-                  <input className="input" type="number" placeholder="150000" value={editEmpForm.salary||''} onChange={e => setEditEmpForm((f:any) => ({ ...f, salary:+e.target.value }))} style={{ paddingRight:60 }} />
+                  <input className="input" type="number" placeholder="0"
+                    value={salaryInput}
+                    onChange={e => setSalaryInput(e.target.value)}
+                    style={{ paddingRight:60 }} />
                   <span style={{ position:'absolute', right:12, bottom:10, fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>
-                    {currency==='EUR'?'€':currency==='USD'?'$':'FCFA'}
+                    {currencySymbol}
                   </span>
                 </div>
-                {(editEmpForm.salary||0) > 0 && (
-                  <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:16, flexWrap:'wrap' }}>
-                    <span>CNSS (8%): <strong style={{color:'var(--danger)'}}>− {fmt(Math.round((editEmpForm.salary||0)*0.08))}</strong></span>
-                    <span>IR (5%): <strong style={{color:'var(--acc)'}}>− {fmt(Math.round((editEmpForm.salary||0)*0.05))}</strong></span>
-                    <span>Net: <strong style={{color:'var(--acc2)'}}>{fmt(Math.round((editEmpForm.salary||0)*0.87))}</strong></span>
-                  </div>
-                )}
+                {+salaryInput > 0 && (() => {
+                  const salaryXOF = toXOF(+salaryInput)
+                  const cnss = Math.round(salaryXOF * 0.08)
+                  const ir   = Math.round(salaryXOF * 0.05)
+                  const net  = salaryXOF - cnss - ir
+                  return (
+                    <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:16, flexWrap:'wrap' }}>
+                      <span>CNSS (8%): <strong style={{color:'var(--danger)'}}>− {fmt(cnss)}</strong></span>
+                      <span>IR (5%): <strong style={{color:'var(--acc)'}}>− {fmt(ir)}</strong></span>
+                      <span>Net: <strong style={{color:'var(--acc2)'}}>{fmt(net)}</strong></span>
+                    </div>
+                  )
+                })()}
               </div>
 
               {/* Contact */}
@@ -1744,7 +1758,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 onClick={async () => {
                   if (!editEmpForm.name?.trim()) { toast.error(lang==='fr'?'Nom requis':'Name required'); return }
                   const avatar = editEmpForm.name.split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()
-                  const dataToSave = { ...editEmpForm, avatar, active: editEmpForm.isActive }
+                  // salaryInput est en devise courante → convertir en XOF pour stocker
+                  const salaryXOF = Math.round(toXOF(+salaryInput || 0))
+                  const dataToSave = { ...editEmpForm, avatar, active: editEmpForm.isActive, salary: salaryXOF }
                   try {
                     await employeesApi.update(String(selectedEmp.id), {
                       ...dataToSave,

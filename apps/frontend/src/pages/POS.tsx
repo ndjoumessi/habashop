@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAppStore, useFormatAmount, formatCurrency, t, convertAmount, formatInCurrency } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, formatCurrency, t, convertAmount, formatInCurrency } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import { salesApi, productsApi, whatsappApi } from '@/lib/api'
 import BarcodeScanner from '@/components/ui/BarcodeScanner'
@@ -142,11 +142,12 @@ export default function POS() {
     posDefaultPayment, priceMode,
     enableScanner: posEnableScanner, autoWhatsApp: posAutoWhatsApp,
   } = useAppStore()
-  const fmt = useFormatAmount()
+  const fmt    = useFormatAmount()
+  const toXOF  = useConvertToXOF()
+  const { symbol: currencySymbol } = useCurrencyInfo()
   const LOCALE_MAP: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
   const locale = LOCALE_MAP[lang] ?? 'fr-FR'
   const ct = CASHIER_TEXTS[lang as keyof typeof CASHIER_TEXTS] ?? CASHIER_TEXTS.fr
-  const currencySymbol = ({ XOF:'FCFA', XAF:'FCFA', EUR:'€', USD:'$', CAD:'CA$' } as Record<string, string>)[currency as string] ?? 'FCFA'
 
   const [posProducts, setPosProducts] = useState<PosProduct[]>(PRODUCTS)
 
@@ -279,7 +280,8 @@ export default function POS() {
   const totalHT = total / (1 + VAT_RATE)
   const tva     = total - totalHT
   const cashGivenAmount = parseFloat(cashGiven) || 0
-  const monnaie = cashGivenAmount - total
+  // cashGiven est dans la devise courante → convertir en XOF pour comparer avec total (XOF)
+  const monnaie = toXOF(cashGivenAmount) - total
 
   const PAY_MODES = [
     { id: 'cash',   label: t('pos_cash'),                                    icon: '💵', color: '#10B981' },
@@ -339,7 +341,7 @@ export default function POS() {
   <div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span>${payMode === 'cash' ? t('pos_cash') : payMode === 'card' ? t('pos_card') : t('pos_mobile')}</span></div>
   ${cashGiven ? `
     <div class="row"><span>${t('pos_ticket_received')}</span><span>${formatInCurrency(parseFloat(cashGiven), currency)}</span></div>
-    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${formatInCurrency(Math.max(monnaie, 0), currency)}</span></div>
+    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${fmt(Math.max(monnaie, 0))}</span></div>
   ` : ''}
   <div class="divider"></div>
   <div class="center footer">
@@ -1188,8 +1190,8 @@ export default function POS() {
                     </span>
                     <span style={{ fontWeight:900, fontFamily:'var(--mono)', fontSize:16, color: monnaie >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
                       {monnaie >= 0
-                        ? formatInCurrency(monnaie, currency)
-                        : `− ${formatInCurrency(Math.abs(monnaie), currency)}`}
+                        ? fmt(monnaie)
+                        : `− ${fmt(Math.abs(monnaie))}`}
                     </span>
                   </div>
                 )}
