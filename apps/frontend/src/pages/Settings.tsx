@@ -7,6 +7,7 @@ import {
   Store, User, Globe, Palette, ShoppingCart, Package, Bell, Shield, Cog,
   Save, Upload, Download, X, RefreshCw, AlertTriangle,
 } from 'lucide-react'
+import { generateCDC } from '@/utils/export'
 import toast from 'react-hot-toast'
 import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
 
@@ -1022,12 +1023,15 @@ export default function Settings() {
               {/* Export/Import */}
               <div className="panel">
                 <div className="panel-head"><span className="panel-title">📁 Configuration</span></div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
                   <button className="btn btn-ghost gap-2" onClick={handleExportConfig}>
                     <Download size={14} /> {t('settings_export_config')}
                   </button>
                   <button className="btn btn-ghost gap-2" onClick={() => importRef.current?.click()}>
                     <Upload size={14} /> {t('settings_import_config')}
+                  </button>
+                  <button className="btn btn-ghost gap-2" onClick={generateCDC}>
+                    📋 {cfg.lang === 'fr' ? 'Cahier des charges PDF' : 'Technical spec PDF'}
                   </button>
                 </div>
               </div>
@@ -1050,6 +1054,9 @@ export default function Settings() {
                     </button>
                     <button className="btn btn-ghost gap-2" onClick={() => importRef.current?.click()}>
                       <Upload size={14} /> {t('settings_import_config')}
+                    </button>
+                    <button className="btn btn-ghost gap-2" onClick={generateCDC}>
+                      📋 {cfg.lang === 'fr' ? 'Cahier des charges PDF' : 'Technical spec PDF'}
                     </button>
                   </div>
                 </div>
