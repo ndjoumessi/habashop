@@ -8,6 +8,7 @@ const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
   { code: 'EUR', flag: '🇪🇺', symbol: 'EUR' },
   { code: 'USD', flag: '🇺🇸', symbol: 'USD' },
   { code: 'CAD', flag: '🇨🇦', symbol: 'CAD' },
+  { code: 'GBP', flag: '🇬🇧', symbol: 'GBP' },
 ]
 
 export default function CurrencyBadge() {
