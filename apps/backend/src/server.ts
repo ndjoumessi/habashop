@@ -1342,6 +1342,25 @@ console.log(products.length + ' produits')</pre>
     }
   })
 
+  // ─── HEALTH EXTENDED ─────────────────
+  app.get('/api/health-extended', async (_request, reply) => {
+    try {
+      const [bonusCount, salaryCount, employeeCount] = await Promise.all([
+        prisma.employeeBonus.count(),
+        prisma.salaryHistory.count(),
+        prisma.employee.count(),
+      ])
+      return reply.send({
+        status: 'ok',
+        tables: { employeeBonus: bonusCount, salaryHistory: salaryCount, employee: employeeCount },
+        routes: ['/api/bonuses', '/api/salary-history'],
+        buildTime: new Date().toISOString(),
+      })
+    } catch (err: any) {
+      return reply.code(500).send({ status: 'error', error: err.message })
+    }
+  })
+
   // ─── DÉMARRAGE ────────────────────────
   try {
     await prisma.$connect()
