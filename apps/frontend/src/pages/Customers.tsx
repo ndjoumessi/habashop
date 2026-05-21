@@ -789,40 +789,32 @@ export default function Customers() {
                 </div>
             }
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <ViewField label="Nom / Enseigne" value={editCustForm.name} editing={custEditMode}>
-                  <input className="input text-sm" value={editCustForm.name}
-                    onChange={e => setEditCustForm(f => ({...f, name:e.target.value}))} />
-                </ViewField>
-              </div>
-              <ViewField label="Type" value={editCustForm.type} editing={custEditMode}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <ViewField label="NOM / ENSEIGNE" value={editCustForm.name} fullWidth editing={custEditMode}>
+                <input className="input text-sm" value={editCustForm.name}
+                  onChange={e => setEditCustForm(f => ({...f, name:e.target.value}))} />
+              </ViewField>
+              <ViewField label="TYPE" value={editCustForm.type} editing={custEditMode}>
                 <select className="input text-sm" value={editCustForm.type}
                   onChange={e => setEditCustForm(f => ({...f, type:e.target.value as ClientType}))}>
                   <option>Grossiste</option><option>Semi-gros</option><option>Fidèle</option><option>Détail</option>
                 </select>
               </ViewField>
-              <ViewField label="Téléphone" value={editCustForm.phone||'—'} editing={custEditMode}>
+              <ViewField label="TÉLÉPHONE" value={editCustForm.phone||''} icon="📞" editing={custEditMode}>
                 <PhoneInput value={editCustForm.phone} onChange={v => setEditCustForm(f => ({...f, phone:v}))} />
               </ViewField>
-              <div className="col-span-2">
-                <ViewField label="Email" value={editCustForm.email||'—'} editing={custEditMode}>
-                  <input className="input text-sm" type="email" value={editCustForm.email}
-                    onChange={e => setEditCustForm(f => ({...f, email:e.target.value}))} />
-                </ViewField>
-              </div>
-              <div className="col-span-2">
-                <ViewField label="Adresse" value={editCustForm.address||'—'} editing={custEditMode}>
-                  <SmartAddressInput value={editCustForm.address}
-                    onChange={v => setEditCustForm(f => ({...f, address:v}))} lang={lang} />
-                </ViewField>
-              </div>
-              <div className="col-span-2">
-                <ViewField label="Notes" value={editCustForm.notes||'—'} editing={custEditMode}>
-                  <textarea className="input text-sm" rows={2} value={editCustForm.notes}
-                    onChange={e => setEditCustForm(f => ({...f, notes:e.target.value}))} />
-                </ViewField>
-              </div>
+              <ViewField label="EMAIL" value={editCustForm.email||''} fullWidth editing={custEditMode}>
+                <input className="input text-sm" type="email" value={editCustForm.email}
+                  onChange={e => setEditCustForm(f => ({...f, email:e.target.value}))} />
+              </ViewField>
+              <ViewField label="ADRESSE" value={editCustForm.address||''} fullWidth editing={custEditMode}>
+                <SmartAddressInput value={editCustForm.address}
+                  onChange={v => setEditCustForm(f => ({...f, address:v}))} lang={lang} />
+              </ViewField>
+              <ViewField label="NOTES" value={editCustForm.notes||''} fullWidth editing={custEditMode}>
+                <textarea className="input text-sm" rows={2} value={editCustForm.notes}
+                  onChange={e => setEditCustForm(f => ({...f, notes:e.target.value}))} />
+              </ViewField>
             </div>
 
             <div className="flex gap-2 mt-5">
@@ -833,7 +825,10 @@ export default function Customers() {
                 </>
               ) : (
                 <>
-                  <button className="btn btn-ghost" onClick={() => setCustEditMode(false)}>{t('btn_cancel')}</button>
+                  <button className="btn btn-ghost" onClick={() => {
+                    setEditCustForm({ name:editCustomer.name, type:editCustomer.type, phone:editCustomer.phone, email:editCustomer.email??'', address:editCustomer.address??'', notes:editCustomer.notes??'' })
+                    setCustEditMode(false)
+                  }}>{t('btn_cancel')}</button>
                   <button className="btn btn-primary flex-1 justify-center" onClick={async () => {
                     if (!editCustForm.name) { toast.error('Nom requis'); return }
                     try { await customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, notes: editCustForm.notes, type: editCustForm.type }) } catch {}

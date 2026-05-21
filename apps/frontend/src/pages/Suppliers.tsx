@@ -441,56 +441,48 @@ export default function Suppliers() {
                 </div>
             }
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <ViewField label="Nom / Raison sociale" value={editSuppForm.name} editing={suppEditMode}>
-                  <input className="input text-sm" value={editSuppForm.name}
-                    onChange={e => setEditSuppForm(p => ({...p, name:e.target.value}))} />
-                </ViewField>
-              </div>
-              <ViewField label="Contact principal" value={editSuppForm.contact||'—'} editing={suppEditMode}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <ViewField label="NOM / RAISON SOCIALE" value={editSuppForm.name} fullWidth editing={suppEditMode}>
+                <input className="input text-sm" value={editSuppForm.name}
+                  onChange={e => setEditSuppForm(p => ({...p, name:e.target.value}))} />
+              </ViewField>
+              <ViewField label="CONTACT PRINCIPAL" value={editSuppForm.contact||''} editing={suppEditMode}>
                 <input className="input text-sm" value={editSuppForm.contact}
                   onChange={e => setEditSuppForm(p => ({...p, contact:e.target.value}))} />
               </ViewField>
-              <ViewField label="Email" value={editSuppForm.email||'—'} editing={suppEditMode}>
+              <ViewField label="EMAIL" value={editSuppForm.email||''} editing={suppEditMode}>
                 <input className="input text-sm" value={editSuppForm.email}
                   onChange={e => setEditSuppForm(p => ({...p, email:e.target.value}))} />
               </ViewField>
-              <div className="col-span-2">
-                <ViewField label="Catégories (séparées par ,)" value={editSuppForm.categories||'—'} editing={suppEditMode}>
-                  <input className="input text-sm" value={editSuppForm.categories}
-                    onChange={e => setEditSuppForm(p => ({...p, categories:e.target.value}))} />
-                </ViewField>
-              </div>
-              <div className="col-span-2">
-                <ViewField label="Adresse" value={editSuppForm.address||'—'} editing={suppEditMode}>
-                  <AddressAutocomplete value={editSuppForm.address}
-                    onChange={v => setEditSuppForm(p => ({...p, address:v}))} />
-                </ViewField>
-              </div>
-              <ViewField label="Téléphone" value={editSuppForm.phone||'—'} editing={suppEditMode}>
+              <ViewField label="CATÉGORIES (séparées par ,)" value={editSuppForm.categories||''} fullWidth editing={suppEditMode}>
+                <input className="input text-sm" value={editSuppForm.categories}
+                  onChange={e => setEditSuppForm(p => ({...p, categories:e.target.value}))} />
+              </ViewField>
+              <ViewField label="ADRESSE" value={editSuppForm.address||''} fullWidth editing={suppEditMode}>
+                <AddressAutocomplete value={editSuppForm.address}
+                  onChange={v => setEditSuppForm(p => ({...p, address:v}))} />
+              </ViewField>
+              <ViewField label="TÉLÉPHONE" value={editSuppForm.phone||''} icon="📞" editing={suppEditMode}>
                 <input className="input" type="tel" placeholder="+221 77 000 00 00" value={editSuppForm.phone} onChange={e => setEditSuppForm(p => ({...p, phone:e.target.value}))} />
               </ViewField>
-              <ViewField label="Délai livraison (jours)" value={`${editSuppForm.leadTime} jours`} editing={suppEditMode}>
+              <ViewField label="DÉLAI LIVRAISON" value={`${editSuppForm.leadTime} jours`} editing={suppEditMode}>
                 <input className="input text-sm" type="number" value={editSuppForm.leadTime}
                   onChange={e => setEditSuppForm(p => ({...p, leadTime:+e.target.value}))} />
               </ViewField>
-              <ViewField label="Note (1-5)" value={`${editSuppForm.rating}/5`} editing={suppEditMode}>
+              <ViewField label="NOTE" value={`${editSuppForm.rating}/5`} editing={suppEditMode}>
                 <input className="input text-sm" type="number" min={1} max={5} value={editSuppForm.rating}
                   onChange={e => setEditSuppForm(p => ({...p, rating:+e.target.value}))} />
               </ViewField>
-              <ViewField label="Statut" value={editSuppForm.status} editing={suppEditMode}>
+              <ViewField label="STATUT" value={editSuppForm.status} editing={suppEditMode}>
                 <select className="input text-sm" value={editSuppForm.status}
                   onChange={e => setEditSuppForm(p => ({...p, status:e.target.value as SupplierStatus}))}>
                   <option>Actif</option><option>Pause</option><option>Inactif</option>
                 </select>
               </ViewField>
-              <div className="col-span-2">
-                <ViewField label="Notes" value={editSuppForm.notes||'—'} editing={suppEditMode}>
-                  <textarea className="input text-sm" rows={2} value={editSuppForm.notes}
-                    onChange={e => setEditSuppForm(p => ({...p, notes:e.target.value}))} />
-                </ViewField>
-              </div>
+              <ViewField label="NOTES" value={editSuppForm.notes||''} fullWidth editing={suppEditMode}>
+                <textarea className="input text-sm" rows={2} value={editSuppForm.notes}
+                  onChange={e => setEditSuppForm(p => ({...p, notes:e.target.value}))} />
+              </ViewField>
             </div>
 
             <div className="flex gap-2 mt-5">
@@ -501,7 +493,10 @@ export default function Suppliers() {
                 </>
               ) : (
                 <>
-                  <button className="btn btn-ghost" onClick={() => setSuppEditMode(false)}>{t('btn_cancel')}</button>
+                  <button className="btn btn-ghost" onClick={() => {
+                    setEditSuppForm({ name:editSupplier.name, categories:editSupplier.categories.join(', '), phone:editSupplier.phone, email:editSupplier.email??'', address:editSupplier.address??'', contact:editSupplier.contact??'', leadTime:editSupplier.leadTime??3, rating:editSupplier.rating??3, status:editSupplier.status??'Actif', notes:editSupplier.notes??'' })
+                    setSuppEditMode(false)
+                  }}>{t('btn_cancel')}</button>
                   <button className="btn btn-primary flex-1 justify-center" onClick={async () => {
                     if (!editSuppForm.name) { toast.error('Nom requis'); return }
                     try { await suppliersApi.update(editSupplier.id, { name: editSuppForm.name, categories: editSuppForm.categories, phone: editSuppForm.phone, email: editSuppForm.email, address: editSuppForm.address, leadTime: editSuppForm.leadTime, rating: editSuppForm.rating, status: editSuppForm.status, notes: editSuppForm.notes }) } catch {}

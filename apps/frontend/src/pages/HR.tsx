@@ -1630,10 +1630,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   {lang==='fr'?'IDENTITÉ':'IDENTITY'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <ViewField label={lang==='fr'?'Nom complet *':'Full name *'} value={editEmpForm.name} editing={empEditMode}>
-                    <input className="input" placeholder="Aminata Diallo" value={editEmpForm.name??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, name:e.target.value }))} />
+                  <ViewField label={lang==='fr'?'NOM COMPLET *':'FULL NAME *'} value={editEmpForm.name??''} editing={empEditMode}>
+                    <input className="input" autoFocus placeholder="Aminata Diallo" value={editEmpForm.name??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, name:e.target.value }))} />
                   </ViewField>
-                  <ViewField label={lang==='fr'?'Poste *':'Position *'} value={editEmpForm.role} editing={empEditMode}>
+                  <ViewField label={lang==='fr'?'POSTE *':'POSITION *'} value={editEmpForm.role??''} editing={empEditMode}>
                     <input className="input" placeholder={lang==='fr'?'Ex: Caissière':'Ex: Cashier'} value={editEmpForm.role??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, role:e.target.value }))} />
                   </ViewField>
                 </div>
@@ -1646,27 +1646,27 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   {lang==='fr'?'CONTRAT':'CONTRACT'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <ViewField label={lang==='fr'?'Département':'Department'} value={editEmpForm.dept} editing={empEditMode}>
+                  <ViewField label={lang==='fr'?'DÉPARTEMENT':'DEPARTMENT'} value={editEmpForm.dept??''} editing={empEditMode}>
                     <select className="input" value={editEmpForm.dept??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, dept:e.target.value }))}>
                       {Object.keys(DEPT_COLORS).map(d => <option key={d}>{d}</option>)}
                     </select>
                   </ViewField>
-                  <ViewField label={lang==='fr'?'Type contrat':'Contract type'} value={editEmpForm.type} editing={empEditMode}>
+                  <ViewField label={lang==='fr'?'TYPE CONTRAT':'CONTRACT TYPE'} value={editEmpForm.type??'CDI'} editing={empEditMode}>
                     <select className="input" value={editEmpForm.type??'CDI'} onChange={e => setEditEmpForm((f:any) => ({ ...f, type:e.target.value }))}>
                       {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t => <option key={t}>{t}</option>)}
                     </select>
                   </ViewField>
-                  <ViewField label={lang==='fr'?'Date embauche':'Hire date'} value={displayDate(editEmpForm.hiredAt)} editing={empEditMode}>
+                  <ViewField label={lang==='fr'?'DATE EMBAUCHE':'HIRE DATE'} value={displayDate(editEmpForm.hiredAt)} editing={empEditMode}>
                     <input className="input" type="date" value={editEmpForm.hiredAt ?? ''} onChange={e => setEditEmpForm((f:any) => ({ ...f, hiredAt:e.target.value }))} />
                   </ViewField>
                   {editEmpForm.type === 'CDI' ? (
-                    <ViewField label={lang==='fr'?'Fin de contrat':'Contract end'} value={<span style={{ color:'var(--acc2)' }}>∞ {lang==='fr'?'Indéterminé':'Permanent'}</span>} editing={empEditMode}>
+                    <ViewField label={lang==='fr'?'FIN DE CONTRAT':'CONTRACT END'} value={lang==='fr'?'∞ Indéterminé':'∞ Permanent'} color="var(--acc2)" editing={empEditMode}>
                       <div style={{ padding:'10px 14px', background:'rgba(0,208,132,.06)', border:'1px solid rgba(0,208,132,.12)', borderRadius:12, fontSize:13, color:'var(--acc2)', fontWeight:600 }}>
                         ∞ {lang==='fr'?'Contrat à durée indéterminée':'Permanent contract'}
                       </div>
                     </ViewField>
                   ) : (
-                    <ViewField label={lang==='fr'?'Fin de contrat':'Contract end'} value={displayDate(editEmpForm.contractEnd)} editing={empEditMode}>
+                    <ViewField label={lang==='fr'?'FIN DE CONTRAT':'CONTRACT END'} value={displayDate(editEmpForm.contractEnd)} editing={empEditMode}>
                       <input className="input" type="date" value={editEmpForm.contractEnd??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, contractEnd:e.target.value }))} />
                     </ViewField>
                   )}
@@ -1682,6 +1682,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 <ViewField
                   label={lang==='fr'?`SALAIRE MENSUEL BRUT (${currency})`:`MONTHLY GROSS SALARY (${currency})`}
                   value={fmt(+salaryInput > 0 ? toXOF(+salaryInput) : (selectedEmp?.salary ?? 0))}
+                  mono
                   editing={empEditMode}>
                   <div style={{ position:'relative' }}>
                     <input className="input" type="number" placeholder="0"
@@ -1715,21 +1716,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   {lang==='fr'?'CONTACT':'CONTACT'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <ViewField label={lang==='fr'?'Téléphone':'Phone'} value={editEmpForm.phone||'—'} editing={empEditMode}>
+                  <ViewField label={lang==='fr'?'TÉLÉPHONE':'PHONE'} value={editEmpForm.phone||''} icon="📞" editing={empEditMode}>
                     <input className="input" type="tel" placeholder="+221 77 000 00 00" value={editEmpForm.phone??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, phone:e.target.value }))} />
                   </ViewField>
-                  <ViewField label="Email" value={editEmpForm.email||'—'} editing={empEditMode}>
+                  <ViewField label="EMAIL" value={editEmpForm.email||''} icon="✉️" editing={empEditMode}>
                     <input className="input" type="email" placeholder="nom@email.com" value={editEmpForm.email??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, email:e.target.value }))} />
                   </ViewField>
-                  <div style={{ gridColumn:'1/-1' }}>
-                    <ViewField label={lang==='fr'?'Adresse':'Address'} value={editEmpForm.address||'—'} editing={empEditMode}>
-                      <AddressAutocomplete
-                        value={editEmpForm.address??''}
-                        onChange={v => setEditEmpForm((f:any) => ({ ...f, address:v }))}
-                        placeholder={lang==='fr'?'Rue 10 × 23, Dakar, Sénégal':'Street address...'}
-                      />
-                    </ViewField>
-                  </div>
+                  <ViewField label={lang==='fr'?'ADRESSE':'ADDRESS'} value={editEmpForm.address||''} fullWidth editing={empEditMode}>
+                    <AddressAutocomplete
+                      value={editEmpForm.address??''}
+                      onChange={v => setEditEmpForm((f:any) => ({ ...f, address:v }))}
+                      placeholder={lang==='fr'?'Rue 10 × 23, Dakar, Sénégal':'Street address...'}
+                    />
+                  </ViewField>
                 </div>
               </div>
 
@@ -1739,30 +1738,40 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,184,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>⭐</div>
                   PERFORMANCE
                 </div>
-                <div style={{ display:'flex', gap:4, alignItems:'center' }}>
-                  {[1,2,3,4,5].map(s => (
-                    <button key={s} type="button"
-                      onClick={() => empEditMode && setEditEmpForm((f:any) => ({ ...f, perf:s }))}
-                      style={{ fontSize:28, background:'none', border:'none', cursor: empEditMode ? 'pointer' : 'default', padding:'2px', opacity: s<=(editEmpForm.perf??3)?1:.2, transform: s<=(editEmpForm.perf??3)?'scale(1.1)':'scale(1)', transition:'all .1s', lineHeight:1 }}>⭐</button>
-                  ))}
-                  <span style={{ fontSize:12, color:'var(--text3)', marginLeft:6 }}>{editEmpForm.perf??3}/5</span>
-                </div>
+                {empEditMode ? (
+                  <div style={{ display:'flex', gap:4 }}>
+                    {[1,2,3,4,5].map(s => (
+                      <button key={s} type="button"
+                        onClick={() => setEditEmpForm((f:any) => ({ ...f, perf:s }))}
+                        style={{ fontSize:24, background:'none', border:'none', cursor:'pointer', padding:'2px', opacity: s<=(editEmpForm.perf??3)?1:.2, lineHeight:1 }}>⭐</button>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ display:'flex', gap:2, alignItems:'center' }}>
+                    {[1,2,3,4,5].map(s => (
+                      <span key={s} style={{ fontSize:18, opacity: s<=(editEmpForm.perf??3)?1:.15 }}>⭐</span>
+                    ))}
+                    <span style={{ fontSize:12, color:'var(--text3)', marginLeft:6 }}>{editEmpForm.perf??3}/5</span>
+                  </div>
+                )}
               </div>
 
-              {/* Couleur */}
-              <div>
-                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
-                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>🎨</div>
-                  {lang==='fr'?'COULEUR AVATAR':'AVATAR COLOR'}
+              {/* Couleur avatar — visible uniquement en édition */}
+              {empEditMode && (
+                <div>
+                  <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+                    <div style={{ width:16, height:16, borderRadius:4, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>🎨</div>
+                    {lang==='fr'?'COULEUR AVATAR':'AVATAR COLOR'}
+                  </div>
+                  <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                    {['#6C47FF','#00B8FF','#00D084','#FF9500','#FF3B5C','#F472B6','#A991FF','#FFB800'].map(col => (
+                      <button key={col} type="button"
+                        onClick={() => setEditEmpForm((f:any) => ({ ...f, color:col }))}
+                        style={{ width:28, height:28, borderRadius:'50%', background:col, border:'3px solid', borderColor: editEmpForm.color===col?'#fff':'transparent', cursor:'pointer', padding:0, boxShadow: editEmpForm.color===col?`0 0 0 3px ${col}`:'none', transition:'all .15s' }} />
+                    ))}
+                  </div>
                 </div>
-                <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                  {['#6C47FF','#00B8FF','#00D084','#FF9500','#FF3B5C','#F472B6','#A991FF','#FFB800'].map(col => (
-                    <button key={col} type="button"
-                      onClick={() => empEditMode && setEditEmpForm((f:any) => ({ ...f, color:col }))}
-                      style={{ width:32, height:32, borderRadius:'50%', background:col, border:'3px solid', borderColor: editEmpForm.color===col?'#fff':'transparent', cursor: empEditMode ? 'pointer' : 'default', padding:0, boxShadow: editEmpForm.color===col?`0 0 0 3px ${col}`:'none', transition:'all .15s', transform: editEmpForm.color===col?'scale(1.2)':'scale(1)' }} />
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
 
             {/* FOOTER */}
@@ -1770,20 +1779,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {!empEditMode ? (
                 <>
                   <button onClick={() => setEmpEditMode(true)}
-                    style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'},${editEmpForm.color??'#6C47FF'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', boxShadow:`0 4px 16px ${editEmpForm.color??'#6C47FF'}40`, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                    style={{ flex:1, padding:'12px', background:'linear-gradient(135deg,var(--p),var(--p2))', border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'var(--sh-p)' }}>
                     ✏️ {lang==='fr'?'Modifier':'Edit'}
                   </button>
-                  <button
-                    onClick={() => {
-                      if (window.confirm(lang==='fr'?`Supprimer ${selectedEmp!.name} ?`:`Delete ${selectedEmp!.name}?`)) {
-                        setEmployees(prev => prev.filter(e=>e.id!==selectedEmp!.id))
-                        setShowEditEmpModal(false)
-                        toast.success(lang==='fr'?'🗑 Employé supprimé':'🗑 Employee deleted')
-                      }
-                    }}
-                    style={{ width:44, padding:'12px', background:'rgba(255,59,92,.1)', border:'1px solid rgba(255,59,92,.2)', borderRadius:12, cursor:'pointer', color:'var(--danger)', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>🗑</button>
                   <button onClick={() => setShowEditEmpModal(false)}
-                    style={{ padding:'12px 16px', background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
+                    style={{ padding:'12px 18px', background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
                     {lang==='fr'?'Fermer':'Close'}
                   </button>
                 </>
@@ -1792,28 +1792,38 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   <button
                     onClick={async () => {
                       if (!editEmpForm.name?.trim()) { toast.error(lang==='fr'?'Nom requis':'Name required'); return }
-                      const avatar = editEmpForm.name.split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()
-                      const salaryXOF = Math.round(toXOF(+salaryInput || 0))
-                      const dataToSave = { ...editEmpForm, avatar, active: editEmpForm.isActive, salary: salaryXOF }
+                      const avatar = (editEmpForm.name||'??').split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()
+                      const salaryXOF = toXOF(+salaryInput || 0)
+                      const data = { ...editEmpForm, avatar, salary: Math.round(salaryXOF) }
                       try {
                         await employeesApi.update(String(selectedEmp!.id), {
-                          ...dataToSave,
-                          hiredAt: dataToSave.hiredAt ? new Date(dataToSave.hiredAt).toISOString() : undefined,
+                          ...data,
+                          hiredAt: data.hiredAt ? new Date(data.hiredAt).toISOString() : undefined,
                         })
-                        toast.success('✅ '+(lang==='fr'?'Employé sauvegardé !':'Employee saved!'))
+                        setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {...e, ...data, avatar} : e))
+                        toast.success('✅ '+(lang==='fr'?'Sauvegardé !':'Saved!'))
                       } catch {
-                        toast.success('✅ '+(lang==='fr'?'Sauvegardé localement':'Saved locally'))
+                        setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {...e, ...data, avatar} : e))
+                        toast.success('✅ Local')
                       }
-                      setEmployees(prev => prev.map(e => e.id===selectedEmp!.id ? {...e, ...dataToSave} : e))
+                      setEmpEditMode(false)
                       setShowEditEmpModal(false)
                     }}
-                    style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'},${editEmpForm.color??'#6C47FF'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', boxShadow:`0 4px 16px ${editEmpForm.color??'#6C47FF'}40`, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-                    ✅ {lang==='fr'?'Sauvegarder':'Save changes'}
+                    style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'},${editEmpForm.color??'#6C47FF'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                    ✅ {lang==='fr'?'Sauvegarder':'Save'}
                   </button>
-                  <button onClick={() => setEmpEditMode(false)}
+                  <button onClick={() => { openEditModal(selectedEmp!) }}
                     style={{ padding:'12px 16px', background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
                     {lang==='fr'?'Annuler':'Cancel'}
                   </button>
+                  <button
+                    onClick={() => {
+                      if (!window.confirm(lang==='fr'?`Supprimer ${selectedEmp!.name} ?`:`Delete ${selectedEmp!.name}?`)) return
+                      setEmployees((prev: Employee[]) => prev.filter(e=>e.id!==selectedEmp!.id))
+                      setShowEditEmpModal(false)
+                      toast.success('🗑 '+(lang==='fr'?'Supprimé':'Deleted'))
+                    }}
+                    style={{ width:44, padding:'12px', background:'rgba(255,59,92,.1)', border:'1px solid rgba(255,59,92,.2)', borderRadius:12, cursor:'pointer', color:'var(--danger)', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>🗑</button>
                 </>
               )}
             </div>

@@ -437,22 +437,24 @@ export default function Stock() {
             {modalTab === 'general' && (
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                 {/* ── IMAGE ── */}
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Image</label>
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
-                    {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🫧','📦'].map(em => (
-                      <button key={em} type="button" onClick={() => setForm(f => ({...f, image:em}))} style={{
-                        width:40, height:40, borderRadius:10, fontSize:20,
-                        background: form.image === em ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
-                        border:`1.5px solid ${form.image === em ? 'var(--p2)' : 'var(--border)'}`,
-                        cursor:'pointer', transition:'all .15s',
-                      }}>{em}</button>
-                    ))}
+                {productEditMode && (
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>IMAGE</label>
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
+                      {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🫧','📦'].map(em => (
+                        <button key={em} type="button" onClick={() => setForm(f => ({...f, image:em}))} style={{
+                          width:40, height:40, borderRadius:10, fontSize:20,
+                          background: form.image === em ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
+                          border:`1.5px solid ${form.image === em ? 'var(--p2)' : 'var(--border)'}`,
+                          cursor:'pointer', transition:'all .15s',
+                        }}>{em}</button>
+                      ))}
+                    </div>
+                    <input className="input text-sm" placeholder="Ou tapez un emoji personnalisé..."
+                      value={form.image} onChange={e => setForm(f => ({...f, image:e.target.value}))}
+                      style={{ fontSize:18, width:220 }} />
                   </div>
-                  <input className="input text-sm" placeholder="Ou tapez un emoji personnalisé..."
-                    value={form.image} onChange={e => setForm(f => ({...f, image:e.target.value}))}
-                    style={{ fontSize:18, width:220 }} />
-                </div>
+                )}
 
                 {/* ── NOM PRODUIT — pleine largeur ── */}
                 <ViewField label="Nom du produit *" value={`${form.image} ${form.name}`} editing={productEditMode}>
@@ -487,23 +489,20 @@ export default function Stock() {
                 </div>
 
                 {/* ── Code-barres + scanner ── */}
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Code-barres</label>
+                <ViewField label="CODE-BARRES" value={form.barcode||''} editing={productEditMode}>
                   <div style={{ display:'flex', gap:8 }}>
                     <input className="input text-sm" style={{ flex:1 }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
                     <button type="button" className="mini-btn" onClick={() => setShowScanner(true)}
                       title="Scanner un code-barres" style={{ padding:'8px 14px', fontSize:18 }}>📷</button>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Description</label>
+                </ViewField>
+                <ViewField label="DESCRIPTION" value={form.description||''} editing={productEditMode}>
                   <textarea className="input text-sm" rows={2} placeholder="Description courte..."
                     value={form.description} onChange={e => setForm(f => ({...f, description:e.target.value}))} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Notes internes</label>
+                </ViewField>
+                <ViewField label="NOTES INTERNES" value={form.notes||''} editing={productEditMode}>
                   <input className="input text-sm" placeholder="Remarques..." value={form.notes} onChange={e => setForm(f => ({...f, notes:e.target.value}))} />
-                </div>
+                </ViewField>
               </div>
             )}
 
@@ -558,15 +557,13 @@ export default function Stock() {
                   </button>
                 </div>
                 {form.hasPromotion && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix promotion</label>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                    <ViewField label="PRIX PROMOTION" value={form.promotionPrice ? fmt(form.promotionPrice) : ''} editing={productEditMode}>
                       <input className="input text-sm" type="number" value={form.promotionPrice || ''} onChange={e => setForm(f => ({...f, promotionPrice:+e.target.value}))} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Date fin promo</label>
+                    </ViewField>
+                    <ViewField label="DATE FIN PROMO" value={form.promotionEnd||''} editing={productEditMode}>
                       <input className="input text-sm" type="date" value={form.promotionEnd} onChange={e => setForm(f => ({...f, promotionEnd:e.target.value}))} />
-                    </div>
+                    </ViewField>
                   </div>
                 )}
               </div>
@@ -583,27 +580,24 @@ export default function Stock() {
                       <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{tog.label}</div>
                       <div style={{ fontSize:11, color:'var(--text3)' }}>{tog.sub}</div>
                     </div>
-                    <button onClick={() => setForm(f => ({...f, [tog.key]:!f[tog.key]}))} style={{
+                    <button onClick={() => productEditMode && setForm(f => ({...f, [tog.key]:!f[tog.key]}))} style={{
                       width:48, height:26, borderRadius:99, position:'relative',
-                      background: form[tog.key] ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor:'pointer',
+                      background: form[tog.key] ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor: productEditMode ? 'pointer' : 'default',
                     }}>
                       <div style={{ position:'absolute', top:3, left: form[tog.key] ? 25 : 3, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
                     </button>
                   </div>
                 ))}
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Référence interne</label>
+                <ViewField label="RÉFÉRENCE INTERNE" value="" editing={productEditMode}>
                   <input className="input text-sm" placeholder="Référence optionnelle..." />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Poids (g)</label>
+                </ViewField>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                  <ViewField label="POIDS (g)" value="" editing={productEditMode}>
                     <input className="input text-sm" type="number" placeholder="Ex: 500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Dimensions</label>
+                  </ViewField>
+                  <ViewField label="DIMENSIONS" value="" editing={productEditMode}>
                     <input className="input text-sm" placeholder="L × l × h cm" />
-                  </div>
+                  </ViewField>
                 </div>
               </div>
             )}
@@ -622,10 +616,15 @@ export default function Stock() {
                   <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct}>
                     ✅ {editingSku ? 'Enregistrer les modifications' : `${t('btn_add')} le produit`}
                   </button>
-                  {editingSku
-                    ? <button className="btn btn-ghost" onClick={() => setProductEditMode(false)}>{t('btn_cancel')}</button>
-                    : <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>{t('btn_cancel')}</button>
-                  }
+                  {editingSku ? (
+                    <button className="btn btn-ghost" onClick={() => {
+                      const p = products.find(p => p.sku === editingSku)
+                      if (p) setForm(f => ({ ...f, sku:p.sku, name:p.name.replace(/^\S+\s/,''), category:p.category, buy:p.buy, sell:p.sell, stock:p.stock, threshold:p.threshold, supplier:p.supplier, image:p.name.match(/^\S+/)?.[0]??'📦' }))
+                      setProductEditMode(false)
+                    }}>{t('btn_cancel')}</button>
+                  ) : (
+                    <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>{t('btn_cancel')}</button>
+                  )}
                 </>
               )}
             </div>
