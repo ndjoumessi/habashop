@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { suppliersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star } from 'lucide-react'
+import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
@@ -140,6 +141,7 @@ export default function Suppliers() {
   })
   const [editSupplier,     setEditSupplier]     = useState<Supplier | null>(null)
   const [showEditSuppModal, setShowEditSuppModal] = useState(false)
+  const [suppEditMode,     setSuppEditMode]     = useState(false)
   const [editSuppForm,     setEditSuppForm]     = useState({
     name: '', categories: '', phone: '', email: '', address: '',
     contact: '', leadTime: 5, rating: 4, status: 'Actif' as SupplierStatus, notes: '',
@@ -312,6 +314,7 @@ export default function Suppliers() {
                           leadTime: s.leadTime ?? 3, rating: s.rating ?? 3,
                           status: s.status ?? 'Actif', notes: s.notes ?? '',
                         })
+                        setSuppEditMode(false)
                         setShowEditSuppModal(true)
                       }}>✏️</button>
                       <button className="btn btn-sm"
@@ -417,69 +420,101 @@ export default function Suppliers() {
       {showEditSuppModal && editSupplier && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowEditSuppModal(false)}>
           <div className="modal-box" style={{ maxWidth: 540 }}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>✏️ Modifier — {editSupplier.name}</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>🏭 {editSupplier.name}</h3>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowEditSuppModal(false)}><X size={14} /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label:'Nom / Raison sociale', key:'name',       span:true  },
-                { label:'Contact principal',     key:'contact',    span:false },
-                { label:'Email',                 key:'email',      span:false },
-                { label:'Catégories (séparées par ,)', key:'categories', span:true },
-              ].map(f => (
-                <div key={f.key} className={f.span ? 'col-span-2' : ''}>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
-                  <input className="input text-sm"
-                    value={(editSuppForm as Record<string,string|number>)[f.key] as string}
-                    onChange={e => setEditSuppForm(p => ({...p, [f.key]:e.target.value}))} />
+
+            {/* Mode banner */}
+            {!suppEditMode
+              ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
+                  <span style={{ fontSize:13 }}>👁</span>
+                  <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>
+                    {t('lang') === 'en' ? 'View mode — click Edit to make changes' : 'Mode visualisation — cliquez sur Modifier pour éditer'}
+                  </span>
                 </div>
-              ))}
+              : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
+                  <span style={{ fontSize:13 }}>✏️</span>
+                  <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>
+                    Mode édition — modifications non sauvegardées
+                  </span>
+                </div>
+            }
+
+            <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Adresse</label>
-                <AddressAutocomplete value={editSuppForm.address}
-                  onChange={v => setEditSuppForm(p => ({...p, address:v}))} />
+                <ViewField label="Nom / Raison sociale" value={editSuppForm.name} editing={suppEditMode}>
+                  <input className="input text-sm" value={editSuppForm.name}
+                    onChange={e => setEditSuppForm(p => ({...p, name:e.target.value}))} />
+                </ViewField>
               </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Téléphone</label>
+              <ViewField label="Contact principal" value={editSuppForm.contact||'—'} editing={suppEditMode}>
+                <input className="input text-sm" value={editSuppForm.contact}
+                  onChange={e => setEditSuppForm(p => ({...p, contact:e.target.value}))} />
+              </ViewField>
+              <ViewField label="Email" value={editSuppForm.email||'—'} editing={suppEditMode}>
+                <input className="input text-sm" value={editSuppForm.email}
+                  onChange={e => setEditSuppForm(p => ({...p, email:e.target.value}))} />
+              </ViewField>
+              <div className="col-span-2">
+                <ViewField label="Catégories (séparées par ,)" value={editSuppForm.categories||'—'} editing={suppEditMode}>
+                  <input className="input text-sm" value={editSuppForm.categories}
+                    onChange={e => setEditSuppForm(p => ({...p, categories:e.target.value}))} />
+                </ViewField>
+              </div>
+              <div className="col-span-2">
+                <ViewField label="Adresse" value={editSuppForm.address||'—'} editing={suppEditMode}>
+                  <AddressAutocomplete value={editSuppForm.address}
+                    onChange={v => setEditSuppForm(p => ({...p, address:v}))} />
+                </ViewField>
+              </div>
+              <ViewField label="Téléphone" value={editSuppForm.phone||'—'} editing={suppEditMode}>
                 <input className="input" type="tel" placeholder="+221 77 000 00 00" value={editSuppForm.phone} onChange={e => setEditSuppForm(p => ({...p, phone:e.target.value}))} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Délai livraison (jours)</label>
+              </ViewField>
+              <ViewField label="Délai livraison (jours)" value={`${editSuppForm.leadTime} jours`} editing={suppEditMode}>
                 <input className="input text-sm" type="number" value={editSuppForm.leadTime}
                   onChange={e => setEditSuppForm(p => ({...p, leadTime:+e.target.value}))} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Note (1-5)</label>
+              </ViewField>
+              <ViewField label="Note (1-5)" value={`${editSuppForm.rating}/5`} editing={suppEditMode}>
                 <input className="input text-sm" type="number" min={1} max={5} value={editSuppForm.rating}
                   onChange={e => setEditSuppForm(p => ({...p, rating:+e.target.value}))} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Statut</label>
+              </ViewField>
+              <ViewField label="Statut" value={editSuppForm.status} editing={suppEditMode}>
                 <select className="input text-sm" value={editSuppForm.status}
                   onChange={e => setEditSuppForm(p => ({...p, status:e.target.value as SupplierStatus}))}>
                   <option>Actif</option><option>Pause</option><option>Inactif</option>
                 </select>
-              </div>
+              </ViewField>
               <div className="col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
-                <textarea className="input text-sm" rows={2} value={editSuppForm.notes}
-                  onChange={e => setEditSuppForm(p => ({...p, notes:e.target.value}))} />
+                <ViewField label="Notes" value={editSuppForm.notes||'—'} editing={suppEditMode}>
+                  <textarea className="input text-sm" rows={2} value={editSuppForm.notes}
+                    onChange={e => setEditSuppForm(p => ({...p, notes:e.target.value}))} />
+                </ViewField>
               </div>
             </div>
+
             <div className="flex gap-2 mt-5">
-              <button className="btn btn-ghost" onClick={() => setShowEditSuppModal(false)}>{t('btn_cancel')}</button>
-              <button className="btn btn-primary flex-1 justify-center" onClick={async () => {
-                if (!editSuppForm.name) { toast.error('Nom requis'); return }
-                try { await suppliersApi.update(editSupplier.id, { name: editSuppForm.name, categories: editSuppForm.categories, phone: editSuppForm.phone, email: editSuppForm.email, address: editSuppForm.address, leadTime: editSuppForm.leadTime, rating: editSuppForm.rating, status: editSuppForm.status, notes: editSuppForm.notes }) } catch {}
-                setSuppliers(prev => prev.map(s =>
-                  s.id === editSupplier.id
-                    ? { ...s, ...editSuppForm, categories: editSuppForm.categories.split(',').map(c => c.trim()).filter(Boolean) }
-                    : s
-                ))
-                setShowEditSuppModal(false)
-                toast.success(`✅ ${editSuppForm.name} mis à jour`)
-              }}>✅ Enregistrer</button>
+              {!suppEditMode ? (
+                <>
+                  <button className="btn btn-primary flex-1 justify-center" onClick={() => setSuppEditMode(true)}>✏️ Modifier</button>
+                  <button className="btn btn-ghost" onClick={() => setShowEditSuppModal(false)}>Fermer</button>
+                </>
+              ) : (
+                <>
+                  <button className="btn btn-ghost" onClick={() => setSuppEditMode(false)}>{t('btn_cancel')}</button>
+                  <button className="btn btn-primary flex-1 justify-center" onClick={async () => {
+                    if (!editSuppForm.name) { toast.error('Nom requis'); return }
+                    try { await suppliersApi.update(editSupplier.id, { name: editSuppForm.name, categories: editSuppForm.categories, phone: editSuppForm.phone, email: editSuppForm.email, address: editSuppForm.address, leadTime: editSuppForm.leadTime, rating: editSuppForm.rating, status: editSuppForm.status, notes: editSuppForm.notes }) } catch {}
+                    setSuppliers(prev => prev.map(s =>
+                      s.id === editSupplier.id
+                        ? { ...s, ...editSuppForm, categories: editSuppForm.categories.split(',').map(c => c.trim()).filter(Boolean) }
+                        : s
+                    ))
+                    setShowEditSuppModal(false)
+                    toast.success(`✅ ${editSuppForm.name} mis à jour`)
+                  }}>✅ Enregistrer</button>
+                </>
+              )}
             </div>
           </div>
         </div>

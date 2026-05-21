@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen } from 'lucide-react'
+import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
 import { productsApi } from '@/lib/api'
@@ -49,6 +50,7 @@ export default function Stock() {
   const [cat, setCat]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [productEditMode, setProductEditMode] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [editingSku, setEditingSku] = useState<string | null>(null)
   const [editingId,  setEditingId]  = useState<string | null>(null)
@@ -157,7 +159,7 @@ export default function Stock() {
           <h1 className="page-title">{t('nav_stock')}</h1>
           <p className="page-subtitle">{products.length} {lang === 'fr' ? 'articles en catalogue' : 'items in catalog'}</p>
         </div>
-        <button className="topbar-btn" onClick={() => { setEditingSku(null); setEditingId(null); setShowModal(true) }}>
+        <button className="topbar-btn" onClick={() => { setEditingSku(null); setEditingId(null); setProductEditMode(true); setShowModal(true) }}>
           <Plus size={14} /> {lang === 'fr' ? 'Nouveau produit' : 'New product'}
         </button>
       </div>
@@ -252,7 +254,7 @@ export default function Stock() {
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { setSelectedForLabel(products.map(p => p.sku)); setShowLabelModal(true) }}>
               🏷️ {lang === 'fr' ? 'Étiquettes' : 'Labels'}
             </button>
-            <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowModal(true)}>
+            <button className="btn btn-primary btn-sm gap-1.5" onClick={() => { setProductEditMode(true); setShowModal(true) }}>
               <Plus size={13} /> {t('btn_add')}
             </button>
           </div>
@@ -325,6 +327,7 @@ export default function Stock() {
                             setEditingSku(p.sku)
                             setEditingId(p._id ?? null)
                             setModalTab('general')
+                            setProductEditMode(false)
                             setShowModal(true)
                           }}>✏️</button>
                       </div>
@@ -388,10 +391,26 @@ export default function Stock() {
             {/* Fixed header */}
             <div className="flex items-center justify-between" style={{ padding:'20px 24px 0', flexShrink:0 }}>
               <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>
-                {editingSku ? `✏️ Modifier — ${form.name || editingSku}` : `➕ ${t('btn_new')} produit`}
+                {editingSku ? `📦 ${form.name || editingSku}` : `➕ ${t('btn_new')} produit`}
               </h3>
               <button className="btn btn-ghost btn-sm" onClick={() => { setShowModal(false); resetForm() }}>✕</button>
             </div>
+
+            {/* Mode banner (edit only, not for new products) */}
+            {editingSku && (
+              <div style={{ padding:'0 24px', flexShrink:0, marginTop:12 }}>
+                {!productEditMode
+                  ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
+                      <span style={{ fontSize:13 }}>👁</span>
+                      <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>Mode visualisation — cliquez sur Modifier pour éditer</span>
+                    </div>
+                  : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
+                      <span style={{ fontSize:13 }}>✏️</span>
+                      <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>Mode édition — modifications non sauvegardées</span>
+                    </div>
+                }
+              </div>
+            )}
 
             {/* Fixed tabs */}
             <div style={{ padding:'16px 24px 0', flexShrink:0 }}>
@@ -436,40 +455,35 @@ export default function Stock() {
                 </div>
 
                 {/* ── NOM PRODUIT — pleine largeur ── */}
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom du produit *</label>
+                <ViewField label="Nom du produit *" value={`${form.image} ${form.name}`} editing={productEditMode}>
                   <input className="input" placeholder="Ex: Riz parfumé 5kg"
                     value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))}
                     style={{ width:'100%', fontSize:15, fontWeight:600 }}
                     autoFocus />
-                </div>
+                </ViewField>
 
                 {/* ── SKU + Catégorie ── */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>SKU (auto si vide)</label>
+                  <ViewField label="SKU" value={form.sku||'—'} editing={productEditMode}>
                     <input className="input text-sm" placeholder="PRD-001" value={form.sku} onChange={e => setForm(f => ({...f, sku:e.target.value}))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Catégorie</label>
+                  </ViewField>
+                  <ViewField label="Catégorie" value={form.category} editing={productEditMode}>
                     <select className="input text-sm" value={form.category} onChange={e => setForm(f => ({...f, category:e.target.value}))}>
                       {categories.map(c => <option key={c.id}>{c.icon} {c.name}</option>)}
                     </select>
-                  </div>
+                  </ViewField>
                 </div>
 
                 {/* ── Unité + Fournisseur ── */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Unité</label>
+                  <ViewField label="Unité" value={form.unit} editing={productEditMode}>
                     <select className="input text-sm" value={form.unit} onChange={e => setForm(f => ({...f, unit:e.target.value}))}>
                       {['unité','kg','g','litre','ml','carton','sac','boîte','palette','douzaine'].map(u => <option key={u}>{u}</option>)}
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Fournisseur</label>
+                  </ViewField>
+                  <ViewField label="Fournisseur" value={form.supplier||'—'} editing={productEditMode}>
                     <input className="input text-sm" placeholder="SENRIZ, SONACO..." value={form.supplier} onChange={e => setForm(f => ({...f, supplier:e.target.value}))} />
-                  </div>
+                  </ViewField>
                 </div>
 
                 {/* ── Code-barres + scanner ── */}
@@ -497,22 +511,18 @@ export default function Stock() {
             {modalTab === 'prix' && (
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix achat HT *</label>
+                  <ViewField label="Prix achat HT *" value={fmt(form.buy)} editing={productEditMode}>
                     <input className="input text-sm" type="number" value={form.buy || ''} onChange={e => setForm(f => ({...f, buy:+e.target.value}))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix vente TTC *</label>
+                  </ViewField>
+                  <ViewField label="Prix vente TTC *" value={fmt(form.sell)} editing={productEditMode}>
                     <input className="input text-sm" type="number" value={form.sell || ''} onChange={e => setForm(f => ({...f, sell:+e.target.value}))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix grossiste</label>
+                  </ViewField>
+                  <ViewField label="Prix grossiste" value={form.priceWholesale ? fmt(form.priceWholesale) : '—'} editing={productEditMode}>
                     <input className="input text-sm" type="number" value={form.priceWholesale || ''} onChange={e => setForm(f => ({...f, priceWholesale:+e.target.value}))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Prix demi-grossiste</label>
+                  </ViewField>
+                  <ViewField label="Prix demi-grossiste" value={form.priceSemiWholesale ? fmt(form.priceSemiWholesale) : '—'} editing={productEditMode}>
                     <input className="input text-sm" type="number" value={form.priceSemiWholesale || ''} onChange={e => setForm(f => ({...f, priceSemiWholesale:+e.target.value}))} />
-                  </div>
+                  </ViewField>
                 </div>
                 {/* Marge calculée */}
                 {form.buy > 0 && form.sell > 0 && (
@@ -522,20 +532,17 @@ export default function Stock() {
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Stock initial *</label>
+                  <ViewField label="Stock initial *" value={String(form.stock)} editing={productEditMode}>
                     <input className="input text-sm" type="number" value={form.stock || ''} onChange={e => setForm(f => ({...f, stock:+e.target.value}))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Seuil alerte *</label>
+                  </ViewField>
+                  <ViewField label="Seuil alerte *" value={String(form.threshold)} editing={productEditMode}>
                     <input className="input text-sm" type="number" value={form.threshold || ''} onChange={e => setForm(f => ({...f, threshold:+e.target.value}))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Taux TVA</label>
+                  </ViewField>
+                  <ViewField label="Taux TVA" value={`${form.taxRate} %`} editing={productEditMode}>
                     <select className="input text-sm" value={form.taxRate} onChange={e => setForm(f => ({...f, taxRate:+e.target.value}))}>
                       {[0,5,10,18,20].map(r => <option key={r} value={r}>{r} %</option>)}
                     </select>
-                  </div>
+                  </ViewField>
                 </div>
                 {/* Toggle promotion */}
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
@@ -605,10 +612,22 @@ export default function Stock() {
 
             {/* Fixed footer */}
             <div className="flex gap-2" style={{ padding:'16px 24px 20px', flexShrink:0, borderTop:'1px solid var(--border)' }}>
-              <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct}>
-                ✅ {editingSku ? 'Enregistrer les modifications' : `${t('btn_add')} le produit`}
-              </button>
-              <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>{t('btn_cancel')}</button>
+              {editingSku && !productEditMode ? (
+                <>
+                  <button className="btn btn-primary flex-1 justify-center" onClick={() => setProductEditMode(true)}>✏️ Modifier</button>
+                  <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>Fermer</button>
+                </>
+              ) : (
+                <>
+                  <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct}>
+                    ✅ {editingSku ? 'Enregistrer les modifications' : `${t('btn_add')} le produit`}
+                  </button>
+                  {editingSku
+                    ? <button className="btn btn-ghost" onClick={() => setProductEditMode(false)}>{t('btn_cancel')}</button>
+                    : <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>{t('btn_cancel')}</button>
+                  }
+                </>
+              )}
             </div>
           </div>
         </div>
