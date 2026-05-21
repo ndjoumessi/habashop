@@ -7,6 +7,7 @@ import { Download, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
 import ViewField from '@/components/ui/ViewField'
+import ValidatedInput from '@/components/ui/ValidatedInput'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1631,7 +1632,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                   <ViewField label={lang==='fr'?'NOM COMPLET *':'FULL NAME *'} value={editEmpForm.name??''} editing={empEditMode}>
-                    <input className="input" autoFocus placeholder="Aminata Diallo" value={editEmpForm.name??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, name:e.target.value }))} />
+                    <ValidatedInput type="name" required autoFocus
+                      value={editEmpForm.name??''}
+                      onChange={val => setEditEmpForm((f:any) => ({ ...f, name:val }))}
+                      placeholder="Aminata Diallo" lang={lang} />
                   </ViewField>
                   <ViewField label={lang==='fr'?'POSTE *':'POSITION *'} value={editEmpForm.role??''} editing={empEditMode}>
                     <input className="input" placeholder={lang==='fr'?'Ex: Caissière':'Ex: Cashier'} value={editEmpForm.role??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, role:e.target.value }))} />
@@ -1717,10 +1721,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                   <ViewField label={lang==='fr'?'TÉLÉPHONE':'PHONE'} value={editEmpForm.phone||''} icon="📞" editing={empEditMode}>
-                    <input className="input" type="tel" placeholder="+221 77 000 00 00" value={editEmpForm.phone??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, phone:e.target.value }))} />
+                    <ValidatedInput type="phone"
+                      value={editEmpForm.phone??''}
+                      onChange={val => setEditEmpForm((f:any) => ({ ...f, phone:val }))}
+                      placeholder="+221 77 000 00 00" lang={lang} />
                   </ViewField>
                   <ViewField label="EMAIL" value={editEmpForm.email||''} icon="✉️" editing={empEditMode}>
-                    <input className="input" type="email" placeholder="nom@email.com" value={editEmpForm.email??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, email:e.target.value }))} />
+                    <ValidatedInput type="email"
+                      value={editEmpForm.email??''}
+                      onChange={val => setEditEmpForm((f:any) => ({ ...f, email:val }))}
+                      placeholder="nom@email.com" lang={lang} />
                   </ViewField>
                   <ViewField label={lang==='fr'?'ADRESSE':'ADDRESS'} value={editEmpForm.address||''} fullWidth editing={empEditMode}>
                     <AddressAutocomplete
@@ -2148,14 +2158,10 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
         <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label className="form-label">Nom complet *</label>
-              <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Prénom Nom" style={{ width: '100%', boxSizing: 'border-box' }} />
-            </div>
-            <div>
-              <label className="form-label">Poste *</label>
-              <input className="input" value={role} onChange={e => setRole(e.target.value)} placeholder="Ex: Caissière" style={{ width: '100%', boxSizing: 'border-box' }} />
-            </div>
+            <ValidatedInput type="name" required autoFocus label="Nom complet *"
+              value={name} onChange={setName} placeholder="Prénom Nom" />
+            <ValidatedInput type="text" required label="Poste *"
+              value={role} onChange={setRole} placeholder="Ex: Caissière" />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -2190,15 +2196,13 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
             )}
           </div>
 
-          <div>
-            <label className="form-label">Téléphone</label>
-            <input className="input" type="tel" placeholder="+221 77 000 00 00" value={phone} onChange={e => setPhone(e.target.value)} style={{ width:'100%', boxSizing:'border-box' }} />
-          </div>
+          <ValidatedInput type="phone" label="Téléphone"
+            value={phone} onChange={setPhone}
+            placeholder="+221 77 000 00 00" />
 
-          <div>
-            <label className="form-label">Email</label>
-            <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="prenom@boutique.com" style={{ width: '100%', boxSizing: 'border-box' }} />
-          </div>
+          <ValidatedInput type="email" label="Email"
+            value={email} onChange={setEmail}
+            placeholder="prenom@boutique.com" />
 
           <div>
             <label className="form-label">Performance</label>
@@ -2258,25 +2262,52 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
 // ─── SalaryRaiseForm ──────────────────────────────────────────────────────────
 
 function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
-  const [newSalary, setNewSalary] = useState(emp.salary)
-  const [reason, setReason]       = useState('')
-  const diff = newSalary - (Number(emp.salary)||0)
-  const pct  = Number(emp.salary) > 0 ? Math.round((diff/Number(emp.salary))*100) : 0
+  const fromXOF = useConvertFromXOF()
+  const toXOF   = useConvertToXOF()
+  const { currency, symbol, decimals } = useCurrencyInfo()
+
+  const oldSalaryXOF = Number(emp.salary) || 0
+  const [newSalaryInput, setNewSalaryInput] = useState(
+    fromXOF(oldSalaryXOF).toFixed(decimals)
+  )
+  const [reason, setReason] = useState('')
+
+  const newSalaryXOF = toXOF(+newSalaryInput || 0)
+  const diff = newSalaryXOF - oldSalaryXOF
+  const pct  = oldSalaryXOF > 0 ? Math.round((diff / oldSalaryXOF) * 100) : 0
 
   const lbl: React.CSSProperties = { display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-      <div style={{ padding:'12px 16px', background:'rgba(108,71,255,.06)', border:'1px solid rgba(108,71,255,.12)', borderRadius:10, display:'flex', justifyContent:'space-between' }}>
+      {/* Salaire actuel — affiché en devise courante via fmt() */}
+      <div style={{ padding:'12px 16px', background:'rgba(108,71,255,.06)', border:'1px solid rgba(108,71,255,.12)', borderRadius:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <span style={{ fontSize:12, color:'var(--text2)' }}>{lang==='fr' ? 'Salaire actuel' : 'Current salary'}</span>
-        <span style={{ fontFamily:'var(--mono)', fontWeight:800, color:'var(--text)' }}>{fmt(Number(emp.salary)||0)}</span>
+        <span style={{ fontFamily:'var(--mono)', fontWeight:800, fontSize:16, color:'var(--text)' }}>{fmt(oldSalaryXOF)}</span>
       </div>
       <div>
-        <label style={lbl}>{lang==='fr' ? 'NOUVEAU SALAIRE' : 'NEW SALARY'}</label>
-        <input className="input" type="number" value={newSalary} onChange={e => setNewSalary(+e.target.value)} />
-        {diff !== 0 && (
-          <div style={{ marginTop:6, fontSize:12, fontWeight:700, color: diff>0 ? 'var(--acc2)' : 'var(--danger)' }}>
-            {diff>0 ? '↑' : '↓'} {fmt(Math.abs(diff))} ({diff>0?'+':''}{pct}%)
+        <label style={lbl}>{lang==='fr' ? `NOUVEAU SALAIRE (${currency})` : `NEW SALARY (${currency})`}</label>
+        <div style={{ position:'relative' }}>
+          <ValidatedInput type="amount"
+            value={newSalaryInput}
+            onChange={setNewSalaryInput}
+            placeholder="0"
+            min={0}
+            decimals={decimals}
+            lang={lang}
+            style={{ paddingRight: 40 }}
+            autoFocus
+          />
+          <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none', fontWeight:600 }}>{symbol}</span>
+        </div>
+        {newSalaryInput && +newSalaryInput > 0 && (
+          <div style={{ marginTop:6, fontSize:11, display:'flex', gap:10, flexWrap:'wrap' }}>
+            <span style={{ color:'var(--text3)' }}>
+              {lang==='fr' ? 'Différence' : 'Difference'}{': '}
+              <strong style={{ color: diff >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
+                {diff >= 0 ? '+' : ''}{fmt(Math.abs(diff))} ({pct >= 0 ? '+' : ''}{pct}%)
+              </strong>
+            </span>
           </div>
         )}
       </div>
@@ -2285,7 +2316,10 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
         <input className="input" placeholder={lang==='fr' ? 'Ex: Promotion, Ancienneté...' : 'Ex: Promotion, Seniority...'} value={reason} onChange={e => setReason(e.target.value)} />
       </div>
       <div style={{ display:'flex', gap:8 }}>
-        <button className="btn btn-primary" style={{ flex:1 }} onClick={() => { if (newSalary <= 0) return; onConfirm(newSalary, reason || 'Augmentation') }}>
+        <button className="btn btn-primary" style={{ flex:1 }} onClick={() => {
+          if (!newSalaryInput || +newSalaryInput <= 0) return
+          onConfirm(newSalaryXOF, reason || 'Augmentation')
+        }}>
           ✅ {lang==='fr' ? 'Confirmer' : 'Confirm'}
         </button>
         <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang==='fr' ? 'Annuler' : 'Cancel'}</button>
@@ -2297,9 +2331,14 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
 // ─── BonusForm ────────────────────────────────────────────────────────────────
 
 function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
+  const toXOF  = useConvertToXOF()
+  const { currency, symbol } = useCurrencyInfo()
+
   const [targetEmpId, setTargetEmpId] = useState(emp?.id != null ? String(emp.id) : 'all')
-  const [amount, setAmount]           = useState(0)
+  const [amountInput, setAmountInput] = useState('')
   const [type, setType]               = useState('Performance')
+
+  const amountXOF = toXOF(+amountInput || 0)
 
   const BONUS_TYPES: Record<string, string[]> = {
     fr:['Performance','Ancienneté','Fête','Transport','Logement','Autre'],
@@ -2334,11 +2373,23 @@ function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
         </div>
       </div>
       <div>
-        <label style={lbl}>{lang==='fr' ? 'MONTANT' : 'AMOUNT'}</label>
-        <input className="input" type="number" placeholder="0" value={amount || ''} onChange={e => setAmount(+e.target.value)} />
+        <label style={lbl}>{lang==='fr' ? `MONTANT (${currency})` : `AMOUNT (${currency})`}</label>
+        <div style={{ position:'relative' }}>
+          <ValidatedInput type="amount"
+            value={amountInput}
+            onChange={setAmountInput}
+            placeholder="0"
+            min={0}
+            lang={lang}
+          />
+          <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none', fontWeight:600 }}>{symbol}</span>
+        </div>
       </div>
       <div style={{ display:'flex', gap:8 }}>
-        <button className="btn btn-primary" style={{ flex:1 }} onClick={() => { if (amount <= 0) return; onConfirm(targetEmpId, amount) }}>
+        <button className="btn btn-primary" style={{ flex:1 }} onClick={() => {
+          if (!amountInput || +amountInput <= 0) return
+          onConfirm(targetEmpId, amountXOF)
+        }}>
           ✅ {lang==='fr' ? 'Ajouter la prime' : 'Add bonus'}
         </button>
         <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang==='fr' ? 'Annuler' : 'Cancel'}</button>

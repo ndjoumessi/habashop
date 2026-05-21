@@ -646,6 +646,24 @@ const fr: TranslationMap = {
   settings_reset_warning: "Toutes vos préférences (thème, langue, devise, POS, stock, notifications, sécurité) seront remises aux valeurs par défaut.",
   settings_import_success: "✅ Configuration importée !",
   settings_import_error: "❌ Fichier de configuration invalide",
+
+  // RH — mode visu/édition
+  hr_view_mode: 'Mode visualisation — cliquez sur Modifier pour éditer',
+  hr_edit_mode: 'Mode édition — modifiez puis sauvegardez',
+  // RH — champs
+  hr_full_name: 'Nom complet',
+  hr_position: 'Poste',
+  hr_gross_salary: 'Salaire brut',
+  hr_net_salary: 'Salaire net',
+  hr_current_salary: 'Salaire actuel',
+  hr_new_salary: 'Nouveau salaire',
+  hr_raise: 'Augmentation',
+  hr_deductions: 'Retenues',
+  // Validation
+  val_required: 'Ce champ est requis',
+  val_phone_invalid: 'Numéro de téléphone invalide',
+  val_email_invalid: 'Email invalide',
+  val_number_invalid: 'Valeur numérique requise',
 }
 
 const en: TranslationMap = {
@@ -981,6 +999,21 @@ const en: TranslationMap = {
   settings_reset_warning: "All your preferences (theme, language, currency, POS, stock, notifications, security) will be reset to default values.",
   settings_import_success: "✅ Configuration imported!",
   settings_import_error: "❌ Invalid configuration file",
+
+  hr_view_mode: 'View mode — click Edit to modify',
+  hr_edit_mode: 'Edit mode — modify then save',
+  hr_full_name: 'Full name',
+  hr_position: 'Position',
+  hr_gross_salary: 'Gross salary',
+  hr_net_salary: 'Net salary',
+  hr_current_salary: 'Current salary',
+  hr_new_salary: 'New salary',
+  hr_raise: 'Raise',
+  hr_deductions: 'Deductions',
+  val_required: 'This field is required',
+  val_phone_invalid: 'Invalid phone number',
+  val_email_invalid: 'Invalid email',
+  val_number_invalid: 'Numeric value required',
 }
 
 const es: TranslationMap = {
@@ -1318,6 +1351,21 @@ const es: TranslationMap = {
   settings_reset_warning: "Todas sus preferencias (tema, idioma, divisa, TPV, stock, notificaciones, seguridad) volverán a sus valores predeterminados.",
   settings_import_success: "✅ ¡Configuración importada!",
   settings_import_error: "❌ Archivo de configuración inválido",
+
+  hr_view_mode: 'Modo visualización — haga clic en Editar para modificar',
+  hr_edit_mode: 'Modo edición — modifique y guarde',
+  hr_full_name: 'Nombre completo',
+  hr_position: 'Cargo',
+  hr_gross_salary: 'Salario bruto',
+  hr_net_salary: 'Salario neto',
+  hr_current_salary: 'Salario actual',
+  hr_new_salary: 'Nuevo salario',
+  hr_raise: 'Aumento',
+  hr_deductions: 'Deducciones',
+  val_required: 'Este campo es obligatorio',
+  val_phone_invalid: 'Número de teléfono inválido',
+  val_email_invalid: 'Email inválido',
+  val_number_invalid: 'Se requiere valor numérico',
 }
 
 const it: TranslationMap = {
@@ -1655,6 +1703,21 @@ const it: TranslationMap = {
   settings_reset_warning: "Tutte le impostazioni (tema, lingua, valuta, POS, stock, notifiche, sicurezza) torneranno ai valori predefiniti.",
   settings_import_success: "✅ Configurazione importata!",
   settings_import_error: "❌ File di configurazione non valido",
+
+  hr_view_mode: 'Modalità visualizzazione — clicca su Modifica per modificare',
+  hr_edit_mode: 'Modalità modifica — modifica poi salva',
+  hr_full_name: 'Nome completo',
+  hr_position: 'Posizione',
+  hr_gross_salary: 'Stipendio lordo',
+  hr_net_salary: 'Stipendio netto',
+  hr_current_salary: 'Stipendio attuale',
+  hr_new_salary: 'Nuovo stipendio',
+  hr_raise: 'Aumento',
+  hr_deductions: 'Detrazioni',
+  val_required: 'Campo obbligatorio',
+  val_phone_invalid: 'Numero di telefono non valido',
+  val_email_invalid: 'Email non valida',
+  val_number_invalid: 'Valore numerico richiesto',
 }
 
 export const translations: Record<Lang, TranslationMap> = { fr, en, es, it }

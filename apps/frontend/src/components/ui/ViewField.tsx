@@ -6,9 +6,9 @@ interface ViewFieldProps {
   icon?:      string
   mono?:      boolean
   color?:     string
-  editing:    boolean   // REQUIS — pas optionnel
+  editing:    boolean
   fullWidth?: boolean
-  children:   React.ReactNode  // input affiché SEULEMENT si editing=true
+  children:   React.ReactNode
 }
 
 export default function ViewField({
@@ -17,52 +17,49 @@ export default function ViewField({
 }: ViewFieldProps) {
 
   const labelStyle: React.CSSProperties = {
-    display:       'block',
-    fontSize:      10,
-    fontWeight:    800,
-    textTransform: 'uppercase',
-    letterSpacing: '.6px',
-    color:         'var(--text3)',
-    marginBottom:  6,
+    display:'block', fontSize:10, fontWeight:800,
+    textTransform:'uppercase', letterSpacing:'.6px',
+    color:'var(--text3)', marginBottom:5,
   }
 
   return (
-    <div style={fullWidth ? { gridColumn: '1/-1' } : {}}>
+    <div style={fullWidth ? {gridColumn:'1/-1'} : {}}>
       <label style={labelStyle}>{label}</label>
 
-      {editing ? (
-        // ── MODE ÉDITION : affiche l'input ──
-        <>{children}</>
-      ) : (
-        // ── MODE VISUALISATION : texte statique, pas d'input ──
+      {/* ÉDITION : affiche UNIQUEMENT les children */}
+      {editing === true && <>{children}</>}
+
+      {/* VISUALISATION : div statique, JAMAIS d'input dans le DOM */}
+      {editing !== true && (
         <div style={{
-          padding:      '10px 14px',
-          background:   'rgba(255,255,255,.03)',
-          border:       '1px solid rgba(255,255,255,.05)',
-          borderRadius: 10,
-          fontSize:     13,
-          fontWeight:   600,
-          color:        color ?? 'var(--text)',
-          fontFamily:   mono ? 'var(--mono)' : 'var(--font)',
-          minHeight:    42,
-          display:      'flex',
-          alignItems:   'center',
-          gap:          8,
-          userSelect:   'text',
-          cursor:       'default',
+          padding:'9px 13px',
+          background:'transparent',
+          border:'1px solid rgba(255,255,255,.06)',
+          borderRadius:10,
+          fontSize:13, fontWeight:500,
+          color: color ?? 'var(--text2)',
+          fontFamily: mono ? 'var(--mono)' : 'var(--font)',
+          minHeight:40,
+          display:'flex', alignItems:'center', gap:8,
+          userSelect:'text', cursor:'default',
+          letterSpacing: mono ? '-.2px' : 'normal',
         }}>
           {icon && (
-            <span style={{ fontSize: 14, flexShrink: 0 }}>{icon}</span>
+            <span style={{fontSize:13,flexShrink:0,opacity:.7}}>
+              {icon}
+            </span>
           )}
           <span style={{
-            flex:         1,
-            overflow:     'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace:   'nowrap',
+            flex:1, overflow:'hidden',
+            textOverflow:'ellipsis', whiteSpace:'nowrap',
           }}>
-            {value !== null && value !== undefined && value !== ''
+            {value !== null && value !== undefined && String(value).trim() !== ''
               ? value
-              : <span style={{ color: 'var(--text4)', fontStyle: 'italic' }}>—</span>
+              : (
+                <span style={{color:'var(--text4)',fontStyle:'italic',fontSize:12}}>
+                  Non renseigné
+                </span>
+              )
             }
           </span>
         </div>

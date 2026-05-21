@@ -4,6 +4,7 @@ import { expensesApi, salesApi } from '@/lib/api'
 import { Download, Plus, X, Search, Settings, TrendingDown, Clock, RefreshCw, BarChart2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
+import ValidatedInput from '@/components/ui/ValidatedInput'
 
 type Category = 'Loyer' | 'Énergie' | 'Transport' | 'Maintenance' | 'Fournitures' | 'Marketing' | 'Formation' | 'Autre'
 type ExpStatus = 'PAYÉ' | 'EN ATTENTE'
@@ -498,9 +499,10 @@ export default function Expenses() {
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
                   <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Montant HT (F CFA)</label>
-                  <input className="input" type="number" placeholder="Ex: 85000"
-                    value={nHT} onChange={e => setNHT(e.target.value)}
-                    style={{ width:'100%', boxSizing:'border-box' }} />
+                  <ValidatedInput type="amount"
+                    value={nHT} onChange={setNHT}
+                    placeholder="Ex: 85000"
+                    min={0} required lang={cfg.lang} />
                 </div>
                 <div>
                   <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Taux TVA</label>

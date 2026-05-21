@@ -8,6 +8,7 @@ import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
 import PhoneInput from '@/components/ui/PhoneInput'
 import ViewField from '@/components/ui/ViewField'
+import ValidatedInput from '@/components/ui/ValidatedInput'
 
 type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
@@ -804,8 +805,11 @@ export default function Customers() {
                 <PhoneInput value={editCustForm.phone} onChange={v => setEditCustForm(f => ({...f, phone:v}))} />
               </ViewField>
               <ViewField label="EMAIL" value={editCustForm.email||''} fullWidth editing={custEditMode}>
-                <input className="input text-sm" type="email" value={editCustForm.email}
-                  onChange={e => setEditCustForm(f => ({...f, email:e.target.value}))} />
+                <ValidatedInput type="email"
+                  value={editCustForm.email}
+                  onChange={val => setEditCustForm(f => ({...f, email:val}))}
+                  placeholder="email@exemple.com"
+                  lang={lang} />
               </ViewField>
               <ViewField label="ADRESSE" value={editCustForm.address||''} fullWidth editing={custEditMode}>
                 <SmartAddressInput value={editCustForm.address}
