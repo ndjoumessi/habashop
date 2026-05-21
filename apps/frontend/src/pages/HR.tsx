@@ -1184,88 +1184,314 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 </div>
               ) : (
                 <>
-                  {/* Stats */}
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:10 }}>
-                    {[
-                      { label:lang==='fr'?'Total révisions':'Total revisions', value:salaryHistory.length, icon:'📋', color:'var(--p2)' },
-                      { label:lang==='fr'?'Employés concernés':'Affected', value:new Set(salaryHistory.map(h=>h.empId)).size, icon:'👥', color:'var(--acc)' },
-                      {
-                        label:lang==='fr'?'Augmentation moy.':'Avg increase',
-                        value:(() => {
-                          const pcts = salaryHistory.map(h => Number(h.oldSalary)>0 ? ((h.newSalary-h.oldSalary)/h.oldSalary)*100 : 0)
-                          return `+${(pcts.reduce((s,v)=>s+v,0)/pcts.length).toFixed(1)}%`
-                        })(),
-                        icon:'📊', color:'var(--acc2)',
-                      },
-                      { label:lang==='fr'?'Impact total':'Total impact', value:fmt(salaryHistory.reduce((s,h)=>s+(h.newSalary-h.oldSalary),0)), icon:'💰', color:'var(--warn)' },
-                    ].map(k => (
-                      <div key={k.label} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:14, padding:'14px 16px', display:'flex', gap:10, alignItems:'center' }}>
-                        <div style={{ width:36, height:36, borderRadius:10, background:'rgba(0,0,0,.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{k.icon}</div>
-                        <div>
-                          <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>{k.label}</div>
-                          <div style={{ fontSize:16, fontWeight:900, color:k.color, fontFamily:'var(--mono)', letterSpacing:'-.5px' }}>{k.value}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {/* Timeline verticale enrichie */}
+                  <div style={{
+                    display:'flex', flexDirection:'column', gap:0,
+                    position:'relative',
+                  }}>
+                    {/* Ligne verticale centrale */}
+                    <div style={{
+                      position:'absolute',
+                      left:28, top:20, bottom:20,
+                      width:2,
+                      background:'linear-gradient(180deg,var(--p),var(--p2),var(--acc2))',
+                      borderRadius:99,
+                      opacity:.3,
+                    }}/>
 
-                  {/* Timeline premium */}
-                  <div style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:20, padding:20 }}>
-                    <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', marginBottom:20, display:'flex', alignItems:'center', gap:8 }}>
-                      <span>📈</span>
-                      {lang==='fr' ? 'Timeline des révisions' : 'Revision timeline'}
-                    </div>
-                    <div style={{ position:'relative', paddingLeft:32 }}>
-                      <div style={{ position:'absolute', left:10, top:8, bottom:8, width:2, background:'linear-gradient(180deg,var(--p),var(--p2)33)', borderRadius:99 }} />
-                      <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                        {[...salaryHistory].reverse().map((h, i) => {
-                          const emp  = employees.find(e => String(e.id) === h.empId)
-                          const diff = h.newSalary - h.oldSalary
-                          const pct  = Number(h.oldSalary)>0 ? (diff/Number(h.oldSalary))*100 : 0
-                          const isPos = diff >= 0
-                          return (
-                            <div key={i} style={{ position:'relative' }}>
-                              <div style={{ position:'absolute', left:-28, top:'50%', transform:'translateY(-50%)', width:16, height:16, borderRadius:'50%', background: isPos ? 'var(--acc2)' : 'var(--danger)', border:'2px solid var(--bg)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8, boxShadow:`0 0 10px ${isPos?'rgba(0,208,132,.5)':'rgba(255,59,92,.5)'}` }}>
-                                {isPos ? '↑' : '↓'}
+                    {[...salaryHistory].reverse().map((h, i) => {
+                      const emp   = employees.find(e => String(e.id) === (h.empId ?? (h as any).employeeId))
+                      const diff  = h.newSalary - h.oldSalary
+                      const pct   = Number(h.oldSalary) > 0
+                        ? ((diff / Number(h.oldSalary)) * 100) : 0
+                      const isPos = diff >= 0
+                      const date  = h.date
+                        ? new Date(h.date).toLocaleDateString(
+                            lang === 'fr' ? 'fr-FR' : 'en-US',
+                            { day:'numeric', month:'short', year:'numeric' }
+                          )
+                        : '—'
+
+                      return (
+                        <div key={i} style={{
+                          display:'flex', gap:0,
+                          alignItems:'stretch',
+                        }}>
+                          {/* Colonne gauche : point */}
+                          <div style={{
+                            width:58, flexShrink:0,
+                            display:'flex', flexDirection:'column',
+                            alignItems:'center',
+                            position:'relative',
+                          }}>
+                            <div style={{
+                              width:18, height:18,
+                              borderRadius:'50%', flexShrink:0,
+                              marginTop:20,
+                              background: isPos
+                                ? 'linear-gradient(135deg,var(--acc2),var(--p2))'
+                                : 'linear-gradient(135deg,var(--danger),var(--warn))',
+                              boxShadow: isPos
+                                ? '0 0 12px rgba(0,208,132,.5)'
+                                : '0 0 12px rgba(255,59,92,.5)',
+                              border:'2px solid var(--bg)',
+                              zIndex:1,
+                              display:'flex', alignItems:'center',
+                              justifyContent:'center',
+                              fontSize:9, color:'#fff', fontWeight:900,
+                            }}>
+                              {isPos ? '↑' : '↓'}
+                            </div>
+                          </div>
+
+                          {/* Carte principale */}
+                          <div style={{
+                            flex:1, marginBottom:12,
+                            background:'var(--grad-card)',
+                            border:`1px solid ${isPos
+                              ? 'rgba(0,208,132,.15)' : 'rgba(255,59,92,.15)'}`,
+                            borderRadius:16,
+                            overflow:'hidden',
+                            transition:'all .2s',
+                          }}
+                            onMouseEnter={e => {
+                              (e.currentTarget as HTMLElement).style.transform = 'translateX(4px)'
+                              ;(e.currentTarget as HTMLElement).style.boxShadow =
+                                isPos ? '0 4px 20px rgba(0,208,132,.1)' : '0 4px 20px rgba(255,59,92,.1)'
+                            }}
+                            onMouseLeave={e => {
+                              (e.currentTarget as HTMLElement).style.transform = 'none'
+                              ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
+                            }}
+                          >
+                            {/* Bande couleur haut */}
+                            <div style={{
+                              height:3,
+                              background: isPos
+                                ? 'linear-gradient(90deg,var(--acc2),var(--p2)33)'
+                                : 'linear-gradient(90deg,var(--danger),var(--warn)33)',
+                            }}/>
+
+                            <div style={{
+                              padding:'14px 18px',
+                              display:'flex', alignItems:'center',
+                              gap:14, flexWrap:'wrap',
+                            }}>
+                              {/* Avatar employé */}
+                              <div style={{
+                                width:42, height:42, borderRadius:12,
+                                flexShrink:0,
+                                background:`${emp?.color ?? '#6C47FF'}22`,
+                                border:`2px solid ${emp?.color ?? '#6C47FF'}33`,
+                                display:'flex', alignItems:'center',
+                                justifyContent:'center',
+                                fontSize:14, fontWeight:900,
+                                color:emp?.color ?? '#6C47FF',
+                                boxShadow:`0 2px 8px ${emp?.color ?? '#6C47FF'}25`,
+                              }}>
+                                {emp?.avatar ?? '??'}
                               </div>
-                              <div style={{ background:'var(--bg4)', border:`1px solid ${isPos?'rgba(0,208,132,.12)':'rgba(255,59,92,.12)'}`, borderRadius:14, padding:'14px 16px', borderLeft:`3px solid ${isPos?'var(--acc2)':'var(--danger)'}` }}>
-                                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, flexWrap:'wrap' }}>
-                                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                                    <div style={{ width:38, height:38, borderRadius:11, background:`${emp?.color??'#6C47FF'}22`, border:`1px solid ${emp?.color??'#6C47FF'}30`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, color:emp?.color??'#6C47FF', flexShrink:0 }}>
-                                      {emp?.avatar ?? '??'}
-                                    </div>
-                                    <div>
-                                      <div style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>{emp?.name ?? 'Employé'}</div>
-                                      <div style={{ fontSize:11, color:'var(--text3)', marginTop:1 }}>
-                                        📅 {h.date}
-                                        {h.reason && <span style={{ marginLeft:6, background:'rgba(108,71,255,.1)', color:'var(--p3)', border:'1px solid rgba(108,71,255,.15)', borderRadius:20, padding:'1px 7px', fontSize:10 }}>{h.reason}</span>}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div style={{ textAlign:'right' }}>
-                                    <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'flex-end', marginBottom:4 }}>
-                                      <span style={{ fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)', textDecoration:'line-through' }}>{fmt(h.oldSalary)}</span>
-                                      <span style={{ fontSize:14, color:'var(--text3)' }}>→</span>
-                                      <span style={{ fontSize:16, fontWeight:900, color:'var(--text)', fontFamily:'var(--mono)' }}>{fmt(h.newSalary)}</span>
-                                    </div>
-                                    <div style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 12px', background: isPos?'rgba(0,208,132,.12)':'rgba(255,59,92,.12)', border:`1px solid ${isPos?'rgba(0,208,132,.2)':'rgba(255,59,92,.2)'}`, borderRadius:99 }}>
-                                      <span style={{ fontSize:12 }}>{isPos?'↗':'↘'}</span>
-                                      <span style={{ fontSize:14, fontWeight:900, color: isPos?'var(--acc2)':'var(--danger)', fontFamily:'var(--mono)' }}>{isPos?'+':''}{pct.toFixed(1)}%</span>
-                                      <span style={{ fontSize:11, color: isPos?'var(--acc2)':'var(--danger)', opacity:.8 }}>({isPos?'+':''}{fmt(Math.abs(diff))})</span>
-                                    </div>
-                                  </div>
+
+                              {/* Infos employé */}
+                              <div style={{ flex:1, minWidth:140 }}>
+                                <div style={{
+                                  fontSize:14, fontWeight:800,
+                                  color:'var(--text)', marginBottom:3,
+                                }}>
+                                  {emp?.name ?? (lang === 'fr' ? 'Employé' : 'Employee')}
                                 </div>
-                                <div style={{ marginTop:10 }}>
-                                  <div style={{ height:5, background:'var(--bg5)', borderRadius:99, overflow:'hidden' }}>
-                                    <div style={{ height:'100%', width:`${Math.min(100,Math.abs(pct)*2)}%`, background: isPos?'linear-gradient(90deg,var(--acc2),var(--p2))':'linear-gradient(90deg,var(--danger),var(--warn))', borderRadius:99, transition:'width .5s ease' }} />
-                                  </div>
+                                <div style={{
+                                  display:'flex', alignItems:'center',
+                                  gap:6, flexWrap:'wrap',
+                                }}>
+                                  <span style={{ fontSize:10, color:'var(--text3)' }}>
+                                    📅 {date}
+                                  </span>
+                                  {h.reason && (
+                                    <span style={{
+                                      fontSize:10, fontWeight:600,
+                                      background:'rgba(108,71,255,.1)',
+                                      color:'var(--p3)',
+                                      border:'1px solid rgba(108,71,255,.15)',
+                                      borderRadius:99, padding:'1px 7px',
+                                    }}>
+                                      {h.reason}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Évolution salaire */}
+                              <div style={{
+                                display:'flex', flexDirection:'column',
+                                alignItems:'flex-end', gap:4,
+                              }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                  <span style={{
+                                    fontSize:13, color:'var(--text3)',
+                                    fontFamily:'var(--mono)',
+                                    textDecoration:'line-through',
+                                    opacity:.6,
+                                  }}>
+                                    {fmt(h.oldSalary)}
+                                  </span>
+                                  <div style={{ width:24, height:1, background:'var(--border2)' }}/>
+                                  <span style={{
+                                    fontSize:16, fontWeight:900,
+                                    color:'var(--text)',
+                                    fontFamily:'var(--mono)',
+                                    letterSpacing:'-.5px',
+                                  }}>
+                                    {fmt(h.newSalary)}
+                                  </span>
+                                </div>
+
+                                {/* Badge % */}
+                                <div style={{
+                                  display:'inline-flex',
+                                  alignItems:'center', gap:5,
+                                  padding:'4px 12px',
+                                  background: isPos
+                                    ? 'rgba(0,208,132,.1)'
+                                    : 'rgba(255,59,92,.1)',
+                                  border:`1px solid ${isPos
+                                    ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
+                                  borderRadius:99,
+                                }}>
+                                  <span style={{ fontSize:11 }}>{isPos ? '↗' : '↘'}</span>
+                                  <span style={{
+                                    fontSize:13, fontWeight:900,
+                                    color: isPos ? 'var(--acc2)' : 'var(--danger)',
+                                    fontFamily:'var(--mono)',
+                                  }}>
+                                    {isPos ? '+' : ''}{pct.toFixed(1)}%
+                                  </span>
+                                  <span style={{
+                                    fontSize:11,
+                                    color: isPos ? 'var(--acc2)' : 'var(--danger)',
+                                    opacity:.75,
+                                  }}>
+                                    ({isPos ? '+' : ''}{fmt(Math.abs(diff))})
+                                  </span>
                                 </div>
                               </div>
                             </div>
+
+                            {/* Barre progression */}
+                            <div style={{ padding:'0 18px 14px' }}>
+                              <div style={{
+                                height:4,
+                                background:'rgba(255,255,255,.06)',
+                                borderRadius:99, overflow:'hidden',
+                              }}>
+                                <div style={{
+                                  height:'100%',
+                                  width:`${Math.min(100, Math.abs(pct) * 1.5)}%`,
+                                  background: isPos
+                                    ? 'linear-gradient(90deg,var(--acc2),var(--p2))'
+                                    : 'linear-gradient(90deg,var(--danger),var(--warn))',
+                                  borderRadius:99,
+                                  transition:'width .6s ease',
+                                  boxShadow: isPos
+                                    ? '0 0 8px rgba(0,208,132,.4)'
+                                    : '0 0 8px rgba(255,59,92,.4)',
+                                }}/>
+                              </div>
+                              <div style={{
+                                display:'flex', justifyContent:'space-between',
+                                marginTop:4,
+                              }}>
+                                <span style={{ fontSize:9, color:'var(--text4)' }}>
+                                  {lang === 'fr' ? 'Évolution' : 'Evolution'}
+                                </span>
+                                <span style={{
+                                  fontSize:9, fontFamily:'var(--mono)',
+                                  color: isPos ? 'var(--acc2)' : 'var(--danger)',
+                                  fontWeight:700,
+                                }}>
+                                  {isPos ? '+' : ''}{pct.toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Stats résumé en bas */}
+                  <div style={{
+                    display:'grid',
+                    gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',
+                    gap:10, marginTop:4,
+                  }}>
+                    {[
+                      {
+                        label: lang === 'fr' ? 'Révisions' : 'Revisions',
+                        value: salaryHistory.length,
+                        icon:'📋', color:'var(--p2)',
+                      },
+                      {
+                        label: lang === 'fr' ? 'Employés' : 'Employees',
+                        value: new Set(salaryHistory.map(h => h.empId)).size,
+                        icon:'👥', color:'var(--acc3)',
+                      },
+                      {
+                        label: lang === 'fr' ? 'Hausse moy.' : 'Avg raise',
+                        value: (() => {
+                          const pcts = salaryHistory.map(h =>
+                            Number(h.oldSalary) > 0
+                              ? ((h.newSalary - h.oldSalary) / h.oldSalary) * 100
+                              : 0
                           )
-                        })}
+                          const avg = pcts.reduce((s, v) => s + v, 0) / pcts.length
+                          return `${avg >= 0 ? '+' : ''}${avg.toFixed(1)}%`
+                        })(),
+                        icon:'📈', color:'var(--acc2)',
+                      },
+                      {
+                        label: lang === 'fr' ? 'Impact total' : 'Total impact',
+                        value: fmt(salaryHistory.reduce((s, h) => s + (h.newSalary - h.oldSalary), 0)),
+                        icon:'💰', color:'var(--warn)',
+                      },
+                    ].map(k => (
+                      <div key={k.label} style={{
+                        background:'var(--grad-card)',
+                        border:'1px solid var(--border)',
+                        borderRadius:12, padding:'12px 14px',
+                        display:'flex', alignItems:'center', gap:10,
+                        transition:'all .15s',
+                      }}
+                        onMouseEnter={e => {
+                          (e.currentTarget as HTMLElement).style.borderColor = 'var(--border2)'
+                          ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'
+                          ;(e.currentTarget as HTMLElement).style.transform = 'none'
+                        }}
+                      >
+                        <div style={{
+                          width:34, height:34, borderRadius:10,
+                          background:'rgba(255,255,255,.04)',
+                          display:'flex', alignItems:'center',
+                          justifyContent:'center', fontSize:16,
+                          flexShrink:0,
+                        }}>{k.icon}</div>
+                        <div>
+                          <div style={{
+                            fontSize:9, fontWeight:700,
+                            textTransform:'uppercase', letterSpacing:'.5px',
+                            color:'var(--text3)', marginBottom:2,
+                          }}>{k.label}</div>
+                          <div style={{
+                            fontSize:16, fontWeight:900,
+                            color:k.color, fontFamily:'var(--mono)',
+                            letterSpacing:'-.5px',
+                          }}>{k.value}</div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </>
               )}
