@@ -5,7 +5,7 @@ import { employeesApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
 import { Download, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
+// AddressAutocomplete remplacé par AddressInputSimple (interne HR)
 import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
 
@@ -1732,13 +1732,33 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       onChange={val => setEditEmpForm((f:any) => ({ ...f, email:val }))}
                       placeholder="nom@email.com" lang={lang} />
                   </ViewField>
-                  <ViewField label={lang==='fr'?'ADRESSE':'ADDRESS'} value={editEmpForm.address||''} fullWidth editing={empEditMode}>
-                    <AddressAutocomplete
-                      value={editEmpForm.address??''}
-                      onChange={v => setEditEmpForm((f:any) => ({ ...f, address:v }))}
-                      placeholder={lang==='fr'?'Rue 10 × 23, Dakar, Sénégal':'Street address...'}
-                    />
-                  </ViewField>
+                  {empEditMode ? (
+                    <div style={{ gridColumn:'1/-1' }}>
+                      <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                        {lang==='fr' ? 'ADRESSE' : 'ADDRESS'}
+                      </label>
+                      <AddressInputSimple
+                        value={editEmpForm.address ?? ''}
+                        onChange={val => setEditEmpForm((f:any) => ({ ...f, address: val }))}
+                        lang={lang}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ gridColumn:'1/-1' }}>
+                      <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                        {lang==='fr' ? 'ADRESSE' : 'ADDRESS'}
+                      </label>
+                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', gap:8 }}>
+                        <span style={{ fontSize:13, opacity:.7 }}>📍</span>
+                        <span>
+                          {editEmpForm.address?.trim()
+                            ? editEmpForm.address
+                            : <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{lang==='fr' ? 'Non renseignée' : 'Not provided'}</span>
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2328,7 +2348,7 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
   )
 }
 
-// ─── BonusForm ────────────────────────────────────────────────────────────────
+// ─── BonusForm ──────────────────────────────────────────────────────────────────
 
 function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
   const toXOF  = useConvertToXOF()
@@ -2394,6 +2414,119 @@ function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
         </button>
         <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang==='fr' ? 'Annuler' : 'Cancel'}</button>
       </div>
+    </div>
+  )
+}
+
+// ─── AddressInputSimple ───────────────────────────────────────────────────────
+// Input adresse interne HR — toujours éditable, autocomplete Google optionnel
+
+function AddressInputSimple({
+  value,
+  onChange,
+  lang = 'fr',
+}: {
+  value: string
+  onChange: (v: string) => void
+  lang?: string
+}) {
+  const [suggestions, setSuggestions] = React.useState<string[]>([])
+  const [show, setShow]               = React.useState(false)
+  const [focused, setFocused]         = React.useState(false)
+  const apiKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_KEY as string
+
+  const fetchSuggestions = React.useCallback((input: string) => {
+    if (!input || input.length < 3) { setSuggestions([]); return }
+    const google = (window as any).google
+    if (!google?.maps?.places?.AutocompleteService) return
+    const svc = new google.maps.places.AutocompleteService()
+    svc.getPlacePredictions(
+      { input, types: ['address'], language: lang },
+      (preds: any[] | null) => {
+        setSuggestions((preds ?? []).slice(0, 5).map((p: any) => p.description))
+      }
+    )
+  }, [lang])
+
+  React.useEffect(() => {
+    if (!apiKey) return
+    if ((window as any).google?.maps?.places) return
+    if (document.querySelector('script[data-gm]')) return
+    const script = document.createElement('script')
+    script.setAttribute('data-gm', '1')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=${lang}`
+    script.async = true
+    document.head.appendChild(script)
+  }, [apiKey])
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        background: 'var(--bg4)',
+        border: `1.5px solid ${focused ? 'var(--p)' : 'var(--border)'}`,
+        borderRadius: 12,
+        transition: 'border-color .15s',
+      }}>
+        <span style={{ padding:'0 6px 0 12px', fontSize:14, flexShrink:0, color: focused ? 'var(--p2)' : 'var(--text3)', pointerEvents:'none', transition:'color .15s' }}>📍</span>
+        <input
+          type="text"
+          autoComplete="off"
+          style={{
+            flex: 1, background: 'transparent',
+            border: 'none', outline: 'none',
+            color: 'var(--text)', fontSize: 13,
+            padding: '10px 12px 10px 4px',
+            fontFamily: 'var(--font)',
+          }}
+          placeholder={lang === 'fr' ? 'Adresse complète...' : 'Full address...'}
+          value={value}
+          onFocus={() => { setFocused(true); setShow(true) }}
+          onBlur={() => { setFocused(false); setTimeout(() => setShow(false), 200) }}
+          onChange={e => {
+            onChange(e.target.value)
+            fetchSuggestions(e.target.value)
+            setShow(true)
+          }}
+        />
+        {value && (
+          <button type="button" tabIndex={-1}
+            onClick={() => { onChange(''); setSuggestions([]) }}
+            style={{ padding:'0 10px', background:'none', border:'none', cursor:'pointer', fontSize:11, color:'var(--text3)', flexShrink:0 }}>
+            ✕
+          </button>
+        )}
+      </div>
+
+      {show && suggestions.length > 0 && (
+        <div style={{
+          position:'absolute', top:'calc(100% + 4px)', left:0, right:0,
+          zIndex:9999, background:'#0D0D1C',
+          border:'1px solid rgba(255,255,255,.1)',
+          borderRadius:10, overflow:'hidden',
+          boxShadow:'0 8px 32px rgba(0,0,0,.8)',
+        }}>
+          {suggestions.map((s, i) => (
+            <button key={i} type="button"
+              onMouseDown={() => { onChange(s); setSuggestions([]); setShow(false) }}
+              style={{
+                display:'flex', alignItems:'center', gap:8,
+                width:'100%', padding:'9px 14px',
+                background:'transparent', border:'none',
+                borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                cursor:'pointer', textAlign:'left',
+                fontFamily:'var(--font)', fontSize:12, color:'var(--text)',
+                transition:'background .1s',
+              }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.1)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+            >
+              <span style={{ fontSize:12, flexShrink:0, color:'var(--text3)' }}>📍</span>
+              <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
