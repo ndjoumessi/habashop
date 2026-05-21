@@ -29,19 +29,15 @@ const STATIC_QR = [
 ]
 
 const CURRENCY_META: { code: Currency; flag: string; symbol: string; descKey: string; regionKey: string }[] = [
-  { code: 'XOF', flag: '🇸🇳', symbol: 'F CFA', descKey: 'currency_xof', regionKey: 'settings_west_africa' },
-  { code: 'XAF', flag: '🇨🇲', symbol: 'F CFA', descKey: 'currency_xaf', regionKey: 'settings_central_africa' },
-  { code: 'EUR', flag: '🇪🇺', symbol: '€',     descKey: 'currency_eur', regionKey: 'settings_europe' },
-  { code: 'USD', flag: '🇺🇸', symbol: '$',     descKey: 'currency_usd', regionKey: 'settings_usa' },
-  { code: 'CAD', flag: '🇨🇦', symbol: 'CA$',   descKey: 'currency_cad', regionKey: 'settings_canada' },
-  { code: 'GBP', flag: '🇬🇧', symbol: '£',     descKey: 'currency_gbp', regionKey: 'settings_uk' },
-  { code: 'MAD', flag: '🇲🇦', symbol: 'MAD',   descKey: 'currency_mad', regionKey: 'settings_morocco' },
-  { code: 'DZD', flag: '🇩🇿', symbol: 'DA',    descKey: 'currency_dzd', regionKey: 'settings_algeria' },
-  { code: 'TND', flag: '🇹🇳', symbol: 'TND',   descKey: 'currency_tnd', regionKey: 'settings_tunisia' },
-  { code: 'CHF', flag: '🇨🇭', symbol: 'CHF',   descKey: 'currency_chf', regionKey: 'settings_switzerland' },
+  { code: 'XOF', flag: '🇸🇳', symbol: 'FCFA', descKey: 'currency_xof', regionKey: 'settings_west_africa' },
+  { code: 'XAF', flag: '🇨🇲', symbol: 'FCFA', descKey: 'currency_xaf', regionKey: 'settings_central_africa' },
+  { code: 'EUR', flag: '🇪🇺', symbol: '€',    descKey: 'currency_eur', regionKey: 'settings_europe' },
+  { code: 'USD', flag: '🇺🇸', symbol: '$',    descKey: 'currency_usd', regionKey: 'settings_usa' },
+  { code: 'CAD', flag: '🇨🇦', symbol: 'CA$',  descKey: 'currency_cad', regionKey: 'settings_canada' },
+  { code: 'GBP', flag: '🇬🇧', symbol: '£',    descKey: 'currency_gbp', regionKey: 'settings_uk' },
 ]
 
-const ALL_CURRENCY_CODES: Currency[] = ['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP', 'MAD', 'DZD', 'TND', 'CHF']
+const ALL_CURRENCY_CODES: Currency[] = ['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP']
 
 const LANG_META: { code: Lang; flag: string; name: string; native: string }[] = [
   { code: 'fr', flag: '🇫🇷', name: 'Français',  native: 'Langue officielle' },
@@ -124,6 +120,8 @@ export default function Settings() {
   const { user, updateUser } = useAuthStore()
   const [tab, setTab] = useState<Tab>('boutique')
   const [showReset, setShowReset] = useState(false)
+  const [editingCurrency, setEditingCurrency] = useState(false)
+  const [editingLang, setEditingLang] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
 
   const [shopForm, setShopForm] = useState({
@@ -252,6 +250,25 @@ export default function Settings() {
                       onChange={v => setShopForm(s => ({ ...s, shopAddress: v }))} />
                   </div>
                   <div>
+                    <div style={{
+                      padding: '12px 16px',
+                      background: 'rgba(0,184,255,.06)',
+                      border: '1px solid rgba(0,184,255,.12)',
+                      borderRadius: 10, marginBottom: 10,
+                    }}>
+                      <div style={{
+                        fontSize: 12, fontWeight: 600,
+                        color: 'var(--acc3)', marginBottom: 4,
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}>
+                        ℹ️ {cfg.lang === 'fr' ? 'À quoi sert ce champ ?' : 'What is this field for?'}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
+                        {cfg.lang === 'fr'
+                          ? "Ce taux TVA est utilisé sur vos documents officiels : factures clients, devis et bons de commande fournisseurs. Il est distinct du taux TVA du POS (caisse) qui se configure dans l'onglet \"Config POS\"."
+                          : 'This VAT rate is used on your official documents: customer invoices, quotes and supplier purchase orders. It is separate from the POS tax rate configured in the "POS Config" tab.'}
+                      </div>
+                    </div>
                     <Label>{t('settings_vat')}</Label>
                     <select className="input text-sm" value={shopForm.shopVatRate}
                       onChange={e => setShopForm(s => ({ ...s, shopVatRate: +e.target.value }))}>
@@ -425,43 +442,72 @@ export default function Settings() {
                 <div className="grid grid-cols-2 gap-3">
                   {LANG_META.map(l => (
                     <div key={l.code}
-                      className="flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all"
+                      className="flex items-center gap-3 p-4 rounded-xl transition-all"
                       style={{
                         background: cfg.lang === l.code ? 'rgba(99,102,241,0.10)' : 'var(--bg3)',
                         border: `1px solid ${cfg.lang === l.code ? 'rgba(99,102,241,0.35)' : 'var(--border)'}`,
+                        cursor: editingLang ? 'pointer' : 'default',
+                        opacity: !editingLang && cfg.lang !== l.code ? 0.65 : 1,
                       }}
-                      onClick={() => { cfg.updateConfig({ lang: l.code }); toast.success(`Langue : ${l.name}`) }}
+                      onClick={() => {
+                        if (!editingLang) return
+                        cfg.updateConfig({ lang: l.code })
+                        toast.success(`Langue : ${l.name}`)
+                      }}
                     >
                       <span style={{ fontSize: 28 }}>{l.flag}</span>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{l.name}</div>
                         <div className="text-xs" style={{ color: 'var(--text3)' }}>{l.native}</div>
                       </div>
-                      {cfg.lang === l.code && <span className="badge badge-teal">{t('status_active')}</span>}
+                      {cfg.lang === l.code
+                        ? <span className="badge badge-teal">{t('status_active')}</span>
+                        : editingLang && <span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600 }}>
+                            {cfg.lang === 'fr' ? 'Sélectionner →' : 'Select →'}
+                          </span>
+                      }
                     </div>
                   ))}
+                </div>
+                <div style={{ marginTop: 14 }}>
+                  {!editingLang ? (
+                    <button className="mini-btn" onClick={() => setEditingLang(true)}>
+                      ✏️ {cfg.lang === 'fr' ? 'Modifier la langue' : 'Change language'}
+                    </button>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="topbar-btn" onClick={() => {
+                        setEditingLang(false)
+                        toast.success(cfg.lang === 'fr' ? 'Langue sauvegardée' : 'Language saved')
+                      }}>
+                        {cfg.lang === 'fr' ? 'Confirmer' : 'Confirm'}
+                      </button>
+                      <button className="mini-btn" onClick={() => setEditingLang(false)}>
+                        {cfg.lang === 'fr' ? 'Annuler' : 'Cancel'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Devise */}
               <div className="panel">
                 <div className="panel-head"><span className="panel-title">💱 {t('settings_currency_label')}</span></div>
-                <div className="grid grid-cols-1 gap-2 mb-4">
+                <div className="grid grid-cols-1 gap-2 mb-3">
                   {CURRENCY_META.map(c => (
                     <div key={c.code}
-                      className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
+                      className="flex items-center gap-3 p-3 rounded-xl transition-all"
                       style={{
                         background: cfg.currency === c.code ? 'rgba(14,196,126,0.10)' : 'var(--bg3)',
                         border: `1px solid ${cfg.currency === c.code ? 'rgba(14,196,126,0.35)' : 'var(--border)'}`,
+                        cursor: editingCurrency ? 'pointer' : 'default',
+                        opacity: !editingCurrency && cfg.currency !== c.code ? 0.65 : 1,
                       }}
                       onClick={() => {
+                        if (!editingCurrency) return
                         cfg.updateConfig({ currency: c.code })
                         tenantApi.update({ currency: c.code }).catch(() => {})
-                        toast.success(
-                          cfg.lang === 'fr'
-                            ? `✅ Devise changée : ${c.code}`
-                            : `✅ Currency changed: ${c.code}`
-                        )
+                        toast.success(cfg.lang === 'fr' ? `Devise : ${c.code}` : `Currency: ${c.code}`)
                       }}
                     >
                       <span style={{ fontSize: 24 }}>{c.flag}</span>
@@ -477,9 +523,35 @@ export default function Settings() {
                         <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{c.code}</div>
                         <div className="text-xs" style={{ color: 'var(--text3)' }}>{t(c.descKey)} — {t(c.regionKey)}</div>
                       </div>
-                      {cfg.currency === c.code && <span className="badge badge-teal">{t('status_active')}</span>}
+                      {cfg.currency === c.code
+                        ? <span className="badge badge-teal">{t('status_active')}</span>
+                        : editingCurrency && <span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600 }}>
+                            {cfg.lang === 'fr' ? 'Sélectionner →' : 'Select →'}
+                          </span>
+                      }
                     </div>
                   ))}
+                </div>
+
+                {/* Boutons action devise */}
+                <div style={{ marginBottom: 16 }}>
+                  {!editingCurrency ? (
+                    <button className="mini-btn" onClick={() => setEditingCurrency(true)}>
+                      ✏️ {cfg.lang === 'fr' ? 'Modifier la devise' : 'Change currency'}
+                    </button>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="topbar-btn" onClick={() => {
+                        setEditingCurrency(false)
+                        toast.success(cfg.lang === 'fr' ? 'Devise sauvegardée' : 'Currency saved')
+                      }}>
+                        {cfg.lang === 'fr' ? 'Confirmer' : 'Confirm'}
+                      </button>
+                      <button className="mini-btn" onClick={() => setEditingCurrency(false)}>
+                        {cfg.lang === 'fr' ? 'Annuler' : 'Cancel'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Conversion preview */}

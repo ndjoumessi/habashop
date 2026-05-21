@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { translations } from '@/i18n'
 
-export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP' | 'MAD' | 'DZD' | 'TND' | 'CHF'
+export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP'
 export type Lang     = 'fr' | 'en' | 'es' | 'it'
 export type Theme    = 'dark' | 'light'
 
@@ -15,25 +15,18 @@ const TO_XOF_RATES: Record<string, number> = {
   USD: 602,         // 1 USD ≈ 602 XOF
   CAD: 443,         // 1 CAD ≈ 443 XOF
   GBP: 763,         // 1 GBP ≈ 763 XOF
-  MAD: 60.7,        // 1 MAD ≈ 60.7 XOF
-  DZD: 4.45,        // 1 DZD ≈ 4.45 XOF
-  TND: 195.8,       // 1 TND ≈ 195.8 XOF
-  CHF: 676,         // 1 CHF ≈ 676 XOF
 }
 
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
-  XOF: 'FCFA', XAF: 'FCFA', EUR: '€', USD: '$',
-  CAD: 'CA$',  GBP: '£',    MAD: 'MAD', DZD: 'DA', TND: 'TND', CHF: 'CHF',
+  XOF: 'FCFA', XAF: 'FCFA', EUR: '€', USD: '$', CAD: 'CA$', GBP: '£',
 }
 
 const CURRENCY_LOCALES: Record<Currency, string> = {
-  XOF: 'fr-FR', XAF: 'fr-FR', EUR: 'fr-FR', USD: 'en-US',
-  CAD: 'fr-CA', GBP: 'en-GB', MAD: 'fr-MA', DZD: 'fr-DZ', TND: 'fr-TN', CHF: 'de-CH',
+  XOF: 'fr-FR', XAF: 'fr-FR', EUR: 'fr-FR', USD: 'en-US', CAD: 'fr-CA', GBP: 'en-GB',
 }
 
 export const CURRENCY_DECIMALS: Record<Currency, number> = {
-  XOF: 0, XAF: 0, MAD: 2, DZD: 0, TND: 3,
-  EUR: 2, USD: 2, CAD: 2, GBP: 2, CHF: 2,
+  XOF: 0, XAF: 0, EUR: 2, USD: 2, CAD: 2, GBP: 2,
 }
 
 // ─── Conversion ────────────────────────────────────────────────────────────────
@@ -309,7 +302,7 @@ export const useAppStore = create<AppStore>()(
           const data = await res.json()
           if (data?.rates) {
             const newRates: Partial<Record<Currency, number>> = {}
-            ;(['EUR', 'USD', 'CAD', 'GBP', 'MAD', 'DZD', 'TND', 'CHF'] as Currency[]).forEach(c => {
+            ;(['EUR', 'USD', 'CAD', 'GBP'] as Currency[]).forEach(c => {
               if (data.rates[c] && data.rates[c] > 0) newRates[c] = 1 / data.rates[c]
             })
             set(state => ({
@@ -353,10 +346,6 @@ export function formatInCurrency(amount: number, currency: string): string {
     USD: { locale: 'en-US', minimumFractionDigits: 2, prefix: '$'     },
     CAD: { locale: 'fr-CA', minimumFractionDigits: 2, suffix: ' CA$'  },
     GBP: { locale: 'en-GB', minimumFractionDigits: 2, prefix: '£'     },
-    MAD: { locale: 'fr-MA', minimumFractionDigits: 2, suffix: ' MAD'  },
-    DZD: { locale: 'fr-DZ', minimumFractionDigits: 0, suffix: ' DA'   },
-    TND: { locale: 'fr-TN', minimumFractionDigits: 3, suffix: ' TND'  },
-    CHF: { locale: 'de-CH', minimumFractionDigits: 2, suffix: ' CHF'  },
   }
   const cfg = configs[currency] ?? configs.XOF
   try {
