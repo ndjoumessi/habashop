@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { ordersApi } from '@/lib/api'
+import { ordersApi, productsApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle, DollarSign, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
@@ -124,6 +124,13 @@ export default function Orders() {
   const prevMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
   const nextMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [products, setProducts] = useState<any[]>([])
+
+  useEffect(() => {
+    productsApi.list()
+      .then(data => setProducts(data))
+      .catch(() => {})
+  }, [])
   const TODAY = new Date().toISOString().split('T')[0]
   const DEFAULT_EXPECTED = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0] })()
   const [form, setForm] = useState({
@@ -397,7 +404,7 @@ export default function Orders() {
               <Download size={13} /> PDF
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreateModal(true)}>
-              <Plus size={13} /> {t('btn_new')} commande
+              <Plus size={13} /> Nouvelle commande
             </button>
           </div>
         </div>
@@ -656,11 +663,25 @@ export default function Orders() {
                 <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text3)' }}>Articles</label>
                 <button className="btn btn-ghost btn-sm gap-1" onClick={addFormItem}><Plus size={11} /> Ajouter</button>
               </div>
+              {/* Datalists pour l'auto-complétion produits */}
+              {form.items.map((_, i) => (
+                <datalist key={i} id={`prod-list-${i}`}>
+                  {products.map(p => <option key={p.id} value={p.name}>{p.emoji || '📦'} {p.name}</option>)}
+                </datalist>
+              ))}
               <div className="space-y-2">
                 {form.items.map((item, i) => (
                   <div key={i} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 60px 80px 90px 28px' }}>
                     <input className="input text-xs py-2" placeholder="Produit…" value={item.product}
-                      onChange={e => updateFormItem(i, 'product', e.target.value)} />
+                      list={`prod-list-${i}`}
+                      onChange={e => {
+                        const selected = products.find(p => p.name === e.target.value)
+                        const newItems = form.items.map((it, idx) => idx === i
+                          ? { ...it, product: e.target.value, ...(selected ? { unitPrice: selected.sellPrice ?? selected.price ?? 0 } : {}) }
+                          : it
+                        )
+                        setForm(f => ({ ...f, items: newItems }))
+                      }} />
                     <input className="input text-xs py-2 text-center" type="number" placeholder="Qté" value={item.qty}
                       onChange={e => updateFormItem(i, 'qty', +e.target.value)} />
                     <select className="input text-xs py-2" value={item.unit}
