@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { ordersApi, productsApi, suppliersApi } from '@/lib/api'
+import { ordersApi, productsApi, suppliersApi, customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle, DollarSign, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
@@ -97,6 +97,15 @@ const STATIC_PRODUCTS = [
   { id:'p12',name:'Détergent 1kg',      price:1200,  emoji:'🧹', category:'Hygiène'     },
 ]
 
+const STATIC_CUSTOMERS = [
+  { id:'c1', name:'Marché Central de Dakar',       phone:'+221 77 000 0001', type:'Grossiste',  totalCA:4200000 },
+  { id:'c2', name:'Superette Kouassi',              phone:'+221 76 000 0002', type:'Semi-gros',  totalCA:1800000 },
+  { id:'c3', name:"Restaurant Soleil d'Afrique",    phone:'+221 70 000 0003', type:'Fidèle',     totalCA:920000  },
+  { id:'c4', name:'Famille Traoré',                 phone:'+221 78 000 0004', type:'Détail',     totalCA:85000   },
+  { id:'c5', name:'Boutique Aminata',               phone:'+221 77 000 0005', type:'Semi-gros',  totalCA:450000  },
+  { id:'c6', name:'Grossiste Diallo',               phone:'+221 76 000 0006', type:'Grossiste',  totalCA:3800000 },
+]
+
 const STATIC_SUPPLIERS = [
   { id:'s1', name:'Diallo et Frères SARL',   specialty:'Céréales, Légumineuses', phone:'+221 77 123 4567', leadTime:'48h', rating:5, status:'active' },
   { id:'s2', name:'Import-Export Koné',       specialty:'Corps gras, Conserves',  phone:'+221 76 987 6543', leadTime:'72h', rating:4, status:'active' },
@@ -158,6 +167,10 @@ export default function Orders() {
   })
   const [suppliersList, setSuppliersList] = useState<any[]>([])
   const [selectedSupplierId, setSelectedSupplierId] = useState('')
+  const [customers, setCustomers] = useState<any[]>([])
+  const [clientSuggestions, setClientSuggestions] = useState<any[]>([])
+  const [showClientDropdown, setShowClientDropdown] = useState(false)
+  const [selectedClient, setSelectedClient] = useState<any>(null)
 
   useEffect(() => {
     productsApi.list()
@@ -187,6 +200,17 @@ export default function Orders() {
       .catch(() => setSuppliersList(STATIC_SUPPLIERS))
   }, [])
 
+  useEffect(() => {
+    customersApi.list()
+      .then((data: any[]) => setCustomers(data.map((c: any) => ({
+        id: c.id, name: c.name,
+        phone: c.phone || '',
+        type: c.type || c.customerType || '',
+        totalCA: c.totalCA ?? c.total_ca ?? 0,
+      }))))
+      .catch(() => setCustomers(STATIC_CUSTOMERS))
+  }, [])
+
   const supplierNames = Array.from(new Set(orders.map(o => o.supplier)))
 
   const filtered = orders.filter(o =>
@@ -210,6 +234,9 @@ export default function Orders() {
 
   const openNewOrderModal = () => {
     setNewOrderForm({ clientName: '', clientPhone: '', items: [], note: '' })
+    setSelectedClient(null)
+    setClientSuggestions([])
+    setShowClientDropdown(false)
     setProductSearch('')
     setOrderType('client')
     setSelectedSupplierId('')
@@ -779,23 +806,131 @@ export default function Orders() {
 
               {/* Formulaire client OU sélecteur fournisseur */}
               {orderType === 'client' ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
-                      {lang === 'fr' ? 'NOM CLIENT *' : 'CLIENT NAME *'}
-                    </label>
-                    <input className="input" placeholder={lang === 'fr' ? 'Nom du client…' : 'Client name…'}
+                <div style={{ position: 'relative' }}>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+                    {lang === 'fr' ? 'NOM CLIENT *' : 'CLIENT NAME *'}
+                  </label>
+
+                  {/* Input avec icône */}
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ position: 'absolute', left: 12, fontSize: 15, color: 'var(--text3)', pointerEvents: 'none', zIndex: 1 }}>👤</span>
+                    <input className="input" style={{ paddingLeft: 38 }} autoComplete="off"
+                      placeholder={lang === 'fr' ? 'Rechercher ou saisir un client…' : 'Search or enter a client…'}
                       value={newOrderForm.clientName}
-                      onChange={e => setNewOrderForm(f => ({ ...f, clientName: e.target.value }))} />
+                      onChange={e => {
+                        const val = e.target.value
+                        setNewOrderForm(f => ({ ...f, clientName: val }))
+                        setSelectedClient(null)
+                        const matches = val.trim().length >= 1
+                          ? customers.filter(c => c.name.toLowerCase().includes(val.toLowerCase()) || (c.phone && c.phone.includes(val)))
+                          : customers
+                        setClientSuggestions(matches.slice(0, 6))
+                        setShowClientDropdown(true)
+                      }}
+                      onFocus={() => {
+                        const matches = newOrderForm.clientName.trim()
+                          ? customers.filter(c => c.name.toLowerCase().includes(newOrderForm.clientName.toLowerCase()))
+                          : customers
+                        setClientSuggestions(matches.slice(0, 6))
+                        setShowClientDropdown(true)
+                      }}
+                      onBlur={() => setTimeout(() => setShowClientDropdown(false), 200)}
+                    />
+                    {(newOrderForm.clientName || selectedClient) && (
+                      <button type="button" tabIndex={-1}
+                        onClick={() => {
+                          setNewOrderForm(f => ({ ...f, clientName: '', clientPhone: '' }))
+                          setSelectedClient(null)
+                          setClientSuggestions(customers.slice(0, 6))
+                          setShowClientDropdown(true)
+                        }}
+                        style={{ position: 'absolute', right: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 14, display: 'flex', alignItems: 'center' }}>✕</button>
+                    )}
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
-                      {lang === 'fr' ? 'TÉLÉPHONE' : 'PHONE'}
-                    </label>
-                    <input className="input" type="tel" placeholder="+221 77 000 0000"
-                      value={newOrderForm.clientPhone}
-                      onChange={e => setNewOrderForm(f => ({ ...f, clientPhone: e.target.value }))} />
-                  </div>
+
+                  {/* Badge client sélectionné */}
+                  {selectedClient && (() => {
+                    const color = selectedClient.type === 'Grossiste' ? '#6C47FF' : selectedClient.type === 'Semi-gros' ? '#FF9500' : selectedClient.type === 'Fidèle' ? '#00D084' : '#00B8FF'
+                    return (
+                      <div style={{ marginTop: 6, padding: '8px 12px', borderRadius: 9, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(0,208,132,.08)', border: '1px solid rgba(0,208,132,.2)' }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, background: `${color}22`, border: `1px solid ${color}44`, color }}>
+                          {selectedClient.name[0]}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--acc2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>✅ {selectedClient.name}</div>
+                          <div style={{ fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 8 }}>
+                            {selectedClient.phone && <span>📞 {selectedClient.phone}</span>}
+                            {selectedClient.type && <span>· {selectedClient.type}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Dropdown suggestions */}
+                  {showClientDropdown && clientSuggestions.length > 0 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
+                      <div style={{ padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,.06)', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{lang === 'fr' ? 'CLIENTS EXISTANTS' : 'EXISTING CLIENTS'}</span>
+                        <span>{clientSuggestions.length} {lang === 'fr' ? 'résultat' : 'result'}{clientSuggestions.length > 1 ? 's' : ''}</span>
+                      </div>
+                      {clientSuggestions.map((customer, i) => {
+                        const color = customer.type === 'Grossiste' ? '#6C47FF' : customer.type === 'Semi-gros' ? '#FF9500' : customer.type === 'Fidèle' ? '#00D084' : '#00B8FF'
+                        const bgAlpha = customer.type === 'Grossiste' ? 'rgba(108,71,255,.15)' : customer.type === 'Semi-gros' ? 'rgba(255,149,0,.15)' : customer.type === 'Fidèle' ? 'rgba(0,208,132,.15)' : 'rgba(0,184,255,.15)'
+                        return (
+                          <button key={customer.id} type="button"
+                            onMouseDown={() => {
+                              setSelectedClient(customer)
+                              setNewOrderForm(f => ({ ...f, clientName: customer.name, clientPhone: customer.phone ?? '' }))
+                              setShowClientDropdown(false)
+                            }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: i < clientSuggestions.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'background .1s' }}
+                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.08)'}
+                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
+                            <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, background: bgAlpha, color }}>
+                              {customer.name[0].toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customer.name}</div>
+                              <div style={{ fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 8, marginTop: 1, alignItems: 'center' }}>
+                                {customer.phone && <span>📞 {customer.phone}</span>}
+                                {customer.type && <span style={{ padding: '1px 6px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: bgAlpha, color }}>{customer.type}</span>}
+                              </div>
+                            </div>
+                            {customer.totalCA > 0 && <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--acc)', fontWeight: 700, flexShrink: 0 }}>{fmt(customer.totalCA)}</div>}
+                          </button>
+                        )
+                      })}
+                      {/* Option "Nouveau client" */}
+                      <button type="button"
+                        onMouseDown={() => setShowClientDropdown(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', background: 'rgba(108,71,255,.06)', borderTop: '1px solid rgba(108,71,255,.1)', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'background .1s' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.12)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.06)'}>
+                        <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(108,71,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>➕</div>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p3)' }}>
+                            {lang === 'fr' ? `Nouveau client "${newOrderForm.clientName || '…'}"` : `New client "${newOrderForm.clientName || '…'}"`}
+                          </div>
+                          <div style={{ fontSize: 10, color: 'var(--text3)' }}>{lang === 'fr' ? 'Créer et continuer' : 'Create and continue'}</div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Aucun résultat */}
+                  {showClientDropdown && clientSuggestions.length === 0 && newOrderForm.clientName.trim().length > 0 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
+                      <button type="button" onMouseDown={() => setShowClientDropdown(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>
+                        <span style={{ fontSize: 20 }}>➕</span>
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p3)' }}>{lang === 'fr' ? `Créer "${newOrderForm.clientName}"` : `Create "${newOrderForm.clientName}"`}</div>
+                          <div style={{ fontSize: 10, color: 'var(--text3)' }}>{lang === 'fr' ? 'Nouveau client — pas encore enregistré' : 'New client — not yet registered'}</div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div>
