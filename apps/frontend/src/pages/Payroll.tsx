@@ -408,13 +408,13 @@ export default function Payroll() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Masse salariale brute', value:fmt(totalBrut),  sub:'Tous employés',                      color:'var(--p2)',   icon:<DollarSign   size={18} /> },
-          { label:'Masse salariale nette', value:fmt(totalNet),   sub:'Après retenues',                     color:'var(--acc2)', icon:<TrendingDown size={18} /> },
-          { label:'Bulletins générés',     value:`${generated}/6`,sub:`${records.length - generated} restants`, color:'var(--acc)', icon:<FileText     size={18} /> },
-          { label:'Bulletins payés',       value:`${paid}/6`,     sub:`${records.length - paid} non payés`, color:'var(--p3)',   icon:<CheckCircle  size={18} /> },
+          { label:'Masse salariale brute', value:fmt(totalBrut),  sub:'Tous employés',                          color:'#6C47FF', icon:<DollarSign   size={18} /> },
+          { label:'Net à payer',           value:fmt(totalNet),   sub:'Après retenues',                         color:'#00D084', icon:<TrendingDown size={18} /> },
+          { label:'Bulletins générés',     value:`${generated}/6`,sub:`${records.length - generated} restants`, color:'#F0A500', icon:<FileText     size={18} /> },
+          { label:'Bulletins payés',       value:`${paid}/6`,     sub:`${records.length - paid} non payés`,     color:'#00B8FF', icon:<CheckCircle  size={18} /> },
         ].map(k => (
-          <div key={k.label} className="kpi-card">
-            <div className="kpi-icon-w" style={{ color:k.color }}>{k.icon}</div>
+          <div key={k.label} className="kpi-card" style={{ background:`linear-gradient(135deg,${k.color}18,${k.color}06)`, border:`1px solid ${k.color}28` }}>
+            <div className="kpi-icon-w" style={{ color:k.color, background:`${k.color}20` }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
             <div className="kpi-value" style={{ color:k.color, fontSize:20 }}>{k.value}</div>
             <div className="kpi-sub">{k.sub}</div>

@@ -3,7 +3,7 @@ import React from 'react'
 import { useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
 import { employeesApi, bonusesApi, salaryHistoryApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
-import { Download, Plus, X } from 'lucide-react'
+import { Download, Plus, X, Users, DollarSign, FileText, TrendingUp, Star, Pencil, Clock, Umbrella, Search, LayoutGrid, AlignJustify } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
@@ -509,14 +509,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
         {[
-          { icon: '👥', label: 'Effectif total',    value: `${employees.length}`,    color: '#6C47FF', sub: `${activeCount} actifs` },
-          { icon: '💰', label: 'Masse salariale',   value: fmt(totalPayroll),         color: '#00D084', sub: 'Ce mois' },
-          { icon: '📋', label: 'Congés en attente', value: `${pendingLeaves}`,        color: pendingLeaves > 0 ? '#F0A500' : '#00D084', sub: 'à traiter' },
-          { icon: '🏆', label: 'Performance moy.',  value: `${((employees ?? []).filter(e => e.perf).reduce((s, e) => s + (e.perf ?? 0), 0) / ((employees ?? []).filter(e => e.perf).length || 1)).toFixed(1)}/5`, color: '#FF9500', sub: 'Top équipe' },
+          { icon: <Users size={18}/>,      label: lang==='fr'?'Effectif total':'Total staff',      value: `${employees.length}`,    color: '#6C47FF', sub: `${activeCount} ${lang==='fr'?'actifs':'active'}` },
+          { icon: <DollarSign size={18}/>, label: lang==='fr'?'Masse salariale':'Payroll',          value: fmt(totalPayroll),         color: '#00D084', sub: lang==='fr'?'Ce mois':'This month' },
+          { icon: <Umbrella size={18}/>,   label: lang==='fr'?'Congés en attente':'Pending leaves', value: `${pendingLeaves}`,        color: pendingLeaves > 0 ? '#F0A500' : '#00D084', sub: lang==='fr'?'à traiter':'to review' },
+          { icon: <TrendingUp size={18}/>, label: lang==='fr'?'Performance moy.':'Avg performance', value: `${((employees ?? []).filter(e => e.perf).reduce((s, e) => s + (e.perf ?? 0), 0) / ((employees ?? []).filter(e => e.perf).length || 1)).toFixed(1)}/5`, color: '#FF9500', sub: lang==='fr'?'Top équipe':'Top team' },
         ].map(k => (
-          <div key={k.label} className="panel" style={{ padding: '14px 16px' }}>
+          <div key={k.label} className="panel" style={{ padding: '14px 16px', background: `linear-gradient(135deg,${k.color}18,${k.color}06)`, border: `1px solid ${k.color}28` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${k.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{k.icon}</div>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${k.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>{k.icon}</div>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }}>{k.label}</span>
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, color: k.color, lineHeight: 1 }}>{k.value}</div>
@@ -528,23 +528,25 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', borderRadius: 12, padding: 4, border: '1px solid var(--border)' }}>
         {([
-          { id: 'team',       icon: '👥', label: lang === 'fr' ? 'Équipe'       : 'Team'       },
-          { id: 'contracts',  icon: '📄', label: lang === 'fr' ? 'Contrats'     : 'Contracts'  },
-          { id: 'pointage',   icon: '⏱️', label: lang === 'fr' ? 'Présences'    : 'Attendance' },
-          { id: 'leaves',     icon: '🏖️', label: lang === 'fr' ? 'Congés'       : 'Leaves'     },
-          { id: 'payroll',    icon: '💰', label: lang === 'fr' ? 'Rémunération' : 'Payroll'    },
-        ] as const).map(t => (
+          { id: 'team'      as const, icon: <Users size={13}/>,      label: lang === 'fr' ? 'Équipe'       : 'Team'       },
+          { id: 'contracts' as const, icon: <FileText size={13}/>,   label: lang === 'fr' ? 'Contrats'     : 'Contracts'  },
+          { id: 'pointage'  as const, icon: <Clock size={13}/>,      label: lang === 'fr' ? 'Présences'    : 'Attendance' },
+          { id: 'leaves'    as const, icon: <Umbrella size={13}/>,   label: lang === 'fr' ? 'Congés'       : 'Leaves'     },
+          { id: 'payroll'   as const, icon: <DollarSign size={13}/>, label: lang === 'fr' ? 'Rémunération' : 'Payroll'    },
+        ]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             flex: 1, padding: '9px 8px', borderRadius: 9,
-            background: tab === t.id ? 'var(--card)' : 'transparent',
-            border: tab === t.id ? '1px solid var(--border)' : '1px solid transparent',
-            color: tab === t.id ? 'var(--text)' : 'var(--text3)',
+            background: tab === t.id
+              ? 'linear-gradient(135deg,rgba(108,71,255,.18),rgba(0,184,255,.08))'
+              : 'transparent',
+            border: tab === t.id ? '1px solid rgba(108,71,255,.28)' : '1px solid transparent',
+            color: tab === t.id ? 'var(--p2)' : 'var(--text3)',
             fontWeight: tab === t.id ? 700 : 500,
-            fontSize: 13, cursor: 'pointer', transition: 'all .15s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            boxShadow: tab === t.id ? 'var(--sh-sm)' : 'none',
+            fontSize: 12, cursor: 'pointer', transition: 'all .15s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            boxShadow: tab === t.id ? '0 2px 10px rgba(108,71,255,.15)' : 'none',
           }}>
-            <span>{t.icon}</span>
+            <span style={{ display:'flex', opacity: tab === t.id ? 1 : 0.6 }}>{t.icon}</span>
             <span>{t.label}</span>
             {t.id === 'leaves' && pendingLeaves > 0 && (
               <span style={{ fontSize: 10, fontWeight: 800, background: 'var(--acc)', color: '#000', borderRadius: 20, padding: '1px 6px', lineHeight: 1.5 }}>
@@ -562,7 +564,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
           <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:4, flexWrap:'wrap' }}>
             {/* Recherche */}
             <div style={{ position:'relative', flex:1, minWidth:180 }}>
-              <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>🔍</span>
+              <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none', display:'flex' }}><Search size={13}/></span>
               <input className="input"
                 style={{ paddingLeft:32, height:36, fontSize:13 }}
                 placeholder={lang === 'fr' ? 'Rechercher...' : 'Search...'}
@@ -588,14 +590,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             </select>
             {/* Toggle vue */}
             <div style={{ display:'flex', gap:2, background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8, padding:3, flexShrink:0 }}>
-              {[{id:'grid',icon:'⊞'},{id:'table',icon:'☰'}].map(v => (
+              {[{id:'grid',icon:<LayoutGrid size={13}/>},{id:'table',icon:<AlignJustify size={13}/>}].map(v => (
                 <button key={v.id} type="button"
                   onClick={() => setViewMode(v.id as any)}
                   style={{
-                    width:28, height:28, borderRadius:6, border:'none', cursor:'pointer', fontSize:14,
+                    width:28, height:28, borderRadius:6, border:'none', cursor:'pointer',
                     background: viewMode === v.id ? 'var(--p)' : 'transparent',
                     color: viewMode === v.id ? '#fff' : 'var(--text3)',
                     transition:'all .15s',
+                    display:'flex', alignItems:'center', justifyContent:'center',
                   }}>{v.icon}</button>
               ))}
             </div>
@@ -693,9 +696,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       {/* Footer card */}
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                         <span style={{ fontSize:10, fontWeight:600, color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:5, padding:'2px 7px' }}>{emp.type}</span>
-                        <div style={{ display:'flex', gap:1 }}>
+                        <div style={{ display:'flex', gap:1, alignItems:'center' }}>
                           {[1,2,3,4,5].map(s => (
-                            <span key={s} style={{ fontSize:9, opacity: s<=(emp.perf??3) ? 1 : .2 }}>⭐</span>
+                            <Star key={s} size={9} style={{ color:'#F59E0B', opacity: s<=(emp.perf??3) ? 1 : .2, fill: s<=(emp.perf??3) ? '#F59E0B' : 'none' }} />
                           ))}
                         </div>
                         <button type="button"
@@ -703,9 +706,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                           style={{
                             width:26, height:26, borderRadius:7,
                             background:'rgba(255,149,0,.1)', border:'1px solid rgba(255,149,0,.2)',
-                            cursor:'pointer', fontSize:11, color:'var(--acc)',
+                            cursor:'pointer', color:'var(--acc)',
                             display:'flex', alignItems:'center', justifyContent:'center',
-                          }}>✏️</button>
+                          }}><Pencil size={11}/></button>
                       </div>
                     </div>
                   </div>
@@ -788,7 +791,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       {tab === 'contracts' && (
         <div className="panel">
           <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <span className="panel-t">📄 {lang === 'fr' ? 'Contrats en cours' : 'Active contracts'}</span>
+            <span className="panel-t" style={{ display:'flex', alignItems:'center', gap:6 }}><FileText size={14}/> {lang === 'fr' ? 'Contrats en cours' : 'Active contracts'}</span>
             <button className="btn btn-primary btn-sm" onClick={() => { setContractForm({ empId: '', type: 'CDI', hiredAt: new Date().toISOString().split('T')[0], contractEnd: '', salary: 0, role: '', dept: 'Ventes' }); setShowNewContractModal(true) }}>
               <Plus size={14} /> {lang === 'fr' ? 'Nouveau contrat' : 'New contract'}
             </button>
@@ -1659,8 +1662,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             {/* Header toolbar */}
             <div className="panel" style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
-              <span style={{ fontSize:16, fontWeight:800, color:'var(--text)' }}>
-                ⏱️ {lang==='fr'?'Feuille de présence':'Attendance sheet'}
+              <span style={{ fontSize:16, fontWeight:800, color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
+                <Clock size={16}/> {lang==='fr'?'Feuille de présence':'Attendance sheet'}
               </span>
               <input type="date" className="input" value={attendanceDate}
                 onChange={e => setAttendanceDate(e.target.value)}
@@ -1788,7 +1791,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 
           <div className="panel">
             <div className="panel-h">
-              <span className="panel-t">🏖️ {lang === 'fr' ? 'Demandes de congés' : 'Leave requests'}</span>
+              <span className="panel-t" style={{ display:'flex', alignItems:'center', gap:6 }}><Umbrella size={14}/> {lang === 'fr' ? 'Demandes de congés' : 'Leave requests'}</span>
               <button className="btn btn-primary btn-sm" onClick={() => {
                 setLeaveForm({ empId: 0, type: lang === 'fr' ? 'Congé annuel' : 'Annual leave', startDate: new Date().toISOString().split('T')[0], endDate: '', notes: '' })
                 setShowLeaveModal(true)

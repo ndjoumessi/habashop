@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { employeesApi } from '@/lib/api'
 import toast from 'react-hot-toast'
-import { Sun, CloudSun, CalendarDays, Moon, Coffee, Umbrella, Users, Info, Download, MousePointer2 } from 'lucide-react'
+import { Sun, CloudSun, CalendarDays, Moon, Coffee, Umbrella, Users, Info, Download, MousePointer2, X } from 'lucide-react'
 
 const SHIFT_TYPES = {
   morning:   { label:'Matin',      hours:'08:00-13:00', color:'#00B8FF', icon:<Sun size={16}/>,         bg:'rgba(0,184,255,.12)'  },
@@ -33,6 +33,8 @@ export default function Planning() {
   const [filterDept, setFilterDept] = useState('all')
   const [filterStatus, setFilterStatus] = useState<ShiftType|'all'>('all')
   const [planningWeek, setPlanningWeek] = useState(new Date())
+  const [shiftModal, setShiftModal] = useState<{empId:string; di:number; name:string} | null>(null)
+  const [modalShift, setModalShift] = useState<ShiftType>('full')
 
   useEffect(() => {
     employeesApi.list().then((data:any[]) => {
@@ -437,7 +439,14 @@ export default function Planning() {
                           ? 'rgba(108,71,255,.03)' : 'transparent',
                       }}>
                         <div
-                          onClick={()=>assignShift(emp.id,di)}
+                          onClick={()=>{
+                            if (!shiftKey) {
+                              setModalShift(activeShift)
+                              setShiftModal({empId:emp.id, di, name:emp.name.split(' ')[0]})
+                            } else {
+                              assignShift(emp.id,di)
+                            }
+                          }}
                           onDoubleClick={()=>clearShift(emp.id,di)}
                           style={{
                             minHeight:58, borderRadius:10,
@@ -534,6 +543,114 @@ export default function Planning() {
           </div>
         </div>
       </div>
+
+      {/* Modal ajout shift */}
+      {shiftModal && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:200,
+          background:'rgba(0,0,0,.7)', backdropFilter:'blur(6px)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          padding:20,
+        }} onClick={e => e.target===e.currentTarget && setShiftModal(null)}>
+          <div style={{
+            width:'100%', maxWidth:400,
+            background:'#0D0D1C', border:'1px solid rgba(255,255,255,.1)',
+            borderRadius:20, overflow:'hidden',
+            boxShadow:'0 32px 80px rgba(0,0,0,.8)',
+          }}>
+            {/* Header */}
+            <div style={{
+              padding:'18px 20px 14px',
+              background:'linear-gradient(135deg,rgba(108,71,255,.15),rgba(0,184,255,.06))',
+              borderBottom:'1px solid rgba(255,255,255,.06)',
+              display:'flex', alignItems:'center', justifyContent:'space-between',
+            }}>
+              <div>
+                <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
+                  {lang==='fr'?'Assigner un shift':'Assign shift'}
+                </div>
+                <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>
+                  {shiftModal.name} · {weekDays[shiftModal.di]?.toLocaleDateString(lang==='fr'?'fr-FR':'en-US',{weekday:'short',day:'numeric',month:'short'})}
+                </div>
+              </div>
+              <button onClick={() => setShiftModal(null)} style={{
+                width:30, height:30, borderRadius:8,
+                background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)',
+                cursor:'pointer', color:'var(--text3)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}><X size={14}/></button>
+            </div>
+
+            {/* Shift type buttons */}
+            <div style={{ padding:'16px 20px', display:'flex', flexDirection:'column', gap:8 }}>
+              <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:2 }}>
+                {lang==='fr'?'TYPE DE SHIFT':'SHIFT TYPE'}
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                {(Object.entries(SHIFT_TYPES) as [ShiftType, typeof SHIFT_TYPES[ShiftType]][]).map(([key,s]) => (
+                  <button key={key} type="button"
+                    onClick={() => setModalShift(key)}
+                    style={{
+                      display:'flex', alignItems:'center', gap:8,
+                      padding:'10px 12px', borderRadius:10,
+                      border:`1.5px solid ${modalShift===key ? s.color : 'rgba(255,255,255,.06)'}`,
+                      background: modalShift===key ? s.bg : 'rgba(255,255,255,.02)',
+                      cursor:'pointer', fontFamily:'var(--font)',
+                      fontSize:12, fontWeight:700,
+                      color: modalShift===key ? s.color : 'var(--text3)',
+                      transition:'all .1s',
+                    }}>
+                    <span style={{ color: modalShift===key ? s.color : 'var(--text3)', display:'flex' }}>{s.icon}</span>
+                    <div style={{ textAlign:'left' }}>
+                      <div style={{ fontSize:12, fontWeight:700 }}>{s.label}</div>
+                      {s.hours && <div style={{ fontSize:9, fontFamily:'var(--mono)', opacity:.7 }}>{s.hours}</div>}
+                    </div>
+                    {modalShift===key && (
+                      <span style={{ marginLeft:'auto', fontSize:9, background:`${s.color}30`, color:s.color, borderRadius:99, padding:'2px 6px', fontWeight:800 }}>✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display:'flex', gap:8, marginTop:8 }}>
+                <button
+                  onClick={() => {
+                    const s = SHIFT_TYPES[modalShift]
+                    setShifts(prev => ({
+                      ...prev,
+                      [shiftModal.empId]: { ...(prev[shiftModal.empId]??{}), [shiftModal.di]: modalShift }
+                    }))
+                    setShiftModal(null)
+                    toast.success(`${s.label} assigné${lang==='fr'?' à ':' → '}${shiftModal.name}`)
+                  }}
+                  style={{
+                    flex:1, padding:'11px', borderRadius:10,
+                    background:`linear-gradient(135deg,${SHIFT_TYPES[modalShift].color},${SHIFT_TYPES[modalShift].color}CC)`,
+                    border:'none', cursor:'pointer',
+                    fontSize:13, fontWeight:700, color:'#fff',
+                    fontFamily:'var(--font)',
+                    boxShadow:`0 4px 14px ${SHIFT_TYPES[modalShift].color}40`,
+                    transition:'all .15s',
+                  }}>
+                  {lang==='fr'?'Confirmer':'Confirm'}
+                </button>
+                <button
+                  onClick={() => setShiftModal(null)}
+                  style={{
+                    padding:'11px 16px', borderRadius:10,
+                    background:'rgba(255,255,255,.04)',
+                    border:'1px solid rgba(255,255,255,.08)',
+                    cursor:'pointer', color:'var(--text3)',
+                    fontSize:13, fontFamily:'var(--font)',
+                  }}>
+                  {lang==='fr'?'Annuler':'Cancel'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats résumé */}
       {Object.keys(stats).length>0&&(
