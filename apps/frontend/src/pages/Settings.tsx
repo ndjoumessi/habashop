@@ -6,6 +6,9 @@ import { tenantApi, cronApi } from '@/lib/api'
 import {
   Store, User, Globe, Palette, ShoppingCart, Package, Bell, Shield, Cog,
   Save, Upload, Download, X, RefreshCw, AlertTriangle,
+  Info, Image, Key, Lock, LockOpen, Pencil, ArrowLeftRight, Moon, Sun,
+  Paintbrush, DollarSign, Receipt, Mail, Smartphone, Sunrise, ShieldCheck,
+  Clock, FolderOpen, ClipboardList, CheckCircle, FlaskConical,
 } from 'lucide-react'
 import { generateCDC } from '@/utils/export'
 import toast from 'react-hot-toast'
@@ -228,7 +231,7 @@ export default function Settings() {
           {tab === 'boutique' && (
             <div className="space-y-4">
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🏪 Informations boutique</span></div>
+                <div className="panel-head"><span className="panel-title"><Store size={14}/> Informations boutique</span></div>
                 <div className="grid grid-cols-2 gap-4">
                   {([
                     { label: t('settings_shop_name'), key: 'shopName',    type: 'text',  span: true },
@@ -262,7 +265,7 @@ export default function Settings() {
                         color: 'var(--acc3)', marginBottom: 4,
                         display: 'flex', alignItems: 'center', gap: 6,
                       }}>
-                        ℹ️ {cfg.lang === 'fr' ? 'À quoi sert ce champ ?' : 'What is this field for?'}
+                        <Info size={14}/> {cfg.lang === 'fr' ? 'À quoi sert ce champ ?' : 'What is this field for?'}
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
                         {cfg.lang === 'fr'
@@ -302,7 +305,7 @@ export default function Settings() {
 
               {/* Logo */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🖼️ {t('settings_logo')}</span></div>
+                <div className="panel-head"><span className="panel-title"><Image size={14}/> {t('settings_logo')}</span></div>
                 <div className="flex items-center gap-5">
                   <div style={{
                     width: 80, height: 80, borderRadius: 16, overflow: 'hidden',
@@ -311,7 +314,7 @@ export default function Settings() {
                   }}>
                     {cfg.shopLogo
                       ? <img src={cfg.shopLogo} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <span style={{ fontSize: 32 }}>🏪</span>
+                      : <Store size={32} style={{ color:'var(--text3)' }}/>
                     }
                   </div>
                   <div className="flex-1">
@@ -339,7 +342,7 @@ export default function Settings() {
           {tab === 'compte' && (
             <div className="space-y-4">
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">👤 {t('settings_personal_info')}</span></div>
+                <div className="panel-head"><span className="panel-title"><User size={14}/> {t('settings_personal_info')}</span></div>
                 <div className="flex items-center gap-4 mb-5">
                   <div style={{
                     width: 64, height: 64, borderRadius: '50%', flexShrink: 0,
@@ -380,7 +383,7 @@ export default function Settings() {
               </div>
 
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🔑 {t('settings_change_password')}</span></div>
+                <div className="panel-head"><span className="panel-title"><Key size={14}/> {t('settings_change_password')}</span></div>
                 <div className="space-y-3">
                   {([
                     { label: t('settings_current_pwd'), key: 'currentPwd' },
@@ -424,22 +427,22 @@ export default function Settings() {
                   borderRadius: 10,
                 }}>
                   <span style={{ fontSize: 13, color: 'var(--acc)', flex: 1 }}>
-                    🔒 {cfg.lang === 'fr'
+                    <Lock size={13}/> {cfg.lang === 'fr'
                       ? 'Les paramètres langue/devise sont verrouillés'
                       : 'Language/currency settings are locked'}
                   </span>
-                  <button className="mini-btn" onClick={() => {
+                  <button className="mini-btn" style={{ display:'flex', alignItems:'center', gap:5, cursor:'pointer' }} onClick={() => {
                     unlockSettings()
                     toast.success(cfg.lang === 'fr' ? '🔓 Paramètres déverrouillés' : '🔓 Settings unlocked')
                   }}>
-                    🔓 {cfg.lang === 'fr' ? 'Déverrouiller' : 'Unlock'}
+                    <LockOpen size={12}/> {cfg.lang === 'fr' ? 'Déverrouiller' : 'Unlock'}
                   </button>
                 </div>
               )}
 
               {/* Langue */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🌍 {t('settings_language_label')}</span></div>
+                <div className="panel-head"><span className="panel-title"><Globe size={14}/> {t('settings_language_label')}</span></div>
                 <div className="grid grid-cols-2 gap-3">
                   {LANG_META.map(l => (
                     <div key={l.code}
@@ -472,8 +475,8 @@ export default function Settings() {
                 </div>
                 <div style={{ marginTop: 14 }}>
                   {!editingLang ? (
-                    <button className="mini-btn" onClick={() => setEditingLang(true)}>
-                      ✏️ {cfg.lang === 'fr' ? 'Modifier la langue' : 'Change language'}
+                    <button className="mini-btn" onClick={() => setEditingLang(true)} style={{ display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>
+                      <Pencil size={12}/> {cfg.lang === 'fr' ? 'Modifier la langue' : 'Change language'}
                     </button>
                   ) : (
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -493,7 +496,7 @@ export default function Settings() {
 
               {/* Devise */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">💱 {t('settings_currency_label')}</span></div>
+                <div className="panel-head"><span className="panel-title"><ArrowLeftRight size={14}/> {t('settings_currency_label')}</span></div>
                 <div className="grid grid-cols-1 gap-2 mb-3">
                   {CURRENCY_META.map(c => (
                     <div key={c.code}
@@ -537,8 +540,8 @@ export default function Settings() {
                 {/* Boutons action devise */}
                 <div style={{ marginBottom: 16 }}>
                   {!editingCurrency ? (
-                    <button className="mini-btn" onClick={() => setEditingCurrency(true)}>
-                      ✏️ {cfg.lang === 'fr' ? 'Modifier la devise' : 'Change currency'}
+                    <button className="mini-btn" onClick={() => setEditingCurrency(true)} style={{ display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>
+                      <Pencil size={12}/> {cfg.lang === 'fr' ? 'Modifier la devise' : 'Change currency'}
                     </button>
                   ) : (
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -586,7 +589,7 @@ export default function Settings() {
                       ? '✅ Paramètres sauvegardés et verrouillés'
                       : '✅ Settings saved and locked')
                   }}>
-                    🔒 {cfg.lang === 'fr' ? 'Verrouiller les paramètres' : 'Lock settings'}
+                    <Lock size={14}/> {cfg.lang === 'fr' ? 'Verrouiller les paramètres' : 'Lock settings'}
                   </button>
                 </div>
               )}
@@ -598,11 +601,11 @@ export default function Settings() {
             <div className="space-y-4">
               {/* Thème */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🎨 {t('settings_theme')}</span></div>
+                <div className="panel-head"><span className="panel-title"><Palette size={14}/> {t('settings_theme')}</span></div>
                 <div className="flex gap-3">
                   {[
-                    { id: 'dark',  label: t('settings_dark'),  emoji: '🌙', desc: t('settings_dark_desc') },
-                    { id: 'light', label: t('settings_light'), emoji: '☀️', desc: t('settings_light_desc') },
+                    { id: 'dark',  label: t('settings_dark'),  icon: <Moon size={28}/>, desc: t('settings_dark_desc') },
+                    { id: 'light', label: t('settings_light'), icon: <Sun size={28}/>, desc: t('settings_light_desc') },
                   ].map(th => (
                     <div key={th.id}
                       className="flex-1 p-4 rounded-xl cursor-pointer transition-all"
@@ -612,7 +615,7 @@ export default function Settings() {
                       }}
                       onClick={() => cfg.updateConfig({ theme: th.id as 'dark' | 'light' })}
                     >
-                      <div style={{ fontSize: 28, marginBottom: 6 }}>{th.emoji}</div>
+                      <div style={{ marginBottom: 6, display:'flex' }}>{th.icon}</div>
                       <div className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{th.label}</div>
                       <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{th.desc}</div>
                       {cfg.theme === th.id && <span className="badge badge-teal mt-2" style={{ display: 'block', marginTop: 8 }}>{t('status_active')}</span>}
@@ -623,7 +626,7 @@ export default function Settings() {
 
               {/* Couleur d'accent */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🖌️ {t('settings_accent_color')}</span></div>
+                <div className="panel-head"><span className="panel-title"><Paintbrush size={14}/> {t('settings_accent_color')}</span></div>
                 <div className="flex gap-3 flex-wrap">
                   {getAccentColors().map(ac => (
                     <div key={ac.hex}
@@ -648,7 +651,7 @@ export default function Settings() {
 
               {/* Options d'affichage */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">⚙️ {t('settings_display_options')}</span></div>
+                <div className="panel-head"><span className="panel-title"><Cog size={14}/> {t('settings_display_options')}</span></div>
                 <div className="space-y-3">
                   <ToggleRow label={t('settings_compact')} sub={t('settings_compact_desc')}
                     value={cfg.compactMode} onChange={v => cfg.updateConfig({ compactMode: v })} />
@@ -673,15 +676,15 @@ export default function Settings() {
           {/* ════ POS ════ */}
           {tab === 'pos' && (
             <div className="panel">
-              <div className="panel-head"><span className="panel-title">🛒 {t('settings_pos_config')}</span></div>
+              <div className="panel-head"><span className="panel-title"><ShoppingCart size={14}/> {t('settings_pos_config')}</span></div>
               <div className="space-y-4">
                 {/* Mode de prix TTC/HT — comparaison visuelle */}
                 <div>
                   <Label>{cfg.lang === 'fr' ? 'Mode d\'affichage des prix' : 'Price display mode'}</Label>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                     {[
-                      { id:'TTC', title:'TTC', subtitle: cfg.lang==='fr'?'Prix avec taxes incluses':'Prices with taxes included', example: cfg.lang==='fr'?'1 000 FCFA (TVA incluse)':'1,000 XOF (tax included)', icon:'💰' },
-                      { id:'HT',  title:'HT',  subtitle: cfg.lang==='fr'?'Prix hors taxes + TVA séparée':'Prices excl. tax + separate VAT', example: cfg.lang==='fr'?'847 FCFA + TVA 153 FCFA':'847 XOF + VAT 153 XOF', icon:'🧾' },
+                      { id:'TTC', title:'TTC', subtitle: cfg.lang==='fr'?'Prix avec taxes incluses':'Prices with taxes included', example: cfg.lang==='fr'?'1 000 FCFA (TVA incluse)':'1,000 XOF (tax included)', icon:<DollarSign size={20}/> },
+                      { id:'HT',  title:'HT',  subtitle: cfg.lang==='fr'?'Prix hors taxes + TVA séparée':'Prices excl. tax + separate VAT', example: cfg.lang==='fr'?'847 FCFA + TVA 153 FCFA':'847 XOF + VAT 153 XOF', icon:<Receipt size={20}/> },
                     ].map(mode => (
                       <button key={mode.id} type="button"
                         aria-pressed={cfg.priceMode === mode.id}
@@ -695,7 +698,7 @@ export default function Settings() {
                         }}>
                         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
                           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                            <span style={{fontSize:20}}>{mode.icon}</span>
+                            <span style={{ display:'flex' }}>{mode.icon}</span>
                             <span style={{ fontSize:16, fontWeight:900, color: cfg.priceMode===mode.id ? 'var(--p3)' : 'var(--text)' }}>{mode.title}</span>
                           </div>
                           {cfg.priceMode===mode.id && (
@@ -782,7 +785,7 @@ export default function Settings() {
           {/* ════ STOCK ════ */}
           {tab === 'stock' && (
             <div className="panel">
-              <div className="panel-head"><span className="panel-title">📦 {t('settings_stock_config')}</span></div>
+              <div className="panel-head"><span className="panel-title"><Package size={14}/> {t('settings_stock_config')}</span></div>
               <div className="space-y-4">
                 <div>
                   <Label>{t('settings_stock_threshold')}</Label>
@@ -814,11 +817,11 @@ export default function Settings() {
           {tab === 'notifications' && (
             <>
             <div className="panel">
-              <div className="panel-head"><span className="panel-title">🔔 {t('notif_preferences')}</span></div>
+              <div className="panel-head"><span className="panel-title"><Bell size={14}/> {t('notif_preferences')}</span></div>
               <div className="space-y-5">
                 {/* Email */}
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>📧 Email</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)', display:'flex', alignItems:'center', gap:5 }}><Mail size={12}/> Email</h4>
                   <div className="space-y-2">
                     <ToggleRow label={t('notif_sales_recap')}
                       sub={t('notif_sales_recap_desc')}
@@ -843,7 +846,7 @@ export default function Settings() {
 
                 {/* SMS */}
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>📱 SMS</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)', display:'flex', alignItems:'center', gap:5 }}><Smartphone size={12}/> SMS</h4>
                   <div className="space-y-2">
                     <ToggleRow label={`${t('notif_big_sales')} (> ${fmt(100000)})`}
                       sub={t('notif_big_sales_desc')}
@@ -856,7 +859,7 @@ export default function Settings() {
 
                 {/* Push */}
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>🔔 Push</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)', display:'flex', alignItems:'center', gap:5 }}><Bell size={12}/> Push</h4>
                   <div className="space-y-2">
                     <ToggleRow label={t('notif_push_all')}
                       sub={t('notif_push_all_desc')}
@@ -874,11 +877,11 @@ export default function Settings() {
 
             {/* WhatsApp automatiques */}
             <div className="panel" style={{ marginTop: 16 }}>
-              <div className="panel-head"><span className="panel-title">📱 Alertes WhatsApp automatiques</span></div>
+              <div className="panel-head"><span className="panel-title"><Smartphone size={14}/> Alertes WhatsApp automatiques</span></div>
               <div className="space-y-3">
                 {[
                   {
-                    icon: '🌅',
+                    icon: <Sunrise size={24}/>,
                     title: cfg.lang === 'fr' ? 'Alerte stock — 8h00' : 'Stock alert — 8:00 AM',
                     desc: cfg.lang === 'fr'
                       ? 'Reçoit une alerte WhatsApp si des produits sont en rupture'
@@ -886,7 +889,7 @@ export default function Settings() {
                     key: 'morning' as const,
                   },
                   {
-                    icon: '🌙',
+                    icon: <Moon size={24}/>,
                     title: cfg.lang === 'fr' ? 'Résumé des ventes — 20h00' : 'Sales summary — 8:00 PM',
                     desc: cfg.lang === 'fr'
                       ? 'Reçoit un résumé WhatsApp des ventes de la journée'
@@ -903,7 +906,7 @@ export default function Settings() {
                     borderRadius: 12,
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ fontSize: 24 }}>{alert.icon}</span>
+                      <span style={{ display:'flex' }}>{alert.icon}</span>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{alert.title}</div>
                         <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{alert.desc}</div>
@@ -919,15 +922,15 @@ export default function Settings() {
                           } catch {
                             toast.error('Erreur envoi test')
                           }
-                        }}>
-                        🧪 Tester
+                        }} style={{ display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>
+                        <FlaskConical size={12}/> Tester
                       </button>
                       <div style={{
                         fontSize: 11, fontWeight: 700,
                         color: 'var(--acc2)',
                         background: 'rgba(14,196,126,.12)',
-                        borderRadius: 20, padding: '3px 10px',
-                      }}>✅ Actif</div>
+                        borderRadius: 20, padding: '3px 10px', display:'flex', alignItems:'center', gap:4,
+                      }}><CheckCircle size={10}/> Actif</div>
                     </div>
                   </div>
                 ))}
@@ -941,7 +944,7 @@ export default function Settings() {
             <div className="space-y-4">
               {/* 2FA */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🔐 Authentification à deux facteurs (2FA)</span></div>
+                <div className="panel-head"><span className="panel-title"><ShieldCheck size={14}/> Authentification à deux facteurs (2FA)</span></div>
                 <ToggleRow label={t('settings_2fa_active')}
                   sub={t('settings_2fa_desc')}
                   value={cfg.twoFAEnabled}
@@ -976,7 +979,7 @@ export default function Settings() {
 
               {/* Session */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">⏱️ Paramètres de session</span></div>
+                <div className="panel-head"><span className="panel-title"><Clock size={14}/> Paramètres de session</span></div>
                 <div className="space-y-4">
                   <div>
                     <Label>{t('settings_session_timeout')}</Label>
@@ -1003,7 +1006,7 @@ export default function Settings() {
 
               {/* Sessions actives */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🛡️ {t('settings_active_sessions')}</span></div>
+                <div className="panel-head"><span className="panel-title"><Shield size={14}/> {t('settings_active_sessions')}</span></div>
                 {[
                   { device: '💻 MacBook Pro', location: 'Dakar, Sénégal', time: 'Maintenant', current: true },
                   { device: '📱 iPhone 15',   location: 'Dakar, Sénégal', time: 'Il y a 2h',  current: false },
@@ -1025,7 +1028,7 @@ export default function Settings() {
 
               {/* Export/Import */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">📁 Configuration</span></div>
+                <div className="panel-head"><span className="panel-title"><FolderOpen size={14}/> Configuration</span></div>
                 <div className="flex gap-3 flex-wrap">
                   <button className="btn btn-ghost gap-2" onClick={handleExportConfig}>
                     <Download size={14} /> {t('settings_export_config')}
@@ -1034,7 +1037,7 @@ export default function Settings() {
                     <Upload size={14} /> {t('settings_import_config')}
                   </button>
                   <button className="btn btn-ghost gap-2" onClick={generateCDC}>
-                    📋 {cfg.lang === 'fr' ? 'Cahier des charges PDF' : 'Technical spec PDF'}
+                    <ClipboardList size={14}/> {cfg.lang === 'fr' ? 'Cahier des charges PDF' : 'Technical spec PDF'}
                   </button>
                 </div>
               </div>
@@ -1046,7 +1049,7 @@ export default function Settings() {
             <div className="space-y-4">
               {/* Export / Import */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">📦 Configuration complète</span></div>
+                <div className="panel-head"><span className="panel-title"><Package size={14}/> Configuration complète</span></div>
                 <div className="space-y-3">
                   <p className="text-sm" style={{ color: 'var(--text2)' }}>
                     {t('settings_export_config_desc')}
@@ -1059,7 +1062,7 @@ export default function Settings() {
                       <Upload size={14} /> {t('settings_import_config')}
                     </button>
                     <button className="btn btn-ghost gap-2" onClick={generateCDC}>
-                      📋 {cfg.lang === 'fr' ? 'Cahier des charges PDF' : 'Technical spec PDF'}
+                      <ClipboardList size={14}/> {cfg.lang === 'fr' ? 'Cahier des charges PDF' : 'Technical spec PDF'}
                     </button>
                   </div>
                 </div>
@@ -1067,7 +1070,7 @@ export default function Settings() {
 
               {/* Réinitialiser */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">🔄 Réinitialisation</span></div>
+                <div className="panel-head"><span className="panel-title"><RefreshCw size={14}/> Réinitialisation</span></div>
                 <div className="flex items-start gap-3 p-4 rounded-xl mb-4"
                   style={{ background: 'rgba(232,64,74,.07)', border: '1px solid rgba(232,64,74,.2)' }}>
                   <AlertTriangle size={18} style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 2 }} />
@@ -1087,7 +1090,7 @@ export default function Settings() {
 
               {/* Informations système */}
               <div className="panel">
-                <div className="panel-head"><span className="panel-title">ℹ️ {t('settings_system_info')}</span></div>
+                <div className="panel-head"><span className="panel-title"><Info size={14}/> {t('settings_system_info')}</span></div>
                 <div className="space-y-2">
                   {[
                     { label: t('settings_version'),     value: 'v1.0.0-beta' },
@@ -1114,7 +1117,7 @@ export default function Settings() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowReset(false)}>
           <div className="modal-box" style={{ maxWidth: 420 }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-base" style={{ color: 'var(--text)' }}>⚠️ Confirmer la réinitialisation</h3>
+              <h3 className="font-bold text-base" style={{ color: 'var(--text)' }}><AlertTriangle size={14}/> Confirmer la réinitialisation</h3>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowReset(false)}><X size={14} /></button>
             </div>
             <p className="text-sm mb-5" style={{ color: 'var(--text2)' }}>

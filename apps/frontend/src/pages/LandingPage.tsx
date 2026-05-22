@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, convertAmount } from '@/stores/appStore'
 import type { Lang, Currency } from '@/stores/appStore'
+import { ShoppingCart, Package, BarChart2, Users, Briefcase, Lock } from 'lucide-react'
 
 // ─── TRADUCTIONS LANDING ──────────────────────────────────────────────────────
 
@@ -449,13 +450,13 @@ export default function LandingPage() {
     return rounded.toString()
   }
 
-  const features = [
-    { icon: '🛒', color: '#6C47FF', title: lp.feature1_title, desc: lp.feature1_desc },
-    { icon: '📦', color: '#00D084', title: lp.feature2_title, desc: lp.feature2_desc },
-    { icon: '📊', color: '#00B8FF', title: lp.feature3_title, desc: lp.feature3_desc },
-    { icon: '👥', color: '#F59E0B', title: lp.feature4_title, desc: lp.feature4_desc },
-    { icon: '🧑‍💼', color: '#EC4899', title: lp.feature5_title, desc: lp.feature5_desc },
-    { icon: '🔐', color: '#EF4444', title: lp.feature6_title, desc: lp.feature6_desc },
+  const features: { icon: JSX.Element; color: string; title: string; desc: string }[] = [
+    { icon: <ShoppingCart size={24}/>, color: '#6C47FF', title: lp.feature1_title, desc: lp.feature1_desc },
+    { icon: <Package size={24}/>,      color: '#00D084', title: lp.feature2_title, desc: lp.feature2_desc },
+    { icon: <BarChart2 size={24}/>,    color: '#00B8FF', title: lp.feature3_title, desc: lp.feature3_desc },
+    { icon: <Users size={24}/>,        color: '#F59E0B', title: lp.feature4_title, desc: lp.feature4_desc },
+    { icon: <Briefcase size={24}/>,    color: '#EC4899', title: lp.feature5_title, desc: lp.feature5_desc },
+    { icon: <Lock size={24}/>,         color: '#EF4444', title: lp.feature6_title, desc: lp.feature6_desc },
   ]
 
   const steps = [
@@ -813,7 +814,7 @@ export default function LandingPage() {
                 background: `linear-gradient(135deg,${f.color}22,${f.color}10)`,
                 border: `1.5px solid ${f.color}33`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 24, marginBottom: 18,
+                marginBottom: 18, color: f.color,
                 boxShadow: `0 4px 16px ${f.color}18`,
               }}>{f.icon}</div>
               <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 8, color: S.ltext }}>{f.title}</div>
