@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { dashboardApi } from '@/lib/api'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip,
+  AreaChart, Area, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
 } from 'recharts'
 
@@ -271,12 +271,17 @@ export default function Dashboard() {
       {/* KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
         {[
-          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} transactions`,  evol: '+12%', up: true,  Icon: DollarSign, color: 'var(--p2)',   bg: 'rgba(108,71,255,.14)' },
-          { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} alertes stock`,   evol: '−3',   up: false, Icon: Package,    color: 'var(--acc)',  bg: 'rgba(255,149,0,.14)'  },
-          { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} cmd. en attente`,   evol: '',     up: null,  Icon: Users,      color: 'var(--acc2)', bg: 'rgba(0,208,132,.14)'  },
-          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),         sub: 'vs mois dernier',                           evol: '+7%',  up: true,  Icon: TrendingUp, color: 'var(--acc3)', bg: 'rgba(0,184,255,.14)'  },
+          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} transactions`,  evol: '+12%', up: true,  Icon: DollarSign, color: 'var(--p2)',   hex: '#6C47FF', bg: 'rgba(108,71,255,.14)' },
+          { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} alertes stock`,   evol: '−3',   up: false, Icon: Package,    color: 'var(--acc)',  hex: '#FF9500', bg: 'rgba(255,149,0,.14)'  },
+          { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} cmd. en attente`,   evol: '',     up: null,  Icon: Users,      color: 'var(--acc2)', hex: '#00D084', bg: 'rgba(0,208,132,.14)'  },
+          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),         sub: 'vs mois dernier',                           evol: '+7%',  up: true,  Icon: TrendingUp, color: 'var(--acc3)', hex: '#00B8FF', bg: 'rgba(0,184,255,.14)'  },
         ].map(k => (
-          <div key={k.label} className="kpi-card">
+          <div key={k.label} className="kpi-card" style={{
+            background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,
+            border: `1px solid ${k.hex}28`,
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
               <div style={{
                 width: 44, height: 44, borderRadius: 12, flexShrink: 0,
@@ -350,11 +355,11 @@ export default function Dashboard() {
             </select>
           </div>
           <ResponsiveContainer width="100%" height={190}>
-            <BarChart data={salesChart} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+            <AreaChart data={salesChart} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
               <defs>
-                <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6C47FF" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#8B6FFF" stopOpacity={0.7} />
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#00D084" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#00D084" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)" />
@@ -366,8 +371,8 @@ export default function Dashboard() {
                   return String(v)
                 }} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,.04)', stroke: 'rgba(255,255,255,.08)', strokeWidth: 1 }} />
-              <Bar dataKey="ventes" fill="url(#salesGrad)" radius={[6, 6, 0, 0]} />
-            </BarChart>
+              <Area dataKey="ventes" stroke="#00D084" strokeWidth={2.5} fill="url(#areaGrad)" dot={false} />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
 

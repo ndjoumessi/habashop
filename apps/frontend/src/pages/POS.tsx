@@ -916,7 +916,7 @@ export default function POS() {
                         color: isLowStock ? 'var(--danger)' : 'var(--text3)',
                         fontWeight: isLowStock ? 600 : 400,
                       }}>
-                        {isLowStock ? '⚠️ ' : ''}Stock : {p.stock}
+                        {isLowStock && <AlertTriangle size={10} style={{ display:'inline', verticalAlign:'middle', marginRight:3 }} />}Stock : {p.stock}
                       </div>
                     )}
                   </div>

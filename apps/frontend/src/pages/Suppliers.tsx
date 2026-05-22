@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { suppliersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star, Pencil, Package } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star, Pencil, Package, FileText } from 'lucide-react'
 import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
@@ -86,11 +86,14 @@ const STATUS_CFG: Record<SupplierStatus, { cls: string }> = {
   Inactif: { cls: 'badge-gray'  },
 }
 
+const SUPP_COLORS = ['#6C47FF','#00D084','#FF9500','#00B8FF','#FF3B5C','#F59E0B','#8B5CF6','#10B981']
+function supplierColor(name: string) { return SUPP_COLORS[name.charCodeAt(0) % SUPP_COLORS.length] }
+
 function StarRating({ rating }: { rating: number }) {
   return (
-    <div className="flex items-center gap-0.5">
+    <div style={{ display:'flex', alignItems:'center', gap:2 }}>
       {[1, 2, 3, 4, 5].map(i => (
-        <span key={i} style={{ color: i <= rating ? '#F0A500' : 'var(--bg4)', fontSize: 13 }}>★</span>
+        <Star key={i} size={12} style={{ color: i <= rating ? '#F0A500' : 'var(--border)', fill: i <= rating ? '#F0A500' : 'none' }} />
       ))}
     </div>
   )
@@ -218,13 +221,18 @@ export default function Suppliers() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('suppliers_total'),            value: suppliers.length.toString(), color: 'var(--p2)',   icon: <Factory       size={18} /> },
-          { label: t('suppliers_active'),          value: actifs.toString(),            color: 'var(--acc2)', icon: <CheckCircle   size={18} /> },
-          { label: t('suppliers_pending_orders'),  value: enCours.toString(),           color: 'var(--acc)',  icon: <Truck         size={18} /> },
-          { label: t('suppliers_avg_rating'),      value: `${avgRating} ★`,            color: 'var(--acc)',  icon: <Star          size={18} /> },
+          { label: t('suppliers_total'),           value: suppliers.length.toString(), color: 'var(--p2)',   hex: '#6C47FF', icon: <Factory       size={18} /> },
+          { label: t('suppliers_active'),          value: actifs.toString(),           color: 'var(--acc2)', hex: '#00D084', icon: <CheckCircle   size={18} /> },
+          { label: t('suppliers_pending_orders'),  value: enCours.toString(),          color: 'var(--acc)',  hex: '#FF9500', icon: <Truck         size={18} /> },
+          { label: t('suppliers_avg_rating'),      value: `${avgRating}/5`,            color: 'var(--acc)',  hex: '#FF9500', icon: <Star          size={18} /> },
         ].map(k => (
-          <div key={k.label} className="kpi-card">
-            <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
+          <div key={k.label} className="kpi-card" style={{
+            background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,
+            border: `1px solid ${k.hex}28`,
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
+            <div className="kpi-icon-w" style={{ color: k.color, background: `${k.hex}20` }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
             <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
           </div>
@@ -286,8 +294,19 @@ export default function Suppliers() {
               {filtered.map(s => (
                 <tr key={s.id}>
                   <td>
-                    <div className="td-bold">{s.name}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{s.contact}</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                      <div style={{
+                        width:34, height:34, borderRadius:10, flexShrink:0,
+                        background:`linear-gradient(135deg,${supplierColor(s.name)}22,${supplierColor(s.name)}11)`,
+                        border:`1px solid ${supplierColor(s.name)}44`,
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:13, fontWeight:900, color:supplierColor(s.name),
+                      }}>{s.name[0]}</div>
+                      <div>
+                        <div className="td-bold">{s.name}</div>
+                        <div className="text-xs" style={{ color: 'var(--text3)' }}>{s.contact}</div>
+                      </div>
+                    </div>
                   </td>
                   <td>
                     <div className="flex flex-wrap gap-1">
@@ -341,7 +360,7 @@ export default function Suppliers() {
           <div className="modal-box" style={{ maxWidth: 580 }}>
             <div className="flex items-start justify-between mb-5">
               <div>
-                <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>🏭 {viewSupplier.name}</h3>
+                <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Factory size={15}/> {viewSupplier.name}</h3>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{viewSupplier.contact} · {viewSupplier.address}</p>
               </div>
               <div className="flex items-center gap-2">
@@ -401,15 +420,16 @@ export default function Suppliers() {
 
             {viewSupplier.notes && (
               <div className="p-3 rounded-xl text-xs mb-4"
-                style={{ background: 'rgba(240,165,0,0.08)', border: '1px solid rgba(240,165,0,0.2)', color: 'var(--acc)' }}>
-                📝 {viewSupplier.notes}
+                style={{ background: 'rgba(240,165,0,0.08)', border: '1px solid rgba(240,165,0,0.2)', color: 'var(--acc)', display:'flex', gap:6, alignItems:'flex-start' }}>
+                <FileText size={12} style={{ flexShrink:0, marginTop:1 }}/> {viewSupplier.notes}
               </div>
             )}
 
             <div className="flex gap-2">
               <button className="btn btn-primary flex-1 justify-center"
+                style={{ display:'flex', alignItems:'center', gap:6 }}
                 onClick={() => { setViewSupplier(null); navigate('/app/orders') }}>
-                📦 Nouvelle commande
+                <Package size={13}/> Nouvelle commande
               </button>
               <button className="btn btn-ghost" onClick={() => setViewSupplier(null)}>Fermer</button>
             </div>
@@ -422,20 +442,20 @@ export default function Suppliers() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowEditSuppModal(false)}>
           <div className="modal-box" style={{ maxWidth: 540 }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>🏭 {editSupplier.name}</h3>
+              <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Factory size={15}/> {editSupplier.name}</h3>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowEditSuppModal(false)}><X size={14} /></button>
             </div>
 
             {/* Mode banner */}
             {!suppEditMode
               ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
-                  <span style={{ fontSize:13 }}>👁</span>
+                  <Eye size={13} style={{ color:'var(--acc3)', flexShrink:0 }} />
                   <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>
                     {t('lang') === 'en' ? 'View mode — click Edit to make changes' : 'Mode visualisation — cliquez sur Modifier pour éditer'}
                   </span>
                 </div>
               : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
-                  <span style={{ fontSize:13 }}>✏️</span>
+                  <Pencil size={13} style={{ color:'var(--warn)', flexShrink:0 }} />
                   <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>
                     Mode édition — modifications non sauvegardées
                   </span>
@@ -521,7 +541,7 @@ export default function Suppliers() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
           <div className="modal-box" style={{ maxWidth: 540 }}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ Nouveau fournisseur</h3>
+              <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Plus size={15}/> Nouveau fournisseur</h3>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowCreate(false)}><X size={14} /></button>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -571,7 +591,7 @@ export default function Suppliers() {
               </div>
             </div>
             <div className="flex gap-2 mt-5">
-              <button className="btn btn-primary flex-1 justify-center" onClick={addSupplier}>✅ {t('btn_add')} le fournisseur</button>
+              <button className="btn btn-primary flex-1 justify-center" style={{ display:'flex', alignItems:'center', gap:6 }} onClick={addSupplier}><CheckCircle size={13}/> {t('btn_add')} le fournisseur</button>
               <button className="btn btn-ghost" onClick={() => setShowCreate(false)}>{t('btn_cancel')}</button>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen, Tag, Printer, Camera, Pencil, Package, X, Eye, Trash2 } from 'lucide-react'
+import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen, Tag, Printer, Camera, Pencil, Package, X, Eye, Trash2, LayoutGrid, AlignJustify } from 'lucide-react'
 import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
@@ -66,6 +66,7 @@ export default function Stock() {
   const [categories, setCategories] = useState(CATEGORIES_INIT)
   const [showCatModal, setShowCatModal] = useState(false)
   const [showLabelModal, setShowLabelModal] = useState(false)
+  const [stockView, setStockView] = useState<'grid'|'list'>('list')
   const [labelConfig, setLabelConfig] = useState({
     size: 'medium' as 'small' | 'medium' | 'large',
     showPrice: true, showSku: true, showBarcode: true, copies: 1,
@@ -188,13 +189,18 @@ export default function Stock() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('stock_total'),    value: products.length.toString(),          color: 'var(--p2)',    icon: <List          size={18} /> },
-          { label: t('stock_value'),   value: fmt(totalValue), color: 'var(--acc2)', icon: <Gem           size={18} /> },
-          { label: t('stock_ruptures'),value: ruptures.length.toString(),           color: 'var(--danger)',icon: <AlertTriangle size={18} /> },
-          { label: t('stock_categories'),value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', icon: <FolderOpen    size={18} /> },
+          { label: t('stock_total'),      value: products.length.toString(),         color: 'var(--p2)',    hex: '#6C47FF', icon: <List          size={18} /> },
+          { label: t('stock_value'),      value: fmt(totalValue),                    color: 'var(--acc2)', hex: '#00D084', icon: <Gem           size={18} /> },
+          { label: t('stock_ruptures'),   value: ruptures.length.toString(),         color: 'var(--danger)',hex: '#FF3B5C', icon: <AlertTriangle size={18} /> },
+          { label: t('stock_categories'), value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', hex: '#FF9500', icon: <FolderOpen size={18} /> },
         ].map(k => (
-          <div key={k.label} className="kpi-card">
-            <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
+          <div key={k.label} className="kpi-card" style={{
+            background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,
+            border: `1px solid ${k.hex}28`,
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
+            <div className="kpi-icon-w" style={{ color: k.color, background: `${k.hex}20` }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
             <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
           </div>
@@ -206,6 +212,10 @@ export default function Stock() {
         <div className="panel-head">
           <span className="panel-title">{t('stock_title')}</span>
           <div className="flex items-center gap-2">
+            <div style={{ display:'flex', background:'var(--bg3)', borderRadius:8, padding:2, border:'1px solid var(--border)' }}>
+              <button onClick={() => setStockView('grid')} style={{ padding:'4px 8px', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'grid' ? 'var(--p)' : 'transparent', color: stockView === 'grid' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }} title="Vue grille"><LayoutGrid size={13} /></button>
+              <button onClick={() => setStockView('list')} style={{ padding:'4px 8px', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'list' ? 'var(--p)' : 'transparent', color: stockView === 'list' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }} title="Vue liste"><AlignJustify size={13} /></button>
+            </div>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
               exportCSV('habashop_stock',
                 ['SKU','Produit','Catégorie','Prix achat','Prix vente','Stock','Seuil','Fournisseur','Statut'],
@@ -279,65 +289,129 @@ export default function Stock() {
           </select>
         </div>
 
-        {/* Table */}
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                {stockShowSKU && <th scope="col">{t('col_ref')}</th>}
-                <th scope="col">{t('col_product')}</th><th scope="col">{t('col_category')}</th>
-                <th scope="col">{t('col_buy_price')}</th><th scope="col">{t('col_sell_price')}</th>
-                <th scope="col">{t('col_stock')}</th><th scope="col">{t('col_threshold')}</th><th scope="col">{t('col_supplier')}</th>
-                <th scope="col">{t('col_status')}</th><th scope="col">{t('col_actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(p => {
-                const st = statusOf(p.stock, p.threshold)
-                return (
-                  <tr key={p.sku}>
-                    {stockShowSKU && <td className="td-mono">{p.sku}</td>}
-                    <td className="td-bold">{p.name}</td>
-                    <td><span className="badge badge-teal">{p.category}</span></td>
-                    <td className="td-num">{fmt(p.buy)}</td>
-                    <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(p.sell)}</td>
-                    <td>
-                      <span className="td-num" style={{
-                        color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)',
-                        fontWeight: 700,
-                      }}>{p.stock}</span>
-                    </td>
-                    <td className="td-num" style={{ color: 'var(--text3)' }}>{p.threshold}</td>
-                    <td className="text-xs" style={{ color: 'var(--text2)' }}>{p.supplier}</td>
-                    <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
-                    <td>
-                      <div className="flex gap-1.5">
-                        {st.cls !== 'badge-green' && (
-                          <button className="btn btn-sm btn-ghost gap-1" title="Commander" style={{ cursor:'pointer' }}
-                            onClick={() => navigate('/app/orders')}><Package size={12} /></button>
-                        )}
-                        <button className="btn btn-sm btn-ghost" title="Modifier"
-                          onClick={() => {
-                            setForm(f => ({ ...f,
-                              sku: p.sku, name: p.name.replace(/^\S+\s/, ''),
-                              category: p.category, buy: p.buy, sell: p.sell,
-                              stock: p.stock, threshold: p.threshold, supplier: p.supplier,
-                              image: p.name.match(/^\S+/)?.[0] ?? '📦',
-                            }))
-                            setEditingSku(p.sku)
-                            setEditingId(p._id ?? null)
-                            setModalTab('general')
-                            setProductEditMode(false)
-                            setShowModal(true)
-                          }}><Pencil size={12} /></button>
+        {/* Grid / List view */}
+        {stockView === 'grid' ? (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:12 }}>
+            {filtered.map(p => {
+              const st = statusOf(p.stock, p.threshold)
+              const pct = Math.min(100, (p.stock / Math.max(p.threshold, 1)) * 100)
+              return (
+                <div key={p.sku} style={{
+                  background:'var(--card)', border:'1px solid var(--border)',
+                  borderRadius:14, padding:16, display:'flex', flexDirection:'column', gap:10,
+                  transition:'all .18s',
+                }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)' }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = '' }}
+                >
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <div style={{ width:42, height:42, borderRadius:12, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>
+                      {p.name.match(/^\S+/)?.[0]}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {p.name.replace(/^\S+\s?/, '')}
                       </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                      {stockShowSKU && <div style={{ fontSize:10, color:'var(--text4)', fontFamily:'var(--mono)' }}>{p.sku}</div>}
+                    </div>
+                    <span className={`badge ${st.cls}`} style={{ flexShrink:0 }}>{st.label}</span>
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
+                    <div style={{ padding:'7px 9px', borderRadius:8, background:'rgba(108,71,255,.08)', border:'1px solid rgba(108,71,255,.15)' }}>
+                      <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'fr' ? 'Achat' : 'Buy'}</div>
+                      <div style={{ fontSize:12, fontWeight:800, color:'var(--p3)', fontFamily:'var(--mono)' }}>{fmt(p.buy)}</div>
+                    </div>
+                    <div style={{ padding:'7px 9px', borderRadius:8, background:'rgba(0,208,132,.08)', border:'1px solid rgba(0,208,132,.15)' }}>
+                      <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'fr' ? 'Vente' : 'Sell'}</div>
+                      <div style={{ fontSize:12, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(p.sell)}</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'var(--text3)', marginBottom:4 }}>
+                      <span>Stock</span>
+                      <span style={{ fontFamily:'var(--mono)', fontWeight:700, color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)' }}>
+                        {p.stock}<span style={{ color:'var(--text4)', fontWeight:400 }}>/{p.threshold}</span>
+                      </span>
+                    </div>
+                    <div style={{ height:5, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
+                      <div style={{ height:'100%', borderRadius:99, width:`${pct}%`, background: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)', transition:'width .3s' }} />
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:5, marginTop:2 }}>
+                    {st.cls !== 'badge-green' && (
+                      <button className="mini-btn" style={{ flex:1, cursor:'pointer', justifyContent:'center', display:'flex', alignItems:'center', gap:4, fontSize:11 }} onClick={() => navigate('/app/orders')}>
+                        <Package size={11} /> {lang === 'fr' ? 'Commander' : 'Order'}
+                      </button>
+                    )}
+                    <button className="mini-btn" style={{ cursor:'pointer' }} title="Modifier" onClick={() => {
+                      setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: p.buy, sell: p.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, image: p.name.match(/^\S+/)?.[0] ?? '📦' }))
+                      setEditingSku(p.sku); setEditingId(p._id ?? null); setModalTab('general'); setProductEditMode(false); setShowModal(true)
+                    }}><Pencil size={11} /></button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  {stockShowSKU && <th scope="col">{t('col_ref')}</th>}
+                  <th scope="col">{t('col_product')}</th><th scope="col">{t('col_category')}</th>
+                  <th scope="col">{t('col_buy_price')}</th><th scope="col">{t('col_sell_price')}</th>
+                  <th scope="col">{t('col_stock')}</th><th scope="col">{t('col_threshold')}</th><th scope="col">{t('col_supplier')}</th>
+                  <th scope="col">{t('col_status')}</th><th scope="col">{t('col_actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(p => {
+                  const st = statusOf(p.stock, p.threshold)
+                  return (
+                    <tr key={p.sku}>
+                      {stockShowSKU && <td className="td-mono">{p.sku}</td>}
+                      <td className="td-bold">{p.name}</td>
+                      <td><span className="badge badge-teal">{p.category}</span></td>
+                      <td className="td-num">{fmt(p.buy)}</td>
+                      <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(p.sell)}</td>
+                      <td>
+                        <span className="td-num" style={{
+                          color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)',
+                          fontWeight: 700,
+                        }}>{p.stock}</span>
+                      </td>
+                      <td className="td-num" style={{ color: 'var(--text3)' }}>{p.threshold}</td>
+                      <td className="text-xs" style={{ color: 'var(--text2)' }}>{p.supplier}</td>
+                      <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
+                      <td>
+                        <div className="flex gap-1.5">
+                          {st.cls !== 'badge-green' && (
+                            <button className="btn btn-sm btn-ghost gap-1" title="Commander" style={{ cursor:'pointer' }}
+                              onClick={() => navigate('/app/orders')}><Package size={12} /></button>
+                          )}
+                          <button className="btn btn-sm btn-ghost" title="Modifier"
+                            onClick={() => {
+                              setForm(f => ({ ...f,
+                                sku: p.sku, name: p.name.replace(/^\S+\s/, ''),
+                                category: p.category, buy: p.buy, sell: p.sell,
+                                stock: p.stock, threshold: p.threshold, supplier: p.supplier,
+                                image: p.name.match(/^\S+/)?.[0] ?? '📦',
+                              }))
+                              setEditingSku(p.sku)
+                              setEditingId(p._id ?? null)
+                              setModalTab('general')
+                              setProductEditMode(false)
+                              setShowModal(true)
+                            }}><Pencil size={12} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ── Panel Catégories ── */}
