@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { dashboardApi } from '@/lib/api'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip,
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
   ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Sector,
 } from 'recharts'
 
@@ -24,12 +24,14 @@ const SALES_CHART_FALLBACK = [
 ]
 
 const PIE_DATA = [
-  { name: 'Céréales',  value: 38, color: '#6C47FF' },
-  { name: 'Corps gras', value: 22, color: '#00D084' },
-  { name: 'Épicerie',  value: 18, color: '#FF9500' },
-  { name: 'Hygiène',   value: 12, color: '#00B8FF' },
-  { name: 'Autres',    value: 10, color: '#8888A8' },
+  { name: 'Céréales',   value: 1007000, color: '#6C47FF' },
+  { name: 'Corps gras', value: 583000,  color: '#00D084' },
+  { name: 'Épicerie',   value: 477000,  color: '#FF9500' },
+  { name: 'Hygiène',    value: 318000,  color: '#00B8FF' },
+  { name: 'Autres',     value: 265000,  color: '#8888A8' },
 ]
+
+const CATEGORY_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#00B8FF', '#FF3B5C', '#FFB800']
 
 type Lang = 'fr' | 'en' | 'es' | 'it'
 type LangMap = Record<Lang, string>
@@ -90,6 +92,49 @@ const ALERTS = [
 ]
 
 const RANK_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#8888A8', '#8888A8']
+
+const DonutTooltip = ({ active, payload }: any) => {
+  const fmt = useFormatAmount()
+  if (!active || !payload?.length) return null
+  const p     = payload[0]
+  const total = p.payload?.total ?? 1
+  const pct   = Math.round((p.value / total) * 100)
+  return (
+    <div style={{
+      background: '#0D0D1C',
+      border: '1px solid rgba(255,255,255,.15)',
+      borderRadius: 12, padding: '12px 16px',
+      boxShadow: '0 12px 40px rgba(0,0,0,.85)',
+      fontFamily: 'var(--font)',
+      minWidth: 160, zIndex: 9999,
+      position: 'relative',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: p.fill, flexShrink: 0 }}/>
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{p.name}</span>
+      </div>
+      <div style={{
+        fontSize: 16, fontWeight: 900, color: 'var(--text)',
+        fontFamily: 'var(--mono)', letterSpacing: '-.3px', marginBottom: 4,
+      }}>
+        {fmt(p.value)}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{
+          flex: 1, height: 4,
+          background: 'rgba(255,255,255,.1)',
+          borderRadius: 99, overflow: 'hidden',
+        }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: p.fill, borderRadius: 99 }}/>
+        </div>
+        <span style={{
+          fontSize: 13, fontWeight: 900, color: p.fill,
+          fontFamily: 'var(--mono)', minWidth: 38, textAlign: 'right',
+        }}>{pct}%</span>
+      </div>
+    </div>
+  )
+}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
@@ -184,6 +229,9 @@ export default function Dashboard() {
   const dateStr = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
+
+  const totalPieCA    = PIE_DATA.reduce((s, d) => s + d.value, 0)
+  const dataWithTotal = PIE_DATA.map(d => ({ ...d, total: totalPieCA }))
 
   const QUICK_ACTIONS = [
     { Icon: ShoppingBag, label: lang === 'fr' ? 'Nouvelle vente' : 'New sale',       path: '/app/pos',     color: 'rgba(108,71,255,.12)',  ic: 'var(--p3)'    },
@@ -326,30 +374,41 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
-              <ResponsiveContainer width="100%" height={130}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={PIE_DATA} cx="50%" cy="50%" innerRadius={38} outerRadius={60}
+                  <Pie data={dataWithTotal} cx="50%" cy="50%" innerRadius={52} outerRadius={80}
                     paddingAngle={3} dataKey="value"
                     activeShape={(props: any) => {
                       const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props
                       return <Sector cx={cx} cy={cy} innerRadius={innerRadius - 3} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />
                     }}>
-                    {PIE_DATA.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
+                    {dataWithTotal.map((_entry, index) => (
+                      <Cell key={index} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip
+                    content={<DonutTooltip />}
+                    wrapperStyle={{ zIndex: 9999, pointerEvents: 'none' }}
+                  />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    wrapperStyle={{ fontSize: 11, color: 'var(--text3)', paddingTop: 8 }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 5, marginTop: 6 }}>
-              {PIE_DATA.map((d) => (
-                <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color, flexShrink: 0 }} />
-                  <span style={{ flex: 1, color: 'var(--text2)' }}>{d.name}</span>
-                  <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text)' }}>{d.value}%</span>
-                </div>
-              ))}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 5, marginTop: 2 }}>
+              {dataWithTotal.map((d, i) => {
+                const pct = Math.round((d.value / totalPieCA) * 100)
+                return (
+                  <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: CATEGORY_COLORS[i % CATEGORY_COLORS.length], flexShrink: 0 }} />
+                    <span style={{ flex: 1, color: 'var(--text2)' }}>{d.name}</span>
+                    <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text)' }}>{pct}%</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

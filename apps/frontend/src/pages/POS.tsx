@@ -1028,6 +1028,7 @@ export default function POS() {
           {/* Cart card */}
           <div style={{
             flex: 1,
+            height: '100%',
             display: 'flex',
             flexDirection: 'column',
             background: 'var(--card)',
@@ -1043,6 +1044,7 @@ export default function POS() {
             borderBottom: '1px solid var(--border)',
             background: 'linear-gradient(135deg,rgba(91,78,232,.1),rgba(124,111,240,.05))',
             display: 'flex', alignItems: 'center', gap: 8,
+            position: 'sticky', top: 0, zIndex: 10,
           }}>
             <div style={{
               width: 32, height: 32, borderRadius: 10,
