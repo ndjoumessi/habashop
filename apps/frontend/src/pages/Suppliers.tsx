@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { suppliersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star, Pencil, Package } from 'lucide-react'
 import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
-import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
+import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
+import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 
 type SupplierStatus = 'Actif' | 'Pause' | 'Inactif'
 
@@ -306,7 +307,7 @@ export default function Suppliers() {
                         onClick={() => toast.success(`📞 ${s.phone}`)}>
                         <Phone size={12} />
                       </button>
-                      <button className="btn btn-sm btn-ghost" title="Modifier" onClick={() => {
+                      <button className="btn btn-sm btn-ghost" title="Modifier" style={{ cursor: 'pointer' }} onClick={() => {
                         setEditSupplier(s)
                         setEditSuppForm({
                           name: s.name, categories: s.categories.join(', '), phone: s.phone,
@@ -316,11 +317,11 @@ export default function Suppliers() {
                         })
                         setSuppEditMode(false)
                         setShowEditSuppModal(true)
-                      }}>✏️</button>
+                      }}><Pencil size={12} /></button>
                       <button className="btn btn-sm"
-                        style={{ background: 'rgba(91,78,232,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
+                        style={{ background: 'rgba(91,78,232,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
                         onClick={() => navigate('/app/orders')}>
-                        📦 Commander
+                        <Package size={11} /> {lang === 'fr' ? 'Commander' : 'Order'}
                       </button>
                     </div>
                   </td>
@@ -459,11 +460,11 @@ export default function Suppliers() {
                   onChange={e => setEditSuppForm(p => ({...p, categories:e.target.value}))} />
               </ViewField>
               <ViewField label="ADRESSE" value={editSuppForm.address||''} fullWidth editing={suppEditMode}>
-                <AddressAutocomplete value={editSuppForm.address}
-                  onChange={v => setEditSuppForm(p => ({...p, address:v}))} />
+                <AddressAutocompleteInput value={editSuppForm.address}
+                  onChange={v => setEditSuppForm(p => ({...p, address:v}))} lang={lang} />
               </ViewField>
               <ViewField label="TÉLÉPHONE" value={editSuppForm.phone||''} icon="📞" editing={suppEditMode}>
-                <input className="input" type="tel" placeholder="+221 77 000 00 00" value={editSuppForm.phone} onChange={e => setEditSuppForm(p => ({...p, phone:e.target.value}))} />
+                <PhoneInputWithCountry value={editSuppForm.phone} onChange={v => setEditSuppForm(p => ({...p, phone:v}))} lang={lang} />
               </ViewField>
               <ViewField label="DÉLAI LIVRAISON" value={`${editSuppForm.leadTime} jours`} editing={suppEditMode}>
                 <input className="input text-sm" type="number" value={editSuppForm.leadTime}
@@ -488,7 +489,7 @@ export default function Suppliers() {
             <div className="flex gap-2 mt-5">
               {!suppEditMode ? (
                 <>
-                  <button className="btn btn-primary flex-1 justify-center" onClick={() => setSuppEditMode(true)}>✏️ Modifier</button>
+                  <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6 }} onClick={() => setSuppEditMode(true)}><Pencil size={13} /> Modifier</button>
                   <button className="btn btn-ghost" onClick={() => setShowEditSuppModal(false)}>Fermer</button>
                 </>
               ) : (
@@ -497,7 +498,7 @@ export default function Suppliers() {
                     setEditSuppForm({ name:editSupplier.name, categories:editSupplier.categories.join(', '), phone:editSupplier.phone, email:editSupplier.email??'', address:editSupplier.address??'', contact:editSupplier.contact??'', leadTime:editSupplier.leadTime??3, rating:editSupplier.rating??3, status:editSupplier.status??'Actif', notes:editSupplier.notes??'' })
                     setSuppEditMode(false)
                   }}>{t('btn_cancel')}</button>
-                  <button className="btn btn-primary flex-1 justify-center" onClick={async () => {
+                  <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer' }} onClick={async () => {
                     if (!editSuppForm.name) { toast.error('Nom requis'); return }
                     try { await suppliersApi.update(editSupplier.id, { name: editSuppForm.name, categories: editSuppForm.categories, phone: editSuppForm.phone, email: editSuppForm.email, address: editSuppForm.address, leadTime: editSuppForm.leadTime, rating: editSuppForm.rating, status: editSuppForm.status, notes: editSuppForm.notes }) } catch {}
                     setSuppliers(prev => prev.map(s =>
@@ -506,8 +507,8 @@ export default function Suppliers() {
                         : s
                     ))
                     setShowEditSuppModal(false)
-                    toast.success(`✅ ${editSuppForm.name} mis à jour`)
-                  }}>✅ Enregistrer</button>
+                    toast.success(`${editSuppForm.name} mis à jour`)
+                  }}>Enregistrer</button>
                 </>
               )}
             </div>
@@ -541,15 +542,20 @@ export default function Suppliers() {
                 </div>
               ))}
               <div className="col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
-                  style={{ color: 'var(--text3)' }}>Adresse</label>
-                <AddressAutocomplete value={form.address}
-                  onChange={v => setForm(p => ({ ...p, address: v }))} />
+                <AddressAutocompleteInput
+                  label={lang === 'fr' ? 'ADRESSE' : 'ADDRESS'}
+                  value={form.address}
+                  onChange={v => setForm(p => ({ ...p, address: v }))}
+                  lang={lang}
+                />
               </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
-                  style={{ color: 'var(--text3)' }}>Téléphone</label>
-                <input className="input" type="tel" placeholder="+221 77 000 00 00" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
+              <div className="col-span-2">
+                <PhoneInputWithCountry
+                  label={lang === 'fr' ? 'TÉLÉPHONE' : 'PHONE'}
+                  value={form.phone}
+                  onChange={v => setForm(p => ({ ...p, phone: v }))}
+                  lang={lang}
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Statut</label>

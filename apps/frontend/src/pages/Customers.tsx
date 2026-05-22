@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
@@ -6,9 +6,9 @@ import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, Trendin
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
-import PhoneInput from '@/components/ui/PhoneInput'
+import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
+import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import ViewField from '@/components/ui/ViewField'
-import ValidatedInput from '@/components/ui/ValidatedInput'
 
 type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
@@ -127,81 +127,6 @@ const CUSTOMERS_INIT: Customer[] = [
   },
 ]
 
-function SmartAddressInput({ value, onChange, lang }: { value: string; onChange: (v: string) => void; lang: string }) {
-  const [suggestions, setSuggestions] = useState<string[]>([])
-  const [showSugg, setShowSugg] = useState(false)
-
-  const fetchSuggestions = useCallback((input: string) => {
-    if (!input || input.length < 3) { setSuggestions([]); return }
-    const google = (window as any).google
-    if (!google?.maps?.places?.AutocompleteService) return
-    const svc = new google.maps.places.AutocompleteService()
-    svc.getPlacePredictions(
-      { input, types: ['address'], language: lang },
-      (preds: any[] | null) => {
-        setSuggestions((preds ?? []).slice(0, 4).map((p: any) => p.description))
-      }
-    )
-  }, [lang])
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        background: 'var(--bg4)',
-        border: '1.5px solid var(--border)',
-        borderRadius: 12, overflow: 'visible',
-      }}>
-        <span style={{ padding: '0 6px 0 12px', fontSize: 14, flexShrink: 0, color: 'var(--text3)' }}>📍</span>
-        <input
-          type="text"
-          className="input"
-          style={{ flex: 1, border: 'none', background: 'transparent', padding: '10px 12px 10px 4px', outline: 'none' }}
-          placeholder={lang === 'fr' ? 'Adresse du client...' : 'Customer address...'}
-          value={value}
-          autoComplete="off"
-          onChange={e => {
-            onChange(e.target.value)
-            fetchSuggestions(e.target.value)
-            setShowSugg(true)
-          }}
-          onFocus={() => setShowSugg(true)}
-          onBlur={() => setTimeout(() => setShowSugg(false), 150)}
-        />
-        {value && (
-          <button type="button"
-            onClick={() => { onChange(''); setSuggestions([]) }}
-            style={{ padding: '0 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--text3)' }}>✕</button>
-        )}
-      </div>
-      {showSugg && suggestions.length > 0 && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 9999,
-          background: '#0D0D1C', border: '1px solid rgba(255,255,255,.1)',
-          borderRadius: 10, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,.8)',
-        }}>
-          {suggestions.map((s, i) => (
-            <button key={i} type="button"
-              onMouseDown={() => { onChange(s); setSuggestions([]); setShowSugg(false) }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                padding: '9px 14px', background: 'transparent', border: 'none',
-                borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
-                cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)',
-                fontSize: 12, color: 'var(--text)',
-              }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.1)'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-            >
-              <span style={{ fontSize: 12, flexShrink: 0 }}>📍</span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
 
 function LoyaltyBar({ points, max }: { points: number; max: number }) {
   const pct = Math.min(100, Math.round((points / max) * 100))
@@ -259,8 +184,7 @@ export default function Customers() {
   const [showCreate, setShowCreate] = useState(false)
   const defaultCustForm = {
     name: '', type: 'Détail' as ClientType,
-    phoneCode: '+221', phoneNumber: '', phone: '',
-    email: '', address: '',
+    phone: '', email: '', address: '',
   }
   const [form, setForm] = useState(defaultCustForm)
   const resetCustForm = () => setForm(defaultCustForm)
@@ -319,9 +243,7 @@ export default function Customers() {
       toast.error(lang === 'fr' ? 'Nom requis' : 'Name required')
       return
     }
-    const fullPhone = form.phoneCode && form.phoneNumber
-      ? `${form.phoneCode}${form.phoneNumber.replace(/\s/g, '')}`
-      : form.phone ?? ''
+    const fullPhone = form.phone ?? ''
     const data = {
       name:    form.name.trim(),
       type:    form.type    ?? 'retail',
@@ -961,17 +883,15 @@ export default function Customers() {
                 </select>
               </ViewField>
               <ViewField label="TÉLÉPHONE" value={editCustForm.phone||''} icon="📞" editing={custEditMode}>
-                <PhoneInput value={editCustForm.phone} onChange={v => setEditCustForm(f => ({...f, phone:v}))} />
+                <PhoneInputWithCountry value={editCustForm.phone} onChange={v => setEditCustForm(f => ({...f, phone:v}))} lang={lang} />
               </ViewField>
               <ViewField label="EMAIL" value={editCustForm.email||''} fullWidth editing={custEditMode}>
-                <ValidatedInput type="email"
+                <input className="input text-sm" type="email" placeholder="email@exemple.com"
                   value={editCustForm.email}
-                  onChange={val => setEditCustForm(f => ({...f, email:val}))}
-                  placeholder="email@exemple.com"
-                  lang={lang} />
+                  onChange={e => setEditCustForm(f => ({...f, email:e.target.value}))} />
               </ViewField>
               <ViewField label="ADRESSE" value={editCustForm.address||''} fullWidth editing={custEditMode}>
-                <SmartAddressInput value={editCustForm.address}
+                <AddressAutocompleteInput value={editCustForm.address}
                   onChange={v => setEditCustForm(f => ({...f, address:v}))} lang={lang} />
               </ViewField>
               <ViewField label="NOTES" value={editCustForm.notes||''} fullWidth editing={custEditMode}>
@@ -1071,43 +991,19 @@ export default function Customers() {
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>TYPE</label>
                   <select className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
-                    <option value="Détail">👤 {lang==='fr'?'Détail':'Retail'}</option>
-                    <option value="Grossiste">🏭 {lang==='fr'?'Grossiste':'Wholesale'}</option>
-                    <option value="Semi-gros">📦 {lang==='fr'?'Semi-gros':'Semi-wholesale'}</option>
-                    <option value="Fidèle">⭐ {lang==='fr'?'Fidèle':'Loyal'}</option>
+                    <option value="Détail">{lang==='fr'?'Détail':'Retail'}</option>
+                    <option value="Grossiste">{lang==='fr'?'Grossiste':'Wholesale'}</option>
+                    <option value="Semi-gros">{lang==='fr'?'Semi-gros':'Semi-wholesale'}</option>
+                    <option value="Fidèle">{lang==='fr'?'Fidèle':'Loyal'}</option>
                   </select>
                 </div>
-                <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
-                    {lang==='fr'?'TÉLÉPHONE':'PHONE'}
-                  </label>
-                  <div style={{
-                    display:'flex', background:'var(--bg4)',
-                    border:'1.5px solid var(--border)', borderRadius:12, overflow:'hidden',
-                  }}
-                    onFocusCapture={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--p)'}}
-                    onBlurCapture={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--border)'}}
-                  >
-                    <select value={form.phoneCode??'+221'} onChange={e=>setForm(f=>({...f,phoneCode:e.target.value}))}
-                      style={{ background:'rgba(108,71,255,.08)', border:'none', borderRight:'1px solid var(--border)', color:'var(--text)', fontSize:12, fontWeight:600, padding:'0 8px', cursor:'pointer', outline:'none', fontFamily:'var(--font)', width:80 }}>
-                      {[
-                        {code:'+221',flag:'🇸🇳'},{code:'+225',flag:'🇨🇮'},{code:'+223',flag:'🇲🇱'},
-                        {code:'+237',flag:'🇨🇲'},{code:'+242',flag:'🇨🇬'},{code:'+241',flag:'🇬🇦'},
-                        {code:'+226',flag:'🇧🇫'},{code:'+229',flag:'🇧🇯'},{code:'+228',flag:'🇹🇬'},
-                        {code:'+224',flag:'🇬🇳'},{code:'+227',flag:'🇳🇪'},{code:'+212',flag:'🇲🇦'},
-                        {code:'+213',flag:'🇩🇿'},{code:'+216',flag:'🇹🇳'},{code:'+33',flag:'🇫🇷'},
-                        {code:'+39',flag:'🇮🇹'},{code:'+32',flag:'🇧🇪'},{code:'+41',flag:'🇨🇭'},
-                        {code:'+34',flag:'🇪🇸'},{code:'+44',flag:'🇬🇧'},{code:'+1',flag:'🇺🇸'},
-                      ].map(c=>(
-                        <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
-                      ))}
-                    </select>
-                    <input type="tel" placeholder="77 000 00 00"
-                      value={form.phoneNumber??''}
-                      onChange={e=>setForm(f=>({...f, phoneNumber:e.target.value, phone:`${f.phoneCode??'+221'}${e.target.value.replace(/\s/g,'')}`}))}
-                      style={{ flex:1, background:'transparent', border:'none', outline:'none', color:'var(--text)', fontSize:13, padding:'10px 12px', fontFamily:'var(--font)' }}
-                    />
-                  </div>
+                <div style={{ gridColumn: '1/-1' }}>
+                  <PhoneInputWithCountry
+                    label={lang==='fr'?'TÉLÉPHONE':'PHONE'}
+                    value={form.phone}
+                    onChange={v=>setForm(f=>({...f, phone:v}))}
+                    lang={lang}
+                  />
                 </div>
               </div>
 
@@ -1118,10 +1014,12 @@ export default function Customers() {
               </div>
 
               <div>
-                <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
-                  {lang==='fr'?'ADRESSE':'ADDRESS'}
-                </label>
-                <SmartAddressInput value={form.address} onChange={v=>setForm(f=>({...f,address:v}))} lang={lang} />
+                <AddressAutocompleteInput
+                  label={lang==='fr'?'ADRESSE':'ADDRESS'}
+                  value={form.address}
+                  onChange={v=>setForm(f=>({...f,address:v}))}
+                  lang={lang}
+                />
               </div>
             </div>
 

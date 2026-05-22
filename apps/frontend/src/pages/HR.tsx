@@ -5,9 +5,10 @@ import { employeesApi, bonusesApi, salaryHistoryApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
 import { Download, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-// AddressAutocomplete remplacé par AddressInputSimple (interne HR)
 import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
+import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
+import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -2029,10 +2030,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                   <ViewField label={lang==='fr'?'TÉLÉPHONE':'PHONE'} value={editEmpForm.phone||''} icon="📞" editing={empEditMode}>
-                    <ValidatedInput type="phone"
+                    <PhoneInputWithCountry
                       value={editEmpForm.phone??''}
                       onChange={val => setEditEmpForm((f:any) => ({ ...f, phone:val }))}
-                      placeholder="+221 77 000 00 00" lang={lang} />
+                      lang={lang}
+                    />
                   </ViewField>
                   <ViewField label="EMAIL" value={editEmpForm.email||''} icon="✉️" editing={empEditMode}>
                     <ValidatedInput type="email"
@@ -2042,10 +2044,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   </ViewField>
                   {empEditMode ? (
                     <div style={{ gridColumn:'1/-1' }}>
-                      <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
-                        {lang==='fr' ? 'ADRESSE' : 'ADDRESS'}
-                      </label>
-                      <AddressInputSimple
+                      <AddressAutocompleteInput
+                        label={lang==='fr' ? 'ADRESSE' : 'ADDRESS'}
                         value={editEmpForm.address ?? ''}
                         onChange={val => setEditEmpForm((f:any) => ({ ...f, address: val }))}
                         lang={lang}
@@ -2524,9 +2524,11 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
             )}
           </div>
 
-          <ValidatedInput type="phone" label="Téléphone"
-            value={phone} onChange={setPhone}
-            placeholder="+221 77 000 00 00" />
+          <PhoneInputWithCountry
+            label="TÉLÉPHONE"
+            value={phone}
+            onChange={setPhone}
+          />
 
           <ValidatedInput type="email" label="Email"
             value={email} onChange={setEmail}
