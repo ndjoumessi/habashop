@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAppStore, useFormatAmount, useCurrencyInfo } from '@/stores/appStore'
 import { dashboardApi } from '@/lib/api'
 import toast from 'react-hot-toast'
-import { Plus } from 'lucide-react'
+import { Plus, Trophy, CheckCircle, AlertTriangle, XCircle, Pencil, X, Check, Trash2, Target } from 'lucide-react'
 
 interface Goal {
   id: string
@@ -124,7 +124,9 @@ export default function Goals() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-              {lang === 'fr' ? '🏆 Score global du mois' : '🏆 Monthly score'}
+              <span style={{ display:'flex', alignItems:'center', gap:5 }}>
+                <Trophy size={14}/> {lang === 'fr' ? 'Score global du mois' : 'Monthly score'}
+              </span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--text3)' }}>
               {achieved}/{goals.length} {lang === 'fr' ? 'objectifs atteints' : 'goals achieved'}
@@ -189,13 +191,14 @@ export default function Goals() {
                     color: statusColor,
                     background: `${statusColor}22`,
                     borderRadius: 20, padding: '2px 8px',
+                    display: 'flex', alignItems: 'center', gap: 3,
                   }}>
-                    {status === 'success' ? '✅' : status === 'warning' ? '⚠️' : '🔴'}
-                    {' '}{pct}%
+                    {status === 'success' ? <CheckCircle size={10}/> : status === 'warning' ? <AlertTriangle size={10}/> : <XCircle size={10}/>}
+                    {pct}%
                   </span>
                   <button className="mini-btn"
-                    style={{ padding: '4px 8px', fontSize: 12 }}
-                    onClick={() => openModal(goal)}>✏️</button>
+                    style={{ padding: '4px 8px', fontSize: 12, cursor:'pointer', display:'flex', alignItems:'center' }}
+                    onClick={() => openModal(goal)}><Pencil size={12}/></button>
                 </div>
               </div>
 
@@ -260,12 +263,12 @@ export default function Goals() {
           onClick={e => e.target === e.currentTarget && setShowEditModal(false)}>
           <div className="modal-box" style={{ maxWidth: 440 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
                 {editGoal
-                  ? (lang === 'fr' ? "✏️ Modifier l'objectif" : '✏️ Edit goal')
-                  : (lang === 'fr' ? '🎯 Nouvel objectif' : '🎯 New goal')}
+                  ? <><Pencil size={14}/> {lang === 'fr' ? "Modifier l'objectif" : 'Edit goal'}</>
+                  : <><Target size={14}/> {lang === 'fr' ? 'Nouvel objectif' : 'New goal'}</>}
               </h3>
-              <button className="mini-btn" onClick={() => setShowEditModal(false)}>✕</button>
+              <button className="mini-btn" onClick={() => setShowEditModal(false)} style={{ cursor:'pointer', display:'flex', alignItems:'center' }}><X size={14}/></button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -351,17 +354,17 @@ export default function Goals() {
                     }
                     setShowEditModal(false)
                   }}>
-                  ✅ {editGoal ? (lang === 'fr' ? 'Modifier' : 'Update') : (lang === 'fr' ? 'Créer' : 'Create')}
+                  <Check size={14}/> {editGoal ? (lang === 'fr' ? 'Modifier' : 'Update') : (lang === 'fr' ? 'Créer' : 'Create')}
                 </button>
                 {editGoal && (
                   <button className="mini-btn"
-                    style={{ color: 'var(--danger)' }}
+                    style={{ color: 'var(--danger)', cursor:'pointer', display:'flex', alignItems:'center' }}
                     onClick={() => {
                       setGoals(prev => prev.filter(g => g.id !== editGoal.id))
                       setShowEditModal(false)
-                      toast.success('🗑 Objectif supprimé')
+                      toast.success('Objectif supprimé')
                     }}>
-                    🗑
+                    <Trash2 size={12}/>
                   </button>
                 )}
                 <button className="mini-btn" style={{ padding: '10px 16px' }}

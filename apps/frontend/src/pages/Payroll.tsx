@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useConfig, useFormatAmount, useAppStore, formatCurrency, convertCurrency, t } from '@/stores/appStore'
-import { Download, Eye, Check, Zap, DollarSign, TrendingDown, FileText, CheckCircle } from 'lucide-react'
+import { Download, Eye, Check, Zap, DollarSign, TrendingDown, FileText, CheckCircle, X, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 
@@ -173,8 +173,9 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
             background:'rgba(255,255,255,.15)',
             border:'1px solid rgba(255,255,255,.25)',
             borderRadius:9, padding:'6px 10px',
-            cursor:'pointer', color:'#fff', fontSize:14,
-          }}>✕</button>
+            cursor:'pointer', color:'#fff',
+            display:'flex', alignItems:'center',
+          }}><X size={14}/></button>
         </div>
 
         {/* ── INFOS EMPLOYÉ ── */}
@@ -337,17 +338,17 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
               cursor:'pointer', fontFamily:'inherit',
               boxShadow:'0 4px 14px rgba(14,196,126,.3)',
             }}
-          >✅ Marquer comme payé</button>
+          ><CheckCircle size={14} style={{ verticalAlign:'middle', marginRight:5 }}/> Marquer comme payé</button>
           <button
             className="mini-btn"
             onClick={() => { printBulletin(record); toast.success('📄 PDF ouvert !') }}
-            style={{ padding:'11px 16px', fontSize:13 }}
-          >🖨️ Imprimer</button>
+            style={{ padding:'11px 16px', fontSize:13, display:'flex', alignItems:'center', gap:5 }}
+          ><Printer size={13}/> Imprimer</button>
           <button
             className="mini-btn"
             onClick={() => { printBulletin(record); toast.success('📄 PDF ouvert !') }}
-            style={{ padding:'11px 16px', fontSize:13 }}
-          >📥 PDF</button>
+            style={{ padding:'11px 16px', fontSize:13, display:'flex', alignItems:'center', gap:5 }}
+          ><Download size={13}/> PDF</button>
         </div>
 
       </div>
