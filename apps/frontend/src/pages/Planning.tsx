@@ -2,15 +2,16 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { employeesApi } from '@/lib/api'
 import toast from 'react-hot-toast'
+import { Sun, CloudSun, CalendarDays, Moon, Coffee, Umbrella, Users, Info, Download, MousePointer2 } from 'lucide-react'
 
 const SHIFT_TYPES = {
-  morning:   { label:'Matin',      hours:'08:00-13:00', color:'#00B8FF', icon:'☀️',  bg:'rgba(0,184,255,.12)'  },
-  afternoon: { label:'Après-midi', hours:'13:00-18:00', color:'#FF9500', icon:'🌤️', bg:'rgba(255,149,0,.12)'   },
-  full:      { label:'Journée',    hours:'08:00-18:00', color:'#00D084', icon:'📅',  bg:'rgba(0,208,132,.12)'  },
-  night:     { label:'Nuit',       hours:'20:00-06:00', color:'#6C47FF', icon:'🌙',  bg:'rgba(108,71,255,.12)' },
-  rest:      { label:'Repos',      hours:'',            color:'#64647A', icon:'☕',  bg:'rgba(100,100,122,.12)'},
-  leave:     { label:'Congé',      hours:'',            color:'#FF3B5C', icon:'🏖️', bg:'rgba(255,59,92,.12)'  },
-} as const
+  morning:   { label:'Matin',      hours:'08:00-13:00', color:'#00B8FF', icon:<Sun size={16}/>,         bg:'rgba(0,184,255,.12)'  },
+  afternoon: { label:'Après-midi', hours:'13:00-18:00', color:'#FF9500', icon:<CloudSun size={16}/>,    bg:'rgba(255,149,0,.12)'   },
+  full:      { label:'Journée',    hours:'08:00-18:00', color:'#00D084', icon:<CalendarDays size={16}/>, bg:'rgba(0,208,132,.12)'  },
+  night:     { label:'Nuit',       hours:'20:00-06:00', color:'#6C47FF', icon:<Moon size={16}/>,         bg:'rgba(108,71,255,.12)' },
+  rest:      { label:'Repos',      hours:'',            color:'#64647A', icon:<Coffee size={16}/>,       bg:'rgba(100,100,122,.12)'},
+  leave:     { label:'Congé',      hours:'',            color:'#FF3B5C', icon:<Umbrella size={16}/>,     bg:'rgba(255,59,92,.12)'  },
+}
 
 type ShiftType = keyof typeof SHIFT_TYPES
 
@@ -218,8 +219,8 @@ export default function Planning() {
               d.setDate(d.getDate()+7)
               setPlanningWeek(d)
             }}>{T.next} →</button>
-          <button className="mini-btn" onClick={exportCSVPlan}>
-            ↓ {T.export}
+          <button className="mini-btn" onClick={exportCSVPlan} style={{ display:'flex', alignItems:'center', gap:4 }}>
+            <Download size={12}/> {T.export}
           </button>
         </div>
       </div>
@@ -259,7 +260,7 @@ export default function Planning() {
                 ? `0 3px 10px ${s.color}30` : 'none',
               transform: activeShift===key ? 'scale(1.02)' : 'scale(1)',
             }}>
-            <span style={{fontSize:14}}>{s.icon}</span>
+            <span style={{ color: activeShift===key ? s.color : 'var(--text3)', display:'flex' }}>{s.icon}</span>
             <span>{s.label}</span>
             {s.hours && (
               <span style={{
@@ -295,14 +296,14 @@ export default function Planning() {
           onChange={e=>setFilterStatus(e.target.value as any)}>
           <option value="all">{T.allStatus}</option>
           {(Object.entries(SHIFT_TYPES) as [ShiftType,any][]).map(([k,s])=>(
-            <option key={k} value={k}>{s.icon} {s.label}</option>
+            <option key={k} value={k}>{s.label}</option>
           ))}
         </select>
         <div style={{
           marginLeft:'auto', fontSize:10,
           color:'var(--text3)', fontStyle:'italic',
         }}>
-          💡 {T.assignTip} · {T.clearTip}
+          <Info size={11}/> {T.assignTip} · {T.clearTip}
         </div>
       </div>
 
@@ -381,7 +382,7 @@ export default function Planning() {
                     textAlign:'center', padding:'48px',
                     color:'var(--text3)', fontSize:14,
                   }}>
-                    👥 {T.noEmp}
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}><Users size={16}/> {T.noEmp}</div>
                   </td>
                 </tr>
               ) : filtered.map((emp,ri)=>(
@@ -481,7 +482,7 @@ export default function Planning() {
                         >
                           {s ? (
                             <>
-                              <span style={{fontSize:16}}>{s.icon}</span>
+                              <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
                               {s.hours && (
                                 <span style={{
                                   fontSize:8, fontWeight:800,
@@ -521,15 +522,15 @@ export default function Planning() {
               display:'flex', alignItems:'center', gap:4,
               fontSize:10,
             }}>
-              <span>{s.icon}</span>
+              <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
               <span style={{color:s.color,fontWeight:600}}>{s.label}</span>
               {s.hours&&<span style={{
                 color:'var(--text3)',fontFamily:'var(--mono)',fontSize:8,
               }}>{s.hours}</span>}
             </div>
           ))}
-          <div style={{marginLeft:'auto',fontSize:9,color:'var(--text3)'}}>
-            🖱️ {T.clearTip}
+          <div style={{marginLeft:'auto',fontSize:9,color:'var(--text3)', display:'flex', alignItems:'center', gap:4}}>
+            <MousePointer2 size={9}/> {T.clearTip}
           </div>
         </div>
       </div>
@@ -551,7 +552,7 @@ export default function Planning() {
                 borderRadius:12, padding:'12px 14px',
                 display:'flex', alignItems:'center', gap:8,
               }}>
-                <span style={{fontSize:20}}>{s.icon}</span>
+                <span style={{ color:s.color, display:'flex', fontSize:20 }}>{s.icon}</span>
                 <div>
                   <div style={{
                     fontSize:9,fontWeight:700,
