@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
@@ -170,6 +170,242 @@ function mapApiCustomer(c: any): Customer {
   }
 }
 
+const GMAPS_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_KEY as string
+
+function useGoogleMaps(apiKey: string) {
+  const [loaded, setLoaded] = useState(false)
+  const [error,  setError]  = useState(false)
+  useEffect(() => {
+    if (!apiKey) { setError(true); return }
+    if ((window as any).google?.maps) { setLoaded(true); return }
+    if (document.querySelector('[data-gm]')) {
+      const check = setInterval(() => {
+        if ((window as any).google?.maps) { setLoaded(true); clearInterval(check) }
+      }, 100)
+      return () => clearInterval(check)
+    }
+    const script = document.createElement('script')
+    script.setAttribute('data-gm', '1')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry&language=fr`
+    script.async = true
+    script.defer = true
+    script.onload  = () => setLoaded(true)
+    script.onerror = () => setError(true)
+    document.head.appendChild(script)
+  }, [apiKey])
+  return { loaded, error }
+}
+
+const MAP_TYPE_COLORS: Record<string, string> = {
+  Grossiste:   '#A991FF',
+  'Semi-gros': '#FFB800',
+  Fidèle:      '#00D084',
+  Détail:      '#00B8FF',
+}
+
+const DARK_MAP_STYLE = [
+  { elementType: 'geometry',                                                      stylers: [{ color: '#0D0D1C' }] },
+  { elementType: 'labels.text.stroke',                                            stylers: [{ color: '#0D0D1C' }] },
+  { elementType: 'labels.text.fill',                                              stylers: [{ color: '#8888A8' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill',      stylers: [{ color: '#A991FF' }] },
+  { featureType: 'poi',                     elementType: 'labels.text.fill',      stylers: [{ color: '#6666AA' }] },
+  { featureType: 'poi.park',                elementType: 'geometry',              stylers: [{ color: '#111128' }] },
+  { featureType: 'poi.park',                elementType: 'labels.text.fill',      stylers: [{ color: '#4A4A6A' }] },
+  { featureType: 'road',                    elementType: 'geometry',              stylers: [{ color: '#1A1A38' }] },
+  { featureType: 'road',                    elementType: 'geometry.stroke',       stylers: [{ color: '#252550' }] },
+  { featureType: 'road',                    elementType: 'labels.text.fill',      stylers: [{ color: '#6666AA' }] },
+  { featureType: 'road.highway',            elementType: 'geometry',              stylers: [{ color: '#252550' }] },
+  { featureType: 'road.highway',            elementType: 'geometry.stroke',       stylers: [{ color: '#1A1A38' }] },
+  { featureType: 'road.highway',            elementType: 'labels.text.fill',      stylers: [{ color: '#8888A8' }] },
+  { featureType: 'transit',                 elementType: 'geometry',              stylers: [{ color: '#0D0D1C' }] },
+  { featureType: 'transit.station',         elementType: 'labels.text.fill',      stylers: [{ color: '#6666AA' }] },
+  { featureType: 'water',                   elementType: 'geometry',              stylers: [{ color: '#07070F' }] },
+  { featureType: 'water',                   elementType: 'labels.text.fill',      stylers: [{ color: '#3A3A6A' }] },
+  { featureType: 'water',                   elementType: 'labels.text.stroke',    stylers: [{ color: '#07070F' }] },
+]
+
+function CustomerMap({
+  customers, geoPositions, geocoding, mapsLoaded, fmt, onSelectCustomer,
+}: {
+  customers: any[]
+  geoPositions: Record<string, { lat: number; lng: number }>
+  geocoding: boolean
+  mapsLoaded: boolean
+  fmt: (v: number) => string
+  lang: string
+  onSelectCustomer: (c: any) => void
+}) {
+  const mapRef     = useRef<HTMLDivElement>(null)
+  const mapObjRef  = useRef<any>(null)
+  const markersRef = useRef<any[]>([])
+  const infoRef    = useRef<any>(null)
+  const [mapReady, setMapReady] = useState(false)
+
+  useEffect(() => {
+    if (!mapsLoaded || !mapRef.current || mapObjRef.current) return
+    const google = (window as any).google
+    if (!google?.maps) return
+    const map = new google.maps.Map(mapRef.current, {
+      zoom: 5,
+      center: { lat: 14.6928, lng: -17.4467 },
+      mapTypeId: 'roadmap',
+      styles: DARK_MAP_STYLE,
+      disableDefaultUI: false,
+      zoomControl: true,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      backgroundColor: '#0D0D1C',
+    })
+    mapObjRef.current = map
+    infoRef.current   = new google.maps.InfoWindow()
+    setMapReady(true)
+  }, [mapsLoaded])
+
+  useEffect(() => {
+    if (!mapReady || !mapObjRef.current) return
+    const google = (window as any).google
+    if (!google?.maps) return
+
+    markersRef.current.forEach(m => m.setMap(null))
+    markersRef.current = []
+
+    const bounds = new google.maps.LatLngBounds()
+    let hasMarkers = false
+
+    customers.forEach(customer => {
+      const pos = geoPositions[customer.id]
+      if (!pos) return
+
+      const color    = MAP_TYPE_COLORS[customer.type] ?? '#6C47FF'
+      const totalCA  = Number(customer.totalRevenue ?? customer.totalCA ?? 0)
+      const scale    = totalCA > 1_000_000 ? 10 : totalCA > 500_000 ? 8 : 6
+      const initials = (customer.name ?? '?').split(' ').map((n: string) => n[0] ?? '').join('').slice(0, 2).toUpperCase()
+
+      const marker = new google.maps.Marker({
+        position: pos,
+        map: mapObjRef.current,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: color, fillOpacity: 1,
+          strokeColor: '#fff', strokeWeight: 2,
+          scale,
+        },
+        label: { text: initials, color: '#fff', fontSize: '9px', fontWeight: '800' },
+        title: customer.name,
+        zIndex: totalCA > 1_000_000 ? 10 : 1,
+      })
+
+      if (totalCA > 1_000_000) {
+        const pulse = new google.maps.Circle({
+          map: mapObjRef.current, center: pos, radius: 8000,
+          fillColor: color, fillOpacity: 0.08,
+          strokeColor: color, strokeOpacity: 0.3, strokeWeight: 1,
+        })
+        markersRef.current.push(pulse as any)
+      }
+
+      marker.addListener('click', () => {
+        const ca      = fmt(totalCA)
+        const loyalty = customer.loyaltyPoints ?? 0
+        const phone   = customer.phone ?? '—'
+        const type    = customer.type ?? 'Détail'
+        const content = `
+          <div style="background:#0D0D1C;border:1px solid ${color}44;border-radius:14px;padding:16px;min-width:220px;font-family:system-ui,sans-serif;color:#F0F0FF;box-shadow:0 12px 40px rgba(0,0,0,.9);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <div style="width:38px;height:38px;border-radius:11px;background:${color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;box-shadow:0 4px 12px ${color}66;">${initials}</div>
+              <div>
+                <div style="font-size:14px;font-weight:800;color:#F0F0FF;margin-bottom:3px;">${customer.name}</div>
+                <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:99px;background:${color}22;color:${color};border:1px solid ${color}44;">${type}</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;text-align:center;">
+                <div style="font-size:9px;color:#555570;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">CA Total</div>
+                <div style="font-size:13px;font-weight:900;color:${color};font-family:monospace;">${ca}</div>
+              </div>
+              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;text-align:center;">
+                <div style="font-size:9px;color:#555570;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Fidélité</div>
+                <div style="font-size:13px;font-weight:900;color:#FFB800;font-family:monospace;">${loyalty} pts</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:#8888A8;display:flex;align-items:center;gap:6px;margin-bottom:${customer.address ? '8px' : '0'};">
+              <span>📞</span><span style="font-family:monospace;">${phone}</span>
+            </div>
+            ${customer.address ? `<div style="font-size:10px;color:#555570;display:flex;gap:5px;align-items:flex-start;"><span>📍</span><span>${customer.address}</span></div>` : ''}
+          </div>`
+        infoRef.current.setContent(content)
+        infoRef.current.open(mapObjRef.current, marker)
+        onSelectCustomer(customer)
+      })
+
+      markersRef.current.push(marker)
+      bounds.extend(pos)
+      hasMarkers = true
+    })
+
+    if (hasMarkers && markersRef.current.filter(m => m.getCenter === undefined).length > 1) {
+      mapObjRef.current.fitBounds(bounds, 60)
+    } else if (hasMarkers) {
+      const firstPos = geoPositions[customers.find(c => geoPositions[c.id])?.id ?? '']
+      if (firstPos) { mapObjRef.current.setCenter(firstPos); mapObjRef.current.setZoom(12) }
+    }
+  }, [mapReady, geoPositions, customers, fmt, onSelectCustomer])
+
+  const locatedCount = Object.keys(geoPositions).length
+  const vipCount     = customers.filter(c => Number(c.totalRevenue ?? c.totalCA ?? 0) >= 1_000_000).length
+  const noAddrCount  = customers.filter(c => !geoPositions[c.id]).length
+
+  return (
+    <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,.08)', height: 560, boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
+      <div ref={mapRef} style={{ width: '100%', height: '100%', background: '#0D0D1C' }} />
+
+      {(!mapsLoaded || geocoding) && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(7,7,15,.85)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 10 }}>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(108,71,255,.2)', borderTopColor: '#6C47FF', animation: 'spin 1s linear infinite' }} />
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)' }}>
+            {!mapsLoaded ? 'Chargement Google Maps…' : 'Localisation des clients…'}
+          </div>
+        </div>
+      )}
+
+      {/* Légende */}
+      <div style={{ position: 'absolute', top: 14, left: 14, background: 'rgba(7,7,15,.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 14, padding: '12px 14px', zIndex: 5, minWidth: 150 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.7px', color: 'var(--text3)', marginBottom: 10 }}>Types de clients</div>
+        {Object.entries(MAP_TYPE_COLORS).map(([type, color]) => (
+          <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0, boxShadow: `0 0 6px ${color}` }} />
+            <span style={{ fontSize: 11, color: 'var(--text2)', fontWeight: 600 }}>{type}</span>
+          </div>
+        ))}
+        <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,.06)', fontSize: 10, color: 'var(--text3)' }}>Taille = CA Total</div>
+      </div>
+
+      {/* Stats bar */}
+      <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, display: 'flex', gap: 8, zIndex: 5 }}>
+        {[
+          { label: 'Localisés',     value: `${locatedCount}/${customers.length}`, color: 'var(--acc2)' },
+          { label: 'Sans adresse',  value: String(noAddrCount),                   color: 'var(--warn)' },
+          { label: 'Clients VIP',   value: String(vipCount),                      color: '#FFB800'      },
+        ].map(s => (
+          <div key={s.label} style={{ flex: 1, background: 'rgba(7,7,15,.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, padding: '10px 14px' }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: s.color, fontFamily: 'var(--mono)' }}>{s.value}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {!GMAPS_KEY && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(7,7,15,.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, zIndex: 20 }}>
+          <MapPin size={40} style={{ color: 'var(--p2)' }} />
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Google Maps non configuré</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', maxWidth: 280 }}>Ajoutez VITE_GOOGLE_MAPS_KEY dans les variables d'environnement</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Customers() {
   const { lang } = useConfig()
   void lang
@@ -211,6 +447,43 @@ export default function Customers() {
   const [viewMode, setViewMode]               = useState<'table' | 'grid'>('table')
   const [mapHover, setMapHover]               = useState<string | null>(null)
   const [mapTypeFilter, setMapTypeFilter]     = useState<ClientType | ''>('')
+  const [geoPositions, setGeoPositions] = useState<Record<string, { lat: number; lng: number }>>({})
+  const [geocoding, setGeocoding]       = useState(false)
+
+  const { loaded: mapsLoaded } = useGoogleMaps(GMAPS_KEY)
+
+  const geocodeCustomers = useCallback(async (customerList: any[]) => {
+    const google = (window as any).google
+    if (!google?.maps?.Geocoder) return
+    setGeocoding(true)
+    const geocoder = new google.maps.Geocoder()
+    const results: Record<string, { lat: number; lng: number }> = {}
+    const withAddress = customerList.filter(c => c.address && c.address.trim().length > 3)
+    const batchSize = 5
+    for (let i = 0; i < withAddress.length; i += batchSize) {
+      const batch = withAddress.slice(i, i + batchSize)
+      await Promise.all(batch.map(async (c) => {
+        try {
+          const res = await new Promise<any>((resolve, reject) => {
+            geocoder.geocode({ address: c.address }, (r: any[], status: string) => {
+              if (status === 'OK' && r[0]) resolve(r[0])
+              else reject(new Error(status))
+            })
+          })
+          results[c.id] = { lat: res.geometry.location.lat(), lng: res.geometry.location.lng() }
+        } catch {}
+      }))
+      if (i + batchSize < withAddress.length) await new Promise(r => setTimeout(r, 300))
+    }
+    setGeoPositions(results)
+    setGeocoding(false)
+  }, [])
+
+  useEffect(() => {
+    if (mapsLoaded && customers.length > 0 && customersTab === 'map') {
+      geocodeCustomers(customers)
+    }
+  }, [mapsLoaded, customers, customersTab, geocodeCustomers])
 
   const filtered = customers.filter(c =>
     (!search || c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)) &&
@@ -610,148 +883,58 @@ export default function Customers() {
         )}
       </div>}
 
-      {/* ── Onglet Carte ── */}
+      {/* ── Onglet Carte — Google Maps ── */}
       {customersTab === 'map' && (
-        <div className="panel">
-          <div className="panel-head">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <MapPin size={16} style={{ color: 'var(--p2)' }} />
-              <span className="panel-title">{lang === 'fr' ? 'Carte des clients — Sénégal' : 'Customer map — Senegal'}</span>
+        <div className="animate-in">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <MapPin size={16} style={{ color: 'var(--p2)' }} />
+                {lang === 'fr' ? 'Carte des clients' : 'Customer map'}
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--text3)' }}>
+                {Object.keys(geoPositions).length} client(s) localisé(s) sur {customers.length}
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {(['', 'Grossiste', 'Semi-gros', 'Fidèle', 'Détail'] as const).map(tp => (
-                <button key={tp || 'all'} onClick={() => setMapTypeFilter(tp as any)}
-                  style={{
-                    padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700,
-                    cursor: 'pointer', border: 'none', transition: 'all .15s', fontFamily: 'var(--font)',
-                    background: mapTypeFilter === tp
-                      ? (tp ? TYPE_CFG[tp as ClientType].bg : 'rgba(124,111,240,.15)')
-                      : 'var(--bg3)',
-                    color: mapTypeFilter === tp
-                      ? (tp ? TYPE_CFG[tp as ClientType].color : 'var(--p2)')
-                      : 'var(--text3)',
-                  }}>
-                  {tp || (lang === 'fr' ? 'Tous' : 'All')}
-                </button>
-              ))}
+            <button
+              onClick={() => geocodeCustomers(customers)}
+              disabled={geocoding || !mapsLoaded}
+              style={{
+                padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)',
+                background: 'var(--bg3)', color: 'var(--text2)', fontSize: 12, fontWeight: 700,
+                cursor: geocoding || !mapsLoaded ? 'not-allowed' : 'pointer',
+                fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 6,
+                opacity: geocoding || !mapsLoaded ? .6 : 1, transition: 'opacity .15s',
+              }}>
+              <MapPin size={12} />
+              {geocoding ? 'Localisation…' : 'Actualiser'}
+            </button>
+          </div>
+
+          <CustomerMap
+            customers={customers}
+            geoPositions={geoPositions}
+            geocoding={geocoding}
+            mapsLoaded={mapsLoaded}
+            fmt={fmt}
+            lang={lang}
+            onSelectCustomer={c => setDetailCustomer(c)}
+          />
+
+          {customers.filter(c => !geoPositions[c.id]).length > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                ⚠️ Clients sans adresse ({customers.filter(c => !geoPositions[c.id]).length}) — non affichés sur la carte
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {customers.filter(c => !geoPositions[c.id]).map(c => (
+                  <span key={c.id} style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: 'rgba(255,184,0,.08)', border: '1px solid rgba(255,184,0,.2)', color: 'var(--warn)' }}>
+                    {c.name}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* SVG Sénégal */}
-          <div style={{ position: 'relative', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
-            <svg viewBox="0 0 700 460" style={{ width: '100%', display: 'block' }}>
-              {/* fond */}
-              <rect width="700" height="460" fill="var(--bg3)" />
-              {/* océan */}
-              <rect x="0" y="0" width="85" height="460" fill="rgba(59,130,246,.04)" />
-
-              {/* contour Sénégal */}
-              <path
-                d="M 115,75 L 162,52 L 242,46 L 372,42 L 515,58 L 592,68
-                   L 600,120 L 598,195 L 594,268 L 586,325 L 560,365
-                   L 545,398 L 510,432 L 448,450 L 368,452
-                   L 290,448 L 238,444 L 198,440 L 155,422
-                   L 128,392 L 94,345 L 68,292 L 52,230 L 50,175 L 66,128 L 95,95 L 115,75 Z"
-                fill="rgba(124,111,240,.06)"
-                stroke="rgba(124,111,240,.35)"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-
-              {/* Gambie enclave */}
-              <path
-                d="M 175,370 L 195,362 L 260,358 L 340,360 L 380,368 L 360,378 L 260,380 L 190,378 Z"
-                fill="rgba(0,0,0,.15)"
-                stroke="rgba(255,255,255,.08)"
-                strokeWidth="1"
-              />
-
-              {/* Légende */}
-              {(Object.entries(TYPE_CFG) as [ClientType, { cls:string; color:string; bg:string }][]).map(([type, cfg], i) => (
-                <g key={type}>
-                  <circle cx={20} cy={20 + i * 20} r={5} fill={cfg.color} opacity={0.85} />
-                  <text x={30} y={25 + i * 20} fontSize="10" fill="var(--text3)" fontFamily="var(--font)">{type}</text>
-                </g>
-              ))}
-
-              {/* Bulles villes */}
-              {SENEGAL_CITIES.map(city => {
-                const cityCustomers = customers.filter(c =>
-                  getCustomerCityId(c.address) === city.id &&
-                  (!mapTypeFilter || c.type === mapTypeFilter)
-                )
-                if (cityCustomers.length === 0) return null
-                const r = Math.max(10, Math.min(28, 8 + cityCustomers.length * 4))
-                const topType = (['Grossiste','Semi-gros','Fidèle','Détail'] as ClientType[])
-                  .find(tp => cityCustomers.some(c => c.type === tp)) ?? 'Détail'
-                const color = TYPE_CFG[topType].color
-                const isHovered = mapHover === city.id
-                return (
-                  <g key={city.id} style={{ cursor: 'pointer' }}
-                    onMouseEnter={() => setMapHover(city.id)}
-                    onMouseLeave={() => setMapHover(null)}
-                  >
-                    <circle cx={city.x} cy={city.y} r={r + 6} fill={color} opacity={0.08} />
-                    <circle cx={city.x} cy={city.y} r={r} fill={color} opacity={isHovered ? 1 : 0.75}
-                      style={{ transition: 'r .15s, opacity .15s' }} />
-                    <text x={city.x} y={city.y + 4} textAnchor="middle" fontSize="10" fontWeight="800" fill="#fff" fontFamily="var(--font)">
-                      {cityCustomers.length}
-                    </text>
-                    <text x={city.x} y={city.y + r + 13} textAnchor="middle" fontSize="9" fill="var(--text2)" fontFamily="var(--font)">
-                      {city.name}
-                    </text>
-                    {/* Tooltip */}
-                    {isHovered && (
-                      <g>
-                        <rect x={city.x - 68} y={city.y - r - 50} width={136} height={38} rx={8} fill="#0D0D1C" stroke={color} strokeWidth="1" opacity={0.97} />
-                        <text x={city.x} y={city.y - r - 35} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--text)" fontFamily="var(--font)">
-                          {city.name}
-                        </text>
-                        <text x={city.x} y={city.y - r - 20} textAnchor="middle" fontSize="10" fill={color} fontFamily="var(--font)">
-                          {cityCustomers.length} client{cityCustomers.length > 1 ? 's' : ''} · {fmt(cityCustomers.reduce((s,c) => s + c.totalCA, 0))}
-                        </text>
-                      </g>
-                    )}
-                  </g>
-                )
-              })}
-
-              {/* Dakar pin si aucun client */}
-              {customers.length === 0 && (
-                <circle cx={76} cy={292} r={8} fill="var(--p2)" opacity={0.4} />
-              )}
-            </svg>
-          </div>
-
-          {/* Grille des villes */}
-          <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 8 }}>
-            {SENEGAL_CITIES.map(city => {
-              const cc = customers.filter(c =>
-                getCustomerCityId(c.address) === city.id &&
-                (!mapTypeFilter || c.type === mapTypeFilter)
-              )
-              if (cc.length === 0) return null
-              const ca = cc.reduce((s, c) => s + c.totalCA, 0)
-              return (
-                <div key={city.id} style={{
-                  background: 'var(--bg3)', border: '1px solid var(--border)',
-                  borderRadius: 10, padding: '10px 12px', cursor: 'pointer', transition: 'border-color .15s',
-                }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--p2)'; setMapHover(city.id) }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; setMapHover(null) }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <MapPin size={11} style={{ color: 'var(--p2)', flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{city.name}</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {cc.length} {lang === 'fr' ? 'client' : 'customer'}{cc.length > 1 ? 's' : ''}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--p2)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{fmt(ca)}</div>
-                </div>
-              )
-            })}
-          </div>
+          )}
         </div>
       )}
 
