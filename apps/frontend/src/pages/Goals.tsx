@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, useCurrencyInfo } from '@/stores/appStore'
 import { dashboardApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { Plus } from 'lucide-react'
@@ -9,7 +9,7 @@ interface Goal {
   label: string
   target: number
   current: number
-  unit: 'FCFA' | '%' | 'clients' | 'transactions'
+  unit: 'currency' | 'FCFA' | '%' | 'clients' | 'transactions'
   period: string
   color: string
   icon: string
@@ -17,9 +17,9 @@ interface Goal {
 }
 
 const DEFAULT_GOALS: Goal[] = [
-  { id: '1', label: 'CA mensuel',        target: 3000000, current: 0, unit: 'FCFA',         period: 'Mai 2026', color: 'var(--p2)',    icon: '💰', category: 'revenue'   },
+  { id: '1', label: 'CA mensuel',        target: 3000000, current: 0, unit: 'currency',     period: 'Mai 2026', color: 'var(--p2)',    icon: '💰', category: 'revenue'   },
   { id: '2', label: 'Nb transactions',   target: 200,     current: 0, unit: 'transactions', period: 'Mai 2026', color: 'var(--acc2)', icon: '🛒', category: 'revenue'   },
-  { id: '3', label: 'Panier moyen',      target: 15000,   current: 0, unit: 'FCFA',         period: 'Mai 2026', color: 'var(--acc)',  icon: '🧺', category: 'revenue'   },
+  { id: '3', label: 'Panier moyen',      target: 15000,   current: 0, unit: 'currency',     period: 'Mai 2026', color: 'var(--acc)',  icon: '🧺', category: 'revenue'   },
   { id: '4', label: 'Marge brute',       target: 30,      current: 0, unit: '%',            period: 'Mai 2026', color: 'var(--p2)',   icon: '📊', category: 'revenue'   },
   { id: '5', label: 'Nouveaux clients',  target: 20,      current: 0, unit: 'clients',      period: 'Mai 2026', color: '#F472B6',     icon: '👥', category: 'customers' },
   { id: '6', label: 'Taux rupture',      target: 5,       current: 0, unit: '%',            period: 'Mai 2026', color: 'var(--danger)', icon: '📦', category: 'stock'   },
@@ -28,13 +28,16 @@ const DEFAULT_GOALS: Goal[] = [
 const BLANK_GOAL: Goal = {
   id: '',
   label: '', target: 0, current: 0,
-  unit: 'FCFA', period: 'Mai 2026',
+  unit: 'currency', period: 'Mai 2026',
   color: 'var(--p2)', icon: '🎯', category: 'revenue',
 }
+
+const isCurrency = (unit: string) => unit === 'currency' || unit === 'FCFA'
 
 export default function Goals() {
   const { lang } = useAppStore()
   const fmt = useFormatAmount()
+  const { symbol: currencySymbol } = useCurrencyInfo()
 
   const [goals, setGoals] = useState<Goal[]>(() => {
     try {
@@ -206,7 +209,7 @@ export default function Goals() {
                     color: statusColor, fontFamily: 'var(--mono)',
                     letterSpacing: '-1px',
                   }}>
-                    {goal.unit === 'FCFA' ? fmt(goal.current)
+                    {isCurrency(goal.unit) ? fmt(goal.current)
                       : goal.current + (goal.unit === '%' ? ' %' : '')}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>
@@ -219,7 +222,7 @@ export default function Goals() {
                     fontSize: 18, fontWeight: 700,
                     color: 'var(--text2)', fontFamily: 'var(--mono)',
                   }}>
-                    {goal.unit === 'FCFA' ? fmt(goal.target)
+                    {isCurrency(goal.unit) ? fmt(goal.target)
                       : goal.target + (goal.unit === '%' ? ' %' : ' ' + goal.unit)}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>
@@ -240,7 +243,7 @@ export default function Goals() {
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
                   {lang === 'fr' ? 'Reste :' : 'Remaining:'}{' '}
                   <span style={{ color: statusColor, fontWeight: 600 }}>
-                    {goal.unit === 'FCFA'
+                    {isCurrency(goal.unit)
                       ? fmt(goal.target - goal.current)
                       : (goal.target - goal.current) + (goal.unit === '%' ? ' %' : ' ' + goal.unit)}
                   </span>
@@ -314,7 +317,7 @@ export default function Goals() {
                   <select className="input"
                     value={goalForm.unit}
                     onChange={e => setGoalForm(f => ({ ...f, unit: e.target.value as Goal['unit'] }))}>
-                    <option value="FCFA">FCFA</option>
+                    <option value="currency">{currencySymbol}</option>
                     <option value="%">%</option>
                     <option value="clients">Clients</option>
                     <option value="transactions">Transactions</option>
