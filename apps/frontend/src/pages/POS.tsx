@@ -249,7 +249,7 @@ export default function POS() {
   const [countrySearch, setCountrySearch]         = useState('')
   const [waNumber, setWaNumber]                   = useState('')
   const [sendWhatsApp, setSendWhatsApp]           = useState(() => posAutoWhatsApp)
-  const [sendingWA, setSendingWA]         = useState(false)
+  const [waSending, setWaSending]                 = useState(false)
   const [cashGiven, setCashGiven] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [clientType, setClientType] = useState<'retail'|'wholesale'|'semi'>('retail')
@@ -462,28 +462,31 @@ export default function POS() {
     // Envoi WhatsApp si activé
     const fullPhone = waNumber.trim() ? `${waCountryCode}${waNumber.replace(/[\s\-]/g, '')}` : ''
     if (sendWhatsApp && fullPhone) {
-      setSendingWA(true)
+      setWaSending(true)
       try {
-        const ticketRef = `V${Date.now().toString().slice(-6)}`
         await whatsappApi.sendTicket({
-          phone: fullPhone,
-          ticket: {
-            ref: ticketRef,
-            items: cart.map(item => ({ name: item.name, qty: item.qty, total: Math.round(item.price * item.qty) })),
-            total: Math.round(total),
-            paymentMode: payMode === 'cash' ? (lang === 'fr' ? 'Espèces' : 'Cash')
-              : payMode === 'card' ? (lang === 'fr' ? 'Carte' : 'Card')
-              : payMode === 'wave' ? 'Wave'
-              : payMode === 'orange' ? 'Orange Money' : 'Mobile',
-          },
-          shopName: 'HabaShop — Dakar Central',
-          lang,
+          phone:       fullPhone,
+          items:       cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+          total:       Math.round(total),
+          paymentMode: payMode === 'cash'   ? (lang === 'fr' ? 'Espèces' : 'Cash')
+                     : payMode === 'card'   ? (lang === 'fr' ? 'Carte'   : 'Card')
+                     : payMode === 'wave'   ? 'Wave'
+                     : payMode === 'orange' ? 'Orange Money' : 'Mobile',
+          discount:    discountAmount > 0 ? Math.round(discountAmount) : undefined,
+          reference:   `V${Date.now().toString().slice(-6)}`,
         })
-        toast.success('📱 Ticket WhatsApp envoyé !')
-      } catch {
-        toast.error('❌ Échec envoi WhatsApp')
+        toast.success(lang === 'fr' ? `📱 Ticket envoyé au ${fullPhone}` : `📱 Receipt sent to ${fullPhone}`)
+      } catch (err: any) {
+        const msg = err.message?.includes('inscrit sur WhatsApp')
+          ? (lang === 'fr' ? `❌ ${fullPhone} n'est pas sur WhatsApp` : `❌ ${fullPhone} is not on WhatsApp`)
+          : err.message?.includes('invalide') || err.message?.includes('Format')
+            ? (lang === 'fr' ? '❌ Format de numéro invalide' : '❌ Invalid phone format')
+            : err.message?.includes('Authentification')
+              ? (lang === 'fr' ? '❌ Erreur configuration Twilio' : '❌ Twilio config error')
+              : `❌ ${err.message ?? 'Échec envoi WhatsApp'}`
+        toast.error(msg)
       } finally {
-        setSendingWA(false)
+        setWaSending(false)
       }
     }
 
@@ -1786,21 +1789,21 @@ export default function POS() {
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 onClick={confirmSale}
-                disabled={isSaving || sendingWA}
+                disabled={isSaving || waSending}
                 style={{
                   flex: 1,
-                  background: (isSaving || sendingWA) ? 'var(--bg4)' : 'linear-gradient(135deg, var(--acc2), #059669)',
+                  background: (isSaving || waSending) ? 'var(--bg4)' : 'linear-gradient(135deg, var(--acc2), #059669)',
                   border: 'none',
                   borderRadius: 10,
                   padding: '12px',
                   fontSize: 14,
                   fontWeight: 700,
-                  color: (isSaving || sendingWA) ? 'var(--text3)' : '#fff',
-                  cursor: (isSaving || sendingWA) ? 'not-allowed' : 'pointer',
+                  color: (isSaving || waSending) ? 'var(--text3)' : '#fff',
+                  cursor: (isSaving || waSending) ? 'not-allowed' : 'pointer',
                   fontFamily: 'inherit',
-                  boxShadow: (isSaving || sendingWA) ? 'none' : '0 4px 16px rgba(14,196,126,.35)',
+                  boxShadow: (isSaving || waSending) ? 'none' : '0 4px 16px rgba(14,196,126,.35)',
                 }}
-              >{sendingWA ? '📱 Envoi WhatsApp…' : isSaving ? '⏳ Enregistrement…' : `✅ ${t('pos_validate')}`}</button>
+              >{waSending ? '📱 Envoi WhatsApp…' : isSaving ? '⏳ Enregistrement…' : `✅ ${t('pos_validate')}`}</button>
               <button
                 onClick={() => { printTicket(); confirmSale() }}
                 className="mini-btn"

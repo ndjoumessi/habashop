@@ -179,10 +179,15 @@ export const aiApi = {
 }
 
 export const whatsappApi = {
-  sendTicket: (data: any) =>
-    api.post('/api/whatsapp/send-ticket', data),
-  broadcast: (data: any) =>
-    api.post('/api/whatsapp/broadcast', data),
+  sendTicket: (data: {
+    phone:        string
+    items:        { name: string; qty: number; price: number }[]
+    total:        number
+    paymentMode:  string
+    discount?:    number
+    reference?:   string
+  }) => api.post<{ success: boolean; sid?: string }>('/api/whatsapp/send-ticket', data),
+  broadcast:   (data: any) => api.post('/api/whatsapp/broadcast', data),
   testEvening: () => api.post('/api/whatsapp/test-evening', {}),
   testMorning: () => api.post('/api/whatsapp/test-morning', {}),
 }
