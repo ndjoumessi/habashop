@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { ordersApi, productsApi } from '@/lib/api'
+import { ordersApi, productsApi, suppliersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle, DollarSign, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
@@ -12,6 +12,7 @@ interface Order {
   id: string; ref: string; supplier: string; date: string
   expectedAt: string; status: OrderStatus; total: number
   items: OrderItem[]; notes: string
+  type?: 'client' | 'supplier'
 }
 
 const STATUS_CONFIG: Record<OrderStatus, { cls: string; icon: React.ReactNode; color: string }> = {
@@ -96,6 +97,14 @@ const STATIC_PRODUCTS = [
   { id:'p12',name:'Détergent 1kg',      price:1200,  emoji:'🧹', category:'Hygiène'     },
 ]
 
+const STATIC_SUPPLIERS = [
+  { id:'s1', name:'Diallo et Frères SARL',   specialty:'Céréales, Légumineuses', phone:'+221 77 123 4567', leadTime:'48h', rating:5, status:'active' },
+  { id:'s2', name:'Import-Export Koné',       specialty:'Corps gras, Conserves',  phone:'+221 76 987 6543', leadTime:'72h', rating:4, status:'active' },
+  { id:'s3', name:'Distributeur Sahara',      specialty:'Hygiène, Ménage',        phone:'+221 70 555 1234', leadTime:'24h', rating:3, status:'pause'  },
+  { id:'s4', name:'Agro Maure International', specialty:'Sucre, Sel, Épices',     phone:'+221 78 321 9876', leadTime:'72h', rating:4, status:'active' },
+  { id:'s5', name:'Pharma Dist. Dakar',       specialty:'Parapharmacie, Hygiène', phone:'+221 33 890 0001', leadTime:'24h', rating:4, status:'active' },
+]
+
 const API_TO_LOCAL_STATUS: Record<string, OrderStatus> = {
   DRAFT: 'BROUILLON', SENT: 'ENVOYÉE', CONFIRMED: 'CONFIRMÉE',
   IN_TRANSIT: 'EN TRANSIT', RECEIVED: 'REÇUE', CANCELLED: 'ANNULÉE',
@@ -139,6 +148,7 @@ export default function Orders() {
   const prevMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
   const nextMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
   const [showNewOrderModal, setShowNewOrderModal] = useState(false)
+  const [orderType, setOrderType] = useState<'client' | 'supplier'>('client')
   const [availableProducts, setAvailableProducts] = useState<any[]>([])
   const [productSearch, setProductSearch] = useState('')
   const [newOrderForm, setNewOrderForm] = useState({
@@ -146,6 +156,8 @@ export default function Orders() {
     items: [] as { id: string; name: string; price: number; qty: number; emoji: string }[],
     note: '',
   })
+  const [suppliersList, setSuppliersList] = useState<any[]>([])
+  const [selectedSupplierId, setSelectedSupplierId] = useState('')
 
   useEffect(() => {
     productsApi.list()
@@ -160,7 +172,22 @@ export default function Orders() {
       .catch(() => setAvailableProducts(STATIC_PRODUCTS))
   }, [])
 
-  const suppliers = Array.from(new Set(orders.map(o => o.supplier)))
+  useEffect(() => {
+    suppliersApi.list()
+      .then(data => setSuppliersList(
+        data.map((s: any) => ({
+          id: s.id, name: s.name,
+          specialty: s.specialty || s.category || '',
+          phone: s.phone || '',
+          leadTime: s.leadTime || s.lead_time || '—',
+          rating: s.rating ?? 4,
+          status: s.status || 'active',
+        }))
+      ))
+      .catch(() => setSuppliersList(STATIC_SUPPLIERS))
+  }, [])
+
+  const supplierNames = Array.from(new Set(orders.map(o => o.supplier)))
 
   const filtered = orders.filter(o =>
     (!search || o.ref.toLowerCase().includes(search.toLowerCase()) || o.supplier.toLowerCase().includes(search.toLowerCase())) &&
@@ -184,36 +211,47 @@ export default function Orders() {
   const openNewOrderModal = () => {
     setNewOrderForm({ clientName: '', clientPhone: '', items: [], note: '' })
     setProductSearch('')
+    setOrderType('client')
+    setSelectedSupplierId('')
     setShowNewOrderModal(true)
   }
 
   const handleCreateOrder = async () => {
-    if (!newOrderForm.clientName.trim() || newOrderForm.items.length === 0) return
+    const canCreate = orderType === 'client'
+      ? newOrderForm.clientName.trim() !== '' && newOrderForm.items.length > 0
+      : selectedSupplierId !== '' && newOrderForm.items.length > 0
+    if (!canCreate) return
+
     const total = newOrderForm.items.reduce((s, i) => s + i.price * i.qty, 0)
     const defaultExpected = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0] })()
+    const supplierObj = orderType === 'supplier' ? suppliersList.find(s => s.id === selectedSupplierId) : null
+    const displayName = orderType === 'client' ? newOrderForm.clientName : (supplierObj?.name ?? '')
+
     const newOrder: Order = {
       id: String(Date.now()),
       ref: `CMD-2026-${String(orders.length + 90).padStart(3, '0')}`,
-      supplier: newOrderForm.clientName,
+      supplier: displayName,
       date: new Date().toISOString().split('T')[0],
       expectedAt: defaultExpected,
       status: 'BROUILLON',
       total,
+      type: orderType,
       items: newOrderForm.items.map(i => ({ product: `${i.emoji} ${i.name}`, qty: i.qty, unit: 'unité', unitPrice: i.price })),
       notes: newOrderForm.note,
     }
     try {
-      await ordersApi.create({
-        clientName: newOrderForm.clientName,
-        clientPhone: newOrderForm.clientPhone,
-        items: newOrderForm.items,
-        total,
-        note: newOrderForm.note,
-      })
+      if (orderType === 'client') {
+        await ordersApi.create({ clientName: newOrderForm.clientName, clientPhone: newOrderForm.clientPhone, items: newOrderForm.items, total, note: newOrderForm.note, type: 'client' })
+      } else {
+        await ordersApi.create({ supplierId: selectedSupplierId, supplierName: supplierObj?.name, items: newOrderForm.items, total, note: newOrderForm.note, type: 'supplier' })
+      }
     } catch {}
     setOrders(prev => [newOrder, ...prev])
     setShowNewOrderModal(false)
-    toast.success(lang === 'fr' ? `✅ Commande créée — ${fmt(total)}` : `✅ Order created — ${fmt(total)}`)
+    toast.success(orderType === 'client'
+      ? (lang === 'fr' ? `✅ Commande créée — ${fmt(total)}` : `✅ Order created — ${fmt(total)}`)
+      : (lang === 'fr' ? `📦 Bon de commande envoyé à ${supplierObj?.name}` : `📦 PO sent to ${supplierObj?.name}`)
+    )
   }
 
   const printOrderPDF = (order: Order) => {
@@ -451,7 +489,7 @@ export default function Orders() {
           </select>
           <select className="input py-2 text-sm w-auto" value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)}>
             <option value="">{t('pos_all')} {t('col_supplier').toLowerCase()}</option>
-            {suppliers.map(s => <option key={s}>{s}</option>)}
+            {supplierNames.map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
 
@@ -491,14 +529,15 @@ export default function Orders() {
           <table>
             <thead>
               <tr>
-                <th>{t('col_ref')}</th>
-                <th>{t('col_supplier')}</th>
-                <th>{t('orders_date')}</th>
-                <th>{t('orders_expected')}</th>
-                <th>{t('orders_articles')}</th>
-                <th>{t('col_amount')}</th>
-                <th>{t('col_status')}</th>
-                <th>{t('col_actions')}</th>
+                <th scope="col">{t('col_ref')}</th>
+                <th scope="col">Type</th>
+                <th scope="col">{lang === 'fr' ? 'Client / Fournisseur' : 'Client / Supplier'}</th>
+                <th scope="col">{t('orders_date')}</th>
+                <th scope="col">{t('orders_expected')}</th>
+                <th scope="col">{t('orders_articles')}</th>
+                <th scope="col">{t('col_amount')}</th>
+                <th scope="col">{t('col_status')}</th>
+                <th scope="col">{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -512,6 +551,12 @@ export default function Orders() {
                         <span className="td-mono">{o.ref}</span>
                         {isLate && <span className="badge badge-red text-xs">Retard</span>}
                       </div>
+                    </td>
+                    <td>
+                      {o.type === 'supplier'
+                        ? <span className="badge badge-amber" style={{ fontSize: 10 }}>🚚 BC</span>
+                        : <span className="badge badge-blue" style={{ fontSize: 10 }}>👥 Vente</span>
+                      }
                     </td>
                     <td className="td-bold">{o.supplier}</td>
                     <td className="td-mono text-xs">{new Date(o.date).toLocaleDateString('fr-FR')}</td>
@@ -562,7 +607,7 @@ export default function Orders() {
                 )
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="text-center py-10" style={{ color: 'var(--text3)' }}>Aucune commande trouvée</td></tr>
+                <tr><td colSpan={9} className="text-center py-10" style={{ color: 'var(--text3)' }}>Aucune commande trouvée</td></tr>
               )}
             </tbody>
           </table>
@@ -696,25 +741,130 @@ export default function Orders() {
               padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16,
             }}>
 
-              {/* Infos client */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
-                    {lang === 'fr' ? 'NOM CLIENT *' : 'CLIENT NAME *'}
-                  </label>
-                  <input className="input" placeholder={lang === 'fr' ? 'Nom du client…' : 'Client name…'}
-                    value={newOrderForm.clientName}
-                    onChange={e => setNewOrderForm(f => ({ ...f, clientName: e.target.value }))} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
-                    {lang === 'fr' ? 'TÉLÉPHONE' : 'PHONE'}
-                  </label>
-                  <input className="input" type="tel" placeholder="+221 77 000 0000"
-                    value={newOrderForm.clientPhone}
-                    onChange={e => setNewOrderForm(f => ({ ...f, clientPhone: e.target.value }))} />
-                </div>
+              {/* Toggle type commande */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <button type="button" onClick={() => { setOrderType('client'); setSelectedSupplierId('') }}
+                  style={{
+                    padding: '12px 16px', borderRadius: 12, cursor: 'pointer',
+                    fontFamily: 'var(--font)', transition: 'all .15s',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    background: orderType === 'client' ? 'rgba(108,71,255,.15)' : 'var(--bg4)',
+                    border: `2px solid ${orderType === 'client' ? 'rgba(108,71,255,.4)' : 'var(--border)'}`,
+                  }}>
+                  <span style={{ fontSize: 22 }}>👥</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: orderType === 'client' ? 'var(--p3)' : 'var(--text2)' }}>
+                    {lang === 'fr' ? 'Commande client' : 'Customer order'}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--text3)' }}>
+                    {lang === 'fr' ? 'Vente à un client' : 'Sale to customer'}
+                  </span>
+                </button>
+                <button type="button" onClick={() => { setOrderType('supplier'); setNewOrderForm(f => ({ ...f, clientName: '', clientPhone: '' })) }}
+                  style={{
+                    padding: '12px 16px', borderRadius: 12, cursor: 'pointer',
+                    fontFamily: 'var(--font)', transition: 'all .15s',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    background: orderType === 'supplier' ? 'rgba(240,165,0,.12)' : 'var(--bg4)',
+                    border: `2px solid ${orderType === 'supplier' ? 'rgba(240,165,0,.35)' : 'var(--border)'}`,
+                  }}>
+                  <span style={{ fontSize: 22 }}>🚚</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: orderType === 'supplier' ? 'var(--acc)' : 'var(--text2)' }}>
+                    {lang === 'fr' ? 'Bon de commande' : 'Purchase order'}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--text3)' }}>
+                    {lang === 'fr' ? 'Achat chez fournisseur' : 'Order from supplier'}
+                  </span>
+                </button>
               </div>
+
+              {/* Formulaire client OU sélecteur fournisseur */}
+              {orderType === 'client' ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+                      {lang === 'fr' ? 'NOM CLIENT *' : 'CLIENT NAME *'}
+                    </label>
+                    <input className="input" placeholder={lang === 'fr' ? 'Nom du client…' : 'Client name…'}
+                      value={newOrderForm.clientName}
+                      onChange={e => setNewOrderForm(f => ({ ...f, clientName: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+                      {lang === 'fr' ? 'TÉLÉPHONE' : 'PHONE'}
+                    </label>
+                    <input className="input" type="tel" placeholder="+221 77 000 0000"
+                      value={newOrderForm.clientPhone}
+                      onChange={e => setNewOrderForm(f => ({ ...f, clientPhone: e.target.value }))} />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+                    {lang === 'fr' ? 'FOURNISSEUR *' : 'SUPPLIER *'}
+                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
+                    {suppliersList.filter(s => s.status !== 'inactive').map(supplier => {
+                      const isSel = selectedSupplierId === supplier.id
+                      return (
+                        <button key={supplier.id} type="button" onClick={() => setSelectedSupplierId(supplier.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: '11px 14px', borderRadius: 11, cursor: 'pointer',
+                            fontFamily: 'var(--font)', textAlign: 'left', transition: 'all .15s',
+                            background: isSel ? 'rgba(240,165,0,.1)' : 'var(--bg4)',
+                            border: `1.5px solid ${isSel ? 'rgba(240,165,0,.35)' : 'var(--border)'}`,
+                          }}>
+                          <div style={{
+                            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                            background: isSel ? 'rgba(240,165,0,.15)' : 'rgba(255,255,255,.05)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+                          }}>🚚</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: isSel ? 'var(--acc)' : 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {supplier.name}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 8 }}>
+                              <span>📦 {supplier.specialty}</span>
+                              <span>⏱ {supplier.leadTime}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
+                            <div style={{ fontSize: 11 }}>{'⭐'.repeat(supplier.rating ?? 0)}</div>
+                            {supplier.phone && <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{supplier.phone}</div>}
+                          </div>
+                          {isSel && (
+                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--acc)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#000', fontWeight: 900, flexShrink: 0 }}>✓</div>
+                          )}
+                        </button>
+                      )
+                    })}
+                    {suppliersList.length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text3)', fontSize: 13 }}>
+                        <div style={{ fontSize: 28, marginBottom: 8 }}>🚚</div>
+                        {lang === 'fr' ? 'Aucun fournisseur disponible' : 'No suppliers available'}
+                      </div>
+                    )}
+                  </div>
+                  {selectedSupplierId && (() => {
+                    const s = suppliersList.find(x => x.id === selectedSupplierId)
+                    if (!s) return null
+                    return (
+                      <div style={{ marginTop: 10, padding: '12px 14px', borderRadius: 10, display: 'flex', gap: 14, alignItems: 'center', background: 'rgba(240,165,0,.06)', border: '1px solid rgba(240,165,0,.15)' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--acc)', marginBottom: 4 }}>✅ {s.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            <span>📦 {s.specialty}</span>
+                            <span>⏱ {lang === 'fr' ? 'Délai' : 'Lead time'} : {s.leadTime}</span>
+                            {s.phone && <span>📞 {s.phone}</span>}
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => setSelectedSupplierId('')}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 15, padding: '4px' }}>✕</button>
+                      </div>
+                    )
+                  })()}
+                </div>
+              )}
 
               {/* Recherche + grille produits */}
               <div>
@@ -832,27 +982,31 @@ export default function Orders() {
               padding: '14px 24px', borderTop: '1px solid var(--border)',
               flexShrink: 0, display: 'flex', gap: 8, background: 'var(--bg2)',
             }}>
-              <button
-                disabled={!newOrderForm.clientName.trim() || newOrderForm.items.length === 0}
-                onClick={handleCreateOrder}
-                style={{
-                  flex: 1, padding: '12px', border: 'none', borderRadius: 12,
-                  background: newOrderForm.items.length > 0 && newOrderForm.clientName.trim()
-                    ? 'linear-gradient(135deg,var(--p),var(--p2))'
-                    : 'var(--bg4)',
-                  color: newOrderForm.items.length > 0 && newOrderForm.clientName.trim() ? '#fff' : 'var(--text3)',
-                  fontSize: 14, fontWeight: 800, fontFamily: 'var(--font)',
-                  cursor: newOrderForm.items.length > 0 && newOrderForm.clientName.trim() ? 'pointer' : 'not-allowed',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  transition: 'all .15s',
-                }}>
-                📋 {lang === 'fr' ? 'Créer la commande' : 'Create order'}
-                {newOrderForm.items.length > 0 && (
-                  <span style={{ fontSize: 12, opacity: .8 }}>
-                    — {newOrderForm.items.reduce((s, i) => s + i.qty, 0)} art.
-                  </span>
-                )}
-              </button>
+              {(() => {
+                const canCreate = orderType === 'client'
+                  ? newOrderForm.clientName.trim() !== '' && newOrderForm.items.length > 0
+                  : selectedSupplierId !== '' && newOrderForm.items.length > 0
+                const createLabel = orderType === 'client'
+                  ? (lang === 'fr' ? '📋 Créer la commande' : '📋 Create order')
+                  : (lang === 'fr' ? '📦 Créer le bon de commande' : '📦 Create PO')
+                return (
+                  <button disabled={!canCreate} onClick={handleCreateOrder}
+                    style={{
+                      flex: 1, padding: '12px', border: 'none', borderRadius: 12,
+                      background: canCreate ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg4)',
+                      color: canCreate ? '#fff' : 'var(--text3)',
+                      fontSize: 14, fontWeight: 800, fontFamily: 'var(--font)',
+                      cursor: canCreate ? 'pointer' : 'not-allowed',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      transition: 'all .15s',
+                    }}>
+                    {createLabel}
+                    {newOrderForm.items.length > 0 && (
+                      <span style={{ fontSize: 12, opacity: .8 }}>— {newOrderForm.items.reduce((s, i) => s + i.qty, 0)} art.</span>
+                    )}
+                  </button>
+                )
+              })()}
               <button onClick={() => setShowNewOrderModal(false)} style={{
                 padding: '12px 18px', background: 'var(--bg3)',
                 border: '1px solid var(--border)', borderRadius: 12,
