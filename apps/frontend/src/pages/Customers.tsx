@@ -28,6 +28,14 @@ const TYPE_CFG: Record<ClientType, { cls: string; color: string; bg: string }> =
   Détail:      { cls: 'badge-gray',   color: '#3B82F6', bg: 'rgba(59,130,246,.15)'  },
 }
 
+const TYPE_CONFIG: Record<string, { color: string; bg: string; border: string; badge: string; icon: string }> = {
+  'Grossiste': { color: '#A991FF', bg: 'rgba(108,71,255,.1)',  border: 'rgba(108,71,255,.25)', badge: 'rgba(108,71,255,.15)', icon: '🏭' },
+  'Semi-gros': { color: '#FFB800', bg: 'rgba(255,184,0,.08)',  border: 'rgba(255,184,0,.2)',   badge: 'rgba(255,184,0,.12)',  icon: '🏪' },
+  'Fidèle':    { color: '#00D084', bg: 'rgba(0,208,132,.08)',  border: 'rgba(0,208,132,.2)',   badge: 'rgba(0,208,132,.12)', icon: '⭐' },
+  'Détail':    { color: '#00B8FF', bg: 'rgba(0,184,255,.08)',  border: 'rgba(0,184,255,.2)',   badge: 'rgba(0,184,255,.12)', icon: '🛍️' },
+}
+const getTypeConfig = (type: string) => TYPE_CONFIG[type] ?? TYPE_CONFIG['Détail']
+
 const SENEGAL_CITIES = [
   { id: 'dakar',       name: 'Dakar',       x: 76,  y: 292 },
   { id: 'thies',       name: 'Thiès',        x: 172, y: 250 },
@@ -449,57 +457,121 @@ export default function Customers() {
 
         {/* Vue grille */}
         {viewMode === 'grid' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
             {filtered.map(c => {
-              const cfg = TYPE_CFG[c.type]
+              const cfg = getTypeConfig(c.type)
               const initials = c.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+              const loyaltyPct = Math.min(100, Math.round(((c.loyaltyPoints ?? 0) / 1000) * 100))
               return (
                 <div key={c.id} style={{
-                  background: 'var(--bg3)', border: `1px solid var(--border)`,
-                  borderRadius: 14, padding: '16px', cursor: 'pointer',
-                  transition: 'border-color .15s, transform .15s',
-                  display: 'flex', flexDirection: 'column', gap: 12,
+                  background: 'var(--bg3)',
+                  border: `1px solid ${cfg.border}`,
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  transition: 'transform .18s, box-shadow .18s',
                 }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = cfg.color; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'none' }}
-                  onClick={() => setViewCustomer(c)}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = `0 8px 32px ${cfg.color}22` }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = '' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-                      background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 15, fontWeight: 900, color: '#fff',
-                    }}>{initials}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
-                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', padding: '2px 8px', borderRadius: 99, background: cfg.bg, color: cfg.color }}>{c.type}</span>
+                  {/* Bande couleur */}
+                  <div style={{ height: 4, background: cfg.color }} />
+
+                  <div style={{ padding: 16 }}>
+                    {/* Avatar + nom + badge */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+                      <div style={{
+                        width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+                        background: cfg.bg, border: `1.5px solid ${cfg.border}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 15, fontWeight: 900, color: cfg.color,
+                      }}>{initials}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{c.name}</div>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px',
+                          padding: '2px 8px', borderRadius: 99,
+                          background: cfg.badge, color: cfg.color, border: `1px solid ${cfg.border}`,
+                        }}>
+                          <span>{cfg.icon}</span>{c.type}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: 'var(--text3)' }}>{c.phone || '—'}</span>
-                    <span style={{ color: 'var(--acc2)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{fmt(c.totalCA)}</span>
-                  </div>
-                  <LoyaltyBar points={c.loyaltyPoints} max={c.maxLoyalty} />
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button title="Modifier" style={{ flex: 1, padding: '6px', borderRadius: 8, background: 'var(--bg4)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color .15s' }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text)'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text3)'}
-                      onClick={ev => { ev.stopPropagation(); setEditCustomer(c); setEditCustForm({ name:c.name, type:c.type, phone:c.phone, email:c.email??'', address:c.address??'', notes:c.notes??'' }); setCustEditMode(false); setShowEditCustModal(true) }}>
-                      <Pencil size={13} />
-                    </button>
-                    <button title="Nouvelle vente" style={{ flex: 1, padding: '6px', borderRadius: 8, background: TYPE_CFG['Fidèle'].bg, border: 'none', cursor: 'pointer', color: 'var(--acc2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s' }}
-                      onClick={ev => { ev.stopPropagation(); navigate('/app/pos', { state: { customer: c } }) }}>
-                      <ShoppingCart size={13} />
-                    </button>
-                    <button title="Carte fidélité" style={{ flex: 1, padding: '6px', borderRadius: 8, background: 'rgba(255,215,0,.12)', border: 'none', cursor: 'pointer', color: '#B8860B', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s' }}
-                      onClick={ev => { ev.stopPropagation(); setLoyaltyCustomer(c) }}>
-                      <Gift size={13} />
-                    </button>
-                    <button title="Devis PDF" style={{ flex: 1, padding: '6px', borderRadius: 8, background: TYPE_CFG['Grossiste'].bg, border: 'none', cursor: 'pointer', color: 'var(--p2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s' }}
-                      onClick={ev => { ev.stopPropagation(); generateInvoice({ type: 'devis', lang: 'fr', customer: { name: c.name, phone: c.phone }, items: [{ name: 'Article', qty: 1, price: 0 }] }) }}>
-                      <FileText size={13} />
-                    </button>
+
+                    {/* Téléphone / Email */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                      {c.phone && (
+                        <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ color: cfg.color }}>📞</span>{c.phone}
+                        </div>
+                      )}
+                      {c.email && (
+                        <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span style={{ color: cfg.color }}>✉</span>{c.email}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* KPIs 2 colonnes */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                      <div style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 10, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 3 }}>CA Total</div>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: cfg.color, fontFamily: 'var(--mono)' }}>{fmt(c.totalCA)}</div>
+                      </div>
+                      <div style={{ background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 3 }}>Commandes</div>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{c.purchasesPerMonth}×/mois</div>
+                      </div>
+                    </div>
+
+                    {/* Barre fidélité */}
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: 'var(--text3)', marginBottom: 5 }}>
+                        <span>Fidélité</span>
+                        <span style={{ color: cfg.color }}>{loyaltyPct}%</span>
+                      </div>
+                      <div style={{ height: 6, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%', width: `${loyaltyPct}%`,
+                          background: `linear-gradient(90deg,${cfg.color},${cfg.color}99)`,
+                          borderRadius: 99, transition: 'width .4s',
+                          boxShadow: `0 0 8px ${cfg.color}66`,
+                        }} />
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={e => { e.stopPropagation(); navigate('/app/pos', { state: { customer: c } }) }}
+                        style={{
+                          flex: 1, padding: '8px', borderRadius: 10,
+                          background: `linear-gradient(135deg,${cfg.color},${cfg.color}cc)`,
+                          border: 'none', cursor: 'pointer',
+                          color: '#fff', fontSize: 11, fontWeight: 800,
+                          fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                          transition: 'opacity .15s',
+                        }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.82'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+                      >
+                        <ShoppingCart size={11} /> Vente
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); setDetailCustomer(c); setShowDetailModal(true) }}
+                        style={{
+                          flex: 1, padding: '8px', borderRadius: 10,
+                          background: cfg.bg, border: `1px solid ${cfg.border}`,
+                          cursor: 'pointer', color: cfg.color, fontSize: 11, fontWeight: 800,
+                          fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                          transition: 'background .15s',
+                        }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = cfg.badge}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = cfg.bg}
+                      >
+                        <Eye size={11} /> Détail
+                      </button>
+                    </div>
                   </div>
                 </div>
               )

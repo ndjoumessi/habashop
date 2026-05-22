@@ -10,7 +10,7 @@ import {
 import { dashboardApi } from '@/lib/api'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
+  ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Sector,
 } from 'recharts'
 
 const SALES_CHART_FALLBACK = [
@@ -90,6 +90,35 @@ const ALERTS = [
 ]
 
 const RANK_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#8888A8', '#8888A8']
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{
+      background: '#0D0D1C',
+      border: '1px solid rgba(255,255,255,.15)',
+      borderRadius: 10, padding: '10px 14px',
+      boxShadow: '0 8px 32px rgba(0,0,0,.8)',
+      fontFamily: 'var(--font)',
+      minWidth: 140,
+    }}>
+      {label && (
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
+          {label}
+        </div>
+      )}
+      {payload.map((p: any, i: number) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: i > 0 ? 4 : 0 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color ?? p.fill ?? 'var(--p)', flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{p.name ?? p.dataKey}</span>
+          <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)' }}>
+            {typeof p.value === 'number' ? p.value.toLocaleString('fr-FR') : p.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function Dashboard() {
   const { lang } = useConfig()
@@ -284,13 +313,7 @@ export default function Dashboard() {
                   if (v >= 1000)    return `${(v / 1000).toFixed(0)}k`
                   return String(v)
                 }} />
-              <Tooltip
-                contentStyle={{ background: 'var(--bg3)', border: '1px solid var(--border2)', borderRadius: 10, fontSize: 12 }}
-                formatter={(value: any, name: string) => [
-                  name === 'ventes' ? fmt(value) : value,
-                  name === 'ventes' ? (lang === 'fr' ? 'Ventes' : 'Sales') : 'Transactions',
-                ]}
-              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,.04)', stroke: 'rgba(255,255,255,.08)', strokeWidth: 1 }} />
               <Bar dataKey="ventes" fill="url(#salesGrad)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -302,20 +325,23 @@ export default function Dashboard() {
             <span className="panel-title">{lang === 'fr' ? 'CA par catégorie' : 'Revenue by category'}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <ResponsiveContainer width="100%" height={130}>
-              <PieChart>
-                <Pie data={PIE_DATA} cx="50%" cy="50%" innerRadius={38} outerRadius={60}
-                  paddingAngle={3} dataKey="value">
-                  {PIE_DATA.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: 'var(--bg3)', border: '1px solid var(--border2)', borderRadius: 10, fontSize: 12 }}
-                  formatter={(value: any) => [`${value}%`, '']}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
+              <ResponsiveContainer width="100%" height={130}>
+                <PieChart>
+                  <Pie data={PIE_DATA} cx="50%" cy="50%" innerRadius={38} outerRadius={60}
+                    paddingAngle={3} dataKey="value"
+                    activeShape={(props: any) => {
+                      const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props
+                      return <Sector cx={cx} cy={cy} innerRadius={innerRadius - 3} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+                    }}>
+                    {PIE_DATA.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 5, marginTop: 6 }}>
               {PIE_DATA.map((d) => (
                 <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11 }}>
