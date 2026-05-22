@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown, Navigation2, Globe, Flame, AlertTriangle, DollarSign, StickyNote, UserPlus, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
@@ -201,11 +201,11 @@ interface GeoCustomer {
   pos:      { lat: number; lng: number }
 }
 
-const TYPE_CFG_MAP: Record<string, { color: string; soft: string; icon: string; label: string }> = {
-  Grossiste:   { color: '#6C47FF', soft: 'rgba(108,71,255,.15)', icon: '🏭', label: 'Grossiste'   },
-  'Semi-gros': { color: '#FF9500', soft: 'rgba(255,149,0,.15)',  icon: '🏪', label: 'Semi-gros'   },
-  Fidèle:      { color: '#00D084', soft: 'rgba(0,208,132,.15)',  icon: '💎', label: 'Fidèle'      },
-  Détail:      { color: '#00B8FF', soft: 'rgba(0,184,255,.12)',  icon: '🛍', label: 'Détail'      },
+const TYPE_CFG_MAP: Record<string, { color: string; soft: string; icon: JSX.Element; label: string }> = {
+  Grossiste:   { color: '#6C47FF', soft: 'rgba(108,71,255,.15)', icon: <Building2 size={10} />, label: 'Grossiste'   },
+  'Semi-gros': { color: '#FF9500', soft: 'rgba(255,149,0,.15)',  icon: <ShoppingBag size={10} />, label: 'Semi-gros'   },
+  Fidèle:      { color: '#00D084', soft: 'rgba(0,208,132,.15)',  icon: <Star size={10} />, label: 'Fidèle'      },
+  Détail:      { color: '#00B8FF', soft: 'rgba(0,184,255,.12)',  icon: <ShoppingCart size={10} />, label: 'Détail'      },
 }
 const getMapCfg = (tp: string) => TYPE_CFG_MAP[tp] ?? TYPE_CFG_MAP.Détail
 
@@ -412,7 +412,7 @@ function CustomerMap({
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: 8 }}>
           {visibleList.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text3)', fontSize: 12 }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>Aucun client trouvé
+              <div style={{ display:'flex', justifyContent:'center', marginBottom: 8 }}><Search size={28} style={{ color: 'var(--text4)' }} /></div>Aucun client trouvé
             </div>
           ) : visibleList.map(({ customer }) => {
             const cfg     = getMapCfg(customer.type ?? 'Détail')
@@ -445,7 +445,7 @@ function CustomerMap({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: isSel ? '#F0F0FF' : 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{customer.name}</div>
                   <div style={{ fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 5 }}>
-                    <span style={{ color: cfg.color, fontWeight: 700 }}>{cfg.icon} {customer.type}</span>
+                    <span style={{ color: cfg.color, fontWeight: 700, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {customer.type}</span>
                     <span>·</span>
                     <span style={{ fontFamily: 'var(--mono)', color: isSel ? cfg.color : 'var(--text3)' }}>{totalCA >= 1000000 ? `${(totalCA / 1000000).toFixed(1)}M` : totalCA >= 1000 ? `${(totalCA / 1000).toFixed(0)}k` : fmt(totalCA)}</span>
                   </div>
@@ -472,7 +472,7 @@ function CustomerMap({
                   <div style={{ width: 38, height: 38, borderRadius: 11, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff', flexShrink: 0, boxShadow: `0 6px 18px ${cfg.color}44` }}>{initials}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: '#F0F0FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{selected.name}</div>
-                    <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99, background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.color}33` }}>{cfg.icon} {selected.type ?? 'Détail'}</span>
+                    <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99, background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.color}33`, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {selected.type ?? 'Détail'}</span>
                   </div>
                   <button type="button" onClick={() => setSelected(null)} style={{ width: 24, height: 24, borderRadius: 7, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer', color: 'var(--text3)', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={11} /></button>
                 </div>
@@ -548,19 +548,19 @@ function CustomerMap({
         {/* Overlay controls */}
         <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
           {[
-            { icon: '📍', title: 'Ma position',  fn: centerOnMe, active: false },
-            { icon: '🌍', title: 'Vue globale',  fn: () => { if (mapObj.current) { mapObj.current.setCenter({ lat: 14.6928, lng: -17.4467 }); mapObj.current.setZoom(6) } }, active: false },
+            { icon: <Navigation2 size={16} />, title: 'Ma position',  fn: centerOnMe },
+            { icon: <Globe size={16} />, title: 'Vue globale',  fn: () => { if (mapObj.current) { mapObj.current.setCenter({ lat: 14.6928, lng: -17.4467 }); mapObj.current.setZoom(6) } } },
           ].map(btn => (
             <button key={btn.title} type="button" onClick={btn.fn} title={btn.title}
-              style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(7,7,15,.9)', border: '1px solid rgba(255,255,255,.12)', cursor: 'pointer', color: 'var(--text2)', fontSize: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 4px 16px rgba(0,0,0,.5)', transition: 'background .15s' }}
+              style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(7,7,15,.9)', border: '1px solid rgba(255,255,255,.12)', cursor: 'pointer', color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 4px 16px rgba(0,0,0,.5)', transition: 'background .15s' }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.2)'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(7,7,15,.9)'}>
               {btn.icon}
             </button>
           ))}
           <button type="button" onClick={() => setShowHeat(h => !h)} title="Carte de chaleur"
-            style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${showHeat ? 'rgba(108,71,255,.6)' : 'rgba(255,255,255,.12)'}`, cursor: 'pointer', fontSize: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 4px 16px rgba(0,0,0,.5)', transition: 'all .15s', background: showHeat ? 'rgba(108,71,255,.35)' : 'rgba(7,7,15,.9)', color: showHeat ? 'var(--p3)' : 'var(--text2)' }}>
-            🔥
+            style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${showHeat ? 'rgba(108,71,255,.6)' : 'rgba(255,255,255,.12)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 4px 16px rgba(0,0,0,.5)', transition: 'all .15s', background: showHeat ? 'rgba(108,71,255,.35)' : 'rgba(7,7,15,.9)', color: showHeat ? 'var(--p3)' : 'var(--text2)' }}>
+            <Flame size={16} />
           </button>
         </div>
 
@@ -762,15 +762,18 @@ export default function Customers() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('customers_total'),       value: customers.length.toString(), color: 'var(--p2)',   icon: <Users size={18} /> },
-          { label: t('customers_active'),    value: activeThisMonth.toString(),  color: 'var(--acc2)', icon: <UserCheck size={18} /> },
-          { label: t('customers_avg_cart'),  value: fmt(avgCart),                color: 'var(--acc)',  icon: <ShoppingCart size={18} /> },
-          { label: t('customers_retention'), value: `${retentionRate}%`,         color: 'var(--p3)',   icon: <TrendingUp size={18} /> },
+          { label: t('customers_total'),     value: customers.length.toString(), hex: '#6C47FF', icon: <Users size={18} /> },
+          { label: t('customers_active'),    value: activeThisMonth.toString(),  hex: '#00D084', icon: <UserCheck size={18} /> },
+          { label: t('customers_avg_cart'),  value: fmt(avgCart),                hex: '#FF9500', icon: <ShoppingCart size={18} /> },
+          { label: t('customers_retention'), value: `${retentionRate}%`,         hex: '#00B8FF', icon: <TrendingUp size={18} /> },
         ].map(k => (
-          <div key={k.label} className="kpi-card">
-            <div className="kpi-icon-w" style={{ color: k.color }}>{k.icon}</div>
+          <div key={k.label} className="kpi-card" style={{ position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${k.hex}18,${k.hex}06)`, border:`1px solid ${k.hex}28`, transition:'transform .2s,box-shadow .2s', cursor:'default' }}
+            onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='translateY(-2px)';el.style.boxShadow=`0 8px 24px ${k.hex}20`}}
+            onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='';el.style.boxShadow=''}}>
+            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
+            <div className="kpi-icon-w" style={{ color: k.hex, background:`${k.hex}20` }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
-            <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
+            <div className="kpi-value" style={{ color: k.hex }}>{k.value}</div>
           </div>
         ))}
       </div>
@@ -1104,7 +1107,7 @@ export default function Customers() {
           {customers.filter(c => !geoPositions[c.id]).length > 0 && (
             <div style={{ marginTop: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                ⚠️ Clients sans adresse ({customers.filter(c => !geoPositions[c.id]).length}) — non affichés sur la carte
+                <AlertTriangle size={13} style={{flexShrink:0}} /> Clients sans adresse ({customers.filter(c => !geoPositions[c.id]).length}) — non affichés sur la carte
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {customers.filter(c => !geoPositions[c.id]).map(c => (
@@ -1218,7 +1221,7 @@ export default function Customers() {
           <div className="modal-box" style={{ maxWidth: 560 }}>
             <div className="flex items-start justify-between mb-5">
               <div>
-                <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>👤 {viewCustomer.name}</h3>
+                <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Users size={15} style={{color:'var(--p2)',flexShrink:0}} /> {viewCustomer.name}</h3>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
                   Depuis {new Date(viewCustomer.since).toLocaleDateString('fr-FR')} · Dernière visite {new Date(viewCustomer.lastPurchase).toLocaleDateString('fr-FR')}
                 </p>
@@ -1278,8 +1281,8 @@ export default function Customers() {
 
             {viewCustomer.notes && (
               <div className="p-3 rounded-xl text-xs mb-4"
-                style={{ background: 'rgba(91,78,232,0.08)', border: '1px solid rgba(91,78,232,0.2)', color: 'var(--p3)' }}>
-                📝 {viewCustomer.notes}
+                style={{ background: 'rgba(91,78,232,0.08)', border: '1px solid rgba(91,78,232,0.2)', color: 'var(--p3)', display:'flex', alignItems:'flex-start', gap:6 }}>
+                <StickyNote size={12} style={{flexShrink:0,marginTop:1}} /> {viewCustomer.notes}
               </div>
             )}
 
@@ -1320,7 +1323,7 @@ export default function Customers() {
             {/* Mode banner */}
             {!custEditMode
               ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
-                  <span style={{ fontSize:13 }}>👁</span>
+                  <Eye size={13} style={{ color:'var(--acc3)', flexShrink:0 }} />
                   <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>
                     {lang==='fr' ? 'Mode visualisation — cliquez sur Modifier pour éditer' : 'View mode — click Edit to make changes'}
                   </span>
@@ -1417,8 +1420,8 @@ export default function Customers() {
                 width:44, height:44, borderRadius:13,
                 background:'linear-gradient(135deg,#F472B6,#EC4899)',
                 display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:22, boxShadow:'0 4px 14px rgba(244,114,182,.4)',
-              }}>👤</div>
+                boxShadow:'0 4px 14px rgba(244,114,182,.4)',
+              }}><UserPlus size={22} color="#fff" /></div>
               <div style={{flex:1}}>
                 <h3 style={{ fontSize:17, fontWeight:900, color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
                   {lang==='fr'?'+ Nouveau client':'+ New customer'}
@@ -1497,7 +1500,7 @@ export default function Customers() {
                 boxShadow:'0 4px 16px rgba(244,114,182,.4)',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               }}>
-                ✅ {lang==='fr'?'Ajouter le client':'Add customer'}
+                <CheckCircle size={15} style={{flexShrink:0}} /> {lang==='fr'?'Ajouter le client':'Add customer'}
               </button>
               <button onClick={()=>{setShowCreate(false);resetCustForm()}} style={{
                 padding:'13px 18px', background:'rgba(255,255,255,.05)',
@@ -1604,12 +1607,12 @@ export default function Customers() {
               {/* KPIs */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 {[
-                  { label: lang === 'fr' ? 'CA Total' : 'Total Revenue', value: fmt(detailCustomer.totalCA), icon: '💰', color: 'var(--acc)' },
-                  { label: lang === 'fr' ? 'Commandes/mois' : 'Orders/month', value: `${detailCustomer.purchasesPerMonth}`, icon: '🛒', color: 'var(--p2)' },
-                  { label: lang === 'fr' ? 'Points fidélité' : 'Loyalty pts', value: `${detailCustomer.loyaltyPoints} pts`, icon: '⭐', color: 'var(--warn)' },
+                  { label: lang === 'fr' ? 'CA Total' : 'Total Revenue', value: fmt(detailCustomer.totalCA), icon: <DollarSign size={20} />, color: 'var(--acc)', hex: '#FF9500' },
+                  { label: lang === 'fr' ? 'Commandes/mois' : 'Orders/month', value: `${detailCustomer.purchasesPerMonth}`, icon: <ShoppingCart size={20} />, color: 'var(--p2)', hex: '#6C47FF' },
+                  { label: lang === 'fr' ? 'Points fidélité' : 'Loyalty pts', value: `${detailCustomer.loyaltyPoints} pts`, icon: <Star size={20} />, color: 'var(--warn)', hex: '#FFB800' },
                 ].map(k => (
-                  <div key={k.label} style={{ background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 22, marginBottom: 6 }}>{k.icon}</div>
+                  <div key={k.label} style={{ background: `linear-gradient(135deg,${k.hex}15,${k.hex}05)`, border: `1px solid ${k.hex}25`, borderRadius: 12, padding: '14px', textAlign: 'center' }}>
+                    <div style={{ display:'flex', justifyContent:'center', marginBottom: 6, color: k.color }}>{k.icon}</div>
                     <div style={{ fontSize: 16, fontWeight: 900, color: k.color, fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{k.value}</div>
                     <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginTop: 4 }}>{k.label}</div>
                   </div>
@@ -1619,28 +1622,28 @@ export default function Customers() {
               {/* Coordonnées */}
               <div style={{ background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px' }}>
                 <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>📋</span>{lang === 'fr' ? 'COORDONNÉES' : 'CONTACT INFO'}
+                  <FileText size={12} style={{color:'var(--text3)'}} />{lang === 'fr' ? 'COORDONNÉES' : 'CONTACT INFO'}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   {[
-                    { label: lang === 'fr' ? 'Téléphone' : 'Phone', value: detailCustomer.phone || '—', icon: '📞', full: false },
-                    { label: 'Email', value: detailCustomer.email || '—', icon: '📧', full: false },
-                    { label: lang === 'fr' ? 'Adresse' : 'Address', value: detailCustomer.address || '—', icon: '📍', full: true },
+                    { label: lang === 'fr' ? 'Téléphone' : 'Phone', value: detailCustomer.phone || '—', icon: <Phone size={10} />, full: false },
+                    { label: 'Email', value: detailCustomer.email || '—', icon: <Mail size={10} />, full: false },
+                    { label: lang === 'fr' ? 'Adresse' : 'Address', value: detailCustomer.address || '—', icon: <MapPin size={10} />, full: true },
                   ].map(item => (
                     <div key={item.label} style={{
                       gridColumn: item.full ? '1 / -1' : 'auto',
                       background: 'var(--bg3)', border: '1px solid rgba(255,255,255,.04)', borderRadius: 10, padding: '10px 12px',
                     }}>
                       <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span>{item.icon}</span>{item.label}
+                        {item.icon}{item.label}
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', wordBreak: 'break-all' }}>{item.value}</div>
                     </div>
                   ))}
                 </div>
                 {detailCustomer.notes && (
-                  <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 10, background: 'rgba(91,78,232,.08)', border: '1px solid rgba(91,78,232,.2)', fontSize: 12, color: 'var(--p3)' }}>
-                    📝 {detailCustomer.notes}
+                  <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 10, background: 'rgba(91,78,232,.08)', border: '1px solid rgba(91,78,232,.2)', fontSize: 12, color: 'var(--p3)', display:'flex', alignItems:'flex-start', gap:6 }}>
+                    <StickyNote size={12} style={{flexShrink:0,marginTop:1}} /> {detailCustomer.notes}
                   </div>
                 )}
               </div>
@@ -1649,7 +1652,7 @@ export default function Customers() {
               <div style={{ background: 'linear-gradient(135deg,rgba(255,184,0,.06),rgba(255,184,0,.02))', border: '1px solid rgba(255,184,0,.15)', borderRadius: 14, padding: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    ⭐ {lang === 'fr' ? 'PROGRAMME FIDÉLITÉ' : 'LOYALTY PROGRAM'}
+                    <Star size={12} style={{color:'var(--warn)'}} /> {lang === 'fr' ? 'PROGRAMME FIDÉLITÉ' : 'LOYALTY PROGRAM'}
                   </div>
                   <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>
                     {detailCustomer.loyaltyPoints} pts
@@ -1669,7 +1672,7 @@ export default function Customers() {
                   return (
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 6 }}>
-                        <span style={{ fontWeight: 700, color: current.color }}>🏅 {current.name}</span>
+                        <span style={{ fontWeight: 700, color: current.color, display:'inline-flex', alignItems:'center', gap:4 }}><Star size={11} style={{color:current.color}} /> {current.name}</span>
                         {next && <span style={{ color: 'var(--text3)' }}>{next.min - pts} pts → {next.name}</span>}
                       </div>
                       <div style={{ height: 8, background: 'var(--bg5,var(--bg4))', borderRadius: 99, overflow: 'hidden' }}>
@@ -1684,11 +1687,11 @@ export default function Customers() {
               {/* Historique achats */}
               <div>
                 <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  🛍️ {lang === 'fr' ? 'HISTORIQUE DES ACHATS' : 'PURCHASE HISTORY'}
+                  <ShoppingBag size={12} style={{color:'var(--text3)'}} /> {lang === 'fr' ? 'HISTORIQUE DES ACHATS' : 'PURCHASE HISTORY'}
                 </div>
                 {detailCustomer.purchases.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '28px', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 12, color: 'var(--text3)', fontSize: 13 }}>
-                    <div style={{ fontSize: 28, marginBottom: 8 }}>🛒</div>
+                    <div style={{ display:'flex', justifyContent:'center', marginBottom: 8 }}><ShoppingCart size={28} style={{color:'var(--text4)'}} /></div>
                     {lang === 'fr' ? 'Aucun achat enregistré' : 'No purchases recorded'}
                   </div>
                 ) : (
