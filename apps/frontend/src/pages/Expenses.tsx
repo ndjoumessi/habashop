@@ -471,7 +471,7 @@ export default function Expenses() {
 
       {/* ── MODAL Ajouter dépense ── */}
       {addOpen && (
-        <div className="modal-backdrop" onClick={() => setAddOpen(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={() => setAddOpen(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:480 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
               <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>Ajouter une dépense</span>
@@ -582,7 +582,7 @@ export default function Expenses() {
           toast.success(`✅ ${lang==='fr'?'Dépense modifiée':'Expense updated'}`)
         }
         return (
-          <div className="modal-backdrop" onClick={e => e.target===e.currentTarget && setShowEditExpModal(false)}>
+          <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && setShowEditExpModal(false)}>
             <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
                 <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>
@@ -676,7 +676,7 @@ export default function Expenses() {
 
       {/* ── MODAL Modifier budgets ── */}
       {budgetOpen && (
-        <div className="modal-backdrop" onClick={() => setBudgetOpen(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={() => setBudgetOpen(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
               <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>⚙️ Modifier les budgets</span>

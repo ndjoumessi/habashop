@@ -446,7 +446,7 @@ export default function Reports() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>{t('col_ref')}</th><th>{t('col_client')}</th><th>Mode</th><th>{t('col_amount')}</th></tr>
+                <tr><th scope="col">{t('col_ref')}</th><th scope="col">{t('col_client')}</th><th scope="col">Mode</th><th scope="col">{t('col_amount')}</th></tr>
               </thead>
               <tbody>
                 {RECENT_SALES.map(s => (

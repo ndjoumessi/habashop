@@ -284,11 +284,11 @@ export default function Stock() {
           <table>
             <thead>
               <tr>
-                {stockShowSKU && <th>{t('col_ref')}</th>}
-                <th>{t('col_product')}</th><th>{t('col_category')}</th>
-                <th>{t('col_buy_price')}</th><th>{t('col_sell_price')}</th>
-                <th>{t('col_stock')}</th><th>{t('col_threshold')}</th><th>{t('col_supplier')}</th>
-                <th>{t('col_status')}</th><th>{t('col_actions')}</th>
+                {stockShowSKU && <th scope="col">{t('col_ref')}</th>}
+                <th scope="col">{t('col_product')}</th><th scope="col">{t('col_category')}</th>
+                <th scope="col">{t('col_buy_price')}</th><th scope="col">{t('col_sell_price')}</th>
+                <th scope="col">{t('col_stock')}</th><th scope="col">{t('col_threshold')}</th><th scope="col">{t('col_supplier')}</th>
+                <th scope="col">{t('col_status')}</th><th scope="col">{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -386,7 +386,7 @@ export default function Stock() {
 
       {/* ── Modal produit enrichi ── */}
       {showModal && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal-box" style={{ maxWidth:560, maxHeight:'90vh', display:'flex', flexDirection:'column', padding:0, overflow:'hidden' }}>
             {/* Fixed header */}
             <div className="flex items-center justify-between" style={{ padding:'20px 24px 0', flexShrink:0 }}>
@@ -646,7 +646,7 @@ export default function Stock() {
 
       {/* ── Modal Catégorie ── */}
       {showCatModal && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowCatModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCatModal(false)}>
           <div className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
@@ -718,7 +718,7 @@ export default function Stock() {
 
       {/* ══ Modal Étiquettes ══ */}
       {showLabelModal && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowLabelModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowLabelModal(false)}>
           <div className="modal-box" style={{ maxWidth: 500 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
               <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>

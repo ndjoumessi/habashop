@@ -1265,7 +1265,7 @@ export default function POS() {
           MODAL REMISE
       ════════════════════════════════ */}
       {showDiscountModal && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowDiscountModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowDiscountModal(false)}>
           <div className="modal-box" style={{ maxWidth:420 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>🏷️ Appliquer une remise</h3>
@@ -1371,7 +1371,7 @@ export default function POS() {
           MODAL FERMETURE CAISSE
       ════════════════════════════════ */}
       {showCloseModal && (
-        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget && setShowCloseModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && setShowCloseModal(false)}>
           <div className="modal-box" style={{ maxWidth:480 }}>
             <h3 style={{ fontSize:16, fontWeight:800, color:'var(--text)', marginBottom:20 }}>
               {ct.close_title}
@@ -1455,7 +1455,7 @@ export default function POS() {
 
       {showModal && (
         <div
-          className="modal-backdrop"
+          className="modal-backdrop" role="dialog" aria-modal="true"
           onClick={e => e.target === e.currentTarget && setShowModal(false)}
         >
           <div className="modal-box">

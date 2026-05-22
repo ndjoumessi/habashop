@@ -88,7 +88,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
+      <nav role="navigation" aria-label={lang === 'fr' ? 'Navigation principale' : 'Main navigation'} style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
         {NAV.map((item, i) => {
           if ('section' in item) {
             return collapsed ? null : (
@@ -123,17 +123,19 @@ export default function Sidebar() {
 
       {/* Admin Panel (SUPER_ADMIN only) */}
       {user?.role === 'SUPER_ADMIN' && (
-        <div
+        <button
+          type="button"
           className="nav-item"
           onClick={() => navigate('/admin')}
-          style={{ cursor: 'pointer', ...(collapsed ? { justifyContent: 'center', padding: '8px 0' } : {}) }}
+          style={{ background: 'none', border: 'none', width: '100%', cursor: 'pointer', ...(collapsed ? { justifyContent: 'center', padding: '8px 0' } : {}) }}
           title={collapsed ? 'Admin Panel' : undefined}
+          aria-label="Admin Panel"
         >
           <div className="nav-icon-wrap">
             <Store size={15} />
           </div>
           {!collapsed && <span style={{ flex: 1 }}>Admin Panel</span>}
-        </div>
+        </button>
       )}
 
       {/* Footer */}

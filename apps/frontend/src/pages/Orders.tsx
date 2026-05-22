@@ -535,7 +535,7 @@ export default function Orders() {
 
       {/* ── Modal détail commande ── */}
       {viewOrder && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setViewOrder(null)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setViewOrder(null)}>
           <div className="modal-box" style={{ maxWidth: 580 }}>
             <div className="flex items-start justify-between mb-5">
               <div>
@@ -628,7 +628,7 @@ export default function Orders() {
 
       {/* ── Modal créer commande ── */}
       {showCreateModal && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowCreateModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCreateModal(false)}>
           <div className="modal-box" style={{ maxWidth: 600 }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ Nouvelle commande</h3>

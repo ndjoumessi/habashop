@@ -160,10 +160,10 @@ export default function Dashboard() {
           { icon: <Plus        size={18} />, label: t('btn_add'),            path: '/app/stock',   color: 'rgba(245,158,11,0.12)',  iconColor: 'var(--acc)'  },
           { icon: <Download    size={18} />, label: t('btn_export'),         path: '/app/reports', color: 'rgba(139,92,246,0.12)',  iconColor: 'var(--info)' },
         ].map(a => (
-          <div key={a.label} className="qa-card" onClick={() => navigate(a.path)}>
+          <button key={a.label} type="button" className="qa-card" onClick={() => navigate(a.path)} aria-label={a.label} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: a.color, color: a.iconColor }}>{a.icon}</div>
             <span className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>{a.label}</span>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -332,7 +332,7 @@ export default function Dashboard() {
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>#</th><th>{t('col_product')}</th><th>{t('col_qty')}</th><th>{t('col_revenue')}</th></tr></thead>
+              <thead><tr><th scope="col">#</th><th scope="col">{t('col_product')}</th><th scope="col">{t('col_qty')}</th><th scope="col">{t('col_revenue')}</th></tr></thead>
               <tbody>
                 {TOP_PRODUCTS.map(p => (
                   <tr key={p.name}>

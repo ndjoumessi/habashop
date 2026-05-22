@@ -331,8 +331,14 @@ export default function Header() {
             color:'var(--text3)', pointerEvents:'none',
           }} />
           <input
+            type="search"
             className="input"
             style={{ paddingLeft:34, width:240, fontSize:13 }}
+            aria-label={lang === 'fr' ? 'Rechercher un produit ou client' : 'Search product or customer'}
+            aria-controls="search-results"
+            aria-autocomplete="list"
+            aria-expanded={showResults}
+            autoComplete="off"
             placeholder={
               lang === 'fr' ? 'Rechercher produit, client...' :
               lang === 'en' ? 'Search product, client...' :
@@ -354,7 +360,7 @@ export default function Header() {
 
         {/* Résultats */}
         {showResults && searchResults.length > 0 && (
-          <div style={{
+          <div id="search-results" role="listbox" aria-label={lang === 'fr' ? 'Résultats de recherche' : 'Search results'} style={{
             position:'absolute', top:'calc(100% + 8px)', left:0,
             background:'var(--card)',
             border:'1px solid var(--border2)',
@@ -526,6 +532,9 @@ export default function Header() {
       {/* ── Bouton cloche ── */}
       <div ref={notifsRef} style={{ position:'relative' }}>
         <button
+          aria-label={lang === 'fr' ? 'Notifications' : 'Notifications'}
+          aria-haspopup="true"
+          aria-expanded={showNotifs}
           onClick={() => { setShowNotifs(v => !v); setShowNewMenu(false); setShowResults(false) }}
           style={{
             background:'var(--bg3)',
@@ -537,7 +546,7 @@ export default function Header() {
             transition:'all .15s',
           }}
         >
-          🔔
+          <span aria-hidden="true">🔔</span>
           {unreadCount > 0 && (
             <div style={{
               position:'absolute', top:3, right:3,
@@ -584,14 +593,16 @@ export default function Header() {
             <div style={{ maxHeight:360, overflowY:'auto' }}>
               {/* Alertes stock temps réel */}
               {lowStockAlerts.slice(0,3).map((product) => (
-                <div key={product.id} style={{
-                  display:'flex', gap:12, padding:'10px 16px',
-                  borderBottom:'1px solid var(--border)',
-                  background:'rgba(232,64,74,.05)',
-                  borderLeft:'3px solid var(--danger)',
-                  cursor:'pointer',
-                }}
+                <button key={product.id} type="button"
+                  aria-label={`${lang === 'fr' ? 'Rupture stock' : 'Low stock'}: ${product.name}`}
                   onClick={() => { navigate('/app/stock'); setShowNotifs(false) }}
+                  style={{
+                    display:'flex', gap:12, padding:'10px 16px', width:'100%',
+                    background:'rgba(232,64,74,.05)',
+                    border:'none', borderBottom:'1px solid var(--border)',
+                    borderLeft:'3px solid var(--danger)',
+                    cursor:'pointer', fontFamily:'var(--font)', textAlign:'left',
+                  }}
                 >
                   <div style={{
                     width:32, height:32, borderRadius:8, flexShrink:0,
@@ -616,20 +627,13 @@ export default function Header() {
                     background:'var(--danger)', flexShrink:0, marginTop:6,
                     boxShadow:'0 0 6px var(--danger)',
                   }} />
-                </div>
+                </button>
               ))}
               {RECENT_NOTIFS.map(notif => {
                 const rgb = TYPE_RGB[notif.type] ?? '91,78,232'
                 return (
-                  <div key={notif.id} style={{
-                    display:'flex', gap:12, padding:'12px 16px',
-                    borderBottom:'1px solid var(--border)',
-                    background: notif.read ? 'transparent' : `rgba(${rgb},.05)`,
-                    borderLeft: notif.read
-                      ? '3px solid transparent'
-                      : `3px solid ${TYPE_COLORS[notif.type] ?? 'var(--p2)'}`,
-                    cursor:'pointer', transition:'background .12s',
-                  }}
+                  <button key={notif.id} type="button"
+                    aria-label={notif.title}
                     onClick={() => {
                       const route = NOTIF_ROUTES[notif.module] ?? '/app/dashboard'
                       navigate(route)
@@ -637,6 +641,14 @@ export default function Header() {
                     }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.025)'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = notif.read ? 'transparent' : `rgba(${rgb},.05)`}
+                    style={{
+                      display:'flex', gap:12, padding:'12px 16px', width:'100%',
+                      background: notif.read ? 'transparent' : `rgba(${rgb},.05)`,
+                      border: 'none', borderBottom:'1px solid var(--border)',
+                      borderLeft: notif.read ? '3px solid transparent' : `3px solid ${TYPE_COLORS[notif.type] ?? 'var(--p2)'}`,
+                      cursor:'pointer', transition:'background .12s',
+                      fontFamily:'var(--font)', textAlign:'left',
+                    }}
                   >
                     <div style={{
                       width:32, height:32, borderRadius:8, flexShrink:0,
@@ -661,7 +673,7 @@ export default function Header() {
                         marginTop:6, boxShadow:'0 0 6px var(--danger)',
                       }} />
                     )}
-                  </div>
+                  </button>
                 )
               })}
             </div>

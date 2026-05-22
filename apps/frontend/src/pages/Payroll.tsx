@@ -460,9 +460,9 @@ export default function Payroll() {
             <table>
               <thead>
                 <tr>
-                  <th>Employé</th><th>Poste</th><th>Base</th>
-                  <th>Primes</th><th>Heures sup.</th><th>Retenues</th>
-                  <th>Absences</th><th>NET</th><th>Statut</th><th>Actions</th>
+                  <th scope="col">Employé</th><th scope="col">Poste</th><th scope="col">Base</th>
+                  <th scope="col">Primes</th><th scope="col">Heures sup.</th><th scope="col">Retenues</th>
+                  <th scope="col">Absences</th><th scope="col">NET</th><th scope="col">Statut</th><th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>

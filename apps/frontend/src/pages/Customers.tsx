@@ -673,7 +673,7 @@ export default function Customers() {
 
       {/* ── Modal fiche client ── */}
       {viewCustomer && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setViewCustomer(null)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setViewCustomer(null)}>
           <div className="modal-box" style={{ maxWidth: 560 }}>
             <div className="flex items-start justify-between mb-5">
               <div>
@@ -767,7 +767,7 @@ export default function Customers() {
 
       {/* ── Modal modifier client ── */}
       {showEditCustModal && editCustomer && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowEditCustModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowEditCustModal(false)}>
           <div className="modal-box" style={{ maxWidth: 480 }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>👤 {editCustomer.name}</h3>
@@ -851,7 +851,7 @@ export default function Customers() {
 
       {/* ── Modal nouveau client ── */}
       {showCreate && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
           <div style={{
             background:'#0D0D1C',
             border:'1px solid rgba(255,255,255,.1)',
@@ -995,7 +995,7 @@ export default function Customers() {
 
       {/* ── Modal détail client ── */}
       {showDetailModal && detailCustomer && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowDetailModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowDetailModal(false)}>
           <div style={{
             background: '#0D0D1C',
             border: '1px solid rgba(255,255,255,.1)',

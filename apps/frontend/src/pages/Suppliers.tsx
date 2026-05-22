@@ -277,8 +277,8 @@ export default function Suppliers() {
           <table>
             <thead>
               <tr>
-                <th>{t('col_supplier')}</th><th>{t('col_category')}</th><th>{t('col_phone')}</th>
-                <th>{t('col_delivery')}</th><th>{t('col_rating')}</th><th>{t('col_status')}</th><th>{t('col_actions')}</th>
+                <th scope="col">{t('col_supplier')}</th><th scope="col">{t('col_category')}</th><th scope="col">{t('col_phone')}</th>
+                <th scope="col">{t('col_delivery')}</th><th scope="col">{t('col_rating')}</th><th scope="col">{t('col_status')}</th><th scope="col">{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -336,7 +336,7 @@ export default function Suppliers() {
 
       {/* ── Modal fiche fournisseur ── */}
       {viewSupplier && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setViewSupplier(null)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setViewSupplier(null)}>
           <div className="modal-box" style={{ maxWidth: 580 }}>
             <div className="flex items-start justify-between mb-5">
               <div>
@@ -373,7 +373,7 @@ export default function Suppliers() {
               <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text3)' }}>Historique commandes</div>
               <div className="table-wrap">
                 <table>
-                  <thead><tr><th>Référence</th><th>Date</th><th>Montant</th><th>Statut</th></tr></thead>
+                  <thead><tr><th scope="col">Référence</th><th scope="col">Date</th><th scope="col">Montant</th><th scope="col">Statut</th></tr></thead>
                   <tbody>
                     {viewSupplier.orders.map(o => (
                       <tr key={o.ref}>
@@ -418,7 +418,7 @@ export default function Suppliers() {
 
       {/* ── Modal modifier fournisseur ── */}
       {showEditSuppModal && editSupplier && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowEditSuppModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowEditSuppModal(false)}>
           <div className="modal-box" style={{ maxWidth: 540 }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>🏭 {editSupplier.name}</h3>
@@ -517,7 +517,7 @@ export default function Suppliers() {
 
       {/* ── Modal nouveau fournisseur ── */}
       {showCreate && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
           <div className="modal-box" style={{ maxWidth: 540 }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ Nouveau fournisseur</h3>

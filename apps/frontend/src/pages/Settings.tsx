@@ -683,12 +683,15 @@ export default function Settings() {
                       { id:'TTC', title:'TTC', subtitle: cfg.lang==='fr'?'Prix avec taxes incluses':'Prices with taxes included', example: cfg.lang==='fr'?'1 000 FCFA (TVA incluse)':'1,000 XOF (tax included)', icon:'💰' },
                       { id:'HT',  title:'HT',  subtitle: cfg.lang==='fr'?'Prix hors taxes + TVA séparée':'Prices excl. tax + separate VAT', example: cfg.lang==='fr'?'847 FCFA + TVA 153 FCFA':'847 XOF + VAT 153 XOF', icon:'🧾' },
                     ].map(mode => (
-                      <div key={mode.id} onClick={()=>cfg.updateConfig({priceMode:mode.id as 'TTC'|'HT'})}
+                      <button key={mode.id} type="button"
+                        aria-pressed={cfg.priceMode === mode.id}
+                        onClick={()=>cfg.updateConfig({priceMode:mode.id as 'TTC'|'HT'})}
                         style={{
                           padding:'16px', borderRadius:14, cursor:'pointer', transition:'all .15s',
                           background: cfg.priceMode===mode.id ? 'rgba(108,71,255,.1)' : 'var(--bg4)',
                           border:`2px solid ${cfg.priceMode===mode.id ? 'var(--p)' : 'var(--border)'}`,
                           boxShadow: cfg.priceMode===mode.id ? '0 4px 14px rgba(108,71,255,.2)' : 'none',
+                          fontFamily:'var(--font)', width:'100%', textAlign:'left',
                         }}>
                         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
                           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -703,7 +706,7 @@ export default function Settings() {
                         <div style={{ fontSize:11, fontFamily:'var(--mono)', color: cfg.priceMode===mode.id ? 'var(--p2)' : 'var(--text3)', background: cfg.priceMode===mode.id ? 'rgba(108,71,255,.08)' : 'var(--bg3)', padding:'4px 8px', borderRadius:6 }}>
                           ex: {mode.example}
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -1108,7 +1111,7 @@ export default function Settings() {
 
       {/* ── Modal confirmation reset ── */}
       {showReset && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowReset(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowReset(false)}>
           <div className="modal-box" style={{ maxWidth: 420 }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-base" style={{ color: 'var(--text)' }}>⚠️ Confirmer la réinitialisation</h3>

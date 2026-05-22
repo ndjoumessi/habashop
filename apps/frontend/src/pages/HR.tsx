@@ -196,6 +196,7 @@ export default function HR() {
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
+  const [loadingEmployees, setLoadingEmployees] = useState(true)
   const [employees, setEmployees] = useState<Employee[]>(STATIC_EMPLOYEES)
   const [leaves, setLeaves] = useState<LeaveRequest[]>(LEAVE_INIT)
   const [showModal, setShowModal] = useState(false)
@@ -282,6 +283,7 @@ export default function HR() {
         }
       })
       .catch(() => {})
+      .finally(() => setLoadingEmployees(false))
 
     bonusesApi.list()
       .then((data: any[]) => {
@@ -607,7 +609,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
           {/* Grid view */}
           {viewMode === 'grid' && (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:12 }}>
-              {filtered.map(emp => {
+              {loadingEmployees ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:16, padding:18, display:'flex', flexDirection:'column', gap:12 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                      <div className="skeleton" style={{ width:40, height:40, borderRadius:'50%', flexShrink:0 }} />
+                      <div style={{ flex:1 }}>
+                        <div className="skeleton" style={{ width:'70%', height:13, borderRadius:4, marginBottom:6 }} />
+                        <div className="skeleton" style={{ width:'50%', height:11, borderRadius:4 }} />
+                      </div>
+                    </div>
+                    <div className="skeleton" style={{ width:'100%', height:8, borderRadius:4 }} />
+                  </div>
+                ))
+              ) : filtered.map(emp => {
                 const deptColor = DEPT_COLORS[emp.dept] ?? '#6C47FF'
                 const isActive  = emp.active
                 return (
@@ -695,7 +710,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   </div>
                 )
               })}
-              {filtered.length === 0 && (
+              {!loadingEmployees && filtered.length === 0 && (
                 <div style={{ gridColumn:'1/-1', textAlign:'center', padding:'40px 0', color:'var(--text3)', fontSize:14 }}>
                   {lang==='fr' ? 'Aucun employé trouvé' : 'No employee found'}
                 </div>
@@ -710,10 +725,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 <table>
                   <thead>
                     <tr>
-                      <th>Employé</th>
-                      <th>Département</th>
-                      <th>Contrat</th>
-                      <th>Ancienneté</th>
+                      <th scope="col">Employé</th>
+                      <th scope="col">Département</th>
+                      <th scope="col">Contrat</th>
+                      <th scope="col">Ancienneté</th>
                       <th style={{ textAlign: 'right' }}>Salaire</th>
                       <th style={{ textAlign: 'center' }}>Perf.</th>
                       <th style={{ textAlign: 'center' }}>Statut</th>
@@ -781,11 +796,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             <table>
               <thead>
                 <tr>
-                  <th>Employé</th>
-                  <th>Département</th>
+                  <th scope="col">Employé</th>
+                  <th scope="col">Département</th>
                   <th style={{ textAlign: 'center' }}>Type</th>
-                  <th>Date début</th>
-                  <th>Date fin</th>
+                  <th scope="col">Date début</th>
+                  <th scope="col">Date fin</th>
                   <th style={{ textAlign: 'right' }}>Salaire brut</th>
                   <th style={{ textAlign: 'center' }}>Statut</th>
                 </tr>
@@ -952,7 +967,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   <table>
                     <thead>
                       <tr>
-                        <th>{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
+                        <th scope="col">{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
                         <th style={{textAlign:'right'}}>{lang==='fr'?'BRUT':'GROSS'}</th>
                         <th style={{textAlign:'right'}}>{lang==='fr'?'PRIME':'BONUS'}</th>
                         <th style={{textAlign:'right'}}>CNSS 8%</th>
@@ -1132,10 +1147,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     <table>
                       <thead>
                         <tr>
-                          <th>{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
-                          <th>{lang==='fr'?'MONTANT':'AMOUNT'}</th>
-                          <th>{lang==='fr'?'% DU SALAIRE':'% OF SALARY'}</th>
-                          <th>ACTIONS</th>
+                          <th scope="col">{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
+                          <th scope="col">{lang==='fr'?'MONTANT':'AMOUNT'}</th>
+                          <th scope="col">{lang==='fr'?'% DU SALAIRE':'% OF SALARY'}</th>
+                          <th scope="col">ACTIONS</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1554,7 +1569,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 
       {/* ── MODAL PRIME / AUGMENTATION ── */}
       {showSalaryModal && (
-        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget && setShowSalaryModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && setShowSalaryModal(false)}>
           <div className="modal-box" style={{ maxWidth:400 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:900, color:'var(--text)', margin:0 }}>
@@ -1849,7 +1864,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 
       {/* ── MODAL EMPLOYÉ PREMIUM (édition) ── */}
       {showEditEmpModal && selectedEmp && (
-        <div className="modal-backdrop"
+        <div className="modal-backdrop" role="dialog" aria-modal="true"
           onClick={e => e.target===e.currentTarget && setShowEditEmpModal(false)}>
           <div style={{ background:'#0D0D1C', border:'1px solid rgba(255,255,255,.1)', borderRadius:24, width:'100%', maxWidth:560, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 24px 80px rgba(0,0,0,.8)', position:'relative' }}>
 
@@ -2157,7 +2172,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       {/* ── MODAL LEAVE REQUEST ── */}
       {/* ── MODAL NOUVEAU CONTRAT ── */}
       {showNewContractModal && (
-        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
           <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, padding:28, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--sh-xl)' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
               <h3 style={{ margin:0, fontSize:17, fontWeight:900, color:'var(--text)' }}>📄 {lang==='fr'?'Nouveau contrat':'New contract'}</h3>
@@ -2240,7 +2255,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 
       {/* ── MODAL DÉTAIL CONTRAT ── */}
       {showContractDetailModal && selectedContract && (
-        <div className="modal-backdrop" onClick={e => e.target===e.currentTarget&&setShowContractDetailModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget&&setShowContractDetailModal(false)}>
           <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, width:'100%', maxWidth:480, boxShadow:'var(--sh-xl)', overflow:'hidden' }}>
             <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${selectedContract.color}18,${selectedContract.color}05)`, borderBottom:'1px solid rgba(255,255,255,.06)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:14 }}>
