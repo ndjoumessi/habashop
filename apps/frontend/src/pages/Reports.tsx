@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from 'recharts'
-import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, BarChart2 } from 'lucide-react'
+import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, BarChart2, CreditCard, Trophy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 import { salesApi, expensesApi } from '@/lib/api'
@@ -229,7 +229,7 @@ export default function Reports() {
         ))}
         <div className="flex-1" />
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleAccountingExport}>
-          📊 {lang === 'fr' ? 'Excel comptable' : 'Accounting Excel'}
+          <BarChart2 size={13}/> {lang === 'fr' ? 'Excel comptable' : 'Accounting Excel'}
         </button>
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
           exportCSV('habashop_rapports',
@@ -313,8 +313,8 @@ export default function Reports() {
               <div style={{
                 width: 36, height: 36, borderRadius: 10,
                 background: 'rgba(108,71,255,.15)', border: '1px solid rgba(108,71,255,.25)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-              }}>💳</div>
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}><CreditCard size={18} style={{ color:'var(--p3)' }}/></div>
               <div>
                 <div className="panel-t">{lang === 'fr' ? 'Répartition paiements' : 'Payment breakdown'}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>
@@ -415,7 +415,7 @@ export default function Reports() {
         {/* Top 5 */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">🏆 {t('reports_top_products')}</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Trophy size={14}/> {t('reports_top_products')}</span>
           </div>
           <div className="space-y-1">
             {TOP_PRODUCTS.map(p => (
@@ -441,7 +441,7 @@ export default function Reports() {
         {/* Ventes récentes */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">🧾 Ventes récentes</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Receipt size={14}/> Ventes récentes</span>
           </div>
           <div className="table-wrap">
             <table>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
-import { TrendingUp, Package, Users, Calendar, ShoppingCart, Zap, DollarSign, Trophy, BarChart2, Lightbulb, MessageSquare } from 'lucide-react'
+import { TrendingUp, Package, Users, Calendar, ShoppingCart, Zap, DollarSign, Trophy, BarChart2, Lightbulb, MessageSquare, Bot, Truck, Mail, ClipboardList, Copy, RefreshCw, Check, FileText, Target, Wallet, Brain, AlertCircle, Download, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer'
@@ -103,10 +103,10 @@ const FORECAST_ITEMS: ForecastItem[] = [
 ]
 
 const PRIORITY_CFG: Record<Priority, { color: string; bg: string; border: string; label: string }> = {
-  CRITIQUE: { color:'var(--danger)', bg:'rgba(232,64,74,.15)',  border:'rgba(232,64,74,.3)',  label:'⚡ Critique' },
-  URGENT:   { color:'var(--acc)',    bg:'rgba(240,165,0,.15)',  border:'rgba(240,165,0,.3)',  label:'🔶 Urgent'   },
-  NORMAL:   { color:'#A78BFA',      bg:'rgba(139,92,246,.15)', border:'rgba(139,92,246,.3)', label:'📦 Normal'   },
-  OK:       { color:'var(--acc2)',   bg:'rgba(14,196,126,.15)', border:'rgba(14,196,126,.3)', label:'✅ OK'        },
+  CRITIQUE: { color:'var(--danger)', bg:'rgba(232,64,74,.15)',  border:'rgba(232,64,74,.3)',  label:'Critique' },
+  URGENT:   { color:'var(--acc)',    bg:'rgba(240,165,0,.15)',  border:'rgba(240,165,0,.3)',  label:'Urgent'   },
+  NORMAL:   { color:'#A78BFA',      bg:'rgba(139,92,246,.15)', border:'rgba(139,92,246,.3)', label:'Normal'   },
+  OK:       { color:'var(--acc2)',   bg:'rgba(14,196,126,.15)', border:'rgba(14,196,126,.3)', label:'OK'       },
 }
 
 const FILTER_MAP: Record<string, Priority | null> = {
@@ -114,12 +114,12 @@ const FILTER_MAP: Record<string, Priority | null> = {
 }
 
 const RH_TYPE_CFG = {
-  recrutement: { color:'var(--p2)',   bg:'rgba(91,78,232,.15)',  label:'🧑‍💼 Recrutement' },
-  interim:     { color:'var(--acc)',  bg:'rgba(240,165,0,.15)',  label:'⏱ Intérim'      },
-  ok:          { color:'var(--acc2)', bg:'rgba(14,196,126,.15)', label:'✅ Suffisant'    },
+  recrutement: { color:'var(--p2)',   bg:'rgba(91,78,232,.15)',  label:'Recrutement' },
+  interim:     { color:'var(--acc)',  bg:'rgba(240,165,0,.15)',  label:'Intérim'     },
+  ok:          { color:'var(--acc2)', bg:'rgba(14,196,126,.15)', label:'Suffisant'   },
 }
 
-const MEDALS = ['🥇', '🥈', '🥉', '4.', '5.']
+const MEDALS = ['#1', '#2', '#3', '#4', '#5']
 
 function joursRestants(item: ForecastItem) { return Math.floor(item.currentStock / item.avgSales) }
 function qtyToOrder(item: ForecastItem)    { return Math.max(0, item.avgSales * (item.leadTime + 7) - item.currentStock) }
@@ -369,11 +369,11 @@ export default function Forecasts() {
           <div style={{
             width:56, height:56, borderRadius:16,
             background:'linear-gradient(135deg,#6C47FF,#A991FF)',
-            display:'flex', alignItems:'center', justifyContent:'center', fontSize:28,
+            display:'flex', alignItems:'center', justifyContent:'center',
             flexShrink:0,
             boxShadow:'0 8px 24px rgba(108,71,255,.4)',
             border:'1px solid rgba(255,255,255,.1)',
-          }}>🤖</div>
+          }}><Bot size={28} style={{ color:'#fff' }}/></div>
           <div style={{ flex:1 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
               <h2 style={{ fontSize:20, fontWeight:900, color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
@@ -401,7 +401,7 @@ export default function Forecasts() {
                 </span>
               </div>
               {aiAnalysis && (
-                <button className="mini-btn" style={{ marginLeft:8 }} onClick={() => { setAiAnalysis(null); setAiData(null) }}>✕</button>
+                <button className="mini-btn" style={{ marginLeft:8 }} onClick={() => { setAiAnalysis(null); setAiData(null) }}><X size={14}/></button>
               )}
             </div>
             <p style={{ fontSize:12, color:'var(--text3)', margin:0, lineHeight:1.5 }}>
@@ -512,7 +512,7 @@ export default function Forecasts() {
             background:'rgba(232,64,74,.08)', border:'1px solid rgba(232,64,74,.2)',
             borderRadius:10, fontSize:13, color:'var(--danger)',
           }}>
-            ❌ {aiError}
+            <AlertCircle size={14} style={{ flexShrink:0 }}/> {aiError}
           </div>
         )}
 
@@ -547,14 +547,14 @@ export default function Forecasts() {
 
             {/* Actions */}
             <div style={{ display:'flex', gap:8, marginTop:16, paddingTop:16, borderTop:'1px solid var(--border)' }}>
-              <button className="mini-btn" onClick={() => {
+              <button className="mini-btn" style={{ display:'flex', alignItems:'center', gap:5 }} onClick={() => {
                 navigator.clipboard.writeText(aiAnalysis)
-                toast.success(lang === 'fr' ? '📋 Copié !' : '📋 Copied!')
-              }}>📋 {lang === 'fr' ? 'Copier' : 'Copy'}</button>
-              <button className="mini-btn" onClick={() => runAnalysis(aiType)}>
-                🔄 {lang === 'fr' ? 'Régénérer' : 'Regenerate'}
+                toast.success(lang === 'fr' ? 'Copié !' : 'Copied!')
+              }}><Copy size={13}/> {lang === 'fr' ? 'Copier' : 'Copy'}</button>
+              <button className="mini-btn" style={{ display:'flex', alignItems:'center', gap:5 }} onClick={() => runAnalysis(aiType)}>
+                <RefreshCw size={13}/> {lang === 'fr' ? 'Régénérer' : 'Regenerate'}
               </button>
-              <button className="mini-btn" onClick={() => {
+              <button className="mini-btn" style={{ display:'flex', alignItems:'center', gap:5 }} onClick={() => {
                 const blob = new Blob([aiAnalysis], { type:'text/plain' })
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a')
@@ -562,7 +562,7 @@ export default function Forecasts() {
                 a.download = `HabaShop-AI-${aiType}-${new Date().toISOString().split('T')[0]}.txt`
                 a.click()
                 URL.revokeObjectURL(url)
-              }}>📥 {lang === 'fr' ? 'Télécharger' : 'Download'}</button>
+              }}><Download size={13}/> {lang === 'fr' ? 'Télécharger' : 'Download'}</button>
             </div>
           </div>
         )}
@@ -570,7 +570,7 @@ export default function Forecasts() {
         {/* État initial */}
         {!aiAnalysis && !aiLoading && !aiError && (
           <div style={{ textAlign:'center', padding:'24px 24px 32px', color:'var(--text3)' }}>
-            <div style={{ fontSize:32, marginBottom:12 }}>🤖</div>
+            <Bot size={32} style={{ color:'var(--text3)', marginBottom:12 }}/>
             <div style={{ fontSize:14, fontWeight:600, color:'var(--text2)', marginBottom:6 }}>
               {lang === 'fr' ? "Choisissez un type d'analyse"
                 : lang === 'en' ? 'Choose an analysis type'
@@ -610,7 +610,7 @@ export default function Forecasts() {
         {/* Bar chart 12 mois */}
         <div id="section-ca" className="panel" style={{ gridColumn:'span 2', marginBottom:0 }}>
           <div className="panel-head">
-            <span className="panel-title">📈 CA mensuel 2026 — Réel vs Prévu</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><TrendingUp size={14}/> CA mensuel 2026 — Réel vs Prévu</span>
           </div>
           <div style={{ display:'flex', gap:16, marginBottom:12 }}>
             <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--text2)' }}>
@@ -649,7 +649,7 @@ export default function Forecasts() {
         {/* Trimestriel CA vs dépenses */}
         <div className="panel" style={{ marginBottom:0 }}>
           <div className="panel-head">
-            <span className="panel-title">📊 Trimestriel</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><BarChart2 size={14}/> Trimestriel</span>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             {QUARTERLY.map(q => (
@@ -693,7 +693,7 @@ export default function Forecasts() {
         {/* Objectifs */}
         <div className="panel" style={{ marginBottom:0 }}>
           <div className="panel-head">
-            <span className="panel-title">🎯 Objectifs à venir</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Target size={14}/> Objectifs à venir</span>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             {OBJECTIFS.map(obj => {
@@ -735,7 +735,7 @@ export default function Forecasts() {
         {/* Top croissance */}
         <div className="panel" style={{ marginBottom:0 }}>
           <div className="panel-head">
-            <span className="panel-title">🚀 Top croissance prévue (3 mois)</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><TrendingUp size={14}/> Top croissance prévue (3 mois)</span>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             {TOP_GROWTH.map((p, i) => {
@@ -771,7 +771,7 @@ export default function Forecasts() {
       {/* ── Section 4 — RH Forecast ──────────────────────────────── */}
       <div className="panel" style={{ marginBottom:0 }}>
         <div className="panel-head">
-          <span className="panel-title">👥 Prévisions RH — Besoins à venir</span>
+          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Users size={14}/> Prévisions RH — Besoins à venir</span>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {RH_FORECAST.map(r => {
@@ -807,8 +807,8 @@ export default function Forecasts() {
       {/* ── Section 5 — Stock onglets ────────────────────────────── */}
       <div style={{ display:'flex', gap:6 }}>
         {([
-          { id:'analyse', label:'📊 Analyse & Prévisions stock' },
-          { id:'bons',    label:'📋 Bons de commande auto'      },
+          { id:'analyse', label:'Analyse & Prévisions stock' },
+          { id:'bons',    label:'Bons de commande auto'      },
         ] as { id:ActiveTab; label:string }[]).map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
             padding:'8px 18px', borderRadius:10, fontSize:13, fontWeight:700,
@@ -825,7 +825,7 @@ export default function Forecasts() {
       {activeTab === 'analyse' && (
         <div className="panel" style={{ marginBottom:0 }}>
           <div className="panel-head">
-            <span className="panel-title">📊 Analyse des stocks & Prévisions</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><BarChart2 size={14}/> Analyse des stocks & Prévisions</span>
           </div>
 
           <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:14, alignItems:'center' }}>
@@ -839,9 +839,9 @@ export default function Forecasts() {
               }}>{p}</button>
             ))}
             <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
-              <button className="mini-btn" style={{ color:'var(--danger)' }}
-                onClick={() => toast('⚡ Bons critiques générés !')}>
-                ⚡ Commander critique
+              <button className="mini-btn" style={{ color:'var(--danger)', display:'flex', alignItems:'center', gap:5 }}
+                onClick={() => toast('Bons critiques générés !')}>
+                <Zap size={13}/> Commander critique
               </button>
               <button className="topbar-btn"
                 onClick={() => {
@@ -850,7 +850,7 @@ export default function Forecasts() {
                   toast.success(`📋 ${suppliers.length} ${lang === 'fr' ? 'bons générés !' : 'orders generated!'}`)
                   setActiveTab('bons')
                 }}>
-                📋 {lang === 'fr' ? 'Générer tous les bons' : 'Generate all orders'}
+                <ClipboardList size={13}/> {lang === 'fr' ? 'Générer tous les bons' : 'Generate all orders'}
               </button>
             </div>
           </div>
@@ -940,7 +940,7 @@ export default function Forecasts() {
                         {qty > 0 && (
                           <button className="mini-btn" style={{ color:'var(--p2)', fontSize:11 }}
                             onClick={() => toast.success(`🛒 ${item.name} ajouté au bon`)}>
-                            🛒 Commander
+                            <ShoppingCart size={11}/> Commander
                           </button>
                         )}
                       </td>
@@ -1006,8 +1006,8 @@ export default function Forecasts() {
                     <div style={{
                       width:36, height:36, borderRadius:9,
                       background:'rgba(91,78,232,.15)',
-                      display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
-                    }}>🚚</div>
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                    }}><Truck size={18} style={{ color:'var(--p3)' }}/></div>
                     <div>
                       <div style={{ fontSize:14, fontWeight:800, color:'var(--text)' }}>{supplier}</div>
                       <div style={{ fontSize:11, color:'var(--text3)' }}>
@@ -1016,8 +1016,8 @@ export default function Forecasts() {
                     </div>
                   </div>
                   <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                    <button className="mini-btn" onClick={() => generateOrderPDF(supplier, FORECAST_ITEMS)}>📄 PDF</button>
-                    <button className="mini-btn" onClick={() => sendOrderByEmail(supplier, FORECAST_ITEMS)}>📧 Email</button>
+                    <button className="mini-btn" onClick={() => generateOrderPDF(supplier, FORECAST_ITEMS)} style={{ display:'flex', alignItems:'center', gap:4 }}><FileText size={13}/> PDF</button>
+                    <button className="mini-btn" onClick={() => sendOrderByEmail(supplier, FORECAST_ITEMS)} style={{ display:'flex', alignItems:'center', gap:4 }}><Mail size={13}/> Email</button>
                     {!isValidated ? (
                       <button style={{
                         background:'linear-gradient(135deg, var(--acc2), #059669)',
@@ -1025,10 +1025,10 @@ export default function Forecasts() {
                         fontSize:12, fontWeight:700, color:'#fff',
                         cursor:'pointer', fontFamily:'var(--font)',
                       }} onClick={() => validateOrder(supplier, FORECAST_ITEMS)}>
-                        ✅ {lang === 'fr' ? 'Valider' : 'Validate'}
+                        <Check size={14}/> {lang === 'fr' ? 'Valider' : 'Validate'}
                       </button>
                     ) : (
-                      <span className="badge badge-green">✅ Envoyé</span>
+                      <span className="badge badge-green">Envoyé</span>
                     )}
                   </div>
                 </div>
@@ -1084,7 +1084,7 @@ export default function Forecasts() {
       {/* ── Section A — Recommandations intelligentes ─────────────── */}
       <div className="panel" style={{ marginBottom:0 }}>
         <div className="panel-head">
-          <span className="panel-title">🧠 Recommandations intelligentes</span>
+          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Brain size={14}/> Recommandations intelligentes</span>
           <span style={{
             fontSize:10, color:'var(--p2)',
             background:'rgba(91,78,232,.12)',
@@ -1147,7 +1147,7 @@ export default function Forecasts() {
       {/* ── Section B — Prévisions trésorerie ────────────────────── */}
       <div id="section-tresorerie" className="panel" style={{ marginBottom:0 }}>
         <div className="panel-head">
-          <span className="panel-title">💳 Prévisions de trésorerie — 6 mois</span>
+          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Wallet size={14}/> Prévisions de trésorerie — 6 mois</span>
           <span style={{ fontSize:11, fontWeight:600, color:'var(--acc2)' }}>
             Solde cumulé : {fmt(8510000)}
           </span>
@@ -1217,7 +1217,7 @@ export default function Forecasts() {
         {/* Panel gauche : CA par catégorie */}
         <div className="panel" style={{ marginBottom:0 }}>
           <div className="panel-head">
-            <span className="panel-title">📦 Prévisions CA par catégorie</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Package size={14}/> Prévisions CA par catégorie</span>
             <span style={{ fontSize:11, color:'var(--text3)' }}>vs mois actuel</span>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -1275,7 +1275,7 @@ export default function Forecasts() {
         {/* Panel droit : Prévisions clients */}
         <div className="panel" style={{ marginBottom:0 }}>
           <div className="panel-head">
-            <span className="panel-title">👥 Prévisions clients & CRM</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Users size={14}/> Prévisions clients & CRM</span>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {CLIENT_FORECAST.map((c, i) => {
@@ -1322,7 +1322,7 @@ export default function Forecasts() {
         border:'1px solid rgba(91,78,232,.25)',
       }}>
         <div className="panel-head">
-          <span className="panel-title" style={{ fontSize:15 }}>🏆 Synthèse prévisionnelle — Année 2026</span>
+          <span className="panel-title" style={{ fontSize:15, display:'flex', alignItems:'center', gap:6 }}><Trophy size={15}/> Synthèse prévisionnelle — Année 2026</span>
           <button className="mini-btn" onClick={() => {
             const items = FORECAST_ITEMS.filter(i => qtyToOrder(i) > 0)
             exportCSV('habashop_bons_commande',
@@ -1330,8 +1330,8 @@ export default function Forecasts() {
               items.map(i => [i.sku, i.name, i.supplier, qtyToOrder(i), i.unitPrice, totalCost(i), i.priority])
             )
             toast.success('📊 Bons de commande exportés !')
-          }}>
-            📥 Exporter le rapport
+          }} style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <Download size={13}/> Exporter le rapport
           </button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:14 }}>
