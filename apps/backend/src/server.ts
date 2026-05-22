@@ -7,30 +7,29 @@ import bcrypt from 'bcryptjs'
 import twilio from 'twilio'
 import Anthropic from '@anthropic-ai/sdk'
 import { CronJob } from 'cron'
-import 'dotenv/config'
-
 const prisma = new PrismaClient()
 
-const TWILIO_SID   = process.env.TWILIO_ACCOUNT_SID  ?? ''
-const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN   ?? ''
-const TWILIO_FROM  = process.env.TWILIO_WHATSAPP_FROM ?? 'whatsapp:+14155238886'
+const TWILIO_FROM = process.env.TWILIO_WHATSAPP_FROM
+  ?? 'whatsapp:+14155238886'
 
-console.log('Twilio SID set:',   !!TWILIO_SID)
-console.log('Twilio TOKEN set:', !!TWILIO_TOKEN)
-console.log('Twilio FROM:',       TWILIO_FROM)
-
-let twilioClient: ReturnType<typeof twilio> | null = null
-try {
-  if (TWILIO_SID && TWILIO_TOKEN) {
-    twilioClient = twilio(TWILIO_SID, TWILIO_TOKEN)
-    console.log('✅ Twilio client initialisé')
-  } else {
-    console.warn('⚠️ Twilio non configuré — variables manquantes')
+// ── Lazy init Twilio ──
+// Lu à chaque appel pour garantir les vars Railway
+function getTwilioClient() {
+  const sid   = (process.env.TWILIO_ACCOUNT_SID  ?? '').trim()
+  const token = (process.env.TWILIO_AUTH_TOKEN   ?? '').trim()
+  if (!sid || !token) {
+    console.error('[Twilio] vars manquantes sid:', !!sid, 'token:', !!token)
+    return null
   }
-} catch (err: any) {
-  console.error('❌ Twilio init error:', err.message)
-  twilioClient = null
+  try {
+    return twilio(sid, token)
+  } catch (e: any) {
+    console.error('[Twilio] init error:', e.message)
+    return null
+  }
 }
+
+
 
 // ─── CRON: RÉSUMÉ SOIR ────────────────
 async function sendEveningReport() {
@@ -59,8 +58,9 @@ async function sendEveningReport() {
           : `✅ Aucune rupture de stock\n\n`) +
         `_Bonne soirée !_ 🌙`
       try {
-        if (!twilioClient) throw new Error('Twilio non configuré')
-        await twilioClient.messages.create({
+        const client = getTwilioClient()
+        if (!client) throw new Error('Twilio non configuré')
+        await client.messages.create({
           from: TWILIO_FROM,
           to: `whatsapp:${ownerPhone}`,
           body: message,
@@ -93,8 +93,9 @@ async function sendMorningStockAlert() {
         }).join('\n') +
         `\n\n💡 Pensez à commander dès aujourd'hui !\n📦 Gérez votre stock sur HabaShop`
       try {
-        if (!twilioClient) throw new Error('Twilio non configuré')
-        await twilioClient.messages.create({
+        const client = getTwilioClient()
+        if (!client) throw new Error('Twilio non configuré')
+        await client.messages.create({
           from: TWILIO_FROM,
           to: `whatsapp:${ownerPhone}`,
           body: message,
@@ -831,8 +832,9 @@ async function start() {
       return reply.code(400).send({ error: 'Numéro de téléphone requis' })
     }
 
-    if (!twilioClient) {
-      console.error('❌ twilioClient is null')
+    const twClient = getTwilioClient()
+    if (!twClient) {
+      console.error('❌ getTwilioClient() returned null')
       return reply.code(503).send({
         error:   'Service WhatsApp non disponible',
         details: 'Variables TWILIO_ACCOUNT_SID et TWILIO_AUTH_TOKEN manquantes dans Railway',
@@ -881,7 +883,7 @@ async function start() {
     console.log('📤 From:', TWILIO_FROM)
 
     try {
-      const msg = await twilioClient.messages.create({ from: TWILIO_FROM, to: waPhone, body })
+      const msg = await twClient.messages.create({ from: TWILIO_FROM, to: waPhone, body })
       console.log('✅ WhatsApp envoyé, SID:', msg.sid)
       return reply.send({ success: true, sid: msg.sid, to: waPhone })
     } catch (err: any) {
@@ -908,13 +910,14 @@ async function start() {
   })
 
   app.get('/api/whatsapp/test', async (_req: any, reply: any) => {
+    const client = getTwilioClient()
     return reply.send({
-      configured:      !!twilioClient,
-      sid_set:         !!TWILIO_SID,
-      token_set:       !!TWILIO_TOKEN,
+      configured:      !!client,
+      sid_set:         !!(process.env.TWILIO_ACCOUNT_SID ?? '').trim(),
+      token_set:       !!(process.env.TWILIO_AUTH_TOKEN  ?? '').trim(),
       from:            TWILIO_FROM,
       twilio_version:  require('twilio/package.json').version,
-      status:          twilioClient ? '✅ Ready' : '❌ Not configured',
+      status:          client ? '✅ Ready' : '❌ Not configured',
     })
   })
 
@@ -922,7 +925,8 @@ async function start() {
     const { phone, alertType, data, lang } = request.body as any
 
     try {
-      if (!twilioClient) return reply.code(503).send({ error: 'Service WhatsApp non configuré' })
+      const client = getTwilioClient()
+      if (!client) return reply.code(503).send({ error: 'Service WhatsApp non configuré' })
       const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
       const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone.replace(/^0/, '')}`
 
@@ -935,7 +939,7 @@ async function start() {
 
       if (!body) return reply.code(400).send({ error: 'alertType inconnu' })
 
-      const result = await twilioClient.messages.create({
+      const result = await client.messages.create({
         from: TWILIO_FROM,
         to:   `whatsapp:${formattedPhone}`,
         body,
@@ -1374,10 +1378,11 @@ console.log(products.length + ' produits')</pre>
 
     for (const phone of phones) {
       try {
-        if (!twilioClient) { failed++; continue }
+        const client = getTwilioClient()
+        if (!client) { failed++; continue }
         const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
         const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone.replace(/^0/, '')}`
-        await twilioClient.messages.create({
+        await client.messages.create({
           from: TWILIO_FROM,
           to: `whatsapp:${formattedPhone}`,
           body: message,
