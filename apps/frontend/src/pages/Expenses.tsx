@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { expensesApi, salesApi } from '@/lib/api'
-import { Download, Plus, X, Search, Settings, TrendingDown, Clock, RefreshCw, BarChart2 } from 'lucide-react'
+import { Download, Plus, X, Search, Settings, TrendingDown, Clock, RefreshCw, BarChart2, Home, Zap, Car, Wrench, Package, Megaphone, GraduationCap, Tag, Check, Pencil, Trash2, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 import ValidatedInput from '@/components/ui/ValidatedInput'
@@ -35,15 +35,15 @@ const BUDGETS_INIT: Record<Category, number> = {
 
 const CATEGORIES: Category[] = ['Loyer','Énergie','Transport','Maintenance','Fournitures','Marketing','Formation','Autre']
 
-const CATEGORY_STYLE: Record<Category, { bg: string; color: string; icon: string }> = {
-  Loyer:       { bg:'rgba(124,111,240,.15)', color:'#A89CF5', icon:'🏠' },
-  Énergie:     { bg:'rgba(240,165,0,.15)',   color:'#F0A500', icon:'⚡' },
-  Transport:   { bg:'rgba(59,130,246,.15)',  color:'#60A5FA', icon:'🚗' },
-  Maintenance: { bg:'rgba(251,146,60,.15)',  color:'#FB923C', icon:'🔧' },
-  Fournitures: { bg:'rgba(20,184,166,.15)',  color:'#2DD4BF', icon:'📦' },
-  Marketing:   { bg:'rgba(236,72,153,.15)',  color:'#F472B6', icon:'📢' },
-  Formation:   { bg:'rgba(14,196,126,.15)',  color:'#0EC47E', icon:'🎓' },
-  Autre:       { bg:'rgba(136,134,168,.15)', color:'#8886A8', icon:'📌' },
+const CATEGORY_STYLE: Record<Category, { bg: string; color: string; icon: JSX.Element }> = {
+  Loyer:       { bg:'rgba(124,111,240,.15)', color:'#A89CF5', icon:<Home size={14}/> },
+  Énergie:     { bg:'rgba(240,165,0,.15)',   color:'#F0A500', icon:<Zap size={14}/> },
+  Transport:   { bg:'rgba(59,130,246,.15)',  color:'#60A5FA', icon:<Car size={14}/> },
+  Maintenance: { bg:'rgba(251,146,60,.15)',  color:'#FB923C', icon:<Wrench size={14}/> },
+  Fournitures: { bg:'rgba(20,184,166,.15)',  color:'#2DD4BF', icon:<Package size={14}/> },
+  Marketing:   { bg:'rgba(236,72,153,.15)',  color:'#F472B6', icon:<Megaphone size={14}/> },
+  Formation:   { bg:'rgba(14,196,126,.15)',  color:'#0EC47E', icon:<GraduationCap size={14}/> },
+  Autre:       { bg:'rgba(136,134,168,.15)', color:'#8886A8', icon:<Tag size={14}/> },
 }
 
 const MODES = ['Espèces','Carte','Chèque','Virement','Prélèvement']
@@ -312,7 +312,7 @@ export default function Expenses() {
               <option value="EN ATTENTE">EN ATTENTE</option>
             </select>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleAccountingExport}>
-              📊 {lang === 'fr' ? 'Export comptable' : 'Accounting export'}
+              <BarChart2 size={12}/> {lang === 'fr' ? 'Export comptable' : 'Accounting export'}
             </button>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printExpensesPDF(); toast.success('📄 PDF ouvert !') }}>
               <Download size={12} /> PDF
@@ -350,7 +350,7 @@ export default function Expenses() {
                     <td>
                       <span className="badge badge-gray">{e.mode}</span>
                     </td>
-                    <td style={{ textAlign:'center', fontSize:16 }}>{e.recurrent ? '🔄' : '—'}</td>
+                    <td style={{ textAlign:'center' }}>{e.recurrent ? <RefreshCw size={14} style={{ color:'var(--p2)', margin:'0 auto' }}/> : <span style={{ color:'var(--text3)' }}>—</span>}</td>
                     <td>
                       <span className={`badge ${e.status === 'PAYÉ' ? 'badge-green' : 'badge-amber'}`}>
                         {e.status}
@@ -359,7 +359,7 @@ export default function Expenses() {
                     <td>
                       <div style={{ display:'flex', gap:5 }}>
                         {e.status === 'EN ATTENTE' && (
-                          <button className="mini-btn" title="Marquer payé" onClick={() => markPaid(e.id)}>✅</button>
+                          <button className="mini-btn" title="Marquer payé" onClick={() => markPaid(e.id)}><Check size={13}/></button>
                         )}
                         <button className="mini-btn" title="Modifier" onClick={() => {
                           setEditExpense(e)
@@ -375,8 +375,8 @@ export default function Expenses() {
                           })
                           setExpEditMode(false)
                           setShowEditExpModal(true)
-                        }}>✏️</button>
-                        <button className="mini-btn" title="Supprimer" onClick={() => deleteExpense(e.id)}>🗑</button>
+                        }}><Pencil size={13}/></button>
+                        <button className="mini-btn" title="Supprimer" onClick={() => deleteExpense(e.id)}><Trash2 size={13}/></button>
                       </div>
                     </td>
                   </tr>
@@ -436,7 +436,7 @@ export default function Expenses() {
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
                     <span style={{ fontWeight:700, color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
                     <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:600 }}>
-                      {over ? `Dépassé de ${fmt(spent - budget)}` : `Restant : ${fmt(budget - spent)} ✅`}
+                      {over ? `Dépassé de ${fmt(spent - budget)}` : `Restant : ${fmt(budget - spent)}`}
                     </span>
                   </div>
                 </div>
@@ -550,7 +550,7 @@ export default function Expenses() {
             </div>
             <div style={{ display:'flex', gap:10, marginTop:20 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setAddOpen(false)}>Annuler</button>
-              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={addExpense}>✅ Enregistrer</button>
+              <button className="btn btn-primary btn-sm" style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }} onClick={addExpense}><Check size={14}/> Enregistrer</button>
             </div>
           </div>
         </div>
@@ -585,8 +585,8 @@ export default function Expenses() {
           <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && setShowEditExpModal(false)}>
             <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-                <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>
-                  {expEditMode ? `✏️ ${lang==='fr'?'Modifier la dépense':'Edit expense'}` : `📋 ${lang==='fr'?'Détail dépense':'Expense detail'}`}
+                <span style={{ fontWeight:800, fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}>
+                  {expEditMode ? <><Pencil size={15}/> {lang==='fr'?'Modifier la dépense':'Edit expense'}</> : <><FileText size={15}/> {lang==='fr'?'Détail dépense':'Expense detail'}</>}
                 </span>
                 <button className="mini-btn" onClick={() => { setShowEditExpModal(false); setExpEditMode(false) }}><X size={15} /></button>
               </div>
@@ -647,21 +647,21 @@ export default function Expenses() {
               <div style={{ display:'flex', gap:8, marginTop:20 }}>
                 {!expEditMode ? (
                   <>
-                    <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }} onClick={() => setExpEditMode(true)}>
-                      ✏️ {lang==='fr'?'Modifier':'Edit'}
+                    <button className="topbar-btn" style={{ flex:1, justifyContent:'center', display:'flex', alignItems:'center', gap:6 }} onClick={() => setExpEditMode(true)}>
+                      <Pencil size={14}/> {lang==='fr'?'Modifier':'Edit'}
                     </button>
                     <button className="mini-btn" onClick={() => setShowEditExpModal(false)}>
                       {lang==='fr'?'Fermer':'Close'}
                     </button>
                     <button className="mini-btn" style={{ color:'var(--danger)', borderColor:'rgba(255,59,92,.2)' }}
                       onClick={() => { deleteExpense(editExpense.id); setShowEditExpModal(false) }}>
-                      🗑
+                      <Trash2 size={13}/>
                     </button>
                   </>
                 ) : (
                   <>
-                    <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }} onClick={handleSave}>
-                      ✅ {lang==='fr'?'Sauvegarder':'Save'}
+                    <button className="topbar-btn" style={{ flex:1, justifyContent:'center', display:'flex', alignItems:'center', gap:6 }} onClick={handleSave}>
+                      <Check size={14}/> {lang==='fr'?'Sauvegarder':'Save'}
                     </button>
                     <button className="mini-btn" onClick={() => setExpEditMode(false)}>
                       {lang==='fr'?'Annuler':'Cancel'}
@@ -679,7 +679,7 @@ export default function Expenses() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={() => setBudgetOpen(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>⚙️ Modifier les budgets</span>
+              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}><Settings size={16}/> Modifier les budgets</span>
               <button className="mini-btn" onClick={() => setBudgetOpen(false)}><X size={15} /></button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
