@@ -81,6 +81,21 @@ const ORDERS_INIT: Order[] = [
 
 const STATUSES: OrderStatus[] = ['BROUILLON','ENVOYÉE','CONFIRMÉE','EN TRANSIT','REÇUE','ANNULÉE']
 
+const STATIC_PRODUCTS = [
+  { id:'p1', name:'Riz parfumé 5kg',    price:4500,  emoji:'🌾', category:'Céréales'   },
+  { id:'p2', name:'Huile palme 1L',     price:1800,  emoji:'🫙', category:'Corps gras'  },
+  { id:'p3', name:'Sucre 1kg',          price:850,   emoji:'🍚', category:'Épicerie'    },
+  { id:'p4', name:'Farine blé 1kg',     price:650,   emoji:'🌾', category:'Céréales'    },
+  { id:'p5', name:'Savon 500g',         price:500,   emoji:'🧼', category:'Hygiène'     },
+  { id:'p6', name:'Lait poudre 400g',   price:2200,  emoji:'🥛', category:'Laitiers'    },
+  { id:'p7', name:'Tomate pelée 400g',  price:750,   emoji:'🍅', category:'Conserves'   },
+  { id:'p8', name:'Thon conserve',      price:1200,  emoji:'🐟', category:'Conserves'   },
+  { id:'p9', name:'Biscuits 100g',      price:300,   emoji:'🍪', category:'Boulangerie' },
+  { id:'p10',name:'Eau minérale 1.5L',  price:400,   emoji:'💧', category:'Boissons'    },
+  { id:'p11',name:'Café soluble 200g',  price:1800,  emoji:'☕', category:'Épicerie'    },
+  { id:'p12',name:'Détergent 1kg',      price:1200,  emoji:'🧹', category:'Hygiène'     },
+]
+
 const API_TO_LOCAL_STATUS: Record<string, OrderStatus> = {
   DRAFT: 'BROUILLON', SENT: 'ENVOYÉE', CONFIRMED: 'CONFIRMÉE',
   IN_TRANSIT: 'EN TRANSIT', RECEIVED: 'REÇUE', CANCELLED: 'ANNULÉE',
@@ -123,20 +138,27 @@ export default function Orders() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const prevMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
   const nextMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [products, setProducts] = useState<any[]>([])
+  const [showNewOrderModal, setShowNewOrderModal] = useState(false)
+  const [availableProducts, setAvailableProducts] = useState<any[]>([])
+  const [productSearch, setProductSearch] = useState('')
+  const [newOrderForm, setNewOrderForm] = useState({
+    clientName: '', clientPhone: '',
+    items: [] as { id: string; name: string; price: number; qty: number; emoji: string }[],
+    note: '',
+  })
 
   useEffect(() => {
     productsApi.list()
-      .then(data => setProducts(data))
-      .catch(() => {})
+      .then(data => setAvailableProducts(
+        data.map((p: any) => ({
+          id: p.id, name: p.name,
+          price: p.sellPrice ?? p.price ?? 0,
+          emoji: p.emoji || '📦',
+          category: p.category || '',
+        }))
+      ))
+      .catch(() => setAvailableProducts(STATIC_PRODUCTS))
   }, [])
-  const TODAY = new Date().toISOString().split('T')[0]
-  const DEFAULT_EXPECTED = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0] })()
-  const [form, setForm] = useState({
-    supplier: '', expectedAt: DEFAULT_EXPECTED, notes: '',
-    items: [{ product: '', qty: 1, unit: 'unité', unitPrice: 0 }]
-  })
 
   const suppliers = Array.from(new Set(orders.map(o => o.supplier)))
 
@@ -159,23 +181,39 @@ export default function Orders() {
     toast.success(`Statut mis à jour → ${status}`)
   }
 
-  const createOrder = () => {
-    const total = form.items.reduce((s, i) => s + i.qty * i.unitPrice, 0)
+  const openNewOrderModal = () => {
+    setNewOrderForm({ clientName: '', clientPhone: '', items: [], note: '' })
+    setProductSearch('')
+    setShowNewOrderModal(true)
+  }
+
+  const handleCreateOrder = async () => {
+    if (!newOrderForm.clientName.trim() || newOrderForm.items.length === 0) return
+    const total = newOrderForm.items.reduce((s, i) => s + i.price * i.qty, 0)
+    const defaultExpected = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0] })()
     const newOrder: Order = {
       id: String(Date.now()),
       ref: `CMD-2026-${String(orders.length + 90).padStart(3, '0')}`,
-      supplier: form.supplier,
+      supplier: newOrderForm.clientName,
       date: new Date().toISOString().split('T')[0],
-      expectedAt: form.expectedAt,
+      expectedAt: defaultExpected,
       status: 'BROUILLON',
       total,
-      items: form.items,
-      notes: form.notes,
+      items: newOrderForm.items.map(i => ({ product: `${i.emoji} ${i.name}`, qty: i.qty, unit: 'unité', unitPrice: i.price })),
+      notes: newOrderForm.note,
     }
+    try {
+      await ordersApi.create({
+        clientName: newOrderForm.clientName,
+        clientPhone: newOrderForm.clientPhone,
+        items: newOrderForm.items,
+        total,
+        note: newOrderForm.note,
+      })
+    } catch {}
     setOrders(prev => [newOrder, ...prev])
-    setShowCreateModal(false)
-    setForm({ supplier: '', expectedAt: (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0] })(), notes: '', items: [{ product: '', qty: 1, unit: 'unité', unitPrice: 0 }] })
-    toast.success(`✅ Commande ${newOrder.ref} créée !`)
+    setShowNewOrderModal(false)
+    toast.success(lang === 'fr' ? `✅ Commande créée — ${fmt(total)}` : `✅ Order created — ${fmt(total)}`)
   }
 
   const printOrderPDF = (order: Order) => {
@@ -237,15 +275,6 @@ export default function Orders() {
     openPDF(t('order_pdf_list_title'), body)
   }
 
-  const addFormItem = () =>
-    setForm(f => ({ ...f, items: [...f.items, { product: '', qty: 1, unit: 'unité', unitPrice: 0 }] }))
-
-  const updateFormItem = (i: number, key: string, val: any) =>
-    setForm(f => ({ ...f, items: f.items.map((item, idx) => idx === i ? { ...item, [key]: val } : item) }))
-
-  const removeFormItem = (i: number) =>
-    setForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))
-
   return (
     <div className="space-y-5 animate-in">
 
@@ -255,8 +284,8 @@ export default function Orders() {
           <h1 className="page-title">{t('nav_orders')}</h1>
           <p className="page-subtitle">{orders.length} {lang === 'fr' ? 'commandes fournisseurs' : 'purchase orders'}</p>
         </div>
-        <button className="topbar-btn" onClick={() => setShowCreateModal(true)}>
-          <Plus size={14} /> {lang === 'fr' ? 'Nouvelle commande' : 'New order'}
+        <button className="topbar-btn" onClick={openNewOrderModal}>
+          <Plus size={14} /> {lang === 'fr' ? 'Nouvelle commande' : lang === 'en' ? 'New order' : lang === 'es' ? 'Nueva orden' : 'Nuovo ordine'}
         </button>
       </div>
 
@@ -403,8 +432,8 @@ export default function Orders() {
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printOrdersListPDF(); toast.success('📄 PDF ouvert !') }}>
               <Download size={13} /> PDF
             </button>
-            <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowCreateModal(true)}>
-              <Plus size={13} /> Nouvelle commande
+            <button className="btn btn-primary btn-sm gap-1.5" onClick={openNewOrderModal}>
+              <Plus size={13} /> {lang === 'fr' ? 'Nouvelle commande' : 'New order'}
             </button>
           </div>
         </div>
@@ -633,85 +662,205 @@ export default function Orders() {
         </div>
       )}
 
-      {/* ── Modal créer commande ── */}
-      {showCreateModal && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCreateModal(false)}>
-          <div className="modal-box" style={{ maxWidth: 600 }}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>➕ Nouvelle commande</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowCreateModal(false)}><X size={14} /></button>
+      {/* ── Modal nouvelle commande ── */}
+      {showNewOrderModal && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true"
+          onClick={e => e.target === e.currentTarget && setShowNewOrderModal(false)}>
+          <div style={{
+            background: 'var(--bg2)', border: '1px solid var(--border2)',
+            borderRadius: 20, width: '100%', maxWidth: 640,
+            maxHeight: '92vh', overflow: 'hidden',
+            display: 'flex', flexDirection: 'column',
+            boxShadow: '0 24px 80px rgba(0,0,0,.5)',
+          }}>
+
+            {/* Header */}
+            <div style={{
+              padding: '20px 24px', borderBottom: '1px solid var(--border)',
+              flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <h2 style={{ fontSize: 17, fontWeight: 900, color: 'var(--text)', margin: 0 }}>
+                📋 {lang === 'fr' ? 'Nouvelle commande' : lang === 'en' ? 'New order' : lang === 'es' ? 'Nueva orden' : 'Nuovo ordine'}
+              </h2>
+              <button onClick={() => setShowNewOrderModal(false)} style={{
+                width: 32, height: 32, borderRadius: 9,
+                background: 'var(--bg3)', border: '1px solid var(--border)',
+                cursor: 'pointer', color: 'var(--text3)', fontSize: 15,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>✕</button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Fournisseur</label>
-                <select className="input text-sm" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))}>
-                  <option value="">Choisir…</option>
-                  {['SONACO','SENRIZ','CSS','UNILEVER','NESTLÉ','TOMAPOR','GRANDS MOULINS'].map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Livraison prévue</label>
-                <input className="input text-sm" type="date" value={form.expectedAt}
-                  onChange={e => setForm(f => ({ ...f, expectedAt: e.target.value }))} />
-              </div>
-            </div>
+            {/* Corps scrollable */}
+            <div style={{
+              flex: 1, overflowY: 'auto', minHeight: 0,
+              padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16,
+            }}>
 
-            {/* Lignes produits */}
-            <div className="mb-3">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text3)' }}>Articles</label>
-                <button className="btn btn-ghost btn-sm gap-1" onClick={addFormItem}><Plus size={11} /> Ajouter</button>
+              {/* Infos client */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+                    {lang === 'fr' ? 'NOM CLIENT *' : 'CLIENT NAME *'}
+                  </label>
+                  <input className="input" placeholder={lang === 'fr' ? 'Nom du client…' : 'Client name…'}
+                    value={newOrderForm.clientName}
+                    onChange={e => setNewOrderForm(f => ({ ...f, clientName: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+                    {lang === 'fr' ? 'TÉLÉPHONE' : 'PHONE'}
+                  </label>
+                  <input className="input" type="tel" placeholder="+221 77 000 0000"
+                    value={newOrderForm.clientPhone}
+                    onChange={e => setNewOrderForm(f => ({ ...f, clientPhone: e.target.value }))} />
+                </div>
               </div>
-              {/* Datalists pour l'auto-complétion produits */}
-              {form.items.map((_, i) => (
-                <datalist key={i} id={`prod-list-${i}`}>
-                  {products.map(p => <option key={p.id} value={p.name}>{p.emoji || '📦'} {p.name}</option>)}
-                </datalist>
-              ))}
-              <div className="space-y-2">
-                {form.items.map((item, i) => (
-                  <div key={i} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 60px 80px 90px 28px' }}>
-                    <input className="input text-xs py-2" placeholder="Produit…" value={item.product}
-                      list={`prod-list-${i}`}
-                      onChange={e => {
-                        const selected = products.find(p => p.name === e.target.value)
-                        const newItems = form.items.map((it, idx) => idx === i
-                          ? { ...it, product: e.target.value, ...(selected ? { unitPrice: selected.sellPrice ?? selected.price ?? 0 } : {}) }
-                          : it
-                        )
-                        setForm(f => ({ ...f, items: newItems }))
-                      }} />
-                    <input className="input text-xs py-2 text-center" type="number" placeholder="Qté" value={item.qty}
-                      onChange={e => updateFormItem(i, 'qty', +e.target.value)} />
-                    <select className="input text-xs py-2" value={item.unit}
-                      onChange={e => updateFormItem(i, 'unit', e.target.value)}>
-                      <option>unité</option><option>carton</option><option>sac</option><option>boîte</option><option>palette</option>
-                    </select>
-                    <input className="input text-xs py-2 text-right" type="number" placeholder="Prix unit." value={item.unitPrice}
-                      onChange={e => updateFormItem(i, 'unitPrice', +e.target.value)} />
-                    <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--danger)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: 4, fontFamily: 'inherit' }}
-                      onClick={() => removeFormItem(i)}>
-                      <X size={12} />
-                    </button>
+
+              {/* Recherche + grille produits */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+                  {lang === 'fr' ? 'ARTICLES' : 'ITEMS'}
+                </label>
+                <input className="input" type="search"
+                  placeholder={lang === 'fr' ? '🔍 Rechercher un produit…' : '🔍 Search product…'}
+                  value={productSearch}
+                  onChange={e => setProductSearch(e.target.value)}
+                  style={{ marginBottom: 10 }}
+                />
+                <div style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))',
+                  gap: 8, maxHeight: 200, overflowY: 'auto', padding: '2px',
+                }}>
+                  {availableProducts
+                    .filter(p => !productSearch || p.name.toLowerCase().includes(productSearch.toLowerCase()))
+                    .map(product => {
+                      const inCart = newOrderForm.items.find(i => i.id === product.id)
+                      return (
+                        <button key={product.id} type="button"
+                          onClick={() => {
+                            if (inCart) {
+                              setNewOrderForm(f => ({ ...f, items: f.items.filter(i => i.id !== product.id) }))
+                            } else {
+                              setNewOrderForm(f => ({ ...f, items: [...f.items, { id: product.id, name: product.name, price: product.price, qty: 1, emoji: product.emoji ?? '📦' }] }))
+                            }
+                          }}
+                          style={{
+                            background: inCart ? 'rgba(108,71,255,.12)' : 'var(--bg3)',
+                            border: `1px solid ${inCart ? 'rgba(108,71,255,.35)' : 'var(--border)'}`,
+                            borderRadius: 10, padding: '10px 8px', cursor: 'pointer',
+                            textAlign: 'center', transition: 'all .15s',
+                            fontFamily: 'var(--font)', position: 'relative',
+                          }}>
+                          {inCart && (
+                            <div style={{
+                              position: 'absolute', top: 4, right: 4,
+                              width: 16, height: 16, borderRadius: '50%',
+                              background: 'var(--p)', display: 'flex',
+                              alignItems: 'center', justifyContent: 'center',
+                              fontSize: 9, color: '#fff', fontWeight: 900,
+                            }}>✓</div>
+                          )}
+                          <div style={{ fontSize: 20, marginBottom: 4 }}>{product.emoji ?? '📦'}</div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{fmt(product.price)}</div>
+                        </button>
+                      )
+                    })
+                  }
+                </div>
+              </div>
+
+              {/* Récapitulatif avec contrôle quantités */}
+              {newOrderForm.items.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 8 }}>
+                    {lang === 'fr' ? 'RÉCAPITULATIF' : 'SUMMARY'} ({newOrderForm.items.length})
                   </div>
-                ))}
-              </div>
-              {/* Total */}
-              <div className="flex justify-end mt-2 text-sm font-black" style={{ color: 'var(--p2)' }}>
-                Total : {fmt(form.items.reduce((s, i) => s + i.qty * i.unitPrice, 0))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {newOrderForm.items.map(item => (
+                      <div key={item.id} style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 12px', background: 'var(--bg3)',
+                        border: '1px solid var(--border)', borderRadius: 10,
+                      }}>
+                        <span style={{ fontSize: 16 }}>{item.emoji}</span>
+                        <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{item.name}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <button type="button"
+                            onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.map(i => i.id === item.id && i.qty > 1 ? { ...i, qty: i.qty - 1 } : i) }))}
+                            style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--bg4)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text2)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                          <span style={{ minWidth: 24, textAlign: 'center', fontSize: 13, fontWeight: 700 }}>{item.qty}</span>
+                          <button type="button"
+                            onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i) }))}
+                            style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--bg4)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text2)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                        </div>
+                        <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 12, color: 'var(--acc)', minWidth: 70, textAlign: 'right' }}>{fmt(item.price * item.qty)}</span>
+                        <button type="button"
+                          onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.filter(i => i.id !== item.id) }))}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: 15, padding: '2px 4px' }}>✕</button>
+                      </div>
+                    ))}
+                    <div style={{
+                      display: 'flex', justifyContent: 'space-between', padding: '10px 12px',
+                      background: 'rgba(108,71,255,.06)', border: '1px solid rgba(108,71,255,.12)', borderRadius: 10,
+                    }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                        TOTAL ({newOrderForm.items.reduce((s, i) => s + i.qty, 0)} {lang === 'fr' ? 'art.' : 'items'})
+                      </span>
+                      <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
+                        {fmt(newOrderForm.items.reduce((s, i) => s + i.price * i.qty, 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Note */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+                  {lang === 'fr' ? 'NOTE (optionnel)' : 'NOTE (optional)'}
+                </label>
+                <textarea className="input" rows={2} style={{ resize: 'vertical' }}
+                  placeholder={lang === 'fr' ? 'Instructions livraison, conditions…' : 'Delivery instructions, conditions…'}
+                  value={newOrderForm.note}
+                  onChange={e => setNewOrderForm(f => ({ ...f, note: e.target.value }))} />
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
-              <textarea className="input text-sm" rows={2} placeholder="Instructions spéciales, conditions…"
-                value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-            </div>
-
-            <div className="flex gap-2">
-              <button className="btn btn-primary flex-1 justify-center" onClick={createOrder}>✅ Créer la commande</button>
-              <button className="btn btn-ghost" onClick={() => setShowCreateModal(false)}>Annuler</button>
+            {/* Footer */}
+            <div style={{
+              padding: '14px 24px', borderTop: '1px solid var(--border)',
+              flexShrink: 0, display: 'flex', gap: 8, background: 'var(--bg2)',
+            }}>
+              <button
+                disabled={!newOrderForm.clientName.trim() || newOrderForm.items.length === 0}
+                onClick={handleCreateOrder}
+                style={{
+                  flex: 1, padding: '12px', border: 'none', borderRadius: 12,
+                  background: newOrderForm.items.length > 0 && newOrderForm.clientName.trim()
+                    ? 'linear-gradient(135deg,var(--p),var(--p2))'
+                    : 'var(--bg4)',
+                  color: newOrderForm.items.length > 0 && newOrderForm.clientName.trim() ? '#fff' : 'var(--text3)',
+                  fontSize: 14, fontWeight: 800, fontFamily: 'var(--font)',
+                  cursor: newOrderForm.items.length > 0 && newOrderForm.clientName.trim() ? 'pointer' : 'not-allowed',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  transition: 'all .15s',
+                }}>
+                📋 {lang === 'fr' ? 'Créer la commande' : 'Create order'}
+                {newOrderForm.items.length > 0 && (
+                  <span style={{ fontSize: 12, opacity: .8 }}>
+                    — {newOrderForm.items.reduce((s, i) => s + i.qty, 0)} art.
+                  </span>
+                )}
+              </button>
+              <button onClick={() => setShowNewOrderModal(false)} style={{
+                padding: '12px 18px', background: 'var(--bg3)',
+                border: '1px solid var(--border)', borderRadius: 12,
+                cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
+                fontFamily: 'var(--font)', fontWeight: 600,
+              }}>
+                {lang === 'fr' ? 'Annuler' : 'Cancel'}
+              </button>
             </div>
           </div>
         </div>
