@@ -45,35 +45,44 @@ interface CartItem {
 
 // ─── INDICATIFS PAYS ────────────────────────
 const COUNTRY_CODES = [
-  { code:'+221', flag:'🇸🇳', country:'Sénégal'        },
-  { code:'+225', flag:'🇨🇮', country:"Côte d'Ivoire"  },
-  { code:'+223', flag:'🇲🇱', country:'Mali'            },
-  { code:'+226', flag:'🇧🇫', country:'Burkina Faso'    },
-  { code:'+227', flag:'🇳🇪', country:'Niger'           },
-  { code:'+228', flag:'🇹🇬', country:'Togo'            },
-  { code:'+229', flag:'🇧🇯', country:'Bénin'           },
-  { code:'+224', flag:'🇬🇳', country:'Guinée'          },
-  { code:'+245', flag:'🇬🇼', country:'Guinée-Bissau'   },
-  { code:'+232', flag:'🇸🇱', country:'Sierra Leone'    },
-  { code:'+231', flag:'🇱🇷', country:'Liberia'         },
-  { code:'+220', flag:'🇬🇲', country:'Gambie'          },
-  { code:'+238', flag:'🇨🇻', country:'Cap-Vert'        },
-  { code:'+237', flag:'🇨🇲', country:'Cameroun'        },
-  { code:'+241', flag:'🇬🇦', country:'Gabon'           },
-  { code:'+242', flag:'🇨🇬', country:'Congo'           },
-  { code:'+243', flag:'🇨🇩', country:'RD Congo'        },
-  { code:'+212', flag:'🇲🇦', country:'Maroc'           },
-  { code:'+213', flag:'🇩🇿', country:'Algérie'         },
-  { code:'+216', flag:'🇹🇳', country:'Tunisie'         },
-  { code:'+20',  flag:'🇪🇬', country:'Égypte'          },
-  { code:'+234', flag:'🇳🇬', country:'Nigeria'         },
-  { code:'+233', flag:'🇬🇭', country:'Ghana'           },
-  { code:'+254', flag:'🇰🇪', country:'Kenya'           },
-  { code:'+33',  flag:'🇫🇷', country:'France'          },
-  { code:'+32',  flag:'🇧🇪', country:'Belgique'        },
-  { code:'+41',  flag:'🇨🇭', country:'Suisse'          },
-  { code:'+1',   flag:'🇺🇸', country:'USA / Canada'    },
-  { code:'+44',  flag:'🇬🇧', country:'Royaume-Uni'     },
+  { code:'+221', flag:'🇸🇳', country:'Sénégal',        region:'Afrique Ouest'    },
+  { code:'+225', flag:'🇨🇮', country:"Côte d'Ivoire",  region:'Afrique Ouest'    },
+  { code:'+223', flag:'🇲🇱', country:'Mali',            region:'Afrique Ouest'    },
+  { code:'+226', flag:'🇧🇫', country:'Burkina Faso',    region:'Afrique Ouest'    },
+  { code:'+227', flag:'🇳🇪', country:'Niger',           region:'Afrique Ouest'    },
+  { code:'+228', flag:'🇹🇬', country:'Togo',            region:'Afrique Ouest'    },
+  { code:'+229', flag:'🇧🇯', country:'Bénin',           region:'Afrique Ouest'    },
+  { code:'+224', flag:'🇬🇳', country:'Guinée',          region:'Afrique Ouest'    },
+  { code:'+245', flag:'🇬🇼', country:'Guinée-Bissau',   region:'Afrique Ouest'    },
+  { code:'+232', flag:'🇸🇱', country:'Sierra Leone',    region:'Afrique Ouest'    },
+  { code:'+231', flag:'🇱🇷', country:'Liberia',         region:'Afrique Ouest'    },
+  { code:'+220', flag:'🇬🇲', country:'Gambie',          region:'Afrique Ouest'    },
+  { code:'+238', flag:'🇨🇻', country:'Cap-Vert',        region:'Afrique Ouest'    },
+  { code:'+234', flag:'🇳🇬', country:'Nigeria',         region:'Afrique Ouest'    },
+  { code:'+233', flag:'🇬🇭', country:'Ghana',           region:'Afrique Ouest'    },
+  { code:'+237', flag:'🇨🇲', country:'Cameroun',        region:'Afrique Centrale' },
+  { code:'+241', flag:'🇬🇦', country:'Gabon',           region:'Afrique Centrale' },
+  { code:'+242', flag:'🇨🇬', country:'Congo',           region:'Afrique Centrale' },
+  { code:'+243', flag:'🇨🇩', country:'RD Congo',        region:'Afrique Centrale' },
+  { code:'+236', flag:'🇨🇫', country:'Centrafrique',    region:'Afrique Centrale' },
+  { code:'+235', flag:'🇹🇩', country:'Tchad',           region:'Afrique Centrale' },
+  { code:'+212', flag:'🇲🇦', country:'Maroc',           region:'Afrique Nord'     },
+  { code:'+213', flag:'🇩🇿', country:'Algérie',         region:'Afrique Nord'     },
+  { code:'+216', flag:'🇹🇳', country:'Tunisie',         region:'Afrique Nord'     },
+  { code:'+20',  flag:'🇪🇬', country:'Égypte',          region:'Afrique Nord'     },
+  { code:'+218', flag:'🇱🇾', country:'Libye',           region:'Afrique Nord'     },
+  { code:'+254', flag:'🇰🇪', country:'Kenya',           region:'Afrique Est'      },
+  { code:'+255', flag:'🇹🇿', country:'Tanzanie',        region:'Afrique Est'      },
+  { code:'+256', flag:'🇺🇬', country:'Ouganda',         region:'Afrique Est'      },
+  { code:'+251', flag:'🇪🇹', country:'Éthiopie',        region:'Afrique Est'      },
+  { code:'+33',  flag:'🇫🇷', country:'France',          region:'Europe'           },
+  { code:'+32',  flag:'🇧🇪', country:'Belgique',        region:'Europe'           },
+  { code:'+41',  flag:'🇨🇭', country:'Suisse',          region:'Europe'           },
+  { code:'+44',  flag:'🇬🇧', country:'Royaume-Uni',     region:'Europe'           },
+  { code:'+352', flag:'🇱🇺', country:'Luxembourg',      region:'Europe'           },
+  { code:'+39',  flag:'🇮🇹', country:'Italie',          region:'Europe'           },
+  { code:'+34',  flag:'🇪🇸', country:'Espagne',         region:'Europe'           },
+  { code:'+1',   flag:'🇺🇸', country:'USA / Canada',    region:'Amériques'        },
 ]
 
 // ─── TEXTES CAISSE i18n ─────────────────────
@@ -164,6 +173,33 @@ const CASHIER_TEXTS = {
   },
 }
 
+// ─── COUNTRY ITEM ───────────────────────────
+function CountryItem({ c, selected, onSelect }: {
+  c: { code: string; flag: string; country: string; region: string }
+  selected: boolean
+  onSelect: () => void
+}) {
+  return (
+    <button
+      onMouseDown={onSelect}
+      style={{
+        display:'flex', alignItems:'center', gap:10,
+        width:'100%', padding:'8px 12px',
+        background: selected ? 'rgba(124,111,240,.15)' : 'transparent',
+        border:'none', borderRadius:8,
+        cursor:'pointer', textAlign:'left',
+        transition:'background .1s',
+      }}
+      onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg3)' }}
+      onMouseLeave={e => { if (!selected) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+    >
+      <span style={{ fontSize:20 }}>{c.flag}</span>
+      <span style={{ flex:1, fontSize:13, color:'var(--text)', fontWeight: selected ? 700 : 400 }}>{c.country}</span>
+      <span style={{ fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)' }}>{c.code}</span>
+    </button>
+  )
+}
+
 // ─── COMPOSANT ─────────────────────────────
 export default function POS() {
   const {
@@ -207,9 +243,12 @@ export default function POS() {
   const [search, setSearch]       = useState('')
   const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mobile'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile')
   useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile') }, [posDefaultPayment])
-  const [waCountryCode, setWaCountryCode] = useState('+221')
-  const [waNumber, setWaNumber]           = useState('')
-  const [sendWhatsApp, setSendWhatsApp]   = useState(() => posAutoWhatsApp)
+  const [waCountryCode, setWaCountryCode]         = useState('+221')
+  const [waCountryFlag, setWaCountryFlag]         = useState('🇸🇳')
+  const [showCountryPicker, setShowCountryPicker] = useState(false)
+  const [countrySearch, setCountrySearch]         = useState('')
+  const [waNumber, setWaNumber]                   = useState('')
+  const [sendWhatsApp, setSendWhatsApp]           = useState(() => posAutoWhatsApp)
   const [sendingWA, setSendingWA]         = useState(false)
   const [cashGiven, setCashGiven] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -229,6 +268,17 @@ export default function POS() {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-phone-picker]')) {
+        setShowCountryPicker(false)
+        setCountrySearch('')
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
   }, [])
 
   const fetchHistory = async () => {
@@ -1598,25 +1648,84 @@ export default function POS() {
                     📱 {lang==='fr' ? 'Numéro WhatsApp (ticket)' : 'WhatsApp number (receipt)'}
                   </label>
                   <div style={{ display:'flex', gap:6, alignItems:'stretch' }}>
-                    {/* Sélecteur indicatif */}
-                    <select
-                      value={waCountryCode}
-                      onChange={e => setWaCountryCode(e.target.value)}
-                      aria-label={lang==='fr' ? 'Indicatif pays' : 'Country code'}
-                      style={{
-                        minHeight:42, minWidth:90, flexShrink:0,
-                        background:'var(--bg4)', border:'1.5px solid var(--border)',
-                        borderRadius:10, padding:'0 28px 0 10px',
-                        color:'var(--text)', fontSize:13, fontFamily:'var(--font)',
-                        cursor:'pointer', outline:'none', appearance:'none',
-                        backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238886A8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
-                        backgroundRepeat:'no-repeat', backgroundPosition:'right 8px center',
-                        transition:'border-color .15s',
-                      }}>
-                      {COUNTRY_CODES.map(c => (
-                        <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
-                      ))}
-                    </select>
+                    {/* Sélecteur indicatif — premium */}
+                    <div style={{ position:'relative', flexShrink:0 }} data-phone-picker>
+                      <button
+                        type="button"
+                        data-phone-picker
+                        onClick={() => { setShowCountryPicker(p => !p); setCountrySearch('') }}
+                        style={{
+                          display:'flex', alignItems:'center', gap:6,
+                          minHeight:42, minWidth:90, padding:'0 10px',
+                          background:'var(--bg4)', border:'1.5px solid var(--border)',
+                          borderRadius:10, cursor:'pointer', color:'var(--text)',
+                          fontSize:13, fontFamily:'var(--font)', transition:'border-color .15s',
+                        }}
+                      >
+                        <span style={{ fontSize:18 }}>{waCountryFlag}</span>
+                        <span style={{ fontFamily:'var(--mono)', fontWeight:700 }}>{waCountryCode}</span>
+                        <span style={{ fontSize:9, color:'var(--text3)', marginLeft:2 }}>▼</span>
+                      </button>
+                      {showCountryPicker && (
+                        <div
+                          data-phone-picker
+                          style={{
+                            position:'absolute', top:'calc(100% + 6px)', left:0, zIndex:999,
+                            width:280, maxHeight:320, overflowY:'auto',
+                            background:'var(--bg2)', border:'1.5px solid var(--border)',
+                            borderRadius:12, boxShadow:'0 8px 32px rgba(0,0,0,.18)',
+                            display:'flex', flexDirection:'column',
+                          }}
+                        >
+                          <div style={{ position:'sticky', top:0, background:'var(--bg2)', padding:'10px 10px 6px', borderBottom:'1px solid var(--border)', zIndex:1 }}>
+                            <input
+                              autoFocus
+                              type="text"
+                              placeholder="🔍 Rechercher..."
+                              value={countrySearch}
+                              onChange={e => setCountrySearch(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Escape') { setShowCountryPicker(false); setCountrySearch('') } }}
+                              data-phone-picker
+                              style={{
+                                width:'100%', padding:'7px 10px',
+                                background:'var(--bg4)', border:'1.5px solid var(--border)',
+                                borderRadius:8, color:'var(--text)', fontSize:12,
+                                fontFamily:'var(--font)', outline:'none', boxSizing:'border-box',
+                              }}
+                            />
+                          </div>
+                          {(() => {
+                            const q = countrySearch.toLowerCase()
+                            const filtered = COUNTRY_CODES.filter(c =>
+                              c.country.toLowerCase().includes(q) ||
+                              c.code.includes(q) ||
+                              c.region.toLowerCase().includes(q)
+                            )
+                            const regions = Array.from(new Set(filtered.map(c => c.region)))
+                            return regions.map(region => (
+                              <div key={region} style={{ padding:'4px 0' }}>
+                                <div style={{ padding:'6px 12px 2px', fontSize:9, fontWeight:900, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)' }}>
+                                  {region}
+                                </div>
+                                {filtered.filter(c => c.region === region).map(c => (
+                                  <CountryItem
+                                    key={c.code}
+                                    c={c}
+                                    selected={c.code === waCountryCode}
+                                    onSelect={() => {
+                                      setWaCountryCode(c.code)
+                                      setWaCountryFlag(c.flag)
+                                      setShowCountryPicker(false)
+                                      setCountrySearch('')
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            ))
+                          })()}
+                        </div>
+                      )}
+                    </div>
                     {/* Input numéro — chiffres seulement */}
                     <div style={{ flex:1, position:'relative' }}>
                       <input
@@ -1658,7 +1767,7 @@ export default function POS() {
                   {waNumber.trim().length > 0 && (
                     <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
                       <span>📱 {lang==='fr' ? 'Numéro complet :' : 'Full number:'}</span>
-                      <span style={{ fontFamily:'var(--mono)', fontWeight:700, color:'var(--acc2)' }}>
+                      <span style={{ fontFamily:'var(--mono)', fontWeight:700, color:'#25D366' }}>
                         {waCountryCode}{waNumber.replace(/\s/g, '')}
                       </span>
                     </div>
