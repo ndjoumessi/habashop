@@ -3,7 +3,7 @@ import React from 'react'
 import { useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
 import { employeesApi, bonusesApi, salaryHistoryApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
-import { Download, Plus, X, Users, DollarSign, FileText, TrendingUp, Star, Pencil, Clock, Umbrella, Search, LayoutGrid, AlignJustify } from 'lucide-react'
+import { Download, Plus, X, Users, DollarSign, FileText, TrendingUp, Star, Pencil, Clock, Umbrella, Search, LayoutGrid, AlignJustify, CheckCircle, XCircle, AlertTriangle, Gift, Trash2, BarChart3, Calendar, User, Eye, CheckCheck, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
@@ -852,7 +852,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                           <span style={{ color:'var(--acc2)', fontWeight:600 }}>{lang==='fr'?'Indéterminé':'Permanent'}</span>
                         ) : emp.endAt ? (
                           <span style={{ color: isExpiringSoon ? 'var(--danger)' : 'var(--text2)', fontWeight: isExpiringSoon ? 700 : 400 }}>
-                            {isExpiringSoon ? '⚠️ ' : ''}{displayDate(emp.endAt, lang==='fr'?'fr-FR':'en-US')}
+                            {isExpiringSoon && <AlertTriangle size={11} style={{display:'inline',verticalAlign:'middle',marginRight:3,flexShrink:0}} />}{displayDate(emp.endAt, lang==='fr'?'fr-FR':'en-US')}
                           </span>
                         ) : (
                           <span style={{ color:'var(--acc)', fontWeight:600 }}>{lang==='fr'?'À définir':'To define'}</span>
@@ -884,10 +884,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
           {/* Sous-onglets */}
           <div style={{ display:'flex', gap:4, background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:10, padding:4 }}>
             {([
-              { id:'grid',    label: lang==='fr' ? '💰 Grille'      : '💰 Grid'      },
-              { id:'payslip', label: lang==='fr' ? '📄 Bulletins'   : '📄 Payslips'  },
-              { id:'bonuses', label: lang==='fr' ? '🎁 Primes'      : '🎁 Bonuses'   },
-              { id:'history', label: lang==='fr' ? '📈 Historique'  : '📈 History'   },
+              { id:'grid',    icon:<DollarSign size={13}/>, label: lang==='fr' ? 'Grille'     : 'Grid'     },
+              { id:'payslip', icon:<FileText size={13}/>,   label: lang==='fr' ? 'Bulletins'  : 'Payslips' },
+              { id:'bonuses', icon:<Gift size={13}/>,        label: lang==='fr' ? 'Primes'     : 'Bonuses'  },
+              { id:'history', icon:<TrendingUp size={13}/>, label: lang==='fr' ? 'Historique' : 'History'  },
             ] as const).map(t => (
               <button key={t.id} type="button"
                 onClick={() => setPayTab(t.id)}
@@ -897,7 +897,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   background: payTab===t.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
                   color: payTab===t.id ? '#fff' : 'var(--text3)',
                   transition:'all .15s',
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:5,
                 }}>
+                {'icon' in t && <span style={{opacity:payTab===t.id?1:.6,display:'flex'}}>{(t as any).icon}</span>}
                 {t.label}
               </button>
             ))}
@@ -936,8 +938,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   toast.success('📊 Export paie téléchargé !')
                 }}><Download size={14} /> CSV</button>
                 <button className="btn btn-primary btn-sm"
-                  onClick={() => generateAllPayslips()}>
-                  📄 {lang === 'fr' ? 'Tous les bulletins' : 'All payslips'}
+                  onClick={() => generateAllPayslips()}
+                  style={{display:'flex',alignItems:'center',gap:5}}>
+                  <FileText size={13} /> {lang === 'fr' ? 'Tous les bulletins' : 'All payslips'}
                 </button>
               </div>
 
@@ -958,8 +961,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {/* Tableau paie */}
               <div className="panel">
                 <div className="panel-h">
-                  <span className="panel-t">
-                    💰 {lang==='fr' ? 'Détail de la paie' : 'Payroll detail'}{' — '}
+                  <span className="panel-t" style={{display:'flex',alignItems:'center',gap:6}}>
+                    <DollarSign size={14}/> {lang==='fr' ? 'Détail de la paie' : 'Payroll detail'}{' — '}
                     {new Date(payrollMonth+'-01').toLocaleDateString(lang==='fr'?'fr-FR':'en-US',{month:'long',year:'numeric'})}
                   </span>
                   <button className="btn btn-primary btn-sm"
@@ -1015,9 +1018,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                             <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', fontSize:12 }}>− {fmt(ir)}</td>
                             <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:900, color:'var(--acc2)' }}>{fmt(net)}</td>
                             <td style={{ textAlign:'center' }}>
-                              <button className="btn btn-sm" style={{ fontSize:10, padding:'3px 8px' }}
+                              <button className="btn btn-sm" style={{ fontSize:10, padding:'3px 8px', display:'flex', alignItems:'center', gap:4 }}
                                 onClick={() => { setSalaryTarget({...emp, mode:'raise'}); setShowSalaryModal(true) }}>
-                                📈 {lang==='fr'?'Augmenter':'Raise'}
+                                <TrendingUp size={11}/> {lang==='fr'?'Augmenter':'Raise'}
                               </button>
                             </td>
                           </tr>
@@ -1053,9 +1056,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   value={payrollMonth}
                   onChange={e => setPayrollMonth(e.target.value)} />
                 <button className="topbar-btn"
-                  style={{ fontSize:12, padding:'7px 14px' }}
+                  style={{ fontSize:12, padding:'7px 14px', display:'flex', alignItems:'center', gap:6 }}
                   onClick={() => generateAllPayslips()}>
-                  📄 {lang==='fr' ? 'Générer tous les bulletins' : 'Generate all payslips'}
+                  <FileText size={13}/> {lang==='fr' ? 'Générer tous les bulletins' : 'Generate all payslips'}
                 </button>
               </div>
 
@@ -1106,9 +1109,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       </div>
 
                       <button className="mini-btn"
-                        style={{ width:'100%', justifyContent:'center' }}
+                        style={{ width:'100%', justifyContent:'center', display:'flex', alignItems:'center', gap:5 }}
                         onClick={() => generatePayslipPDF(emp, { brut, bonus, cnss, ir, net, month: payrollMonth })}>
-                        📄 {lang==='fr' ? 'Télécharger bulletin' : 'Download payslip'}
+                        <FileText size={13}/> {lang==='fr' ? 'Télécharger bulletin' : 'Download payslip'}
                       </button>
                     </div>
                   )
@@ -1129,7 +1132,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 
               <div className="panel">
                 <div className="panel-h">
-                  <span className="panel-t">🎁 {lang==='fr' ? 'Primes du mois' : 'Monthly bonuses'}</span>
+                  <span className="panel-t" style={{display:'flex',alignItems:'center',gap:6}}><Gift size={14}/> {lang==='fr' ? 'Primes du mois' : 'Monthly bonuses'}</span>
                   <span style={{ fontSize:12, color:'var(--text3)' }}>
                     {lang==='fr' ? 'Total :' : 'Total:'}{' '}
                     <strong style={{ color:'var(--acc2)' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</strong>
@@ -1138,7 +1141,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 
                 {Object.keys(bonuses).length === 0 ? (
                   <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text3)' }}>
-                    <div style={{ fontSize:36, marginBottom:12 }}>🎁</div>
+                    <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Gift size={36} style={{color:'var(--text4)'}}/></div>
                     <div style={{ fontSize:14, fontWeight:600 }}>
                       {lang==='fr' ? 'Aucune prime ce mois' : 'No bonuses this month'}
                     </div>
@@ -1183,7 +1186,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                               </td>
                               <td>
                                 <button className="mini-btn"
-                                  style={{ fontSize:10, padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)' }}
+                                  style={{ fontSize:10, padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)', display:'flex', alignItems:'center', gap:4 }}
                                   onClick={() => {
                                     const nb = {...bonuses}
                                     delete nb[empId]
@@ -1193,7 +1196,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                                     ids.forEach(id => { if (!id.startsWith('local-')) bonusesApi.delete(id).catch(()=>{}) })
                                     toast.success(lang==='fr' ? 'Prime supprimée' : 'Bonus removed')
                                   }}>
-                                  🗑 {lang==='fr' ? 'Supprimer' : 'Remove'}
+                                  <Trash2 size={11}/> {lang==='fr' ? 'Supprimer' : 'Remove'}
                                 </button>
                               </td>
                             </tr>
@@ -1208,8 +1211,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {Object.keys(bonuses).length > 0 && (
                 <div style={{ padding:'14px 18px', background:'rgba(0,208,132,.05)', border:'1px solid rgba(0,208,132,.12)', borderRadius:12, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
                   <div>
-                    <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', marginBottom:4 }}>
-                      📊 {lang==='fr' ? 'Impact sur la masse salariale' : 'Impact on payroll'}
+                    <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
+                      <BarChart3 size={14} style={{color:'var(--acc2)',flexShrink:0}}/> {lang==='fr' ? 'Impact sur la masse salariale' : 'Impact on payroll'}
                     </div>
                     <div style={{ fontSize:11, color:'var(--text3)' }}>
                       {lang==='fr'
@@ -1233,7 +1236,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               {salaryHistory.length === 0 ? (
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 20px', textAlign:'center', background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:20 }}>
-                  <div style={{ width:72, height:72, borderRadius:20, background:'rgba(108,71,255,.1)', border:'1px solid rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32, marginBottom:16 }}>📈</div>
+                  <div style={{ width:72, height:72, borderRadius:20, background:'rgba(108,71,255,.1)', border:'1px solid rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16 }}><TrendingUp size={32} style={{color:'var(--p2)'}}/></div>
                   <div style={{ fontSize:16, fontWeight:800, color:'var(--text)', marginBottom:8 }}>
                     {lang==='fr' ? 'Aucune révision salariale' : 'No salary revisions yet'}
                   </div>
@@ -1243,14 +1246,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       : 'Salary increases and revisions will appear here with their complete history.'}
                   </div>
                   <button className="topbar-btn"
-                    style={{ marginTop:20 }}
+                    style={{ marginTop:20, display:'flex', alignItems:'center', gap:6 }}
                     onClick={() => {
                       if (employees.length > 0) {
                         setSalaryTarget({ ...employees[0], mode:'raise' })
                         setShowSalaryModal(true)
                       }
                     }}>
-                    📈 {lang==='fr' ? 'Première révision salariale' : 'First salary revision'}
+                    <TrendingUp size={14}/> {lang==='fr' ? 'Première révision salariale' : 'First salary revision'}
                   </button>
                 </div>
               ) : (
@@ -1375,8 +1378,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                                   display:'flex', alignItems:'center',
                                   gap:6, flexWrap:'wrap',
                                 }}>
-                                  <span style={{ fontSize:10, color:'var(--text3)' }}>
-                                    📅 {date}
+                                  <span style={{ fontSize:10, color:'var(--text3)', display:'inline-flex', alignItems:'center', gap:3 }}>
+                                    <Calendar size={9}/> {date}
                                   </span>
                                   {h.reason && (
                                     <span style={{
@@ -1500,12 +1503,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       {
                         label: lang === 'fr' ? 'Révisions' : 'Revisions',
                         value: salaryHistory.length,
-                        icon:'📋', color:'var(--p2)',
+                        icon: <FileText size={16} />, color:'var(--p2)',
                       },
                       {
                         label: lang === 'fr' ? 'Employés' : 'Employees',
                         value: new Set(salaryHistory.map(h => h.empId)).size,
-                        icon:'👥', color:'var(--acc3)',
+                        icon: <Users size={16} />, color:'var(--acc3)',
                       },
                       {
                         label: lang === 'fr' ? 'Hausse moy.' : 'Avg raise',
@@ -1518,12 +1521,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                           const avg = pcts.reduce((s, v) => s + v, 0) / pcts.length
                           return `${avg >= 0 ? '+' : ''}${avg.toFixed(1)}%`
                         })(),
-                        icon:'📈', color:'var(--acc2)',
+                        icon: <TrendingUp size={16} />, color:'var(--acc2)',
                       },
                       {
                         label: lang === 'fr' ? 'Impact total' : 'Total impact',
                         value: fmt(salaryHistory.reduce((s, h) => s + (h.newSalary - h.oldSalary), 0)),
-                        icon:'💰', color:'var(--warn)',
+                        icon: <DollarSign size={16} />, color:'var(--warn)',
                       },
                     ].map(k => (
                       <div key={k.label} style={{
@@ -1546,7 +1549,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                           width:34, height:34, borderRadius:10,
                           background:'rgba(255,255,255,.04)',
                           display:'flex', alignItems:'center',
-                          justifyContent:'center', fontSize:16,
+                          justifyContent:'center', color:k.color,
                           flexShrink:0,
                         }}>{k.icon}</div>
                         <div>
@@ -1576,10 +1579,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && setShowSalaryModal(false)}>
           <div className="modal-box" style={{ maxWidth:400 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-              <h3 style={{ fontSize:15, fontWeight:900, color:'var(--text)', margin:0 }}>
+              <h3 style={{ fontSize:15, fontWeight:900, color:'var(--text)', margin:0, display:'flex', alignItems:'center', gap:8 }}>
                 {salaryTarget?.mode === 'raise'
-                  ? `📈 ${lang==='fr' ? 'Augmentation salariale' : 'Salary raise'}`
-                  : `🎁 ${lang==='fr' ? 'Ajouter une prime' : 'Add bonus'}${salaryTarget ? ` — ${salaryTarget.name}` : ''}`}
+                  ? <><TrendingUp size={15} style={{color:'var(--acc2)',flexShrink:0}}/>{lang==='fr' ? 'Augmentation salariale' : 'Salary raise'}</>
+                  : <><Gift size={15} style={{color:'var(--acc)',flexShrink:0}}/>{lang==='fr' ? 'Ajouter une prime' : 'Add bonus'}{salaryTarget ? ` — ${salaryTarget.name}` : ''}</>}
               </h3>
               <button className="btn btn-sm" onClick={() => setShowSalaryModal(false)}>✕</button>
             </div>
@@ -1611,11 +1614,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 
       {/* ── TAB POINTAGE / PRÉSENCES ── */}
       {tab === 'pointage' && (() => {
-        const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-          present: { label: lang==='fr'?'Présent':'Present',  color:'#00D084', bg:'rgba(0,208,132,.1)',  icon:'✅' },
-          late:    { label: lang==='fr'?'Retard':'Late',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:'⚠️' },
-          absent:  { label: lang==='fr'?'Absent':'Absent',    color:'#EF4444', bg:'rgba(239,68,68,.1)',  icon:'❌' },
-          half:    { label: lang==='fr'?'Mi-temps':'Half',    color:'#3B82F6', bg:'rgba(59,130,246,.1)', icon:'🌗' },
+        const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: JSX.Element }> = {
+          present: { label: lang==='fr'?'Présent':'Present',  color:'#00D084', bg:'rgba(0,208,132,.1)',  icon:<CheckCircle size={11}/> },
+          late:    { label: lang==='fr'?'Retard':'Late',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:<Clock size={11}/> },
+          absent:  { label: lang==='fr'?'Absent':'Absent',    color:'#EF4444', bg:'rgba(239,68,68,.1)',  icon:<XCircle size={11}/> },
+          half:    { label: lang==='fr'?'Mi-temps':'Half',    color:'#3B82F6', bg:'rgba(59,130,246,.1)', icon:<AlertTriangle size={11}/> },
         }
 
         const dayEmp = employees.filter(e => e.active !== false)
@@ -1669,11 +1672,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 onChange={e => setAttendanceDate(e.target.value)}
                 style={{ width:150, height:34, fontSize:13 }} />
               <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
-                <button className="btn btn-sm" onClick={markAllPresent}>
-                  ✅ {lang==='fr'?'Tous présents':'All present'}
+                <button className="btn btn-sm" onClick={markAllPresent} style={{display:'flex',alignItems:'center',gap:5}}>
+                  <CheckCheck size={13}/> {lang==='fr'?'Tous présents':'All present'}
                 </button>
-                <button className="btn btn-sm" onClick={exportAttendanceCSV}>
-                  📥 CSV
+                <button className="btn btn-sm" onClick={exportAttendanceCSV} style={{display:'flex',alignItems:'center',gap:5}}>
+                  <Download size={13}/> CSV
                 </button>
               </div>
             </div>
@@ -1681,13 +1684,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             {/* KPI row */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
               {[
-                { icon:'✅', label:lang==='fr'?'Présents':'Present',  count:presentCount,                  color:'#00D084' },
-                { icon:'⚠️', label:lang==='fr'?'Retards':'Late',      count:countByStatus('late'),          color:'#F59E0B' },
-                { icon:'❌', label:lang==='fr'?'Absents':'Absent',    count:countByStatus('absent'),        color:'#EF4444' },
-                { icon:'🌗', label:lang==='fr'?'Mi-temps':'Half-day', count:countByStatus('half'),          color:'#3B82F6' },
+                { icon:<CheckCircle size={20}/>, label:lang==='fr'?'Présents':'Present',  count:presentCount,          color:'#00D084', hex:'#00D084' },
+                { icon:<Clock size={20}/>,       label:lang==='fr'?'Retards':'Late',      count:countByStatus('late'), color:'#F59E0B', hex:'#F59E0B' },
+                { icon:<XCircle size={20}/>,     label:lang==='fr'?'Absents':'Absent',    count:countByStatus('absent'),color:'#EF4444', hex:'#EF4444' },
+                { icon:<AlertTriangle size={20}/>,label:lang==='fr'?'Mi-temps':'Half-day', count:countByStatus('half'), color:'#3B82F6', hex:'#3B82F6' },
               ].map(k => (
-                <div key={k.label} className="panel" style={{ padding:'12px 14px' }}>
-                  <div style={{ fontSize:20, marginBottom:4 }}>{k.icon}</div>
+                <div key={k.label} className="panel" style={{ padding:'12px 14px', position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${k.hex}18,${k.hex}06)`, border:`1px solid ${k.hex}28` }}>
+                  <div style={{ position:'absolute', top:-16, right:-16, width:64, height:64, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}20 0%,transparent 70%)`, pointerEvents:'none' }} />
+                  <div style={{ color:k.color, marginBottom:6, display:'flex' }}>{k.icon}</div>
                   <div style={{ fontSize:22, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.count}</div>
                   <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginTop:2 }}>{k.label}</div>
                 </div>
@@ -1727,7 +1731,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     </div>
                     {/* Statut badge */}
                     <div style={{ display:'flex', justifyContent:'center' }}>
-                      <span style={{ fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:20, background:sc.bg, color:sc.color }}>
+                      <span style={{ fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:20, background:sc.bg, color:sc.color, display:'inline-flex', alignItems:'center', gap:4 }}>
                         {sc.icon} {sc.label}
                       </span>
                     </div>
@@ -1752,8 +1756,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                           style={{
                             width:26, height:26, borderRadius:6, border:'none', cursor:'pointer',
                             background: a.status === s ? STATUS_CONFIG[s].bg : 'var(--bg3)',
-                            fontSize:12,
+                            color: STATUS_CONFIG[s].color,
                             outline: a.status === s ? `1.5px solid ${STATUS_CONFIG[s].color}` : 'none',
+                            display:'flex', alignItems:'center', justifyContent:'center',
                           }}>
                           {STATUS_CONFIG[s].icon}
                         </button>
@@ -1782,7 +1787,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {pendingLeaves > 0 && (
             <div style={{ padding: '14px 16px', background: 'rgba(240,165,0,.1)', border: '1px solid rgba(240,165,0,.25)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 18 }}>⏳</span>
+              <Clock size={18} style={{ color: 'var(--acc)', flexShrink: 0 }} />
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--acc)' }}>
                 {pendingLeaves} demande{pendingLeaves > 1 ? 's' : ''} de congé en attente de validation
               </span>
@@ -1923,13 +1928,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {/* Mode banner */}
               {!empEditMode
                 ? <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:16, background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
-                    <span style={{ fontSize:14 }}>👁</span>
+                    <Eye size={14} style={{ color:'var(--acc3)', flexShrink:0 }} />
                     <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>
                       {lang==='fr' ? 'Mode visualisation — cliquez sur Modifier pour éditer' : 'View mode — click Edit to make changes'}
                     </span>
                   </div>
                 : <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
-                    <span style={{ fontSize:14 }}>✏️</span>
+                    <Pencil size={14} style={{ color:'var(--warn)', flexShrink:0 }} />
                     <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>
                       {lang==='fr' ? 'Mode édition — modifications non sauvegardées' : 'Edit mode — unsaved changes'}
                     </span>
@@ -1939,7 +1944,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {/* Identité */}
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
-                  <div style={{ width:16, height:16, borderRadius:4, background:`${editEmpForm.color??'#6C47FF'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>👤</div>
+                  <div style={{ width:16, height:16, borderRadius:4, background:`${editEmpForm.color??'#6C47FF'}22`, display:'flex', alignItems:'center', justifyContent:'center', color:editEmpForm.color??'#6C47FF' }}><User size={10}/></div>
                   {lang==='fr'?'IDENTITÉ':'IDENTITY'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
@@ -1958,7 +1963,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {/* Contrat */}
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
-                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,149,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>📋</div>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,149,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc)' }}><FileText size={10}/></div>
                   {lang==='fr'?'CONTRAT':'CONTRACT'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
@@ -1992,7 +1997,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {/* Rémunération */}
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
-                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,208,132,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>💰</div>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,208,132,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc2)' }}><DollarSign size={10}/></div>
                   {lang==='fr'?'RÉMUNÉRATION':'COMPENSATION'}
                 </div>
                 <ViewField
@@ -2028,7 +2033,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {/* Contact */}
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
-                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,184,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>📞</div>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,184,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc3)' }}><User size={10}/></div>
                   {lang==='fr'?'CONTACT':'CONTACT'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
@@ -2060,7 +2065,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                         {lang==='fr' ? 'ADRESSE' : 'ADDRESS'}
                       </label>
                       <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', gap:8 }}>
-                        <span style={{ fontSize:13, opacity:.7 }}>📍</span>
+                        <MapPin size={13} style={{ opacity:.7, flexShrink:0, color:'var(--text3)' }} />
                         <span>
                           {editEmpForm.address?.trim()
                             ? editEmpForm.address
@@ -2076,7 +2081,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {/* Performance */}
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
-                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,184,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>⭐</div>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,184,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'#FFB800' }}><Star size={10}/></div>
                   PERFORMANCE
                 </div>
                 {empEditMode ? (
@@ -2084,13 +2089,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     {[1,2,3,4,5].map(s => (
                       <button key={s} type="button"
                         onClick={() => setEditEmpForm((f:any) => ({ ...f, perf:s }))}
-                        style={{ fontSize:24, background:'none', border:'none', cursor:'pointer', padding:'2px', opacity: s<=(editEmpForm.perf??3)?1:.2, lineHeight:1 }}>⭐</button>
+                        style={{ background:'none', border:'none', cursor:'pointer', padding:'2px', color: s<=(editEmpForm.perf??3) ? '#FFB800' : 'var(--border)', display:'flex', alignItems:'center' }}>
+                        <Star size={22} fill={s<=(editEmpForm.perf??3) ? '#FFB800' : 'none'} />
+                      </button>
                     ))}
                   </div>
                 ) : (
                   <div style={{ display:'flex', gap:2, alignItems:'center' }}>
                     {[1,2,3,4,5].map(s => (
-                      <span key={s} style={{ fontSize:18, opacity: s<=(editEmpForm.perf??3)?1:.15 }}>⭐</span>
+                      <Star key={s} size={16} style={{ color: s<=(editEmpForm.perf??3) ? '#FFB800' : 'var(--border)' }} fill={s<=(editEmpForm.perf??3) ? '#FFB800' : 'none'} />
                     ))}
                     <span style={{ fontSize:12, color:'var(--text3)', marginLeft:6 }}>{editEmpForm.perf??3}/5</span>
                   </div>
@@ -2101,7 +2108,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {empEditMode && (
                 <div>
                   <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
-                    <div style={{ width:16, height:16, borderRadius:4, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9 }}>🎨</div>
+                    <div style={{ width:16, height:16, borderRadius:4, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--p2)' }}><Pencil size={10}/></div>
                     {lang==='fr'?'COULEUR AVATAR':'AVATAR COLOR'}
                   </div>
                   <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -2162,9 +2169,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       if (!window.confirm(lang==='fr'?`Supprimer ${selectedEmp!.name} ?`:`Delete ${selectedEmp!.name}?`)) return
                       setEmployees((prev: Employee[]) => prev.filter(e=>e.id!==selectedEmp!.id))
                       setShowEditEmpModal(false)
-                      toast.success('🗑 '+(lang==='fr'?'Supprimé':'Deleted'))
+                      toast.success(lang==='fr'?'Supprimé':'Deleted')
                     }}
-                    style={{ width:44, padding:'12px', background:'rgba(255,59,92,.1)', border:'1px solid rgba(255,59,92,.2)', borderRadius:12, cursor:'pointer', color:'var(--danger)', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>🗑</button>
+                    style={{ width:44, padding:'12px', background:'rgba(255,59,92,.1)', border:'1px solid rgba(255,59,92,.2)', borderRadius:12, cursor:'pointer', color:'var(--danger)', display:'flex', alignItems:'center', justifyContent:'center' }}><Trash2 size={16}/></button>
                 </>
               )}
             </div>
@@ -2781,7 +2788,7 @@ function AddressInputSimple({
         borderRadius: 12,
         transition: 'border-color .15s',
       }}>
-        <span style={{ padding:'0 6px 0 12px', fontSize:14, flexShrink:0, color: focused ? 'var(--p2)' : 'var(--text3)', pointerEvents:'none', transition:'color .15s' }}>📍</span>
+        <MapPin size={14} style={{ padding:'0 6px 0 12px', flexShrink:0, color: focused ? 'var(--p2)' : 'var(--text3)', pointerEvents:'none', transition:'color .15s', marginLeft:12 }} />
         <input
           type="text"
           autoComplete="off"
@@ -2834,7 +2841,7 @@ function AddressInputSimple({
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.1)'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
             >
-              <span style={{ fontSize:12, flexShrink:0, color:'var(--text3)' }}>📍</span>
+              <MapPin size={12} style={{ flexShrink:0, color:'var(--text3)' }} />
               <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s}</span>
             </button>
           ))}
