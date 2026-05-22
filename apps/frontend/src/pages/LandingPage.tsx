@@ -100,8 +100,8 @@ const LANDING_TRANSLATIONS = {
     faq3_a: "Absolument. Vos données sont chiffrées, hébergées en Europe et sauvegardées quotidiennement. L'authentification 2FA protège tous les accès. Conformité RGPD.",
     faq4_q: 'Puis-je gérer plusieurs boutiques ?',
     faq4_a: 'Oui, avec le plan Enterprise vous pouvez gérer un réseau de boutiques depuis un tableau de bord centralisé. Chaque boutique a ses propres données isolées.',
-    faq5_q: 'Quelle devise est supportée ?',
-    faq5_a: "HabaShop supporte le Franc CFA (XOF), l'Euro (EUR), le Dollar US (USD) et le Dollar canadien (CAD). La TVA est configurable par boutique.",
+    faq5_q: 'Quelles devises sont supportées ?',
+    faq5_a: "HabaShop supporte 6 devises : Franc CFA Ouest-Africain (XOF), Franc CFA Centre-Africain (XAF), Euro (EUR), Dollar US (USD), Dollar canadien (CAD) et Livre Sterling (GBP). La conversion est automatique et la TVA configurable par boutique.",
     cta_title: 'Prêt à moderniser votre commerce ?',
     cta_sub: "Rejoignez les commerçants d'Afrique qui font confiance à HabaShop",
     cta_btn: "🚀 Commencer maintenant — C'est gratuit",
@@ -205,7 +205,7 @@ const LANDING_TRANSLATIONS = {
     faq4_q: 'Can I manage multiple stores?',
     faq4_a: 'Yes, with the Enterprise plan you can manage a network of stores from a centralized dashboard. Each store has its own isolated data.',
     faq5_q: 'Which currencies are supported?',
-    faq5_a: 'HabaShop supports CFA Franc (XOF), Euro (EUR), US Dollar (USD) and Canadian Dollar (CAD). VAT is configurable per store.',
+    faq5_a: 'HabaShop supports 6 currencies: West African CFA Franc (XOF), Central African CFA Franc (XAF), Euro (EUR), US Dollar (USD), Canadian Dollar (CAD) and British Pound (GBP). Conversion is automatic and VAT is configurable per store.',
     cta_title: 'Ready to modernize your business?',
     cta_sub: 'Join African merchants who trust HabaShop',
     cta_btn: "🚀 Start now — It's free",
@@ -309,7 +309,7 @@ const LANDING_TRANSLATIONS = {
     faq4_q: '¿Puedo gestionar varias tiendas?',
     faq4_a: 'Sí, con el plan Enterprise puedes gestionar una red de tiendas desde un panel centralizado. Cada tienda tiene sus propios datos aislados.',
     faq5_q: '¿Qué divisas están admitidas?',
-    faq5_a: 'HabaShop admite Franco CFA (XOF), Euro (EUR), Dólar US (USD) y Dólar canadiense (CAD). El IVA es configurable por tienda.',
+    faq5_a: 'HabaShop admite 6 divisas: Franco CFA de África Occidental (XOF), Franco CFA de África Central (XAF), Euro (EUR), Dólar US (USD), Dólar canadiense (CAD) y Libra Esterlina (GBP). La conversión es automática y el IVA es configurable por tienda.',
     cta_title: '¿Listo para modernizar tu negocio?',
     cta_sub: 'Únete a los comerciantes africanos que confían en HabaShop',
     cta_btn: '🚀 Empezar ahora — Es gratis',
@@ -413,7 +413,7 @@ const LANDING_TRANSLATIONS = {
     faq4_q: 'Posso gestire più negozi?',
     faq4_a: 'Sì, con il piano Enterprise puoi gestire una rete di negozi da una dashboard centralizzata. Ogni negozio ha i propri dati isolati.',
     faq5_q: 'Quali valute sono supportate?',
-    faq5_a: 'HabaShop supporta Franco CFA (XOF), Euro (EUR), Dollaro US (USD) e Dollaro canadese (CAD). L\'IVA è configurabile per negozio.',
+    faq5_a: "HabaShop supporta 6 valute: Franco CFA dell'Africa Occidentale (XOF), Franco CFA dell'Africa Centrale (XAF), Euro (EUR), Dollaro US (USD), Dollaro canadese (CAD) e Sterlina britannica (GBP). La conversione è automatica e l'IVA è configurabile per negozio.",
     cta_title: 'Pronto a modernizzare il tuo business?',
     cta_sub: "Unisciti ai commercianti africani che si fidano di HabaShop",
     cta_btn: "🚀 Inizia ora — È gratis",
@@ -445,6 +445,7 @@ export default function LandingPage() {
     if (currency === 'EUR') return new Intl.NumberFormat('fr-FR').format(rounded) + ' €'
     if (currency === 'USD') return '$ ' + new Intl.NumberFormat('en-US').format(rounded)
     if (currency === 'CAD') return 'CA$ ' + new Intl.NumberFormat('en-US').format(rounded)
+    if (currency === 'GBP') return '£' + new Intl.NumberFormat('en-GB').format(rounded)
     return rounded.toString()
   }
 
@@ -523,8 +524,8 @@ export default function LandingPage() {
   const stats = [
     { v: '16',    l: lp.stat1_l },
     { v: '100 %', l: lp.stat2_l },
-    { v: '4+',    l: lp.stat3_l },
-    { v: '5+',    l: lp.stat4_l },
+    { v: '6',     l: lp.stat3_l },
+    { v: '15+',   l: lp.stat4_l },
   ]
 
   return (
@@ -621,11 +622,12 @@ export default function LandingPage() {
               outline: 'none',
             }}
           >
-            <option value="XOF">🌍 FCFA (XOF)</option>
-            <option value="XAF">🌍 FCFA (XAF)</option>
+            <option value="XOF">🇸🇳 FCFA (XOF)</option>
+            <option value="XAF">🇨🇲 FCFA (XAF)</option>
             <option value="EUR">🇪🇺 Euro (EUR)</option>
             <option value="USD">🇺🇸 Dollar (USD)</option>
             <option value="CAD">🇨🇦 CA Dollar (CAD)</option>
+            <option value="GBP">🇬🇧 Livre (GBP)</option>
           </select>
           <div style={{
             position: 'absolute', right: 10, top: '50%',

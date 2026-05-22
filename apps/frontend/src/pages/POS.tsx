@@ -43,6 +43,39 @@ interface CartItem {
   emoji: string
 }
 
+// ─── INDICATIFS PAYS ────────────────────────
+const COUNTRY_CODES = [
+  { code:'+221', flag:'🇸🇳', country:'Sénégal'        },
+  { code:'+225', flag:'🇨🇮', country:"Côte d'Ivoire"  },
+  { code:'+223', flag:'🇲🇱', country:'Mali'            },
+  { code:'+226', flag:'🇧🇫', country:'Burkina Faso'    },
+  { code:'+227', flag:'🇳🇪', country:'Niger'           },
+  { code:'+228', flag:'🇹🇬', country:'Togo'            },
+  { code:'+229', flag:'🇧🇯', country:'Bénin'           },
+  { code:'+224', flag:'🇬🇳', country:'Guinée'          },
+  { code:'+245', flag:'🇬🇼', country:'Guinée-Bissau'   },
+  { code:'+232', flag:'🇸🇱', country:'Sierra Leone'    },
+  { code:'+231', flag:'🇱🇷', country:'Liberia'         },
+  { code:'+220', flag:'🇬🇲', country:'Gambie'          },
+  { code:'+238', flag:'🇨🇻', country:'Cap-Vert'        },
+  { code:'+237', flag:'🇨🇲', country:'Cameroun'        },
+  { code:'+241', flag:'🇬🇦', country:'Gabon'           },
+  { code:'+242', flag:'🇨🇬', country:'Congo'           },
+  { code:'+243', flag:'🇨🇩', country:'RD Congo'        },
+  { code:'+212', flag:'🇲🇦', country:'Maroc'           },
+  { code:'+213', flag:'🇩🇿', country:'Algérie'         },
+  { code:'+216', flag:'🇹🇳', country:'Tunisie'         },
+  { code:'+20',  flag:'🇪🇬', country:'Égypte'          },
+  { code:'+234', flag:'🇳🇬', country:'Nigeria'         },
+  { code:'+233', flag:'🇬🇭', country:'Ghana'           },
+  { code:'+254', flag:'🇰🇪', country:'Kenya'           },
+  { code:'+33',  flag:'🇫🇷', country:'France'          },
+  { code:'+32',  flag:'🇧🇪', country:'Belgique'        },
+  { code:'+41',  flag:'🇨🇭', country:'Suisse'          },
+  { code:'+1',   flag:'🇺🇸', country:'USA / Canada'    },
+  { code:'+44',  flag:'🇬🇧', country:'Royaume-Uni'     },
+]
+
 // ─── TEXTES CAISSE i18n ─────────────────────
 const CASHIER_TEXTS = {
   fr: {
@@ -174,7 +207,8 @@ export default function POS() {
   const [search, setSearch]       = useState('')
   const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mobile'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile')
   useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile') }, [posDefaultPayment])
-  const [customerPhone, setCustomerPhone] = useState('')
+  const [waCountryCode, setWaCountryCode] = useState('+221')
+  const [waNumber, setWaNumber]           = useState('')
   const [sendWhatsApp, setSendWhatsApp]   = useState(() => posAutoWhatsApp)
   const [sendingWA, setSendingWA]         = useState(false)
   const [cashGiven, setCashGiven] = useState('')
@@ -376,12 +410,13 @@ export default function POS() {
     }
 
     // Envoi WhatsApp si activé
-    if (sendWhatsApp && customerPhone) {
+    const fullPhone = waNumber.trim() ? `${waCountryCode}${waNumber.replace(/[\s\-]/g, '')}` : ''
+    if (sendWhatsApp && fullPhone) {
       setSendingWA(true)
       try {
         const ticketRef = `V${Date.now().toString().slice(-6)}`
         await whatsappApi.sendTicket({
-          phone: customerPhone,
+          phone: fullPhone,
           ticket: {
             ref: ticketRef,
             items: cart.map(item => ({ name: item.name, qty: item.qty, total: Math.round(item.price * item.qty) })),
@@ -409,7 +444,7 @@ export default function POS() {
     setCashGiven('')
     setDiscount(null)
     setSendWhatsApp(false)
-    setCustomerPhone('')
+    setWaNumber('')
     setIsSaving(false)
   }
 
@@ -1559,10 +1594,81 @@ export default function POS() {
               </div>
               {sendWhatsApp && (
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
-                    {lang === 'fr' ? 'Numéro WhatsApp du client' : 'Customer WhatsApp number'}
+                  <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                    📱 {lang==='fr' ? 'Numéro WhatsApp (ticket)' : 'WhatsApp number (receipt)'}
                   </label>
-                  <input className="input" type="tel" placeholder="+221 77 000 00 00" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+                  <div style={{ display:'flex', gap:6, alignItems:'stretch' }}>
+                    {/* Sélecteur indicatif */}
+                    <select
+                      value={waCountryCode}
+                      onChange={e => setWaCountryCode(e.target.value)}
+                      aria-label={lang==='fr' ? 'Indicatif pays' : 'Country code'}
+                      style={{
+                        minHeight:42, minWidth:90, flexShrink:0,
+                        background:'var(--bg4)', border:'1.5px solid var(--border)',
+                        borderRadius:10, padding:'0 28px 0 10px',
+                        color:'var(--text)', fontSize:13, fontFamily:'var(--font)',
+                        cursor:'pointer', outline:'none', appearance:'none',
+                        backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238886A8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                        backgroundRepeat:'no-repeat', backgroundPosition:'right 8px center',
+                        transition:'border-color .15s',
+                      }}>
+                      {COUNTRY_CODES.map(c => (
+                        <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+                      ))}
+                    </select>
+                    {/* Input numéro — chiffres seulement */}
+                    <div style={{ flex:1, position:'relative' }}>
+                      <input
+                        type="tel" inputMode="numeric"
+                        placeholder="77 000 00 00"
+                        value={waNumber}
+                        maxLength={15}
+                        aria-label={lang==='fr' ? 'Numéro WhatsApp' : 'WhatsApp number'}
+                        style={{
+                          width:'100%', minHeight:42,
+                          background:'var(--bg4)',
+                          border:`1.5px solid ${waNumber && !/^[\d\s\-]+$/.test(waNumber) ? 'var(--danger)' : 'var(--border)'}`,
+                          borderRadius:10, padding:'10px 36px 10px 13px',
+                          color:'var(--text)', fontSize:13, fontFamily:'var(--font)',
+                          outline:'none', transition:'border-color .15s, box-shadow .15s',
+                        }}
+                        onFocus={e => { e.target.style.borderColor='var(--p2)'; e.target.style.boxShadow='0 0 0 3px rgba(124,111,240,.15)' }}
+                        onBlur={e => { e.target.style.borderColor='var(--border)'; e.target.style.boxShadow='none' }}
+                        onChange={e => setWaNumber(e.target.value.replace(/[^0-9\s\-]/g, ''))}
+                        onKeyDown={e => {
+                          const allowed = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','Enter',' ','-']
+                          if (allowed.includes(e.key) || /^\d$/.test(e.key) || e.ctrlKey || e.metaKey) return
+                          e.preventDefault()
+                        }}
+                        onPaste={e => {
+                          e.preventDefault()
+                          const cleaned = e.clipboardData.getData('text').replace(/[^0-9\s\-]/g, '')
+                          setWaNumber(prev => (prev + cleaned).slice(0, 15))
+                        }}
+                      />
+                      {waNumber.length > 0 && (
+                        <span style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', fontSize:13, pointerEvents:'none' }}>
+                          {/^[\d\s\-]{6,}$/.test(waNumber) ? '✅' : '❌'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Aperçu numéro complet */}
+                  {waNumber.trim().length > 0 && (
+                    <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
+                      <span>📱 {lang==='fr' ? 'Numéro complet :' : 'Full number:'}</span>
+                      <span style={{ fontFamily:'var(--mono)', fontWeight:700, color:'var(--acc2)' }}>
+                        {waCountryCode}{waNumber.replace(/\s/g, '')}
+                      </span>
+                    </div>
+                  )}
+                  {/* Message erreur */}
+                  {waNumber.length > 0 && !/^[\d\s\-]{6,}$/.test(waNumber) && (
+                    <div style={{ marginTop:5, fontSize:10, color:'var(--danger)', fontWeight:600, display:'flex', gap:4 }}>
+                      ⚠️ {lang==='fr' ? 'Chiffres uniquement (ex: 77 000 00 00)' : 'Digits only (ex: 77 000 00 00)'}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
