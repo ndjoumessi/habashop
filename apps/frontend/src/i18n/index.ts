@@ -24,6 +24,7 @@ const fr: TranslationMap = {
   nav_ai: 'Assistant IA',
   nav_goals: 'Objectifs & KPIs',
   nav_api_docs: 'API & Intégrations',
+  nav_integrations: 'Intégrations API',
 
   // KPIs (compat)
   kpi_sales_today: 'Ventes du jour',
@@ -677,6 +678,7 @@ const en: TranslationMap = {
   nav_ai: 'AI Assistant',
   nav_goals: 'Goals & KPIs',
   nav_api_docs: 'API & Integrations',
+  nav_integrations: 'API Integrations',
 
   kpi_sales_today: "Today's Sales", kpi_monthly_revenue: 'Monthly Revenue',
   kpi_employees: 'Active Employees', kpi_stock: 'Items in Stock',
@@ -1028,6 +1030,7 @@ const es: TranslationMap = {
   nav_ai: 'Asistente IA',
   nav_goals: 'Objetivos & KPIs',
   nav_api_docs: 'API & Integraciones',
+  nav_integrations: 'Integraciones API',
 
   kpi_sales_today: 'Ventas del día', kpi_monthly_revenue: 'Ingresos mensuales',
   kpi_employees: 'Empleados activos', kpi_stock: 'Artículos en stock',
@@ -1380,6 +1383,7 @@ const it: TranslationMap = {
   nav_ai: 'Assistente IA',
   nav_goals: 'Obiettivi & KPI',
   nav_api_docs: 'API & Integrazioni',
+  nav_integrations: 'Integrazioni API',
 
   kpi_sales_today: 'Vendite oggi', kpi_monthly_revenue: 'Fatturato mensile',
   kpi_employees: 'Dipendenti attivi', kpi_stock: 'Articoli in stock',

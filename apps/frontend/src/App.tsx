@@ -28,6 +28,7 @@ import Marketing from '@/pages/Marketing'
 import AIAssistant from '@/pages/AIAssistant'
 import Goals from '@/pages/Goals'
 import APIDocs from '@/pages/APIDocs'
+import Integrations from '@/pages/Integrations'
 import Onboarding from '@/pages/Onboarding'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -83,6 +84,7 @@ export default function App() {
         <Route path="ai" element={<AIAssistant />} />
         <Route path="goals" element={<Goals />} />
         <Route path="api-docs" element={<APIDocs />} />
+        <Route path="integrations" element={<Integrations />} />
       </Route>
       <Route path="/admin" element={
         <ProtectedRoute>

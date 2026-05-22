@@ -6,7 +6,7 @@ import {
   UserCog, Calendar, Wallet, Receipt, TrendingUp, BarChart2,
   Megaphone, Bot, Target, Code2, Settings, ShieldCheck, Activity,
   Store, ChevronLeft, ChevronRight, Sun, Moon, LogOut,
-  ClipboardList, Wifi,
+  ClipboardList, Wifi, Plug,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -36,7 +36,8 @@ const NAV: NavEntry[] = [
   { path: '/app/ai',        key: 'nav_ai',        Icon: Bot, badge: 'AI' },
   { section: 'Système' },
   { path: '/app/settings',  key: 'nav_settings',  Icon: Settings },
-  { path: '/app/api-docs',  key: 'nav_api_docs',  Icon: Code2 },
+  { path: '/app/api-docs',      key: 'nav_api_docs',      Icon: Code2 },
+  { path: '/app/integrations',  key: 'nav_integrations',  Icon: Plug  },
   { section: 'Administration' },
   { path: '/app/users',     key: 'nav_users',     Icon: ShieldCheck },
   { path: '/app/activity',  key: 'nav_activity',  Icon: Activity, badge: '12', badgeTeal: true },
