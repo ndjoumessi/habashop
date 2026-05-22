@@ -254,8 +254,8 @@ export default function Expenses() {
           { label:'Dépenses récurrentes',value:recurrentCount,    sub:'Mensuelles / abonnements', color:'var(--p2)',    icon:<RefreshCw size={18} /> },
           { label:'Budget restant',      value:fmt(Math.max(0, budgetLeft)), sub:'Sur budget mensuel', color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', icon:<BarChart2 size={18} /> },
         ].map(k => (
-          <div key={k.label} className="kpi-card">
-            <div className="kpi-icon-w" style={{ color:k.color }}>{k.icon}</div>
+          <div key={k.label} className="kpi-card" style={{ borderTop:`3px solid ${k.color}`, overflow:'hidden' }}>
+            <div className="kpi-icon-w" style={{ color:k.color, background:`color-mix(in srgb, ${k.color} 12%, transparent)` }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
             <div className="kpi-value" style={{ color:k.color, fontSize: typeof k.value === 'number' ? 28 : 18 }}>
               {k.value}
@@ -339,48 +339,56 @@ export default function Expenses() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(e => (
-                  <tr key={e.id}>
-                    <td className="td-mono text-xs">{e.date}</td>
-                    <td className="td-bold text-xs">{e.label}</td>
-                    <td><CatPill cat={e.category} /></td>
-                    <td className="td-num text-sm">{fmt(e.amount)}</td>
-                    <td style={{ fontSize:12, color:'var(--text3)' }}>{e.vat} %</td>
-                    <td className="td-num text-sm" style={{ color:'var(--acc2)' }}>{fmt(ttcAmount(e))}</td>
-                    <td>
-                      <span className="badge badge-gray">{e.mode}</span>
-                    </td>
-                    <td style={{ textAlign:'center' }}>{e.recurrent ? <RefreshCw size={14} style={{ color:'var(--p2)', margin:'0 auto' }}/> : <span style={{ color:'var(--text3)' }}>—</span>}</td>
-                    <td>
-                      <span className={`badge ${e.status === 'PAYÉ' ? 'badge-green' : 'badge-amber'}`}>
-                        {e.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display:'flex', gap:5 }}>
-                        {e.status === 'EN ATTENTE' && (
-                          <button className="mini-btn" title="Marquer payé" onClick={() => markPaid(e.id)}><Check size={13}/></button>
-                        )}
-                        <button className="mini-btn" title="Modifier" onClick={() => {
-                          setEditExpense(e)
-                          setEditExpForm({
-                            date: e.date,
-                            label: e.label,
-                            category: e.category,
-                            amountHT: e.amount,
-                            vat: e.vat,
-                            mode: e.mode,
-                            recurrent: e.recurrent,
-                            notes: '',
-                          })
-                          setExpEditMode(false)
-                          setShowEditExpModal(true)
-                        }}><Pencil size={13}/></button>
-                        <button className="mini-btn" title="Supprimer" onClick={() => deleteExpense(e.id)}><Trash2 size={13}/></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map(e => {
+                  const catStyle = CATEGORY_STYLE[e.category]
+                  return (
+                    <tr key={e.id} style={{ borderLeft:`3px solid ${catStyle.color}40` }}>
+                      <td className="td-mono text-xs">{e.date}</td>
+                      <td>
+                        <div className="td-bold text-xs">{e.label}</div>
+                        {e.recurrent && <div style={{ fontSize:10, color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> Récurrent</div>}
+                      </td>
+                      <td><CatPill cat={e.category} /></td>
+                      <td className="td-num text-sm">{fmt(e.amount)}</td>
+                      <td style={{ fontSize:12, color:'var(--text3)' }}>{e.vat} %</td>
+                      <td className="td-num text-sm" style={{ color:'var(--acc2)', fontWeight:700 }}>{fmt(ttcAmount(e))}</td>
+                      <td>
+                        <span className="badge badge-gray">{e.mode}</span>
+                      </td>
+                      <td style={{ textAlign:'center' }}>
+                        {e.recurrent
+                          ? <RefreshCw size={14} style={{ color:'var(--p2)', margin:'0 auto' }}/>
+                          : <span style={{ color:'var(--text3)' }}>—</span>}
+                      </td>
+                      <td>
+                        <span style={{
+                          display:'inline-flex', alignItems:'center', gap:4,
+                          padding:'3px 9px', borderRadius:20, fontSize:11, fontWeight:700,
+                          background: e.status === 'PAYÉ' ? 'rgba(14,196,126,.15)' : 'rgba(240,165,0,.15)',
+                          color:       e.status === 'PAYÉ' ? 'var(--acc2)'         : 'var(--acc)',
+                          border:      e.status === 'PAYÉ' ? '1px solid rgba(14,196,126,.3)' : '1px solid rgba(240,165,0,.3)',
+                        }}>
+                          {e.status === 'PAYÉ' ? <Check size={10}/> : <Clock size={10}/>}
+                          {e.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display:'flex', gap:5 }}>
+                          {e.status === 'EN ATTENTE' && (
+                            <button className="mini-btn" title="Marquer payé" onClick={() => markPaid(e.id)}><Check size={13}/></button>
+                          )}
+                          <button className="mini-btn" title="Modifier" onClick={() => {
+                            setEditExpense(e)
+                            setEditExpForm({ date:e.date, label:e.label, category:e.category, amountHT:e.amount, vat:e.vat, mode:e.mode, recurrent:e.recurrent, notes:'' })
+                            setExpEditMode(false)
+                            setShowEditExpModal(true)
+                          }}><Pencil size={13}/></button>
+                          <button className="mini-btn" title="Supprimer" onClick={() => deleteExpense(e.id)}><Trash2 size={13}/></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
                 {filtered.length === 0 && (
                   <tr><td colSpan={10} style={{ textAlign:'center', color:'var(--text3)', padding:'24px', fontSize:13 }}>Aucune dépense trouvée</td></tr>
                 )}

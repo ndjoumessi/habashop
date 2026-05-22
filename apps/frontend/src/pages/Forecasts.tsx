@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { TrendingUp, Package, Users, Calendar, ShoppingCart, Zap, DollarSign, Trophy, BarChart2, Lightbulb, MessageSquare, Bot, Truck, Mail, ClipboardList, Copy, RefreshCw, Check, FileText, Target, Wallet, Brain, AlertCircle, Download, X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartTooltip, ResponsiveContainer, Legend } from 'recharts'
 import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer'
 import { aiApi, ordersApi, suppliersApi } from '@/lib/api'
@@ -83,7 +84,7 @@ const CLIENT_FORECAST = [
 
 // RECOMMANDATIONS is built inside the component to use fmt() for amounts
 
-type Priority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'OK'
+type Priority = 'URGENT' | 'SOON' | 'PLAN' | 'OK'
 
 interface ForecastItem {
   id: number; sku: string; name: string; category: string
@@ -92,25 +93,25 @@ interface ForecastItem {
 }
 
 const FORECAST_ITEMS: ForecastItem[] = [
-  { id:1, sku:'PRD-001', name:'🌾 Riz parfumé 5kg',      category:'Céréales',   currentStock:12,  minStock:20, avgSales:8,  leadTime:3, unitPrice:3200, supplier:'SENRIZ',         priority:'CRITIQUE' },
-  { id:2, sku:'PRD-005', name:'🧼 Savon OMO 500g',        category:'Hygiène',    currentStock:5,   minStock:10, avgSales:15, leadTime:2, unitPrice:320,  supplier:'UNILEVER',       priority:'CRITIQUE' },
-  { id:3, sku:'PRD-003', name:'🍚 Sucre 1kg',             category:'Épicerie',   currentStock:18,  minStock:50, avgSales:20, leadTime:2, unitPrice:600,  supplier:'CSS',            priority:'URGENT'   },
-  { id:4, sku:'PRD-002', name:'🫙 Huile palme 1L',         category:'Corps gras', currentStock:18,  minStock:25, avgSales:12, leadTime:4, unitPrice:1200, supplier:'SONACO',         priority:'URGENT'   },
-  { id:5, sku:'PRD-007', name:'🫒 Huile végétale 5L',      category:'Corps gras', currentStock:34,  minStock:15, avgSales:6,  leadTime:4, unitPrice:6500, supplier:'SONACO',         priority:'NORMAL'   },
-  { id:6, sku:'PRD-004', name:'🌾 Farine blé 1kg',         category:'Céréales',   currentStock:89,  minStock:30, avgSales:18, leadTime:3, unitPrice:400,  supplier:'GRANDS MOULINS', priority:'NORMAL'   },
-  { id:7, sku:'PRD-006', name:'🥛 Lait poudre 400g',       category:'Laitiers',   currentStock:67,  minStock:20, avgSales:10, leadTime:5, unitPrice:1500, supplier:'NESTLÉ',         priority:'NORMAL'   },
-  { id:8, sku:'PRD-008', name:'🍅 Tomate concentrée 800g', category:'Conserves',  currentStock:112, minStock:30, avgSales:25, leadTime:2, unitPrice:900,  supplier:'TOMAPOR',        priority:'OK'       },
+  { id:1, sku:'PRD-001', name:'🌾 Riz parfumé 5kg',      category:'Céréales',   currentStock:12,  minStock:20, avgSales:8,  leadTime:3, unitPrice:3200, supplier:'SENRIZ',         priority:'URGENT' },
+  { id:2, sku:'PRD-005', name:'🧼 Savon OMO 500g',        category:'Hygiène',    currentStock:5,   minStock:10, avgSales:15, leadTime:2, unitPrice:320,  supplier:'UNILEVER',       priority:'URGENT' },
+  { id:3, sku:'PRD-003', name:'🍚 Sucre 1kg',             category:'Épicerie',   currentStock:18,  minStock:50, avgSales:20, leadTime:2, unitPrice:600,  supplier:'CSS',            priority:'SOON'   },
+  { id:4, sku:'PRD-002', name:'🫙 Huile palme 1L',         category:'Corps gras', currentStock:18,  minStock:25, avgSales:12, leadTime:4, unitPrice:1200, supplier:'SONACO',         priority:'SOON'   },
+  { id:5, sku:'PRD-007', name:'🫒 Huile végétale 5L',      category:'Corps gras', currentStock:34,  minStock:15, avgSales:6,  leadTime:4, unitPrice:6500, supplier:'SONACO',         priority:'PLAN'   },
+  { id:6, sku:'PRD-004', name:'🌾 Farine blé 1kg',         category:'Céréales',   currentStock:89,  minStock:30, avgSales:18, leadTime:3, unitPrice:400,  supplier:'GRANDS MOULINS', priority:'PLAN'   },
+  { id:7, sku:'PRD-006', name:'🥛 Lait poudre 400g',       category:'Laitiers',   currentStock:67,  minStock:20, avgSales:10, leadTime:5, unitPrice:1500, supplier:'NESTLÉ',         priority:'PLAN'   },
+  { id:8, sku:'PRD-008', name:'🍅 Tomate concentrée 800g', category:'Conserves',  currentStock:112, minStock:30, avgSales:25, leadTime:2, unitPrice:900,  supplier:'TOMAPOR',        priority:'OK'     },
 ]
 
 const PRIORITY_CFG: Record<Priority, { color: string; bg: string; border: string; label: string }> = {
-  CRITIQUE: { color:'var(--danger)', bg:'rgba(232,64,74,.15)',  border:'rgba(232,64,74,.3)',  label:'Critique' },
-  URGENT:   { color:'var(--acc)',    bg:'rgba(240,165,0,.15)',  border:'rgba(240,165,0,.3)',  label:'Urgent'   },
-  NORMAL:   { color:'#A78BFA',      bg:'rgba(139,92,246,.15)', border:'rgba(139,92,246,.3)', label:'Normal'   },
-  OK:       { color:'var(--acc2)',   bg:'rgba(14,196,126,.15)', border:'rgba(14,196,126,.3)', label:'OK'       },
+  URGENT: { color:'var(--danger)', bg:'rgba(232,64,74,.15)',  border:'rgba(232,64,74,.3)',  label:'URGENT' },
+  SOON:   { color:'var(--acc)',    bg:'rgba(240,165,0,.15)',  border:'rgba(240,165,0,.3)',  label:'SOON'   },
+  PLAN:   { color:'#A78BFA',      bg:'rgba(139,92,246,.15)', border:'rgba(139,92,246,.3)', label:'PLAN'   },
+  OK:     { color:'var(--acc2)',   bg:'rgba(14,196,126,.15)', border:'rgba(14,196,126,.3)', label:'OK'     },
 }
 
 const FILTER_MAP: Record<string, Priority | null> = {
-  'Toutes': null, 'Critique': 'CRITIQUE', 'Urgent': 'URGENT', 'Normal': 'NORMAL', 'OK': 'OK',
+  'Toutes': null, 'URGENT': 'URGENT', 'SOON': 'SOON', 'PLAN': 'PLAN', 'OK': 'OK',
 }
 
 const RH_TYPE_CFG = {
@@ -340,7 +341,6 @@ export default function Forecasts() {
     .map(supplier => ({ supplier, items: enriched.filter(i => i.supplier === supplier && i.qtyToOrder > 0) }))
     .filter(g => g.items.length > 0)
 
-  const maxCA = Math.max(...CA_DATA.map(d => d.reel ?? d.prevu ?? 0))
   const maxQCA = Math.max(...QUARTERLY.flatMap(q => [q.ca, q.depenses]))
 
   return (
@@ -607,43 +607,36 @@ export default function Forecasts() {
       {/* ── Section 2 — Graphiques CA ────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        {/* Bar chart 12 mois */}
+        {/* ComposedChart 12 mois — Recharts */}
         <div id="section-ca" className="panel" style={{ gridColumn:'span 2', marginBottom:0 }}>
           <div className="panel-head">
             <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><TrendingUp size={14}/> CA mensuel 2026 — Réel vs Prévu</span>
           </div>
-          <div style={{ display:'flex', gap:16, marginBottom:12 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--text2)' }}>
-              <div style={{ width:14, height:10, borderRadius:3, background:'linear-gradient(to top, var(--acc), #FCD34D)' }} />
-              Réel
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--text2)' }}>
-              <div style={{ width:14, height:10, borderRadius:3, background:'linear-gradient(to top, var(--p), var(--p2))', opacity:.75, border:'1px dashed rgba(124,111,240,.5)' }} />
-              Prévu
-            </div>
-          </div>
-          <div style={{ display:'flex', alignItems:'flex-end', gap:5, height:160 }}>
-            {CA_DATA.map((d, i) => {
-              const val    = d.reel ?? d.prevu ?? 0
-              const h      = (val / maxCA) * 100
-              const isReel = d.type === 'reel'
-              return (
-                <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                  <div title={fmt(val)} style={{
-                    width:'100%', height:`${h}%`,
-                    background: isReel
-                      ? 'linear-gradient(to top, var(--acc), #FCD34D)'
-                      : 'linear-gradient(to top, var(--p), var(--p2))',
-                    borderRadius:'4px 4px 0 0',
-                    opacity: isReel ? 1 : 0.75,
-                    border: isReel ? 'none' : '1px dashed rgba(124,111,240,.5)',
-                    minHeight:4, cursor:'pointer', transition:'opacity .2s',
-                  }} />
-                  <span style={{ fontSize:9, color: isReel ? 'var(--text2)' : 'var(--text3)' }}>{d.month}</span>
-                </div>
-              )
-            })}
-          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <ComposedChart data={CA_DATA} margin={{ top:4, right:8, left:0, bottom:0 }}>
+              <defs>
+                <linearGradient id="barGradReel" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FCD34D" />
+                  <stop offset="100%" stopColor="#F0A500" />
+                </linearGradient>
+                <linearGradient id="barGradPrevu" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#A991FF" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#6C47FF" stopOpacity={0.6} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)" vertical={false} />
+              <XAxis dataKey="month" tick={{ fill:'var(--text3)', fontSize:11 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={v => `${(v/1000000).toFixed(1)}M`} tick={{ fill:'var(--text3)', fontSize:10 }} axisLine={false} tickLine={false} width={42} />
+              <RechartTooltip
+                formatter={(v: number, name: string) => [fmt(v), name === 'reel' ? 'Réel' : 'Prévu']}
+                contentStyle={{ background:'#111125', border:'1px solid rgba(108,71,255,.3)', borderRadius:10, fontSize:12 }}
+                labelStyle={{ color:'var(--text2)', fontWeight:700 }}
+              />
+              <Legend formatter={(v: string) => v === 'reel' ? 'Réel' : 'Prévu'} wrapperStyle={{ fontSize:12 }} />
+              <Bar dataKey="reel"  name="reel"  fill="url(#barGradReel)"  radius={[4,4,0,0]} maxBarSize={32} />
+              <Line dataKey="prevu" name="prevu" stroke="#A991FF" strokeWidth={2.5} strokeDasharray="6 3" dot={{ fill:'#A991FF', r:4, strokeWidth:0 }} activeDot={{ r:6, fill:'#A991FF' }} connectNulls={false} type="monotone" />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Trimestriel CA vs dépenses */}
@@ -829,7 +822,7 @@ export default function Forecasts() {
           </div>
 
           <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:14, alignItems:'center' }}>
-            {['Toutes', 'Critique', 'Urgent', 'Normal', 'OK'].map(p => (
+            {['Toutes', 'URGENT', 'SOON', 'PLAN', 'OK'].map(p => (
               <button key={p} onClick={() => setActiveFilter(p)} style={{
                 padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:600,
                 cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
