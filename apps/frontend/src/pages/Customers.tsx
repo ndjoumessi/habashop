@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
@@ -21,11 +21,42 @@ interface Customer {
   purchases: Purchase[]; notes: string
 }
 
-const TYPE_CFG: Record<ClientType, { cls: string }> = {
-  Grossiste: { cls: 'badge-violet' },
-  'Semi-gros':{ cls: 'badge-blue'   },
-  Fidèle:    { cls: 'badge-green'  },
-  Détail:    { cls: 'badge-gray'   },
+const TYPE_CFG: Record<ClientType, { cls: string; color: string; bg: string }> = {
+  Grossiste:   { cls: 'badge-violet', color: '#7C6FF0', bg: 'rgba(124,111,240,.15)' },
+  'Semi-gros': { cls: 'badge-blue',   color: '#F59E0B', bg: 'rgba(245,158,11,.15)'  },
+  Fidèle:      { cls: 'badge-green',  color: '#10B981', bg: 'rgba(16,185,129,.15)'  },
+  Détail:      { cls: 'badge-gray',   color: '#3B82F6', bg: 'rgba(59,130,246,.15)'  },
+}
+
+const SENEGAL_CITIES = [
+  { id: 'dakar',       name: 'Dakar',       x: 76,  y: 292 },
+  { id: 'thies',       name: 'Thiès',        x: 172, y: 250 },
+  { id: 'stlouis',     name: 'Saint-Louis',  x: 127, y: 78  },
+  { id: 'louga',       name: 'Louga',        x: 248, y: 145 },
+  { id: 'diourbel',    name: 'Diourbel',     x: 228, y: 245 },
+  { id: 'kaolack',     name: 'Kaolack',      x: 255, y: 318 },
+  { id: 'fatick',      name: 'Fatick',       x: 178, y: 308 },
+  { id: 'ziguinchor',  name: 'Ziguinchor',   x: 158, y: 418 },
+  { id: 'kolda',       name: 'Kolda',        x: 362, y: 392 },
+  { id: 'kaffrine',    name: 'Kaffrine',     x: 318, y: 285 },
+  { id: 'tambacounda', name: 'Tambacounda',  x: 502, y: 332 },
+  { id: 'matam',       name: 'Matam',        x: 558, y: 122 },
+]
+
+function getCustomerCityId(address: string): string {
+  const a = (address ?? '').toLowerCase()
+  if (a.includes('saint-louis') || a.includes('saint louis')) return 'stlouis'
+  if (a.includes('thiès') || a.includes('thies'))             return 'thies'
+  if (a.includes('kaolack'))                                  return 'kaolack'
+  if (a.includes('ziguinchor'))                               return 'ziguinchor'
+  if (a.includes('tambacounda'))                              return 'tambacounda'
+  if (a.includes('matam'))                                    return 'matam'
+  if (a.includes('louga'))                                    return 'louga'
+  if (a.includes('kolda'))                                    return 'kolda'
+  if (a.includes('kaffrine'))                                 return 'kaffrine'
+  if (a.includes('fatick'))                                   return 'fatick'
+  if (a.includes('diourbel'))                                 return 'diourbel'
+  return 'dakar'
 }
 
 const CUSTOMERS_INIT: Customer[] = [
@@ -243,6 +274,9 @@ export default function Customers() {
   const [customersTab, setCustomersTab] = useState<'list' | 'map' | 'stats'>('list')
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [detailCustomer, setDetailCustomer]   = useState<Customer | null>(null)
+  const [viewMode, setViewMode]               = useState<'table' | 'grid'>('table')
+  const [mapHover, setMapHover]               = useState<string | null>(null)
+  const [mapTypeFilter, setMapTypeFilter]     = useState<ClientType | ''>('')
 
   const filtered = customers.filter(c =>
     (!search || c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)) &&
@@ -388,6 +422,14 @@ export default function Customers() {
         <div className="panel-head">
           <span className="panel-title">{t('customers_title')}</span>
           <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', background: 'var(--bg3)', borderRadius: 8, padding: 3, gap: 2 }}>
+              <button title="Vue tableau" onClick={() => setViewMode('table')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'table' ? 'var(--bg)' : 'transparent', color: viewMode === 'table' ? 'var(--p2)' : 'var(--text3)' }}>
+                <LayoutList size={14} />
+              </button>
+              <button title="Vue grille" onClick={() => setViewMode('grid')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'grid' ? 'var(--bg)' : 'transparent', color: viewMode === 'grid' ? 'var(--p2)' : 'var(--text3)' }}>
+                <Grid3X3 size={14} />
+              </button>
+            </div>
             <button className="btn btn-ghost btn-sm" onClick={() => {
               exportCSV('habashop_clients',
                 ['Nom','Type','Téléphone','Email','Achats/mois','CA total','Points fidélité'],
@@ -417,181 +459,277 @@ export default function Customers() {
           </select>
         </div>
 
-        {/* Tableau */}
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>{t('col_client')}</th><th>{t('col_type')}</th><th>{t('col_phone')}</th>
-                <th>{t('customers_purchases')}</th><th>{t('customers_total_revenue')}</th><th>{t('col_loyalty')}</th><th>{t('col_actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(c => (
-                <tr key={c.id}>
-                  <td>
-                    <div className="td-bold">{c.name}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
-                      Depuis {new Date(c.since).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
-                    </div>
-                  </td>
-                  <td><span className={`badge ${TYPE_CFG[c.type].cls}`}>{c.type}</span></td>
-                  <td className="td-mono">{c.phone}</td>
-                  <td className="td-num" style={{ color: 'var(--text2)' }}>{c.purchasesPerMonth}×</td>
-                  <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(c.totalCA)}</td>
-                  <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} max={c.maxLoyalty} /></td>
-                  <td>
-                    <div className="flex gap-1.5">
-                      <button className="btn btn-sm btn-ghost" title="Voir fiche" onClick={() => setViewCustomer(c)}>
-                        <Eye size={12} />
-                      </button>
-                      <button className="btn btn-sm btn-ghost" title="Modifier" onClick={() => {
-                        setEditCustomer(c)
-                        setEditCustForm({ name:c.name, type:c.type, phone:c.phone, email:c.email??'', address:c.address??'', notes:c.notes??'' })
-                        setCustEditMode(false)
-                        setShowEditCustModal(true)
-                      }}>✏️</button>
-                      <button className="btn btn-sm"
-                        style={{ background: 'rgba(14,196,126,0.12)', color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
-                        onClick={() => toast.success(`🛒 Vente pour ${c.name}`)}>
-                        🛒 Vente
-                      </button>
-                      <button className="btn btn-sm"
-                        style={{ background: 'rgba(255,215,0,0.12)', color: '#B8860B', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
-                        title="Carte fidélité"
-                        onClick={() => setLoyaltyCustomer(c)}>
-                        🎁
-                      </button>
-                      <button className="btn btn-sm"
-                        style={{ background: 'rgba(91,78,232,0.12)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit' }}
-                        title="Générer un devis PDF"
-                        onClick={() => generateInvoice({
-                          type: 'devis',
-                          lang: 'fr',
-                          customer: { name: c.name, phone: c.phone },
-                          items: [{ name: 'Article', qty: 1, price: 0 }],
-                        })}>
-                        📄
-                      </button>
-                    </div>
-                  </td>
+        {/* Vue tableau */}
+        {viewMode === 'table' && (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{t('col_client')}</th><th>{t('col_type')}</th><th>{t('col_phone')}</th>
+                  <th>{t('customers_purchases')}</th><th>{t('customers_total_revenue')}</th><th>{t('col_loyalty')}</th><th>{t('col_actions')}</th>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>Aucun client trouvé</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map(c => (
+                  <tr key={c.id}>
+                    <td>
+                      <div className="td-bold">{c.name}</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
+                        Depuis {new Date(c.since).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                      </div>
+                    </td>
+                    <td><span className={`badge ${TYPE_CFG[c.type].cls}`}>{c.type}</span></td>
+                    <td className="td-mono">{c.phone}</td>
+                    <td className="td-num" style={{ color: 'var(--text2)' }}>{c.purchasesPerMonth}×</td>
+                    <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(c.totalCA)}</td>
+                    <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} max={c.maxLoyalty} /></td>
+                    <td>
+                      <div className="flex gap-1.5">
+                        <button className="btn btn-sm btn-ghost" title="Voir fiche" style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>
+                          <Eye size={12} />
+                        </button>
+                        <button className="btn btn-sm btn-ghost" title="Modifier" style={{ cursor: 'pointer' }} onClick={() => {
+                          setEditCustomer(c)
+                          setEditCustForm({ name:c.name, type:c.type, phone:c.phone, email:c.email??'', address:c.address??'', notes:c.notes??'' })
+                          setCustEditMode(false)
+                          setShowEditCustModal(true)
+                        }}><Pencil size={12} /></button>
+                        <button className="btn btn-sm" title="Nouvelle vente"
+                          style={{ background: TYPE_CFG['Fidèle'].bg, color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
+                          onClick={() => navigate('/app/pos', { state: { customer: c } })}>
+                          <ShoppingCart size={11} />
+                        </button>
+                        <button className="btn btn-sm" title="Carte fidélité"
+                          style={{ background: 'rgba(255,215,0,.12)', color: '#B8860B', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
+                          onClick={() => setLoyaltyCustomer(c)}>
+                          <Gift size={11} />
+                        </button>
+                        <button className="btn btn-sm" title="Générer un devis PDF"
+                          style={{ background: TYPE_CFG['Grossiste'].bg, color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
+                          onClick={() => generateInvoice({
+                            type: 'devis', lang: 'fr',
+                            customer: { name: c.name, phone: c.phone },
+                            items: [{ name: 'Article', qty: 1, price: 0 }],
+                          })}>
+                          <FileText size={11} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>Aucun client trouvé</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Vue grille */}
+        {viewMode === 'grid' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 12 }}>
+            {filtered.map(c => {
+              const cfg = TYPE_CFG[c.type]
+              const initials = c.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+              return (
+                <div key={c.id} style={{
+                  background: 'var(--bg3)', border: `1px solid var(--border)`,
+                  borderRadius: 14, padding: '16px', cursor: 'pointer',
+                  transition: 'border-color .15s, transform .15s',
+                  display: 'flex', flexDirection: 'column', gap: 12,
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = cfg.color; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'none' }}
+                  onClick={() => setViewCustomer(c)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+                      background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 15, fontWeight: 900, color: '#fff',
+                    }}>{initials}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', padding: '2px 8px', borderRadius: 99, background: cfg.bg, color: cfg.color }}>{c.type}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--text3)' }}>{c.phone || '—'}</span>
+                    <span style={{ color: 'var(--acc2)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{fmt(c.totalCA)}</span>
+                  </div>
+                  <LoyaltyBar points={c.loyaltyPoints} max={c.maxLoyalty} />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button title="Modifier" style={{ flex: 1, padding: '6px', borderRadius: 8, background: 'var(--bg4)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color .15s' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text3)'}
+                      onClick={ev => { ev.stopPropagation(); setEditCustomer(c); setEditCustForm({ name:c.name, type:c.type, phone:c.phone, email:c.email??'', address:c.address??'', notes:c.notes??'' }); setCustEditMode(false); setShowEditCustModal(true) }}>
+                      <Pencil size={13} />
+                    </button>
+                    <button title="Nouvelle vente" style={{ flex: 1, padding: '6px', borderRadius: 8, background: TYPE_CFG['Fidèle'].bg, border: 'none', cursor: 'pointer', color: 'var(--acc2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s' }}
+                      onClick={ev => { ev.stopPropagation(); navigate('/app/pos', { state: { customer: c } }) }}>
+                      <ShoppingCart size={13} />
+                    </button>
+                    <button title="Carte fidélité" style={{ flex: 1, padding: '6px', borderRadius: 8, background: 'rgba(255,215,0,.12)', border: 'none', cursor: 'pointer', color: '#B8860B', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s' }}
+                      onClick={ev => { ev.stopPropagation(); setLoyaltyCustomer(c) }}>
+                      <Gift size={13} />
+                    </button>
+                    <button title="Devis PDF" style={{ flex: 1, padding: '6px', borderRadius: 8, background: TYPE_CFG['Grossiste'].bg, border: 'none', cursor: 'pointer', color: 'var(--p2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity .15s' }}
+                      onClick={ev => { ev.stopPropagation(); generateInvoice({ type: 'devis', lang: 'fr', customer: { name: c.name, phone: c.phone }, items: [{ name: 'Article', qty: 1, price: 0 }] }) }}>
+                      <FileText size={13} />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+            {filtered.length === 0 && (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 0', color: 'var(--text3)', fontSize: 14 }}>Aucun client trouvé</div>
+            )}
+          </div>
+        )}
       </div>}
 
       {/* ── Onglet Carte ── */}
       {customersTab === 'map' && (
         <div className="panel">
-          <div className="panel-h">
-            <span className="panel-t">🗺️ {lang === 'fr' ? 'Carte des clients' : 'Customer map'}</span>
-          </div>
-          <div style={{
-            position: 'relative',
-            background: 'linear-gradient(135deg,rgba(59,130,246,.05),rgba(91,78,232,.05))',
-            border: '1px solid var(--border)',
-            borderRadius: 12, overflow: 'hidden',
-            height: 400,
-          }}>
-            <svg viewBox="0 0 800 400" style={{ width: '100%', height: '100%' }}>
-              <rect width="800" height="400" fill="var(--bg3)" rx="12"/>
-              <ellipse cx="200" cy="200" rx="150" ry="120" fill="rgba(59,130,246,.08)" stroke="rgba(59,130,246,.2)" strokeWidth="1"/>
-              <ellipse cx="500" cy="150" rx="120" ry="90" fill="rgba(91,78,232,.08)" stroke="rgba(91,78,232,.2)" strokeWidth="1"/>
-              <ellipse cx="600" cy="300" rx="100" ry="80" fill="rgba(14,196,126,.08)" stroke="rgba(14,196,126,.2)" strokeWidth="1"/>
-              <ellipse cx="350" cy="320" rx="80" ry="60" fill="rgba(240,165,0,.08)" stroke="rgba(240,165,0,.2)" strokeWidth="1"/>
-              <text x="200" y="180" textAnchor="middle" fontSize="12" fill="#3B82F6" fontWeight="600">Zone Centre</text>
-              <text x="500" y="130" textAnchor="middle" fontSize="12" fill="#5B4EE8" fontWeight="600">Zone Nord</text>
-              <text x="600" y="280" textAnchor="middle" fontSize="12" fill="#10B981" fontWeight="600">Zone Est</text>
-              <text x="350" y="310" textAnchor="middle" fontSize="12" fill="#F59E0B" fontWeight="600">Zone Sud</text>
-              {customers.slice(0, 20).map((customer, i) => {
-                const zones = [
-                  { cx: 200, cy: 200, r: 120 },
-                  { cx: 500, cy: 150, r: 90 },
-                  { cx: 600, cy: 300, r: 80 },
-                  { cx: 350, cy: 320, r: 60 },
-                ]
-                const zone = zones[i % 4]
-                const angle = (i / 5) * Math.PI * 2
-                const radius = (i % 3 + 1) * (zone.r / 3)
-                const x = zone.cx + Math.cos(angle) * radius
-                const y = zone.cy + Math.sin(angle) * radius
-                const colorMap: Record<string, string> = {
-                  'Grossiste': '#5B4EE8', 'Semi-gros': '#F59E0B',
-                  'Fidèle': '#10B981', 'Détail': '#3B82F6',
-                }
-                const color = colorMap[customer.type] ?? '#3B82F6'
-                return (
-                  <g key={customer.id}>
-                    <circle cx={x} cy={y} r={14} fill={color} opacity={0.15}/>
-                    <circle cx={x} cy={y} r={8} fill={color} opacity={0.85} style={{ cursor: 'pointer' }}>
-                      <title>{customer.name} — {customer.type}</title>
-                    </circle>
-                  </g>
-                )
-              })}
-              {[
-                { color: '#5B4EE8', label: 'Grossiste' },
-                { color: '#F59E0B', label: 'Semi-gros' },
-                { color: '#10B981', label: 'Fidèle' },
-                { color: '#3B82F6', label: 'Détail' },
-              ].map((l, i) => (
-                <g key={l.label}>
-                  <circle cx={20} cy={20 + i * 22} r={6} fill={l.color}/>
-                  <text x={32} y={25 + i * 22} fontSize="11" fill="var(--text3)">{l.label}</text>
-                </g>
-              ))}
-            </svg>
-            <div style={{
-              position: 'absolute', bottom: 12, right: 12,
-              background: 'rgba(255,255,255,.9)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: 10, padding: '10px 14px',
-              fontSize: 12,
-            }}>
-              <div style={{ fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }}>
-                📍 {customers.length} {lang === 'fr' ? 'clients au total' : 'total customers'}
-              </div>
-              {[
-                { type: 'Grossiste', color: '#5B4EE8' },
-                { type: 'Semi-gros', color: '#F59E0B' },
-                { type: 'Fidèle',    color: '#10B981' },
-              ].map(t => (
-                <div key={t.type} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, color: '#666', marginBottom: 2 }}>
-                  <span style={{ color: t.color, fontWeight: 600 }}>● {t.type}</span>
-                  <span>{customers.filter(c => c.type === t.type).length}</span>
-                </div>
+          <div className="panel-head">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <MapPin size={16} style={{ color: 'var(--p2)' }} />
+              <span className="panel-title">{lang === 'fr' ? 'Carte des clients — Sénégal' : 'Customer map — Senegal'}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(['', 'Grossiste', 'Semi-gros', 'Fidèle', 'Détail'] as const).map(tp => (
+                <button key={tp || 'all'} onClick={() => setMapTypeFilter(tp as any)}
+                  style={{
+                    padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700,
+                    cursor: 'pointer', border: 'none', transition: 'all .15s', fontFamily: 'var(--font)',
+                    background: mapTypeFilter === tp
+                      ? (tp ? TYPE_CFG[tp as ClientType].bg : 'rgba(124,111,240,.15)')
+                      : 'var(--bg3)',
+                    color: mapTypeFilter === tp
+                      ? (tp ? TYPE_CFG[tp as ClientType].color : 'var(--p2)')
+                      : 'var(--text3)',
+                  }}>
+                  {tp || (lang === 'fr' ? 'Tous' : 'All')}
+                </button>
               ))}
             </div>
           </div>
 
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
-              📋 {lang === 'fr' ? 'Clients par zone' : 'Customers by zone'}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-              {['Zone Centre', 'Zone Nord', 'Zone Est', 'Zone Sud'].map((zone, i) => {
-                const zoneCustomers = customers.filter((_, idx) => idx % 4 === i)
-                const zoneCA = zoneCustomers.reduce((s, c) => s + (c.totalCA ?? 0), 0)
+          {/* SVG Sénégal */}
+          <div style={{ position: 'relative', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+            <svg viewBox="0 0 700 460" style={{ width: '100%', display: 'block' }}>
+              {/* fond */}
+              <rect width="700" height="460" fill="var(--bg3)" />
+              {/* océan */}
+              <rect x="0" y="0" width="85" height="460" fill="rgba(59,130,246,.04)" />
+
+              {/* contour Sénégal */}
+              <path
+                d="M 115,75 L 162,52 L 242,46 L 372,42 L 515,58 L 592,68
+                   L 600,120 L 598,195 L 594,268 L 586,325 L 560,365
+                   L 545,398 L 510,432 L 448,450 L 368,452
+                   L 290,448 L 238,444 L 198,440 L 155,422
+                   L 128,392 L 94,345 L 68,292 L 52,230 L 50,175 L 66,128 L 95,95 L 115,75 Z"
+                fill="rgba(124,111,240,.06)"
+                stroke="rgba(124,111,240,.35)"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+
+              {/* Gambie enclave */}
+              <path
+                d="M 175,370 L 195,362 L 260,358 L 340,360 L 380,368 L 360,378 L 260,380 L 190,378 Z"
+                fill="rgba(0,0,0,.15)"
+                stroke="rgba(255,255,255,.08)"
+                strokeWidth="1"
+              />
+
+              {/* Légende */}
+              {(Object.entries(TYPE_CFG) as [ClientType, { cls:string; color:string; bg:string }][]).map(([type, cfg], i) => (
+                <g key={type}>
+                  <circle cx={20} cy={20 + i * 20} r={5} fill={cfg.color} opacity={0.85} />
+                  <text x={30} y={25 + i * 20} fontSize="10" fill="var(--text3)" fontFamily="var(--font)">{type}</text>
+                </g>
+              ))}
+
+              {/* Bulles villes */}
+              {SENEGAL_CITIES.map(city => {
+                const cityCustomers = customers.filter(c =>
+                  getCustomerCityId(c.address) === city.id &&
+                  (!mapTypeFilter || c.type === mapTypeFilter)
+                )
+                if (cityCustomers.length === 0) return null
+                const r = Math.max(10, Math.min(28, 8 + cityCustomers.length * 4))
+                const topType = (['Grossiste','Semi-gros','Fidèle','Détail'] as ClientType[])
+                  .find(tp => cityCustomers.some(c => c.type === tp)) ?? 'Détail'
+                const color = TYPE_CFG[topType].color
+                const isHovered = mapHover === city.id
                 return (
-                  <div key={zone} style={{
-                    background: 'var(--bg3)', border: '1px solid var(--border)',
-                    borderRadius: 10, padding: '12px 14px',
-                  }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>📍 {zone}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>
-                      {zoneCustomers.length} {lang === 'fr' ? 'clients' : 'customers'}
-                      {' · '}
-                      <span style={{ color: 'var(--p2)', fontWeight: 600 }}>{fmt(zoneCA)}</span>
-                    </div>
-                  </div>
+                  <g key={city.id} style={{ cursor: 'pointer' }}
+                    onMouseEnter={() => setMapHover(city.id)}
+                    onMouseLeave={() => setMapHover(null)}
+                  >
+                    <circle cx={city.x} cy={city.y} r={r + 6} fill={color} opacity={0.08} />
+                    <circle cx={city.x} cy={city.y} r={r} fill={color} opacity={isHovered ? 1 : 0.75}
+                      style={{ transition: 'r .15s, opacity .15s' }} />
+                    <text x={city.x} y={city.y + 4} textAnchor="middle" fontSize="10" fontWeight="800" fill="#fff" fontFamily="var(--font)">
+                      {cityCustomers.length}
+                    </text>
+                    <text x={city.x} y={city.y + r + 13} textAnchor="middle" fontSize="9" fill="var(--text2)" fontFamily="var(--font)">
+                      {city.name}
+                    </text>
+                    {/* Tooltip */}
+                    {isHovered && (
+                      <g>
+                        <rect x={city.x - 68} y={city.y - r - 50} width={136} height={38} rx={8} fill="#0D0D1C" stroke={color} strokeWidth="1" opacity={0.97} />
+                        <text x={city.x} y={city.y - r - 35} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--text)" fontFamily="var(--font)">
+                          {city.name}
+                        </text>
+                        <text x={city.x} y={city.y - r - 20} textAnchor="middle" fontSize="10" fill={color} fontFamily="var(--font)">
+                          {cityCustomers.length} client{cityCustomers.length > 1 ? 's' : ''} · {fmt(cityCustomers.reduce((s,c) => s + c.totalCA, 0))}
+                        </text>
+                      </g>
+                    )}
+                  </g>
                 )
               })}
-            </div>
+
+              {/* Dakar pin si aucun client */}
+              {customers.length === 0 && (
+                <circle cx={76} cy={292} r={8} fill="var(--p2)" opacity={0.4} />
+              )}
+            </svg>
+          </div>
+
+          {/* Grille des villes */}
+          <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 8 }}>
+            {SENEGAL_CITIES.map(city => {
+              const cc = customers.filter(c =>
+                getCustomerCityId(c.address) === city.id &&
+                (!mapTypeFilter || c.type === mapTypeFilter)
+              )
+              if (cc.length === 0) return null
+              const ca = cc.reduce((s, c) => s + c.totalCA, 0)
+              return (
+                <div key={city.id} style={{
+                  background: 'var(--bg3)', border: '1px solid var(--border)',
+                  borderRadius: 10, padding: '10px 12px', cursor: 'pointer', transition: 'border-color .15s',
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--p2)'; setMapHover(city.id) }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; setMapHover(null) }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <MapPin size={11} style={{ color: 'var(--p2)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{city.name}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {cc.length} {lang === 'fr' ? 'client' : 'customer'}{cc.length > 1 ? 's' : ''}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--p2)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{fmt(ca)}</div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -600,31 +738,38 @@ export default function Customers() {
       {customersTab === 'stats' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="panel">
-            <div className="panel-h">
-              <span className="panel-t">📊 {lang === 'fr' ? 'Répartition par type' : 'Distribution by type'}</span>
+            <div className="panel-head">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BarChart3 size={16} style={{ color: 'var(--p2)' }} />
+                <span className="panel-title">{lang === 'fr' ? 'Répartition par type' : 'Distribution by type'}</span>
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {(['Grossiste', 'Semi-gros', 'Fidèle', 'Détail'] as const).map(type => {
                 const count = customers.filter(c => c.type === type).length
                 const ca = customers.filter(c => c.type === type).reduce((s, c) => s + (c.totalCA ?? 0), 0)
                 const pct = customers.length > 0 ? Math.round(count / customers.length * 100) : 0
-                const colors: Record<string, string> = {
-                  'Grossiste': 'var(--p2)', 'Semi-gros': 'var(--acc)',
-                  'Fidèle': 'var(--acc2)', 'Détail': '#60A5FA',
-                }
-                const color = colors[type] ?? 'var(--p2)'
+                const { color } = TYPE_CFG[type]
                 return (
                   <div key={type}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{type}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{type}</span>
+                      </div>
                       <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
-                        <span style={{ color: 'var(--text3)' }}>{count} clients</span>
-                        <span style={{ color, fontWeight: 700 }}>{fmt(ca)}</span>
-                        <span style={{ color: 'var(--text3)' }}>{pct} %</span>
+                        <span style={{ color: 'var(--text3)' }}>{count} client{count > 1 ? 's' : ''}</span>
+                        <span style={{ color, fontWeight: 700, fontFamily: 'var(--mono)' }}>{fmt(ca)}</span>
+                        <span style={{ color: 'var(--text2)', fontWeight: 600, minWidth: 32, textAlign: 'right' }}>{pct}%</span>
                       </div>
                     </div>
-                    <div style={{ height: 8, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width .5s ease' }} />
+                    <div style={{ height: 10, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', width: `${pct}%`,
+                        background: `linear-gradient(90deg,${color},${color}99)`,
+                        borderRadius: 99, transition: 'width .6s cubic-bezier(.4,0,.2,1)',
+                        boxShadow: `0 0 8px ${color}55`,
+                      }} />
                     </div>
                   </div>
                 )
@@ -633,39 +778,51 @@ export default function Customers() {
           </div>
 
           <div className="panel">
-            <div className="panel-h">
-              <span className="panel-t">🏆 {lang === 'fr' ? 'Top 5 clients' : 'Top 5 customers'}</span>
+            <div className="panel-head">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <TrendingUp size={16} style={{ color: 'var(--acc)' }} />
+                <span className="panel-title">{lang === 'fr' ? 'Top 5 clients' : 'Top 5 customers'}</span>
+              </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[...customers]
                 .sort((a, b) => (b.totalCA ?? 0) - (a.totalCA ?? 0))
                 .slice(0, 5)
-                .map((c, i) => (
-                <div key={c.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '10px', background: 'var(--bg3)',
-                  border: '1px solid var(--border)', borderRadius: 10,
-                }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                    background: i === 0 ? 'linear-gradient(135deg,#F59E0B,#FCD34D)'
-                      : i === 1 ? 'linear-gradient(135deg,#9CA3AF,#D1D5DB)'
-                      : i === 2 ? 'linear-gradient(135deg,#D97706,#F59E0B)'
-                      : 'var(--bg4)',
-                    display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#fff',
-                  }}>
-                    {i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{c.type} · {c.loyaltyPoints} pts</div>
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--p2)', fontFamily: 'var(--mono)' }}>
-                    {fmt(c.totalCA ?? 0)}
-                  </div>
-                </div>
-              ))}
+                .map((c, i) => {
+                  const cfg = TYPE_CFG[c.type]
+                  const initials = c.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+                  const medalColors = ['linear-gradient(135deg,#F59E0B,#FCD34D)', 'linear-gradient(135deg,#9CA3AF,#D1D5DB)', 'linear-gradient(135deg,#D97706,#B45309)']
+                  return (
+                    <div key={c.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '12px',
+                      background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12,
+                      cursor: 'pointer', transition: 'border-color .15s',
+                    }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = cfg.color}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'}
+                      onClick={() => setViewCustomer(c)}
+                    >
+                      <div style={{
+                        width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                        background: i < 3 ? medalColors[i] : 'var(--bg4)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 12, fontWeight: 900, color: i < 3 ? '#fff' : 'var(--text3)',
+                      }}>
+                        {i < 3 ? (i + 1) : i + 1}
+                      </div>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff' }}>
+                        {initials}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{c.type} · {c.loyaltyPoints} pts</div>
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: cfg.color, fontFamily: 'var(--mono)', flexShrink: 0 }}>
+                        {fmt(c.totalCA ?? 0)}
+                      </div>
+                    </div>
+                  )
+                })}
             </div>
           </div>
         </div>
@@ -744,8 +901,9 @@ export default function Customers() {
 
             <div className="flex gap-2">
               <button className="btn btn-primary flex-1 justify-center"
-                onClick={() => { toast.success(`🛒 Vente pour ${viewCustomer.name}`); setViewCustomer(null) }}>
-                🛒 Nouvelle vente
+                onClick={() => { setViewCustomer(null); navigate('/app/pos', { state: { customer: viewCustomer } }) }}
+                style={{ cursor: 'pointer' }}>
+                <ShoppingCart size={14} /> {lang === 'fr' ? 'Nouvelle vente' : 'New sale'}
               </button>
               <button className="btn btn-sm"
                 onClick={() => { setDetailCustomer(viewCustomer); setShowDetailModal(true); setViewCustomer(null) }}
@@ -756,8 +914,9 @@ export default function Customers() {
                   color: '#fff', fontSize: 12, fontWeight: 700,
                   fontFamily: 'var(--font)',
                   boxShadow: 'var(--sh-p)',
+                  display: 'flex', alignItems: 'center', gap: 6,
                 }}>
-                📋 {lang === 'fr' ? 'Détail' : 'Detail'}
+                <FileText size={13} /> {lang === 'fr' ? 'Détail' : 'Detail'}
               </button>
               <button className="btn btn-ghost" onClick={() => setViewCustomer(null)}>{lang === 'fr' ? 'Fermer' : 'Close'}</button>
             </div>
@@ -783,7 +942,7 @@ export default function Customers() {
                   </span>
                 </div>
               : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
-                  <span style={{ fontSize:13 }}>✏️</span>
+                  <Pencil size={13} style={{ color:'var(--warn)', flexShrink:0 }} />
                   <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>
                     {lang==='fr' ? 'Mode édition — modifications non sauvegardées' : 'Edit mode — unsaved changes'}
                   </span>
@@ -824,7 +983,7 @@ export default function Customers() {
             <div className="flex gap-2 mt-5">
               {!custEditMode ? (
                 <>
-                  <button className="btn btn-primary flex-1 justify-center" onClick={() => setCustEditMode(true)}>✏️ {lang==='fr'?'Modifier':'Edit'}</button>
+                  <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6 }} onClick={() => setCustEditMode(true)}><Pencil size={13} /> {lang==='fr'?'Modifier':'Edit'}</button>
                   <button className="btn btn-ghost" onClick={() => setShowEditCustModal(false)}>{lang==='fr'?'Fermer':'Close'}</button>
                 </>
               ) : (
@@ -833,15 +992,15 @@ export default function Customers() {
                     setEditCustForm({ name:editCustomer.name, type:editCustomer.type, phone:editCustomer.phone, email:editCustomer.email??'', address:editCustomer.address??'', notes:editCustomer.notes??'' })
                     setCustEditMode(false)
                   }}>{t('btn_cancel')}</button>
-                  <button className="btn btn-primary flex-1 justify-center" onClick={async () => {
+                  <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer' }} onClick={async () => {
                     if (!editCustForm.name) { toast.error('Nom requis'); return }
                     try { await customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, notes: editCustForm.notes, type: editCustForm.type }) } catch {}
                     setCustomers(prev => prev.map(c =>
                       c.id === editCustomer.id ? { ...c, ...editCustForm } : c
                     ))
                     setShowEditCustModal(false)
-                    toast.success(`✅ ${editCustForm.name} mis à jour`)
-                  }}>✅ Enregistrer</button>
+                    toast.success(`${editCustForm.name} mis à jour`)
+                  }}>Enregistrer</button>
                 </>
               )}
             </div>
@@ -1214,7 +1373,7 @@ export default function Customers() {
                 alignItems: 'center', justifyContent: 'center', gap: 8,
                 boxShadow: 'var(--sh-p)',
               }}>
-                🛒 {lang === 'fr' ? 'Nouvelle vente' : 'New sale'}
+                <ShoppingCart size={14} /> {lang === 'fr' ? 'Nouvelle vente' : 'New sale'}
               </button>
               <button onClick={() => {
                 setShowDetailModal(false)
@@ -1227,8 +1386,9 @@ export default function Customers() {
                 border: '1px solid rgba(255,255,255,.08)', borderRadius: 12,
                 cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
                 fontFamily: 'var(--font)', fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                ✏️ {lang === 'fr' ? 'Modifier' : 'Edit'}
+                <Pencil size={13} /> {lang === 'fr' ? 'Modifier' : 'Edit'}
               </button>
               <button onClick={() => setShowDetailModal(false)} style={{
                 padding: '12px 16px', background: 'rgba(255,255,255,.05)',
