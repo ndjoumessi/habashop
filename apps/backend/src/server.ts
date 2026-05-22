@@ -11,17 +11,26 @@ import 'dotenv/config'
 
 const prisma = new PrismaClient()
 
-const twilioClient = (() => {
-  const sid   = process.env.TWILIO_ACCOUNT_SID
-  const token = process.env.TWILIO_AUTH_TOKEN
-  if (!sid || !token) {
-    console.warn('⚠️ Twilio non configuré — variables TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN manquantes')
-    return null
-  }
-  try { return twilio(sid, token) } catch { return null }
-})()
+const TWILIO_SID   = process.env.TWILIO_ACCOUNT_SID  ?? ''
+const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN   ?? ''
+const TWILIO_FROM  = process.env.TWILIO_WHATSAPP_FROM ?? 'whatsapp:+14155238886'
 
-const TWILIO_FROM = process.env.TWILIO_WHATSAPP_FROM ?? 'whatsapp:+14155238886'
+console.log('Twilio SID set:',   !!TWILIO_SID)
+console.log('Twilio TOKEN set:', !!TWILIO_TOKEN)
+console.log('Twilio FROM:',       TWILIO_FROM)
+
+let twilioClient: ReturnType<typeof twilio> | null = null
+try {
+  if (TWILIO_SID && TWILIO_TOKEN) {
+    twilioClient = twilio(TWILIO_SID, TWILIO_TOKEN)
+    console.log('✅ Twilio client initialisé')
+  } else {
+    console.warn('⚠️ Twilio non configuré — variables manquantes')
+  }
+} catch (err: any) {
+  console.error('❌ Twilio init error:', err.message)
+  twilioClient = null
+}
 
 // ─── CRON: RÉSUMÉ SOIR ────────────────
 async function sendEveningReport() {
@@ -815,86 +824,99 @@ async function start() {
   // WHATSAPP ROUTES (Twilio)
   // ════════════════════════════════════════
 
-  app.post('/api/whatsapp/send-ticket', { preHandler: authenticate }, async (request, reply) => {
-    const { phone, items, total, total_ttc, paymentMode, discount, reference } = request.body as any
+  app.post('/api/whatsapp/send-ticket', { preHandler: [authenticate] }, async (request: any, reply: any) => {
+    const { phone, items, total, paymentMode, discount, reference } = request.body as any
 
-    if (!phone) return reply.code(400).send({ error: 'Numéro de téléphone requis' })
+    if (!phone?.trim()) {
+      return reply.code(400).send({ error: 'Numéro de téléphone requis' })
+    }
 
     if (!twilioClient) {
-      console.error('❌ Twilio client non initialisé')
+      console.error('❌ twilioClient is null')
       return reply.code(503).send({
-        error:   'Service WhatsApp non configuré',
-        details: 'Variables TWILIO_* manquantes dans Railway',
+        error:   'Service WhatsApp non disponible',
+        details: 'Variables TWILIO_ACCOUNT_SID et TWILIO_AUTH_TOKEN manquantes dans Railway',
       })
     }
 
-    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '').replace(/^00/, '+')
-    const waPhone    = cleanPhone.startsWith('+') ? `whatsapp:${cleanPhone}` : `whatsapp:+${cleanPhone}`
+    const cleaned = phone.replace(/[\s\-\(\)]/g, '').replace(/^00/, '+')
+    const waPhone = cleaned.startsWith('+') ? `whatsapp:${cleaned}` : `whatsapp:+${cleaned}`
 
     const now     = new Date()
     const dateStr = now.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' })
     const timeStr = now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })
     const ref     = reference || `#${Date.now().toString().slice(-6)}`
 
-    const itemsText = (items || [])
-      .map((i: any) => `• ${i.name} ×${i.qty} — ${Number(i.price * i.qty).toLocaleString('fr-FR')} F`)
-      .join('\n')
+    const itemLines = Array.isArray(items)
+      ? items.map((i: any) => {
+          const lineTotal = Number(i.price ?? 0) * Number(i.qty ?? 1)
+          return `• ${i.name} ×${i.qty} — ${lineTotal.toLocaleString('fr-FR')} F`
+        }).join('\n')
+      : '• Articles non détaillés'
 
-    const totalAmount  = Number(total || total_ttc || 0).toLocaleString('fr-FR')
-    const discountText = discount
+    const totalFmt    = Number(total ?? 0).toLocaleString('fr-FR')
+    const discountLine = discount && Number(discount) > 0
       ? `\n🏷️ Remise : -${Number(discount).toLocaleString('fr-FR')} F`
       : ''
 
-    const message = [
+    const body = [
       '🧾 *TICKET DE CAISSE*',
-      `HabaShop — ${dateStr} à ${timeStr}`,
-      `Réf : ${ref}`,
+      `📍 HabaShop — ${dateStr} à ${timeStr}`,
+      `🔖 Réf : ${ref}`,
       '',
-      '📦 *Articles*',
-      itemsText,
-      discountText,
+      '━━━━━━━━━━━━━━━━━',
+      '📦 *Articles commandés*',
+      itemLines,
+      '━━━━━━━━━━━━━━━━━',
+      discountLine,
+      `💰 *TOTAL TTC : ${totalFmt} F CFA*`,
+      `💳 Paiement : ${paymentMode ?? 'Espèces'}`,
       '',
-      `💰 *TOTAL : ${totalAmount} F CFA*`,
-      `💳 Paiement : ${paymentMode || 'Espèces'}`,
-      '',
-      '✅ Merci pour votre achat !',
-      '_Conservez ce ticket comme justificatif._',
-    ].filter(s => s !== undefined).join('\n')
+      '✅ *Merci pour votre achat !*',
+      '_Ce ticket fait office de reçu._',
+      '_Conservez-le comme justificatif._',
+    ].filter(l => l !== null && l !== undefined).join('\n')
 
-    console.log('WhatsApp send to:', waPhone)
-    console.log('From:', TWILIO_FROM)
+    console.log('📱 Envoi WhatsApp vers:', waPhone)
+    console.log('📤 From:', TWILIO_FROM)
 
     try {
-      const result = await twilioClient.messages.create({ from: TWILIO_FROM, to: waPhone, body: message })
-      console.log('✅ WhatsApp sent:', result.sid)
-      return { success: true, sid: result.sid, to: waPhone }
+      const msg = await twilioClient.messages.create({ from: TWILIO_FROM, to: waPhone, body })
+      console.log('✅ WhatsApp envoyé, SID:', msg.sid)
+      return reply.send({ success: true, sid: msg.sid, to: waPhone })
     } catch (err: any) {
-      console.error('❌ WhatsApp error:', err.message, 'code:', err.code)
+      console.error('❌ Twilio error code:', err.code)
+      console.error('❌ Twilio error msg:', err.message)
 
-      const errorMap: Record<number, string> = {
-        21608: 'Numéro non inscrit sur WhatsApp',
+      const TWILIO_ERRORS: Record<number, string> = {
+        21608: "Ce numéro n'est pas inscrit sur WhatsApp",
         21211: 'Format de numéro invalide',
-        21614: 'Numéro non valide pour WhatsApp',
+        21614: 'Numéro non joignable sur WhatsApp',
         63007: 'Canal WhatsApp non disponible',
         63016: 'Message non livrable',
-        20003: 'Authentification Twilio échouée — vérifier SID/Token',
-        21401: 'Numéro Twilio non valide',
+        20003: 'Authentification Twilio échouée',
+        21401: 'Numéro expéditeur invalide',
+        21606: 'Numéro non activé pour WhatsApp',
       }
 
       return reply.code(500).send({
-        error: errorMap[err.code] || err.message || 'Erreur envoi WhatsApp',
-        code:  err.code,
-        raw:   err.message,
+        error:   TWILIO_ERRORS[err.code] ?? err.message ?? "Erreur lors de l'envoi",
+        code:    err.code ?? 0,
+        details: err.message,
       })
     }
   })
 
-  app.get('/api/whatsapp/test', async () => ({
-    configured: !!twilioClient,
-    from:       TWILIO_FROM,
-    sid_set:    !!process.env.TWILIO_ACCOUNT_SID,
-    token_set:  !!process.env.TWILIO_AUTH_TOKEN,
-  }))
+  app.get('/api/whatsapp/test', async (_req: any, reply: any) => {
+    return reply.send({
+      configured:      !!twilioClient,
+      sid_set:         !!TWILIO_SID,
+      token_set:       !!TWILIO_TOKEN,
+      from:            TWILIO_FROM,
+      twilio_version:  require('twilio/package.json').version,
+      status:          twilioClient ? '✅ Ready' : '❌ Not configured',
+    })
+  })
 
   app.post('/api/whatsapp/send-alert', { preHandler: authenticate }, async (request, reply) => {
     const { phone, alertType, data, lang } = request.body as any
