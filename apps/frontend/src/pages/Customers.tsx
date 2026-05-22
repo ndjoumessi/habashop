@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3 } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
@@ -28,13 +28,15 @@ const TYPE_CFG: Record<ClientType, { cls: string; color: string; bg: string }> =
   Détail:      { cls: 'badge-gray',   color: '#3B82F6', bg: 'rgba(59,130,246,.15)'  },
 }
 
-const TYPE_CONFIG: Record<string, { color: string; bg: string; border: string; badge: string; icon: string }> = {
-  'Grossiste': { color: '#A991FF', bg: 'rgba(108,71,255,.1)',  border: 'rgba(108,71,255,.25)', badge: 'rgba(108,71,255,.15)', icon: '🏭' },
-  'Semi-gros': { color: '#FFB800', bg: 'rgba(255,184,0,.08)',  border: 'rgba(255,184,0,.2)',   badge: 'rgba(255,184,0,.12)',  icon: '🏪' },
-  'Fidèle':    { color: '#00D084', bg: 'rgba(0,208,132,.08)',  border: 'rgba(0,208,132,.2)',   badge: 'rgba(0,208,132,.12)', icon: '⭐' },
-  'Détail':    { color: '#00B8FF', bg: 'rgba(0,184,255,.08)',  border: 'rgba(0,184,255,.2)',   badge: 'rgba(0,184,255,.12)', icon: '🛍️' },
+const BENTO_CFG: Record<ClientType, {
+  grad: string; glow: string; soft: string
+  color: string; border: string; icon: JSX.Element; label: string
+}> = {
+  Grossiste:   { grad: 'linear-gradient(135deg,#6C47FF22,#6C47FF08)', glow: 'rgba(108,71,255,.35)', soft: 'rgba(108,71,255,.1)',  color: '#A991FF', border: 'rgba(108,71,255,.28)', icon: <Building2 size={12} />, label: 'Grossiste'   },
+  'Semi-gros': { grad: 'linear-gradient(135deg,#FFB80022,#FFB80008)', glow: 'rgba(255,184,0,.35)',  soft: 'rgba(255,184,0,.1)',   color: '#FFB800', border: 'rgba(255,184,0,.28)',  icon: <ShoppingBag size={12} />, label: 'Semi-gros' },
+  Fidèle:      { grad: 'linear-gradient(135deg,#00D08422,#00D08408)', glow: 'rgba(0,208,132,.35)',  soft: 'rgba(0,208,132,.1)',   color: '#00D084', border: 'rgba(0,208,132,.28)',  icon: <Star size={12} />,        label: 'Fidèle'    },
+  Détail:      { grad: 'linear-gradient(135deg,#00B8FF22,#00B8FF08)', glow: 'rgba(0,184,255,.35)',  soft: 'rgba(0,184,255,.1)',   color: '#00B8FF', border: 'rgba(0,184,255,.28)',  icon: <ShoppingCart size={12} />, label: 'Détail'   },
 }
-const getTypeConfig = (type: string) => TYPE_CONFIG[type] ?? TYPE_CONFIG['Détail']
 
 const SENEGAL_CITIES = [
   { id: 'dakar',       name: 'Dakar',       x: 76,  y: 292 },
@@ -455,102 +457,127 @@ export default function Customers() {
           </div>
         )}
 
-        {/* Vue grille */}
+        {/* Vue grille — bento premium */}
         {viewMode === 'grid' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(285px,1fr))', gap: 16 }}>
             {filtered.map(c => {
-              const cfg = getTypeConfig(c.type)
-              const initials = c.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
-              const loyaltyPct = Math.min(100, Math.round(((c.loyaltyPoints ?? 0) / 1000) * 100))
+              const cfg       = BENTO_CFG[c.type] ?? BENTO_CFG['Détail']
+              const initials  = c.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
+              const totalCA   = c.totalCA ?? 0
+              const points    = c.loyaltyPoints ?? 0
+              const loyaltyPct = Math.min(100, Math.round((points / (c.maxLoyalty || 1000)) * 100))
+              const isVIP     = totalCA >= 1_000_000
               return (
-                <div key={c.id} style={{
-                  background: 'var(--bg3)',
-                  border: `1px solid ${cfg.border}`,
-                  borderRadius: 16,
-                  overflow: 'hidden',
-                  transition: 'transform .18s, box-shadow .18s',
-                }}
-                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = `0 8px 32px ${cfg.color}22` }}
+                <div key={c.id}
+                  style={{
+                    background: 'linear-gradient(160deg,#0D0D1E 0%,#111228 100%)',
+                    border: `1px solid ${cfg.border}`,
+                    borderRadius: 22, overflow: 'hidden',
+                    position: 'relative', cursor: 'pointer',
+                    transition: 'transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease',
+                  }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-5px) scale(1.01)'; el.style.boxShadow = `0 20px 60px ${cfg.glow}, 0 0 0 1px ${cfg.border}` }}
                   onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = '' }}
+                  onClick={() => { setDetailCustomer(c); setShowDetailModal(true) }}
                 >
-                  {/* Bande couleur */}
-                  <div style={{ height: 4, background: cfg.color }} />
+                  {/* Top gradient band */}
+                  <div style={{ height: 5, background: cfg.grad, borderBottom: `1px solid ${cfg.border}`, position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg,${cfg.color}88,transparent)` }}/>
+                  </div>
 
-                  <div style={{ padding: 16 }}>
-                    {/* Avatar + nom + badge */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-                      <div style={{
-                        width: 46, height: 46, borderRadius: 14, flexShrink: 0,
-                        background: cfg.bg, border: `1.5px solid ${cfg.border}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 15, fontWeight: 900, color: cfg.color,
-                      }}>{initials}</div>
+                  {/* Radial orb */}
+                  <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: `radial-gradient(circle,${cfg.glow} 0%,transparent 70%)`, pointerEvents: 'none' }}/>
+
+                  <div style={{ padding: '15px 18px 18px' }}>
+                    {/* Avatar + name + badge */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 13 }}>
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <div style={{
+                          width: 50, height: 50, borderRadius: 16,
+                          background: cfg.soft, border: `1.5px solid ${cfg.border}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 16, fontWeight: 900, color: cfg.color, fontFamily: 'var(--mono)',
+                        }}>{initials}</div>
+                        {isVIP && (
+                          <div style={{
+                            position: 'absolute', top: -6, right: -6,
+                            width: 18, height: 18, borderRadius: '50%',
+                            background: 'linear-gradient(135deg,#FFB800,#FF9500)',
+                            border: '2px solid #0D0D1E',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <Crown size={9} color="#fff" />
+                          </div>
+                        )}
+                      </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{c.name}</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 5 }}>{c.name}</div>
                         <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px',
-                          padding: '2px 8px', borderRadius: 99,
-                          background: cfg.badge, color: cfg.color, border: `1px solid ${cfg.border}`,
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px',
+                          padding: '3px 8px', borderRadius: 99,
+                          background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.border}`,
                         }}>
-                          <span>{cfg.icon}</span>{c.type}
+                          {cfg.icon}{cfg.label}
                         </span>
                       </div>
                     </div>
 
-                    {/* Téléphone / Email */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                    {/* Contact */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 13 }}>
                       {c.phone && (
-                        <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ color: cfg.color }}>📞</span>{c.phone}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 8, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' }}>
+                          <Phone size={11} color={cfg.color} style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', fontFamily: 'var(--mono)' }}>{c.phone}</span>
                         </div>
                       )}
                       {c.email && (
-                        <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          <span style={{ color: cfg.color }}>✉</span>{c.email}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 8, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', overflow: 'hidden' }}>
+                          <Mail size={11} color={cfg.color} style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* KPIs 2 colonnes */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-                      <div style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 10, padding: '8px 10px' }}>
-                        <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 3 }}>CA Total</div>
-                        <div style={{ fontSize: 13, fontWeight: 900, color: cfg.color, fontFamily: 'var(--mono)' }}>{fmt(c.totalCA)}</div>
+                    {/* KPI 3 cols */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 12 }}>
+                      <div style={{ background: cfg.soft, border: `1px solid ${cfg.border}`, borderRadius: 10, padding: '7px 8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'rgba(255,255,255,.4)', marginBottom: 3 }}>CA</div>
+                        <div style={{ fontSize: 11, fontWeight: 900, color: cfg.color, fontFamily: 'var(--mono)', lineHeight: 1 }}>
+                          {totalCA >= 1000000 ? `${(totalCA/1000000).toFixed(1)}M` : totalCA >= 1000 ? `${(totalCA/1000).toFixed(0)}k` : String(totalCA)}
+                        </div>
                       </div>
-                      <div style={{ background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
-                        <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 3 }}>Commandes</div>
-                        <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{c.purchasesPerMonth}×/mois</div>
+                      <div style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 10, padding: '7px 8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'rgba(255,255,255,.4)', marginBottom: 3 }}>Cmds</div>
+                        <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', fontFamily: 'var(--mono)', lineHeight: 1 }}>{c.purchasesPerMonth}×</div>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 10, padding: '7px 8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'rgba(255,255,255,.4)', marginBottom: 3 }}>Pts</div>
+                        <div style={{ fontSize: 11, fontWeight: 900, color: '#FFB800', fontFamily: 'var(--mono)', lineHeight: 1 }}>{points}</div>
                       </div>
                     </div>
 
-                    {/* Barre fidélité */}
+                    {/* Gold loyalty bar */}
                     <div style={{ marginBottom: 14 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: 'var(--text3)', marginBottom: 5 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.4)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.4px' }}>
                         <span>Fidélité</span>
-                        <span style={{ color: cfg.color }}>{loyaltyPct}%</span>
+                        <span style={{ color: '#FFB800' }}>{loyaltyPct}%</span>
                       </div>
-                      <div style={{ height: 6, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%', width: `${loyaltyPct}%`,
-                          background: `linear-gradient(90deg,${cfg.color},${cfg.color}99)`,
-                          borderRadius: 99, transition: 'width .4s',
-                          boxShadow: `0 0 8px ${cfg.color}66`,
-                        }} />
+                      <div style={{ height: 5, background: 'rgba(255,255,255,.08)', borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${loyaltyPct}%`, background: 'linear-gradient(90deg,#FFB800,#FF9500)', borderRadius: 99, transition: 'width .4s', boxShadow: '0 0 10px rgba(255,184,0,.5)' }} />
                       </div>
                     </div>
 
-                    {/* Actions */}
+                    {/* Footer buttons */}
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button
                         onClick={e => { e.stopPropagation(); navigate('/app/pos', { state: { customer: c } }) }}
                         style={{
-                          flex: 1, padding: '8px', borderRadius: 10,
-                          background: `linear-gradient(135deg,${cfg.color},${cfg.color}cc)`,
-                          border: 'none', cursor: 'pointer',
-                          color: '#fff', fontSize: 11, fontWeight: 800,
+                          flex: 1, padding: '9px', borderRadius: 10,
+                          background: `linear-gradient(135deg,${cfg.color},${cfg.color}bb)`,
+                          border: 'none', cursor: 'pointer', color: '#fff', fontSize: 11, fontWeight: 800,
                           fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                          transition: 'opacity .15s',
+                          transition: 'opacity .15s', boxShadow: `0 4px 16px ${cfg.glow}`,
                         }}
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.82'}
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
@@ -560,14 +587,14 @@ export default function Customers() {
                       <button
                         onClick={e => { e.stopPropagation(); setDetailCustomer(c); setShowDetailModal(true) }}
                         style={{
-                          flex: 1, padding: '8px', borderRadius: 10,
-                          background: cfg.bg, border: `1px solid ${cfg.border}`,
+                          flex: 1, padding: '9px', borderRadius: 10,
+                          background: cfg.soft, border: `1px solid ${cfg.border}`,
                           cursor: 'pointer', color: cfg.color, fontSize: 11, fontWeight: 800,
                           fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                          transition: 'background .15s',
+                          transition: 'opacity .15s',
                         }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = cfg.badge}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = cfg.bg}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.82'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
                       >
                         <Eye size={11} /> Détail
                       </button>
