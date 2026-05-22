@@ -3,7 +3,7 @@ import React from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { customersApi, marketingApi } from '@/lib/api'
 import toast from 'react-hot-toast'
-import { Search, Send, Users, CheckSquare, Square } from 'lucide-react'
+import { Search, Send, Users, CheckSquare, Square, Smartphone, Tag, Package, Gift, MessageCircle } from 'lucide-react'
 
 interface Customer {
   id: string
@@ -142,7 +142,12 @@ const MK = {
   },
 }
 
-const TPL_ICONS = ['🏷️', '📦', '🎁', '💬']
+const TPL_ICONS: JSX.Element[] = [
+  <Tag size={15}/>,
+  <Package size={15}/>,
+  <Gift size={15}/>,
+  <MessageCircle size={15}/>,
+]
 
 // ─── WhatsApp Inline Renderer ────────────────────────────────────────────────
 
@@ -269,8 +274,8 @@ export default function Marketing() {
             width: 48, height: 48, borderRadius: 14,
             background: 'linear-gradient(135deg,#25D366,#128C7E)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, boxShadow: '0 4px 14px rgba(37,211,102,.3)',
-          }}>📱</div>
+            boxShadow: '0 4px 14px rgba(37,211,102,.3)',
+          }}><Smartphone size={24} style={{ color:'#fff' }}/></div>
           <div>
             <h1 style={{
               fontSize: 20, fontWeight: 900, color: 'var(--text)',
@@ -317,7 +322,7 @@ export default function Marketing() {
                 fontSize: 12, fontWeight: 600, color: 'var(--text2)', fontFamily: 'var(--font)',
                 textAlign: 'left', transition: 'all .12s',
               }}>
-                <span style={{ fontSize: 16 }}>{tpl.icon}</span>
+                <span style={{ display:'flex', color:'var(--text3)' }}>{tpl.icon}</span>
                 {tpl.label}
               </button>
             ))}
@@ -362,7 +367,7 @@ export default function Marketing() {
                 letterSpacing: '.6px', color: 'rgba(37,211,102,.6)',
                 marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                <span>📱</span>
+                <Smartphone size={11}/>
                 {mk.wa_render}
               </div>
               <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text)' }}>
@@ -440,10 +445,10 @@ export default function Marketing() {
                         color: c.type === 'wholesale' ? 'var(--p2)' : c.type === 'semi' ? 'var(--acc)' : 'var(--acc2)',
                       }}>{c.type}</span>
                       {(c.loyaltyPoints ?? 0) >= 5000
-                        ? <span title="Gold">🥇</span>
+                        ? <span title="Gold"   style={{ fontSize:9, fontWeight:800, color:'#F0A500', background:'rgba(240,165,0,.15)',   borderRadius:4, padding:'1px 5px' }}>G</span>
                         : (c.loyaltyPoints ?? 0) >= 2000
-                          ? <span title="Silver">🥈</span>
-                          : <span title="Bronze">🥉</span>}
+                          ? <span title="Silver" style={{ fontSize:9, fontWeight:800, color:'#94A3B8', background:'rgba(148,163,184,.15)', borderRadius:4, padding:'1px 5px' }}>S</span>
+                          : <span title="Bronze" style={{ fontSize:9, fontWeight:800, color:'#CD7F32', background:'rgba(205,127,50,.15)',  borderRadius:4, padding:'1px 5px' }}>B</span>}
                     </div>
                   </div>
                 )
@@ -489,9 +494,9 @@ export default function Marketing() {
           }}
         >
           {sending
-            ? `⏳ ${mk.sending}`
+            ? <><span style={{ width:16, height:16, borderRadius:'50%', border:'2px solid rgba(255,255,255,.3)', borderTopColor:'#fff', display:'inline-block', animation:'spin .6s linear infinite' }}/> {mk.sending}</>
             : selected.size
-              ? <><Send size={16} />{mk.send} {selected.size} {selected.size > 1 ? mk.clients : mk.client}</>
+              ? <><Send size={16}/> {mk.send} {selected.size} {selected.size > 1 ? mk.clients : mk.client}</>
               : mk.select_recipients}
         </button>
 

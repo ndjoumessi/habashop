@@ -3,6 +3,7 @@ import { useAppStore } from '@/stores/appStore'
 import { aiApi } from '@/lib/api'
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer'
 import toast from 'react-hot-toast'
+import { Bot, BarChart2, Package, TrendingUp, Users, Trash2, Send, User } from 'lucide-react'
 
 interface ChatMessage {
   id:       string
@@ -12,11 +13,11 @@ interface ChatMessage {
   loading?: boolean
 }
 
-const ANALYSIS_BUTTONS = [
-  { type:'full',      icon:'📊', color:'#6C47FF', fr:'Analyse mensuelle',   en:'Monthly analysis'   },
-  { type:'stock',     icon:'📦', color:'#FF9500', fr:'Analyse stock',        en:'Stock analysis'     },
-  { type:'revenue',   icon:'💰', color:'#00D084', fr:'Analyse financière',   en:'Financial analysis' },
-  { type:'customers', icon:'👥', color:'#00B8FF', fr:'Analyse clients',      en:'Customer analysis'  },
+const ANALYSIS_BUTTONS: { type: string; icon: JSX.Element; color: string; fr: string; en: string }[] = [
+  { type:'full',      icon:<BarChart2 size={14}/>,  color:'#6C47FF', fr:'Analyse mensuelle',   en:'Monthly analysis'   },
+  { type:'stock',     icon:<Package size={14}/>,    color:'#FF9500', fr:'Analyse stock',        en:'Stock analysis'     },
+  { type:'revenue',   icon:<TrendingUp size={14}/>, color:'#00D084', fr:'Analyse financière',   en:'Financial analysis' },
+  { type:'customers', icon:<Users size={14}/>,      color:'#00B8FF', fr:'Analyse clients',      en:'Customer analysis'  },
 ]
 
 const QUICK_QUESTIONS = {
@@ -152,9 +153,9 @@ export default function AIAssistant() {
           <div style={{
             width: 52, height: 52, borderRadius: 15, flexShrink: 0,
             background: 'linear-gradient(135deg,#6C47FF,#A991FF)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 6px 20px rgba(108,71,255,.4)',
-          }}>🤖</div>
+          }}><Bot size={26} style={{ color:'#fff' }}/></div>
 
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -191,8 +192,8 @@ export default function AIAssistant() {
           </div>
 
           {messages.length > 1 && (
-            <button className="mini-btn" onClick={clearChat}>
-              🗑 {lang === 'fr' ? 'Effacer' : 'Clear'}
+            <button className="mini-btn" onClick={clearChat} style={{ display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>
+              <Trash2 size={12}/> {lang === 'fr' ? 'Effacer' : 'Clear'}
             </button>
           )}
         </div>
@@ -242,10 +243,12 @@ export default function AIAssistant() {
                 ? 'linear-gradient(135deg,#6C47FF,#A991FF)'
                 : 'linear-gradient(135deg,var(--acc2),var(--p2))',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, marginTop: 2,
+              marginTop: 2,
               boxShadow: msg.role === 'assistant' ? '0 3px 10px rgba(108,71,255,.3)' : 'none',
             }}>
-              {msg.role === 'assistant' ? '🤖' : '👤'}
+              {msg.role === 'assistant'
+                ? <Bot  size={16} style={{ color:'#fff' }}/>
+                : <User size={16} style={{ color:'#fff' }}/>}
             </div>
 
             <div style={{
@@ -395,11 +398,13 @@ export default function AIAssistant() {
               ? 'linear-gradient(135deg,#6C47FF,#A991FF)' : 'var(--bg4)',
             border: `1px solid ${input.trim() && !analyzing ? 'transparent' : 'var(--border)'}`,
             cursor: input.trim() && !analyzing ? 'pointer' : 'default',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: input.trim() && !analyzing ? '0 4px 14px rgba(108,71,255,.4)' : 'none',
             transition: 'all .15s',
           }}>
-          {analyzing ? '⏳' : '🚀'}
+          {analyzing
+            ? <span style={{ width:20, height:20, borderRadius:'50%', border:'2px solid rgba(255,255,255,.3)', borderTopColor:'#fff', display:'inline-block', animation:'spin .6s linear infinite' }} />
+            : <Send size={20} style={{ color: input.trim() ? '#fff' : 'var(--text3)' }} />}
         </button>
       </div>
     </div>
