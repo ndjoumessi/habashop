@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen } from 'lucide-react'
+import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen, Tag, Printer, Camera, Pencil, Package, X, Eye } from 'lucide-react'
 import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
@@ -252,7 +252,7 @@ export default function Stock() {
               <Download size={13} /> PDF
             </button>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { setSelectedForLabel(products.map(p => p.sku)); setShowLabelModal(true) }}>
-              🏷️ {lang === 'fr' ? 'Étiquettes' : 'Labels'}
+              <Tag size={13} /> {lang === 'fr' ? 'Étiquettes' : 'Labels'}
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => { setProductEditMode(true); setShowModal(true) }}>
               <Plus size={13} /> {t('btn_add')}
@@ -313,8 +313,8 @@ export default function Stock() {
                     <td>
                       <div className="flex gap-1.5">
                         {st.cls !== 'badge-green' && (
-                          <button className="btn btn-sm btn-ghost gap-1" title="Commander"
-                            onClick={() => navigate('/app/orders')}>📦</button>
+                          <button className="btn btn-sm btn-ghost gap-1" title="Commander" style={{ cursor:'pointer' }}
+                            onClick={() => navigate('/app/orders')}><Package size={12} /></button>
                         )}
                         <button className="btn btn-sm btn-ghost" title="Modifier"
                           onClick={() => {
@@ -329,7 +329,7 @@ export default function Stock() {
                             setModalTab('general')
                             setProductEditMode(false)
                             setShowModal(true)
-                          }}>✏️</button>
+                          }}><Pencil size={12} /></button>
                       </div>
                     </td>
                   </tr>
@@ -343,7 +343,7 @@ export default function Stock() {
       {/* ── Panel Catégories ── */}
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">🏷️ Gestion des catégories</span>
+          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Tag size={14} /> Gestion des catégories</span>
           <button className="topbar-btn" onClick={() => { setEditCat(null); setCatForm({ name:'', color:'#818CF8', icon:'📦', description:'' }); setShowCatModal(true) }}>
             + Nouvelle catégorie
           </button>
@@ -367,12 +367,12 @@ export default function Stock() {
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:4 }}>
-                  <button className="mini-btn" onClick={() => { setEditCat(cat); setCatForm({ name:cat.name, color:cat.color, icon:cat.icon, description:cat.description }); setShowCatModal(true) }}>✏️</button>
-                  <button className="mini-btn" style={{ color:'var(--danger)' }} onClick={() => {
+                  <button className="mini-btn" style={{ cursor:'pointer' }} onClick={() => { setEditCat(cat); setCatForm({ name:cat.name, color:cat.color, icon:cat.icon, description:cat.description }); setShowCatModal(true) }}><Pencil size={12} /></button>
+                  <button className="mini-btn" style={{ color:'var(--danger)', cursor:'pointer' }} onClick={() => {
                     if (cat.productsCount > 0) { toast.error('Catégorie non vide !'); return }
                     setCategories(prev => prev.filter(c => c.id !== cat.id))
                     toast.success('Catégorie supprimée')
-                  }}>🗑</button>
+                  }}><Trash2 size={12} /></button>
                 </div>
               </div>
               <div style={{ fontSize:12, color:'var(--text2)' }}>{cat.description}</div>
@@ -391,9 +391,9 @@ export default function Stock() {
             {/* Fixed header */}
             <div className="flex items-center justify-between" style={{ padding:'20px 24px 0', flexShrink:0 }}>
               <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>
-                {editingSku ? `📦 ${form.name || editingSku}` : `➕ ${t('btn_new')} produit`}
+                {editingSku ? (form.name || editingSku) : `${t('btn_new')} produit`}
               </h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setShowModal(false); resetForm() }}>✕</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setShowModal(false); resetForm() }}><X size={14} /></button>
             </div>
 
             {/* Mode banner (edit only, not for new products) */}
@@ -401,11 +401,11 @@ export default function Stock() {
               <div style={{ padding:'0 24px', flexShrink:0, marginTop:12 }}>
                 {!productEditMode
                   ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
-                      <span style={{ fontSize:13 }}>👁</span>
+                      <Eye size={13} />
                       <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>Mode visualisation — cliquez sur Modifier pour éditer</span>
                     </div>
                   : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
-                      <span style={{ fontSize:13 }}>✏️</span>
+                      <Pencil size={13} />
                       <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>Mode édition — modifications non sauvegardées</span>
                     </div>
                 }
@@ -416,9 +416,9 @@ export default function Stock() {
             <div style={{ padding:'16px 24px 0', flexShrink:0 }}>
               <div style={{ display:'flex', gap:4, background:'var(--bg3)', borderRadius:10, padding:4 }}>
                 {([
-                  { id:'general', label:'ℹ️ Général' },
-                  { id:'prix',    label:'💰 Prix & Stock' },
-                  { id:'avance',  label:'📋 Avancé' },
+                  { id:'general', label:'Général' },
+                  { id:'prix',    label:'Prix & Stock' },
+                  { id:'avance',  label:'Avancé' },
                 ] as { id:'general'|'prix'|'avance'; label:string }[]).map(tb => (
                   <button key={tb.id} onClick={() => setModalTab(tb.id)} style={{
                     flex:1, padding:'7px 12px', borderRadius:8, fontSize:12, fontWeight:600,
@@ -493,7 +493,7 @@ export default function Stock() {
                   <div style={{ display:'flex', gap:8 }}>
                     <input className="input text-sm" style={{ flex:1 }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
                     <button type="button" className="mini-btn" onClick={() => setShowScanner(true)}
-                      title="Scanner un code-barres" style={{ padding:'8px 14px', fontSize:18 }}>📷</button>
+                      title="Scanner un code-barres" style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Camera size={18} /></button>
                   </div>
                 </ViewField>
                 <ViewField label="DESCRIPTION" value={form.description||''} editing={productEditMode}>
@@ -608,13 +608,13 @@ export default function Stock() {
             <div className="flex gap-2" style={{ padding:'16px 24px 20px', flexShrink:0, borderTop:'1px solid var(--border)' }}>
               {editingSku && !productEditMode ? (
                 <>
-                  <button className="btn btn-primary flex-1 justify-center" onClick={() => setProductEditMode(true)}>✏️ Modifier</button>
+                  <button className="btn btn-primary flex-1 justify-center gap-1.5" style={{ display:'flex', alignItems:'center' }} onClick={() => setProductEditMode(true)}><Pencil size={13} /> Modifier</button>
                   <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>Fermer</button>
                 </>
               ) : (
                 <>
                   <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct}>
-                    ✅ {editingSku ? 'Enregistrer les modifications' : `${t('btn_add')} le produit`}
+                    {editingSku ? 'Enregistrer les modifications' : `${t('btn_add')} le produit`}
                   </button>
                   {editingSku ? (
                     <button className="btn btn-ghost" onClick={() => {
@@ -650,9 +650,9 @@ export default function Stock() {
           <div className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
-                {editCat ? '✏️ Modifier la catégorie' : '➕ Nouvelle catégorie'}
+                {editCat ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
               </h3>
-              <button className="mini-btn" onClick={() => setShowCatModal(false)}>✕</button>
+              <button className="mini-btn" onClick={() => setShowCatModal(false)}><X size={14} /></button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
@@ -709,7 +709,7 @@ export default function Stock() {
                   toast.success(`✅ Catégorie "${catForm.name}" créée`)
                 }
                 setShowCatModal(false)
-              }}>{editCat ? '✅ Modifier' : '✅ Créer'}</button>
+              }}>{editCat ? 'Modifier' : 'Créer'}</button>
               <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowCatModal(false)}>Annuler</button>
             </div>
           </div>
@@ -721,10 +721,10 @@ export default function Stock() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowLabelModal(false)}>
           <div className="modal-box" style={{ maxWidth: 500 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
-                🏷️ {lang === 'fr' ? 'Imprimer des étiquettes' : 'Print labels'}
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
+                <Tag size={14} /> {lang === 'fr' ? 'Imprimer des étiquettes' : 'Print labels'}
               </h3>
-              <button className="mini-btn" onClick={() => setShowLabelModal(false)}>✕</button>
+              <button className="mini-btn" onClick={() => setShowLabelModal(false)}><X size={14} /></button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -735,9 +735,9 @@ export default function Stock() {
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                   {[
-                    { id: 'small',  label: 'Petite\n150×80px',   icon: '▫️' },
-                    { id: 'medium', label: 'Moyenne\n200×100px', icon: '◾' },
-                    { id: 'large',  label: 'Grande\n280×140px',  icon: '⬛' },
+                    { id: 'small',  label: 'Petite\n150×80px'   },
+                    { id: 'medium', label: 'Moyenne\n200×100px' },
+                    { id: 'large',  label: 'Grande\n280×140px'  },
                   ].map(size => (
                     <button key={size.id} type="button"
                       onClick={() => setLabelConfig(f => ({ ...f, size: size.id as any }))}
@@ -750,7 +750,7 @@ export default function Stock() {
                         color: labelConfig.size === size.id ? 'var(--p2)' : 'var(--text2)',
                         whiteSpace: 'pre-line', transition: 'all .15s',
                       }}>
-                      {size.icon}{'\n'}{size.label}
+                      {size.label}
                     </button>
                   ))}
                 </div>
@@ -847,7 +847,7 @@ export default function Stock() {
                   printProductLabels(selectedProducts, fmt, { ...labelConfig, shopName: 'HabaShop', lang })
                   setShowLabelModal(false)
                 }}>
-                🖨️ {lang === 'fr' ? 'Imprimer' : 'Print'}
+                <Printer size={13} /> {lang === 'fr' ? 'Imprimer' : 'Print'}
               </button>
               <button className="mini-btn" style={{ padding: '10px 16px' }} onClick={() => setShowLabelModal(false)}>
                 {lang === 'fr' ? 'Annuler' : 'Cancel'}

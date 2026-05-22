@@ -4,7 +4,7 @@ import type { Currency } from '@/stores/appStore'
 import { salesApi, productsApi, whatsappApi } from '@/lib/api'
 import BarcodeScanner from '@/components/ui/BarcodeScanner'
 import { generateInvoice } from '@/utils/export'
-import { Search, Minus, Plus, Trash2, ShoppingCart, X } from 'lucide-react'
+import { Search, Minus, Plus, Trash2, ShoppingCart, X, Lock, Unlock, Camera, User, Factory, Package, Tag, Banknote, CreditCard, Smartphone, ClipboardList, Printer, FileText, BarChart3, CheckCircle, AlertTriangle, History } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // ─── DONNÉES ───────────────────────────────
@@ -93,7 +93,7 @@ const CASHIER_TEXTS = {
     fund_label: 'Fond de caisse initial',
     fund_placeholder: 'Ex: 50 000',
     cashier_label: 'Caisse 1',
-    open_btn: '🔓 Ouvrir la caisse',
+    open_btn: 'Ouvrir la caisse',
     close_btn: '🔒 Fermer',
     close_title: 'Fermeture de caisse',
     open_time: 'Heure ouverture',
@@ -104,7 +104,7 @@ const CASHIER_TEXTS = {
     total_cash: 'Total en caisse',
     counted_label: 'Montant compté en caisse',
     counted_placeholder: 'Entrez le montant physique compté...',
-    confirm_close: '🔒 Confirmer la fermeture',
+    confirm_close: 'Confirmer la fermeture',
     cancel: 'Annuler',
     opened_on: 'Caisse ouverte le',
   },
@@ -114,7 +114,7 @@ const CASHIER_TEXTS = {
     fund_label: 'Opening float',
     fund_placeholder: 'Ex: 50,000',
     cashier_label: 'Register 1',
-    open_btn: '🔓 Open register',
+    open_btn: 'Open register',
     close_btn: '🔒 Close',
     close_title: 'Close register',
     open_time: 'Opening time',
@@ -125,7 +125,7 @@ const CASHIER_TEXTS = {
     total_cash: 'Total in register',
     counted_label: 'Counted amount',
     counted_placeholder: 'Enter the physically counted amount...',
-    confirm_close: '🔒 Confirm closing',
+    confirm_close: 'Confirm closing',
     cancel: 'Cancel',
     opened_on: 'Register opened on',
   },
@@ -135,7 +135,7 @@ const CASHIER_TEXTS = {
     fund_label: 'Fondo de caja inicial',
     fund_placeholder: 'Ej: 50,000',
     cashier_label: 'Caja 1',
-    open_btn: '🔓 Abrir caja',
+    open_btn: 'Abrir caja',
     close_btn: '🔒 Cerrar',
     close_title: 'Cierre de caja',
     open_time: 'Hora apertura',
@@ -146,7 +146,7 @@ const CASHIER_TEXTS = {
     total_cash: 'Total en caja',
     counted_label: 'Importe contado',
     counted_placeholder: 'Ingrese el importe contado físicamente...',
-    confirm_close: '🔒 Confirmar cierre',
+    confirm_close: 'Confirmar cierre',
     cancel: 'Cancelar',
     opened_on: 'Caja abierta el',
   },
@@ -156,7 +156,7 @@ const CASHIER_TEXTS = {
     fund_label: 'Fondo cassa iniziale',
     fund_placeholder: 'Es: 50.000',
     cashier_label: 'Cassa 1',
-    open_btn: '🔓 Apri cassa',
+    open_btn: 'Apri cassa',
     close_btn: '🔒 Chiudi',
     close_title: 'Chiusura cassa',
     open_time: 'Ora apertura',
@@ -167,7 +167,7 @@ const CASHIER_TEXTS = {
     total_cash: 'Totale in cassa',
     counted_label: 'Importo contato',
     counted_placeholder: 'Inserire l\'importo contato fisicamente...',
-    confirm_close: '🔒 Conferma chiusura',
+    confirm_close: 'Conferma chiusura',
     cancel: 'Annulla',
     opened_on: 'Cassa aperta il',
   },
@@ -519,8 +519,8 @@ export default function POS() {
             width:80, height:80, borderRadius:'50%',
             background:'rgba(91,78,232,.12)', border:'2px solid rgba(91,78,232,.25)',
             display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:36, margin:'0 auto 20px',
-          }}>🔐</div>
+            margin:'0 auto 20px',
+          }}><Lock size={36} style={{ color:'var(--p2)' }} /></div>
           <h2 style={{ fontSize:22, fontWeight:900, color:'var(--text)', marginBottom:8, letterSpacing:'-0.5px' }}>
             {ct.closed_title}
           </h2>
@@ -585,7 +585,7 @@ export default function POS() {
               boxShadow:'0 6px 20px rgba(91,78,232,.4)',
               display:'flex', alignItems:'center', justifyContent:'center', gap:8,
             }}
-          >{ct.open_btn}</button>
+          ><Unlock size={16} /> {ct.open_btn}</button>
         </div>
       </div>
     )
@@ -626,9 +626,11 @@ export default function POS() {
                   fontSize: 14,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:6,
                 }}
               >
-                {view === 'products' ? `🛒 ${t('pos_products') || 'Produits'}` : `🛍️ ${t('pos_cart')} (${cart.length})`}
+                <ShoppingCart size={14} />
+                {view === 'products' ? t('pos_products') || 'Produits' : `${t('pos_cart')} (${cart.length})`}
               </button>
             ))}
           </div>
@@ -656,8 +658,8 @@ export default function POS() {
             flexShrink: 0,
           }}>
             {([
-              { id:'pos',     label: lang === 'fr' ? '🛒 Caisse'     : lang === 'en' ? '🛒 Register'  : lang === 'es' ? '🛒 Caja'      : '🛒 Cassa'   },
-              { id:'history', label: lang === 'fr' ? '📋 Historique' : lang === 'en' ? '📋 History'   : lang === 'es' ? '📋 Historial' : '📋 Storico' },
+              { id:'pos',     label: lang === 'fr' ? 'Caisse'     : lang === 'en' ? 'Register'  : lang === 'es' ? 'Caja'      : 'Cassa'   },
+              { id:'history', label: lang === 'fr' ? 'Historique' : lang === 'en' ? 'History'   : lang === 'es' ? 'Historial' : 'Storico' },
             ] as const).map(tab => (
               <button key={tab.id} type="button"
                 onClick={() => { setPosTab(tab.id); if (tab.id === 'history') fetchHistory() }}
@@ -668,8 +670,12 @@ export default function POS() {
                   background: posTab === tab.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
                   color: posTab === tab.id ? '#fff' : 'var(--text2)',
                   border:'none', transition:'all .15s',
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:6,
                 }}
-              >{tab.label}</button>
+              >
+                {tab.id === 'pos' ? <ShoppingCart size={13} /> : <History size={13} />}
+                {tab.label}
+              </button>
             ))}
           </div>
 
@@ -736,7 +742,7 @@ export default function POS() {
                     color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,
                   }}
-                >📷</button>
+                ><Camera size={18} /></button>
               )}
             </div>
           )}
@@ -744,10 +750,10 @@ export default function POS() {
           {/* Barre type client + remise */}
           {posTab === 'pos' && <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
             {([
-              { id:'retail',    label:'Détail',   icon:'👤' },
-              { id:'wholesale', label:'Grossiste', icon:'🏭' },
-              { id:'semi',      label:'Demi-gros', icon:'📦' },
-            ] as { id:'retail'|'wholesale'|'semi'; label:string; icon:string }[]).map(ct => (
+              { id:'retail',    label:'Détail'   },
+              { id:'wholesale', label:'Grossiste' },
+              { id:'semi',      label:'Demi-gros' },
+            ] as { id:'retail'|'wholesale'|'semi'; label:string }[]).map(ct => (
               <button key={ct.id} onClick={() => setClientType(ct.id)} style={{
                 padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:600,
                 cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
@@ -755,7 +761,10 @@ export default function POS() {
                 border:`1px solid ${clientType === ct.id ? 'var(--p2)' : 'var(--border)'}`,
                 color: clientType === ct.id ? 'var(--p2)' : 'var(--text2)',
                 display:'flex', alignItems:'center', gap:5,
-              }}><span>{ct.icon}</span>{ct.label}</button>
+              }}>
+                {ct.id === 'retail' ? <User size={12} /> : ct.id === 'wholesale' ? <Factory size={12} /> : <Package size={12} />}
+                {ct.label}
+              </button>
             ))}
             <div style={{ width:1, height:20, background:'var(--border)', margin:'0 4px' }} />
             <button onClick={() => setShowDiscountModal(true)} style={{
@@ -766,7 +775,7 @@ export default function POS() {
               color: discount ? 'var(--acc2)' : 'var(--text2)',
               display:'flex', alignItems:'center', gap:6,
             }}>
-              🏷️ {discount
+              <Tag size={12} /> {discount
                 ? `Remise: ${discount.type === 'percent' ? discount.value + ' %' : fmt(discount.value)}`
                 : 'Appliquer une remise'}
             </button>
@@ -775,10 +784,11 @@ export default function POS() {
                 padding:'6px 8px', borderRadius:8, fontSize:11,
                 background:'rgba(232,64,74,.1)', border:'1px solid rgba(232,64,74,.2)',
                 color:'var(--danger)', cursor:'pointer', fontFamily:'var(--font)',
-              }}>✕ Annuler remise</button>
+                display:'flex', alignItems:'center', gap:4,
+              }}><X size={11} /> Annuler remise</button>
             )}
-            <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:600 }}>
-              🏷️ {PRODUCTS.filter(p => p.promotion).length} promotions actives
+            <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+              <Tag size={11} /> {PRODUCTS.filter(p => p.promotion).length} promotions actives
             </div>
           </div>}
 
@@ -936,7 +946,7 @@ export default function POS() {
                 </div>
               ) : salesHistory.length === 0 ? (
                 <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>📋</div>
+                  <ClipboardList size={32} style={{ marginBottom:12, color:'var(--text3)' }} />
                   <div>{lang === 'fr' ? 'Aucune vente enregistrée' : lang === 'en' ? 'No sales recorded' : lang === 'es' ? 'Sin ventas registradas' : 'Nessuna vendita registrata'}</div>
                 </div>
               ) : (
@@ -951,8 +961,8 @@ export default function POS() {
                       }}>
                         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
                           <div>
-                            <div style={{ fontSize:13, fontWeight:700, color:'var(--text)', marginBottom:2 }}>
-                              💳 {lang === 'fr' ? 'Vente' : lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : 'Vendita'} #{String(sale.id).slice(-6).toUpperCase()}
+                            <div style={{ fontSize:13, fontWeight:700, color:'var(--text)', marginBottom:2, display:'flex', alignItems:'center', gap:5 }}>
+                              <CreditCard size={13} /> {lang === 'fr' ? 'Vente' : lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : 'Vendita'} #{String(sale.id).slice(-6).toUpperCase()}
                             </div>
                             <div style={{ fontSize:11, color:'var(--text3)' }}>
                               {date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'it-IT')}
@@ -1038,10 +1048,10 @@ export default function POS() {
               width: 32, height: 32, borderRadius: 10,
               background: 'linear-gradient(135deg,var(--p),var(--p2))',
               display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 16,
+              justifyContent: 'center',
               flexShrink: 0,
               boxShadow: '0 2px 8px rgba(108,71,255,.4)',
-            }}>🛒</div>
+            }}><ShoppingCart size={16} style={{ color:'#fff' }} /></div>
             <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', flex: 1 }}>
               {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
             </span>
@@ -1085,7 +1095,7 @@ export default function POS() {
                   cursor: 'pointer', fontSize: 12, color: 'var(--danger)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all .15s', flexShrink: 0,
-                }}>🗑</button>
+                }}><Trash2 size={12} /></button>
             )}
             <button type="button" onClick={() => setShowCloseModal(true)} style={{
               fontSize: 11, color: 'var(--danger)',
@@ -1094,7 +1104,7 @@ export default function POS() {
               fontFamily: 'var(--font)', fontWeight: 700, flexShrink: 0,
               whiteSpace: 'nowrap',
               display: 'flex', alignItems: 'center', gap: 4,
-            }}>🔒 {lang === 'fr' ? 'Fermer' : 'Close'}</button>
+            }}><Lock size={11} /> {lang === 'fr' ? 'Fermer' : 'Close'}</button>
           </div>
 
           {/* ── LISTE ITEMS — ZONE SCROLLABLE ── */}
@@ -1111,8 +1121,8 @@ export default function POS() {
                 <div style={{
                   width:60, height:60, borderRadius:'50%',
                   border:'2px dashed var(--border)',
-                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:26,
-                }}>🛒</div>
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}><ShoppingCart size={26} style={{ color:'var(--text3)' }} /></div>
                 <div style={{ fontSize:13, fontWeight:600, textAlign:'center', color:'var(--text2)' }}>
                   {lang === 'fr' ? 'Panier vide' : lang === 'en' ? 'Empty cart' : lang === 'es' ? 'Carrito vacío' : 'Carrello vuoto'}
                 </div>
@@ -1204,8 +1214,8 @@ export default function POS() {
                   background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.15)',
                   borderRadius:8,
                 }}>
-                  <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600 }}>
-                    🏷️ {lang === 'fr' ? 'Remise' : 'Discount'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}
+                  <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+                    <Tag size={11} /> {lang === 'fr' ? 'Remise' : 'Discount'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}
                   </span>
                   <span style={{ fontSize:11, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
                     − {fmt(discountAmount)}
@@ -1244,7 +1254,13 @@ export default function POS() {
                     color: payMode === mode.id ? mode.color : 'var(--text3)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, transition: 'all .12s',
                   }}>
-                  <span style={{ fontSize: 14 }}>{mode.icon}</span>
+                  <span style={{ display:'flex', alignItems:'center', justifyContent:'center', height:16 }}>
+                    {mode.id === 'cash'   ? <Banknote size={14} />   :
+                     mode.id === 'card'   ? <CreditCard size={14} /> :
+                     mode.id === 'wave'   ? <span style={{ fontWeight:900, fontSize:10, lineHeight:1 }}>W</span>  :
+                     mode.id === 'orange' ? <span style={{ fontWeight:900, fontSize:9, lineHeight:1 }}>OM</span>  :
+                                            <Smartphone size={14} />}
+                  </span>
                   {mode.label}
                 </button>
               ))}
@@ -1309,7 +1325,7 @@ export default function POS() {
                     fontSize:12, fontWeight:700, color:'#fff',
                     cursor:'pointer', fontFamily:'var(--font)',
                   }}>
-                  ✅ {lang === 'fr' ? 'Confirmer' : 'Confirm'}
+                  {lang === 'fr' ? 'Confirmer' : 'Confirm'}
                 </button>
               </div>
             )}
@@ -1332,15 +1348,15 @@ export default function POS() {
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               }}>
               {cart.length === 0
-                ? (lang === 'fr' ? '🛒 Panier vide' : '🛒 Empty cart')
-                : `✅ ${lang === 'fr' ? 'Encaisser' : lang === 'en' ? 'Checkout' : lang === 'es' ? 'Cobrar' : 'Incassare'} — ${fmt(total)}`}
+                ? <><ShoppingCart size={15} /> {lang === 'fr' ? 'Panier vide' : 'Empty cart'}</>
+                : <>{lang === 'fr' ? 'Encaisser' : lang === 'en' ? 'Checkout' : lang === 'es' ? 'Cobrar' : 'Incassare'} — {fmt(total)}</>}
             </button>
             {cashierSessionTx > 0 && (
               <div style={{
                 display:'flex', justifyContent:'space-between',
                 fontSize:10, color:'var(--text3)', marginTop:5, padding:'0 4px',
               }}>
-                <span>📊 {cashierSessionTx} tx</span>
+                <span style={{ display:'flex', alignItems:'center', gap:4 }}><BarChart3 size={10} /> {cashierSessionTx} tx</span>
                 <span style={{ color:'var(--acc)', fontFamily:'var(--mono)', fontWeight:600 }}>{fmt(cashierSessionCA)}</span>
               </div>
             )}
@@ -1444,7 +1460,7 @@ export default function POS() {
                   setShowDiscountModal(false)
                   toast.success(`🏷️ Remise de ${discountForm.type === 'percent' ? discountForm.value + ' %' : fmt(discountForm.value)} appliquée`)
                 }}>
-                ✅ Appliquer la remise
+                Appliquer la remise
               </button>
               <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowDiscountModal(false)}>Annuler</button>
             </div>
@@ -1529,7 +1545,7 @@ export default function POS() {
                   closeCashier()
                   setOpeningFundInput('')
                   setShowCloseModal(false)
-                  toast.success('✅ Caisse fermée — Rapport imprimé')
+                  toast.success('Caisse fermée — Rapport imprimé')
                 }}
                 className="topbar-btn"
                 style={{ flex:1, justifyContent:'center', background:'linear-gradient(135deg,var(--danger),#dc2626)' }}
@@ -1561,8 +1577,7 @@ export default function POS() {
                   background: 'rgba(14,196,126,.15)',
                   border: '1px solid rgba(14,196,126,.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 20,
-                }}>✅</div>
+                }}><CheckCircle size={20} style={{ color:'var(--acc2)' }} /></div>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
                     {t('pos_confirm_sale')}
@@ -1622,7 +1637,7 @@ export default function POS() {
             <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: sendWhatsApp ? 12 : 0 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ fontSize:20 }}>📱</span>
+                  <Smartphone size={20} />
                   <div>
                     <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>
                       {lang === 'fr' ? 'Envoyer le ticket WhatsApp' : lang === 'en' ? 'Send WhatsApp receipt' : lang === 'es' ? 'Enviar ticket WhatsApp' : 'Invia scontrino WhatsApp'}
@@ -1648,7 +1663,7 @@ export default function POS() {
               {sendWhatsApp && (
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
-                    📱 {lang==='fr' ? 'Numéro WhatsApp (ticket)' : 'WhatsApp number (receipt)'}
+                    {lang==='fr' ? 'Numéro WhatsApp (ticket)' : 'WhatsApp number (receipt)'}
                   </label>
                   <div style={{ display:'flex', gap:6, alignItems:'stretch' }}>
                     {/* Sélecteur indicatif — premium */}
@@ -1760,16 +1775,18 @@ export default function POS() {
                         }}
                       />
                       {waNumber.length > 0 && (
-                        <span style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', fontSize:13, pointerEvents:'none' }}>
-                          {/^[\d\s\-]{6,}$/.test(waNumber) ? '✅' : '❌'}
-                        </span>
+                        <div style={{
+                          position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
+                          width:8, height:8, borderRadius:'50%', pointerEvents:'none',
+                          background: /^[\d\s\-]{6,}$/.test(waNumber) ? 'var(--acc2)' : 'var(--danger)',
+                        }} />
                       )}
                     </div>
                   </div>
                   {/* Aperçu numéro complet */}
                   {waNumber.trim().length > 0 && (
                     <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
-                      <span>📱 {lang==='fr' ? 'Numéro complet :' : 'Full number:'}</span>
+                      <span>{lang==='fr' ? 'Numéro complet :' : 'Full number:'}</span>
                       <span style={{ fontFamily:'var(--mono)', fontWeight:700, color:'#25D366' }}>
                         {waCountryCode}{waNumber.replace(/\s/g, '')}
                       </span>
@@ -1777,8 +1794,8 @@ export default function POS() {
                   )}
                   {/* Message erreur */}
                   {waNumber.length > 0 && !/^[\d\s\-]{6,}$/.test(waNumber) && (
-                    <div style={{ marginTop:5, fontSize:10, color:'var(--danger)', fontWeight:600, display:'flex', gap:4 }}>
-                      ⚠️ {lang==='fr' ? 'Chiffres uniquement (ex: 77 000 00 00)' : 'Digits only (ex: 77 000 00 00)'}
+                    <div style={{ marginTop:5, fontSize:10, color:'var(--danger)', fontWeight:600, display:'flex', gap:4, alignItems:'center' }}>
+                      <AlertTriangle size={10} /> {lang==='fr' ? 'Chiffres uniquement (ex: 77 000 00 00)' : 'Digits only (ex: 77 000 00 00)'}
                     </div>
                   )}
                 </div>
@@ -1803,12 +1820,18 @@ export default function POS() {
                   fontFamily: 'inherit',
                   boxShadow: (isSaving || waSending) ? 'none' : '0 4px 16px rgba(14,196,126,.35)',
                 }}
-              >{waSending ? '📱 Envoi WhatsApp…' : isSaving ? '⏳ Enregistrement…' : `✅ ${t('pos_validate')}`}</button>
+              >
+                {waSending
+                  ? <><Smartphone size={14} /> Envoi WhatsApp…</>
+                  : isSaving
+                  ? 'Enregistrement…'
+                  : t('pos_validate')}
+              </button>
               <button
                 onClick={() => { printTicket(); confirmSale() }}
                 className="mini-btn"
                 style={{ padding: '12px 16px', fontSize: 13 }}
-              >🖨️ Ticket</button>
+              ><Printer size={13} /> Ticket</button>
               <button
                 onClick={() => {
                   generateInvoice({
@@ -1821,7 +1844,7 @@ export default function POS() {
                 }}
                 className="mini-btn"
                 style={{ padding: '12px 14px', fontSize: 13 }}
-              >📄</button>
+              ><FileText size={13} /></button>
             </div>
           </div>
         </div>
@@ -1851,7 +1874,7 @@ export default function POS() {
             fontFamily: 'inherit',
           }}
         >
-          🛍️ {t('pos_cart')} · {cart.length}
+          <ShoppingCart size={16} /> {t('pos_cart')} · {cart.length}
         </button>
       )}
 
