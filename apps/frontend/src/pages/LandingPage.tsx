@@ -747,7 +747,7 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', top: '38%', right: '32%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,184,255,.09),transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none' }}/>
 
         {/* Content */}
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 820 }}>
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 820, width: '100%' }}>
           {/* Badge */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -761,14 +761,15 @@ export default function LandingPage() {
 
           {/* Title */}
           <h1 style={{
-            fontSize: 'clamp(34px,5.4vw,68px)', fontWeight: 900, color: D.text,
-            letterSpacing: '-2px', lineHeight: 1.05, marginBottom: 22,
+            fontSize: 'clamp(22px,5.4vw,60px)', fontWeight: 900, color: D.text,
+            letterSpacing: 'clamp(-2px,-.13vw,-.3px)', lineHeight: 1.12,
+            marginBottom: 22, overflowWrap: 'break-word',
           }}>
-            {lp.h1a}{' '}
+            <span style={{ display: 'block' }}>{lp.h1a}</span>
             <span style={{
+              display: 'block',
               background: `linear-gradient(135deg,${D.p},${D.p3} 50%,${D.acc})`,
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              display: 'inline-block',
             }}>{lp.h1b}</span>
           </h1>
 
