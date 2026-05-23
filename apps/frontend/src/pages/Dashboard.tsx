@@ -269,7 +269,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
         {[
           { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} transactions`,  evol: '+12%', up: true,  Icon: DollarSign, color: 'var(--p2)',   hex: '#6C47FF', bg: 'rgba(108,71,255,.14)' },
           { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} alertes stock`,   evol: '−3',   up: false, Icon: Package,    color: 'var(--acc)',  hex: '#FF9500', bg: 'rgba(255,149,0,.14)'  },
@@ -312,7 +312,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick actions 2×4 grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8,1fr)', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: 8 }}>
         {QUICK_ACTIONS.map(a => (
           <button key={a.label} type="button"
             onClick={() => navigate(a.path)}
@@ -335,9 +335,9 @@ export default function Dashboard() {
       </div>
 
       {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-        {/* Bar chart (col span 2) */}
-        <div className="panel" style={{ gridColumn: 'span 2', marginBottom: 0 }}>
+      <div className="dashboard-charts-grid" style={{ display: 'grid', gap: 12 }}>
+        {/* Bar chart (col span 2 on wide screens) */}
+        <div className="panel dashboard-chart-wide" style={{ marginBottom: 0 }}>
           <div className="panel-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(108,71,255,.15)', border: '1px solid rgba(108,71,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--p3)' }}>
