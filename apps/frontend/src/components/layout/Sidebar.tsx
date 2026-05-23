@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, canAccess } from '@/stores/authStore'
 import { useConfig, t } from '@/stores/appStore'
 import {
   LayoutDashboard, ShoppingCart, Package, Archive, Truck, Users,
@@ -114,12 +114,25 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Navigation */}
+      {/* Navigation (filtered by role) */}
       <nav role="navigation" aria-label={lang === 'fr' ? 'Navigation principale' : 'Main navigation'} style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
-        {NAV.map((item, i) => {
+        {(() => {
+          // Walk NAV: only emit a section header if at least one following item
+          // (before the next section) is allowed by the current role.
+          const out: NavEntry[] = []
+          let pendingSection: NavSection | null = null
+          for (const entry of NAV) {
+            if ('section' in entry) { pendingSection = entry; continue }
+            const slug = entry.path.split('/').pop() || ''
+            if (!canAccess(user?.role, slug)) continue
+            if (pendingSection) { out.push(pendingSection); pendingSection = null }
+            out.push(entry)
+          }
+          return out
+        })().map((item, i) => {
           if ('section' in item) {
             return collapsed ? null : (
-              <div key={i} className="nav-section" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div key={`s-${i}`} className="nav-section" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span>{item.section}</span>
                 <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               </div>

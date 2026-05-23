@@ -4,6 +4,47 @@ import { authApi } from '@/lib/api'
 
 export type UserRole = 'ADMIN' | 'MANAGER' | 'CASHIER' | 'ACCOUNTANT' | 'HR' | 'SUPER_ADMIN' | 'admin' | 'manager' | 'cashier' | 'accountant' | 'hr'
 
+// ─── RBAC ─────────────────────────────────────────────────────────────────────
+// Slug = last segment of `/app/<slug>`. '*' = full access (admins).
+// Pages omitted from a role's list are denied; route guard redirects to landing.
+export const ROLE_PERMISSIONS: Record<string, readonly string[] | '*'> = {
+  SUPER_ADMIN: '*',
+  ADMIN:       '*',
+  MANAGER: [
+    'dashboard', 'pos', 'stock', 'customers', 'suppliers', 'orders',
+    'hr', 'planning', 'payroll',
+    'reports', 'forecasts', 'expenses', 'goals', 'marketing', 'ai',
+    'notifications', 'activity', 'settings',
+  ],
+  CASHIER: [
+    'dashboard', 'pos', 'stock', 'customers', 'notifications',
+  ],
+  ACCOUNTANT: [
+    'dashboard', 'reports', 'forecasts', 'expenses', 'payroll',
+    'orders', 'suppliers', 'notifications',
+  ],
+  HR: [
+    'dashboard', 'hr', 'planning', 'payroll', 'notifications', 'activity',
+  ],
+}
+
+export function canAccess(role: UserRole | undefined | null, slug: string): boolean {
+  if (!role) return false
+  const upper = String(role).toUpperCase()
+  const perms = ROLE_PERMISSIONS[upper]
+  if (perms === '*') return true
+  return Array.isArray(perms) && perms.includes(slug)
+}
+
+export function getLandingForRole(role: UserRole | undefined | null): string {
+  if (!role) return '/login'
+  const upper = String(role).toUpperCase()
+  if (upper === 'CASHIER')    return '/app/pos'
+  if (upper === 'ACCOUNTANT') return '/app/reports'
+  if (upper === 'HR')         return '/app/hr'
+  return '/app/dashboard'
+}
+
 export interface User {
   id: string
   name: string

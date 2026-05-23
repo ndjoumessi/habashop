@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, canAccess, getLandingForRole } from '@/stores/authStore'
 import { authApi } from '@/lib/api'
 import { useAppStore } from '@/stores/appStore'
 import AppLayout from '@/components/layout/AppLayout'
@@ -36,6 +36,28 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
+function RoleRoute({ slug, children }: { slug: string; children: React.ReactNode }) {
+  const { user } = useAuthStore()
+  if (!canAccess(user?.role, slug)) {
+    return <Navigate to={getLandingForRole(user?.role)} replace />
+  }
+  return <>{children}</>
+}
+
+function AppIndex() {
+  const { user } = useAuthStore()
+  return <Navigate to={getLandingForRole(user?.role)} replace />
+}
+
+function AdminOnly({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore()
+  const role = String(user?.role || '').toUpperCase()
+  if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+    return <Navigate to={getLandingForRole(user?.role)} replace />
+  }
+  return <>{children}</>
+}
+
 export default function App() {
   const { token, logout, updateUser } = useAuthStore()
 
@@ -63,32 +85,34 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/app/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="pos" element={<POS />} />
-        <Route path="stock" element={<Stock />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="suppliers" element={<Suppliers />} />
-        <Route path="customers" element={<Customers />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="hr" element={<HR />} />
-        <Route path="planning" element={<Planning />} />
-        <Route path="payroll" element={<Payroll />} />
-        <Route path="expenses" element={<Expenses />} />
-        <Route path="forecasts" element={<Forecasts />} />
-        <Route path="users" element={<Users />} />
-        <Route path="activity" element={<Activity />} />
-        <Route path="notifications" element={<Notifications />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="marketing" element={<Marketing />} />
-        <Route path="ai" element={<AIAssistant />} />
-        <Route path="goals" element={<Goals />} />
-        <Route path="api-docs" element={<APIDocs />} />
-        <Route path="integrations" element={<Integrations />} />
+        <Route index element={<AppIndex />} />
+        <Route path="dashboard"     element={<RoleRoute slug="dashboard"><Dashboard /></RoleRoute>} />
+        <Route path="pos"           element={<RoleRoute slug="pos"><POS /></RoleRoute>} />
+        <Route path="stock"         element={<RoleRoute slug="stock"><Stock /></RoleRoute>} />
+        <Route path="orders"        element={<RoleRoute slug="orders"><Orders /></RoleRoute>} />
+        <Route path="suppliers"     element={<RoleRoute slug="suppliers"><Suppliers /></RoleRoute>} />
+        <Route path="customers"     element={<RoleRoute slug="customers"><Customers /></RoleRoute>} />
+        <Route path="reports"       element={<RoleRoute slug="reports"><Reports /></RoleRoute>} />
+        <Route path="hr"            element={<RoleRoute slug="hr"><HR /></RoleRoute>} />
+        <Route path="planning"      element={<RoleRoute slug="planning"><Planning /></RoleRoute>} />
+        <Route path="payroll"       element={<RoleRoute slug="payroll"><Payroll /></RoleRoute>} />
+        <Route path="expenses"      element={<RoleRoute slug="expenses"><Expenses /></RoleRoute>} />
+        <Route path="forecasts"     element={<RoleRoute slug="forecasts"><Forecasts /></RoleRoute>} />
+        <Route path="users"         element={<AdminOnly><Users /></AdminOnly>} />
+        <Route path="activity"      element={<RoleRoute slug="activity"><Activity /></RoleRoute>} />
+        <Route path="notifications" element={<RoleRoute slug="notifications"><Notifications /></RoleRoute>} />
+        <Route path="settings"      element={<RoleRoute slug="settings"><Settings /></RoleRoute>} />
+        <Route path="marketing"     element={<RoleRoute slug="marketing"><Marketing /></RoleRoute>} />
+        <Route path="ai"            element={<RoleRoute slug="ai"><AIAssistant /></RoleRoute>} />
+        <Route path="goals"         element={<RoleRoute slug="goals"><Goals /></RoleRoute>} />
+        <Route path="api-docs"      element={<AdminOnly><APIDocs /></AdminOnly>} />
+        <Route path="integrations"  element={<AdminOnly><Integrations /></AdminOnly>} />
       </Route>
       <Route path="/admin" element={
         <ProtectedRoute>
-          <AdminDashboard />
+          <AdminOnly>
+            <AdminDashboard />
+          </AdminOnly>
         </ProtectedRoute>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
