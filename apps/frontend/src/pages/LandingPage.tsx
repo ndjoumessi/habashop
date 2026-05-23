@@ -1,7 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, convertAmount } from '@/stores/appStore'
 import type { Lang, Currency } from '@/stores/appStore'
-import { ShoppingCart, Package, BarChart2, Users, Briefcase, Lock } from 'lucide-react'
+import {
+  ShoppingCart, Package, BarChart2, Users, Briefcase, Lock,
+  Sparkles, Globe, Check, Star, Zap, Shield, ArrowRight, Play,
+} from 'lucide-react'
 
 // ─── TRADUCTIONS LANDING ──────────────────────────────────────────────────────
 
@@ -11,13 +14,13 @@ const LANDING_TRANSLATIONS = {
     nav_features: 'Fonctionnalités',
     nav_pricing: 'Tarifs',
     nav_faq: 'FAQ',
-    nav_login: 'Connexion →',
+    nav_login: 'Connexion',
     badge: "Conçu pour l'Afrique francophone",
     h1a: 'Gérez votre commerce',
     h1b: 'simplement et efficacement',
     hero_sub: "HabaShop centralise votre caisse, vos stocks, vos équipes et vos finances dans un seul outil — simple, rapide, et disponible même sans internet.",
-    cta1: '🚀 Démarrer gratuitement',
-    cta2: '▶ Voir la démo',
+    cta1: 'Démarrer gratuitement',
+    cta2: 'Voir la démo',
     stat1_l: 'Modules intégrés',
     stat2_l: 'Offline-ready',
     stat3_l: 'Devises supportées',
@@ -63,7 +66,7 @@ const LANDING_TRANSLATIONS = {
     pricing_sub: "14 jours d'essai gratuit — aucune carte requise",
     per_month: '/mois',
     on_estimate: 'Sur devis',
-    most_popular: '⭐ Le plus populaire',
+    most_popular: 'Le plus populaire',
     free_start: 'Commencer gratuitement',
     try_free: 'Essayer 14 jours',
     contact_us: 'Nous contacter',
@@ -105,23 +108,28 @@ const LANDING_TRANSLATIONS = {
     faq5_a: "HabaShop supporte 6 devises : Franc CFA Ouest-Africain (XOF), Franc CFA Centre-Africain (XAF), Euro (EUR), Dollar US (USD), Dollar canadien (CAD) et Livre Sterling (GBP). La conversion est automatique et la TVA configurable par boutique.",
     cta_title: 'Prêt à moderniser votre commerce ?',
     cta_sub: "Rejoignez les commerçants d'Afrique qui font confiance à HabaShop",
-    cta_btn: "🚀 Commencer maintenant — C'est gratuit",
+    cta_btn: "Commencer maintenant — C'est gratuit",
     cta_note: "Aucune carte bancaire requise · 14 jours d'essai gratuit",
     footer: '© 2026 HabaShop · Logiciel SaaS pour commerces africains',
     footer_links: ['Confidentialité', 'CGU', 'Contact'],
+    trust_title: 'Déjà actifs dans 8+ pays africains',
+    cur_title: 'Multi-devises & Multi-langues',
+    cur_sub: 'Adapté à votre marché, dans votre langue',
+    proof_stores: 'boutiques actives',
+    proof_countries: '150+ pays',
   },
   en: {
     nav: ['Features', 'Pricing', 'FAQ'],
     nav_features: 'Features',
     nav_pricing: 'Pricing',
     nav_faq: 'FAQ',
-    nav_login: 'Sign in →',
+    nav_login: 'Sign in',
     badge: 'Built for francophone Africa',
     h1a: 'Manage your business',
     h1b: 'simply and efficiently',
     hero_sub: 'HabaShop centralizes your POS, inventory, team and finances in one tool — simple, fast, and available even without internet.',
-    cta1: '🚀 Start for free',
-    cta2: '▶ View demo',
+    cta1: 'Start for free',
+    cta2: 'View demo',
     stat1_l: 'Integrated modules',
     stat2_l: 'Offline-ready',
     stat3_l: 'Supported currencies',
@@ -167,7 +175,7 @@ const LANDING_TRANSLATIONS = {
     pricing_sub: '14-day free trial — no credit card required',
     per_month: '/mo',
     on_estimate: 'Custom quote',
-    most_popular: '⭐ Most popular',
+    most_popular: 'Most popular',
     free_start: 'Start for free',
     try_free: 'Try 14 days',
     contact_us: 'Contact us',
@@ -209,23 +217,28 @@ const LANDING_TRANSLATIONS = {
     faq5_a: 'HabaShop supports 6 currencies: West African CFA Franc (XOF), Central African CFA Franc (XAF), Euro (EUR), US Dollar (USD), Canadian Dollar (CAD) and British Pound (GBP). Conversion is automatic and VAT is configurable per store.',
     cta_title: 'Ready to modernize your business?',
     cta_sub: 'Join African merchants who trust HabaShop',
-    cta_btn: "🚀 Start now — It's free",
+    cta_btn: "Start now — It's free",
     cta_note: 'No credit card required · 14-day free trial',
     footer: '© 2026 HabaShop · SaaS software for African businesses',
     footer_links: ['Privacy', 'Terms', 'Contact'],
+    trust_title: 'Already active in 8+ African countries',
+    cur_title: 'Multi-currency & Multi-language',
+    cur_sub: 'Tailored to your market, in your language',
+    proof_stores: 'active stores',
+    proof_countries: '150+ countries',
   },
   es: {
     nav: ['Funciones', 'Precios', 'FAQ'],
     nav_features: 'Funciones',
     nav_pricing: 'Precios',
     nav_faq: 'FAQ',
-    nav_login: 'Iniciar sesión →',
+    nav_login: 'Iniciar sesión',
     badge: 'Diseñado para el África francófona',
     h1a: 'Gestiona tu negocio',
     h1b: 'de forma simple y eficiente',
     hero_sub: 'HabaShop centraliza tu caja, inventario, equipo y finanzas en una sola herramienta — simple, rápida y disponible incluso sin internet.',
-    cta1: '🚀 Empezar gratis',
-    cta2: '▶ Ver demo',
+    cta1: 'Empezar gratis',
+    cta2: 'Ver demo',
     stat1_l: 'Módulos integrados',
     stat2_l: 'Offline-ready',
     stat3_l: 'Divisas admitidas',
@@ -271,7 +284,7 @@ const LANDING_TRANSLATIONS = {
     pricing_sub: '14 días de prueba gratuita — sin tarjeta requerida',
     per_month: '/mes',
     on_estimate: 'Presupuesto',
-    most_popular: '⭐ El más popular',
+    most_popular: 'El más popular',
     free_start: 'Empezar gratis',
     try_free: 'Probar 14 días',
     contact_us: 'Contáctanos',
@@ -313,23 +326,28 @@ const LANDING_TRANSLATIONS = {
     faq5_a: 'HabaShop admite 6 divisas: Franco CFA de África Occidental (XOF), Franco CFA de África Central (XAF), Euro (EUR), Dólar US (USD), Dólar canadiense (CAD) y Libra Esterlina (GBP). La conversión es automática y el IVA es configurable por tienda.',
     cta_title: '¿Listo para modernizar tu negocio?',
     cta_sub: 'Únete a los comerciantes africanos que confían en HabaShop',
-    cta_btn: '🚀 Empezar ahora — Es gratis',
+    cta_btn: 'Empezar ahora — Es gratis',
     cta_note: 'Sin tarjeta de crédito · 14 días de prueba gratuita',
     footer: '© 2026 HabaShop · Software SaaS para comercios africanos',
     footer_links: ['Privacidad', 'Términos', 'Contacto'],
+    trust_title: 'Ya activos en 8+ países africanos',
+    cur_title: 'Multi-divisa y Multi-idioma',
+    cur_sub: 'Adaptado a tu mercado, en tu idioma',
+    proof_stores: 'tiendas activas',
+    proof_countries: '150+ países',
   },
   it: {
     nav: ['Funzioni', 'Prezzi', 'FAQ'],
     nav_features: 'Funzioni',
     nav_pricing: 'Prezzi',
     nav_faq: 'FAQ',
-    nav_login: 'Accedi →',
+    nav_login: 'Accedi',
     badge: "Progettato per l'Africa francofona",
     h1a: 'Gestisci il tuo business',
     h1b: 'in modo semplice ed efficiente',
     hero_sub: 'HabaShop centralizza il tuo POS, magazzino, team e finanze in un unico strumento — semplice, veloce e disponibile anche senza internet.',
-    cta1: '🚀 Inizia gratis',
-    cta2: '▶ Guarda la demo',
+    cta1: 'Inizia gratis',
+    cta2: 'Guarda la demo',
     stat1_l: 'Moduli integrati',
     stat2_l: 'Offline-ready',
     stat3_l: 'Valute supportate',
@@ -375,7 +393,7 @@ const LANDING_TRANSLATIONS = {
     pricing_sub: '14 giorni di prova gratuita — nessuna carta richiesta',
     per_month: '/mese',
     on_estimate: 'Su preventivo',
-    most_popular: '⭐ Il più popolare',
+    most_popular: 'Il più popolare',
     free_start: 'Inizia gratis',
     try_free: 'Prova 14 giorni',
     contact_us: 'Contattaci',
@@ -410,28 +428,52 @@ const LANDING_TRANSLATIONS = {
     faq2_q: "Quanto tempo richiede l'installazione?",
     faq2_a: 'Nessuna installazione richiesta! HabaShop è un software web (SaaS). Ti connetti da qualsiasi browser. La configurazione iniziale richiede meno di 30 minuti.',
     faq3_q: 'I miei dati sono al sicuro?',
-    faq3_a: 'Assolutamente. I tuoi dati sono crittografati, ospitati in Europa e sottoposti a backup giornaliero. L\'autenticazione 2FA protegge tutti gli accessi. Conformità GDPR.',
+    faq3_a: "Assolutamente. I tuoi dati sono crittografati, ospitati in Europa e sottoposti a backup giornaliero. L'autenticazione 2FA protegge tutti gli accessi. Conformità GDPR.",
     faq4_q: 'Posso gestire più negozi?',
     faq4_a: 'Sì, con il piano Enterprise puoi gestire una rete di negozi da una dashboard centralizzata. Ogni negozio ha i propri dati isolati.',
     faq5_q: 'Quali valute sono supportate?',
     faq5_a: "HabaShop supporta 6 valute: Franco CFA dell'Africa Occidentale (XOF), Franco CFA dell'Africa Centrale (XAF), Euro (EUR), Dollaro US (USD), Dollaro canadese (CAD) e Sterlina britannica (GBP). La conversione è automatica e l'IVA è configurabile per negozio.",
     cta_title: 'Pronto a modernizzare il tuo business?',
     cta_sub: "Unisciti ai commercianti africani che si fidano di HabaShop",
-    cta_btn: "🚀 Inizia ora — È gratis",
+    cta_btn: "Inizia ora — È gratis",
     cta_note: "Nessuna carta di credito richiesta · 14 giorni di prova gratuita",
     footer: '© 2026 HabaShop · Software SaaS per le attività africane',
     footer_links: ['Privacy', 'Termini', 'Contatto'],
+    trust_title: 'Già attivi in 8+ paesi africani',
+    cur_title: 'Multi-valuta & Multi-lingua',
+    cur_sub: 'Adattato al tuo mercato, nella tua lingua',
+    proof_stores: 'negozi attivi',
+    proof_countries: '150+ paesi',
   },
 }
 
-const S = {
-  lp: '#5B4EE8', lp2: '#7C6FF0', lp3: '#A78BFA',
-  lbg: '#f8f7ff', lbg2: '#f0effe', lbg3: '#e8e5fd',
-  ltext: '#0f0e1a', ltext2: '#6b6880', ltext3: '#9b98b0',
-  lborder: 'rgba(91,78,232,.13)', lborder2: 'rgba(91,78,232,.25)',
-  lcard: '#ffffff',
-  lshadow: '0 8px 40px rgba(91,78,232,.12)',
-  green: '#0EC47E', orange: '#F0A500',
+// ─── DARK PALETTE ─────────────────────────────────────────────────────────────
+
+const D = {
+  bg:      '#07070F',
+  bg2:     '#0D0D1C',
+  bg3:     '#111128',
+  bg4:     '#161636',
+  p:       '#6C47FF',
+  p2:      '#8B6FFF',
+  p3:      '#A991FF',
+  text:    '#F0F0FF',
+  text2:   'rgba(240,240,255,.66)',
+  text3:   'rgba(240,240,255,.42)',
+  text4:   'rgba(240,240,255,.22)',
+  border:  'rgba(255,255,255,.08)',
+  border2: 'rgba(255,255,255,.15)',
+  acc:     '#00D084',
+  acc2:    '#00B8FF',
+  acc3:    '#FF9500',
+  acc4:    '#FF3B5C',
+}
+
+const FONT = "'Outfit', system-ui, -apple-system, sans-serif"
+const MONO = "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
+
+const scrollTo = (id: string) => {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 export default function LandingPage() {
@@ -450,13 +492,38 @@ export default function LandingPage() {
     return rounded.toString()
   }
 
-  const features: { icon: JSX.Element; color: string; title: string; desc: string }[] = [
-    { icon: <ShoppingCart size={24}/>, color: '#6C47FF', title: lp.feature1_title, desc: lp.feature1_desc },
-    { icon: <Package size={24}/>,      color: '#00D084', title: lp.feature2_title, desc: lp.feature2_desc },
-    { icon: <BarChart2 size={24}/>,    color: '#00B8FF', title: lp.feature3_title, desc: lp.feature3_desc },
-    { icon: <Users size={24}/>,        color: '#F59E0B', title: lp.feature4_title, desc: lp.feature4_desc },
-    { icon: <Briefcase size={24}/>,    color: '#EC4899', title: lp.feature5_title, desc: lp.feature5_desc },
-    { icon: <Lock size={24}/>,         color: '#EF4444', title: lp.feature6_title, desc: lp.feature6_desc },
+  const itemsFR: Record<number, string[]> = {
+    1: ['Modes paiement multiples', 'Ticket WhatsApp', 'Mode offline'],
+    2: ['Alertes rupture auto', 'Scan codes-barres', 'Multi-entrepôts'],
+    3: ['KPIs temps réel', 'Exports CSV / PDF', 'Top produits'],
+    4: ['Points de fidélité', 'Historique achats', 'Segments clients'],
+    5: ['Planning semaine', 'Bulletins PDF', 'Suivi présences'],
+    6: ['Rôles & permissions', 'Auth 2FA TOTP', "Journal d'audit"],
+  }
+  const itemsEN: Record<number, string[]> = {
+    1: ['Multiple payment modes', 'WhatsApp receipt', 'Offline mode'],
+    2: ['Auto shortage alerts', 'Barcode scanning', 'Multi-warehouse'],
+    3: ['Real-time KPIs', 'CSV / PDF exports', 'Top products'],
+    4: ['Loyalty points', 'Purchase history', 'Customer segments'],
+    5: ['Weekly schedule', 'PDF payslips', 'Attendance tracking'],
+    6: ['Roles & permissions', '2FA TOTP auth', 'Audit log'],
+  }
+  const items = lang === 'fr' ? itemsFR : itemsEN
+
+  const features: { icon: JSX.Element; color: string; title: string; desc: string; items: string[] }[] = [
+    { icon: <ShoppingCart size={22}/>, color: '#6C47FF', title: lp.feature1_title, desc: lp.feature1_desc, items: items[1] },
+    { icon: <Package      size={22}/>, color: '#00B8FF', title: lp.feature2_title, desc: lp.feature2_desc, items: items[2] },
+    { icon: <BarChart2    size={22}/>, color: '#A991FF', title: lp.feature3_title, desc: lp.feature3_desc, items: items[3] },
+    { icon: <Users        size={22}/>, color: '#FF9500', title: lp.feature4_title, desc: lp.feature4_desc, items: items[4] },
+    { icon: <Briefcase    size={22}/>, color: '#00D084', title: lp.feature5_title, desc: lp.feature5_desc, items: items[5] },
+    { icon: <Lock         size={22}/>, color: '#FF3B5C', title: lp.feature6_title, desc: lp.feature6_desc, items: items[6] },
+  ]
+
+  const stats = [
+    { v: '16',    l: lp.stat1_l, c: D.p2   },
+    { v: '100 %', l: lp.stat2_l, c: D.acc  },
+    { v: '6',     l: lp.stat3_l, c: D.acc2 },
+    { v: '15+',   l: lp.stat4_l, c: D.acc3 },
   ]
 
   const steps = [
@@ -467,15 +534,15 @@ export default function LandingPage() {
   ]
 
   const testimonials = [
-    { name: lp.test1_name, role: lp.test1_role, avatar: 'MD', color: '#6C3FD6', quote: lp.test1_quote, stars: 5 },
-    { name: lp.test2_name, role: lp.test2_role, avatar: 'FK', color: '#F59E0B', quote: lp.test2_quote, stars: 5 },
-    { name: lp.test3_name, role: lp.test3_role, avatar: 'IT', color: '#10B981', quote: lp.test3_quote, stars: 5 },
+    { name: lp.test1_name, role: lp.test1_role, avatar: 'MD', color: '#6C47FF', quote: lp.test1_quote },
+    { name: lp.test2_name, role: lp.test2_role, avatar: 'FK', color: '#FF9500', quote: lp.test2_quote },
+    { name: lp.test3_name, role: lp.test3_role, avatar: 'IT', color: '#00D084', quote: lp.test3_quote },
   ]
 
   const pricing = [
     {
-      name: lp.starter_name, price: '22', currency: '€', period: lp.per_month, fcfa: '14 400 FCFA',
-      sub: lp.starter_sub, pop: false,
+      name: lp.starter_name, sub: lp.starter_sub, xof: 14400, pop: false, btn: 'light',
+      btnText: lp.free_start, color: D.acc2,
       features: [
         { ok: true,  text: lp.feat_pos_1 },
         { ok: true,  text: lp.feat_stock_500 },
@@ -484,11 +551,10 @@ export default function LandingPage() {
         { ok: false, text: lp.feat_multiuser },
         { ok: false, text: lp.feat_hr },
       ],
-      btn: 'light', btnText: lp.free_start,
     },
     {
-      name: lp.business_name, price: '53', currency: '€', period: lp.per_month, fcfa: '34 750 FCFA',
-      sub: lp.business_sub, pop: true, tag: lp.most_popular,
+      name: lp.business_name, sub: lp.business_sub, xof: 34750, pop: true, btn: 'white',
+      btnText: lp.try_free, tag: lp.most_popular, color: D.p3,
       features: [
         { ok: true, text: lp.feat_pos_3 },
         { ok: true, text: lp.feat_stock_inf },
@@ -497,11 +563,10 @@ export default function LandingPage() {
         { ok: true, text: lp.feat_5users },
         { ok: true, text: lp.feat_priority },
       ],
-      btn: 'white', btnText: lp.try_free,
     },
     {
-      name: lp.enterprise_name, price: lp.on_estimate, currency: '', period: '', fcfa: '',
-      sub: lp.enterprise_sub, pop: false,
+      name: lp.enterprise_name, sub: lp.enterprise_sub, xof: 0, pop: false, btn: 'outline',
+      btnText: lp.contact_us, color: D.acc3,
       features: [
         { ok: true, text: lp.feat_pos_inf },
         { ok: true, text: lp.feat_multi_shop },
@@ -510,7 +575,6 @@ export default function LandingPage() {
         { ok: true, text: lp.feat_onboarding },
         { ok: true, text: lp.feat_sla },
       ],
-      btn: 'outline', btnText: lp.contact_us,
     },
   ]
 
@@ -522,341 +586,467 @@ export default function LandingPage() {
     { q: lp.faq5_q, a: lp.faq5_a },
   ]
 
-  const stats = [
-    { v: '16',    l: lp.stat1_l },
-    { v: '100 %', l: lp.stat2_l },
-    { v: '6',     l: lp.stat3_l },
-    { v: '15+',   l: lp.stat4_l },
+  const trustCountries = [
+    { flag: '🇸🇳', name: 'Sénégal' },
+    { flag: '🇨🇮', name: "Côte d'Ivoire" },
+    { flag: '🇨🇲', name: 'Cameroun' },
+    { flag: '🇲🇱', name: 'Mali' },
+    { flag: '🇧🇫', name: 'Burkina Faso' },
+    { flag: '🇨🇩', name: 'RD Congo' },
+    { flag: '🇬🇭', name: 'Ghana' },
+    { flag: '🇳🇬', name: 'Nigeria' },
+  ]
+
+  const currencyChips = [
+    { code: 'XOF', flag: '🇸🇳', name: 'Franc CFA Ouest' },
+    { code: 'XAF', flag: '🇨🇲', name: 'Franc CFA Centre' },
+    { code: 'EUR', flag: '🇪🇺', name: 'Euro' },
+    { code: 'USD', flag: '🇺🇸', name: 'Dollar US' },
+    { code: 'CAD', flag: '🇨🇦', name: 'Dollar CA' },
+    { code: 'GBP', flag: '🇬🇧', name: 'Livre Sterling' },
+  ]
+
+  const languageChips = [
+    { flag: '🇫🇷', name: 'Français', code: 'fr' as Lang },
+    { flag: '🇬🇧', name: 'English',  code: 'en' as Lang },
+    { flag: '🇪🇸', name: 'Español',  code: 'es' as Lang },
+    { flag: '🇮🇹', name: 'Italiano', code: 'it' as Lang },
   ]
 
   return (
-    <div style={{ background: S.lbg, color: S.ltext, fontFamily: "'Outfit', sans-serif", minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', background: D.bg, color: D.text, fontFamily: FONT, overflowX: 'hidden' }}>
 
-      {/* ── NAV ── */}
+      {/* ════ NAVBAR ════ */}
       <nav style={{
-        display: 'flex', alignItems: 'center', padding: '0 32px', height: 68,
-        background: 'rgba(248,247,255,.88)', backdropFilter: 'blur(24px)',
-        borderBottom: `1px solid ${S.lborder}`,
-        position: 'sticky', top: 0, zIndex: 100, gap: 10, flexWrap: 'nowrap',
-        boxShadow: `0 1px 0 ${S.lborder}`,
+        position: 'fixed', top: 0, left: 0, right: 0, height: 64, zIndex: 100,
+        background: 'rgba(7,7,15,.85)', backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: `1px solid ${D.border}`,
+        display: 'flex', alignItems: 'center',
+        padding: '0 clamp(16px,4vw,60px)', gap: 14,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11, flex: 1, minWidth: 0 }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
           <div style={{
-            width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-            background: `linear-gradient(135deg,${S.lp},${S.lp2})`,
+            width: 36, height: 36, borderRadius: 11,
+            background: `linear-gradient(135deg,${D.p},${D.p2})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 19, fontWeight: 900, color: '#fff',
-            boxShadow: '0 4px 18px rgba(91,78,232,.38)',
-          }}>H</div>
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-.5px', color: S.ltext, whiteSpace: 'nowrap' }}>
-            Haba<span style={{ color: S.lp }}>Shop</span>
+            color: '#fff', boxShadow: '0 4px 14px rgba(108,71,255,.4)', flexShrink: 0,
+          }}>
+            <ShoppingCart size={18} strokeWidth={2.4}/>
+          </div>
+          <span style={{ fontSize: 18, fontWeight: 900, color: D.text, letterSpacing: '-.3px', whiteSpace: 'nowrap' }}>
+            Haba<span style={{ background: `linear-gradient(135deg,${D.p2},${D.p3})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Shop</span>
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
+
+        {/* Nav links (desktop) */}
+        <div className="lp-nav-desktop" style={{ display: 'flex', gap: 4 }}>
           {[
             { label: lp.nav_features, target: 'section-features' },
             { label: lp.nav_pricing,  target: 'section-pricing'  },
             { label: lp.nav_faq,      target: 'section-faq'      },
-          ].map(item => (
-            <a key={item.target}
-              onClick={e => {
-                e.preventDefault()
-                document.getElementById(item.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }}
+          ].map(it => (
+            <a key={it.target} href={`#${it.target}`}
+              onClick={e => { e.preventDefault(); scrollTo(it.target) }}
               style={{
-                color: S.ltext2, fontSize: 13.5, fontWeight: 500, textDecoration: 'none',
-                padding: '7px 14px', borderRadius: 9, cursor: 'pointer', transition: 'all .18s',
-                display: 'block', whiteSpace: 'nowrap',
+                padding: '7px 14px', borderRadius: 99,
+                color: D.text2, fontSize: 13, fontWeight: 600,
+                textDecoration: 'none', cursor: 'pointer', transition: 'color .15s',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = S.lbg2; (e.currentTarget as HTMLElement).style.color = S.ltext; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = S.ltext2; }}
-            >{item.label}</a>
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = D.text}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = D.text2}
+            >{it.label}</a>
           ))}
         </div>
 
-        {/* separator */}
-        <div style={{ width: 1, height: 28, background: 'rgba(91,78,232,.15)', flexShrink: 0 }} />
-
-        {/* Language dropdown */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <select
-            value={lang}
-            onChange={e => setLang(e.target.value as Lang)}
+        {/* Language + Currency */}
+        <div className="lp-selectors" style={{ display: 'flex', gap: 6 }}>
+          <select value={lang} onChange={e => setLang(e.target.value as Lang)}
             style={{
               appearance: 'none', WebkitAppearance: 'none',
-              background: '#fff',
-              border: '1.5px solid rgba(91,78,232,.2)',
-              borderRadius: 10, padding: '7px 34px 7px 12px',
-              fontSize: 13, fontWeight: 700,
-              color: '#5B4EE8', cursor: 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: '0 2px 8px rgba(91,78,232,.1)',
-              outline: 'none',
-            }}
-          >
-            <option value="fr">🇫🇷 Français</option>
-            <option value="en">🇬🇧 English</option>
-            <option value="es">🇪🇸 Español</option>
-            <option value="it">🇮🇹 Italiano</option>
+              background: 'rgba(255,255,255,.05)',
+              border: `1px solid ${D.border2}`, borderRadius: 9,
+              padding: '6px 24px 6px 10px', fontSize: 12, fontWeight: 700,
+              color: D.p3, cursor: 'pointer', fontFamily: FONT, outline: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A991FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
+            }}>
+            <option value="fr">🇫🇷 FR</option>
+            <option value="en">🇬🇧 EN</option>
+            <option value="es">🇪🇸 ES</option>
+            <option value="it">🇮🇹 IT</option>
           </select>
-          <div style={{
-            position: 'absolute', right: 10, top: '50%',
-            transform: 'translateY(-50%)',
-            pointerEvents: 'none', fontSize: 10, color: '#5B4EE8',
-          }}>▼</div>
-        </div>
-
-        {/* Currency dropdown */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <select
-            value={currency}
-            onChange={e => setCurrency(e.target.value as Currency)}
+          <select value={currency} onChange={e => setCurrency(e.target.value as Currency)}
             style={{
               appearance: 'none', WebkitAppearance: 'none',
-              background: '#fff',
-              border: '1.5px solid rgba(91,78,232,.2)',
-              borderRadius: 10, padding: '7px 34px 7px 12px',
-              fontSize: 13, fontWeight: 700,
-              color: '#5B4EE8', cursor: 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: '0 2px 8px rgba(91,78,232,.1)',
-              outline: 'none',
-            }}
-          >
-            <option value="XOF">🇸🇳 FCFA (XOF)</option>
-            <option value="XAF">🇨🇲 FCFA (XAF)</option>
-            <option value="EUR">🇪🇺 Euro (EUR)</option>
-            <option value="USD">🇺🇸 Dollar (USD)</option>
-            <option value="CAD">🇨🇦 CA Dollar (CAD)</option>
-            <option value="GBP">🇬🇧 Livre (GBP)</option>
+              background: 'rgba(255,255,255,.05)',
+              border: `1px solid ${D.border2}`, borderRadius: 9,
+              padding: '6px 24px 6px 10px', fontSize: 12, fontWeight: 700,
+              color: D.p3, cursor: 'pointer', fontFamily: FONT, outline: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A991FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
+            }}>
+            <option value="XOF">XOF</option>
+            <option value="XAF">XAF</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="CAD">CAD</option>
+            <option value="GBP">GBP</option>
           </select>
-          <div style={{
-            position: 'absolute', right: 10, top: '50%',
-            transform: 'translateY(-50%)',
-            pointerEvents: 'none', fontSize: 10, color: '#5B4EE8',
-          }}>▼</div>
         </div>
 
-        <button
-          onClick={() => navigate('/login')}
-          style={{
-            background: `linear-gradient(135deg,${S.lp},${S.lp2})`,
-            color: '#fff', borderRadius: 10, padding: '8px 20px', fontWeight: 700,
-            boxShadow: '0 4px 18px rgba(91,78,232,.35)', border: 'none',
-            cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, transition: 'all .2s',
-            whiteSpace: 'nowrap', flexShrink: 0,
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 26px rgba(91,78,232,.45)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 18px rgba(91,78,232,.35)'; }}
-        >{lp.nav_login}</button>
+        {/* CTAs */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" onClick={() => navigate('/login')}
+            className="lp-btn-ghost"
+            style={{
+              padding: '8px 16px', borderRadius: 10, background: 'transparent',
+              border: `1px solid ${D.border2}`, color: D.text2,
+              fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+              transition: 'all .15s', whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,.06)'; el.style.color = D.text }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.color = D.text2 }}
+          >{lp.nav_login}</button>
+          <button type="button" onClick={() => navigate('/signup')}
+            style={{
+              padding: '8px 18px', borderRadius: 10,
+              background: `linear-gradient(135deg,${D.p},${D.p2})`,
+              border: 'none', color: '#fff', fontSize: 13, fontWeight: 800,
+              cursor: 'pointer', fontFamily: FONT,
+              boxShadow: '0 4px 14px rgba(108,71,255,.35)',
+              transition: 'all .15s', whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-1px)'; el.style.boxShadow = '0 6px 20px rgba(108,71,255,.5)' }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.boxShadow = '0 4px 14px rgba(108,71,255,.35)' }}
+          >{lp.cta1}</button>
+        </div>
       </nav>
 
-      {/* ── HERO ── */}
+      {/* ════ HERO ════ */}
       <section style={{
-        padding: '100px 24px 80px', textAlign: 'center',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '120px clamp(16px,4vw,80px) 80px',
         position: 'relative', overflow: 'hidden',
-        background: `linear-gradient(180deg,${S.lbg2} 0%,${S.lbg} 60%)`,
+        background: `linear-gradient(160deg,${D.bg} 0%,${D.bg2} 50%,#0A0718 100%)`,
       }}>
+        {/* Grid */}
         <div style={{
-          position: 'absolute', top: -200, left: '50%', transform: 'translateX(-50%)',
-          width: 900, height: 900, borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle,rgba(91,78,232,.12) 0%,transparent 70%)',
-        }} />
-        <div style={{
-          position: 'absolute', top: 80, right: '10%',
-          width: 320, height: 320, borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle,rgba(0,212,132,.07) 0%,transparent 70%)',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: 40, left: '8%',
-          width: 260, height: 260, borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle,rgba(0,184,255,.06) 0%,transparent 70%)',
-        }} />
-        {/* Badge */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'rgba(91,78,232,.08)', border: '1.5px solid rgba(91,78,232,.2)',
-          borderRadius: 100, padding: '6px 16px 6px 8px', marginBottom: 24, position: 'relative', zIndex: 1,
-        }}>
-          <span style={{ background: `linear-gradient(135deg,${S.lp},${S.lp2})`, color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: .8 }}>Nouveau</span>
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: S.lp }}>{lp.badge}</span>
-        </div>
+          position: 'absolute', inset: 0,
+          backgroundImage: `linear-gradient(rgba(108,71,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(108,71,255,.06) 1px,transparent 1px)`,
+          backgroundSize: '48px 48px',
+          maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 100%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 100%)',
+          pointerEvents: 'none',
+        }}/>
 
-        <h1 style={{
-          fontSize: 'clamp(36px,5.8vw,76px)', fontWeight: 900, lineHeight: 1.04,
-          maxWidth: 900, marginBottom: 22, letterSpacing: '-3px', color: S.ltext,
-          position: 'relative', zIndex: 1,
-        }}>
-          {lp.h1a}{' '}
-          <span style={{
-            background: `linear-gradient(135deg,${S.lp} 0%,${S.lp3} 50%,${S.orange} 100%)`,
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-          }}>{lp.h1b}</span>
-        </h1>
+        {/* Orbs */}
+        <div style={{ position: 'absolute', top: '8%', left: '8%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(108,71,255,.16),transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', animation: 'lp-float 6s ease-in-out infinite' }}/>
+        <div style={{ position: 'absolute', bottom: '12%', right: '8%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,208,132,.11),transparent 70%)', filter: 'blur(50px)', pointerEvents: 'none', animation: 'lp-float 8s ease-in-out infinite reverse' }}/>
+        <div style={{ position: 'absolute', top: '38%', right: '32%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,184,255,.09),transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none' }}/>
 
-        <p style={{ color: S.ltext2, fontSize: 18, maxWidth: 580, lineHeight: 1.7, marginBottom: 40 }}>
-          {lp.hero_sub}
-        </p>
-
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 72 }}>
-          <button onClick={() => navigate('/signup')} style={{
-            background: `linear-gradient(135deg,${S.lp},${S.lp2})`, color: '#fff', border: 'none',
-            borderRadius: 13, padding: '15px 36px', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-            boxShadow: '0 10px 32px rgba(91,78,232,.4)', transition: 'all .22s', fontFamily: 'inherit',
+        {/* Content */}
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 820 }}>
+          {/* Badge */}
+          <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
-          }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 18px 48px rgba(91,78,232,.48)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 10px 32px rgba(91,78,232,.4)'; }}
-          >
-            {lp.cta1}
-          </button>
-          <button onClick={() => navigate('/login')} style={{
-            background: '#fff', color: S.ltext, border: `1.5px solid ${S.lborder2}`,
-            borderRadius: 13, padding: '15px 30px', fontSize: 15, fontWeight: 600, cursor: 'pointer',
-            transition: 'all .22s', fontFamily: 'inherit',
-            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '6px 16px', background: 'rgba(108,71,255,.12)',
+            border: '1px solid rgba(108,71,255,.3)', borderRadius: 99, marginBottom: 28,
           }}>
-            {lp.cta2}
-          </button>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: D.p2, animation: 'lp-pulse 2s infinite', display: 'inline-block' }}/>
+            <Sparkles size={12} strokeWidth={2.4} color={D.p3}/>
+            <span style={{ fontSize: 12, fontWeight: 700, color: D.p3 }}>{lp.badge}</span>
+          </div>
+
+          {/* Title */}
+          <h1 style={{
+            fontSize: 'clamp(34px,5.4vw,68px)', fontWeight: 900, color: D.text,
+            letterSpacing: '-2px', lineHeight: 1.05, marginBottom: 22,
+          }}>
+            {lp.h1a}{' '}
+            <span style={{
+              background: `linear-gradient(135deg,${D.p},${D.p3} 50%,${D.acc})`,
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              display: 'inline-block',
+            }}>{lp.h1b}</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p style={{
+            fontSize: 'clamp(15px,1.8vw,18px)', color: D.text2,
+            lineHeight: 1.75, maxWidth: 600, margin: '0 auto 36px',
+          }}>{lp.hero_sub}</p>
+
+          {/* CTAs */}
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
+            <button type="button" onClick={() => navigate('/signup')}
+              style={{
+                padding: '15px 32px', borderRadius: 14,
+                background: `linear-gradient(135deg,${D.p},${D.p2})`,
+                border: 'none', color: '#fff', fontSize: 15, fontWeight: 800,
+                cursor: 'pointer', fontFamily: FONT,
+                boxShadow: '0 8px 28px rgba(108,71,255,.5)', transition: 'all .2s',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+              }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 12px 36px rgba(108,71,255,.65)' }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.boxShadow = '0 8px 28px rgba(108,71,255,.5)' }}
+            >
+              <Zap size={16} strokeWidth={2.6}/>{lp.cta1}
+            </button>
+            <button type="button" onClick={() => navigate('/login')}
+              style={{
+                padding: '15px 28px', borderRadius: 14,
+                background: 'rgba(255,255,255,.06)',
+                border: `1px solid ${D.border2}`, color: D.text,
+                fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                transition: 'all .2s',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+              }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.1)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.06)'}
+            >
+              <Play size={14} strokeWidth={2.6}/>{lp.cta2}
+            </button>
+          </div>
+
+          {/* Social proof */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex' }}>
+                {[D.p, D.acc3, D.acc, D.acc2, D.acc4].map((c, i) => (
+                  <div key={i} style={{
+                    width: 28, height: 28, borderRadius: '50%', background: c,
+                    border: `2px solid ${D.bg}`, marginLeft: i > 0 ? -8 : 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 10, fontWeight: 900, color: '#fff',
+                  }}>{['MB','KD','FN','SK','AT'][i]}</div>
+                ))}
+              </div>
+              <span style={{ fontSize: 13, color: D.text2 }}>
+                <strong style={{ color: D.text }}>2 500+</strong>{' '}{lp.proof_stores}
+              </span>
+            </div>
+            <div style={{ width: 4, height: 4, borderRadius: '50%', background: D.text4 }}/>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {[1,2,3,4,5].map(i => <Star key={i} size={13} fill={D.acc3} color={D.acc3}/>)}
+              <span style={{ fontSize: 13, color: D.text2, marginLeft: 4 }}>4.9/5</span>
+            </div>
+            <div style={{ width: 4, height: 4, borderRadius: '50%', background: D.text4 }}/>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: D.text2 }}>
+              <Globe size={14} color={D.text3}/>{lp.proof_countries}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════ TRUST BAND ════ */}
+      <section style={{
+        padding: '28px clamp(16px,4vw,80px)',
+        borderTop: `1px solid ${D.border}`, borderBottom: `1px solid ${D.border}`,
+        background: 'rgba(255,255,255,.02)',
+      }}>
+        <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: D.text3, textTransform: 'uppercase', marginBottom: 18 }}>
+          {lp.trust_title}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(16px,3vw,40px)', flexWrap: 'wrap' }}>
+          {trustCountries.map(c => (
+            <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 7, opacity: .55, transition: 'opacity .15s', cursor: 'default' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '.55'}
+            >
+              <span style={{ fontSize: 22 }}>{c.flag}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: D.text2 }}>{c.name}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ════ STATS ════ */}
+      <section style={{ padding: '72px clamp(16px,4vw,80px)', background: `linear-gradient(180deg,${D.bg},${D.bg2})` }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 16, maxWidth: 960, margin: '0 auto' }}>
+          {stats.map(s => (
+            <div key={s.l} style={{
+              background: `linear-gradient(160deg,${D.bg2},${D.bg3})`,
+              border: `1px solid ${D.border}`, borderRadius: 20,
+              padding: '24px 22px', textAlign: 'center',
+              transition: 'all .2s', position: 'relative', overflow: 'hidden', cursor: 'default',
+            }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-4px)'; el.style.borderColor = `${s.c}33`; el.style.boxShadow = `0 16px 40px ${s.c}15` }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.borderColor = D.border; el.style.boxShadow = 'none' }}
+            >
+              <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle,${s.c}26,transparent 70%)`, pointerEvents: 'none' }}/>
+              <div style={{ fontSize: 32, fontWeight: 900, color: s.c, fontFamily: MONO, letterSpacing: '-1px', marginBottom: 6, lineHeight: 1 }}>{s.v}</div>
+              <div style={{ fontSize: 13, color: D.text2, fontWeight: 600 }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ════ FEATURES ════ */}
+      <section id="section-features" style={{ padding: '88px clamp(16px,4vw,80px)', background: D.bg2 }}>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <span style={{
+            display: 'inline-block', background: 'rgba(108,71,255,.1)',
+            border: '1px solid rgba(108,71,255,.25)', color: D.p3,
+            fontSize: 11, fontWeight: 800, padding: '5px 14px', borderRadius: 99,
+            letterSpacing: '.8px',
+          }}>{lp.features_label}</span>
+          <h2 style={{ fontSize: 'clamp(26px,3.4vw,42px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', margin: '14px 0', lineHeight: 1.2 }}>
+            {lp.features_title}
+          </h2>
+          <p style={{ fontSize: 16, color: D.text2, maxWidth: 520, margin: '0 auto', lineHeight: 1.7 }}>{lp.features_sub}</p>
         </div>
 
-        {/* Hero mock */}
-        <div style={{
-          maxWidth: 960, width: '95%', margin: '0 auto',
-          background: '#fff', border: `1px solid ${S.lborder}`,
-          borderRadius: 20, overflow: 'hidden',
-          boxShadow: '0 60px 150px rgba(91,78,232,.22), 0 0 0 1px rgba(91,78,232,.08)',
-          transform: 'perspective(1200px) rotateX(2deg)',
-          transition: 'transform .4s ease', position: 'relative', zIndex: 1,
-        }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(1200px) rotateX(0deg)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(1200px) rotateX(2deg)'; }}
-        >
-          <div style={{ background: S.lbg2, padding: '11px 16px', display: 'flex', alignItems: 'center', gap: 7, borderBottom: `1px solid ${S.lborder}` }}>
-            <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#FF5F57' }} />
-            <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#FEBC2E' }} />
-            <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28C840' }} />
-            <span style={{ color: S.ltext2, fontSize: 10.5, marginLeft: 8, fontFamily: 'SF Mono,monospace' }}>app.habashop.com/dashboard</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '168px 1fr', height: 240 }}>
-            <div style={{ background: 'linear-gradient(180deg,#f4f2ff,#edeaff)', borderRight: `1px solid ${S.lborder}`, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {['🏠 Dashboard','🛒 POS','📦 Stock','🚚 Fournisseurs','👥 Clients','📊 Rapports'].map((item, i) => (
-                <div key={item} style={{
-                  padding: '7px 10px', borderRadius: 7, fontSize: 10.5,
-                  color: i === 0 ? '#fff' : S.ltext2,
-                  background: i === 0 ? S.lp : 'transparent',
-                  fontWeight: i === 0 ? 700 : 400,
-                  boxShadow: i === 0 ? '0 3px 10px rgba(91,78,232,.3)' : 'none',
-                  display: 'flex', alignItems: 'center', gap: 7,
-                }}>{item}</div>
-              ))}
-            </div>
-            <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10, background: '#fff' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
-                {[
-                  { l: 'Ventes du jour', v: '842 000 F' },
-                  { l: 'Articles stock', v: '3 248' },
-                  { l: 'Employés actifs', v: '18/21' },
-                  { l: 'CA mensuel', v: '2,65M F' },
-                ].map(k => (
-                  <div key={k.l} style={{ background: 'linear-gradient(135deg,#f8f7ff,#f0effe)', border: `1px solid ${S.lborder}`, borderRadius: 10, padding: 10 }}>
-                    <div style={{ fontSize: 8, color: S.ltext2, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, letterSpacing: .5 }}>{k.l}</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: S.ltext }}>{k.v}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(290px,1fr))', gap: 16, maxWidth: 1100, margin: '0 auto' }}>
+          {features.map(f => (
+            <div key={f.title} style={{
+              background: `linear-gradient(160deg,${D.bg2},${D.bg3})`,
+              border: `1px solid ${D.border}`, borderRadius: 20, padding: 24,
+              transition: 'all .25s cubic-bezier(.34,1.56,.64,1)',
+              position: 'relative', overflow: 'hidden', cursor: 'default',
+            }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-5px)'; el.style.borderColor = `${f.color}40`; el.style.boxShadow = `0 20px 50px rgba(0,0,0,.5),0 0 0 1px ${f.color}22` }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.borderColor = D.border; el.style.boxShadow = 'none' }}
+            >
+              <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: `radial-gradient(circle,${f.color}1F,transparent 70%)`, pointerEvents: 'none' }}/>
+
+              <div style={{
+                width: 52, height: 52, borderRadius: 16,
+                background: `${f.color}18`, border: `1px solid ${f.color}33`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: 16, color: f.color,
+                boxShadow: `0 8px 24px ${f.color}26`,
+              }}>{f.icon}</div>
+
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: D.text, marginBottom: 8, letterSpacing: '-.2px' }}>{f.title}</h3>
+              <p style={{ fontSize: 13, color: D.text2, lineHeight: 1.7, marginBottom: 16 }}>{f.desc}</p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {f.items.map(it => (
+                  <div key={it} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: D.text2 }}>
+                    <span style={{
+                      width: 18, height: 18, borderRadius: '50%',
+                      background: `${f.color}22`, color: f.color, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Check size={11} strokeWidth={3}/>
+                    </span>
+                    {it}
                   </div>
                 ))}
               </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 4 }}>
-                {[55,72,45,83,97,100,88].map((h, i) => (
-                  <div key={i} style={{
-                    flex: 1, height: `${h}%`, borderRadius: '4px 4px 0 0', minHeight: 4,
-                    background: i === 6
-                      ? 'linear-gradient(to top,#F0A500,#FCD34D)'
-                      : `linear-gradient(to top,${S.lp},${S.lp3})`,
-                    opacity: i === 6 ? 1 : 0.7,
-                  }} />
-                ))}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ════ HOW IT WORKS ════ */}
+      <section style={{ padding: '88px clamp(16px,4vw,80px)', background: D.bg, borderTop: `1px solid ${D.border}` }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <span style={{ display: 'inline-block', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', color: D.p3, fontSize: 11, fontWeight: 800, padding: '5px 14px', borderRadius: 99, letterSpacing: '.8px' }}>
+            {lp.how_label}
+          </span>
+          <h2 style={{ fontSize: 'clamp(26px,3.4vw,42px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', margin: '14px 0 0', lineHeight: 1.2 }}>
+            {lp.how_title}
+          </h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 24, maxWidth: 1060, margin: '0 auto' }}>
+          {steps.map(s => (
+            <div key={s.num} style={{ textAlign: 'center', padding: '12px 8px' }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: '50%', margin: '0 auto 16px',
+                background: `linear-gradient(135deg,${D.p},${D.p2})`,
+                color: '#fff', fontSize: 22, fontWeight: 900,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: MONO,
+                boxShadow: '0 8px 24px rgba(108,71,255,.35)',
+              }}>{s.num}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: D.text, marginBottom: 8 }}>{s.title}</div>
+              <div style={{ fontSize: 13, color: D.text2, lineHeight: 1.65 }}>{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ════ CURRENCIES + LANGUAGES ════ */}
+      <section style={{ padding: '64px clamp(16px,4vw,80px)', background: D.bg2, borderTop: `1px solid ${D.border}`, textAlign: 'center' }}>
+        <h2 style={{ fontSize: 'clamp(22px,3vw,32px)', fontWeight: 900, color: D.text, letterSpacing: '-.5px', marginBottom: 10 }}>
+          {lp.cur_title}
+        </h2>
+        <p style={{ fontSize: 14, color: D.text3, marginBottom: 28 }}>{lp.cur_sub}</p>
+
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24, maxWidth: 880, margin: '0 auto 24px' }}>
+          {currencyChips.map(c => (
+            <div key={c.code} style={{
+              padding: '10px 16px', borderRadius: 12,
+              background: 'rgba(255,255,255,.04)',
+              border: `1px solid ${D.border}`,
+              display: 'flex', alignItems: 'center', gap: 10,
+              transition: 'all .15s', cursor: 'default',
+            }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,184,0,.08)'; el.style.borderColor = 'rgba(255,184,0,.2)' }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,.04)'; el.style.borderColor = D.border }}
+            >
+              <span style={{ fontSize: 20 }}>{c.flag}</span>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: D.text, fontFamily: MONO }}>{c.code}</div>
+                <div style={{ fontSize: 10, color: D.text3 }}>{c.name}</div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
-      </section>
 
-      {/* ── STATS BAND ── */}
-      <div style={{ display: 'flex', justifyContent: 'center', background: `linear-gradient(135deg,${S.lp},${S.lp2})` }}>
-        {stats.map((s, i) => (
-          <div key={s.l} style={{
-            flex: 1, maxWidth: 220, padding: '40px 24px', textAlign: 'center',
-            borderRight: i < 3 ? '1px solid rgba(255,255,255,.15)' : 'none',
-          }}>
-            <div style={{ fontSize: 40, fontWeight: 900, letterSpacing: -2, color: '#fff', marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>{s.v}</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,.75)', fontWeight: 500 }}>{s.l}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── FEATURES ── */}
-      <section id="section-features" style={{ padding: '96px 24px', background: S.lbg }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(91,78,232,.1)', border: `1px solid rgba(91,78,232,.2)`, color: S.lp, fontSize: 11, fontWeight: 700, padding: '5px 15px', borderRadius: 100, letterSpacing: .8 }}>{lp.features_label}</span>
-          <h2 style={{ fontSize: 'clamp(26px,3.2vw,44px)', fontWeight: 900, margin: '12px 0', letterSpacing: -2, color: S.ltext }}>{lp.features_title}</h2>
-          <p style={{ color: S.ltext2, fontSize: 16, maxWidth: 540, margin: '0 auto' }}>{lp.features_sub}</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, maxWidth: 1060, margin: '0 auto' }}>
-          {features.map(f => (
-            <div key={f.title}
-              style={{ background: '#fff', border: `1px solid ${S.lborder}`, borderRadius: 20, padding: 28, transition: 'all .28s', cursor: 'default', boxShadow: '0 2px 12px rgba(91,78,232,.05)', borderTop: `3px solid ${f.color}` }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-5px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 24px 64px ${f.color}22, 0 0 0 1px ${f.color}22`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(91,78,232,.05)'; }}
-            >
-              <div style={{
-                width: 52, height: 52, borderRadius: 15,
-                background: `linear-gradient(135deg,${f.color}22,${f.color}10)`,
-                border: `1.5px solid ${f.color}33`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 18, color: f.color,
-                boxShadow: `0 4px 16px ${f.color}18`,
-              }}>{f.icon}</div>
-              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 8, color: S.ltext }}>{f.title}</div>
-              <div style={{ color: S.ltext2, fontSize: 13.5, lineHeight: 1.72 }}>{f.desc}</div>
-            </div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {languageChips.map(l => (
+            <button key={l.code} type="button" onClick={() => setLang(l.code)}
+              style={{
+                padding: '8px 16px', borderRadius: 99,
+                background: lang === l.code ? 'rgba(108,71,255,.16)' : 'rgba(108,71,255,.06)',
+                border: `1px solid ${lang === l.code ? 'rgba(108,71,255,.4)' : 'rgba(108,71,255,.18)'}`,
+                fontSize: 13, fontWeight: 700, color: D.p3,
+                cursor: 'pointer', fontFamily: FONT,
+                display: 'flex', alignItems: 'center', gap: 6,
+                transition: 'all .15s',
+              }}>
+              <span>{l.flag}</span>
+              <span>{l.name}</span>
+            </button>
           ))}
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section style={{ padding: '96px 24px', background: S.lbg2, borderTop: `1px solid ${S.lborder}` }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(91,78,232,.1)', border: `1px solid rgba(91,78,232,.2)`, color: S.lp, fontSize: 11, fontWeight: 700, padding: '5px 15px', borderRadius: 100, letterSpacing: .8 }}>{lp.how_label}</span>
-          <h2 style={{ fontSize: 'clamp(26px,3.2vw,44px)', fontWeight: 900, margin: '12px 0', letterSpacing: -2, color: S.ltext }}>{lp.how_title}</h2>
+      {/* ════ TESTIMONIALS ════ */}
+      <section style={{ padding: '88px clamp(16px,4vw,80px)', background: D.bg, borderTop: `1px solid ${D.border}` }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <span style={{ display: 'inline-block', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', color: D.p3, fontSize: 11, fontWeight: 800, padding: '5px 14px', borderRadius: 99, letterSpacing: '.8px' }}>
+            {lp.testimonials_label}
+          </span>
+          <h2 style={{ fontSize: 'clamp(26px,3.4vw,42px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', margin: '14px 0 0', lineHeight: 1.2 }}>
+            {lp.testimonials_title}
+          </h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 24, maxWidth: 1060, margin: '0 auto' }}>
-          {steps.map(s => (
-            <div key={s.num} style={{ textAlign: 'center', padding: '24px 16px' }}>
-              <div style={{ width: 52, height: 52, borderRadius: '50%', margin: '0 auto 18px', background: `linear-gradient(135deg,${S.lp},${S.lp2})`, color: '#fff', fontSize: 22, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(91,78,232,.3)' }}>{s.num}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: S.ltext, marginBottom: 8 }}>{s.title}</div>
-              <div style={{ fontSize: 13, color: S.ltext2, lineHeight: 1.65 }}>{s.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ── */}
-      <section style={{ padding: '96px 24px', background: '#fff', borderTop: `1px solid ${S.lborder}` }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(91,78,232,.1)', border: `1px solid rgba(91,78,232,.2)`, color: S.lp, fontSize: 11, fontWeight: 700, padding: '5px 15px', borderRadius: 100, letterSpacing: .8 }}>{lp.testimonials_label}</span>
-          <h2 style={{ fontSize: 'clamp(26px,3.2vw,44px)', fontWeight: 900, margin: '12px 0', letterSpacing: -2, color: S.ltext }}>{lp.testimonials_title}</h2>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, maxWidth: 1060, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 16, maxWidth: 1060, margin: '0 auto' }}>
           {testimonials.map(t => (
-            <div key={t.name} style={{ background: S.lbg, border: `1px solid ${S.lborder}`, borderRadius: 18, padding: 26 }}>
-              <div style={{ color: S.orange, fontSize: 13, marginBottom: 12 }}>{'★'.repeat(t.stars)}</div>
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: S.ltext, marginBottom: 16, fontStyle: 'italic' }}>"{t.quote}"</p>
+            <div key={t.name} style={{
+              background: `linear-gradient(160deg,${D.bg2},${D.bg3})`,
+              border: `1px solid ${D.border}`, borderRadius: 20, padding: 26,
+              transition: 'all .2s', cursor: 'default',
+            }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.borderColor = `${t.color}33`; el.style.boxShadow = `0 16px 40px ${t.color}15` }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.borderColor = D.border; el.style.boxShadow = 'none' }}
+            >
+              <div style={{ display: 'flex', gap: 2, marginBottom: 12 }}>
+                {[1,2,3,4,5].map(i => <Star key={i} size={14} fill={D.acc3} color={D.acc3}/>)}
+              </div>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: D.text, marginBottom: 18, fontStyle: 'italic' }}>"{t.quote}"</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0 }}>{t.avatar}</div>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff', flexShrink: 0, boxShadow: `0 4px 14px ${t.color}55` }}>
+                  {t.avatar}
+                </div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: S.ltext }}>{t.name}</div>
-                  <div style={{ fontSize: 11, color: S.ltext2 }}>{t.role}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: D.text }}>{t.name}</div>
+                  <div style={{ fontSize: 11, color: D.text3 }}>{t.role}</div>
                 </div>
               </div>
             </div>
@@ -864,150 +1054,250 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── PRICING ── */}
-      <section id="section-pricing" style={{ padding: '96px 24px', background: `linear-gradient(180deg,${S.lbg},${S.lbg2})`, borderTop: `1px solid ${S.lborder}` }}>
+      {/* ════ PRICING ════ */}
+      <section id="section-pricing" style={{ padding: '88px clamp(16px,4vw,80px)', background: `linear-gradient(180deg,${D.bg2},${D.bg})`, borderTop: `1px solid ${D.border}` }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(91,78,232,.1)', border: `1px solid rgba(91,78,232,.2)`, color: S.lp, fontSize: 11, fontWeight: 700, padding: '5px 15px', borderRadius: 100, letterSpacing: .8 }}>{lp.pricing_label}</span>
-          <h2 style={{ fontSize: 'clamp(26px,3.2vw,44px)', fontWeight: 900, margin: '12px 0', letterSpacing: -2, color: S.ltext }}>{lp.pricing_title}</h2>
-          <p style={{ color: S.ltext2, fontSize: 16 }}>{lp.pricing_sub}</p>
+          <span style={{ display: 'inline-block', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', color: D.p3, fontSize: 11, fontWeight: 800, padding: '5px 14px', borderRadius: 99, letterSpacing: '.8px' }}>
+            {lp.pricing_label}
+          </span>
+          <h2 style={{ fontSize: 'clamp(26px,3.4vw,42px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', margin: '14px 0 8' }}>
+            {lp.pricing_title}
+          </h2>
+          <p style={{ fontSize: 15, color: D.text2 }}>{lp.pricing_sub}</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, maxWidth: 980, margin: '0 auto', alignItems: 'start' }}>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 18, maxWidth: 1000, margin: '0 auto', alignItems: 'start' }}>
           {pricing.map(p => (
-            <div key={p.name}
-              style={{
-                background: p.pop ? `linear-gradient(145deg,${S.lp},${S.lp2} 70%,#A78BFA)` : '#fff',
-                border: `1.5px solid ${p.pop ? 'transparent' : S.lborder}`,
-                borderRadius: 24, padding: 32, transition: 'all .28s', position: 'relative',
-                boxShadow: p.pop ? `0 24px 72px rgba(91,78,232,.42), 0 0 0 1px rgba(91,78,232,.12)` : '0 2px 16px rgba(91,78,232,.06)',
-                transform: p.pop ? 'scale(1.03)' : 'none',
-              }}
-              onMouseEnter={e => { if (!p.pop) { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 28px 72px rgba(91,78,232,.16)'; } }}
-              onMouseLeave={e => { if (!p.pop) { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px rgba(91,78,232,.06)'; } }}
+            <div key={p.name} style={{
+              background: p.pop
+                ? `linear-gradient(160deg,${D.p},${D.p2} 70%,${D.p3})`
+                : `linear-gradient(160deg,${D.bg2},${D.bg3})`,
+              border: `1.5px solid ${p.pop ? 'transparent' : D.border}`,
+              borderRadius: 22, padding: '32px 28px',
+              position: 'relative',
+              transition: 'all .2s',
+              transform: p.pop ? 'scale(1.03)' : 'none',
+              boxShadow: p.pop
+                ? '0 24px 60px rgba(108,71,255,.5),0 0 0 1px rgba(108,71,255,.2)'
+                : '0 2px 12px rgba(0,0,0,.2)',
+            }}
+              onMouseEnter={e => { if (!p.pop) { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = '0 20px 50px rgba(0,0,0,.5)' } }}
+              onMouseLeave={e => { if (!p.pop) { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.boxShadow = '0 2px 12px rgba(0,0,0,.2)' } }}
             >
               {p.tag && (
-                <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: `linear-gradient(135deg,${S.lp},${S.lp2})`, color: '#fff', fontSize: 10, fontWeight: 800, padding: '5px 16px', borderRadius: 100, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(91,78,232,.4)', letterSpacing: .5 }}>{p.tag}</div>
-              )}
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2, color: p.pop ? 'rgba(255,255,255,.7)' : S.ltext3, marginBottom: 6 }}>{p.name}</div>
-              <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.65)' : S.ltext2, marginBottom: 16 }}>{p.sub}</div>
-
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: p.name === 'Enterprise' ? 26 : 40, fontWeight: 900, letterSpacing: -1.5, lineHeight: 1, color: p.pop ? '#fff' : S.ltext }}>
-                  {p.name === 'Enterprise' ? lp.on_estimate : formatPlanPrice(p.name === 'Starter' ? 14410 : 34750)}
+                <div style={{
+                  position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)',
+                  background: '#fff', color: D.p,
+                  fontSize: 10, fontWeight: 900, padding: '5px 14px', borderRadius: 99,
+                  textTransform: 'uppercase', letterSpacing: '.7px',
+                  boxShadow: '0 6px 18px rgba(0,0,0,.3)',
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                }}>
+                  <Star size={11} fill={D.acc3} color={D.acc3}/>{p.tag}
                 </div>
-                {p.name !== 'Enterprise' && (
-                  <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.6)' : S.ltext2, marginTop: 3 }}>{lp.per_month}</div>
+              )}
+
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.2px', color: p.pop ? 'rgba(255,255,255,.75)' : D.text3, marginBottom: 6 }}>
+                {p.name}
+              </div>
+              <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.7)' : D.text2, marginBottom: 18 }}>
+                {p.sub}
+              </div>
+
+              <div style={{ marginBottom: 22 }}>
+                <div style={{ fontSize: p.xof === 0 ? 26 : 40, fontWeight: 900, letterSpacing: '-1.5px', lineHeight: 1, color: p.pop ? '#fff' : D.text }}>
+                  {p.xof === 0 ? lp.on_estimate : formatPlanPrice(p.xof)}
+                </div>
+                {p.xof !== 0 && (
+                  <div style={{ fontSize: 13, color: p.pop ? 'rgba(255,255,255,.65)' : D.text3, marginTop: 4 }}>
+                    {lp.per_month}
+                  </div>
                 )}
-                {p.name !== 'Enterprise' && currency !== 'XOF' && currency !== 'XAF' && (
-                  <div style={{ fontSize: 10.5, color: p.pop ? 'rgba(255,255,255,.45)' : S.ltext3, marginTop: 3 }}>
-                    ≈ {new Intl.NumberFormat('fr-FR').format(p.name === 'Starter' ? 14410 : 34750)} FCFA
+                {p.xof !== 0 && currency !== 'XOF' && currency !== 'XAF' && (
+                  <div style={{ fontSize: 11, color: p.pop ? 'rgba(255,255,255,.5)' : D.text4, marginTop: 4, fontFamily: MONO }}>
+                    ≈ {new Intl.NumberFormat('fr-FR').format(p.xof)} FCFA
                   </div>
                 )}
               </div>
 
-              <div style={{ height: 1, background: p.pop ? 'rgba(255,255,255,.15)' : S.lborder, marginBottom: 20 }} />
+              <div style={{ height: 1, background: p.pop ? 'rgba(255,255,255,.15)' : D.border, marginBottom: 20 }}/>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 28 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 26 }}>
                 {p.features.map(f => (
-                  <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5 }}>
-                    <div style={{
+                  <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+                    <span style={{
                       width: 20, height: 20, borderRadius: 6, flexShrink: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
-                      background: p.pop ? (f.ok ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.08)') : (f.ok ? `${S.green}18` : S.lbg3),
-                      color: p.pop ? (f.ok ? '#fff' : 'rgba(255,255,255,.3)') : (f.ok ? S.green : S.ltext3),
-                      fontWeight: 800,
-                    }}>{f.ok ? '✓' : '–'}</div>
-                    <span style={{ color: p.pop ? (f.ok ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.4)') : (f.ok ? S.ltext : S.ltext3) }}>
+                      background: p.pop
+                        ? (f.ok ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.08)')
+                        : (f.ok ? 'rgba(0,208,132,.18)' : 'rgba(255,255,255,.05)'),
+                      color: p.pop
+                        ? (f.ok ? '#fff' : 'rgba(255,255,255,.35)')
+                        : (f.ok ? D.acc : D.text4),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {f.ok ? <Check size={11} strokeWidth={3.2}/> : '−'}
+                    </span>
+                    <span style={{ color: p.pop ? (f.ok ? '#fff' : 'rgba(255,255,255,.5)') : (f.ok ? D.text : D.text4) }}>
                       {f.text}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <button
-                onClick={() => {
-                  if (p.name === 'Starter' || p.name === 'Business') navigate('/signup')
-                  else navigate('/login')
-                }}
+              <button type="button"
+                onClick={() => p.name === lp.enterprise_name ? scrollTo('section-faq') : navigate('/signup')}
                 style={{
-                  width: '100%',
-                  border: p.btn === 'outline' ? `1.5px solid ${S.lborder2}` : 'none',
-                  borderRadius: 13, padding: '13px 0', fontSize: 14, fontWeight: 800,
-                  cursor: 'pointer', fontFamily: 'inherit', transition: 'all .22s',
-                  background: p.btn === 'light' ? `linear-gradient(135deg,${S.lp},${S.lp2})` : p.btn === 'white' ? '#fff' : 'transparent',
-                  color: p.btn === 'light' ? '#fff' : p.btn === 'white' ? S.lp : S.lp,
-                  boxShadow: p.btn === 'light' ? '0 6px 20px rgba(91,78,232,.32)' : p.btn === 'white' ? '0 4px 16px rgba(0,0,0,.12)' : 'none',
+                  width: '100%', borderRadius: 13, padding: '13px 0',
+                  fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                  fontFamily: FONT, transition: 'all .2s',
+                  background: p.btn === 'light' ? `linear-gradient(135deg,${D.p},${D.p2})`
+                    : p.btn === 'white' ? '#fff'
+                    : 'rgba(255,255,255,.04)',
+                  color: p.btn === 'light' ? '#fff' : p.btn === 'white' ? D.p : D.text,
+                  border: p.btn === 'outline' ? `1.5px solid ${D.border2}` : 'none',
+                  boxShadow: p.btn === 'light' ? '0 6px 20px rgba(108,71,255,.35)'
+                    : p.btn === 'white' ? '0 6px 20px rgba(0,0,0,.25)'
+                    : 'none',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; }}
-              >{p.btnText}</button>
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'none'}
+              >
+                {p.btnText}<ArrowRight size={14}/>
+              </button>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── FAQ ── */}
-      <section id="section-faq" style={{ padding: '96px 24px', background: '#fff', borderTop: `1px solid ${S.lborder}` }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(91,78,232,.1)', border: `1px solid rgba(91,78,232,.2)`, color: S.lp, fontSize: 11, fontWeight: 700, padding: '5px 15px', borderRadius: 100, letterSpacing: .8 }}>{lp.faq_label}</span>
-          <h2 style={{ fontSize: 'clamp(26px,3.2vw,44px)', fontWeight: 900, margin: '12px 0', letterSpacing: -2, color: S.ltext }}>{lp.faq_title}</h2>
+      {/* ════ FAQ ════ */}
+      <section id="section-faq" style={{ padding: '88px clamp(16px,4vw,80px)', background: D.bg2, borderTop: `1px solid ${D.border}` }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <span style={{ display: 'inline-block', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', color: D.p3, fontSize: 11, fontWeight: 800, padding: '5px 14px', borderRadius: 99, letterSpacing: '.8px' }}>
+            {lp.faq_label}
+          </span>
+          <h2 style={{ fontSize: 'clamp(26px,3.4vw,42px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', margin: '14px 0 0', lineHeight: 1.2 }}>
+            {lp.faq_title}
+          </h2>
         </div>
-        <div style={{ maxWidth: 740, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {faqs.map((f, i) => (
-            <details key={i} style={{ background: S.lbg, border: `1px solid ${S.lborder}`, borderRadius: 14, overflow: 'hidden' }}>
-              <summary style={{ padding: '18px 22px', fontSize: 14.5, fontWeight: 700, color: S.ltext, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', userSelect: 'none', listStyle: 'none' }}>
-                {f.q} <span style={{ fontSize: 18, color: S.lp, flexShrink: 0 }}>+</span>
+            <details key={i} style={{
+              background: `linear-gradient(160deg,${D.bg2},${D.bg3})`,
+              border: `1px solid ${D.border}`, borderRadius: 14, overflow: 'hidden',
+            }}>
+              <summary style={{
+                padding: '18px 22px', fontSize: 14.5, fontWeight: 700,
+                color: D.text, cursor: 'pointer',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                userSelect: 'none', listStyle: 'none',
+              }}>
+                {f.q}
+                <span style={{ fontSize: 18, color: D.p3, flexShrink: 0, marginLeft: 12 }}>+</span>
               </summary>
-              <div style={{ padding: '0 22px 18px', fontSize: 14, color: S.ltext2, lineHeight: 1.75 }}>{f.a}</div>
+              <div style={{ padding: '0 22px 18px', fontSize: 14, color: D.text2, lineHeight: 1.75 }}>{f.a}</div>
             </details>
           ))}
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* ════ CTA FINAL ════ */}
       <section style={{
-        padding: '100px 24px', textAlign: 'center',
-        background: `linear-gradient(135deg,${S.lp},${S.lp2} 60%,${S.lp3})`,
-        position: 'relative', overflow: 'hidden',
+        padding: '100px clamp(16px,4vw,80px)',
+        background: `linear-gradient(160deg,${D.bg},${D.bg2})`,
+        position: 'relative', overflow: 'hidden', textAlign: 'center',
       }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1.5' fill='%23ffffff' fill-opacity='0.07'/%3E%3C/svg%3E\")" }} />
-        <h2 style={{ fontSize: 'clamp(28px,4vw,52px)', fontWeight: 900, letterSpacing: -2, color: '#fff', marginBottom: 16, position: 'relative' }}>
-          {lp.cta_title}
-        </h2>
-        <p style={{ color: 'rgba(255,255,255,.8)', fontSize: 17, marginBottom: 36, maxWidth: 520, margin: '0 auto 36px', position: 'relative' }}>
-          {lp.cta_sub}
-        </p>
-        <button onClick={() => navigate('/signup')} style={{
-          background: '#fff', color: S.lp, border: 'none', borderRadius: 13,
-          padding: '15px 40px', fontSize: 15, fontWeight: 800, cursor: 'pointer',
-          boxShadow: '0 12px 36px rgba(0,0,0,.2)', position: 'relative', fontFamily: 'inherit',
-          transition: 'all .22s', display: 'inline-flex', alignItems: 'center', gap: 8,
-        }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 50px rgba(0,0,0,.28)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 36px rgba(0,0,0,.2)'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
-        >
-          {lp.cta_btn}
-        </button>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', marginTop: 14, position: 'relative' }}>
-          {lp.cta_note}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%,-50%)',
+          width: 540, height: 540, borderRadius: '50%',
+          background: 'radial-gradient(circle,rgba(108,71,255,.18),transparent 70%)',
+          filter: 'blur(60px)', pointerEvents: 'none',
+        }}/>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 900, color: D.text, letterSpacing: '-1.5px', marginBottom: 14, lineHeight: 1.1 }}>
+            {lp.cta_title}
+          </h2>
+          <p style={{ fontSize: 16, color: D.text2, marginBottom: 32, maxWidth: 460, margin: '0 auto 32px' }}>
+            {lp.cta_sub}
+          </p>
+          <button type="button" onClick={() => navigate('/signup')}
+            style={{
+              padding: '17px 38px', borderRadius: 14,
+              background: `linear-gradient(135deg,${D.p},${D.p2})`,
+              border: 'none', color: '#fff', fontSize: 16, fontWeight: 800,
+              cursor: 'pointer', fontFamily: FONT,
+              boxShadow: '0 12px 40px rgba(108,71,255,.5)',
+              transition: 'all .2s',
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+            }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = '0 16px 50px rgba(108,71,255,.65)' }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.boxShadow = '0 12px 40px rgba(108,71,255,.5)' }}
+          >
+            <Zap size={18} strokeWidth={2.6}/>{lp.cta_btn}
+          </button>
+          <div style={{ marginTop: 18, fontSize: 12, color: D.text3, display: 'inline-flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'fr' ? '14 jours gratuits' : '14 days free'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'fr' ? 'Sans carte bancaire' : 'No credit card'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'fr' ? 'Annulation facile' : 'Easy cancellation'}</span>
+          </div>
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer style={{ background: '#0f0e1a', color: 'rgba(255,255,255,.45)', padding: '36px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, fontSize: 12.5 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,.7)', fontWeight: 700 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${S.lp},${S.lp2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: 14 }}>H</div>
-          HabaShop
+      {/* ════ FOOTER ════ */}
+      <footer style={{
+        padding: '40px clamp(16px,4vw,80px) 28px',
+        borderTop: `1px solid ${D.border}`,
+        background: D.bg,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 9,
+              background: `linear-gradient(135deg,${D.p},${D.p2})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff',
+            }}>
+              <ShoppingCart size={15} strokeWidth={2.4}/>
+            </div>
+            <span style={{ fontSize: 16, fontWeight: 900, color: D.text }}>HabaShop</span>
+          </div>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+            {lp.footer_links.map(link => (
+              <a key={link} href="#" style={{
+                fontSize: 12, color: D.text3, textDecoration: 'none',
+                transition: 'color .15s', cursor: 'pointer',
+              }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = D.text}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = D.text3}
+              >{link}</a>
+            ))}
+          </div>
         </div>
-        <span>{lp.footer}</span>
-        <div style={{ display: 'flex', gap: 20 }}>
-          {lp.footer_links.map(label => (
-            <a key={label} style={{ color: 'rgba(255,255,255,.45)', textDecoration: 'none', cursor: 'pointer', transition: 'color .15s' }}
-              onMouseEnter={e => { (e.target as HTMLElement).style.color = 'rgba(255,255,255,.8)'; }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.color = 'rgba(255,255,255,.45)'; }}
-            >{label}</a>
-          ))}
+        <div style={{ textAlign: 'center', fontSize: 11, color: D.text4, paddingTop: 18, borderTop: `1px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center', width: '100%' }}>
+          {lp.footer}<Shield size={11}/>
         </div>
       </footer>
+
+      <style>{`
+        @keyframes lp-float {
+          0%, 100% { transform: translateY(0) }
+          50%      { transform: translateY(-20px) }
+        }
+        @keyframes lp-pulse {
+          0%, 100% { opacity: 1; transform: scale(1) }
+          50%      { opacity: .5; transform: scale(.8) }
+        }
+        @media (max-width: 880px) {
+          .lp-nav-desktop { display: none !important }
+        }
+        @media (max-width: 640px) {
+          .lp-selectors { display: none !important }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important }
+        }
+      `}</style>
     </div>
   )
 }
