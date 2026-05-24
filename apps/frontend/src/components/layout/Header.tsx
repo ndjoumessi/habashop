@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Search, Plus, Bell, Wifi, WifiOff, ShoppingCart, Package, User, Receipt, Users, Truck, X, ChevronDown, Zap } from 'lucide-react'
-import { useAppStore, t } from '@/stores/appStore'
+import { Search, Plus, Bell, Wifi, WifiOff, ShoppingCart, Package, User, Receipt, Users, Truck, X, ChevronDown, Zap, Clock, Crown } from 'lucide-react'
+import { useAppStore, t, getTrialInfo } from '@/stores/appStore'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import CurrencyBadge from '@/components/ui/CurrencyBadge'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import toast from 'react-hot-toast'
-import { alertsApi } from '@/lib/api'
+import { alertsApi, tenantApi } from '@/lib/api'
 
 // ── Multilingual page titles ─────────────────────────────────────────────────
 
@@ -150,6 +150,14 @@ export default function Header() {
   const [swUpdate,      setSwUpdate]      = useState(false)
 
   const role = useAuthStore(s => s.user?.role)
+  const tenant    = useAppStore(s => s.tenant)
+  const setTenant = useAppStore(s => s.setTenant)
+
+  // Charge le tenant depuis l'API si absent du store (session déjà ouverte)
+  useEffect(() => {
+    if (tenant) return
+    tenantApi.get().then(data => { if (data?.id) setTenant(data) }).catch(() => {})
+  }, [tenant, setTenant])
 
   const ALL_NEW_ITEMS = [
     { slug: 'pos',       Icon: ShoppingCart, label: lang === 'fr' ? 'Nouvelle vente'    : 'New sale',      action: () => navigate('/app/pos') },
@@ -357,6 +365,31 @@ export default function Header() {
             {apiStatus === 'online' ? 'Live' : apiStatus === 'offline' ? 'Hors ligne' : '…'}
           </span>
         </div>
+
+        {/* ── Plan / trial badge ── */}
+        {tenant && (() => {
+          const trial = getTrialInfo(tenant)
+          const planLabel = tenant.plan ? tenant.plan.charAt(0).toUpperCase() + tenant.plan.slice(1) : 'Free'
+          const danger = trial.isTrial && trial.daysLeft <= 3
+          const color  = danger ? 'var(--danger)' : trial.isTrial ? 'var(--warn)' : 'var(--p3)'
+          const bg     = danger ? 'rgba(255,59,92,.10)' : trial.isTrial ? 'rgba(255,184,0,.10)' : 'rgba(108,71,255,.12)'
+          const border = danger ? 'rgba(255,59,92,.25)' : trial.isTrial ? 'rgba(255,184,0,.25)' : 'rgba(108,71,255,.25)'
+          return (
+            <div
+              title={trial.isTrial
+                ? (lang === 'fr' ? `Essai gratuit — ${trial.daysLeft} jour(s) restant(s)` : `Free trial — ${trial.daysLeft} day(s) left`)
+                : (lang === 'fr' ? `Plan ${planLabel}` : `${planLabel} plan`)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
+                background: bg, border: `1px solid ${border}`, color, flexShrink: 0,
+                fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', cursor: 'default',
+              }}>
+              {trial.isTrial
+                ? <><Clock size={11} />{lang === 'fr' ? `Essai · ${trial.daysLeft}j` : `Trial · ${trial.daysLeft}d`}</>
+                : <><Crown size={11} />{planLabel}</>}
+            </div>
+          )
+        })()}
 
         <LanguageSwitcher />
         <CurrencyBadge />
