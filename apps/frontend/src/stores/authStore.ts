@@ -85,8 +85,11 @@ export const useAuthStore = create<AuthState>()(
         } catch (err: any) {
           // Fallback démo sans backend
           const demoAccounts: Record<string, { id: string; name: string; role: UserRole }> = {
-            'admin@habashop.com':   { id: 'demo-admin',   name: 'Nelson Djoumessi', role: 'ADMIN'   },
-            'cashier@habashop.com': { id: 'demo-cashier', name: 'Aminata Touré',    role: 'CASHIER' },
+            'admin@habashop.com':      { id: 'demo-admin',      name: 'Nelson Djoumessi', role: 'ADMIN'      },
+            'manager@habashop.com':    { id: 'demo-manager',    name: 'Ibrahim Touré',    role: 'MANAGER'    },
+            'cashier@habashop.com':    { id: 'demo-cashier',    name: 'Aminata Touré',    role: 'CASHIER'    },
+            'accountant@habashop.com': { id: 'demo-accountant', name: 'Fatou Sow',        role: 'ACCOUNTANT' },
+            'hr@habashop.com':         { id: 'demo-hr',         name: 'Marie Bakayoko',   role: 'HR'         },
           }
           const demo = demoAccounts[email]
           if (demo && password === 'demo1234') {

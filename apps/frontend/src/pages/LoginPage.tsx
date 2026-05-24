@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import toast from 'react-hot-toast'
+import { Crown, Briefcase, ShoppingCart, Calculator, Users } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 export default function LoginPage() {
   const navigate              = useNavigate()
@@ -296,18 +298,21 @@ export default function LoginPage() {
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }}/>
             </div>
 
-            {/* Boutons démo */}
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[
-                { label: 'Admin',    email: 'admin@habashop.com',   pwd: 'demo1234', icon: '👑', color: 'rgba(108,71,255,.15)', border: 'rgba(108,71,255,.3)',  text: 'var(--p3)'  },
-                { label: 'Caissier', email: 'cashier@habashop.com', pwd: 'demo1234', icon: '🛒', color: 'rgba(0,184,255,.1)',   border: 'rgba(0,184,255,.25)', text: 'var(--acc3,var(--acc2))' },
-              ].map(demo => (
+            {/* Boutons démo (5 rôles) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(110px,1fr))', gap: 8 }}>
+              {([
+                { label: 'Admin',     email: 'admin@habashop.com',      Icon: Crown,        color: 'rgba(108,71,255,.15)', border: 'rgba(108,71,255,.3)',  text: 'var(--p3)'  },
+                { label: 'Manager',   email: 'manager@habashop.com',    Icon: Briefcase,    color: 'rgba(0,208,132,.12)',  border: 'rgba(0,208,132,.28)', text: 'var(--acc2)' },
+                { label: 'Caissier',  email: 'cashier@habashop.com',    Icon: ShoppingCart, color: 'rgba(0,184,255,.1)',   border: 'rgba(0,184,255,.25)', text: 'var(--acc3,var(--acc2))' },
+                { label: 'Comptable', email: 'accountant@habashop.com', Icon: Calculator,   color: 'rgba(255,149,0,.12)',  border: 'rgba(255,149,0,.28)', text: 'var(--acc)' },
+                { label: 'RH',        email: 'hr@habashop.com',         Icon: Users,        color: 'rgba(244,114,182,.12)',border: 'rgba(244,114,182,.28)', text: '#F472B6' },
+              ] as { label: string; email: string; Icon: LucideIcon; color: string; border: string; text: string }[]).map(demo => (
                 <button
                   key={demo.label}
                   type="button"
-                  onClick={() => { setEmail(demo.email); setPassword(demo.pwd); setError('') }}
+                  onClick={() => { setEmail(demo.email); setPassword('demo1234'); setError('') }}
                   style={{
-                    flex: 1, padding: '9px',
+                    padding: '9px',
                     background: demo.color,
                     border: `1px solid ${demo.border}`,
                     borderRadius: 10, cursor: 'pointer',
@@ -319,7 +324,8 @@ export default function LoginPage() {
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.8'}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
                 >
-                  {demo.icon} {demo.label}
+                  <demo.Icon size={13} strokeWidth={2.4} />
+                  {demo.label}
                 </button>
               ))}
             </div>
