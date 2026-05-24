@@ -706,7 +706,7 @@ export default function Forecasts() {
                       <span style={{ fontSize:12, color:'var(--text3)' }}>
                         {displayVal} / {displayTgt}
                       </span>
-                      {reached && <span style={{ fontSize:10, color:'var(--acc2)', fontWeight:800 }}>✓</span>}
+                      {reached && <Check size={12} strokeWidth={3} color="var(--acc2)" />}
                     </div>
                   </div>
                   <div style={{ height:8, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>

@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount, t } from '@/stores/appStore'
-import { Bell } from 'lucide-react'
+import {
+  Bell, AlertOctagon, AlertTriangle, CheckCircle2, Info,
+  Check, Trash2, Settings, Mail, MessageCircle, Save,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const NOTIF_ROUTES: Record<string, string> = {
@@ -44,8 +48,11 @@ const TYPE_CONFIG: Record<NotifType, { color: string; bg: string; border: string
   info:    { color:'var(--p2)',     bg:'rgba(91,78,232,.1)',  border:'rgba(91,78,232,.25)'  },
 }
 
-const NOTIF_ICON: Record<NotifType, string> = {
-  danger:'🚨', warning:'⚠️', success:'✅', info:'ℹ️',
+const NOTIF_ICON: Record<NotifType, LucideIcon> = {
+  danger:  AlertOctagon,
+  warning: AlertTriangle,
+  success: CheckCircle2,
+  info:    Info,
 }
 
 const PREF_ROWS = [
@@ -130,9 +137,11 @@ export default function Notifications() {
           ))}
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          <button className="mini-btn" onClick={markAllRead}>✅ {t('notif_mark_all_read')}</button>
-          <button className="mini-btn" style={{ color:'var(--danger)' }} onClick={deleteRead}>
-            🗑 {t('notif_delete_read')}
+          <button className="mini-btn" onClick={markAllRead} style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+            <Check size={13} strokeWidth={2.4} /> {t('notif_mark_all_read')}
+          </button>
+          <button className="mini-btn" style={{ color:'var(--danger)', display:'inline-flex', alignItems:'center', gap:6 }} onClick={deleteRead}>
+            <Trash2 size={13} strokeWidth={2.4} /> {t('notif_delete_read')}
           </button>
         </div>
       </div>
@@ -162,11 +171,18 @@ export default function Notifications() {
               )}
 
               {/* Icône type */}
-              <div style={{
-                width:44, height:44, borderRadius:12, flexShrink:0,
-                background:cfg.bg, border:`1px solid ${cfg.border}`,
-                display:'flex', alignItems:'center', justifyContent:'center', fontSize:20,
-              }}>{NOTIF_ICON[notif.type]}</div>
+              {(() => {
+                const TypeIcon = NOTIF_ICON[notif.type]
+                return (
+                  <div style={{
+                    width:44, height:44, borderRadius:12, flexShrink:0,
+                    background:cfg.bg, border:`1px solid ${cfg.border}`,
+                    display:'flex', alignItems:'center', justifyContent:'center', color:cfg.color,
+                  }}>
+                    <TypeIcon size={20} strokeWidth={2.2} />
+                  </div>
+                )
+              })()}
 
               {/* Contenu */}
               <div style={{ flex:1 }}>
@@ -202,14 +218,16 @@ export default function Notifications() {
                     </button>
                   )}
                   {!notif.read && (
-                    <button className="mini-btn" onClick={() => markRead(notif.id)}>
-                      ✓ Marquer comme lu
+                    <button className="mini-btn" onClick={() => markRead(notif.id)}
+                      style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+                      <Check size={12} strokeWidth={2.6} /> Marquer comme lu
                     </button>
                   )}
                   <button className="mini-btn"
-                    style={{ color:'var(--danger)', marginLeft:'auto' }}
+                    aria-label="Supprimer"
+                    style={{ color:'var(--danger)', marginLeft:'auto', display:'inline-flex', alignItems:'center', padding:'5px 8px' }}
                     onClick={() => deleteNotif(notif.id)}>
-                    🗑
+                    <Trash2 size={13} strokeWidth={2.4} />
                   </button>
                 </div>
               </div>
@@ -228,16 +246,30 @@ export default function Notifications() {
       {/* Section préférences */}
       <div className="panel" style={{ marginBottom:0 }}>
         <div className="panel-h">
-          <span className="panel-t">⚙️ Préférences de notifications</span>
+          <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+            <Settings size={15} /> Préférences de notifications
+          </span>
         </div>
         <div style={{ overflowX:'auto' }}>
           <table style={{ minWidth:600 }}>
             <thead>
               <tr>
                 <th style={{ width:220 }}>Type de notification</th>
-                <th style={{ textAlign:'center' }}>📧 Email</th>
-                <th style={{ textAlign:'center' }}>💬 SMS</th>
-                <th style={{ textAlign:'center' }}>🔔 Push</th>
+                <th style={{ textAlign:'center' }}>
+                  <span style={{ display:'inline-flex', alignItems:'center', gap:6, justifyContent:'center' }}>
+                    <Mail size={13} /> Email
+                  </span>
+                </th>
+                <th style={{ textAlign:'center' }}>
+                  <span style={{ display:'inline-flex', alignItems:'center', gap:6, justifyContent:'center' }}>
+                    <MessageCircle size={13} /> SMS
+                  </span>
+                </th>
+                <th style={{ textAlign:'center' }}>
+                  <span style={{ display:'inline-flex', alignItems:'center', gap:6, justifyContent:'center' }}>
+                    <Bell size={13} /> Push
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -275,8 +307,9 @@ export default function Notifications() {
           </table>
         </div>
         <div style={{ display:'flex', justifyContent:'flex-end', marginTop:16 }}>
-          <button className="topbar-btn" onClick={() => toast.success('✅ Préférences sauvegardées !')}>
-            💾 Sauvegarder les préférences
+          <button className="topbar-btn" onClick={() => toast.success('Préférences sauvegardées')}
+            style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+            <Save size={14} /> Sauvegarder les préférences
           </button>
         </div>
       </div>

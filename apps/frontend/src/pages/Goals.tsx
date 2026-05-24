@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAppStore, useFormatAmount, useCurrencyInfo } from '@/stores/appStore'
 import { dashboardApi } from '@/lib/api'
 import toast from 'react-hot-toast'
-import { Plus, Trophy, Pencil, X, Check, Trash2, Target } from 'lucide-react'
+import { Plus, Trophy, Pencil, X, Check, Trash2, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
 interface Goal {
   id: string
@@ -236,9 +236,14 @@ export default function Goals() {
                   background: status === 'success' ? 'rgba(0,208,132,.12)' : status === 'warning' ? 'rgba(240,165,0,.12)' : 'rgba(239,68,68,.1)',
                   color: statusColor,
                   border:`1px solid ${status === 'success' ? 'rgba(0,208,132,.25)' : status === 'warning' ? 'rgba(240,165,0,.2)' : 'rgba(239,68,68,.2)'}`,
+                  display:'inline-flex', alignItems:'center', gap:4,
                 }}>
-                  {status === 'success' ? '✓' : status === 'warning' ? '↗' : '↘'}
-                  {' '}{status === 'success' ? (lang === 'fr' ? 'Atteint' : 'Achieved') : status === 'warning' ? (lang === 'fr' ? 'En cours' : 'In progress') : (lang === 'fr' ? 'En retard' : 'Behind')}
+                  {status === 'success'
+                    ? <Check size={11} strokeWidth={3} />
+                    : status === 'warning'
+                      ? <ArrowUpRight size={11} strokeWidth={2.6} />
+                      : <ArrowDownRight size={11} strokeWidth={2.6} />}
+                  {status === 'success' ? (lang === 'fr' ? 'Atteint' : 'Achieved') : status === 'warning' ? (lang === 'fr' ? 'En cours' : 'In progress') : (lang === 'fr' ? 'En retard' : 'Behind')}
                 </span>
               </div>
 

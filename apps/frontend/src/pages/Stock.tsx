@@ -274,7 +274,7 @@ export default function Stock() {
         <div className="flex flex-wrap gap-2 mb-4">
           <div className="search-wrap flex-1 min-w-40">
             <span className="search-icon"><Search size={13} /></span>
-            <input className="input pl-8 py-2 text-sm w-full" placeholder="🔍 Produit, référence…"
+            <input className="input pl-8 py-2 text-sm w-full" placeholder={t('common_search') + '…'}
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="input py-2 text-sm w-auto" value={cat} onChange={e => setCat(e.target.value)}>

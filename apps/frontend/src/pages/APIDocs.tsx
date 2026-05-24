@@ -3,6 +3,11 @@ import { useAppStore } from '@/stores/appStore'
 import { api } from '@/lib/api'
 import { generateCDC } from '@/utils/export'
 import toast from 'react-hot-toast'
+import {
+  Link2, ClipboardList, Globe, Zap, Code2, FlaskConical,
+  FileDown, Copy, BookOpen, Plug, HeartPulse, Lock,
+  Play, Loader2, AlertCircle, ArrowRight,
+} from 'lucide-react'
 
 const TESTER_ENDPOINTS = [
   'GET /api/dashboard/stats',
@@ -28,8 +33,9 @@ export default function APIDocs() {
   return (
     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
-        <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0 }}>
-          🔗 {lang === 'fr' ? 'API & Intégrations'
+        <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+          <Link2 size={20} strokeWidth={2.2} color="var(--p3)" />
+          {lang === 'fr' ? 'API & Intégrations'
             : lang === 'en' ? 'API & Integrations'
             : lang === 'es' ? 'API & Integraciones'
             : 'API & Integrazioni'}
@@ -43,7 +49,9 @@ export default function APIDocs() {
       {/* CDC PDF */}
       <div className="panel">
         <div className="panel-h">
-          <span className="panel-t">📋 {lang === 'fr' ? 'Cahier des charges' : 'Specification document'}</span>
+          <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+            <ClipboardList size={15} /> {lang === 'fr' ? 'Cahier des charges' : 'Specification document'}
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div style={{ fontSize: 13, color: 'var(--text2)', flex: 1 }}>
@@ -54,9 +62,9 @@ export default function APIDocs() {
           <button
             className="btn btn-primary btn-sm"
             onClick={() => generateCDC()}
-            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+            style={{ whiteSpace: 'nowrap', flexShrink: 0, display:'inline-flex', alignItems:'center', gap:6 }}
           >
-            📄 {lang === 'fr' ? 'Générer le PDF' : 'Generate PDF'}
+            <FileDown size={13} /> {lang === 'fr' ? 'Générer le PDF' : 'Generate PDF'}
           </button>
         </div>
       </div>
@@ -64,7 +72,9 @@ export default function APIDocs() {
       {/* Base URL */}
       <div className="panel">
         <div className="panel-h">
-          <span className="panel-t">🌐 Base URL</span>
+          <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+            <Globe size={15} /> Base URL
+          </span>
         </div>
         <div style={{
           padding: '12px 16px',
@@ -82,18 +92,19 @@ export default function APIDocs() {
           <button className="mini-btn"
             onClick={() => {
               navigator.clipboard.writeText('https://habashop-production.up.railway.app')
-              toast.success('📋 URL copiée !')
-            }}>
-            📋 Copier
+              toast.success('URL copiée')
+            }}
+            style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+            <Copy size={12} /> Copier
           </button>
         </div>
       </div>
 
       {/* Liens */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 12 }}>
         {[
           {
-            icon: '📖',
+            Icon: BookOpen,
             title: lang === 'fr' ? 'Documentation complète' : 'Full documentation',
             desc: lang === 'fr' ? 'Tous les endpoints avec exemples' : 'All endpoints with examples',
             url: 'https://habashop-production.up.railway.app/api/docs/html',
@@ -101,7 +112,7 @@ export default function APIDocs() {
             color: 'var(--p2)',
           },
           {
-            icon: '🔌',
+            Icon: Plug,
             title: 'JSON Schema',
             desc: lang === 'fr' ? "Format JSON de l'API" : 'API JSON format',
             url: 'https://habashop-production.up.railway.app/api/docs',
@@ -109,7 +120,7 @@ export default function APIDocs() {
             color: 'var(--acc2)',
           },
           {
-            icon: '💚',
+            Icon: HeartPulse,
             title: 'Health Check',
             desc: lang === 'fr' ? 'Statut du serveur en temps réel' : 'Real-time server status',
             url: 'https://habashop-production.up.railway.app/health',
@@ -123,19 +134,26 @@ export default function APIDocs() {
             borderRadius: 14, padding: '20px',
             display: 'flex', flexDirection: 'column', gap: 10,
           }}>
-            <div style={{ fontSize: 32 }}>{link.icon}</div>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: `${link.color}1F`, border: `1px solid ${link.color}3F`,
+              color: link.color,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <link.Icon size={22} strokeWidth={2.2} />
+            </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{link.title}</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', flex: 1 }}>{link.desc}</div>
             <a href={link.url} target="_blank" rel="noopener noreferrer"
               style={{
-                display: 'block', textAlign: 'center',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 padding: '8px', borderRadius: 9,
                 background: `${link.color}22`,
                 border: `1px solid ${link.color}44`,
                 color: link.color, fontSize: 12, fontWeight: 700,
                 textDecoration: 'none', transition: 'all .15s',
               }}>
-              {link.btn} →
+              {link.btn} <ArrowRight size={12} />
             </a>
           </div>
         ))}
@@ -144,7 +162,9 @@ export default function APIDocs() {
       {/* Endpoints rapides */}
       <div className="panel">
         <div className="panel-h">
-          <span className="panel-t">⚡ {lang === 'fr' ? 'Endpoints principaux' : 'Main endpoints'}</span>
+          <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+            <Zap size={15} /> {lang === 'fr' ? 'Endpoints principaux' : 'Main endpoints'}
+          </span>
         </div>
         <div className="table-wrap">
           <table>
@@ -191,14 +211,16 @@ export default function APIDocs() {
                         color: 'var(--danger)',
                         background: 'rgba(232,64,74,.1)',
                         borderRadius: 6, padding: '2px 8px',
-                      }}>🔒 JWT</span>
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                      }}><Lock size={10} strokeWidth={2.6}/> JWT</span>
                     ) : (
                       <span style={{
                         fontSize: 10, fontWeight: 700,
                         color: 'var(--acc2)',
                         background: 'rgba(14,196,126,.1)',
                         borderRadius: 6, padding: '2px 8px',
-                      }}>🌍 Public</span>
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                      }}><Globe size={10} strokeWidth={2.6}/> Public</span>
                     )}
                   </td>
                 </tr>
@@ -211,14 +233,17 @@ export default function APIDocs() {
       {/* Exemple code */}
       <div className="panel">
         <div className="panel-h">
-          <span className="panel-t">💻 {lang === 'fr' ? "Exemple d'intégration" : 'Integration example'}</span>
+          <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+            <Code2 size={15} /> {lang === 'fr' ? "Exemple d'intégration" : 'Integration example'}
+          </span>
           <button className="mini-btn"
             onClick={() => {
               const code = document.getElementById('api-example-code')?.textContent ?? ''
               navigator.clipboard.writeText(code)
-              toast.success('📋 Code copié !')
-            }}>
-            📋 Copier
+              toast.success('Code copié')
+            }}
+            style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
+            <Copy size={12} /> Copier
           </button>
         </div>
         <pre id="api-example-code" style={{
@@ -268,7 +293,9 @@ main().catch(console.error)`}
       {/* Testeur interactif */}
       <div className="panel">
         <div className="panel-h">
-          <span className="panel-t">🧪 {lang === 'fr' ? 'Testeur interactif' : 'Interactive tester'}</span>
+          <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+            <FlaskConical size={15} /> {lang === 'fr' ? 'Testeur interactif' : 'Interactive tester'}
+          </span>
         </div>
         <div style={{ display:'flex', gap:10, marginBottom:12 }}>
           <select className="input text-sm" style={{ flex:1 }} value={testerEndpoint}
@@ -295,13 +322,15 @@ main().catch(console.error)`}
                 }
                 setTesterResult(JSON.stringify(data, null, 2))
               } catch (err: any) {
-                setTesterResult(`❌ ${err.message}`)
+                setTesterResult(`__ERR__${err.message}`)
               } finally {
                 setTesterLoading(false)
               }
             }}
           >
-            {testerLoading ? '⏳' : '▶ Tester'}
+            {testerLoading
+              ? <Loader2 size={14} className="animate-spin" />
+              : <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><Play size={12} strokeWidth={2.6}/> Tester</span>}
           </button>
         </div>
 
@@ -320,16 +349,22 @@ main().catch(console.error)`}
           </div>
         )}
 
-        {testerResult && (
-          <pre style={{
-            background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10,
-            padding:14, margin:0, fontSize:12, lineHeight:1.7, overflow:'auto', maxHeight:340,
-            color: testerResult.startsWith('❌') ? 'var(--danger)' : 'var(--acc2)',
-            fontFamily:'var(--mono)',
-          }}>
-            {testerResult}
-          </pre>
-        )}
+        {testerResult && (() => {
+          const isError = testerResult.startsWith('__ERR__')
+          const display = isError ? testerResult.slice(7) : testerResult
+          return (
+            <div style={{
+              background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10,
+              padding:14, fontSize:12, lineHeight:1.7, overflow:'auto', maxHeight:340,
+              color: isError ? 'var(--danger)' : 'var(--acc2)',
+              fontFamily:'var(--mono)',
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+            }}>
+              {isError && <AlertCircle size={14} style={{ flexShrink:0, marginTop:2 }} />}
+              <pre style={{ margin:0, fontFamily:'inherit', whiteSpace:'pre-wrap', flex:1 }}>{display}</pre>
+            </div>
+          )
+        })()}
 
         {!testerResult && !testerLoading && (
           <div style={{ padding:'20px 0', textAlign:'center', fontSize:12, color:'var(--text3)' }}>
