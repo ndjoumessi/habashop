@@ -845,13 +845,16 @@ export default function Customers() {
         <div className="flex flex-wrap gap-2 mb-4">
           <div className="search-box flex-1 min-w-40">
             <Search size={13} className="search-icon" />
-            <input className="input pl-8 py-2 text-sm w-full" placeholder="🔍 Nom, téléphone…"
+            <input className="input pl-8 py-2 text-sm w-full" placeholder={lang === 'fr' ? '🔍 Nom, téléphone…' : lang === 'en' ? '🔍 Name, phone…' : lang === 'es' ? '🔍 Nombre, teléfono…' : '🔍 Nome, telefono…'}
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="input py-2 text-sm w-auto" value={typeFilter}
             onChange={e => setTypeFilter(e.target.value as any)}>
             <option value="">{t('pos_all')} {t('col_type').toLowerCase()}</option>
-            <option>Grossiste</option><option>Semi-gros</option><option>Fidèle</option><option>Détail</option>
+            <option value="Grossiste">{typeLabel('Grossiste', lang)}</option>
+            <option value="Semi-gros">{typeLabel('Semi-gros', lang)}</option>
+            <option value="Fidèle">{typeLabel('Fidèle', lang)}</option>
+            <option value="Détail">{typeLabel('Détail', lang)}</option>
           </select>
         </div>
 
@@ -1350,10 +1353,13 @@ export default function Customers() {
                 <input className="input text-sm" value={editCustForm.name}
                   onChange={e => setEditCustForm(f => ({...f, name:e.target.value}))} />
               </ViewField>
-              <ViewField label="TYPE" value={editCustForm.type} editing={custEditMode}>
+              <ViewField label="TYPE" value={typeLabel(editCustForm.type, lang)} editing={custEditMode}>
                 <select className="input text-sm" value={editCustForm.type}
                   onChange={e => setEditCustForm(f => ({...f, type:e.target.value as ClientType}))}>
-                  <option>Grossiste</option><option>Semi-gros</option><option>Fidèle</option><option>Détail</option>
+                  <option value="Grossiste">{typeLabel('Grossiste', lang)}</option>
+                  <option value="Semi-gros">{typeLabel('Semi-gros', lang)}</option>
+                  <option value="Fidèle">{typeLabel('Fidèle', lang)}</option>
+                  <option value="Détail">{typeLabel('Détail', lang)}</option>
                 </select>
               </ViewField>
               <ViewField label="TÉLÉPHONE" value={editCustForm.phone||''} icon="📞" editing={custEditMode}>
