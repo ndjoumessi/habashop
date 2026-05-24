@@ -31,6 +31,7 @@ import APIDocs from '@/pages/APIDocs'
 import Integrations from '@/pages/Integrations'
 import Onboarding from '@/pages/Onboarding'
 import Pricing from '@/pages/Pricing'
+import UpgradePlan from '@/pages/UpgradePlan'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -88,6 +89,7 @@ export default function App() {
         }
       >
         <Route index element={<AppIndex />} />
+        <Route path="upgrade"       element={<UpgradePlan />} />
         <Route path="dashboard"     element={<RoleRoute slug="dashboard"><Dashboard /></RoleRoute>} />
         <Route path="pos"           element={<RoleRoute slug="pos"><POS /></RoleRoute>} />
         <Route path="stock"         element={<RoleRoute slug="stock"><Stock /></RoleRoute>} />

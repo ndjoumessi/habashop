@@ -208,6 +208,14 @@ export const adminApi = {
   tenants:      () => api.get<any[]>('/api/admin/tenants'),
   stats:        () => api.get<any>('/api/admin/stats'),
   createTenant: (data: any) => api.post<any>('/api/admin/tenants', data),
+  planRequests: () => api.get<any[]>('/api/admin/plan-requests'),
+  reviewPlanRequest: (id: string, data: { action: 'approve' | 'reject'; adminNotes?: string }) =>
+    api.patch<any>(`/api/admin/plan-requests/${id}`, data),
+}
+
+export const billingApi = {
+  status:      () => api.get<any>('/api/billing/status'),
+  requestPlan: (data: any) => api.post<any>('/api/billing/request-plan', data),
 }
 
 export const cronApi = {

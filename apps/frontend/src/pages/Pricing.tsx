@@ -76,6 +76,12 @@ export default function Pricing() {
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
   const i = (fr: string, en: string, es: string, it: string) => (lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it)
 
+  const handleCTA = (planId: string) => {
+    if (planId === 'enterprise') { window.open('mailto:contact@habashop.com', '_blank'); return }
+    const loggedIn = !!localStorage.getItem('habashop_token')
+    navigate(loggedIn ? `/app/upgrade?plan=${planId}` : `/signup?plan=${planId}`)
+  }
+
   // Map display currency to one of the priced currencies (+ symbol)
   const priceKey: 'XOF' | 'EUR' | 'USD' = currency === 'EUR' || currency === 'GBP' ? 'EUR' : currency === 'USD' || currency === 'CAD' ? 'USD' : 'XOF'
   const symbol = priceKey === 'EUR' ? '€' : priceKey === 'USD' ? '$' : 'FCFA'
@@ -125,7 +131,7 @@ export default function Pricing() {
                     <div key={idx} style={{ fontSize: 12, color: f.startsWith('✅') ? 'var(--text2)' : 'rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', gap: 6 }}>{f}</div>
                   ))}
                 </div>
-                <button onClick={() => { if (plan.id === 'enterprise') window.open('mailto:contact@habashop.com', '_blank'); else navigate('/signup?plan=' + plan.id) }}
+                <button onClick={() => handleCTA(plan.id)}
                   style={{ width: '100%', padding: 13, borderRadius: 12, background: plan.popular ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : `${plan.color}18`, border: `1px solid ${plan.color}${plan.popular ? '00' : '44'}`, cursor: 'pointer', color: plan.popular ? '#fff' : plan.color, fontSize: 13, fontWeight: 800, fontFamily: 'var(--font)', transition: 'all .2s', boxShadow: plan.popular ? '0 8px 24px rgba(108,71,255,.35)' : 'none' }}>{plan.cta[lang] ?? plan.cta.fr}</button>
               </div>
             </div>

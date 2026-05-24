@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import {
   Shield, Store, Users, CreditCard, Wallet, Package, TrendingUp,
   Search, X, Plus, ArrowLeft, ChevronRight, Layers, BarChart3,
+  LayoutDashboard, Inbox, Check,
 } from 'lucide-react'
 
 type Tenant = {
@@ -41,13 +42,36 @@ export default function AdminDashboard() {
   const [selected, setSelected] = useState<Tenant | null>(null)
   const [showNewTenant, setShowNewTenant] = useState(false)
   const [newTenantForm, setNewTenantForm] = useState({ name: '', currency: 'XOF', country: 'SN', plan: 'starter', adminEmail: '', adminPassword: '' })
+  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'requests'>('overview')
+  const [planRequests, setPlanRequests] = useState<any[]>([])
 
   useEffect(() => {
-    Promise.all([adminApi.tenants(), adminApi.stats()])
-      .then(([t, s]) => { setTenants(t); setStats(s) })
+    Promise.all([adminApi.tenants(), adminApi.stats(), adminApi.planRequests().catch(() => [])])
+      .then(([t, s, r]) => { setTenants(t); setStats(s); setPlanRequests(r) })
       .catch(() => toast.error(i('Accès refusé — SUPER_ADMIN requis', 'Access denied — SUPER_ADMIN required', 'Acceso denegado — SUPER_ADMIN requerido', 'Accesso negato — SUPER_ADMIN richiesto')))
       .finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pendingCount = planRequests.length
+
+  const handleApprove = async (id: string) => {
+    if (!window.confirm(i('Approuver cette demande et activer le plan ?', 'Approve this request and activate the plan?', '¿Aprobar esta solicitud y activar el plan?', 'Approvare questa richiesta e attivare il piano?'))) return
+    try {
+      await adminApi.reviewPlanRequest(id, { action: 'approve', adminNotes: 'Paiement validé' })
+      toast.success(i('✅ Plan activé !', '✅ Plan activated!', '✅ ¡Plan activado!', '✅ Piano attivato!'))
+      setPlanRequests(prev => prev.filter(r => r.id !== id))
+    } catch (e: any) { toast.error(e?.message ?? 'Erreur') }
+  }
+
+  const handleReject = async (id: string) => {
+    const reason = window.prompt(i('Raison du rejet (optionnel) :', 'Rejection reason (optional):', 'Razón del rechazo (opcional):', 'Motivo del rifiuto (opzionale):'))
+    if (reason === null) return
+    try {
+      await adminApi.reviewPlanRequest(id, { action: 'reject', adminNotes: reason || 'Demande rejetée' })
+      toast.success(i('Demande rejetée', 'Request rejected', 'Solicitud rechazada', 'Richiesta rifiutata'))
+      setPlanRequests(prev => prev.filter(r => r.id !== id))
+    } catch (e: any) { toast.error(e?.message ?? 'Erreur') }
+  }
 
   const mrr = useMemo(() => tenants.reduce((s, t) => s + planPrice(t.plan), 0), [tenants])
 
@@ -136,8 +160,25 @@ export default function AdminDashboard() {
 
       {loading && <div style={{ textAlign: 'center', padding: 60, color: 'var(--text3)' }}>{i('Chargement…', 'Loading…', 'Cargando…', 'Caricamento…')}</div>}
 
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
+        {([
+          { id: 'overview', icon: <LayoutDashboard size={14} />, label: i("Vue d'ensemble", 'Overview', 'Resumen', 'Panoramica'), urgent: false },
+          { id: 'tenants', icon: <Store size={14} />, label: i('Boutiques', 'Shops', 'Tiendas', 'Negozi'), urgent: false },
+          { id: 'requests', icon: <Inbox size={14} />, label: `${i('Demandes', 'Requests', 'Solicitudes', 'Richieste')}${pendingCount > 0 ? ` (${pendingCount})` : ''}`, urgent: pendingCount > 0 },
+        ] as const).map(tab => (
+          <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id as any)} style={{
+            padding: '8px 16px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 6,
+            background: activeTab === tab.id ? (tab.urgent ? 'rgba(255,59,92,.15)' : 'rgba(108,71,255,.15)') : 'rgba(255,255,255,.04)',
+            border: `1px solid ${activeTab === tab.id ? (tab.urgent ? 'rgba(255,59,92,.3)' : 'rgba(108,71,255,.3)') : 'rgba(255,255,255,.08)'}`,
+            cursor: 'pointer', color: activeTab === tab.id ? (tab.urgent ? 'var(--danger)' : 'var(--p3)') : 'var(--text3)',
+            fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
+          }}>{tab.icon} {tab.label}</button>
+        ))}
+      </div>
+
       {/* KPIs */}
-      {stats && (
+      {activeTab === 'overview' && stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14, marginBottom: 20 }}>
           {kpis.map(k => (
             <div key={k.label} className="kpi-card">
@@ -152,7 +193,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Plan distribution + Growth */}
-      {tenants.length > 0 && (
+      {activeTab === 'overview' && tenants.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginBottom: 20 }}>
           <div className="panel">
             <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={15} /> {i('Répartition des plans', 'Plan distribution', 'Distribución de planes', 'Distribuzione piani')}</span></div>
@@ -190,7 +231,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Tenants table */}
-      {tenants.length > 0 && (
+      {activeTab === 'tenants' && tenants.length > 0 && (
         <div className="panel">
           <div className="panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Store size={15} /> {i('Boutiques', 'Shops', 'Tiendas', 'Negozi')} ({view.length})</span>
@@ -234,6 +275,49 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Plan requests */}
+      {activeTab === 'requests' && (
+        <div className="panel">
+          <div className="panel-head">
+            <span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CreditCard size={15} /> {i('Demandes de plans en attente', 'Pending plan requests', 'Solicitudes de planes pendientes', 'Richieste piani in attesa')}
+              {pendingCount > 0 && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,59,92,.15)', color: 'var(--danger)', fontWeight: 700 }}>{pendingCount}</span>}
+            </span>
+          </div>
+          {planRequests.length === 0 ? (
+            <div style={{ padding: 48, textAlign: 'center', color: 'var(--text3)' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
+              <div style={{ fontSize: 13 }}>{i('Aucune demande en attente', 'No pending requests', 'Sin solicitudes pendientes', 'Nessuna richiesta in attesa')}</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {planRequests.map(req => (
+                <div key={req.id} style={{ padding: '18px 20px', borderBottom: '1px solid var(--border,rgba(255,255,255,.04))', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>{req.tenant?.name ?? '—'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{req.tenant?.email ?? '—'} · {req.tenant?.country ?? ''}</div>
+                    <div style={{ marginTop: 5, fontSize: 11, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(108,71,255,.12)', color: 'var(--p3)', fontWeight: 700, fontSize: 10, textTransform: 'capitalize' }}>⚡ {req.plan} · {req.period}</span>
+                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(255,184,0,.1)', color: 'var(--warn)', fontWeight: 700, fontSize: 10 }}>💳 {req.paymentMethod}</span>
+                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(255,255,255,.06)', color: 'var(--text2)', fontWeight: 700, fontSize: 10, fontFamily: 'var(--mono)' }}>{fmt(req.amount)}</span>
+                    </div>
+                  </div>
+                  <div style={{ minWidth: 140, fontSize: 11, color: 'var(--text3)' }}>
+                    {req.paymentRef && <div style={{ fontFamily: 'var(--mono)', color: 'var(--text2)', marginBottom: 3 }}>Réf: {req.paymentRef}</div>}
+                    <div>{new Date(req.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
+                    {req.notes && <div style={{ marginTop: 3, fontStyle: 'italic', color: 'var(--text4)', fontSize: 10 }}>"{req.notes}"</div>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <button onClick={() => handleApprove(req.id)} style={{ padding: '8px 16px', borderRadius: 10, background: 'rgba(0,208,132,.12)', border: '1px solid rgba(0,208,132,.25)', cursor: 'pointer', color: 'var(--acc2)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5 }}><Check size={13} /> {i('Approuver', 'Approve', 'Aprobar', 'Approva')}</button>
+                    <button onClick={() => handleReject(req.id)} style={{ padding: '8px 14px', borderRadius: 10, background: 'rgba(255,59,92,.08)', border: '1px solid rgba(255,59,92,.2)', cursor: 'pointer', color: 'var(--danger)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5 }}><X size={13} /> {i('Rejeter', 'Reject', 'Rechazar', 'Rifiuta')}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

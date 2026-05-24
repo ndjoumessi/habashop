@@ -4,6 +4,7 @@ import Header from './Header'
 import { useAppStore } from '@/stores/appStore'
 import { useEffect } from 'react'
 import PWAInstallButton from '@/components/ui/PWAInstallButton'
+import BillingBanner from '@/components/ui/BillingBanner'
 
 export default function AppLayout() {
   const { theme } = useAppStore()
@@ -16,6 +17,7 @@ export default function AppLayout() {
       <Sidebar />
       <div className="main-content">
         <Header />
+        <BillingBanner />
         <main className="page-content">
           <Outlet />
         </main>
