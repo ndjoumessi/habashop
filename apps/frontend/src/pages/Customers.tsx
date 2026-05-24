@@ -874,7 +874,7 @@ export default function Customers() {
                         Depuis {new Date(c.since).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
                       </div>
                     </td>
-                    <td><span className={`badge ${TYPE_CFG[c.type].cls}`}>{c.type}</span></td>
+                    <td><span className={`badge ${TYPE_CFG[c.type].cls}`}>{typeLabel(c.type, lang)}</span></td>
                     <td className="td-mono">{c.phone}</td>
                     <td className="td-num" style={{ color: 'var(--text2)' }}>{c.purchasesPerMonth}×</td>
                     <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(c.totalCA)}</td>
@@ -1211,7 +1211,7 @@ export default function Customers() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{c.type} · {c.loyaltyPoints} pts</div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{typeLabel(c.type, lang)} · {c.loyaltyPoints} pts</div>
                       </div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: cfg.color, fontFamily: 'var(--mono)', flexShrink: 0 }}>
                         {fmt(c.totalCA ?? 0)}
@@ -1236,7 +1236,7 @@ export default function Customers() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`badge ${TYPE_CFG[viewCustomer.type].cls}`}>{viewCustomer.type}</span>
+                <span className={`badge ${TYPE_CFG[viewCustomer.type].cls}`}>{typeLabel(viewCustomer.type, lang)}</span>
                 <button className="btn btn-ghost btn-sm" onClick={() => setViewCustomer(null)}><X size={14} /></button>
               </div>
             </div>
