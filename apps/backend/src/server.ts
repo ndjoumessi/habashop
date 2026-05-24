@@ -140,13 +140,16 @@ async function start() {
 
   // ─── PLUGINS ────────────────────────────
   const allowedOrigins = [
-    'http://localhost:5173',
     'https://habashop.vercel.app',
     ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
   ]
+  // Localhost on any port is always allowed (dev only)
+  const isLocalhost = (origin: string) =>
+    /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/.test(origin)
   await app.register(cors, {
     origin: (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
+      if (!origin) return cb(null, true)
+      if (isLocalhost(origin) || allowedOrigins.includes(origin)) return cb(null, true)
       cb(new Error('CORS not allowed'), false)
     },
     credentials: true,
