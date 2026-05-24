@@ -595,6 +595,7 @@ function CustomerMap({
 
 export default function Customers() {
   const { lang } = useConfig()
+  const i = (fr: string, en: string, es: string, it: string) => lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
   void lang
   const fmt = useFormatAmount()
   const abbr = useAbbrevAmount()
@@ -711,7 +712,7 @@ export default function Customers() {
 
   const handleCreateCustomer = async () => {
     if (!form.name?.trim()) {
-      toast.error(lang === 'fr' ? 'Nom requis' : 'Name required')
+      toast.error(i('Nom requis', 'Name required', 'Nombre requerido', 'Nome richiesto'))
       return
     }
     const fullPhone = form.phone ?? ''
@@ -725,7 +726,7 @@ export default function Customers() {
     try {
       const created = await customersApi.create(data)
       setCustomers(prev => [...prev, mapApiCustomer(created)])
-      toast.success(lang === 'fr' ? 'Client créé' : 'Customer created')
+      toast.success(i('Client créé', 'Customer created', 'Cliente creado', 'Cliente creato'))
       setShowCreate(false)
       resetCustForm()
     } catch {
@@ -743,7 +744,7 @@ export default function Customers() {
         purchases: [],
         notes: '',
       }])
-      toast.success(lang === 'fr' ? 'Client créé (local)' : 'Customer created (local)')
+      toast.success(i('Client créé (local)', 'Customer created (local)', 'Cliente creado (local)', 'Cliente creato (locale)'))
       setShowCreate(false)
       resetCustForm()
     }
@@ -756,14 +757,14 @@ export default function Customers() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('nav_customers')}</h1>
-          <p className="page-subtitle">{customers.length} {lang === 'fr' ? 'clients enregistrés' : 'registered customers'}</p>
+          <p className="page-subtitle">{customers.length} {i('clients enregistrés', 'registered customers', 'clientes registrados', 'clienti registrati')}</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => { printCustomersPDF(); toast.success(lang === 'fr' ? 'PDF ouvert' : 'PDF opened') }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => { printCustomersPDF(); toast.success(i('PDF ouvert', 'PDF opened', 'PDF abierto', 'PDF aperto')) }}>
             <Download size={14} /> Export
           </button>
           <button className="topbar-btn" onClick={() => setShowCreate(true)}>
-            <Plus size={14} /> {lang === 'fr' ? 'Nouveau client' : 'New customer'}
+            <Plus size={14} /> {i('Nouveau client', 'New customer', 'Nuevo cliente', 'Nuovo cliente')}
           </button>
         </div>
       </div>
@@ -793,9 +794,9 @@ export default function Customers() {
         background: 'var(--bg3)', borderRadius: 10, padding: 4,
       }}>
         {[
-          { id: 'list',  label: lang === 'fr' ? 'Liste'        : 'List'       },
-          { id: 'map',   label: lang === 'fr' ? 'Carte'        : 'Map'        },
-          { id: 'stats', label: lang === 'fr' ? 'Statistiques' : 'Statistics'  },
+          { id: 'list',  label: i('Liste', 'List', 'Lista', 'Elenco')       },
+          { id: 'map',   label: i('Carte', 'Map', 'Mapa', 'Mappa')        },
+          { id: 'stats', label: i('Statistiques', 'Statistics', 'Estadísticas', 'Statistiche')  },
         ].map(tab => (
           <button key={tab.id} type="button"
             onClick={() => setCustomersTab(tab.id as any)}
@@ -831,11 +832,11 @@ export default function Customers() {
                 ['Nom','Type','Téléphone','Email','Achats/mois','CA total','Points fidélité'],
                 customers.map(c => [c.name, c.type, c.phone, c.email ?? '', c.purchasesPerMonth, c.totalCA, c.loyaltyPoints])
               )
-              toast.success(lang === 'fr' ? 'Export CSV téléchargé' : 'CSV exported')
+              toast.success(i('Export CSV téléchargé', 'CSV exported', 'CSV exportado', 'CSV esportato'))
             }}>
               <Download size={13} /> {t('btn_export')}
             </button>
-            <button className="btn btn-ghost btn-sm" onClick={() => { printCustomersPDF(); toast.success(lang === 'fr' ? 'PDF ouvert' : 'PDF opened') }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => { printCustomersPDF(); toast.success(i('PDF ouvert', 'PDF opened', 'PDF abierto', 'PDF aperto')) }}>
               <Download size={13} /> PDF
             </button>
           </div>
@@ -1084,7 +1085,7 @@ export default function Customers() {
             <div>
               <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <MapPin size={16} style={{ color: 'var(--p2)' }} />
-                {lang === 'fr' ? 'Carte des clients' : 'Customer map'}
+                {i('Carte des clients', 'Customer map', 'Mapa de clientes', 'Mappa clienti')}
               </h2>
               <p style={{ fontSize: 12, color: 'var(--text3)' }}>
                 {Object.keys(geoPositions).length} client(s) localisé(s) sur {customers.length}
@@ -1140,7 +1141,7 @@ export default function Customers() {
             <div className="panel-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <BarChart3 size={16} style={{ color: 'var(--p2)' }} />
-                <span className="panel-title">{lang === 'fr' ? 'Répartition par type' : 'Distribution by type'}</span>
+                <span className="panel-title">{i('Répartition par type', 'Distribution by type', 'Distribución por tipo', 'Distribuzione per tipo')}</span>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -1180,7 +1181,7 @@ export default function Customers() {
             <div className="panel-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <TrendingUp size={16} style={{ color: 'var(--acc)' }} />
-                <span className="panel-title">{lang === 'fr' ? 'Top 5 clients' : 'Top 5 customers'}</span>
+                <span className="panel-title">{i('Top 5 clients', 'Top 5 customers', 'Top 5 clientes', 'Top 5 clienti')}</span>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1302,7 +1303,7 @@ export default function Customers() {
               <button className="btn btn-primary flex-1 justify-center"
                 onClick={() => { setViewCustomer(null); navigate('/app/pos', { state: { customer: viewCustomer } }) }}
                 style={{ cursor: 'pointer' }}>
-                <ShoppingCart size={14} /> {lang === 'fr' ? 'Nouvelle vente' : 'New sale'}
+                <ShoppingCart size={14} /> {i('Nouvelle vente', 'New sale', 'Nueva venta', 'Nuova vendita')}
               </button>
               <button className="btn btn-sm"
                 onClick={() => { setDetailCustomer(viewCustomer); setShowDetailModal(true); setViewCustomer(null) }}
@@ -1315,9 +1316,9 @@ export default function Customers() {
                   boxShadow: 'var(--sh-p)',
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}>
-                <FileText size={13} /> {lang === 'fr' ? 'Détail' : 'Detail'}
+                <FileText size={13} /> {i('Détail', 'Detail', 'Detalle', 'Dettaglio')}
               </button>
-              <button className="btn btn-ghost" onClick={() => setViewCustomer(null)}>{lang === 'fr' ? 'Fermer' : 'Close'}</button>
+              <button className="btn btn-ghost" onClick={() => setViewCustomer(null)}>{i('Fermer', 'Close', 'Cerrar', 'Chiudi')}</button>
             </div>
           </div>
         </div>
@@ -1596,12 +1597,12 @@ export default function Customers() {
                     </span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
-                    {lang === 'fr' ? 'Depuis le' : 'Since'}{' '}
-                    {new Date(detailCustomer.since).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {i('Depuis le', 'Since', 'Desde el', 'Dal')}{' '}
+                    {new Date(detailCustomer.since).toLocaleDateString(i('fr-FR', 'en-US', 'es-ES', 'it-IT'), { day: 'numeric', month: 'long', year: 'numeric' })}
                     {detailCustomer.lastPurchase && (
                       <span style={{ marginLeft: 10 }}>
-                        · {lang === 'fr' ? 'Dernière visite' : 'Last visit'}{' '}
-                        {new Date(detailCustomer.lastPurchase).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
+                        · {i('Dernière visite', 'Last visit', 'Última visita', 'Ultima visita')}{' '}
+                        {new Date(detailCustomer.lastPurchase).toLocaleDateString(i('fr-FR', 'en-US', 'es-ES', 'it-IT'))}
                       </span>
                     )}
                   </div>
@@ -1622,9 +1623,9 @@ export default function Customers() {
               {/* KPIs */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 {[
-                  { label: lang === 'fr' ? 'CA Total' : 'Total Revenue', value: fmt(detailCustomer.totalCA), icon: <DollarSign size={20} />, color: 'var(--acc)', hex: '#FF9500' },
-                  { label: lang === 'fr' ? 'Commandes/mois' : 'Orders/month', value: `${detailCustomer.purchasesPerMonth}`, icon: <ShoppingCart size={20} />, color: 'var(--p2)', hex: '#6C47FF' },
-                  { label: lang === 'fr' ? 'Points fidélité' : 'Loyalty pts', value: `${detailCustomer.loyaltyPoints} pts`, icon: <Star size={20} />, color: 'var(--warn)', hex: '#FFB800' },
+                  { label: i('CA Total', 'Total Revenue', 'Ingresos totales', 'Fatturato totale'), value: fmt(detailCustomer.totalCA), icon: <DollarSign size={20} />, color: 'var(--acc)', hex: '#FF9500' },
+                  { label: i('Commandes/mois', 'Orders/month', 'Pedidos/mes', 'Ordini/mese'), value: `${detailCustomer.purchasesPerMonth}`, icon: <ShoppingCart size={20} />, color: 'var(--p2)', hex: '#6C47FF' },
+                  { label: i('Points fidélité', 'Loyalty pts', 'Puntos fidelidad', 'Punti fedeltà'), value: `${detailCustomer.loyaltyPoints} pts`, icon: <Star size={20} />, color: 'var(--warn)', hex: '#FFB800' },
                 ].map(k => (
                   <div key={k.label} style={{ background: `linear-gradient(135deg,${k.hex}15,${k.hex}05)`, border: `1px solid ${k.hex}25`, borderRadius: 12, padding: '14px', textAlign: 'center' }}>
                     <div style={{ display:'flex', justifyContent:'center', marginBottom: 6, color: k.color }}>{k.icon}</div>
@@ -1637,13 +1638,13 @@ export default function Customers() {
               {/* Coordonnées */}
               <div style={{ background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px' }}>
                 <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <FileText size={12} style={{color:'var(--text3)'}} />{lang === 'fr' ? 'COORDONNÉES' : 'CONTACT INFO'}
+                  <FileText size={12} style={{color:'var(--text3)'}} />{i('COORDONNÉES', 'CONTACT INFO', 'CONTACTO', 'CONTATTI')}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   {[
-                    { label: lang === 'fr' ? 'Téléphone' : 'Phone', value: detailCustomer.phone || '—', icon: <Phone size={10} />, full: false },
+                    { label: i('Téléphone', 'Phone', 'Teléfono', 'Telefono'), value: detailCustomer.phone || '—', icon: <Phone size={10} />, full: false },
                     { label: 'Email', value: detailCustomer.email || '—', icon: <Mail size={10} />, full: false },
-                    { label: lang === 'fr' ? 'Adresse' : 'Address', value: detailCustomer.address || '—', icon: <MapPin size={10} />, full: true },
+                    { label: i('Adresse', 'Address', 'Dirección', 'Indirizzo'), value: detailCustomer.address || '—', icon: <MapPin size={10} />, full: true },
                   ].map(item => (
                     <div key={item.label} style={{
                       gridColumn: item.full ? '1 / -1' : 'auto',
@@ -1667,7 +1668,7 @@ export default function Customers() {
               <div style={{ background: 'linear-gradient(135deg,rgba(255,184,0,.06),rgba(255,184,0,.02))', border: '1px solid rgba(255,184,0,.15)', borderRadius: 14, padding: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Star size={12} style={{color:'var(--warn)'}} /> {lang === 'fr' ? 'PROGRAMME FIDÉLITÉ' : 'LOYALTY PROGRAM'}
+                    <Star size={12} style={{color:'var(--warn)'}} /> {i('PROGRAMME FIDÉLITÉ', 'LOYALTY PROGRAM', 'PROGRAMA FIDELIDAD', 'PROGRAMMA FEDELTÀ')}
                   </div>
                   <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>
                     {detailCustomer.loyaltyPoints} pts
@@ -1702,22 +1703,22 @@ export default function Customers() {
               {/* Historique achats */}
               <div>
                 <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <ShoppingBag size={12} style={{color:'var(--text3)'}} /> {lang === 'fr' ? 'HISTORIQUE DES ACHATS' : 'PURCHASE HISTORY'}
+                  <ShoppingBag size={12} style={{color:'var(--text3)'}} /> {i('HISTORIQUE DES ACHATS', 'PURCHASE HISTORY', 'HISTORIAL DE COMPRAS', 'STORICO ACQUISTI')}
                 </div>
                 {detailCustomer.purchases.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '28px', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 12, color: 'var(--text3)', fontSize: 13 }}>
                     <div style={{ display:'flex', justifyContent:'center', marginBottom: 8 }}><ShoppingCart size={28} style={{color:'var(--text4)'}} /></div>
-                    {lang === 'fr' ? 'Aucun achat enregistré' : 'No purchases recorded'}
+                    {i('Aucun achat enregistré', 'No purchases recorded', 'Sin compras registradas', 'Nessun acquisto registrato')}
                   </div>
                 ) : (
                   <div className="table-wrap">
                     <table>
                       <thead>
                         <tr>
-                          <th>{lang === 'fr' ? 'RÉFÉRENCE' : 'REF'}</th>
+                          <th>{i('RÉFÉRENCE', 'REF', 'REF', 'RIF')}</th>
                           <th>DATE</th>
-                          <th>{lang === 'fr' ? 'ARTICLES' : 'ITEMS'}</th>
-                          <th>{lang === 'fr' ? 'MONTANT' : 'AMOUNT'}</th>
+                          <th>{i('ARTICLES', 'ITEMS', 'ARTÍCULOS', 'ARTICOLI')}</th>
+                          <th>{i('MONTANT', 'AMOUNT', 'IMPORTE', 'IMPORTO')}</th>
                           <th>STATUT</th>
                         </tr>
                       </thead>
@@ -1726,11 +1727,11 @@ export default function Customers() {
                           <tr key={p.ref}>
                             <td className="td-mono" style={{ fontSize: 11, color: 'var(--p3)' }}>{p.ref}</td>
                             <td style={{ fontSize: 11, color: 'var(--text2)' }}>
-                              {new Date(p.date).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
+                              {new Date(p.date).toLocaleDateString(i('fr-FR', 'en-US', 'es-ES', 'it-IT'))}
                             </td>
                             <td style={{ fontSize: 11, color: 'var(--text2)' }}>{p.items} art.</td>
                             <td className="td-mono" style={{ color: 'var(--acc2)', fontWeight: 700 }}>{fmt(p.total)}</td>
-                            <td><span className="badge badge-ok">✓ {lang === 'fr' ? 'Payé' : 'Paid'}</span></td>
+                            <td><span className="badge badge-ok">✓ {i('Payé', 'Paid', 'Pagado', 'Pagato')}</span></td>
                           </tr>
                         ))}
                       </tbody>
@@ -1751,7 +1752,7 @@ export default function Customers() {
                 alignItems: 'center', justifyContent: 'center', gap: 8,
                 boxShadow: 'var(--sh-p)',
               }}>
-                <ShoppingCart size={14} /> {lang === 'fr' ? 'Nouvelle vente' : 'New sale'}
+                <ShoppingCart size={14} /> {i('Nouvelle vente', 'New sale', 'Nueva venta', 'Nuova vendita')}
               </button>
               <button onClick={() => {
                 setShowDetailModal(false)
@@ -1766,7 +1767,7 @@ export default function Customers() {
                 fontFamily: 'var(--font)', fontWeight: 600,
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                <Pencil size={13} /> {lang === 'fr' ? 'Modifier' : 'Edit'}
+                <Pencil size={13} /> {i('Modifier', 'Edit', 'Editar', 'Modifica')}
               </button>
               <button onClick={() => setShowDetailModal(false)} style={{
                 padding: '12px 16px', background: 'rgba(255,255,255,.05)',
@@ -1774,7 +1775,7 @@ export default function Customers() {
                 cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
                 fontFamily: 'var(--font)', fontWeight: 600,
               }}>
-                {lang === 'fr' ? 'Fermer' : 'Close'}
+                {i('Fermer', 'Close', 'Cerrar', 'Chiudi')}
               </button>
             </div>
           </div>
