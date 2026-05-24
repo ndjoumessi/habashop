@@ -1237,7 +1237,7 @@ export default function LandingPage() {
           >
             <Zap size={18} strokeWidth={2.6}/>{lp.cta_btn}
           </button>
-          <div style={{ marginTop: 18, fontSize: 12, color: D.text3, display: 'inline-flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div style={{ marginTop: 18, fontSize: 12, color: D.text3, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'fr' ? '14 jours gratuits' : '14 days free'}</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'fr' ? 'Sans carte bancaire' : 'No credit card'}</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'fr' ? 'Annulation facile' : 'Easy cancellation'}</span>
