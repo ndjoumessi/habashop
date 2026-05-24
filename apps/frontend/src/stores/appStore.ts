@@ -192,9 +192,42 @@ function applyAccentColor(color: string) {
   root.style.setProperty('--p3', pair.p3)
 }
 
+// ─── Tenant ──────────────────────────────────────────────────────────────────
+
+export interface Tenant {
+  id: string
+  name: string
+  plan: string
+  currency: string
+  country: string
+  vatRate: number
+  address?: string | null
+  phone?: string | null
+  email?: string | null
+  logo?: string | null
+  createdAt?: string
+}
+
+const TRIAL_DAYS = 14
+const FREE_PLANS = ['starter', 'trial', 'free']
+
+// Calcule l'état d'essai d'un tenant (essai = createdAt + 14j sur les plans gratuits)
+export function getTrialInfo(tenant: Tenant | null): { isTrial: boolean; daysLeft: number } {
+  if (!tenant?.createdAt || !FREE_PLANS.includes(tenant.plan?.toLowerCase())) {
+    return { isTrial: false, daysLeft: 0 }
+  }
+  const end = new Date(tenant.createdAt).getTime() + TRIAL_DAYS * 86_400_000
+  const daysLeft = Math.max(0, Math.ceil((end - Date.now()) / 86_400_000))
+  return { isTrial: true, daysLeft }
+}
+
 // ─── Store interface ───────────────────────────────────────────────────────────
 
 interface AppStore extends AppConfig {
+  // Tenant courant
+  tenant: Tenant | null
+  setTenant: (t: Tenant | null) => void
+  clearTenant: () => void
   updateConfig: (partial: Partial<AppConfig>) => void
   resetConfig:  () => void
   exportConfig: () => string
@@ -226,6 +259,11 @@ export const useAppStore = create<AppStore>()(
     (set, get) => ({
       ...DEFAULT_CONFIG,
 
+      // Tenant courant
+      tenant: null,
+      setTenant:   (tenant) => set({ tenant }),
+      clearTenant: () => set({ tenant: null }),
+
       updateConfig: (partial) => {
         set(partial as Partial<AppStore>)
         if (partial.theme)       document.documentElement.setAttribute('data-theme', partial.theme)
@@ -241,7 +279,7 @@ export const useAppStore = create<AppStore>()(
       exportConfig: () => {
         const s = get()
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { updateConfig, resetConfig, exportConfig, importConfig, setTheme, setLang, setCurrency, ...cfg } = s
+        const { updateConfig, resetConfig, exportConfig, importConfig, setTheme, setLang, setCurrency, tenant, setTenant, clearTenant, ...cfg } = s
         return JSON.stringify(cfg, null, 2)
       },
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi } from '@/lib/api'
+import { useAppStore } from '@/stores/appStore'
 
 export type UserRole = 'ADMIN' | 'MANAGER' | 'CASHIER' | 'ACCOUNTANT' | 'HR' | 'SUPER_ADMIN' | 'admin' | 'manager' | 'cashier' | 'accountant' | 'hr'
 
@@ -79,8 +80,9 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
         set({ isLoading: true, error: null })
         try {
-          const { token, user } = await authApi.login(email, password)
+          const { token, user, tenant } = await authApi.login(email, password)
           localStorage.setItem('habashop_token', token)
+          useAppStore.getState().setTenant(tenant ?? null)
           set({ user, token, isAuthenticated: true, isLoading: false })
         } catch (err: any) {
           // Fallback démo sans backend
@@ -95,6 +97,15 @@ export const useAuthStore = create<AuthState>()(
           if (demo && password === 'demo1234') {
             const demoToken = 'demo-token-local'
             localStorage.setItem('habashop_token', demoToken)
+            useAppStore.getState().setTenant({
+              id: 'demo-tenant-001',
+              name: 'HabaShop — Dakar Central',
+              plan: 'business',
+              currency: 'XOF',
+              country: 'SN',
+              vatRate: 18,
+              createdAt: new Date().toISOString(),
+            })
             set({
               user: { ...demo, email, shopName: 'HabaShop — Dakar Central' },
               token: demoToken,
@@ -112,8 +123,9 @@ export const useAuthStore = create<AuthState>()(
       register: async (data) => {
         set({ isLoading: true, error: null })
         try {
-          const { token, user } = await authApi.register(data)
+          const { token, user, tenant } = await authApi.register(data)
           localStorage.setItem('habashop_token', token)
+          useAppStore.getState().setTenant(tenant ?? null)
           set({ user, token, isAuthenticated: true, isLoading: false })
         } catch (err: any) {
           set({ error: err.message, isLoading: false })
@@ -123,6 +135,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         localStorage.removeItem('habashop_token')
+        useAppStore.getState().clearTenant()
         set({ user: null, token: null, isAuthenticated: false })
       },
 

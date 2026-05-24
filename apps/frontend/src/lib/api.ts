@@ -92,9 +92,9 @@ export const api = {
 
 export const authApi = {
   login: (email: string, password: string) =>
-    api.post<{token:string; user:any}>('/api/auth/login', { email, password }),
+    api.post<{token:string; user:any; tenant?:any}>('/api/auth/login', { email, password }),
   me: () => api.get<any>('/api/auth/me'),
-  register: (data: any) => api.post<any>('/api/auth/register', data),
+  register: (data: any) => api.post<{token:string; user:any; tenant?:any}>('/api/auth/register', data),
 }
 
 export const productsApi = {
@@ -163,8 +163,10 @@ export const dashboardApi = {
 }
 
 export const tenantApi = {
-  get:    () => api.get<any>('/api/tenant'),
-  update: (data: any) => api.put<any>('/api/tenant', data),
+  get:        () => api.get<any>('/api/tenant'),
+  update:     (data: any) => api.patch<any>('/api/tenant', data),
+  users:      () => api.get<any[]>('/api/tenant/users'),
+  createUser: (data: any) => api.post<any>('/api/tenant/users', data),
 }
 
 export const aiApi = {
