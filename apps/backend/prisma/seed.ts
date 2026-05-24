@@ -24,8 +24,10 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('demo1234', 12)
   const demoUsers = [
-    { email: 'admin@habashop.com',   name: 'Nelson Djoumessi', role: 'ADMIN'   },
-    { email: 'cashier@habashop.com', name: 'Aminata Touré',    role: 'CASHIER' },
+    { email: 'admin@habashop.com',      name: 'Nelson Djoumessi', role: 'ADMIN'      },
+    { email: 'cashier@habashop.com',    name: 'Aminata Touré',    role: 'CASHIER'    },
+    { email: 'accountant@habashop.com', name: 'Fatou Sow',        role: 'ACCOUNTANT' },
+    { email: 'hr@habashop.com',         name: 'Marie Bakayoko',   role: 'HR'         },
   ]
   for (const u of demoUsers) {
     await prisma.user.upsert({
