@@ -25,6 +25,7 @@ async function main() {
   const passwordHash = await bcrypt.hash('demo1234', 12)
   const demoUsers = [
     { email: 'admin@habashop.com',      name: 'Nelson Djoumessi', role: 'ADMIN'      },
+    { email: 'manager@habashop.com',    name: 'Ibrahim Touré',    role: 'MANAGER'    },
     { email: 'cashier@habashop.com',    name: 'Aminata Touré',    role: 'CASHIER'    },
     { email: 'accountant@habashop.com', name: 'Fatou Sow',        role: 'ACCOUNTANT' },
     { email: 'hr@habashop.com',         name: 'Marie Bakayoko',   role: 'HR'         },
