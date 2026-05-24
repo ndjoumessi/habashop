@@ -423,6 +423,7 @@ export function useCurrencyInfo() {
   const currency = useAppStore(s => s.currency) as Currency
   return {
     currency,
+    code:     currency,
     symbol:   CURRENCY_SYMBOLS[currency]  ?? currency,
     decimals: CURRENCY_DECIMALS[currency] ?? 2,
     locale:   CURRENCY_LOCALES[currency]  ?? 'fr-FR',

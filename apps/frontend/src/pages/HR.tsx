@@ -2436,10 +2436,17 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
   onSave: (data: any) => void
   onDelete?: (id: number) => void
 }) {
+  const toXOF   = useConvertToXOF()
+  const fromXOF = useConvertFromXOF()
+  const { code, symbol, decimals } = useCurrencyInfo()
+  const lang = useAppStore(s => s.lang)
+  const T = (fr: string, en: string, es: string, it: string) =>
+    lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
+
   const [name, setName]       = useState(emp?.name ?? '')
   const [role, setRole]       = useState(emp?.role ?? '')
   const [dept, setDept]       = useState(emp?.dept ?? '')
-  const [salary, setSalary]   = useState(String(emp?.salary ?? ''))
+  const [salary, setSalary]   = useState(emp?.salary != null ? fromXOF(emp.salary).toFixed(decimals) : '')
   const [type, setType]       = useState<'CDI'|'CDD'>(emp?.type ?? 'CDI')
   const [hiredAt, setHiredAt] = useState(emp?.hiredAt ?? '')
   const [endAt, setEndAt]     = useState(emp?.endAt ?? '')
@@ -2475,7 +2482,7 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
             )}
             <div>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>
-                {emp ? emp.name : '➕ Nouvel employé'}
+                {emp ? emp.name : `➕ ${T('Nouvel employé', 'New employee', 'Nuevo empleado', 'Nuovo dipendente')}`}
               </h3>
               {emp && <div style={{ fontSize: 11, color: deptColor, fontWeight: 600, marginTop: 1 }}>{dept || emp.dept}</div>}
             </div>
@@ -2496,19 +2503,19 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
         <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <ValidatedInput type="name" required autoFocus label="Nom complet *"
+            <ValidatedInput type="name" required autoFocus label={T('Nom complet *', 'Full name *', 'Nombre completo *', 'Nome completo *')}
               value={name} onChange={setName} placeholder="Prénom Nom" />
-            <ValidatedInput type="text" required label="Poste *"
+            <ValidatedInput type="text" required label={T('Poste *', 'Position *', 'Puesto *', 'Posizione *')}
               value={role} onChange={setRole} placeholder="Ex: Caissière" />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label className="form-label">Département</label>
+              <label className="form-label">{T('Département', 'Department', 'Departamento', 'Dipartimento')}</label>
               <input className="input" value={dept} onChange={e => setDept(e.target.value)} placeholder="Ex: Ventes" style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
             <div>
-              <label className="form-label">Contrat</label>
+              <label className="form-label">{T('Contrat', 'Contract', 'Contrato', 'Contratto')}</label>
               <select className="input" value={type} onChange={e => setType(e.target.value as 'CDI'|'CDD')} style={{ width: '100%' }}>
                 <option value="CDI">CDI</option>
                 <option value="CDD">CDD</option>
@@ -2517,18 +2524,28 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
           </div>
 
           <div>
-            <label className="form-label">Salaire brut (XOF)</label>
-            <input className="input" type="number" value={salary} onChange={e => setSalary(e.target.value)} placeholder="Ex: 350000" style={{ width: '100%', boxSizing: 'border-box' }} />
+            <label className="form-label">{T('Salaire brut', 'Gross salary', 'Salario bruto', 'Stipendio lordo')} ({code})</label>
+            <div style={{ position: 'relative' }}>
+              <input className="input" type="number" value={salary} onChange={e => setSalary(e.target.value)} placeholder={code === 'XOF' || code === 'XAF' ? '350000' : '500'} style={{ width: '100%', boxSizing: 'border-box', paddingRight: 50 }} />
+              <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--acc2)', fontSize: 12, fontWeight: 800, pointerEvents: 'none' }}>{symbol}</span>
+            </div>
+            {salary && code !== 'XOF' && code !== 'XAF' && (
+              <div style={{ marginTop: 5, fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 4 }}>
+                <span>≈</span>
+                <span style={{ color: 'var(--acc2)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{Math.round(toXOF(Number(salary) || 0)).toLocaleString('fr-FR')} XOF</span>
+                <span>{T('en base', 'stored', 'en base', 'in base')}</span>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label className="form-label">Date d'embauche</label>
+              <label className="form-label">{T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')}</label>
               <input className="input" value={hiredAt} onChange={e => setHiredAt(e.target.value)} placeholder="JJ/MM/AAAA" style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
             {type === 'CDD' && (
               <div>
-                <label className="form-label">Fin de contrat</label>
+                <label className="form-label">{T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')}</label>
                 <input className="input" value={endAt} onChange={e => setEndAt(e.target.value)} placeholder="JJ/MM/AAAA" style={{ width: '100%', boxSizing: 'border-box' }} />
               </div>
             )}
@@ -2545,7 +2562,7 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
             placeholder="prenom@boutique.com" />
 
           <div>
-            <label className="form-label">Performance</label>
+            <label className="form-label">{T('Performance', 'Performance', 'Rendimiento', 'Prestazione')}</label>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
               {[1,2,3,4,5].map(star => (
                 <button key={star} onClick={() => setPerf(star)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 24, color: star <= perf ? '#F59E0B' : 'var(--border2)', padding: '2px 3px', lineHeight: 1 }}>★</button>
@@ -2557,8 +2574,8 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
           {emp && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--bg3)', borderRadius: 10, border: '1px solid var(--border)' }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Statut employé</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{active ? 'Employé actif' : 'Employé inactif'}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{T('Statut employé', 'Employee status', 'Estado del empleado', 'Stato dipendente')}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{active ? T('Employé actif', 'Active employee', 'Empleado activo', 'Dipendente attivo') : T('Employé inactif', 'Inactive employee', 'Empleado inactivo', 'Dipendente inattivo')}</div>
               </div>
               <button onClick={() => setActive(a => !a)} style={{
                 padding: '6px 14px', borderRadius: 20, fontWeight: 700, fontSize: 12, cursor: 'pointer', border: '1px solid',
@@ -2566,13 +2583,13 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
                 color: active ? 'var(--acc2)' : 'var(--danger)',
                 borderColor: active ? 'rgba(14,196,126,.3)' : 'rgba(232,64,74,.25)',
               }}>
-                {active ? '✓ Actif' : '✗ Inactif'}
+                {active ? `✓ ${T('Actif', 'Active', 'Activo', 'Attivo')}` : `✗ ${T('Inactif', 'Inactive', 'Inactivo', 'Inattivo')}`}
               </button>
             </div>
           )}
 
           <div>
-            <label className="form-label">Couleur d'avatar</label>
+            <label className="form-label">{T("Couleur d'avatar", 'Avatar color', 'Color de avatar', 'Colore avatar')}</label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {COLORS.map(c => (
                 <button key={c} onClick={() => setColor(c)} style={{ width: 30, height: 30, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', outline: color === c ? `3px solid ${c}` : 'none', outlineOffset: 2, transition: 'all .15s', transform: color === c ? 'scale(1.2)' : 'none' }} />
@@ -2585,13 +2602,13 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
 
         {/* Fixed footer */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 10 }}>
-          <button className="btn" style={{ flex: 1 }} onClick={onClose}>Annuler</button>
+          <button className="btn" style={{ flex: 1 }} onClick={onClose}>{T('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</button>
           <button className="btn btn-primary" style={{ flex: 1 }}
             onClick={() => {
-              if (!name.trim() || !role.trim()) { toast.error('Nom et poste requis'); return }
-              onSave({ name, role, dept, salary: Number(salary) || 0, type, hiredAt, endAt: endAt || undefined, phone, email, color, active, perf })
+              if (!name.trim() || !role.trim()) { toast.error(T('Nom et poste requis', 'Name and position required', 'Nombre y puesto requeridos', 'Nome e posizione richiesti')); return }
+              onSave({ name, role, dept, salary: toXOF(Number(salary) || 0), type, hiredAt, endAt: endAt || undefined, phone, email, color, active, perf })
             }}>
-            {emp ? '💾 Enregistrer' : '➕ Ajouter'}
+            {emp ? `💾 ${T('Enregistrer', 'Save', 'Guardar', 'Salva')}` : `➕ ${T('Ajouter', 'Add', 'Agregar', 'Aggiungi')}`}
           </button>
         </div>
       </div>

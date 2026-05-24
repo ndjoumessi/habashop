@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { useAppStore } from '@/stores/appStore'
-import { aiApi } from '@/lib/api'
+import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { aiApi, dashboardApi, customersApi } from '@/lib/api'
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer'
 import toast from 'react-hot-toast'
 import { Bot, BarChart2, Package, TrendingUp, Users, Trash2, Send, User, Plus, MessageSquare, DollarSign, ShoppingCart } from 'lucide-react'
@@ -20,38 +20,28 @@ const ANALYSIS_BUTTONS: { type: string; Icon: typeof BarChart2; color: string; f
   { type:'customers', Icon: Users,      color:'#00B8FF', fr:'Analyse clients',      en:'Customer analysis'  },
 ]
 
-interface QuickAction { Icon: typeof BarChart2; label: string; prompt: string; color: string }
+type Lang4 = 'fr' | 'en' | 'es' | 'it'
+interface QuickAction { Icon: typeof BarChart2; color: string; label: Record<Lang4, string>; prompt: Record<Lang4, string> }
 
-const QUICK_ACTIONS_FR: QuickAction[] = [
-  { Icon: BarChart2,    label:'Analyse des ventes',      prompt:'Analyse mes ventes du mois et donne-moi les tendances clés.',        color:'#6C47FF' },
-  { Icon: Package,      label:'Alertes stock',           prompt:'Quels produits sont en rupture ou en stock critique ?',               color:'#FF9500' },
-  { Icon: TrendingUp,   label:'Opportunités croissance', prompt:'Quelles sont les meilleures opportunités de croissance ?',            color:'#00D084' },
-  { Icon: Users,        label:'Analyse clients',         prompt:'Analyse mon portefeuille clients et identifie les plus rentables.',   color:'#00B8FF' },
-  { Icon: DollarSign,   label:'Santé financière',        prompt:'Donne-moi un bilan de la santé financière de ma boutique ce mois.',  color:'#F472B6' },
-  { Icon: ShoppingCart, label:'Top produits',            prompt:'Quels sont mes 10 meilleurs produits en termes de CA ce mois-ci ?',  color:'#34D399' },
-]
-
-const QUICK_ACTIONS_EN: QuickAction[] = [
-  { Icon: BarChart2,    label:'Sales analysis',       prompt:'Analyze my monthly sales and give me the key trends.',               color:'#6C47FF' },
-  { Icon: Package,      label:'Stock alerts',         prompt:'Which products are out of stock or critically low?',                 color:'#FF9500' },
-  { Icon: TrendingUp,   label:'Growth opportunities', prompt:'What are the best growth opportunities for my business?',            color:'#00D084' },
-  { Icon: Users,        label:'Customer analysis',    prompt:'Analyze my customer portfolio and identify the most profitable.',    color:'#00B8FF' },
-  { Icon: DollarSign,   label:'Financial health',     prompt:'Give me a financial health summary of my shop this month.',          color:'#F472B6' },
-  { Icon: ShoppingCart, label:'Top products',         prompt:'What are my top 10 products by revenue this month?',                color:'#34D399' },
-]
-
-const SHOP_CONTEXT_FR = [
-  { label:'Type boutique',   value:'Commerce général' },
-  { label:'Articles actifs', value:'142 produits'     },
-  { label:'CA ce mois',      value:'2 650 000 F'      },
-  { label:'Clients actifs',  value:'89 clients'       },
-]
-
-const SHOP_CONTEXT_EN = [
-  { label:'Shop type',             value:'General retail' },
-  { label:'Active items',          value:'142 products'   },
-  { label:'Revenue this month',    value:'2,650,000 F'    },
-  { label:'Active customers',      value:'89 customers'   },
+const QUICK_ACTIONS: QuickAction[] = [
+  { Icon: BarChart2,    color:'#6C47FF',
+    label:{fr:'Analyse des ventes',en:'Sales analysis',es:'Análisis de ventas',it:'Analisi vendite'},
+    prompt:{fr:'Analyse mes ventes du mois et donne-moi les tendances clés.',en:'Analyze my monthly sales and give me the key trends.',es:'Analiza mis ventas del mes y dame las tendencias clave.',it:'Analizza le mie vendite del mese e dammi le tendenze chiave.'} },
+  { Icon: Package,      color:'#FF9500',
+    label:{fr:'Alertes stock',en:'Stock alerts',es:'Alertas de stock',it:'Avvisi magazzino'},
+    prompt:{fr:'Quels produits sont en rupture ou en stock critique ?',en:'Which products are out of stock or critically low?',es:'¿Qué productos están agotados o en nivel crítico?',it:'Quali prodotti sono esauriti o a livello critico?'} },
+  { Icon: TrendingUp,   color:'#00D084',
+    label:{fr:'Opportunités croissance',en:'Growth opportunities',es:'Oportunidades de crecimiento',it:'Opportunità di crescita'},
+    prompt:{fr:'Quelles sont les meilleures opportunités de croissance ?',en:'What are the best growth opportunities for my business?',es:'¿Cuáles son las mejores oportunidades de crecimiento?',it:'Quali sono le migliori opportunità di crescita?'} },
+  { Icon: Users,        color:'#00B8FF',
+    label:{fr:'Analyse clients',en:'Customer analysis',es:'Análisis de clientes',it:'Analisi clienti'},
+    prompt:{fr:'Analyse mon portefeuille clients et identifie les plus rentables.',en:'Analyze my customer portfolio and identify the most profitable.',es:'Analiza mi cartera de clientes e identifica los más rentables.',it:'Analizza il mio portafoglio clienti e identifica i più redditizi.'} },
+  { Icon: DollarSign,   color:'#F472B6',
+    label:{fr:'Santé financière',en:'Financial health',es:'Salud financiera',it:'Salute finanziaria'},
+    prompt:{fr:'Donne-moi un bilan de la santé financière de ma boutique ce mois.',en:'Give me a financial health summary of my shop this month.',es:'Dame un resumen de la salud financiera de mi tienda este mes.',it:'Dammi un riepilogo della salute finanziaria del mio negozio questo mese.'} },
+  { Icon: ShoppingCart, color:'#34D399',
+    label:{fr:'Top produits',en:'Top products',es:'Top productos',it:'Top prodotti'},
+    prompt:{fr:'Quels sont mes 10 meilleurs produits en termes de CA ce mois-ci ?',en:'What are my top 10 products by revenue this month?',es:'¿Cuáles son mis 10 mejores productos por ingresos este mes?',it:'Quali sono i miei 10 migliori prodotti per fatturato questo mese?'} },
 ]
 
 const QUICK_QUESTIONS = {
@@ -69,15 +59,35 @@ const QUICK_QUESTIONS = {
     'What is my current margin rate?',
     'Which customers should I prioritize?',
   ],
+  es: [
+    '¿Cuáles son mis productos más vendidos?',
+    '¿Qué productos están agotados?',
+    '¿Cómo puedo mejorar mis ingresos?',
+    '¿Cuál es mi tasa de margen actual?',
+    '¿A qué clientes debo fidelizar?',
+  ],
+  it: [
+    'Quali sono i miei prodotti più venduti?',
+    'Quali prodotti sono esauriti?',
+    'Come posso migliorare il mio fatturato?',
+    "Qual è il mio attuale tasso di margine?",
+    'Quali clienti dovrei fidelizzare?',
+  ],
 }
 
 const WELCOME: Record<string, string> = {
   fr: `# Bonjour ! Je suis **HabaShop AI** 👋\n\nAssistant commercial intelligent alimenté par **Claude** d'Anthropic.\n\n## Ce que je peux faire :\n- Analyser vos **ventes et tendances**\n- Surveiller votre **stock** et prévenir les ruptures\n- Analyser vos **finances** et rentabilité\n- Segmenter vos **clients** et recommander des actions\n- Répondre à toutes vos **questions business**\n\nChoisissez une action rapide ou posez-moi une question !`,
   en: `# Hello! I'm **HabaShop AI** 👋\n\nIntelligent business assistant powered by **Claude** from Anthropic.\n\n## What I can do:\n- Analyze your **sales and trends**\n- Monitor your **stock** and prevent stockouts\n- Analyze your **finances** and profitability\n- Segment your **customers** and recommend actions\n- Answer all your **business questions**\n\nChoose a quick action or ask me a question!`,
+  es: `# ¡Hola! Soy **HabaShop AI** 👋\n\nAsistente comercial inteligente con tecnología de **Claude** de Anthropic.\n\n## Lo que puedo hacer:\n- Analizar tus **ventas y tendencias**\n- Vigilar tu **inventario** y evitar roturas de stock\n- Analizar tus **finanzas** y rentabilidad\n- Segmentar tus **clientes** y recomendar acciones\n- Responder todas tus **preguntas de negocio**\n\n¡Elige una acción rápida o hazme una pregunta!`,
+  it: `# Ciao! Sono **HabaShop AI** 👋\n\nAssistente commerciale intelligente basato su **Claude** di Anthropic.\n\n## Cosa posso fare:\n- Analizzare le tue **vendite e tendenze**\n- Monitorare il tuo **magazzino** ed evitare esaurimenti\n- Analizzare le tue **finanze** e redditività\n- Segmentare i tuoi **clienti** e consigliare azioni\n- Rispondere a tutte le tue **domande di business**\n\nScegli un'azione rapida o fammi una domanda!`,
 }
 
 export default function AIAssistant() {
   const { lang } = useAppStore()
+  const fmt = useFormatAmount()
+  const T = (fr: string, en: string, es: string, it: string) =>
+    lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
+  const [shopStats, setShopStats] = useState({ caMonth: 2650000, products: 142, customers: 89 })
   const [messages, setMessages]             = useState<ChatMessage[]>([])
   const [input, setInput]                   = useState('')
   const [analyzing, setAnalyzing]           = useState(false)
@@ -92,6 +102,19 @@ export default function AIAssistant() {
   useEffect(() => {
     setMessages([{ id:'welcome', role:'assistant', time: new Date(), content: WELCOME[lang] ?? WELCOME.fr }])
   }, [lang])
+
+  useEffect(() => {
+    Promise.all([
+      dashboardApi.stats().catch(() => null),
+      customersApi.list().catch(() => []),
+    ]).then(([stats, customers]: [any, any]) => {
+      setShopStats(s => ({
+        caMonth:   stats?.salesMonth ?? s.caMonth,
+        products:  stats?.totalProducts ?? s.products,
+        customers: Array.isArray(customers) ? customers.length : s.customers,
+      }))
+    })
+  }, [])
 
   const addLoadingMsg = (): string => {
     const id = (Date.now() + 1).toString()
@@ -153,8 +176,17 @@ export default function AIAssistant() {
     toast.success(lang === 'fr' ? 'Conversation effacée' : 'Chat cleared')
   }
 
-  const quickActions = lang === 'fr' ? QUICK_ACTIONS_FR : QUICK_ACTIONS_EN
-  const shopContext  = lang === 'fr' ? SHOP_CONTEXT_FR  : SHOP_CONTEXT_EN
+  const quickActions = QUICK_ACTIONS.map(a => ({
+    Icon: a.Icon, color: a.color,
+    label:  a.label[lang as Lang4]  ?? a.label.fr,
+    prompt: a.prompt[lang as Lang4] ?? a.prompt.fr,
+  }))
+  const shopContext = [
+    { label: T('Type boutique', 'Shop type', 'Tipo de tienda', 'Tipo negozio'),         value: T('Commerce général', 'General retail', 'Comercio general', 'Commercio generale') },
+    { label: T('Articles actifs', 'Active items', 'Artículos activos', 'Articoli attivi'), value: String(shopStats.products) },
+    { label: T('CA ce mois', 'Revenue this month', 'Ingresos del mes', 'Fatturato del mese'), value: fmt(shopStats.caMonth) },
+    { label: T('Clients actifs', 'Active customers', 'Clientes activos', 'Clienti attivi'), value: String(shopStats.customers) },
+  ]
 
   return (
     <div className="animate-in" style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
@@ -402,7 +434,7 @@ export default function AIAssistant() {
         {/* Quick questions */}
         {messages.length <= 2 && (
           <div style={{ display:'flex', gap:6, flexWrap:'wrap', padding:'8px 0', flexShrink:0 }}>
-            {(QUICK_QUESTIONS[lang === 'fr' ? 'fr' : 'en'] ?? QUICK_QUESTIONS.fr).map((q, i) => (
+            {(QUICK_QUESTIONS[lang as keyof typeof QUICK_QUESTIONS] ?? QUICK_QUESTIONS.fr).map((q, i) => (
               <button key={i} type="button"
                 onClick={() => sendMessage(q)}
                 disabled={analyzing}
@@ -437,9 +469,11 @@ export default function AIAssistant() {
             <textarea
               ref={inputRef}
               rows={2}
-              placeholder={lang === 'fr'
-                ? 'Posez une question à HabaShop AI... (Enter pour envoyer)'
-                : 'Ask HabaShop AI a question... (Enter to send)'}
+              placeholder={T(
+                'Posez une question à HabaShop AI... (Enter pour envoyer)',
+                'Ask HabaShop AI a question... (Enter to send)',
+                'Haz una pregunta a HabaShop AI... (Enter para enviar)',
+                'Fai una domanda a HabaShop AI... (Invio per inviare)')}
               value={input}
               onChange={e => setInput(e.target.value.slice(0, 2000))}
               onKeyDown={e => {

@@ -207,6 +207,14 @@ const TYPE_CFG_MAP: Record<string, { color: string; soft: string; icon: JSX.Elem
   Fidèle:      { color: '#00D084', soft: 'rgba(0,208,132,.15)',  icon: <Star size={10} />, label: 'Fidèle'      },
   Détail:      { color: '#00B8FF', soft: 'rgba(0,184,255,.12)',  icon: <ShoppingCart size={10} />, label: 'Détail'      },
 }
+const TYPE_LABELS: Record<string, Record<string, string>> = {
+  Grossiste:   { fr: 'Grossiste',  en: 'Wholesaler',     es: 'Mayorista',  it: 'Grossista' },
+  'Semi-gros': { fr: 'Semi-gros',  en: 'Semi-wholesale', es: 'Semi-mayor', it: 'Semi-ingrosso' },
+  Fidèle:      { fr: 'Fidèle',     en: 'Loyal',          es: 'Fiel',       it: 'Fedele' },
+  Détail:      { fr: 'Détail',     en: 'Retail',         es: 'Minorista',  it: 'Dettaglio' },
+}
+const typeLabel = (t: string | undefined, lang: string) => TYPE_LABELS[t ?? 'Détail']?.[lang] ?? t ?? 'Détail'
+
 const getMapCfg = (tp: string) => TYPE_CFG_MAP[tp] ?? TYPE_CFG_MAP.Détail
 
 const DARK_STYLE = [
@@ -254,7 +262,7 @@ function createMarkerIcon(google: any, color: string, size: number, text: string
 }
 
 function CustomerMap({
-  customers, geoPositions, geocoding, mapsLoaded, fmt, navigate, onOpenDetail,
+  customers, geoPositions, geocoding, mapsLoaded, fmt, lang, navigate, onOpenDetail,
 }: {
   customers:    any[]
   geoPositions: Record<string, { lat: number; lng: number }>
@@ -387,7 +395,7 @@ function CustomerMap({
           {/* Search */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 10, padding: '7px 11px', marginBottom: 8 }}>
             <Search size={12} style={{ color: 'var(--text3)', flexShrink: 0 }} />
-            <input type="text" placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)}
+            <input type="text" placeholder={lang === 'fr' ? 'Rechercher…' : lang === 'en' ? 'Search…' : lang === 'es' ? 'Buscar…' : 'Cerca…'} value={search} onChange={e => setSearch(e.target.value)}
               style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 12, fontFamily: 'var(--font)' }} />
             {search && <button type="button" onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 12, lineHeight: 1 }}><X size={12} /></button>}
           </div>
@@ -402,7 +410,7 @@ function CustomerMap({
                   border: `1px solid ${active ? (cfg?.color ?? 'var(--p2)') + '55' : 'rgba(255,255,255,.08)'}`,
                   background: active ? (cfg?.soft ?? 'rgba(108,71,255,.12)') : 'transparent',
                   color: active ? (cfg?.color ?? 'var(--p3)') : 'var(--text3)',
-                }}>{f === 'all' ? 'Tous' : f}</button>
+                }}>{f === 'all' ? (lang === 'fr' ? 'Tous' : lang === 'en' ? 'All' : lang === 'es' ? 'Todos' : 'Tutti') : typeLabel(f, lang)}</button>
               )
             })}
           </div>
@@ -472,7 +480,7 @@ function CustomerMap({
                   <div style={{ width: 38, height: 38, borderRadius: 11, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff', flexShrink: 0, boxShadow: `0 6px 18px ${cfg.color}44` }}>{initials}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: '#F0F0FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{selected.name}</div>
-                    <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99, background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.color}33`, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {selected.type ?? 'Détail'}</span>
+                    <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99, background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.color}33`, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {typeLabel(selected.type, lang)}</span>
                   </div>
                   <button type="button" onClick={() => setSelected(null)} style={{ width: 24, height: 24, borderRadius: 7, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer', color: 'var(--text3)', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={11} /></button>
                 </div>
@@ -974,7 +982,7 @@ export default function Customers() {
                           padding: '3px 8px', borderRadius: 99,
                           background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.border}`,
                         }}>
-                          {cfg.icon}{cfg.label}
+                          {cfg.icon}{typeLabel(c.type, lang)}
                         </span>
                       </div>
                     </div>
