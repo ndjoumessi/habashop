@@ -119,6 +119,7 @@ console.log('⏰ Cron jobs planifiés : résumé 20h + alertes 8h')
 async function authenticate(request: any, reply: any) {
   try {
     await request.jwtVerify()
+    request.tenantId = (request.user as any)?.tenantId
   } catch {
     reply.code(401).send({ error: 'Non autorisé' })
   }
@@ -197,6 +198,7 @@ async function start() {
         role: user.role,
         shopName: tenant?.name ?? 'HabaShop',
       },
+      tenant,
     }
   })
 
@@ -208,17 +210,19 @@ async function start() {
 
     const passwordHash = await bcrypt.hash(password, 12)
 
-    const tenant = await prisma.tenant.create({
-      data: {
-        name: shopName,
-        currency: currency ?? 'XOF',
-        country: country ?? 'SN',
-        plan: 'starter',
-      },
-    })
-
-    const user = await prisma.user.create({
-      data: { name, email, passwordHash, role: 'ADMIN', tenantId: tenant.id },
+    const { tenant, user } = await prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.create({
+        data: {
+          name: shopName,
+          currency: currency ?? 'XOF',
+          country: country ?? 'SN',
+          plan: 'starter',
+        },
+      })
+      const user = await tx.user.create({
+        data: { name, email, passwordHash, role: 'ADMIN', tenantId: tenant.id },
+      })
+      return { tenant, user }
     })
 
     const token = app.jwt.sign(
@@ -229,6 +233,7 @@ async function start() {
     return {
       token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role, shopName: tenant.name },
+      tenant,
     }
   })
 
@@ -333,8 +338,8 @@ async function start() {
     return prisma.tenant.findUnique({ where: { id: tenantId } })
   })
 
-  app.put('/api/tenant', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+  const updateTenantHandler = async (request: any) => {
+    const tenantId = request.tenantId
     const data = request.body as any
     return prisma.tenant.update({
       where: { id: tenantId },
@@ -348,6 +353,38 @@ async function start() {
         email:    data.email,
       },
     })
+  }
+  app.put('/api/tenant',   { preHandler: authenticate }, updateTenantHandler)
+  app.patch('/api/tenant', { preHandler: authenticate }, updateTenantHandler)
+
+  // ─── TENANT USERS ─────────────────────
+  app.get('/api/tenant/users', { preHandler: authenticate }, async (request: any) => {
+    const users = await prisma.user.findMany({
+      where: { tenantId: request.tenantId },
+      orderBy: { createdAt: 'asc' },
+    })
+    return users.map(({ passwordHash, twoFASecret, ...u }) => u)
+  })
+
+  app.post('/api/tenant/users', { preHandler: authenticate }, async (request: any, reply: any) => {
+    const { name, email, password, role } = request.body as any
+    if (!name?.trim() || !email?.trim() || !password) {
+      return reply.code(400).send({ error: 'Nom, email et mot de passe requis' })
+    }
+    const existing = await prisma.user.findUnique({ where: { email: email.trim() } })
+    if (existing) return reply.code(409).send({ error: 'Email déjà utilisé' })
+    const passwordHash = await bcrypt.hash(password, 12)
+    const user = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        email: email.trim(),
+        passwordHash,
+        role: role ?? 'CASHIER',
+        tenantId: request.tenantId,
+      },
+    })
+    const { passwordHash: _ph, twoFASecret: _2fa, ...safe } = user
+    return reply.code(201).send(safe)
   })
 
   // ════════════════════════════════════════
