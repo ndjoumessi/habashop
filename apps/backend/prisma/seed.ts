@@ -23,17 +23,17 @@ async function main() {
   })
 
   const passwordHash = await bcrypt.hash('demo1234', 12)
-  await prisma.user.upsert({
-    where: { email: 'admin@habashop.com' },
-    update: {},
-    create: {
-      name: 'Nelson Djoumessi',
-      email: 'admin@habashop.com',
-      passwordHash,
-      role: 'ADMIN',
-      tenantId: tenant.id,
-    },
-  })
+  const demoUsers = [
+    { email: 'admin@habashop.com',   name: 'Nelson Djoumessi', role: 'ADMIN'   },
+    { email: 'cashier@habashop.com', name: 'Aminata Touré',    role: 'CASHIER' },
+  ]
+  for (const u of demoUsers) {
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: { role: u.role, name: u.name },
+      create: { ...u, passwordHash, tenantId: tenant.id },
+    })
+  }
 
   const products = [
     { sku: 'PRD-001', name: 'Riz parfumé 5kg',       category: 'Céréales',   emoji: '🌾', buyPrice: 3200, sellPrice: 4500, stockQty: 120, stockMin: 20 },
