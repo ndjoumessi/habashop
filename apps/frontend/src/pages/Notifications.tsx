@@ -111,8 +111,8 @@ export default function Notifications() {
       </div>
 
       {/* Onglets + actions */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ display:'flex', gap:4, background:'var(--bg3)', borderRadius:10, padding:4 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+        <div style={{ display:'flex', gap:4, background:'var(--bg3)', borderRadius:10, padding:4, flexWrap:'wrap' }}>
           {([
             { id:'all',    label:`${t('notif_all')} (${notifs.length})`      },
             { id:'unread', label:`${t('notif_unread')} (${unreadCount})`     },

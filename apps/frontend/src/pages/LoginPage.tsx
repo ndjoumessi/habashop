@@ -34,7 +34,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{
+    <div className="login-grid" style={{
       minHeight: '100vh',
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
@@ -43,7 +43,7 @@ export default function LoginPage() {
     }}>
 
       {/* ── Côté gauche : Branding ── */}
-      <div style={{
+      <div className="login-brand" style={{
         position: 'relative', overflow: 'hidden',
         background: 'linear-gradient(160deg,#07070F 0%,#0D0D28 50%,#0A0718 100%)',
         display: 'flex', flexDirection: 'column',

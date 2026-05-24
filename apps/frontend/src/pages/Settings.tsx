@@ -192,7 +192,7 @@ export default function Settings() {
     <div className="animate-in">
       <input ref={importRef} type="file" accept=".json" onChange={handleImportConfig} style={{ display: 'none' }} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, alignItems: 'start' }}>
+      <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, alignItems: 'start' }}>
 
         {/* ── Left nav ── */}
         <div style={{ position: 'sticky', top: 80, background: 'linear-gradient(160deg,#0D0D1C,#111128)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 20, padding: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>

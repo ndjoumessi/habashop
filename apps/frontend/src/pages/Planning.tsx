@@ -329,6 +329,8 @@ export default function Planning() {
                   width:160, fontSize:10, fontWeight:800,
                   textTransform:'uppercase', letterSpacing:'.6px',
                   color:'var(--text3)',
+                  position:'sticky', left:0, zIndex:2,
+                  background:'linear-gradient(135deg,var(--bg4),var(--bg3))',
                 }}>
                   {T.employee}
                 </th>
@@ -393,7 +395,12 @@ export default function Planning() {
                   background: ri%2===0
                     ? 'transparent' : 'rgba(255,255,255,.01)',
                 }}>
-                  <td style={{padding:'8px 16px'}}>
+                  <td style={{
+                    padding:'8px 16px',
+                    position:'sticky', left:0, zIndex:1,
+                    background: ri%2===0 ? 'var(--card)' : 'var(--bg2)',
+                    boxShadow:'2px 0 6px rgba(0,0,0,.15)',
+                  }}>
                     <div style={{
                       display:'flex', alignItems:'center', gap:8,
                     }}>

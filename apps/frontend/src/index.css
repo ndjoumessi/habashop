@@ -434,3 +434,14 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 @media (min-width:880px) {
   .dashboard-charts-grid { grid-template-columns:2fr 1fr }
 }
+
+/* Login & Signup split: collapse left branding panel below 880px */
+@media (max-width:880px) {
+  .login-grid { grid-template-columns:1fr !important }
+  .login-brand { display:none !important }
+}
+
+/* Settings page: left settings-nav + right form panel — stack below 880px */
+@media (max-width:880px) {
+  .settings-grid { grid-template-columns:1fr !important }
+}

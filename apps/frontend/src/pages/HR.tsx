@@ -507,7 +507,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
         {[
           { icon: <Users size={18}/>,      label: lang==='fr'?'Effectif total':'Total staff',      value: `${employees.length}`,    color: '#6C47FF', sub: `${activeCount} ${lang==='fr'?'actifs':'active'}` },
           { icon: <DollarSign size={18}/>, label: lang==='fr'?'Masse salariale':'Payroll',          value: fmt(totalPayroll),         color: '#00D084', sub: lang==='fr'?'Ce mois':'This month' },
