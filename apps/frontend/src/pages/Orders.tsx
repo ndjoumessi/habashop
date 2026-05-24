@@ -525,7 +525,7 @@ export default function Orders() {
         <div className="flex flex-wrap gap-2 mb-4">
           <div className="search-box flex-1 min-w-40">
             <Search size={13} className="search-icon" />
-            <input className="input pl-8 py-2 text-sm w-full" placeholder="🔍 Référence, fournisseur…"
+            <input className="input pl-8 py-2 text-sm w-full" placeholder={i('🔍 Référence, fournisseur…', '🔍 Reference, supplier…', '🔍 Referencia, proveedor…', '🔍 Riferimento, fornitore…')}
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="input py-2 text-sm w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
@@ -575,7 +575,7 @@ export default function Orders() {
             <thead>
               <tr>
                 <th scope="col">{t('col_ref')}</th>
-                <th scope="col">Type</th>
+                <th scope="col">{i('Type', 'Type', 'Tipo', 'Tipo')}</th>
                 <th scope="col">{i('Client / Fournisseur', 'Client / Supplier', 'Cliente / Proveedor', 'Cliente / Fornitore')}</th>
                 <th scope="col">{t('orders_date')}</th>
                 <th scope="col">{t('orders_expected')}</th>
@@ -599,8 +599,8 @@ export default function Orders() {
                     </td>
                     <td>
                       {o.type === 'supplier'
-                        ? <span className="badge badge-amber" style={{ fontSize: 10, display:'inline-flex', alignItems:'center', gap:3 }}><Truck size={9}/> BC</span>
-                        : <span className="badge badge-blue" style={{ fontSize: 10, display:'inline-flex', alignItems:'center', gap:3 }}><Users size={9}/> Vente</span>
+                        ? <span className="badge badge-amber" style={{ fontSize: 10, display:'inline-flex', alignItems:'center', gap:3 }}><Truck size={9}/> {i('BC', 'PO', 'OC', 'OA')}</span>
+                        : <span className="badge badge-blue" style={{ fontSize: 10, display:'inline-flex', alignItems:'center', gap:3 }}><Users size={9}/> {i('Vente', 'Sale', 'Venta', 'Vendita')}</span>
                       }
                     </td>
                     <td className="td-bold">{o.supplier}</td>
@@ -609,7 +609,7 @@ export default function Orders() {
                       {new Date(o.expectedAt).toLocaleDateString('fr-FR')}
                     </td>
                     <td>
-                      <span className="badge badge-gray">{o.items.length} article{o.items.length > 1 ? 's' : ''}</span>
+                      <span className="badge badge-gray">{o.items.length} {o.items.length > 1 ? i('articles', 'items', 'artículos', 'articoli') : i('article', 'item', 'artículo', 'articolo')}</span>
                     </td>
                     <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(o.total)}</td>
                     <td>
