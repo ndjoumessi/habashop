@@ -7,6 +7,8 @@ import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
 import { productsApi } from '@/lib/api'
 import BarcodeScanner from '@/components/ui/BarcodeScanner'
+import Pagination from '@/components/ui/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 
 type ProductItem = {
   _id?: string; sku: string; name: string; category: string
@@ -87,6 +89,8 @@ export default function Stock() {
       (!statusFilter || s.label === statusFilter)
     )
   })
+  const pg = usePagination(filtered, 24)
+  useEffect(() => { pg.reset() }, [search, cat, statusFilter])
 
   const resetForm = () => {
     setForm({ sku:'', name:'', description:'', category:'Céréales', unit:'unité', buy:0, sell:0, priceWholesale:0, priceSemiWholesale:0, stock:0, threshold:stockLowThreshold, supplier:'', barcode:'', taxRate:18, isActive:true, hasPromotion:false, promotionPrice:0, promotionEnd:'', image:'📦', notes:'' })
@@ -292,7 +296,7 @@ export default function Stock() {
         {/* Grid / List view */}
         {stockView === 'grid' ? (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:12 }}>
-            {filtered.map(p => {
+            {pg.paginated.map(p => {
               const st = statusOf(p.stock, p.threshold)
               const pct = Math.min(100, (p.stock / Math.max(p.threshold, 1)) * 100)
               return (
@@ -365,7 +369,7 @@ export default function Stock() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(p => {
+                {pg.paginated.map(p => {
                   const st = statusOf(p.stock, p.threshold)
                   return (
                     <tr key={p.sku}>
@@ -412,6 +416,7 @@ export default function Stock() {
             </table>
           </div>
         )}
+        <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} onPage={pg.onPage} onPageSize={pg.onSize} lang={lang} />
       </div>
 
       {/* ── Panel Catégories ── */}

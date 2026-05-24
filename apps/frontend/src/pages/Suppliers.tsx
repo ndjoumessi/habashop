@@ -8,6 +8,8 @@ import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
+import Pagination from '@/components/ui/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 
 type SupplierStatus = 'Actif' | 'Pause' | 'Inactif'
 type L4 = 'fr' | 'en' | 'es' | 'it'
@@ -169,6 +171,8 @@ export default function Suppliers() {
     (!statusFilter || s.status === statusFilter) &&
     (!catFilter || s.categories.includes(catFilter))
   )
+  const pg = usePagination(filtered, 15)
+  useEffect(() => { pg.reset() }, [search, statusFilter, catFilter])
 
   const actifs    = suppliers.filter(s => s.status === 'Actif').length
   const enCours   = suppliers.flatMap(s => s.orders).filter(o => ['ENVOYÉE', 'CONFIRMÉE', 'EN TRANSIT'].includes(o.status)).length
@@ -305,7 +309,7 @@ export default function Suppliers() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(s => (
+              {pg.paginated.map(s => (
                 <tr key={s.id}>
                   <td>
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -366,6 +370,7 @@ export default function Suppliers() {
             </tbody>
           </table>
         </div>
+        <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} onPage={pg.onPage} onPageSize={pg.onSize} lang={lang} />
       </div>
 
       {/* ── Modal fiche fournisseur ── */}

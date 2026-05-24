@@ -9,6 +9,8 @@ import LoyaltyCard from '@/components/ui/LoyaltyCard'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import ViewField from '@/components/ui/ViewField'
+import Pagination from '@/components/ui/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 
 type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
@@ -678,6 +680,8 @@ export default function Customers() {
     (!search || c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)) &&
     (!typeFilter || c.type === typeFilter)
   )
+  const pg = usePagination(filtered, 12)
+  useEffect(() => { pg.reset() }, [search, typeFilter])
 
   const now = new Date()
   const activeThisMonth = customers.filter(c => {
@@ -870,7 +874,7 @@ export default function Customers() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(c => (
+                {pg.paginated.map(c => (
                   <tr key={c.id}>
                     <td>
                       <div className="td-bold">{c.name}</div>
@@ -928,7 +932,7 @@ export default function Customers() {
         {/* Vue grille — bento premium */}
         {viewMode === 'grid' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(285px,1fr))', gap: 16 }}>
-            {filtered.map(c => {
+            {pg.paginated.map(c => {
               const cfg       = BENTO_CFG[c.type] ?? BENTO_CFG['Détail']
               const initials  = c.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
               const totalCA   = c.totalCA ?? 0
@@ -1076,6 +1080,7 @@ export default function Customers() {
             )}
           </div>
         )}
+        <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} onPage={pg.onPage} onPageSize={pg.onSize} lang={lang} />
       </div>}
 
       {/* ── Onglet Carte — Google Maps ── */}

@@ -4,6 +4,8 @@ import { ordersApi, productsApi, suppliersApi, customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle, DollarSign, Package, CalendarDays, List, Users, Phone, Send, Inbox, Printer, ClipboardList, User, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
+import Pagination from '@/components/ui/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 
 type OrderStatus = 'BROUILLON' | 'ENVOYÉE' | 'CONFIRMÉE' | 'EN TRANSIT' | 'REÇUE' | 'ANNULÉE'
 
@@ -230,6 +232,8 @@ export default function Orders() {
     (!statusFilter || o.status === statusFilter) &&
     (!supplierFilter || o.supplier === supplierFilter)
   )
+  const pg = usePagination(filtered, 20)
+  useEffect(() => { pg.reset() }, [search, statusFilter, supplierFilter])
 
   // KPIs
   const totalEngaged  = orders.filter(o => ['ENVOYÉE','CONFIRMÉE','EN TRANSIT'].includes(o.status)).reduce((s,o) => s+o.total, 0)
@@ -586,7 +590,7 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(o => {
+              {pg.paginated.map(o => {
                 const cfg = STATUS_CONFIG[o.status]
                 const isLate = o.status === 'EN TRANSIT' && new Date(o.expectedAt) < new Date()
                 return (
@@ -657,6 +661,7 @@ export default function Orders() {
             </tbody>
           </table>
         </div>
+        <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} onPage={pg.onPage} onPageSize={pg.onSize} lang={lang} />
       </div>}
 
       {/* ── Modal détail commande ── */}

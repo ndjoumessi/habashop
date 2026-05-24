@@ -9,6 +9,8 @@ import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
+import Pagination from '@/components/ui/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -385,6 +387,8 @@ export default function HR() {
     const matchStatus = filterStatus === 'all' || (filterStatus === 'active' ? e.active : !e.active)
     return matchSearch && matchDept && matchStatus
   }), [employees, search, deptFilter, filterStatus])
+  const pg = usePagination(filtered, 12)
+  useEffect(() => { pg.reset() }, [search, deptFilter, filterStatus])
 
   const totalPayroll = useMemo(() => (employees ?? []).filter(e => e.active).reduce((s, e) => s + e.salary, 0), [employees])
   const activeCount  = useMemo(() => (employees ?? []).filter(e => e.active).length, [employees])
@@ -626,7 +630,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     <div className="skeleton" style={{ width:'100%', height:8, borderRadius:4 }} />
                   </div>
                 ))
-              ) : filtered.map(emp => {
+              ) : pg.paginated.map(emp => {
                 const deptColor = DEPT_COLORS[emp.dept] ?? '#6C47FF'
                 const isActive  = emp.active
                 return (
@@ -739,7 +743,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map(emp => (
+                    {pg.paginated.map(emp => (
                       <tr key={emp.id} onClick={() => { openEditModal(emp) }} style={{ cursor: 'pointer' }}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -784,6 +788,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               </div>
             </div>
           )}
+          <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} onPage={pg.onPage} onPageSize={pg.onSize} lang={lang} />
         </>
       )}
 
