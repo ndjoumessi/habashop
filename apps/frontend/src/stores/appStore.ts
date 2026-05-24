@@ -447,6 +447,34 @@ export function formatCurrency(amount: number, currency?: Currency): string {
   return formatAmount(amount, curr)
 }
 
+// Hook — abrège un montant XOF dans la devise courante (axes de graphiques)
+// Convertit puis abrège (k/M) pour rester correct quelle que soit la devise.
+export function useAbbrevAmount() {
+  const currency = useAppStore(s => s.currency)
+  return (amountInXOF: number): string => {
+    const c = convertAmount(amountInXOF, 'XOF', currency)
+    const abs = Math.abs(c)
+    if (abs >= 1_000_000) return `${(c / 1_000_000).toFixed(1)}M`
+    if (abs >= 1_000)     return `${Math.round(c / 1_000)}k`
+    return String(Math.round(c))
+  }
+}
+
+// ─── Dates localisées ────────────────────────────────────────────────────────
+const DATE_LOCALES: Record<string, string> = {
+  fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT',
+}
+
+export function formatDate(date: string | Date, lang: string, options?: Intl.DateTimeFormatOptions): string {
+  const locale = DATE_LOCALES[lang] ?? 'fr-FR'
+  return new Date(date).toLocaleDateString(locale, options ?? { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+export function formatDateTime(date: string | Date, lang: string): string {
+  const locale = DATE_LOCALES[lang] ?? 'fr-FR'
+  return new Date(date).toLocaleString(locale, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
 // ─── i18n ──────────────────────────────────────────────────────────────────────
 
 export function t(key: string): string {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, useAbbrevAmount } from '@/stores/appStore'
 import { TrendingUp, Package, Users, Calendar, ShoppingCart, Zap, DollarSign, Trophy, BarChart2, Lightbulb, MessageSquare, Bot, Truck, Mail, ClipboardList, Copy, RefreshCw, Check, FileText, Target, Wallet, Brain, AlertCircle, Download, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartTooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -135,6 +135,7 @@ export default function Forecasts() {
   const { lang, currency } = useAppStore()
   void lang; void currency
   const fmt = useFormatAmount()
+  const abbr = useAbbrevAmount()
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab]       = useState<ActiveTab>('analyse')
@@ -626,7 +627,7 @@ export default function Forecasts() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)" vertical={false} />
               <XAxis dataKey="month" tick={{ fill:'var(--text3)', fontSize:11 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={v => `${(v/1000000).toFixed(1)}M`} tick={{ fill:'var(--text3)', fontSize:10 }} axisLine={false} tickLine={false} width={42} />
+              <YAxis tickFormatter={v => abbr(v)} tick={{ fill:'var(--text3)', fontSize:10 }} axisLine={false} tickLine={false} width={42} />
               <RechartTooltip
                 formatter={(v: number, name: string) => [fmt(v), name === 'reel' ? 'Réel' : 'Prévu']}
                 contentStyle={{ background:'#111125', border:'1px solid rgba(108,71,255,.3)', borderRadius:10, fontSize:12 }}

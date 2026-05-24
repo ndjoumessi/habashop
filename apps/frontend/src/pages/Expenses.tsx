@@ -530,7 +530,7 @@ export default function Expenses() {
                 }}>
                   <span style={{ color:'var(--text3)' }}>Montant TTC calculé :</span>
                   <span style={{ fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
-                    {nTTC.toLocaleString('fr-FR')} FCFA
+                    {fmt(nTTC)}
                   </span>
                 </div>
               )}

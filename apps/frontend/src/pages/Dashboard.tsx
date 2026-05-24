@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -143,6 +143,7 @@ const CatTooltip = ({ active, payload }: any) => {
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
+  const fmt = useFormatAmount()
   if (!active || !payload?.length) return null
   return (
     <div style={{
@@ -163,7 +164,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color ?? p.fill ?? 'var(--p)', flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{p.name ?? p.dataKey}</span>
           <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)' }}>
-            {typeof p.value === 'number' ? p.value.toLocaleString('fr-FR') : p.value}
+            {typeof p.value === 'number' ? fmt(p.value) : p.value}
           </span>
         </div>
       ))}
@@ -174,6 +175,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function Dashboard() {
   const { lang } = useConfig()
   const fmt = useFormatAmount()
+  const abbr = useAbbrevAmount()
   const { user } = useAuthStore()
   const navigate = useNavigate()
   void lang
@@ -368,11 +370,7 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)" />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: 'var(--text3)' }} axisLine={false} tickLine={false}
-                tickFormatter={v => {
-                  if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`
-                  if (v >= 1000)    return `${(v / 1000).toFixed(0)}k`
-                  return String(v)
-                }} />
+                tickFormatter={v => abbr(v)} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,.04)', stroke: 'rgba(255,255,255,.08)', strokeWidth: 1 }} />
               <Area dataKey="ventes" stroke="#00D084" strokeWidth={2.5} fill="url(#areaGrad)" dot={false} />
             </AreaChart>

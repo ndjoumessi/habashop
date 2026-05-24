@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, BarChart2, CreditCard, Trophy, Package, Users, Wallet, UserCog } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -67,6 +67,7 @@ export default function Reports() {
   const { lang, currency } = useConfig()
   void lang
   const fmt = useFormatAmount()
+  const abbr = useAbbrevAmount()
 
   const [activePayIndex, setActivePayIndex] = useState<number | null>(null)
   const [salesData,      setSalesData]      = useState<any[]>([])
@@ -331,7 +332,7 @@ export default function Reports() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)" vertical={false} />
               <XAxis dataKey="day" tick={{ fill:'var(--text3)', fontSize:11 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={v => `${(v/1000000).toFixed(1)}M`} tick={{ fill:'var(--text3)', fontSize:10 }} axisLine={false} tickLine={false} width={38} />
+              <YAxis tickFormatter={v => abbr(v)} tick={{ fill:'var(--text3)', fontSize:10 }} axisLine={false} tickLine={false} width={38} />
               <Tooltip
                 formatter={(v: number) => [fmt(v), lang === 'fr' ? 'CA' : 'Revenue']}
                 contentStyle={{ background:'#111125', border:'1px solid rgba(108,71,255,.3)', borderRadius:10, fontSize:12 }}
