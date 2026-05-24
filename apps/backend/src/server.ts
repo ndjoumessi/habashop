@@ -882,15 +882,6 @@ async function start() {
     console.log('📱 Envoi WhatsApp vers:', waPhone)
     console.log('📤 From:', TWILIO_FROM)
 
-    const twClient = getTwilioClient()
-    if (!twClient) {
-      console.error('❌ Twilio non disponible — vars Railway manquantes')
-      return reply.code(503).send({
-        error: 'Service WhatsApp non configuré',
-        details: 'Vérifier TWILIO_ACCOUNT_SID et TWILIO_AUTH_TOKEN dans Railway',
-      })
-    }
-
     try {
       const msg = await twClient.messages.create({ from: TWILIO_FROM, to: waPhone, body })
       console.log('✅ WhatsApp envoyé, SID:', msg.sid)
