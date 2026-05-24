@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, canAccess } from '@/stores/authStore'
 import { useNavigate } from 'react-router-dom'
 import {
   TrendingUp, TrendingDown, Package, Users, DollarSign, ShoppingCart,
@@ -237,7 +237,7 @@ export default function Dashboard() {
   })
 
 
-  const QUICK_ACTIONS = [
+  const ALL_QUICK_ACTIONS = [
     { Icon: ShoppingBag, label: lang === 'fr' ? 'Nouvelle vente' : 'New sale',       path: '/app/pos',     color: 'rgba(108,71,255,.12)',  ic: 'var(--p3)'    },
     { Icon: Download,    label: lang === 'fr' ? 'Recevoir stock' : 'Receive stock',   path: '/app/stock',   color: 'rgba(0,208,132,.12)',   ic: 'var(--acc2)'  },
     { Icon: Plus,        label: lang === 'fr' ? 'Ajouter produit': 'Add product',     path: '/app/stock',   color: 'rgba(255,149,0,.12)',   ic: 'var(--acc)'   },
@@ -247,6 +247,7 @@ export default function Dashboard() {
     { Icon: Activity,    label: lang === 'fr' ? 'Activité'       : 'Activity',        path: '/app/activity',color: 'rgba(251,146,60,.12)',  ic: '#FB923C'      },
     { Icon: Zap,         label: 'IA Assistant',                                        path: '/app/ai',      color: 'rgba(108,71,255,.15)',  ic: 'var(--p2)'    },
   ]
+  const QUICK_ACTIONS = ALL_QUICK_ACTIONS.filter(a => canAccess(user?.role, a.path.split('/').pop() || ''))
 
   return (
     <div className="space-y-5 animate-in">
@@ -262,10 +263,12 @@ export default function Dashboard() {
           </h1>
           <p className="page-subtitle">{t('today')} — {dateStr}</p>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/app/pos')} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <ShoppingCart size={14} />
-          {lang === 'fr' ? 'Nouvelle vente' : lang === 'en' ? 'New sale' : lang === 'es' ? 'Nueva venta' : 'Nuova vendita'}
-        </button>
+        {canAccess(user?.role, 'pos') && (
+          <button className="btn-primary" onClick={() => navigate('/app/pos')} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <ShoppingCart size={14} />
+            {lang === 'fr' ? 'Nouvelle vente' : lang === 'en' ? 'New sale' : lang === 'es' ? 'Nueva venta' : 'Nuova vendita'}
+          </button>
+        )}
       </div>
 
       {/* KPI cards */}
