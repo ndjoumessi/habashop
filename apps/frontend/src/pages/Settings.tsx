@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
-  useConfig, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, ACCENT_PAIRS,
-  type Currency, type Lang,
+  useConfig, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, ACCENT_PAIRS, THEMES,
+  type Currency, type Lang, type Theme,
 } from '@/stores/appStore'
 import { tenantApi, dashboardApi, customersApi } from '@/lib/api'
 
@@ -31,17 +31,17 @@ function Switch({ on, onClick, color, disabled }: { on: boolean; onClick: () => 
   )
 }
 
-function ToggleCard({ icon, color, label, desc, on, onChange }: {
-  icon: string; color: string; label: string; desc: string; on: boolean; onChange: () => void
+function ToggleCard({ icon, color, label, desc, on, onChange, disabled }: {
+  icon: string; color: string; label: string; desc: string; on: boolean; onChange: () => void; disabled?: boolean
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(255,255,255,.03)', border: `1px solid ${disabled ? 'rgba(255,255,255,.05)' : 'rgba(255,255,255,.09)'}`, borderRadius: 14, transition: 'border-color .2s' }}>
       <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 11, color: 'var(--text3)' }}>{desc}</div>
       </div>
-      <Switch on={on} onClick={onChange} color={color} />
+      <Switch on={on} onClick={onChange} color={color} disabled={disabled} />
     </div>
   )
 }
@@ -259,7 +259,16 @@ function SectionPOS() {
   const fromXOF = useConvertFromXOF()
   const { symbol, decimals } = useCurrencyInfo()
   const [editMode, setEditMode] = useState(false)
+  const snapshot = () => ({
+    posVatIncluded: cfg.posVatIncluded, posAutoprint: cfg.posAutoprint, autoWhatsApp: cfg.autoWhatsApp,
+    enableLoyalty: cfg.enableLoyalty, requireCashier: cfg.requireCashier, enableScanner: cfg.enableScanner,
+    priceMode: cfg.priceMode, posTaxRate: cfg.posTaxRate,
+  })
+  const [draft, setDraft] = useState(snapshot())
   const [fundInput, setFundInput] = useState(fromXOF(cfg.posDefaultFund).toFixed(decimals))
+  const v = editMode ? draft : snapshot()
+  const startEdit = () => { setDraft(snapshot()); setFundInput(fromXOF(cfg.posDefaultFund).toFixed(decimals)); setEditMode(true) }
+  const toggle = (key: keyof ReturnType<typeof snapshot>) => { if (!editMode) return; setDraft(p => ({ ...p, [key]: !(p as any)[key] })) }
 
   const TOGGLES: { key: any; icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string> }[] = [
     { key: 'posVatIncluded', icon: '💰', color: 'var(--acc2)', label: { fr: 'TVA incluse', en: 'VAT included', es: 'IVA incluido', it: 'IVA inclusa' }, desc: { fr: 'Prix affichés TVA comprise', en: 'Prices shown VAT-inclusive', es: 'Precios con IVA', it: 'Prezzi IVA inclusa' } },
@@ -275,9 +284,9 @@ function SectionPOS() {
     { id: 'HT', title: 'HT', sub: i('Hors taxes', 'Excl. tax', 'Sin impuestos', 'Tasse escluse') },
   ]
 
-  const saveFund = () => {
-    cfg.updateConfig({ posDefaultFund: toXOF(Number(fundInput) || 0) })
-    toast.success(i('✅ Sauvegardé', '✅ Saved', '✅ Guardado', '✅ Salvato'))
+  const save = () => {
+    cfg.updateConfig({ ...draft, posDefaultFund: toXOF(Number(fundInput) || 0) })
+    toast.success(i('✅ Config POS sauvegardée', '✅ POS config saved', '✅ Config TPV guardada', '✅ Config POS salvata'))
     setEditMode(false)
   }
 
@@ -288,21 +297,24 @@ function SectionPOS() {
           title={i('Configuration POS', 'POS Configuration', 'Configuración TPV', 'Configurazione POS')}
           sub={i('Caisse, TVA et paiements', 'Cashier, VAT and payments', 'Caja, IVA y pagos', 'Cassa, IVA e pagamenti')}
           right={editMode
-            ? <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: 12, cursor: 'pointer' }} onClick={saveFund}>✅ {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
-            : <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(true)}>✏️ {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>} />
+            ? <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: 12, cursor: 'pointer' }} onClick={save}>✅ {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
+                <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(false)}>{i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</button>
+              </div>
+            : <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={startEdit}>✏️ {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>} />
 
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {TOGGLES.map(t => (
             <ToggleCard key={t.key} icon={t.icon} color={t.color} label={pick(lang, t.label)} desc={pick(lang, t.desc)}
-              on={!!(cfg as any)[t.key]} onChange={() => cfg.updateConfig({ [t.key]: !(cfg as any)[t.key] } as any)} />
+              on={!!(v as any)[t.key]} disabled={!editMode} onChange={() => toggle(t.key as any)} />
           ))}
 
           {/* Price mode (TTC / HT) */}
           <div style={{ display: 'flex', gap: 10 }}>
             {PRICE_MODES.map(m => (
-              <button key={m.id} type="button" onClick={() => cfg.updateConfig({ priceMode: m.id })}
-                style={{ flex: 1, padding: 14, borderRadius: 12, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', background: cfg.priceMode === m.id ? 'rgba(108,71,255,.1)' : 'rgba(255,255,255,.02)', border: `2px solid ${cfg.priceMode === m.id ? 'var(--p)' : 'rgba(255,255,255,.06)'}` }}>
-                <div style={{ fontSize: 15, fontWeight: 900, color: cfg.priceMode === m.id ? 'var(--p3)' : 'var(--text)' }}>{m.title}{cfg.priceMode === m.id ? ' ✓' : ''}</div>
+              <button key={m.id} type="button" disabled={!editMode} onClick={() => editMode && setDraft(p => ({ ...p, priceMode: m.id }))}
+                style={{ flex: 1, padding: 14, borderRadius: 12, cursor: editMode ? 'pointer' : 'default', opacity: editMode ? 1 : .7, textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', background: v.priceMode === m.id ? 'rgba(108,71,255,.1)' : 'rgba(255,255,255,.02)', border: `2px solid ${v.priceMode === m.id ? 'var(--p)' : 'rgba(255,255,255,.06)'}` }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: v.priceMode === m.id ? 'var(--p3)' : 'var(--text)' }}>{m.title}{v.priceMode === m.id ? ' ✓' : ''}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{m.sub}</div>
               </button>
             ))}
@@ -317,10 +329,14 @@ function SectionPOS() {
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Appliqué sur les ventes POS', 'Applied on POS sales', 'Aplicado en ventas TPV', 'Applicato sulle vendite POS')}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input type="number" min={0} max={100} step={0.5} className="input" style={{ width: 80, textAlign: 'right' }} value={cfg.posTaxRate} onChange={e => cfg.updateConfig({ posTaxRate: Math.max(0, Math.min(100, +e.target.value)) })} />
-              <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--acc)', width: 20 }}>%</span>
-            </div>
+            {editMode ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="number" min={0} max={100} step={0.5} className="input" style={{ width: 80, textAlign: 'right' }} value={draft.posTaxRate} onChange={e => setDraft(p => ({ ...p, posTaxRate: Math.max(0, Math.min(100, +e.target.value)) }))} />
+                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--acc)', width: 20 }}>%</span>
+              </div>
+            ) : (
+              <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{cfg.posTaxRate}%</div>
+            )}
           </div>
 
           {/* Opening fund — currency dynamic */}
@@ -341,6 +357,13 @@ function SectionPOS() {
               <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(cfg.posDefaultFund)}</div>
             )}
           </div>
+
+          {editMode && (
+            <div style={{ padding: '10px 14px', background: 'rgba(255,184,0,.06)', border: '1px solid rgba(255,184,0,.15)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--warn)' }}>
+              <span>⚠️</span>
+              <span>{i('Modifications non sauvegardées — cliquez sur Sauvegarder', 'Unsaved changes — click Save to apply', 'Cambios sin guardar — haga clic en Guardar', 'Modifiche non salvate — clicca Salva')}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -436,14 +459,32 @@ function SectionLang() {
           title={i('Apparence', 'Appearance', 'Apariencia', 'Aspetto')}
           sub={i('Thème et couleur d\'accent', 'Theme and accent color', 'Tema y color de acento', 'Tema e colore d\'accento')} />
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', gap: 10 }}>
-            {([{ id: 'dark', label: i('Sombre', 'Dark', 'Oscuro', 'Scuro'), e: '🌙' }, { id: 'light', label: i('Clair', 'Light', 'Claro', 'Chiaro'), e: '☀️' }] as const).map(th => (
-              <button key={th.id} type="button" onClick={() => cfg.updateConfig({ theme: th.id })}
-                style={{ flex: 1, padding: '14px 16px', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left', transition: 'all .15s', background: cfg.theme === th.id ? 'rgba(108,71,255,.1)' : 'rgba(255,255,255,.03)', border: `1px solid ${cfg.theme === th.id ? 'rgba(108,71,255,.35)' : 'rgba(255,255,255,.06)'}` }}>
-                <div style={{ fontSize: 18, marginBottom: 4 }}>{th.e}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: cfg.theme === th.id ? 'var(--p3)' : 'var(--text)' }}>{th.label}{cfg.theme === th.id ? ' ✓' : ''}</div>
-              </button>
-            ))}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Thème', 'Theme', 'Tema', 'Tema')}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(118px,1fr))', gap: 10 }}>
+              {(Object.entries(THEMES) as [Theme, typeof THEMES[Theme]][]).map(([key, th]) => {
+                const active = cfg.theme === key
+                const tbg = th.vars['--bg']; const tp = th.vars['--p']; const tacc = th.vars['--acc2']; const ttext = th.vars['--text']
+                return (
+                  <button key={key} type="button" onClick={() => cfg.updateConfig({ theme: key })}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', borderRadius: 14, background: active ? `${tp}18` : 'rgba(255,255,255,.03)', border: `2px solid ${active ? tp + '66' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
+                    {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: tp, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff', fontWeight: 900 }}>✓</div>}
+                    <div style={{ width: 72, height: 46, borderRadius: 9, background: tbg, border: '1px solid rgba(255,255,255,.1)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+                      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, background: tp + '33', borderRight: `1px solid ${tp}22` }} />
+                      <div style={{ position: 'absolute', left: 20, top: 6, right: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <div style={{ height: 4, borderRadius: 99, background: tp, width: '60%' }} />
+                        <div style={{ height: 3, borderRadius: 99, background: ttext + '44', width: '80%' }} />
+                        <div style={{ marginTop: 2, height: 10, borderRadius: 4, background: tacc + '44' }} />
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 16, marginBottom: 1 }}>{th.emoji}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: active ? 'var(--p3)' : 'var(--text2)' }}>{pick(lang, th.label)}</div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Couleur d\'accent', 'Accent color', 'Color de acento', 'Colore d\'accento')}</div>
