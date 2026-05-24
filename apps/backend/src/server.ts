@@ -221,7 +221,7 @@ async function start() {
         },
       })
       const user = await tx.user.create({
-        data: { name, email, passwordHash, role: 'ADMIN', tenantId: tenant.id },
+        data: { name: resolvedName, email, passwordHash, role: 'ADMIN', tenantId: tenant.id },
       })
       return { tenant, user }
     })
