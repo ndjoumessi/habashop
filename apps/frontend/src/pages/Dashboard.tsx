@@ -404,7 +404,7 @@ export default function Dashboard() {
             }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 2 }}>Total CA</div>
               <div style={{ fontSize: 17, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>
-                {`${(catTotal / 1000000).toFixed(1)}M`}
+                {abbr(catTotal)}
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
 import { customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown, Navigation2, Globe, Flame, AlertTriangle, DollarSign, StickyNote, UserPlus, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -589,6 +589,7 @@ export default function Customers() {
   const { lang } = useConfig()
   void lang
   const fmt = useFormatAmount()
+  const abbr = useAbbrevAmount()
   const navigate = useNavigate()
   const [customers, setCustomers] = useState(CUSTOMERS_INIT)
 
@@ -999,7 +1000,7 @@ export default function Customers() {
                       <div style={{ background: cfg.soft, border: `1px solid ${cfg.border}`, borderRadius: 10, padding: '7px 8px', textAlign: 'center' }}>
                         <div style={{ fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'rgba(255,255,255,.4)', marginBottom: 3 }}>CA</div>
                         <div style={{ fontSize: 11, fontWeight: 900, color: cfg.color, fontFamily: 'var(--mono)', lineHeight: 1 }}>
-                          {totalCA >= 1000000 ? `${(totalCA/1000000).toFixed(1)}M` : totalCA >= 1000 ? `${(totalCA/1000).toFixed(0)}k` : String(totalCA)}
+                          {abbr(totalCA)}
                         </div>
                       </div>
                       <div style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 10, padding: '7px 8px', textAlign: 'center' }}>
