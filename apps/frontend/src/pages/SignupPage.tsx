@@ -309,7 +309,7 @@ export default function SignupPage() {
         country:  form.country,
       })
       toast.success('Bienvenue sur HabaShop')
-      navigate('/app/dashboard')
+      navigate('/onboarding')
     } catch (err: any) {
       setError(err?.message || tx.errRequired)
     } finally {
