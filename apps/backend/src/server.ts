@@ -1590,7 +1590,71 @@ console.log(products.length + ' produits')</pre>
   // ─── DÉMARRAGE ────────────────────────
   try {
     await prisma.$connect()
-    await app.listen({
+
+  // ─── ANALYTICS ───────────────────────────
+  app.get('/api/analytics/summary', { preHandler: [authenticate] }, async (request: any, reply: any) => {
+    const tenantId = request.tenantId
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    const [salesDay, salesMonth, customers, products] = await Promise.all([
+      prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
+      prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
+      prisma.customer.count({ where: { tenantId } }),
+      prisma.product.count({ where: { tenantId, isActive: true } }),
+    ])
+    return {
+      caToday:  salesDay._sum.total   ?? 0,
+      txToday:  salesDay._count.id    ?? 0,
+      caMonth:  salesMonth._sum.total ?? 0,
+      txMonth:  salesMonth._count.id  ?? 0,
+      customers, products,
+    }
+  })
+
+  app.get('/api/analytics', { preHandler: [authenticate] }, async (request: any, reply: any) => {
+    const tenantId = request.tenantId
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const last30d = new Date(now.getTime() - 30*24*60*60*1000)
+    const [salesDay, salesMonth, customers, products, salesByDay, salesByPayment] = await Promise.all([
+      prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
+      prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
+      prisma.customer.count({ where: { tenantId } }),
+      prisma.product.count({ where: { tenantId, isActive: true } }),
+      prisma.sale.findMany({ where: { tenantId, createdAt: { gte: last30d } }, select: { createdAt: true, total: true }, orderBy: { createdAt: 'asc' } }),
+      prisma.sale.groupBy({ by: ['paymentMode'], where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
+    ])
+    const dayMap = new Map<string, { ca: number; count: number }>()
+    salesByDay.forEach((s: any) => {
+      const day = new Date(s.createdAt).toISOString().slice(0, 10)
+      const curr = dayMap.get(day) ?? { ca: 0, count: 0 }
+      dayMap.set(day, { ca: curr.ca + s.total, count: curr.count + 1 })
+    })
+    const salesChartData = Array.from(dayMap.entries()).map(([day, v]) => ({
+      day: new Date(day).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+      ca: v.ca, count: v.count,
+    }))
+    return {
+      kpis: {
+        caToday: salesDay._sum.total ?? 0,
+        txToday: salesDay._count.id ?? 0,
+        caMonth: salesMonth._sum.total ?? 0,
+        txMonth: salesMonth._count.id ?? 0,
+        avgBasket: (salesMonth._count.id ?? 0) > 0 ? Math.round((salesMonth._sum.total ?? 0) / (salesMonth._count.id ?? 1)) : 0,
+        customers, products,
+      },
+      charts: {
+        salesByDay: salesChartData,
+        salesByPayment: salesByPayment.map((p: any) => ({ mode: p.paymentMode ?? 'Autre', total: p._sum.total ?? 0, count: p._count.id ?? 0 })),
+      },
+      generatedAt: new Date().toISOString(),
+    }
+  })
+
+
+      await app.listen({
       port: Number(process.env.PORT ?? 3001),
       host: '0.0.0.0',
     })
