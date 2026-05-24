@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Search, Plus, Bell, Wifi, WifiOff, ShoppingCart, Package, User, Receipt, Users, Truck, X, ChevronDown, Zap } from 'lucide-react'
 import { useAppStore, t } from '@/stores/appStore'
+import { useAuthStore, canAccess } from '@/stores/authStore'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import CurrencyBadge from '@/components/ui/CurrencyBadge'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -148,14 +149,17 @@ export default function Header() {
   const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([])
   const [swUpdate,      setSwUpdate]      = useState(false)
 
-  const NEW_ITEMS = [
-    { Icon: ShoppingCart, label: lang === 'fr' ? 'Nouvelle vente'    : 'New sale',      action: () => navigate('/app/pos') },
-    { Icon: Package,      label: lang === 'fr' ? 'Nouveau produit'   : 'New product',   action: () => { navigate('/app/stock');     setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-product')),    300) } },
-    { Icon: User,         label: lang === 'fr' ? 'Nouveau client'    : 'New customer',  action: () => { navigate('/app/customers'); setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-customer')),  300) } },
-    { Icon: Receipt,      label: lang === 'fr' ? 'Nouvelle dépense'  : 'New expense',   action: () => { navigate('/app/expenses');  setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-expense')),   300) } },
-    { Icon: Users,        label: lang === 'fr' ? 'Nouvel employé'    : 'New employee',  action: () => { navigate('/app/hr');        setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-employee')),  300) } },
-    { Icon: Truck,        label: lang === 'fr' ? 'Nouveau fournisseur': 'New supplier', action: () => { navigate('/app/suppliers'); setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-supplier')),  300) } },
+  const role = useAuthStore(s => s.user?.role)
+
+  const ALL_NEW_ITEMS = [
+    { slug: 'pos',       Icon: ShoppingCart, label: lang === 'fr' ? 'Nouvelle vente'    : 'New sale',      action: () => navigate('/app/pos') },
+    { slug: 'stock',     Icon: Package,      label: lang === 'fr' ? 'Nouveau produit'   : 'New product',   action: () => { navigate('/app/stock');     setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-product')),    300) } },
+    { slug: 'customers', Icon: User,         label: lang === 'fr' ? 'Nouveau client'    : 'New customer',  action: () => { navigate('/app/customers'); setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-customer')),  300) } },
+    { slug: 'expenses',  Icon: Receipt,      label: lang === 'fr' ? 'Nouvelle dépense'  : 'New expense',   action: () => { navigate('/app/expenses');  setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-expense')),   300) } },
+    { slug: 'hr',        Icon: Users,        label: lang === 'fr' ? 'Nouvel employé'    : 'New employee',  action: () => { navigate('/app/hr');        setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-employee')),  300) } },
+    { slug: 'suppliers', Icon: Truck,        label: lang === 'fr' ? 'Nouveau fournisseur': 'New supplier', action: () => { navigate('/app/suppliers'); setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-supplier')),  300) } },
   ]
+  const NEW_ITEMS = ALL_NEW_ITEMS.filter(item => canAccess(role, item.slug))
 
   useEffect(() => {
     const BASE = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:3001'
@@ -357,7 +361,8 @@ export default function Header() {
         <LanguageSwitcher />
         <CurrencyBadge />
 
-        {/* ── + Nouveau button ── */}
+        {/* ── + Nouveau button ── (hidden if role has zero quick-create actions) */}
+        {NEW_ITEMS.length > 0 && (
         <div ref={newMenuRef} style={{ position: 'relative' }}>
           <button
             className="topbar-btn"
@@ -407,6 +412,7 @@ export default function Header() {
             </div>
           )}
         </div>
+        )}
 
         {/* ── Notifications bell ── */}
         <div ref={notifsRef} style={{ position: 'relative' }}>
