@@ -100,7 +100,43 @@ async function main() {
     })
   }
 
-  console.log('✅ Seed terminé !')
+  // ─── 2e tenant de démo (isolation multi-tenant) ──────────────────────────────
+  const tenant2 = await prisma.tenant.upsert({
+    where: { id: 'demo-tenant-002' },
+    update: {},
+    create: {
+      id: 'demo-tenant-002',
+      name: 'Alimentation Koné — Abidjan',
+      currency: 'XOF',
+      country: 'CI',
+      plan: 'starter',
+      vatRate: 18,
+      address: "Boulevard de Marseille, Abidjan, Côte d'Ivoire",
+      phone: '+225 07 00 00 00',
+      email: 'contact@kone-alim.ci',
+    },
+  })
+
+  await prisma.user.upsert({
+    where: { email: 'kone@habashop.com' },
+    update: { role: 'ADMIN', name: 'Ibrahim Koné' },
+    create: { email: 'kone@habashop.com', name: 'Ibrahim Koné', role: 'ADMIN', passwordHash, tenantId: tenant2.id },
+  })
+
+  const tenant2Products = [
+    { sku: 'K-001', name: 'Attiéké 1kg',     category: 'Céréales',   emoji: '🥣', buyPrice: 500,  sellPrice: 800,  stockQty: 80, stockMin: 15 },
+    { sku: 'K-002', name: 'Huile rouge 1L',  category: 'Corps gras', emoji: '🛢️', buyPrice: 1400, sellPrice: 2000, stockQty: 40, stockMin: 10 },
+    { sku: 'K-003', name: 'Cube Maggi x100', category: 'Épicerie',   emoji: '🧂', buyPrice: 1800, sellPrice: 2500, stockQty: 25, stockMin: 8  },
+  ]
+  for (const p of tenant2Products) {
+    await prisma.product.upsert({
+      where: { id: `demo2-${p.sku}` },
+      update: {},
+      create: { id: `demo2-${p.sku}`, tenantId: tenant2.id, unit: 'unité', taxRate: 18, ...p },
+    })
+  }
+
+  console.log('✅ Seed terminé ! (2 tenants : Dakar Central + Alimentation Koné)')
 }
 
 main()
