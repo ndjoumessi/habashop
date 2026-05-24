@@ -1,774 +1,615 @@
-import { useState, useRef, useEffect, type CSSProperties } from 'react'
-import {
-  useConfig, t, ACCENT_PAIRS, useFormatAmount, useAppStore,
-  convertAmount, useCurrencyInfo, formatInCurrency,
-} from '@/stores/appStore'
-import type { Currency, Lang } from '@/stores/appStore'
-import { useAuthStore } from '@/stores/authStore'
-import { tenantApi, cronApi } from '@/lib/api'
-import {
-  Store, Globe, ShoppingCart, Bell, Shield, FileText,
-  Save, Upload, Download, X, RefreshCw, AlertTriangle,
-  Info, Image, Lock, LockOpen, ArrowLeftRight, Moon, Sun,
-  Paintbrush, DollarSign, Receipt, Mail, Smartphone, Sunrise, ShieldCheck,
-  Clock, ClipboardList, CheckCircle, FlaskConical, ChevronRight, Package, Cog,
-} from 'lucide-react'
-import { generateCDC } from '@/utils/export'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import AddressAutocomplete from '@/components/ui/AddressAutocomplete'
+import {
+  useConfig, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, ACCENT_PAIRS,
+  type Currency, type Lang,
+} from '@/stores/appStore'
+import { tenantApi, dashboardApi, customersApi } from '@/lib/api'
 
-type SectionId = 'boutique' | 'pos' | 'lang' | 'notif' | 'security' | 'docs'
+// ─── helpers ──────────────────────────────────────────────────────────────────
 
-const STATIC_QR = [
-  1,1,1,1,1,1,1,0,0,1,0,1,
-  1,0,0,0,0,0,1,0,1,0,0,1,
-  1,0,1,1,1,0,1,1,0,1,0,0,
-  1,0,1,1,1,0,1,0,0,0,1,0,
-  1,0,1,1,1,0,1,1,0,0,0,1,
-  1,0,0,0,0,0,1,0,1,0,1,0,
-  1,1,1,1,1,1,1,0,0,1,0,0,
-  0,0,0,0,0,0,0,1,0,1,1,0,
-  1,0,1,1,0,1,1,0,0,1,0,1,
-  0,1,0,0,1,0,0,1,0,0,1,0,
-  1,1,0,1,0,1,0,0,1,0,0,1,
-  0,0,1,0,1,0,0,1,0,1,0,1,
-]
+type L4 = 'fr' | 'en' | 'es' | 'it'
+const makeI = (lang: string) => (fr: string, en: string, es: string, it: string) =>
+  lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
+const pick = (lang: string, o: Record<L4, string>) => o[lang as L4] ?? o.fr
 
-const CURRENCY_META: { code: Currency; flag: string; symbol: string; descKey: string; regionKey: string }[] = [
-  { code: 'XOF', flag: '🇸🇳', symbol: 'FCFA', descKey: 'currency_xof', regionKey: 'settings_west_africa' },
-  { code: 'XAF', flag: '🇨🇲', symbol: 'FCFA', descKey: 'currency_xaf', regionKey: 'settings_central_africa' },
-  { code: 'EUR', flag: '🇪🇺', symbol: '€',    descKey: 'currency_eur', regionKey: 'settings_europe' },
-  { code: 'USD', flag: '🇺🇸', symbol: '$',    descKey: 'currency_usd', regionKey: 'settings_usa' },
-  { code: 'CAD', flag: '🇨🇦', symbol: 'CA$',  descKey: 'currency_cad', regionKey: 'settings_canada' },
-  { code: 'GBP', flag: '🇬🇧', symbol: '£',    descKey: 'currency_gbp', regionKey: 'settings_uk' },
-]
-
-const ALL_CURRENCY_CODES: Currency[] = ['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP']
-
-const LANG_META: { code: Lang; flag: string; name: string; native: string }[] = [
-  { code: 'fr', flag: '🇫🇷', name: 'Français', native: 'Langue officielle' },
-  { code: 'en', flag: '🇬🇧', name: 'English',  native: 'International' },
-  { code: 'es', flag: '🇪🇸', name: 'Español',  native: 'Iberoamérica' },
-  { code: 'it', flag: '🇮🇹', name: 'Italiano', native: 'Europa' },
-]
-
-function getAccentColors() {
-  return Object.entries(ACCENT_PAIRS).map(([hex, pair]) => ({
-    hex,
-    nameKey: hex === '#5B4EE8' ? 'color_violet' :
-             hex === '#3B82F6' ? 'color_blue' :
-             hex === '#10B981' ? 'color_green' :
-             hex === '#F59E0B' ? 'color_orange' :
-             hex === '#EF4444' ? 'color_red' : 'color_pink',
-    p2: pair.p2,
-  }))
+const panel: React.CSSProperties = {
+  background: 'linear-gradient(160deg,#0D0D1C,#111128)',
+  border: '1px solid rgba(255,255,255,.07)', borderRadius: 20, overflow: 'hidden',
 }
 
-const VAT_OPTIONS = [0, 5, 10, 18, 20]
-
-const SECTIONS: {
-  id: SectionId; icon: JSX.Element
-  labelFr: string; labelEn: string; descFr: string; descEn: string
-}[] = [
-  { id: 'boutique', icon: <Store size={16} />,       labelFr: 'Boutique',        labelEn: 'Shop',               descFr: 'Infos générales',    descEn: 'General info'      },
-  { id: 'pos',      icon: <ShoppingCart size={16} />, labelFr: 'Config POS',      labelEn: 'POS Config',         descFr: 'Caisse & TVA',       descEn: 'Cashier & VAT'     },
-  { id: 'lang',     icon: <Globe size={16} />,        labelFr: 'Langue & Devise',  labelEn: 'Language & Currency', descFr: 'Localisation',      descEn: 'Localization'      },
-  { id: 'notif',    icon: <Bell size={16} />,         labelFr: 'Notifications',   labelEn: 'Notifications',      descFr: 'Alertes & rapports', descEn: 'Alerts & reports'  },
-  { id: 'security', icon: <Shield size={16} />,       labelFr: 'Sécurité',        labelEn: 'Security',           descFr: 'Accès & sessions',   descEn: 'Access & sessions' },
-  { id: 'docs',     icon: <FileText size={16} />,     labelFr: 'Documents',       labelEn: 'Documents',          descFr: 'PDF & exports',      descEn: 'PDF & exports'     },
-]
-
-const card: CSSProperties = {
-  background: 'linear-gradient(160deg,#0D0D1C 0%,#111128 100%)',
-  border: '1px solid rgba(255,255,255,.06)',
-  borderRadius: 18, padding: 24, marginBottom: 16,
-}
-
-function CardHead({ icon, title, desc }: { icon: JSX.Element; title: string; desc?: string }) {
+function Switch({ on, onClick, color, disabled }: { on: boolean; onClick: () => void; color: string; disabled?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,.06)' }}>
-      <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: 'rgba(108,71,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A991FF' }}>
-        {icon}
-      </div>
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{title}</div>
-        {desc && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{desc}</div>}
-      </div>
-    </div>
-  )
-}
-
-function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button onClick={() => onChange(!value)} style={{ position: 'relative', width: 48, height: 26, borderRadius: 99, border: 'none', cursor: 'pointer', flexShrink: 0, background: value ? '#00D084' : 'rgba(255,255,255,.15)', transition: 'background .2s' }}>
-      <div style={{ position: 'absolute', width: 18, height: 18, borderRadius: '50%', background: '#fff', top: 4, transition: 'left .15s', left: value ? 26 : 4, boxShadow: '0 1px 4px rgba(0,0,0,.35)' }} />
+    <button type="button" disabled={disabled} onClick={onClick} aria-pressed={on} style={{
+      width: 48, height: 26, borderRadius: 99, flexShrink: 0,
+      background: on ? color : 'rgba(255,255,255,.1)', border: 'none',
+      cursor: disabled ? 'default' : 'pointer', transition: 'all .25s', position: 'relative',
+    }}>
+      <div style={{ position: 'absolute', top: 3, left: on ? 24 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .25s', boxShadow: '0 2px 6px rgba(0,0,0,.3)' }} />
     </button>
   )
 }
 
-function ToggleRow({ label, sub, value, onChange }: { label: string; sub?: string; value: boolean; onChange: (v: boolean) => void }) {
+function ToggleCard({ icon, color, label, desc, on, onChange }: {
+  icon: string; color: string; label: string; desc: string; on: boolean; onChange: () => void
+}) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12 }}>
-      <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{label}</div>
-        {sub && <div style={{ fontSize: 11, marginTop: 2, color: 'var(--text3)' }}>{sub}</div>}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{icon}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{desc}</div>
       </div>
-      <Toggle value={value} onChange={onChange} />
+      <Switch on={on} onClick={onChange} color={color} />
     </div>
   )
 }
 
-function Label({ children }: { children: React.ReactNode }) {
+function Head({ emoji, title, sub, tint, right }: { emoji: string; title: string; sub?: string; tint: string; right?: React.ReactNode }) {
   return (
-    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px', marginBottom: 6 }}>
-      {children}
-    </label>
+    <div style={{ padding: '18px 22px', borderBottom: '1px solid rgba(255,255,255,.06)', background: `linear-gradient(135deg,${tint},transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ minWidth: 0 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', margin: 0, marginBottom: sub ? 3 : 0 }}>{emoji} {title}</h2>
+        {sub && <p style={{ fontSize: 11, color: 'var(--text3)', margin: 0 }}>{sub}</p>}
+      </div>
+      {right}
+    </div>
   )
 }
 
+// ─── navigation sections ────────────────────────────────────────────────────────
+
+const SECTIONS = [
+  { id: 'shop',     icon: '🏪', color: 'var(--p2)',    label: { fr: 'Boutique', en: 'Shop', es: 'Tienda', it: 'Negozio' },                          desc: { fr: 'Infos générales', en: 'General info', es: 'Info general', it: 'Info generali' } },
+  { id: 'pos',      icon: '🛒', color: 'var(--acc2)',  label: { fr: 'Config POS', en: 'POS Config', es: 'Config TPV', it: 'Config POS' },           desc: { fr: 'Caisse & TVA', en: 'Cashier & VAT', es: 'Caja & IVA', it: 'Cassa & IVA' } },
+  { id: 'lang',     icon: '🌍', color: 'var(--acc3,#00B8FF)', label: { fr: 'Langue & Devise', en: 'Language & Currency', es: 'Idioma & Divisa', it: 'Lingua & Valuta' }, desc: { fr: 'Localisation & thème', en: 'Localization & theme', es: 'Localización & tema', it: 'Localizzazione & tema' } },
+  { id: 'notif',    icon: '🔔', color: 'var(--warn)',  label: { fr: 'Notifications', en: 'Notifications', es: 'Notificaciones', it: 'Notifiche' },  desc: { fr: 'Alertes & rapports', en: 'Alerts & reports', es: 'Alertas & reportes', it: 'Avvisi & rapporti' } },
+  { id: 'security', icon: '🔒', color: 'var(--danger)', label: { fr: 'Sécurité', en: 'Security', es: 'Seguridad', it: 'Sicurezza' },               desc: { fr: 'Accès & sessions', en: 'Access & sessions', es: 'Acceso & sesiones', it: 'Accesso & sessioni' } },
+  { id: 'docs',     icon: '📋', color: 'var(--acc)',   label: { fr: 'Documents', en: 'Documents', es: 'Documentos', it: 'Documenti' },              desc: { fr: 'Exports & config', en: 'Exports & config', es: 'Exportar & config', it: 'Esporta & config' } },
+]
+
+// ─── main ─────────────────────────────────────────────────────────────────────
+
 export default function Settings() {
   const cfg = useConfig()
-  const fmt = useFormatAmount()
-  const { symbol: currencySymbol } = useCurrencyInfo()
-  const { settingsLocked, lockSettings, unlockSettings } = useAppStore()
-  const { updateUser } = useAuthStore()
+  const lang = cfg.lang
+  const i = makeI(lang)
+  const [activeSection, setActiveSection] = useState('shop')
 
-  const [activeSection, setActiveSection] = useState<SectionId>('boutique')
-  const [showReset, setShowReset]         = useState(false)
-  const [shopEditMode, setShopEditMode]   = useState(false)
-  const [posEditMode, setPosEditMode]     = useState(false)
-  const importRef = useRef<HTMLInputElement>(null)
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20, alignItems: 'start' }}>
+      {/* ── Navigation ── */}
+      <div style={{ ...panel, position: 'sticky', top: 24 }}>
+        <div style={{ padding: '20px 18px 14px', borderBottom: '1px solid rgba(255,255,255,.06)', background: 'linear-gradient(135deg,rgba(108,71,255,.08),transparent)' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.7px', color: 'var(--text3)', marginBottom: 3 }}>
+            {i('Configuration', 'Configuration', 'Configuración', 'Configurazione')}
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: '-.3px' }}>
+            {i('Paramètres', 'Settings', 'Ajustes', 'Impostazioni')}
+          </div>
+        </div>
+        <div style={{ padding: 8 }}>
+          {SECTIONS.map(s => {
+            const active = activeSection === s.id
+            return (
+              <button key={s.id} type="button" onClick={() => setActiveSection(s.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 14px', borderRadius: 12, border: `1px solid ${active ? `${s.color}44` : 'transparent'}`, background: active ? `${s.color}12` : 'transparent', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', marginBottom: 2 }}
+                onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.04)' }}
+                onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: active ? `${s.color}20` : 'rgba(255,255,255,.05)', border: `1px solid ${active ? `${s.color}33` : 'rgba(255,255,255,.08)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0, transition: 'all .15s' }}>{s.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: active ? s.color : 'var(--text2)', transition: 'color .15s' }}>{pick(lang, s.label)}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 1 }}>{pick(lang, s.desc)}</div>
+                </div>
+                {active && <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.color, flexShrink: 0, boxShadow: `0 0 6px ${s.color}` }} />}
+              </button>
+            )
+          })}
+        </div>
+        <div style={{ padding: '12px 18px', borderTop: '1px solid rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#6C47FF,#8B6FFF)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>🛒</div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text2)' }}>HabaShop v2.0</div>
+            <div style={{ fontSize: 9, color: 'var(--text4)' }}>Production · Railway + Vercel</div>
+          </div>
+        </div>
+      </div>
 
-  const [shopForm, setShopForm] = useState({
-    shopName: cfg.shopName, shopSlogan: cfg.shopSlogan,
-    shopAddress: cfg.shopAddress, shopPhone: cfg.shopPhone,
-    shopEmail: cfg.shopEmail, shopCountry: cfg.shopCountry,
-    shopSiret: cfg.shopSiret, shopVatRate: cfg.shopVatRate,
+      {/* ── Content ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+        {activeSection === 'shop'     && <SectionShop />}
+        {activeSection === 'pos'      && <SectionPOS />}
+        {activeSection === 'lang'     && <SectionLang />}
+        {activeSection === 'notif'    && <SectionNotif />}
+        {activeSection === 'security' && <SectionSecurity />}
+        {activeSection === 'docs'     && <SectionDocs />}
+      </div>
+    </div>
+  )
+}
+
+// ─── 🏪 Shop ─────────────────────────────────────────────────────────────────────
+
+function SectionShop() {
+  const cfg = useConfig()
+  const lang = cfg.lang
+  const i = makeI(lang)
+  const [editMode, setEditMode] = useState(false)
+  const [shopData, setShopData] = useState({
+    name: cfg.shopName, email: cfg.shopEmail, phone: cfg.shopPhone,
+    address: cfg.shopAddress, country: cfg.shopCountry, taxRate: cfg.shopVatRate,
   })
+  const [stats, setStats] = useState({ users: 0, products: 0, customers: 0, sales: 0 })
 
   useEffect(() => {
-    tenantApi.get().then(data => {
-      if (data) setShopForm(p => ({
-        ...p,
-        shopName:    data.name     ?? p.shopName,
-        shopCountry: data.country  ?? p.shopCountry,
-        shopPhone:   data.phone    ?? p.shopPhone,
-        shopEmail:   data.email    ?? p.shopEmail,
-        shopAddress: data.address  ?? p.shopAddress,
-        shopVatRate: data.vatRate  ?? p.shopVatRate,
+    tenantApi.get().then((d: any) => {
+      if (d) setShopData(s => ({
+        name: d.name ?? s.name, email: d.email ?? s.email, phone: d.phone ?? s.phone,
+        address: d.address ?? s.address, country: d.country ?? s.country, taxRate: d.vatRate ?? s.taxRate,
       }))
     }).catch(() => {})
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    Promise.all([
+      dashboardApi.stats().catch(() => ({} as any)),
+      customersApi.list().catch(() => [] as any[]),
+      tenantApi.users().catch(() => [] as any[]),
+    ]).then(([st, cust, usr]: any[]) => setStats({
+      products: st?.totalProducts ?? 0,
+      sales: st?.transactionsMonth ?? 0,
+      customers: Array.isArray(cust) ? cust.length : 0,
+      users: Array.isArray(usr) ? usr.length : 0,
+    }))
+  }, [])
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => cfg.updateConfig({ shopLogo: ev.target?.result as string })
-    reader.readAsDataURL(file)
+  const save = async () => {
+    try {
+      await tenantApi.update({ name: shopData.name, email: shopData.email, phone: shopData.phone, address: shopData.address, country: shopData.country, vatRate: shopData.taxRate })
+      cfg.updateConfig({ shopName: shopData.name, shopEmail: shopData.email, shopPhone: shopData.phone, shopAddress: shopData.address, shopCountry: shopData.country, shopVatRate: shopData.taxRate })
+      toast.success(i('✅ Paramètres sauvegardés', '✅ Settings saved', '✅ Ajustes guardados', '✅ Impostazioni salvate'))
+      setEditMode(false)
+    } catch (e: any) { toast.error(e.message) }
   }
 
-  const handleExportConfig = () => {
+  const FIELDS = [
+    { key: 'name',    full: true,  icon: '🏪', type: 'text',  label: i('NOM DE LA BOUTIQUE', 'SHOP NAME', 'NOMBRE TIENDA', 'NOME NEGOZIO'),  ph: i('Nom de votre boutique', 'Shop name', 'Nombre tienda', 'Nome negozio') },
+    { key: 'email',   full: false, icon: '📧', type: 'email', label: 'EMAIL', ph: 'email@boutique.com' },
+    { key: 'phone',   full: false, icon: '📞', type: 'tel',   label: i('TÉLÉPHONE', 'PHONE', 'TELÉFONO', 'TELEFONO'), ph: '+221 77 000 0000' },
+    { key: 'country', full: false, icon: '🌍', type: 'text',  label: i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE'), ph: i('Sénégal', 'Senegal', 'Senegal', 'Senegal') },
+    { key: 'address', full: true,  icon: '📍', type: 'text',  label: i('ADRESSE', 'ADDRESS', 'DIRECCIÓN', 'INDIRIZZO'), ph: i('Adresse complète', 'Full address', 'Dirección completa', 'Indirizzo completo') },
+  ]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'slideUp .3s ease both' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+        {[
+          { label: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), value: stats.users, icon: '👤', color: 'var(--p2)' },
+          { label: i('Produits', 'Products', 'Productos', 'Prodotti'), value: stats.products, icon: '📦', color: 'var(--acc3,#00B8FF)' },
+          { label: i('Clients', 'Customers', 'Clientes', 'Clienti'), value: stats.customers, icon: '👥', color: 'var(--acc)' },
+          { label: i('Ventes (mois)', 'Sales (month)', 'Ventas (mes)', 'Vendite (mese)'), value: stats.sales, icon: '🛒', color: 'var(--acc2)' },
+        ].map(s => (
+          <div key={s.label} style={{ ...panel, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>
+            <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: s.color, fontFamily: 'var(--mono)' }}>{s.value}</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={panel}>
+        <Head emoji="🏪" tint="rgba(108,71,255,.06)"
+          title={i('Informations boutique', 'Shop information', 'Información de la tienda', 'Informazioni negozio')}
+          sub={i('Nom, adresse et coordonnées', 'Name, address and contact', 'Nombre, dirección y contacto', 'Nome, indirizzo e contatti')}
+          right={editMode ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: 12, cursor: 'pointer' }} onClick={save}>✅ {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
+              <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(false)}>{i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</button>
+            </div>
+          ) : (
+            <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(true)}>✏️ {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>
+          )} />
+
+        <div style={{ padding: '20px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {FIELDS.map(f => (
+            <div key={f.key} style={f.full ? { gridColumn: '1/-1' } : {}}>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{f.label}</label>
+              {editMode ? (
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: 'var(--text3)', pointerEvents: 'none' }}>{f.icon}</span>
+                  <input type={f.type} className="input" style={{ paddingLeft: 36, width: '100%', boxSizing: 'border-box' }} placeholder={f.ph}
+                    value={(shopData as any)[f.key] ?? ''} onChange={e => setShopData(d => ({ ...d, [f.key]: e.target.value }))} />
+                </div>
+              ) : (
+                <div style={{ padding: '10px 14px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 10, fontSize: 13, color: 'var(--text2)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, minHeight: 42 }}>
+                  <span style={{ opacity: .5 }}>{f.icon}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {(shopData as any)[f.key] || <span style={{ color: 'var(--text4)', fontStyle: 'italic' }}>{i('Non renseigné', 'Not set', 'No especificado', 'Non impostato')}</span>}
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+          <div>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{i('TAUX TVA', 'VAT RATE', 'TASA IVA', 'ALIQUOTA IVA')} (%)</label>
+            {editMode ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="number" min={0} max={100} step={0.5} className="input" style={{ flex: 1 }} value={shopData.taxRate} onChange={e => setShopData(d => ({ ...d, taxRate: Number(e.target.value) }))} />
+                <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--acc)', width: 24 }}>%</span>
+              </div>
+            ) : (
+              <div style={{ padding: '10px 14px', background: 'rgba(255,149,0,.06)', border: '1px solid rgba(255,149,0,.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 }}>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Appliqué sur ventes', 'Applied on sales', 'Aplicado en ventas', 'Applicato sulle vendite')}</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{shopData.taxRate}%</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── 🛒 POS ──────────────────────────────────────────────────────────────────────
+
+function SectionPOS() {
+  const cfg = useConfig()
+  const lang = cfg.lang
+  const i = makeI(lang)
+  const fmt = useFormatAmount()
+  const toXOF = useConvertToXOF()
+  const fromXOF = useConvertFromXOF()
+  const { symbol, decimals } = useCurrencyInfo()
+  const [editMode, setEditMode] = useState(false)
+  const [fundInput, setFundInput] = useState(fromXOF(cfg.posDefaultFund).toFixed(decimals))
+
+  const TOGGLES: { key: any; icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string> }[] = [
+    { key: 'posVatIncluded', icon: '💰', color: 'var(--acc2)', label: { fr: 'TVA incluse', en: 'VAT included', es: 'IVA incluido', it: 'IVA inclusa' }, desc: { fr: 'Prix affichés TVA comprise', en: 'Prices shown VAT-inclusive', es: 'Precios con IVA', it: 'Prezzi IVA inclusa' } },
+    { key: 'posAutoprint', icon: '🖨️', color: 'var(--p2)', label: { fr: 'Impression auto', en: 'Auto print', es: 'Impresión auto', it: 'Stampa auto' }, desc: { fr: 'Imprime le ticket après vente', en: 'Print receipt after sale', es: 'Imprimir ticket tras venta', it: 'Stampa ricevuta dopo vendita' } },
+    { key: 'autoWhatsApp', icon: '💬', color: '#25D366', label: { fr: 'Ticket WhatsApp', en: 'WhatsApp receipt', es: 'Ticket WhatsApp', it: 'Ricevuta WhatsApp' }, desc: { fr: 'Envoie le ticket par WhatsApp', en: 'Send receipt via WhatsApp', es: 'Enviar ticket por WhatsApp', it: 'Invia ricevuta via WhatsApp' } },
+    { key: 'enableLoyalty', icon: '⭐', color: 'var(--warn)', label: { fr: 'Programme fidélité', en: 'Loyalty program', es: 'Programa fidelidad', it: 'Programma fedeltà' }, desc: { fr: 'Active les points de fidélité', en: 'Enable loyalty points', es: 'Activar puntos de fidelidad', it: 'Abilita punti fedeltà' } },
+    { key: 'requireCashier', icon: '🔐', color: 'var(--acc3,#00B8FF)', label: { fr: 'Ouverture de caisse', en: 'Cashier open required', es: 'Apertura de caja', it: 'Apertura cassa' }, desc: { fr: 'Exiger l\'ouverture avant les ventes', en: 'Require opening before sales', es: 'Exigir apertura antes de ventas', it: 'Richiedi apertura prima delle vendite' } },
+    { key: 'enableScanner', icon: '📷', color: 'var(--p3)', label: { fr: 'Scanner codes-barres', en: 'Barcode scanner', es: 'Escáner de códigos', it: 'Scanner codici' }, desc: { fr: 'Active le scanner intégré', en: 'Enable built-in scanner', es: 'Activar escáner integrado', it: 'Abilita scanner integrato' } },
+  ]
+
+  const PRICE_MODES: { id: 'TTC' | 'HT'; title: string; sub: string }[] = [
+    { id: 'TTC', title: 'TTC', sub: i('Taxes incluses', 'Tax included', 'Impuestos incluidos', 'Tasse incluse') },
+    { id: 'HT', title: 'HT', sub: i('Hors taxes', 'Excl. tax', 'Sin impuestos', 'Tasse escluse') },
+  ]
+
+  const saveFund = () => {
+    cfg.updateConfig({ posDefaultFund: toXOF(Number(fundInput) || 0) })
+    toast.success(i('✅ Sauvegardé', '✅ Saved', '✅ Guardado', '✅ Salvato'))
+    setEditMode(false)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'slideUp .3s ease both' }}>
+      <div style={panel}>
+        <Head emoji="🛒" tint="rgba(0,208,132,.05)"
+          title={i('Configuration POS', 'POS Configuration', 'Configuración TPV', 'Configurazione POS')}
+          sub={i('Caisse, TVA et paiements', 'Cashier, VAT and payments', 'Caja, IVA y pagos', 'Cassa, IVA e pagamenti')}
+          right={editMode
+            ? <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: 12, cursor: 'pointer' }} onClick={saveFund}>✅ {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
+            : <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(true)}>✏️ {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>} />
+
+        <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {TOGGLES.map(t => (
+            <ToggleCard key={t.key} icon={t.icon} color={t.color} label={pick(lang, t.label)} desc={pick(lang, t.desc)}
+              on={!!(cfg as any)[t.key]} onChange={() => cfg.updateConfig({ [t.key]: !(cfg as any)[t.key] } as any)} />
+          ))}
+
+          {/* Price mode (TTC / HT) */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            {PRICE_MODES.map(m => (
+              <button key={m.id} type="button" onClick={() => cfg.updateConfig({ priceMode: m.id })}
+                style={{ flex: 1, padding: 14, borderRadius: 12, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', background: cfg.priceMode === m.id ? 'rgba(108,71,255,.1)' : 'rgba(255,255,255,.02)', border: `2px solid ${cfg.priceMode === m.id ? 'var(--p)' : 'rgba(255,255,255,.06)'}` }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: cfg.priceMode === m.id ? 'var(--p3)' : 'var(--text)' }}>{m.title}{cfg.priceMode === m.id ? ' ✓' : ''}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{m.sub}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* VAT rate */}
+          <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,149,0,.12)', border: '1px solid rgba(255,149,0,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📊</div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{i('Taux de TVA', 'VAT Rate', 'Tasa IVA', 'Aliquota IVA')}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Appliqué sur les ventes POS', 'Applied on POS sales', 'Aplicado en ventas TPV', 'Applicato sulle vendite POS')}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="number" min={0} max={100} step={0.5} className="input" style={{ width: 80, textAlign: 'right' }} value={cfg.posTaxRate} onChange={e => cfg.updateConfig({ posTaxRate: Math.max(0, Math.min(100, +e.target.value)) })} />
+              <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--acc)', width: 20 }}>%</span>
+            </div>
+          </div>
+
+          {/* Opening fund — currency dynamic */}
+          <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💵</div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{i('Fond de caisse', 'Opening fund', 'Fondo de caja', 'Fondo cassa')}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Montant initial en caisse', 'Initial cash amount', 'Monto inicial en caja', 'Importo iniziale in cassa')}</div>
+              </div>
+            </div>
+            {editMode ? (
+              <div style={{ position: 'relative' }}>
+                <input type="number" min={0} step={1} className="input" style={{ width: 150, textAlign: 'right', paddingRight: 44 }} value={fundInput} onChange={e => setFundInput(e.target.value)} />
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', fontSize: 11, pointerEvents: 'none', fontWeight: 700 }}>{symbol}</span>
+              </div>
+            ) : (
+              <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(cfg.posDefaultFund)}</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── 🌍 Language, Currency & Appearance ─────────────────────────────────────────
+
+function SectionLang() {
+  const cfg = useConfig()
+  const lang = cfg.lang
+  const currency = cfg.currency
+  const fmt = useFormatAmount()
+  const i = makeI(lang)
+
+  const LANGS = [
+    { code: 'fr', flag: '🇫🇷', name: 'Français', native: 'Français' },
+    { code: 'en', flag: '🇬🇧', name: 'English', native: 'English' },
+    { code: 'es', flag: '🇪🇸', name: 'Spanish', native: 'Español' },
+    { code: 'it', flag: '🇮🇹', name: 'Italian', native: 'Italiano' },
+  ]
+  const CURRENCIES: { code: Currency; flag: string; name: Record<L4, string> }[] = [
+    { code: 'XOF', flag: '🇸🇳', name: { fr: 'Franc CFA Ouest', en: 'West African CFA', es: 'Franco CFA Oeste', it: 'Franco CFA Ovest' } },
+    { code: 'XAF', flag: '🇨🇲', name: { fr: 'Franc CFA Centre', en: 'Central African CFA', es: 'Franco CFA Centro', it: 'Franco CFA Centro' } },
+    { code: 'EUR', flag: '🇪🇺', name: { fr: 'Euro', en: 'Euro', es: 'Euro', it: 'Euro' } },
+    { code: 'USD', flag: '🇺🇸', name: { fr: 'Dollar US', en: 'US Dollar', es: 'Dólar US', it: 'Dollaro US' } },
+    { code: 'CAD', flag: '🇨🇦', name: { fr: 'Dollar CA', en: 'Canadian Dollar', es: 'Dólar CA', it: 'Dollaro CA' } },
+    { code: 'GBP', flag: '🇬🇧', name: { fr: 'Livre Sterling', en: 'British Pound', es: 'Libra Esterlina', it: 'Sterlina' } },
+  ]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'slideUp .3s ease both' }}>
+      {/* Language */}
+      <div style={panel}>
+        <Head emoji="🌍" tint="rgba(0,184,255,.05)"
+          title={i("Langue de l'interface", 'Interface language', 'Idioma de la interfaz', "Lingua dell'interfaccia")}
+          sub={i('4 langues — changement immédiat', '4 languages — instant change', '4 idiomas — cambio inmediato', '4 lingue — cambio immediato')} />
+        <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {LANGS.map(l => {
+            const active = lang === l.code
+            return (
+              <button key={l.code} type="button" onClick={() => cfg.setLang(l.code as Lang)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 14, background: active ? 'rgba(108,71,255,.12)' : 'rgba(255,255,255,.03)', border: `1.5px solid ${active ? 'rgba(108,71,255,.35)' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s' }}>
+                <span style={{ fontSize: 28 }}>{l.flag}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? 'var(--p3)' : 'var(--text)' }}>{l.native}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text3)' }}>{l.name}</div>
+                </div>
+                {active && <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--p2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', fontWeight: 900 }}>✓</div>}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Currency */}
+      <div style={panel}>
+        <Head emoji="💱" tint="rgba(255,184,0,.05)"
+          title={i("Devise d'affichage", 'Display currency', 'Divisa de visualización', 'Valuta di visualizzazione')}
+          sub={i('6 devises — conversion automatique des montants', '6 currencies — automatic conversion of amounts', '6 divisas — conversión automática de importes', '6 valute — conversione automatica degli importi')} />
+        <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+          {CURRENCIES.map(c => {
+            const active = currency === c.code
+            return (
+              <button key={c.code} type="button" onClick={() => cfg.setCurrency(c.code)}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '16px 10px', borderRadius: 14, background: active ? 'rgba(255,184,0,.1)' : 'rgba(255,255,255,.03)', border: `1.5px solid ${active ? 'rgba(255,184,0,.4)' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
+                {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: 'var(--warn)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#000', fontWeight: 900 }}>✓</div>}
+                <span style={{ fontSize: 26 }}>{c.flag}</span>
+                <div style={{ fontSize: 14, fontWeight: 900, color: active ? 'var(--warn)' : 'var(--text)', fontFamily: 'var(--mono)' }}>{c.code}</div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.3 }}>{pick(lang, c.name)}</div>
+              </button>
+            )
+          })}
+        </div>
+        <div style={{ margin: '0 22px 20px', padding: 16, background: 'rgba(255,184,0,.05)', border: '1px solid rgba(255,184,0,.15)', borderRadius: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', marginBottom: 12 }}>
+            {i('APERÇU — Conversion temps réel', 'PREVIEW — Real-time conversion', 'VISTA PREVIA — Conversión en tiempo real', 'ANTEPRIMA — Conversione in tempo reale')}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+            {[100000, 500000, 1000000].map(xof => (
+              <div key={xof} style={{ textAlign: 'center', padding: 10, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 10 }}>
+                <div style={{ fontSize: 9, color: 'var(--text3)', marginBottom: 4 }}>{xof.toLocaleString('fr-FR')} XOF</div>
+                <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{fmt(xof)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Appearance (theme + accent) */}
+      <div style={panel}>
+        <Head emoji="🎨" tint="rgba(108,71,255,.05)"
+          title={i('Apparence', 'Appearance', 'Apariencia', 'Aspetto')}
+          sub={i('Thème et couleur d\'accent', 'Theme and accent color', 'Tema y color de acento', 'Tema e colore d\'accento')} />
+        <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {([{ id: 'dark', label: i('Sombre', 'Dark', 'Oscuro', 'Scuro'), e: '🌙' }, { id: 'light', label: i('Clair', 'Light', 'Claro', 'Chiaro'), e: '☀️' }] as const).map(th => (
+              <button key={th.id} type="button" onClick={() => cfg.updateConfig({ theme: th.id })}
+                style={{ flex: 1, padding: '14px 16px', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left', transition: 'all .15s', background: cfg.theme === th.id ? 'rgba(108,71,255,.1)' : 'rgba(255,255,255,.03)', border: `1px solid ${cfg.theme === th.id ? 'rgba(108,71,255,.35)' : 'rgba(255,255,255,.06)'}` }}>
+                <div style={{ fontSize: 18, marginBottom: 4 }}>{th.e}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: cfg.theme === th.id ? 'var(--p3)' : 'var(--text)' }}>{th.label}{cfg.theme === th.id ? ' ✓' : ''}</div>
+              </button>
+            ))}
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Couleur d\'accent', 'Accent color', 'Color de acento', 'Colore d\'accento')}</div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {Object.keys(ACCENT_PAIRS).map(hex => (
+                <button key={hex} type="button" onClick={() => cfg.updateConfig({ accentColor: hex })} aria-label={hex}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: hex, border: 'none', cursor: 'pointer', outline: cfg.accentColor === hex ? `3px solid ${hex}` : '3px solid transparent', outlineOffset: 2, boxShadow: cfg.accentColor === hex ? `0 0 0 2px rgba(255,255,255,.25)` : 'none', transition: 'all .15s', transform: cfg.accentColor === hex ? 'scale(1.12)' : 'none' }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── 🔔 Notifications ────────────────────────────────────────────────────────────
+
+function SectionNotif() {
+  const cfg = useConfig()
+  const lang = cfg.lang
+  const i = makeI(lang)
+
+  const NOTIFS: { key: any; icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string> }[] = [
+    { key: 'notifEmailStock', icon: '⚠️', color: 'var(--danger)', label: { fr: 'Alertes rupture stock', en: 'Stock shortage alerts', es: 'Alertas de stock', it: 'Avvisi scorte' }, desc: { fr: 'Email quand un produit est en rupture', en: 'Email when a product runs out', es: 'Email cuando un producto se agota', it: 'Email quando un prodotto si esaurisce' } },
+    { key: 'notifEmailSales', icon: '📊', color: 'var(--p2)', label: { fr: 'Rapport ventes par email', en: 'Sales report by email', es: 'Reporte de ventas por email', it: 'Report vendite via email' }, desc: { fr: 'Résumé des ventes par email', en: 'Sales summary by email', es: 'Resumen de ventas por email', it: 'Riepilogo vendite via email' } },
+    { key: 'notifSmsSales', icon: '🛒', color: 'var(--acc2)', label: { fr: 'SMS ventes', en: 'Sales SMS', es: 'SMS de ventas', it: 'SMS vendite' }, desc: { fr: 'SMS pour les nouvelles ventes', en: 'SMS on new sales', es: 'SMS en nuevas ventas', it: 'SMS sulle nuove vendite' } },
+    { key: 'notifSmsStock', icon: '📦', color: 'var(--acc)', label: { fr: 'SMS stock', en: 'Stock SMS', es: 'SMS de stock', it: 'SMS magazzino' }, desc: { fr: 'SMS pour les alertes stock', en: 'SMS for stock alerts', es: 'SMS para alertas de stock', it: 'SMS per avvisi scorte' } },
+    { key: 'notifEmailPayroll', icon: '💼', color: 'var(--warn)', label: { fr: 'Email paie', en: 'Payroll email', es: 'Email de nómina', it: 'Email stipendi' }, desc: { fr: 'Notifie la génération des bulletins', en: 'Notify payslip generation', es: 'Notificar generación de nóminas', it: 'Notifica generazione buste paga' } },
+    { key: 'notifPushAll', icon: '🔔', color: 'var(--p3)', label: { fr: 'Notifications push', en: 'Push notifications', es: 'Notificaciones push', it: 'Notifiche push' }, desc: { fr: 'Toutes les notifications dans l\'app', en: 'All in-app notifications', es: 'Todas las notificaciones en la app', it: 'Tutte le notifiche in-app' } },
+  ]
+
+  return (
+    <div style={{ ...panel, animation: 'slideUp .3s ease both' }}>
+      <Head emoji="🔔" tint="rgba(255,59,92,.04)"
+        title={i('Notifications', 'Notifications', 'Notificaciones', 'Notifiche')}
+        sub={i('Gérez vos alertes et rapports automatiques', 'Manage your alerts and automatic reports', 'Gestiona tus alertas y reportes automáticos', 'Gestisci i tuoi avvisi e report automatici')} />
+      <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {NOTIFS.map(n => (
+          <ToggleCard key={n.key} icon={n.icon} color={n.color} label={pick(lang, n.label)} desc={pick(lang, n.desc)}
+            on={!!(cfg as any)[n.key]} onChange={() => cfg.updateConfig({ [n.key]: !(cfg as any)[n.key] } as any)} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── 🔒 Security ─────────────────────────────────────────────────────────────────
+
+function SectionSecurity() {
+  const cfg = useConfig()
+  const lang = cfg.lang
+  const i = makeI(lang)
+  const navigate = useNavigate()
+  const locked = cfg.settingsLocked
+
+  const token = localStorage.getItem('habashop_token')
+  const tokenInfo = token && token.split('.').length === 3 ? (() => {
+    try {
+      const p = JSON.parse(atob(token.split('.')[1]))
+      const exp = new Date(p.exp * 1000)
+      return { role: p.role, exp: exp.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' }), daysLeft: Math.ceil((exp.getTime() - Date.now()) / 86400000) }
+    } catch { return null }
+  })() : null
+
+  return (
+    <div style={{ ...panel, animation: 'slideUp .3s ease both' }}>
+      <Head emoji="🔒" tint="rgba(255,59,92,.04)" title={i('Sécurité & Accès', 'Security & Access', 'Seguridad & Acceso', 'Sicurezza & Accesso')} />
+      <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Lock */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, background: locked ? 'rgba(255,59,92,.08)' : 'rgba(0,208,132,.05)', border: `1px solid ${locked ? 'rgba(255,59,92,.2)' : 'rgba(0,208,132,.15)'}`, borderRadius: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 13, background: locked ? 'rgba(255,59,92,.15)' : 'rgba(0,208,132,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{locked ? '🔒' : '🔓'}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: locked ? 'var(--danger)' : 'var(--acc2)' }}>{locked ? i('Paramètres verrouillés', 'Settings locked', 'Ajustes bloqueados', 'Impostazioni bloccate') : i('Paramètres déverrouillés', 'Settings unlocked', 'Ajustes desbloqueados', 'Impostazioni sbloccate')}</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Verrouille langue & devise dans le header', 'Locks language & currency in the header', 'Bloquea idioma y divisa en el encabezado', 'Blocca lingua e valuta nell\'header')}</div>
+          </div>
+          <button type="button" onClick={() => locked ? cfg.unlockSettings() : cfg.lockSettings()}
+            style={{ padding: '8px 16px', borderRadius: 10, background: locked ? 'rgba(255,59,92,.15)' : 'rgba(0,208,132,.1)', border: `1px solid ${locked ? 'rgba(255,59,92,.3)' : 'rgba(0,208,132,.25)'}`, cursor: 'pointer', fontFamily: 'var(--font)', color: locked ? 'var(--danger)' : 'var(--acc2)', fontSize: 12, fontWeight: 700, transition: 'all .15s' }}>
+            {locked ? i('Déverrouiller', 'Unlock', 'Desbloquear', 'Sblocca') : i('Verrouiller', 'Lock', 'Bloquear', 'Blocca')}
+          </button>
+        </div>
+
+        {/* JWT session */}
+        {tokenInfo && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(108,71,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🔑</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>JWT · {i('Rôle', 'Role', 'Rol', 'Ruolo')}: {tokenInfo.role}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <span>{i('Expire le', 'Expires on', 'Expira el', 'Scade il')} {tokenInfo.exp}</span><span>·</span>
+                <span style={{ color: tokenInfo.daysLeft > 3 ? 'var(--acc2)' : 'var(--danger)' }}>● {i('Actif', 'Active', 'Activo', 'Attivo')} ({tokenInfo.daysLeft}j)</span>
+              </div>
+            </div>
+            <button type="button" className="btn btn-ghost" style={{ padding: '7px 14px', fontSize: 11, cursor: 'pointer' }}
+              onClick={() => { localStorage.removeItem('habashop_token'); cfg.clearTenant?.(); navigate('/login') }}>
+              {i('Déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}
+            </button>
+          </div>
+        )}
+
+        {/* Change password (stub) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(255,184,0,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🔐</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Bientôt disponible', 'Coming soon', 'Próximamente', 'Prossimamente')}</div>
+          </div>
+          <button type="button" className="btn btn-ghost" style={{ padding: '7px 14px', fontSize: 11, cursor: 'pointer' }} onClick={() => toast(i('Bientôt disponible', 'Coming soon', 'Próximamente', 'Prossimamente'))}>✏️ {i('Modifier', 'Change', 'Cambiar', 'Modifica')}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── 📋 Documents & config ──────────────────────────────────────────────────────
+
+function SectionDocs() {
+  const cfg = useConfig()
+  const lang = cfg.lang
+  const i = makeI(lang)
+  const importRef = useRef<HTMLInputElement>(null)
+
+  const exportConfig = () => {
     const blob = new Blob([cfg.exportConfig()], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url; a.download = `habashop-config-${new Date().toISOString().split('T')[0]}.json`; a.click()
     URL.revokeObjectURL(url)
-    toast.success(t('settings_config_exported'))
+    toast.success(i('📥 Configuration exportée', '📥 Configuration exported', '📥 Configuración exportada', '📥 Configurazione esportata'))
   }
-
-  const handleImportConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const importConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
-    reader.onload = ev => {
-      try { cfg.importConfig(ev.target?.result as string); toast.success(t('settings_import_success')) }
-      catch { toast.error(t('settings_import_error')) }
-    }
-    reader.readAsText(file); e.target.value = ''
+    reader.onload = ev => { cfg.importConfig(ev.target?.result as string); toast.success(i('✅ Configuration importée', '✅ Configuration imported', '✅ Configuración importada', '✅ Configurazione importata')) }
+    reader.readAsText(file)
   }
 
-  const lbl = (fr: string, en: string) => cfg.lang === 'fr' ? fr : en
+  const DOCS: { icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string>; action: () => void }[] = [
+    { icon: '📥', color: 'var(--p2)', label: { fr: 'Exporter la configuration', en: 'Export configuration', es: 'Exportar configuración', it: 'Esporta configurazione' }, desc: { fr: 'Sauvegarde tous vos paramètres (JSON)', en: 'Back up all your settings (JSON)', es: 'Respalda todos tus ajustes (JSON)', it: 'Backup di tutte le impostazioni (JSON)' }, action: exportConfig },
+    { icon: '📤', color: 'var(--acc3,#00B8FF)', label: { fr: 'Importer la configuration', en: 'Import configuration', es: 'Importar configuración', it: 'Importa configurazione' }, desc: { fr: 'Restaure depuis un fichier JSON', en: 'Restore from a JSON file', es: 'Restaurar desde un archivo JSON', it: 'Ripristina da un file JSON' }, action: () => importRef.current?.click() },
+    { icon: '💰', color: 'var(--warn)', label: { fr: 'Rapport comptable', en: 'Accounting report', es: 'Reporte contable', it: 'Report contabile' }, desc: { fr: 'Dépenses et revenus du mois', en: 'Monthly expenses and revenue', es: 'Gastos e ingresos del mes', it: 'Spese e ricavi del mese' }, action: () => toast(i('Bientôt disponible', 'Coming soon', 'Próximamente', 'Prossimamente')) },
+    { icon: '📋', color: 'var(--p3)', label: { fr: 'Documentation', en: 'Documentation', es: 'Documentación', it: 'Documentazione' }, desc: { fr: 'Dépôt GitHub HabaShop', en: 'HabaShop GitHub repo', es: 'Repo GitHub HabaShop', it: 'Repo GitHub HabaShop' }, action: () => window.open('https://github.com/ndjoumessi/habashop', '_blank') },
+    { icon: '🖨️', color: 'var(--text2)', label: { fr: 'Imprimer la configuration', en: 'Print configuration', es: 'Imprimir configuración', it: 'Stampa configurazione' }, desc: { fr: 'Imprime les paramètres actuels', en: 'Print current settings', es: 'Imprimir ajustes actuales', it: 'Stampa impostazioni correnti' }, action: () => window.print() },
+    { icon: '♻️', color: 'var(--danger)', label: { fr: 'Réinitialiser', en: 'Reset', es: 'Restablecer', it: 'Ripristina' }, desc: { fr: 'Restaure les paramètres par défaut', en: 'Restore default settings', es: 'Restaurar ajustes por defecto', it: 'Ripristina impostazioni predefinite' }, action: () => { cfg.resetConfig(); toast.success(i('♻️ Paramètres réinitialisés', '♻️ Settings reset', '♻️ Ajustes restablecidos', '♻️ Impostazioni ripristinate')) } },
+  ]
 
   return (
-    <div className="animate-in">
-      <input ref={importRef} type="file" accept=".json" onChange={handleImportConfig} style={{ display: 'none' }} />
-
-      <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, alignItems: 'start' }}>
-
-        {/* ── Left nav ── */}
-        <div style={{ position: 'sticky', top: 80, background: 'linear-gradient(160deg,#0D0D1C,#111128)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 20, padding: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {SECTIONS.map(sec => {
-            const active = activeSection === sec.id
-            return (
-              <button key={sec.id} onClick={() => setActiveSection(sec.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 14, width: '100%', border: active ? '1px solid rgba(108,71,255,.3)' : '1px solid transparent', background: active ? 'rgba(108,71,255,.12)' : 'transparent', cursor: 'pointer', transition: 'all .15s', textAlign: 'left', fontFamily: 'var(--font)' }}>
-                <span style={{ color: active ? '#A991FF' : 'var(--text3)', flexShrink: 0, display: 'flex' }}>{sec.icon}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: active ? 'var(--text)' : 'var(--text2)' }}>{cfg.lang === 'fr' ? sec.labelFr : sec.labelEn}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 1 }}>{cfg.lang === 'fr' ? sec.descFr : sec.descEn}</div>
-                </div>
-                {active && <ChevronRight size={13} style={{ color: '#A991FF', flexShrink: 0 }} />}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* ── Right content (key triggers slideUp on section change) ── */}
-        <div key={activeSection} style={{ animation: 'slideUp .22s ease' }}>
-
-          {/* ════ BOUTIQUE ════ */}
-          {activeSection === 'boutique' && <>
-            <div style={card}>
-              <CardHead icon={<Store size={16} />} title={lbl('Informations boutique', 'Shop information')} desc={lbl('Nom, adresse, coordonnées', 'Name, address, contacts')} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                {([
-                  { label: t('settings_shop_name'), key: 'shopName',    type: 'text',  span: true  },
-                  { label: t('settings_slogan'),    key: 'shopSlogan',  type: 'text',  span: true  },
-                  { label: t('settings_country'),   key: 'shopCountry', type: 'text',  span: false },
-                  { label: t('settings_siret'),     key: 'shopSiret',   type: 'text',  span: false },
-                  { label: t('settings_phone'),     key: 'shopPhone',   type: 'tel',   span: false },
-                  { label: t('settings_email'),     key: 'shopEmail',   type: 'email', span: false },
-                ] as { label: string; key: keyof typeof shopForm; type: string; span: boolean }[]).map(f => (
-                  <div key={f.key} style={{ gridColumn: f.span ? '1/-1' : 'auto' }}>
-                    <Label>{f.label}</Label>
-                    <input className="input text-sm" type={f.type} readOnly={!shopEditMode}
-                      value={String(shopForm[f.key])}
-                      onChange={e => setShopForm(s => ({ ...s, [f.key]: e.target.value }))}
-                      style={{ opacity: shopEditMode ? 1 : .65, cursor: shopEditMode ? 'text' : 'default' }} />
-                  </div>
-                ))}
-                <div style={{ gridColumn: '1/-1' }}>
-                  <Label>{t('settings_address')}</Label>
-                  {shopEditMode
-                    ? <AddressAutocomplete value={shopForm.shopAddress} onChange={v => setShopForm(s => ({ ...s, shopAddress: v }))} />
-                    : <input className="input text-sm" readOnly value={shopForm.shopAddress} style={{ opacity: .65, cursor: 'default' }} />}
-                </div>
-                <div>
-                  <div style={{ padding: '10px 14px', background: 'rgba(0,184,255,.06)', border: '1px solid rgba(0,184,255,.12)', borderRadius: 10, marginBottom: 10 }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--acc3)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <Info size={12} /> {lbl('À quoi sert ce champ ?', 'What is this field for?')}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.6 }}>
-                      {lbl("Taux TVA pour factures et devis. Distinct du taux TVA du POS.", "VAT rate for invoices and quotes. Separate from the POS tax rate.")}
-                    </div>
-                  </div>
-                  <Label>{t('settings_vat')}</Label>
-                  <select className="input text-sm" disabled={!shopEditMode} value={shopForm.shopVatRate} onChange={e => setShopForm(s => ({ ...s, shopVatRate: +e.target.value }))}>
-                    {VAT_OPTIONS.map(v => <option key={v} value={v}>{v} %</option>)}
-                  </select>
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-                {!shopEditMode ? (
-                  <button className="btn btn-ghost gap-2" onClick={() => setShopEditMode(true)} style={{ cursor: 'pointer' }}>
-                    <Save size={13} /> {lbl('Modifier', 'Edit')}
-                  </button>
-                ) : <>
-                  <button className="btn btn-ghost gap-2" onClick={() => setShopEditMode(false)} style={{ cursor: 'pointer' }}>
-                    <X size={13} /> {lbl('Annuler', 'Cancel')}
-                  </button>
-                  <button className="btn btn-primary gap-2" style={{ cursor: 'pointer' }} onClick={async () => {
-                    cfg.updateConfig(shopForm)
-                    updateUser({ shopName: shopForm.shopName })
-                    try {
-                      await tenantApi.update({ name: shopForm.shopName, country: shopForm.shopCountry, phone: shopForm.shopPhone, email: shopForm.shopEmail, address: shopForm.shopAddress, vatRate: shopForm.shopVatRate })
-                      toast.success('✅ Boutique mise à jour !')
-                    } catch { toast.success(t('settings_saved')) }
-                    setShopEditMode(false)
-                  }}>
-                    <Save size={13} /> {lbl('Sauvegarder', 'Save')}
-                  </button>
-                </>}
-              </div>
+    <div style={{ ...panel, animation: 'slideUp .3s ease both' }}>
+      <Head emoji="📋" tint="rgba(255,149,0,.04)"
+        title={i('Documents & Configuration', 'Documents & Configuration', 'Documentos & Configuración', 'Documenti & Configurazione')}
+        sub={i('Exportez vos données et votre configuration', 'Export your data and configuration', 'Exporta tus datos y configuración', 'Esporta i tuoi dati e la configurazione')} />
+      <input ref={importRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={importConfig} />
+      <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        {DOCS.map(d => (
+          <button key={pick(lang, d.label)} type="button" onClick={d.action}
+            style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s' }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,.06)'; el.style.borderColor = 'rgba(255,255,255,.12)'; el.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,.03)'; el.style.borderColor = 'rgba(255,255,255,.07)'; el.style.transform = 'none' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: `${d.color}15`, border: `1px solid ${d.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{d.icon}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>{pick(lang, d.label)}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>{pick(lang, d.desc)}</div>
             </div>
-
-            <div style={card}>
-              <CardHead icon={<Image size={16} />} title={t('settings_logo')} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                <div style={{ width: 80, height: 80, borderRadius: 16, overflow: 'hidden', background: 'rgba(255,255,255,.04)', border: '2px dashed rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {cfg.shopLogo ? <img src={cfg.shopLogo} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Store size={32} style={{ color: 'var(--text3)' }} />}
-                </div>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{cfg.shopLogo ? t('settings_logo_change') : t('settings_logo_none')}</p>
-                  <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>{t('settings_logo_formats')}</p>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <label className="btn btn-ghost gap-2" style={{ cursor: 'pointer', display: 'inline-flex' }}>
-                      <Upload size={13} /> {t('settings_logo_upload')}
-                      <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
-                    </label>
-                    {cfg.shopLogo && (
-                      <button className="btn btn-ghost gap-2" style={{ color: 'var(--danger)', cursor: 'pointer' }} onClick={() => { cfg.updateConfig({ shopLogo: null }); toast.success(t('settings_saved')) }}>
-                        <X size={13} /> {t('btn_delete')}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<Paintbrush size={16} />} title={t('settings_theme')} />
-              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-                {[
-                  { id: 'dark',  label: t('settings_dark'),  icon: <Moon size={24} />,  desc: t('settings_dark_desc')  },
-                  { id: 'light', label: t('settings_light'), icon: <Sun size={24} />,   desc: t('settings_light_desc') },
-                ].map(th => (
-                  <div key={th.id} onClick={() => cfg.updateConfig({ theme: th.id as 'dark' | 'light' })} style={{ flex: 1, padding: '14px 16px', borderRadius: 14, cursor: 'pointer', transition: 'all .15s', background: cfg.theme === th.id ? 'rgba(108,71,255,.1)' : 'rgba(255,255,255,.03)', border: `1px solid ${cfg.theme === th.id ? 'rgba(108,71,255,.35)' : 'rgba(255,255,255,.06)'}` }}>
-                    <div style={{ marginBottom: 8, display: 'flex', color: cfg.theme === th.id ? '#A991FF' : 'var(--text3)' }}>{th.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{th.label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3 }}>{th.desc}</div>
-                    {cfg.theme === th.id && <span className="badge badge-teal" style={{ marginTop: 8, display: 'inline-block' }}>{t('status_active')}</span>}
-                  </div>
-                ))}
-              </div>
-              <Label>{t('settings_accent_color')}</Label>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
-                {getAccentColors().map(ac => (
-                  <div key={ac.hex} onClick={() => cfg.updateConfig({ accentColor: ac.hex })} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: ac.hex, border: cfg.accentColor === ac.hex ? `3px solid ${ac.p2}` : '3px solid transparent', outline: cfg.accentColor === ac.hex ? '2px solid rgba(255,255,255,.2)' : 'none', boxShadow: cfg.accentColor === ac.hex ? `0 0 0 2px ${ac.hex}44` : 'none', transition: 'all .15s' }} />
-                    <span style={{ fontSize: 10, fontWeight: 600, color: cfg.accentColor === ac.hex ? 'var(--text)' : 'var(--text3)' }}>{t(ac.nameKey)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>}
-
-          {/* ════ POS ════ */}
-          {activeSection === 'pos' && <>
-            <div style={card}>
-              <CardHead icon={<ShoppingCart size={16} />} title={t('settings_pos_config')} desc={lbl('Configuration de la caisse', 'Cash register configuration')} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <Label>{lbl('Mode d\'affichage des prix', 'Price display mode')}</Label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    {[
-                      { id: 'TTC', title: 'TTC', subtitle: lbl('Prix taxes incluses', 'Prices with taxes'), example: lbl('1 000 FCFA (TVA incluse)', '1,000 XOF (tax included)'), icon: <DollarSign size={20} /> },
-                      { id: 'HT',  title: 'HT',  subtitle: lbl('Prix HT + TVA séparée', 'Excl. tax + VAT line'),    example: lbl('847 FCFA + TVA 153 FCFA', '847 XOF + VAT 153 XOF'),    icon: <Receipt size={20} />    },
-                    ].map(mode => (
-                      <button key={mode.id} type="button" disabled={!posEditMode} aria-pressed={cfg.priceMode === mode.id}
-                        onClick={() => cfg.updateConfig({ priceMode: mode.id as 'TTC' | 'HT' })}
-                        style={{ padding: 14, borderRadius: 12, cursor: posEditMode ? 'pointer' : 'default', transition: 'all .15s', background: cfg.priceMode === mode.id ? 'rgba(108,71,255,.1)' : 'rgba(255,255,255,.02)', border: `2px solid ${cfg.priceMode === mode.id ? 'var(--p)' : 'rgba(255,255,255,.06)'}`, boxShadow: cfg.priceMode === mode.id ? '0 4px 14px rgba(108,71,255,.2)' : 'none', fontFamily: 'var(--font)', width: '100%', textAlign: 'left', opacity: posEditMode ? 1 : .7 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ display: 'flex', color: cfg.priceMode === mode.id ? '#A991FF' : 'var(--text3)' }}>{mode.icon}</span>
-                            <span style={{ fontSize: 15, fontWeight: 900, color: cfg.priceMode === mode.id ? 'var(--p3)' : 'var(--text)' }}>{mode.title}</span>
-                          </div>
-                          {cfg.priceMode === mode.id && <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--p)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff', fontWeight: 800 }}>✓</div>}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5 }}>{mode.subtitle}</div>
-                        <div style={{ fontSize: 10, fontFamily: 'var(--mono)', color: cfg.priceMode === mode.id ? 'var(--p2)' : 'var(--text3)', background: cfg.priceMode === mode.id ? 'rgba(108,71,255,.08)' : 'rgba(255,255,255,.03)', padding: '3px 7px', borderRadius: 5 }}>
-                          ex: {mode.example}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{lbl('Mode de paiement par défaut', 'Default payment mode')}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{lbl('Pré-sélectionné à l\'ouverture du panier', 'Pre-selected when opening cart')}</div>
-                  </div>
-                  <select className="input" style={{ width: 'auto', minWidth: 140 }} disabled={!posEditMode}
-                    value={cfg.posDefaultPayment} onChange={e => cfg.updateConfig({ posDefaultPayment: e.target.value as 'cash' | 'card' | 'mobile' })}>
-                    <option value="cash">💵 {lbl('Espèces', 'Cash')}</option>
-                    <option value="card">💳 {lbl('Carte', 'Card')}</option>
-                    <option value="wave">🌊 Wave</option>
-                    <option value="orange">🟠 Orange Money</option>
-                    <option value="mobile">📱 Mobile</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{lbl('Taux de taxe POS (%)', 'POS tax rate (%)')}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{lbl('TVA appliquée sur toutes les ventes', 'VAT applied to all sales')}</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input className="input" type="number" style={{ width: 70, textAlign: 'right' }} disabled={!posEditMode}
-                      value={cfg.posTaxRate} min="0" max="100" step="0.5"
-                      onChange={e => cfg.updateConfig({ posTaxRate: Math.max(0, Math.min(100, +e.target.value)) })} />
-                    <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>%</span>
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Fond de caisse par défaut</Label>
-                  <div style={{ position: 'relative' }}>
-                    <input className="input text-sm" type="number" min={0} step={1000} disabled={!posEditMode}
-                      value={cfg.posDefaultFund} onChange={e => cfg.updateConfig({ posDefaultFund: +e.target.value })} style={{ paddingRight: 60 }} />
-                    <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', pointerEvents: 'none' }}>{currencySymbol}</span>
-                  </div>
-                  <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>Montant pré-rempli à l'ouverture de la caisse</p>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <ToggleRow label={t('settings_pos_show_stock')} sub="Affiche la quantité disponible sous chaque produit" value={cfg.posShowStockOnTile} onChange={v => cfg.updateConfig({ posShowStockOnTile: v })} />
-                  <ToggleRow label={t('settings_pos_autoprint')} value={cfg.posAutoprint} onChange={v => cfg.updateConfig({ posAutoprint: v })} />
-                  <ToggleRow label={t('settings_pos_vat_included')} value={cfg.posVatIncluded} onChange={v => cfg.updateConfig({ posVatIncluded: v })} />
-                  <ToggleRow label="Programme fidélité" sub="Active les points de fidélité à la caisse" value={cfg.enableLoyalty} onChange={v => cfg.updateConfig({ enableLoyalty: v })} />
-                  <ToggleRow label="Ouverture de caisse obligatoire" sub="Exiger l'ouverture de caisse avant toute vente" value={cfg.requireCashier} onChange={v => cfg.updateConfig({ requireCashier: v })} />
-                  <ToggleRow label="Scanner codes-barres" sub="Active le scanner de codes-barres intégré" value={cfg.enableScanner} onChange={v => cfg.updateConfig({ enableScanner: v })} />
-                  <ToggleRow label="WhatsApp automatique" sub="Envoie automatiquement le ticket par WhatsApp" value={cfg.autoWhatsApp} onChange={v => cfg.updateConfig({ autoWhatsApp: v })} />
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                  {!posEditMode ? (
-                    <button className="btn btn-ghost gap-2" onClick={() => setPosEditMode(true)} style={{ cursor: 'pointer' }}>
-                      <Save size={13} /> {lbl('Modifier', 'Edit')}
-                    </button>
-                  ) : <>
-                    <button className="btn btn-ghost gap-2" onClick={() => setPosEditMode(false)} style={{ cursor: 'pointer' }}><X size={13} /> {lbl('Annuler', 'Cancel')}</button>
-                    <button className="btn btn-primary gap-2" style={{ cursor: 'pointer' }} onClick={() => { toast.success(t('settings_saved')); setPosEditMode(false) }}><Save size={13} /> {lbl('Sauvegarder', 'Save')}</button>
-                  </>}
-                </div>
-              </div>
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<Package size={16} />} title={t('settings_stock_config')} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <Label>{t('settings_stock_threshold')}</Label>
-                  <input className="input text-sm" type="number" min={0} value={cfg.stockLowThreshold} onChange={e => cfg.updateConfig({ stockLowThreshold: +e.target.value })} />
-                  <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{t('settings_stock_threshold_desc')}</p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <ToggleRow label={t('settings_stock_auto_order')} sub={t('settings_stock_auto_order_desc')} value={cfg.stockAutoOrder} onChange={v => cfg.updateConfig({ stockAutoOrder: v })} />
-                  <ToggleRow label={t('settings_stock_show_sku')} sub={t('settings_stock_show_sku_desc')} value={cfg.stockShowSKU} onChange={v => cfg.updateConfig({ stockShowSKU: v })} />
-                </div>
-              </div>
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<Cog size={16} />} title={t('settings_display_options')} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <ToggleRow label={t('settings_compact')} sub={t('settings_compact_desc')} value={cfg.compactMode} onChange={v => cfg.updateConfig({ compactMode: v })} />
-                <ToggleRow label={t('settings_animations')} sub={t('settings_animations_desc')} value={cfg.showAnimations} onChange={v => cfg.updateConfig({ showAnimations: v })} />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t('settings_rows_per_page')}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{t('settings_rows_per_page_desc')}</div>
-                  </div>
-                  <select className="input text-sm" style={{ width: 'auto', padding: '6px 10px' }} value={cfg.tableRowsPerPage} onChange={e => cfg.updateConfig({ tableRowsPerPage: +e.target.value })}>
-                    {[10, 25, 50, 100].map(n => <option key={n} value={n}>{n} lignes</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </>}
-
-          {/* ════ LANGUE & DEVISE ════ */}
-          {activeSection === 'lang' && <>
-            {settingsLocked && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'rgba(255,149,0,.08)', border: '1px solid rgba(255,149,0,.15)', borderRadius: 12, marginBottom: 16 }}>
-                <Lock size={13} style={{ color: 'var(--acc)', flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: 'var(--acc)', flex: 1 }}>{lbl('Les paramètres langue/devise sont verrouillés', 'Language/currency settings are locked')}</span>
-                <button className="mini-btn" style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }} onClick={() => { unlockSettings(); toast.success(lbl('🔓 Paramètres déverrouillés', '🔓 Settings unlocked')) }}>
-                  <LockOpen size={12} /> {lbl('Déverrouiller', 'Unlock')}
-                </button>
-              </div>
-            )}
-
-            <div style={card}>
-              <CardHead icon={<Globe size={16} />} title={t('settings_language_label')} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {LANG_META.map(l => (
-                  <div key={l.code} onClick={() => { if (settingsLocked) return; cfg.updateConfig({ lang: l.code }); toast.success(`Langue : ${l.name}`) }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 14, background: cfg.lang === l.code ? 'rgba(108,71,255,.1)' : 'rgba(255,255,255,.02)', border: `1px solid ${cfg.lang === l.code ? 'rgba(108,71,255,.35)' : 'rgba(255,255,255,.06)'}`, cursor: settingsLocked ? 'default' : 'pointer', transition: 'all .15s', opacity: settingsLocked && cfg.lang !== l.code ? .45 : 1 }}>
-                    <span style={{ fontSize: 26 }}>{l.flag}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{l.name}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text3)' }}>{l.native}</div>
-                    </div>
-                    {cfg.lang === l.code && <span className="badge badge-teal">{t('status_active')}</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<ArrowLeftRight size={16} />} title={t('settings_currency_label')} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                {CURRENCY_META.map(c => (
-                  <div key={c.code} onClick={() => { if (settingsLocked) return; cfg.updateConfig({ currency: c.code }); tenantApi.update({ currency: c.code }).catch(() => {}); toast.success(lbl(`Devise : ${c.code}`, `Currency: ${c.code}`)) }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, background: cfg.currency === c.code ? 'rgba(0,208,132,.08)' : 'rgba(255,255,255,.02)', border: `1px solid ${cfg.currency === c.code ? 'rgba(0,208,132,.3)' : 'rgba(255,255,255,.06)'}`, cursor: settingsLocked ? 'default' : 'pointer', transition: 'all .15s', opacity: settingsLocked && cfg.currency !== c.code ? .45 : 1 }}>
-                    <span style={{ fontSize: 22 }}>{c.flag}</span>
-                    <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: 'rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 10, color: 'var(--p2)', fontFamily: 'var(--mono)' }}>{c.symbol}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{c.code}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text3)' }}>{t(c.descKey)} — {t(c.regionKey)}</div>
-                    </div>
-                    {cfg.currency === c.code && <span className="badge badge-teal">{t('status_active')}</span>}
-                  </div>
-                ))}
-              </div>
-              <div style={{ padding: 16, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text3)', marginBottom: 12 }}>
-                  {t('settings_conversion_preview')} — 1 000 {cfg.currency}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {ALL_CURRENCY_CODES.filter(code => code !== cfg.currency).map(code => {
-                    const meta = CURRENCY_META.find(m => m.code === code)
-                    return (
-                      <div key={code} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,.03)', borderRadius: 8 }}>
-                        <span style={{ fontSize: 12, color: 'var(--text2)' }}>{meta?.flag} {code}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--p2)', fontFamily: 'var(--mono)' }}>{formatInCurrency(convertAmount(1000, cfg.currency, code), code)}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {!settingsLocked && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn btn-primary gap-2" style={{ cursor: 'pointer' }} onClick={() => { lockSettings(); toast.success(lbl('✅ Paramètres verrouillés', '✅ Settings locked')) }}>
-                  <Lock size={14} /> {lbl('Verrouiller les paramètres', 'Lock settings')}
-                </button>
-              </div>
-            )}
-          </>}
-
-          {/* ════ NOTIFICATIONS ════ */}
-          {activeSection === 'notif' && <>
-            <div style={card}>
-              <CardHead icon={<Bell size={16} />} title={t('notif_preferences')} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}><Mail size={12} /> Email</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <ToggleRow label={t('notif_sales_recap')} sub={t('notif_sales_recap_desc')} value={cfg.notifEmailSales} onChange={v => cfg.updateConfig({ notifEmailSales: v })} />
-                    <ToggleRow label={t('notif_stock_alert')} sub={t('notif_stock_alert_desc')} value={cfg.notifEmailStock} onChange={v => cfg.updateConfig({ notifEmailStock: v })} />
-                    <ToggleRow label={t('notif_payroll')} sub={t('notif_payroll_desc')} value={cfg.notifEmailPayroll} onChange={v => cfg.updateConfig({ notifEmailPayroll: v })} />
-                  </div>
-                  {cfg.notifEmailStock && (
-                    <div style={{ marginTop: 10 }}>
-                      <Label>Email de destination pour les alertes stock</Label>
-                      <input className="input text-sm" type="email" value={cfg.notifStockEmail} onChange={e => cfg.updateConfig({ notifStockEmail: e.target.value })} placeholder="alerte@moncommerce.com" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}><Smartphone size={12} /> SMS</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <ToggleRow label={`${t('notif_big_sales')} (> ${fmt(100000)})`} sub={t('notif_big_sales_desc')} value={cfg.notifSmsSales} onChange={v => cfg.updateConfig({ notifSmsSales: v })} />
-                    <ToggleRow label={t('notif_critical_stock')} sub={t('notif_critical_stock_desc')} value={cfg.notifSmsStock} onChange={v => cfg.updateConfig({ notifSmsStock: v })} />
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}><Bell size={12} /> Push</div>
-                  <ToggleRow label={t('notif_push_all')} sub={t('notif_push_all_desc')} value={cfg.notifPushAll} onChange={v => cfg.updateConfig({ notifPushAll: v })} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-primary gap-2" style={{ cursor: 'pointer' }} onClick={() => toast.success(t('settings_saved'))}><Save size={13} /> {t('btn_save')}</button>
-                </div>
-              </div>
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<Smartphone size={16} />} title="Alertes WhatsApp automatiques" />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  { icon: <Sunrise size={22} style={{ color: '#FFB800' }} />, title: lbl('Alerte stock — 8h00', 'Stock alert — 8:00 AM'), desc: lbl('Reçoit une alerte si des produits sont en rupture', 'Receives an alert if products are out of stock'), key: 'morning' as const },
-                  { icon: <Moon size={22} style={{ color: '#6C47FF' }} />,    title: lbl('Résumé des ventes — 20h00', 'Sales summary — 8:00 PM'), desc: lbl('Reçoit un résumé des ventes de la journée', 'Receives a sales summary for the day'), key: 'evening' as const },
-                ].map(alert => (
-                  <div key={alert.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {alert.icon}
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{alert.title}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{alert.desc}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <button className="mini-btn" style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}
-                        onClick={async () => {
-                          try { if (alert.key === 'morning') await cronApi.testMorning(); else await cronApi.testEvening(); toast.success('📱 Message de test envoyé !') }
-                          catch { toast.error('Erreur envoi test') }
-                        }}>
-                        <FlaskConical size={12} /> Tester
-                      </button>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--acc2)', background: 'rgba(14,196,126,.12)', borderRadius: 20, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <CheckCircle size={10} /> Actif
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>}
-
-          {/* ════ SECURITY ════ */}
-          {activeSection === 'security' && <>
-            <div style={card}>
-              <CardHead icon={<ShieldCheck size={16} />} title="Authentification à deux facteurs (2FA)" />
-              <ToggleRow label={t('settings_2fa_active')} sub={t('settings_2fa_desc')} value={cfg.twoFAEnabled} onChange={v => { cfg.updateConfig({ twoFAEnabled: v }); toast.success(v ? '2FA activé' : '2FA désactivé') }} />
-              {cfg.twoFAEnabled && (
-                <div style={{ marginTop: 16, display: 'flex', alignItems: 'flex-start', gap: 16, padding: 16, background: 'rgba(0,208,132,.06)', border: '1px solid rgba(0,208,132,.2)', borderRadius: 12 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12,1fr)', gap: 2, width: 90, height: 90, padding: 6, background: 'white', borderRadius: 8, flexShrink: 0 }}>
-                    {STATIC_QR.map((b, i) => <div key={i} style={{ background: b ? '#111' : 'transparent', borderRadius: 1 }} />)}
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Scannez ce QR code</p>
-                    <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>Utilisez Google Authenticator, Authy ou toute app TOTP</p>
-                    <code style={{ fontSize: 11, fontFamily: 'var(--mono)', padding: '3px 8px', borderRadius: 6, background: 'rgba(255,255,255,.06)', color: 'var(--p2)' }}>HABA-XXXX-XXXX-XXXX</code>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<Clock size={16} />} title="Paramètres de session" />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <Label>{t('settings_session_timeout')}</Label>
-                  <select className="input text-sm" value={cfg.sessionTimeout} onChange={e => cfg.updateConfig({ sessionTimeout: +e.target.value })}>
-                    <option value={15}>15 minutes</option>
-                    <option value={30}>30 minutes</option>
-                    <option value={60}>1 heure</option>
-                    <option value={240}>4 heures</option>
-                    <option value={0}>Jamais</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>{t('settings_max_attempts')}</Label>
-                  <select className="input text-sm" value={cfg.maxLoginAttempts} onChange={e => cfg.updateConfig({ maxLoginAttempts: +e.target.value })}>
-                    <option value={3}>3 tentatives</option>
-                    <option value={5}>5 tentatives</option>
-                    <option value={10}>10 tentatives</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<Shield size={16} />} title={t('settings_active_sessions')} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  { device: '💻 MacBook Pro', location: 'Dakar, Sénégal', time: 'Maintenant', current: true  },
-                  { device: '📱 iPhone 15',   location: 'Dakar, Sénégal', time: 'Il y a 2h',  current: false },
-                ].map((s, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{s.device}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{s.location} · {s.time}</div>
-                    </div>
-                    {s.current
-                      ? <span className="badge badge-green">{t('settings_current_session')}</span>
-                      : <button className="mini-btn" style={{ color: 'var(--danger)', cursor: 'pointer' }} onClick={() => toast.success('Session révoquée')}>{t('settings_revoke')}</button>}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<Lock size={16} />} title={lbl('Verrouillage des paramètres', 'Settings lock')} desc={lbl('Protège les paramètres langue/devise', 'Protects language/currency settings')} />
-              <ToggleRow
-                label={lbl('Paramètres verrouillés', 'Settings locked')}
-                sub={lbl('Les changements de langue/devise sont bloqués', 'Language/currency changes are blocked')}
-                value={settingsLocked}
-                onChange={v => {
-                  if (v) { lockSettings(); toast.success(lbl('🔒 Paramètres verrouillés', '🔒 Settings locked')) }
-                  else { unlockSettings(); toast.success(lbl('🔓 Paramètres déverrouillés', '🔓 Settings unlocked')) }
-                }} />
-            </div>
-          </>}
-
-          {/* ════ DOCS ════ */}
-          {activeSection === 'docs' && <>
-            <div style={card}>
-              <CardHead icon={<FileText size={16} />} title={lbl('Documents & Exports', 'Documents & Exports')} desc={lbl('PDF, CSV et configuration', 'PDF, CSV and configuration')} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  { icon: <ClipboardList size={18} style={{ color: '#6C47FF' }} />, title: lbl('Cahier des charges PDF', 'Technical spec PDF'), desc: lbl('Génère le cahier des charges complet de votre boutique', "Generates your shop's complete technical spec"), action: () => { generateCDC(); toast.success(lbl('📄 PDF généré !', '📄 PDF generated!')) }, color: 'rgba(108,71,255,.08)', border: 'rgba(108,71,255,.2)' },
-                  { icon: <Download size={18} style={{ color: '#00D084' }} />,       title: lbl('Exporter la configuration', 'Export configuration'), desc: lbl('Sauvegarde tous vos paramètres en JSON', 'Save all your settings as JSON'), action: handleExportConfig, color: 'rgba(0,208,132,.06)', border: 'rgba(0,208,132,.2)' },
-                  { icon: <Upload size={18} style={{ color: '#00B8FF' }} />,         title: lbl('Importer la configuration', 'Import configuration'), desc: lbl('Restaure une configuration précédemment exportée', 'Restore a previously exported configuration'), action: () => importRef.current?.click(), color: 'rgba(0,184,255,.06)', border: 'rgba(0,184,255,.2)' },
-                ].map((item, i) => (
-                  <button key={i} type="button" onClick={item.action}
-                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 14, background: item.color, border: `1px solid ${item.border}`, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'opacity .15s', width: '100%' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.75'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}>
-                    {item.icon}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.title}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{item.desc}</div>
-                    </div>
-                    <ChevronRight size={14} style={{ color: 'var(--text3)', flexShrink: 0 }} />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<RefreshCw size={16} />} title="Réinitialisation" />
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 14, background: 'rgba(255,59,92,.07)', border: '1px solid rgba(255,59,92,.15)', borderRadius: 12, marginBottom: 14 }}>
-                <AlertTriangle size={16} style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 1 }} />
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--danger)', marginBottom: 3 }}>Action irréversible</p>
-                  <p style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.6 }}>Toutes vos préférences seront remises aux valeurs par défaut. Vos données métier ne seront pas affectées.</p>
-                </div>
-              </div>
-              <button type="button" onClick={() => setShowReset(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'rgba(255,59,92,.1)', color: 'var(--danger)', border: '1px solid rgba(255,59,92,.2)', borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 13, fontWeight: 600 }}>
-                <RefreshCw size={13} /> {t('settings_reset')}
-              </button>
-            </div>
-
-            <div style={card}>
-              <CardHead icon={<Info size={16} />} title={t('settings_system_info')} />
-              <div>
-                {[
-                  { label: t('settings_version'),     value: 'v2.0.0'       },
-                  { label: t('settings_environment'), value: (import.meta as { env?: { MODE?: string } }).env?.MODE === 'production' ? 'Production' : t('settings_development') },
-                  { label: t('settings_last_update'),  value: '22 mai 2026' },
-                  { label: 'Navigateur',              value: navigator.userAgent.split(' ').slice(-1)[0] || '—' },
-                  { label: 'Stockage utilisé',        value: `${(JSON.stringify(localStorage).length / 1024).toFixed(1)} Ko` },
-                ].map((row, i, arr) => (
-                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text2)' }}>{row.label}</span>
-                    <span style={{ fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 600, color: 'var(--text)' }}>{row.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>}
-
-        </div>
+          </button>
+        ))}
       </div>
-
-      {/* Reset modal */}
-      {showReset && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowReset(false)}>
-          <div className="modal-box" style={{ maxWidth: 420 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <AlertTriangle size={15} style={{ color: 'var(--danger)' }} /> Confirmer la réinitialisation
-              </h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowReset(false)}><X size={14} /></button>
-            </div>
-            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 20, lineHeight: 1.7 }}>
-              {t('settings_reset_warning')}<br /><br />{t('settings_reset_desc')}
-            </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-ghost flex-1 justify-center" onClick={() => setShowReset(false)}>{t('btn_cancel')}</button>
-              <button className="btn flex-1 justify-center" style={{ background: 'var(--danger)', color: '#fff', border: 'none', cursor: 'pointer' }}
-                onClick={() => {
-                  cfg.resetConfig(); setShowReset(false)
-                  setShopForm({ shopName: cfg.shopName, shopSlogan: cfg.shopSlogan, shopAddress: cfg.shopAddress, shopPhone: cfg.shopPhone, shopEmail: cfg.shopEmail, shopCountry: cfg.shopCountry, shopSiret: cfg.shopSiret, shopVatRate: cfg.shopVatRate })
-                  toast.success(t('settings_config_reset'))
-                }}>
-                {t('settings_reset')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }
