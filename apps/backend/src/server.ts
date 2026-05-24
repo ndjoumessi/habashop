@@ -175,7 +175,8 @@ async function start() {
   // ─── HEALTH CHECK ─────────────────────
   app.get('/health', async () => ({
     status: 'ok',
-    version: '2.0.0',
+    version: '2.1.0',
+    build: 'p2025-404',
     timestamp: new Date().toISOString(),
   }))
 
