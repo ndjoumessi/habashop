@@ -203,7 +203,8 @@ async function start() {
   })
 
   app.post('/api/auth/register', async (request, reply) => {
-    const { name, email, password, shopName, currency, country } = request.body as any
+    const { name, ownerName, email, password, shopName, currency, country, language, phone } = request.body as any
+    const resolvedName = name ?? ownerName ?? shopName
 
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) return reply.code(409).send({ error: 'Email déjà utilisé' })
@@ -213,7 +214,7 @@ async function start() {
     const { tenant, user } = await prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
-          name: shopName,
+          name: shopName ?? resolvedName,
           currency: currency ?? 'XOF',
           country: country ?? 'SN',
           plan: 'starter',
