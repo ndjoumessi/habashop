@@ -82,6 +82,17 @@ const ORDERS_INIT: Order[] = [
 
 const STATUSES: OrderStatus[] = ['BROUILLON','ENVOYÉE','CONFIRMÉE','EN TRANSIT','REÇUE','ANNULÉE']
 
+type L4 = 'fr' | 'en' | 'es' | 'it'
+const ORDER_STATUS_LABELS: Record<OrderStatus, Record<L4, string>> = {
+  'BROUILLON':  { fr: 'Brouillon',  en: 'Draft',      es: 'Borrador',   it: 'Bozza' },
+  'ENVOYÉE':    { fr: 'Envoyée',    en: 'Sent',       es: 'Enviada',    it: 'Inviata' },
+  'CONFIRMÉE':  { fr: 'Confirmée',  en: 'Confirmed',  es: 'Confirmada', it: 'Confermata' },
+  'EN TRANSIT': { fr: 'En transit', en: 'In transit', es: 'En tránsito',it: 'In transito' },
+  'REÇUE':      { fr: 'Reçue',      en: 'Received',   es: 'Recibida',   it: 'Ricevuta' },
+  'ANNULÉE':    { fr: 'Annulée',    en: 'Cancelled',  es: 'Cancelada',  it: 'Annullata' },
+}
+const orderStatusLabel = (s: OrderStatus, lang: string) => ORDER_STATUS_LABELS[s]?.[lang as L4] ?? s
+
 const STATIC_PRODUCTS = [
   { id:'p1', name:'Riz parfumé 5kg',    price:4500,  emoji:'🌾', category:'Céréales'   },
   { id:'p2', name:'Huile palme 1L',     price:1800,  emoji:'🫙', category:'Corps gras'  },
@@ -139,6 +150,7 @@ function mapApiOrder(o: any): Order {
 
 export default function Orders() {
   const { lang } = useConfig()
+  const i = (fr: string, en: string, es: string, it: string) => lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
   void lang
   const fmt = useFormatAmount()
   const [orders, setOrders] = useState<Order[]>(ORDERS_INIT)
@@ -347,7 +359,7 @@ export default function Orders() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('nav_orders')}</h1>
-          <p className="page-subtitle">{orders.length} {lang === 'fr' ? 'commandes fournisseurs' : 'purchase orders'}</p>
+          <p className="page-subtitle">{orders.length} {i('commandes fournisseurs', 'purchase orders', 'pedidos a proveedores', 'ordini fornitori')}</p>
         </div>
         <button className="topbar-btn" onClick={openNewOrderModal}>
           <Plus size={14} /> {lang === 'fr' ? 'Nouvelle commande' : lang === 'en' ? 'New order' : lang === 'es' ? 'Nueva orden' : 'Nuovo ordine'}
@@ -378,8 +390,8 @@ export default function Orders() {
       {/* Tab switcher */}
       <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', borderRadius: 10, padding: 4, marginBottom: 4 }}>
         {[
-          { id: 'list',     icon: <List size={14} />,         label: lang === 'fr' ? 'Liste' : 'List' },
-          { id: 'calendar', icon: <CalendarDays size={14} />, label: lang === 'fr' ? 'Calendrier' : 'Calendar' },
+          { id: 'list',     icon: <List size={14} />,         label: i('Liste', 'List', 'Lista', 'Elenco') },
+          { id: 'calendar', icon: <CalendarDays size={14} />, label: i('Calendrier', 'Calendar', 'Calendario', 'Calendario') },
         ].map(tab => (
           <button key={tab.id} type="button"
             onClick={() => setOrdersTab(tab.id as any)}
@@ -400,16 +412,16 @@ export default function Orders() {
       {ordersTab === 'calendar' && (
         <div className="panel">
           <div className="panel-head">
-            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><CalendarDays size={14}/> {lang === 'fr' ? 'Calendrier des livraisons' : 'Delivery calendar'}</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><CalendarDays size={14}/> {i('Calendrier des livraisons', 'Delivery calendar', 'Calendario de entregas', 'Calendario consegne')}</span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button className="mini-btn" onClick={prevMonth}>← {lang === 'fr' ? 'Préc.' : 'Prev'}</button>
+              <button className="mini-btn" onClick={prevMonth}>← {i('Préc.', 'Prev', 'Ant.', 'Prec.')}</button>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                 {currentMonth.toLocaleDateString(
                   lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'it-IT',
                   { month: 'long', year: 'numeric' }
                 )}
               </span>
-              <button className="mini-btn" onClick={nextMonth}>{lang === 'fr' ? 'Suiv.' : 'Next'} →</button>
+              <button className="mini-btn" onClick={nextMonth}>{i('Suiv.', 'Next', 'Sig.', 'Succ.')} →</button>
             </div>
           </div>
           {(() => {
@@ -473,11 +485,11 @@ export default function Orders() {
                 <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 11, color: 'var(--text3)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <div style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(14,196,126,.25)' }} />
-                    {lang === 'fr' ? 'Livraison prévue' : 'Expected delivery'}
+                    {i('Livraison prévue', 'Expected delivery', 'Entrega prevista', 'Consegna prevista')}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <div style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(91,78,232,.2)' }} />
-                    {lang === 'fr' ? 'Commande passée' : 'Order placed'}
+                    {i('Commande passée', 'Order placed', 'Pedido realizado', 'Ordine effettuato')}
                   </div>
                 </div>
               </div>
@@ -504,7 +516,7 @@ export default function Orders() {
               <Download size={13} /> PDF
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={openNewOrderModal}>
-              <Plus size={13} /> {lang === 'fr' ? 'Nouvelle commande' : 'New order'}
+              <Plus size={13} /> {i('Nouvelle commande', 'New order', 'Nueva orden', 'Nuovo ordine')}
             </button>
           </div>
         </div>
@@ -518,7 +530,7 @@ export default function Orders() {
           </div>
           <select className="input py-2 text-sm w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
             <option value="">{t('pos_all')} {t('col_status').toLowerCase()}</option>
-            {STATUSES.map(s => <option key={s}>{s}</option>)}
+            {STATUSES.map(s => <option key={s} value={s}>{orderStatusLabel(s, lang)}</option>)}
           </select>
           <select className="input py-2 text-sm w-auto" value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)}>
             <option value="">{t('pos_all')} {t('col_supplier').toLowerCase()}</option>
@@ -551,7 +563,7 @@ export default function Orders() {
                 }}
                 onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
               >
-                {s} ({count})
+                {orderStatusLabel(s, lang)} ({count})
               </button>
             )
           })}
@@ -564,7 +576,7 @@ export default function Orders() {
               <tr>
                 <th scope="col">{t('col_ref')}</th>
                 <th scope="col">Type</th>
-                <th scope="col">{lang === 'fr' ? 'Client / Fournisseur' : 'Client / Supplier'}</th>
+                <th scope="col">{i('Client / Fournisseur', 'Client / Supplier', 'Cliente / Proveedor', 'Cliente / Fornitore')}</th>
                 <th scope="col">{t('orders_date')}</th>
                 <th scope="col">{t('orders_expected')}</th>
                 <th scope="col">{t('orders_articles')}</th>
@@ -602,7 +614,7 @@ export default function Orders() {
                     <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(o.total)}</td>
                     <td>
                       <span className={`badge ${cfg.cls} flex items-center gap-1 w-fit`}>
-                        {cfg.icon} {o.status}
+                        {cfg.icon} {orderStatusLabel(o.status, lang)}
                       </span>
                     </td>
                     <td>
@@ -662,7 +674,7 @@ export default function Orders() {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`badge ${STATUS_CONFIG[viewOrder.status].cls} flex items-center gap-1`}>
-                  {STATUS_CONFIG[viewOrder.status].icon} {viewOrder.status}
+                  {STATUS_CONFIG[viewOrder.status].icon} {orderStatusLabel(viewOrder.status, lang)}
                 </span>
                 <button className="btn btn-ghost btn-sm" onClick={() => setViewOrder(null)}><X size={14} /></button>
               </div>
@@ -788,10 +800,10 @@ export default function Orders() {
                   }}>
                   <Users size={22} style={{ color: orderType === 'client' ? 'var(--p3)' : 'var(--text3)' }}/>
                   <span style={{ fontSize: 13, fontWeight: 700, color: orderType === 'client' ? 'var(--p3)' : 'var(--text2)' }}>
-                    {lang === 'fr' ? 'Commande client' : 'Customer order'}
+                    {i('Commande client', 'Customer order', 'Pedido cliente', 'Ordine cliente')}
                   </span>
                   <span style={{ fontSize: 10, color: 'var(--text3)' }}>
-                    {lang === 'fr' ? 'Vente à un client' : 'Sale to customer'}
+                    {i('Vente à un client', 'Sale to customer', 'Venta a un cliente', 'Vendita a un cliente')}
                   </span>
                 </button>
                 <button type="button" onClick={() => { setOrderType('supplier'); setNewOrderForm(f => ({ ...f, clientName: '', clientPhone: '' })) }}
@@ -804,10 +816,10 @@ export default function Orders() {
                   }}>
                   <Truck size={22} style={{ color: orderType === 'supplier' ? 'var(--acc)' : 'var(--text3)' }}/>
                   <span style={{ fontSize: 13, fontWeight: 700, color: orderType === 'supplier' ? 'var(--acc)' : 'var(--text2)' }}>
-                    {lang === 'fr' ? 'Bon de commande' : 'Purchase order'}
+                    {i('Bon de commande', 'Purchase order', 'Orden de compra', 'Ordine acquisto')}
                   </span>
                   <span style={{ fontSize: 10, color: 'var(--text3)' }}>
-                    {lang === 'fr' ? 'Achat chez fournisseur' : 'Order from supplier'}
+                    {i('Achat chez fournisseur', 'Order from supplier', 'Compra a proveedor', 'Acquisto da fornitore')}
                   </span>
                 </button>
               </div>
@@ -816,14 +828,14 @@ export default function Orders() {
               {orderType === 'client' ? (
                 <div style={{ position: 'relative' }}>
                   <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
-                    {lang === 'fr' ? 'NOM CLIENT *' : 'CLIENT NAME *'}
+                    {i('NOM CLIENT *', 'CLIENT NAME *', 'NOMBRE CLIENTE *', 'NOME CLIENTE *')}
                   </label>
 
                   {/* Input avec icône */}
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <User size={15} style={{ position: 'absolute', left: 12, color: 'var(--text3)', pointerEvents: 'none', zIndex: 1 }}/>
                     <input className="input" style={{ paddingLeft: 38 }} autoComplete="off"
-                      placeholder={lang === 'fr' ? 'Rechercher ou saisir un client…' : 'Search or enter a client…'}
+                      placeholder={i('Rechercher ou saisir un client…', 'Search or enter a client…', 'Buscar o ingresar un cliente…', 'Cerca o inserisci un cliente…')}
                       value={newOrderForm.clientName}
                       onChange={e => {
                         const val = e.target.value
@@ -879,8 +891,8 @@ export default function Orders() {
                   {showClientDropdown && clientSuggestions.length > 0 && (
                     <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
                       <div style={{ padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,.06)', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>{lang === 'fr' ? 'CLIENTS EXISTANTS' : 'EXISTING CLIENTS'}</span>
-                        <span>{clientSuggestions.length} {lang === 'fr' ? 'résultat' : 'result'}{clientSuggestions.length > 1 ? 's' : ''}</span>
+                        <span>{i('CLIENTS EXISTANTS', 'EXISTING CLIENTS', 'CLIENTES EXISTENTES', 'CLIENTI ESISTENTI')}</span>
+                        <span>{clientSuggestions.length} {i('résultat', 'result', 'resultado', 'risultato')}{clientSuggestions.length > 1 ? 's' : ''}</span>
                       </div>
                       {clientSuggestions.map((customer, i) => {
                         const color = customer.type === 'Grossiste' ? '#6C47FF' : customer.type === 'Semi-gros' ? '#FF9500' : customer.type === 'Fidèle' ? '#00D084' : '#00B8FF'
@@ -920,7 +932,7 @@ export default function Orders() {
                           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p3)' }}>
                             {lang === 'fr' ? `Nouveau client "${newOrderForm.clientName || '…'}"` : `New client "${newOrderForm.clientName || '…'}"`}
                           </div>
-                          <div style={{ fontSize: 10, color: 'var(--text3)' }}>{lang === 'fr' ? 'Créer et continuer' : 'Create and continue'}</div>
+                          <div style={{ fontSize: 10, color: 'var(--text3)' }}>{i('Créer et continuer', 'Create and continue', 'Crear y continuar', 'Crea e continua')}</div>
                         </div>
                       </button>
                     </div>
@@ -934,7 +946,7 @@ export default function Orders() {
                         <Plus size={20} style={{ color:'var(--p3)' }}/>
                         <div style={{ textAlign: 'left' }}>
                           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p3)' }}>{lang === 'fr' ? `Créer "${newOrderForm.clientName}"` : `Create "${newOrderForm.clientName}"`}</div>
-                          <div style={{ fontSize: 10, color: 'var(--text3)' }}>{lang === 'fr' ? 'Nouveau client — pas encore enregistré' : 'New client — not yet registered'}</div>
+                          <div style={{ fontSize: 10, color: 'var(--text3)' }}>{i('Nouveau client — pas encore enregistré', 'New client — not yet registered', 'Nuevo cliente — aún no registrado', 'Nuovo cliente — non ancora registrato')}</div>
                         </div>
                       </button>
                     </div>
@@ -943,7 +955,7 @@ export default function Orders() {
               ) : (
                 <div>
                   <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
-                    {lang === 'fr' ? 'FOURNISSEUR *' : 'SUPPLIER *'}
+                    {i('FOURNISSEUR *', 'SUPPLIER *', 'PROVEEDOR *', 'FORNITORE *')}
                   </label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
                     {suppliersList.filter(s => s.status !== 'inactive').map(supplier => {
@@ -984,7 +996,7 @@ export default function Orders() {
                     {suppliersList.length === 0 && (
                       <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text3)', fontSize: 13 }}>
                         <Truck size={28} style={{ color:'var(--text3)', marginBottom: 8 }}/>
-                        {lang === 'fr' ? 'Aucun fournisseur disponible' : 'No suppliers available'}
+                        {i('Aucun fournisseur disponible', 'No suppliers available', 'Ningún proveedor disponible', 'Nessun fornitore disponibile')}
                       </div>
                     )}
                   </div>
@@ -997,7 +1009,7 @@ export default function Orders() {
                           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--acc)', marginBottom: 4, display:'flex', alignItems:'center', gap:4 }}><CheckCircle size={12}/> {s.name}</div>
                           <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                             <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Package size={10}/> {s.specialty}</span>
-                            <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Clock size={10}/> {lang === 'fr' ? 'Délai' : 'Lead time'} : {s.leadTime}</span>
+                            <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Clock size={10}/> {i('Délai', 'Lead time', 'Plazo', 'Tempo')} : {s.leadTime}</span>
                             {s.phone && <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Phone size={10}/> {s.phone}</span>}
                           </div>
                         </div>
@@ -1012,10 +1024,10 @@ export default function Orders() {
               {/* Recherche + grille produits */}
               <div>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
-                  {lang === 'fr' ? 'ARTICLES' : 'ITEMS'}
+                  {i('ARTICLES', 'ITEMS', 'ARTÍCULOS', 'ARTICOLI')}
                 </label>
                 <input className="input" type="search"
-                  placeholder={lang === 'fr' ? '🔍 Rechercher un produit…' : '🔍 Search product…'}
+                  placeholder={i('🔍 Rechercher un produit…', '🔍 Search product…', '🔍 Buscar un producto…', '🔍 Cerca un prodotto…')}
                   value={productSearch}
                   onChange={e => setProductSearch(e.target.value)}
                   style={{ marginBottom: 10 }}
@@ -1067,7 +1079,7 @@ export default function Orders() {
               {newOrderForm.items.length > 0 && (
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 8 }}>
-                    {lang === 'fr' ? 'RÉCAPITULATIF' : 'SUMMARY'} ({newOrderForm.items.length})
+                    {i('RÉCAPITULATIF', 'SUMMARY', 'RESUMEN', 'RIEPILOGO')} ({newOrderForm.items.length})
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {newOrderForm.items.map(item => (
@@ -1098,7 +1110,7 @@ export default function Orders() {
                       background: 'rgba(108,71,255,.06)', border: '1px solid rgba(108,71,255,.12)', borderRadius: 10,
                     }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                        TOTAL ({newOrderForm.items.reduce((s, i) => s + i.qty, 0)} {lang === 'fr' ? 'art.' : 'items'})
+                        TOTAL ({newOrderForm.items.reduce((s, i) => s + i.qty, 0)} {i('art.', 'items', 'art.', 'art.')})
                       </span>
                       <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
                         {fmt(newOrderForm.items.reduce((s, i) => s + i.price * i.qty, 0))}
@@ -1111,10 +1123,10 @@ export default function Orders() {
               {/* Note */}
               <div>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
-                  {lang === 'fr' ? 'NOTE (optionnel)' : 'NOTE (optional)'}
+                  {i('NOTE (optionnel)', 'NOTE (optional)', 'NOTA (opcional)', 'NOTA (opzionale)')}
                 </label>
                 <textarea className="input" rows={2} style={{ resize: 'vertical' }}
-                  placeholder={lang === 'fr' ? 'Instructions livraison, conditions…' : 'Delivery instructions, conditions…'}
+                  placeholder={i('Instructions livraison, conditions…', 'Delivery instructions, conditions…', 'Instrucciones de entrega, condiciones…', 'Istruzioni di consegna, condizioni…')}
                   value={newOrderForm.note}
                   onChange={e => setNewOrderForm(f => ({ ...f, note: e.target.value }))} />
               </div>
@@ -1142,8 +1154,8 @@ export default function Orders() {
                     }}>
                     {orderType === 'client' ? <ClipboardList size={14}/> : <Package size={14}/>}
                     {orderType === 'client'
-                      ? (lang === 'fr' ? 'Créer la commande' : 'Create order')
-                      : (lang === 'fr' ? 'Créer le bon de commande' : 'Create PO')}
+                      ? (i('Créer la commande', 'Create order', 'Crear el pedido', 'Crea ordine'))
+                      : (i('Créer le bon de commande', 'Create PO', 'Crear orden de compra', 'Crea ordine acquisto'))}
                     {newOrderForm.items.length > 0 && (
                       <span style={{ fontSize: 12, opacity: .8 }}>— {newOrderForm.items.reduce((s, i) => s + i.qty, 0)} art.</span>
                     )}
@@ -1156,7 +1168,7 @@ export default function Orders() {
                 cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
                 fontFamily: 'var(--font)', fontWeight: 600,
               }}>
-                {lang === 'fr' ? 'Annuler' : 'Cancel'}
+                {i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}
               </button>
             </div>
           </div>
