@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, formatCurrency, t, convertAmount, formatInCurrency } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
+import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi } from '@/lib/api'
 import BarcodeScanner from '@/components/ui/BarcodeScanner'
 import { generateInvoice } from '@/utils/export'
@@ -214,6 +215,9 @@ export default function POS() {
   const fmt    = useFormatAmount()
   const toXOF  = useConvertToXOF()
   const { symbol: currencySymbol } = useCurrencyInfo()
+  const user = useAuthStore(s => s.user)
+  const cashierName = user?.name?.trim() || 'Caissier'
+  const cashierInitial = cashierName.charAt(0).toUpperCase()
   const LOCALE_MAP: Record<string, string> = { fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT' }
   const locale = LOCALE_MAP[lang] ?? 'fr-FR'
   const ct = CASHIER_TEXTS[lang as keyof typeof CASHIER_TEXTS] ?? CASHIER_TEXTS.fr
@@ -563,9 +567,9 @@ export default function POS() {
               background:'linear-gradient(135deg,var(--p),var(--p2))',
               display:'flex', alignItems:'center', justifyContent:'center',
               color:'#fff', fontSize:14, fontWeight:800, flexShrink:0,
-            }}>N</div>
+            }}>{cashierInitial}</div>
             <div>
-              <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Nelson Djoumessi</div>
+              <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{cashierName}</div>
               <div style={{ fontSize:11, color:'var(--text3)' }}>
                 {ct.cashier_label} · {new Date().toLocaleDateString(locale, { weekday:'long', day:'numeric', month:'long' })}
               </div>
