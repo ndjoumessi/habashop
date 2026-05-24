@@ -453,7 +453,7 @@ function CustomerMap({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: isSel ? '#F0F0FF' : 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{customer.name}</div>
                   <div style={{ fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 5 }}>
-                    <span style={{ color: cfg.color, fontWeight: 700, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {customer.type}</span>
+                    <span style={{ color: cfg.color, fontWeight: 700, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {typeLabel(customer.type, lang)}</span>
                     <span>·</span>
                     <span style={{ fontFamily: 'var(--mono)', color: isSel ? cfg.color : 'var(--text3)' }}>{totalCA >= 1000000 ? `${(totalCA / 1000000).toFixed(1)}M` : totalCA >= 1000 ? `${(totalCA / 1000).toFixed(0)}k` : fmt(totalCA)}</span>
                   </div>
@@ -1151,7 +1151,7 @@ export default function Customers() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{type}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{typeLabel(type, lang)}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
                         <span style={{ color: 'var(--text3)' }}>{count} client{count > 1 ? 's' : ''}</span>
@@ -1586,7 +1586,7 @@ export default function Customers() {
                       background: ({ Grossiste: 'rgba(108,71,255,.15)', 'Semi-gros': 'rgba(255,149,0,.15)', Fidèle: 'rgba(0,208,132,.15)', Détail: 'rgba(0,184,255,.15)' } as Record<string,string>)[detailCustomer.type] ?? 'rgba(108,71,255,.15)',
                       color: ({ Grossiste: 'var(--p3)', 'Semi-gros': 'var(--acc)', Fidèle: 'var(--acc2)', Détail: 'var(--info)' } as Record<string,string>)[detailCustomer.type] ?? 'var(--p3)',
                     }}>
-                      {detailCustomer.type}
+                      {typeLabel(detailCustomer.type, lang)}
                     </span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
