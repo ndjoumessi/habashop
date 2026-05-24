@@ -1,120 +1,215 @@
-# HabaShop 🛒
+# 🛒 HabaShop — SaaS de Gestion Commerciale
 
-**Logiciel de gestion commerciale SaaS tout-en-un pour les commerces d'Afrique francophone**
+> Solution complète de gestion pour commerces d'Afrique francophone
+> (Sénégal, Côte d'Ivoire, Mali, Cameroun, RDC…) — épiceries, grossistes, demi-grossistes.
 
-> Épiceries · Grossistes · Demi-grossistes — Sénégal, Côte d'Ivoire, Mali, Cameroun, RDC...
+## 🌐 URLs Production
 
----
+| Service  | URL |
+|----------|-----|
+| Frontend | https://habashop.vercel.app |
+| Backend  | https://habashop-production.up.railway.app |
+| GitHub   | https://github.com/ndjoumessi/habashop |
 
-## Stack technique
+## 🔑 Comptes démo
 
-| Couche | Technologies |
-|--------|-------------|
-| Frontend | React 18 + TypeScript + Tailwind CSS + Vite + Zustand |
-| Backend | Node.js + Fastify + Prisma ORM |
-| Base de données | PostgreSQL 16 + Redis 7 |
-| Stockage | S3-compatible (MinIO / Cloudflare R2) |
-| Infra | Docker + Kubernetes + GitHub Actions CI/CD |
-| Monitoring | Sentry + Grafana |
+Mot de passe commun : `demo1234`
 
----
+| Email | Rôle | Boutique |
+|-------|------|----------|
+| admin@habashop.com | SUPER_ADMIN | HabaShop — Dakar Central |
+| manager@habashop.com | MANAGER | HabaShop — Dakar Central |
+| cashier@habashop.com | CASHIER | HabaShop — Dakar Central |
+| accountant@habashop.com | ACCOUNTANT | HabaShop — Dakar Central |
+| hr@habashop.com | HR | HabaShop — Dakar Central |
+| kone@habashop.com | ADMIN | Alimentation Koné — Abidjan |
 
-## Démarrage rapide
+> `admin@habashop.com` est `SUPER_ADMIN` (accès à la console `/admin`). Le login tente d'abord le backend réel ; en cas d'échec réseau, un mode démo local prend le relais pour ces comptes.
 
-### Prérequis
-- Node.js >= 18
-- Docker & Docker Compose
-- npm >= 9
+## 🏗️ Stack technique
 
-### Installation
+### Frontend
+- React 18 + TypeScript + Vite
+- Zustand (state management) + React Router v6
+- Recharts (graphiques)
+- PWA (service worker, installable)
+- Déploiement : Vercel
+
+### Backend
+- Fastify 4 + Node.js 20
+- Prisma ORM + PostgreSQL (Railway)
+- Auth JWT (`@fastify/jwt`) — payload `{ userId, tenantId, role }`
+- `@fastify/rate-limit`, `@fastify/cors`
+- Swagger / OpenAPI (`@fastify/swagger` + `swagger-ui`)
+- Twilio SDK (WhatsApp), Anthropic SDK (assistant IA — Claude)
+- Déploiement : Railway (Docker, `prisma migrate deploy` au démarrage)
+
+### Infrastructure
+- Railway (backend + PostgreSQL)
+- Vercel (frontend — déployé depuis `apps/frontend`)
+- GitHub
+
+## 📦 Modules
+
+### Commerce
+- ✅ POS / Caisse
+- ✅ Stock & produits
+- ✅ Commandes clients & fournisseurs
+- ✅ Clients (CRM + fidélité)
+- ✅ Fournisseurs
+
+### Finance
+- ✅ Dépenses
+- ✅ Rapports & analytics
+- ✅ Prévisions CA
+- ✅ Export CSV + PDF
+
+### RH
+- ✅ Employés, contrats
+- ✅ Planning & congés
+- ✅ Paie & bulletins
+- ✅ Primes & historique salaires
+
+### Marketing & IA
+- ✅ Assistant IA (Claude) — `/api/ai/analyze`, `/api/ai/chat`
+- ✅ Notifications WhatsApp (Twilio)
+- ✅ Marketing & objectifs / KPIs
+
+### Administration
+- ✅ Journal d'activités (AuditLog)
+- ✅ Gestion utilisateurs (par boutique)
+- ✅ Paramètres boutique (7 thèmes UI)
+- ✅ Console Super-Admin (`/admin`) — boutiques, MRR, demandes de plans
+
+## 🌍 Internationalisation
+- **4 langues** : Français, English, Español, Italiano
+- **6 devises** : XOF, XAF, EUR, USD, CAD, GBP — conversion temps réel (taux récupérés au démarrage)
+- **7 thèmes UI** : Dark, Darker, Midnight, Forest, Ocean, Sunset, Light
+
+## 🏢 Multi-Tenancy
+- Isolation des données par boutique via `where: { tenantId }` sur chaque requête
+- Le JWT contient `userId + tenantId + role`
+- Chaque `signup` crée un `Tenant` + un `User` rôle `ADMIN`
+- `User.email` est **globalement unique** (`@unique`)
+
+## 💳 Système de pricing
+
+| Plan | Prix/mois (XOF) | Utilisateurs | Produits |
+|------|-----------------|--------------|----------|
+| Starter | 9 900 F CFA | 1 | 100 max |
+| Pro | 24 900 F CFA | 5 | Illimité |
+| Enterprise | 49 900 F CFA | Illimité | Illimité |
+
+### Flux de validation (marché africain)
+1. **Signup** → essai 14 jours (`status: trial`, plan Starter)
+2. **Upgrade** → demande de plan via Wave / Orange Money / MTN Money / Virement
+3. **Super-Admin** valide la demande → plan activé (24–48 h)
+
+> ⚠️ **Statut** : le système de validation des plans (modèle `PlanRequest`, routes `/api/billing/*` et `/api/admin/plan-requests`, page `/app/upgrade`, `BillingBanner`) est **implémenté et committé** mais **pas encore déployé en production** (déploiement backend Railway en attente). Le frontend dégrade proprement tant que les routes ne sont pas en ligne.
+
+## 🔌 API — endpoints principaux
+
+> Base : `https://habashop-production.up.railway.app` · Docs Swagger : `/api/docs/html`
+
+### Auth
+- `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me`
+
+### Tenant
+- `GET /api/tenant` · `PATCH /api/tenant` · `PUT /api/tenant`
+- `GET /api/tenant/users` · `POST /api/tenant/users`
+
+### Commerce
+- `GET|POST /api/products` · `PUT|DELETE /api/products/:id` · `GET /api/products/low-stock`
+- `GET|POST /api/customers` · `PUT /api/customers/:id` · `GET|POST /api/customers/:id/loyalty`
+- `GET|POST /api/suppliers` · `PUT /api/suppliers/:id`
+- `GET|POST /api/sales`
+- `GET|POST /api/orders` · `PATCH /api/orders/:id/status`
+
+### RH
+- `GET|POST /api/employees` · `PUT|DELETE /api/employees/:id`
+- `GET|POST /api/bonuses` · `GET /api/bonuses/employee/:employeeId` · `DELETE /api/bonuses/:id`
+- `GET|POST /api/salary-history` · `GET /api/salary-history/employee/:employeeId`
+- `GET|POST /api/expenses` · `PUT|DELETE /api/expenses/:id`
+
+### Analytics & Export
+- `GET /api/analytics` · `GET /api/analytics/summary`
+- `GET /api/dashboard/stats` · `GET /api/reports/sales`
+- `GET /api/export/:resource` (products / customers / suppliers / sales / employees)
+- `GET /api/export/pdf/monthly`
+
+### IA & WhatsApp
+- `POST /api/ai/analyze` · `POST /api/ai/chat`
+- `POST /api/whatsapp/broadcast` · `POST /api/whatsapp/send-alert` · `POST /api/whatsapp/send-ticket`
+
+### Super-Admin (rôle `SUPER_ADMIN`)
+- `GET /api/admin/stats` · `GET /api/admin/tenants` · `POST /api/admin/tenants`
+
+### Billing — *implémenté, déploiement en attente*
+- `POST /api/billing/request-plan` · `GET /api/billing/status`
+- `GET /api/admin/plan-requests` · `PATCH /api/admin/plan-requests/:id`
+
+## 🚀 Installation locale
+
+> **Node.js 20 requis.** Un Node trop ancien casse `tsc` / Vite.
 
 ```bash
-# Cloner le projet
+# Cloner
 git clone https://github.com/ndjoumessi/habashop.git
 cd habashop
 
-# Installer les dépendances
+# Dépendances (monorepo)
 npm install
 
-# Copier les variables d'environnement
-cp apps/backend/.env.example apps/backend/.env
-cp apps/frontend/.env.example apps/frontend/.env
+# Variables d'environnement
+#  apps/backend/.env  →  DATABASE_URL (PostgreSQL), JWT_SECRET, PORT (def. 3001)
+#                        ANTHROPIC_API_KEY (IA), TWILIO_* (WhatsApp) — optionnels
+#  apps/frontend/.env →  VITE_API_URL (def. https://habashop-production.up.railway.app)
 
-# Démarrer les services (PostgreSQL + Redis)
-docker-compose up -d
+# Prisma : générer le client + appliquer les migrations
+npm run db:generate --workspace=apps/backend
+npm run db:migrate  --workspace=apps/backend   # prisma migrate deploy
 
-# Lancer les migrations de base de données
-npm run db:migrate --workspace=apps/backend
-
-# Démarrer en développement
-npm run dev
+# Démarrer
+npm run dev --workspace=apps/backend   # API sur http://localhost:3001
+npm run dev --workspace=apps/frontend  # UI  sur http://localhost:5173
 ```
 
-L'application sera disponible sur :
-- **Frontend** : http://localhost:5173
-- **Backend API** : http://localhost:3000
-- **API Docs** : http://localhost:3000/docs
+## 🛠️ Build & déploiement
 
----
+```bash
+# Frontend (build + déploiement Vercel — depuis apps/frontend)
+cd apps/frontend && npm run build && npx vercel --prod
 
-## Modules (16)
+# Backend (build local)
+cd apps/backend && npm run build       # tsc -> dist/
 
-| # | Module | Priorité |
-|---|--------|----------|
-| 1 | Dashboard (KPIs, graphiques) | P0 |
-| 2 | POS / Caisse (offline-ready) | P0 |
-| 3 | Stock & inventaire | P0 |
-| 4 | Commandes & facturation | P0 |
-| 5 | Fournisseurs | P1 |
-| 6 | Clients CRM | P1 |
-| 7 | Rapports & exports | P1 |
-| 8 | RH — Équipe | P1 |
-| 9 | Planning | P1 |
-| 10 | Paie | P1 |
-| 11 | Dépenses | P1 |
-| 12 | Prévisions | P2 |
-| 13 | Utilisateurs & RBAC | P0 |
-| 14 | Audit & activité | P2 |
-| 15 | Notifications | P2 |
-| 16 | Paramètres | P0 |
+# Backend (déploiement Railway, builder Docker)
+#  Le Dockerfile compile depuis src (tsc) puis exécute :
+#  prisma migrate deploy && node dist/server.js
+```
 
----
+> ℹ️ Le frontend **ne se déploie pas automatiquement** au `git push` : lancer `vercel --prod` **depuis `apps/frontend`** (un déploiement depuis la racine renvoie un 404).
 
-## Structure du projet
+## 🗄️ Base de données (15 modèles Prisma)
+
+`Tenant` · `User` · `Product` · `Sale` · `SaleItem` · `Customer` · `Supplier` · `PurchaseOrder` · `PurchaseOrderItem` · `Employee` · `EmployeeBonus` · `SalaryHistory` · `Expense` · `AuditLog` · `PlanRequest`
+
+> Toutes les tables métier portent un `tenantId` (isolation). `PlanRequest` et les champs de facturation du `Tenant` (`status`, `trialEnds`, …) existent dans le schéma mais leur migration **n'est pas encore appliquée en prod** (voir le statut billing ci-dessus).
+
+## 📱 PWA mobile
+- `manifest.json` + Service Worker (généré au build via `vite-plugin-pwa`)
+- Installable (bouton d'installation in-app)
+- Responsive
+
+## 📁 Structure
 
 ```
 habashop/
 ├── apps/
-│   ├── frontend/          # React 18 + TypeScript + Vite
-│   └── backend/           # Node.js + Fastify + Prisma
-├── packages/
-│   └── shared/            # Types et utilitaires partagés
-├── docker-compose.yml
-└── .github/workflows/     # CI/CD GitHub Actions
+│   ├── frontend/   # React 18 + TS + Vite (Vercel)
+│   └── backend/    # Fastify + Prisma (Railway, Docker)
+└── README.md
 ```
 
----
-
-## Variables d'environnement
-
-### Backend (`apps/backend/.env`)
-```env
-DATABASE_URL="postgresql://habashop:password@localhost:5432/habashop"
-REDIS_URL="redis://localhost:6379"
-JWT_SECRET="your-super-secret-jwt-key"
-JWT_REFRESH_SECRET="your-refresh-secret"
-PORT=3000
-NODE_ENV=development
-```
-
-### Frontend (`apps/frontend/.env`)
-```env
-VITE_API_URL=http://localhost:3000
-VITE_APP_NAME=HabaShop
-```
-
----
-
-## Licence
-
+## 📄 Licence
 Propriétaire — © 2026 HabaShop. Tous droits réservés.
