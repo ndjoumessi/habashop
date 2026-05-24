@@ -160,6 +160,18 @@ async function start() {
     secret: process.env.JWT_SECRET ?? 'habashop-secret-dev-2026',
   })
 
+  // ─── ERROR HANDLER ────────────────────
+  // Prisma P2025 = "record not found" → 404. Couvre les update/delete
+  // scopés par tenant (where:{id, tenantId}) : un accès cross-tenant ne
+  // matche aucun enregistrement et doit renvoyer 404, pas 500.
+  app.setErrorHandler((error: any, _request, reply) => {
+    if (error?.code === 'P2025') {
+      return reply.code(404).send({ error: 'Ressource introuvable' })
+    }
+    app.log.error(error)
+    return reply.code(error?.statusCode ?? 500).send({ error: error?.message ?? 'Erreur serveur' })
+  })
+
   // ─── HEALTH CHECK ─────────────────────
   app.get('/health', async () => ({
     status: 'ok',
