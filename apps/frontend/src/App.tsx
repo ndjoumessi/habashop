@@ -1,37 +1,47 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore, canAccess, getLandingForRole } from '@/stores/authStore'
 import { authApi } from '@/lib/api'
 import { useAppStore } from '@/stores/appStore'
 import AppLayout from '@/components/layout/AppLayout'
-import LandingPage from '@/pages/LandingPage'
-import LoginPage from '@/pages/LoginPage'
-import Dashboard from '@/pages/Dashboard'
-import POS from '@/pages/POS'
-import Stock from '@/pages/Stock'
-import Orders from '@/pages/Orders'
-import Suppliers from '@/pages/Suppliers'
-import Customers from '@/pages/Customers'
-import Reports from '@/pages/Reports'
-import HR from '@/pages/HR'
-import Planning from '@/pages/Planning'
-import Payroll from '@/pages/Payroll'
-import Expenses from '@/pages/Expenses'
-import Forecasts from '@/pages/Forecasts'
-import Users from '@/pages/Users'
-import Activity from '@/pages/Activity'
-import Notifications from '@/pages/Notifications'
-import Settings from '@/pages/Settings'
-import SignupPage from '@/pages/SignupPage'
-import AdminDashboard from '@/pages/AdminDashboard'
-import Marketing from '@/pages/Marketing'
-import AIAssistant from '@/pages/AIAssistant'
-import Goals from '@/pages/Goals'
-import APIDocs from '@/pages/APIDocs'
-import Integrations from '@/pages/Integrations'
-import Onboarding from '@/pages/Onboarding'
-import Pricing from '@/pages/Pricing'
-import UpgradePlan from '@/pages/UpgradePlan'
+
+// Pages chargées à la demande (code-splitting par route) → réduit le bundle initial
+const LandingPage    = lazy(() => import('@/pages/LandingPage'))
+const LoginPage      = lazy(() => import('@/pages/LoginPage'))
+const Dashboard      = lazy(() => import('@/pages/Dashboard'))
+const POS            = lazy(() => import('@/pages/POS'))
+const Stock          = lazy(() => import('@/pages/Stock'))
+const Orders         = lazy(() => import('@/pages/Orders'))
+const Suppliers      = lazy(() => import('@/pages/Suppliers'))
+const Customers      = lazy(() => import('@/pages/Customers'))
+const Reports        = lazy(() => import('@/pages/Reports'))
+const HR             = lazy(() => import('@/pages/HR'))
+const Planning       = lazy(() => import('@/pages/Planning'))
+const Payroll        = lazy(() => import('@/pages/Payroll'))
+const Expenses       = lazy(() => import('@/pages/Expenses'))
+const Forecasts      = lazy(() => import('@/pages/Forecasts'))
+const Users          = lazy(() => import('@/pages/Users'))
+const Activity       = lazy(() => import('@/pages/Activity'))
+const Notifications  = lazy(() => import('@/pages/Notifications'))
+const Settings       = lazy(() => import('@/pages/Settings'))
+const SignupPage     = lazy(() => import('@/pages/SignupPage'))
+const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'))
+const Marketing      = lazy(() => import('@/pages/Marketing'))
+const AIAssistant    = lazy(() => import('@/pages/AIAssistant'))
+const Goals          = lazy(() => import('@/pages/Goals'))
+const APIDocs        = lazy(() => import('@/pages/APIDocs'))
+const Integrations   = lazy(() => import('@/pages/Integrations'))
+const Onboarding     = lazy(() => import('@/pages/Onboarding'))
+const Pricing        = lazy(() => import('@/pages/Pricing'))
+const UpgradePlan    = lazy(() => import('@/pages/UpgradePlan'))
+
+function RouteFallback() {
+  return (
+    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontFamily: 'var(--font)', fontSize: 14 }}>
+      Chargement…
+    </div>
+  )
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -74,6 +84,7 @@ export default function App() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
@@ -121,5 +132,6 @@ export default function App() {
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   )
 }

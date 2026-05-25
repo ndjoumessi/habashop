@@ -4,7 +4,7 @@ import Header from './Header'
 import { useAppStore } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import PWAInstallButton from '@/components/ui/PWAInstallButton'
 import BillingBanner from '@/components/ui/BillingBanner'
 
@@ -27,7 +27,9 @@ export default function AppLayout() {
         <Header />
         <BillingBanner />
         <main className="page-content">
-          <Outlet />
+          <Suspense fallback={<div style={{ padding: 40, color: 'var(--text3)', fontFamily: 'var(--font)' }}>Chargement…</div>}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
       <PWAInstallButton />
