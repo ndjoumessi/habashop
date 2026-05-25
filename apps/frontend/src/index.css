@@ -2,6 +2,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
 :root {
+  /* ─── Tokens couleurs fréquemment hardcodées (fonds/bordures translucides) ─── */
+  --c-purple-bg:     rgba(108,71,255,.12);
+  --c-purple-border: rgba(108,71,255,.25);
+  --c-purple-bg2:    rgba(108,71,255,.08);
+  --c-green-bg:      rgba(0,208,132,.12);
+  --c-green-border:  rgba(0,208,132,.25);
+  --c-green-bg2:     rgba(0,208,132,.08);
+  --c-orange-bg:     rgba(255,149,0,.12);
+  --c-orange-border: rgba(255,149,0,.25);
+  --c-blue-bg:       rgba(0,184,255,.12);
+  --c-blue-border:   rgba(0,184,255,.25);
+  --c-red-bg:        rgba(255,59,92,.12);
+  --c-red-border:    rgba(255,59,92,.25);
+  --c-red-bg2:       rgba(255,59,92,.08);
+  /* Marques tierces (paiement) */
+  --brand-wave:      #1B9AF5;
+  --brand-om:        #FF6600;
+  --brand-whatsapp:  #25D366;
+  --brand-mtn:       #FFCC00;
+}
+
+:root {
   --p:    #6C47FF;
   --p2:   #8B6FFF;
   --p3:   #A991FF;

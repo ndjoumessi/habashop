@@ -36,10 +36,10 @@ const BENTO_CFG: Record<ClientType, {
   grad: string; glow: string; soft: string
   color: string; border: string; icon: JSX.Element; label: string
 }> = {
-  Grossiste:   { grad: 'linear-gradient(135deg,#6C47FF22,#6C47FF08)', glow: 'rgba(108,71,255,.35)', soft: 'rgba(108,71,255,.1)',  color: '#A991FF', border: 'rgba(108,71,255,.28)', icon: <Building2 size={12} />, label: 'Grossiste'   },
-  'Semi-gros': { grad: 'linear-gradient(135deg,#FFB80022,#FFB80008)', glow: 'rgba(255,184,0,.35)',  soft: 'rgba(255,184,0,.1)',   color: '#FFB800', border: 'rgba(255,184,0,.28)',  icon: <ShoppingBag size={12} />, label: 'Semi-gros' },
-  Fidèle:      { grad: 'linear-gradient(135deg,#00D08422,#00D08408)', glow: 'rgba(0,208,132,.35)',  soft: 'rgba(0,208,132,.1)',   color: '#00D084', border: 'rgba(0,208,132,.28)',  icon: <Star size={12} />,        label: 'Fidèle'    },
-  Détail:      { grad: 'linear-gradient(135deg,#00B8FF22,#00B8FF08)', glow: 'rgba(0,184,255,.35)',  soft: 'rgba(0,184,255,.1)',   color: '#00B8FF', border: 'rgba(0,184,255,.28)',  icon: <ShoppingCart size={12} />, label: 'Détail'   },
+  Grossiste:   { grad: 'linear-gradient(135deg,#6C47FF22,#6C47FF08)', glow: 'rgba(108,71,255,.35)', soft: 'rgba(108,71,255,.1)',  color: 'var(--p3)', border: 'rgba(108,71,255,.28)', icon: <Building2 size={12} />, label: 'Grossiste'   },
+  'Semi-gros': { grad: 'linear-gradient(135deg,#FFB80022,#FFB80008)', glow: 'rgba(255,184,0,.35)',  soft: 'rgba(255,184,0,.1)',   color: 'var(--warn)', border: 'rgba(255,184,0,.28)',  icon: <ShoppingBag size={12} />, label: 'Semi-gros' },
+  Fidèle:      { grad: 'linear-gradient(135deg,#00D08422,#00D08408)', glow: 'rgba(0,208,132,.35)',  soft: 'rgba(0,208,132,.1)',   color: 'var(--acc2)', border: 'rgba(0,208,132,.28)',  icon: <Star size={12} />,        label: 'Fidèle'    },
+  Détail:      { grad: 'linear-gradient(135deg,#00B8FF22,#00B8FF08)', glow: 'rgba(0,184,255,.35)',  soft: 'rgba(0,184,255,.1)',   color: 'var(--acc3)', border: 'rgba(0,184,255,.28)',  icon: <ShoppingCart size={12} />, label: 'Détail'   },
 }
 
 const SENEGAL_CITIES = [
@@ -206,10 +206,10 @@ interface GeoCustomer {
 }
 
 const TYPE_CFG_MAP: Record<string, { color: string; soft: string; icon: JSX.Element; label: string }> = {
-  Grossiste:   { color: '#6C47FF', soft: 'rgba(108,71,255,.15)', icon: <Building2 size={10} />, label: 'Grossiste'   },
-  'Semi-gros': { color: '#FF9500', soft: 'rgba(255,149,0,.15)',  icon: <ShoppingBag size={10} />, label: 'Semi-gros'   },
-  Fidèle:      { color: '#00D084', soft: 'rgba(0,208,132,.15)',  icon: <Star size={10} />, label: 'Fidèle'      },
-  Détail:      { color: '#00B8FF', soft: 'rgba(0,184,255,.12)',  icon: <ShoppingCart size={10} />, label: 'Détail'      },
+  Grossiste:   { color: 'var(--p)', soft: 'rgba(108,71,255,.15)', icon: <Building2 size={10} />, label: 'Grossiste'   },
+  'Semi-gros': { color: 'var(--acc)', soft: 'rgba(255,149,0,.15)',  icon: <ShoppingBag size={10} />, label: 'Semi-gros'   },
+  Fidèle:      { color: 'var(--acc2)', soft: 'rgba(0,208,132,.15)',  icon: <Star size={10} />, label: 'Fidèle'      },
+  Détail:      { color: 'var(--acc3)', soft: 'var(--c-blue-bg)',  icon: <ShoppingCart size={10} />, label: 'Détail'      },
 }
 const TYPE_LABELS: Record<string, Record<string, string>> = {
   Grossiste:   { fr: 'Grossiste',  en: 'Wholesaler',     es: 'Mayorista',  it: 'Grossista' },
@@ -227,7 +227,7 @@ const DARK_STYLE = [
   { elementType: 'labels.text.fill',                                                stylers: [{ color: '#6666AA' }] },
   { featureType: 'administrative',          elementType: 'geometry.stroke',         stylers: [{ color: '#1A1A38' }] },
   { featureType: 'administrative.locality', elementType: 'labels.text.fill',        stylers: [{ color: '#8888CC' }] },
-  { featureType: 'administrative.country',  elementType: 'labels.text.fill',        stylers: [{ color: '#A991FF' }] },
+  { featureType: 'administrative.country',  elementType: 'labels.text.fill',        stylers: [{ color: 'var(--p3)' }] },
   { featureType: 'poi',                     elementType: 'geometry',                stylers: [{ color: '#0D0D20' }] },
   { featureType: 'poi',                     elementType: 'labels.text.fill',        stylers: [{ color: '#4A4A70' }] },
   { featureType: 'poi.park',                elementType: 'geometry',                stylers: [{ color: '#0D0D1C' }] },
@@ -412,7 +412,7 @@ function CustomerMap({
                 <button key={f} type="button" onClick={() => setFilter(f)} style={{
                   padding: '3px 8px', borderRadius: 99, fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
                   border: `1px solid ${active ? (cfg?.color ?? 'var(--p2)') + '55' : 'rgba(255,255,255,.08)'}`,
-                  background: active ? (cfg?.soft ?? 'rgba(108,71,255,.12)') : 'transparent',
+                  background: active ? (cfg?.soft ?? 'var(--c-purple-bg)') : 'transparent',
                   color: active ? (cfg?.color ?? 'var(--p3)') : 'var(--text3)',
                 }}>{f === 'all' ? (lang === 'fr' ? 'Tous' : lang === 'en' ? 'All' : lang === 'es' ? 'Todos' : 'Tutti') : typeLabel(f, lang)}</button>
               )
@@ -496,7 +496,7 @@ function CustomerMap({
                   {[
                     { l: 'CA', v: totalCA >= 1000000 ? `${(totalCA / 1000000).toFixed(1)}M` : totalCA >= 1000 ? `${(totalCA / 1000).toFixed(0)}k` : fmt(totalCA), c: cfg.color },
                     { l: 'Cmds', v: `${orders}×`, c: '#F0F0FF' },
-                    { l: 'Pts',  v: String(loyalty), c: '#FFB800' },
+                    { l: 'Pts',  v: String(loyalty), c: 'var(--warn)' },
                   ].map(k => (
                     <div key={k.l} style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 8, padding: '6px 5px', textAlign: 'center' }}>
                       <div style={{ fontSize: 12, fontWeight: 900, color: k.c, fontFamily: 'var(--mono)' }}>{k.v}</div>
@@ -507,7 +507,7 @@ function CustomerMap({
                 {/* Loyalty bar */}
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
-                    <span>Fidélité</span><span style={{ color: '#FFB800' }}>{loyaltyPct}%</span>
+                    <span>Fidélité</span><span style={{ color: 'var(--warn)' }}>{loyaltyPct}%</span>
                   </div>
                   <div style={{ height: 4, background: 'rgba(255,255,255,.07)', borderRadius: 99, overflow: 'hidden' }}>
                     <div style={{ width: `${loyaltyPct}%`, height: '100%', background: 'linear-gradient(90deg,#FFB800,#FF9500)', borderRadius: 99, boxShadow: loyaltyPct > 0 ? '0 0 8px rgba(255,184,0,.5)' : 'none' }} />
@@ -528,7 +528,7 @@ function CustomerMap({
                     <Eye size={11} /> Détail
                   </button>
                   <button type="button" onClick={() => navigate('/app/pos', { state: { customer: selected } })}
-                    style={{ flex: 1, padding: '8px 6px', background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.25)', borderRadius: 9, cursor: 'pointer', color: 'var(--acc2)', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'opacity .15s' }}
+                    style={{ flex: 1, padding: '8px 6px', background: 'rgba(0,208,132,.1)', border: '1px solid var(--c-green-border)', borderRadius: 9, cursor: 'pointer', color: 'var(--acc2)', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'opacity .15s' }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.8'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}>
                     <ShoppingCart size={11} /> Vente
@@ -545,7 +545,7 @@ function CustomerMap({
             {[
               { l: 'Localisés',    v: `${geoCustomers.length}/${customers.length}`, c: 'var(--acc2)' },
               { l: 'Sans adresse', v: String(noAddr),                                c: 'var(--warn)' },
-              { l: 'VIP',          v: String(vipCount),                              c: '#FFB800'      },
+              { l: 'VIP',          v: String(vipCount),                              c: 'var(--warn)'      },
             ].map((s, i) => (
               <div key={s.l} style={{ flex: 1, textAlign: 'center', paddingLeft: i > 0 ? 0 : 0, borderLeft: i > 0 ? '1px solid rgba(255,255,255,.06)' : 'none' }}>
                 <div style={{ fontSize: 15, fontWeight: 900, color: s.c, fontFamily: 'var(--mono)' }}>{s.v}</div>
@@ -582,7 +582,7 @@ function CustomerMap({
         {/* Loading overlay */}
         {(!mapsLoaded || geocoding) && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(7,7,15,.85)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 20 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(108,71,255,.2)', borderTopColor: '#6C47FF', animation: 'spin 1s linear infinite' }} />
+            <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(108,71,255,.2)', borderTopColor: 'var(--p)', animation: 'spin 1s linear infinite' }} />
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)' }}>{!mapsLoaded ? 'Chargement Google Maps…' : 'Localisation des clients…'}</div>
           </div>
         )}
@@ -781,10 +781,10 @@ export default function Customers() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('customers_total'),     value: customers.length.toString(), hex: '#6C47FF', icon: <Users size={18} /> },
-          { label: t('customers_active'),    value: activeThisMonth.toString(),  hex: '#00D084', icon: <UserCheck size={18} /> },
-          { label: t('customers_avg_cart'),  value: fmt(avgCart),                hex: '#FF9500', icon: <ShoppingCart size={18} /> },
-          { label: t('customers_retention'), value: `${retentionRate}%`,         hex: '#00B8FF', icon: <TrendingUp size={18} /> },
+          { label: t('customers_total'),     value: customers.length.toString(), hex: 'var(--p)', icon: <Users size={18} /> },
+          { label: t('customers_active'),    value: activeThisMonth.toString(),  hex: 'var(--acc2)', icon: <UserCheck size={18} /> },
+          { label: t('customers_avg_cart'),  value: fmt(avgCart),                hex: 'var(--acc)', icon: <ShoppingCart size={18} /> },
+          { label: t('customers_retention'), value: `${retentionRate}%`,         hex: 'var(--acc3)', icon: <TrendingUp size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card" style={{ position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${k.hex}18,${k.hex}06)`, border:`1px solid ${k.hex}28`, transition:'transform .2s,box-shadow .2s', cursor:'default' }}
             onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='translateY(-2px)';el.style.boxShadow=`0 8px 24px ${k.hex}20`}}
@@ -1030,7 +1030,7 @@ export default function Customers() {
                       </div>
                       <div style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 10, padding: '7px 8px', textAlign: 'center' }}>
                         <div style={{ fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'rgba(255,255,255,.4)', marginBottom: 3 }}>Pts</div>
-                        <div style={{ fontSize: 11, fontWeight: 900, color: '#FFB800', fontFamily: 'var(--mono)', lineHeight: 1 }}>{points}</div>
+                        <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)', lineHeight: 1 }}>{points}</div>
                       </div>
                     </div>
 
@@ -1038,7 +1038,7 @@ export default function Customers() {
                     <div style={{ marginBottom: 14 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.4)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.4px' }}>
                         <span>Fidélité</span>
-                        <span style={{ color: '#FFB800' }}>{loyaltyPct}%</span>
+                        <span style={{ color: 'var(--warn)' }}>{loyaltyPct}%</span>
                       </div>
                       <div style={{ height: 5, background: 'rgba(255,255,255,.08)', borderRadius: 99, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${loyaltyPct}%`, background: 'linear-gradient(90deg,#FFB800,#FF9500)', borderRadius: 99, transition: 'width .4s', boxShadow: '0 0 10px rgba(255,184,0,.5)' }} />
@@ -1644,9 +1644,9 @@ export default function Customers() {
               {/* KPIs */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 {[
-                  { label: i('CA Total', 'Total Revenue', 'Ingresos totales', 'Fatturato totale'), value: fmt(detailCustomer.totalCA), icon: <DollarSign size={20} />, color: 'var(--acc)', hex: '#FF9500' },
-                  { label: i('Commandes/mois', 'Orders/month', 'Pedidos/mes', 'Ordini/mese'), value: `${detailCustomer.purchasesPerMonth}`, icon: <ShoppingCart size={20} />, color: 'var(--p2)', hex: '#6C47FF' },
-                  { label: i('Points fidélité', 'Loyalty pts', 'Puntos fidelidad', 'Punti fedeltà'), value: `${detailCustomer.loyaltyPoints} pts`, icon: <Star size={20} />, color: 'var(--warn)', hex: '#FFB800' },
+                  { label: i('CA Total', 'Total Revenue', 'Ingresos totales', 'Fatturato totale'), value: fmt(detailCustomer.totalCA), icon: <DollarSign size={20} />, color: 'var(--acc)', hex: 'var(--acc)' },
+                  { label: i('Commandes/mois', 'Orders/month', 'Pedidos/mes', 'Ordini/mese'), value: `${detailCustomer.purchasesPerMonth}`, icon: <ShoppingCart size={20} />, color: 'var(--p2)', hex: 'var(--p)' },
+                  { label: i('Points fidélité', 'Loyalty pts', 'Puntos fidelidad', 'Punti fedeltà'), value: `${detailCustomer.loyaltyPoints} pts`, icon: <Star size={20} />, color: 'var(--warn)', hex: 'var(--warn)' },
                 ].map(k => (
                   <div key={k.label} style={{ background: `linear-gradient(135deg,${k.hex}15,${k.hex}05)`, border: `1px solid ${k.hex}25`, borderRadius: 12, padding: '14px', textAlign: 'center' }}>
                     <div style={{ display:'flex', justifyContent:'center', marginBottom: 6, color: k.color }}>{k.icon}</div>

@@ -254,7 +254,7 @@ export default function HR() {
       email:       emp.email       ?? '',
       isActive:    emp.active,
       perf:        emp.perf        ?? 3,
-      color:       emp.color       ?? '#6C47FF',
+      color:       emp.color       ?? 'var(--p)',
       photoUrl:    emp.photoUrl    ?? '',
       address:     emp.address     ?? '',
       hiredAt:     toInputDate(emp.hiredAt),
@@ -515,10 +515,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
         {[
-          { icon: <Users size={18}/>,      label: lang==='fr'?'Effectif total':'Total staff',      value: `${employees.length}`,    color: '#6C47FF', sub: `${activeCount} ${lang==='fr'?'actifs':'active'}` },
-          { icon: <DollarSign size={18}/>, label: lang==='fr'?'Masse salariale':'Payroll',          value: fmt(totalPayroll),         color: '#00D084', sub: lang==='fr'?'Ce mois':'This month' },
-          { icon: <Umbrella size={18}/>,   label: lang==='fr'?'Congés en attente':'Pending leaves', value: `${pendingLeaves}`,        color: pendingLeaves > 0 ? '#F0A500' : '#00D084', sub: lang==='fr'?'à traiter':'to review' },
-          { icon: <TrendingUp size={18}/>, label: lang==='fr'?'Performance moy.':'Avg performance', value: `${((employees ?? []).filter(e => e.perf).reduce((s, e) => s + (e.perf ?? 0), 0) / ((employees ?? []).filter(e => e.perf).length || 1)).toFixed(1)}/5`, color: '#FF9500', sub: lang==='fr'?'Top équipe':'Top team' },
+          { icon: <Users size={18}/>,      label: lang==='fr'?'Effectif total':'Total staff',      value: `${employees.length}`,    color: 'var(--p)', sub: `${activeCount} ${lang==='fr'?'actifs':'active'}` },
+          { icon: <DollarSign size={18}/>, label: lang==='fr'?'Masse salariale':'Payroll',          value: fmt(totalPayroll),         color: 'var(--acc2)', sub: lang==='fr'?'Ce mois':'This month' },
+          { icon: <Umbrella size={18}/>,   label: lang==='fr'?'Congés en attente':'Pending leaves', value: `${pendingLeaves}`,        color: pendingLeaves > 0 ? '#F0A500' : 'var(--acc2)', sub: lang==='fr'?'à traiter':'to review' },
+          { icon: <TrendingUp size={18}/>, label: lang==='fr'?'Performance moy.':'Avg performance', value: `${((employees ?? []).filter(e => e.perf).reduce((s, e) => s + (e.perf ?? 0), 0) / ((employees ?? []).filter(e => e.perf).length || 1)).toFixed(1)}/5`, color: 'var(--acc)', sub: lang==='fr'?'Top équipe':'Top team' },
         ].map(k => (
           <div key={k.label} className="panel" style={{ padding: '14px 16px', background: `linear-gradient(135deg,${k.color}18,${k.color}06)`, border: `1px solid ${k.color}28` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -633,7 +633,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   </div>
                 ))
               ) : pg.paginated.map(emp => {
-                const deptColor = DEPT_COLORS[emp.dept] ?? '#6C47FF'
+                const deptColor = DEPT_COLORS[emp.dept] ?? 'var(--p)'
                 const isActive  = emp.active
                 return (
                   <div key={emp.id} style={{
@@ -665,10 +665,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
                         <div style={{
                           width:44, height:44, borderRadius:12,
-                          background:`linear-gradient(135deg,${emp.color??'#6C47FF'},${emp.color??'#6C47FF'}66)`,
+                          background:`linear-gradient(135deg,${emp.color??'var(--p)'},${emp.color??'var(--p)'}66)`,
                           display:'flex', alignItems:'center', justifyContent:'center',
                           fontSize:14, fontWeight:900, color:'#fff', flexShrink:0,
-                          boxShadow:`0 3px 10px ${emp.color??'#6C47FF'}35`,
+                          boxShadow:`0 3px 10px ${emp.color??'var(--p)'}35`,
                         }}>
                           {emp.avatar}
                         </div>
@@ -1080,7 +1080,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   return (
                     <div key={emp.id} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:14, padding:18, transition:'all .2s' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, paddingBottom:12, borderBottom:'1px solid var(--border)' }}>
-                        <div style={{ width:40, height:40, borderRadius:11, background:`linear-gradient(135deg,${emp.color??'#6C47FF'},${emp.color??'#6C47FF'}66)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:900, color:'#fff', flexShrink:0 }}>
+                        <div style={{ width:40, height:40, borderRadius:11, background:`linear-gradient(135deg,${emp.color??'var(--p)'},${emp.color??'var(--p)'}66)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:900, color:'#fff', flexShrink:0 }}>
                           {emp.avatar ?? '??'}
                         </div>
                         <div style={{ flex:1 }}>
@@ -1106,7 +1106,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                         ))}
                       </div>
 
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'rgba(0,208,132,.06)', border:'1px solid rgba(0,208,132,.12)', borderRadius:10, marginBottom:12 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'rgba(0,208,132,.06)', border:'1px solid var(--c-green-bg)', borderRadius:10, marginBottom:12 }}>
                         <span style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>
                           {lang==='fr' ? 'NET À PAYER' : 'NET TO PAY'}
                         </span>
@@ -1176,7 +1176,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                             <tr key={empId}>
                               <td>
                                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                                  <div style={{ width:30, height:30, borderRadius:8, background:`${emp.color??'#6C47FF'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, color:emp.color??'#6C47FF' }}>
+                                  <div style={{ width:30, height:30, borderRadius:8, background:`${emp.color??'var(--p)'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, color:emp.color??'var(--p)' }}>
                                     {emp.avatar ?? '??'}
                                   </div>
                                   <span style={{ fontWeight:700, fontSize:13 }}>{emp.name}</span>
@@ -1216,7 +1216,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               </div>
 
               {Object.keys(bonuses).length > 0 && (
-                <div style={{ padding:'14px 18px', background:'rgba(0,208,132,.05)', border:'1px solid rgba(0,208,132,.12)', borderRadius:12, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
+                <div style={{ padding:'14px 18px', background:'rgba(0,208,132,.05)', border:'1px solid var(--c-green-bg)', borderRadius:12, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
                   <div>
                     <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
                       <BarChart3 size={14} style={{color:'var(--acc2)',flexShrink:0}}/> {lang==='fr' ? 'Impact sur la masse salariale' : 'Impact on payroll'}
@@ -1362,13 +1362,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                               <div style={{
                                 width:42, height:42, borderRadius:12,
                                 flexShrink:0,
-                                background:`${emp?.color ?? '#6C47FF'}22`,
-                                border:`2px solid ${emp?.color ?? '#6C47FF'}33`,
+                                background:`${emp?.color ?? 'var(--p)'}22`,
+                                border:`2px solid ${emp?.color ?? 'var(--p)'}33`,
                                 display:'flex', alignItems:'center',
                                 justifyContent:'center',
                                 fontSize:14, fontWeight:900,
-                                color:emp?.color ?? '#6C47FF',
-                                boxShadow:`0 2px 8px ${emp?.color ?? '#6C47FF'}25`,
+                                color:emp?.color ?? 'var(--p)',
+                                boxShadow:`0 2px 8px ${emp?.color ?? 'var(--p)'}25`,
                               }}>
                                 {emp?.avatar ?? '??'}
                               </div>
@@ -1622,7 +1622,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       {/* ── TAB POINTAGE / PRÉSENCES ── */}
       {tab === 'pointage' && (() => {
         const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: JSX.Element }> = {
-          present: { label: lang==='fr'?'Présent':'Present',  color:'#00D084', bg:'rgba(0,208,132,.1)',  icon:<CheckCircle size={11}/> },
+          present: { label: lang==='fr'?'Présent':'Present',  color:'var(--acc2)', bg:'rgba(0,208,132,.1)',  icon:<CheckCircle size={11}/> },
           late:    { label: lang==='fr'?'Retard':'Late',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:<Clock size={11}/> },
           absent:  { label: lang==='fr'?'Absent':'Absent',    color:'#EF4444', bg:'rgba(239,68,68,.1)',  icon:<XCircle size={11}/> },
           half:    { label: lang==='fr'?'Mi-temps':'Half',    color:'#3B82F6', bg:'rgba(59,130,246,.1)', icon:<AlertTriangle size={11}/> },
@@ -1691,7 +1691,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             {/* KPI row */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
               {[
-                { icon:<CheckCircle size={20}/>, label:lang==='fr'?'Présents':'Present',  count:presentCount,          color:'#00D084', hex:'#00D084' },
+                { icon:<CheckCircle size={20}/>, label:lang==='fr'?'Présents':'Present',  count:presentCount,          color:'var(--acc2)', hex:'var(--acc2)' },
                 { icon:<Clock size={20}/>,       label:lang==='fr'?'Retards':'Late',      count:countByStatus('late'), color:'#F59E0B', hex:'#F59E0B' },
                 { icon:<XCircle size={20}/>,     label:lang==='fr'?'Absents':'Absent',    count:countByStatus('absent'),color:'#EF4444', hex:'#EF4444' },
                 { icon:<AlertTriangle size={20}/>,label:lang==='fr'?'Mi-temps':'Half-day', count:countByStatus('half'), color:'#3B82F6', hex:'#3B82F6' },
@@ -1820,7 +1820,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   <div key={leave.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, flexWrap: 'wrap' }}>
                     {emp && <EmpAvatar emp={emp} size={38} />}
                     {!emp && (
-                      <div style={{ width:38, height:38, borderRadius:'50%', background:'#6C47FF22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:'#6C47FF', flexShrink:0 }}>
+                      <div style={{ width:38, height:38, borderRadius:'50%', background:'#6C47FF22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:'var(--p)', flexShrink:0 }}>
                         {displayName.slice(0,2).toUpperCase()}
                       </div>
                     )}
@@ -1885,13 +1885,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
           <div style={{ background:'#0D0D1C', border:'1px solid rgba(255,255,255,.1)', borderRadius:24, width:'100%', maxWidth:560, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 24px 80px rgba(0,0,0,.8)', position:'relative' }}>
 
             {/* Ligne décorative */}
-            <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:'40%', height:1, background:`linear-gradient(90deg,transparent,${editEmpForm.color??'#6C47FF'},transparent)` }} />
+            <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:'40%', height:1, background:`linear-gradient(90deg,transparent,${editEmpForm.color??'var(--p)'},transparent)` }} />
 
             {/* HEADER */}
-            <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'}18,${editEmpForm.color??'#6C47FF'}05)`, borderBottom:'1px solid rgba(255,255,255,.06)', flexShrink:0 }}>
+            <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'}18,${editEmpForm.color??'var(--p)'}05)`, borderBottom:'1px solid rgba(255,255,255,.06)', flexShrink:0 }}>
               <div style={{ display:'flex', alignItems:'center', gap:14 }}>
                 <div
-                  style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'},${editEmpForm.color??'#6C47FF'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'#6C47FF'}50`, border:`2px solid ${editEmpForm.color??'#6C47FF'}40`, letterSpacing:'-1px', cursor: empEditMode ? 'pointer' : 'default', position:'relative' }}
+                  style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'var(--p)'}50`, border:`2px solid ${editEmpForm.color??'var(--p)'}40`, letterSpacing:'-1px', cursor: empEditMode ? 'pointer' : 'default', position:'relative' }}
                   title={empEditMode ? (lang==='fr'?'Cliquer pour changer la photo':'Click to change photo') : undefined}
                   onClick={() => empEditMode && (document.getElementById('emp-photo-input') as HTMLInputElement)?.click()}>
                   {editEmpForm.photoUrl
@@ -1951,7 +1951,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {/* Identité */}
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
-                  <div style={{ width:16, height:16, borderRadius:4, background:`${editEmpForm.color??'#6C47FF'}22`, display:'flex', alignItems:'center', justifyContent:'center', color:editEmpForm.color??'#6C47FF' }}><User size={10}/></div>
+                  <div style={{ width:16, height:16, borderRadius:4, background:`${editEmpForm.color??'var(--p)'}22`, display:'flex', alignItems:'center', justifyContent:'center', color:editEmpForm.color??'var(--p)' }}><User size={10}/></div>
                   {lang==='fr'?'IDENTITÉ':'IDENTITY'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
@@ -1989,7 +1989,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                   </ViewField>
                   {editEmpForm.type === 'CDI' ? (
                     <ViewField label={lang==='fr'?'FIN DE CONTRAT':'CONTRACT END'} value={lang==='fr'?'∞ Indéterminé':'∞ Permanent'} color="var(--acc2)" editing={empEditMode}>
-                      <div style={{ padding:'10px 14px', background:'rgba(0,208,132,.06)', border:'1px solid rgba(0,208,132,.12)', borderRadius:12, fontSize:13, color:'var(--acc2)', fontWeight:600 }}>
+                      <div style={{ padding:'10px 14px', background:'rgba(0,208,132,.06)', border:'1px solid var(--c-green-bg)', borderRadius:12, fontSize:13, color:'var(--acc2)', fontWeight:600 }}>
                         ∞ {lang==='fr'?'Contrat à durée indéterminée':'Permanent contract'}
                       </div>
                     </ViewField>
@@ -2088,7 +2088,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               {/* Performance */}
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
-                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,184,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'#FFB800' }}><Star size={10}/></div>
+                  <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,184,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--warn)' }}><Star size={10}/></div>
                   PERFORMANCE
                 </div>
                 {empEditMode ? (
@@ -2096,15 +2096,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     {[1,2,3,4,5].map(s => (
                       <button key={s} type="button"
                         onClick={() => setEditEmpForm((f:any) => ({ ...f, perf:s }))}
-                        style={{ background:'none', border:'none', cursor:'pointer', padding:'2px', color: s<=(editEmpForm.perf??3) ? '#FFB800' : 'var(--border)', display:'flex', alignItems:'center' }}>
-                        <Star size={22} fill={s<=(editEmpForm.perf??3) ? '#FFB800' : 'none'} />
+                        style={{ background:'none', border:'none', cursor:'pointer', padding:'2px', color: s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'var(--border)', display:'flex', alignItems:'center' }}>
+                        <Star size={22} fill={s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'none'} />
                       </button>
                     ))}
                   </div>
                 ) : (
                   <div style={{ display:'flex', gap:2, alignItems:'center' }}>
                     {[1,2,3,4,5].map(s => (
-                      <Star key={s} size={16} style={{ color: s<=(editEmpForm.perf??3) ? '#FFB800' : 'var(--border)' }} fill={s<=(editEmpForm.perf??3) ? '#FFB800' : 'none'} />
+                      <Star key={s} size={16} style={{ color: s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'var(--border)' }} fill={s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'none'} />
                     ))}
                     <span style={{ fontSize:12, color:'var(--text3)', marginLeft:6 }}>{editEmpForm.perf??3}/5</span>
                   </div>
@@ -2119,7 +2119,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     {lang==='fr'?'COULEUR AVATAR':'AVATAR COLOR'}
                   </div>
                   <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                    {['#6C47FF','#00B8FF','#00D084','#FF9500','#FF3B5C','#F472B6','#A991FF','#FFB800'].map(col => (
+                    {['var(--p)','var(--acc3)','var(--acc2)','var(--acc)','var(--danger)','#F472B6','var(--p3)','var(--warn)'].map(col => (
                       <button key={col} type="button"
                         onClick={() => setEditEmpForm((f:any) => ({ ...f, color:col }))}
                         style={{ width:28, height:28, borderRadius:'50%', background:col, border:'3px solid', borderColor: editEmpForm.color===col?'#fff':'transparent', cursor:'pointer', padding:0, boxShadow: editEmpForm.color===col?`0 0 0 3px ${col}`:'none', transition:'all .15s' }} />
@@ -2164,7 +2164,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       setEmpEditMode(false)
                       setShowEditEmpModal(false)
                     }}
-                    style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'#6C47FF'},${editEmpForm.color??'#6C47FF'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                    style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
                     ✅ {lang==='fr'?'Sauvegarder':'Save'}
                   </button>
                   <button onClick={() => { openEditModal(selectedEmp!) }}
@@ -2291,7 +2291,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             <div style={{ padding:24, display:'flex', flexDirection:'column', gap:16 }}>
               <div style={{ display:'flex', gap:8 }}>
                 <span style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:20, background:selectedContract.type==='CDI'?'rgba(108,71,255,.15)':'rgba(14,196,126,.12)', color:selectedContract.type==='CDI'?'var(--p2)':'var(--acc2)' }}>{selectedContract.type}</span>
-                <span style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:20, background:selectedContract.active?'rgba(0,208,132,.12)':'var(--bg3)', color:selectedContract.active?'var(--acc2)':'var(--text3)' }}>
+                <span style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:20, background:selectedContract.active?'var(--c-green-bg)':'var(--bg3)', color:selectedContract.active?'var(--acc2)':'var(--text3)' }}>
                   {selectedContract.active?(lang==='fr'?'Actif':'Active'):(lang==='fr'?'Inactif':'Inactive')}
                 </span>
               </div>
@@ -2645,7 +2645,7 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
       {/* Salaire actuel — affiché en devise courante via fmt() */}
-      <div style={{ padding:'12px 16px', background:'rgba(108,71,255,.06)', border:'1px solid rgba(108,71,255,.12)', borderRadius:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+      <div style={{ padding:'12px 16px', background:'rgba(108,71,255,.06)', border:'1px solid var(--c-purple-bg)', borderRadius:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <span style={{ fontSize:12, color:'var(--text2)' }}>{lang==='fr' ? 'Salaire actuel' : 'Current salary'}</span>
         <span style={{ fontFamily:'var(--mono)', fontWeight:800, fontSize:16, color:'var(--text)' }}>{fmt(oldSalaryXOF)}</span>
       </div>

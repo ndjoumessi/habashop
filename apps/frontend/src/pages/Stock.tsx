@@ -193,10 +193,10 @@ export default function Stock() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t('stock_total'),      value: products.length.toString(),         color: 'var(--p2)',    hex: '#6C47FF', icon: <List          size={18} /> },
-          { label: t('stock_value'),      value: fmt(totalValue),                    color: 'var(--acc2)', hex: '#00D084', icon: <Gem           size={18} /> },
-          { label: t('stock_ruptures'),   value: ruptures.length.toString(),         color: 'var(--danger)',hex: '#FF3B5C', icon: <AlertTriangle size={18} /> },
-          { label: t('stock_categories'), value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', hex: '#FF9500', icon: <FolderOpen size={18} /> },
+          { label: t('stock_total'),      value: products.length.toString(),         color: 'var(--p2)',    hex: 'var(--p)', icon: <List          size={18} /> },
+          { label: t('stock_value'),      value: fmt(totalValue),                    color: 'var(--acc2)', hex: 'var(--acc2)', icon: <Gem           size={18} /> },
+          { label: t('stock_ruptures'),   value: ruptures.length.toString(),         color: 'var(--danger)',hex: 'var(--danger)', icon: <AlertTriangle size={18} /> },
+          { label: t('stock_categories'), value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', hex: 'var(--acc)', icon: <FolderOpen size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card" style={{
             background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,
@@ -321,11 +321,11 @@ export default function Stock() {
                     <span className={`badge ${st.cls}`} style={{ flexShrink:0 }}>{st.label}</span>
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
-                    <div style={{ padding:'7px 9px', borderRadius:8, background:'rgba(108,71,255,.08)', border:'1px solid rgba(108,71,255,.15)' }}>
+                    <div style={{ padding:'7px 9px', borderRadius:8, background:'var(--c-purple-bg2)', border:'1px solid rgba(108,71,255,.15)' }}>
                       <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'fr' ? 'Achat' : 'Buy'}</div>
                       <div style={{ fontSize:12, fontWeight:800, color:'var(--p3)', fontFamily:'var(--mono)' }}>{fmt(p.buy)}</div>
                     </div>
-                    <div style={{ padding:'7px 9px', borderRadius:8, background:'rgba(0,208,132,.08)', border:'1px solid rgba(0,208,132,.15)' }}>
+                    <div style={{ padding:'7px 9px', borderRadius:8, background:'var(--c-green-bg2)', border:'1px solid rgba(0,208,132,.15)' }}>
                       <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'fr' ? 'Vente' : 'Sell'}</div>
                       <div style={{ fontSize:12, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(p.sell)}</div>
                     </div>
