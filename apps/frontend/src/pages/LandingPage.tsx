@@ -459,8 +459,8 @@ const D = {
   p3:      '#A991FF',
   text:    '#F0F0FF',
   text2:   'rgba(240,240,255,.66)',
-  text3:   'rgba(240,240,255,.42)',
-  text4:   'rgba(240,240,255,.22)',
+  text3:   'rgba(240,240,255,.65)',
+  text4:   'rgba(240,240,255,.55)',
   border:  'rgba(255,255,255,.08)',
   border2: 'rgba(255,255,255,.15)',
   acc:     '#00D084',
@@ -534,9 +534,9 @@ export default function LandingPage() {
   ]
 
   const testimonials = [
-    { name: lp.test1_name, role: lp.test1_role, avatar: 'MD', color: '#6C47FF', quote: lp.test1_quote },
-    { name: lp.test2_name, role: lp.test2_role, avatar: 'FK', color: '#FF9500', quote: lp.test2_quote },
-    { name: lp.test3_name, role: lp.test3_role, avatar: 'IT', color: '#00D084', quote: lp.test3_quote },
+    { name: lp.test1_name, role: lp.test1_role, avatar: 'MD', color: '#6C47FF', fg: '#fff', quote: lp.test1_quote },
+    { name: lp.test2_name, role: lp.test2_role, avatar: 'FK', color: '#FF9500', fg: '#1A1A2E', quote: lp.test2_quote },
+    { name: lp.test3_name, role: lp.test3_role, avatar: 'IT', color: '#00D084', fg: '#1A1A2E', quote: lp.test3_quote },
   ]
 
   const pricing = [
@@ -1048,7 +1048,7 @@ export default function LandingPage() {
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.7, color: D.text, marginBottom: 18, fontStyle: 'italic' }}>"{t.quote}"</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 38, height: 38, borderRadius: '50%', background: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff', flexShrink: 0, boxShadow: `0 4px 14px ${t.color}55` }}>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: t.fg, flexShrink: 0, boxShadow: `0 4px 14px ${t.color}55` }}>
                   {t.avatar}
                 </div>
                 <div>
