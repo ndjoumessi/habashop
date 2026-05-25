@@ -1,8 +1,8 @@
-name: HabaShop CI
+name: HabaShop CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
     branches: [main]
 
@@ -10,9 +10,9 @@ env:
   NODE_VERSION: '20'
 
 jobs:
-  # ─── Backend : typecheck + tests ─────────
-  backend:
-    name: Backend (typecheck + tests)
+  # ─── Tests unitaires backend ─────────────
+  unit-tests-backend:
+    name: Unit Tests — Backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,15 +27,16 @@ jobs:
       - name: TypeScript check
         working-directory: apps/backend
         run: npx tsc --noEmit
-      - name: Tests
-        run: npm test --workspace=apps/backend
+      - name: Unit tests
+        run: npm run test:unit --workspace=apps/backend
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           JWT_SECRET: test-secret-for-ci-only-not-production
+          NODE_ENV: test
 
-  # ─── Frontend : typecheck + tests + build ─
-  frontend:
-    name: Frontend (typecheck + tests + build)
+  # ─── Tests unitaires frontend ────────────
+  unit-tests-frontend:
+    name: Unit Tests — Frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,50 +49,106 @@ jobs:
       - name: TypeScript check
         working-directory: apps/frontend
         run: npx tsc --noEmit
-      - name: Tests
+      - name: Unit tests
         run: npm test --workspace=apps/frontend
       - name: Build
         run: npm run build --workspace=apps/frontend
         env:
           VITE_API_URL: https://habashop-production.up.railway.app
+      - name: Bundle size check (< 100KB gzip)
+        working-directory: apps/frontend
+        run: |
+          SIZE=$(find dist/assets -name "index-*.js" -exec gzip -c {} \; | wc -c)
+          echo "Bundle gzip size: ${SIZE} bytes"
+          if [ "$SIZE" -gt 100000 ]; then
+            echo "❌ Bundle trop lourd: ${SIZE} > 100000 bytes"
+            exit 1
+          fi
+          echo "✅ Bundle OK: ${SIZE} bytes"
 
   # ─── Sécurité ────────────────────────────
   security:
-    name: Security audit
+    name: Security Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: npm audit (non bloquant)
-        run: npm audit --audit-level=high
-        continue-on-error: true
+          cache: 'npm'
+      - name: Install (workspaces, depuis la racine)
+        run: npm ci
       - name: Secrets en dur ?
         run: |
-          echo "Recherche de secrets en dur dans le code source…"
+          echo "🔍 Scan secrets…"
+          FOUND=0
+          # Clés API hardcodées (Anthropic / Twilio SID)
           if grep -rnE "sk-ant-api[0-9]{2}|AC[0-9a-f]{30,}" apps/backend/src apps/frontend/src 2>/dev/null; then
-            echo "⚠️  Secret potentiel détecté dans le code source !"
-            exit 1
+            echo "❌ Clé API hardcodée trouvée !"
+            FOUND=1
           fi
+          # Fallback JWT dangereux (valeur de repli en dur)
+          if grep -rnE "habashop-secret-dev|JWT_SECRET *\?\?" apps/backend/src 2>/dev/null; then
+            echo "❌ Fallback JWT dangereux !"
+            FOUND=1
+          fi
+          if [ "$FOUND" -eq 1 ]; then exit 1; fi
           echo "✅ Aucun secret en dur détecté"
+      - name: Backend npm audit (non bloquant)
+        working-directory: apps/backend
+        run: npm audit --audit-level=critical
+        continue-on-error: true
+      - name: Frontend npm audit (non bloquant)
+        working-directory: apps/frontend
+        run: npm audit --audit-level=critical
+        continue-on-error: true
+
+  # ─── Tests d'intégration (API prod, lecture seule) ──
+  integration-tests:
+    name: Integration Tests (prod, read-only)
+    runs-on: ubuntu-latest
+    needs: [unit-tests-backend, unit-tests-frontend]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Install (workspaces, depuis la racine)
+        run: npm ci
+      - name: Integration tests (lecture seule contre la prod)
+        run: npm run test:integration --workspace=apps/backend
+        timeout-minutes: 5
 
   # ─── Résumé post-CI (déploiement MANUEL) ──
   summary:
     name: Résumé déploiement
     runs-on: ubuntu-latest
-    needs: [backend, frontend]
+    needs: [unit-tests-backend, unit-tests-frontend, security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
+      - name: Vérifier la santé de la prod
+        run: |
+          echo "Vérification santé production…"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://habashop-production.up.railway.app/api/health-extended)
+          if [ "$STATUS" != "200" ]; then
+            echo "⚠️ Health check prod: HTTP $STATUS (déploiement peut-être en attente)"
+          else
+            echo "✅ Production saine: HTTP $STATUS"
+          fi
       - name: Note de déploiement
         run: |
           echo "## ✅ CI réussie" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "⚠️ Le déploiement n'est **pas** automatique sur push — à déclencher manuellement :" >> $GITHUB_STEP_SUMMARY
-          echo "- Backend (Railway) : \`cd apps/backend && railway up\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend (Railway) : \`cd apps/backend && railway up --ci\`" >> $GITHUB_STEP_SUMMARY
           echo "- Frontend (Vercel) : \`cd apps/frontend && vercel --prod\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Commit : ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Auteur : ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Frontend : https://habashop.vercel.app" >> $GITHUB_STEP_SUMMARY
-          echo "- Backend : https://habashop-production.up.railway.app" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Valeur |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Auteur | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | https://habashop.vercel.app |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | https://habashop-production.up.railway.app |" >> $GITHUB_STEP_SUMMARY

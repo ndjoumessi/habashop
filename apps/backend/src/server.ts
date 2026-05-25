@@ -108,21 +108,44 @@ async function start() {
   }))
 
   app.get('/api/health-extended', async (_request, reply) => {
+    const start = Date.now()
+    let dbStatus = 'ok'
+    let dbLatency = 0
+    let tables: { employeeBonus: number; salaryHistory: number; employee: number } | null = null
     try {
+      const t0 = Date.now()
+      await prisma.$queryRaw`SELECT 1`
+      dbLatency = Date.now() - t0
       const [bonusCount, salaryCount, employeeCount] = await Promise.all([
         prisma.employeeBonus.count(),
         prisma.salaryHistory.count(),
         prisma.employee.count(),
       ])
-      return reply.send({
-        status: 'ok',
-        tables: { employeeBonus: bonusCount, salaryHistory: salaryCount, employee: employeeCount },
-        routes: ['/api/bonuses', '/api/salary-history'],
-        buildTime: new Date().toISOString(),
-      })
-    } catch (err: any) {
-      return reply.code(500).send({ status: 'error', error: err.message })
+      tables = { employeeBonus: bonusCount, salaryHistory: salaryCount, employee: employeeCount }
+    } catch {
+      dbStatus = 'error'
     }
+    const mem = process.memoryUsage()
+    return reply.send({
+      status: dbStatus === 'ok' ? 'ok' : 'degraded',
+      version: '2.3.0',
+      uptime: Math.round(process.uptime()),
+      latency: Date.now() - start,
+      services: {
+        database: { status: dbStatus, latency: dbLatency },
+        redis:    { status: process.env.REDIS_URL ? 'configured' : 'not-configured' },
+        whatsapp: { status: process.env.TWILIO_ACCOUNT_SID ? 'configured' : 'not-configured' },
+        ai:       { status: process.env.ANTHROPIC_API_KEY ? 'configured' : 'not-configured' },
+      },
+      memory: {
+        used:  Math.round(mem.heapUsed / 1024 / 1024),
+        total: Math.round(mem.heapTotal / 1024 / 1024),
+        unit:  'MB',
+      },
+      tables,
+      routes: ['/api/bonuses', '/api/salary-history'],
+      buildTime: new Date().toISOString(),
+    })
   })
 
   // ─── ROUTES ─────────────────────────────
@@ -158,6 +181,18 @@ async function start() {
     process.exit(1)
   }
 }
+
+// Filets de sécurité process : on logge toujours ; en prod on ne crashe pas
+// sur une promesse rejetée non gérée (Railway garde le service en ligne).
+process.on('unhandledRejection', (reason) => {
+  console.error('❌ Unhandled Rejection:', reason)
+  if (process.env.NODE_ENV === 'production') return
+  process.exit(1)
+})
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error)
+  process.exit(1)
+})
 
 // Arrêt propre
 const shutdown = async () => {

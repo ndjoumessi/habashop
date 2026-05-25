@@ -11,7 +11,10 @@
     "db:seed": "ts-node --transpile-only prisma/seed.ts",
     "db:studio": "prisma studio",
     "lint": "eslint src --ext .ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",

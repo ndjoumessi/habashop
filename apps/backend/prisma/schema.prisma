@@ -67,6 +67,7 @@ model PlanRequest {
 
   @@index([tenantId])
   @@index([status])
+  @@index([tenantId, status])
 }
 
 model User {
@@ -121,6 +122,7 @@ model Product {
 
   @@index([tenantId])
   @@index([tenantId, isActive])
+  @@index([tenantId, barcode])
 }
 
 model Sale {
@@ -142,6 +144,7 @@ model Sale {
 
   @@index([tenantId])
   @@index([tenantId, createdAt])
+  @@index([tenantId, paymentMode])
 }
 
 model SaleItem {
@@ -175,6 +178,8 @@ model Customer {
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
+  @@index([tenantId, totalRevenue])
+  @@index([tenantId, type])
 }
 
 model Supplier {
@@ -218,6 +223,7 @@ model PurchaseOrder {
 
   @@index([tenantId])
   @@index([tenantId, status])
+  @@index([tenantId, createdAt])
 }
 
 model PurchaseOrderItem {
@@ -259,6 +265,8 @@ model Employee {
   salaryHistory SalaryHistory[]
 
   @@index([tenantId])
+  @@index([tenantId, dept])
+  @@index([tenantId, isActive])
 }
 
 model EmployeeBonus {
@@ -312,6 +320,7 @@ model Expense {
 
   @@index([tenantId])
   @@index([tenantId, date])
+  @@index([tenantId, category])
 }
 
 model AuditLog {
@@ -330,4 +339,5 @@ model AuditLog {
 
   @@index([tenantId])
   @@index([tenantId, createdAt])
+  @@index([tenantId, action])
 }
