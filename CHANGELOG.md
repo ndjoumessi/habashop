@@ -3,7 +3,7 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
-## [2.3.6] — 2026-05-25 — SEO Afrique francophone (Lighthouse SEO 100/100)
+## [2.3.7] — 2026-05-25 — SEO Afrique francophone (Lighthouse SEO 100/100)
 
 > Déployé et **vérifié en production** (frontend Vercel). **Lighthouse SEO 100/100** (tous audits verts) ; fichiers statiques servis en 200.
 
@@ -26,6 +26,22 @@ Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités c
 - **FAQ FR + EN alignées** sur le JSON-LD (offline, modes de paiement, coût, disponibilité pays, import CSV/Excel). FAQ ES/IT laissées telles quelles (FR = cible SEO et langue du JSON-LD).
 
 > Vérifié : `tsc` clean, 43/43 tests, build OK, smoke Playwright (H1 + section pays + FAQ rendent, 0 erreur JS), `curl` prod 200 sur sitemap/robots/og-image, **Lighthouse SEO 100/100**.
+
+## [2.3.6] — 2026-05-25 — Architecture frontend : découpe de `Settings.tsx`
+
+> Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
+
+### ♻️ Découpe de `Settings.tsx`
+- `Settings.tsx` : **656 → 78 lignes** (la page déléguait déjà à 6 fonctions `Section*` sans props → extraction à l'identique, **zéro threading de props**).
+- JSX extrait dans `src/components/settings/` :
+  - **`SectionShop.tsx`** — infos boutique + KPIs (fetch tenant/dashboard/customers).
+  - **`SectionPOS.tsx`** — config POS (toggles, TVA, fond de caisse).
+  - **`SectionLang.tsx`** — langue / devise / thème + couleur d'accent.
+  - **`SectionNotif.tsx`** — toggles de notifications.
+  - **`SectionSecurity.tsx`** — verrou paramètres, session JWT.
+  - **`SectionDocs.tsx`** — export/import config, reset.
+- **`settingsShared.tsx`** — primitives partagées (`L4`, `makeI`, `pick`, `panel`, `Switch`, `ToggleCard`, `Head`). Le const `SECTIONS` + la navigation restent dans `Settings.tsx`.
+- **Vérifié** : `tsc` clean (du premier coup), **43/43** tests, build OK (chunk Settings 10,8 KB gzip). Smoke Playwright (les 6 sections rendent, sans action destructive) sur preview local puis **prod live** — après correction d'un sélecteur de test (le nom accessible des boutons de nav inclut leur description, et « Notifications »/« Documents » entraient en collision avec la cloche du header → ciblage par description unique).
 
 ## [2.3.5] — 2026-05-25 — Loading states généralisés + composant Skeleton
 
