@@ -21,11 +21,11 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
           _sum: { total: true },
           _count: true,
         }),
-        prisma.product.count({ where: { tenantId, isActive: true } }),
+        prisma.product.count({ where: { tenantId, isActive: true, deletedAt: null } }),
         prisma.employee.count({ where: { tenantId, isActive: true } }),
         prisma.purchaseOrder.count({ where: { tenantId, status: 'SENT' } }),
         prisma.product.findMany({
-          where: { tenantId, isActive: true },
+          where: { tenantId, isActive: true, deletedAt: null },
           select: { stockQty: true, stockMin: true },
         }),
       ])
@@ -79,8 +79,8 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
     const [salesDay, salesMonth, customers, products] = await Promise.all([
       prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
       prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
-      prisma.customer.count({ where: { tenantId } }),
-      prisma.product.count({ where: { tenantId, isActive: true } }),
+      prisma.customer.count({ where: { tenantId, deletedAt: null } }),
+      prisma.product.count({ where: { tenantId, isActive: true, deletedAt: null } }),
     ])
     return {
       caToday:  salesDay._sum.total   ?? 0,
@@ -100,8 +100,8 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
     const [salesDay, salesMonth, customers, products, salesByDay, salesByPayment] = await Promise.all([
       prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
       prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
-      prisma.customer.count({ where: { tenantId } }),
-      prisma.product.count({ where: { tenantId, isActive: true } }),
+      prisma.customer.count({ where: { tenantId, deletedAt: null } }),
+      prisma.product.count({ where: { tenantId, isActive: true, deletedAt: null } }),
       prisma.sale.findMany({ where: { tenantId, createdAt: { gte: last30d } }, select: { createdAt: true, total: true }, orderBy: { createdAt: 'asc' } }),
       prisma.sale.groupBy({ by: ['paymentMode'], where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
     ])

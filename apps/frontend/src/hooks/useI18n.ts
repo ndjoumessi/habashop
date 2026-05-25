@@ -3,6 +3,11 @@ import { useCallback } from 'react'
 
 export type Lang = 'fr' | 'en' | 'es' | 'it'
 
+/**
+ * Hook d'internationalisation : `i(fr,en,es,it)` choisit la chaîne selon la langue
+ * courante du store, plus `formatDate`/`formatDateTime` localisés (FR/EN/ES/IT).
+ * @returns { lang, i, formatDate, formatDateTime }
+ */
 export function useI18n() {
   const lang = useAppStore(s => s.lang) as Lang
 

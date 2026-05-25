@@ -5,7 +5,7 @@ import { authenticate } from '../middleware/authenticate'
 export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/products', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    return prisma.product.findMany({ where: { tenantId }, orderBy: { name: 'asc' } })
+    return prisma.product.findMany({ where: { tenantId, deletedAt: null }, orderBy: { name: 'asc' } })
   })
 
   app.post('/api/products', { preHandler: authenticate }, async (request, reply) => {
@@ -20,6 +20,15 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
 
     if (!name?.trim()) {
       return reply.code(400).send({ error: 'Nom requis' })
+    }
+    if (sellPrice !== undefined && sellPrice < 0) {
+      return reply.code(400).send({ error: 'Le prix de vente ne peut pas être négatif' })
+    }
+    if (buyPrice !== undefined && buyPrice < 0) {
+      return reply.code(400).send({ error: "Le prix d'achat ne peut pas être négatif" })
+    }
+    if (stockQty !== undefined && stockQty < 0) {
+      return reply.code(400).send({ error: 'Le stock ne peut pas être négatif' })
     }
 
     try {
@@ -61,16 +70,35 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     return prisma.product.update({ where: { id, tenantId }, data: request.body as any })
   })
 
-  app.delete('/api/products/:id', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+  app.delete('/api/products/:id', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId, userId } = request.user
     const { id } = request.params as any
-    await prisma.product.delete({ where: { id, tenantId } })
+    const product = await prisma.product.findFirst({ where: { id, tenantId, deletedAt: null } })
+    if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
+    await prisma.product.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete
+    await prisma.auditLog.create({
+      data: { tenantId, userId, module: 'products', action: 'DELETE_PRODUCT', description: JSON.stringify({ id, name: product.name }) },
+    }).catch(() => {})
     return { success: true }
+  })
+
+  // Restaurer un produit soft-supprimé (ADMIN / SUPER_ADMIN)
+  app.patch('/api/products/:id/restore', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId, userId, role } = request.user
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
+    const { id } = request.params as any
+    const product = await prisma.product.findFirst({ where: { id, tenantId } })
+    if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
+    const restored = await prisma.product.update({ where: { id }, data: { deletedAt: null } })
+    await prisma.auditLog.create({
+      data: { tenantId, userId, module: 'products', action: 'RESTORE_PRODUCT', description: JSON.stringify({ id, name: product.name }) },
+    }).catch(() => {})
+    return restored
   })
 
   app.get('/api/products/low-stock', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const products = await prisma.product.findMany({ where: { tenantId, isActive: true } })
+    const products = await prisma.product.findMany({ where: { tenantId, isActive: true, deletedAt: null } })
     return products.filter((p: any) => p.stockQty <= p.stockMin)
   })
 }

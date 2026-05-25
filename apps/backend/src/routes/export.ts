@@ -14,17 +14,17 @@ export async function exportRoutes(app: FastifyInstance): Promise<void> {
 
     switch (resource) {
       case 'products':
-        data = await prisma.product.findMany({ where: { tenantId, isActive: true }, orderBy: { name: 'asc' } })
+        data = await prisma.product.findMany({ where: { tenantId, isActive: true, deletedAt: null }, orderBy: { name: 'asc' } })
         filename = `stock-${new Date().toISOString().slice(0,10)}.csv`
         headers = lang==='fr' ? ['Nom','Catégorie','Stock','Min','Prix achat','Prix vente'] : ['Name','Category','Stock','Min','Buy price','Sell price']
         break
       case 'customers':
-        data = await prisma.customer.findMany({ where: { tenantId }, orderBy: { createdAt: 'desc' } })
+        data = await prisma.customer.findMany({ where: { tenantId, deletedAt: null }, orderBy: { createdAt: 'desc' } })
         filename = `clients-${new Date().toISOString().slice(0,10)}.csv`
         headers = lang==='fr' ? ['Nom','Téléphone','Email','Type','CA Total','Points'] : ['Name','Phone','Email','Type','Revenue','Points']
         break
       case 'suppliers':
-        data = await prisma.supplier.findMany({ where: { tenantId }, orderBy: { name: 'asc' } })
+        data = await prisma.supplier.findMany({ where: { tenantId, deletedAt: null }, orderBy: { name: 'asc' } })
         filename = `fournisseurs-${new Date().toISOString().slice(0,10)}.csv`
         headers = lang==='fr' ? ['Nom','Spécialité','Téléphone','Email','Rating','Délai'] : ['Name','Specialty','Phone','Email','Rating','Lead time']
         break

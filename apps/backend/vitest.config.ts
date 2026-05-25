@@ -9,5 +9,13 @@ export default defineConfig({
     environment: 'node',
     include: ['src/tests/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', 'src/tests/integration.test.ts'],
+    // Couverture rapportée (sans seuil bloquant) : les routes sont surtout
+    // exercées par les tests d'intégration (API prod distante, non instrumentée).
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      include: ['src/routes/**', 'src/middleware/**'],
+      exclude: ['src/tests/**', 'src/db.ts'],
+    },
   },
 })

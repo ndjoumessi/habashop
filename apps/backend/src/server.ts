@@ -5,6 +5,7 @@ import jwt from '@fastify/jwt'
 import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
 import Redis from 'ioredis'
+import * as Sentry from '@sentry/node'
 import { prisma } from './db'
 
 // Routes
@@ -39,6 +40,31 @@ const OPTIONAL_ENV_VARS = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'ANTHROPIC
 OPTIONAL_ENV_VARS.forEach(v => {
   if (!process.env[v]) console.warn(`⚠️  Variable optionnelle manquante: ${v} — fonctionnalité associée désactivée`)
 })
+
+// ─── Sentry (inerte sans SENTRY_DSN) ───
+if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: 'production',
+    release: 'habashop@2.3.0',
+    tracesSampleRate: 0.05,
+  })
+  console.log('📡 Sentry initialisé')
+}
+
+// ─── Alertes webhook Discord/Slack (inerte sans ALERT_WEBHOOK_URL) ───
+const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK_URL
+async function sendAlert(title: string, message: string, level: 'info' | 'warning' | 'error' = 'error'): Promise<void> {
+  if (!ALERT_WEBHOOK) return
+  const colors = { info: 3447003, warning: 16776960, error: 16711680 }
+  try {
+    await fetch(ALERT_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [{ title, description: message, color: colors[level], timestamp: new Date().toISOString(), footer: { text: 'HabaShop Production' } }] }),
+    })
+  } catch { /* ne pas crasher si l'alerte échoue */ }
+}
 
 async function start() {
   const app = Fastify({ logger: true, trustProxy: true }) // derrière le proxy Railway : request.ip = vrai client (X-Forwarded-For) → clé rate-limit stable
@@ -91,12 +117,16 @@ async function start() {
   // Prisma P2025 = "record not found" → 404. Couvre les update/delete
   // scopés par tenant (where:{id, tenantId}) : un accès cross-tenant ne
   // matche aucun enregistrement et doit renvoyer 404, pas 500.
-  app.setErrorHandler((error: any, _request, reply) => {
+  app.setErrorHandler((error: any, request, reply) => {
     if (error?.code === 'P2025') {
       return reply.code(404).send({ error: 'Ressource introuvable' })
     }
+    const status = error?.statusCode ?? 500
+    if (status >= 500) {
+      Sentry.captureException(error, { extra: { url: request.url, method: request.method, tenantId: (request as any).tenantId } })
+    }
     app.log.error(error)
-    return reply.code(error?.statusCode ?? 500).send({ error: error?.message ?? 'Erreur serveur' })
+    return reply.code(status).send({ error: error?.message ?? 'Erreur serveur' })
   })
 
   // ─── HEALTH CHECK ───────────────────────
@@ -186,11 +216,14 @@ async function start() {
 // sur une promesse rejetée non gérée (Railway garde le service en ligne).
 process.on('unhandledRejection', (reason) => {
   console.error('❌ Unhandled Rejection:', reason)
+  Sentry.captureException(reason)
   if (process.env.NODE_ENV === 'production') return
   process.exit(1)
 })
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', async (error) => {
   console.error('❌ Uncaught Exception:', error)
+  Sentry.captureException(error)
+  await sendAlert('❌ HabaShop — Crash', `Erreur non gérée: ${error.message}`, 'error')
   process.exit(1)
 })
 

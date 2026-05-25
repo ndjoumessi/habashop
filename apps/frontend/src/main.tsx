@@ -5,6 +5,47 @@ import { Toaster } from 'react-hot-toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import App from './App'
 import './index.css'
+import * as Sentry from '@sentry/react'
+
+// Sentry : actif uniquement si un DSN est fourni ET en build production (inerte sinon).
+const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined
+if (SENTRY_DSN && import.meta.env.PROD) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: 'production',
+    release: 'habashop@2.3.0',
+    tracesSampleRate: 0.1,
+    ignoreErrors: ['ResizeObserver loop', 'Non-Error promise rejection', 'NetworkError', 'Failed to fetch', 'Load failed'],
+    beforeSend(event) {
+      const msg = event.exception?.values?.[0]?.value
+      if (msg?.includes('CORS') || msg?.includes('NetworkError')) return null
+      return event
+    },
+  })
+}
+
+// ErrorBoundary Sentry si DSN présent, sinon passe-plat (aucune dépendance au runtime Sentry).
+const SentryBoundary = (SENTRY_DSN
+  ? Sentry.ErrorBoundary
+  : ({ children }: { children: React.ReactNode }) => <>{children}</>) as React.ComponentType<any>
+
+function ErrorFallback({ error, resetError }: { error: unknown; resetError: () => void }) {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#07070F', color: '#F0F0FF', fontFamily: 'sans-serif', gap: 16, padding: 24 }}>
+      <div style={{ fontSize: 48 }}>⚠️</div>
+      <h1 style={{ fontSize: 20, fontWeight: 700 }}>Une erreur est survenue</h1>
+      <p style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', textAlign: 'center', maxWidth: 400 }}>
+        {(error as Error)?.message ?? 'Erreur inconnue'}
+      </p>
+      <button onClick={resetError} style={{ padding: '10px 24px', borderRadius: 10, background: '#6C47FF', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+        Réessayer
+      </button>
+      <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 20px', borderRadius: 10, background: 'transparent', border: '1px solid rgba(255,255,255,.2)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontSize: 12 }}>
+        Retour à l'accueil
+      </button>
+    </div>
+  )
+}
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
@@ -27,7 +68,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <TooltipProvider>
-        <App />
+        <SentryBoundary fallback={ErrorFallback}>
+          <App />
+        </SentryBoundary>
       </TooltipProvider>
       <Toaster
         position="top-right"

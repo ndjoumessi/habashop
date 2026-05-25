@@ -7,7 +7,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/orders', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     return prisma.purchaseOrder.findMany({
-      where: { tenantId },
+      where: { tenantId, deletedAt: null },
       include: { items: true, supplier: true },
       orderBy: { createdAt: 'desc' },
     })
@@ -49,17 +49,31 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.delete('/api/orders/:id', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId, role } = request.user
+    const { tenantId, userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
       return reply.code(403).send({ error: 'Admin requis pour supprimer une commande' })
     }
     const { id } = request.params as any
-    const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, select: { id: true } })
+    const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId, deletedAt: null }, select: { id: true, ref: true } })
     if (!order) return reply.code(404).send({ error: 'Commande introuvable' })
-    await prisma.$transaction([
-      prisma.purchaseOrderItem.deleteMany({ where: { orderId: id } }),
-      prisma.purchaseOrder.delete({ where: { id } }),
-    ])
+    await prisma.purchaseOrder.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete (lignes conservées)
+    await prisma.auditLog.create({
+      data: { tenantId, userId, module: 'orders', action: 'DELETE_ORDER', description: JSON.stringify({ id, ref: order.ref }) },
+    }).catch(() => {})
     return reply.code(204).send()
+  })
+
+  // Restaurer une commande soft-supprimée (ADMIN / SUPER_ADMIN)
+  app.patch('/api/orders/:id/restore', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId, userId, role } = request.user
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
+    const { id } = request.params as any
+    const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, select: { id: true, ref: true } })
+    if (!order) return reply.code(404).send({ error: 'Commande introuvable' })
+    const restored = await prisma.purchaseOrder.update({ where: { id }, data: { deletedAt: null } })
+    await prisma.auditLog.create({
+      data: { tenantId, userId, module: 'orders', action: 'RESTORE_ORDER', description: JSON.stringify({ id, ref: order.ref }) },
+    }).catch(() => {})
+    return restored
   })
 }

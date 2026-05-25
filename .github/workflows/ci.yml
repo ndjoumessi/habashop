@@ -152,3 +152,24 @@ jobs:
           echo "| Auteur | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend | https://habashop.vercel.app |" >> $GITHUB_STEP_SUMMARY
           echo "| Backend | https://habashop-production.up.railway.app |" >> $GITHUB_STEP_SUMMARY
+
+  # ─── Notification d'échec (Discord, optionnel) ──
+  notify-failure:
+    name: Notify on failure
+    runs-on: ubuntu-latest
+    needs: [unit-tests-backend, unit-tests-frontend]
+    if: failure()
+    steps:
+      - name: Alerte Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then echo "DISCORD_WEBHOOK absent — skip"; exit 0; fi
+          curl -X POST "$DISCORD_WEBHOOK" -H "Content-Type: application/json" -d '{
+            "embeds": [{
+              "title": "❌ HabaShop CI Failed",
+              "description": "Branch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}",
+              "color": 16711680,
+              "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }]
+          }'

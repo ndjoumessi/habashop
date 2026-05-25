@@ -16,9 +16,16 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
-  app.post('/api/sales', { preHandler: authenticate }, async (request) => {
+  app.post('/api/sales', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId } = request.user
     const { items, paymentMode, total, discount } = request.body as any
+
+    if (!items?.length) {
+      return reply.code(400).send({ error: 'Une vente doit contenir au moins un article' })
+    }
+    if (total < 0) {
+      return reply.code(400).send({ error: 'Le total ne peut pas être négatif' })
+    }
 
     const newSale = await prisma.$transaction(async (tx: any) => {
       const newSale = await tx.sale.create({

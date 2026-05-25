@@ -64,5 +64,12 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'], // exclut e2e/*.spec.ts (Playwright)
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/hooks/**', 'src/stores/**'],
+      exclude: ['src/tests/**'],
+    },
   },
 })

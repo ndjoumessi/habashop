@@ -13,7 +13,7 @@ export async function aiRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       const [products, sales, expenses, employees] = await Promise.all([
-        prisma.product.findMany({ where: { tenantId, isActive: true }, take: 50 }),
+        prisma.product.findMany({ where: { tenantId, isActive: true, deletedAt: null }, take: 50 }),
         prisma.sale.findMany({
           where: { tenantId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
           include: { items: { include: { product: true } } },
@@ -155,7 +155,7 @@ En ${langLabel}, analyse :
 
     try {
       const [products, sales, employees, expenses] = await Promise.all([
-        prisma.product.findMany({ where: { tenantId, isActive: true }, take: 30 }),
+        prisma.product.findMany({ where: { tenantId, isActive: true, deletedAt: null }, take: 30 }),
         prisma.sale.findMany({
           where: { tenantId, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
           take: 50,

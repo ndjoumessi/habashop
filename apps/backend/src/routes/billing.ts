@@ -10,13 +10,20 @@ const PLAN_PRICES: Record<string, Record<string, number>> = {
 const VALID_PAYMENTS = ['wave', 'orange_money', 'mtn_money', 'virement', 'card']
 
 export async function billingRoutes(app: FastifyInstance): Promise<void> {
-  // Le tenant demande un upgrade de plan
+  /**
+   * Crée une demande d'upgrade de plan (validée ensuite manuellement par le super-admin).
+   * @route POST /api/billing/request-plan — auth requise, 3 requêtes/heure.
+   * @returns 201 demande créée · 400 plan/période/méthode invalide · 429 quota dépassé.
+   */
   app.post('/api/billing/request-plan', { preHandler: authenticate, config: { rateLimit: { max: 3, timeWindow: '1 hour' } } }, async (request, reply) => {
     const { tenantId, userId } = request.user
     const { plan, period, paymentMethod, paymentRef, notes } = (request.body ?? {}) as BillingBody
 
     if (!['pro', 'enterprise'].includes(plan)) {
       return reply.code(400).send({ error: 'Plan invalide. Choisissez pro ou enterprise.' })
+    }
+    if (!['monthly', 'yearly'].includes(period)) {
+      return reply.code(400).send({ error: 'Période invalide. Choisissez monthly ou yearly.' })
     }
     if (!VALID_PAYMENTS.includes(paymentMethod)) {
       return reply.code(400).send({ error: 'Méthode de paiement invalide.' })

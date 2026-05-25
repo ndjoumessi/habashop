@@ -116,6 +116,7 @@ model Product {
   emoji              String    @default("📦")
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime? // null = actif (soft delete ; distinct de isActive)
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id])
   saleItems SaleItem[]
@@ -123,6 +124,7 @@ model Product {
   @@index([tenantId])
   @@index([tenantId, isActive])
   @@index([tenantId, barcode])
+  @@index([tenantId, deletedAt])
 }
 
 model Sale {
@@ -174,12 +176,14 @@ model Customer {
   totalRevenue  Float    @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  deletedAt     DateTime? // null = actif (soft delete)
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
   @@index([tenantId, totalRevenue])
   @@index([tenantId, type])
+  @@index([tenantId, deletedAt])
 }
 
 model Supplier {
@@ -196,11 +200,13 @@ model Supplier {
   notes      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  deletedAt  DateTime? // null = actif (soft delete)
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
   purchaseOrders PurchaseOrder[]
 
   @@index([tenantId])
+  @@index([tenantId, deletedAt])
 }
 
 model PurchaseOrder {
@@ -215,6 +221,7 @@ model PurchaseOrder {
   notes       String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // null = actif (soft delete)
 
   tenant    Tenant              @relation(fields: [tenantId], references: [id])
   supplier  Supplier            @relation(fields: [supplierId], references: [id])
@@ -224,6 +231,7 @@ model PurchaseOrder {
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
+  @@index([tenantId, deletedAt])
 }
 
 model PurchaseOrderItem {

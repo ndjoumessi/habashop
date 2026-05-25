@@ -8,7 +8,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     const { tenantId } = request.user
     try {
       return await prisma.customer.findMany({
-        where: { tenantId },
+        where: { tenantId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
       })
     } catch (err: any) {
@@ -73,10 +73,29 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.delete('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const { tenantId, userId } = request.user
     const { id } = request.params as any
-    await prisma.customer.delete({ where: { id, tenantId } }) // P2025 (cross-tenant/introuvable) → 404
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+    await prisma.customer.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete
+    await prisma.auditLog.create({
+      data: { tenantId, userId, module: 'customers', action: 'DELETE_CUSTOMER', description: JSON.stringify({ id, name: customer.name }) },
+    }).catch(() => {})
     return reply.code(204).send()
+  })
+
+  // Restaurer un client soft-supprimé (ADMIN / SUPER_ADMIN)
+  app.patch('/api/customers/:id/restore', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId, userId, role } = request.user
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
+    const { id } = request.params as any
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+    const restored = await prisma.customer.update({ where: { id }, data: { deletedAt: null } })
+    await prisma.auditLog.create({
+      data: { tenantId, userId, module: 'customers', action: 'RESTORE_CUSTOMER', description: JSON.stringify({ id, name: customer.name }) },
+    }).catch(() => {})
+    return restored
   })
 
   // ─── LOYALTY ──────────────────────────

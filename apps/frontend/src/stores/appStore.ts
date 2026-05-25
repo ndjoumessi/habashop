@@ -42,7 +42,11 @@ export function convertAmount(amount: number, fromCurrency: string, toCurrency: 
 }
 export const convertCurrency = convertAmount // backward-compat
 
-// Convertit un montant XOF vers la devise cible
+/**
+ * Convertit un montant stocké en XOF (devise pivot) vers la devise d'affichage.
+ * @param amountXOF montant en francs CFA · @param toCurrency code devise cible (EUR/USD/…)
+ * @returns montant converti dans la devise cible
+ */
 export function convertFromXOF(amountXOF: number, toCurrency: string): number {
   return convertAmount(amountXOF, 'XOF', toCurrency)
 }

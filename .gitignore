@@ -32,3 +32,9 @@ apps/frontend/.vite/
 # TypeScript
 *.tsbuildinfo
 .vercel
+
+# Test coverage & E2E artifacts
+coverage/
+playwright-report/
+test-results/
+.playwright/
