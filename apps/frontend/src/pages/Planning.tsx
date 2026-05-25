@@ -16,17 +16,11 @@ const SHIFT_TYPES = {
 
 type ShiftType = keyof typeof SHIFT_TYPES
 
-const STATIC_EMPLOYEES = [
-  { id:'1', name:'Aminata Diallo',    role:'Caissière',    dept:'Ventes',    avatar:'AD', color:'#6C47FF', isActive:true },
-  { id:'2', name:'Moussa Traoré',     role:'Magasinier',   dept:'Stock',     avatar:'MT', color:'#00D084', isActive:true },
-  { id:'3', name:'Fatou Sow',         role:'Comptable',    dept:'Finance',   avatar:'FS', color:'#FF9500', isActive:true },
-  { id:'4', name:'Ibrahim Koné',      role:'Livreur',      dept:'Logistique',avatar:'IK', color:'#00B8FF', isActive:true },
-  { id:'5', name:'Fatoumata Ndiaye',  role:'Responsable',  dept:'Direction', avatar:'FN', color:'#F472B6', isActive:true },
-]
+interface PlanningEmployee { id: string; name: string; role: string; dept: string; avatar: string; color: string; isActive: boolean }
 
 export default function Planning() {
   const { lang } = useAppStore()
-  const [employees, setEmployees] = useState(STATIC_EMPLOYEES)
+  const [employees, setEmployees] = useState<PlanningEmployee[]>([])
   const [loading, setLoading] = useState(true)
   const [activeShift, setActiveShift] = useState<ShiftType>('full')
   const [shifts, setShifts] = useState<Record<string,Record<number,ShiftType>>>(() => {

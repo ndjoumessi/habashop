@@ -26,66 +26,6 @@ interface Supplier {
   orders: SupplierOrder[]; notes: string
 }
 
-const SUPPLIERS_INIT: Supplier[] = [
-  {
-    id: '1', name: 'SONACO', categories: ['Corps gras'], phone: '+221 33 123 45 67',
-    email: 'commandes@sonaco.sn', address: 'Zone Industrielle, Dakar', contact: 'M. Diallo',
-    leadTime: 3, rating: 4, status: 'Actif',
-    orders: [
-      { ref: 'CMD-2026-089', date: '2026-05-10', total: 1250000, status: 'EN TRANSIT' },
-      { ref: 'CMD-2026-075', date: '2026-04-20', total: 890000,  status: 'REÇUE' },
-    ],
-    notes: 'Fournisseur principal huiles alimentaires',
-  },
-  {
-    id: '2', name: 'SENRIZ', categories: ['Céréales'], phone: '+221 33 234 56 78',
-    email: 'info@senriz.sn', address: 'Route de Rufisque, Dakar', contact: 'Mme Ndiaye',
-    leadTime: 5, rating: 5, status: 'Actif',
-    orders: [
-      { ref: 'CMD-2026-088', date: '2026-05-08', total: 980000, status: 'REÇUE' },
-      { ref: 'CMD-2026-070', date: '2026-04-10', total: 760000, status: 'REÇUE' },
-    ],
-    notes: 'Leader riz local parfumé',
-  },
-  {
-    id: '3', name: 'CSS', categories: ['Épicerie'], phone: '+221 33 345 67 89',
-    email: 'ventes@css.sn', address: 'Richard-Toll, Saint-Louis', contact: 'M. Mbaye',
-    leadTime: 7, rating: 4, status: 'Actif',
-    orders: [
-      { ref: 'CMD-2026-087', date: '2026-05-06', total: 560000, status: 'CONFIRMÉE' },
-    ],
-    notes: 'Compagnie Sucrière Sénégalaise',
-  },
-  {
-    id: '4', name: 'UNILEVER', categories: ['Hygiène', 'Corps gras'], phone: '+221 33 456 78 90',
-    email: 'b2b@unilever.sn', address: 'Zone Franche, Dakar', contact: 'Mme Sow',
-    leadTime: 10, rating: 3, status: 'Pause',
-    orders: [
-      { ref: 'CMD-2026-086', date: '2026-05-03', total: 325000, status: 'ENVOYÉE' },
-    ],
-    notes: 'Délais parfois longs, qualité constante',
-  },
-  {
-    id: '5', name: 'NESTLÉ', categories: ['Laitiers'], phone: '+221 33 567 89 01',
-    email: 'pro@nestle.sn', address: 'Plateau, Dakar', contact: 'M. Fall',
-    leadTime: 5, rating: 5, status: 'Actif',
-    orders: [
-      { ref: 'CMD-2026-085', date: '2026-04-28', total: 440000, status: 'REÇUE' },
-      { ref: 'CMD-2026-065', date: '2026-03-15', total: 510000, status: 'REÇUE' },
-    ],
-    notes: 'Excellent service, prix négociés',
-  },
-  {
-    id: '6', name: 'TOMAPOR', categories: ['Conserves'], phone: '+221 33 678 90 12',
-    email: 'export@tomapor.sn', address: 'Pikine, Dakar', contact: 'M. Thiam',
-    leadTime: 4, rating: 3, status: 'Inactif',
-    orders: [
-      { ref: 'CMD-2026-084', date: '2026-04-25', total: 168000, status: 'BROUILLON' },
-    ],
-    notes: 'Contrat en renégociation',
-  },
-]
-
 const STATUS_CFG: Record<SupplierStatus, { cls: string }> = {
   Actif:   { cls: 'badge-green' },
   Pause:   { cls: 'badge-amber' },
@@ -136,7 +76,7 @@ export default function Suppliers() {
   const { i } = useI18n()
   const statusLabel = (s: SupplierStatus) => STATUS_LABELS[s]?.[lang as L4] ?? s
 
-  const [suppliers, setSuppliers] = useState(SUPPLIERS_INIT)
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

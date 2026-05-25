@@ -18,7 +18,7 @@ import CustomerMap from '@/components/customers/CustomerMap'
 import CustomersList from '@/components/customers/CustomersList'
 import CustomersStats from '@/components/customers/CustomersStats'
 import CustomersModals from '@/components/customers/CustomersModals'
-import { type ClientType, type Customer, CUSTOMERS_INIT, mapApiCustomer, useGoogleMaps, GMAPS_KEY } from '@/components/customers/customersShared'
+import { type ClientType, type Customer, mapApiCustomer, useGoogleMaps, GMAPS_KEY } from '@/components/customers/customersShared'
 
 export default function Customers() {
   const { lang } = useConfig()
@@ -27,7 +27,7 @@ export default function Customers() {
   const fmt = useFormatAmount()
   const abbr = useAbbrevAmount()
   const navigate = useNavigate()
-  const [customers, setCustomers] = useState(CUSTOMERS_INIT)
+  const [customers, setCustomers] = useState<Customer[]>([])
 
   useEffect(() => {
     customersApi.list()

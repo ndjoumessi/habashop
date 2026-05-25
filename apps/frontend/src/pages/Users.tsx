@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useConfig, t } from '@/stores/appStore'
+import { tenantApi } from '@/lib/api'
 import {
   Search, Plus, Shield, X, Mail, Lock, Eye, EyeOff,
   Crown, Target, ShoppingCart, Archive, Calculator, UserCog,
@@ -38,14 +39,21 @@ const AVATAR_COLORS: Record<Role, string> = {
   HR:         '#00B8FF',
 }
 
-const USERS_INIT: User[] = [
-  { id:'1', name:'Nelson Djoumessi', email:'admin@habashop.com',    role:'ADMIN',      active:true,  twoFA:true,  lastLogin:"Aujourd'hui 14:02", createdAt:'2026-01-01' },
-  { id:'2', name:'Marie Koné',       email:'marie@habashop.com',    role:'MANAGER',    active:true,  twoFA:true,  lastLogin:"Aujourd'hui 09:15", createdAt:'2026-01-15' },
-  { id:'3', name:'Oumar Diallo',     email:'oumar@habashop.com',    role:'CASHIER',    active:true,  twoFA:false, lastLogin:'Hier 18:45',         createdAt:'2026-02-01' },
-  { id:'4', name:'Fatou Ndiaye',     email:'fatou@habashop.com',    role:'CASHIER',    active:true,  twoFA:false, lastLogin:"Aujourd'hui 11:30", createdAt:'2026-02-10' },
-  { id:'5', name:'Ibrahima Sow',     email:'ibrahima@habashop.com', role:'ACCOUNTANT', active:true,  twoFA:true,  lastLogin:'Il y a 2 jours',     createdAt:'2026-03-01' },
-  { id:'6', name:'Aminata Traoré',   email:'aminata@habashop.com',  role:'HR',         active:false, twoFA:false, lastLogin:'Il y a 1 semaine',   createdAt:'2026-03-15' },
-]
+const VALID_ROLES: Role[] = ['ADMIN', 'MANAGER', 'CASHIER', 'ACCOUNTANT', 'HR']
+
+function mapApiUser(u: any): User {
+  const role = (VALID_ROLES.includes(u.role) ? u.role : 'CASHIER') as Role
+  return {
+    id: String(u.id),
+    name: u.name ?? u.email?.split('@')[0] ?? 'Utilisateur',
+    email: u.email ?? '',
+    role,
+    active: u.active ?? u.isActive ?? true,
+    twoFA: u.twoFA ?? false,
+    lastLogin: u.lastLogin ?? '—',
+    createdAt: (u.createdAt ?? '').split('T')[0] ?? '',
+  }
+}
 
 function initials(name: string) {
   return name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase()
@@ -58,8 +66,15 @@ function isOnlineNow(u: User) {
 export default function Users() {
   const { lang } = useConfig()
   void lang
-  const [users, setUsers]           = useState<User[]>(USERS_INIT)
+  const [users, setUsers]           = useState<User[]>([])
   const [search, setSearch]         = useState('')
+
+  useEffect(() => {
+    tenantApi.users()
+      .then((data: any[]) => { if (Array.isArray(data)) setUsers(data.map(mapApiUser)) })
+      .catch(() => {})
+  }, [])
+
   const [roleFilter, setRoleFilter] = useState<Role | ''>('')
   const [showModal, setShowModal]   = useState(false)
   const [showPerms, setShowPerms]   = useState<Role | null>(null)

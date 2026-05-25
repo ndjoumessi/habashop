@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, useAppStore, formatCurrency, convertCurrency, t } from '@/stores/appStore'
 import { Download, Eye, Check, Zap, DollarSign, TrendingDown, FileText, CheckCircle, X, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { employeesApi } from '@/lib/api'
+import EmptyState from '@/components/ui/EmptyState'
 import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 
 type PayStatus = 'PAYÉ' | 'EN ATTENTE' | 'SUSPENDU' | 'GÉNÉRÉ'
@@ -12,32 +15,14 @@ interface PayRecord {
   absences: number; status: PayStatus; paidAt: string | null; month: string
 }
 
-const PAYROLL_INIT: PayRecord[] = [
-  { id:1, employee:'Marie Bakayoko',   avatar:'MB', color:'#6C3FD6', role:'Caissière',
-    baseSalary:350000, bonus:25000,  overtime:18000, deductions:35000, absences:1,
-    status:'PAYÉ',       paidAt:'30/04/2026', month:'Avril 2026' },
-  { id:2, employee:'Kofi Diallo',      avatar:'KD', color:'#F59E0B', role:'Magasinier',
-    baseSalary:420000, bonus:0,      overtime:42000, deductions:42000, absences:0,
-    status:'PAYÉ',       paidAt:'30/04/2026', month:'Avril 2026' },
-  { id:3, employee:'Aminata Touré',    avatar:'AT', color:'#10B981', role:'Comptable',
-    baseSalary:280000, bonus:15000,  overtime:0,     deductions:28000, absences:2,
-    status:'EN ATTENTE', paidAt:null,         month:'Mai 2026'   },
-  { id:4, employee:'Seydou Koné',      avatar:'SK', color:'#EF4444', role:'Caissier',
-    baseSalary:310000, bonus:20000,  overtime:0,     deductions:31000, absences:0,
-    status:'EN ATTENTE', paidAt:null,         month:'Mai 2026'   },
-  { id:5, employee:'Fatoumata Ndiaye', avatar:'FN', color:'#3B82F6', role:'Responsable',
-    baseSalary:480000, bonus:50000,  overtime:0,     deductions:53000, absences:0,
-    status:'EN ATTENTE', paidAt:null,         month:'Mai 2026'   },
-  { id:6, employee:'Ibrahim Sow',      avatar:'IS', color:'#8B5CF6', role:'Livreur',
-    baseSalary:220000, bonus:0,      overtime:0,     deductions:22000, absences:5,
-    status:'SUSPENDU',   paidAt:null,         month:'Mai 2026'   },
-]
-
 const MONTHS = [
   'Janvier 2026','Février 2026','Mars 2026','Avril 2026','Mai 2026',
   'Juin 2026','Juillet 2026','Août 2026','Septembre 2026','Octobre 2026',
   'Novembre 2026','Décembre 2026',
 ]
+
+const PAY_COLORS = ['#6C3FD6','#F59E0B','#10B981','#EF4444','#3B82F6','#8B5CF6','#EC4899','#F472B6']
+const currentMonthLabel = MONTHS[new Date().getMonth()] ?? MONTHS[0]
 
 function printBulletin(bulletin: PayRecord) {
   const { currency } = useAppStore.getState()
@@ -360,10 +345,34 @@ export default function Payroll() {
   const { lang } = useConfig()
   void lang
   const fmt = useFormatAmount()
+  const navigate = useNavigate()
 
-  const [records, setRecords]       = useState<PayRecord[]>(PAYROLL_INIT)
-  const [month, setMonth]           = useState('Mai 2026')
+  const [records, setRecords]       = useState<PayRecord[]>([])
+  const [month, setMonth]           = useState(currentMonthLabel)
   const [bulletin, setBulletin]     = useState<PayRecord | null>(null)
+
+  useEffect(() => {
+    employeesApi.list()
+      .then((data: any[]) => {
+        if (!Array.isArray(data) || data.length === 0) return
+        setRecords(data
+          .filter((e: any) => (e.active ?? e.isActive ?? e.status !== 'inactive'))
+          .map((e: any, i: number) => {
+            const name = e.name ?? (`${e.firstName ?? ''} ${e.lastName ?? ''}`.trim() || 'Employé')
+            return {
+              id: typeof e.id === 'number' ? e.id : i + 1,
+              employee: name,
+              avatar: name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
+              color: PAY_COLORS[i % PAY_COLORS.length],
+              role: e.role ?? e.position ?? 'Employé',
+              baseSalary: Number(e.salary ?? e.baseSalary ?? 0),
+              bonus: 0, overtime: 0, deductions: 0, absences: 0,
+              status: 'EN ATTENTE' as PayStatus, paidAt: null, month: currentMonthLabel,
+            }
+          }))
+      })
+      .catch(() => {})
+  }, [])
 
   const filtered = records.filter(r => r.month === month)
 
@@ -410,8 +419,8 @@ export default function Payroll() {
         {[
           { label:'Masse salariale brute', value:fmt(totalBrut),  sub:'Tous employés',                          color:'#6C47FF', icon:<DollarSign   size={18} /> },
           { label:'Net à payer',           value:fmt(totalNet),   sub:'Après retenues',                         color:'#00D084', icon:<TrendingDown size={18} /> },
-          { label:'Bulletins générés',     value:`${generated}/6`,sub:`${records.length - generated} restants`, color:'#F0A500', icon:<FileText     size={18} /> },
-          { label:'Bulletins payés',       value:`${paid}/6`,     sub:`${records.length - paid} non payés`,     color:'#00B8FF', icon:<CheckCircle  size={18} /> },
+          { label:'Bulletins générés',     value:`${generated}/${records.length}`,sub:`${records.length - generated} restants`, color:'#F0A500', icon:<FileText     size={18} /> },
+          { label:'Bulletins payés',       value:`${paid}/${records.length}`,     sub:`${records.length - paid} non payés`,     color:'#00B8FF', icon:<CheckCircle  size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card" style={{ background:`linear-gradient(135deg,${k.color}18,${k.color}06)`, border:`1px solid ${k.color}28` }}>
             <div className="kpi-icon-w" style={{ color:k.color, background:`${k.color}20` }}>{k.icon}</div>
@@ -422,6 +431,17 @@ export default function Payroll() {
         ))}
       </div>
 
+      {records.length === 0 ? (
+        <div className="panel">
+          <EmptyState
+            icon="💰"
+            title={lang === 'fr' ? 'Aucune donnée de paie' : 'No payroll data'}
+            message={lang === 'fr' ? 'Ajoutez des employés avec leurs salaires pour gérer la paie.' : 'Add employees with their salaries to manage payroll.'}
+            action={{ label: lang === 'fr' ? 'Gérer les employés' : 'Manage employees', onClick: () => navigate('/app/hr') }}
+          />
+        </div>
+      ) : (
+      <>
       {/* Toolbar */}
       <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
         <select className="input" value={month} onChange={e => setMonth(e.target.value)}
@@ -518,6 +538,8 @@ export default function Payroll() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Modal bulletin */}
       {bulletin && (

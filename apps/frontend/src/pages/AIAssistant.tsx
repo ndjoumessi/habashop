@@ -87,7 +87,7 @@ export default function AIAssistant() {
   const fmt = useFormatAmount()
   const T = (fr: string, en: string, es: string, it: string) =>
     lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
-  const [shopStats, setShopStats] = useState({ caMonth: 2650000, products: 142, customers: 89 })
+  const [shopStats, setShopStats] = useState({ caMonth: 0, products: 0, customers: 0 })
   const [messages, setMessages]             = useState<ChatMessage[]>([])
   const [input, setInput]                   = useState('')
   const [analyzing, setAnalyzing]           = useState(false)

@@ -18,7 +18,8 @@ import { usePagination } from '@/hooks/usePagination'
 import HREmployeeGrid from '@/components/hr/HREmployeeGrid'
 import HRTabs from '@/components/hr/HRTabs'
 import HRModals from '@/components/hr/HRModals'
-import { type Employee, type LeaveRequest, STATIC_EMPLOYEES, LEAVE_INIT, COLORS, toInputDate } from '@/components/hr/hrShared'
+import EmptyState from '@/components/ui/EmptyState'
+import { type Employee, type LeaveRequest, COLORS, toInputDate } from '@/components/hr/hrShared'
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -35,8 +36,8 @@ export default function HR() {
   const [deptFilter, setDeptFilter] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
   const [loadingEmployees, setLoadingEmployees] = useState(true)
-  const [employees, setEmployees] = useState<Employee[]>(STATIC_EMPLOYEES)
-  const [leaves, setLeaves] = useState<LeaveRequest[]>(LEAVE_INIT)
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [leaves, setLeaves] = useState<LeaveRequest[]>([])
   const [showModal, setShowModal] = useState(false)
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null)
   const [showEditEmpModal, setShowEditEmpModal] = useState(false)
@@ -380,7 +381,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         ))}
       </div>
 
-      {tab === 'team' && (
+      {tab === 'team' && employees.length === 0 && !loadingEmployees ? (
+        <div className="panel">
+          <EmptyState
+            icon="👔"
+            title={lang === 'fr' ? 'Aucun employé' : 'No employees'}
+            message={lang === 'fr' ? 'Ajoutez votre premier employé pour commencer à gérer votre équipe.' : 'Add your first employee to start managing your team.'}
+            action={{ label: lang === 'fr' ? '+ Ajouter un employé' : '+ Add an employee', onClick: () => { setSelectedEmp(null); setShowModal(true) } }}
+          />
+        </div>
+      ) : tab === 'team' && (
         <HREmployeeGrid
           search={search} setSearch={setSearch}
           deptFilter={deptFilter} setDeptFilter={setDeptFilter}

@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Skeleton from '@/components/ui/skeleton'
+import EmptyState from '@/components/ui/EmptyState'
 import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, BarChart2, CreditCard, Trophy, Package, Users, Wallet, UserCog } from 'lucide-react'
@@ -15,6 +17,7 @@ export default function Reports() {
   void lang
   const fmt = useFormatAmount()
   const abbr = useAbbrevAmount()
+  const navigate = useNavigate()
 
   const [activePayIndex, setActivePayIndex] = useState<number | null>(null)
   const [salesData,      setSalesData]      = useState<any[]>([])
@@ -93,6 +96,25 @@ export default function Reports() {
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
       <Skeleton height={56} count={5} />
+    </div>
+  )
+
+  if (salesData.length === 0) return (
+    <div className="space-y-5 animate-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{t('nav_reports')}</h1>
+          <p className="page-subtitle">{PERIOD_LABELS[period]}</p>
+        </div>
+      </div>
+      <div className="panel">
+        <EmptyState
+          icon="📊"
+          title={lang === 'fr' ? 'Aucune donnée disponible' : 'No data available'}
+          message={lang === 'fr' ? 'Enregistrez vos premières ventes pour générer des rapports.' : 'Record your first sales to generate reports.'}
+          action={{ label: lang === 'fr' ? 'Ouvrir la caisse' : 'Open the register', onClick: () => navigate('/app/pos') }}
+        />
+      </div>
     </div>
   )
 

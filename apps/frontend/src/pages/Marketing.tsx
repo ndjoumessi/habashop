@@ -200,13 +200,7 @@ export default function Marketing() {
       .then(data => setCustomers(
         (data ?? []).filter((c: any) => c.phone?.trim())
       ))
-      .catch(() => setCustomers([
-        { id: '1', name: 'Fatou Diallo',     phone: '+221771234567', type: 'retail',    loyaltyPoints: 1200 },
-        { id: '2', name: 'Mamadou Sow',      phone: '+221785678901', type: 'wholesale', loyaltyPoints: 3400 },
-        { id: '3', name: 'Aïssatou Ndiaye',  phone: '+221779876543', type: 'retail',    loyaltyPoints: 6100 },
-        { id: '4', name: 'Ibrahim Traoré',   phone: '+221781234567', type: 'semi',      loyaltyPoints: 450  },
-        { id: '5', name: 'Mariama Bah',      phone: '+221770123456', type: 'retail',    loyaltyPoints: 890  },
-      ]))
+      .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 

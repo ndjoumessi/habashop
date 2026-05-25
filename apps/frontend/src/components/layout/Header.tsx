@@ -103,34 +103,14 @@ const PAGE_TITLES: Record<string, Record<string, string>> = {
   },
 }
 
-// ── Static notifications ─────────────────────────────────────────────────────
-
-const RECENT_NOTIFS = [
-  { id: 1, type: 'danger',  module: 'STOCK', title: 'Rupture stock critique',       message: 'Riz parfumé 5kg — Stock: 12',   time: 'il y a 5 min',  read: false },
-  { id: 2, type: 'danger',  module: 'STOCK', title: 'Rupture stock critique',       message: 'Savon OMO 500g — Stock: 5',     time: 'il y a 12 min', read: false },
-  { id: 3, type: 'warning', module: 'AUTH',  title: 'Tentative connexion suspecte', message: '3 tentatives IP: 41.82.100.24', time: 'il y a 1h',     read: false },
-  { id: 4, type: 'success', module: 'POS',   title: 'Objectif journalier dépassé',  message: 'CA: 842 000 FCFA — +5,25 %',   time: 'il y a 2h',     read: false },
-  { id: 5, type: 'info',    module: 'PAIE',  title: 'Bulletins de paie générés',    message: '6 bulletins Mai 2026 prêts',    time: 'il y a 3h',     read: true  },
-]
-
-const NOTIF_ROUTES: Record<string, string> = {
-  'STOCK': '/app/stock', 'AUTH': '/app/activity', 'POS': '/app/reports',
-  'PAIE': '/app/payroll', 'RH': '/app/hr', 'COMMANDES': '/app/orders',
-}
-
-const TYPE_COLORS: Record<string, string> = {
-  danger: 'var(--danger)', warning: 'var(--acc)', success: 'var(--acc2)', info: 'var(--p2)',
-}
-
 const SEARCH_INDEX = [
-  { type: 'Produit',     label: 'Riz parfumé 5kg',   sub: 'Stock: 120',   path: '/app/stock',     icon: Package },
-  { type: 'Produit',     label: 'Huile palme 1L',     sub: 'Stock: 18',    path: '/app/stock',     icon: Package },
-  { type: 'Client',      label: 'Mamadou Diallo',     sub: 'Grossiste',    path: '/app/customers', icon: User    },
-  { type: 'Client',      label: 'Fatou Ndiaye',       sub: 'Fidèle',       path: '/app/customers', icon: User    },
-  { type: 'Fournisseur', label: 'SONACO',             sub: 'Corps gras',   path: '/app/suppliers', icon: Truck   },
-  { type: 'Page',        label: 'Tableau de bord',    sub: 'KPIs',         path: '/app/dashboard', icon: Zap     },
-  { type: 'Page',        label: 'Point de vente',     sub: 'Caisse',       path: '/app/pos',       icon: ShoppingCart },
-  { type: 'Page',        label: 'Stock & Produits',   sub: 'Inventaire',   path: '/app/stock',     icon: Package },
+  { type: 'Page', label: 'Tableau de bord',  sub: 'KPIs',         path: '/app/dashboard',  icon: Zap          },
+  { type: 'Page', label: 'Point de vente',   sub: 'Caisse',       path: '/app/pos',        icon: ShoppingCart },
+  { type: 'Page', label: 'Stock & Produits', sub: 'Inventaire',   path: '/app/stock',      icon: Package      },
+  { type: 'Page', label: 'Clients',          sub: 'CRM',          path: '/app/customers',  icon: User         },
+  { type: 'Page', label: 'Fournisseurs',     sub: 'Achats',       path: '/app/suppliers',  icon: Truck        },
+  { type: 'Page', label: 'Commandes',        sub: 'Approvision.', path: '/app/orders',     icon: Receipt      },
+  { type: 'Page', label: 'Rapports',         sub: 'Analyses',     path: '/app/reports',    icon: Zap          },
 ]
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -215,7 +195,7 @@ export default function Header() {
   const liveUnread     = useNotificationStore(s => s.unreadCount)
   const markNotifsRead = useNotificationStore(s => s.markAllRead)
 
-  const unreadCount = liveUnread + Math.max(RECENT_NOTIFS.filter(n => !n.read).length, lowStockAlerts.length)
+  const unreadCount = liveUnread + lowStockAlerts.length
 
   const liveNotifView = (n: LiveNotif): { icon: JSX.Element; title: string; message: string; route: string } => {
     if (n.type === 'new_sale')     return { icon: <ShoppingCart size={13} />, title: lang === 'fr' ? 'Nouvelle vente' : 'New sale',     message: `${(n.data?.total ?? 0).toLocaleString('fr-FR')} FCFA · ${n.data?.paymentMode ?? ''}`, route: '/app/reports' }
@@ -575,41 +555,13 @@ export default function Header() {
                   </button>
                 ))}
 
-                {/* Static notifications */}
-                {RECENT_NOTIFS.map(notif => (
-                  <button key={notif.id} type="button"
-                    aria-label={notif.title}
-                    onClick={() => { navigate(NOTIF_ROUTES[notif.module] ?? '/app/dashboard'); setShowNotifs(false) }}
-                    style={{
-                      display: 'flex', gap: 12, padding: '11px 16px', width: '100%',
-                      background: notif.read ? 'transparent' : `${TYPE_COLORS[notif.type]}0A`,
-                      border: 'none', borderBottom: '1px solid var(--border)',
-                      borderLeft: notif.read ? '3px solid transparent' : `3px solid ${TYPE_COLORS[notif.type]}`,
-                      cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left', transition: 'background .1s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.03)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = notif.read ? 'transparent' : `${TYPE_COLORS[notif.type]}0A`}
-                  >
-                    <div style={{
-                      width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                      background: `${TYPE_COLORS[notif.type]}22`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: TYPE_COLORS[notif.type],
-                    }}>
-                      <Bell size={12} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: notif.read ? 500 : 700, color: 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {notif.title}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 3, lineHeight: 1.4 }}>{notif.message}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text4)' }}>{notif.time}</div>
-                    </div>
-                    {!notif.read && (
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', flexShrink: 0, marginTop: 5, boxShadow: '0 0 5px var(--danger)' }} />
-                    )}
-                  </button>
-                ))}
+                {/* Empty state */}
+                {liveNotifs.length === 0 && lowStockAlerts.length === 0 && (
+                  <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text3)' }}>
+                    <Bell size={24} style={{ opacity: .4, marginBottom: 8 }} />
+                    <div style={{ fontSize: 13 }}>{lang === 'fr' ? 'Aucune notification' : 'No notifications'}</div>
+                  </div>
+                )}
               </div>
 
               {/* Footer */}

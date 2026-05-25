@@ -12,7 +12,8 @@ import { usePagination } from '@/hooks/usePagination'
 
 import StockInventory from '@/components/stock/StockInventory'
 import StockModals from '@/components/stock/StockModals'
-import { type ProductItem, PRODUCTS_INIT, CATEGORIES_INIT, statusOf } from '@/components/stock/stockShared'
+import EmptyState from '@/components/ui/EmptyState'
+import { type ProductItem, CATEGORIES_INIT, statusOf } from '@/components/stock/stockShared'
 
 export default function Stock() {
   const { stockLowThreshold, stockShowSKU, lang } = useConfig()
@@ -20,7 +21,8 @@ export default function Stock() {
   const navigate = useNavigate()
   void lang // for t() reactivity
 
-  const [products, setProducts] = useState<ProductItem[]>(PRODUCTS_INIT)
+  const [products, setProducts] = useState<ProductItem[]>([])
+  const [loading, setLoading]   = useState(true)
   const [search, setSearch]     = useState('')
   const [cat, setCat]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -86,6 +88,7 @@ export default function Stock() {
         supplier: '',
       }))))
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -185,6 +188,16 @@ export default function Stock() {
       </div>
 
       {/* Panel inventaire */}
+      {!loading && products.length === 0 ? (
+        <div className="panel">
+          <EmptyState
+            icon="📦"
+            title={lang === 'fr' ? 'Aucun produit en stock' : 'No products in stock'}
+            message={lang === 'fr' ? 'Ajoutez vos premiers produits pour commencer à gérer votre inventaire.' : 'Add your first products to start managing your inventory.'}
+            action={{ label: lang === 'fr' ? '+ Ajouter un produit' : '+ Add a product', onClick: () => { resetForm(); setShowModal(true) } }}
+          />
+        </div>
+      ) : (
       <StockInventory
         products={products}
         fmt={fmt} lang={lang} stockShowSKU={stockShowSKU}
@@ -199,6 +212,7 @@ export default function Stock() {
         setForm={setForm} setEditingSku={setEditingSku} setEditingId={setEditingId}
         setModalTab={setModalTab}
       />
+      )}
 
       {/* ── Panel Catégories ── */}
       <div className="panel">

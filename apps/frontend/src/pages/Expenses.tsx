@@ -6,6 +6,7 @@ import { Download, Plus, X, Search, Settings, TrendingDown, Clock, RefreshCw, Ba
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 import ValidatedInput from '@/components/ui/ValidatedInput'
+import EmptyState from '@/components/ui/EmptyState'
 
 type Category = 'Loyer' | 'Énergie' | 'Transport' | 'Maintenance' | 'Fournitures' | 'Marketing' | 'Formation' | 'Autre'
 type ExpStatus = 'PAYÉ' | 'EN ATTENTE'
@@ -15,19 +16,6 @@ interface Expense {
   amount: number; vat: number; mode: string
   status: ExpStatus; recurrent: boolean
 }
-
-const EXPENSES_INIT: Expense[] = [
-  { id:1,  date:'2026-05-13', label:'Loyer boutique',       category:'Loyer',       amount:450000, vat:0,  mode:'Virement',    status:'PAYÉ',       recurrent:true  },
-  { id:2,  date:'2026-05-12', label:'Facture électricité',  category:'Énergie',     amount:85000,  vat:18, mode:'Espèces',     status:'PAYÉ',       recurrent:false },
-  { id:3,  date:'2026-05-11', label:'Transport livraison',  category:'Transport',   amount:35000,  vat:0,  mode:'Espèces',     status:'PAYÉ',       recurrent:false },
-  { id:4,  date:'2026-05-10', label:'Maintenance frigo',    category:'Maintenance', amount:120000, vat:18, mode:'Chèque',      status:'EN ATTENTE', recurrent:false },
-  { id:5,  date:'2026-05-08', label:'Fournitures bureau',   category:'Fournitures', amount:28000,  vat:18, mode:'Espèces',     status:'PAYÉ',       recurrent:false },
-  { id:6,  date:'2026-05-05', label:'Abonnement internet',  category:'Énergie',     amount:45000,  vat:18, mode:'Prélèvement', status:'PAYÉ',       recurrent:true  },
-  { id:7,  date:'2026-05-03', label:'Carburant véhicule',   category:'Transport',   amount:62000,  vat:0,  mode:'Espèces',     status:'PAYÉ',       recurrent:false },
-  { id:8,  date:'2026-05-01', label:'Nettoyage locaux',     category:'Maintenance', amount:40000,  vat:0,  mode:'Espèces',     status:'PAYÉ',       recurrent:true  },
-  { id:9,  date:'2026-04-28', label:'Publicité Facebook',   category:'Marketing',   amount:75000,  vat:0,  mode:'Carte',       status:'PAYÉ',       recurrent:false },
-  { id:10, date:'2026-04-25', label:'Formation employés',   category:'Formation',   amount:150000, vat:0,  mode:'Virement',    status:'PAYÉ',       recurrent:false },
-]
 
 const BUDGETS_INIT: Record<Category, number> = {
   Loyer: 500000, Énergie: 150000, Transport: 100000, Maintenance: 200000,
@@ -95,7 +83,7 @@ export default function Expenses() {
     }
   }
 
-  const [expenses, setExpenses] = useState<Expense[]>(EXPENSES_INIT)
+  const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -295,6 +283,14 @@ export default function Expenses() {
             </button>
           </div>
 
+          {!loading && expenses.length === 0 ? (
+            <EmptyState
+              icon="💸"
+              title={lang === 'fr' ? 'Aucune dépense enregistrée' : 'No expenses recorded'}
+              message={lang === 'fr' ? 'Enregistrez vos dépenses pour suivre vos charges.' : 'Record your expenses to track your costs.'}
+              action={{ label: lang === 'fr' ? '+ Ajouter une dépense' : '+ Add an expense', onClick: () => setAddOpen(true) }}
+            />
+          ) : (<>
           {/* Filtres */}
           <div style={{ display:'flex', gap:9, marginBottom:14, flexWrap:'wrap', alignItems:'center' }}>
             <div style={{ position:'relative' }}>
@@ -402,6 +398,7 @@ export default function Expenses() {
               </tbody>
             </table>
           </div>
+          </>)}
         </div>
       )}
 

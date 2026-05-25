@@ -28,62 +28,6 @@ const STATUS_CONFIG: Record<OrderStatus, { cls: string; icon: React.ReactNode; c
   'ANNULÉE':    { cls: 'badge-red',    icon: <XCircle size={11}/>,      color: 'var(--danger)' },
 }
 
-const ORDERS_INIT: Order[] = [
-  {
-    id: '1', ref: 'CMD-2026-089', supplier: 'SONACO', date: '2026-05-10',
-    expectedAt: '2026-05-14', status: 'EN TRANSIT', total: 1250000,
-    items: [
-      { product: '🫙 Huile palme 1L', qty: 500, unit: 'unité', unitPrice: 1200 },
-      { product: '🫒 Huile végétale 5L', qty: 50, unit: 'carton', unitPrice: 6500 },
-    ],
-    notes: 'Livraison urgente — rupture imminente'
-  },
-  {
-    id: '2', ref: 'CMD-2026-088', supplier: 'SENRIZ', date: '2026-05-08',
-    expectedAt: '2026-05-12', status: 'REÇUE', total: 980000,
-    items: [
-      { product: '🌾 Riz parfumé 5kg', qty: 200, unit: 'sac', unitPrice: 3200 },
-      { product: '🌾 Farine blé 1kg', qty: 500, unit: 'unité', unitPrice: 400 },
-    ],
-    notes: ''
-  },
-  {
-    id: '3', ref: 'CMD-2026-087', supplier: 'CSS', date: '2026-05-06',
-    expectedAt: '2026-05-16', status: 'CONFIRMÉE', total: 560000,
-    items: [
-      { product: '🍚 Sucre 1kg', qty: 800, unit: 'unité', unitPrice: 600 },
-      { product: '🍚 Sucre 50kg', qty: 2, unit: 'sac', unitPrice: 28000 },
-    ],
-    notes: 'Bon de commande signé le 06/05'
-  },
-  {
-    id: '4', ref: 'CMD-2026-086', supplier: 'UNILEVER', date: '2026-05-03',
-    expectedAt: '2026-05-18', status: 'ENVOYÉE', total: 325000,
-    items: [
-      { product: '🧼 Savon OMO 500g', qty: 300, unit: 'unité', unitPrice: 320 },
-      { product: '🫧 Savon ménage 400g', qty: 500, unit: 'unité', unitPrice: 280 },
-    ],
-    notes: ''
-  },
-  {
-    id: '5', ref: 'CMD-2026-085', supplier: 'NESTLÉ', date: '2026-04-28',
-    expectedAt: '2026-05-05', status: 'REÇUE', total: 440000,
-    items: [
-      { product: '🥛 Lait poudre 400g', qty: 200, unit: 'boîte', unitPrice: 1500 },
-      { product: '🥤 Lait concentré 397g', qty: 100, unit: 'boîte', unitPrice: 900 },
-    ],
-    notes: 'Réception partielle — 18 boîtes manquantes signalées'
-  },
-  {
-    id: '6', ref: 'CMD-2026-084', supplier: 'TOMAPOR', date: '2026-04-25',
-    expectedAt: '2026-04-30', status: 'BROUILLON', total: 168000,
-    items: [
-      { product: '🍅 Tomate concentrée 800g', qty: 120, unit: 'boîte', unitPrice: 900 },
-    ],
-    notes: 'À valider avant envoi'
-  },
-]
-
 const STATUSES: OrderStatus[] = ['BROUILLON','ENVOYÉE','CONFIRMÉE','EN TRANSIT','REÇUE','ANNULÉE']
 
 type L4 = 'fr' | 'en' | 'es' | 'it'
@@ -96,38 +40,6 @@ const ORDER_STATUS_LABELS: Record<OrderStatus, Record<L4, string>> = {
   'ANNULÉE':    { fr: 'Annulée',    en: 'Cancelled',  es: 'Cancelada',  it: 'Annullata' },
 }
 const orderStatusLabel = (s: OrderStatus, lang: string) => ORDER_STATUS_LABELS[s]?.[lang as L4] ?? s
-
-const STATIC_PRODUCTS = [
-  { id:'p1', name:'Riz parfumé 5kg',    price:4500,  emoji:'🌾', category:'Céréales'   },
-  { id:'p2', name:'Huile palme 1L',     price:1800,  emoji:'🫙', category:'Corps gras'  },
-  { id:'p3', name:'Sucre 1kg',          price:850,   emoji:'🍚', category:'Épicerie'    },
-  { id:'p4', name:'Farine blé 1kg',     price:650,   emoji:'🌾', category:'Céréales'    },
-  { id:'p5', name:'Savon 500g',         price:500,   emoji:'🧼', category:'Hygiène'     },
-  { id:'p6', name:'Lait poudre 400g',   price:2200,  emoji:'🥛', category:'Laitiers'    },
-  { id:'p7', name:'Tomate pelée 400g',  price:750,   emoji:'🍅', category:'Conserves'   },
-  { id:'p8', name:'Thon conserve',      price:1200,  emoji:'🐟', category:'Conserves'   },
-  { id:'p9', name:'Biscuits 100g',      price:300,   emoji:'🍪', category:'Boulangerie' },
-  { id:'p10',name:'Eau minérale 1.5L',  price:400,   emoji:'💧', category:'Boissons'    },
-  { id:'p11',name:'Café soluble 200g',  price:1800,  emoji:'☕', category:'Épicerie'    },
-  { id:'p12',name:'Détergent 1kg',      price:1200,  emoji:'🧹', category:'Hygiène'     },
-]
-
-const STATIC_CUSTOMERS = [
-  { id:'c1', name:'Marché Central de Dakar',       phone:'+221 77 000 0001', type:'Grossiste',  totalCA:4200000 },
-  { id:'c2', name:'Superette Kouassi',              phone:'+221 76 000 0002', type:'Semi-gros',  totalCA:1800000 },
-  { id:'c3', name:"Restaurant Soleil d'Afrique",    phone:'+221 70 000 0003', type:'Fidèle',     totalCA:920000  },
-  { id:'c4', name:'Famille Traoré',                 phone:'+221 78 000 0004', type:'Détail',     totalCA:85000   },
-  { id:'c5', name:'Boutique Aminata',               phone:'+221 77 000 0005', type:'Semi-gros',  totalCA:450000  },
-  { id:'c6', name:'Grossiste Diallo',               phone:'+221 76 000 0006', type:'Grossiste',  totalCA:3800000 },
-]
-
-const STATIC_SUPPLIERS = [
-  { id:'s1', name:'Diallo et Frères SARL',   specialty:'Céréales, Légumineuses', phone:'+221 77 123 4567', leadTime:'48h', rating:5, status:'active' },
-  { id:'s2', name:'Import-Export Koné',       specialty:'Corps gras, Conserves',  phone:'+221 76 987 6543', leadTime:'72h', rating:4, status:'active' },
-  { id:'s3', name:'Distributeur Sahara',      specialty:'Hygiène, Ménage',        phone:'+221 70 555 1234', leadTime:'24h', rating:3, status:'pause'  },
-  { id:'s4', name:'Agro Maure International', specialty:'Sucre, Sel, Épices',     phone:'+221 78 321 9876', leadTime:'72h', rating:4, status:'active' },
-  { id:'s5', name:'Pharma Dist. Dakar',       specialty:'Parapharmacie, Hygiène', phone:'+221 33 890 0001', leadTime:'24h', rating:4, status:'active' },
-]
 
 const API_TO_LOCAL_STATUS: Record<string, OrderStatus> = {
   DRAFT: 'BROUILLON', SENT: 'ENVOYÉE', CONFIRMED: 'CONFIRMÉE',
@@ -157,7 +69,7 @@ export default function Orders() {
   const { i } = useI18n()
   void lang
   const fmt = useFormatAmount()
-  const [orders, setOrders] = useState<Order[]>(ORDERS_INIT)
+  const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -200,7 +112,7 @@ export default function Orders() {
           category: p.category || '',
         }))
       ))
-      .catch(() => setAvailableProducts(STATIC_PRODUCTS))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -215,7 +127,7 @@ export default function Orders() {
           status: s.status || 'active',
         }))
       ))
-      .catch(() => setSuppliersList(STATIC_SUPPLIERS))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -226,7 +138,7 @@ export default function Orders() {
         type: c.type || c.customerType || '',
         totalCA: c.totalCA ?? c.total_ca ?? 0,
       }))))
-      .catch(() => setCustomers(STATIC_CUSTOMERS))
+      .catch(() => {})
   }, [])
 
   const supplierNames = Array.from(new Set(orders.map(o => o.supplier)))

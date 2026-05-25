@@ -4,6 +4,7 @@ import { useAppStore, useFormatAmount, useCurrencyInfo } from '@/stores/appStore
 import { dashboardApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { Plus, Trophy, Pencil, X, Check, Trash2, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 
 interface Goal {
   id: string
@@ -16,15 +17,6 @@ interface Goal {
   icon: string
   category: 'revenue' | 'stock' | 'customers' | 'team'
 }
-
-const DEFAULT_GOALS: Goal[] = [
-  { id:'1', label:'CA mensuel',        target:3000000, current:0, unit:'currency',     period:'Mai 2026', color:'#00D084', icon:'💰', category:'revenue'   },
-  { id:'2', label:'Nb transactions',   target:200,     current:0, unit:'transactions', period:'Mai 2026', color:'#6C47FF', icon:'🛒', category:'revenue'   },
-  { id:'3', label:'Panier moyen',      target:15000,   current:0, unit:'currency',     period:'Mai 2026', color:'#FF9500', icon:'🧺', category:'revenue'   },
-  { id:'4', label:'Marge brute',       target:30,      current:0, unit:'%',            period:'Mai 2026', color:'#00B8FF', icon:'📊', category:'revenue'   },
-  { id:'5', label:'Nouveaux clients',  target:20,      current:0, unit:'clients',      period:'Mai 2026', color:'#FFB800', icon:'👥', category:'customers' },
-  { id:'6', label:'Taux rupture',      target:5,       current:0, unit:'%',            period:'Mai 2026', color:'#FF3B5C', icon:'📦', category:'stock'     },
-]
 
 const BLANK_GOAL: Goal = { id:'', label:'', target:0, current:0, unit:'currency', period:'Mai 2026', color:'#6C47FF', icon:'🎯', category:'revenue' }
 
@@ -40,8 +32,8 @@ export default function Goals() {
   const [goals, setGoals] = useState<Goal[]>(() => {
     try {
       const saved = localStorage.getItem('habashop-goals')
-      return saved ? JSON.parse(saved) : DEFAULT_GOALS
-    } catch { return DEFAULT_GOALS }
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
   })
   const [showEditModal, setShowEditModal] = useState(false)
   const [editGoal, setEditGoal]           = useState<Goal | null>(null)
@@ -91,7 +83,7 @@ export default function Goals() {
   }[status] ?? 'var(--text3)')
 
   const achieved  = goals.filter(g => getStatus(g) === 'success').length
-  const globalPct = Math.round(achieved / goals.length * 100)
+  const globalPct = goals.length ? Math.round(achieved / goals.length * 100) : 0
 
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
@@ -117,6 +109,16 @@ export default function Goals() {
         </button>
       </div>
 
+      {goals.length === 0 ? (
+        <div className="panel">
+          <EmptyState
+            icon="🎯"
+            title={lang === 'fr' ? 'Aucun objectif défini' : 'No goals defined'}
+            message={lang === 'fr' ? 'Définissez vos objectifs de vente pour suivre votre progression.' : 'Set your sales goals to track your progress.'}
+            action={{ label: lang === 'fr' ? '+ Créer un objectif' : '+ Create a goal', onClick: () => openModal(null) }}
+          />
+        </div>
+      ) : (<>
       {/* ── Score global ── */}
       <div className="panel" style={{
         background:'linear-gradient(135deg,rgba(91,78,232,.1),rgba(124,111,240,.05))',
@@ -296,6 +298,7 @@ export default function Goals() {
           )
         })}
       </div>
+      </>)}
 
       {/* ── Modal édition ── */}
       {showEditModal && (

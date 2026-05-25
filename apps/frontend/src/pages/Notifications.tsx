@@ -28,19 +28,6 @@ interface Notification {
   message: string; read: boolean; time: string; action: string | null
 }
 
-const NOTIFS_INIT: Notification[] = [
-  { id:1,  type:'danger',  module:'STOCK',    title:'Rupture stock critique',         message:'Riz parfumé 5kg — Stock: 12 / Seuil: 20. Commander immédiatement pour éviter une rupture.',         read:false, time:'il y a 5 min',  action:'Voir le stock'  },
-  { id:2,  type:'danger',  module:'STOCK',    title:'Rupture stock critique',         message:'Savon OMO 500g — Stock: 5 / Seuil: 10. Risque de rupture totale avant ce soir.',                    read:false, time:'il y a 12 min', action:'Commander'      },
-  { id:3,  type:'danger',  module:'AUTH',     title:'Tentative connexion suspecte',   message:'3 tentatives échouées depuis IP 41.82.100.24. Le compte a été temporairement bloqué.',              read:false, time:'il y a 1h',     action:'Voir activité'  },
-  { id:4,  type:'success', module:'POS',      title:'Objectif journalier dépassé',    message:'CA du jour: 842 000 FCFA — Objectif 800 000 FCFA dépassé de 5,25 % ! Félicitations.',               read:false, time:'il y a 2h',     action:'Voir rapports'  },
-  { id:5,  type:'info',    module:'PAIE',     title:'Bulletins de paie générés',      message:'6 bulletins Mai 2026 prêts. Total net: 2 060 000 FCFA. En attente de validation et paiement.',      read:true,  time:'il y a 3h',     action:'Voir la paie'   },
-  { id:6,  type:'info',    module:'RH',       title:'Congé approuvé',                 message:'Congé annuel de Fatoumata Ndiaye approuvé du 12/05 au 23/05. Planning automatiquement mis à jour.', read:true,  time:'il y a 4h',     action:'Voir planning'  },
-  { id:7,  type:'warning', module:'STOCK',    title:'Stock faible',                   message:'Huile palme 1L — Stock: 18 / Seuil: 25. Penser à commander avant la fin de semaine.',               read:true,  time:'hier 18:30',    action:'Commander'      },
-  { id:8,  type:'info',    module:'COMMANDES',title:'Commande reçue',                 message:'CMD-2026-088 SENRIZ confirmée. 200 sacs riz + 500 farines reçus et enregistrés en stock.',          read:true,  time:'hier 14:15',    action:'Voir commandes' },
-  { id:9,  type:'success', module:'CLIENTS',  title:'Nouveau client enregistré',      message:'Mamadou Diallo (Grossiste) ajouté au CRM. Premier achat: 450 000 FCFA. Programme fidélité activé.',read:true,  time:'hier 11:00',    action:'Voir clients'   },
-  { id:10, type:'info',    module:'SYSTÈME',  title:'Sauvegarde automatique réussie', message:'Backup quotidien effectué avec succès. 847 MB archivés. Prochain backup: demain 03:00.',           read:true,  time:'hier 03:00',    action:null             },
-]
-
 const TYPE_CONFIG: Record<NotifType, { color: string; bg: string; border: string }> = {
   danger:  { color:'var(--danger)', bg:'rgba(232,64,74,.1)',  border:'rgba(232,64,74,.25)'  },
   warning: { color:'var(--acc)',    bg:'rgba(240,165,0,.1)',  border:'rgba(240,165,0,.25)'  },
@@ -70,7 +57,7 @@ export default function Notifications() {
   void fmt
   const navigate = useNavigate()
 
-  const [notifs,     setNotifs]     = useState<Notification[]>(NOTIFS_INIT)
+  const [notifs,     setNotifs]     = useState<Notification[]>([])
   const [activeTab,  setActiveTab]  = useState<TabType>('all')
   const [prefs,      setPrefs]      = useState({
     email_stock:true,  email_ventes:true,  email_auth:true,  email_paie:false, email_commandes:true,

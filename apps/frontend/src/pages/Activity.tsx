@@ -19,29 +19,6 @@ interface ActivityEntry {
   ip: string; date: string; time: string; severity: Severity
 }
 
-const ACTIVITY_LOG: ActivityEntry[] = [
-  { id:1,  module:'POS',          action:'VENTE',        user:'Marie Bakayoko',   avatar:'MB', color:'#6C3FD6', description:'Vente #V2041 encaissée — 45 000 FCFA — Caisse 1',                  ip:'192.168.1.14', date:'2026-05-14', time:'14:32', severity:'success' },
-  { id:2,  module:'STOCK',        action:'ALERTE',       user:'Système',          avatar:'SY', color:'#EF4444', description:'Rupture critique — Riz parfumé 5kg (stock:12, seuil:20)',           ip:'système',      date:'2026-05-14', time:'14:18', severity:'danger'  },
-  { id:3,  module:'AUTH',         action:'CONNEXION',    user:'Nelson Djoumessi', avatar:'ND', color:'#3B82F6', description:'Connexion réussie depuis 192.168.1.10 — Chrome/macOS',             ip:'192.168.1.10', date:'2026-05-14', time:'14:02', severity:'info'    },
-  { id:4,  module:'POS',          action:'VENTE',        user:'Seydou Koné',      avatar:'SK', color:'#EF4444', description:'Vente #V2040 encaissée — 128 000 FCFA — Caisse 2',                 ip:'192.168.1.15', date:'2026-05-14', time:'13:47', severity:'success' },
-  { id:5,  module:'STOCK',        action:'RÉCEPTION',    user:'Kofi Diallo',      avatar:'KD', color:'#F59E0B', description:'Réception SONACO — 50 unités Huile palme 1L enregistrées',        ip:'192.168.1.12', date:'2026-05-14', time:'13:20', severity:'success' },
-  { id:6,  module:'RH',           action:'CONGÉ',        user:'Nelson Djoumessi', avatar:'ND', color:'#3B82F6', description:'Congé approuvé — Fatoumata Ndiaye (12/05 au 23/05/2026)',         ip:'192.168.1.10', date:'2026-05-14', time:'11:35', severity:'info'    },
-  { id:7,  module:'UTILISATEURS', action:'INVITATION',   user:'Nelson Djoumessi', avatar:'ND', color:'#3B82F6', description:'Invitation envoyée — nouveau.employe@shop.com (rôle: Caissier)',  ip:'192.168.1.10', date:'2026-05-14', time:'10:58', severity:'info'    },
-  { id:8,  module:'AUTH',         action:'ÉCHEC AUTH',   user:'Inconnu',          avatar:'??', color:'#6B7280', description:'3 tentatives échouées consécutives — IP suspecte: 41.82.100.24',  ip:'41.82.100.24', date:'2026-05-14', time:'10:22', severity:'danger'  },
-  { id:9,  module:'COMMANDES',    action:'CRÉATION',     user:'Nelson Djoumessi', avatar:'ND', color:'#3B82F6', description:'Bon de commande CMD-2026-090 créé — SENRIZ — 336 000 FCFA',      ip:'192.168.1.10', date:'2026-05-14', time:'09:45', severity:'info'    },
-  { id:10, module:'PARAMÈTRES',   action:'MODIFICATION', user:'Nelson Djoumessi', avatar:'ND', color:'#3B82F6', description:'Devise modifiée XOF → EUR — Paramètres généraux',                ip:'192.168.1.10', date:'2026-05-14', time:'09:12', severity:'info'    },
-  { id:11, module:'POS',          action:'VENTE',        user:'Marie Bakayoko',   avatar:'MB', color:'#6C3FD6', description:'Vente #V2039 encaissée — 67 500 FCFA — Caisse 1',                 ip:'192.168.1.14', date:'2026-05-13', time:'18:55', severity:'success' },
-  { id:12, module:'STOCK',        action:'ALERTE',       user:'Système',          avatar:'SY', color:'#EF4444', description:'Stock faible — Savon OMO 500g (stock:5, seuil:10)',              ip:'système',      date:'2026-05-13', time:'17:30', severity:'warning' },
-  { id:13, module:'PAIE',         action:'GÉNÉRATION',   user:'Nelson Djoumessi', avatar:'ND', color:'#3B82F6', description:'Paie Mai 2026 générée — 6 bulletins — 2 060 000 FCFA total',    ip:'192.168.1.10', date:'2026-05-13', time:'16:00', severity:'success' },
-  { id:14, module:'AUTH',         action:'DÉCONNEXION',  user:'Kofi Diallo',      avatar:'KD', color:'#F59E0B', description:'Déconnexion volontaire — durée session: 6h 32min',               ip:'192.168.1.12', date:'2026-05-13', time:'15:45', severity:'info'    },
-  { id:15, module:'CLIENTS',      action:'CRÉATION',     user:'Marie Bakayoko',   avatar:'MB', color:'#6C3FD6', description:'Nouveau client — Mamadou Diallo (Grossiste) — Premier achat',   ip:'192.168.1.14', date:'2026-05-13', time:'14:20', severity:'success' },
-  { id:16, module:'STOCK',        action:'MODIFICATION', user:'Kofi Diallo',      avatar:'KD', color:'#F59E0B', description:'Prix modifié — Riz parfumé 5kg: 4 200 → 4 500 FCFA (+7,1 %)',  ip:'192.168.1.12', date:'2026-05-13', time:'11:10', severity:'warning' },
-  { id:17, module:'COMMANDES',    action:'RÉCEPTION',    user:'Kofi Diallo',      avatar:'KD', color:'#F59E0B', description:'CMD-2026-088 reçue — SENRIZ — 200 sacs riz + 500 farines',      ip:'192.168.1.12', date:'2026-05-12', time:'09:30', severity:'success' },
-  { id:18, module:'PAIE',         action:'PAIEMENT',     user:'Nelson Djoumessi', avatar:'ND', color:'#3B82F6', description:'Virement effectué — Marie Bakayoko — 338 000 FCFA net',         ip:'192.168.1.10', date:'2026-05-12', time:'08:45', severity:'success' },
-  { id:19, module:'AUTH',         action:'2FA',          user:'Nelson Djoumessi', avatar:'ND', color:'#3B82F6', description:'2FA activé — Authentification TOTP configurée avec succès',     ip:'192.168.1.10', date:'2026-05-11', time:'16:20', severity:'info'    },
-  { id:20, module:'CLIENTS',      action:'MODIFICATION', user:'Seydou Koné',      avatar:'SK', color:'#EF4444', description:'Fidélité mise à jour — Aminata Traoré: 850 → 1 200 points',    ip:'192.168.1.15', date:'2026-05-11', time:'14:05', severity:'info'    },
-]
-
 const MODULE_CONFIG: Record<string, { color: string; bg: string; label: string; Icon: LucideIcon }> = {
   POS:          { color:'#818CF8', bg:'rgba(99,102,241,.15)',   label:'POS',          Icon: ShoppingCart },
   STOCK:        { color:'#F59E0B', bg:'rgba(245,158,11,.15)',   label:'Stock',        Icon: Package      },
@@ -65,6 +42,7 @@ const ITEMS_PER_PAGE = 8
 
 export default function Activity() {
   const { lang } = useAppStore()
+  const [activityLog] = useState<ActivityEntry[]>([])
 
   const [search,         setSearch]         = useState('')
   const [moduleFilter,   setModuleFilter]   = useState('')
@@ -74,7 +52,7 @@ export default function Activity() {
   const [loading,        setLoading]        = useState(true)
   useEffect(() => { setLoading(false) }, [])
 
-  const filtered = useMemo(() => ACTIVITY_LOG.filter(log => {
+  const filtered = useMemo(() => activityLog.filter(log => {
     const matchSearch   = !search || log.description.toLowerCase().includes(search.toLowerCase()) || log.user.toLowerCase().includes(search.toLowerCase())
     const matchModule   = !moduleFilter || log.module === moduleFilter
     const matchSeverity = !severityFilter || log.severity === severityFilter
@@ -85,9 +63,9 @@ export default function Activity() {
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1
   const paginated  = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
-  const todayCount    = ACTIVITY_LOG.filter(l => l.date === '2026-05-14').length
-  const dangerCount   = ACTIVITY_LOG.filter(l => l.severity === 'danger').length
-  const activeModules = new Set(ACTIVITY_LOG.map(l => l.module)).size
+  const todayCount    = activityLog.filter(l => l.date === '2026-05-14').length
+  const dangerCount   = activityLog.filter(l => l.severity === 'danger').length
+  const activeModules = new Set(activityLog.map(l => l.module)).size
   const hasFilters    = !!(search || moduleFilter || severityFilter || dateFilter !== 'all')
 
   const resetPage = () => setCurrentPage(1)
@@ -125,7 +103,7 @@ export default function Activity() {
       {/* ── KPIs ── */}
       <div className="kpi-grid">
         {[
-          { label: t('activity_total'),    value: ACTIVITY_LOG.length, color:'var(--p2)'     },
+          { label: t('activity_total'),    value: activityLog.length, color:'var(--p2)'     },
           { label: t('activity_today'),    value: todayCount,           color:'var(--acc2)'   },
           { label: t('activity_security'), value: dangerCount,          color:'var(--danger)' },
           { label: t('activity_modules'),  value: activeModules,        color:'var(--acc)'    },
