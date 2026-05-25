@@ -3,6 +3,21 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.3.1] — 2026-05-25 — Architecture frontend : découpe de `HR.tsx`
+
+> Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
+
+### ♻️ Découpe de `HR.tsx`
+- `HR.tsx` : **2861 → 445 lignes** (page conteneur : imports, état, effets, handlers, layout + délégation du rendu).
+- JSX extrait **à l'identique** (script de découpe, zéro réécriture) dans 3 composants `src/components/hr/` :
+  - **`HREmployeeGrid.tsx`** (251 l.) — onglet Équipe : barre de filtres, vue grille, vue tableau, pagination.
+  - **`HRTabs.tsx`** (1056 l.) — onglets Contrats / Rémunération (4 sous-onglets : grille, bulletins, primes, historique) / Présences / Congés.
+  - **`HRModals.tsx`** (1096 l.) — les 6 modales (ajout & édition employé, prime/augmentation, nouveau contrat, détail contrat, demande de congé) + helpers `EmpModal`/`SalaryRaiseForm`/`BonusForm`/`AddressInputSimple`.
+- **`hrShared.tsx`** (174 l.) — module partagé (types `Employee`/`LeaveRequest`, données statiques, `DEPT_COLORS`/`COLORS`/`STATUS_CFG`, utils `toInputDate`/`displayDate`/`calcAnciennete`, `EmpAvatar`/`Stars`) pour **éviter tout import circulaire** ; état/handlers passés en **props typées**.
+- **Vérifié** : `tsc` clean, **43/43** tests unitaires, build OK. Smoke Playwright (`e2e/hr.spec.ts`) sur **preview local du build** puis sur **prod live** — rendu page + KPIs, ouverture de la modale d'édition, navigation onglets (**2/2**) ; probe étendu (4 onglets + 4 sous-onglets paie + modales contrat/congé) **sans erreur runtime**.
+
+> Couverture honnête : le smoke vérifie le **rendu** de chaque onglet/modale et l'absence d'erreur JS, pas les flux d'écriture de bout en bout (sauvegarde employé, soumission de congé, calcul de prime) — qui compilent et s'affichent sans erreur mais n'ont pas été exercés en aller-retour.
+
 ## [2.3.0] — 2026-05-25 — Mois 3 : modularisation, base de données, soft-delete, tests & monitoring
 
 > Déployé et **vérifié en production** (backend Railway + frontend Vercel).
