@@ -40,7 +40,8 @@ Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités c
 - **Sentry** : `@sentry/react` (front : `ErrorBoundary` + UI de repli) + `@sentry/node` (back : `captureException` sur 5xx ; P2025→404 et format de réponse **conservés**) — **inerte sans DSN** (`VITE_SENTRY_DSN` / `SENTRY_DSN`). Alertes webhook Discord/Slack (`sendAlert`, `ALERT_WEBHOOK_URL`) au crash.
 
 ### 🧹 Qualité de code
-- **ESLint backend** : `.eslintrc.json` (`@typescript-eslint`) + scripts `lint`/`lint:fix` — **0 erreur, 142 warnings** (surtout `any`).
+- **Typage strict des routes** : `as any`/`: any` backend **110 → 25** (objectif < 30). Helpers `Req<Body,Params,Querystring>`/`Reply`/`IdParam` + interfaces de body (`ProductBody`, `CustomerBody`, `EmployeeBody`, `SaleBody`, `OrderBody`, `BonusBody`, `SalaryHistoryBody`, `TenantUpdateBody`, `InviteUserBody`, `AdminCreateTenantBody`/`AdminReviewBody`) dans `types.ts`. `request.body`/`params`/`query` typés sur toutes les routes. `any` restants assumés : spreads d'input Prisma (supplier/expense/product), socket WS + payload JWT, `context` du rate-limit, données CSV/chat non typées. **Type-only — JS émis inchangé** (tsc OK, 39/39 tests, vérifié en prod).
+- **ESLint backend** : `.eslintrc.json` (`@typescript-eslint`) + scripts `lint`/`lint:fix` — **0 erreur, 142 → 53 warnings** (suite à la réduction des `any`).
 - **JSDoc** concis sur les fonctions critiques : `authenticate`, `db`/`prisma`, `billing` request-plan, `useI18n`, `convertFromXOF`.
 - `src/lib/logger.ts` (front) : `log` silencieux en prod, `warn`/`error` toujours actifs.
 
