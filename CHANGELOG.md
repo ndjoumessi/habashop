@@ -3,6 +3,30 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.3.6] — 2026-05-25 — SEO Afrique francophone (Lighthouse SEO 100/100)
+
+> Déployé et **vérifié en production** (frontend Vercel). **Lighthouse SEO 100/100** (tous audits verts) ; fichiers statiques servis en 200.
+
+### 🔎 Meta tags & données structurées (`index.html`)
+- `<title>`, `description`, `keywords` (longue traîne Afrique), `robots`, `author`, **`canonical`**.
+- **Open Graph** (Facebook/WhatsApp) + **Twitter Card** pointant sur `og-image.png` (1200×630), `og:locale fr_SN` + alternates (CI/ML/BF).
+- **3 blocs JSON-LD** : `SoftwareApplication` (featureList, offers, aggregateRating, areaServed), `Organization` (logo, serviceArea, contactPoint), `FAQPage` (5 Q/R : offline, paiement, prix, pays, import).
+- **Prix JSON-LD alignés sur le réel** : Starter 9 900 / Pro 24 900 / Enterprise 49 900 F CFA/mois (la spec proposait « Starter: 0 », corrigé).
+- Polices Google (Outfit/JetBrains Mono) **conservées** (la spec les retirait → régression polices évitée) ; lien `favicon-32x32` retiré (fichier inexistant).
+
+### 🗺️ Crawl & partage (`public/`)
+- **`sitemap.xml`** (4 URLs publiques : /, /pricing, /signup, /login) + **`robots.txt`** (`Disallow /app /admin /onboarding` + ligne `Sitemap`).
+- **`og-image.png`** (1200×630) généré via **Playwright** (rendu HTML réel : polices, dégradés, drapeaux) — Pillow indisponible sur l'environnement.
+- **`manifest.json`** enrichi (name long, description, `categories` business/productivity/finance, `screenshots`, `shortcuts` POS/Dashboard) en **gardant les icônes PWA `pwa-192/512`** et `start_url: /app/dashboard` (la spec les supprimait/changeait → installabilité & UX préservées).
+
+### 🌍 Contenu landing (`LandingPage.tsx`) — mots-clés naturels
+- H1 enrichi : « Gérez votre **boutique en Afrique** » + « Caisse, stock, clients & RH en un seul **logiciel** » ; badge pays, sous-titre, titres de features SEO (Caisse Enregistreuse POS, Gestion de Stock Temps Réel, Gestion Clients & Fidélité, RH & Paie).
+- Pricing ancré local : « prix en Franc CFA » + « payez par **Wave, Orange Money ou MTN** ».
+- Nouvelle section **« Pays couverts »** (`<h2>` indexable + grille de 10 drapeaux : Sénégal, Côte d'Ivoire, Mali, Burkina, Guinée, Cameroun, Congo, Gabon, Togo, Bénin + 140 autres).
+- **FAQ FR + EN alignées** sur le JSON-LD (offline, modes de paiement, coût, disponibilité pays, import CSV/Excel). FAQ ES/IT laissées telles quelles (FR = cible SEO et langue du JSON-LD).
+
+> Vérifié : `tsc` clean, 43/43 tests, build OK, smoke Playwright (H1 + section pays + FAQ rendent, 0 erreur JS), `curl` prod 200 sur sitemap/robots/og-image, **Lighthouse SEO 100/100**.
+
 ## [2.3.5] — 2026-05-25 — Loading states généralisés + composant Skeleton
 
 > Déployé et **vérifié en production** (frontend Vercel). Aucun changement de comportement fonctionnel.
