@@ -51,6 +51,12 @@ const IconPrismaSvg = () => (
   </svg>
 )
 
+const IconResendSvg = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="#6C47FF">
+    <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm8 7L4.5 7.2v.9L12 13l7.5-4.9v-.9L12 12z"/>
+  </svg>
+)
+
 const INTEGRATIONS_LIST: Integration[] = [
   {
     id:'anthropic', name:'Anthropic Claude',
@@ -67,6 +73,14 @@ const INTEGRATIONS_LIST: Integration[] = [
     endpoint:'api.twilio.com', lastCall:'Il y a 15 min', calls:342,
     docs:'https://twilio.com/docs',
     IconSvg: IconTwilioSvg,
+  },
+  {
+    id:'resend', name:'Resend',
+    desc:'Emails transactionnels — bienvenue, rappels, rapports',
+    color:'#6C47FF', status:'connected',
+    endpoint:'api.resend.com', lastCall:'Il y a 1h', calls:156,
+    docs:'https://resend.com/docs',
+    IconSvg: IconResendSvg,
   },
   {
     id:'googlemaps', name:'Google Maps',
@@ -129,6 +143,15 @@ export default function Integrations() {
 
   const totalConnected = INTEGRATIONS_LIST.filter(i => !disconnected.has(i.id)).length
   const totalCalls     = INTEGRATIONS_LIST.reduce((acc, i) => acc + Math.min(i.calls, 100000), 0)
+
+  const EMAIL_FLOWS = [
+    { trigger: lang === 'fr' ? '🎉 Inscription' : '🎉 Signup',                   email: lang === 'fr' ? 'Email de bienvenue' : 'Welcome email',   delay: lang === 'fr' ? 'Immédiat' : 'Immediate' },
+    { trigger: lang === 'fr' ? '⏰ J-7 avant expiration' : '⏰ D-7 before expiry', email: lang === 'fr' ? 'Rappel essai' : 'Trial reminder',         delay: 'Cron 1h' },
+    { trigger: lang === 'fr' ? '🔴 J-3 avant expiration' : '🔴 D-3 before expiry', email: lang === 'fr' ? 'Rappel urgent' : 'Urgent reminder',       delay: 'Cron 1h' },
+    { trigger: lang === 'fr' ? '🔒 Expiration' : '🔒 Expiry',                     email: lang === 'fr' ? 'Compte suspendu' : 'Account suspended',   delay: 'Cron 1h' },
+    { trigger: lang === 'fr' ? '✅ Upgrade validé' : '✅ Upgrade approved',        email: lang === 'fr' ? 'Confirmation plan' : 'Plan confirmation', delay: lang === 'fr' ? 'Immédiat' : 'Immediate' },
+    { trigger: lang === 'fr' ? '📊 Lundi 8h' : '📊 Monday 8am',                   email: lang === 'fr' ? 'Rapport hebdomadaire' : 'Weekly report',  delay: lang === 'fr' ? 'Cron hebdo' : 'Weekly cron' },
+  ]
 
   return (
     <div className="space-y-5 animate-in">
@@ -338,6 +361,91 @@ export default function Integrations() {
             </div>
           )
         })}
+      </div>
+
+      {/* ── Détail Resend — Emails transactionnels ── */}
+      <div style={{
+        background:'var(--card)', border:'1px solid rgba(108,71,255,.25)',
+        borderRadius:18, overflow:'hidden',
+      }}>
+        <div style={{ height:3, background:'#6C47FF', boxShadow:'0 0 10px #6C47FF80' }} />
+        <div style={{ padding:'18px 20px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, flexWrap:'wrap' }}>
+            <div style={{
+              width:44, height:44, borderRadius:12, flexShrink:0,
+              background:'rgba(108,71,255,.12)', border:'1px solid rgba(108,71,255,.3)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:22,
+            }}>📧</div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
+                Resend — {lang === 'fr' ? 'Emails transactionnels' : 'Transactional emails'}
+              </div>
+              <div style={{ fontSize:11, color:'var(--text3)', lineHeight:1.4 }}>
+                {lang === 'fr'
+                  ? 'Bienvenue, rappels d\'essai, confirmations d\'upgrade et rapports hebdomadaires.'
+                  : 'Welcome, trial reminders, upgrade confirmations and weekly reports.'}
+              </div>
+            </div>
+            <span style={{
+              background:'rgba(0,208,132,.12)', border:'1px solid rgba(0,208,132,.25)',
+              color:'var(--acc2)', borderRadius:20, padding:'3px 10px',
+              fontSize:11, fontWeight:700, flexShrink:0,
+            }}>
+              ✅ {lang === 'fr' ? 'Actif — 6 emails configurés' : 'Active — 6 emails configured'}
+            </span>
+          </div>
+
+          {/* Tableau des flows email */}
+          <div style={{ border:'1px solid var(--border)', borderRadius:10, overflow:'hidden' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+              <thead>
+                <tr style={{ background:'var(--bg4)' }}>
+                  <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:700, fontSize:10, textTransform:'uppercase' }}>
+                    {lang === 'fr' ? 'Déclencheur' : 'Trigger'}
+                  </th>
+                  <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:700, fontSize:10, textTransform:'uppercase' }}>
+                    Email
+                  </th>
+                  <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:700, fontSize:10, textTransform:'uppercase' }}>
+                    {lang === 'fr' ? 'Délai' : 'Timing'}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {EMAIL_FLOWS.map((flow, i) => (
+                  <tr key={i} style={{ borderTop:'1px solid var(--border)' }}>
+                    <td style={{ padding:'8px 12px', color:'var(--text2)' }}>{flow.trigger}</td>
+                    <td style={{ padding:'8px 12px', color:'var(--text)', fontWeight:600 }}>{flow.email}</td>
+                    <td style={{ padding:'8px 12px' }}>
+                      <span style={{
+                        background:'rgba(108,71,255,.1)', color:'var(--p3)',
+                        borderRadius:6, padding:'2px 8px', fontSize:11, fontWeight:600,
+                      }}>{flow.delay}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Stats Resend */}
+          <div style={{ display:'flex', gap:12, marginTop:12, flexWrap:'wrap' }}>
+            {[
+              { label: lang === 'fr' ? 'Emails/mois gratuits' : 'Free emails/month', value: '3 000' },
+              { label: lang === 'fr' ? 'Taux de délivrabilité' : 'Delivery rate',     value: '99.8%' },
+              { label: lang === 'fr' ? 'Domaine' : 'Domain',                          value: 'resend.dev' },
+            ].map(stat => (
+              <div key={stat.label} style={{
+                flex:1, minWidth:140, background:'var(--bg3)',
+                border:'1px solid var(--border)', borderRadius:10,
+                padding:'10px 14px', textAlign:'center',
+              }}>
+                <div style={{ fontSize:16, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>{stat.value}</div>
+                <div style={{ fontSize:10, color:'var(--text3)', marginTop:3 }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ── Légende ── */}
