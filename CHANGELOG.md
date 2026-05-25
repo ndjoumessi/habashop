@@ -3,6 +3,23 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.3.2] — 2026-05-25 — Architecture frontend : découpe de `Customers.tsx`
+
+> Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
+
+### ♻️ Découpe de `Customers.tsx`
+- `Customers.tsx` : **1811 → 341 lignes** (page conteneur : imports, état, effets, handlers `geocodeCustomers`/`handleCreateCustomer`/`printCustomersPDF`, layout + délégation du rendu).
+- JSX extrait **à l'identique** (script de découpe, zéro réécriture) dans `src/components/customers/` :
+  - **`CustomerMap.tsx`** (339 l.) — carte Google Maps (composant déjà autonome, déplacé tel quel).
+  - **`CustomersList.tsx`** (297 l.) — onglet Liste : filtres, vue tableau, vue grille « bento », pagination.
+  - **`CustomersStats.tsx`** (105 l.) — onglet Statistiques (répartition par type + top 5 clients).
+  - **`CustomersModals.tsx`** (600 l.) — 4 modales (fiche, modifier, nouveau, détail) + carte de fidélité.
+- **`customersShared.tsx`** (253 l.) — module partagé (types `Customer`/`ClientType`/`GeoCustomer`, consts `TYPE_CFG`/`BENTO_CFG`/`CUSTOMERS_INIT`/`DARK_STYLE`/`SENEGAL_CITIES`, utils `mapApiCustomer`/`useGoogleMaps`/`typeLabel`/`createMarkerIcon`, `LoyaltyBar`) — évite tout import circulaire ; état/handlers passés en **props typées**.
+- L'**onglet Carte est resté inline** dans `Customers.tsx` (il dépend du `useCallback` local `geocodeCustomers`) — il câble simplement `<CustomerMap>`.
+- **Vérifié** : `tsc` clean (a détecté un `GMAPS_KEY` manquant dans `CustomerMap` → corrigé), **43/43** tests unitaires, build OK. Smoke Playwright (`e2e/customers.spec.ts`) sur **preview local du build** puis sur **prod live** — rendu page, bascule des onglets (Liste/Carte/Stats), ouverture de la modale « nouveau client » ; probe étendu sur **données réelles** (6 clients) exerçant les modales fiche + modifier + détail **sans erreur runtime**.
+
+> Couverture honnête : le smoke + probe vérifient le **rendu** des onglets/modales et l'absence d'erreur JS, pas les flux d'écriture de bout en bout (création/édition/suppression client persistées) — qui compilent et s'affichent sans erreur mais n'ont pas été exercés en aller-retour serveur.
+
 ## [2.3.1] — 2026-05-25 — Architecture frontend : découpe de `HR.tsx`
 
 > Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
