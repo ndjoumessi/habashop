@@ -8,6 +8,7 @@ import CurrencyBadge from '@/components/ui/CurrencyBadge'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import toast from 'react-hot-toast'
 import { alertsApi, tenantApi } from '@/lib/api'
+import { useNotificationStore, type LiveNotif } from '@/stores/notificationStore'
 
 // ── Multilingual page titles ─────────────────────────────────────────────────
 
@@ -210,7 +211,19 @@ export default function Header() {
     ?? PAGE_TITLES.fr[location.pathname]
     ?? 'HabaShop'
 
-  const unreadCount = Math.max(RECENT_NOTIFS.filter(n => !n.read).length, lowStockAlerts.length)
+  const liveNotifs     = useNotificationStore(s => s.notifications)
+  const liveUnread     = useNotificationStore(s => s.unreadCount)
+  const markNotifsRead = useNotificationStore(s => s.markAllRead)
+
+  const unreadCount = liveUnread + Math.max(RECENT_NOTIFS.filter(n => !n.read).length, lowStockAlerts.length)
+
+  const liveNotifView = (n: LiveNotif): { icon: JSX.Element; title: string; message: string; route: string } => {
+    if (n.type === 'new_sale')     return { icon: <ShoppingCart size={13} />, title: lang === 'fr' ? 'Nouvelle vente' : 'New sale',     message: `${(n.data?.total ?? 0).toLocaleString('fr-FR')} FCFA · ${n.data?.paymentMode ?? ''}`, route: '/app/reports' }
+    if (n.type === 'low_stock')    return { icon: <Package size={13} />,      title: lang === 'fr' ? 'Stock bas' : 'Low stock',        message: `${n.data?.products?.length ?? 0} ${lang === 'fr' ? 'produit(s)' : 'product(s)'}`,       route: '/app/stock' }
+    if (n.type === 'new_order')    return { icon: <Receipt size={13} />,      title: lang === 'fr' ? 'Nouvelle commande' : 'New order',  message: `${n.data?.ref ?? ''}`,                                                                  route: '/app/orders' }
+    if (n.type === 'new_customer') return { icon: <User size={13} />,         title: lang === 'fr' ? 'Nouveau client' : 'New customer',  message: `${n.data?.name ?? ''}`,                                                                 route: '/app/customers' }
+    return { icon: <Bell size={13} />, title: n.type, message: '', route: '/app/dashboard' }
+  }
 
   function handleSearch(q: string) {
     setSearchQuery(q)
@@ -453,7 +466,7 @@ export default function Header() {
             aria-label="Notifications"
             aria-haspopup="true"
             aria-expanded={showNotifs}
-            onClick={() => { setShowNotifs(v => !v); setShowNewMenu(false); setShowResults(false) }}
+            onClick={() => { setShowNotifs(v => { if (!v) markNotifsRead(); return !v }); setShowNewMenu(false); setShowResults(false) }}
             style={{
               background: 'rgba(255,255,255,.04)', border: '1px solid var(--border)',
               borderRadius: 10, padding: '7px 9px', cursor: 'pointer', position: 'relative',
@@ -507,6 +520,34 @@ export default function Header() {
 
               {/* Notification list */}
               <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+                {/* Live WebSocket notifications */}
+                {liveNotifs.map((n) => {
+                  const v = liveNotifView(n)
+                  return (
+                    <button key={n.id} type="button"
+                      aria-label={v.title}
+                      onClick={() => { navigate(v.route); setShowNotifs(false) }}
+                      style={{
+                        display: 'flex', gap: 12, padding: '11px 16px', width: '100%',
+                        background: 'rgba(108,71,255,.05)', border: 'none',
+                        borderBottom: '1px solid var(--border)',
+                        borderLeft: '3px solid var(--p2)', cursor: 'pointer',
+                        fontFamily: 'var(--font)', textAlign: 'left',
+                      }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'rgba(108,71,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--p3)' }}>
+                        {v.icon}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{v.title}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{v.message}</div>
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text4)', flexShrink: 0, marginTop: 3 }}>
+                        {new Date(n.ts).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </button>
+                  )
+                })}
+
                 {/* Real-time low stock */}
                 {lowStockAlerts.slice(0, 3).map((product) => (
                   <button key={product.id} type="button"

@@ -7,6 +7,7 @@ require("dotenv/config");
 const fastify_1 = __importDefault(require("fastify"));
 const cors_1 = __importDefault(require("@fastify/cors"));
 const jwt_1 = __importDefault(require("@fastify/jwt"));
+const websocket_1 = __importDefault(require("@fastify/websocket"));
 const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const twilio_1 = __importDefault(require("twilio"));
@@ -160,6 +161,66 @@ async function start() {
     });
     await app.register(jwt_1.default, {
         secret: process.env.JWT_SECRET ?? 'habashop-secret-dev-2026',
+    });
+    await app.register(websocket_1.default);
+    // ─── NOTIFICATIONS TEMPS RÉEL (WebSocket) ──
+    // Sockets actifs regroupés par tenant : un broadcast ne touche que la boutique concernée.
+    const tenantSockets = new Map();
+    function notifyTenant(tenantId, event) {
+        const set = tenantSockets.get(tenantId);
+        if (!set || set.size === 0)
+            return;
+        const msg = JSON.stringify(event);
+        for (const sock of set) {
+            try {
+                sock.send(msg);
+            }
+            catch { /* socket fermé */ }
+        }
+    }
+    app.get('/api/ws', { websocket: true }, (connection, req) => {
+        const sock = connection.socket;
+        // Auth : le navigateur ne peut pas poser d'en-tête sur un WebSocket → token en query.
+        const token = req.query?.token || (req.headers?.authorization?.replace(/^Bearer\s+/i, ''));
+        let payload;
+        try {
+            payload = app.jwt.verify(token);
+        }
+        catch {
+            try {
+                sock.send(JSON.stringify({ type: 'error', data: { message: 'unauthorized' } }));
+            }
+            catch { }
+            sock.close(1008, 'unauthorized');
+            return;
+        }
+        const { tenantId, userId } = payload;
+        if (!tenantSockets.has(tenantId))
+            tenantSockets.set(tenantId, new Set());
+        tenantSockets.get(tenantId).add(sock);
+        try {
+            sock.send(JSON.stringify({ type: 'connected', data: { userId, tenantId } }));
+        }
+        catch { }
+        const ping = setInterval(() => {
+            try {
+                sock.send(JSON.stringify({ type: 'ping' }));
+            }
+            catch { }
+        }, 30000);
+        sock.on('close', () => {
+            clearInterval(ping);
+            const set = tenantSockets.get(tenantId);
+            if (set) {
+                set.delete(sock);
+                if (set.size === 0)
+                    tenantSockets.delete(tenantId);
+            }
+        });
+        sock.on('error', () => { try {
+            sock.close();
+        }
+        catch { } });
     });
     // ─── ERROR HANDLER ────────────────────
     // Prisma P2025 = "record not found" → 404. Couvre les update/delete
@@ -388,7 +449,7 @@ async function start() {
     app.post('/api/sales', { preHandler: authenticate }, async (request) => {
         const { tenantId, userId } = request.user;
         const { items, paymentMode, total, discount } = request.body;
-        return prisma.$transaction(async (tx) => {
+        const newSale = await prisma.$transaction(async (tx) => {
             const newSale = await tx.sale.create({
                 data: {
                     tenantId,
@@ -416,6 +477,19 @@ async function start() {
             }
             return newSale;
         });
+        notifyTenant(tenantId, { type: 'new_sale', data: { id: newSale.id, total, paymentMode, itemCount: Array.isArray(items) ? items.length : 0 } });
+        try {
+            const ids = (items ?? []).map((i) => i.productId);
+            const sold = await prisma.product.findMany({
+                where: { tenantId, id: { in: ids } },
+                select: { id: true, name: true, stockQty: true, stockMin: true },
+            });
+            const low = sold.filter((p) => p.stockQty <= p.stockMin);
+            if (low.length)
+                notifyTenant(tenantId, { type: 'low_stock', data: { products: low.map((p) => ({ id: p.id, name: p.name, stockQty: p.stockQty })) } });
+        }
+        catch { /* non bloquant */ }
+        return newSale;
     });
     // ════════════════════════════════════════
     // CUSTOMERS ROUTES
@@ -452,6 +526,7 @@ async function start() {
                     totalRevenue: totalRevenue ?? 0,
                 }
             });
+            notifyTenant(tenantId, { type: 'new_customer', data: { id: customer.id, name: customer.name } });
             return customer;
         }
         catch (err) {
@@ -514,7 +589,7 @@ async function start() {
         const { supplierId, items, expectedAt, notes } = request.body;
         const ref = `CMD-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
         const total = items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
-        return prisma.purchaseOrder.create({
+        const order = await prisma.purchaseOrder.create({
             data: {
                 ref, tenantId, supplierId,
                 createdById: userId,
@@ -531,6 +606,8 @@ async function start() {
             },
             include: { items: true },
         });
+        notifyTenant(tenantId, { type: 'new_order', data: { id: order.id, ref: order.ref, total } });
+        return order;
     });
     app.patch('/api/orders/:id/status', { preHandler: authenticate }, async (request) => {
         const { tenantId } = request.user;
