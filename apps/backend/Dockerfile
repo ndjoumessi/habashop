@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:22-slim
 
 # Installe OpenSSL et autres dépendances système
 RUN apt-get update -y && \
