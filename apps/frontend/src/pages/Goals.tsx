@@ -305,11 +305,11 @@ export default function Goals() {
               <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>Icône</label>
-                  <input className="input" value={goalForm.icon} onChange={e => setGoalForm(f => ({...f, icon:e.target.value}))} style={{ textAlign:'center', fontSize:20 }} />
+                  <input aria-label="Icône" className="input" value={goalForm.icon} onChange={e => setGoalForm(f => ({...f, icon:e.target.value}))} style={{ textAlign:'center', fontSize:20 }} />
                 </div>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>Label</label>
-                  <input className="input" placeholder={lang === 'fr' ? 'Ex: CA mensuel' : 'Ex: Monthly revenue'} value={goalForm.label} onChange={e => setGoalForm(f => ({...f, label:e.target.value}))} />
+                  <input aria-label="Label" className="input" placeholder={lang === 'fr' ? 'Ex: CA mensuel' : 'Ex: Monthly revenue'} value={goalForm.label} onChange={e => setGoalForm(f => ({...f, label:e.target.value}))} />
                 </div>
               </div>
 
@@ -331,7 +331,7 @@ export default function Goals() {
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>Unité</label>
-                  <select className="input" value={goalForm.unit} onChange={e => setGoalForm(f => ({...f, unit:e.target.value as Goal['unit']}))}>
+                  <select aria-label="Unité" className="input" value={goalForm.unit} onChange={e => setGoalForm(f => ({...f, unit:e.target.value as Goal['unit']}))}>
                     <option value="currency">{currencySymbol}</option>
                     <option value="%">%</option>
                     <option value="clients">Clients</option>

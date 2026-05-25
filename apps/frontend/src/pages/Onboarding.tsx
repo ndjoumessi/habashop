@@ -84,11 +84,11 @@ export default function Onboarding() {
 
             <div style={{ marginBottom: 16 }}>
               <label style={lbl}>{i('NOM DE VOTRE BOUTIQUE *', 'YOUR SHOP NAME *', 'NOMBRE DE TU TIENDA *', 'NOME DEL NEGOZIO *')}</label>
-              <input className="input" style={{ fontSize: 15, fontWeight: 700 }} autoFocus placeholder={i('Ex: Épicerie Centrale Dakar', 'Ex: Central Market', 'Ej: Tienda Central', 'Es: Negozio Centrale')} value={form.shopName} onChange={e => set({ shopName: e.target.value })} />
+              <input aria-label={i('NOM DE VOTRE BOUTIQUE *', 'YOUR SHOP NAME *', 'NOMBRE DE TU TIENDA *', 'NOME DEL NEGOZIO *')} className="input" style={{ fontSize: 15, fontWeight: 700 }} autoFocus placeholder={i('Ex: Épicerie Centrale Dakar', 'Ex: Central Market', 'Ej: Tienda Central', 'Es: Negozio Centrale')} value={form.shopName} onChange={e => set({ shopName: e.target.value })} />
             </div>
             <div style={{ marginBottom: 20 }}>
               <label style={lbl}>{i('VOTRE NOM *', 'YOUR NAME *', 'TU NOMBRE *', 'IL TUO NOME *')}</label>
-              <input className="input" placeholder={i('Ex: Aminata Diallo', 'Ex: John Smith', 'Ej: María García', 'Es: Mario Rossi')} value={form.ownerName} onChange={e => set({ ownerName: e.target.value })} />
+              <input aria-label={i('VOTRE NOM *', 'YOUR NAME *', 'TU NOMBRE *', 'IL TUO NOME *')} className="input" placeholder={i('Ex: Aminata Diallo', 'Ex: John Smith', 'Ej: María García', 'Es: Mario Rossi')} value={form.ownerName} onChange={e => set({ ownerName: e.target.value })} />
             </div>
             <div style={{ marginBottom: 28 }}>
               <label style={lbl}>{i('TYPE DE COMMERCE', 'BUSINESS TYPE', 'TIPO DE NEGOCIO', 'TIPO DI ATTIVITÀ')}</label>
@@ -118,13 +118,13 @@ export default function Onboarding() {
 
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>{i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE')}</label>
-              <select className="input" value={form.country} onChange={e => set({ country: e.target.value })}>
+              <select aria-label={i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE')} className="input" value={form.country} onChange={e => set({ country: e.target.value })}>
                 {[['Sénégal', '🇸🇳'], ["Côte d'Ivoire", '🇨🇮'], ['Mali', '🇲🇱'], ['Burkina Faso', '🇧🇫'], ['Guinée', '🇬🇳'], ['Cameroun', '🇨🇲'], ['Congo RDC', '🇨🇩'], ['Gabon', '🇬🇦'], ['Togo', '🇹🇬'], ['Bénin', '🇧🇯'], ['Niger', '🇳🇪'], ['Tchad', '🇹🇩'], ['France', '🇫🇷'], ['Belgique', '🇧🇪'], ['Canada', '🇨🇦'], ['Autre', '🌍']].map(([c, f]) => <option key={c} value={c}>{f} {c}</option>)}
               </select>
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>{i('VILLE', 'CITY', 'CIUDAD', 'CITTÀ')}</label>
-              <input className="input" placeholder={i('Ex: Dakar, Abidjan…', 'Ex: Lagos, Accra…', 'Ej: Bamako…', 'Es: Dakar…')} value={form.city} onChange={e => set({ city: e.target.value })} />
+              <input aria-label={i('VILLE', 'CITY', 'CIUDAD', 'CITTÀ')} className="input" placeholder={i('Ex: Dakar, Abidjan…', 'Ex: Lagos, Accra…', 'Ej: Bamako…', 'Es: Dakar…')} value={form.city} onChange={e => set({ city: e.target.value })} />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>{i('TÉLÉPHONE BOUTIQUE', 'SHOP PHONE', 'TELÉFONO TIENDA', 'TELEFONO NEGOZIO')}</label>
@@ -132,7 +132,7 @@ export default function Onboarding() {
             </div>
             <div style={{ marginBottom: 28 }}>
               <label style={lbl}>{i('ADRESSE (optionnel)', 'ADDRESS (optional)', 'DIRECCIÓN (opcional)', 'INDIRIZZO (opzionale)')}</label>
-              <input className="input" placeholder={i('Rue, quartier…', 'Street, district…', 'Calle, barrio…', 'Via, quartiere…')} value={form.address} onChange={e => set({ address: e.target.value })} />
+              <input aria-label={i('ADRESSE (optionnel)', 'ADDRESS (optional)', 'DIRECCIÓN (opcional)', 'INDIRIZZO (opzionale)')} className="input" placeholder={i('Rue, quartier…', 'Street, district…', 'Calle, barrio…', 'Via, quartiere…')} value={form.address} onChange={e => set({ address: e.target.value })} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(1)}>← {i('Retour', 'Back', 'Volver', 'Indietro')}</button>
@@ -194,7 +194,7 @@ export default function Onboarding() {
 
             <div style={{ marginBottom: 16 }}>
               <label style={lbl}>{i('NOM DU PRODUIT', 'PRODUCT NAME', 'NOMBRE DEL PRODUCTO', 'NOME PRODOTTO')}</label>
-              <input className="input" placeholder={i('Ex: Riz local 25kg', 'Ex: Local rice 25kg', 'Ej: Arroz local 25kg', 'Es: Riso locale 25kg')} value={form.productName} onChange={e => set({ productName: e.target.value, skipProduct: !e.target.value.trim() })} />
+              <input aria-label={i('NOM DU PRODUIT', 'PRODUCT NAME', 'NOMBRE DEL PRODUCTO', 'NOME PRODOTTO')} className="input" placeholder={i('Ex: Riz local 25kg', 'Ex: Local rice 25kg', 'Ej: Arroz local 25kg', 'Es: Riso locale 25kg')} value={form.productName} onChange={e => set({ productName: e.target.value, skipProduct: !e.target.value.trim() })} />
             </div>
             {form.productName.trim() && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
@@ -204,7 +204,7 @@ export default function Onboarding() {
                 </div>
                 <div>
                   <label style={lbl}>{i('STOCK INITIAL', 'INITIAL STOCK', 'STOCK INICIAL', 'STOCK INIZIALE')}</label>
-                  <input type="number" min={0} className="input" value={form.productStock || ''} onChange={e => set({ productStock: Number(e.target.value) })} />
+                  <input aria-label={i('STOCK INITIAL', 'INITIAL STOCK', 'STOCK INICIAL', 'STOCK INIZIALE')} type="number" min={0} className="input" value={form.productStock || ''} onChange={e => set({ productStock: Number(e.target.value) })} />
                 </div>
               </div>
             )}

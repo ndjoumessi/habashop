@@ -1452,7 +1452,7 @@ export default function POS() {
             {/* Motif */}
             <div style={{ marginBottom:20 }}>
               <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>Motif (optionnel)</label>
-              <input className="input" placeholder="Ex: Client fidèle, promotion du jour..."
+              <input aria-label="Motif (optionnel)" className="input" placeholder="Ex: Client fidèle, promotion du jour..."
                 value={discountForm.reason}
                 onChange={e => setDiscountForm(f => ({...f, reason:e.target.value}))} />
             </div>

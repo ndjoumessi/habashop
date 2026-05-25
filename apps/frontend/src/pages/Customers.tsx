@@ -1488,7 +1488,7 @@ export default function Customers() {
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>TYPE</label>
-                  <select className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
+                  <select aria-label="TYPE" className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
                     <option value="Détail">{lang==='fr'?'Détail':'Retail'}</option>
                     <option value="Grossiste">{lang==='fr'?'Grossiste':'Wholesale'}</option>
                     <option value="Semi-gros">{lang==='fr'?'Semi-gros':'Semi-wholesale'}</option>
@@ -1507,7 +1507,7 @@ export default function Customers() {
 
               <div>
                 <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>EMAIL</label>
-                <input className="input" type="email" placeholder="email@exemple.com"
+                <input aria-label="EMAIL" className="input" type="email" placeholder="email@exemple.com"
                   value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} />
               </div>
 

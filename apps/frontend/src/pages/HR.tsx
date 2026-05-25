@@ -2197,39 +2197,39 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
                 <label style={labelStyle}>{lang==='fr'?'NOM DE L\'EMPLOYÉ':'EMPLOYEE NAME'}</label>
-                <input className="input" placeholder={lang==='fr'?'Aminata Diallo':'Employee name'} value={contractForm.empId} onChange={e=>setContractForm(f=>({...f,empId:e.target.value}))}/>
+                <input aria-label={lang==='fr'?'NOM DE L\'EMPLOYÉ':'EMPLOYEE NAME'} className="input" placeholder={lang==='fr'?'Aminata Diallo':'Employee name'} value={contractForm.empId} onChange={e=>setContractForm(f=>({...f,empId:e.target.value}))}/>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
                   <label style={labelStyle}>{lang==='fr'?'POSTE':'POSITION'}</label>
-                  <input className="input" placeholder={lang==='fr'?'Ex: Caissière':'Ex: Cashier'} value={contractForm.role} onChange={e=>setContractForm(f=>({...f,role:e.target.value}))}/>
+                  <input aria-label={lang==='fr'?'POSTE':'POSITION'} className="input" placeholder={lang==='fr'?'Ex: Caissière':'Ex: Cashier'} value={contractForm.role} onChange={e=>setContractForm(f=>({...f,role:e.target.value}))}/>
                 </div>
                 <div>
                   <label style={labelStyle}>{lang==='fr'?'DÉPARTEMENT':'DEPARTMENT'}</label>
-                  <select className="input" value={contractForm.dept} onChange={e=>setContractForm(f=>({...f,dept:e.target.value}))}>
+                  <select aria-label={lang==='fr'?'DÉPARTEMENT':'DEPARTMENT'} className="input" value={contractForm.dept} onChange={e=>setContractForm(f=>({...f,dept:e.target.value}))}>
                     {Object.keys(DEPT_COLORS).map(d=><option key={d}>{d}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={labelStyle}>{lang==='fr'?'TYPE CONTRAT':'CONTRACT TYPE'}</label>
-                  <select className="input" value={contractForm.type} onChange={e=>setContractForm(f=>({...f,type:e.target.value}))}>
+                  <select aria-label={lang==='fr'?'TYPE CONTRAT':'CONTRACT TYPE'} className="input" value={contractForm.type} onChange={e=>setContractForm(f=>({...f,type:e.target.value}))}>
                     {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t=><option key={t}>{t}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={labelStyle}>{lang==='fr'?'DATE DÉBUT':'START DATE'}</label>
-                  <input className="input" type="date" value={contractForm.hiredAt} onChange={e=>setContractForm(f=>({...f,hiredAt:e.target.value}))}/>
+                  <input aria-label={lang==='fr'?'DATE DÉBUT':'START DATE'} className="input" type="date" value={contractForm.hiredAt} onChange={e=>setContractForm(f=>({...f,hiredAt:e.target.value}))}/>
                 </div>
                 {contractForm.type==='CDD'&&(
                   <div style={{ gridColumn:'1/-1' }}>
                     <label style={labelStyle}>{lang==='fr'?'DATE FIN CONTRAT':'CONTRACT END DATE'}</label>
-                    <input className="input" type="date" value={contractForm.contractEnd} onChange={e=>setContractForm(f=>({...f,contractEnd:e.target.value}))}/>
+                    <input aria-label={lang==='fr'?'DATE FIN CONTRAT':'CONTRACT END DATE'} className="input" type="date" value={contractForm.contractEnd} onChange={e=>setContractForm(f=>({...f,contractEnd:e.target.value}))}/>
                   </div>
                 )}
                 <div style={{ gridColumn:'1/-1' }}>
                   <label style={labelStyle}>{lang==='fr'?'SALAIRE BRUT':'GROSS SALARY'}</label>
                   <div style={{ position:'relative' }}>
-                    <input className="input" type="number" placeholder="150000" value={contractForm.salary||''} onChange={e=>setContractForm(f=>({...f,salary:+e.target.value}))} style={{ paddingRight:60 }}/>
+                    <input aria-label={lang==='fr'?'SALAIRE BRUT':'GROSS SALARY'} className="input" type="number" placeholder="150000" value={contractForm.salary||''} onChange={e=>setContractForm(f=>({...f,salary:+e.target.value}))} style={{ paddingRight:60 }}/>
                     <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>FCFA</span>
                   </div>
                   {contractForm.salary>0&&(
@@ -2352,7 +2352,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={labelStyle}>{lang === 'fr' ? 'EMPLOYÉ' : 'EMPLOYEE'}</label>
-                <select className="input" style={{ width: '100%' }}
+                <select aria-label={lang === 'fr' ? 'EMPLOYÉ' : 'EMPLOYEE'} className="input" style={{ width: '100%' }}
                   value={leaveForm.empId}
                   onChange={e => setLeaveForm(f => ({ ...f, empId: Number(e.target.value) }))}>
                   <option value={0}>{lang === 'fr' ? 'Sélectionner...' : 'Select...'}</option>
@@ -2363,7 +2363,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               </div>
               <div>
                 <label style={labelStyle}>{lang === 'fr' ? 'TYPE DE CONGÉ' : 'LEAVE TYPE'}</label>
-                <select className="input" style={{ width: '100%' }}
+                <select aria-label={lang === 'fr' ? 'TYPE DE CONGÉ' : 'LEAVE TYPE'} className="input" style={{ width: '100%' }}
                   value={leaveForm.type}
                   onChange={e => setLeaveForm(f => ({ ...f, type: e.target.value }))}>
                   {[
@@ -2378,20 +2378,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={labelStyle}>{lang === 'fr' ? 'DU' : 'FROM'}</label>
-                  <input className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+                  <input aria-label={lang === 'fr' ? 'DU' : 'FROM'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
                     value={leaveForm.startDate}
                     onChange={e => setLeaveForm(f => ({ ...f, startDate: e.target.value }))} />
                 </div>
                 <div>
                   <label style={labelStyle}>{lang === 'fr' ? 'AU' : 'TO'}</label>
-                  <input className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+                  <input aria-label={lang === 'fr' ? 'AU' : 'TO'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
                     value={leaveForm.endDate}
                     onChange={e => setLeaveForm(f => ({ ...f, endDate: e.target.value }))} />
                 </div>
               </div>
               <div>
                 <label style={labelStyle}>NOTES / MOTIF</label>
-                <textarea className="input" rows={2} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+                <textarea aria-label="NOTES / MOTIF" className="input" rows={2} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
                   placeholder={lang === 'fr' ? 'Motif, justificatif...' : 'Reason, justification...'}
                   value={leaveForm.notes}
                   onChange={e => setLeaveForm(f => ({ ...f, notes: e.target.value }))} />
@@ -2518,11 +2518,11 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label className="form-label">{T('Département', 'Department', 'Departamento', 'Dipartimento')}</label>
-              <input className="input" value={dept} onChange={e => setDept(e.target.value)} placeholder="Ex: Ventes" style={{ width: '100%', boxSizing: 'border-box' }} />
+              <input aria-label={T('Département', 'Department', 'Departamento', 'Dipartimento')} className="input" value={dept} onChange={e => setDept(e.target.value)} placeholder="Ex: Ventes" style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label className="form-label">{T('Contrat', 'Contract', 'Contrato', 'Contratto')}</label>
-              <select className="input" value={type} onChange={e => setType(e.target.value as 'CDI'|'CDD')} style={{ width: '100%' }}>
+              <select aria-label={T('Contrat', 'Contract', 'Contrato', 'Contratto')} className="input" value={type} onChange={e => setType(e.target.value as 'CDI'|'CDD')} style={{ width: '100%' }}>
                 <option value="CDI">CDI</option>
                 <option value="CDD">CDD</option>
               </select>
@@ -2547,12 +2547,12 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label className="form-label">{T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')}</label>
-              <input className="input" value={hiredAt} onChange={e => setHiredAt(e.target.value)} placeholder="JJ/MM/AAAA" style={{ width: '100%', boxSizing: 'border-box' }} />
+              <input aria-label={T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')} className="input" value={hiredAt} onChange={e => setHiredAt(e.target.value)} placeholder="JJ/MM/AAAA" style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
             {type === 'CDD' && (
               <div>
                 <label className="form-label">{T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')}</label>
-                <input className="input" value={endAt} onChange={e => setEndAt(e.target.value)} placeholder="JJ/MM/AAAA" style={{ width: '100%', boxSizing: 'border-box' }} />
+                <input aria-label={T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')} className="input" value={endAt} onChange={e => setEndAt(e.target.value)} placeholder="JJ/MM/AAAA" style={{ width: '100%', boxSizing: 'border-box' }} />
               </div>
             )}
           </div>
@@ -2676,7 +2676,7 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
       </div>
       <div>
         <label style={lbl}>{lang==='fr' ? 'MOTIF' : 'REASON'}</label>
-        <input className="input" placeholder={lang==='fr' ? 'Ex: Promotion, Ancienneté...' : 'Ex: Promotion, Seniority...'} value={reason} onChange={e => setReason(e.target.value)} />
+        <input aria-label={lang==='fr' ? 'MOTIF' : 'REASON'} className="input" placeholder={lang==='fr' ? 'Ex: Promotion, Ancienneté...' : 'Ex: Promotion, Seniority...'} value={reason} onChange={e => setReason(e.target.value)} />
       </div>
       <div style={{ display:'flex', gap:8 }}>
         <button className="btn btn-primary" style={{ flex:1 }} onClick={() => {
@@ -2716,7 +2716,7 @@ function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
       <div>
         <label style={lbl}>{lang==='fr' ? 'BÉNÉFICIAIRE' : 'RECIPIENT'}</label>
-        <select className="input" value={targetEmpId} onChange={e => setTargetEmpId(e.target.value)}>
+        <select aria-label={lang==='fr' ? 'BÉNÉFICIAIRE' : 'RECIPIENT'} className="input" value={targetEmpId} onChange={e => setTargetEmpId(e.target.value)}>
           <option value="all">🌍 {lang==='fr' ? "Toute l'équipe" : 'All team'}</option>
           {employees.map((e: any) => <option key={e.id} value={String(e.id)}>{e.name}</option>)}
         </select>

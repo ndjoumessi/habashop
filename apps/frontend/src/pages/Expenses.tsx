@@ -489,12 +489,12 @@ export default function Expenses() {
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
                   <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Date</label>
-                  <input className="input" type="date" value={nDate} onChange={e => setNDate(e.target.value)}
+                  <input aria-label="Date" className="input" type="date" value={nDate} onChange={e => setNDate(e.target.value)}
                     style={{ width:'100%', boxSizing:'border-box' }} />
                 </div>
                 <div>
                   <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Catégorie</label>
-                  <select className="input" value={nCat} onChange={e => setNCat(e.target.value as Category)}
+                  <select aria-label="Catégorie" className="input" value={nCat} onChange={e => setNCat(e.target.value as Category)}
                     style={{ width:'100%', boxSizing:'border-box' }}>
                     {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                   </select>
@@ -502,7 +502,7 @@ export default function Expenses() {
               </div>
               <div>
                 <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Libellé</label>
-                <input className="input" type="text" placeholder="Ex: Facture EDF"
+                <input aria-label="Libellé" className="input" type="text" placeholder="Ex: Facture EDF"
                   value={nLabel} onChange={e => setNLabel(e.target.value)}
                   style={{ width:'100%', boxSizing:'border-box' }} />
               </div>
@@ -516,7 +516,7 @@ export default function Expenses() {
                 </div>
                 <div>
                   <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Taux TVA</label>
-                  <select className="input" value={nVat} onChange={e => setNVat(+e.target.value)}
+                  <select aria-label="Taux TVA" className="input" value={nVat} onChange={e => setNVat(+e.target.value)}
                     style={{ width:'100%', boxSizing:'border-box' }}>
                     {VAT_RATES.map(v => <option key={v} value={v}>{v} %</option>)}
                   </select>
@@ -536,7 +536,7 @@ export default function Expenses() {
               )}
               <div>
                 <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Mode de paiement</label>
-                <select className="input" value={nMode} onChange={e => setNMode(e.target.value)}
+                <select aria-label="Mode de paiement" className="input" value={nMode} onChange={e => setNMode(e.target.value)}
                   style={{ width:'100%', boxSizing:'border-box' }}>
                   {MODES.map(m => <option key={m}>{m}</option>)}
                 </select>
@@ -551,7 +551,7 @@ export default function Expenses() {
               </div>
               <div>
                 <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Notes (optionnel)</label>
-                <input className="input" type="text" placeholder="Informations supplémentaires…"
+                <input aria-label="Notes (optionnel)" className="input" type="text" placeholder="Informations supplémentaires…"
                   value={nNotes} onChange={e => setNNotes(e.target.value)}
                   style={{ width:'100%', boxSizing:'border-box' }} />
               </div>

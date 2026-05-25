@@ -637,7 +637,7 @@ export default function Suppliers() {
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
-                <textarea className="input text-sm" rows={2} value={form.notes}
+                <textarea aria-label="Notes" className="input text-sm" rows={2} value={form.notes}
                   onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
             </div>

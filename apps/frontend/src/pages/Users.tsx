@@ -382,11 +382,11 @@ export default function Users() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom complet</label>
-                  <input className="input text-sm" value={editForm.name} onChange={e => setEditForm(f => ({...f, name:e.target.value}))} />
+                  <input aria-label="Nom complet" className="input text-sm" value={editForm.name} onChange={e => setEditForm(f => ({...f, name:e.target.value}))} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Rôle</label>
-                  <select className="input text-sm" value={editForm.role} onChange={e => setEditForm(f => ({...f, role:e.target.value as Role}))}>
+                  <select aria-label="Rôle" className="input text-sm" value={editForm.role} onChange={e => setEditForm(f => ({...f, role:e.target.value as Role}))}>
                     {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
                       <option key={r} value={r}>{ROLE_CONFIG[r].label}</option>
                     ))}
@@ -397,19 +397,19 @@ export default function Users() {
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Email</label>
                 <div className="relative">
                   <Mail size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color:'var(--text3)' }} />
-                  <input className="input text-sm pl-8" type="email" value={editForm.email} onChange={e => setEditForm(f => ({...f, email:e.target.value}))} />
+                  <input aria-label="Email" className="input text-sm pl-8" type="email" value={editForm.email} onChange={e => setEditForm(f => ({...f, email:e.target.value}))} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Statut</label>
-                  <select className="input text-sm" value={editForm.active ? 'active' : 'inactive'} onChange={e => setEditForm(f => ({...f, active:e.target.value==='active'}))}>
+                  <select aria-label="Statut" className="input text-sm" value={editForm.active ? 'active' : 'inactive'} onChange={e => setEditForm(f => ({...f, active:e.target.value==='active'}))}>
                     <option value="active">Actif</option><option value="inactive">Inactif</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>2FA</label>
-                  <select className="input text-sm" value={editForm.twoFA ? 'enabled' : 'disabled'} onChange={e => setEditForm(f => ({...f, twoFA:e.target.value==='enabled'}))}>
+                  <select aria-label="2FA" className="input text-sm" value={editForm.twoFA ? 'enabled' : 'disabled'} onChange={e => setEditForm(f => ({...f, twoFA:e.target.value==='enabled'}))}>
                     <option value="enabled">Activé</option><option value="disabled">Désactivé</option>
                   </select>
                 </div>
@@ -455,11 +455,11 @@ export default function Users() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom complet</label>
-                  <input className="input text-sm" placeholder="Prénom Nom" value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))} />
+                  <input aria-label="Nom complet" className="input text-sm" placeholder="Prénom Nom" value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Rôle</label>
-                  <select className="input text-sm" value={form.role} onChange={e => setForm(f => ({...f, role:e.target.value as Role}))}>
+                  <select aria-label="Rôle" className="input text-sm" value={form.role} onChange={e => setForm(f => ({...f, role:e.target.value as Role}))}>
                     {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
                       <option key={r} value={r}>{ROLE_CONFIG[r].label}</option>
                     ))}
@@ -470,7 +470,7 @@ export default function Users() {
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Email</label>
                 <div className="relative">
                   <Mail size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color:'var(--text3)' }} />
-                  <input className="input text-sm pl-8" type="email" placeholder="email@example.com" value={form.email} onChange={e => setForm(f => ({...f, email:e.target.value}))} />
+                  <input aria-label="Email" className="input text-sm pl-8" type="email" placeholder="email@example.com" value={form.email} onChange={e => setForm(f => ({...f, email:e.target.value}))} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -486,7 +486,7 @@ export default function Users() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Confirmer</label>
-                  <input className="input text-sm" type={showPwd ? 'text' : 'password'} placeholder="••••••••" value={form.confirm} onChange={e => setForm(f => ({...f, confirm:e.target.value}))} />
+                  <input aria-label="Confirmer" className="input text-sm" type={showPwd ? 'text' : 'password'} placeholder="••••••••" value={form.confirm} onChange={e => setForm(f => ({...f, confirm:e.target.value}))} />
                 </div>
               </div>
               {form.role && (

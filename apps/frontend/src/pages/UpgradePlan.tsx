@@ -149,12 +149,12 @@ export default function UpgradePlan() {
 
             <div style={{ marginBottom: 16 }}>
               <label style={lbl}>{i('RÉFÉRENCE TRANSACTION (optionnel)', 'TRANSACTION REFERENCE (optional)', 'REFERENCIA TRANSACCIÓN (opcional)', 'RIFERIMENTO TRANSAZIONE (opzionale)')}</label>
-              <input className="input" placeholder={i('Ex: WV-12345678 ou numéro Orange Money', 'Ex: WV-12345678 or Orange Money number', 'Ej: WV-12345678 o número Orange Money', 'Es: WV-12345678 o numero Orange Money')} value={form.paymentRef} onChange={e => set({ paymentRef: e.target.value })} />
+              <input aria-label={i('RÉFÉRENCE TRANSACTION (optionnel)', 'TRANSACTION REFERENCE (optional)', 'REFERENCIA TRANSACCIÓN (opcional)', 'RIFERIMENTO TRANSAZIONE (opzionale)')} className="input" placeholder={i('Ex: WV-12345678 ou numéro Orange Money', 'Ex: WV-12345678 or Orange Money number', 'Ej: WV-12345678 o número Orange Money', 'Es: WV-12345678 o numero Orange Money')} value={form.paymentRef} onChange={e => set({ paymentRef: e.target.value })} />
             </div>
 
             <div style={{ marginBottom: 24 }}>
               <label style={lbl}>{i('MESSAGE (optionnel)', 'MESSAGE (optional)', 'MENSAJE (opcional)', 'MESSAGGIO (opzionale)')}</label>
-              <textarea className="input" rows={2} placeholder={i('Informations complémentaires…', 'Additional information…', 'Información adicional…', 'Informazioni aggiuntive…')} value={form.notes} onChange={e => set({ notes: e.target.value })} style={{ resize: 'none' }} />
+              <textarea aria-label={i('MESSAGE (optionnel)', 'MESSAGE (optional)', 'MENSAJE (opcional)', 'MESSAGGIO (opzionale)')} className="input" rows={2} placeholder={i('Informations complémentaires…', 'Additional information…', 'Información adicional…', 'Informazioni aggiuntive…')} value={form.notes} onChange={e => set({ notes: e.target.value })} style={{ resize: 'none' }} />
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>

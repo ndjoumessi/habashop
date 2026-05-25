@@ -375,12 +375,12 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={lbl}>{i('Nom de la boutique *', 'Shop name *', 'Nombre de la tienda *', 'Nome del negozio *')}</label>
-                <input className="input" placeholder="Ex: Superette Kouassi" value={newTenantForm.name} onChange={e => setNewTenantForm(f => ({ ...f, name: e.target.value }))} />
+                <input aria-label={i('Nom de la boutique *', 'Shop name *', 'Nombre de la tienda *', 'Nome del negozio *')} className="input" placeholder="Ex: Superette Kouassi" value={newTenantForm.name} onChange={e => setNewTenantForm(f => ({ ...f, name: e.target.value }))} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={lbl}>Plan</label>
-                  <select className="input" value={newTenantForm.plan} onChange={e => setNewTenantForm(f => ({ ...f, plan: e.target.value }))}>
+                  <select aria-label="Plan" className="input" value={newTenantForm.plan} onChange={e => setNewTenantForm(f => ({ ...f, plan: e.target.value }))}>
                     <option value="starter">Starter — {fmt(9900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
                     <option value="pro">Pro — {fmt(24900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
                     <option value="enterprise">Enterprise — {fmt(49900)}/{i('mois', 'mo', 'mes', 'mese')}</option>
@@ -388,7 +388,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <label style={lbl}>{i('Devise', 'Currency', 'Divisa', 'Valuta')}</label>
-                  <select className="input" value={newTenantForm.currency} onChange={e => setNewTenantForm(f => ({ ...f, currency: e.target.value }))}>
+                  <select aria-label={i('Devise', 'Currency', 'Divisa', 'Valuta')} className="input" value={newTenantForm.currency} onChange={e => setNewTenantForm(f => ({ ...f, currency: e.target.value }))}>
                     <option value="XOF">FCFA (XOF)</option>
                     <option value="XAF">FCFA (XAF)</option>
                     <option value="EUR">Euro (EUR)</option>
@@ -398,11 +398,11 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <label style={lbl}>{i('Email administrateur', 'Admin email', 'Email admin', 'Email admin')}</label>
-                <input className="input" type="email" placeholder="admin@boutique.com" value={newTenantForm.adminEmail} onChange={e => setNewTenantForm(f => ({ ...f, adminEmail: e.target.value }))} />
+                <input aria-label={i('Email administrateur', 'Admin email', 'Email admin', 'Email admin')} className="input" type="email" placeholder="admin@boutique.com" value={newTenantForm.adminEmail} onChange={e => setNewTenantForm(f => ({ ...f, adminEmail: e.target.value }))} />
               </div>
               <div>
                 <label style={lbl}>{i('Mot de passe admin', 'Admin password', 'Contraseña admin', 'Password admin')}</label>
-                <input className="input" type="password" placeholder={i('Min. 8 caractères', 'Min. 8 chars', 'Mín. 8 caracteres', 'Min. 8 caratteri')} value={newTenantForm.adminPassword} onChange={e => setNewTenantForm(f => ({ ...f, adminPassword: e.target.value }))} />
+                <input aria-label={i('Mot de passe admin', 'Admin password', 'Contraseña admin', 'Password admin')} className="input" type="password" placeholder={i('Min. 8 caractères', 'Min. 8 chars', 'Mín. 8 caracteres', 'Min. 8 caratteri')} value={newTenantForm.adminPassword} onChange={e => setNewTenantForm(f => ({ ...f, adminPassword: e.target.value }))} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
