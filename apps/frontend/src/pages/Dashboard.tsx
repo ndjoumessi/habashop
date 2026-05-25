@@ -181,15 +181,15 @@ export default function Dashboard() {
   void lang
 
   const [stats, setStats] = useState({
-    salesToday: 842000,
-    transactionsToday: 47,
-    salesMonth: 2650000,
-    totalProducts: 248,
-    lowStockProducts: 3,
-    activeEmployees: 18,
-    pendingOrders: 4,
+    salesToday: 0,
+    transactionsToday: 0,
+    salesMonth: 0,
+    totalProducts: 0,
+    lowStockProducts: 0,
+    activeEmployees: 0,
+    pendingOrders: 0,
   })
-  const [salesChart, setSalesChart] = useState(SALES_CHART_FALLBACK)
+  const [salesChart, setSalesChart] = useState<any[]>([])
   const [reportPeriod, setReportPeriod] = useState('7days')
 
   useEffect(() => {
@@ -228,10 +228,12 @@ export default function Dashboard() {
             return acc
           }, {})
           const chartData = Object.values(grouped)
-          if (chartData.length > 0) setSalesChart(chartData as any)
+          setSalesChart(chartData as any)
+        } else {
+          setSalesChart([])
         }
       })
-      .catch(() => {})
+      .catch(() => setSalesChart([]))
   }, [reportPeriod, lang]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const dateStr = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', {
@@ -250,6 +252,11 @@ export default function Dashboard() {
     { Icon: Zap,         label: 'IA Assistant',                                        path: '/app/ai',      color: 'rgba(108,71,255,.15)',  ic: 'var(--p2)'    },
   ]
   const QUICK_ACTIONS = ALL_QUICK_ACTIONS.filter(a => canAccess(user?.role, a.path.split('/').pop() || ''))
+
+  // Données de démo (alertes, activité, top produits) affichées uniquement si le
+  // tenant a une activité réelle — sinon états vides au lieu de chiffres fictifs.
+  const hasActivity = stats.transactionsToday > 0 || salesChart.length > 0
+  const emptyHint = lang === 'fr' ? 'Commencez par enregistrer vos premières ventes' : 'Start by recording your first sales'
 
   return (
     <div className="space-y-5 animate-in">
@@ -360,6 +367,11 @@ export default function Dashboard() {
             </select>
           </div>
           <div role="img" aria-label={lang === 'fr' ? 'Graphique des ventes par jour' : lang === 'en' ? 'Daily sales chart' : lang === 'es' ? 'Gráfico de ventas diarias' : 'Grafico vendite giornaliere'}>
+          {salesChart.length === 0 ? (
+            <div style={{ height: 190, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 13, textAlign: 'center', padding: '0 16px' }}>
+              {lang === 'fr' ? 'Aucune vente pour le moment' : 'No sales yet'}
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height={190}>
             <AreaChart data={salesChart} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
               <defs>
@@ -376,6 +388,7 @@ export default function Dashboard() {
               <Area dataKey="ventes" stroke="#00D084" strokeWidth={2.5} fill="url(#areaGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
+          )}
           </div>
         </div>
 
@@ -440,10 +453,14 @@ export default function Dashboard() {
               </div>
               <span className="panel-title">{t('stock_alerts')}</span>
             </div>
-            <span className="badge badge-red">{ALERTS.length}</span>
+            {hasActivity && <span className="badge badge-red">{ALERTS.length}</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            {ALERTS.map(a => (
+            {!hasActivity ? (
+              <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+                {lang === 'fr' ? 'Aucune alerte de stock' : 'No stock alerts'}
+              </div>
+            ) : ALERTS.map(a => (
               <div key={a.name} style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px',
                 borderRadius: 10, cursor: 'pointer', transition: 'all .15s',
@@ -470,7 +487,11 @@ export default function Dashboard() {
             <span className="panel-title">{t('recent_activity')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {RECENT_ACTIVITY.map((a, i) => (
+            {!hasActivity ? (
+              <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
+                {emptyHint}
+              </div>
+            ) : RECENT_ACTIVITY.map((a, i) => (
               <div key={i} style={{
                 display: 'flex', gap: 11, alignItems: 'flex-start', padding: '9px 3px',
                 borderBottom: i < RECENT_ACTIVITY.length - 1 ? '1px solid var(--border)' : 'none',
@@ -501,7 +522,11 @@ export default function Dashboard() {
             <span className="panel-title">{t('top_products')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {TOP_PRODUCTS.map((p, i) => (
+            {!hasActivity ? (
+              <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
+                {emptyHint}
+              </div>
+            ) : TOP_PRODUCTS.map((p, i) => (
               <div key={p.name}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                   <div style={{
