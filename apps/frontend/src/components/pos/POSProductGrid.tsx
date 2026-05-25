@@ -1,0 +1,396 @@
+import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History } from 'lucide-react'
+import { t } from '@/stores/appStore'
+import { CATS, PRODUCTS, type PosProduct, type CartItem } from '@/components/pos/posShared'
+
+interface POSProductGridProps {
+  posTab: 'pos' | 'history'; setPosTab: (v: any) => void; fetchHistory: () => void
+  lang: string
+  activeCat: string; setActiveCat: (v: string) => void
+  search: string; setSearch: (v: string) => void
+  posEnableScanner: boolean; setShowScanner: (b: boolean) => void
+  clientType: 'retail' | 'wholesale' | 'semi'; setClientType: (v: any) => void
+  setShowDiscountModal: (b: boolean) => void
+  discount: any; setDiscount: (v: any) => void
+  fmt: (n: number) => string
+  filtered: PosProduct[]
+  cart: CartItem[]
+  addItem: (p: any) => void
+  getPrice: (p: any) => number
+  posShowStockOnTile: boolean
+  loadingHistory: boolean
+  salesHistory: any[]
+  isMobile: boolean; mobileView: string
+}
+
+export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, isMobile, mobileView }: POSProductGridProps) {
+  return (
+        <div style={{
+          flex: 1,
+          minWidth: 0,
+          display: isMobile && mobileView === 'cart' ? 'none' : 'flex',
+          flexDirection: 'column',
+          padding: '12px 12px 12px 16px',
+          gap: 10,
+          overflow: 'hidden',
+        }}>
+
+          {/* Onglets Caisse / Historique */}
+          <div style={{
+            display: 'flex', gap: 4,
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 12, padding: 5,
+            flexShrink: 0,
+          }}>
+            {([
+              { id:'pos',     label: lang === 'fr' ? 'Caisse'     : lang === 'en' ? 'Register'  : lang === 'es' ? 'Caja'      : 'Cassa'   },
+              { id:'history', label: lang === 'fr' ? 'Historique' : lang === 'en' ? 'History'   : lang === 'es' ? 'Historial' : 'Storico' },
+            ] as const).map(tab => (
+              <button key={tab.id} type="button"
+                onClick={() => { setPosTab(tab.id); if (tab.id === 'history') fetchHistory() }}
+                style={{
+                  flex:1, padding:'8px', borderRadius:8,
+                  fontSize:13, fontWeight:600,
+                  cursor:'pointer', fontFamily:'var(--font)',
+                  background: posTab === tab.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
+                  color: posTab === tab.id ? '#fff' : 'var(--text2)',
+                  border:'none', transition:'all .15s',
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                }}
+              >
+                {tab.id === 'pos' ? <ShoppingCart size={13} /> : <History size={13} />}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Filtres catégories */}
+          {posTab === 'pos' && (
+            <div style={{
+              flexShrink: 0,
+              display: 'flex',
+              gap: 6,
+              overflowX: 'auto',
+              flexWrap: 'nowrap',
+              paddingBottom: 2,
+            }}>
+              {CATS.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setActiveCat(c.id)}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font)',
+                    transition: 'all .15s',
+                    border: 'none',
+                    whiteSpace: 'nowrap',
+                    background: activeCat === c.id
+                      ? 'linear-gradient(135deg, var(--p), var(--p2))'
+                      : 'var(--bg3)',
+                    color: activeCat === c.id ? '#fff' : 'var(--text2)',
+                    boxShadow: activeCat === c.id ? '0 4px 14px rgba(91,78,232,.35)' : 'none',
+                  }}
+                >{c.id === 'all' ? t('pos_all') : c.label}</button>
+              ))}
+            </div>
+          )}
+
+          {/* Recherche + Scan */}
+          {posTab === 'pos' && (
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <Search size={14} style={{
+                  position: 'absolute', left: 10,
+                  top: '50%', transform: 'translateY(-50%)',
+                  color: 'var(--text3)', pointerEvents: 'none',
+                }} />
+                <input
+                  className="input"
+                  style={{ paddingLeft: 34, width: '100%', fontSize: 13, boxSizing: 'border-box' }}
+                  aria-label="Rechercher" placeholder={t('pos_search')}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+              {posEnableScanner && (
+                <button
+                  onClick={() => setShowScanner(true)}
+                  title="Scanner un code-barres"
+                  style={{
+                    width: 40, height: 40, borderRadius: 10, fontSize: 18,
+                    cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+                    background: 'var(--bg3)', border: '1px solid var(--border)',
+                    color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                ><Camera size={18} /></button>
+              )}
+            </div>
+          )}
+
+          {/* Barre type client + remise */}
+          {posTab === 'pos' && <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+            {([
+              { id:'retail',    label:'Détail'   },
+              { id:'wholesale', label:'Grossiste' },
+              { id:'semi',      label:'Demi-gros' },
+            ] as { id:'retail'|'wholesale'|'semi'; label:string }[]).map(ct => (
+              <button key={ct.id} onClick={() => setClientType(ct.id)} style={{
+                padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:600,
+                cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
+                background: clientType === ct.id ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
+                border:`1px solid ${clientType === ct.id ? 'var(--p2)' : 'var(--border)'}`,
+                color: clientType === ct.id ? 'var(--p2)' : 'var(--text2)',
+                display:'flex', alignItems:'center', gap:5,
+              }}>
+                {ct.id === 'retail' ? <User size={12} /> : ct.id === 'wholesale' ? <Factory size={12} /> : <Package size={12} />}
+                {ct.label}
+              </button>
+            ))}
+            <div style={{ width:1, height:20, background:'var(--border)', margin:'0 4px' }} />
+            <button onClick={() => setShowDiscountModal(true)} style={{
+              padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:600,
+              cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
+              background: discount ? 'rgba(14,196,126,.15)' : 'var(--bg3)',
+              border:`1px solid ${discount ? 'rgba(14,196,126,.3)' : 'var(--border)'}`,
+              color: discount ? 'var(--acc2)' : 'var(--text2)',
+              display:'flex', alignItems:'center', gap:6,
+            }}>
+              <Tag size={12} /> {discount
+                ? `Remise: ${discount.type === 'percent' ? discount.value + ' %' : fmt(discount.value)}`
+                : 'Appliquer une remise'}
+            </button>
+            {discount && (
+              <button onClick={() => setDiscount(null)} style={{
+                padding:'6px 8px', borderRadius:8, fontSize:11,
+                background:'rgba(232,64,74,.1)', border:'1px solid rgba(232,64,74,.2)',
+                color:'var(--danger)', cursor:'pointer', fontFamily:'var(--font)',
+                display:'flex', alignItems:'center', gap:4,
+              }}><X size={11} /> Annuler remise</button>
+            )}
+            <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+              <Tag size={11} /> {PRODUCTS.filter(p => p.promotion).length} promotions actives
+            </div>
+          </div>}
+
+          {/* Grille produits — SCROLL ICI */}
+          {posTab === 'pos' && <div style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            paddingTop: 8,
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+              gap: 10,
+              paddingBottom: 8,
+            }}>
+              {filtered.map(p => {
+                const inCart     = cart.find(i => i.id === p.id)
+                const isLowStock = p.stock < 20
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => addItem(p)}
+                    style={{
+                      background: inCart
+                        ? 'linear-gradient(135deg, rgba(91,78,232,.15), rgba(124,111,240,.08))'
+                        : 'var(--card)',
+                      border: inCart
+                        ? '1.5px solid var(--p2)'
+                        : '1px solid var(--border)',
+                      borderRadius: 12,
+                      padding: '16px 12px 14px',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      transition: 'all .18s',
+                      position: 'relative',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                    onMouseEnter={e => {
+                      if (!inCart) {
+                        const el = e.currentTarget as HTMLElement
+                        el.style.borderColor = 'var(--p2)'
+                        el.style.transform = 'translateY(-2px)'
+                        el.style.boxShadow = '0 8px 24px rgba(91,78,232,.18)'
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (!inCart) {
+                        const el = e.currentTarget as HTMLElement
+                        el.style.borderColor = 'var(--border)'
+                        el.style.transform = 'none'
+                        el.style.boxShadow = 'none'
+                      }
+                    }}
+                  >
+                    {/* Badge promo */}
+                    {p.promotion && clientType === 'retail' && (
+                      <div style={{
+                        position:'absolute', top:6, left:6,
+                        background:'var(--danger)', color:'#fff',
+                        borderRadius:6, padding:'2px 6px',
+                        fontSize:9, fontWeight:800,
+                      }}>PROMO</div>
+                    )}
+                    {/* Badge quantité si dans panier */}
+                    {inCart && (
+                      <div style={{
+                        position: 'absolute',
+                        top: -8, right: -8,
+                        background: 'var(--p)',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        width: 22, height: 22,
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 11, fontWeight: 800,
+                        border: '2px solid var(--bg)',
+                      }}>×{inCart.qty}</div>
+                    )}
+
+                    {/* Emoji dans cercle */}
+                    <div style={{
+                      width: 56, height: 56,
+                      borderRadius: '50%',
+                      background: 'var(--bg3)',
+                      border: '1px solid var(--border)',
+                      display: 'flex', alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 28,
+                    }}>{p.emoji}</div>
+
+                    {/* Nom */}
+                    <div style={{
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: 'var(--text)',
+                      lineHeight: 1.3,
+                    }}>{p.name}</div>
+
+                    {/* Prix */}
+                    {clientType !== 'retail' && (
+                      <div style={{ fontSize:9, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
+                        {fmt(p.price)}
+                      </div>
+                    )}
+                    {p.promotion && clientType === 'retail' && (
+                      <div style={{ fontSize:9, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
+                        {fmt(p.price)}
+                      </div>
+                    )}
+                    <div style={{
+                      fontSize: 14,
+                      fontWeight: 800,
+                      color: p.promotion && clientType === 'retail' ? 'var(--danger)' : 'var(--acc)',
+                      fontFamily: 'var(--mono)',
+                    }}>{fmt(getPrice(p))}</div>
+
+                    {/* Stock */}
+                    {posShowStockOnTile && (
+                      <div style={{
+                        fontSize: 10.5,
+                        color: isLowStock ? 'var(--danger)' : 'var(--text3)',
+                        fontWeight: isLowStock ? 600 : 400,
+                      }}>
+                        {isLowStock && <AlertTriangle size={10} style={{ display:'inline', verticalAlign:'middle', marginRight:3 }} />}Stock : {p.stock}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {filtered.length === 0 && (
+                <div style={{
+                  gridColumn: '1 / -1',
+                  textAlign: 'center',
+                  padding: '60px 20px',
+                  color: 'var(--text3)',
+                  fontSize: 14,
+                }}>
+                  {t('pos_not_found')}
+                </div>
+              )}
+            </div>
+          </div>}
+
+          {/* ── Onglet Historique ── */}
+          {posTab === 'history' && (
+            <div style={{ flex:1, overflowY:'auto', minHeight:0 }}>
+              {loadingHistory ? (
+                <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
+                  ⏳ {lang === 'fr' ? 'Chargement...' : 'Loading...'}
+                </div>
+              ) : salesHistory.length === 0 ? (
+                <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
+                  <ClipboardList size={32} style={{ marginBottom:12, color:'var(--text3)' }} />
+                  <div>{lang === 'fr' ? 'Aucune vente enregistrée' : lang === 'en' ? 'No sales recorded' : lang === 'es' ? 'Sin ventas registradas' : 'Nessuna vendita registrata'}</div>
+                </div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:8, padding:'0 4px' }}>
+                  {salesHistory.slice(0, 50).map((sale: any, i: number) => {
+                    const date = new Date(sale.createdAt)
+                    const timeAgo = Math.round((Date.now() - date.getTime()) / 60000)
+                    const timeLabel = timeAgo < 60 ? `${timeAgo} min` : `${Math.round(timeAgo / 60)}h`
+                    return (
+                      <div key={sale.id ?? i} style={{
+                        background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, padding:'12px 14px',
+                      }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
+                          <div>
+                            <div style={{ fontSize:13, fontWeight:700, color:'var(--text)', marginBottom:2, display:'flex', alignItems:'center', gap:5 }}>
+                              <CreditCard size={13} /> {lang === 'fr' ? 'Vente' : lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : 'Vendita'} #{String(sale.id).slice(-6).toUpperCase()}
+                            </div>
+                            <div style={{ fontSize:11, color:'var(--text3)' }}>
+                              {date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'it-IT')}
+                              {' · '}{date.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}
+                              {' · '}{timeLabel}
+                            </div>
+                          </div>
+                          <div style={{ textAlign:'right' }}>
+                            <div style={{ fontSize:15, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>{fmt(sale.total)}</div>
+                            <span style={{
+                              fontSize:10, fontWeight:700, borderRadius:20, padding:'2px 8px',
+                              background: sale.paymentMode === 'cash' ? 'rgba(14,196,126,.12)' : sale.paymentMode === 'card' ? 'rgba(91,78,232,.12)' : 'rgba(240,165,0,.12)',
+                              color: sale.paymentMode === 'cash' ? 'var(--acc2)' : sale.paymentMode === 'card' ? 'var(--p2)' : 'var(--acc)',
+                            }}>
+                              {sale.paymentMode === 'cash' ? (lang === 'fr' ? 'Espèces' : 'Cash')
+                                : sale.paymentMode === 'card' ? (lang === 'fr' ? 'Carte' : 'Card') : 'Mobile'}
+                            </span>
+                          </div>
+                        </div>
+                        {sale.items?.slice(0, 3).map((item: any, j: number) => (
+                          <div key={j} style={{
+                            fontSize:11, color:'var(--text2)',
+                            display:'flex', justifyContent:'space-between',
+                            padding: j === 0 ? '8px 0 3px' : '3px 0',
+                            borderTop: j === 0 ? '1px solid var(--border)' : 'none',
+                            marginTop: j === 0 ? 6 : 0,
+                          }}>
+                            <span>×{item.qty} {item.product?.name ?? 'Produit'}</span>
+                            <span style={{ fontFamily:'var(--mono)' }}>{fmt(item.total ?? item.qty * item.unitPrice)}</span>
+                          </div>
+                        ))}
+                        {sale.items?.length > 3 && (
+                          <div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>
+                            +{sale.items.length - 3} {lang === 'fr' ? 'autres articles' : 'more items'}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+  )
+}
