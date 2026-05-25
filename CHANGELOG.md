@@ -13,6 +13,7 @@ Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités c
 - `POST /api/billing/request-plan`, `GET /api/billing/status` (auto-suspension à l'expiration de l'essai)
 - `GET /api/admin/plan-requests`, `PATCH /api/admin/plan-requests/:id` (SUPER_ADMIN approve/reject)
 - Frontend : `BillingBanner` (essai ≤ 7 j / expiré / demande en cours), page `/app/upgrade` (Wave / Orange Money / MTN / Virement), onglet « Demandes » dans la console super-admin
+- **Vérifié de bout en bout en production (nouveau tenant)** : signup → essai 14 j → demande d'upgrade via `/app/upgrade` (Wave) → demande visible dans la console super-admin → validation → tenant passé en plan `pro` / `status=active` (tenant de test supprimé ensuite)
 
 ### 🔔 Notifications temps réel (WebSocket)
 - `@fastify/websocket` ; `GET /api/ws` (auth par token en query, fermeture `1008` si token invalide)
