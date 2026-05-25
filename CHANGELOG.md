@@ -3,6 +3,27 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.3.5] — 2026-05-25 — Loading states généralisés + composant Skeleton
+
+> Déployé et **vérifié en production** (frontend Vercel). Aucun changement de comportement fonctionnel.
+
+### 🦴 Composant `Skeleton` (refonte)
+- `ui/skeleton.tsx` : **export default + nommé**, props `height` / `width` / `count` / `radius` (+ className/style/props spread). Rend `count` barres **visibles** via la classe `.skeleton` (shimmer `--bg4`/`--bg5`).
+- Motif : le `<Skeleton>` shadcn d'origine s'appuyait sur `bg-muted`, mais le token `--muted` n'est **pas défini** dans le projet → rendu quasi-invisible. La classe `.skeleton` (déjà utilisée par HR) est la vraie primitive.
+- Casse d'import corrigée : le fichier réel est `ui/skeleton.tsx` (minuscule, convention shadcn) ; les imports en `Skeleton` majuscule déclenchaient `TS1261` (conflit de casse sur FS insensible).
+
+### ⏳ Loading states — 8 pages
+- **Suppliers / Orders / Expenses / Planning** : passage des squelettes inline `.skeleton` au composant `<Skeleton>` (dans le `<tbody>`, état vide conservé).
+- **Reports / Goals** : vrai fetch au chargement (`salesApi.list` / `dashboardApi.stats`) → `finally(() => setLoading(false))` + squelette en early-return.
+- **Activity / Forecasts** : **données statiques** (pas de fetch réseau au montage) — squelette bref au montage (`useEffect(() => setLoading(false), [])`), ajouté pour la cohérence visuelle ; signalé comme quasi-instantané.
+- `grep -rl "Skeleton" src/pages | wc -l` → **8**.
+
+### 🎨 Tokenisation couleurs (composants extraits)
+- Script hex→var appliqué sur `components/{customers,stock,pos}` + pages Customers/Stock/POS : **1 remplacement** (`POSCart` `rgba(0,208,132,.25)` → `var(--c-green-border)`, valeur identique). Le reste était déjà tokenisé (passes précédentes) ; les hex en dégradés/alpha ne correspondent volontairement pas au motif.
+- **Aucun** hex de print-HTML (`window.open`), de template SVG (`createMarkerIcon`) ou de graphique Recharts touché — vérifié avant exécution.
+
+> Rappel : la découpe de `Stock.tsx` a été livrée en [2.3.3] (940 → 264 lignes). Non refaite.
+
 ## [2.3.4] — 2026-05-25 — Architecture frontend : découpe de `POS.tsx` + loading states
 
 > Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
