@@ -79,7 +79,9 @@ Retourne l'utilisateur courant.
 ```jsonc
 // POST /api/sales — body
 { "items": [{ "productId": "…", "qty": 2, "price": 1500 }],
-  "paymentMethod": "cash", "customerId": "…"?, "total": 3000 }
+  "paymentMode": "cash|card|wave|orange_money",
+  "total": 3000,
+  "discount": { "amount": 0, "type": null } }   // optionnel
 ```
 
 ---

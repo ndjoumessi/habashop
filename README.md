@@ -190,6 +190,16 @@ cd apps/backend && npm run build       # tsc -> dist/
 
 > ℹ️ Le frontend **ne se déploie pas automatiquement** au `git push` : lancer `vercel --prod` **depuis `apps/frontend`** (un déploiement depuis la racine renvoie un 404).
 
+## 🧪 Tests
+
+```bash
+# Frontend — 22 tests (currency, pagination, i18n)
+cd apps/frontend && npm test
+
+# Backend — 8 tests (auth, JWT, isolation multi-tenant)
+cd apps/backend && npm test
+```
+
 ## 🗄️ Base de données (15 modèles Prisma)
 
 `Tenant` · `User` · `Product` · `Sale` · `SaleItem` · `Customer` · `Supplier` · `PurchaseOrder` · `PurchaseOrderItem` · `Employee` · `EmployeeBonus` · `SalaryHistory` · `Expense` · `AuditLog` · `PlanRequest`
