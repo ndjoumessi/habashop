@@ -87,6 +87,16 @@ html,body,#root {
   overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0;
 }
 
+/* Accessibilité : lien d'évitement (skip to content) — visible au focus clavier */
+.skip-to-content {
+  position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;
+}
+.skip-to-content:focus {
+  position:fixed; top:8px; left:8px; width:auto; height:auto;
+  padding:8px 16px; background:var(--p); color:#fff; border-radius:var(--r-md);
+  z-index:9999; font-size:14px; font-weight:700; outline:none;
+}
+
 /* ── Buttons ── */
 .btn,.topbar-btn,.mini-btn {
   display:inline-flex; align-items:center; justify-content:center;
