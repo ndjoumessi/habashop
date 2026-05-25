@@ -13,64 +13,10 @@ import {
   ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
 } from 'recharts'
 
-const SALES_CHART_FALLBACK = [
-  { name: 'Lun', ventes: 320000, transactions: 12 },
-  { name: 'Mar', ventes: 450000, transactions: 18 },
-  { name: 'Mer', ventes: 280000, transactions: 10 },
-  { name: 'Jeu', ventes: 590000, transactions: 24 },
-  { name: 'Ven', ventes: 750000, transactions: 31 },
-  { name: 'Sam', ventes: 890000, transactions: 38 },
-  { name: 'Dim', ventes: 420000, transactions: 17 },
-]
-
 const DONUT_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#00B8FF', '#FF3B5C', '#FFB800']
-
-const catData = [
-  { name: 'Céréales',   value: 4200000 },
-  { name: 'Corps gras', value: 2800000 },
-  { name: 'Hygiène',    value: 1900000 },
-  { name: 'Laitiers',   value: 1400000 },
-  { name: 'Conserves',  value: 980000  },
-  { name: 'Épicerie',   value: 720000  },
-]
-
-const catTotal = catData.reduce((s, d) => s + d.value, 0)
 
 type Lang = 'fr' | 'en' | 'es' | 'it'
 type LangMap = Record<Lang, string>
-
-const RECENT_ACTIVITY: Array<{
-  iconType: 'sale' | 'stock' | 'hr' | 'alert'
-  color: string; iconColor: string
-  title: LangMap
-  getDesc: (fmt: (n: number) => string, lang: string) => string
-}> = [
-  {
-    iconType: 'sale', color: 'rgba(0,208,132,.15)', iconColor: '#00D084',
-    title: { fr: 'Vente #2041', en: 'Sale #2041', es: 'Venta #2041', it: 'Vendita #2041' },
-    getDesc: (f, l) => ({ fr: `${f(45000)} · Il y a 3 min · Caisse 1`, en: `${f(45000)} · 3 min ago · Till 1`, es: `${f(45000)} · Hace 3 min · Caja 1`, it: `${f(45000)} · 3 min fa · Cassa 1` })[l as Lang] ?? `${f(45000)} · 3 min`,
-  },
-  {
-    iconType: 'stock', color: 'rgba(255,149,0,.15)', iconColor: '#FF9500',
-    title: { fr: 'Réception stock', en: 'Stock receipt', es: 'Recepción stock', it: 'Ricezione stock' },
-    getDesc: (_f, l) => ({ fr: 'Fournisseur Diallo · Il y a 18 min', en: 'Supplier Diallo · 18 min ago', es: 'Proveedor Diallo · Hace 18 min', it: 'Fornitore Diallo · 18 min fa' })[l as Lang] ?? '',
-  },
-  {
-    iconType: 'hr', color: 'rgba(108,71,255,.15)', iconColor: '#A991FF',
-    title: { fr: 'Pointage Marie K.', en: 'Clock-in Marie K.', es: 'Fichaje Marie K.', it: 'Timbratura Marie K.' },
-    getDesc: (_f, l) => ({ fr: 'Arrivée 08:02 · Il y a 35 min', en: 'Arrived 08:02 · 35 min ago', es: 'Llegada 08:02 · Hace 35 min', it: 'Arrivo 08:02 · 35 min fa' })[l as Lang] ?? '',
-  },
-  {
-    iconType: 'alert', color: 'rgba(255,59,92,.15)', iconColor: '#FF3B5C',
-    title: { fr: 'Alerte rupture', en: 'Out-of-stock alert', es: 'Alerta rotura', it: 'Allarme esaurimento' },
-    getDesc: (_f, l) => ({ fr: 'Sucre 50kg · Il y a 1h', en: 'Sugar 50kg · 1h ago', es: 'Azúcar 50kg · Hace 1h', it: 'Zucchero 50kg · 1h fa' })[l as Lang] ?? '',
-  },
-  {
-    iconType: 'sale', color: 'rgba(0,208,132,.15)', iconColor: '#00D084',
-    title: { fr: 'Vente #2040', en: 'Sale #2040', es: 'Venta #2040', it: 'Vendita #2040' },
-    getDesc: (f, l) => ({ fr: `${f(128000)} · Il y a 1h 12`, en: `${f(128000)} · 1h 12 ago`, es: `${f(128000)} · Hace 1h 12`, it: `${f(128000)} · 1h 12 fa` })[l as Lang] ?? `${f(128000)}`,
-  },
-]
 
 function ActivityIcon({ type }: { type: 'sale' | 'stock' | 'hr' | 'alert' }) {
   if (type === 'sale')  return <CreditCard size={15} />
@@ -78,21 +24,6 @@ function ActivityIcon({ type }: { type: 'sale' | 'stock' | 'hr' | 'alert' }) {
   if (type === 'hr')    return <Clock size={15} />
   return <AlertTriangle size={15} />
 }
-
-const TOP_PRODUCTS = [
-  { rank: 1, name: 'Riz parfumé 5kg', qty: 842, ca: 2100000, pct: 100 },
-  { rank: 2, name: 'Huile palme 1L',  qty: 612, ca: 1500000, pct: 71  },
-  { rank: 3, name: 'Farine blé 25kg', qty: 430, ca: 980000,  pct: 46  },
-  { rank: 4, name: 'Sucre 50kg',       qty: 318, ca: 720000,  pct: 34  },
-  { rank: 5, name: 'Savon 500g',        qty: 290, ca: 580000,  pct: 27  },
-]
-
-const ALERTS = [
-  { name: 'Riz parfumé 5kg', stock: 12, threshold: 20, cls: 'badge-red',   label: 'Rupture' },
-  { name: 'Huile palme 1L',  stock: 18, threshold: 25, cls: 'badge-amber', label: 'Bas'     },
-  { name: 'Sucre 50kg',      stock:  5, threshold: 10, cls: 'badge-red',   label: 'Rupture' },
-  { name: 'Farine blé 25kg', stock: 22, threshold: 30, cls: 'badge-amber', label: 'Bas'     },
-]
 
 const RANK_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#8888A8', '#8888A8']
 
@@ -114,9 +45,8 @@ const CatTooltip = ({ active, payload }: any) => {
   const fmt = useFormatAmount()
   if (!active || !payload?.length) return null
   const p = payload[0]
-  const pct = Math.round((p.value / catTotal) * 100)
-  const idx = catData.findIndex(d => d.name === p.name)
-  const color = DONUT_COLORS[idx >= 0 ? idx : 0]
+  const pct = Math.round((p.percent ?? 0) * 100)
+  const color = p.payload?.color ?? DONUT_COLORS[0]
   return (
     <div style={{
       background: '#0A0A16',
@@ -190,7 +120,12 @@ export default function Dashboard() {
     pendingOrders: 0,
   })
   const [salesChart, setSalesChart] = useState<any[]>([])
+  const [topProducts, setTopProducts] = useState<any[]>([])
+  const [stockAlerts, setStockAlerts] = useState<any[]>([])
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [catData, setCatData] = useState<any[]>([])
   const [reportPeriod, setReportPeriod] = useState('7days')
+  const catTotal = catData.reduce((s, d) => s + (d.value ?? 0), 0)
 
   useEffect(() => {
     dashboardApi.stats()
@@ -204,6 +139,10 @@ export default function Dashboard() {
           activeEmployees:   data.activeEmployees   ?? stats.activeEmployees,
           pendingOrders:     data.pendingOrders     ?? stats.pendingOrders,
         })
+        setTopProducts(data?.topProducts ?? [])
+        setStockAlerts(data?.stockAlerts ?? [])
+        setRecentActivity(data?.recentActivity ?? [])
+        setCatData((data?.categoryBreakdown ?? []).map((c: any, i: number) => ({ ...c, color: DONUT_COLORS[i % DONUT_COLORS.length] })))
       })
       .catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -253,10 +192,9 @@ export default function Dashboard() {
   ]
   const QUICK_ACTIONS = ALL_QUICK_ACTIONS.filter(a => canAccess(user?.role, a.path.split('/').pop() || ''))
 
-  // Données de démo (alertes, activité, top produits) affichées uniquement si le
-  // tenant a une activité réelle — sinon états vides au lieu de chiffres fictifs.
-  const hasActivity = stats.transactionsToday > 0 || salesChart.length > 0
+  // Toutes les sections sont alimentées par l'API ; états vides sinon (pas de démo).
   const emptyHint = lang === 'fr' ? 'Commencez par enregistrer vos premières ventes' : 'Start by recording your first sales'
+  const isNewTenant = stats.transactionsToday === 0 && stats.salesMonth === 0 && stats.totalProducts === 0
 
   return (
     <div className="space-y-5 animate-in">
@@ -279,6 +217,32 @@ export default function Dashboard() {
           </button>
         )}
       </div>
+
+      {isNewTenant && (
+        <div style={{
+          background: 'linear-gradient(135deg,rgba(108,71,255,.12),rgba(0,208,132,.08))',
+          border: '1px solid rgba(108,71,255,.25)',
+          borderRadius: 16, padding: '20px 24px',
+          display: 'flex', alignItems: 'center', gap: 16,
+        }}>
+          <div style={{ fontSize: 40 }}>🎉</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>
+              {lang === 'fr'
+                ? `Bienvenue sur HabaShop, ${user?.name?.split(' ')[0] ?? ''} !`
+                : `Welcome to HabaShop, ${user?.name?.split(' ')[0] ?? ''}!`}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
+              {lang === 'fr'
+                ? 'Votre boutique est prête. Commencez par ajouter vos produits puis ouvrez la caisse.'
+                : 'Your shop is ready. Start by adding products then open the register.'}
+            </div>
+          </div>
+          <button onClick={() => navigate('/app/stock')} className="btn-primary" style={{ flexShrink: 0, fontSize: 13 }}>
+            {lang === 'fr' ? '+ Ajouter des produits' : '+ Add products'}
+          </button>
+        </div>
+      )}
 
       {/* KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
@@ -397,6 +361,11 @@ export default function Dashboard() {
           <div className="panel-head">
             <span className="panel-title">{lang === 'fr' ? 'CA par catégorie' : 'Revenue by category'}</span>
           </div>
+          {catData.length === 0 ? (
+            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+              {lang === 'fr' ? 'Aucune donnée de vente disponible' : 'No sales data available'}
+            </div>
+          ) : (<>
           <div style={{ position: 'relative', margin: '0 -8px', overflow: 'visible' }}>
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
@@ -438,6 +407,7 @@ export default function Dashboard() {
               )
             })}
           </div>
+          </>)}
         </div>
       </div>
 
@@ -453,31 +423,33 @@ export default function Dashboard() {
               </div>
               <span className="panel-title">{t('stock_alerts')}</span>
             </div>
-            {hasActivity && <span className="badge badge-red">{ALERTS.length}</span>}
+            {stockAlerts.length > 0 && <span className="badge badge-red">{stockAlerts.length}</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            {!hasActivity ? (
-              <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
-                {lang === 'fr' ? 'Aucune alerte de stock' : 'No stock alerts'}
+            {stockAlerts.length === 0 ? (
+              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--acc2)', fontSize: 13, fontWeight: 600 }}>
+                {lang === 'fr' ? '✅ Aucune alerte de stock' : '✅ No stock alerts'}
               </div>
-            ) : ALERTS.map(a => (
-              <div key={a.name} style={{
+            ) : stockAlerts.map((a, i) => {
+              const red = (a.stockQty ?? 0) === 0
+              return (
+              <div key={(a.name ?? '') + i} style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px',
                 borderRadius: 10, cursor: 'pointer', transition: 'all .15s',
-                background: a.cls === 'badge-red' ? 'rgba(255,59,92,.05)' : 'rgba(255,184,0,.05)',
-                border: `1px solid ${a.cls === 'badge-red' ? 'rgba(255,59,92,.15)' : 'rgba(255,184,0,.15)'}`,
+                background: red ? 'rgba(255,59,92,.05)' : 'rgba(255,184,0,.05)',
+                border: `1px solid ${red ? 'rgba(255,59,92,.15)' : 'rgba(255,184,0,.15)'}`,
               }}
                 onClick={() => navigate('/app/stock')}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = ''}
               >
-                <Package size={13} style={{ color: a.cls === 'badge-red' ? 'var(--danger)' : 'var(--warn)', flexShrink: 0 }} />
+                <Package size={13} style={{ color: red ? 'var(--danger)' : 'var(--warn)', flexShrink: 0 }} />
                 <div style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, color: a.cls === 'badge-red' ? 'var(--danger)' : 'var(--warn)' }}>
-                  {a.stock}<span style={{ color: 'var(--text4)', fontWeight: 400 }}>/{a.threshold}</span>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, color: red ? 'var(--danger)' : 'var(--warn)' }}>
+                  {a.stockQty}<span style={{ color: 'var(--text4)', fontWeight: 400 }}>/{a.stockMin}</span>
                 </span>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 
@@ -487,32 +459,39 @@ export default function Dashboard() {
             <span className="panel-title">{t('recent_activity')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {!hasActivity ? (
-              <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
-                {emptyHint}
+            {recentActivity.length === 0 ? (
+              <div style={{ padding: '30px 20px', textAlign: 'center', color: 'var(--text3)' }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🛍️</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)', marginBottom: 6 }}>
+                  {lang === 'fr' ? 'Aucune activité pour le moment' : 'No activity yet'}
+                </div>
+                <div style={{ fontSize: 12 }}>{emptyHint}</div>
               </div>
-            ) : RECENT_ACTIVITY.map((a, i) => (
-              <div key={i} style={{
+            ) : recentActivity.map((a, i) => {
+              const mins = Math.max(0, Math.round((Date.now() - new Date(a.createdAt).getTime()) / 60000))
+              const ago = mins < 60 ? `${mins} min` : mins < 1440 ? `${Math.round(mins / 60)}h` : `${Math.round(mins / 1440)}j`
+              return (
+              <div key={a.id ?? i} style={{
                 display: 'flex', gap: 11, alignItems: 'flex-start', padding: '9px 3px',
-                borderBottom: i < RECENT_ACTIVITY.length - 1 ? '1px solid var(--border)' : 'none',
+                borderBottom: i < recentActivity.length - 1 ? '1px solid var(--border)' : 'none',
                 transition: 'background .12s', cursor: 'default', borderRadius: 8,
               }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.025)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
               >
-                <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: a.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: a.iconColor }}>
-                  <ActivityIcon type={a.iconType} />
+                <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: 'rgba(0,208,132,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00D084' }}>
+                  <ActivityIcon type="sale" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {a.title[lang as Lang] ?? a.title.fr}
+                    {lang === 'fr' ? 'Vente' : 'Sale'} #{String(a.id ?? '').slice(-6).toUpperCase()}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>
-                    {a.getDesc(fmt, lang)}
+                    {fmt(a.total ?? 0)} · {a.paymentMode} · {ago}
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 
@@ -522,27 +501,31 @@ export default function Dashboard() {
             <span className="panel-title">{t('top_products')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {!hasActivity ? (
+            {topProducts.length === 0 ? (
               <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
-                {emptyHint}
+                {lang === 'fr' ? 'Aucune vente enregistrée pour le moment' : 'No sales recorded yet'}
               </div>
-            ) : TOP_PRODUCTS.map((p, i) => (
-              <div key={p.name}>
+            ) : topProducts.map((p, i) => {
+              const maxCa = topProducts[0]?.ca || 1
+              const pct = Math.round(((p.ca ?? 0) / maxCa) * 100)
+              const color = RANK_COLORS[i] ?? RANK_COLORS[RANK_COLORS.length - 1]
+              return (
+              <div key={(p.name ?? '') + i}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                   <div style={{
                     width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                    background: `${RANK_COLORS[i]}22`, border: `1px solid ${RANK_COLORS[i]}44`,
+                    background: `${color}22`, border: `1px solid ${color}44`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 900, color: RANK_COLORS[i],
-                  }}>{p.rank}</div>
+                    fontSize: 10, fontWeight: 900, color,
+                  }}>{i + 1}</div>
                   <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, color: RANK_COLORS[i] }}>{fmt(p.ca)}</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, color }}>{fmt(p.ca ?? 0)}</span>
                 </div>
                 <div style={{ height: 5, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${p.pct}%`, background: RANK_COLORS[i], borderRadius: 99, transition: 'width .4s var(--ease)' }} />
+                  <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width .4s var(--ease)' }} />
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       </div>

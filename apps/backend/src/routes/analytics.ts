@@ -32,6 +32,48 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
 
     const lowStockProducts = allProducts.filter((p: { stockQty: number; stockMin: number }) => p.stockQty <= p.stockMin).length
 
+    // Données détaillées du dashboard (réelles, scopées au tenant)
+    const [topProductsRaw, stockAlertsRaw, recentActivity, categoryItems] = await Promise.all([
+      prisma.saleItem.groupBy({
+        by: ['productId'],
+        where: { sale: { tenantId, createdAt: { gte: monthStart } } },
+        _sum: { total: true },
+        orderBy: { _sum: { total: 'desc' } },
+        take: 5,
+      }).catch(() => [] as { productId: string; _sum: { total: number | null } }[]),
+      prisma.product.findMany({
+        where: { tenantId, isActive: true, deletedAt: null, stockQty: { lte: prisma.product.fields.stockMin } },
+        select: { name: true, stockQty: true, stockMin: true },
+        orderBy: { stockQty: 'asc' },
+        take: 5,
+      }).catch(() => []),
+      prisma.sale.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { id: true, total: true, paymentMode: true, createdAt: true },
+      }).catch(() => []),
+      prisma.saleItem.findMany({
+        where: { sale: { tenantId, createdAt: { gte: monthStart } } },
+        select: { total: true, product: { select: { category: true } } },
+      }).catch(() => []),
+    ])
+
+    const topProducts = await Promise.all(topProductsRaw.map(async (it) => {
+      const p = await prisma.product.findUnique({ where: { id: it.productId }, select: { name: true } }).catch(() => null)
+      return { name: p?.name ?? 'Produit supprimé', ca: it._sum.total ?? 0 }
+    }))
+
+    const catMap: Record<string, number> = {}
+    for (const i of categoryItems) {
+      const c = i.product?.category ?? 'Autre'
+      catMap[c] = (catMap[c] ?? 0) + (i.total ?? 0)
+    }
+    const categoryBreakdown = Object.entries(catMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6)
+
     return {
       salesToday: salesToday._sum.total ?? 0,
       transactionsToday: salesToday._count,
@@ -41,6 +83,10 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       lowStockProducts,
       activeEmployees,
       pendingOrders,
+      topProducts,
+      stockAlerts: stockAlertsRaw,
+      recentActivity,
+      categoryBreakdown,
     }
   })
 
