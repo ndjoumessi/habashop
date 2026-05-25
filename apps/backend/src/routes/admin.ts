@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import type { AdminCreateTenantBody, AdminReviewBody } from '../types'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 import { authenticateAdmin } from '../middleware/superAdmin'
@@ -28,7 +29,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/admin/tenants', { preHandler: authenticateAdmin }, async (request) => {
-    const { name, currency, country, plan, adminEmail, adminPassword } = request.body as any
+    const { name, currency, country, plan, adminEmail, adminPassword } = request.body as AdminCreateTenantBody
     const tenant = await prisma.tenant.create({
       data: { name, currency: currency ?? 'XOF', country: country ?? 'SN', plan: plan ?? 'starter' },
     })
@@ -57,8 +58,8 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
 
   // SUPER_ADMIN : approuver / rejeter une demande
   app.patch('/api/admin/plan-requests/:id', { preHandler: authenticateAdmin }, async (request, reply) => {
-    const { id } = request.params as any
-    const { action, adminNotes } = (request.body ?? {}) as any
+    const { id } = request.params as { id: string }
+    const { action, adminNotes } = (request.body ?? {}) as AdminReviewBody
     const { userId } = request.user
 
     const planRequest = await prisma.planRequest.findUnique({ where: { id }, include: { tenant: true } })

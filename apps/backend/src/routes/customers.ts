@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import type { CustomerBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
@@ -11,7 +12,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
         where: { tenantId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
       })
-    } catch (err: any) {
+    } catch (err) {
       console.error('Get customers error:', err)
       return []
     }
@@ -22,7 +23,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     const {
       name, type, phone, email, address,
       loyaltyPoints, totalRevenue,
-    } = request.body as any
+    } = request.body as CustomerBody
 
     if (!name || !name.trim()) {
       return reply.code(400).send({ error: 'Le nom est requis' })
@@ -43,7 +44,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
       })
       notifyTenant(tenantId, { type: 'new_customer', data: { id: customer.id, name: customer.name } })
       return customer
-    } catch (err: any) {
+    } catch (err) {
       console.error('Create customer error:', err)
       return reply.code(500).send({
         error: 'Erreur création client',
@@ -54,8 +55,8 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
 
   app.put('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user
-    const { id } = request.params as any
-    const data = request.body as any
+    const { id } = request.params as { id: string }
+    const data = request.body as CustomerBody
     try {
       return await prisma.customer.update({
         where: { id, tenantId },
@@ -67,14 +68,14 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
           address: data.address,
         }
       })
-    } catch (err: any) {
+    } catch (err) {
       return reply.code(500).send({ error: err.message })
     }
   })
 
   app.delete('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
     await prisma.customer.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete
@@ -88,7 +89,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
   app.patch('/api/customers/:id/restore', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     const customer = await prisma.customer.findFirst({ where: { id, tenantId } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
     const restored = await prisma.customer.update({ where: { id }, data: { deletedAt: null } })

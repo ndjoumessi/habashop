@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import type { BonusBody, SalaryHistoryBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 
@@ -14,7 +15,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/api/bonuses/employee/:employeeId', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { employeeId } = request.params as any
+    const { employeeId } = request.params as { employeeId: string }
     return prisma.employeeBonus.findMany({
       where: { tenantId, employeeId },
       orderBy: { date: 'desc' },
@@ -23,7 +24,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/bonuses', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user
-    const { employeeId, amount, reason, date } = request.body as any
+    const { employeeId, amount, reason, date } = request.body as BonusBody
     if (!employeeId || !amount) return reply.code(400).send({ error: 'employeeId et amount requis' })
     try {
       const bonus = await prisma.employeeBonus.create({
@@ -36,18 +37,18 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
         }
       })
       return bonus
-    } catch (err: any) {
+    } catch (err) {
       return reply.code(500).send({ error: err.message })
     }
   })
 
   app.delete('/api/bonuses/:id', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     try {
       await prisma.employeeBonus.delete({ where: { id, tenantId } })
       return { success: true }
-    } catch (err: any) {
+    } catch (err) {
       return reply.code(500).send({ error: err.message })
     }
   })
@@ -63,7 +64,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/api/salary-history/employee/:employeeId', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { employeeId } = request.params as any
+    const { employeeId } = request.params as { employeeId: string }
     return prisma.salaryHistory.findMany({
       where: { tenantId, employeeId },
       orderBy: { date: 'desc' },
@@ -72,7 +73,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/salary-history', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user
-    const { employeeId, oldSalary, newSalary, reason, date } = request.body as any
+    const { employeeId, oldSalary, newSalary, reason, date } = request.body as SalaryHistoryBody
     if (!employeeId || newSalary === undefined) return reply.code(400).send({ error: 'employeeId et newSalary requis' })
     try {
       const entry = await prisma.salaryHistory.create({
@@ -86,7 +87,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
         }
       })
       return entry
-    } catch (err: any) {
+    } catch (err) {
       return reply.code(500).send({ error: err.message })
     }
   })

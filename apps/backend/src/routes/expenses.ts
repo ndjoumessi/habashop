@@ -15,13 +15,13 @@ export async function expenseRoutes(app: FastifyInstance): Promise<void> {
 
   app.put('/api/expenses/:id', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     return prisma.expense.update({ where: { id, tenantId }, data: request.body as any })
   })
 
   app.delete('/api/expenses/:id', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     await prisma.expense.delete({ where: { id, tenantId } })
     return { success: true }
   })

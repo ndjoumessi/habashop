@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import type { OrderBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
@@ -15,10 +16,10 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/orders', { preHandler: authenticate }, async (request) => {
     const { tenantId, userId } = request.user
-    const { supplierId, items, expectedAt, notes } = request.body as any
+    const { supplierId, items, expectedAt, notes } = request.body as OrderBody
 
     const ref = `CMD-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`
-    const total = (items as any[]).reduce((s: number, i: any) => s + i.qty * i.unitPrice, 0)
+    const total = (items as any[]).reduce((s: number, i) => s + i.qty * i.unitPrice, 0)
 
     const order = await prisma.purchaseOrder.create({
       data: {
@@ -27,7 +28,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
         total, expectedAt, notes,
         status: 'DRAFT',
         items: {
-          create: (items as any[]).map((i: any) => ({
+          create: (items as any[]).map((i) => ({
             productName: i.product,
             qty: i.qty,
             unitPrice: i.unitPrice,
@@ -43,8 +44,8 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
 
   app.patch('/api/orders/:id/status', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { id } = request.params as any
-    const { status } = request.body as any
+    const { id } = request.params as { id: string }
+    const { status } = request.body as { status?: string }
     return prisma.purchaseOrder.update({ where: { id, tenantId }, data: { status } })
   })
 
@@ -53,7 +54,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
       return reply.code(403).send({ error: 'Admin requis pour supprimer une commande' })
     }
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId, deletedAt: null }, select: { id: true, ref: true } })
     if (!order) return reply.code(404).send({ error: 'Commande introuvable' })
     await prisma.purchaseOrder.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete (lignes conservées)
@@ -67,7 +68,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
   app.patch('/api/orders/:id/restore', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, select: { id: true, ref: true } })
     if (!order) return reply.code(404).send({ error: 'Commande introuvable' })
     const restored = await prisma.purchaseOrder.update({ where: { id }, data: { deletedAt: null } })

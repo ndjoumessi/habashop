@@ -18,7 +18,7 @@ function getTwilioClient() {
   }
   try {
     return twilio(sid, token)
-  } catch (e: any) {
+  } catch (e) {
     console.error('[Twilio] init error:', e.message)
     return null
   }
@@ -59,11 +59,11 @@ async function sendEveningReport() {
           body: message,
         })
         console.log(`✅ Résumé soir envoyé pour ${tenant.name}`)
-      } catch (err: any) {
+      } catch (err) {
         console.error(`❌ Erreur envoi résumé: ${err.message}`)
       }
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Cron evening error:', err.message)
   }
 }
@@ -94,11 +94,11 @@ async function sendMorningStockAlert() {
           body: message,
         })
         console.log(`✅ Alerte matin envoyée pour ${tenant.name}`)
-      } catch (err: any) {
+      } catch (err) {
         console.error(`❌ Erreur alerte matin: ${err.message}`)
       }
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Cron morning error:', err.message)
   }
 }
@@ -110,7 +110,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   console.log('⏰ Cron jobs planifiés : résumé 20h + alertes 8h')
 
   app.post('/api/whatsapp/send-ticket', { preHandler: [authenticate] }, async (request, reply) => {
-    const { phone, items, total, paymentMode, discount, reference } = request.body as any
+    const { phone, items, total, paymentMode, discount, reference } = request.body as { phone?: string; items?: any[]; total?: number; paymentMode?: string; discount?: number; reference?: string }
 
     if (!phone?.trim()) {
       return reply.code(400).send({ error: 'Numéro de téléphone requis' })
@@ -134,7 +134,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     const ref     = reference || `#${Date.now().toString().slice(-6)}`
 
     const itemLines = Array.isArray(items)
-      ? items.map((i: any) => {
+      ? items.map((i) => {
           const lineTotal = Number(i.price ?? 0) * Number(i.qty ?? 1)
           return `• ${i.name} ×${i.qty} — ${lineTotal.toLocaleString('fr-FR')} F`
         }).join('\n')
@@ -170,7 +170,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       const msg = await twClient.messages.create({ from: TWILIO_FROM, to: waPhone, body })
       console.log('✅ WhatsApp envoyé, SID:', msg.sid)
       return reply.send({ success: true, sid: msg.sid, to: waPhone })
-    } catch (err: any) {
+    } catch (err) {
       console.error('❌ Twilio error code:', err.code)
       console.error('❌ Twilio error msg:', err.message)
 
@@ -193,7 +193,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.get('/api/whatsapp/test', async (_req: any, reply: any) => {
+  app.get('/api/whatsapp/test', async (_req, reply) => {
     const client = getTwilioClient()
     return reply.send({
       configured:      !!client,
@@ -206,7 +206,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/whatsapp/send-alert', { preHandler: authenticate }, async (request, reply) => {
-    const { phone, alertType, data, lang } = request.body as any
+    const { phone, alertType, data, lang } = request.body as { phone?: string; alertType?: string; data?: any; lang?: string }
 
     try {
       const client = getTwilioClient()
@@ -217,8 +217,8 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       let body = ''
       if (alertType === 'low_stock') {
         body = lang === 'fr'
-          ? `⚠️ *HabaShop — Alerte Stock*\n\n🔴 *Rupture critique :*\n${(data.products ?? []).map((p: any) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Commander immédiatement pour éviter la rupture.`
-          : `⚠️ *HabaShop — Stock Alert*\n\n🔴 *Critical stock:*\n${(data.products ?? []).map((p: any) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Order immediately to avoid stockout.`
+          ? `⚠️ *HabaShop — Alerte Stock*\n\n🔴 *Rupture critique :*\n${(data.products ?? []).map((p) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Commander immédiatement pour éviter la rupture.`
+          : `⚠️ *HabaShop — Stock Alert*\n\n🔴 *Critical stock:*\n${(data.products ?? []).map((p) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Order immediately to avoid stockout.`
       }
 
       if (!body) return reply.code(400).send({ error: 'alertType inconnu' })
@@ -229,7 +229,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
         body,
       })
       return { success: true, sid: result.sid }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Twilio alert error:', err.message)
       return reply.code(503).send({ error: err.message })
     }

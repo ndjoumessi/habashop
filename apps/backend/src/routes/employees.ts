@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import type { EmployeeBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 
@@ -14,7 +15,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
       name, role, dept, type, salary,
       phone, email, isActive, color,
       hiredAt, perf, avatar,
-    } = request.body as any
+    } = request.body as EmployeeBody
 
     if (!name?.trim()) {
       return reply.code(400).send({ error: 'Nom requis' })
@@ -39,7 +40,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
         }
       })
       return emp
-    } catch (err: any) {
+    } catch (err) {
       console.error('Create employee error:', err.message)
       return reply.code(500).send({ error: 'Erreur création employé', details: err.message })
     }
@@ -47,12 +48,12 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
 
   app.put('/api/employees/:id', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     const {
       name, role, dept, type, salary,
       phone, email, address, photo, isActive, color,
       hiredAt, perf,
-    } = request.body as any
+    } = request.body as EmployeeBody
 
     try {
       const updated = await prisma.employee.update({
@@ -74,7 +75,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
         }
       })
       return updated
-    } catch (err: any) {
+    } catch (err) {
       console.error('Update employee error:', err.message)
       return reply.code(500).send({ error: 'Erreur mise à jour employé', details: err.message })
     }
@@ -82,11 +83,11 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
 
   app.delete('/api/employees/:id', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     try {
       await prisma.employee.delete({ where: { id, tenantId } })
       return { success: true }
-    } catch (err: any) {
+    } catch (err) {
       return reply.code(500).send({ error: err.message })
     }
   })

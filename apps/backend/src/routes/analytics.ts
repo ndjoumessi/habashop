@@ -46,7 +46,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/api/reports/sales', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { period = '7days' } = request.query as any
+    const { period = '7days' } = request.query as { period?: string }
 
     const now = new Date()
     const from = new Date()
@@ -62,8 +62,8 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       orderBy: { createdAt: 'desc' },
     })
 
-    const total = sales.reduce((s: number, sale: any) => s + sale.total, 0)
-    const byPayment = sales.reduce((acc: Record<string, number>, sale: any) => {
+    const total = sales.reduce((s: number, sale) => s + sale.total, 0)
+    const byPayment = sales.reduce((acc: Record<string, number>, sale) => {
       acc[sale.paymentMode] = (acc[sale.paymentMode] ?? 0) + sale.total
       return acc
     }, {} as Record<string, number>)
@@ -106,7 +106,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       prisma.sale.groupBy({ by: ['paymentMode'], where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
     ])
     const dayMap = new Map<string, { ca: number; count: number }>()
-    salesByDay.forEach((s: any) => {
+    salesByDay.forEach((s) => {
       const day = new Date(s.createdAt).toISOString().slice(0, 10)
       const curr = dayMap.get(day) ?? { ca: 0, count: 0 }
       dayMap.set(day, { ca: curr.ca + s.total, count: curr.count + 1 })
@@ -126,7 +126,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       },
       charts: {
         salesByDay: salesChartData,
-        salesByPayment: salesByPayment.map((p: any) => ({ mode: p.paymentMode ?? 'Autre', total: p._sum.total ?? 0, count: p._count.id ?? 0 })),
+        salesByPayment: salesByPayment.map((p) => ({ mode: p.paymentMode ?? 'Autre', total: p._sum.total ?? 0, count: p._count.id ?? 0 })),
       },
       generatedAt: new Date().toISOString(),
     }

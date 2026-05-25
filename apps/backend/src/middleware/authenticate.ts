@@ -3,7 +3,7 @@
  * Vérifie le token et injecte `request.tenantId` depuis le payload signé.
  * @throws 401 si le token est absent, invalide ou expiré.
  */
-export async function authenticate(request: any, reply: any): Promise<void> {
+export async function authenticate(request, reply): Promise<void> {
   try {
     await request.jwtVerify()
     request.tenantId = (request.user)?.tenantId

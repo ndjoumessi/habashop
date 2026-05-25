@@ -1,4 +1,4 @@
-export async function authenticateAdmin(request: any, reply: any): Promise<void> {
+export async function authenticateAdmin(request, reply): Promise<void> {
   try {
     await request.jwtVerify()
     if ((request.user).role !== 'SUPER_ADMIN') {

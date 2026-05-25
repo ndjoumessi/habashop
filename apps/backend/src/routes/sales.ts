@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import type { SaleBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
@@ -6,7 +7,7 @@ import { notifyTenant } from './notifications'
 export async function saleRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/sales', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { limit = 50, offset = 0 } = request.query as any
+    const { limit = 50, offset = 0 } = request.query as { limit?: number; offset?: number }
     return prisma.sale.findMany({
       where: { tenantId },
       include: { items: { include: { product: true } } },
@@ -18,7 +19,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/sales', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId } = request.user
-    const { items, paymentMode, total, discount } = request.body as any
+    const { items, paymentMode, total, discount } = request.body as SaleBody
 
     if (!items?.length) {
       return reply.code(400).send({ error: 'Une vente doit contenir au moins un article' })
@@ -27,7 +28,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'Le total ne peut pas être négatif' })
     }
 
-    const newSale = await prisma.$transaction(async (tx: any) => {
+    const newSale = await prisma.$transaction(async (tx) => {
       const newSale = await tx.sale.create({
         data: {
           tenantId,
@@ -60,13 +61,13 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
 
     notifyTenant(tenantId, { type: 'new_sale', data: { id: newSale.id, total, paymentMode, itemCount: Array.isArray(items) ? items.length : 0 } })
     try {
-      const ids = (items ?? []).map((i: any) => i.productId)
+      const ids = (items ?? []).map((i) => i.productId)
       const sold = await prisma.product.findMany({
         where: { tenantId, id: { in: ids } },
         select: { id: true, name: true, stockQty: true, stockMin: true },
       })
-      const low = sold.filter((p: any) => p.stockQty <= p.stockMin)
-      if (low.length) notifyTenant(tenantId, { type: 'low_stock', data: { products: low.map((p: any) => ({ id: p.id, name: p.name, stockQty: p.stockQty })) } })
+      const low = sold.filter((p) => p.stockQty <= p.stockMin)
+      if (low.length) notifyTenant(tenantId, { type: 'low_stock', data: { products: low.map((p) => ({ id: p.id, name: p.name, stockQty: p.stockQty })) } })
     } catch { /* non bloquant */ }
     return newSale
   })

@@ -5,7 +5,7 @@ import { authenticate } from '../middleware/authenticate'
 
 export async function aiRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/ai/analyze', { preHandler: authenticate }, async (request, reply) => {
-    const { type, lang } = request.body as any
+    const { type, lang } = request.body as { type?: string; lang?: string }
     const { tenantId } = request.user
 
     const apiKey = process.env.ANTHROPIC_API_KEY
@@ -33,7 +33,7 @@ export async function aiRoutes(app: FastifyInstance): Promise<void> {
 
       const productSales: Record<string, { name: string; qty: number; revenue: number }> = {}
       sales.forEach(sale => {
-        sale.items.forEach((item: any) => {
+        sale.items.forEach((item) => {
           const id = item.productId
           if (!productSales[id]) productSales[id] = { name: item.product?.name ?? 'Produit', qty: 0, revenue: 0 }
           productSales[id].qty     += item.qty
@@ -137,7 +137,7 @@ En ${langLabel}, analyse :
         analysis,
         data: { totalRevenue, avgDailySales, totalSales: sales.length, margin, lowStockCount: lowStockProducts.length, topProducts },
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Claude AI error:', err.message)
       return reply.code(500).send({ error: 'Analyse IA non disponible', details: err.message })
     }
@@ -146,7 +146,7 @@ En ${langLabel}, analyse :
   // ─── AI CHAT ──────────────────────────
   app.post('/api/ai/chat', { preHandler: authenticate }, async (request, reply) => {
     // Accepte {message: string} (simple) ou {messages: array} (historique)
-    const { message: singleMsg, messages: msgHistory, lang } = request.body as any
+    const { message: singleMsg, messages: msgHistory, lang } = request.body as { message?: string; messages?: any[]; lang?: string }
     const { tenantId } = request.user
 
     if (!singleMsg?.trim() && (!msgHistory || msgHistory.length === 0)) {
@@ -164,9 +164,9 @@ En ${langLabel}, analyse :
         prisma.expense.findMany({ where: { tenantId }, take: 20 }),
       ])
 
-      const totalCA = sales.reduce((s: number, sale: any) => s + sale.total, 0)
-      const lowStock = products.filter((p: any) => p.stockQty <= p.stockMin)
-      const totalExpenses = expenses.reduce((s: number, e: any) => s + e.amountTTC, 0)
+      const totalCA = sales.reduce((s: number, sale) => s + sale.total, 0)
+      const lowStock = products.filter((p) => p.stockQty <= p.stockMin)
+      const totalExpenses = expenses.reduce((s: number, e) => s + e.amountTTC, 0)
 
       const systemPrompt = `Tu es l'assistant IA de HabaShop, un logiciel de gestion commerciale pour commerces africains.
 Tu aides le gérant à prendre de meilleures décisions basées sur ses données réelles.
@@ -179,10 +179,10 @@ DONNÉES RÉELLES DE LA BOUTIQUE (30 derniers jours) :
 - Dépenses : ${totalExpenses.toLocaleString('fr-FR')} FCFA
 - Résultat net : ${(totalCA - totalExpenses).toLocaleString('fr-FR')} FCFA
 - Employés actifs : ${employees.length}
-- Masse salariale : ${employees.reduce((s: number, e: any) => s + e.salary, 0).toLocaleString('fr-FR')} FCFA
+- Masse salariale : ${employees.reduce((s: number, e) => s + e.salary, 0).toLocaleString('fr-FR')} FCFA
 - Produits en rupture/bas : ${lowStock.length}
-- Produits en rupture : ${lowStock.filter((p: any) => p.stockQty === 0).length}
-- Top 5 produits : ${products.slice(0, 5).map((p: any) => `${p.name} (stock:${p.stockQty})`).join(', ')}
+- Produits en rupture : ${lowStock.filter((p) => p.stockQty === 0).length}
+- Top 5 produits : ${products.slice(0, 5).map((p) => `${p.name} (stock:${p.stockQty})`).join(', ')}
 
 INSTRUCTIONS :
 - Réponds en ${lang === 'fr' ? 'français' : lang === 'en' ? 'anglais' : lang === 'es' ? 'espagnol' : 'italien'}
@@ -200,7 +200,7 @@ INSTRUCTIONS :
       const msgsToSend = singleMsg?.trim()
         ? [{ role: 'user' as const, content: singleMsg.trim() }]
         : Array.isArray(msgHistory) && msgHistory.length > 0
-          ? (msgHistory as any[]).slice(-10).map((m: any) => ({
+          ? (msgHistory as any[]).slice(-10).map((m) => ({
               role: m.role as 'user' | 'assistant',
               content: m.content,
             }))
@@ -222,7 +222,7 @@ INSTRUCTIONS :
           ? message.content[0].text
           : 'Désolé, je ne peux pas répondre pour le moment.'
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Chat AI error:', err.message)
       return reply.code(500).send({ error: err.message })
     }

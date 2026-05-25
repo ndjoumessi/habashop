@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import type { ProductBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 
@@ -16,7 +17,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       description, barcode, isActive,
       wholesalePrice, semiWholesalePrice,
       hasPromotion, promotionPrice,
-    } = request.body as any
+    } = request.body as ProductBody
 
     if (!name?.trim()) {
       return reply.code(400).send({ error: 'Nom requis' })
@@ -55,7 +56,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
         }
       })
       return product
-    } catch (err: any) {
+    } catch (err) {
       console.error('Create product error:', err)
       return reply.code(500).send({
         error: 'Erreur création produit',
@@ -66,13 +67,13 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
 
   app.put('/api/products/:id', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     return prisma.product.update({ where: { id, tenantId }, data: request.body as any })
   })
 
   app.delete('/api/products/:id', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     const product = await prisma.product.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
     await prisma.product.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete
@@ -86,7 +87,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.patch('/api/products/:id/restore', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     const product = await prisma.product.findFirst({ where: { id, tenantId } })
     if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
     const restored = await prisma.product.update({ where: { id }, data: { deletedAt: null } })
@@ -99,6 +100,6 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/products/low-stock', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     const products = await prisma.product.findMany({ where: { tenantId, isActive: true, deletedAt: null } })
-    return products.filter((p: any) => p.stockQty <= p.stockMin)
+    return products.filter((p) => p.stockQty <= p.stockMin)
   })
 }

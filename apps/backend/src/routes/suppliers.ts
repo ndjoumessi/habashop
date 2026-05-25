@@ -15,13 +15,13 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
 
   app.put('/api/suppliers/:id', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     return prisma.supplier.update({ where: { id, tenantId }, data: request.body as any })
   })
 
   app.delete('/api/suppliers/:id', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId } = request.user
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     // Soft delete : la ligne reste (FK des commandes liées intacte) → plus de P2003/409
     const supplier = await prisma.supplier.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!supplier) return reply.code(404).send({ error: 'Fournisseur introuvable' })
@@ -36,7 +36,7 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
   app.patch('/api/suppliers/:id/restore', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
-    const { id } = request.params as any
+    const { id } = request.params as { id: string }
     const supplier = await prisma.supplier.findFirst({ where: { id, tenantId } })
     if (!supplier) return reply.code(404).send({ error: 'Fournisseur introuvable' })
     const restored = await prisma.supplier.update({ where: { id }, data: { deletedAt: null } })
