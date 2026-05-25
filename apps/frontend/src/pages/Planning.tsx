@@ -26,6 +26,7 @@ const STATIC_EMPLOYEES = [
 export default function Planning() {
   const { lang } = useAppStore()
   const [employees, setEmployees] = useState(STATIC_EMPLOYEES)
+  const [loading, setLoading] = useState(true)
   const [activeShift, setActiveShift] = useState<ShiftType>('full')
   const [shifts, setShifts] = useState<Record<string,Record<number,ShiftType>>>(() => {
     try { return JSON.parse(localStorage.getItem('habashop_shifts') ?? 'null') ?? {} } catch { return {} }
@@ -44,7 +45,7 @@ export default function Planning() {
           .map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase(),
         color: e.color??'#6C47FF', isActive: e.isActive!==false,
       })))
-    }).catch(()=>{})
+    }).catch(()=>{}).finally(()=>setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -380,7 +381,11 @@ export default function Planning() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length===0 ? (
+              {loading ? (
+                Array.from({ length: 5 }).map((_, idx) => (
+                  <tr key={idx}><td colSpan={8} style={{ padding: '12px 14px' }}><div className="skeleton" style={{ height: 40, borderRadius: 8 }} /></td></tr>
+                ))
+              ) : filtered.length===0 ? (
                 <tr>
                   <td colSpan={8} style={{
                     textAlign:'center', padding:'48px',

@@ -95,11 +95,13 @@ export default function Expenses() {
   }
 
   const [expenses, setExpenses] = useState<Expense[]>(EXPENSES_INIT)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     expensesApi.list()
       .then(data => setExpenses(data.map(mapApiExpense)))
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -339,6 +341,11 @@ export default function Expenses() {
                 </tr>
               </thead>
               <tbody>
+                {loading ? (
+                  Array.from({ length: 6 }).map((_, idx) => (
+                    <tr key={idx}><td colSpan={10} style={{ padding: '12px 14px' }}><div className="skeleton" style={{ height: 32, borderRadius: 8 }} /></td></tr>
+                  ))
+                ) : (<>
                 {filtered.map(e => {
                   const catStyle = CATEGORY_STYLE[e.category]
                   return (
@@ -392,6 +399,7 @@ export default function Expenses() {
                 {filtered.length === 0 && (
                   <tr><td colSpan={10} style={{ textAlign:'center', color:'var(--text3)', padding:'24px', fontSize:13 }}>Aucune dépense trouvée</td></tr>
                 )}
+                </>)}
               </tbody>
             </table>
           </div>

@@ -157,11 +157,13 @@ export default function Orders() {
   void lang
   const fmt = useFormatAmount()
   const [orders, setOrders] = useState<Order[]>(ORDERS_INIT)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     ordersApi.list()
       .then(data => setOrders(data.map(mapApiOrder)))
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
@@ -591,6 +593,11 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody>
+              {loading ? (
+                Array.from({ length: 6 }).map((_, idx) => (
+                  <tr key={idx}><td colSpan={9} style={{ padding: '12px 14px' }}><div className="skeleton" style={{ height: 34, borderRadius: 8 }} /></td></tr>
+                ))
+              ) : (<>
               {pg.paginated.map(o => {
                 const cfg = STATUS_CONFIG[o.status]
                 const isLate = o.status === 'EN TRANSIT' && new Date(o.expectedAt) < new Date()
@@ -659,6 +666,7 @@ export default function Orders() {
               {filtered.length === 0 && (
                 <tr><td colSpan={9} className="text-center py-10" style={{ color: 'var(--text3)' }}>Aucune commande trouvée</td></tr>
               )}
+              </>)}
             </tbody>
           </table>
         </div>

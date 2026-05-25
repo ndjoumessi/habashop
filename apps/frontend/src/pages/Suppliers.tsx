@@ -136,11 +136,13 @@ export default function Suppliers() {
   const statusLabel = (s: SupplierStatus) => STATUS_LABELS[s]?.[lang as L4] ?? s
 
   const [suppliers, setSuppliers] = useState(SUPPLIERS_INIT)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     suppliersApi.list()
       .then(data => setSuppliers(data.map(mapApiSupplier)))
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -310,6 +312,11 @@ export default function Suppliers() {
               </tr>
             </thead>
             <tbody>
+              {loading ? (
+                Array.from({ length: 6 }).map((_, idx) => (
+                  <tr key={idx}><td colSpan={7} style={{ padding: '12px 14px' }}><div className="skeleton" style={{ height: 34, borderRadius: 8 }} /></td></tr>
+                ))
+              ) : (<>
               {pg.paginated.map(s => (
                 <tr key={s.id}>
                   <td>
@@ -368,6 +375,7 @@ export default function Suppliers() {
               {filtered.length === 0 && (
                 <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>{i('Aucun fournisseur trouvé', 'No supplier found', 'Ningún proveedor encontrado', 'Nessun fornitore trovato')}</td></tr>
               )}
+              </>)}
             </tbody>
           </table>
         </div>
