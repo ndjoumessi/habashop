@@ -4,6 +4,7 @@ import { useAuthStore, canAccess, getLandingForRole } from '@/stores/authStore'
 import { authApi } from '@/lib/api'
 import { useAppStore } from '@/stores/appStore'
 import AppLayout from '@/components/layout/AppLayout'
+import { ConfirmHost } from '@/lib/confirm'
 
 // Pages chargées à la demande (code-splitting par route) → réduit le bundle initial
 const LandingPage    = lazy(() => import('@/pages/LandingPage'))
@@ -84,6 +85,7 @@ export default function App() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
+    <>
     <Suspense fallback={<RouteFallback />}>
     <Routes>
       <Route path="/" element={<LandingPage />} />
@@ -133,5 +135,7 @@ export default function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </Suspense>
+    <ConfirmHost />
+    </>
   )
 }

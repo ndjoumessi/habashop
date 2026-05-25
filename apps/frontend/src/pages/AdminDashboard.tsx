@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { adminApi } from '@/lib/api'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
+import { confirm } from '@/lib/confirm'
 import toast from 'react-hot-toast'
 import {
   Shield, Store, Users, CreditCard, Wallet, Package, TrendingUp,
@@ -56,7 +57,7 @@ export default function AdminDashboard() {
   const pendingCount = planRequests.length
 
   const handleApprove = async (id: string) => {
-    if (!window.confirm(i('Approuver cette demande et activer le plan ?', 'Approve this request and activate the plan?', '¿Aprobar esta solicitud y activar el plan?', 'Approvare questa richiesta e attivare il piano?'))) return
+    if (!(await confirm({ title: i('Approuver la demande', 'Approve request', 'Aprobar solicitud', 'Approva richiesta'), message: i('Approuver cette demande et activer le plan ?', 'Approve this request and activate the plan?', '¿Aprobar esta solicitud y activar el plan?', 'Approvare questa richiesta e attivare il piano?') }))) return
     try {
       await adminApi.reviewPlanRequest(id, { action: 'approve', adminNotes: 'Paiement validé' })
       toast.success(i('✅ Plan activé !', '✅ Plan activated!', '✅ ¡Plan activado!', '✅ Piano attivato!'))

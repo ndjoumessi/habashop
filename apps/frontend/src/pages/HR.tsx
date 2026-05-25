@@ -11,6 +11,7 @@ import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import Pagination from '@/components/ui/Pagination'
 import { logger } from '@/lib/logger'
+import { confirm } from '@/lib/confirm'
 import { usePagination } from '@/hooks/usePagination'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -2171,8 +2172,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     {lang==='fr'?'Annuler':'Cancel'}
                   </button>
                   <button
-                    onClick={() => {
-                      if (!window.confirm(lang==='fr'?`Supprimer ${selectedEmp!.name} ?`:`Delete ${selectedEmp!.name}?`)) return
+                    onClick={async () => {
+                      if (!(await confirm({ title: lang==='fr'?"Supprimer l'employé":'Delete employee', message: lang==='fr'?`Supprimer ${selectedEmp!.name} ? Cette action est irréversible.`:`Delete ${selectedEmp!.name}? This action is irreversible.`, danger: true }))) return
                       setEmployees((prev: Employee[]) => prev.filter(e=>e.id!==selectedEmp!.id))
                       setShowEditEmpModal(false)
                       toast.success(lang==='fr'?'Supprimé':'Deleted')

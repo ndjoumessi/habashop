@@ -7,6 +7,7 @@ import BarcodeScanner from '@/components/ui/BarcodeScanner'
 import { generateInvoice } from '@/utils/export'
 import { Search, Minus, Plus, Trash2, ShoppingCart, X, Lock, Unlock, Camera, User, Factory, Package, Tag, Banknote, CreditCard, Smartphone, ClipboardList, Printer, FileText, BarChart3, CheckCircle, AlertTriangle, History } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { confirm } from '@/lib/confirm'
 
 // ─── DONNÉES ───────────────────────────────
 const CATS = [
@@ -1093,7 +1094,7 @@ export default function POS() {
             )}
             {cart.length > 0 && (
               <button type="button"
-                onClick={() => { if (window.confirm(lang === 'fr' ? 'Vider le panier ?' : 'Clear cart?')) setCart([]) }}
+                onClick={async () => { if (await confirm({ title: lang === 'fr' ? 'Vider le panier' : 'Clear cart', message: lang === 'fr' ? 'Tous les articles du panier seront retirés.' : 'All items will be removed from the cart.', danger: true })) setCart([]) }}
                 title={lang === 'fr' ? 'Vider le panier' : 'Clear cart'}
                 style={{
                   width: 26, height: 26, borderRadius: 7,

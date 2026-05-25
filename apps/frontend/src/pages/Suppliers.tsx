@@ -5,6 +5,7 @@ import { useI18n } from '@/hooks/useI18n'
 import { suppliersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star, Pencil, Package, FileText, Trash2 } from 'lucide-react'
 import ViewField from '@/components/ui/ViewField'
+import { confirm } from '@/lib/confirm'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
@@ -533,7 +534,7 @@ export default function Suppliers() {
                     aria-label={i('Supprimer le fournisseur', 'Delete supplier', 'Eliminar proveedor', 'Elimina fornitore')}
                     onClick={async () => {
                       if (!editSupplier) return
-                      if (!window.confirm(i('Supprimer ce fournisseur ?', 'Delete this supplier?', '¿Eliminar este proveedor?', 'Eliminare questo fornitore?'))) return
+                      if (!(await confirm({ title: i('Supprimer le fournisseur', 'Delete supplier', 'Eliminar proveedor', 'Elimina fornitore'), message: i('Cette action est irréversible.', 'This action is irreversible.', 'Esta acción es irreversible.', 'Questa azione è irreversibile.'), danger: true }))) return
                       try {
                         await suppliersApi.delete(editSupplier.id)
                         setSuppliers(prev => prev.filter(s => s.id !== editSupplier.id))

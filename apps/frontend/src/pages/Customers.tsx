@@ -5,6 +5,7 @@ import { useI18n } from '@/hooks/useI18n'
 import { customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown, Navigation2, Globe, Flame, AlertTriangle, DollarSign, StickyNote, UserPlus, CheckCircle, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { confirm } from '@/lib/confirm'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
@@ -431,7 +432,9 @@ function CustomerMap({
             const initials = (customer.name ?? '?').split(' ').map((n: string) => n[0] ?? '').join('').slice(0, 2).toUpperCase()
             const isSel   = selected?.id === customer.id
             return (
-              <div key={customer.id} onClick={() => {
+              <button type="button" key={customer.id}
+                aria-label={(lang === 'fr' ? 'Voir ' : 'View ') + customer.name}
+                onClick={() => {
                 setSelected(customer)
                 const pos = geoPositions[customer.id]
                 if (pos && mapObj.current) {
@@ -445,6 +448,7 @@ function CustomerMap({
                 onMouseLeave={e => { if (!isSel) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 11, marginBottom: 3, cursor: 'pointer', transition: 'all .15s',
+                  width: '100%', textAlign: 'left', font: 'inherit',
                   background: isSel ? cfg.soft : 'transparent',
                   border: `1px solid ${isSel ? cfg.color + '44' : 'transparent'}`,
                 }}>
@@ -462,7 +466,7 @@ function CustomerMap({
                   </div>
                 </div>
                 <span style={{ fontSize: 12, color: isSel ? cfg.color : 'var(--text4)', flexShrink: 0 }}>›</span>
-              </div>
+              </button>
             )
           })}
         </div>
@@ -1394,7 +1398,7 @@ export default function Customers() {
                   <button className="btn btn-ghost" style={{ color:'var(--danger)', display:'flex', alignItems:'center', gap:6 }}
                     aria-label={i('Supprimer le client', 'Delete customer', 'Eliminar cliente', 'Elimina cliente')}
                     onClick={async () => {
-                      if (!window.confirm(i('Supprimer ce client ?', 'Delete this customer?', '¿Eliminar este cliente?', 'Eliminare questo cliente?'))) return
+                      if (!(await confirm({ title: i('Supprimer le client', 'Delete customer', 'Eliminar cliente', 'Elimina cliente'), message: i('Cette action est irréversible.', 'This action is irreversible.', 'Esta acción es irreversible.', 'Questa azione è irreversibile.'), danger: true }))) return
                       try {
                         await customersApi.delete(editCustomer.id)
                         setCustomers(prev => prev.filter(c => c.id !== editCustomer.id))

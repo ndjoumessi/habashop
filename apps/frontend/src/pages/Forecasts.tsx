@@ -8,6 +8,7 @@ import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as Recha
 import { exportCSV, openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer'
 import { aiApi, ordersApi, suppliersApi } from '@/lib/api'
+import { confirm } from '@/lib/confirm'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -289,11 +290,12 @@ export default function Forecasts() {
     const ref     = `CMD-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
     const maxLead = Math.max(...filteredItems.map(i => i.leadTime))
 
-    const confirmed = window.confirm(
-      lang === 'fr'
-        ? `Créer le bon de commande ${ref} pour ${supplier} ?\nMontant : ${total.toLocaleString('fr-FR')} FCFA`
-        : `Create purchase order ${ref} for ${supplier}?\nAmount: ${total.toLocaleString('fr-FR')} FCFA`
-    )
+    const confirmed = await confirm({
+      title: lang === 'fr' ? `Créer le bon de commande ${ref}` : `Create purchase order ${ref}`,
+      message: lang === 'fr'
+        ? `Fournisseur : ${supplier} · Montant : ${total.toLocaleString('fr-FR')} FCFA`
+        : `Supplier: ${supplier} · Amount: ${total.toLocaleString('fr-FR')} FCFA`,
+    })
     if (!confirmed) return
 
     try {
