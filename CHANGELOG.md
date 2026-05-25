@@ -3,16 +3,32 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
-## [Non publié] — en attente de déploiement
+## [2.1.0] — 2026-05-25 — Billing, WebSocket & durcissement sécurité
 
-### 💳 Système de validation des plans (codé, **pas encore déployé en prod**)
-- Modèle Prisma `PlanRequest` + champs `Tenant` (`status`, `trialEnds`, `planActivatedAt`, `planRequestedAt`, `paymentMethod`, `paymentRef`, `suspendedAt`, `suspendReason`, `notes`, `isActive`)
-- Migration additive `20260525120000_add_billing_plan_requests` — **non appliquée** sur la base prod (déploiement Railway en attente)
-- Backend : `POST /api/billing/request-plan`, `GET /api/billing/status` (auto-suspension à l'expiration de l'essai), `GET /api/admin/plan-requests`, `PATCH /api/admin/plan-requests/:id`
+> Déployé et **vérifié en production** (backend Railway + frontend Vercel).
+
+### 💳 Système de validation des plans
+- Modèle `PlanRequest` + champs billing du `Tenant` (`status`, `trialEnds`, `planActivatedAt`, `planRequestedAt`, `paymentMethod`, `paymentRef`, `suspendedAt`, `suspendReason`, `notes`, `isActive`) — migration `20260525120000_add_billing_plan_requests` **appliquée en prod**
+- `register` : nouveaux tenants en `status=trial`, `trialEnds = +14 j`
+- `POST /api/billing/request-plan`, `GET /api/billing/status` (auto-suspension à l'expiration de l'essai)
+- `GET /api/admin/plan-requests`, `PATCH /api/admin/plan-requests/:id` (SUPER_ADMIN approve/reject)
 - Frontend : `BillingBanner` (essai ≤ 7 j / expiré / demande en cours), page `/app/upgrade` (Wave / Orange Money / MTN / Virement), onglet « Demandes » dans la console super-admin
-- `register` initialise les nouveaux tenants en `status=trial`, `trialEnds = +14 j`
 
-> Le frontend est en ligne et dégrade proprement : tant que les routes backend renvoient 404, la `BillingBanner` reste masquée.
+### 🔔 Notifications temps réel (WebSocket)
+- `@fastify/websocket` ; `GET /api/ws` (auth par token en query, fermeture `1008` si token invalide)
+- Diffusion isolée par tenant (`notifyTenant`) : `new_sale`, `low_stock`, `new_order`, `new_customer`
+- Keepalive ping 30 s, nettoyage des sockets à la déconnexion
+- Frontend : `notificationStore` (reconnexion auto 5 s), cloche du Header avec badge + dropdown — **vérifié live** (broadcast reçu, badge incrémenté, notification affichée en temps réel)
+
+### 🔒 Sécurité (audit Semaine 1)
+- **Rate-limiting** (`@fastify/rate-limit`) : login 10/15 min, register 5/h, billing 3/h — **store Redis partagé** + `trustProxy: true` (clé = vrai IP client) → 429 fiable en multi-replica (**vérifié**)
+- **JWT_SECRET obligatoire** : `process.exit(1)` au démarrage si absent (suppression de la valeur de repli en dur)
+- Validation des variables d'environnement requises au démarrage (`DATABASE_URL`, `JWT_SECRET`)
+- **23 index Prisma** (`@@index([tenantId])` + composites) — migration appliquée en prod
+
+### ⚙️ CI/CD & qualité
+- GitHub Actions (`.github/workflows/ci.yml`) : typecheck + tests + build + scan secrets (sur push)
+- `.env.example` backend/frontend à jour ; hook `useI18n()` partagé (dédoublonnage du helper i18n)
 
 ## [2.0.0] — 2026-05-25
 
@@ -85,8 +101,7 @@ Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités c
 
 ## 🛣️ Roadmap (non implémenté)
 
-- **Notifications temps réel WebSocket** — *non implémenté* (pas de `@fastify/websocket`, pas de route `/api/ws`). Les notifications actuelles sont côté frontend.
-- **Super-Admin : activer/désactiver une boutique, changer le plan depuis la table** — nécessite des routes + (déjà prévu) le champ `isActive` ; non câblé.
+- **Super-Admin : activer/désactiver une boutique, changer le plan depuis la table** — le champ `isActive` existe désormais, mais les routes/boutons ne sont pas câblés.
 - **Validation automatique des paiements** via Wave Business API / Orange Money API (aujourd'hui : validation manuelle prévue côté super-admin).
 - **Email transactionnel** (Mailgun / SendGrid), **notifications push mobile**, **mode offline avancé**.
 - **Auto-déploiement** Railway/Vercel sur push (actuellement déclenchement manuel).
