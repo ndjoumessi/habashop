@@ -3,6 +3,25 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.3.8] — 2026-05-25 — Emails transactionnels (Resend)
+
+> Déployé et **vérifié en production** (backend Railway). Clé `RESEND_API_KEY` configurée (send-restricted).
+
+### 📧 Service email (`services/email.ts`)
+- Intégration **Resend** (`npm i resend`) — gratuit 3 000 emails/mois. Helper `send()` **non-bloquant** : sans `RESEND_API_KEY` → warn + no-op (jamais d'erreur). `FROM` configurable via `EMAIL_FROM`, défaut `onboarding@resend.dev` (fonctionne sans domaine vérifié).
+- **6 emails templatés** (HTML responsive + branding HabaShop) : bienvenue, rappel J-7 (avec stats), rappel J-3 (urgent), essai expiré, confirmation d'upgrade, rapport hebdomadaire.
+
+### 🔗 Intégrations
+- **`auth.ts`** : email de bienvenue après `POST /api/auth/register` (non-bloquant, `.catch`).
+- **`admin.ts`** : email de confirmation après approbation d'upgrade (`PATCH /api/admin/plan-requests/:id`, action `approve`) + route **`POST /api/admin/test-email`** (dev uniquement, 403 en prod, `authenticateAdmin`).
+- **`server.ts`** : crons `setInterval` — rappels d'essai (horaire) + rapport hebdo (lundi 8h). Le cron rappels **suspend** aussi les essais venant d'expirer (`status: suspended`, `isActive: false`, fenêtre ±30 min) — mutation DB prod, indépendante de la clé email ; premier run +1h après boot.
+- Champs Prisma validés contre le schéma (`tenant.status`/`trialEnds`, `user.role 'ADMIN'`, `product.stockQty/stockMin` via field reference, `saleItem.groupBy`).
+
+### ⚠️ Limite Resend à lever pour la prod réelle
+- Avec `onboarding@resend.dev`, Resend n'autorise l'envoi **qu'à l'adresse du titulaire du compte**. Pour écrire aux vrais clients : **vérifier un domaine** sur Resend (DNS sous votre contrôle — pas `habashop.vercel.app`) puis définir `EMAIL_FROM`.
+
+> Réconciliations vs spec : email d'upgrade placé dans `admin.ts` (vrai handler d'approbation, pas `billing.ts`) avec `authenticateAdmin` ; `FROM` lu depuis l'env avec défaut sûr ; requête low-stock filtrée `deletedAt: null`. Vérifié : `tsc` clean, 39/39 tests, build OK, redéploiement Railway sain.
+
 ## [2.3.7] — 2026-05-25 — SEO Afrique francophone (Lighthouse SEO 100/100)
 
 > Déployé et **vérifié en production** (frontend Vercel). **Lighthouse SEO 100/100** (tous audits verts) ; fichiers statiques servis en 200.
