@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import { ordersApi, productsApi, suppliersApi, customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, CheckCircle, Truck, Clock, FileText, XCircle, DollarSign, Package, CalendarDays, List, Users, Phone, Send, Inbox, Printer, ClipboardList, User, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -152,7 +153,7 @@ function mapApiOrder(o: any): Order {
 
 export default function Orders() {
   const { lang } = useConfig()
-  const i = (fr: string, en: string, es: string, it: string) => lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
+  const i = useI18n()
   void lang
   const fmt = useFormatAmount()
   const [orders, setOrders] = useState<Order[]>(ORDERS_INIT)

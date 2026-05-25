@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAppStore } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import { billingApi } from '@/lib/api'
 
 type Step = 'plan' | 'payment' | 'done'
@@ -22,7 +23,7 @@ const PAYMENT_METHODS: { id: string; icon: string; name: string; color: string; 
 export default function UpgradePlan() {
   const navigate = useNavigate()
   const lang = useAppStore(s => s.lang)
-  const i = (fr: string, en: string, es: string, it: string) => (lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it)
+  const i = useI18n()
   const L = (o: L4) => o[lang] ?? o.fr
 
   const [step, setStep] = useState<Step>('plan')

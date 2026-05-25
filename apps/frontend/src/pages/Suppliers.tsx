@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import { suppliersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star, Pencil, Package, FileText } from 'lucide-react'
 import ViewField from '@/components/ui/ViewField'
@@ -130,8 +131,7 @@ export default function Suppliers() {
   const navigate = useNavigate()
   const { lang } = useConfig()
   const fmt = useFormatAmount()
-  const i = (fr: string, en: string, es: string, it: string) =>
-    lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
+  const i = useI18n()
   const statusLabel = (s: SupplierStatus) => STATUS_LABELS[s]?.[lang as L4] ?? s
 
   const [suppliers, setSuppliers] = useState(SUPPLIERS_INIT)

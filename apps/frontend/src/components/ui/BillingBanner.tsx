@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import { billingApi } from '@/lib/api'
 
 interface BillingStatus {
@@ -18,7 +19,7 @@ export default function BillingBanner() {
   const [status, setStatus] = useState<BillingStatus | null>(null)
   const [dismissed, setDismissed] = useState(false)
 
-  const i = (fr: string, en: string, es: string, it: string) => (lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it)
+  const i = useI18n()
 
   useEffect(() => {
     billingApi.status().then(setStatus).catch(() => {})

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import { customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown, Navigation2, Globe, Flame, AlertTriangle, DollarSign, StickyNote, UserPlus, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -597,7 +598,7 @@ function CustomerMap({
 
 export default function Customers() {
   const { lang } = useConfig()
-  const i = (fr: string, en: string, es: string, it: string) => lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it
+  const i = useI18n()
   void lang
   const fmt = useFormatAmount()
   const abbr = useAbbrevAmount()

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminApi } from '@/lib/api'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
 import {
   Shield, Store, Users, CreditCard, Wallet, Package, TrendingUp,
@@ -31,7 +32,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate()
   const lang = useAppStore(s => s.lang)
   const fmt = useFormatAmount()
-  const i = (fr: string, en: string, es: string, it: string) => (lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it)
+  const i = useI18n()
 
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [stats, setStats] = useState<any>(null)

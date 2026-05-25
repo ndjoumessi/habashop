@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 
 type L4 = 'fr' | 'en' | 'es' | 'it'
 
@@ -74,7 +75,7 @@ export default function Pricing() {
   const lang = useAppStore(s => s.lang) as L4
   const currency = useAppStore(s => s.currency)
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
-  const i = (fr: string, en: string, es: string, it: string) => (lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it)
+  const i = useI18n()
 
   const handleCTA = (planId: string) => {
     if (planId === 'enterprise') { window.open('mailto:contact@habashop.com', '_blank'); return }

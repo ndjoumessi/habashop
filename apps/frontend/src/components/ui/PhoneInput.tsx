@@ -43,14 +43,6 @@ interface PhoneInputProps {
 export default function PhoneInput({
   value, onChange, placeholder = '77 000 00 00', defaultCountry, readOnly,
 }: PhoneInputProps) {
-  if (readOnly) {
-    return (
-      <span style={{ fontSize: 13, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
-        {value || '—'}
-      </span>
-    )
-  }
-
   const getDefaultCode = () => {
     if (defaultCountry) {
       const found = COUNTRY_CODES.find(c => c.iso === defaultCountry)
@@ -84,6 +76,15 @@ export default function PhoneInput({
       }
     }
   }, [value])
+
+  // Mode lecture seule : rendu simple (placé après les hooks pour respecter les Rules of Hooks)
+  if (readOnly) {
+    return (
+      <span style={{ fontSize: 13, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
+        {value || '—'}
+      </span>
+    )
+  }
 
   const filtered = COUNTRY_CODES.filter(c =>
     c.country.toLowerCase().includes(search.toLowerCase()) ||

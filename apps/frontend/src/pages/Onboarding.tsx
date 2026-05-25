@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAppStore, type Currency, type Lang } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import { tenantApi, productsApi } from '@/lib/api'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 
@@ -24,7 +25,7 @@ export default function Onboarding() {
   })
 
   const lang = form.language
-  const i = (fr: string, en: string, es: string, it: string) => (lang === 'fr' ? fr : lang === 'en' ? en : lang === 'es' ? es : it)
+  const i = useI18n()
   const set = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }))
 
   const handleFinish = async () => {
