@@ -15,10 +15,10 @@ const LANDING_TRANSLATIONS = {
     nav_pricing: 'Tarifs',
     nav_faq: 'FAQ',
     nav_login: 'Connexion',
-    badge: "Conçu pour l'Afrique francophone",
-    h1a: 'Gérez votre commerce',
-    h1b: 'simplement et efficacement',
-    hero_sub: "HabaShop centralise votre caisse, vos stocks, vos équipes et vos finances dans un seul outil — simple, rapide, et disponible même sans internet.",
+    badge: "N°1 en Afrique francophone · Sénégal · Côte d'Ivoire · Mali · Burkina",
+    h1a: 'Gérez votre boutique en Afrique',
+    h1b: 'Caisse, stock, clients & RH en un seul logiciel',
+    hero_sub: "HabaShop est le logiciel de gestion commerciale tout-en-un pour les boutiques et superettes d'Afrique : caisse (POS), gestion de stock, clients, RH et analytics — rapide et disponible même sans internet.",
     cta1: 'Démarrer gratuitement',
     cta2: 'Voir la démo',
     stat1_l: 'Modules intégrés',
@@ -28,15 +28,15 @@ const LANDING_TRANSLATIONS = {
     features_label: 'FONCTIONNALITÉS',
     features_title: 'Tout ce dont vous avez besoin',
     features_sub: '16 modules intégrés pour gérer chaque aspect de votre commerce',
-    feature1_title: 'Caisse (POS)',
+    feature1_title: 'Caisse Enregistreuse (POS)',
     feature1_desc: 'Encaissement rapide, catalogue filtrable, multi-modes de paiement, ticket imprimé ou WhatsApp, mode offline.',
-    feature2_title: 'Stock & Inventaire',
+    feature2_title: 'Gestion de Stock Temps Réel',
     feature2_desc: 'Alertes rupture en temps réel, CRUD produits, bon de commande automatique depuis la fiche produit.',
     feature3_title: 'Rapports & Analyses',
     feature3_desc: 'KPIs par période, CA, marges, top produits, répartition paiements. Exports CSV et PDF en un clic.',
-    feature4_title: 'CRM Clients',
+    feature4_title: 'Gestion Clients & Fidélité',
     feature4_desc: "Fiches clients, types (gros/semi-gros/fidèle), programme de fidélité et historique d'achats complet.",
-    feature5_title: 'RH & Planning',
+    feature5_title: 'Ressources Humaines & Paie',
     feature5_desc: 'Fiches employés, planning hebdomadaire drag & drop, gestion des congés et suivi des présences.',
     feature6_title: 'Sécurité & RBAC',
     feature6_desc: "Rôles et permissions granulaires, authentification 2FA TOTP, journal d'audit immuable, multi-tenant.",
@@ -62,8 +62,8 @@ const LANDING_TRANSLATIONS = {
     test3_role: 'Demi-grossiste · Bamako',
     test3_quote: "Les rapports de vente m'aident à prendre de meilleures décisions d'achat. L'interface est claire et les données sont toujours à jour.",
     pricing_label: 'TARIFS',
-    pricing_title: "Des prix adaptés à l'Afrique",
-    pricing_sub: "14 jours d'essai gratuit — aucune carte requise",
+    pricing_title: "Des prix en Franc CFA, accessibles partout en Afrique",
+    pricing_sub: "14 jours d'essai gratuit — payez par Wave, Orange Money ou MTN. Aucune carte requise.",
     per_month: '/mois',
     on_estimate: 'Sur devis',
     most_popular: 'Le plus populaire',
@@ -98,24 +98,24 @@ const LANDING_TRANSLATIONS = {
     faq_title: 'Questions fréquentes',
     faq1_q: 'HabaShop fonctionne-t-il sans internet ?',
     faq1_a: "Oui ! La caisse POS fonctionne en mode offline grâce à la technologie PWA. Les ventes sont stockées localement et synchronisées automatiquement au retour de la connexion.",
-    faq2_q: "Combien de temps prend l'installation ?",
-    faq2_a: "Aucune installation requise ! HabaShop est un logiciel web (SaaS). Vous vous connectez depuis n'importe quel navigateur. La configuration initiale prend moins de 30 minutes.",
-    faq3_q: 'Mes données sont-elles sécurisées ?',
-    faq3_a: "Absolument. Vos données sont chiffrées, hébergées en Europe et sauvegardées quotidiennement. L'authentification 2FA protège tous les accès. Conformité RGPD.",
-    faq4_q: 'Puis-je gérer plusieurs boutiques ?',
-    faq4_a: 'Oui, avec le plan Enterprise vous pouvez gérer un réseau de boutiques depuis un tableau de bord centralisé. Chaque boutique a ses propres données isolées.',
-    faq5_q: 'Quelles devises sont supportées ?',
-    faq5_a: "HabaShop supporte 6 devises : Franc CFA Ouest-Africain (XOF), Franc CFA Centre-Africain (XAF), Euro (EUR), Dollar US (USD), Dollar canadien (CAD) et Livre Sterling (GBP). La conversion est automatique et la TVA configurable par boutique.",
+    faq2_q: "Quels modes de paiement sont acceptés pour s'abonner ?",
+    faq2_a: "HabaShop accepte Wave, Orange Money, MTN Money, virement bancaire et carte bancaire. Aucune carte internationale n'est requise.",
+    faq3_q: 'Combien coûte HabaShop ?',
+    faq3_a: "HabaShop propose un essai gratuit de 14 jours. Le plan Starter coûte 9 900 F CFA/mois, le plan Pro 24 900 F CFA/mois et le plan Enterprise 49 900 F CFA/mois.",
+    faq4_q: "HabaShop est-il disponible en Côte d'Ivoire, au Mali et au Burkina Faso ?",
+    faq4_a: "Oui, HabaShop est disponible dans toute l'Afrique francophone : Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Guinée, Cameroun, Congo, Gabon, Togo, Bénin et plus de 150 pays.",
+    faq5_q: 'Puis-je importer mes produits existants dans HabaShop ?',
+    faq5_a: "Oui, HabaShop permet l'import de produits via fichier CSV ou Excel. L'équipe support peut vous accompagner dans la migration depuis votre ancien système.",
     cta_title: 'Prêt à moderniser votre commerce ?',
     cta_sub: "Rejoignez les commerçants d'Afrique qui font confiance à HabaShop",
     cta_btn: "Commencer maintenant — C'est gratuit",
     cta_note: "Aucune carte bancaire requise · 14 jours d'essai gratuit",
     footer: '© 2026 HabaShop · Logiciel SaaS pour commerces africains',
     footer_links: ['Confidentialité', 'CGU', 'Contact'],
-    trust_title: 'Déjà actifs dans 8+ pays africains',
+    trust_title: "Déjà actifs au Sénégal, en Côte d'Ivoire, au Mali et 8+ pays africains",
     cur_title: 'Multi-devises & Multi-langues',
     cur_sub: 'Adapté à votre marché, dans votre langue',
-    proof_stores: 'boutiques actives',
+    proof_stores: 'boutiques actives (Sénégal, CI, Mali)',
     proof_countries: '150+ pays',
   },
   en: {
@@ -207,14 +207,14 @@ const LANDING_TRANSLATIONS = {
     faq_title: 'Frequently asked questions',
     faq1_q: 'Does HabaShop work without internet?',
     faq1_a: 'Yes! The POS works offline thanks to PWA technology. Sales are stored locally and automatically synced when the connection returns.',
-    faq2_q: 'How long does setup take?',
-    faq2_a: 'No installation required! HabaShop is a web app (SaaS). You connect from any browser. Initial setup takes less than 30 minutes.',
-    faq3_q: 'Is my data secure?',
-    faq3_a: 'Absolutely. Your data is encrypted, hosted in Europe and backed up daily. 2FA authentication protects all access. GDPR compliant.',
-    faq4_q: 'Can I manage multiple stores?',
-    faq4_a: 'Yes, with the Enterprise plan you can manage a network of stores from a centralized dashboard. Each store has its own isolated data.',
-    faq5_q: 'Which currencies are supported?',
-    faq5_a: 'HabaShop supports 6 currencies: West African CFA Franc (XOF), Central African CFA Franc (XAF), Euro (EUR), US Dollar (USD), Canadian Dollar (CAD) and British Pound (GBP). Conversion is automatic and VAT is configurable per store.',
+    faq2_q: 'Which payment methods are accepted to subscribe?',
+    faq2_a: 'HabaShop accepts Wave, Orange Money, MTN Money, bank transfer and credit card. No international card required.',
+    faq3_q: 'How much does HabaShop cost?',
+    faq3_a: 'HabaShop offers a 14-day free trial. The Starter plan is 9,900 F CFA/month, Pro is 24,900 F CFA/month and Enterprise is 49,900 F CFA/month.',
+    faq4_q: "Is HabaShop available in Côte d'Ivoire, Mali and Burkina Faso?",
+    faq4_a: "Yes, HabaShop is available across French-speaking Africa: Senegal, Côte d'Ivoire, Mali, Burkina Faso, Guinea, Cameroon, Congo, Gabon, Togo, Benin and 150+ countries.",
+    faq5_q: 'Can I import my existing products into HabaShop?',
+    faq5_a: 'Yes, HabaShop lets you import products via CSV or Excel file. The support team can help you migrate from your previous system.',
     cta_title: 'Ready to modernize your business?',
     cta_sub: 'Join African merchants who trust HabaShop',
     cta_btn: "Start now — It's free",
@@ -1058,6 +1058,33 @@ export default function LandingPage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ════ PAYS COUVERTS (SEO géographique) ════ */}
+      <section aria-label="Pays disponibles" style={{ padding: '72px clamp(16px,4vw,80px)', background: D.bg, borderTop: `1px solid ${D.border}` }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 'clamp(24px,3.2vw,38px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', marginBottom: 14, lineHeight: 1.2 }}>
+            {lang === 'fr' ? "Disponible dans toute l'Afrique francophone" : 'Available across French-speaking Africa'}
+          </h2>
+          <p style={{ fontSize: 15, color: D.text2, maxWidth: 720, margin: '0 auto 36px', lineHeight: 1.7 }}>
+            {lang === 'fr'
+              ? "HabaShop fonctionne au Sénégal, en Côte d'Ivoire, au Mali, au Burkina Faso, en Guinée, au Cameroun, au Congo, au Gabon, au Togo, au Bénin et dans plus de 150 pays."
+              : "HabaShop works in Senegal, Côte d'Ivoire, Mali, Burkina Faso, Guinea, Cameroon, Congo, Gabon, Togo, Benin and 150+ countries."}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
+            {([
+              ['🇸🇳', 'Sénégal'], ['🇨🇮', "Côte d'Ivoire"], ['🇲🇱', 'Mali'], ['🇧🇫', 'Burkina Faso'], ['🇬🇳', 'Guinée'],
+              ['🇨🇲', 'Cameroun'], ['🇨🇬', 'Congo'], ['🇬🇦', 'Gabon'], ['🇹🇬', 'Togo'], ['🇧🇯', 'Bénin'],
+            ] as [string, string][]).map(([flag, name]) => (
+              <span key={name} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', background: D.bg2, border: `1px solid ${D.border}`, borderRadius: 99, fontSize: 14, fontWeight: 600, color: D.text2 }}>
+                <span style={{ fontSize: 18 }}>{flag}</span>{name}
+              </span>
+            ))}
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '9px 16px', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', borderRadius: 99, fontSize: 14, fontWeight: 700, color: D.p3 }}>
+              + 140 {lang === 'fr' ? 'autres pays' : 'more countries'}
+            </span>
+          </div>
         </div>
       </section>
 

@@ -1,30 +1,45 @@
 {
-  "name": "HabaShop",
+  "name": "HabaShop — Gestion Commerciale Afrique",
   "short_name": "HabaShop",
+  "description": "Logiciel SaaS de gestion commerciale pour boutiques et superettes en Afrique. POS, stock, clients, RH.",
   "start_url": "/app/dashboard",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "theme_color": "#5B4EE8",
   "background_color": "#0C0B14",
-  "description": "Logiciel de gestion commerciale pour l'Afrique",
-  "categories": ["business", "finance", "productivity"],
+  "theme_color": "#6C47FF",
+  "orientation": "portrait-primary",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "finance"],
+  "screenshots": [
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "Dashboard HabaShop"
+    }
+  ],
   "icons": [
-    { "src": "/pwa-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/pwa-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/pwa-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
   ],
   "shortcuts": [
     {
-      "name": "Point de Vente",
+      "name": "Nouvelle vente",
       "short_name": "POS",
+      "description": "Ouvrir la caisse",
       "url": "/app/pos",
       "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Stock",
-      "short_name": "Stock",
-      "url": "/app/products",
+      "name": "Dashboard",
+      "short_name": "Stats",
+      "description": "Voir les statistiques",
+      "url": "/app/dashboard",
       "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
     }
-  ]
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }

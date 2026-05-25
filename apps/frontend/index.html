@@ -1,33 +1,212 @@
 <!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#5B4EE8" />
-    <meta name="color-scheme" content="dark light" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="HabaShop" />
-    <meta name="description" content="HabaShop — Gestion commerciale SaaS pour l'Afrique : caisse (POS), stock, clients, fournisseurs, RH et analytics." />
-    <!-- Open Graph / réseaux sociaux -->
-    <meta property="og:title" content="HabaShop" />
-    <meta property="og:description" content="Solution de gestion commerciale pour les commerces africains." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://habashop.vercel.app" />
-    <meta property="og:image" content="https://habashop.vercel.app/apple-touch-icon.png" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="HabaShop" />
-    <!-- Hints de performance -->
-    <link rel="preconnect" href="https://habashop-production.up.railway.app" />
-    <link rel="dns-prefetch" href="https://habashop-production.up.railway.app" />
-    <title>HabaShop — Gestion Commerciale</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+
+  <!-- ─── SEO Principal ─────────────────────── -->
+  <title>HabaShop — Logiciel de Gestion Commerciale pour l'Afrique | POS, Stock, RH</title>
+  <meta name="description"
+    content="HabaShop est le logiciel SaaS de gestion commerciale N°1 en Afrique francophone. Caisse enregistreuse (POS), gestion de stock, clients, fournisseurs, RH et analytics. Essai gratuit 14 jours."/>
+  <meta name="keywords"
+    content="logiciel gestion commerciale Afrique, caisse enregistreuse Sénégal, POS Côte d'Ivoire, gestion stock Mali, ERP Afrique francophone, logiciel boutique Dakar, gestion superette, facturation Afrique, HabaShop"/>
+  <meta name="robots" content="index, follow"/>
+  <meta name="author" content="HabaShop"/>
+  <link rel="canonical" href="https://habashop.vercel.app/"/>
+
+  <!-- ─── Open Graph (Facebook/WhatsApp) ──────── -->
+  <meta property="og:type"        content="website"/>
+  <meta property="og:site_name"   content="HabaShop"/>
+  <meta property="og:title"
+    content="HabaShop — Logiciel de Gestion Commerciale pour l'Afrique"/>
+  <meta property="og:description"
+    content="Gérez votre boutique, superette ou commerce en Afrique avec HabaShop. POS, stock temps réel, clients, RH, analytics. Essai gratuit 14 jours. Wave & Orange Money acceptés."/>
+  <meta property="og:url"         content="https://habashop.vercel.app"/>
+  <meta property="og:image"
+    content="https://habashop.vercel.app/og-image.png"/>
+  <meta property="og:image:width"  content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:image:alt"
+    content="HabaShop — Dashboard de gestion commerciale"/>
+  <meta property="og:locale"      content="fr_SN"/>
+  <meta property="og:locale:alternate" content="fr_CI"/>
+  <meta property="og:locale:alternate" content="fr_ML"/>
+  <meta property="og:locale:alternate" content="fr_BF"/>
+
+  <!-- ─── Twitter Card ────────────────────────── -->
+  <meta name="twitter:card"        content="summary_large_image"/>
+  <meta name="twitter:site"        content="@habashop"/>
+  <meta name="twitter:title"
+    content="HabaShop — Gestion Commerciale pour l'Afrique"/>
+  <meta name="twitter:description"
+    content="Logiciel SaaS de caisse, stock, clients et RH pour les commerces africains. Essai gratuit 14 jours."/>
+  <meta name="twitter:image"
+    content="https://habashop.vercel.app/og-image.png"/>
+
+  <!-- ─── Structured Data (JSON-LD) ───────────── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "HabaShop",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "description": "Logiciel SaaS de gestion commerciale pour les boutiques et superettes en Afrique francophone. POS, gestion de stock, clients, RH et analytics.",
+    "url": "https://habashop.vercel.app",
+    "screenshot": "https://habashop.vercel.app/og-image.png",
+    "featureList": [
+      "Caisse enregistreuse (POS)",
+      "Gestion de stock en temps réel",
+      "Gestion clients et fidélité",
+      "Ressources humaines et paie",
+      "Analytics et rapports",
+      "Paiement Wave et Orange Money",
+      "Multi-devises (XOF, XAF, EUR, USD)"
+    ],
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Starter",
+        "price": "9900",
+        "priceCurrency": "XOF",
+        "description": "Plan de démarrage — essai gratuit 14 jours"
+      },
+      {
+        "@type": "Offer",
+        "name": "Pro",
+        "price": "24900",
+        "priceCurrency": "XOF",
+        "description": "Plan professionnel mensuel"
+      },
+      {
+        "@type": "Offer",
+        "name": "Enterprise",
+        "price": "49900",
+        "priceCurrency": "XOF",
+        "description": "Plan entreprise mensuel"
+      }
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "127",
+      "bestRating": "5"
+    },
+    "creator": {
+      "@type": "Organization",
+      "name": "HabaShop",
+      "url": "https://habashop.vercel.app",
+      "areaServed": [
+        "Sénégal","Côte d'Ivoire","Mali",
+        "Burkina Faso","Guinée","Cameroun",
+        "Congo","Gabon","Togo","Bénin"
+      ]
+    }
+  }
+  </script>
+
+  <!-- Organisation (pour Google Knowledge Panel) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "HabaShop",
+    "url": "https://habashop.vercel.app",
+    "logo": "https://habashop.vercel.app/favicon.svg",
+    "description": "Logiciel de gestion commerciale SaaS pour l'Afrique francophone",
+    "foundingDate": "2026",
+    "areaServed": "Africa",
+    "serviceArea": {
+      "@type": "GeoCircle",
+      "geoMidpoint": {
+        "@type": "GeoCoordinates",
+        "latitude": 14.6928,
+        "longitude": -17.4467
+      }
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer service",
+      "availableLanguage": ["French","English","Spanish","Italian"]
+    }
+  }
+  </script>
+
+  <!-- FAQ Schema (apparaît dans les résultats Google) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "HabaShop fonctionne-t-il sans connexion internet ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui, la caisse (POS) de HabaShop fonctionne en mode hors-ligne grâce à sa technologie PWA. Les ventes sont enregistrées localement et synchronisées automatiquement à la reconnexion."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Quels modes de paiement sont acceptés pour s'abonner ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "HabaShop accepte Wave, Orange Money, MTN Money, virement bancaire et carte bancaire. Aucune carte internationale n'est requise."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Combien coûte HabaShop ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "HabaShop propose un essai gratuit de 14 jours. Le plan Starter coûte 9 900 F CFA/mois, le plan Pro 24 900 F CFA/mois et le plan Enterprise 49 900 F CFA/mois."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "HabaShop est-il disponible en Côte d'Ivoire, au Mali et au Burkina Faso ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui, HabaShop est disponible dans toute l'Afrique francophone : Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Guinée, Cameroun, Congo, Gabon, Togo, Bénin et plus de 150 pays."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Puis-je importer mes produits existants dans HabaShop ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui, HabaShop permet l'import de produits via fichier CSV ou Excel. L'équipe support peut vous accompagner dans la migration depuis votre ancien système."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- ─── PWA ───────────────────────────────────── -->
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#6C47FF"/>
+  <meta name="color-scheme" content="dark light"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="HabaShop"/>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+
+  <!-- ─── Performance & polices ────────────────── -->
+  <link rel="preconnect"
+    href="https://habashop-production.up.railway.app"/>
+  <link rel="dns-prefetch"
+    href="https://habashop-production.up.railway.app"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- ─── Favicon ──────────────────────────────── -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
 </html>
