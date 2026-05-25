@@ -3,9 +3,9 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
-## [2.3.0] — 2026-05-25 — Mois 3 : modularisation, base de données, tests & DevOps
+## [2.3.0] — 2026-05-25 — Mois 3 : modularisation, base de données, soft-delete, tests & monitoring
 
-> Déployé et **vérifié en production** (backend Railway). Modularisation + index DB + monitoring — **aucun changement de comportement fonctionnel**.
+> Déployé et **vérifié en production** (backend Railway + frontend Vercel).
 
 ### 🧱 Architecture backend
 - `server.ts` : **2003 → 170 lignes** (bootstrap uniquement : env, CORS, JWT, rate-limit Redis, WebSocket, error handler P2025→404, `/health` + `/api/health-extended`, enregistrement des routes).
@@ -19,18 +19,31 @@ Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités c
 - **+10 index composites** (23 → **33**) sur les chemins de requête fréquents : `Sale[tenantId,paymentMode]`, `Product[tenantId,barcode]`, `Customer[tenantId,totalRevenue]` & `[tenantId,type]`, `Employee[tenantId,dept]` & `[tenantId,isActive]`, `Expense[tenantId,category]`, `AuditLog[tenantId,action]`, `PurchaseOrder[tenantId,createdAt]`, `PlanRequest[tenantId,status]`.
 - Migration `20260525140000_add_composite_indexes` — **additive** (`CREATE INDEX` uniquement, zéro changement de données), appliquée en prod via `prisma migrate deploy` au déploiement (jamais `migrate dev` : `DATABASE_URL` pointe sur la prod). **Présence des 10 index confirmée en prod** (`pg_indexes`).
 
+### 🗑️ Soft delete & validation
+- **`deletedAt`** sur `Customer`, `Supplier`, `PurchaseOrder`, `Product` (+ index `[tenantId, deletedAt]` → **37 index** au total). Migration `20260525150000_add_soft_delete` — **additive** (colonnes nullables + index), appliquée via `migrate deploy`. **Colonnes + index confirmés en prod**.
+- `DELETE` → suppression douce (`deletedAt = now()`) + entrée `AuditLog` ; listes/exports/analytics filtrent `deletedAt: null` ; `PATCH /api/<resource>/:id/restore` (ADMIN/SUPER_ADMIN) restaure. Fournisseur avec commandes liées : plus de 409 (la ligne est conservée). `Employee` reste sur `isActive` (pas de double mécanisme).
+- **Vérifié en prod** (cycle complet sur un client jetable) : create → `DELETE` **204** (masqué de la liste, ligne conservée avec `deletedAt`) → `restore` **200** (réapparaît) → audit `DELETE_CUSTOMER`/`RESTORE_CUSTOMER` → nettoyage.
+- **Validation** : produits (prix/stock négatifs), ventes (≥ 1 article, total ≥ 0), billing (plan/période/méthode) — **5/5 renvoient 400 en prod**.
+
 ### 🧪 Tests — 97 au total
 - **Backend** : 39 unitaires + **15 tests d'intégration** (`integration.test.ts`, **lecture seule** contre l'API prod : auth, 401/RBAC, isolation multi-tenant, analytics, billing, super-admin, export CSV via octets bruts du BOM, santé). Connexion unique partagée pour respecter le rate-limit login (10/15 min).
 - **Frontend** : **22 → 43** (`components.test.tsx` : `useI18n`, conversions de devises, `usePagination`, logique billing/thèmes/onboarding).
 - Séparation **unit vs intégration** : `npm test` = unitaires seulement (hors ligne) ; `npm run test:integration` via `vitest.integration.config.ts` (timeout réseau 30 s).
+- **Couverture** : `@vitest/coverage-v8` (back + front), `test:coverage` — **rapport seul, pas de seuil bloquant** (les routes sont couvertes par l'intégration distante, non instrumentée). Mesuré : hooks/stores front ~47 % (`useI18n` 92 %, `usePagination` 100 %, `appStore` 76 %).
+- **E2E Playwright** : `e2e/smoke.spec.ts` (9 tests prod) + `playwright.config.ts` + scripts `e2e` ; **3 tests publics (sans login) passent en prod** (les 6 connectés sont écrits mais non lancés — rate-limit login 10/15 min).
 
 ### ⚙️ DevOps & monitoring (additif)
 - `GET /api/health-extended` enrichi : **latence DB**, uptime, **mémoire** (heap), statut des services (redis/whatsapp/ai) — `status`/`tables` conservés (rétrocompatible).
 - Filets de sécurité process : `unhandledRejection` (log, pas de crash en prod) + `uncaughtException`.
-- **CI/CD** (`ci.yml`) : 5 jobs — unit backend, unit frontend + **contrôle de taille de bundle (< 100 KB gzip)**, scan sécurité (secrets + fallback JWT + `npm audit`), tests d'intégration (lecture seule, sur `main`), résumé + health check prod. Installation **workspaces depuis la racine** (lockfile racine — pas de lockfile par app).
-- Sentry : `VITE_SENTRY_DSN` ajouté à `.env.example` (pas de dépendance ajoutée pour l'instant).
+- **CI/CD** (`ci.yml`) : 6 jobs — unit backend, unit frontend + **contrôle de taille de bundle (< 100 KB gzip)**, scan sécurité (secrets + fallback JWT + `npm audit`), tests d'intégration (lecture seule, sur `main`), résumé + health check prod, **`notify-failure`** (alerte Discord en cas d'échec). Installation **workspaces depuis la racine** (lockfile racine — pas de lockfile par app).
+- **Sentry** : `@sentry/react` (front : `ErrorBoundary` + UI de repli) + `@sentry/node` (back : `captureException` sur 5xx ; P2025→404 et format de réponse **conservés**) — **inerte sans DSN** (`VITE_SENTRY_DSN` / `SENTRY_DSN`). Alertes webhook Discord/Slack (`sendAlert`, `ALERT_WEBHOOK_URL`) au crash.
 
-> Hors périmètre (décidé) : soft-delete (`deletedAt`) et réécriture de l'error handler / `/health` — comportement vérifié conservé tel quel. Contraintes de validation type CHECK non ajoutées (non exprimables dans le schéma Prisma sans SQL brut).
+### 🧹 Qualité de code
+- **ESLint backend** : `.eslintrc.json` (`@typescript-eslint`) + scripts `lint`/`lint:fix` — **0 erreur, 142 warnings** (surtout `any`).
+- **JSDoc** concis sur les fonctions critiques : `authenticate`, `db`/`prisma`, `billing` request-plan, `useI18n`, `convertFromXOF`.
+- `src/lib/logger.ts` (front) : `log` silencieux en prod, `warn`/`error` toujours actifs.
+
+> Reportés (faible valeur / risque élevé, signalés) : réduction agressive des `any` (104 → < 50), remplacement global `console`→`logger` dans les pages, intégrations Sentry react-router/Prisma (fragiles selon la version). Contraintes type CHECK non ajoutées (non exprimables en schéma Prisma sans SQL brut). Error handler et `/health` **inchangés** (comportement vérifié conservé).
 
 ## [2.2.0] — 2026-05-25 — CRUD complet & accessibilité (Mois 2)
 
