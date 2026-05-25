@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { suppliersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star, Pencil, Package, FileText } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Phone, Factory, CheckCircle, Truck, Star, Pencil, Package, FileText, Trash2 } from 'lucide-react'
 import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
@@ -529,6 +529,18 @@ export default function Suppliers() {
               {!suppEditMode ? (
                 <>
                   <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6 }} onClick={() => setSuppEditMode(true)}><Pencil size={13} /> {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>
+                  <button className="btn btn-ghost" style={{ color:'var(--danger)', display:'flex', alignItems:'center', gap:6 }}
+                    aria-label={i('Supprimer le fournisseur', 'Delete supplier', 'Eliminar proveedor', 'Elimina fornitore')}
+                    onClick={async () => {
+                      if (!editSupplier) return
+                      if (!window.confirm(i('Supprimer ce fournisseur ?', 'Delete this supplier?', '¿Eliminar este proveedor?', 'Eliminare questo fornitore?'))) return
+                      try {
+                        await suppliersApi.delete(editSupplier.id)
+                        setSuppliers(prev => prev.filter(s => s.id !== editSupplier.id))
+                        setShowEditSuppModal(false)
+                        toast.success(i('Fournisseur supprimé', 'Supplier deleted', 'Proveedor eliminado', 'Fornitore eliminato'))
+                      } catch (e: any) { toast.error(e?.message ?? 'Erreur') }
+                    }}><Trash2 size={13} /> {i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}</button>
                   <button className="btn btn-ghost" onClick={() => setShowEditSuppModal(false)}>{i('Fermer', 'Close', 'Cerrar', 'Chiudi')}</button>
                 </>
               ) : (

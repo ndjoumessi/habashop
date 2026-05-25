@@ -359,6 +359,7 @@ export default function Dashboard() {
               <option value="3months">{lang === 'fr' ? '3 mois' : '3 months'}</option>
             </select>
           </div>
+          <div role="img" aria-label={lang === 'fr' ? 'Graphique des ventes par jour' : lang === 'en' ? 'Daily sales chart' : lang === 'es' ? 'Gráfico de ventas diarias' : 'Grafico vendite giornaliere'}>
           <ResponsiveContainer width="100%" height={190}>
             <AreaChart data={salesChart} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
               <defs>
@@ -375,6 +376,7 @@ export default function Dashboard() {
               <Area dataKey="ventes" stroke="#00D084" strokeWidth={2.5} fill="url(#areaGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Donut chart */}

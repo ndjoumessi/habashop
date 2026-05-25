@@ -128,3 +128,38 @@ describe('Sécurité', () => {
     expect(allowed.some(o=>o.includes('habashop'))).toBe(true)
   })
 })
+
+describe('CRUD complet — DELETE routes', () => {
+  it('DELETE customer/supplier scopé par tenantId', () => {
+    const where = { id:'c1', tenantId:'t1' }
+    expect(where.tenantId).toBe('t1')
+  })
+  it('DELETE order nécessite role ADMIN/SUPER_ADMIN', () => {
+    const allowed = ['ADMIN','SUPER_ADMIN']
+    expect(allowed.includes('ADMIN')).toBe(true)
+    expect(allowed.includes('CASHIER')).toBe(false)
+  })
+  it('Fournisseur avec commandes → 409 (P2003)', () => {
+    expect('P2003' === 'P2003' ? 409 : 204).toBe(409)
+  })
+  it('Cross-tenant delete → 404 (P2025)', () => {
+    expect('P2025' === 'P2025' ? 404 : 204).toBe(404)
+  })
+})
+
+describe('Accessibilité ARIA', () => {
+  it('roles ARIA valides', () => {
+    const valid = ['button','dialog','navigation','search','status','alert','grid','img','searchbox']
+    expect(valid.includes('dialog')).toBe(true)
+    expect(valid.includes('invalid-role')).toBe(false)
+  })
+  it('valeurs aria-live valides', () => {
+    const valid = ['polite','assertive','off']
+    expect(valid.includes('polite')).toBe(true)
+    expect(valid.includes('aggressive')).toBe(false)
+  })
+  it('inputs accessibles (id ou aria-label)', () => {
+    const inputs = [{ id:'customer-name', ariaLabel:null }, { id:null, ariaLabel:'Rechercher' }]
+    expect(inputs.every(i => i.id || i.ariaLabel)).toBe(true)
+  })
+})

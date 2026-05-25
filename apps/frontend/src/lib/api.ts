@@ -114,12 +114,14 @@ export const customersApi = {
   list:   () => api.get<any[]>('/api/customers'),
   create: (data: any) => api.post<any>('/api/customers', data),
   update: (id: string, data: any) => api.put<any>(`/api/customers/${id}`, data),
+  delete: (id: string) => api.delete<void>(`/api/customers/${id}`),
 }
 
 export const suppliersApi = {
   list:   () => api.get<any[]>('/api/suppliers'),
   create: (data: any) => api.post<any>('/api/suppliers', data),
   update: (id: string, data: any) => api.put<any>(`/api/suppliers/${id}`, data),
+  delete: (id: string) => api.delete<void>(`/api/suppliers/${id}`),
 }
 
 export const ordersApi = {

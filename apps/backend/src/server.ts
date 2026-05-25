@@ -661,6 +661,13 @@ async function start() {
     }
   })
 
+  app.delete('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
+    const { id } = request.params as any
+    await prisma.customer.delete({ where: { id, tenantId } }) // P2025 (cross-tenant/introuvable) → 404
+    return reply.code(204).send()
+  })
+
   // ════════════════════════════════════════
   // SUPPLIERS ROUTES
   // ════════════════════════════════════════
@@ -679,6 +686,18 @@ async function start() {
     const { tenantId } = request.user
     const { id } = request.params as any
     return prisma.supplier.update({ where: { id, tenantId }, data: request.body as any })
+  })
+
+  app.delete('/api/suppliers/:id', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
+    const { id } = request.params as any
+    try {
+      await prisma.supplier.delete({ where: { id, tenantId } })
+      return reply.code(204).send()
+    } catch (err: any) {
+      if (err?.code === 'P2003') return reply.code(409).send({ error: 'Impossible de supprimer : le fournisseur a des commandes liées' })
+      throw err // P2025 → 404 (handler global)
+    }
   })
 
   // ════════════════════════════════════════
@@ -727,6 +746,21 @@ async function start() {
     const { id } = request.params as any
     const { status } = request.body as any
     return prisma.purchaseOrder.update({ where: { id, tenantId }, data: { status } })
+  })
+
+  app.delete('/api/orders/:id', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId, role } = request.user
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
+      return reply.code(403).send({ error: 'Admin requis pour supprimer une commande' })
+    }
+    const { id } = request.params as any
+    const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, select: { id: true } })
+    if (!order) return reply.code(404).send({ error: 'Commande introuvable' })
+    await prisma.$transaction([
+      prisma.purchaseOrderItem.deleteMany({ where: { orderId: id } }),
+      prisma.purchaseOrder.delete({ where: { id } }),
+    ])
+    return reply.code(204).send()
   })
 
   // ════════════════════════════════════════

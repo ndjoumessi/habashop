@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { customersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown, Navigation2, Globe, Flame, AlertTriangle, DollarSign, StickyNote, UserPlus, CheckCircle } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown, Navigation2, Globe, Flame, AlertTriangle, DollarSign, StickyNote, UserPlus, CheckCircle, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
@@ -870,8 +870,8 @@ export default function Customers() {
             <table>
               <thead>
                 <tr>
-                  <th>{t('col_client')}</th><th>{t('col_type')}</th><th>{t('col_phone')}</th>
-                  <th>{t('customers_purchases')}</th><th>{t('customers_total_revenue')}</th><th>{t('col_loyalty')}</th><th>{t('col_actions')}</th>
+                  <th scope="col">{t('col_client')}</th><th scope="col">{t('col_type')}</th><th scope="col">{t('col_phone')}</th>
+                  <th scope="col">{t('customers_purchases')}</th><th scope="col">{t('customers_total_revenue')}</th><th scope="col">{t('col_loyalty')}</th><th scope="col">{t('col_actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1391,6 +1391,17 @@ export default function Customers() {
               {!custEditMode ? (
                 <>
                   <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6 }} onClick={() => setCustEditMode(true)}><Pencil size={13} /> {lang==='fr'?'Modifier':'Edit'}</button>
+                  <button className="btn btn-ghost" style={{ color:'var(--danger)', display:'flex', alignItems:'center', gap:6 }}
+                    aria-label={i('Supprimer le client', 'Delete customer', 'Eliminar cliente', 'Elimina cliente')}
+                    onClick={async () => {
+                      if (!window.confirm(i('Supprimer ce client ?', 'Delete this customer?', '¿Eliminar este cliente?', 'Eliminare questo cliente?'))) return
+                      try {
+                        await customersApi.delete(editCustomer.id)
+                        setCustomers(prev => prev.filter(c => c.id !== editCustomer.id))
+                        setShowEditCustModal(false)
+                        toast.success(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
+                      } catch (e: any) { toast.error(e?.message ?? 'Erreur') }
+                    }}><Trash2 size={13} /> {i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}</button>
                   <button className="btn btn-ghost" onClick={() => setShowEditCustModal(false)}>{lang==='fr'?'Fermer':'Close'}</button>
                 </>
               ) : (

@@ -245,14 +245,14 @@ export default function AdminDashboard() {
             <table>
               <thead>
                 <tr>
-                  <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('name')}>{i('Boutique', 'Shop', 'Tienda', 'Negozio')}{sortArrow('name')}</th>
-                  <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('plan')}>{i('Plan', 'Plan', 'Plan', 'Piano')}{sortArrow('plan')}</th>
-                  <th>{i('Devise', 'Currency', 'Divisa', 'Valuta')}</th>
-                  <th>{i('Pays', 'Country', 'País', 'Paese')}</th>
-                  <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('users')}>{i('Users', 'Users', 'Usuarios', 'Utenti')}{sortArrow('users')}</th>
-                  <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('products')}>{i('Produits', 'Products', 'Productos', 'Prodotti')}{sortArrow('products')}</th>
-                  <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('sales')}>{i('Ventes', 'Sales', 'Ventas', 'Vendite')}{sortArrow('sales')}</th>
-                  <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('createdAt')}>{i('Créée le', 'Created', 'Creada', 'Creato')}{sortArrow('createdAt')}</th>
+                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('name')}>{i('Boutique', 'Shop', 'Tienda', 'Negozio')}{sortArrow('name')}</th>
+                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('plan')}>{i('Plan', 'Plan', 'Plan', 'Piano')}{sortArrow('plan')}</th>
+                  <th scope="col">{i('Devise', 'Currency', 'Divisa', 'Valuta')}</th>
+                  <th scope="col">{i('Pays', 'Country', 'País', 'Paese')}</th>
+                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('users')}>{i('Users', 'Users', 'Usuarios', 'Utenti')}{sortArrow('users')}</th>
+                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('products')}>{i('Produits', 'Products', 'Productos', 'Prodotti')}{sortArrow('products')}</th>
+                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('sales')}>{i('Ventes', 'Sales', 'Ventas', 'Vendite')}{sortArrow('sales')}</th>
+                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('createdAt')}>{i('Créée le', 'Created', 'Creada', 'Creato')}{sortArrow('createdAt')}</th>
                   <th></th>
                 </tr>
               </thead>

@@ -144,6 +144,7 @@ export default function Sidebar() {
               key={item.path}
               to={item.path}
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              aria-label={t(item.key)}
               title={collapsed ? t(item.key) : undefined}
               style={collapsed ? { justifyContent: 'center', padding: '8px 0', width: '100%', margin: '1px 0' } : undefined}
             >
