@@ -8,11 +8,25 @@ const fastify_1 = __importDefault(require("fastify"));
 const cors_1 = __importDefault(require("@fastify/cors"));
 const jwt_1 = __importDefault(require("@fastify/jwt"));
 const websocket_1 = __importDefault(require("@fastify/websocket"));
+const rate_limit_1 = __importDefault(require("@fastify/rate-limit"));
 const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const twilio_1 = __importDefault(require("twilio"));
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const cron_1 = require("cron");
+// ─── Validation des variables d'environnement obligatoires ───
+const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET'];
+const missingVars = REQUIRED_ENV_VARS.filter(v => !process.env[v]);
+if (missingVars.length > 0) {
+    console.error('❌ FATAL: variables d\'environnement manquantes:', missingVars.join(', '));
+    console.error('📋 Consultez apps/backend/.env.example pour la configuration');
+    process.exit(1);
+}
+const OPTIONAL_ENV_VARS = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'ANTHROPIC_API_KEY'];
+OPTIONAL_ENV_VARS.forEach(v => {
+    if (!process.env[v])
+        console.warn(`⚠️  Variable optionnelle manquante: ${v} — fonctionnalité associée désactivée`);
+});
 const prisma = new client_1.PrismaClient();
 const TWILIO_FROM = process.env.TWILIO_WHATSAPP_FROM
     ?? 'whatsapp:+14155238886';
@@ -160,7 +174,12 @@ async function start() {
         credentials: true,
     });
     await app.register(jwt_1.default, {
-        secret: process.env.JWT_SECRET ?? 'habashop-secret-dev-2026',
+        secret: process.env.JWT_SECRET, // garanti présent par la validation au démarrage
+    });
+    await app.register(rate_limit_1.default, {
+        global: false, // n'applique qu'aux routes qui déclarent config.rateLimit
+        max: 100,
+        timeWindow: '1 minute',
     });
     await app.register(websocket_1.default);
     // ─── NOTIFICATIONS TEMPS RÉEL (WebSocket) ──
@@ -243,7 +262,20 @@ async function start() {
     // ════════════════════════════════════════
     // AUTH ROUTES
     // ════════════════════════════════════════
-    app.post('/api/auth/login', async (request, reply) => {
+    app.post('/api/auth/login', {
+        config: {
+            rateLimit: {
+                max: 10,
+                timeWindow: '15 minutes',
+                errorResponseBuilder: (_req, context) => ({
+                    statusCode: 429,
+                    error: 'Too Many Requests',
+                    message: `Trop de tentatives. Réessayez dans ${Math.ceil(context.after / 60000)} minute(s).`,
+                    retryAfter: context.after,
+                }),
+            },
+        },
+    }, async (request, reply) => {
         const { email, password } = request.body;
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user)
@@ -267,7 +299,20 @@ async function start() {
             tenant,
         };
     });
-    app.post('/api/auth/register', async (request, reply) => {
+    app.post('/api/auth/register', {
+        config: {
+            rateLimit: {
+                max: 5,
+                timeWindow: '1 hour',
+                errorResponseBuilder: (_req, context) => ({
+                    statusCode: 429,
+                    error: 'Too Many Requests',
+                    message: `Trop d'inscriptions. Réessayez dans ${Math.ceil(context.after / 60000)} minute(s).`,
+                    retryAfter: context.after,
+                }),
+            },
+        },
+    }, async (request, reply) => {
         const { name, ownerName, email, password, shopName, currency, country, language, phone } = request.body;
         const resolvedName = name ?? ownerName ?? shopName;
         const existing = await prisma.user.findUnique({ where: { email } });
@@ -1038,7 +1083,7 @@ async function start() {
     };
     const VALID_PAYMENTS = ['wave', 'orange_money', 'mtn_money', 'virement', 'card'];
     // Le tenant demande un upgrade de plan
-    app.post('/api/billing/request-plan', { preHandler: authenticate }, async (request, reply) => {
+    app.post('/api/billing/request-plan', { preHandler: authenticate, config: { rateLimit: { max: 3, timeWindow: '1 hour' } } }, async (request, reply) => {
         const { tenantId, userId } = request.user;
         const { plan, period, paymentMethod, paymentRef, notes } = (request.body ?? {});
         if (!['pro', 'enterprise'].includes(plan)) {

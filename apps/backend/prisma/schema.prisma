@@ -64,6 +64,9 @@ model PlanRequest {
   updatedAt     DateTime  @updatedAt
   reviewedAt    DateTime?
   reviewedBy    String?
+
+  @@index([tenantId])
+  @@index([status])
 }
 
 model User {
@@ -84,6 +87,8 @@ model User {
   sales          Sale[]          @relation("SaleCashier")
   purchaseOrders PurchaseOrder[] @relation("OrderCreator")
   auditLogs      AuditLog[]
+
+  @@index([tenantId])
 }
 
 model Product {
@@ -113,6 +118,9 @@ model Product {
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id])
   saleItems SaleItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, isActive])
 }
 
 model Sale {
@@ -131,6 +139,9 @@ model Sale {
   tenant  Tenant     @relation(fields: [tenantId], references: [id])
   cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
   items   SaleItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
 }
 
 model SaleItem {
@@ -143,6 +154,9 @@ model SaleItem {
 
   sale    Sale    @relation(fields: [saleId], references: [id])
   product Product @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@index([productId])
 }
 
 model Customer {
@@ -159,6 +173,8 @@ model Customer {
   updatedAt     DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
 }
 
 model Supplier {
@@ -178,6 +194,8 @@ model Supplier {
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
   purchaseOrders PurchaseOrder[]
+
+  @@index([tenantId])
 }
 
 model PurchaseOrder {
@@ -197,6 +215,9 @@ model PurchaseOrder {
   supplier  Supplier            @relation(fields: [supplierId], references: [id])
   createdBy User                @relation("OrderCreator", fields: [createdById], references: [id])
   items     PurchaseOrderItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
 }
 
 model PurchaseOrderItem {
@@ -208,6 +229,8 @@ model PurchaseOrderItem {
   total       Float
 
   order PurchaseOrder @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
 }
 
 model Employee {
@@ -234,6 +257,8 @@ model Employee {
   tenant        Tenant          @relation(fields: [tenantId], references: [id])
   bonuses       EmployeeBonus[]
   salaryHistory SalaryHistory[]
+
+  @@index([tenantId])
 }
 
 model EmployeeBonus {
@@ -246,6 +271,9 @@ model EmployeeBonus {
   createdAt  DateTime @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
 }
 
 model SalaryHistory {
@@ -259,6 +287,9 @@ model SalaryHistory {
   createdAt  DateTime @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
 }
 
 model Expense {
@@ -278,6 +309,9 @@ model Expense {
   updatedAt DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, date])
 }
 
 model AuditLog {
@@ -293,4 +327,7 @@ model AuditLog {
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
 }
