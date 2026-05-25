@@ -3,6 +3,26 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.3.4] — 2026-05-25 — Architecture frontend : découpe de `POS.tsx` + loading states
+
+> Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
+
+### ♻️ Découpe de `POS.tsx`
+- `POS.tsx` : **1891 → 569 lignes** (page conteneur : état caisse/panier, handlers `confirmSale`/`printTicket`/`addItem`, écran « caisse fermée », layout + délégation du rendu).
+- JSX extrait **à l'identique** (script de découpe, zéro réécriture) dans `src/components/pos/` :
+  - **`POSProductGrid.tsx`** (396 l.) — colonne catalogue : onglets Caisse/Historique, filtres catégories, recherche + scan, barre type-client/remise, grille produits, vue historique.
+  - **`POSCart.tsx`** (376 l.) — colonne panier : lignes d'articles, totaux HT/TVA/TTC, 5 modes de paiement, monnaie, bouton encaisser.
+  - **`POSModals.tsx`** (522 l.) — modale remise + fermeture de caisse + confirmation de vente (avec sélecteur d'indicatif pays WhatsApp).
+- **`posShared.tsx`** (191 l.) — module partagé (CATS, PRODUCTS, types `PosProduct`/`CartItem`, COUNTRY_CODES, CASHIER_TEXTS, composant `CountryItem`). État/handlers passés en **props typées** ; l'orchestration (caisse, checkout) reste dans `POS.tsx`.
+- **Vérifié** : `tsc` clean (a détecté `isMobile`/`mobileView` manquants dans `POSProductGrid` → corrigé), **43/43** tests, build OK (chunk POS 15,6 KB gzip < 100 KB). Smoke Playwright (`e2e/pos.spec.ts`, non-flaky ×2) + probe sur **preview local** puis **prod live** : ouverture caisse → grille + panier + modales, ajout produit au panier → modale de vente **sans déclencher d'encaissement** (pour ne pas créer de vente réelle en prod).
+
+### ⏳ Loading states (squelettes)
+- Ajout d'un état `loading` + squelettes shimmer (classe CSS `.skeleton`) pendant le fetch API sur **4 pages liste/grille** avec un vrai appel réseau : **Suppliers, Orders, Expenses, Planning** (`finally(() => setLoading(false))`, branche skeleton dans le `<tbody>` avant le contenu existant + état vide conservé).
+- **Skip assumé** : pages à données statiques/seed (Goals, Activity, Payroll, Notifications, Users) où le loading serait factice ; pages charts (Reports, Forecasts) où un squelette de tableau ne convient pas.
+- Le composant shadcn `<Skeleton>` n'est **pas** utilisé : il s'appuie sur `bg-muted` dont le token `--muted` n'est pas défini dans le projet (rendu quasi-invisible) ; la classe `.skeleton` (shimmer `--bg4`/`--bg5`, déjà utilisée par HR) est la vraie primitive visible.
+
+> Note `Customers.tsx` : déjà découpé en [2.3.2] (1811 → 341 lignes) — non refait.
+
 ## [2.3.3] — 2026-05-25 — Architecture frontend : découpe de `Stock.tsx`
 
 > Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
