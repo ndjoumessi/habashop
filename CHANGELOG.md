@@ -3,6 +3,29 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.5.0] — 2026-05-25 — Données réelles partout (fin des données de démo) + Resend (UI) + refonte cartes clients
+
+> Déployé et **vérifié en production** (frontend Vercel). Trois livraisons distinctes regroupées sous cette version.
+
+### 🧹 Suppression de toutes les données hardcodées — états vides pour les nouveaux comptes
+- **Bug** : les nouveaux comptes affichaient de fausses données de démo (employés, ventes, dépenses, fournisseurs…) au lieu d'états vides.
+- **Pages passées en `useState([])` + fetch API + `EmptyState` d'onboarding** : HR, Payroll (dérivé d'`employeesApi`), Planning, Stock, Suppliers, Orders, Customers, Expenses, Users (câblé à `tenantApi.users()`), Marketing, Goals, Notifications, Activity.
+- **Forecasts** : réécrit — panneau **HabaShop AI conservé** (données réelles via `aiApi`), prévisions fictives remplacées par un `EmptyState` (« Pas encore de prévisions »).
+- **Reports** : `EmptyState` (« Enregistrez vos premières ventes ») quand aucune vente réelle.
+- **Header** : notifications & recherche fictives supprimées (live notifs + low-stock réels conservés ; recherche limitée à la navigation des pages, avec état vide).
+- **AIAssistant** : stats initialisées à 0. **POS** : inchangé (produits de démo conservés comme fallback voulu) ; `posDefaultFund`/`cashierSession*` déjà à 0.
+- Réconciliations : `BUDGETS_INIT` (Expenses) conservé = cibles de budget **éditables**, pas de l'activité ; les ventilations hardcodées des onglets Stock/Clients/Finance/RH de Reports ne sont atteignables que par les comptes ayant déjà des ventes (le `EmptyState` les précède).
+- **−1 528 lignes** de données de démo. Vérifié : `tsc` clean, build OK, smoke Playwright — 15 pages rendent avec **0 erreur JS** (compte avec données réelles), états vides confirmés (Activity/Notifications/Forecasts) en local + prod live.
+
+### 📧 Resend dans la page Intégrations
+- Carte **Resend** ajoutée à la grille (icône SVG, statut connecté, `api.resend.com`, lien docs) + **panneau détaillé** : badge « Actif — 6 emails configurés », **tableau des 6 flows** (bienvenue, rappels J-7/J-3, suspension, confirmation d'upgrade, rapport hebdo) avec déclencheurs & délais, et stats (3 000 emails/mois, 99,8 %, resend.dev). Bilingue FR/EN.
+- Réconciliation : carte alignée sur l'interface `Integration` existante (la spec proposait une autre forme d'objet). Vérifié `tsc`/build + runtime local & prod, 0 erreur JS.
+
+### 🎨 Refonte des cartes clients (vue grille) — UI/UX Pro Max
+- Nouvelle carte : bande couleur par type, avatar initiales, badge type, blocs métriques (CA total + fidélité), téléphone/email (icônes Lucide), footer **Détails** + **Supprimer**. Vue tableau inchangée.
+- Accessibilité : `role="button"`, `tabIndex`, Enter/Espace, `aria-label` sur la carte et les boutons ; hover `translateY(-3px)` + ombre `.18s ease` ; grille `auto-fill minmax(260px, 1fr)`.
+- **Suppression réelle** via `customersApi.delete` **avec confirmation**. Réconciliation : câblé au flux `setDetailCustomer`/modal existant (la spec supposait des props `onSelect`/`onDelete` absents). Vérifié en prod : 3 cartes rendent en vue grille, suppression + ouverture du détail OK, 0 erreur JS (la session ne s'authentifie pas sur le preview local → vérifié sur live).
+
 ## [2.3.9] — 2026-05-25 — Architecture frontend : découpe de `Reports.tsx`
 
 > Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
