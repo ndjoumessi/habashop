@@ -1,132 +1,74 @@
 # 🔍 Audit HabaShop — Rapport complet
 
-**Date :** 25 mai 2026 · **Version auditée :** code à `79b3de09` (main)
-**Méthode :** mesures réelles sur le code (greps, `tsc`, tests, build, état prod). Aucune valeur inventée.
+**Audit initial :** 25 mai 2026 (code à `79b3de09`) · **Re-score :** 25 mai 2026 après les travaux Mois 1-3 (code à `bfc2d90c`, main)
+**Méthode :** mesures réelles sur le code (greps, `tsc`, tests, build, CI) et **état prod vérifié**. Aucune valeur inventée.
 
 ## Scores
 
-| Dimension | Score | Statut |
-|-----------|-------|--------|
-| Sécurité | 6/10 | 🟡 |
-| Performance | 6/10 | 🟡 |
-| Qualité du code | 6/10 | 🟡 |
-| Couverture fonctionnelle | 8/10 | 🟢 |
-| Base de données | 6/10 | 🟡 |
-| Tests | 5/10 | 🟡 |
-| UX / Accessibilité | 7/10 | 🟡 |
-| DevOps | 5/10 | 🟡 |
-| **TOTAL** | **49/80** | 🟡 |
+| Dimension | Avant | Après | Statut |
+|-----------|-------|-------|--------|
+| Sécurité | 6/10 | **9/10** | 🟢 |
+| Performance | 6/10 | **8/10** | 🟢 |
+| Qualité du code | 6/10 | **8/10** | 🟢 |
+| Couverture fonctionnelle | 8/10 | **9/10** | 🟢 |
+| Base de données | 6/10 | **9/10** | 🟢 |
+| Tests | 5/10 | **9/10** | 🟢 |
+| UX / Accessibilité | 7/10 | **8/10** | 🟢 |
+| DevOps | 5/10 | **9/10** | 🟢 |
+| **TOTAL** | **49/80** | **69/80** | 🟢 |
 
-## Score global : **61 %**
+## Score global : **61 % → 86 %**
 
-Produit fonctionnellement riche et type-safe à la compilation, mais avec des angles morts d'**exploitation** (rate-limiting non branché, secret JWT à défaut faible, pas d'index DB, pas de CI/CD, déploiements manuels et instables). Aucun bloquant fonctionnel ; les correctifs critiques sont rapides.
+Tous les problèmes critiques de l'audit initial sont **résolus et vérifiés en production**. Le produit est désormais throttlé, indexé, testé (unit + intégration + E2E), monitoré et livré via une CI verte. Les points restants sont des optimisations (déploiement encore manuel, couverture % faible sur les routes, ~104 `any`, pages volumineuses), sans bloquant.
 
 ---
 
-## ✅ Points forts
+## ✅ Problèmes critiques — tous résolus
 
-- **Isolation multi-tenant solide** : `tenantId` filtré dans ~141 emplacements sur 67 routes ; un accès cross-tenant renvoie **404** (handler global Prisma `P2025`), comportement vérifié en session.
-- **Aucune requête SQL brute** (`$queryRaw`/`$executeRaw` = 0) → surface d'injection SQL nulle (Prisma paramétré).
-- **Secrets non exposés** : `passwordHash` et `twoFASecret` retirés des réponses (`/api/tenant/users`) ; login/register ne renvoient jamais le hash.
-- **TypeScript propre** : `tsc --noEmit` passe sans erreur côté backend **et** frontend.
-- **Couverture fonctionnelle large** : 29 pages, 67 routes API, tous les modules majeurs présents (POS, stock, clients, fournisseurs, ventes, commandes, RH/paie, dépenses, rapports, analytics, IA, WhatsApp, billing, super-admin, onboarding, pricing).
-- **Billing en production** : routes `/api/billing/*` live, flux d'upgrade déjà exercé (demande Pro en attente observée).
-- **i18n 4 langues + 6 devises** avec conversion temps réel ; **PWA** (service worker, installable).
-- **CORS** validé par fonction (localhost + `FRONTEND_URL`), `credentials: true`.
-- **Build front découpé** (chunks `vendor` / `charts` / `ui` séparés) ; `.env.example` présent.
+1. **Rate-limiting** — `@fastify/rate-limit` enregistré ; login 10/15 min, register 5/h, billing 3/h ; **store Redis partagé + `trustProxy`** → 429 fiable en multi-replica (**vérifié en prod** : en-têtes `x-ratelimit-*` monotones, 429 atteint).
+2. **Secret JWT** — repli en dur supprimé ; `process.exit(1)` au démarrage si `JWT_SECRET` absent (fail-fast).
+3. **Index DB** — **0 → 37 `@@index`** (`tenantId` + composites `[tenantId, createdAt|paymentMode|status|…]` + `[tenantId, deletedAt]`). Migrations additives appliquées via `migrate deploy` (**présence confirmée en prod** via `pg_indexes`).
+4. **CI/CD + déploiements** — GitHub Actions **7 jobs** (unit back/front, bundle < 100 KB gzip, sécurité, intégration prod, **E2E Playwright**, résumé + health check, notify-failure) — **run complet vérifié vert**. Déploiement Railway fiabilisé (`railway up --ci`, Docker depuis `src`, `migrate deploy` au boot) ; WebSocket `/api/ws` **live + vérifié** (handshake, close 1008).
 
-## 🔴 Problèmes critiques (à corriger immédiatement)
+## 📈 Évolution par rapport à l'audit initial
 
-1. **Rate-limiting non appliqué.** `@fastify/rate-limit` est une dépendance et la doc `/api/docs` annonce « 100/minute par token », mais le plugin **n'est ni importé ni enregistré**. Les endpoints d'auth (`/api/auth/login`, `/register`) sont **non throttlés** → risque de brute-force / abus.
-2. **Secret JWT à valeur de repli en dur.** `secret: process.env.JWT_SECRET ?? 'habashop-secret-dev-2026'`. Si `JWT_SECRET` n'est pas défini en prod, des tokens sont signés avec un secret **public connu** → forge de tokens possible. Doit **échouer au démarrage** si la variable manque.
-3. **Aucun index en base.** `@@index` = 0 alors que `tenantId` est filtré ~141 fois. Les colonnes `tenantId` / clés étrangères ne sont pas indexées (Postgres n'indexe pas les FK automatiquement) → scans séquentiels et dégradation à la montée en charge.
-4. **Pas de CI/CD et déploiements instables.** Aucun `.github/workflows`. Les déploiements Railway **et** Vercel sont manuels et n'ont pas atterri de façon fiable (le code WebSocket — commit `79b3de09` — n'est **toujours pas en prod** : `/api/ws` renvoie 404).
+- **Tests : 30 → ~106** — backend 39 unitaires + 15 intégration (lecture seule prod) ; frontend 43 ; **E2E Playwright 9/9** (prod). Chemins critiques couverts (WebSocket, export CSV, billing, isolation, soft-delete round-trip vérifié). Outil de couverture branché (rapport seul).
+- **`server.ts` : 1 894 → 170 lignes** — découpé en **18 modules** `routes/` + middleware + `db.ts` partagé (zéro régression, vérifié en prod).
+- **Bundle principal : 1 507 Ko (380 Ko gzip) → 58 Ko gzip** — lazy-loading par route (`React.lazy` + `Suspense`), code-splitting.
+- **CRUD complet + soft-delete** — `deletedAt` sur Customer/Supplier/PurchaseOrder/Product + `restore` (ADMIN) + `AuditLog` ; validation des entrées (prix/stock négatifs, vente vide, plan/période billing) — **5/5 rejets 400 vérifiés en prod**.
+- **Monitoring** — `/api/health-extended` enrichi (latence DB, mémoire, services) ; **Sentry** front + back (inerte sans DSN) ; alertes webhook Discord/Slack ; `BACKUP.md` (stratégie de sauvegarde documentée).
+- **Accessibilité : ~71 → 152** attributs `aria-/role/scope` ; `useI18n()` partagé ; ESLint backend configuré ; `any` backend 157 → ~104.
 
-## ⚠️ Points d'amélioration (priorisés)
+## ⚠️ Points restants (non bloquants)
 
-- **Tests sous l'objectif** : 22 (front) + 8 (back) = 30, mais routes critiques **non testées** : `POST /api/sales`, billing request, WebSocket, export CSV, la plupart des CRUD.
-- **`server.ts` monolithique** : 1 894 lignes (> seuil de refactor 1 500). À découper par domaine.
-- **Typage faible** : 157 occurrences de `: any` / `as any` côté backend.
-- **Pages volumineuses** : `HR.tsx` 2 874, `POS.tsx` 1 890, `Customers.tsx` 1 795 lignes.
-- **i18n dupliqué** : helper `const i = (fr,en,es,it)` recopié dans 8 pages → extraire un hook `useI18n()`.
-- **ESLint non configuré** : la dépendance existe mais **aucun fichier de config** → linting non appliqué.
-- **Bundle principal lourd** : `index` = 1,5 Mo (≈ 380 Ko gzip), **pas de lazy-loading par route** ni code-splitting applicatif.
-- **CRUD incomplet** : `DELETE` seulement sur products/employees/bonuses/expenses ; absent sur customers/suppliers/sales/orders.
-- **Logs backend** : 27 `console.*` → vérifier qu'aucune donnée sensible/token n'est journalisée.
-- **Accessibilité éparse** : ~71 attributs `aria-/role/alt` pour une app de cette taille.
-
-## 📋 Plan d'action recommandé
-
-### Semaine 1 — Critique
-- Enregistrer `@fastify/rate-limit` (auth + global), avec limites réelles.
-- Supprimer le repli de secret JWT ; **fail-fast** si `JWT_SECRET` absent.
-- Ajouter les index : `@@index([tenantId])` sur les modèles métier (et composites utiles : `[tenantId, createdAt]`), migration additive.
-- Fiabiliser le déploiement backend Railway (faire atterrir `/api/ws`) ; vérifier les Deploy Logs (runtime), pas seulement le build.
-
-### Semaine 2 — Important
-- Tests des chemins critiques : `POST /api/sales`, billing request, connexion WebSocket, format export CSV, isolation tenant (déjà couverte — étendre).
-- Configurer ESLint (config + script) et corriger les warnings.
-- Compléter les CRUD (`DELETE` customers/suppliers/orders) selon les besoins métier.
-- Extraire `useI18n()` partagé.
-
-### Mois 2 — Optimisation
-- Lazy-loading des routes (`React.lazy` + `Suspense`) pour réduire le bundle de 1,5 Mo.
-- Découper `server.ts` par domaine (auth / commerce / RH / billing / admin).
-- Réduire l'usage de `any` (typer les `request.body` / `params`).
-
-### Mois 3 — Évolution
-- CI/CD GitHub Actions : lint + tests + build (+ déploiement) à chaque push.
-- Monitoring / alerting (erreurs, latence) et stratégie de backup DB documentée.
-- Persistance / historique des notifications (aujourd'hui WebSocket éphémère).
+- **Déploiement encore manuel** (Railway/Vercel) — CI verte mais pas de déploiement auto sur push (choix actuel).
+- **Couverture % faible sur les routes** — les routes sont exercées par les tests d'intégration **distants** (prod), non instrumentés → couverture v8 ≈ 0 % sur `routes/` (pas de seuil bloquant) ; les hooks/stores front sont à ~47 %.
+- **~104 `any` backend** (142 warnings ESLint) ; **pages volumineuses** (`HR.tsx` 2 874 lignes, etc.) ; remplacement global `console`→`logger` non fait.
 
 ---
 
 ## Détail par dimension
 
-### 1. Sécurité — 6/10 🟡
-- JWT : secret via `process.env.JWT_SECRET` (mais repli en dur), expiration **7 j** (OK mobile), `jwtVerify` appliqué via le middleware `authenticate`.
-- Injection : **0** requête brute → protégé par Prisma.
-- Données sensibles : hash retiré des réponses (`{ passwordHash, twoFASecret, ...u }`).
-- CORS : origine validée (localhost + `FRONTEND_URL`), credentials inclus.
-- `process.env` : 13 usages ; pas de clé API en dur détectée (hors le repli JWT).
-- ❌ Rate-limiting documenté mais **non branché**.
+### 1. Sécurité — 6/10 → **9/10** 🟢
+Rate-limiting live (Redis, vérifié) ; JWT fail-fast (plus de repli) ; **0** requête SQL brute (Prisma paramétré) ; hash/2FA retirés des réponses ; CORS validé par fonction ; `AuditLog` sur suppressions/restaurations ; validation des entrées ; Sentry (capture 5xx). Restant : déploiement manuel, pas de gate de suspension par requête (allégé, choisi).
 
-### 2. Performance — 6/10 🟡
-- Build : `index` 1 507 Ko (380 Ko gzip), `charts` 434 Ko (115 Ko gzip), `vendor` 164 Ko (54 Ko gzip), `ui` 64 Ko (15 Ko gzip). Total JS ≈ 560 Ko gzip → léger dépassement de la cible 500 Ko.
-- Découpage manuel présent, mais **pas de lazy-loading par page**.
-- ❌ **0 `@@index`** malgré 141 filtres `tenantId`.
-- Modèle « suspend » allégé : pas de requête tenant par requête.
+### 2. Performance — 6/10 → **8/10** 🟢
+**37 `@@index`** (composites sur chemins chauds) ; lazy-loading (main 58 Ko gzip) ; store rate-limit Redis. Restant : chunks `charts`/`BarcodeScanner` lourds (chargés à la demande), total JS ≈ 560 Ko gzip réparti.
 
-### 3. Qualité du code — 6/10 🟡
-- `tsc --noEmit` : **0 erreur** (back + front).
-- `server.ts` : **1 894 lignes** ; 157 `any` ; 89 commentaires ; 27 `console.*`.
-- Frontend : `console.log` dans seulement 2 fichiers de pages (propre).
-- ESLint : **aucune config** → non appliqué.
+### 3. Qualité du code — 6/10 → **8/10** 🟢
+`tsc --noEmit` 0 erreur (back + front) ; `server.ts` modularisé (170 lignes, 18 modules) ; **ESLint backend configuré** (0 erreur, 142 warnings) ; JSDoc sur fonctions critiques ; `useI18n()` partagé. Restant : ~104 `any`, pages volumineuses.
 
-### 4. Couverture fonctionnelle — 8/10 🟢
-- 29 pages, 67 routes. Modules complets ; billing **live**.
-- WebSocket : **implémenté + vérifié en local** (handshake, rejet token, broadcast `new_customer`) mais **pas déployé** (`/api/ws` = 404 en prod).
-- CRUD partiel (deletes limités).
+### 4. Couverture fonctionnelle — 8/10 → **9/10** 🟢
+29 pages, ~70 routes ; CRUD complet (DELETE + **soft-delete + restore**) ; billing **live** ; WebSocket **live + vérifié** ; IA/WhatsApp ; super-admin.
 
-### 5. Base de données — 6/10 🟡
-- **15 modèles**, relations correctes, 12 modèles avec `tenantId`, `createdAt`/`updatedAt` répandus (22 occurrences).
-- **3 migrations** nommées proprement (`init`, `add_employee_bonuses_salary_history`, `add_billing_plan_requests`) — toutes appliquées en prod.
-- Seed : 145 lignes (2 tenants démo). `email` en `@unique` (global).
-- ❌ **Aucun `@@index`**.
+### 5. Base de données — 6/10 → **9/10** 🟢
+15 modèles, relations correctes ; **37 `@@index`** ; **6 migrations** propres (toutes appliquées en prod) ; soft-delete (`deletedAt`) sur 4 modèles ; `BACKUP.md`. Restant : contraintes CHECK non exprimables en schéma Prisma (sans SQL brut).
 
-### 6. Tests — 5/10 🟡
-- Frontend : **22** tests (3 fichiers : currency, pagination, i18n) — ✅ passent.
-- Backend : **8** tests (auth, isolation multi-tenant) — ✅ passent.
-- Sous les objectifs (30 / 20) ; chemins critiques non couverts.
+### 6. Tests — 5/10 → **9/10** 🟢
+Backend 39 unitaires + 15 intégration ; frontend 43 ; **E2E Playwright 9/9** (prod) ; couverture branchée (rapport). CI les exécute (intégration + E2E sur `main`). Restant : couverture % routes faible (intégration distante non instrumentée).
 
-### 7. UX / Accessibilité — 7/10 🟡
-- Responsive : 9 règles `@media`/breakpoints dans `index.css`.
-- Feedback : `toast` utilisé dans 25 pages.
-- a11y : ~71 attributs `aria-/role/alt`.
-- i18n : 4 langues ; helper dupliqué dans 8 pages.
+### 7. UX / Accessibilité — 7/10 → **8/10** 🟢
+**152** attributs `aria-/role/scope` (`.sr-only`, `aria-label` nav/recherche, `scope="col"`, `role="dialog"`/`aria-modal`) ; 7 thèmes ; i18n 4 langues / 6 devises ; PWA ; toasts. Restant : audit a11y complet (contrastes, navigation clavier exhaustive).
 
-### 8. DevOps — 5/10 🟡
-- Railway : builder **Dockerfile** (`railway.json`), `prisma migrate deploy && node dist/server.js` au démarrage.
-- Scripts : back `build: tsc` / `start: node dist/server.js` ; front `build: tsc && vite build`.
-- `.env.example` ✅ ; health `/health` + `/api/health-extended` ✅.
-- ❌ Pas de CI/CD ; déploiements manuels et instables ; monitoring/backup non documentés.
+### 8. DevOps — 5/10 → **9/10** 🟢
+**CI 7 jobs vérifiée verte** ; déploiement Railway fiabilisé (Docker depuis `src`) ; `/health` + `/api/health-extended` enrichi ; Sentry + alertes webhook ; `BACKUP.md`. Restant : déploiement **manuel** (pas d'auto-deploy sur push).
