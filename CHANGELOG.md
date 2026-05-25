@@ -3,6 +3,37 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.6.0] — 2026-05-26 — Carte client interactive, Integrations temps réel, changement de mot de passe & nettoyage données démo
+
+> Déployé et **vérifié en production** (frontend Vercel + backend Railway). Regroupe deux lots livrés après 2.5.0.
+
+### 🎴 Carte client (vue grille) — adresse puis version interactive
+- Adresse client désormais **visible** sur la carte (icône + clamp 2 lignes).
+- Refonte interactive : **3 états** (défaut / hover / sélectionné via `aria-pressed`), **footer révélé au survol** (Détails + Supprimer), points fidélité en coin, métriques **CA Total + Achats**, adresse en bloc encadré. Accessible (`role="button"`, `tabIndex`, Enter/Espace, aria-labels). Grille `auto-fill minmax(270px,1fr)`.
+- Vérifié prod : 3 cartes, adresses réelles (Marseille), footer/suppression OK, 0 erreur JS. *(Footer au survol = desktop ; sur tactile, tap → fiche détail.)*
+
+### 🔌 Integrations — santé en temps réel
+- Lot 1 (refonte) : cartes premium (bande statut, badge, description, liste de features, footer Docs + Configurer).
+- Lot 2 (ping) : suivi de santé **en direct** — `PingBadge` (latence ms / Vérification / Injoignable) via `fetch HEAD no-cors` (timeout 5 s), **bouton Tester** par carte, **stats Appels/Uptime/Latence**, URL d'endpoint, et **barre de santé globale** (X/Y OK). Bilingue.
+- Vérifié : barre de santé + 7 boutons Tester + badges de latence rendent, 0 erreur JS.
+
+### 🔐 Changement de mot de passe (Settings)
+- Nouvelle route backend **`PATCH /api/auth/password`** (vérif bcrypt + hash 12, écriture `AuditLog`), `authApi.changePassword`, formulaire 3 champs (actuel / nouveau / confirmation) avec validation dans `SectionSecurity` (remplace le stub « Bientôt disponible »).
+- Vérifié prod : **401** (mot de passe actuel incorrect), **400** (< 8 caractères), **401** (sans token) — sans muter le mot de passe admin.
+
+### 🐛 Correctifs
+- **Suppliers** : « NaN/5 » corrigé (moyenne sur liste vide → `—`, `Number()||0`) — causé par la liste fournisseurs désormais vide pour les nouveaux comptes.
+- **POS** : i18n WhatsApp complétée (es/it + chaînes FR hardcodées : sous-titre, label numéro, numéro complet, message d'erreur, états Envoi/Enregistrement, recherche d'indicatif).
+- **Payroll** : en-tête bulletin « HabaShop — Dakar Central » → « HabaShop ».
+
+### 🧹 Données démo restantes
+- **POS** : produits **uniquement depuis l'API** (`init []` + loading) + `EmptyState` « Aucun produit en stock » → lien Stock ; scan code-barres & compteur de promotions sur les produits réels (remplace le fallback `PRODUCTS`). *(Remplace l'exception « fallback démo conservé » de 2.5.0.)*
+- **Marketing** : KPIs fictifs supprimés (842 / 94 % / 127 / `|| 5` → valeur réelle ou `—`).
+- **Activity** : journal câblé à **`GET /api/audit-logs`** (nouvelle route backend, trail réel du tenant) + mapping + date « aujourd'hui » réelle. Vérifié prod : affiche le log réel `PLAN_REQUEST`, plus aucune entrée fictive.
+- Reste hardcodé **volontairement** : onglets Stock/Clients/Finance/RH de Reports (`reportsShared` — atteignables seulement avec des ventes réelles, après le gate `EmptyState`) et les témoignages de la landing (contenu marketing).
+
+> Vérifié : `tsc` clean (frontend + backend), builds OK, smokes Playwright local + prod live (0 erreur JS). Backend redéployé (Railway) pour les routes password + audit-logs.
+
 ## [2.5.0] — 2026-05-25 — Données réelles partout (fin des données de démo) + Resend (UI) + refonte cartes clients
 
 > Déployé et **vérifié en production** (frontend Vercel). Trois livraisons distinctes regroupées sous cette version.
