@@ -4,6 +4,7 @@ import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
 import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
+import Redis from 'ioredis'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import twilio from 'twilio'
@@ -176,11 +177,23 @@ async function start() {
     secret: process.env.JWT_SECRET as string, // garanti présent par la validation au démarrage
   })
 
-  await app.register(rateLimit, {
+  // Store partagé Redis si REDIS_URL est défini (sinon mémoire — non fiable en multi-replica).
+  const rateLimitOpts: any = {
     global: false, // n'applique qu'aux routes qui déclarent config.rateLimit
     max: 100,
     timeWindow: '1 minute',
-  })
+  }
+  if (process.env.REDIS_URL) {
+    rateLimitOpts.redis = new Redis(process.env.REDIS_URL, {
+      connectTimeout: 1000,
+      maxRetriesPerRequest: 1,
+      enableReadyCheck: false,
+    })
+    console.log('🧮 Rate-limit : store Redis partagé activé')
+  } else {
+    console.warn('⚠️  Rate-limit : REDIS_URL absent → store mémoire (non fiable en multi-replica)')
+  }
+  await app.register(rateLimit, rateLimitOpts)
 
   await app.register(websocket)
 

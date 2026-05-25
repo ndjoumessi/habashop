@@ -9,6 +9,7 @@ const cors_1 = __importDefault(require("@fastify/cors"));
 const jwt_1 = __importDefault(require("@fastify/jwt"));
 const websocket_1 = __importDefault(require("@fastify/websocket"));
 const rate_limit_1 = __importDefault(require("@fastify/rate-limit"));
+const ioredis_1 = __importDefault(require("ioredis"));
 const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const twilio_1 = __importDefault(require("twilio"));
@@ -176,11 +177,24 @@ async function start() {
     await app.register(jwt_1.default, {
         secret: process.env.JWT_SECRET, // garanti présent par la validation au démarrage
     });
-    await app.register(rate_limit_1.default, {
+    // Store partagé Redis si REDIS_URL est défini (sinon mémoire — non fiable en multi-replica).
+    const rateLimitOpts = {
         global: false, // n'applique qu'aux routes qui déclarent config.rateLimit
         max: 100,
         timeWindow: '1 minute',
-    });
+    };
+    if (process.env.REDIS_URL) {
+        rateLimitOpts.redis = new ioredis_1.default(process.env.REDIS_URL, {
+            connectTimeout: 1000,
+            maxRetriesPerRequest: 1,
+            enableReadyCheck: false,
+        });
+        console.log('🧮 Rate-limit : store Redis partagé activé');
+    }
+    else {
+        console.warn('⚠️  Rate-limit : REDIS_URL absent → store mémoire (non fiable en multi-replica)');
+    }
+    await app.register(rate_limit_1.default, rateLimitOpts);
     await app.register(websocket_1.default);
     // ─── NOTIFICATIONS TEMPS RÉEL (WebSocket) ──
     // Sockets actifs regroupés par tenant : un broadcast ne touche que la boutique concernée.
