@@ -44,6 +44,12 @@ Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités c
 - **JSDoc** concis sur les fonctions critiques : `authenticate`, `db`/`prisma`, `billing` request-plan, `useI18n`, `convertFromXOF`.
 - `src/lib/logger.ts` (front) : `log` silencieux en prod, `warn`/`error` toujours actifs.
 
+### ♿ Accessibilité & UX (Lighthouse)
+- **Lighthouse : accessibilité 91 → 100/100**, bonnes pratiques **100/100**, SEO **91/100** (audité en prod sur la landing).
+- **Contraste WCAG AA** : audit `color-contrast` **PASS** (26 → 0 nœuds en échec) — texte sombre sur avatars clairs (orange/vert/bleu/rouge), labels muets `text3/text4` éclaircis, opacité de la bande pays relevée, libellé « trust » `text3`→`text2`.
+- `OfflineBanner` (détection online/offline, `role="status"`) dans `AppLayout` ; lien d'évitement **skip-to-content** + `#main-content`.
+- `index.html` : meta `description`, Open Graph/Twitter, `color-scheme`, titre Apple, `preconnect`/`dns-prefetch` vers l'API.
+
 > Reportés (faible valeur / risque élevé, signalés) : réduction agressive des `any` (104 → < 50), remplacement global `console`→`logger` dans les pages, intégrations Sentry react-router/Prisma (fragiles selon la version). Contraintes type CHECK non ajoutées (non exprimables en schéma Prisma sans SQL brut). Error handler et `/health` **inchangés** (comportement vérifié conservé).
 
 ## [2.2.0] — 2026-05-25 — CRUD complet & accessibilité (Mois 2)
