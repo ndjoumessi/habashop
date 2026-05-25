@@ -9,6 +9,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "ts-node --transpile-only prisma/seed.ts",
+    "seed:demo": "tsx prisma/seed-demo.ts",
     "db:studio": "prisma studio",
     "lint": "eslint src --ext .ts --max-warnings 200",
     "lint:fix": "eslint src --ext .ts --fix",
