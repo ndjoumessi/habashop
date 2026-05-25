@@ -571,7 +571,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none', display:'flex' }}><Search size={13}/></span>
               <input className="input"
                 style={{ paddingLeft:32, height:36, fontSize:13 }}
-                placeholder={lang === 'fr' ? 'Rechercher...' : 'Search...'}
+                aria-label="Rechercher" placeholder={lang === 'fr' ? 'Rechercher...' : 'Search...'}
                 value={search}
                 onChange={e => setSearch(e.target.value)} />
             </div>
@@ -737,9 +737,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                       <th scope="col">Département</th>
                       <th scope="col">Contrat</th>
                       <th scope="col">Ancienneté</th>
-                      <th style={{ textAlign: 'right' }}>Salaire</th>
-                      <th style={{ textAlign: 'center' }}>Perf.</th>
-                      <th style={{ textAlign: 'center' }}>Statut</th>
+                      <th scope="col" style={{ textAlign: 'right' }}>Salaire</th>
+                      <th scope="col" style={{ textAlign: 'center' }}>Perf.</th>
+                      <th scope="col" style={{ textAlign: 'center' }}>Statut</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -807,11 +807,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                 <tr>
                   <th scope="col">Employé</th>
                   <th scope="col">Département</th>
-                  <th style={{ textAlign: 'center' }}>Type</th>
+                  <th scope="col" style={{ textAlign: 'center' }}>Type</th>
                   <th scope="col">Date début</th>
                   <th scope="col">Date fin</th>
-                  <th style={{ textAlign: 'right' }}>Salaire brut</th>
-                  <th style={{ textAlign: 'center' }}>Statut</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>Salaire brut</th>
+                  <th scope="col" style={{ textAlign: 'center' }}>Statut</th>
                 </tr>
               </thead>
               <tbody>
@@ -980,12 +980,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
                     <thead>
                       <tr>
                         <th scope="col">{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
-                        <th style={{textAlign:'right'}}>{lang==='fr'?'BRUT':'GROSS'}</th>
-                        <th style={{textAlign:'right'}}>{lang==='fr'?'PRIME':'BONUS'}</th>
-                        <th style={{textAlign:'right'}}>CNSS 8%</th>
-                        <th style={{textAlign:'right'}}>IR 5%</th>
-                        <th style={{textAlign:'right'}}>NET</th>
-                        <th style={{textAlign:'center'}}>ACTIONS</th>
+                        <th scope="col" style={{textAlign:'right'}}>{lang==='fr'?'BRUT':'GROSS'}</th>
+                        <th scope="col" style={{textAlign:'right'}}>{lang==='fr'?'PRIME':'BONUS'}</th>
+                        <th scope="col" style={{textAlign:'right'}}>CNSS 8%</th>
+                        <th scope="col" style={{textAlign:'right'}}>IR 5%</th>
+                        <th scope="col" style={{textAlign:'right'}}>NET</th>
+                        <th scope="col" style={{textAlign:'center'}}>ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>

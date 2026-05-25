@@ -427,7 +427,7 @@ export default function Marketing() {
             <div style={{ position: 'relative', flex: 1 }}>
               <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
               <input className="input" style={{ paddingLeft: 30, fontSize: 12 }}
-                placeholder={mk.search}
+                aria-label="Rechercher" placeholder={mk.search}
                 value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <div style={{ fontSize: 12, color: 'var(--text3)', whiteSpace: 'nowrap' }}>

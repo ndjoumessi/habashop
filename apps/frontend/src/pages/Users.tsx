@@ -369,7 +369,7 @@ export default function Users() {
 
       {/* ── Modal modifier ── */}
       {showEditModal && editUser && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowEditModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowEditModal(false)}>
           <div className="modal-box" style={{ maxWidth:480 }}>
             <div className="flex items-center justify-between mb-5">
               <div>
@@ -442,7 +442,7 @@ export default function Users() {
 
       {/* ── Modal invitation ── */}
       {showModal && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal-box">
             <div className="flex items-center justify-between mb-5">
               <div>

@@ -296,7 +296,7 @@ export default function Expenses() {
           <div style={{ display:'flex', gap:9, marginBottom:14, flexWrap:'wrap', alignItems:'center' }}>
             <div style={{ position:'relative' }}>
               <Search size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text2)' }} />
-              <input className="input" placeholder="Rechercher…" value={search}
+              <input className="input" aria-label="Rechercher" placeholder="Rechercher…" value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ paddingLeft:30, width:200, boxSizing:'border-box' }} />
             </div>
@@ -332,10 +332,10 @@ export default function Expenses() {
             <table>
               <thead>
                 <tr>
-                  <th>Date</th><th>Libellé</th><th>Catégorie</th>
-                  <th>Montant HT</th><th>TVA</th><th>TTC</th>
-                  <th>Mode</th><th style={{ textAlign:'center' }}>Récurrent</th>
-                  <th>Statut</th><th>Actions</th>
+                  <th scope="col">Date</th><th scope="col">Libellé</th><th scope="col">Catégorie</th>
+                  <th scope="col">Montant HT</th><th scope="col">TVA</th><th scope="col">TTC</th>
+                  <th scope="col">Mode</th><th style={{ textAlign:'center' }}>Récurrent</th>
+                  <th scope="col">Statut</th><th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>

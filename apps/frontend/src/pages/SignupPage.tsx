@@ -596,7 +596,7 @@ export default function SignupPage() {
                         <div style={{ padding: '10px 12px', borderBottom: `1px solid ${D.border}` }}>
                           <div style={{ position: 'relative' }}>
                             <Search size={13} color={D.text3} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}/>
-                            <input autoFocus type="text" placeholder={tx.search_country}
+                            <input autoFocus type="text" aria-label="Rechercher" placeholder={tx.search_country}
                               value={countrySearch}
                               onChange={e => setCountrySearch(e.target.value)}
                               style={{

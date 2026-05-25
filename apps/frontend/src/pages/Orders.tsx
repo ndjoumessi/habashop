@@ -705,7 +705,7 @@ export default function Orders() {
             <div className="table-wrap mb-4">
               <table>
                 <thead>
-                  <tr><th>Produit</th><th>Qté</th><th>Unité</th><th>PU</th><th>Total</th></tr>
+                  <tr><th scope="col">Produit</th><th scope="col">Qté</th><th scope="col">Unité</th><th scope="col">PU</th><th scope="col">Total</th></tr>
                 </thead>
                 <tbody>
                   {viewOrder.items.map((item, i) => (
@@ -841,7 +841,7 @@ export default function Orders() {
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <User size={15} style={{ position: 'absolute', left: 12, color: 'var(--text3)', pointerEvents: 'none', zIndex: 1 }}/>
                     <input className="input" style={{ paddingLeft: 38 }} autoComplete="off"
-                      placeholder={i('Rechercher ou saisir un client…', 'Search or enter a client…', 'Buscar o ingresar un cliente…', 'Cerca o inserisci un cliente…')}
+                      aria-label="Rechercher" placeholder={i('Rechercher ou saisir un client…', 'Search or enter a client…', 'Buscar o ingresar un cliente…', 'Cerca o inserisci un cliente…')}
                       value={newOrderForm.clientName}
                       onChange={e => {
                         const val = e.target.value
@@ -1033,7 +1033,7 @@ export default function Orders() {
                   {i('ARTICLES', 'ITEMS', 'ARTÍCULOS', 'ARTICOLI')}
                 </label>
                 <input className="input" type="search"
-                  placeholder={i('🔍 Rechercher un produit…', '🔍 Search product…', '🔍 Buscar un producto…', '🔍 Cerca un prodotto…')}
+                  aria-label="Rechercher" placeholder={i('🔍 Rechercher un produit…', '🔍 Search product…', '🔍 Buscar un producto…', '🔍 Cerca un prodotto…')}
                   value={productSearch}
                   onChange={e => setProductSearch(e.target.value)}
                   style={{ marginBottom: 10 }}

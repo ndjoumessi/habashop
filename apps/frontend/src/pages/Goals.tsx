@@ -290,7 +290,7 @@ export default function Goals() {
 
       {/* ── Modal édition ── */}
       {showEditModal && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowEditModal(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowEditModal(false)}>
           <div className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>

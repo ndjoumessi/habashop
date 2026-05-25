@@ -238,7 +238,7 @@ export default function AdminDashboard() {
             <span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Store size={15} /> {i('Boutiques', 'Shops', 'Tiendas', 'Negozi')} ({view.length})</span>
             <div style={{ position: 'relative' }}>
               <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
-              <input className="input" style={{ paddingLeft: 32, width: 220, height: 34 }} placeholder={i('Rechercher…', 'Search…', 'Buscar…', 'Cerca…')} value={query} onChange={e => setQuery(e.target.value)} />
+              <input className="input" style={{ paddingLeft: 32, width: 220, height: 34 }} aria-label="Rechercher" placeholder={i('Rechercher…', 'Search…', 'Buscar…', 'Cerca…')} value={query} onChange={e => setQuery(e.target.value)} />
             </div>
           </div>
           <div className="table-wrap">
@@ -324,7 +324,7 @@ export default function AdminDashboard() {
 
       {/* Detail drawer */}
       {selected && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setSelected(null)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setSelected(null)}>
           <div style={{ position: 'fixed', top: 0, right: 0, height: '100vh', width: 'min(420px,100vw)', background: 'var(--card,#fff)', borderLeft: '1px solid var(--border,rgba(0,0,0,.08))', boxShadow: '-20px 0 60px rgba(0,0,0,.3)', padding: 24, overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
 
       {/* New tenant modal */}
       {showNewTenant && (
-        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowNewTenant(false)}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowNewTenant(false)}>
           <div className="modal-box" style={{ maxWidth: 480 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, alignItems: 'center' }}>
               <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={16} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</h3>

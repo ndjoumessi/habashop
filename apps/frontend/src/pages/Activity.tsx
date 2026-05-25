@@ -136,7 +136,7 @@ export default function Activity() {
           <div style={{ position:'relative', flex:1, minWidth:220 }}>
             <Search size={14} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
             <input className="input" style={{ paddingLeft:34, fontSize:13 }}
-              placeholder={lang === 'fr' ? 'Rechercher utilisateur, action, description...' : 'Search user, action, description...'}
+              aria-label="Rechercher" placeholder={lang === 'fr' ? 'Rechercher utilisateur, action, description...' : 'Search user, action, description...'}
               value={search} onChange={e => { setSearch(e.target.value); resetPage() }} />
           </div>
           <select className="input" style={{ width:'auto', fontSize:13 }}

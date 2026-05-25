@@ -730,7 +730,7 @@ export default function POS() {
                 <input
                   className="input"
                   style={{ paddingLeft: 34, width: '100%', fontSize: 13, boxSizing: 'border-box' }}
-                  placeholder={t('pos_search')}
+                  aria-label="Rechercher" placeholder={t('pos_search')}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />
@@ -1705,7 +1705,7 @@ export default function POS() {
                             <input
                               autoFocus
                               type="text"
-                              placeholder="🔍 Rechercher..."
+                              aria-label="Rechercher" placeholder="🔍 Rechercher..."
                               value={countrySearch}
                               onChange={e => setCountrySearch(e.target.value)}
                               onKeyDown={e => { if (e.key === 'Escape') { setShowCountryPicker(false); setCountrySearch('') } }}
