@@ -27,6 +27,12 @@ import { notificationRoutes } from './routes/notifications'
 import { whatsappRoutes }     from './routes/whatsapp'
 import { aiRoutes }           from './routes/ai'
 import { docsRoutes }         from './routes/docs'
+import {
+  sendTrialReminder7Days,
+  sendTrialReminder3Days,
+  sendTrialExpired,
+  sendWeeklyReport,
+} from './services/email'
 
 // ─── Validation des variables d'environnement obligatoires ───
 const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET']
@@ -198,6 +204,19 @@ async function start() {
   await app.register(aiRoutes)
   await app.register(docsRoutes)
 
+  // ─── CRONS EMAIL (rappels essai + rapport hebdo) ──
+  // Rappels d'essai — toutes les heures
+  setInterval(() => {
+    runTrialReminders().catch(err => console.error('❌ Cron trial reminders:', err))
+  }, 60 * 60 * 1000)
+
+  // Rapport hebdomadaire — lundi 8h (vérifié chaque heure)
+  setInterval(() => {
+    const now = new Date()
+    if (now.getDay() !== 1 || now.getHours() !== 8 || now.getMinutes() > 5) return
+    runWeeklyReports().catch(err => console.error('❌ Cron weekly reports:', err))
+  }, 60 * 60 * 1000)
+
   // ─── DÉMARRAGE ──────────────────────────
   try {
     await prisma.$connect()
@@ -210,6 +229,100 @@ async function start() {
     app.log.error(err)
     process.exit(1)
   }
+}
+
+// ─── Logique des crons email ─────────────────────────────────────────────
+async function runTrialReminders(): Promise<void> {
+  const now     = new Date()
+  const in7days = new Date(now.getTime() + 7 * 24 * 3600 * 1000)
+  const in3days = new Date(now.getTime() + 3 * 24 * 3600 * 1000)
+  const window30 = 30 * 60 * 1000 // ±30 min pour éviter les doublons
+
+  // Essai expirant dans ~7 jours
+  const remind7 = await prisma.tenant.findMany({
+    where: { status: 'trial', trialEnds: { gte: new Date(in7days.getTime() - window30), lte: new Date(in7days.getTime() + window30) } },
+    include: { users: { where: { role: 'ADMIN' }, take: 1 } },
+  })
+  for (const tenant of remind7) {
+    const admin = tenant.users[0]
+    if (!admin?.email) continue
+    const sales = await prisma.sale.aggregate({ where: { tenantId: tenant.id }, _sum: { total: true }, _count: { id: true } })
+    await sendTrialReminder7Days({
+      to: admin.email, shopName: tenant.name, ownerName: admin.name ?? tenant.name,
+      caToday: sales._sum.total ?? 0, txCount: sales._count.id ?? 0, currency: 'XOF',
+    }).catch(() => {})
+  }
+
+  // Essai expirant dans ~3 jours
+  const remind3 = await prisma.tenant.findMany({
+    where: { status: 'trial', trialEnds: { gte: new Date(in3days.getTime() - window30), lte: new Date(in3days.getTime() + window30) } },
+    include: { users: { where: { role: 'ADMIN' }, take: 1 } },
+  })
+  for (const tenant of remind3) {
+    const admin = tenant.users[0]
+    if (!admin?.email) continue
+    await sendTrialReminder3Days({ to: admin.email, shopName: tenant.name, ownerName: admin.name ?? tenant.name }).catch(() => {})
+  }
+
+  // Essai venant d'expirer (dernière fenêtre) → suspension + email
+  const expired = await prisma.tenant.findMany({
+    where: { status: 'trial', trialEnds: { gte: new Date(now.getTime() - window30), lte: now } },
+    include: { users: { where: { role: 'ADMIN' }, take: 1 } },
+  })
+  for (const tenant of expired) {
+    await prisma.tenant.update({ where: { id: tenant.id }, data: { status: 'suspended', isActive: false, suspendedAt: new Date(), suspendReason: 'trial_expired' } }).catch(() => {})
+    const admin = tenant.users[0]
+    if (!admin?.email) continue
+    await sendTrialExpired({ to: admin.email, shopName: tenant.name, ownerName: admin.name ?? tenant.name }).catch(() => {})
+  }
+
+  if (remind7.length + remind3.length + expired.length > 0) {
+    console.log('📧 Cron emails:', { remind7: remind7.length, remind3: remind3.length, expired: expired.length })
+  }
+}
+
+async function runWeeklyReports(): Promise<void> {
+  const now          = new Date()
+  const weekAgo      = new Date(now.getTime() - 7 * 24 * 3600 * 1000)
+  const twoWeeksAgo  = new Date(now.getTime() - 14 * 24 * 3600 * 1000)
+
+  const tenants = await prisma.tenant.findMany({
+    where: { isActive: true, status: { in: ['trial', 'active'] } },
+    include: { users: { where: { role: 'ADMIN' }, take: 1 } },
+  })
+
+  for (const tenant of tenants) {
+    const admin = tenant.users[0]
+    if (!admin?.email) continue
+
+    const [salesWeek, salesLastWeek, lowStock] = await Promise.all([
+      prisma.sale.aggregate({ where: { tenantId: tenant.id, createdAt: { gte: weekAgo } }, _sum: { total: true }, _count: { id: true } }),
+      prisma.sale.aggregate({ where: { tenantId: tenant.id, createdAt: { gte: twoWeeksAgo, lt: weekAgo } }, _sum: { total: true } }),
+      prisma.product.count({ where: { tenantId: tenant.id, isActive: true, deletedAt: null, stockQty: { lte: prisma.product.fields.stockMin } } }).catch(() => 0),
+    ])
+
+    const topItems = await prisma.saleItem.groupBy({
+      by: ['productId'],
+      where: { sale: { tenantId: tenant.id, createdAt: { gte: weekAgo } } },
+      _sum: { total: true },
+      orderBy: { _sum: { total: 'desc' } },
+      take: 1,
+    }).catch(() => [] as { productId: string }[])
+
+    let topProduct = 'Aucune vente cette semaine'
+    if (topItems[0]) {
+      const prod = await prisma.product.findUnique({ where: { id: topItems[0].productId }, select: { name: true } }).catch(() => null)
+      if (prod) topProduct = prod.name
+    }
+
+    await sendWeeklyReport({
+      to: admin.email, shopName: tenant.name, ownerName: admin.name ?? tenant.name,
+      caWeek: salesWeek._sum.total ?? 0, txWeek: salesWeek._count.id ?? 0,
+      caLastWeek: salesLastWeek._sum.total ?? 0, topProduct, lowStock: lowStock as number,
+    }).catch(() => {})
+  }
+
+  console.log(`📊 Rapports hebdo envoyés: ${tenants.length}`)
 }
 
 // Filets de sécurité process : on logge toujours ; en prod on ne crashe pas

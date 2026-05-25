@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { sendWelcomeEmail } from '../services/email'
 import type { LoginBody, RegisterBody } from '../types'
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
@@ -95,6 +96,14 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       { userId: user.id, tenantId: tenant.id, role: user.role },
       { expiresIn: '7d' }
     )
+
+    // Email de bienvenue — non-bloquant : ne doit jamais faire échouer l'inscription
+    sendWelcomeEmail({
+      to:        email,
+      shopName:  tenant.name,
+      ownerName: user.name ?? resolvedName,
+      plan:      'starter',
+    }).catch(() => {})
 
     return reply.code(201).send({
       token,
