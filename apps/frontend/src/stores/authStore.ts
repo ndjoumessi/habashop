@@ -83,6 +83,7 @@ export const useAuthStore = create<AuthState>()(
           const { token, user, tenant } = await authApi.login(email, password)
           localStorage.setItem('habashop_token', token)
           useAppStore.getState().setTenant(tenant ?? null)
+          useAppStore.getState().closeCashier() // pas de session caisse héritée d'une connexion précédente
           set({ user, token, isAuthenticated: true, isLoading: false })
         } catch (err: any) {
           // Fallback démo sans backend
@@ -106,6 +107,7 @@ export const useAuthStore = create<AuthState>()(
               vatRate: 18,
               createdAt: new Date().toISOString(),
             })
+            useAppStore.getState().closeCashier()
             set({
               user: { ...demo, email, shopName: 'HabaShop — Dakar Central' },
               token: demoToken,
@@ -136,6 +138,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         localStorage.removeItem('habashop_token')
         useAppStore.getState().clearTenant()
+        useAppStore.getState().closeCashier()
         set({ user: null, token: null, isAuthenticated: false })
       },
 

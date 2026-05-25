@@ -1,7 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { Trophy, Receipt, CreditCard, Package, Users, TrendingUp, Wallet, DollarSign, UserCog } from 'lucide-react'
 import { t } from '@/stores/appStore'
-import { RADIAN, TOP_PRODUCTS, RECENT_SALES } from '@/components/reports/reportsShared'
+import { RADIAN } from '@/components/reports/reportsShared'
 
 interface ReportsTabsProps {
   reportTab: 'ventes' | 'stock' | 'clients' | 'finance' | 'rh'
@@ -14,9 +14,23 @@ interface ReportsTabsProps {
   setActivePayIndex: (i: number | null) => void
   salesData: any[]
   data: { ca: number; margin: number; transactions: number; avgCart: number; caEvol: number; marginEvol: number; txEvol: number; cartEvol: number }
+  topProducts: { rank: number; name: string; qty: number; ca: number }[]
 }
 
-export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, paymentData, activePayIndex, setActivePayIndex, salesData, data }: ReportsTabsProps) {
+const PAY_LABEL = (mode: string, lang: string) =>
+  mode === 'cash' ? (lang === 'fr' ? 'Espèces' : 'Cash') :
+  mode === 'mobile' ? 'Mobile' : mode === 'wave' ? 'Wave' : mode === 'orange' ? 'Orange' :
+  mode === 'card' ? (lang === 'fr' ? 'Carte' : 'Card') : mode
+
+export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, paymentData, activePayIndex, setActivePayIndex, salesData, data, topProducts }: ReportsTabsProps) {
+  const recentSales = salesData.slice(0, 8).map((s: any) => ({
+    ref: `VNT-${String(s.id ?? '').slice(-6).toUpperCase()}`,
+    date: s.createdAt,
+    client: s.customerId ? (lang === 'fr' ? 'Client' : 'Customer') : (lang === 'fr' ? 'Client direct' : 'Walk-in'),
+    total: s.total ?? 0,
+    mode: PAY_LABEL(s.paymentMode ?? 'cash', lang),
+    items: (s.items ?? []).length,
+  }))
   const renderActiveShape = (props: any) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props
     return (
@@ -227,9 +241,13 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
             <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Trophy size={14}/> {t('reports_top_products')}</span>
           </div>
           <div className="space-y-1">
-            {TOP_PRODUCTS.map(p => (
+            {topProducts.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text3)', fontSize: 13 }}>
+                {lang === 'fr' ? 'Aucune vente sur la période' : 'No sales in this period'}
+              </div>
+            ) : topProducts.map(p => (
               <div key={p.rank} className="flex items-center gap-3 py-2"
-                style={{ borderBottom: p.rank < 5 ? '1px solid var(--border)' : 'none' }}>
+                style={{ borderBottom: p.rank < topProducts.length ? '1px solid var(--border)' : 'none' }}>
                 <div style={{
                   width: 26, height: 26, borderRadius: 8, flexShrink: 0,
                   background: p.rank === 1 ? 'rgba(240,165,0,.2)' : p.rank === 2 ? 'rgba(136,134,168,.2)' : 'rgba(91,78,232,.1)',
@@ -239,7 +257,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 }}>#{p.rank}</div>
                 <div className="flex-1">
                   <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</div>
-                  <div className="text-xs" style={{ color: 'var(--text3)' }}>{p.qty.toLocaleString('fr-FR')} unités vendues</div>
+                  <div className="text-xs" style={{ color: 'var(--text3)' }}>{p.qty.toLocaleString('fr-FR')} {lang === 'fr' ? 'unités vendues' : 'units sold'}</div>
                 </div>
                 <div className="td-num text-sm" style={{ color: 'var(--acc2)' }}>{fmt(p.ca)}</div>
               </div>
@@ -258,7 +276,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 <tr><th scope="col">{t('col_ref')}</th><th scope="col">{t('col_client')}</th><th scope="col">Mode</th><th scope="col">{t('col_amount')}</th></tr>
               </thead>
               <tbody>
-                {RECENT_SALES.map(s => (
+                {recentSales.map(s => (
                   <tr key={s.ref}>
                     <td>
                       <div className="td-mono text-xs">{s.ref}</div>

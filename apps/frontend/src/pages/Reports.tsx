@@ -10,7 +10,14 @@ import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '
 import { salesApi, expensesApi } from '@/lib/api'
 
 import ReportsTabs from '@/components/reports/ReportsTabs'
-import { type Period, PERIOD_DATA, CHART_DATA, PAYMENT_MODES, TOP_PRODUCTS, Trend } from '@/components/reports/reportsShared'
+import { type Period, Trend } from '@/components/reports/reportsShared'
+
+const WEEK_ABBR: Record<string, string[]> = {
+  fr: ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
+  en: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  es: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+  it: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],
+}
 
 export default function Reports() {
   const { lang, currency } = useConfig()
@@ -68,7 +75,6 @@ export default function Reports() {
   }
   const [period,     setPeriod]     = useState<Period>('30days')
   const [reportTab,  setReportTab]  = useState<'ventes' | 'stock' | 'clients' | 'finance' | 'rh'>('ventes')
-  const data = PERIOD_DATA[period]
 
   const PERIOD_LABELS: Record<Period, string> = {
     today:    t('reports_today'),
@@ -78,20 +84,43 @@ export default function Reports() {
     year:     t('reports_year'),
   }
 
-  const paymentModes = [
-    { label: t('reports_cash'),   pct: PAYMENT_MODES[0].pct, color: PAYMENT_MODES[0].color, amount: PAYMENT_MODES[0].amount },
-    { label: t('reports_mobile'), pct: PAYMENT_MODES[1].pct, color: PAYMENT_MODES[1].color, amount: PAYMENT_MODES[1].amount },
-    { label: t('reports_card'),   pct: PAYMENT_MODES[2].pct, color: PAYMENT_MODES[2].color, amount: PAYMENT_MODES[2].amount },
-  ]
+  // KPIs + graphique 7j + top produits calculés depuis les vraies ventes
+  // (les items incluent product.buyPrice → vraie marge brute = CA − coût d'achat).
+  const { data, chartData, topProducts } = useMemo(() => {
+    const now = Date.now(); const DAY = 86400000
+    const span = ({ today: DAY, '7days': 7*DAY, '30days': 30*DAY, '3months': 90*DAY, year: 365*DAY } as Record<Period, number>)[period]
+    const ts = (s: any) => new Date(s.createdAt).getTime()
+    const cur  = salesData.filter(s => ts(s) >= now - span)
+    const prev = salesData.filter(s => ts(s) >= now - 2*span && ts(s) < now - span)
+    const agg = (arr: any[]) => {
+      const ca = arr.reduce((s, x) => s + (x.total ?? 0), 0)
+      const margin = arr.reduce((s, x) => s + (x.items ?? []).reduce((m: number, it: any) => m + (((it.unitPrice ?? 0) - (it.product?.buyPrice ?? 0)) * (it.qty ?? 0)), 0), 0)
+      return { ca, margin, transactions: arr.length, avgCart: arr.length ? Math.round(ca / arr.length) : 0 }
+    }
+    const c = agg(cur), p = agg(prev)
+    const evol = (a: number, b: number) => b > 0 ? Math.round(((a - b) / b) * 1000) / 10 : 0
+    const labels = WEEK_ABBR[lang] ?? WEEK_ABBR.fr
+    const chart = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now - (6 - i) * DAY)
+      const key = d.toISOString().slice(0, 10)
+      const val = salesData.filter(s => new Date(s.createdAt).toISOString().slice(0, 10) === key).reduce((s2, x) => s2 + (x.total ?? 0), 0)
+      return { day: labels[(d.getDay() + 6) % 7], val }
+    })
+    const pmap: Record<string, { name: string; qty: number; ca: number }> = {}
+    cur.forEach(s => (s.items ?? []).forEach((it: any) => {
+      const name = it.product?.name ?? (lang === 'fr' ? 'Produit' : 'Product')
+      pmap[name] = pmap[name] ?? { name, qty: 0, ca: 0 }
+      pmap[name].qty += it.qty ?? 0; pmap[name].ca += it.total ?? 0
+    }))
+    const top = Object.values(pmap).sort((a, b) => b.ca - a.ca).slice(0, 5).map((p2, i) => ({ rank: i + 1, ...p2 }))
+    return {
+      data: { ...c, caEvol: evol(c.ca, p.ca), marginEvol: evol(c.margin, p.margin), txEvol: evol(c.transactions, p.transactions), cartEvol: evol(c.avgCart, p.avgCart) },
+      chartData: chart,
+      topProducts: top,
+    }
+  }, [salesData, period, lang])
 
-  const WEEK_ABBR: Record<string, string[]> = {
-    fr: ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
-    en: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
-    es: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
-    it: ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],
-  }
-  const weekAbbr = WEEK_ABBR[lang] ?? WEEK_ABBR.fr
-  const chartData = CHART_DATA.map((d, i) => ({ ...d, day: weekAbbr[i] }))
+  const paymentModes = paymentData.map(p => ({ label: p.name, pct: p.value, color: p.color, amount: p.amount }))
 
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
@@ -174,7 +203,7 @@ export default function Reports() {
             <h2>${t('report_pdf_top')}</h2>
             ${htmlTable(
               ['#', t('col_product'), t('col_qty'), t('reports_revenue')],
-              TOP_PRODUCTS.map(p => [String(p.rank), p.name, String(p.qty), fmt(p.ca)])
+              topProducts.map(p => [String(p.rank), p.name, String(p.qty), fmt(p.ca)])
             )}
           `
           openPDF(`${t('report_pdf_title')} — ${PERIOD_LABELS[period]}`, body)
@@ -234,6 +263,7 @@ export default function Reports() {
         activePayIndex={activePayIndex} setActivePayIndex={setActivePayIndex}
         salesData={salesData}
         data={data}
+        topProducts={topProducts}
       />
 
     </div>
