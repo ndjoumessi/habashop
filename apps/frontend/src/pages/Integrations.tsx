@@ -1,12 +1,12 @@
-import { useState } from 'react'
 import { useAppStore } from '@/stores/appStore'
-import { ExternalLink, Settings, Zap, RefreshCw } from 'lucide-react'
+import { ExternalLink, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Integration {
   id: string; name: string; desc: string
   color: string; status: 'connected' | 'disconnected'
   endpoint: string; lastCall: string; calls: number; docs: string
+  features: string[]
   IconSvg: () => JSX.Element
 }
 
@@ -64,6 +64,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#FF6B35', status:'connected',
     endpoint:'api.anthropic.com', lastCall:'Il y a 2 min', calls:1847,
     docs:'https://docs.anthropic.com',
+    features:['Analyses IA temps réel', 'Recommandations personnalisées', 'Chat assistant intégré'],
     IconSvg: IconAnthropicSvg,
   },
   {
@@ -72,6 +73,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#25D366', status:'connected',
     endpoint:'api.twilio.com', lastCall:'Il y a 15 min', calls:342,
     docs:'https://twilio.com/docs',
+    features:['Tickets de caisse par WhatsApp', 'Campagnes marketing', 'Notifications clients'],
     IconSvg: IconTwilioSvg,
   },
   {
@@ -80,6 +82,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#6C47FF', status:'connected',
     endpoint:'api.resend.com', lastCall:'Il y a 1h', calls:156,
     docs:'https://resend.com/docs',
+    features:['Email de bienvenue à l\'inscription', 'Rappels d\'essai J-7 / J-3', 'Rapport hebdomadaire automatique'],
     IconSvg: IconResendSvg,
   },
   {
@@ -88,6 +91,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#4285F4', status:'connected',
     endpoint:'maps.googleapis.com', lastCall:'Il y a 5 min', calls:2103,
     docs:'https://developers.google.com/maps',
+    features:['Autocomplete d\'adresses', 'Géocodage des clients', 'Carte interactive'],
     IconSvg: IconGoogleMapsSvg,
   },
   {
@@ -96,6 +100,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#8E2DFF', status:'connected',
     endpoint:'habashop-production.up.railway.app', lastCall:'Continu', calls:999999,
     docs:'https://railway.app',
+    features:['PostgreSQL managé', 'Backend Node.js', 'Déploiement continu'],
     IconSvg: IconRailwaySvg,
   },
   {
@@ -104,6 +109,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#E0E0E0', status:'connected',
     endpoint:'habashop.vercel.app', lastCall:'Continu', calls:999999,
     docs:'https://vercel.com',
+    features:['CDN global', 'Déploiements preview', 'HTTPS automatique'],
     IconSvg: IconVercelSvg,
   },
   {
@@ -112,6 +118,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#5A67D8', status:'connected',
     endpoint:'yamanote.proxy.rlwy.net', lastCall:'Continu', calls:8942,
     docs:'https://prisma.io',
+    features:['ORM type-safe', 'Migrations versionnées', 'Requêtes optimisées'],
     IconSvg: IconPrismaSvg,
   },
 ]
@@ -119,29 +126,11 @@ const INTEGRATIONS_LIST: Integration[] = [
 export default function Integrations() {
   const { lang } = useAppStore()
 
-  const [disconnected, setDisconnected] = useState<Set<string>>(new Set())
-  const [pinging, setPinging]           = useState<string | null>(null)
-
-  const toggleConnection = (id: string) => {
-    setDisconnected(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-    const itg = INTEGRATIONS_LIST.find(i => i.id === id)
-    const wasConnected = !disconnected.has(id)
-    toast.success(wasConnected ? `${itg?.name} déconnecté` : `${itg?.name} reconnecté`)
+  const configure = (itg: Integration) => {
+    toast.success(lang === 'fr' ? `${itg.name} est géré automatiquement par HabaShop` : lang === 'es' ? `${itg.name} es gestionado automáticamente por HabaShop` : lang === 'it' ? `${itg.name} è gestito automaticamente da HabaShop` : `${itg.name} is managed automatically by HabaShop`)
   }
 
-  const ping = async (id: string) => {
-    setPinging(id)
-    await new Promise(r => setTimeout(r, 900))
-    setPinging(null)
-    const itg = INTEGRATIONS_LIST.find(i => i.id === id)
-    toast.success(`${itg?.name} — Ping OK (42ms)`)
-  }
-
-  const totalConnected = INTEGRATIONS_LIST.filter(i => !disconnected.has(i.id)).length
+  const totalConnected = INTEGRATIONS_LIST.length
   const totalCalls     = INTEGRATIONS_LIST.reduce((acc, i) => acc + Math.min(i.calls, 100000), 0)
 
   const EMAIL_FLOWS = [
@@ -204,159 +193,88 @@ export default function Integrations() {
         gap:14,
       }}>
         {INTEGRATIONS_LIST.map(itg => {
-          const isConnected = !disconnected.has(itg.id)
-          const isPinging   = pinging === itg.id
+          const isActive = itg.status === 'connected'
           const { IconSvg } = itg
 
           return (
             <div key={itg.id} style={{
-              background:'var(--card)',
-              border:`1px solid ${isConnected ? `${itg.color}30` : 'var(--border)'}`,
-              borderRadius:18, overflow:'hidden',
-              transition:'transform .2s, box-shadow .2s',
+              background:'var(--card)', border:'1px solid var(--border)',
+              borderRadius:16, overflow:'hidden', transition:'all .18s ease',
+              display:'flex', flexDirection:'column',
             }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLElement
-                el.style.transform = 'translateY(-2px)'
-                el.style.boxShadow = `0 8px 28px ${isConnected ? itg.color : '#000'}18`
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement
-                el.style.transform = 'none'
-                el.style.boxShadow = 'none'
-              }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = '0 12px 32px rgba(0,0,0,.4)'; el.style.borderColor = 'var(--border3)' }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = ''; el.style.borderColor = 'var(--border)' }}
             >
-              {/* Status bar top */}
-              <div style={{
-                height:3,
-                background: isConnected ? itg.color : 'rgba(255,255,255,.1)',
-                boxShadow: isConnected ? `0 0 10px ${itg.color}80` : 'none',
-                transition:'all .3s',
-              }} />
+              {/* Bande statut */}
+              <div style={{ height:3, background: isActive ? 'linear-gradient(90deg,var(--acc2),#00B574)' : 'var(--border)' }} />
 
-              <div style={{ padding:'18px 20px' }}>
+              <div style={{ padding:'20px', flex:1 }}>
                 {/* Header */}
                 <div style={{ display:'flex', alignItems:'flex-start', gap:12, marginBottom:14 }}>
                   <div style={{
-                    width:48, height:48, borderRadius:14, flexShrink:0,
-                    background:`${itg.color}12`,
-                    border:`1px solid ${itg.color}30`,
+                    width:44, height:44, borderRadius:12, flexShrink:0,
+                    background:'var(--bg3)', border:'1px solid var(--border)',
                     display:'flex', alignItems:'center', justifyContent:'center',
                   }}>
                     <IconSvg />
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', marginBottom:3 }}>
-                      {itg.name}
-                    </div>
-                    <div style={{ fontSize:11, color:'var(--text3)', lineHeight:1.4 }}>
-                      {itg.desc}
-                    </div>
-                  </div>
-                  {/* Status badge */}
-                  <span style={{
-                    fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px',
-                    padding:'4px 10px', borderRadius:99, flexShrink:0,
-                    background: isConnected ? 'rgba(0,208,132,.1)' : 'rgba(239,68,68,.08)',
-                    color: isConnected ? 'var(--acc2)' : 'var(--danger)',
-                    border:`1px solid ${isConnected ? 'rgba(0,208,132,.2)' : 'rgba(239,68,68,.15)'}`,
-                    display:'flex', alignItems:'center', gap:4,
-                  }}>
+                    <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', marginBottom:5 }}>{itg.name}</div>
                     <span style={{
-                      width:5, height:5, borderRadius:'50%',
-                      background: isConnected ? 'var(--acc2)' : 'var(--danger)',
-                      animation: isConnected ? 'pulse 2s infinite' : 'none',
-                      display:'inline-block',
-                    }} />
-                    {isConnected ? (lang === 'fr' ? 'Connecté' : 'Connected') : (lang === 'fr' ? 'Inactif' : 'Offline')}
-                  </span>
-                </div>
-
-                {/* Stats */}
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
-                  <div style={{
-                    background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.06)',
-                    borderRadius:10, padding:'9px 11px',
-                  }}>
-                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:4 }}>
-                      {lang === 'fr' ? 'Appels API' : 'API Calls'}
-                    </div>
-                    <div style={{ fontSize:16, fontWeight:900, color:itg.color, fontFamily:'var(--mono)' }}>
-                      {itg.calls > 100000 ? '∞' : itg.calls.toLocaleString('fr-FR')}
-                    </div>
-                  </div>
-                  <div style={{
-                    background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.06)',
-                    borderRadius:10, padding:'9px 11px',
-                  }}>
-                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:4 }}>
-                      {lang === 'fr' ? 'Dernier appel' : 'Last call'}
-                    </div>
-                    <div style={{ fontSize:12, fontWeight:700, color: isConnected ? 'var(--acc2)' : 'var(--text3)' }}>
-                      {itg.lastCall}
-                    </div>
+                      display:'inline-flex', alignItems:'center', gap:4,
+                      padding:'3px 9px', borderRadius:99, fontSize:10, fontWeight:700,
+                      background: isActive ? 'rgba(0,208,132,.12)' : 'rgba(136,136,168,.1)',
+                      color: isActive ? 'var(--acc2)' : 'var(--text3)',
+                      border: isActive ? '1px solid rgba(0,208,132,.25)' : '1px solid var(--border)',
+                    }}>
+                      <span style={{ width:5, height:5, borderRadius:'50%', background: isActive ? 'var(--acc2)' : 'var(--text4)', boxShadow: isActive ? '0 0 6px var(--acc2)' : 'none' }} />
+                      {isActive
+                        ? (lang === 'fr' ? 'Actif' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Active')
+                        : (lang === 'fr' ? 'Inactif' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactive')}
+                    </span>
                   </div>
                 </div>
 
-                {/* Endpoint */}
-                <div style={{
-                  display:'flex', alignItems:'center', gap:7,
-                  padding:'8px 10px',
-                  background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.06)',
-                  borderRadius:9, marginBottom:14,
-                }}>
-                  <Zap size={11} style={{ color:'var(--text3)', flexShrink:0 }} />
-                  <code style={{
-                    fontSize:10, color:'var(--text3)', fontFamily:'var(--mono)',
-                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1,
-                  }}>
-                    {itg.endpoint}
-                  </code>
-                </div>
+                {/* Description */}
+                <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, margin:'0 0 14px' }}>{itg.desc}</p>
 
-                {/* Actions */}
-                <div style={{ display:'flex', gap:6 }}>
-                  <a href={itg.docs} target="_blank" rel="noopener noreferrer"
-                    style={{
-                      flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-                      padding:'7px', borderRadius:9, fontSize:11, fontWeight:700,
-                      background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.08)',
-                      color:'var(--text2)', textDecoration:'none', cursor:'pointer',
-                      transition:'all .15s',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.08)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.04)' }}
-                  >
-                    <ExternalLink size={12}/> Docs
-                  </a>
-                  <button type="button"
-                    onClick={() => ping(itg.id)}
-                    disabled={!isConnected || isPinging}
-                    style={{
-                      flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-                      padding:'7px', borderRadius:9, fontSize:11, fontWeight:700,
-                      background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.08)',
-                      color:'var(--text2)', cursor: (!isConnected || isPinging) ? 'not-allowed' : 'pointer',
-                      opacity: !isConnected ? 0.5 : 1,
-                      fontFamily:'var(--font)',
-                    }}>
-                    <RefreshCw size={12} style={{ animation: isPinging ? 'spin .6s linear infinite' : 'none' }}/>
-                    {isPinging ? 'Ping...' : 'Ping'}
-                  </button>
-                  <button type="button"
-                    onClick={() => toggleConnection(itg.id)}
-                    style={{
-                      flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-                      padding:'7px', borderRadius:9, fontSize:11, fontWeight:700,
-                      background: isConnected ? 'rgba(239,68,68,.08)' : 'rgba(0,208,132,.08)',
-                      border:`1px solid ${isConnected ? 'rgba(239,68,68,.15)' : 'rgba(0,208,132,.15)'}`,
-                      color: isConnected ? 'var(--danger)' : 'var(--acc2)',
-                      cursor:'pointer', fontFamily:'var(--font)',
-                    }}>
-                    <Settings size={12}/>
-                    {isConnected ? (lang === 'fr' ? 'Désactiver' : 'Disable') : (lang === 'fr' ? 'Activer' : 'Enable')}
-                  </button>
-                </div>
+                {/* Features */}
+                {itg.features.length > 0 && (
+                  <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                    {itg.features.slice(0, 3).map((f, idx) => (
+                      <div key={idx} style={{ display:'flex', alignItems:'center', gap:7, fontSize:11, color:'var(--text3)' }}>
+                        <Check size={12} strokeWidth={3} style={{ color:'var(--acc2)', flexShrink:0 }} />
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div style={{
+                padding:'12px 20px', borderTop:'1px solid var(--border)', background:'var(--bg3)',
+                display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
+              }}>
+                <a href={itg.docs} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize:11, color:'var(--text3)', textDecoration:'none', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text2)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text3)' }}
+                >
+                  <ExternalLink size={11} /> Docs
+                </a>
+                <button type="button" onClick={() => configure(itg)}
+                  aria-label={`${lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'} ${itg.name}`}
+                  style={{
+                    padding:'7px 14px', background:'rgba(108,71,255,.1)', border:'1px solid rgba(108,71,255,.2)',
+                    borderRadius:8, fontSize:11, fontWeight:700, color:'var(--p3)', cursor:'pointer',
+                    fontFamily:'var(--font)', minHeight:32, transition:'background .15s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(108,71,255,.2)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(108,71,255,.1)' }}
+                >
+                  {lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'}
+                </button>
               </div>
             </div>
           )

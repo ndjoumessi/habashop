@@ -128,4 +128,28 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       currency: user.tenant?.currency,
     }
   })
+
+  app.patch('/api/auth/password', { preHandler: authenticate }, async (request, reply) => {
+    const { userId, tenantId } = request.user
+    const { currentPassword, newPassword } = request.body as { currentPassword?: string; newPassword?: string }
+
+    if (!newPassword || newPassword.length < 8) {
+      return reply.code(400).send({ error: 'Le nouveau mot de passe doit faire au moins 8 caractères' })
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return reply.code(404).send({ error: 'Utilisateur introuvable' })
+
+    const valid = await bcrypt.compare(currentPassword ?? '', user.passwordHash)
+    if (!valid) return reply.code(401).send({ error: 'Mot de passe actuel incorrect' })
+
+    const passwordHash = await bcrypt.hash(newPassword, 12)
+    await prisma.user.update({ where: { id: userId }, data: { passwordHash } })
+
+    await prisma.auditLog.create({
+      data: { tenantId, userId, module: 'AUTH', action: 'CHANGE_PASSWORD', description: 'Mot de passe modifié', severity: 'info' },
+    }).catch(() => {})
+
+    return { success: true, message: 'Mot de passe modifié' }
+  })
 }

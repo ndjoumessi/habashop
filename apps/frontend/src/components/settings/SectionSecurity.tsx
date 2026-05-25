@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useConfig } from '@/stores/appStore'
+import { authApi } from '@/lib/api'
 import { makeI, panel, Head } from '@/components/settings/settingsShared'
 
 export default function SectionSecurity() {
@@ -9,6 +11,27 @@ export default function SectionSecurity() {
   const i = makeI(lang)
   const navigate = useNavigate()
   const locked = cfg.settingsLocked
+
+  const [pwForm, setPwForm]       = useState({ current: '', next: '', confirm: '' })
+  const [pwError, setPwError]     = useState('')
+  const [pwLoading, setPwLoading] = useState(false)
+
+  const handleChangePassword = async () => {
+    setPwError('')
+    if (!pwForm.current) { setPwError(i('Mot de passe actuel requis', 'Current password required', 'Contraseña actual requerida', 'Password attuale richiesto')); return }
+    if (pwForm.next.length < 8) { setPwError(i('Minimum 8 caractères', 'Minimum 8 characters', 'Mínimo 8 caracteres', 'Minimo 8 caratteri')); return }
+    if (pwForm.next !== pwForm.confirm) { setPwError(i('Les mots de passe ne correspondent pas', 'Passwords do not match', 'Las contraseñas no coinciden', 'Le password non corrispondono')); return }
+    setPwLoading(true)
+    try {
+      await authApi.changePassword(pwForm.current, pwForm.next)
+      setPwForm({ current: '', next: '', confirm: '' })
+      toast.success(i('Mot de passe modifié ✅', 'Password changed ✅', 'Contraseña cambiada ✅', 'Password cambiato ✅'))
+    } catch (err: any) {
+      setPwError(err?.message ?? i('Erreur lors du changement', 'Error changing password', 'Error al cambiar', 'Errore nel cambio'))
+    } finally {
+      setPwLoading(false)
+    }
+  }
 
   const token = localStorage.getItem('habashop_token')
   const tokenInfo = token && token.split('.').length === 3 ? (() => {
@@ -54,14 +77,34 @@ export default function SectionSecurity() {
           </div>
         )}
 
-        {/* Change password (stub) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(255,184,0,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🔐</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}</div>
-            <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Bientôt disponible', 'Coming soon', 'Próximamente', 'Prossimamente')}</div>
+        {/* Change password */}
+        <div style={{ padding: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(255,184,0,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🔐</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Au moins 8 caractères', 'At least 8 characters', 'Al menos 8 caracteres', 'Almeno 8 caratteri')}</div>
+            </div>
           </div>
-          <button type="button" className="btn btn-ghost" style={{ padding: '7px 14px', fontSize: 11, cursor: 'pointer' }} onClick={() => toast(i('Bientôt disponible', 'Coming soon', 'Próximamente', 'Prossimamente'))}>✏️ {i('Modifier', 'Change', 'Cambiar', 'Modifica')}</button>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <input className="input" type="password" autoComplete="current-password"
+              aria-label={i('Mot de passe actuel', 'Current password', 'Contraseña actual', 'Password attuale')}
+              placeholder={i('Mot de passe actuel', 'Current password', 'Contraseña actual', 'Password attuale')}
+              value={pwForm.current} onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))} />
+            <input className="input" type="password" autoComplete="new-password"
+              aria-label={i('Nouveau mot de passe', 'New password', 'Nueva contraseña', 'Nuova password')}
+              placeholder={i('Nouveau mot de passe', 'New password', 'Nueva contraseña', 'Nuova password')}
+              value={pwForm.next} onChange={e => setPwForm(f => ({ ...f, next: e.target.value }))} />
+            <input className="input" type="password" autoComplete="new-password"
+              aria-label={i('Confirmer le mot de passe', 'Confirm password', 'Confirmar contraseña', 'Conferma password')}
+              placeholder={i('Confirmer le nouveau mot de passe', 'Confirm new password', 'Confirmar nueva contraseña', 'Conferma nuova password')}
+              value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} />
+          </div>
+          {pwError && <div style={{ fontSize: 11, color: 'var(--danger)' }}>{pwError}</div>}
+          <button type="button" className="btn btn-primary" disabled={pwLoading} onClick={handleChangePassword}
+            style={{ alignSelf: 'flex-start', padding: '8px 16px', fontSize: 12, cursor: pwLoading ? 'not-allowed' : 'pointer', opacity: pwLoading ? .6 : 1 }}>
+            {pwLoading ? i('Modification…', 'Changing…', 'Cambiando…', 'Modifica…') : i('Modifier le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}
+          </button>
         </div>
       </div>
     </div>

@@ -95,6 +95,8 @@ export const authApi = {
     api.post<{token:string; user:any; tenant?:any}>('/api/auth/login', { email, password }),
   me: () => api.get<any>('/api/auth/me'),
   register: (data: any) => api.post<{token:string; user:any; tenant?:any}>('/api/auth/register', data),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.patch<{ success: boolean; message: string }>('/api/auth/password', { currentPassword, newPassword }),
 }
 
 export const productsApi = {

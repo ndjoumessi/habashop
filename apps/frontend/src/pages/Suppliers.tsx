@@ -43,10 +43,11 @@ const SUPP_COLORS = ['#6C47FF','#00D084','#FF9500','#00B8FF','#FF3B5C','#F59E0B'
 function supplierColor(name: string) { return SUPP_COLORS[name.charCodeAt(0) % SUPP_COLORS.length] }
 
 function StarRating({ rating }: { rating: number }) {
+  const r = Number(rating) || 0
   return (
     <div style={{ display:'flex', alignItems:'center', gap:2 }}>
       {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} size={12} style={{ color: i <= rating ? '#F0A500' : 'var(--border)', fill: i <= rating ? '#F0A500' : 'none' }} />
+        <Star key={i} size={12} style={{ color: i <= r ? '#F0A500' : 'var(--border)', fill: i <= r ? '#F0A500' : 'none' }} />
       ))}
     </div>
   )
@@ -120,7 +121,9 @@ export default function Suppliers() {
 
   const actifs    = suppliers.filter(s => s.status === 'Actif').length
   const enCours   = suppliers.flatMap(s => s.orders).filter(o => ['ENVOYÉE', 'CONFIRMÉE', 'EN TRANSIT'].includes(o.status)).length
-  const avgRating = (suppliers.reduce((s, sup) => s + sup.rating, 0) / suppliers.length).toFixed(1)
+  const avgRating = suppliers.length > 0
+    ? (suppliers.reduce((s, sup) => s + (Number(sup.rating) || 0), 0) / suppliers.length).toFixed(1)
+    : null
 
   const printSuppliersPDF = () => {
     const body = `
@@ -183,7 +186,7 @@ export default function Suppliers() {
           { label: t('suppliers_total'),           value: suppliers.length.toString(), color: 'var(--p2)',   hex: '#6C47FF', icon: <Factory       size={18} /> },
           { label: t('suppliers_active'),          value: actifs.toString(),           color: 'var(--acc2)', hex: '#00D084', icon: <CheckCircle   size={18} /> },
           { label: t('suppliers_pending_orders'),  value: enCours.toString(),          color: 'var(--acc)',  hex: '#FF9500', icon: <Truck         size={18} /> },
-          { label: t('suppliers_avg_rating'),      value: `${avgRating}/5`,            color: 'var(--acc)',  hex: '#FF9500', icon: <Star          size={18} /> },
+          { label: t('suppliers_avg_rating'),      value: avgRating ? `${avgRating}/5` : '—', color: 'var(--acc)',  hex: '#FF9500', icon: <Star          size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card" style={{
             background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,
@@ -353,7 +356,7 @@ export default function Suppliers() {
             <div className="flex items-center gap-3 p-3 rounded-xl mb-4" style={{ background: 'var(--bg3)' }}>
               <span className="text-sm font-semibold" style={{ color: 'var(--text2)' }}>{i('Note', 'Rating', 'Valoración', 'Valutazione')} :</span>
               <StarRating rating={viewSupplier.rating} />
-              <span className="text-sm font-bold" style={{ color: 'var(--acc)' }}>{viewSupplier.rating}/5</span>
+              <span className="text-sm font-bold" style={{ color: 'var(--acc)' }}>{(Number(viewSupplier.rating) || 0) > 0 ? `${(Number(viewSupplier.rating) || 0).toFixed(1)}/5` : '—'}</span>
             </div>
 
             <div className="mb-4">

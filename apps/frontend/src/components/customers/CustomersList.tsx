@@ -1,4 +1,4 @@
-import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, Star, Trash2 } from 'lucide-react'
+import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { exportCSV, generateInvoice } from '@/utils/export'
@@ -245,9 +245,15 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                       </div>
                     )}
                     {c.email && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--text2)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--text2)', marginBottom: c.address ? 5 : 0 }}>
                         <Mail size={12} style={{ color: 'var(--text3)', flexShrink: 0 }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11, color: 'var(--text3)' }}>{c.email}</span>
+                      </div>
+                    )}
+                    {c.address && (
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 11, color: 'var(--text3)', marginTop: (c.phone || c.email) ? 0 : 0, lineHeight: 1.4 }}>
+                        <MapPin size={12} style={{ color: 'var(--text4)', flexShrink: 0, marginTop: 1 }} />
+                        <span style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{c.address}</span>
                       </div>
                     )}
                   </div>

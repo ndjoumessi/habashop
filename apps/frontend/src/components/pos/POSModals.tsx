@@ -311,7 +311,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       {lang === 'fr' ? 'Envoyer le ticket WhatsApp' : lang === 'en' ? 'Send WhatsApp receipt' : lang === 'es' ? 'Enviar ticket WhatsApp' : 'Invia scontrino WhatsApp'}
                     </div>
                     <div style={{ fontSize:11, color:'var(--text3)' }}>
-                      {lang === 'fr' ? 'Le client recevra son reçu sur WhatsApp' : 'Customer receives receipt on WhatsApp'}
+                      {lang === 'fr' ? 'Le client recevra son reçu sur WhatsApp' : lang === 'en' ? 'Customer receives receipt on WhatsApp' : lang === 'es' ? 'El cliente recibirá su recibo por WhatsApp' : 'Il cliente riceverà la ricevuta su WhatsApp'}
                     </div>
                   </div>
                 </div>
@@ -331,7 +331,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               {sendWhatsApp && (
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
-                    {lang==='fr' ? 'Numéro WhatsApp (ticket)' : 'WhatsApp number (receipt)'}
+                    {lang==='fr' ? 'Numéro WhatsApp (ticket)' : lang==='en' ? 'WhatsApp number (receipt)' : lang==='es' ? 'Número WhatsApp (recibo)' : 'Numero WhatsApp (ricevuta)'}
                   </label>
                   <div style={{ display:'flex', gap:6, alignItems:'stretch' }}>
                     {/* Sélecteur indicatif — premium */}
@@ -367,7 +367,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                             <input
                               autoFocus
                               type="text"
-                              aria-label="Rechercher" placeholder="🔍 Rechercher..."
+                              aria-label={lang==='fr' ? 'Rechercher' : lang==='en' ? 'Search' : lang==='es' ? 'Buscar' : 'Cerca'} placeholder={lang==='fr' ? '🔍 Rechercher...' : lang==='en' ? '🔍 Search...' : lang==='es' ? '🔍 Buscar...' : '🔍 Cerca...'}
                               value={countrySearch}
                               onChange={e => setCountrySearch(e.target.value)}
                               onKeyDown={e => { if (e.key === 'Escape') { setShowCountryPicker(false); setCountrySearch('') } }}
@@ -419,7 +419,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                         placeholder="77 000 00 00"
                         value={waNumber}
                         maxLength={15}
-                        aria-label={lang==='fr' ? 'Numéro WhatsApp' : 'WhatsApp number'}
+                        aria-label={lang==='fr' ? 'Numéro WhatsApp' : lang==='en' ? 'WhatsApp number' : lang==='es' ? 'Número WhatsApp' : 'Numero WhatsApp'}
                         style={{
                           width:'100%', minHeight:42,
                           background:'var(--bg4)',
@@ -454,7 +454,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   {/* Aperçu numéro complet */}
                   {waNumber.trim().length > 0 && (
                     <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
-                      <span>{lang==='fr' ? 'Numéro complet :' : 'Full number:'}</span>
+                      <span>{lang==='fr' ? 'Numéro complet :' : lang==='en' ? 'Full number:' : lang==='es' ? 'Número completo:' : 'Numero completo:'}</span>
                       <span style={{ fontFamily:'var(--mono)', fontWeight:700, color:'#25D366' }}>
                         {waCountryCode}{waNumber.replace(/\s/g, '')}
                       </span>
@@ -463,7 +463,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   {/* Message erreur */}
                   {waNumber.length > 0 && !/^[\d\s\-]{6,}$/.test(waNumber) && (
                     <div style={{ marginTop:5, fontSize:10, color:'var(--danger)', fontWeight:600, display:'flex', gap:4, alignItems:'center' }}>
-                      <AlertTriangle size={10} /> {lang==='fr' ? 'Chiffres uniquement (ex: 77 000 00 00)' : 'Digits only (ex: 77 000 00 00)'}
+                      <AlertTriangle size={10} /> {lang==='fr' ? 'Chiffres uniquement (ex: 77 000 00 00)' : lang==='en' ? 'Digits only (ex: 77 000 00 00)' : lang==='es' ? 'Solo dígitos (ej: 77 000 00 00)' : 'Solo cifre (es: 77 000 00 00)'}
                     </div>
                   )}
                 </div>
@@ -490,9 +490,9 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 }}
               >
                 {waSending
-                  ? <><Smartphone size={14} /> Envoi WhatsApp…</>
+                  ? <><Smartphone size={14} /> {lang==='fr' ? 'Envoi WhatsApp…' : lang==='en' ? 'Sending WhatsApp…' : lang==='es' ? 'Enviando WhatsApp…' : 'Invio WhatsApp…'}</>
                   : isSaving
-                  ? 'Enregistrement…'
+                  ? (lang==='fr' ? 'Enregistrement…' : lang==='en' ? 'Saving…' : lang==='es' ? 'Guardando…' : 'Salvataggio…')
                   : t('pos_validate')}
               </button>
               <button
