@@ -15,8 +15,8 @@ Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités c
 - (la suppression employé existante est conservée en hard-delete)
 
 ### ♿ Accessibilité (ARIA)
-- Attributs `aria-*`/`role`/`scope` : **69 → 117**
-- `.sr-only` ; `aria-label` sur les liens de navigation (Sidebar) ; `scope="col"` sur les tables (Customers, Admin, Stock) ; `role="img"` + label sur le graphique des ventes
+- Attributs `aria-*`/`role`/`scope` : **69 → 152**
+- `.sr-only` ; `aria-label` sur les liens de navigation (Sidebar) et les champs de recherche ; `scope="col"` sur les tables (Customers, Admin, Stock, Expenses, Orders, HR) ; `role="dialog"` + `aria-modal` sur les modales ; `role="img"` + label sur le graphique des ventes
 - (déjà en place : `:focus-visible`, `prefers-reduced-motion`, landmark `nav`, `NavLink` aria-current, `role="dialog"`)
 
 ### 🧪 Tests
