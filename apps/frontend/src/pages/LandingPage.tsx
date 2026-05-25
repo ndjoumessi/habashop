@@ -815,12 +815,18 @@ export default function LandingPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ display: 'flex' }}>
-                {[D.p, D.acc3, D.acc, D.acc2, D.acc4].map((c, i) => (
+                {[
+                  { bg: D.p,    fg: '#fff'    }, // violet : texte blanc (AA ok)
+                  { bg: D.acc3, fg: '#1A1A2E' }, // orange : texte sombre (AA)
+                  { bg: D.acc,  fg: '#1A1A2E' }, // vert   : texte sombre (AA)
+                  { bg: D.acc2, fg: '#1A1A2E' }, // bleu   : texte sombre (AA)
+                  { bg: D.acc4, fg: '#1A1A2E' }, // rouge  : texte sombre (AA)
+                ].map((a, i) => (
                   <div key={i} style={{
-                    width: 28, height: 28, borderRadius: '50%', background: c,
+                    width: 28, height: 28, borderRadius: '50%', background: a.bg,
                     border: `2px solid ${D.bg}`, marginLeft: i > 0 ? -8 : 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 900, color: '#fff',
+                    fontSize: 10, fontWeight: 900, color: a.fg,
                   }}>{['MB','KD','FN','SK','AT'][i]}</div>
                 ))}
               </div>
@@ -847,14 +853,14 @@ export default function LandingPage() {
         borderTop: `1px solid ${D.border}`, borderBottom: `1px solid ${D.border}`,
         background: 'rgba(255,255,255,.02)',
       }}>
-        <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: D.text3, textTransform: 'uppercase', marginBottom: 18 }}>
+        <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: D.text2, textTransform: 'uppercase', marginBottom: 18 }}>
           {lp.trust_title}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(16px,3vw,40px)', flexWrap: 'wrap' }}>
           {trustCountries.map(c => (
-            <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 7, opacity: .55, transition: 'opacity .15s', cursor: 'default' }}
+            <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 7, opacity: .85, transition: 'opacity .15s', cursor: 'default' }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '.55'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '.85'}
             >
               <span style={{ fontSize: 22 }}>{c.flag}</span>
               <span style={{ fontSize: 12, fontWeight: 700, color: D.text2 }}>{c.name}</span>
