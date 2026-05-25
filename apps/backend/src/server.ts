@@ -154,7 +154,7 @@ async function authenticateAdmin(request: any, reply: any) {
 }
 
 async function start() {
-  const app = Fastify({ logger: true })
+  const app = Fastify({ logger: true, trustProxy: true }) // derrière le proxy Railway : request.ip = vrai client (X-Forwarded-For) → clé rate-limit stable
 
   // ─── PLUGINS ────────────────────────────
   const allowedOrigins = [

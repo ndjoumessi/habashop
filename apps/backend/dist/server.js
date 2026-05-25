@@ -156,7 +156,7 @@ async function authenticateAdmin(request, reply) {
     }
 }
 async function start() {
-    const app = (0, fastify_1.default)({ logger: true });
+    const app = (0, fastify_1.default)({ logger: true, trustProxy: true }); // derrière le proxy Railway : request.ip = vrai client (X-Forwarded-For) → clé rate-limit stable
     // ─── PLUGINS ────────────────────────────
     const allowedOrigins = [
         'https://habashop.vercel.app',
