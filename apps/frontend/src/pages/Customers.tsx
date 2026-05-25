@@ -139,6 +139,18 @@ export default function Customers() {
     openPDF(t('customers_pdf_title'), body)
   }
 
+  const handleDeleteCustomer = async (id: string) => {
+    const c = customers.find(x => x.id === id)
+    const ok = await confirm({
+      title: i('Supprimer ce client ?', 'Delete this customer?', '¿Eliminar este cliente?', 'Eliminare questo cliente?'),
+      message: c?.name ?? '',
+    })
+    if (!ok) return
+    try { await customersApi.delete(id) } catch {}
+    setCustomers(prev => prev.filter(x => x.id !== id))
+    toast.success(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
+  }
+
   const handleCreateCustomer = async () => {
     if (!form.name?.trim()) {
       toast.error(i('Nom requis', 'Name required', 'Nombre requerido', 'Nome richiesto'))
@@ -259,6 +271,7 @@ export default function Customers() {
           setCustEditMode={setCustEditMode} setShowEditCustModal={setShowEditCustModal}
           setLoyaltyCustomer={setLoyaltyCustomer}
           setDetailCustomer={setDetailCustomer} setShowDetailModal={setShowDetailModal}
+          onDelete={handleDeleteCustomer}
         />
       )}
 
