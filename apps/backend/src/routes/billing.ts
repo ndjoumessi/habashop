@@ -9,6 +9,12 @@ const PLAN_PRICES: Record<string, Record<string, number>> = {
 }
 const VALID_PAYMENTS = ['wave', 'orange_money', 'mtn_money', 'virement', 'card']
 
+/**
+ * Routes de facturation HabaShop. Flux : le tenant demande un upgrade
+ * (`POST /request-plan`, status `pending`), puis un super-admin valide
+ * (`PATCH /api/admin/plan-requests/:id`) → tenant `active` sur le nouveau plan.
+ * Méthodes de paiement : Wave, Orange Money, MTN Money, virement, carte.
+ */
 export async function billingRoutes(app: FastifyInstance): Promise<void> {
   /**
    * Crée une demande d'upgrade de plan (validée ensuite manuellement par le super-admin).

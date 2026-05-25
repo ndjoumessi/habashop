@@ -10,6 +10,7 @@ import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import Pagination from '@/components/ui/Pagination'
+import { logger } from '@/lib/logger'
 import { usePagination } from '@/hooks/usePagination'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -296,9 +297,9 @@ export default function HR() {
         const agg: Record<string, number> = {}
         list.forEach(b => { if (b.empId) agg[b.empId] = (agg[b.empId] ?? 0) + b.amount })
         setBonuses(agg)
-        console.log('✅ Bonuses chargés:', agg)
+        logger.log('✅ Bonuses chargés:', agg)
       })
-      .catch(err => console.warn('bonuses load:', err.message))
+      .catch(err => logger.warn('bonuses load:', err.message))
 
     salaryHistoryApi.list()
       .then((data: any[]) => {
@@ -313,9 +314,9 @@ export default function HR() {
           reason:     h.reason ?? 'Augmentation',
         }))
         setSalaryHistory(normalized)
-        console.log('✅ Salary history chargé:', normalized.length)
+        logger.log('✅ Salary history chargé:', normalized.length)
       })
-      .catch(err => console.warn('salary-history load:', err.message))
+      .catch(err => logger.warn('salary-history load:', err.message))
   }, [])
 
   useEffect(() => {

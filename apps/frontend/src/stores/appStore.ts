@@ -430,6 +430,11 @@ export function formatInCurrency(amount: number, currency: string): string {
 }
 
 // Hook React — montants stockés en XOF, convertis + formatés à l'affichage
+/**
+ * Hook de formatage des montants, réactif à la devise courante du store.
+ * Convertit depuis XOF (devise de stockage) vers la devise d'affichage.
+ * @returns une fonction `(amountXOF) => string` formatée dans la devise active
+ */
 export function useFormatAmount() {
   const currency = useAppStore(s => s.currency)
   return (amountInXOF: number): string => {
