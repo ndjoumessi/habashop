@@ -3,6 +3,27 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.2.0] — 2026-05-25 — CRUD complet & accessibilité (Mois 2)
+
+> Déployé et **vérifié en production** (backend Railway + frontend Vercel).
+
+### 🗑️ Suppression (CRUD complet)
+- `DELETE /api/customers/:id`, `/api/suppliers/:id`, `/api/orders/:id` — scopés par tenant (accès cross-tenant → **404**)
+- Fournisseur avec commandes liées → **409** (FK P2003) ; commande → **ADMIN requis** + transaction (supprime d'abord les lignes)
+- Frontend : `customersApi`/`suppliersApi.delete` + boutons **Supprimer** (icône Lucide, `confirm` + i18n + toast) dans les fiches client/fournisseur
+- Vérifié bout en bout : create → `DELETE` → **204** → absent de la liste ; id inexistant → **404**
+- (la suppression employé existante est conservée en hard-delete)
+
+### ♿ Accessibilité (ARIA)
+- Attributs `aria-*`/`role`/`scope` : **69 → 117**
+- `.sr-only` ; `aria-label` sur les liens de navigation (Sidebar) ; `scope="col"` sur les tables (Customers, Admin, Stock) ; `role="img"` + label sur le graphique des ventes
+- (déjà en place : `:focus-visible`, `prefers-reduced-motion`, landmark `nav`, `NavLink` aria-current, `role="dialog"`)
+
+### 🧪 Tests
+- Backend **32 → 39** (`routes.test.ts` : DELETE CRUD + ARIA)
+
+> Hors périmètre (décidé) : découpe modulaire de `server.ts` (différée — risque de régression élevé) ; pas de gate de suspension par requête (enforcement allégé conservé).
+
 ## [2.1.1] — 2026-05-25 — Performance & qualité
 
 ### ⚡ Performance (frontend, déployé + vérifié en prod)
