@@ -3,6 +3,18 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.3.0] — 2026-05-25 — Découpe modulaire de `server.ts`
+
+> Déployé et **vérifié en production** (backend Railway). Refactor interne — **aucun changement de comportement**.
+
+### 🧱 Architecture backend
+- `server.ts` : **2003 → 170 lignes** (bootstrap uniquement : env, CORS, JWT, rate-limit Redis, WebSocket, error handler P2025→404, `/health` + `/api/health-extended`, enregistrement des routes).
+- Handlers extraits **à l'identique** dans **18 modules** `src/routes/` (`auth`, `tenant`, `products`, `customers`, `sales`, `suppliers`, `orders`, `employees`, `hr`, `expenses`, `analytics`, `export`, `billing`, `admin`, `notifications`, `whatsapp`, `ai`, `docs`).
+- Middleware d'auth isolés (`src/middleware/authenticate.ts`, `superAdmin.ts`) ; client Prisma partagé (`src/db.ts`) ; augmentations de type JWT/`tenantId` déplacées dans `types.ts` (portée globale).
+- `notifyTenant` + état WebSocket dans `routes/notifications.ts`, importés par `sales`/`customers`/`orders`. Crons WhatsApp enregistrés **dans** `whatsappRoutes` (plus de déclenchement à l'import — neutre en tests).
+- `dist/server.js` n'est plus versionné (Railway construit depuis `src` via Dockerfile ; `dist` est git/docker-ignoré).
+- **Zéro régression** : tsc OK, **39/39 tests**, build OK ; vérifié en prod (santé, 401 sur routes protégées, en-têtes rate-limit au login, handshake WebSocket → close 1008).
+
 ## [2.2.0] — 2026-05-25 — CRUD complet & accessibilité (Mois 2)
 
 > Déployé et **vérifié en production** (backend Railway + frontend Vercel).
@@ -22,7 +34,7 @@ Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités c
 ### 🧪 Tests
 - Backend **32 → 39** (`routes.test.ts` : DELETE CRUD + ARIA)
 
-> Hors périmètre (décidé) : découpe modulaire de `server.ts` (différée — risque de régression élevé) ; pas de gate de suspension par requête (enforcement allégé conservé).
+> Hors périmètre (décidé) : pas de gate de suspension par requête (enforcement allégé conservé). _(La découpe modulaire de `server.ts`, alors différée, a été livrée en [2.3.0].)_
 
 ## [2.1.1] — 2026-05-25 — Performance & qualité
 
