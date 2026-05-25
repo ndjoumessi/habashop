@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Skeleton from '@/components/ui/skeleton'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { ordersApi, productsApi, suppliersApi, customersApi } from '@/lib/api'
@@ -594,9 +595,7 @@ export default function Orders() {
             </thead>
             <tbody>
               {loading ? (
-                Array.from({ length: 6 }).map((_, idx) => (
-                  <tr key={idx}><td colSpan={9} style={{ padding: '12px 14px' }}><div className="skeleton" style={{ height: 34, borderRadius: 8 }} /></td></tr>
-                ))
+                <tr><td colSpan={9} style={{ padding: '8px 14px' }}><Skeleton height={34} count={6} radius={8} /></td></tr>
               ) : (<>
               {pg.paginated.map(o => {
                 const cfg = STATUS_CONFIG[o.status]

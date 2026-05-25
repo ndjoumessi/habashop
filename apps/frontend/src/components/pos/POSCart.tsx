@@ -79,7 +79,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             {cashierSessionTx > 0 && (
               <span style={{
                 background: 'rgba(0,208,132,.15)',
-                border: '1px solid rgba(0,208,132,.25)',
+                border: '1px solid var(--c-green-border)',
                 color: 'var(--acc2)', borderRadius: 20,
                 padding: '3px 10px', fontSize: 11,
                 fontWeight: 700, fontFamily: 'var(--mono)',

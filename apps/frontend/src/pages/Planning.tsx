@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import Skeleton from '@/components/ui/skeleton'
 import { useAppStore } from '@/stores/appStore'
 import { employeesApi } from '@/lib/api'
 import toast from 'react-hot-toast'
@@ -382,9 +383,7 @@ export default function Planning() {
             </thead>
             <tbody>
               {loading ? (
-                Array.from({ length: 5 }).map((_, idx) => (
-                  <tr key={idx}><td colSpan={8} style={{ padding: '12px 14px' }}><div className="skeleton" style={{ height: 40, borderRadius: 8 }} /></td></tr>
-                ))
+                <tr><td colSpan={8} style={{ padding: '8px 14px' }}><Skeleton height={40} count={5} radius={8} /></td></tr>
               ) : filtered.length===0 ? (
                 <tr>
                   <td colSpan={8} style={{

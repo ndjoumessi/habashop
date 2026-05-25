@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Skeleton from '@/components/ui/skeleton'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
@@ -313,9 +314,7 @@ export default function Suppliers() {
             </thead>
             <tbody>
               {loading ? (
-                Array.from({ length: 6 }).map((_, idx) => (
-                  <tr key={idx}><td colSpan={7} style={{ padding: '12px 14px' }}><div className="skeleton" style={{ height: 34, borderRadius: 8 }} /></td></tr>
-                ))
+                <tr><td colSpan={7} style={{ padding: '8px 14px' }}><Skeleton height={34} count={6} radius={8} /></td></tr>
               ) : (<>
               {pg.paginated.map(s => (
                 <tr key={s.id}>

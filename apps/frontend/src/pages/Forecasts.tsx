@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import React from 'react'
+import Skeleton from '@/components/ui/skeleton'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useAbbrevAmount } from '@/stores/appStore'
 import { TrendingUp, Package, Users, Calendar, ShoppingCart, Zap, DollarSign, Trophy, BarChart2, Lightbulb, MessageSquare, Bot, Truck, Mail, ClipboardList, Copy, RefreshCw, Check, FileText, Target, Wallet, Brain, AlertCircle, Download, X } from 'lucide-react'
@@ -140,6 +141,8 @@ export default function Forecasts() {
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab]       = useState<ActiveTab>('analyse')
+  const [loading, setLoading]           = useState(true)
+  useEffect(() => { setLoading(false) }, [])
 
   // ── IA Claude ──────────────────────────────────────────────────────────────
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
@@ -345,6 +348,12 @@ export default function Forecasts() {
     .filter(g => g.items.length > 0)
 
   const maxQCA = Math.max(...QUARTERLY.flatMap(q => [q.ca, q.depenses]))
+
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
+      <Skeleton height={56} count={5} />
+    </div>
+  )
 
   return (
     <div className="space-y-5 animate-in">

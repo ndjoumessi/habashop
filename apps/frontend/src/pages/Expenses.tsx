@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Skeleton from '@/components/ui/skeleton'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { expensesApi, salesApi } from '@/lib/api'
 import { Download, Plus, X, Search, Settings, TrendingDown, Clock, RefreshCw, BarChart2, Home, Zap, Car, Wrench, Package, Megaphone, GraduationCap, Tag, Check, Pencil, Trash2, FileText } from 'lucide-react'
@@ -342,9 +343,7 @@ export default function Expenses() {
               </thead>
               <tbody>
                 {loading ? (
-                  Array.from({ length: 6 }).map((_, idx) => (
-                    <tr key={idx}><td colSpan={10} style={{ padding: '12px 14px' }}><div className="skeleton" style={{ height: 32, borderRadius: 8 }} /></td></tr>
-                  ))
+                  <tr><td colSpan={10} style={{ padding: '8px 14px' }}><Skeleton height={32} count={6} radius={8} /></td></tr>
                 ) : (<>
                 {filtered.map(e => {
                   const catStyle = CATEGORY_STYLE[e.category]

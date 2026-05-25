@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import Skeleton from '@/components/ui/skeleton'
 import { useAppStore, t } from '@/stores/appStore'
 import {
   Search, Download, X,
@@ -70,6 +71,8 @@ export default function Activity() {
   const [severityFilter, setSeverityFilter] = useState('')
   const [dateFilter,     setDateFilter]     = useState('all')
   const [currentPage,    setCurrentPage]    = useState(1)
+  const [loading,        setLoading]        = useState(true)
+  useEffect(() => { setLoading(false) }, [])
 
   const filtered = useMemo(() => ACTIVITY_LOG.filter(log => {
     const matchSearch   = !search || log.description.toLowerCase().includes(search.toLowerCase()) || log.user.toLowerCase().includes(search.toLowerCase())
@@ -88,6 +91,12 @@ export default function Activity() {
   const hasFilters    = !!(search || moduleFilter || severityFilter || dateFilter !== 'all')
 
   const resetPage = () => setCurrentPage(1)
+
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
+      <Skeleton height={56} count={5} />
+    </div>
+  )
 
   return (
     <div className="space-y-5 animate-in">

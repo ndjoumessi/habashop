@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import Skeleton from '@/components/ui/skeleton'
 import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, BarChart2, CreditCard, Trophy, Package, Users, Wallet, UserCog } from 'lucide-react'
@@ -71,11 +72,13 @@ export default function Reports() {
 
   const [activePayIndex, setActivePayIndex] = useState<number | null>(null)
   const [salesData,      setSalesData]      = useState<any[]>([])
+  const [loading,        setLoading]        = useState(true)
 
   useEffect(() => {
     salesApi.list()
       .then((d: any) => { if (d?.length) setSalesData(d) })
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   const paymentData = useMemo(() => {
@@ -202,6 +205,12 @@ export default function Reports() {
   }
   const weekAbbr = WEEK_ABBR[lang] ?? WEEK_ABBR.fr
   const chartData = CHART_DATA.map((d, i) => ({ ...d, day: weekAbbr[i] }))
+
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
+      <Skeleton height={56} count={5} />
+    </div>
+  )
 
   return (
     <div className="space-y-5 animate-in">

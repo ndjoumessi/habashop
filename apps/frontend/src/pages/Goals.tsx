@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Skeleton from '@/components/ui/skeleton'
 import { useAppStore, useFormatAmount, useCurrencyInfo } from '@/stores/appStore'
 import { dashboardApi } from '@/lib/api'
 import toast from 'react-hot-toast'
@@ -45,6 +46,7 @@ export default function Goals() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editGoal, setEditGoal]           = useState<Goal | null>(null)
   const [goalForm, setGoalForm]           = useState<Goal>(BLANK_GOAL)
+  const [loading, setLoading]             = useState(true)
 
   useEffect(() => {
     dashboardApi.stats()
@@ -57,6 +59,7 @@ export default function Goals() {
         }))
       })
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -89,6 +92,12 @@ export default function Goals() {
 
   const achieved  = goals.filter(g => getStatus(g) === 'success').length
   const globalPct = Math.round(achieved / goals.length * 100)
+
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 0' }}>
+      <Skeleton height={56} count={5} />
+    </div>
+  )
 
   return (
     <div className="animate-in" style={{ display:'flex', flexDirection:'column', gap:16 }}>
