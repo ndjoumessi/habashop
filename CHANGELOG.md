@@ -3,6 +3,19 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.1.1] — 2026-05-25 — Performance & qualité
+
+### ⚡ Performance (frontend, déployé + vérifié en prod)
+- **Lazy-loading des routes** (`React.lazy` + `Suspense`) : chunk `index` principal **1 507 kB → 194 kB** (380 → 58 kB gzip). Pages, `charts` (recharts) et `BarcodeScanner` chargés à la demande. `AppLayout` reste eager (shell) ; `Suspense` autour de l'`Outlet` garde sidebar/header pendant la navigation.
+
+### 🧹 Qualité & typage
+- **Backend `any` : 160 → 104** — augmentation `@fastify/jwt` typant `request.user` (`JWTPayload`), interfaces de body typées (`LoginBody` / `RegisterBody` / `BillingBody` dans `types.ts`), paramètres de handler typés.
+- **Tests backend : 8 → 32** (`routes.test.ts` : rate-limit / isolation multi-tenant / config billing).
+- Hook **`useI18n()`** partagé renvoyant `{ lang, i, formatDate, formatDateTime }` — dédoublonnage du helper i18n dans 8 pages.
+- **ESLint** : config unique `.eslintrc.cjs` (suppression du doublon `.eslintrc.json`).
+
+> Les changements backend de cette version sont **purement typage** (JS compilé inchangé) → aucun redéploiement Railway requis ; la perf frontend est déployée sur Vercel.
+
 ## [2.1.0] — 2026-05-25 — Billing, WebSocket & durcissement sécurité
 
 > Déployé et **vérifié en production** (backend Railway + frontend Vercel).
