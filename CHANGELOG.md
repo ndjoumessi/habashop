@@ -3,6 +3,20 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.3.9] — 2026-05-25 — Architecture frontend : découpe de `Reports.tsx`
+
+> Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
+
+### ♻️ Découpe de `Reports.tsx`
+- `Reports.tsx` : **698 → 219 lignes** (page conteneur : état + fetch `salesApi`, `paymentData` (useMemo), exports CSV/PDF/Excel, header + sélecteur de période + KPIs + barre d'onglets).
+- JSX extrait **à l'identique** dans `src/components/reports/` :
+  - **`ReportsTabs.tsx`** (459 l.) — les 5 onglets (Ventes / Stock / Clients / Finance / RH) **+** les 3 renderers Recharts (`renderActiveShape`, `CustomPayTooltip`, `renderLabel`) déplacés depuis `Reports()` (ils closent désormais sur le prop `fmt` + `RADIAN` importé).
+  - **`reportsShared.tsx`** (58 l.) — type `Period`, consts `PERIOD_DATA`/`CHART_DATA`/`PAYMENT_MODES`/`RADIAN`/`TOP_PRODUCTS`/`RECENT_SALES` + composant `Trend`.
+- Données calculées (`chartData`, `paymentData`, `data`, `activePayIndex`) passées en **props typées** ; couleurs des graphiques Recharts inchangées.
+- **Vérifié** : `tsc` clean (du premier coup), **43/43** tests, build OK (chunk Reports 7,8 KB gzip). Smoke Playwright (`e2e/reports.spec.ts`) sur **preview local** puis **prod live** — les 5 onglets rendent (graphiques inclus : donut + area chart via les renderers déplacés), **0 erreur JS**, non-flaky ×2 (après correction d'un sélecteur de test : le titre RH `<UserCog/> Équipe` a un espace de tête → ciblé sur « Masse salariale »).
+
+> Série de découpe complète : HR [2.3.1], Customers [2.3.2], Stock [2.3.3], POS [2.3.4], Settings [2.3.6], Reports [2.3.9].
+
 ## [2.3.8] — 2026-05-25 — Emails transactionnels (Resend)
 
 > Déployé et **vérifié en production** (backend Railway). Clé `RESEND_API_KEY` configurée (send-restricted).
