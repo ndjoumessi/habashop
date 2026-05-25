@@ -9,7 +9,13 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV } from '@/utils/export'
+import { auditApi } from '@/lib/api'
 import type { LucideIcon } from 'lucide-react'
+
+const MODULE_NORMALIZE: Record<string, string> = {
+  orders: 'COMMANDES', customers: 'CLIENTS', products: 'STOCK', suppliers: 'COMMANDES',
+  billing: 'PARAMÈTRES', employees: 'RH', auth: 'AUTH', tenant: 'PARAMÈTRES',
+}
 
 type Severity = 'success' | 'info' | 'warning' | 'danger'
 
@@ -38,11 +44,38 @@ const SEVERITY_CONFIG: Record<Severity, { color: string; bg: string; Icon: Lucid
   danger:  { color:'var(--danger)',  bg:'rgba(232,64,74,.1)',   Icon: AlertOctagon,  label:'Danger'  },
 }
 
+function mapAuditLog(l: any, idx: number): ActivityEntry {
+  const mod = (MODULE_NORMALIZE[l.module] ?? String(l.module ?? 'PARAMÈTRES')).toUpperCase()
+  const cfg = MODULE_CONFIG[mod] ?? MODULE_CONFIG['PARAMÈTRES']
+  let detail = l.description ?? ''
+  if (typeof detail === 'string' && detail.startsWith('{')) {
+    try { const o = JSON.parse(detail); detail = o.name ?? o.ref ?? o.id ?? '' } catch {}
+  }
+  const name = l.user?.name ?? 'Système'
+  const d = new Date(l.createdAt)
+  const sev: Severity = (['success', 'info', 'warning', 'danger'].includes(l.severity) ? l.severity : 'info') as Severity
+  return {
+    id: idx + 1,
+    module: mod,
+    action: l.action ?? '',
+    user: name,
+    avatar: name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
+    color: cfg.color,
+    description: `${l.action ?? ''}${detail ? ' — ' + detail : ''}`.trim(),
+    ip: l.ip ?? '—',
+    date: isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10),
+    time: isNaN(d.getTime()) ? '' : d.toTimeString().slice(0, 5),
+    severity: sev,
+  }
+}
+
+const TODAY_ISO = new Date().toISOString().slice(0, 10)
+
 const ITEMS_PER_PAGE = 8
 
 export default function Activity() {
   const { lang } = useAppStore()
-  const [activityLog] = useState<ActivityEntry[]>([])
+  const [activityLog, setActivityLog] = useState<ActivityEntry[]>([])
 
   const [search,         setSearch]         = useState('')
   const [moduleFilter,   setModuleFilter]   = useState('')
@@ -50,20 +83,26 @@ export default function Activity() {
   const [dateFilter,     setDateFilter]     = useState('all')
   const [currentPage,    setCurrentPage]    = useState(1)
   const [loading,        setLoading]        = useState(true)
-  useEffect(() => { setLoading(false) }, [])
+
+  useEffect(() => {
+    auditApi.list()
+      .then((data: any[]) => setActivityLog((data ?? []).map(mapAuditLog)))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   const filtered = useMemo(() => activityLog.filter(log => {
     const matchSearch   = !search || log.description.toLowerCase().includes(search.toLowerCase()) || log.user.toLowerCase().includes(search.toLowerCase())
     const matchModule   = !moduleFilter || log.module === moduleFilter
     const matchSeverity = !severityFilter || log.severity === severityFilter
-    const matchDate     = dateFilter === 'today' ? log.date === '2026-05-14' : true
+    const matchDate     = dateFilter === 'today' ? log.date === TODAY_ISO : true
     return matchSearch && matchModule && matchSeverity && matchDate
   }), [search, moduleFilter, severityFilter, dateFilter])
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1
   const paginated  = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
-  const todayCount    = activityLog.filter(l => l.date === '2026-05-14').length
+  const todayCount    = activityLog.filter(l => l.date === TODAY_ISO).length
   const dangerCount   = activityLog.filter(l => l.severity === 'danger').length
   const activeModules = new Set(activityLog.map(l => l.module)).size
   const hasFilters    = !!(search || moduleFilter || severityFilter || dateFilter !== 'all')

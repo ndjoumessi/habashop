@@ -1,11 +1,16 @@
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/stores/appStore'
-import { ExternalLink, Check } from 'lucide-react'
+import { ExternalLink, RotateCw, Globe } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+type PingState = 'checking' | 'ok' | 'slow' | 'error'
 
 interface Integration {
   id: string; name: string; desc: string
   color: string; status: 'connected' | 'disconnected'
   endpoint: string; lastCall: string; calls: number; docs: string
+  uptime: string
+  pingUrl: string
   features: string[]
   IconSvg: () => JSX.Element
 }
@@ -64,6 +69,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#FF6B35', status:'connected',
     endpoint:'api.anthropic.com', lastCall:'Il y a 2 min', calls:1847,
     docs:'https://docs.anthropic.com',
+    uptime:'99.9%', pingUrl:'https://api.anthropic.com',
     features:['Analyses IA temps réel', 'Recommandations personnalisées', 'Chat assistant intégré'],
     IconSvg: IconAnthropicSvg,
   },
@@ -73,6 +79,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#25D366', status:'connected',
     endpoint:'api.twilio.com', lastCall:'Il y a 15 min', calls:342,
     docs:'https://twilio.com/docs',
+    uptime:'99.9%', pingUrl:'https://api.twilio.com',
     features:['Tickets de caisse par WhatsApp', 'Campagnes marketing', 'Notifications clients'],
     IconSvg: IconTwilioSvg,
   },
@@ -82,6 +89,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#6C47FF', status:'connected',
     endpoint:'api.resend.com', lastCall:'Il y a 1h', calls:156,
     docs:'https://resend.com/docs',
+    uptime:'99.8%', pingUrl:'https://api.resend.com',
     features:['Email de bienvenue à l\'inscription', 'Rappels d\'essai J-7 / J-3', 'Rapport hebdomadaire automatique'],
     IconSvg: IconResendSvg,
   },
@@ -91,6 +99,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#4285F4', status:'connected',
     endpoint:'maps.googleapis.com', lastCall:'Il y a 5 min', calls:2103,
     docs:'https://developers.google.com/maps',
+    uptime:'99.9%', pingUrl:'https://maps.googleapis.com',
     features:['Autocomplete d\'adresses', 'Géocodage des clients', 'Carte interactive'],
     IconSvg: IconGoogleMapsSvg,
   },
@@ -100,6 +109,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#8E2DFF', status:'connected',
     endpoint:'habashop-production.up.railway.app', lastCall:'Continu', calls:999999,
     docs:'https://railway.app',
+    uptime:'99.9%', pingUrl:'https://habashop-production.up.railway.app',
     features:['PostgreSQL managé', 'Backend Node.js', 'Déploiement continu'],
     IconSvg: IconRailwaySvg,
   },
@@ -109,6 +119,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#E0E0E0', status:'connected',
     endpoint:'habashop.vercel.app', lastCall:'Continu', calls:999999,
     docs:'https://vercel.com',
+    uptime:'99.99%', pingUrl:'https://habashop.vercel.app',
     features:['CDN global', 'Déploiements preview', 'HTTPS automatique'],
     IconSvg: IconVercelSvg,
   },
@@ -118,6 +129,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#5A67D8', status:'connected',
     endpoint:'yamanote.proxy.rlwy.net', lastCall:'Continu', calls:8942,
     docs:'https://prisma.io',
+    uptime:'99.9%', pingUrl:'https://habashop-production.up.railway.app',
     features:['ORM type-safe', 'Migrations versionnées', 'Requêtes optimisées'],
     IconSvg: IconPrismaSvg,
   },
@@ -126,9 +138,54 @@ const INTEGRATIONS_LIST: Integration[] = [
 export default function Integrations() {
   const { lang } = useAppStore()
 
+  const [pingStatus, setPingStatus]   = useState<Record<string, PingState>>({})
+  const [pingLatency, setPingLatency] = useState<Record<string, number>>({})
+
+  const pingIntegration = async (id: string, url: string) => {
+    setPingStatus(s => ({ ...s, [id]: 'checking' }))
+    const start = Date.now()
+    try {
+      await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout(5000) })
+      const ms = Date.now() - start
+      setPingLatency(p => ({ ...p, [id]: ms }))
+      setPingStatus(s => ({ ...s, [id]: ms < 500 ? 'ok' : ms < 2000 ? 'slow' : 'error' }))
+    } catch {
+      setPingLatency(p => ({ ...p, [id]: 0 }))
+      setPingStatus(s => ({ ...s, [id]: 'error' }))
+    }
+  }
+
+  useEffect(() => {
+    INTEGRATIONS_LIST.forEach(itg => { pingIntegration(itg.id, itg.pingUrl) })
+  }, [])
+
+  function PingBadge({ id }: { id: string }) {
+    const status  = pingStatus[id] ?? 'checking'
+    const latency = pingLatency[id]
+    const configs: Record<PingState, { color: string; bg: string; label: string; dot: string }> = {
+      checking: { color: 'var(--text4)',  bg: 'var(--bg4)',          label: '...',         dot: 'var(--text4)' },
+      ok:       { color: 'var(--acc2)',    bg: 'rgba(0,208,132,.1)',  label: `${latency}ms`, dot: 'var(--acc2)' },
+      slow:     { color: 'var(--acc)',     bg: 'rgba(255,184,0,.1)',  label: `${latency}ms`, dot: 'var(--acc)' },
+      error:    { color: 'var(--danger)',  bg: 'rgba(255,59,92,.1)',  label: lang === 'fr' ? 'Injoignable' : lang === 'es' ? 'Inaccesible' : lang === 'it' ? 'Irraggiungibile' : 'Unreachable', dot: 'var(--danger)' },
+    }
+    const c = configs[status]
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: c.bg, color: c.color }}>
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: c.dot, boxShadow: status === 'ok' ? `0 0 5px ${c.dot}` : 'none', animation: status === 'checking' ? 'pulse 1s infinite' : 'none' }} />
+        {status === 'checking' ? (lang === 'fr' ? 'Vérification...' : lang === 'es' ? 'Verificando...' : lang === 'it' ? 'Verifica...' : 'Checking...') : c.label}
+      </span>
+    )
+  }
+
   const configure = (itg: Integration) => {
     toast.success(lang === 'fr' ? `${itg.name} est géré automatiquement par HabaShop` : lang === 'es' ? `${itg.name} es gestionado automáticamente por HabaShop` : lang === 'it' ? `${itg.name} è gestito automaticamente da HabaShop` : `${itg.name} is managed automatically by HabaShop`)
   }
+
+  const pingedIds   = Object.keys(pingStatus)
+  const okCount     = pingedIds.filter(id => pingStatus[id] === 'ok' || pingStatus[id] === 'slow').length
+  const anyError    = pingedIds.some(id => pingStatus[id] === 'error')
+  const allChecked  = pingedIds.length === INTEGRATIONS_LIST.length && pingedIds.every(id => pingStatus[id] !== 'checking')
+  const allOk       = allChecked && !anyError
 
   const totalConnected = INTEGRATIONS_LIST.length
   const totalCalls     = INTEGRATIONS_LIST.reduce((acc, i) => acc + Math.min(i.calls, 100000), 0)
@@ -186,6 +243,25 @@ export default function Integrations() {
         ))}
       </div>
 
+      {/* ── Barre de santé globale ── */}
+      <div style={{
+        display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:12,
+        background: allOk ? 'rgba(0,208,132,.06)' : anyError ? 'rgba(255,59,92,.06)' : 'var(--bg3)',
+        border: `1px solid ${allOk ? 'rgba(0,208,132,.2)' : anyError ? 'rgba(255,59,92,.2)' : 'var(--border)'}`,
+      }}>
+        <div style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, background: allOk ? 'var(--acc2)' : anyError ? 'var(--danger)' : 'var(--acc)', boxShadow: allOk ? '0 0 8px var(--acc2)' : 'none' }} />
+        <span style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>
+          {allOk
+            ? (lang === 'fr' ? 'Tous les services opérationnels' : lang === 'es' ? 'Todos los servicios operativos' : lang === 'it' ? 'Tutti i servizi operativi' : 'All services operational')
+            : anyError
+            ? (lang === 'fr' ? 'Certains services sont injoignables' : lang === 'es' ? 'Algunos servicios no responden' : lang === 'it' ? 'Alcuni servizi non rispondono' : 'Some services are unreachable')
+            : (lang === 'fr' ? 'Vérification en cours...' : lang === 'es' ? 'Verificando...' : lang === 'it' ? 'Verifica in corso...' : 'Checking...')}
+        </span>
+        <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>
+          {okCount}/{INTEGRATIONS_LIST.length} OK
+        </span>
+      </div>
+
       {/* ── Grid intégrations ── */}
       <div style={{
         display:'grid',
@@ -220,35 +296,38 @@ export default function Integrations() {
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', marginBottom:5 }}>{itg.name}</div>
-                    <span style={{
-                      display:'inline-flex', alignItems:'center', gap:4,
-                      padding:'3px 9px', borderRadius:99, fontSize:10, fontWeight:700,
-                      background: isActive ? 'rgba(0,208,132,.12)' : 'rgba(136,136,168,.1)',
-                      color: isActive ? 'var(--acc2)' : 'var(--text3)',
-                      border: isActive ? '1px solid rgba(0,208,132,.25)' : '1px solid var(--border)',
-                    }}>
-                      <span style={{ width:5, height:5, borderRadius:'50%', background: isActive ? 'var(--acc2)' : 'var(--text4)', boxShadow: isActive ? '0 0 6px var(--acc2)' : 'none' }} />
-                      {isActive
-                        ? (lang === 'fr' ? 'Actif' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Active')
-                        : (lang === 'fr' ? 'Inactif' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactive')}
-                    </span>
+                    <PingBadge id={itg.id} />
                   </div>
+                  <button type="button" onClick={() => pingIntegration(itg.id, itg.pingUrl)}
+                    title={lang === 'fr' ? 'Tester la connexion' : lang === 'es' ? 'Probar conexión' : lang === 'it' ? 'Testa connessione' : 'Test connection'}
+                    aria-label={`${lang === 'fr' ? 'Tester' : lang === 'es' ? 'Probar' : lang === 'it' ? 'Testa' : 'Test'} ${itg.name}`}
+                    style={{ width:28, height:28, borderRadius:8, flexShrink:0, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <RotateCw size={12} style={{ animation: pingStatus[itg.id] === 'checking' ? 'spin .8s linear infinite' : 'none' }} />
+                  </button>
                 </div>
 
                 {/* Description */}
-                <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, margin:'0 0 14px' }}>{itg.desc}</p>
+                <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, margin:'0 0 12px' }}>{itg.desc}</p>
 
-                {/* Features */}
-                {itg.features.length > 0 && (
-                  <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                    {itg.features.slice(0, 3).map((f, idx) => (
-                      <div key={idx} style={{ display:'flex', alignItems:'center', gap:7, fontSize:11, color:'var(--text3)' }}>
-                        <Check size={12} strokeWidth={3} style={{ color:'var(--acc2)', flexShrink:0 }} />
-                        {f}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {/* Stats API */}
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:10 }}>
+                  {[
+                    { label: lang === 'fr' ? 'Appels/mois' : 'Calls/mo', value: itg.calls > 100000 ? '∞' : itg.calls.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US') },
+                    { label: 'Uptime', value: itg.uptime },
+                    { label: lang === 'fr' ? 'Latence' : 'Latency', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—' },
+                  ].map(stat => (
+                    <div key={stat.label} style={{ background:'var(--bg3)', borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
+                      <div style={{ fontSize:12, fontWeight:800, color:'var(--text)', fontFamily:'var(--mono)' }}>{stat.value}</div>
+                      <div style={{ fontSize:9, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.4px', marginTop:2 }}>{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Endpoint */}
+                <div style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 10px', background:'var(--bg4)', borderRadius:7, border:'1px solid var(--border)', fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)' }}>
+                  <Globe size={10} style={{ flexShrink:0 }} />
+                  <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{itg.endpoint}</span>
+                </div>
               </div>
 
               {/* Footer */}

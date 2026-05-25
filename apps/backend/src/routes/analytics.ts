@@ -177,4 +177,19 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       generatedAt: new Date().toISOString(),
     }
   })
+
+  app.get('/api/audit-logs', { preHandler: authenticate }, async (request) => {
+    const { tenantId } = request.user
+    try {
+      return await prisma.auditLog.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        include: { user: { select: { name: true } } },
+      })
+    } catch (err) {
+      console.error('Get audit-logs error:', err)
+      return []
+    }
+  })
 }

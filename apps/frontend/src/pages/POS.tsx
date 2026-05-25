@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, formatCurrency, t, convertAmount, formatInCurrency } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -13,7 +14,7 @@ import { confirm } from '@/lib/confirm'
 import POSProductGrid from '@/components/pos/POSProductGrid'
 import POSCart from '@/components/pos/POSCart'
 import POSModals from '@/components/pos/POSModals'
-import { PRODUCTS, type PosProduct, type CartItem, CASHIER_TEXTS } from '@/components/pos/posShared'
+import { type PosProduct, type CartItem, CASHIER_TEXTS } from '@/components/pos/posShared'
 
 export default function POS() {
   const {
@@ -35,7 +36,9 @@ export default function POS() {
   const locale = LOCALE_MAP[lang] ?? 'fr-FR'
   const ct = CASHIER_TEXTS[lang as keyof typeof CASHIER_TEXTS] ?? CASHIER_TEXTS.fr
 
-  const [posProducts, setPosProducts] = useState<PosProduct[]>(PRODUCTS)
+  const navigate = useNavigate()
+  const [posProducts, setPosProducts] = useState<PosProduct[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(true)
 
   useEffect(() => {
     productsApi.list()
@@ -53,6 +56,7 @@ export default function POS() {
         promotionEnd: p.promotionEnd?.split('T')[0] ?? '',
       }))))
       .catch(() => {})
+      .finally(() => setLoadingProducts(false))
   }, [])
 
   const [cart, setCart]           = useState<CartItem[]>([])
@@ -116,7 +120,7 @@ export default function POS() {
 
   const handleScan = (barcode: string) => {
     setShowScanner(false)
-    const found = PRODUCTS.find(p =>
+    const found = posProducts.find(p =>
       p.name.toLowerCase().includes(barcode.toLowerCase()) ||
       String(p.id) === barcode
     )
@@ -474,6 +478,8 @@ export default function POS() {
           loadingHistory={loadingHistory}
           salesHistory={salesHistory}
           isMobile={isMobile} mobileView={mobileView}
+          totalProducts={posProducts.length} loadingProducts={loadingProducts}
+          navigate={navigate}
         />
 
         {/* Séparateur vertical */}

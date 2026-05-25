@@ -147,7 +147,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
             }}>H</div>
             <div>
               <div style={{ fontSize:16, fontWeight:800, color:'#fff' }}>
-                HabaShop — Dakar Central
+                HabaShop
               </div>
               <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginTop:2 }}>
                 Bulletin de Paie — {record.month}

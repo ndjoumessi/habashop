@@ -231,3 +231,7 @@ export const cronApi = {
 export const alertsApi = {
   lowStock: () => api.get<any[]>('/api/products/low-stock'),
 }
+
+export const auditApi = {
+  list: () => api.get<any[]>('/api/audit-logs'),
+}

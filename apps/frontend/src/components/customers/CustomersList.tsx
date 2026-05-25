@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
@@ -38,6 +39,7 @@ interface CustomersListProps {
 }
 
 export default function CustomersList({ customers, search, setSearch, typeFilter, setTypeFilter, viewMode, setViewMode, pg, filtered, fmt, abbr, lang, i, navigate, printCustomersPDF, setViewCustomer, setEditCustomer, setEditCustForm, setCustEditMode, setShowEditCustModal, setLoyaltyCustomer, setDetailCustomer, setShowDetailModal, onDelete }: CustomersListProps) {
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   return (
     <div className="panel">
         <div className="panel-head">
@@ -149,159 +151,116 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
           </div>
         )}
 
-        {/* Vue grille — cartes clients UI/UX Pro Max */}
+        {/* Vue grille — cartes clients interactives */}
         {viewMode === 'grid' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14, padding: '4px 2px' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(270px,1fr))', gap:12, padding:'2px' }}>
             {pg.paginated.map(c => {
-              const cfg      = CARD_TYPE[c.type] ?? CARD_TYPE['Détail']
+              const cfg = CARD_TYPE[c.type] ?? CARD_TYPE['Détail']
               const initials = c.name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
-              const totalCA  = c.totalCA ?? 0
-              const points   = c.loyaltyPoints ?? 0
+              const isSel = selectedId === c.id
+              const openDetail = () => { setSelectedId(c.id); setDetailCustomer(c); setShowDetailModal(true) }
               return (
                 <div key={c.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => { setDetailCustomer(c); setShowDetailModal(true) }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailCustomer(c); setShowDetailModal(true) }
-                  }}
+                  role="button" tabIndex={0}
+                  onClick={openDetail}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail() } }}
                   aria-label={`${i('Client', 'Customer', 'Cliente', 'Cliente')} ${c.name}`}
+                  aria-pressed={isSel}
                   style={{
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 16, cursor: 'pointer',
-                    transition: 'all .18s ease', overflow: 'hidden',
-                    display: 'flex', flexDirection: 'column', position: 'relative',
+                    background: isSel ? 'linear-gradient(135deg,rgba(108,71,255,.08),rgba(108,71,255,.03))' : 'var(--card)',
+                    border: isSel ? '1.5px solid var(--p2)' : '1px solid var(--border)',
+                    borderRadius:16, overflow:'hidden', cursor:'pointer', transition:'all .2s ease',
+                    display:'flex', flexDirection:'column', position:'relative',
                   }}
-                  onMouseEnter={e => {
-                    const el = e.currentTarget as HTMLElement
-                    el.style.transform = 'translateY(-3px)'
-                    el.style.boxShadow = '0 12px 32px rgba(0,0,0,.4)'
-                    el.style.borderColor = 'var(--border3)'
-                  }}
-                  onMouseLeave={e => {
-                    const el = e.currentTarget as HTMLElement
-                    el.style.transform = ''
-                    el.style.boxShadow = ''
-                    el.style.borderColor = 'var(--border)'
-                  }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = '0 16px 40px rgba(0,0,0,.35)'; el.style.borderColor = isSel ? 'var(--p)' : 'var(--border3)'; const f = el.querySelector('.card-footer') as HTMLElement; if (f) f.style.maxHeight = '52px' }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = ''; el.style.borderColor = isSel ? 'var(--p2)' : 'var(--border)'; const f = el.querySelector('.card-footer') as HTMLElement; if (f) f.style.maxHeight = '0' }}
                 >
-                  {/* Bande couleur type client */}
-                  <div style={{ height: 4, background: cfg.grad, flexShrink: 0 }} />
+                  {/* Bande couleur type */}
+                  <div style={{ height:3, flexShrink:0, background: cfg.grad }} />
 
                   {/* Corps */}
-                  <div style={{ padding: '16px 16px 14px', flex: 1 }}>
-                    {/* Avatar + Nom + Badge type */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+                  <div style={{ padding:'14px 16px 12px', flex:1 }}>
+                    {/* Avatar + Nom + Type + Points */}
+                    <div style={{ display:'flex', gap:11, alignItems:'flex-start', marginBottom:11 }}>
                       <div style={{
-                        width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
-                        background: cfg.avatar,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,.25)',
-                      }}>
-                        {initials}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 5 }}>
-                          {c.name}
-                        </div>
+                        width:42, height:42, borderRadius:12, flexShrink:0, background: cfg.avatar,
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:15, fontWeight:800, color:'#fff', letterSpacing:'-0.5px', boxShadow:'0 4px 10px rgba(0,0,0,.2)',
+                      }}>{initials}</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:800, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:5, lineHeight:1.3 }}>{c.name}</div>
                         <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          padding: '3px 9px', borderRadius: 99,
-                          fontSize: 10, fontWeight: 700, letterSpacing: '.3px',
+                          display:'inline-flex', alignItems:'center', gap:3, padding:'2px 8px', borderRadius:99,
+                          fontSize:9, fontWeight:800, letterSpacing:'.4px', textTransform:'uppercase',
                           background: cfg.badgeBg, color: cfg.badgeColor, border: cfg.badgeBorder,
-                        }}>
-                          {typeLabel(c.type, lang)}
-                        </span>
+                        }}>{typeLabel(c.type, lang)}</span>
                       </div>
+                      {(c.loyaltyPoints ?? 0) > 0 && (
+                        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', background:'rgba(255,184,0,.1)', border:'1px solid rgba(255,184,0,.2)', borderRadius:8, padding:'4px 7px', flexShrink:0 }}>
+                          <Star size={12} fill="#FFB800" stroke="#FFB800" />
+                          <span style={{ fontSize:9, fontWeight:800, color:'#FFB800', fontFamily:'var(--mono)', marginTop:1 }}>{c.loyaltyPoints}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Séparateur */}
-                    <div style={{ height: 1, background: 'var(--border)', margin: '0 0 12px' }} />
+                    <div style={{ height:1, background:'var(--border)', margin:'0 0 10px' }} />
 
-                    {/* Métriques */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-                      <div style={{ background: 'var(--bg3)', borderRadius: 10, padding: '8px 10px' }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 3 }}>{i('CA Total', 'Revenue', 'Ingresos', 'Fatturato')}</div>
-                        <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {fmt(totalCA)}
-                        </div>
+                    {/* CA + Achats */}
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:7, marginBottom:10 }}>
+                      <div style={{ background:'var(--bg3)', borderRadius:9, padding:'7px 10px' }}>
+                        <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:2 }}>{i('CA Total', 'Revenue', 'Ingresos', 'Fatturato')}</div>
+                        <div style={{ fontSize:12, fontWeight:900, color:'var(--acc)', fontFamily:'var(--mono)', letterSpacing:'-0.3px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{fmt(c.totalCA ?? 0)}</div>
                       </div>
-                      <div style={{ background: 'var(--bg3)', borderRadius: 10, padding: '8px 10px' }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 3 }}>{i('Fidélité', 'Loyalty', 'Fidelidad', 'Fedeltà')}</div>
-                        <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Star size={12} fill="#FFB800" stroke="#FFB800" style={{ flexShrink: 0 }} /> {points}
-                          <span style={{ fontSize: 9, fontWeight: 600, color: 'var(--text3)' }}>pts</span>
-                        </div>
+                      <div style={{ background:'var(--bg3)', borderRadius:9, padding:'7px 10px' }}>
+                        <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:2 }}>{i('Achats', 'Orders', 'Compras', 'Acquisti')}</div>
+                        <div style={{ fontSize:12, fontWeight:900, color:'var(--text2)', fontFamily:'var(--mono)' }}>{c.purchasesPerMonth ?? 0}<span style={{ fontSize:9, color:'var(--text4)', fontWeight:400, marginLeft:3 }}>{i('cmd.', 'ord.', 'ped.', 'ord.')}</span></div>
                       </div>
                     </div>
 
-                    {/* Téléphone + Email */}
+                    {/* Téléphone */}
                     {c.phone && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--text2)', marginBottom: c.email ? 5 : 0 }}>
-                        <Phone size={12} style={{ color: 'var(--text3)', flexShrink: 0 }} />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.phone}</span>
+                      <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:12, color:'var(--text2)', marginBottom:5 }}>
+                        <Phone size={11} style={{ color:'var(--text4)', flexShrink:0 }} />
+                        <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.phone}</span>
                       </div>
                     )}
-                    {c.email && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--text2)', marginBottom: c.address ? 5 : 0 }}>
-                        <Mail size={12} style={{ color: 'var(--text3)', flexShrink: 0 }} />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11, color: 'var(--text3)' }}>{c.email}</span>
-                      </div>
-                    )}
+
+                    {/* Adresse */}
                     {c.address && (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 11, color: 'var(--text3)', marginTop: (c.phone || c.email) ? 0 : 0, lineHeight: 1.4 }}>
-                        <MapPin size={12} style={{ color: 'var(--text4)', flexShrink: 0, marginTop: 1 }} />
-                        <span style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{c.address}</span>
+                      <div style={{ display:'flex', alignItems:'flex-start', gap:7, padding:'7px 9px', background:'rgba(255,255,255,.03)', border:'1px solid var(--border)', borderRadius:8, marginTop: c.phone ? 5 : 0 }}>
+                        <MapPin size={11} style={{ color:'var(--text4)', flexShrink:0, marginTop:1 }} />
+                        <div style={{ fontSize:11, color:'var(--text2)', lineHeight:1.5, flex:1, minWidth:0 }}>
+                          <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500 }}>{c.address}</div>
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Footer — Actions */}
-                  <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={e => { e.stopPropagation(); setDetailCustomer(c); setShowDetailModal(true) }}
-                      aria-label={`${i('Voir détails de', 'View details of', 'Ver detalles de', 'Vedi dettagli di')} ${c.name}`}
-                      style={{
-                        flex: 1, padding: '7px 0',
-                        background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.2)',
-                        borderRadius: 8, fontSize: 11, fontWeight: 700, color: 'var(--p3)',
-                        cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s ease',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, minHeight: 32,
-                      }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(108,71,255,.2)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(108,71,255,.1)' }}
-                    >
-                      <Eye size={12} /> {lang === 'fr' ? 'Détails' : lang === 'es' ? 'Detalles' : lang === 'it' ? 'Dettagli' : 'Details'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={e => { e.stopPropagation(); onDelete(c.id) }}
-                      aria-label={`${i('Supprimer', 'Delete', 'Eliminar', 'Elimina')} ${c.name}`}
-                      style={{
-                        width: 32, height: 32, borderRadius: 8,
-                        background: 'rgba(255,59,92,.08)', border: '1px solid rgba(255,59,92,.2)',
-                        color: 'var(--danger)', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all .15s ease', flexShrink: 0,
-                      }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,59,92,.18)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,59,92,.08)' }}
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                  {/* Footer révélé au hover */}
+                  <div className="card-footer" style={{ maxHeight:0, overflow:'hidden', transition:'max-height .2s ease', borderTop:'1px solid var(--border)', background:'var(--bg3)' }}>
+                    <div style={{ padding:'10px 14px', display:'flex', gap:7 }}>
+                      <button type="button" onClick={e => { e.stopPropagation(); openDetail() }}
+                        aria-label={`${i('Voir', 'View', 'Ver', 'Vedi')} ${c.name}`}
+                        style={{ flex:1, height:32, borderRadius:8, background:'rgba(108,71,255,.1)', border:'1px solid rgba(108,71,255,.2)', color:'var(--p3)', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
+                        <Eye size={11} /> {lang === 'fr' ? 'Détails' : lang === 'en' ? 'Details' : lang === 'es' ? 'Detalles' : 'Dettagli'}
+                      </button>
+                      <button type="button" onClick={e => { e.stopPropagation(); onDelete(c.id) }}
+                        aria-label={`${i('Supprimer', 'Delete', 'Eliminar', 'Elimina')} ${c.name}`}
+                        style={{ width:32, height:32, borderRadius:8, flexShrink:0, background:'rgba(255,59,92,.08)', border:'1px solid rgba(255,59,92,.2)', color:'var(--danger)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
             })}
             {filtered.length === 0 && (
-              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 0', color: 'var(--text3)', fontSize: 14 }}>{i('Aucun client trouvé', 'No customer found', 'Ningún cliente encontrado', 'Nessun cliente trovato')}</div>
+              <div style={{ gridColumn:'1/-1', textAlign:'center', padding:'48px 0', color:'var(--text3)', fontSize:14 }}>{i('Aucun client trouvé', 'No customer found', 'Ningún cliente encontrado', 'Nessun cliente trovato')}</div>
             )}
           </div>
         )}
-        <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} onPage={pg.onPage} onPageSize={pg.onSize} lang={lang} />
+                <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} onPage={pg.onPage} onPageSize={pg.onSize} lang={lang} />
     </div>
   )
 }

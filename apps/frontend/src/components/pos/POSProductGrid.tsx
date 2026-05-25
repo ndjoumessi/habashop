@@ -1,6 +1,6 @@
 import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History } from 'lucide-react'
 import { t } from '@/stores/appStore'
-import { CATS, PRODUCTS, type PosProduct, type CartItem } from '@/components/pos/posShared'
+import { CATS, type PosProduct, type CartItem } from '@/components/pos/posShared'
 
 interface POSProductGridProps {
   posTab: 'pos' | 'history'; setPosTab: (v: any) => void; fetchHistory: () => void
@@ -20,9 +20,11 @@ interface POSProductGridProps {
   loadingHistory: boolean
   salesHistory: any[]
   isMobile: boolean; mobileView: string
+  totalProducts: number; loadingProducts: boolean
+  navigate: (path: string, opts?: any) => void
 }
 
-export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, isMobile, mobileView }: POSProductGridProps) {
+export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
   return (
         <div style={{
           flex: 1,
@@ -173,7 +175,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
               }}><X size={11} /> Annuler remise</button>
             )}
             <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
-              <Tag size={11} /> {PRODUCTS.filter(p => p.promotion).length} promotions actives
+              <Tag size={11} /> {filtered.filter(p => p.promotion).length} promotions actives
             </div>
           </div>}
 
@@ -309,15 +311,24 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
               })}
 
               {filtered.length === 0 && (
-                <div style={{
-                  gridColumn: '1 / -1',
-                  textAlign: 'center',
-                  padding: '60px 20px',
-                  color: 'var(--text3)',
-                  fontSize: 14,
-                }}>
-                  {t('pos_not_found')}
-                </div>
+                totalProducts === 0 && !loadingProducts ? (
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>
+                      {lang === 'fr' ? 'Aucun produit en stock' : lang === 'es' ? 'Sin productos en stock' : lang === 'it' ? 'Nessun prodotto in stock' : 'No products in stock'}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16, maxWidth: 280 }}>
+                      {lang === 'fr' ? 'Ajoutez vos produits dans Stock pour commencer à vendre.' : lang === 'es' ? 'Agregue productos en Stock para comenzar a vender.' : lang === 'it' ? 'Aggiungi prodotti in Stock per iniziare a vendere.' : 'Add products in Stock to start selling.'}
+                    </div>
+                    <button type="button" onClick={() => navigate('/app/stock')} className="topbar-btn" style={{ fontSize: 13 }}>
+                      {lang === 'fr' ? '+ Ajouter des produits' : lang === 'es' ? '+ Agregar productos' : lang === 'it' ? '+ Aggiungi prodotti' : '+ Add products'}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'var(--text3)', fontSize: 14 }}>
+                    {t('pos_not_found')}
+                  </div>
+                )
               )}
             </div>
           </div>}

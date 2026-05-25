@@ -285,10 +285,10 @@ export default function Marketing() {
         gap: 10, marginBottom: 18,
       }}>
         {[
-          { label: lang === 'fr' ? 'Envoyés ce mois' : 'Sent this month', value: result?.sent ?? 842,    color:'#25D366' },
-          { label: lang === 'fr' ? 'Taux de lecture'  : 'Read rate',       value: '94%',                 color:'var(--acc2)'  },
-          { label: lang === 'fr' ? 'Réponses reçues'  : 'Replies',         value: 127,                   color:'var(--p2)'    },
-          { label: lang === 'fr' ? 'Contacts actifs'  : 'Active contacts', value: customers.length || 5, color:'var(--acc)'   },
+          { label: lang === 'fr' ? 'Envoyés ce mois' : 'Sent this month', value: result?.sent ?? 0,     color:'#25D366' },
+          { label: lang === 'fr' ? 'Taux de lecture'  : 'Read rate',       value: '—',                   color:'var(--acc2)'  },
+          { label: lang === 'fr' ? 'Réponses reçues'  : 'Replies',         value: '—',                   color:'var(--p2)'    },
+          { label: lang === 'fr' ? 'Contacts actifs'  : 'Active contacts', value: customers.length,      color:'var(--acc)'   },
         ].map(k => (
           <div key={k.label} style={{
             background: 'var(--card)', border: '1px solid var(--border)',
