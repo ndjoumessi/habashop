@@ -3,6 +3,21 @@
 Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/).
 Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités codées-mais-non-déployées ou planifiées sont signalées explicitement.
 
+## [2.3.3] — 2026-05-25 — Architecture frontend : découpe de `Stock.tsx`
+
+> Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
+
+### ♻️ Découpe de `Stock.tsx`
+- `Stock.tsx` : **940 → 264 lignes** (page conteneur : imports, état, effets, handlers `saveProduct`/`resetForm`, layout + délégation du rendu).
+- JSX extrait **à l'identique** (script de découpe, zéro réécriture) dans `src/components/stock/` :
+  - **`StockInventory.tsx`** (239 l.) — panel inventaire : toolbar (export CSV/PDF, étiquettes, ajout), filtres, vue grille + vue liste, pagination.
+  - **`StockModals.tsx`** (507 l.) — modale produit (3 onglets : Général / Prix & Stock / Avancé) + scanner code-barres + modale catégorie + modale étiquettes.
+- **`stockShared.tsx`** (32 l.) — module partagé (type `ProductItem`, `PRODUCTS_INIT`, `CATEGORIES_INIT`, helper `statusOf`) — évite tout import circulaire ; état/handlers passés en **props typées**.
+- Gardés **inline** dans `Stock.tsx` : header, alerte rupture, KPIs, et le panel **Catégories** (petit ; son bouton ouvre la modale catégorie de `StockModals`).
+- **Vérifié** : `tsc` clean (du premier coup), **43/43** tests unitaires, build OK. Smoke Playwright (`e2e/stock.spec.ts`) sur **preview local du build** puis sur **prod live** — rendu page, ouverture des modales produit / étiquettes / catégorie ; probe étendu sur **données réelles** (édition produit depuis la liste → modale, bascule vue grille) **sans erreur runtime**.
+
+> Couverture honnête : le smoke + probe vérifient le **rendu** des modales/vues et l'absence d'erreur JS, pas les flux d'écriture de bout en bout (création/édition produit persistées, impression d'étiquettes) — qui compilent et s'affichent sans erreur mais n'ont pas été exercés en aller-retour serveur.
+
 ## [2.3.2] — 2026-05-25 — Architecture frontend : découpe de `Customers.tsx`
 
 > Déployé et **vérifié en production** (frontend Vercel). Refactor interne — **aucun changement de comportement**.
