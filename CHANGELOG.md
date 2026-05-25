@@ -30,12 +30,12 @@ Ce changelog reflète **ce qui est réellement livré** ; les fonctionnalités c
 - **Frontend** : **22 → 43** (`components.test.tsx` : `useI18n`, conversions de devises, `usePagination`, logique billing/thèmes/onboarding).
 - Séparation **unit vs intégration** : `npm test` = unitaires seulement (hors ligne) ; `npm run test:integration` via `vitest.integration.config.ts` (timeout réseau 30 s).
 - **Couverture** : `@vitest/coverage-v8` (back + front), `test:coverage` — **rapport seul, pas de seuil bloquant** (les routes sont couvertes par l'intégration distante, non instrumentée). Mesuré : hooks/stores front ~47 % (`useI18n` 92 %, `usePagination` 100 %, `appStore` 76 %).
-- **E2E Playwright** : `e2e/smoke.spec.ts` (9 tests prod) + `playwright.config.ts` + scripts `e2e` ; **3 tests publics (sans login) passent en prod** (les 6 connectés sont écrits mais non lancés — rate-limit login 10/15 min).
+- **E2E Playwright** : `e2e/smoke.spec.ts` (**9 tests prod, 9/9 ✓** : pages publiques + flux login/dashboard/sidebar/POS/settings/super-admin) + `playwright.config.ts` + scripts `e2e`.
 
 ### ⚙️ DevOps & monitoring (additif)
 - `GET /api/health-extended` enrichi : **latence DB**, uptime, **mémoire** (heap), statut des services (redis/whatsapp/ai) — `status`/`tables` conservés (rétrocompatible).
 - Filets de sécurité process : `unhandledRejection` (log, pas de crash en prod) + `uncaughtException`.
-- **CI/CD** (`ci.yml`) : 6 jobs — unit backend, unit frontend + **contrôle de taille de bundle (< 100 KB gzip)**, scan sécurité (secrets + fallback JWT + `npm audit`), tests d'intégration (lecture seule, sur `main`), résumé + health check prod, **`notify-failure`** (alerte Discord en cas d'échec). Installation **workspaces depuis la racine** (lockfile racine — pas de lockfile par app).
+- **CI/CD** (`ci.yml`) : **7 jobs** — unit backend, unit frontend + **contrôle de taille de bundle (< 100 KB gzip)**, scan sécurité (secrets + fallback JWT + `npm audit`), tests d'intégration (lecture seule, sur `main`), **E2E Playwright** (chromium + 9 tests prod, sur `main`, rapport HTML en artefact), résumé + health check prod, **`notify-failure`** (alerte Discord). Installation **workspaces depuis la racine** (lockfile racine — pas de lockfile par app). **CI vérifiée verte** (run complet incluant le job E2E).
 - **Sentry** : `@sentry/react` (front : `ErrorBoundary` + UI de repli) + `@sentry/node` (back : `captureException` sur 5xx ; P2025→404 et format de réponse **conservés**) — **inerte sans DSN** (`VITE_SENTRY_DSN` / `SENTRY_DSN`). Alertes webhook Discord/Slack (`sendAlert`, `ALERT_WEBHOOK_URL`) au crash.
 
 ### 🧹 Qualité de code
