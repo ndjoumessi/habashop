@@ -23,7 +23,7 @@ const PAYMENT_METHODS: { id: string; icon: string; name: string; color: string; 
 export default function UpgradePlan() {
   const navigate = useNavigate()
   const lang = useAppStore(s => s.lang)
-  const i = useI18n()
+  const { i } = useI18n()
   const L = (o: L4) => o[lang] ?? o.fr
 
   const [step, setStep] = useState<Step>('plan')

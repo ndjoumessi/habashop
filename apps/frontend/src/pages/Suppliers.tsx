@@ -131,7 +131,7 @@ export default function Suppliers() {
   const navigate = useNavigate()
   const { lang } = useConfig()
   const fmt = useFormatAmount()
-  const i = useI18n()
+  const { i } = useI18n()
   const statusLabel = (s: SupplierStatus) => STATUS_LABELS[s]?.[lang as L4] ?? s
 
   const [suppliers, setSuppliers] = useState(SUPPLIERS_INIT)

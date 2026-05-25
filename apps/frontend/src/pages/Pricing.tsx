@@ -75,7 +75,7 @@ export default function Pricing() {
   const lang = useAppStore(s => s.lang) as L4
   const currency = useAppStore(s => s.currency)
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
-  const i = useI18n()
+  const { i } = useI18n()
 
   const handleCTA = (planId: string) => {
     if (planId === 'enterprise') { window.open('mailto:contact@habashop.com', '_blank'); return }

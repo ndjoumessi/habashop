@@ -32,7 +32,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate()
   const lang = useAppStore(s => s.lang)
   const fmt = useFormatAmount()
-  const i = useI18n()
+  const { i } = useI18n()
 
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [stats, setStats] = useState<any>(null)

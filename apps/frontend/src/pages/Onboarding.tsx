@@ -25,7 +25,7 @@ export default function Onboarding() {
   })
 
   const lang = form.language
-  const i = useI18n()
+  const { i } = useI18n()
   const set = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }))
 
   const handleFinish = async () => {

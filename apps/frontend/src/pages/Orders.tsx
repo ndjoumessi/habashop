@@ -153,7 +153,7 @@ function mapApiOrder(o: any): Order {
 
 export default function Orders() {
   const { lang } = useConfig()
-  const i = useI18n()
+  const { i } = useI18n()
   void lang
   const fmt = useFormatAmount()
   const [orders, setOrders] = useState<Order[]>(ORDERS_INIT)

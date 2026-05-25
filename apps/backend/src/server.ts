@@ -10,6 +10,21 @@ import bcrypt from 'bcryptjs'
 import twilio from 'twilio'
 import Anthropic from '@anthropic-ai/sdk'
 import { CronJob } from 'cron'
+import type { JWTPayload, LoginBody, RegisterBody, BillingBody } from './types'
+
+// Typage du JWT : request.user = payload signé (voir types.ts)
+declare module '@fastify/jwt' {
+  interface FastifyJWT {
+    payload: JWTPayload
+    user: JWTPayload
+  }
+}
+// request.tenantId injecté par le middleware authenticate
+declare module 'fastify' {
+  interface FastifyRequest {
+    tenantId?: string
+  }
+}
 
 // ─── Validation des variables d'environnement obligatoires ───
 const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET']
@@ -133,19 +148,19 @@ new CronJob('0 8 * * *', sendMorningStockAlert, null, true, 'Africa/Dakar')
 console.log('⏰ Cron jobs planifiés : résumé 20h + alertes 8h')
 
 // ─── MIDDLEWARE AUTH ──────────────────
-async function authenticate(request: any, reply: any) {
+async function authenticate(request, reply) {
   try {
     await request.jwtVerify()
-    request.tenantId = (request.user as any)?.tenantId
+    request.tenantId = (request.user)?.tenantId
   } catch {
     reply.code(401).send({ error: 'Non autorisé' })
   }
 }
 
-async function authenticateAdmin(request: any, reply: any) {
+async function authenticateAdmin(request, reply) {
   try {
     await request.jwtVerify()
-    if ((request.user as any).role !== 'SUPER_ADMIN') {
+    if ((request.user).role !== 'SUPER_ADMIN') {
       return reply.code(403).send({ error: 'Accès refusé — SUPER_ADMIN requis' })
     }
   } catch {
@@ -276,7 +291,7 @@ async function start() {
       },
     },
   }, async (request, reply) => {
-    const { email, password } = request.body as any
+    const { email, password } = request.body as LoginBody
 
     const user = await prisma.user.findUnique({ where: { email } })
     if (!user) return reply.code(401).send({ error: 'Email ou mot de passe incorrect' })
@@ -320,7 +335,7 @@ async function start() {
       },
     },
   }, async (request, reply) => {
-    const { name, ownerName, email, password, shopName, currency, country, language, phone } = request.body as any
+    const { name, ownerName, email, password, shopName, currency, country, language, phone } = request.body as RegisterBody
     const resolvedName = name ?? ownerName ?? shopName
 
     const existing = await prisma.user.findUnique({ where: { email } })
@@ -361,7 +376,7 @@ async function start() {
   })
 
   app.get('/api/auth/me', { preHandler: authenticate }, async (request) => {
-    const { userId } = request.user as any
+    const { userId } = request.user
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { tenant: true },
@@ -382,12 +397,12 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/products', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.product.findMany({ where: { tenantId }, orderBy: { name: 'asc' } })
   })
 
   app.post('/api/products', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const {
       sku, name, category, buyPrice, sellPrice,
       stockQty, stockMin, unit, emoji, taxRate,
@@ -434,20 +449,20 @@ async function start() {
   })
 
   app.put('/api/products/:id', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     return prisma.product.update({ where: { id, tenantId }, data: request.body as any })
   })
 
   app.delete('/api/products/:id', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     await prisma.product.delete({ where: { id, tenantId } })
     return { success: true }
   })
 
   app.get('/api/products/low-stock', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const products = await prisma.product.findMany({ where: { tenantId, isActive: true } })
     return products.filter((p: any) => p.stockQty <= p.stockMin)
   })
@@ -457,7 +472,7 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/tenant', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.tenant.findUnique({ where: { id: tenantId } })
   })
 
@@ -489,7 +504,7 @@ async function start() {
     return users.map(({ passwordHash, twoFASecret, ...u }) => u)
   })
 
-  app.post('/api/tenant/users', { preHandler: authenticate }, async (request: any, reply: any) => {
+  app.post('/api/tenant/users', { preHandler: authenticate }, async (request, reply) => {
     const { name, email, password, role } = request.body as any
     if (!name?.trim() || !email?.trim() || !password) {
       return reply.code(400).send({ error: 'Nom, email et mot de passe requis' })
@@ -515,7 +530,7 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/sales', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { limit = 50, offset = 0 } = request.query as any
     return prisma.sale.findMany({
       where: { tenantId },
@@ -527,7 +542,7 @@ async function start() {
   })
 
   app.post('/api/sales', { preHandler: authenticate }, async (request) => {
-    const { tenantId, userId } = request.user as any
+    const { tenantId, userId } = request.user
     const { items, paymentMode, total, discount } = request.body as any
 
     const newSale = await prisma.$transaction(async (tx: any) => {
@@ -579,7 +594,7 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/customers', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     try {
       return await prisma.customer.findMany({
         where: { tenantId },
@@ -592,7 +607,7 @@ async function start() {
   })
 
   app.post('/api/customers', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const {
       name, type, phone, email, address,
       loyaltyPoints, totalRevenue,
@@ -627,7 +642,7 @@ async function start() {
   })
 
   app.put('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     const data = request.body as any
     try {
@@ -651,17 +666,17 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/suppliers', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.supplier.findMany({ where: { tenantId } })
   })
 
   app.post('/api/suppliers', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.supplier.create({ data: { ...(request.body as any), tenantId } })
   })
 
   app.put('/api/suppliers/:id', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     return prisma.supplier.update({ where: { id, tenantId }, data: request.body as any })
   })
@@ -671,7 +686,7 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/orders', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.purchaseOrder.findMany({
       where: { tenantId },
       include: { items: true, supplier: true },
@@ -680,7 +695,7 @@ async function start() {
   })
 
   app.post('/api/orders', { preHandler: authenticate }, async (request) => {
-    const { tenantId, userId } = request.user as any
+    const { tenantId, userId } = request.user
     const { supplierId, items, expectedAt, notes } = request.body as any
 
     const ref = `CMD-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`
@@ -708,7 +723,7 @@ async function start() {
   })
 
   app.patch('/api/orders/:id/status', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     const { status } = request.body as any
     return prisma.purchaseOrder.update({ where: { id, tenantId }, data: { status } })
@@ -719,12 +734,12 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/employees', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.employee.findMany({ where: { tenantId } })
   })
 
   app.post('/api/employees', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const {
       name, role, dept, type, salary,
       phone, email, isActive, color,
@@ -761,7 +776,7 @@ async function start() {
   })
 
   app.put('/api/employees/:id', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     const {
       name, role, dept, type, salary,
@@ -796,7 +811,7 @@ async function start() {
   })
 
   app.delete('/api/employees/:id', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     try {
       await prisma.employee.delete({ where: { id, tenantId } })
@@ -811,7 +826,7 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/bonuses', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.employeeBonus.findMany({
       where: { tenantId },
       orderBy: { date: 'desc' },
@@ -819,7 +834,7 @@ async function start() {
   })
 
   app.get('/api/bonuses/employee/:employeeId', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { employeeId } = request.params as any
     return prisma.employeeBonus.findMany({
       where: { tenantId, employeeId },
@@ -828,7 +843,7 @@ async function start() {
   })
 
   app.post('/api/bonuses', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { employeeId, amount, reason, date } = request.body as any
     if (!employeeId || !amount) return reply.code(400).send({ error: 'employeeId et amount requis' })
     try {
@@ -848,7 +863,7 @@ async function start() {
   })
 
   app.delete('/api/bonuses/:id', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     try {
       await prisma.employeeBonus.delete({ where: { id, tenantId } })
@@ -863,7 +878,7 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/salary-history', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.salaryHistory.findMany({
       where: { tenantId },
       orderBy: { date: 'desc' },
@@ -871,7 +886,7 @@ async function start() {
   })
 
   app.get('/api/salary-history/employee/:employeeId', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { employeeId } = request.params as any
     return prisma.salaryHistory.findMany({
       where: { tenantId, employeeId },
@@ -880,7 +895,7 @@ async function start() {
   })
 
   app.post('/api/salary-history', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { employeeId, oldSalary, newSalary, reason, date } = request.body as any
     if (!employeeId || newSalary === undefined) return reply.code(400).send({ error: 'employeeId et newSalary requis' })
     try {
@@ -905,23 +920,23 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/expenses', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.expense.findMany({ where: { tenantId }, orderBy: { date: 'desc' } })
   })
 
   app.post('/api/expenses', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     return prisma.expense.create({ data: { ...(request.body as any), tenantId } })
   })
 
   app.put('/api/expenses/:id', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     return prisma.expense.update({ where: { id, tenantId }, data: request.body as any })
   })
 
   app.delete('/api/expenses/:id', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { id } = request.params as any
     await prisma.expense.delete({ where: { id, tenantId } })
     return { success: true }
@@ -932,7 +947,7 @@ async function start() {
   // ════════════════════════════════════════
 
   app.get('/api/dashboard/stats', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
@@ -973,7 +988,7 @@ async function start() {
   })
 
   app.get('/api/reports/sales', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
     const { period = '7days' } = request.query as any
 
     const now = new Date()
@@ -1003,7 +1018,7 @@ async function start() {
   // WHATSAPP ROUTES (Twilio)
   // ════════════════════════════════════════
 
-  app.post('/api/whatsapp/send-ticket', { preHandler: [authenticate] }, async (request: any, reply: any) => {
+  app.post('/api/whatsapp/send-ticket', { preHandler: [authenticate] }, async (request, reply) => {
     const { phone, items, total, paymentMode, discount, reference } = request.body as any
 
     if (!phone?.trim()) {
@@ -1186,9 +1201,9 @@ async function start() {
   const VALID_PAYMENTS = ['wave', 'orange_money', 'mtn_money', 'virement', 'card']
 
   // Le tenant demande un upgrade de plan
-  app.post('/api/billing/request-plan', { preHandler: authenticate, config: { rateLimit: { max: 3, timeWindow: '1 hour' } } }, async (request: any, reply: any) => {
-    const { tenantId, userId } = request.user as any
-    const { plan, period, paymentMethod, paymentRef, notes } = (request.body ?? {}) as any
+  app.post('/api/billing/request-plan', { preHandler: authenticate, config: { rateLimit: { max: 3, timeWindow: '1 hour' } } }, async (request, reply) => {
+    const { tenantId, userId } = request.user
+    const { plan, period, paymentMethod, paymentRef, notes } = (request.body ?? {}) as BillingBody
 
     if (!['pro', 'enterprise'].includes(plan)) {
       return reply.code(400).send({ error: 'Plan invalide. Choisissez pro ou enterprise.' })
@@ -1241,8 +1256,8 @@ async function start() {
   })
 
   // Statut actuel du tenant + jours d'essai restants
-  app.get('/api/billing/status', { preHandler: authenticate }, async (request: any, reply: any) => {
-    const { tenantId } = request.user as any
+  app.get('/api/billing/status', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
 
     const [tenant, pendingRequest] = await Promise.all([
       prisma.tenant.findUnique({
@@ -1291,10 +1306,10 @@ async function start() {
   })
 
   // SUPER_ADMIN : approuver / rejeter une demande
-  app.patch('/api/admin/plan-requests/:id', { preHandler: authenticateAdmin }, async (request: any, reply: any) => {
+  app.patch('/api/admin/plan-requests/:id', { preHandler: authenticateAdmin }, async (request, reply) => {
     const { id } = request.params as any
     const { action, adminNotes } = (request.body ?? {}) as any
-    const { userId } = request.user as any
+    const { userId } = request.user
 
     const planRequest = await prisma.planRequest.findUnique({ where: { id }, include: { tenant: true } })
     if (!planRequest) return reply.code(404).send({ error: 'Demande introuvable' })
@@ -1343,7 +1358,7 @@ async function start() {
 
   app.post('/api/ai/analyze', { preHandler: authenticate }, async (request, reply) => {
     const { type, lang } = request.body as any
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) return reply.code(503).send({ error: 'Clé API Anthropic non configurée' })
@@ -1484,7 +1499,7 @@ En ${langLabel}, analyse :
   app.post('/api/ai/chat', { preHandler: authenticate }, async (request, reply) => {
     // Accepte {message: string} (simple) ou {messages: array} (historique)
     const { message: singleMsg, messages: msgHistory, lang } = request.body as any
-    const { tenantId } = request.user as any
+    const { tenantId } = request.user
 
     if (!singleMsg?.trim() && (!msgHistory || msgHistory.length === 0)) {
       return reply.code(400).send({ error: 'message ou messages requis' })
@@ -1792,7 +1807,7 @@ console.log(products.length + ' produits')</pre>
   // EXPORT ROUTES
   // ════════════════════════════════════════
 
-  app.get('/api/export/:resource', { preHandler: [authenticate] }, async (request: any, reply: any) => {
+  app.get('/api/export/:resource', { preHandler: [authenticate] }, async (request, reply) => {
     const { resource } = request.params as any
     const tenantId = request.tenantId
     const lang = (request.query as any)?.lang ?? 'fr'
@@ -1856,7 +1871,7 @@ console.log(products.length + ' produits')</pre>
   })
 
   // Export PDF rapport mensuel
-  app.get('/api/export/pdf/monthly', { preHandler: [authenticate] }, async (request: any, reply: any) => {
+  app.get('/api/export/pdf/monthly', { preHandler: [authenticate] }, async (request, reply) => {
     const tenantId = request.tenantId
     const now = new Date()
     const start = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -1878,7 +1893,7 @@ console.log(products.length + ' produits')</pre>
     await prisma.$connect()
 
   // ─── ANALYTICS ───────────────────────────
-  app.get('/api/analytics/summary', { preHandler: [authenticate] }, async (request: any, reply: any) => {
+  app.get('/api/analytics/summary', { preHandler: [authenticate] }, async (request, reply) => {
     const tenantId = request.tenantId
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -1898,7 +1913,7 @@ console.log(products.length + ' produits')</pre>
     }
   })
 
-  app.get('/api/analytics', { preHandler: [authenticate] }, async (request: any, reply: any) => {
+  app.get('/api/analytics', { preHandler: [authenticate] }, async (request, reply) => {
     const tenantId = request.tenantId
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())

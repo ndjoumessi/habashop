@@ -598,7 +598,7 @@ function CustomerMap({
 
 export default function Customers() {
   const { lang } = useConfig()
-  const i = useI18n()
+  const { i } = useI18n()
   void lang
   const fmt = useFormatAmount()
   const abbr = useAbbrevAmount()

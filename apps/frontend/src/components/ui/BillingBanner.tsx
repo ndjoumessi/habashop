@@ -19,7 +19,7 @@ export default function BillingBanner() {
   const [status, setStatus] = useState<BillingStatus | null>(null)
   const [dismissed, setDismissed] = useState(false)
 
-  const i = useI18n()
+  const { i } = useI18n()
 
   useEffect(() => {
     billingApi.status().then(setStatus).catch(() => {})
