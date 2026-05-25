@@ -121,6 +121,33 @@ jobs:
         run: npm run test:integration --workspace=apps/backend
         timeout-minutes: 5
 
+  # ─── Tests E2E (Playwright vs prod) ──────
+  e2e-tests:
+    name: E2E Tests (Playwright, prod)
+    runs-on: ubuntu-latest
+    needs: [unit-tests-backend, unit-tests-frontend]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Install (workspaces, depuis la racine)
+        run: npm ci
+      - name: Install Playwright (chromium)
+        run: npx playwright install --with-deps chromium
+      - name: E2E smoke (prod) — ~6 logins, sous la limite 10/15 min
+        run: npm run e2e --workspace=apps/frontend
+        timeout-minutes: 10
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/frontend/playwright-report/
+          retention-days: 7
+
   # ─── Résumé post-CI (déploiement MANUEL) ──
   summary:
     name: Résumé déploiement
