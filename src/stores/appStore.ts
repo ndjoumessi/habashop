@@ -106,8 +106,8 @@ export function useFmt() {
     switch (currency) {
       case 'XOF':
       case 'XAF':
-        // Franc CFA — pas de décimales, symbole F
-        return `${localeNumber(Math.round(converted), 'fr-FR', 0)} F`
+        // Franc CFA — pas de décimales, symbole FCFA
+        return `${localeNumber(Math.round(converted), 'fr-FR', 0)} FCFA`
       case 'EUR':
         return `${localeNumber(converted, 'fr-FR', 2)} €`
       case 'USD':

@@ -130,7 +130,7 @@ export default function SettingsScreen() {
           })}
           {currency !== 'XOF' && currency !== 'XAF' && (
             <View style={s.rateInfo}>
-              <Text style={s.rateText}>💱 1 000 F = {fmt(1000)}</Text>
+              <Text style={s.rateText}>💱 1 000 FCFA = {fmt(1000)}</Text>
               <Text style={s.rateSubText}>
                 {i(
                   'Taux mis à jour toutes les 6h',
