@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAppStore } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
-import { billingApi } from '@/lib/api'
+import { api, billingApi } from '@/lib/api'
 
 type Step = 'plan' | 'payment' | 'done'
 type L4 = { fr: string; en: string; es: string; it: string }
@@ -31,6 +31,9 @@ export default function UpgradePlan() {
   const [form, setForm] = useState({ plan: 'pro', period: 'monthly', paymentMethod: 'wave', paymentRef: '', notes: '' })
   const set = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }))
   const amount = PRICES[form.plan][form.period]
+  // Wave & Orange Money ont une API : on initie le paiement et on redirige.
+  // Les autres méthodes (MTN, virement) restent en demande manuelle.
+  const isAuto = form.paymentMethod === 'wave' || form.paymentMethod === 'orange_money'
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -40,6 +43,24 @@ export default function UpgradePlan() {
     } catch (e: any) {
       toast.error(e?.message ?? 'Erreur lors de la demande')
     } finally {
+      setLoading(false)
+    }
+  }
+
+  // Paiement automatique Wave / Orange Money → redirection vers le prestataire.
+  const handleAutoPayment = async () => {
+    setLoading(true)
+    try {
+      if (form.paymentMethod === 'wave') {
+        const res = await api.post<{ checkoutUrl: string }>('/api/payments/wave/checkout', { plan: form.plan, period: form.period })
+        window.location.href = res.checkoutUrl
+      } else {
+        const res = await api.post<{ paymentUrl: string }>('/api/payments/orange/checkout', { plan: form.plan, period: form.period })
+        window.location.href = res.paymentUrl
+      }
+      // Redirection en cours : on laisse le spinner actif (la page va se décharger).
+    } catch (e: any) {
+      toast.error(e?.message ?? i('Erreur de paiement', 'Payment error', 'Error de pago', 'Errore di pagamento'))
       setLoading(false)
     }
   }
@@ -122,44 +143,60 @@ export default function UpgradePlan() {
               })}
             </div>
 
-            <div style={{ padding: '14px 16px', marginBottom: 16, background: 'rgba(255,184,0,.06)', border: '1px solid rgba(255,184,0,.15)', borderRadius: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--warn)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>📋 {i('Instructions de paiement', 'Payment instructions', 'Instrucciones de pago', 'Istruzioni di pagamento')}</div>
-              {(() => {
-                const method = PAYMENT_METHODS.find(m => m.id === form.paymentMethod)
-                return (
-                  <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-                    {form.paymentMethod === 'virement' ? (
-                      <>
-                        {i(`Effectuez un virement de ${amount.toLocaleString('fr-FR')} F CFA à :`, `Transfer ${amount.toLocaleString('fr-FR')} F CFA to:`, `Transfiera ${amount.toLocaleString('fr-FR')} F CFA a:`, `Bonificate ${amount.toLocaleString('fr-FR')} F CFA a:`)}<br />
-                        <strong>IBAN:</strong> SN00 0000 0000 0000<br />
-                        <strong>BIC:</strong> HABITDAKXXX<br />
-                        <strong>{i('Motif', 'Reference', 'Referencia', 'Causale')}:</strong> HABASHOP-{form.plan.toUpperCase()}
-                      </>
-                    ) : (
-                      <>
-                        {i(`Envoyez ${amount.toLocaleString('fr-FR')} F CFA au :`, `Send ${amount.toLocaleString('fr-FR')} F CFA to:`, `Envíe ${amount.toLocaleString('fr-FR')} F CFA al:`, `Invia ${amount.toLocaleString('fr-FR')} F CFA al:`)}<br />
-                        <strong style={{ fontSize: 16, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{method?.number}</strong><br />
-                        {i('Puis entrez la référence de transaction ci-dessous.', 'Then enter the transaction reference below.', 'Luego ingresa la referencia de transacción abajo.', 'Poi inserisci il riferimento della transazione qui sotto.')}
-                      </>
-                    )}
-                  </div>
-                )
-              })()}
-            </div>
+            {isAuto ? (
+              <div style={{ padding: '14px 16px', marginBottom: 20, background: 'rgba(0,208,132,.06)', border: '1px solid rgba(0,208,132,.15)', borderRadius: 12 }}>
+                <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
+                  ⚡ {form.paymentMethod === 'wave'
+                    ? i('Vous allez être redirigé vers Wave pour payer en toute sécurité. Votre plan est activé automatiquement dès le paiement confirmé.', 'You will be redirected to Wave to pay securely. Your plan is activated automatically once payment is confirmed.', 'Será redirigido a Wave para pagar de forma segura. Su plan se activa automáticamente al confirmarse el pago.', 'Verrai reindirizzato a Wave per pagare in sicurezza. Il piano si attiva automaticamente alla conferma del pagamento.')
+                    : i('Vous allez être redirigé vers Orange Money pour payer en toute sécurité. Votre plan est activé automatiquement dès le paiement confirmé.', 'You will be redirected to Orange Money to pay securely. Your plan is activated automatically once payment is confirmed.', 'Será redirigido a Orange Money para pagar de forma segura. Su plan se activa automáticamente al confirmarse el pago.', 'Verrai reindirizzato a Orange Money per pagare in sicurezza. Il piano si attiva automaticamente alla conferma del pagamento.')}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{ padding: '14px 16px', marginBottom: 16, background: 'rgba(255,184,0,.06)', border: '1px solid rgba(255,184,0,.15)', borderRadius: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--warn)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>📋 {i('Instructions de paiement', 'Payment instructions', 'Instrucciones de pago', 'Istruzioni di pagamento')}</div>
+                  {(() => {
+                    const method = PAYMENT_METHODS.find(m => m.id === form.paymentMethod)
+                    return (
+                      <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
+                        {form.paymentMethod === 'virement' ? (
+                          <>
+                            {i(`Effectuez un virement de ${amount.toLocaleString('fr-FR')} F CFA à :`, `Transfer ${amount.toLocaleString('fr-FR')} F CFA to:`, `Transfiera ${amount.toLocaleString('fr-FR')} F CFA a:`, `Bonificate ${amount.toLocaleString('fr-FR')} F CFA a:`)}<br />
+                            <strong>IBAN:</strong> SN00 0000 0000 0000<br />
+                            <strong>BIC:</strong> HABITDAKXXX<br />
+                            <strong>{i('Motif', 'Reference', 'Referencia', 'Causale')}:</strong> HABASHOP-{form.plan.toUpperCase()}
+                          </>
+                        ) : (
+                          <>
+                            {i(`Envoyez ${amount.toLocaleString('fr-FR')} F CFA au :`, `Send ${amount.toLocaleString('fr-FR')} F CFA to:`, `Envíe ${amount.toLocaleString('fr-FR')} F CFA al:`, `Invia ${amount.toLocaleString('fr-FR')} F CFA al:`)}<br />
+                            <strong style={{ fontSize: 16, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{method?.number}</strong><br />
+                            {i('Puis entrez la référence de transaction ci-dessous.', 'Then enter the transaction reference below.', 'Luego ingresa la referencia de transacción abajo.', 'Poi inserisci il riferimento della transazione qui sotto.')}
+                          </>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={lbl}>{i('RÉFÉRENCE TRANSACTION (optionnel)', 'TRANSACTION REFERENCE (optional)', 'REFERENCIA TRANSACCIÓN (opcional)', 'RIFERIMENTO TRANSAZIONE (opzionale)')}</label>
-              <input aria-label={i('RÉFÉRENCE TRANSACTION (optionnel)', 'TRANSACTION REFERENCE (optional)', 'REFERENCIA TRANSACCIÓN (opcional)', 'RIFERIMENTO TRANSAZIONE (opzionale)')} className="input" placeholder={i('Ex: WV-12345678 ou numéro Orange Money', 'Ex: WV-12345678 or Orange Money number', 'Ej: WV-12345678 o número Orange Money', 'Es: WV-12345678 o numero Orange Money')} value={form.paymentRef} onChange={e => set({ paymentRef: e.target.value })} />
-            </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={lbl}>{i('RÉFÉRENCE TRANSACTION (optionnel)', 'TRANSACTION REFERENCE (optional)', 'REFERENCIA TRANSACCIÓN (opcional)', 'RIFERIMENTO TRANSAZIONE (opzionale)')}</label>
+                  <input aria-label={i('RÉFÉRENCE TRANSACTION (optionnel)', 'TRANSACTION REFERENCE (optional)', 'REFERENCIA TRANSACCIÓN (opcional)', 'RIFERIMENTO TRANSAZIONE (opzionale)')} className="input" placeholder={i('Ex: WV-12345678 ou numéro Orange Money', 'Ex: WV-12345678 or Orange Money number', 'Ej: WV-12345678 o número Orange Money', 'Es: WV-12345678 o numero Orange Money')} value={form.paymentRef} onChange={e => set({ paymentRef: e.target.value })} />
+                </div>
 
-            <div style={{ marginBottom: 24 }}>
-              <label style={lbl}>{i('MESSAGE (optionnel)', 'MESSAGE (optional)', 'MENSAJE (opcional)', 'MESSAGGIO (opzionale)')}</label>
-              <textarea aria-label={i('MESSAGE (optionnel)', 'MESSAGE (optional)', 'MENSAJE (opcional)', 'MESSAGGIO (opzionale)')} className="input" rows={2} placeholder={i('Informations complémentaires…', 'Additional information…', 'Información adicional…', 'Informazioni aggiuntive…')} value={form.notes} onChange={e => set({ notes: e.target.value })} style={{ resize: 'none' }} />
-            </div>
+                <div style={{ marginBottom: 24 }}>
+                  <label style={lbl}>{i('MESSAGE (optionnel)', 'MESSAGE (optional)', 'MENSAJE (opcional)', 'MESSAGGIO (opzionale)')}</label>
+                  <textarea aria-label={i('MESSAGE (optionnel)', 'MESSAGE (optional)', 'MENSAJE (opcional)', 'MESSAGGIO (opzionale)')} className="input" rows={2} placeholder={i('Informations complémentaires…', 'Additional information…', 'Información adicional…', 'Informazioni aggiuntive…')} value={form.notes} onChange={e => set({ notes: e.target.value })} style={{ resize: 'none' }} />
+                </div>
+              </>
+            )}
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep('plan')}>← {i('Retour', 'Back', 'Volver', 'Indietro')}</button>
-              <button className="btn btn-primary" style={{ flex: 2, justifyContent: 'center', padding: 14, fontSize: 14 }} disabled={loading} onClick={handleSubmit}>{loading ? '⏳ …' : i('Envoyer la demande ✓', 'Send request ✓', 'Enviar solicitud ✓', 'Invia richiesta ✓')}</button>
+              {isAuto ? (
+                <button className="btn btn-primary" style={{ flex: 2, justifyContent: 'center', padding: 14, fontSize: 14 }} disabled={loading} onClick={handleAutoPayment}>{loading ? i('Redirection…', 'Redirecting…', 'Redirigiendo…', 'Reindirizzamento…') : `${form.paymentMethod === 'wave' ? '🌊' : '🟠'} ${i('Payer', 'Pay', 'Pagar', 'Paga')} ${amount.toLocaleString('fr-FR')} F`}</button>
+              ) : (
+                <button className="btn btn-primary" style={{ flex: 2, justifyContent: 'center', padding: 14, fontSize: 14 }} disabled={loading} onClick={handleSubmit}>{loading ? '⏳ …' : i('Envoyer la demande ✓', 'Send request ✓', 'Enviar solicitud ✓', 'Invia richiesta ✓')}</button>
+              )}
             </div>
           </div>
         )}
