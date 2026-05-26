@@ -486,10 +486,20 @@ export default function Payroll() {
         <div style={{ flex:1 }} />
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
           exportCSV('habashop_paie',
-            ['Employé','Poste','Salaire base','Primes','Heures sup','Retenues','Absences','Net','Statut'],
+            [
+              lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé',
+              lang === 'en' ? 'Role' : lang === 'es' ? 'Puesto' : lang === 'it' ? 'Ruolo' : 'Poste',
+              lang === 'en' ? 'Base salary' : lang === 'es' ? 'Salario base' : lang === 'it' ? 'Stipendio base' : 'Salaire base',
+              lang === 'en' ? 'Bonuses' : lang === 'es' ? 'Primas' : lang === 'it' ? 'Premi' : 'Primes',
+              lang === 'en' ? 'Overtime' : lang === 'es' ? 'Horas extra' : lang === 'it' ? 'Straordinari' : 'Heures sup',
+              lang === 'en' ? 'Deductions' : lang === 'es' ? 'Deducciones' : lang === 'it' ? 'Detrazioni' : 'Retenues',
+              lang === 'en' ? 'Absences' : lang === 'es' ? 'Ausencias' : lang === 'it' ? 'Assenze' : 'Absences',
+              'Net',
+              lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut',
+            ],
             records.map(r => {
               const net = r.baseSalary + r.bonus + r.overtime - r.deductions - (r.absences * Math.round(r.baseSalary / 26))
-              return [r.employee, r.role, r.baseSalary, r.bonus, r.overtime, r.deductions, r.absences, net, r.status]
+              return [r.employee, roleLabel(r.role, lang), r.baseSalary, r.bonus, r.overtime, r.deductions, r.absences, net, statusLabel(r.status, lang)]
             })
           )
           toast.success(lang === 'en' ? '📊 CSV export downloaded!' : lang === 'es' ? '📊 ¡Exportación CSV descargada!' : lang === 'it' ? '📊 Esportazione CSV scaricata!' : '📊 Export CSV téléchargé !')

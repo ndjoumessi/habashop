@@ -1,7 +1,7 @@
 import { Download, Plus, Users, DollarSign, FileText, TrendingUp, Clock, Umbrella, CheckCircle, XCircle, AlertTriangle, Gift, Trash2, BarChart3, Calendar, CheckCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { bonusesApi } from '@/lib/api'
-import { type Employee, type LeaveRequest, DEPT_COLORS, LEAVE_STATUS_CFG, EmpAvatar, displayDate, toInputDate } from '@/components/hr/hrShared'
+import { type Employee, type LeaveRequest, DEPT_COLORS, LEAVE_STATUS_CFG, EmpAvatar, displayDate, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusLabel, leaveStatusLabel } from '@/components/hr/hrShared'
 
 interface HRTabsProps {
   tab: string
@@ -68,14 +68,14 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                           <EmpAvatar emp={emp} size={32} />
                           <div>
                             <div style={{ fontWeight: 700, fontSize: 13 }}>{emp.name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text3)' }}>{emp.role}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
                           </div>
                         </div>
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <div style={{ width: 8, height: 8, borderRadius: '50%', background: deptColor, flexShrink: 0 }} />
-                          <span style={{ fontSize: 12, color: deptColor, fontWeight: 600 }}>{emp.dept}</span>
+                          <span style={{ fontSize: 12, color: deptColor, fontWeight: 600 }}>{deptLabel(emp.dept, lang)}</span>
                         </div>
                       </td>
                       <td style={{ textAlign: 'center' }}>
@@ -83,7 +83,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                           fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
                           background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
                           color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
-                        }}>{emp.type}</span>
+                        }}>{contractLabel(emp.type, lang)}</span>
                       </td>
                       <td style={{ fontSize: 12, color: 'var(--text2)' }}>
                         {displayDate(emp.hiredAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}
@@ -166,7 +166,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                       const cnss  = Math.round(total * 0.08)
                       const ir    = Math.round(total * 0.05)
                       const net   = total - cnss - ir
-                      return [emp.name, emp.role, brut, bonus, cnss, ir, net]
+                      return [emp.name, roleLabel(emp.role, lang), brut, bonus, cnss, ir, net]
                     }),
                   ]
                   const csv = BOM + rows.map(r => r.join(';')).join('\r\n')
@@ -239,7 +239,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                 <EmpAvatar emp={emp} size={32} />
                                 <div>
                                   <div style={{ fontWeight:700, fontSize:13 }}>{emp.name}</div>
-                                  <div style={{ fontSize:10, color:'var(--text3)' }}>{emp.role}</div>
+                                  <div style={{ fontSize:10, color:'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
                                 </div>
                               </div>
                             </td>
@@ -318,7 +318,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                         </div>
                         <div style={{ flex:1 }}>
                           <div style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>{emp.name}</div>
-                          <div style={{ fontSize:11, color:'var(--text3)' }}>{emp.role} · {emp.dept}</div>
+                          <div style={{ fontSize:11, color:'var(--text3)' }}>{roleLabel(emp.role, lang)} · {deptLabel(emp.dept, lang)}</div>
                         </div>
                         <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', background:'rgba(0,208,132,.1)', color:'var(--acc2)', border:'1px solid rgba(0,208,132,.2)', borderRadius:20, padding:'2px 8px' }}>
                           {new Date(payrollMonth+'-01').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', {month:'short', year:'numeric'})}
@@ -830,7 +830,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
           const rows = dayEmp.map(e => {
             const key = `${String(e.id)}_${todayKey}`
             const a = attendance[key]
-            return [e.name, e.role, a?.status ?? 'absent', a?.in ?? '—', a?.out ?? '—']
+            return [e.name, roleLabel(e.role, lang), attendStatusLabel(a?.status ?? 'absent', lang), a?.in ?? '—', a?.out ?? '—']
           })
           const lines = [['Employé','Poste','Statut','Arrivée','Départ'], ...rows]
           const csv = lines.map(r => r.join(';')).join('\n')
@@ -925,13 +925,13 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                       </div>
                       <div>
                         <div style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>{emp.name.split(' ')[0]}</div>
-                        <div style={{ fontSize:10, color:'var(--text3)' }}>{emp.role}</div>
+                        <div style={{ fontSize:10, color:'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
                       </div>
                     </div>
                     {/* Statut badge */}
                     <div style={{ display:'flex', justifyContent:'center' }}>
                       <span style={{ fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:20, background:sc.bg, color:sc.color, display:'inline-flex', alignItems:'center', gap:4 }}>
-                        {sc.icon} {sc.label}
+                        {sc.icon} {attendStatusLabel(a.status, lang)}
                       </span>
                     </div>
                     {/* Heure arrivée */}
@@ -1023,7 +1023,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                       {leave.motif && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>"{leave.motif}"</div>}
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: statusCfg.bg, color: statusCfg.color, whiteSpace: 'nowrap' }}>
-                      {statusCfg.label}
+                      {leaveStatusLabel(leave.status, lang)}
                     </span>
                     {leave.status === 'pending' && (
                       <div style={{ display: 'flex', gap: 6 }}>

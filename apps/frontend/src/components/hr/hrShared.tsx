@@ -70,6 +70,74 @@ export const LEAVE_STATUS_CFG = {
   refused:  { label:'Refusé',     color:'var(--danger)', bg:'rgba(232,64,74,.12)'  },
 }
 
+// ─── i18n maps (rôles / départements / statuts) ─────────────────────────────────
+// Traduisent les valeurs FR à l'affichage uniquement ; les valeurs custom passent inchangées (fallback).
+
+export const localeOf = (lang: string): string =>
+  lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+
+export const ROLE_LABELS: Record<string, Record<string, string>> = {
+  'Caissier':    { fr:'Caissier',    en:'Cashier',     es:'Cajero',      it:'Cassiere'     },
+  'Caissière':   { fr:'Caissière',   en:'Cashier',     es:'Cajera',      it:'Cassiera'     },
+  'Vendeur':     { fr:'Vendeur',     en:'Sales rep',   es:'Vendedor',    it:'Venditore'    },
+  'Vendeuse':    { fr:'Vendeuse',    en:'Sales rep',   es:'Vendedora',   it:'Venditrice'   },
+  'Manager':     { fr:'Manager',     en:'Manager',     es:'Gerente',     it:'Manager'      },
+  'Directeur':   { fr:'Directeur',   en:'Director',    es:'Director',    it:'Direttore'    },
+  'Directrice':  { fr:'Directrice',  en:'Director',    es:'Directora',   it:'Direttrice'   },
+  'Comptable':   { fr:'Comptable',   en:'Accountant',  es:'Contable',    it:'Contabile'    },
+  'Magasinier':  { fr:'Magasinier',  en:'Storekeeper', es:'Almacenero',  it:'Magazziniere' },
+  'Magasinière': { fr:'Magasinière', en:'Storekeeper', es:'Almacenera',  it:'Magazziniera' },
+  'Responsable': { fr:'Responsable', en:'Supervisor',  es:'Responsable', it:'Responsabile' },
+  'Livreur':     { fr:'Livreur',     en:'Delivery',    es:'Repartidor',  it:'Fattorino'    },
+  'Sécurité':    { fr:'Sécurité',    en:'Security',    es:'Seguridad',   it:'Sicurezza'    },
+  'RH':          { fr:'RH',          en:'HR',          es:'RR.HH.',      it:'HR'           },
+  'Admin':       { fr:'Admin',       en:'Admin',       es:'Admin',       it:'Admin'        },
+}
+export const roleLabel = (r: string, lang: string): string =>
+  ROLE_LABELS[r]?.[lang] ?? r
+
+export const DEPT_LABELS: Record<string, Record<string, string>> = {
+  'Ventes':     { fr:'Ventes',     en:'Sales',      es:'Ventas',     it:'Vendite'    },
+  'Stock':      { fr:'Stock',      en:'Stock',      es:'Stock',      it:'Stock'      },
+  'Finance':    { fr:'Finance',    en:'Finance',    es:'Finanzas',   it:'Finanza'    },
+  'Direction':  { fr:'Direction',  en:'Management', es:'Dirección',  it:'Direzione'  },
+  'Marketing':  { fr:'Marketing',  en:'Marketing',  es:'Marketing',  it:'Marketing'  },
+  'Logistique': { fr:'Logistique', en:'Logistics',  es:'Logística',  it:'Logistica'  },
+  'RH':         { fr:'RH',         en:'HR',         es:'RR.HH.',     it:'HR'         },
+  'IT':         { fr:'IT',         en:'IT',         es:'IT',         it:'IT'         },
+  'Sécurité':   { fr:'Sécurité',   en:'Security',   es:'Seguridad',  it:'Sicurezza'  },
+}
+export const deptLabel = (d: string, lang: string): string =>
+  DEPT_LABELS[d]?.[lang] ?? d
+
+export const CONTRACT_LABELS: Record<string, Record<string, string>> = {
+  'CDI':       { fr:'CDI',       en:'Permanent',  es:'Indefinido', it:'Indeterminato' },
+  'CDD':       { fr:'CDD',       en:'Fixed-term', es:'Temporal',   it:'Determinato'   },
+  'Freelance': { fr:'Freelance', en:'Freelance',  es:'Freelance',  it:'Freelance'     },
+  'Stage':     { fr:'Stage',     en:'Internship', es:'Prácticas',  it:'Tirocinio'     },
+  'Temps partiel': { fr:'Temps partiel', en:'Part-time', es:'Tiempo parcial', it:'Part-time' },
+}
+export const contractLabel = (t: string, lang: string): string =>
+  CONTRACT_LABELS[t]?.[lang] ?? t
+
+export const ATTEND_LABELS: Record<string, Record<string, string>> = {
+  present: { fr:'Présent', en:'Present',  es:'Presente',   it:'Presente' },
+  retard:  { fr:'Retard',  en:'Late',     es:'Retraso',    it:'Ritardo'  },
+  absent:  { fr:'Absent',  en:'Absent',   es:'Ausente',    it:'Assente'  },
+  conge:   { fr:'Congé',   en:'On leave', es:'De permiso', it:'In ferie' },
+  repos:   { fr:'Repos',   en:'Day off',  es:'Descanso',   it:'Riposo'   },
+}
+export const attendStatusLabel = (s: string, lang: string): string =>
+  ATTEND_LABELS[s]?.[lang] ?? (STATUS_CFG as any)[s]?.label ?? s
+
+export const LEAVE_LABELS: Record<string, Record<string, string>> = {
+  pending:  { fr:'En attente', en:'Pending',  es:'Pendiente', it:'In attesa' },
+  approved: { fr:'Approuvé',   en:'Approved', es:'Aprobado',  it:'Approvato' },
+  refused:  { fr:'Refusé',     en:'Refused',  es:'Rechazado', it:'Rifiutato' },
+}
+export const leaveStatusLabel = (s: string, lang: string): string =>
+  LEAVE_LABELS[s]?.[lang] ?? (LEAVE_STATUS_CFG as any)[s]?.label ?? s
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function toInputDate(dateStr: string | undefined | null): string {
@@ -92,14 +160,16 @@ export function displayDate(dateStr: string | undefined | null, locale = 'fr-FR'
   return new Date(iso).toLocaleDateString(locale)
 }
 
-export function calcAnciennete(hiredAt: string): string {
+export function calcAnciennete(hiredAt: string, lang: string = 'fr'): string {
   const iso = toInputDate(hiredAt)
   if (!iso) return '—'
   const months = Math.floor((new Date('2026-05-18').getTime() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24 * 30))
   if (months < 0) return '—'
   const years = Math.floor(months / 12), rem = months % 12
-  if (years >= 1) return `${years} an${years > 1 ? 's' : ''}${rem > 0 ? ` ${rem} mois` : ''}`
-  return `${months} mois`
+  const yLabel = (n: number) => lang === 'en' ? `${n}y` : lang === 'es' ? `${n} año${n > 1 ? 's' : ''}` : lang === 'it' ? `${n} anno${n > 1 ? 'i' : ''}` : `${n} an${n > 1 ? 's' : ''}`
+  const mLabel = (n: number) => lang === 'en' ? `${n}mo` : lang === 'es' ? `${n} mes${n > 1 ? 'es' : ''}` : lang === 'it' ? `${n} mese${n > 1 ? 'i' : ''}` : `${n} mois`
+  if (years >= 1) return `${yLabel(years)}${rem > 0 ? ` ${mLabel(rem)}` : ''}`
+  return mLabel(months)
 }
 
 export function calcHeures(empId: number): string {

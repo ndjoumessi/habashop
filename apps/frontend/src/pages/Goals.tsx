@@ -34,6 +34,12 @@ export default function Goals() {
     { month: 'long', year: 'numeric' }
   )
 
+  // Libellé localisé d'une unité d'objectif (clients / transactions ; les autres passent inchangées)
+  const unitLabel = (u: string): string =>
+    u === 'clients'      ? (lang === 'en' ? 'customers'    : lang === 'es' ? 'clientes'      : lang === 'it' ? 'clienti'      : 'clients')
+    : u === 'transactions' ? (lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions')
+    : u
+
   const [goals, setGoals] = useState<Goal[]>(() => {
     try {
       const saved = localStorage.getItem('habashop-goals')
@@ -243,7 +249,7 @@ export default function Goals() {
                 <div style={{ fontSize:11, color:'var(--text3)', marginBottom:8 }}>
                   {isCurrency(goal.unit)
                     ? `${fmt(goal.current)} / ${fmt(goal.target)}`
-                    : `${goal.current} / ${goal.target}${goal.unit === '%' ? ' %' : ' ' + goal.unit}`}
+                    : `${goal.current} / ${goal.target}${goal.unit === '%' ? ' %' : ' ' + unitLabel(goal.unit)}`}
                 </div>
 
                 {/* Badge status */}
@@ -287,7 +293,7 @@ export default function Goals() {
                     {' '}<span style={{ color:statusColor, fontWeight:700 }}>
                       {isCurrency(goal.unit)
                         ? fmt(goal.target - goal.current)
-                        : `${goal.target - goal.current}${goal.unit === '%' ? '%' : ' ' + goal.unit}`}
+                        : `${goal.target - goal.current}${goal.unit === '%' ? '%' : ' ' + unitLabel(goal.unit)}`}
                     </span>
                   </div>
                 )}
@@ -321,12 +327,12 @@ export default function Goals() {
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>Icône</label>
-                  <input aria-label="Icône" className="input" value={goalForm.icon} onChange={e => setGoalForm(f => ({...f, icon:e.target.value}))} style={{ textAlign:'center', fontSize:20 }} />
+                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Icon' : lang === 'es' ? 'Icono' : lang === 'it' ? 'Icona' : 'Icône'}</label>
+                  <input aria-label={lang === 'en' ? 'Icon' : lang === 'es' ? 'Icono' : lang === 'it' ? 'Icona' : 'Icône'} className="input" value={goalForm.icon} onChange={e => setGoalForm(f => ({...f, icon:e.target.value}))} style={{ textAlign:'center', fontSize:20 }} />
                 </div>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>Label</label>
-                  <input aria-label="Label" className="input" placeholder={lang === 'en' ? 'Ex: Monthly revenue' : lang === 'es' ? 'Ej: Ingresos mensuales' : lang === 'it' ? 'Es: Ricavi mensili' : 'Ex: CA mensuel'} value={goalForm.label} onChange={e => setGoalForm(f => ({...f, label:e.target.value}))} />
+                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé'}</label>
+                  <input aria-label={lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé'} className="input" placeholder={lang === 'en' ? 'Ex: Monthly revenue' : lang === 'es' ? 'Ej: Ingresos mensuales' : lang === 'it' ? 'Es: Ricavi mensili' : 'Ex: CA mensuel'} value={goalForm.label} onChange={e => setGoalForm(f => ({...f, label:e.target.value}))} />
                 </div>
               </div>
 
@@ -347,12 +353,12 @@ export default function Goals() {
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>Unité</label>
-                  <select aria-label="Unité" className="input" value={goalForm.unit} onChange={e => setGoalForm(f => ({...f, unit:e.target.value as Goal['unit']}))}>
+                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Unit' : lang === 'es' ? 'Unidad' : lang === 'it' ? 'Unità' : 'Unité'}</label>
+                  <select aria-label={lang === 'en' ? 'Unit' : lang === 'es' ? 'Unidad' : lang === 'it' ? 'Unità' : 'Unité'} className="input" value={goalForm.unit} onChange={e => setGoalForm(f => ({...f, unit:e.target.value as Goal['unit']}))}>
                     <option value="currency">{currencySymbol}</option>
                     <option value="%">%</option>
-                    <option value="clients">Clients</option>
-                    <option value="transactions">Transactions</option>
+                    <option value="clients">{lang === 'en' ? 'Customers' : lang === 'es' ? 'Clientes' : lang === 'it' ? 'Clienti' : 'Clients'}</option>
+                    <option value="transactions">{lang === 'en' ? 'Transactions' : lang === 'es' ? 'Transacciones' : lang === 'it' ? 'Transazioni' : 'Transactions'}</option>
                   </select>
                 </div>
                 <div>

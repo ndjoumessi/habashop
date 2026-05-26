@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Skeleton from '@/components/ui/skeleton'
 import { useAppStore } from '@/stores/appStore'
 import { employeesApi } from '@/lib/api'
+import { deptLabel } from '@/components/hr/hrShared'
 import toast from 'react-hot-toast'
 import { Sun, CloudSun, CalendarDays, Moon, Coffee, Umbrella, Users, Info, Download, MousePointer2, X } from 'lucide-react'
 
@@ -298,7 +299,7 @@ export default function Planning() {
           value={filterDept}
           onChange={e=>setFilterDept(e.target.value)}>
           <option value="all">{T.allDepts}</option>
-          {depts.map(d=><option key={d} value={d}>{d}</option>)}
+          {depts.map(d=><option key={d} value={d}>{deptLabel(d, lang)}</option>)}
         </select>
         <select className="input"
           style={{width:'auto',minWidth:180,height:36,fontSize:12}}
@@ -436,7 +437,7 @@ export default function Planning() {
                         <div style={{
                           fontSize:9, color:'var(--text3)',
                           whiteSpace:'nowrap',
-                        }}>{emp.dept}</div>
+                        }}>{deptLabel(emp.dept, lang)}</div>
                       </div>
                     </div>
                   </td>

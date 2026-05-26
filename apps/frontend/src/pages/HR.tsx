@@ -19,7 +19,7 @@ import HREmployeeGrid from '@/components/hr/HREmployeeGrid'
 import HRTabs from '@/components/hr/HRTabs'
 import HRModals from '@/components/hr/HRModals'
 import EmptyState from '@/components/ui/EmptyState'
-import { type Employee, type LeaveRequest, COLORS, toInputDate } from '@/components/hr/hrShared'
+import { type Employee, type LeaveRequest, COLORS, toInputDate, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -267,9 +267,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 <div class="section">
   <div class="section-title">${lang === 'en' ? 'EMPLOYEE INFORMATION' : lang === 'es' ? 'INFORMACIÓN DEL EMPLEADO' : lang === 'it' ? 'INFORMAZIONI DIPENDENTE' : 'INFORMATIONS EMPLOYÉ'}</div>
   <div class="row"><span class="label">${lang === 'en' ? 'Name' : lang === 'es' ? 'Nombre' : lang === 'it' ? 'Nome' : 'Nom'}</span><span class="value">${emp.name}</span></div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Position' : lang === 'es' ? 'Puesto' : lang === 'it' ? 'Posizione' : 'Poste'}</span><span class="value">${emp.role}</span></div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Department' : lang === 'es' ? 'Departamento' : lang === 'it' ? 'Reparto' : 'Département'}</span><span class="value">${emp.dept}</span></div>
-  <div class="row"><span class="label">${lang === 'en' ? 'Contract' : lang === 'es' ? 'Tipo contrato' : lang === 'it' ? 'Tipo contratto' : 'Type contrat'}</span><span class="value">${emp.type}</span></div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Position' : lang === 'es' ? 'Puesto' : lang === 'it' ? 'Posizione' : 'Poste'}</span><span class="value">${roleLabel(emp.role, lang)}</span></div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Department' : lang === 'es' ? 'Departamento' : lang === 'it' ? 'Reparto' : 'Département'}</span><span class="value">${deptLabel(emp.dept, lang)}</span></div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Contract' : lang === 'es' ? 'Tipo contrato' : lang === 'it' ? 'Tipo contratto' : 'Type contrat'}</span><span class="value">${contractLabel(emp.type, lang)}</span></div>
   <div class="row"><span class="label">${lang === 'en' ? 'Hire date' : lang === 'es' ? 'Fecha contratación' : lang === 'it' ? 'Data assunzione' : 'Date embauche'}</span><span class="value">${emp.hiredAt}</span></div>
 </div>
 <div class="section">
@@ -334,9 +334,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => {
-            exportCSV('RH', ['Nom','Rôle','Département','Contrat','Salaire','Embauche','Statut'],
-              employees.map(e => [e.name, e.role, e.dept, e.type, e.salary, e.hiredAt, e.active ? 'Actif' : 'Inactif']))
-            toast.success('CSV exporté')
+            exportCSV('RH', [
+              lang === 'en' ? 'Name' : lang === 'es' ? 'Nombre' : lang === 'it' ? 'Nome' : 'Nom',
+              lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle',
+              lang === 'en' ? 'Department' : lang === 'es' ? 'Departamento' : lang === 'it' ? 'Dipartimento' : 'Département',
+              lang === 'en' ? 'Contract' : lang === 'es' ? 'Contrato' : lang === 'it' ? 'Contratto' : 'Contrat',
+              lang === 'en' ? 'Salary' : lang === 'es' ? 'Salario' : lang === 'it' ? 'Stipendio' : 'Salaire',
+              lang === 'en' ? 'Hire date' : lang === 'es' ? 'Contratación' : lang === 'it' ? 'Assunzione' : 'Embauche',
+              lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut',
+            ],
+              employees.map(e => [e.name, roleLabel(e.role, lang), deptLabel(e.dept, lang), contractLabel(e.type, lang), e.salary, e.hiredAt, e.active ? (lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif') : (lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')]))
+            toast.success(lang === 'en' ? 'CSV exported' : lang === 'es' ? 'CSV exportado' : lang === 'it' ? 'CSV esportato' : 'CSV exporté')
           }}>
             <Download size={14} /> Export
           </button>

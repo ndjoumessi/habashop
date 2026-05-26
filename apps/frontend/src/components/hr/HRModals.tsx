@@ -9,7 +9,7 @@ import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
-import { type Employee, COLORS, DEPT_COLORS, labelStyle, displayDate, calcAnciennete } from '@/components/hr/hrShared'
+import { type Employee, COLORS, DEPT_COLORS, labelStyle, displayDate, calcAnciennete, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
 
 interface HRModalsProps {
   showSalaryModal: boolean; setShowSalaryModal: (b: boolean) => void
@@ -133,7 +133,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                     {editEmpForm.name || selectedEmp.name}
                   </h3>
                   <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>
-                    {editEmpForm.role || selectedEmp.role} · {editEmpForm.dept || selectedEmp.dept}
+                    {roleLabel(editEmpForm.role || selectedEmp.role, lang)} · {deptLabel(editEmpForm.dept || selectedEmp.dept, lang)}
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8 }}>
                     <button type="button"
@@ -196,12 +196,12 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                   <ViewField label={lang === 'en' ? 'DEPARTMENT' : lang === 'es' ? 'DEPARTAMENTO' : lang === 'it' ? 'REPARTO' : 'DÉPARTEMENT'} value={editEmpForm.dept??''} editing={empEditMode}>
                     <select className="input" value={editEmpForm.dept??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, dept:e.target.value }))}>
-                      {Object.keys(DEPT_COLORS).map(d => <option key={d}>{d}</option>)}
+                      {Object.keys(DEPT_COLORS).map(d => <option key={d} value={d}>{deptLabel(d, lang)}</option>)}
                     </select>
                   </ViewField>
                   <ViewField label={lang === 'en' ? 'CONTRACT TYPE' : lang === 'es' ? 'TIPO CONTRATO' : lang === 'it' ? 'TIPO CONTRATTO' : 'TYPE CONTRAT'} value={editEmpForm.type??'CDI'} editing={empEditMode}>
                     <select className="input" value={editEmpForm.type??'CDI'} onChange={e => setEditEmpForm((f:any) => ({ ...f, type:e.target.value }))}>
-                      {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t => <option key={t}>{t}</option>)}
+                      {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t => <option key={t} value={t}>{contractLabel(t, lang)}</option>)}
                     </select>
                   </ViewField>
                   <ViewField label={lang === 'en' ? 'HIRE DATE' : lang === 'es' ? 'FECHA CONTRATACIÓN' : lang === 'it' ? 'DATA ASSUNZIONE' : 'DATE EMBAUCHE'} value={displayDate(editEmpForm.hiredAt)} editing={empEditMode}>
@@ -428,13 +428,13 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 <div>
                   <label style={labelStyle}>{lang === 'en' ? 'DEPARTMENT' : lang === 'es' ? 'DEPARTAMENTO' : lang === 'it' ? 'REPARTO' : 'DÉPARTEMENT'}</label>
                   <select aria-label={lang === 'en' ? 'DEPARTMENT' : lang === 'es' ? 'DEPARTAMENTO' : lang === 'it' ? 'REPARTO' : 'DÉPARTEMENT'} className="input" value={contractForm.dept} onChange={e=>setContractForm(f=>({...f,dept:e.target.value}))}>
-                    {Object.keys(DEPT_COLORS).map(d=><option key={d}>{d}</option>)}
+                    {Object.keys(DEPT_COLORS).map(d=><option key={d} value={d}>{deptLabel(d, lang)}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={labelStyle}>{lang === 'en' ? 'CONTRACT TYPE' : lang === 'es' ? 'TIPO CONTRATO' : lang === 'it' ? 'TIPO CONTRATTO' : 'TYPE CONTRAT'}</label>
                   <select aria-label={lang === 'en' ? 'CONTRACT TYPE' : lang === 'es' ? 'TIPO CONTRATO' : lang === 'it' ? 'TIPO CONTRATTO' : 'TYPE CONTRAT'} className="input" value={contractForm.type} onChange={e=>setContractForm(f=>({...f,type:e.target.value}))}>
-                    {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t=><option key={t}>{t}</option>)}
+                    {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t=><option key={t} value={t}>{contractLabel(t, lang)}</option>)}
                   </select>
                 </div>
                 <div>
@@ -503,7 +503,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 </div>
                 <div style={{ flex:1 }}>
                   <h3 style={{ margin:0, fontSize:17, fontWeight:900, color:'var(--text)' }}>{selectedContract.name}</h3>
-                  <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>{selectedContract.role} · {selectedContract.dept}</div>
+                  <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>{roleLabel(selectedContract.role, lang)} · {deptLabel(selectedContract.dept, lang)}</div>
                 </div>
                 <button onClick={()=>setShowContractDetailModal(false)} style={{ background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)', borderRadius:10, width:32, height:32, cursor:'pointer', color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✕</button>
               </div>
@@ -518,7 +518,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, display:'flex', flexDirection:'column', gap:10 }}>
                 {[
                   {label:lang === 'en' ? 'Hire date' : lang === 'es' ? 'Fecha de contratación' : lang === 'it' ? 'Data di assunzione' : 'Date d\'embauche', value:displayDate(selectedContract.hiredAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')},
-                  {label:lang === 'en' ? 'Seniority' : lang === 'es' ? 'Antigüedad' : lang === 'it' ? 'Anzianità' : 'Ancienneté', value:calcAnciennete(selectedContract.hiredAt)},
+                  {label:lang === 'en' ? 'Seniority' : lang === 'es' ? 'Antigüedad' : lang === 'it' ? 'Anzianità' : 'Ancienneté', value:calcAnciennete(selectedContract.hiredAt, lang)},
                   ...(selectedContract.type!=='CDI'&&selectedContract.endAt
                     ? [{label:lang === 'en' ? 'Contract end' : lang === 'es' ? 'Fin de contrato' : lang === 'it' ? 'Fine contratto' : 'Fin de contrat', value:displayDate(selectedContract.endAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}]
                     : selectedContract.type==='CDI'
@@ -711,7 +711,7 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>
                 {emp ? emp.name : `➕ ${T('Nouvel employé', 'New employee', 'Nuevo empleado', 'Nuovo dipendente')}`}
               </h3>
-              {emp && <div style={{ fontSize: 11, color: deptColor, fontWeight: 600, marginTop: 1 }}>{dept || emp.dept}</div>}
+              {emp && <div style={{ fontSize: 11, color: deptColor, fontWeight: 600, marginTop: 1 }}>{deptLabel(dept || emp.dept, lang)}</div>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

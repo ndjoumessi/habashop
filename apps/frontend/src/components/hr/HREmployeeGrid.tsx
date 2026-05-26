@@ -1,6 +1,6 @@
 import { Search, LayoutGrid, AlignJustify, Star, Pencil } from 'lucide-react'
 import Pagination from '@/components/ui/Pagination'
-import { type Employee, DEPT_COLORS, EmpAvatar, Stars, calcAnciennete } from '@/components/hr/hrShared'
+import { type Employee, DEPT_COLORS, EmpAvatar, Stars, calcAnciennete, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
 
 interface HREmployeeGridProps {
   search: string; setSearch: (v: string) => void
@@ -38,7 +38,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
               value={deptFilter}
               onChange={e => setDeptFilter(e.target.value)}>
               <option value="all">{lang === 'en' ? 'All depts' : lang === 'es' ? 'Todos los deptos' : lang === 'it' ? 'Tutti i reparti' : 'Tous les depts'}</option>
-              {depts.map(d => <option key={d} value={d}>{d}</option>)}
+              {depts.map(d => <option key={d} value={d}>{deptLabel(d, lang)}</option>)}
             </select>
             {/* Filtre statut */}
             <select className="input"
@@ -129,7 +129,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ fontSize:13, fontWeight:800, color:'var(--text)', lineHeight:1.2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{emp.name}</div>
-                          <div style={{ fontSize:11, color:'var(--text3)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{emp.role}</div>
+                          <div style={{ fontSize:11, color:'var(--text3)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{roleLabel(emp.role, lang)}</div>
                         </div>
                         <span style={{
                           fontSize:9, fontWeight:700, textTransform:'uppercase',
@@ -151,12 +151,12 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                         </div>
                         <div style={{ background:`${deptColor}0D`, border:`1px solid ${deptColor}1A`, borderRadius:8, padding:'7px 9px' }}>
                           <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>Dept</div>
-                          <div style={{ fontSize:11, fontWeight:700, color:deptColor, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{emp.dept}</div>
+                          <div style={{ fontSize:11, fontWeight:700, color:deptColor, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{deptLabel(emp.dept, lang)}</div>
                         </div>
                       </div>
                       {/* Footer card */}
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                        <span style={{ fontSize:10, fontWeight:600, color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:5, padding:'2px 7px' }}>{emp.type}</span>
+                        <span style={{ fontSize:10, fontWeight:600, color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:5, padding:'2px 7px' }}>{contractLabel(emp.type, lang)}</span>
                         <div style={{ display:'flex', gap:1, alignItems:'center' }}>
                           {[1,2,3,4,5].map(s => (
                             <Star key={s} size={9} style={{ color:'#F59E0B', opacity: s<=(emp.perf??3) ? 1 : .2, fill: s<=(emp.perf??3) ? '#F59E0B' : 'none' }} />
@@ -190,13 +190,13 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                 <table>
                   <thead>
                     <tr>
-                      <th scope="col">Employé</th>
-                      <th scope="col">Département</th>
-                      <th scope="col">Contrat</th>
-                      <th scope="col">Ancienneté</th>
-                      <th scope="col" style={{ textAlign: 'right' }}>Salaire</th>
-                      <th scope="col" style={{ textAlign: 'center' }}>Perf.</th>
-                      <th scope="col" style={{ textAlign: 'center' }}>Statut</th>
+                      <th scope="col">{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</th>
+                      <th scope="col">{lang === 'en' ? 'Department' : lang === 'es' ? 'Departamento' : lang === 'it' ? 'Dipartimento' : 'Département'}</th>
+                      <th scope="col">{lang === 'en' ? 'Contract' : lang === 'es' ? 'Contrato' : lang === 'it' ? 'Contratto' : 'Contrat'}</th>
+                      <th scope="col">{lang === 'en' ? 'Seniority' : lang === 'es' ? 'Antigüedad' : lang === 'it' ? 'Anzianità' : 'Ancienneté'}</th>
+                      <th scope="col" style={{ textAlign: 'right' }}>{lang === 'en' ? 'Salary' : lang === 'es' ? 'Salario' : lang === 'it' ? 'Stipendio' : 'Salaire'}</th>
+                      <th scope="col" style={{ textAlign: 'center' }}>{lang === 'en' ? 'Perf.' : lang === 'es' ? 'Rend.' : lang === 'it' ? 'Perf.' : 'Perf.'}</th>
+                      <th scope="col" style={{ textAlign: 'center' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -207,13 +207,13 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                             <EmpAvatar emp={emp} size={32} />
                             <div>
                               <div style={{ fontWeight: 700, fontSize: 13 }}>{emp.name}</div>
-                              <div style={{ fontSize: 11, color: 'var(--text3)' }}>{emp.role}</div>
+                              <div style={{ fontSize: 11, color: 'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
                             </div>
                           </div>
                         </td>
                         <td>
                           <span style={{ fontSize: 12, fontWeight: 600, color: DEPT_COLORS[emp.dept] ?? 'var(--text2)' }}>
-                            {emp.dept}
+                            {deptLabel(emp.dept, lang)}
                           </span>
                         </td>
                         <td>
@@ -221,9 +221,9 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                             fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
                             background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
                             color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
-                          }}>{emp.type}</span>
+                          }}>{contractLabel(emp.type, lang)}</span>
                         </td>
-                        <td style={{ fontSize: 12, color: 'var(--text2)' }}>{calcAnciennete(emp.hiredAt)}</td>
+                        <td style={{ fontSize: 12, color: 'var(--text2)' }}>{calcAnciennete(emp.hiredAt, lang)}</td>
                         <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700 }}>{fmt(emp.salary)}</td>
                         <td style={{ textAlign: 'center' }}>{emp.perf != null && <Stars v={emp.perf} />}</td>
                         <td style={{ textAlign: 'center' }}>
@@ -232,13 +232,13 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                             background: emp.active ? 'rgba(14,196,126,.12)' : 'var(--bg3)',
                             color: emp.active ? 'var(--acc2)' : 'var(--text3)',
                           }}>
-                            {emp.active ? '● Actif' : '○ Inactif'}
+                            {emp.active ? `● ${lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif'}` : `○ ${lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif'}`}
                           </span>
                         </td>
                       </tr>
                     ))}
                     {filtered.length === 0 && (
-                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)' }}>Aucun employé trouvé</td></tr>
+                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)' }}>{lang === 'en' ? 'No employee found' : lang === 'es' ? 'Sin empleados encontrados' : lang === 'it' ? 'Nessun dipendente trovato' : 'Aucun employé trouvé'}</td></tr>
                     )}
                   </tbody>
                 </table>
