@@ -1,5 +1,5 @@
-/* ── Google Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+/* Polices chargées en asynchrone dans index.html (preload+onload, non render-blocking).
+   Plus d'@import ici : il créait une requête CSS bloquant le rendu (chaîne critique). */
 
 :root {
   /* ─── Tokens couleurs fréquemment hardcodées (fonds/bordures translucides) ─── */

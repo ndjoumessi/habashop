@@ -201,13 +201,15 @@
     href="https://habashop-production.up.railway.app"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <!-- Polices chargées en asynchrone (non render-blocking) → meilleur FCP/LCP -->
+  <!-- Polices réelles de l'app (Plus Jakarta Sans + JetBrains Mono) chargées en
+       asynchrone (preload+onload) → non render-blocking, meilleur FCP/LCP.
+       display=swap : le texte s'affiche immédiatement en fallback puis swap. -->
   <link rel="preload" as="style"
-    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap"
     onload="this.onload=null;this.rel='stylesheet'"/>
   <noscript>
     <link rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"/>
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap"/>
   </noscript>
 
   <!-- ─── Favicon ──────────────────────────────── -->
