@@ -80,6 +80,15 @@ export default function App() {
         .then(user => updateUser(user))
         .catch(() => logout())
     }
+    // Reset session caisse au démarrage
+    // (évite les valeurs résiduelles du localStorage)
+    useAppStore.setState({
+      cashierOpen:        false,
+      cashierOpenedAt:    null,
+      cashierOpeningFund: 0,
+      cashierSessionTx:   0,
+      cashierSessionCA:   0,
+    })
     // Mise à jour des taux de change au démarrage
     useAppStore.getState().fetchExchangeRates()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
