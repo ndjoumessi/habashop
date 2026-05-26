@@ -16,15 +16,14 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Scanner les codes-barres des produits",
         "NSFaceIDUsageDescription": "Connexion rapide et sécurisée"
-      }
+      },
+      "icon": "./assets/icon.png"
     },
     "android": {
       "package": "com.habashop.app",
       "adaptiveIcon": {
-        "backgroundColor": "#07070F",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#6C47FF"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -33,7 +32,8 @@
         "USE_FINGERPRINT",
         "VIBRATE",
         "RECORD_AUDIO"
-      ]
+      ],
+      "icon": "./assets/icon.png"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -78,6 +78,11 @@
     },
     "updates": {
       "url": "https://u.expo.dev/e7399d7a-e5ba-4e30-a333-8cff7ad10eb4"
+    },
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#07070F"
     }
   }
 }
