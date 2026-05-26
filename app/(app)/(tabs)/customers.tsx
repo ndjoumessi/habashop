@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import {
   View, Text, TextInput, FlatList, ScrollView,
   TouchableOpacity, Modal, StyleSheet,
@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { customersApi } from '@/services/api'
-import { useAppStore } from '@/stores/appStore'
+import { useI18n, useFmt } from '@/stores/appStore'
 import {
   Colors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
@@ -56,17 +56,12 @@ function CustomerCard({ c, fmt, onPress }: { c: any; fmt: (n: number) => string;
 // ── Écran Clients ────────────────────────────────
 export default function CustomersScreen() {
   const insets = useSafeAreaInsets()
-  const { i, currency } = useAppStore()
+  const { i } = useI18n()
+  const { fmt } = useFmt()
 
   const [showSearch, setShowSearch] = useState(false)
   const [search, setSearch] = useState('')
   const [sel, setSel] = useState<any | null>(null)
-
-  const fmt = useCallback((n: number) => {
-    if (!n) return currency === 'XOF' ? '0 F' : `0 ${currency}`
-    if (currency === 'XOF') return `${Math.round(n).toLocaleString('fr-FR')} F`
-    return `${n.toFixed(2)} ${currency}`
-  }, [currency])
 
   const { data: customers = [], isLoading, isError, refetch, isRefetching } = useQuery<any[]>({
     queryKey: ['customers'],

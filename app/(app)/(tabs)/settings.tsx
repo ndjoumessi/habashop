@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '@/stores/authStore'
-import { useAppStore, type Lang } from '@/stores/appStore'
+import { useAppStore, useI18n, useFmt, type Lang } from '@/stores/appStore'
 import { sendLocalNotification } from '@/services/notifications'
 import {
   Colors, Spacing, BorderRadius, FontSize, Shadow,
@@ -44,7 +44,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets()
   const { user, tenant, logout } = useAuthStore()
-  const { i, lang, setLang, currency, setCurrency } = useAppStore()
+  const { i, lang } = useI18n()
+  const { currency } = useFmt()
+  const setLang = useAppStore(s => s.setLang)
+  const setCurrency = useAppStore(s => s.setCurrency)
   const qc = useQueryClient()
 
   const [notifStock, setNotifStock] = useState(true)
@@ -53,6 +56,18 @@ export default function SettingsScreen() {
 
   const status = tenant?.status ?? 'active'
   const statusColor = status === 'suspended' ? Colors.danger : status === 'trial' ? Colors.warn : Colors.accent2
+
+  // Change la langue + confirme (feedback immédiat dans la nouvelle langue)
+  const handleSetLang = (code: Lang) => {
+    setLang(code)
+    Alert.alert(
+      code === 'en' ? 'Language changed' : code === 'es' ? 'Idioma cambiado' : code === 'it' ? 'Lingua cambiata' : 'Langue changée',
+      code === 'en' ? 'The app language is now English'
+      : code === 'es' ? 'El idioma de la app es ahora español'
+      : code === 'it' ? "La lingua dell'app è ora italiano"
+      : "La langue de l'app est maintenant le français",
+    )
+  }
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
@@ -86,7 +101,7 @@ export default function SettingsScreen() {
             {LANGS.map(l => {
               const on = lang === l.code
               return (
-                <Pressable key={l.code} style={[s.gridItem, on && s.gridItemOn]} onPress={() => setLang(l.code)}>
+                <Pressable key={l.code} style={[s.gridItem, on && s.gridItemOn]} onPress={() => handleSetLang(l.code)}>
                   <Text style={{ fontSize: 22 }}>{l.flag}</Text>
                   <Text style={[s.gridLabel, on && s.gridLabelOn]}>{l.label}</Text>
                   {on && <Ionicons name="checkmark-circle" size={16} color={Colors.primary} style={s.gridCheck} />}

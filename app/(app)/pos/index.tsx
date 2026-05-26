@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import {
   View, Text, TextInput, FlatList, ScrollView,
   TouchableOpacity, Modal, StyleSheet,
@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi, salesApi } from '@/services/api'
 import { usePosStore, type CartItem } from '@/stores/posStore'
-import { useAppStore } from '@/stores/appStore'
+import { useI18n, useFmt } from '@/stores/appStore'
 import {
   Colors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
@@ -89,7 +89,8 @@ function CartRow({
 // ── Écran POS ────────────────────────────────────
 export default function POSScreen() {
   const insets = useSafeAreaInsets()
-  const { i, currency } = useAppStore()
+  const { i } = useI18n()
+  const { fmt } = useFmt()
   const qc = useQueryClient()
 
   const cart           = usePosStore(st => st.cart)
@@ -110,12 +111,6 @@ export default function POSScreen() {
   const [activeCat, setActiveCat] = useState('all')
   const [showCart, setShowCart]   = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-
-  const fmt = useCallback((n: number) => {
-    if (!n) return currency === 'XOF' ? '0 F' : `0 ${currency}`
-    if (currency === 'XOF') return `${Math.round(n).toLocaleString('fr-FR')} F`
-    return `${n.toFixed(2)} ${currency}`
-  }, [currency])
 
   const { data: products = [], isLoading, isError, refetch } = useQuery<any[]>({
     queryKey: ['products'],

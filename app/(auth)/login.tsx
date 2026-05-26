@@ -5,13 +5,13 @@ import {
   KeyboardAvoidingView, Platform, Alert,
 } from 'react-native'
 import { useAuthStore } from '@/stores/authStore'
-import { useAppStore } from '@/stores/appStore'
+import { useI18n } from '@/stores/appStore'
 import { authApi } from '@/services/api'
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
 
 export default function LoginScreen() {
   const { setAuth } = useAuthStore()
-  const { i } = useAppStore()
+  const { i } = useI18n()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)

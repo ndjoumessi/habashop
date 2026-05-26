@@ -1,4 +1,3 @@
-import { useCallback } from 'react'
 import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, RefreshControl, ActivityIndicator,
@@ -9,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { analyticsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
-import { useAppStore } from '@/stores/appStore'
+import { useI18n, useFmt } from '@/stores/appStore'
 import {
   Colors, Spacing, BorderRadius,
   FontSize, Shadow,
@@ -65,16 +64,8 @@ function QuickAction({
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets()
   const { user, tenant } = useAuthStore()
-  const { i, currency }  = useAppStore()
-
-  // Format montant
-  const fmt = useCallback((n: number) => {
-    if (!n) return currency === 'XOF' ? '0 F' : `0 ${currency}`
-    if (currency === 'XOF') {
-      return `${Math.round(n).toLocaleString('fr-FR')} F`
-    }
-    return `${n.toFixed(2)} ${currency}`
-  }, [currency])
+  const { i }   = useI18n()
+  const { fmt } = useFmt()
 
   // Charge les stats dashboard (API réelle : GET /api/dashboard/stats, réponse à plat)
   const {

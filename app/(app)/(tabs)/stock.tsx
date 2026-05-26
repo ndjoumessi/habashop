@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import {
   View, Text, TextInput, FlatList,
   TouchableOpacity, Modal, StyleSheet,
@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi } from '@/services/api'
-import { useAppStore } from '@/stores/appStore'
+import { useI18n, useFmt } from '@/stores/appStore'
 import {
   Colors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
@@ -55,7 +55,8 @@ function ProductRow({
 // ── Écran Stock ──────────────────────────────────
 export default function StockScreen() {
   const insets = useSafeAreaInsets()
-  const { i, currency } = useAppStore()
+  const { i } = useI18n()
+  const { fmt } = useFmt()
   const qc = useQueryClient()
 
   const [search, setSearch]   = useState('')
@@ -63,17 +64,10 @@ export default function StockScreen() {
   const [editP, setEditP]     = useState<any | null>(null)
   const [newQty, setNewQty]   = useState(0)
 
-  const fmt = useCallback((n: number) => {
-    if (!n) return currency === 'XOF' ? '0 F' : `0 ${currency}`
-    if (currency === 'XOF') return `${Math.round(n).toLocaleString('fr-FR')} F`
-    return `${n.toFixed(2)} ${currency}`
-  }, [currency])
-
-  const statusLabel = useCallback((st: 'ok' | 'low' | 'out') =>
+  const statusLabel = (st: 'ok' | 'low' | 'out') =>
     st === 'out' ? i('Rupture', 'Out of stock', 'Agotado', 'Esaurito')
     : st === 'low' ? i('Stock bas', 'Low stock', 'Stock bajo', 'Scorte basse')
-    : i('En stock', 'In stock', 'En stock', 'In stock'),
-  [i])
+    : i('En stock', 'In stock', 'En stock', 'In stock')
 
   const { data: products = [], isLoading, isError, refetch, isRefetching } = useQuery<any[]>({
     queryKey: ['products'],

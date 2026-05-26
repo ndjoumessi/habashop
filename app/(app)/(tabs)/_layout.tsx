@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router'
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '@/constants/theme'
-import { useAppStore } from '@/stores/appStore'
+import { useI18n } from '@/stores/appStore'
 
 function TabIcon({ name, focused, label }:{
   name: keyof typeof Ionicons.glyphMap
@@ -23,7 +23,7 @@ function TabIcon({ name, focused, label }:{
 }
 
 export default function TabLayout() {
-  const { i } = useAppStore()
+  const { i } = useI18n()
   return (
     <Tabs screenOptions={{
       headerShown:false,
