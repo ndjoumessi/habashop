@@ -48,13 +48,28 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['lucide-react', 'react-hot-toast'],
-          charts: ['recharts'],
+        manualChunks(id) {
+          // Vendor React — critique, toujours chargé
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router')) {
+            return 'vendor'
+          }
+          // BarcodeScanner / @zxing — lourd, chargé seulement à l'ouverture du scanner
+          if (id.includes('@zxing')) {
+            return 'barcode'
+          }
+          // Recharts / d3 — lazy via les routes Dashboard/Reports uniquement
+          if (id.includes('recharts') || id.includes('node_modules/d3-')) {
+            return 'charts'
+          }
+          // UI helpers
+          if (id.includes('lucide-react') || id.includes('react-hot-toast')) {
+            return 'ui'
+          }
         },
       },
     },
+    // Les gros chunks (barcode/charts) sont volontairement lazy → on relève le seuil
+    chunkSizeWarningLimit: 600,
   },
   server: {
     port: 5173,

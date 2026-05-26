@@ -1,10 +1,12 @@
+import { lazy, Suspense } from 'react'
 import { X, Eye, Pencil, Camera, Tag, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { printProductLabels } from '@/utils/export'
 import ViewField from '@/components/ui/ViewField'
-import BarcodeScanner from '@/components/ui/BarcodeScanner'
 import { type ProductItem } from '@/components/stock/stockShared'
+// Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
+const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
 interface StockModalsProps {
   showModal: boolean; setShowModal: (b: boolean) => void
@@ -280,14 +282,16 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
       {/* ── Scanner code-barres ── */}
       {showScanner && (
-        <BarcodeScanner
-          onScan={barcode => {
-            setForm(f => ({ ...f, barcode }))
-            setShowScanner(false)
-            toast.success(`✅ Code-barres : ${barcode}`)
-          }}
-          onClose={() => setShowScanner(false)}
-        />
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            onScan={barcode => {
+              setForm(f => ({ ...f, barcode }))
+              setShowScanner(false)
+              toast.success(`✅ Code-barres : ${barcode}`)
+            }}
+            onClose={() => setShowScanner(false)}
+          />
+        </Suspense>
       )}
 
       {/* ── Modal Catégorie ── */}

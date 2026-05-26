@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, formatCurrency, t, convertAmount, formatInCurrency } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi } from '@/lib/api'
-import BarcodeScanner from '@/components/ui/BarcodeScanner'
 import { generateInvoice } from '@/utils/export'
+// Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
+const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 import { Search, Minus, Plus, Trash2, ShoppingCart, X, Lock, Unlock, Camera, User, Factory, Package, Tag, Banknote, CreditCard, Smartphone, ClipboardList, Printer, FileText, BarChart3, CheckCircle, AlertTriangle, History } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { confirm } from '@/lib/confirm'
@@ -569,7 +570,7 @@ export default function POS() {
         </button>
       )}
 
-      {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
+      {showScanner && <Suspense fallback={null}><BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} /></Suspense>}
     </>
   )
 }
