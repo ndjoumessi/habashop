@@ -41,8 +41,7 @@ export default function APIDocs() {
             : 'API & Integrazioni'}
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text3)', margin: '4px 0 0' }}>
-          {lang === 'fr' ? 'Intégrez HabaShop dans vos applications via notre API REST'
-            : 'Integrate HabaShop into your applications via our REST API'}
+          {lang === 'en' ? 'Integrate HabaShop into your applications via our REST API' : lang === 'es' ? 'Integre HabaShop en sus aplicaciones a través de nuestra API REST' : lang === 'it' ? 'Integra HabaShop nelle tue applicazioni tramite la nostra API REST' : 'Intégrez HabaShop dans vos applications via notre API REST'}
         </p>
       </div>
 
@@ -50,21 +49,19 @@ export default function APIDocs() {
       <div className="panel">
         <div className="panel-h">
           <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
-            <ClipboardList size={15} /> {lang === 'fr' ? 'Cahier des charges' : 'Specification document'}
+            <ClipboardList size={15} /> {lang === 'en' ? 'Specification document' : lang === 'es' ? 'Pliego de condiciones' : lang === 'it' ? 'Capitolato' : 'Cahier des charges'}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div style={{ fontSize: 13, color: 'var(--text2)', flex: 1 }}>
-            {lang === 'fr'
-              ? 'Document complet HabaShop v2.0 — 16 modules, stack technique, architecture, sécurité.'
-              : 'Full HabaShop v2.0 document — 16 modules, tech stack, architecture, security.'}
+            {lang === 'en' ? 'Full HabaShop v2.0 document — 16 modules, tech stack, architecture, security.' : lang === 'es' ? 'Documento completo HabaShop v2.0 — 16 módulos, stack técnico, arquitectura, seguridad.' : lang === 'it' ? 'Documento completo HabaShop v2.0 — 16 moduli, stack tecnico, architettura, sicurezza.' : 'Document complet HabaShop v2.0 — 16 modules, stack technique, architecture, sécurité.'}
           </div>
           <button
             className="btn btn-primary btn-sm"
             onClick={() => generateCDC()}
             style={{ whiteSpace: 'nowrap', flexShrink: 0, display:'inline-flex', alignItems:'center', gap:6 }}
           >
-            <FileDown size={13} /> {lang === 'fr' ? 'Générer le PDF' : 'Generate PDF'}
+            <FileDown size={13} /> {lang === 'en' ? 'Generate PDF' : lang === 'es' ? 'Generar el PDF' : lang === 'it' ? 'Genera il PDF' : 'Générer le PDF'}
           </button>
         </div>
       </div>
@@ -105,26 +102,26 @@ export default function APIDocs() {
         {[
           {
             Icon: BookOpen,
-            title: lang === 'fr' ? 'Documentation complète' : 'Full documentation',
-            desc: lang === 'fr' ? 'Tous les endpoints avec exemples' : 'All endpoints with examples',
+            title: lang === 'en' ? 'Full documentation' : lang === 'es' ? 'Documentación completa' : lang === 'it' ? 'Documentazione completa' : 'Documentation complète',
+            desc: lang === 'en' ? 'All endpoints with examples' : lang === 'es' ? 'Todos los endpoints con ejemplos' : lang === 'it' ? 'Tutti gli endpoint con esempi' : 'Tous les endpoints avec exemples',
             url: 'https://habashop-production.up.railway.app/api/docs/html',
-            btn: lang === 'fr' ? 'Ouvrir la doc' : 'Open docs',
+            btn: lang === 'en' ? 'Open docs' : lang === 'es' ? 'Abrir la doc' : lang === 'it' ? 'Apri la doc' : 'Ouvrir la doc',
             color: 'var(--p2)',
           },
           {
             Icon: Plug,
             title: 'JSON Schema',
-            desc: lang === 'fr' ? "Format JSON de l'API" : 'API JSON format',
+            desc: lang === 'en' ? 'API JSON format' : lang === 'es' ? 'Formato JSON de la API' : lang === 'it' ? 'Formato JSON dell\'API' : "Format JSON de l'API",
             url: 'https://habashop-production.up.railway.app/api/docs',
-            btn: lang === 'fr' ? 'Voir le JSON' : 'View JSON',
+            btn: lang === 'en' ? 'View JSON' : lang === 'es' ? 'Ver el JSON' : lang === 'it' ? 'Vedi il JSON' : 'Voir le JSON',
             color: 'var(--acc2)',
           },
           {
             Icon: HeartPulse,
             title: 'Health Check',
-            desc: lang === 'fr' ? 'Statut du serveur en temps réel' : 'Real-time server status',
+            desc: lang === 'en' ? 'Real-time server status' : lang === 'es' ? 'Estado del servidor en tiempo real' : lang === 'it' ? 'Stato del server in tempo reale' : 'Statut du serveur en temps réel',
             url: 'https://habashop-production.up.railway.app/health',
-            btn: lang === 'fr' ? 'Vérifier' : 'Check',
+            btn: lang === 'en' ? 'Check' : lang === 'es' ? 'Verificar' : lang === 'it' ? 'Verifica' : 'Vérifier',
             color: 'var(--acc)',
           },
         ].map(link => (
@@ -163,7 +160,7 @@ export default function APIDocs() {
       <div className="panel">
         <div className="panel-h">
           <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
-            <Zap size={15} /> {lang === 'fr' ? 'Endpoints principaux' : 'Main endpoints'}
+            <Zap size={15} /> {lang === 'en' ? 'Main endpoints' : lang === 'es' ? 'Endpoints principales' : lang === 'it' ? 'Endpoint principali' : 'Endpoints principaux'}
           </span>
         </div>
         <div className="table-wrap">
@@ -178,15 +175,15 @@ export default function APIDocs() {
             </thead>
             <tbody>
               {[
-                { method: 'POST', path: '/api/auth/login',           desc: lang === 'fr' ? 'Authentification'     : 'Authentication',      auth: false },
-                { method: 'GET',  path: '/api/products',             desc: lang === 'fr' ? 'Liste produits'       : 'Product list',         auth: true  },
-                { method: 'POST', path: '/api/sales',                desc: lang === 'fr' ? 'Créer une vente'      : 'Create sale',          auth: true  },
-                { method: 'GET',  path: '/api/customers',            desc: lang === 'fr' ? 'Liste clients'        : 'Customer list',        auth: true  },
-                { method: 'GET',  path: '/api/dashboard/stats',      desc: lang === 'fr' ? 'Stats en temps réel'  : 'Real-time stats',      auth: true  },
-                { method: 'POST', path: '/api/ai/analyze',           desc: lang === 'fr' ? 'Analyse IA Claude'    : 'Claude AI analysis',   auth: true  },
-                { method: 'POST', path: '/api/ai/chat',              desc: lang === 'fr' ? 'Chat IA Claude'       : 'Claude AI chat',       auth: true  },
+                { method: 'POST', path: '/api/auth/login',           desc: lang === 'en' ? 'Authentication' : lang === 'es' ? 'Autenticación' : lang === 'it' ? 'Autenticazione' : 'Authentification',      auth: false },
+                { method: 'GET',  path: '/api/products',             desc: lang === 'en' ? 'Product list' : lang === 'es' ? 'Lista de productos' : lang === 'it' ? 'Lista prodotti' : 'Liste produits',         auth: true  },
+                { method: 'POST', path: '/api/sales',                desc: lang === 'en' ? 'Create sale' : lang === 'es' ? 'Crear una venta' : lang === 'it' ? 'Crea una vendita' : 'Créer une vente',          auth: true  },
+                { method: 'GET',  path: '/api/customers',            desc: lang === 'en' ? 'Customer list' : lang === 'es' ? 'Lista de clientes' : lang === 'it' ? 'Lista clienti' : 'Liste clients',        auth: true  },
+                { method: 'GET',  path: '/api/dashboard/stats',      desc: lang === 'en' ? 'Real-time stats' : lang === 'es' ? 'Estadísticas en tiempo real' : lang === 'it' ? 'Statistiche in tempo reale' : 'Stats en temps réel',      auth: true  },
+                { method: 'POST', path: '/api/ai/analyze',           desc: lang === 'en' ? 'Claude AI analysis' : lang === 'es' ? 'Análisis IA Claude' : lang === 'it' ? 'Analisi IA Claude' : 'Analyse IA Claude',   auth: true  },
+                { method: 'POST', path: '/api/ai/chat',              desc: lang === 'en' ? 'Claude AI chat' : lang === 'es' ? 'Chat IA Claude' : lang === 'it' ? 'Chat IA Claude' : 'Chat IA Claude',       auth: true  },
                 { method: 'POST', path: '/api/whatsapp/send-ticket', desc: 'Ticket WhatsApp',                                               auth: true  },
-                { method: 'GET',  path: '/health',                   desc: lang === 'fr' ? 'Statut API'           : 'API status',           auth: false },
+                { method: 'GET',  path: '/health',                   desc: lang === 'en' ? 'API status' : lang === 'es' ? 'Estado API' : lang === 'it' ? 'Stato API' : 'Statut API',           auth: false },
               ].map((e, i) => (
                 <tr key={i}>
                   <td>
@@ -234,7 +231,7 @@ export default function APIDocs() {
       <div className="panel">
         <div className="panel-h">
           <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
-            <Code2 size={15} /> {lang === 'fr' ? "Exemple d'intégration" : 'Integration example'}
+            <Code2 size={15} /> {lang === 'en' ? 'Integration example' : lang === 'es' ? 'Ejemplo de integración' : lang === 'it' ? 'Esempio di integrazione' : "Exemple d'intégration"}
           </span>
           <button className="mini-btn"
             onClick={() => {
@@ -294,7 +291,7 @@ main().catch(console.error)`}
       <div className="panel">
         <div className="panel-h">
           <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
-            <FlaskConical size={15} /> {lang === 'fr' ? 'Testeur interactif' : 'Interactive tester'}
+            <FlaskConical size={15} /> {lang === 'en' ? 'Interactive tester' : lang === 'es' ? 'Probador interactivo' : lang === 'it' ? 'Tester interattivo' : 'Testeur interactif'}
           </span>
         </div>
         <div style={{ display:'flex', gap:10, marginBottom:12 }}>
@@ -337,7 +334,7 @@ main().catch(console.error)`}
         {testerEndpoint.startsWith('POST') && (
           <div style={{ marginBottom:12 }}>
             <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
-              {lang === 'fr' ? 'Corps JSON' : 'JSON body'}
+              {lang === 'en' ? 'JSON body' : lang === 'es' ? 'Cuerpo JSON' : lang === 'it' ? 'Corpo JSON' : 'Corps JSON'}
             </div>
             <textarea
               className="input"
@@ -368,7 +365,7 @@ main().catch(console.error)`}
 
         {!testerResult && !testerLoading && (
           <div style={{ padding:'20px 0', textAlign:'center', fontSize:12, color:'var(--text3)' }}>
-            {lang === 'fr' ? 'Sélectionnez un endpoint et cliquez Tester' : 'Select an endpoint and click Test'}
+            {lang === 'en' ? 'Select an endpoint and click Test' : lang === 'es' ? 'Seleccione un endpoint y haga clic en Probar' : lang === 'it' ? 'Seleziona un endpoint e clicca Testa' : 'Sélectionnez un endpoint et cliquez Tester'}
           </div>
         )}
       </div>

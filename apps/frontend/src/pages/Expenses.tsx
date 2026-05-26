@@ -72,7 +72,7 @@ export default function Expenses() {
   const fmt = useFormatAmount()
 
   const handleAccountingExport = async () => {
-    const period = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })
+    const period = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { month: 'long', year: 'numeric' })
     try {
       const sales = await salesApi.list()
       exportAccountingExcel({ sales: sales ?? [], expenses, period, shopName: 'HabaShop', currency }, fmt)
@@ -229,11 +229,11 @@ export default function Expenses() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">{lang === 'fr' ? 'Dépenses' : 'Expenses'}</h1>
-          <p className="page-subtitle">{expenses.length} {lang === 'fr' ? 'dépenses enregistrées' : 'recorded expenses'}</p>
+          <h1 className="page-title">{lang === 'en' ? 'Expenses' : lang === 'es' ? 'Gastos' : lang === 'it' ? 'Spese' : 'Dépenses'}</h1>
+          <p className="page-subtitle">{expenses.length} {lang === 'en' ? 'recorded expenses' : lang === 'es' ? 'gastos registrados' : lang === 'it' ? 'spese registrate' : 'dépenses enregistrées'}</p>
         </div>
         <button className="topbar-btn" onClick={() => setAddOpen(true)}>
-          <Plus size={14} /> {lang === 'fr' ? 'Nouvelle dépense' : 'New expense'}
+          <Plus size={14} /> {lang === 'en' ? 'New expense' : lang === 'es' ? 'Nuevo gasto' : lang === 'it' ? 'Nuova spesa' : 'Nouvelle dépense'}
         </button>
       </div>
 
@@ -277,7 +277,7 @@ export default function Expenses() {
       {tab === 'journal' && (
         <div className="panel" style={{ marginBottom:0 }}>
           <div className="panel-head">
-            <span className="panel-title">{lang === 'fr' ? 'Journal des dépenses' : 'Expense log'}</span>
+            <span className="panel-title">{lang === 'en' ? 'Expense log' : lang === 'es' ? 'Registro de gastos' : lang === 'it' ? 'Registro spese' : 'Journal des dépenses'}</span>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setAddOpen(true)}>
               <Plus size={13} /> Ajouter dépense
             </button>
@@ -286,9 +286,9 @@ export default function Expenses() {
           {!loading && expenses.length === 0 ? (
             <EmptyState
               icon="💸"
-              title={lang === 'fr' ? 'Aucune dépense enregistrée' : 'No expenses recorded'}
-              message={lang === 'fr' ? 'Enregistrez vos dépenses pour suivre vos charges.' : 'Record your expenses to track your costs.'}
-              action={{ label: lang === 'fr' ? '+ Ajouter une dépense' : '+ Add an expense', onClick: () => setAddOpen(true) }}
+              title={lang === 'en' ? 'No expenses recorded' : lang === 'es' ? 'Sin gastos registrados' : lang === 'it' ? 'Nessuna spesa registrata' : 'Aucune dépense enregistrée'}
+              message={lang === 'en' ? 'Record your expenses to track your costs.' : lang === 'es' ? 'Registre sus gastos para controlar sus costos.' : lang === 'it' ? 'Registra le tue spese per monitorare i costi.' : 'Enregistrez vos dépenses pour suivre vos charges.'}
+              action={{ label: lang === 'en' ? '+ Add an expense' : lang === 'es' ? '+ Agregar un gasto' : lang === 'it' ? '+ Aggiungi una spesa' : '+ Ajouter une dépense', onClick: () => setAddOpen(true) }}
             />
           ) : (<>
           {/* Filtres */}
@@ -311,7 +311,7 @@ export default function Expenses() {
               <option value="EN ATTENTE">EN ATTENTE</option>
             </select>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleAccountingExport}>
-              <BarChart2 size={12}/> {lang === 'fr' ? 'Export comptable' : 'Accounting export'}
+              <BarChart2 size={12}/> {lang === 'en' ? 'Accounting export' : lang === 'es' ? 'Exportación contable' : lang === 'it' ? 'Esportazione contabile' : 'Export comptable'}
             </button>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printExpensesPDF(); toast.success('📄 PDF ouvert !') }}>
               <Download size={12} /> PDF
@@ -462,7 +462,7 @@ export default function Expenses() {
             borderRadius:14, padding:'18px 20px',
           }}>
             <div className="panel-head" style={{ marginBottom:16 }}>
-              <span className="panel-title">{lang === 'fr' ? 'Résumé mensuel' : 'Monthly summary'}</span>
+              <span className="panel-title">{lang === 'en' ? 'Monthly summary' : lang === 'es' ? 'Resumen mensual' : lang === 'it' ? 'Riepilogo mensile' : 'Résumé mensuel'}</span>
             </div>
             {[
               { label:'Budget total mensuel',  value:fmt(totalBudget),            color:'var(--text2)' },
@@ -575,13 +575,13 @@ export default function Expenses() {
             <label style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>{label}</label>
             {expEditMode ? null : (
               <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, fontWeight:500, color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', fontFamily: mono ? 'var(--mono)' : 'var(--font)' }}>
-                {value || <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{lang==='fr'?'Non renseigné':'Not set'}</span>}
+                {value || <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{lang === 'en' ? 'Not set' : lang === 'es' ? 'No indicado' : lang === 'it' ? 'Non indicato' : 'Non renseigné'}</span>}
               </div>
             )}
           </div>
         )
         const handleSave = async () => {
-          if (!editExpForm.label || !editExpForm.amountHT) { toast.error(lang==='fr'?'Libellé et montant requis':'Label and amount required'); return }
+          if (!editExpForm.label || !editExpForm.amountHT) { toast.error(lang === 'en' ? 'Label and amount required' : lang === 'es' ? 'Etiqueta e importe requeridos' : lang === 'it' ? 'Etichetta e importo richiesti' : 'Libellé et montant requis'); return }
           if (editExpense._apiId) {
             try { await expensesApi.update(editExpense._apiId, { date: new Date(editExpForm.date).toISOString(), label: editExpForm.label, category: editExpForm.category, amountHT: editExpForm.amountHT, vat: editExpForm.vat, amountTTC: Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100)), mode: editExpForm.mode, recurrent: editExpForm.recurrent }) } catch {}
           }
@@ -591,35 +591,35 @@ export default function Expenses() {
               : e
           ))
           setExpEditMode(false)
-          toast.success(`✅ ${lang==='fr'?'Dépense modifiée':'Expense updated'}`)
+          toast.success(`✅ ${lang === 'en' ? 'Expense updated' : lang === 'es' ? 'Gasto modificado' : lang === 'it' ? 'Spesa modificata' : 'Dépense modifiée'}`)
         }
         return (
           <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && setShowEditExpModal(false)}>
             <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
                 <span style={{ fontWeight:800, fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}>
-                  {expEditMode ? <><Pencil size={15}/> {lang==='fr'?'Modifier la dépense':'Edit expense'}</> : <><FileText size={15}/> {lang==='fr'?'Détail dépense':'Expense detail'}</>}
+                  {expEditMode ? <><Pencil size={15}/> {lang === 'en' ? 'Edit expense' : lang === 'es' ? 'Editar el gasto' : lang === 'it' ? 'Modifica la spesa' : 'Modifier la dépense'}</> : <><FileText size={15}/> {lang === 'en' ? 'Expense detail' : lang === 'es' ? 'Detalle del gasto' : lang === 'it' ? 'Dettaglio spesa' : 'Détail dépense'}</>}
                 </span>
                 <button className="mini-btn" onClick={() => { setShowEditExpModal(false); setExpEditMode(false) }}><X size={15} /></button>
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                   <div>
-                    {vf(lang==='fr'?'Date':'Date', editExpForm.date)}
+                    {vf(lang === 'en' ? 'Date' : lang === 'es' ? 'Fecha' : lang === 'it' ? 'Data' : 'Date', editExpForm.date)}
                     {expEditMode && <input className="input" type="date" value={editExpForm.date} onChange={e => setEditExpForm(f => ({...f, date:e.target.value}))} style={{ width:'100%', boxSizing:'border-box' }} />}
                   </div>
                   <div>
-                    {vf(lang==='fr'?'Catégorie':'Category', editExpForm.category)}
+                    {vf(lang === 'en' ? 'Category' : lang === 'es' ? 'Categoría' : lang === 'it' ? 'Categoria' : 'Catégorie', editExpForm.category)}
                     {expEditMode && <select className="input" value={editExpForm.category} onChange={e => setEditExpForm(f => ({...f, category:e.target.value as Category}))} style={{ width:'100%', boxSizing:'border-box' }}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>}
                   </div>
                 </div>
                 <div>
-                  {vf(lang==='fr'?'Libellé':'Label', editExpForm.label)}
-                  {expEditMode && <input className="input" value={editExpForm.label} onChange={e => setEditExpForm(f => ({...f, label:e.target.value}))} placeholder={lang==='fr'?'Description...':'Description...'} style={{ width:'100%', boxSizing:'border-box' }} />}
+                  {vf(lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé', editExpForm.label)}
+                  {expEditMode && <input className="input" value={editExpForm.label} onChange={e => setEditExpForm(f => ({...f, label:e.target.value}))} placeholder={lang === 'en' ? 'Description...' : lang === 'es' ? 'Descripción...' : lang === 'it' ? 'Descrizione...' : 'Description...'} style={{ width:'100%', boxSizing:'border-box' }} />}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
                   <div>
-                    {vf(lang==='fr'?'Montant HT':'Amount excl.', fmt(editExpForm.amountHT), true)}
+                    {vf(lang === 'en' ? 'Amount excl.' : lang === 'es' ? 'Importe s/IVA' : lang === 'it' ? 'Importo netto' : 'Montant HT', fmt(editExpForm.amountHT), true)}
                     {expEditMode && <input className="input" type="number" value={editExpForm.amountHT || ''} onChange={e => setEditExpForm(f => ({...f, amountHT:+e.target.value}))} style={{ width:'100%', boxSizing:'border-box' }} />}
                   </div>
                   <div>
@@ -633,15 +633,15 @@ export default function Expenses() {
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                   <div>
-                    {vf(lang==='fr'?'Mode paiement':'Payment mode', editExpForm.mode)}
+                    {vf(lang === 'en' ? 'Payment mode' : lang === 'es' ? 'Modo de pago' : lang === 'it' ? 'Metodo pagamento' : 'Mode paiement', editExpForm.mode)}
                     {expEditMode && <select className="input" value={editExpForm.mode} onChange={e => setEditExpForm(f => ({...f, mode:e.target.value}))} style={{ width:'100%', boxSizing:'border-box' }}>{MODES.map(m => <option key={m}>{m}</option>)}</select>}
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
                     {!expEditMode ? (
                       <div>
-                        <label style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>{lang==='fr'?'Récurrente':'Recurring'}</label>
+                        <label style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</label>
                         <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, fontWeight:500, color: editExpForm.recurrent ? 'var(--acc2)' : 'var(--text3)', minHeight:40, display:'flex', alignItems:'center' }}>
-                          {editExpForm.recurrent ? `✅ ${lang==='fr'?'Oui':'Yes'}` : `— ${lang==='fr'?'Non':'No'}`}
+                          {editExpForm.recurrent ? `✅ ${lang === 'en' ? 'Yes' : lang === 'es' ? 'Sí' : lang === 'it' ? 'Sì' : 'Oui'}` : `— ${lang === 'en' ? 'No' : lang === 'es' ? 'No' : lang === 'it' ? 'No' : 'Non'}`}
                         </div>
                       </div>
                     ) : (
@@ -650,7 +650,7 @@ export default function Expenses() {
                           style={{ width:44, height:24, borderRadius:99, background: editExpForm.recurrent ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0 }}>
                           <div style={{ position:'absolute', top:2, left: editExpForm.recurrent ? 22 : 2, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
                         </button>
-                        <span style={{ fontSize:13, color:'var(--text2)' }}>{lang==='fr'?'Récurrente':'Recurring'}</span>
+                        <span style={{ fontSize:13, color:'var(--text2)' }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</span>
                       </label>
                     )}
                   </div>
@@ -660,10 +660,10 @@ export default function Expenses() {
                 {!expEditMode ? (
                   <>
                     <button className="topbar-btn" style={{ flex:1, justifyContent:'center', display:'flex', alignItems:'center', gap:6 }} onClick={() => setExpEditMode(true)}>
-                      <Pencil size={14}/> {lang==='fr'?'Modifier':'Edit'}
+                      <Pencil size={14}/> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
                     </button>
                     <button className="mini-btn" onClick={() => setShowEditExpModal(false)}>
-                      {lang==='fr'?'Fermer':'Close'}
+                      {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}
                     </button>
                     <button className="mini-btn" style={{ color:'var(--danger)', borderColor:'rgba(255,59,92,.2)' }}
                       onClick={() => { deleteExpense(editExpense.id); setShowEditExpModal(false) }}>
@@ -673,10 +673,10 @@ export default function Expenses() {
                 ) : (
                   <>
                     <button className="topbar-btn" style={{ flex:1, justifyContent:'center', display:'flex', alignItems:'center', gap:6 }} onClick={handleSave}>
-                      <Check size={14}/> {lang==='fr'?'Sauvegarder':'Save'}
+                      <Check size={14}/> {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Sauvegarder'}
                     </button>
                     <button className="mini-btn" onClick={() => setExpEditMode(false)}>
-                      {lang==='fr'?'Annuler':'Cancel'}
+                      {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
                     </button>
                   </>
                 )}

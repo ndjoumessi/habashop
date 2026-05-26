@@ -90,7 +90,7 @@ export default function Forecasts() {
                   background:'var(--acc2)', boxShadow:'0 0 8px var(--acc2)',
                 }}/>
                 <span style={{ fontSize:10, color:'var(--acc2)', fontWeight:600 }}>
-                  {lang === 'fr' ? 'En ligne' : 'Online'}
+                  {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
                 </span>
               </div>
               {aiAnalysis && (
@@ -98,16 +98,14 @@ export default function Forecasts() {
               )}
             </div>
             <p style={{ fontSize:12, color:'var(--text3)', margin:0, lineHeight:1.5 }}>
-              {lang === 'fr'
-                ? 'Votre assistant commercial intelligent — Analysez vos ventes, stock, finances et obtenez des recommandations personnalisées.'
-                : 'Your intelligent business assistant — Analyze your sales, stock, finances and get personalized recommendations.'}
+              {lang === 'en' ? 'Your intelligent business assistant — Analyze your sales, stock, finances and get personalized recommendations.' : lang === 'es' ? 'Su asistente comercial inteligente — Analice sus ventas, stock, finanzas y obtenga recomendaciones personalizadas.' : lang === 'it' ? 'Il tuo assistente commerciale intelligente — Analizza vendite, stock, finanze e ottieni raccomandazioni personalizzate.' : 'Votre assistant commercial intelligent — Analysez vos ventes, stock, finances et obtenez des recommandations personnalisées.'}
             </p>
             <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap' }}>
               {[
-                { Icon: BarChart2,   label: lang === 'fr' ? 'Analyse ventes' : 'Sales analysis' },
-                { Icon: Package,     label: lang === 'fr' ? 'Prévisions stock' : 'Stock forecast' },
-                { Icon: Lightbulb,   label: lang === 'fr' ? 'Recommandations' : 'Recommendations' },
-                { Icon: MessageSquare, label: lang === 'fr' ? 'Chat libre' : 'Free chat' },
+                { Icon: BarChart2,   label: lang === 'en' ? 'Sales analysis' : lang === 'es' ? 'Análisis de ventas' : lang === 'it' ? 'Analisi vendite' : 'Analyse ventes' },
+                { Icon: Package,     label: lang === 'en' ? 'Stock forecast' : lang === 'es' ? 'Previsión de stock' : lang === 'it' ? 'Previsione stock' : 'Prévisions stock' },
+                { Icon: Lightbulb,   label: lang === 'en' ? 'Recommendations' : lang === 'es' ? 'Recomendaciones' : lang === 'it' ? 'Raccomandazioni' : 'Recommandations' },
+                { Icon: MessageSquare, label: lang === 'en' ? 'Free chat' : lang === 'es' ? 'Chat libre' : lang === 'it' ? 'Chat libero' : 'Chat libre' },
               ].map((cap, i) => (
                 <span key={i} style={{
                   fontSize:10, fontWeight:600, color:'var(--text3)',
@@ -125,10 +123,10 @@ export default function Forecasts() {
         {/* Boutons types d'analyse redesignés */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:10, padding:'16px 24px' }}>
           {([
-            { id:'full',    Icon: BarChart2,   color:'#6C47FF', label: lang === 'fr' ? 'Analyse mensuelle' : 'Monthly analysis', desc: lang === 'fr' ? 'Ventes, tendances, top produits' : 'Sales, trends, top products' },
-            { id:'stock',   Icon: Package,     color:'#FF9500', label: lang === 'fr' ? 'Analyse stock' : 'Stock analysis', desc: lang === 'fr' ? 'Ruptures, commandes à passer' : 'Stockouts, orders to place' },
-            { id:'revenue', Icon: DollarSign,  color:'#00D084', label: lang === 'fr' ? 'Analyse financière' : 'Financial analysis', desc: lang === 'fr' ? 'Revenus, dépenses, trésorerie' : 'Revenue, expenses, cash flow' },
-            { id:'hr',      Icon: Users,       color:'#00B8FF', label: lang === 'fr' ? 'Analyse clients' : 'Customer analysis', desc: lang === 'fr' ? 'Fidélité, segments, comportement' : 'Loyalty, segments, behavior' },
+            { id:'full',    Icon: BarChart2,   color:'#6C47FF', label: lang === 'en' ? 'Monthly analysis' : lang === 'es' ? 'Análisis mensual' : lang === 'it' ? 'Analisi mensile' : 'Analyse mensuelle', desc: lang === 'en' ? 'Sales, trends, top products' : lang === 'es' ? 'Ventas, tendencias, top productos' : lang === 'it' ? 'Vendite, tendenze, top prodotti' : 'Ventes, tendances, top produits' },
+            { id:'stock',   Icon: Package,     color:'#FF9500', label: lang === 'en' ? 'Stock analysis' : lang === 'es' ? 'Análisis de stock' : lang === 'it' ? 'Analisi stock' : 'Analyse stock', desc: lang === 'en' ? 'Stockouts, orders to place' : lang === 'es' ? 'Agotados, pedidos por hacer' : lang === 'it' ? 'Esauriti, ordini da effettuare' : 'Ruptures, commandes à passer' },
+            { id:'revenue', Icon: DollarSign,  color:'#00D084', label: lang === 'en' ? 'Financial analysis' : lang === 'es' ? 'Análisis financiero' : lang === 'it' ? 'Analisi finanziaria' : 'Analyse financière', desc: lang === 'en' ? 'Revenue, expenses, cash flow' : lang === 'es' ? 'Ingresos, gastos, tesorería' : lang === 'it' ? 'Ricavi, spese, liquidità' : 'Revenus, dépenses, trésorerie' },
+            { id:'hr',      Icon: Users,       color:'#00B8FF', label: lang === 'en' ? 'Customer analysis' : lang === 'es' ? 'Análisis de clientes' : lang === 'it' ? 'Analisi clienti' : 'Analyse clients', desc: lang === 'en' ? 'Loyalty, segments, behavior' : lang === 'es' ? 'Fidelidad, segmentos, comportamiento' : lang === 'it' ? 'Fedeltà, segmenti, comportamento' : 'Fidélité, segments, comportement' },
           ] as { id: 'full'|'stock'|'revenue'|'hr'; Icon: typeof BarChart2; color: string; label: string; desc: string }[]).map(btn => (
             <button key={btn.id}
               onClick={() => runAnalysis(btn.id)}
@@ -191,8 +189,7 @@ export default function Forecasts() {
                   : '🤖 Claude analizza i dati...'}
               </div>
               <div style={{ fontSize:12, color:'var(--text3)' }}>
-                {lang === 'fr' ? 'Ventes, stock, finances, RH — analyse en cours'
-                  : 'Sales, stock, finances, HR — analysis in progress'}
+                {lang === 'en' ? 'Sales, stock, finances, HR — analysis in progress' : lang === 'es' ? 'Ventas, stock, finanzas, RRHH — análisis en curso' : lang === 'it' ? 'Vendite, stock, finanze, HR — analisi in corso' : 'Ventes, stock, finances, RH — analyse en cours'}
               </div>
             </div>
           </div>
@@ -219,10 +216,10 @@ export default function Forecasts() {
                 gap:10, marginBottom:20,
               }}>
                 {[
-                  { label: lang === 'fr' ? 'CA du mois' : 'Monthly revenue', value:fmt(aiData.totalRevenue), color:'var(--acc2)' },
-                  { label: lang === 'fr' ? 'Transactions' : 'Transactions',   value:aiData.totalSales,        color:'var(--p2)'  },
-                  { label: lang === 'fr' ? 'Marge' : 'Margin',               value:aiData.margin + ' %',     color: parseFloat(aiData.margin) > 20 ? 'var(--acc2)' : 'var(--acc)' },
-                  { label: lang === 'fr' ? 'Ruptures' : 'Low stock',         value:aiData.lowStockCount,     color: aiData.lowStockCount > 0 ? 'var(--danger)' : 'var(--acc2)' },
+                  { label: lang === 'en' ? 'Monthly revenue' : lang === 'es' ? 'Ingresos del mes' : lang === 'it' ? 'Ricavi del mese' : 'CA du mois', value:fmt(aiData.totalRevenue), color:'var(--acc2)' },
+                  { label: lang === 'en' ? 'Transactions' : lang === 'es' ? 'Transacciones' : lang === 'it' ? 'Transazioni' : 'Transactions',   value:aiData.totalSales,        color:'var(--p2)'  },
+                  { label: lang === 'en' ? 'Margin' : lang === 'es' ? 'Margen' : lang === 'it' ? 'Margine' : 'Marge',               value:aiData.margin + ' %',     color: parseFloat(aiData.margin) > 20 ? 'var(--acc2)' : 'var(--acc)' },
+                  { label: lang === 'en' ? 'Low stock' : lang === 'es' ? 'Agotados' : lang === 'it' ? 'Esauriti' : 'Ruptures',         value:aiData.lowStockCount,     color: aiData.lowStockCount > 0 ? 'var(--danger)' : 'var(--acc2)' },
                 ].map(kpi => (
                   <div key={kpi.label} style={{
                     background:'var(--bg4)', border:'1px solid var(--border)',
@@ -242,10 +239,10 @@ export default function Forecasts() {
             <div style={{ display:'flex', gap:8, marginTop:16, paddingTop:16, borderTop:'1px solid var(--border)' }}>
               <button className="mini-btn" style={{ display:'flex', alignItems:'center', gap:5 }} onClick={() => {
                 navigator.clipboard.writeText(aiAnalysis)
-                toast.success(lang === 'fr' ? 'Copié !' : 'Copied!')
-              }}><Copy size={13}/> {lang === 'fr' ? 'Copier' : 'Copy'}</button>
+                toast.success(lang === 'en' ? 'Copied!' : lang === 'es' ? '¡Copiado!' : lang === 'it' ? 'Copiato!' : 'Copié !')
+              }}><Copy size={13}/> {lang === 'en' ? 'Copy' : lang === 'es' ? 'Copiar' : lang === 'it' ? 'Copia' : 'Copier'}</button>
               <button className="mini-btn" style={{ display:'flex', alignItems:'center', gap:5 }} onClick={() => runAnalysis(aiType)}>
-                <RefreshCw size={13}/> {lang === 'fr' ? 'Régénérer' : 'Regenerate'}
+                <RefreshCw size={13}/> {lang === 'en' ? 'Regenerate' : lang === 'es' ? 'Regenerar' : lang === 'it' ? 'Rigenera' : 'Régénérer'}
               </button>
               <button className="mini-btn" style={{ display:'flex', alignItems:'center', gap:5 }} onClick={() => {
                 const blob = new Blob([aiAnalysis], { type:'text/plain' })
@@ -255,7 +252,7 @@ export default function Forecasts() {
                 a.download = `HabaShop-AI-${aiType}-${new Date().toISOString().split('T')[0]}.txt`
                 a.click()
                 URL.revokeObjectURL(url)
-              }}><Download size={13}/> {lang === 'fr' ? 'Télécharger' : 'Download'}</button>
+              }}><Download size={13}/> {lang === 'en' ? 'Download' : lang === 'es' ? 'Descargar' : lang === 'it' ? 'Scarica' : 'Télécharger'}</button>
             </div>
           </div>
         )}
@@ -283,14 +280,12 @@ export default function Forecasts() {
       {/* ── Prévisions automatiques ──────────────────────────────── */}
       <div className="panel" style={{ marginBottom:0 }}>
         <div className="panel-head">
-          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Zap size={14}/> {lang === 'fr' ? 'Prévisions automatiques' : 'Automatic forecasts'}</span>
+          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Zap size={14}/> {lang === 'en' ? 'Automatic forecasts' : lang === 'es' ? 'Previsiones automáticas' : lang === 'it' ? 'Previsioni automatiche' : 'Prévisions automatiques'}</span>
         </div>
         <EmptyState
           icon="🔮"
-          title={lang === 'fr' ? 'Pas encore de prévisions' : 'No forecasts yet'}
-          message={lang === 'fr'
-            ? 'Les prévisions de ventes, stock et trésorerie se génèrent automatiquement après 30 jours de ventes. En attendant, utilisez HabaShop AI ci-dessus pour analyser vos données.'
-            : 'Sales, stock and cash-flow forecasts are generated automatically after 30 days of sales. In the meantime, use HabaShop AI above to analyze your data.'}
+          title={lang === 'en' ? 'No forecasts yet' : lang === 'es' ? 'Aún no hay previsiones' : lang === 'it' ? 'Ancora nessuna previsione' : 'Pas encore de prévisions'}
+          message={lang === 'en' ? 'Sales, stock and cash-flow forecasts are generated automatically after 30 days of sales. In the meantime, use HabaShop AI above to analyze your data.' : lang === 'es' ? 'Las previsiones de ventas, stock y tesorería se generan automáticamente tras 30 días de ventas. Mientras tanto, use HabaShop AI arriba para analizar sus datos.' : lang === 'it' ? 'Le previsioni di vendite, stock e liquidità si generano automaticamente dopo 30 giorni di vendite. Nel frattempo, usa HabaShop AI qui sopra per analizzare i tuoi dati.' : 'Les prévisions de ventes, stock et trésorerie se génèrent automatiquement après 30 jours de ventes. En attendant, utilisez HabaShop AI ci-dessus pour analyser vos données.'}
         />
       </div>
 

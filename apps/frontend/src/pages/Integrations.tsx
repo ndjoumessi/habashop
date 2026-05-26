@@ -193,12 +193,12 @@ export default function Integrations() {
   const totalCalls     = INTEGRATIONS_LIST.reduce((acc, i) => acc + Math.min(i.calls, 100000), 0)
 
   const EMAIL_FLOWS = [
-    { trigger: lang === 'fr' ? '🎉 Inscription' : '🎉 Signup',                   email: lang === 'fr' ? 'Email de bienvenue' : 'Welcome email',   delay: lang === 'fr' ? 'Immédiat' : 'Immediate' },
-    { trigger: lang === 'fr' ? '⏰ J-7 avant expiration' : '⏰ D-7 before expiry', email: lang === 'fr' ? 'Rappel essai' : 'Trial reminder',         delay: 'Cron 1h' },
-    { trigger: lang === 'fr' ? '🔴 J-3 avant expiration' : '🔴 D-3 before expiry', email: lang === 'fr' ? 'Rappel urgent' : 'Urgent reminder',       delay: 'Cron 1h' },
-    { trigger: lang === 'fr' ? '🔒 Expiration' : '🔒 Expiry',                     email: lang === 'fr' ? 'Compte suspendu' : 'Account suspended',   delay: 'Cron 1h' },
-    { trigger: lang === 'fr' ? '✅ Upgrade validé' : '✅ Upgrade approved',        email: lang === 'fr' ? 'Confirmation plan' : 'Plan confirmation', delay: lang === 'fr' ? 'Immédiat' : 'Immediate' },
-    { trigger: lang === 'fr' ? '📊 Lundi 8h' : '📊 Monday 8am',                   email: lang === 'fr' ? 'Rapport hebdomadaire' : 'Weekly report',  delay: lang === 'fr' ? 'Cron hebdo' : 'Weekly cron' },
+    { trigger: lang === 'en' ? '🎉 Signup' : lang === 'es' ? '🎉 Registro' : lang === 'it' ? '🎉 Iscrizione' : '🎉 Inscription',                   email: lang === 'en' ? 'Welcome email' : lang === 'es' ? 'Email de bienvenida' : lang === 'it' ? 'Email di benvenuto' : 'Email de bienvenue',   delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
+    { trigger: lang === 'en' ? '⏰ D-7 before expiry' : lang === 'es' ? '⏰ D-7 antes de expirar' : lang === 'it' ? '⏰ G-7 prima della scadenza' : '⏰ J-7 avant expiration', email: lang === 'en' ? 'Trial reminder' : lang === 'es' ? 'Recordatorio de prueba' : lang === 'it' ? 'Promemoria prova' : 'Rappel essai',         delay: 'Cron 1h' },
+    { trigger: lang === 'en' ? '🔴 D-3 before expiry' : lang === 'es' ? '🔴 D-3 antes de expirar' : lang === 'it' ? '🔴 G-3 prima della scadenza' : '🔴 J-3 avant expiration', email: lang === 'en' ? 'Urgent reminder' : lang === 'es' ? 'Recordatorio urgente' : lang === 'it' ? 'Promemoria urgente' : 'Rappel urgent',       delay: 'Cron 1h' },
+    { trigger: lang === 'en' ? '🔒 Expiry' : lang === 'es' ? '🔒 Expiración' : lang === 'it' ? '🔒 Scadenza' : '🔒 Expiration',                     email: lang === 'en' ? 'Account suspended' : lang === 'es' ? 'Cuenta suspendida' : lang === 'it' ? 'Account sospeso' : 'Compte suspendu',   delay: 'Cron 1h' },
+    { trigger: lang === 'en' ? '✅ Upgrade approved' : lang === 'es' ? '✅ Upgrade aprobado' : lang === 'it' ? '✅ Upgrade approvato' : '✅ Upgrade validé',        email: lang === 'en' ? 'Plan confirmation' : lang === 'es' ? 'Confirmación de plan' : lang === 'it' ? 'Conferma piano' : 'Confirmation plan', delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
+    { trigger: lang === 'en' ? '📊 Monday 8am' : lang === 'es' ? '📊 Lunes 8h' : lang === 'it' ? '📊 Lunedì 8' : '📊 Lundi 8h',                   email: lang === 'en' ? 'Weekly report' : lang === 'es' ? 'Informe semanal' : lang === 'it' ? 'Report settimanale' : 'Rapport hebdomadaire',  delay: lang === 'en' ? 'Weekly cron' : lang === 'es' ? 'Cron semanal' : lang === 'it' ? 'Cron settimanale' : 'Cron hebdo' },
   ]
 
   return (
@@ -211,7 +211,7 @@ export default function Integrations() {
             {lang === 'fr' ? 'API & Intégrations' : lang === 'en' ? 'API & Integrations' : lang === 'es' ? 'Integraciones API' : 'Integrazioni API'}
           </h1>
           <p className="page-subtitle">
-            {lang === 'fr' ? 'Services connectés et statuts en temps réel' : 'Connected services and real-time status'}
+            {lang === 'en' ? 'Connected services and real-time status' : lang === 'es' ? 'Servicios conectados y estados en tiempo real' : lang === 'it' ? 'Servizi connessi e stati in tempo reale' : 'Services connectés et statuts en temps réel'}
           </p>
         </div>
         <div style={{
@@ -225,7 +225,7 @@ export default function Integrations() {
             animation:'pulse 2s infinite',
           }} />
           <span style={{ fontSize:12, fontWeight:700, color:'var(--acc2)' }}>
-            {totalConnected}/{INTEGRATIONS_LIST.length} {lang === 'fr' ? 'actives' : 'active'}
+            {totalConnected}/{INTEGRATIONS_LIST.length} {lang === 'en' ? 'active' : lang === 'es' ? 'activas' : lang === 'it' ? 'attive' : 'actives'}
           </span>
         </div>
       </div>
@@ -233,10 +233,10 @@ export default function Integrations() {
       {/* ── KPIs ── */}
       <div className="kpi-grid">
         {[
-          { label:lang === 'fr' ? 'Intégrations' : 'Integrations', value:INTEGRATIONS_LIST.length, color:'var(--p2)'    },
-          { label:lang === 'fr' ? 'Connectées'   : 'Connected',    value:totalConnected,            color:'var(--acc2)'  },
-          { label:lang === 'fr' ? 'Appels API'   : 'API Calls',    value:`${(totalCalls/1000).toFixed(0)}K+`, color:'var(--acc)' },
-          { label:lang === 'fr' ? 'Disponibilité': 'Uptime',       value:'99.9%',                   color:'var(--p3)'    },
+          { label:lang === 'en' ? 'Integrations' : lang === 'es' ? 'Integraciones' : lang === 'it' ? 'Integrazioni' : 'Intégrations', value:INTEGRATIONS_LIST.length, color:'var(--p2)'    },
+          { label:lang === 'en' ? 'Connected' : lang === 'es' ? 'Conectadas' : lang === 'it' ? 'Connesse' : 'Connectées',    value:totalConnected,            color:'var(--acc2)'  },
+          { label:lang === 'en' ? 'API Calls' : lang === 'es' ? 'Llamadas API' : lang === 'it' ? 'Chiamate API' : 'Appels API',    value:`${(totalCalls/1000).toFixed(0)}K+`, color:'var(--acc)' },
+          { label:lang === 'en' ? 'Uptime' : lang === 'es' ? 'Disponibilidad' : lang === 'it' ? 'Disponibilità' : 'Disponibilité',       value:'99.9%',                   color:'var(--p3)'    },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-label">{k.label}</div>
@@ -314,9 +314,9 @@ export default function Integrations() {
                 {/* Stats API */}
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:10 }}>
                   {[
-                    { label: lang === 'fr' ? 'Appels/mois' : 'Calls/mo', value: itg.calls > 100000 ? '∞' : itg.calls.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US') },
+                    { label: lang === 'en' ? 'Calls/mo' : lang === 'es' ? 'Llamadas/mes' : lang === 'it' ? 'Chiamate/mese' : 'Appels/mois', value: itg.calls > 100000 ? '∞' : itg.calls.toLocaleString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR') },
                     { label: 'Uptime', value: itg.uptime },
-                    { label: lang === 'fr' ? 'Latence' : 'Latency', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—' },
+                    { label: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—' },
                   ].map(stat => (
                     <div key={stat.label} style={{ background:'var(--bg3)', borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
                       <div style={{ fontSize:12, fontWeight:800, color:'var(--text)', fontFamily:'var(--mono)' }}>{stat.value}</div>
@@ -377,12 +377,10 @@ export default function Integrations() {
             }}>📧</div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
-                Resend — {lang === 'fr' ? 'Emails transactionnels' : 'Transactional emails'}
+                Resend — {lang === 'en' ? 'Transactional emails' : lang === 'es' ? 'Emails transaccionales' : lang === 'it' ? 'Email transazionali' : 'Emails transactionnels'}
               </div>
               <div style={{ fontSize:11, color:'var(--text3)', lineHeight:1.4 }}>
-                {lang === 'fr'
-                  ? 'Bienvenue, rappels d\'essai, confirmations d\'upgrade et rapports hebdomadaires.'
-                  : 'Welcome, trial reminders, upgrade confirmations and weekly reports.'}
+                {lang === 'en' ? 'Welcome, trial reminders, upgrade confirmations and weekly reports.' : lang === 'es' ? 'Bienvenida, recordatorios de prueba, confirmaciones de upgrade e informes semanales.' : lang === 'it' ? 'Benvenuto, promemoria di prova, conferme di upgrade e report settimanali.' : 'Bienvenue, rappels d\'essai, confirmations d\'upgrade et rapports hebdomadaires.'}
               </div>
             </div>
             <span style={{
@@ -390,7 +388,7 @@ export default function Integrations() {
               color:'var(--acc2)', borderRadius:20, padding:'3px 10px',
               fontSize:11, fontWeight:700, flexShrink:0,
             }}>
-              ✅ {lang === 'fr' ? 'Actif — 6 emails configurés' : 'Active — 6 emails configured'}
+              ✅ {lang === 'en' ? 'Active — 6 emails configured' : lang === 'es' ? 'Activo — 6 emails configurados' : lang === 'it' ? 'Attivo — 6 email configurate' : 'Actif — 6 emails configurés'}
             </span>
           </div>
 
@@ -400,13 +398,13 @@ export default function Integrations() {
               <thead>
                 <tr style={{ background:'var(--bg4)' }}>
                   <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:700, fontSize:10, textTransform:'uppercase' }}>
-                    {lang === 'fr' ? 'Déclencheur' : 'Trigger'}
+                    {lang === 'en' ? 'Trigger' : lang === 'es' ? 'Disparador' : lang === 'it' ? 'Attivazione' : 'Déclencheur'}
                   </th>
                   <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:700, fontSize:10, textTransform:'uppercase' }}>
                     Email
                   </th>
                   <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:700, fontSize:10, textTransform:'uppercase' }}>
-                    {lang === 'fr' ? 'Délai' : 'Timing'}
+                    {lang === 'en' ? 'Timing' : lang === 'es' ? 'Plazo' : lang === 'it' ? 'Tempistica' : 'Délai'}
                   </th>
                 </tr>
               </thead>
@@ -430,9 +428,9 @@ export default function Integrations() {
           {/* Stats Resend */}
           <div style={{ display:'flex', gap:12, marginTop:12, flexWrap:'wrap' }}>
             {[
-              { label: lang === 'fr' ? 'Emails/mois gratuits' : 'Free emails/month', value: '3 000' },
-              { label: lang === 'fr' ? 'Taux de délivrabilité' : 'Delivery rate',     value: '99.8%' },
-              { label: lang === 'fr' ? 'Domaine' : 'Domain',                          value: 'resend.dev' },
+              { label: lang === 'en' ? 'Free emails/month' : lang === 'es' ? 'Emails/mes gratuitos' : lang === 'it' ? 'Email/mese gratuite' : 'Emails/mois gratuits', value: '3 000' },
+              { label: lang === 'en' ? 'Delivery rate' : lang === 'es' ? 'Tasa de entrega' : lang === 'it' ? 'Tasso di recapito' : 'Taux de délivrabilité',     value: '99.8%' },
+              { label: lang === 'en' ? 'Domain' : lang === 'es' ? 'Dominio' : lang === 'it' ? 'Dominio' : 'Domaine',                          value: 'resend.dev' },
             ].map(stat => (
               <div key={stat.label} style={{
                 flex:1, minWidth:140, background:'var(--bg3)',
@@ -451,7 +449,7 @@ export default function Integrations() {
               type="button"
               onClick={() => setShowResendMonitor(v => !v)}
               aria-expanded={showResendMonitor}
-              aria-label={lang === 'fr' ? 'Afficher le monitoring temps réel' : 'Toggle real-time monitoring'}
+              aria-label={lang === 'en' ? 'Toggle real-time monitoring' : lang === 'es' ? 'Mostrar el monitoreo en tiempo real' : lang === 'it' ? 'Mostra il monitoraggio in tempo reale' : 'Afficher le monitoring temps réel'}
               style={{
                 width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
                 padding:'10px 12px',
@@ -465,7 +463,7 @@ export default function Integrations() {
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
-                {lang === 'fr' ? 'Monitoring temps réel' : 'Real-time monitoring'}
+                {lang === 'en' ? 'Real-time monitoring' : lang === 'es' ? 'Monitoreo en tiempo real' : lang === 'it' ? 'Monitoraggio in tempo reale' : 'Monitoring temps réel'}
                 <span style={{
                   padding:'1px 7px', borderRadius:99, fontSize:9, fontWeight:800,
                   background:'rgba(0,208,132,.1)', color:'var(--acc2)',
@@ -495,11 +493,9 @@ export default function Integrations() {
       }}>
         <div style={{ fontSize:11, color:'var(--text3)', lineHeight:1.5 }}>
           <span style={{ color:'var(--p2)', fontWeight:700 }}>
-            {lang === 'fr' ? 'Note :' : 'Note:'}
+            {lang === 'en' ? 'Note:' : lang === 'es' ? 'Nota:' : lang === 'it' ? 'Nota:' : 'Note :'}
           </span>
-          {' '}{lang === 'fr'
-            ? 'Les intégrations marquées ∞ sont des services en cours d\'exécution permanente (backend, base de données, CDN).'
-            : 'Integrations marked ∞ are continuously running services (backend, database, CDN).'}
+          {' '}{lang === 'en' ? 'Integrations marked ∞ are continuously running services (backend, database, CDN).' : lang === 'es' ? 'Las integraciones marcadas con ∞ son servicios en ejecución permanente (backend, base de datos, CDN).' : lang === 'it' ? 'Le integrazioni contrassegnate con ∞ sono servizi in esecuzione permanente (backend, database, CDN).' : 'Les intégrations marquées ∞ sont des services en cours d\'exécution permanente (backend, base de données, CDN).'}
         </div>
       </div>
     </div>

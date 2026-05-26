@@ -235,7 +235,7 @@ export default function HR() {
     data: { brut:number; bonus:number; cnss:number; ir:number; net:number; month:string }
   ) => {
     const monthLabel = new Date(data.month+'-01')
-      .toLocaleDateString(lang==='fr'?'fr-FR':'en-US', {month:'long', year:'numeric'})
+      .toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', {month:'long', year:'numeric'})
     const win = window.open('', '_blank', 'width=700,height=900')
     if (!win) return
     win.document.write(`<!DOCTYPE html>
@@ -261,38 +261,38 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 <button onclick="window.print()" style="position:fixed;top:16px;right:16px;background:#6C47FF;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:700">🖨️ Imprimer</button>
 <div class="header">
   <div><div class="logo">HabaShop</div>
-  <div style="font-size:12px;color:#888;margin-top:4px;">${lang==='fr'?'Bulletin de paie':'Payslip'} — ${monthLabel}</div></div>
-  <div class="badge">${lang==='fr'?'CONFIDENTIEL':'CONFIDENTIAL'}</div>
+  <div style="font-size:12px;color:#888;margin-top:4px;">${lang === 'en' ? 'Payslip' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Busta paga' : 'Bulletin de paie'} — ${monthLabel}</div></div>
+  <div class="badge">${lang === 'en' ? 'CONFIDENTIAL' : lang === 'es' ? 'CONFIDENCIAL' : lang === 'it' ? 'RISERVATO' : 'CONFIDENTIEL'}</div>
 </div>
 <div class="section">
-  <div class="section-title">${lang==='fr'?'INFORMATIONS EMPLOYÉ':'EMPLOYEE INFORMATION'}</div>
-  <div class="row"><span class="label">${lang==='fr'?'Nom':'Name'}</span><span class="value">${emp.name}</span></div>
-  <div class="row"><span class="label">${lang==='fr'?'Poste':'Position'}</span><span class="value">${emp.role}</span></div>
-  <div class="row"><span class="label">${lang==='fr'?'Département':'Department'}</span><span class="value">${emp.dept}</span></div>
-  <div class="row"><span class="label">${lang==='fr'?'Type contrat':'Contract'}</span><span class="value">${emp.type}</span></div>
-  <div class="row"><span class="label">${lang==='fr'?'Date embauche':'Hire date'}</span><span class="value">${emp.hiredAt}</span></div>
+  <div class="section-title">${lang === 'en' ? 'EMPLOYEE INFORMATION' : lang === 'es' ? 'INFORMACIÓN DEL EMPLEADO' : lang === 'it' ? 'INFORMAZIONI DIPENDENTE' : 'INFORMATIONS EMPLOYÉ'}</div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Name' : lang === 'es' ? 'Nombre' : lang === 'it' ? 'Nome' : 'Nom'}</span><span class="value">${emp.name}</span></div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Position' : lang === 'es' ? 'Puesto' : lang === 'it' ? 'Posizione' : 'Poste'}</span><span class="value">${emp.role}</span></div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Department' : lang === 'es' ? 'Departamento' : lang === 'it' ? 'Reparto' : 'Département'}</span><span class="value">${emp.dept}</span></div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Contract' : lang === 'es' ? 'Tipo contrato' : lang === 'it' ? 'Tipo contratto' : 'Type contrat'}</span><span class="value">${emp.type}</span></div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Hire date' : lang === 'es' ? 'Fecha contratación' : lang === 'it' ? 'Data assunzione' : 'Date embauche'}</span><span class="value">${emp.hiredAt}</span></div>
 </div>
 <div class="section">
-  <div class="section-title">${lang==='fr'?'DÉTAIL DE LA RÉMUNÉRATION':'COMPENSATION DETAIL'}</div>
-  <div class="row"><span class="label">${lang==='fr'?'Salaire brut de base':'Base gross salary'}</span><span class="value">${fmt(data.brut)}</span></div>
-  ${data.bonus>0?`<div class="row"><span class="label">${lang==='fr'?'Prime du mois':'Monthly bonus'}</span><span class="value" style="color:#00D084;">+ ${fmt(data.bonus)}</span></div>`:''}
-  <div class="row"><span class="label" style="font-weight:700">${lang==='fr'?'Total brut':'Total gross'}</span><span class="value">${fmt(data.brut+data.bonus)}</span></div>
+  <div class="section-title">${lang === 'en' ? 'COMPENSATION DETAIL' : lang === 'es' ? 'DETALLE DE LA REMUNERACIÓN' : lang === 'it' ? 'DETTAGLIO DELLA RETRIBUZIONE' : 'DÉTAIL DE LA RÉMUNÉRATION'}</div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Base gross salary' : lang === 'es' ? 'Salario bruto base' : lang === 'it' ? 'Stipendio lordo base' : 'Salaire brut de base'}</span><span class="value">${fmt(data.brut)}</span></div>
+  ${data.bonus>0?`<div class="row"><span class="label">${lang === 'en' ? 'Monthly bonus' : lang === 'es' ? 'Prima del mes' : lang === 'it' ? 'Premio del mese' : 'Prime du mois'}</span><span class="value" style="color:#00D084;">+ ${fmt(data.bonus)}</span></div>`:''}
+  <div class="row"><span class="label" style="font-weight:700">${lang === 'en' ? 'Total gross' : lang === 'es' ? 'Total bruto' : lang === 'it' ? 'Totale lordo' : 'Total brut'}</span><span class="value">${fmt(data.brut+data.bonus)}</span></div>
 </div>
 <div class="section">
-  <div class="section-title">${lang==='fr'?'COTISATIONS ET RETENUES':'CONTRIBUTIONS & DEDUCTIONS'}</div>
+  <div class="section-title">${lang === 'en' ? 'CONTRIBUTIONS & DEDUCTIONS' : lang === 'es' ? 'COTIZACIONES Y DEDUCCIONES' : lang === 'it' ? 'CONTRIBUTI E TRATTENUTE' : 'COTISATIONS ET RETENUES'}</div>
   <div class="row"><span class="label">CNSS (8%)</span><span class="value" style="color:#FF3B5C;">− ${fmt(data.cnss)}</span></div>
-  <div class="row"><span class="label">${lang==='fr'?'Impôt sur le revenu (5%)':'Income tax (5%)'}</span><span class="value" style="color:#FFB800;">− ${fmt(data.ir)}</span></div>
-  <div class="row"><span class="label" style="font-weight:700">${lang==='fr'?'Total retenues':'Total deductions'}</span><span class="value" style="color:#FF3B5C;">− ${fmt(data.cnss+data.ir)}</span></div>
+  <div class="row"><span class="label">${lang === 'en' ? 'Income tax (5%)' : lang === 'es' ? 'Impuesto sobre la renta (5%)' : lang === 'it' ? 'Imposta sul reddito (5%)' : 'Impôt sur le revenu (5%)'}</span><span class="value" style="color:#FFB800;">− ${fmt(data.ir)}</span></div>
+  <div class="row"><span class="label" style="font-weight:700">${lang === 'en' ? 'Total deductions' : lang === 'es' ? 'Total deducciones' : lang === 'it' ? 'Totale trattenute' : 'Total retenues'}</span><span class="value" style="color:#FF3B5C;">− ${fmt(data.cnss+data.ir)}</span></div>
 </div>
 <div class="total-box">
-  <div><div class="total-label">${lang==='fr'?'NET À PAYER':'NET TO PAY'}</div>
+  <div><div class="total-label">${lang === 'en' ? 'NET TO PAY' : lang === 'es' ? 'NETO A PAGAR' : lang === 'it' ? 'NETTO DA PAGARE' : 'NET À PAYER'}</div>
   <div style="font-size:11px;opacity:.7;margin-top:4px;">${monthLabel}</div></div>
   <div class="total-value">${fmt(data.net)}</div>
 </div>
 <div class="footer">
   <div><div style="font-weight:700;margin-bottom:4px">HabaShop</div>
   <div>Document généré le ${new Date().toLocaleDateString('fr-FR')}</div></div>
-  <div><div class="sign-box">${lang==='fr'?'Signature employeur<br/><br/><br/>':'Employer signature<br/><br/><br/>'}</div></div>
+  <div><div class="sign-box">${lang === 'en' ? 'Employer signature<br/><br/><br/>' : lang === 'es' ? 'Firma del empleador<br/><br/><br/>' : lang === 'it' ? 'Firma del datore di lavoro<br/><br/><br/>' : 'Signature employeur<br/><br/><br/>'}</div></div>
 </div>
 </body></html>`)
     win.document.close()
@@ -326,10 +326,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            {lang === 'fr' ? 'Ressources Humaines' : 'Human Resources'}
+            {lang === 'en' ? 'Human Resources' : lang === 'es' ? 'Recursos Humanos' : lang === 'it' ? 'Risorse Umane' : 'Ressources Humaines'}
           </h1>
           <p className="page-subtitle">
-            {employees.length} {lang === 'fr' ? 'employés' : 'employees'} · {activeCount} {lang === 'fr' ? 'actifs' : 'active'}
+            {employees.length} {lang === 'en' ? 'employees' : lang === 'es' ? 'empleados' : lang === 'it' ? 'dipendenti' : 'employés'} · {activeCount} {lang === 'en' ? 'active' : lang === 'es' ? 'activos' : lang === 'it' ? 'attivi' : 'actifs'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -341,7 +341,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             <Download size={14} /> Export
           </button>
           <button className="topbar-btn" onClick={() => { setSelectedEmp(null); setShowModal(true) }}>
-            <Plus size={14} /> {lang === 'fr' ? 'Ajouter' : 'Add'}
+            <Plus size={14} /> {lang === 'en' ? 'Add' : lang === 'es' ? 'Agregar' : lang === 'it' ? 'Aggiungi' : 'Ajouter'}
           </button>
         </div>
       </div>
@@ -352,11 +352,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', borderRadius: 12, padding: 4, border: '1px solid var(--border)' }}>
         {([
-          { id: 'team'      as const, icon: <Users size={13}/>,      label: lang === 'fr' ? 'Équipe'       : 'Team'       },
-          { id: 'contracts' as const, icon: <FileText size={13}/>,   label: lang === 'fr' ? 'Contrats'     : 'Contracts'  },
-          { id: 'pointage'  as const, icon: <Clock size={13}/>,      label: lang === 'fr' ? 'Présences'    : 'Attendance' },
-          { id: 'leaves'    as const, icon: <Umbrella size={13}/>,   label: lang === 'fr' ? 'Congés'       : 'Leaves'     },
-          { id: 'payroll'   as const, icon: <DollarSign size={13}/>, label: lang === 'fr' ? 'Rémunération' : 'Payroll'    },
+          { id: 'team'      as const, icon: <Users size={13}/>,      label: lang === 'en' ? 'Team' : lang === 'es' ? 'Equipo' : lang === 'it' ? 'Squadra' : 'Équipe'       },
+          { id: 'contracts' as const, icon: <FileText size={13}/>,   label: lang === 'en' ? 'Contracts' : lang === 'es' ? 'Contratos' : lang === 'it' ? 'Contratti' : 'Contrats'  },
+          { id: 'pointage'  as const, icon: <Clock size={13}/>,      label: lang === 'en' ? 'Attendance' : lang === 'es' ? 'Asistencia' : lang === 'it' ? 'Presenze' : 'Présences' },
+          { id: 'leaves'    as const, icon: <Umbrella size={13}/>,   label: lang === 'en' ? 'Leaves' : lang === 'es' ? 'Permisos' : lang === 'it' ? 'Ferie' : 'Congés'     },
+          { id: 'payroll'   as const, icon: <DollarSign size={13}/>, label: lang === 'en' ? 'Payroll' : lang === 'es' ? 'Remuneración' : lang === 'it' ? 'Retribuzione' : 'Rémunération'    },
         ]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             flex: 1, padding: '9px 8px', borderRadius: 9,
@@ -385,9 +385,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         <div className="panel">
           <EmptyState
             icon="👔"
-            title={lang === 'fr' ? 'Aucun employé' : 'No employees'}
-            message={lang === 'fr' ? 'Ajoutez votre premier employé pour commencer à gérer votre équipe.' : 'Add your first employee to start managing your team.'}
-            action={{ label: lang === 'fr' ? '+ Ajouter un employé' : '+ Add an employee', onClick: () => { setSelectedEmp(null); setShowModal(true) } }}
+            title={lang === 'en' ? 'No employees' : lang === 'es' ? 'Sin empleados' : lang === 'it' ? 'Nessun dipendente' : 'Aucun employé'}
+            message={lang === 'en' ? 'Add your first employee to start managing your team.' : lang === 'es' ? 'Agregue su primer empleado para empezar a gestionar su equipo.' : lang === 'it' ? 'Aggiungi il tuo primo dipendente per iniziare a gestire la squadra.' : 'Ajoutez votre premier employé pour commencer à gérer votre équipe.'}
+            action={{ label: lang === 'en' ? '+ Add an employee' : lang === 'es' ? '+ Agregar un empleado' : lang === 'it' ? '+ Aggiungi un dipendente' : '+ Ajouter un employé', onClick: () => { setSelectedEmp(null); setShowModal(true) } }}
           />
         </div>
       ) : tab === 'team' && (
