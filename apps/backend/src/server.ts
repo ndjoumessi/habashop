@@ -1,12 +1,13 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
 import jwt from '@fastify/jwt'
 import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
-import Redis from 'ioredis'
 import * as Sentry from '@sentry/node'
 import { prisma } from './db'
+import { redis } from './redis'
 
 // Routes
 import { authRoutes }         from './routes/auth'
@@ -92,6 +93,16 @@ async function start() {
     credentials: true,
   })
 
+  // ─── HELMET (en-têtes de sécurité) ──────
+  // API JSON consommée par un frontend cross-origin (Vercel) : on garde les
+  // en-têtes utiles (HSTS, X-Content-Type-Options, frameguard…) et on désactive
+  // CSP / politiques cross-origin qui interfèreraient avec le SPA distant + le WS.
+  await app.register(helmet, {
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+
   // ─── JWT ────────────────────────────────
   await app.register(jwt, {
     secret: process.env.JWT_SECRET as string, // garanti présent par la validation au démarrage
@@ -104,12 +115,8 @@ async function start() {
     max: 100,
     timeWindow: '1 minute',
   }
-  if (process.env.REDIS_URL) {
-    rateLimitOpts.redis = new Redis(process.env.REDIS_URL, {
-      connectTimeout: 1000,
-      maxRetriesPerRequest: 1,
-      enableReadyCheck: false,
-    })
+  if (redis) {
+    rateLimitOpts.redis = redis
     console.log('🧮 Rate-limit : store Redis partagé activé')
   } else {
     console.warn('⚠️  Rate-limit : REDIS_URL absent → store mémoire (non fiable en multi-replica)')

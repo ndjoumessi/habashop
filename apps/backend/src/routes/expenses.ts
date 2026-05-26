@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { invalidateTenantCache } from '../lib/cache'
 
 export async function expenseRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/expenses', { preHandler: authenticate }, async (request) => {
@@ -10,19 +11,24 @@ export async function expenseRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/expenses', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    return prisma.expense.create({ data: { ...(request.body as any), tenantId } })
+    const expense = await prisma.expense.create({ data: { ...(request.body as any), tenantId } })
+    invalidateTenantCache(tenantId).catch(() => {})
+    return expense
   })
 
   app.put('/api/expenses/:id', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
-    return prisma.expense.update({ where: { id, tenantId }, data: request.body as any })
+    const expense = await prisma.expense.update({ where: { id, tenantId }, data: request.body as any })
+    invalidateTenantCache(tenantId).catch(() => {})
+    return expense
   })
 
   app.delete('/api/expenses/:id', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
     await prisma.expense.delete({ where: { id, tenantId } })
+    invalidateTenantCache(tenantId).catch(() => {})
     return { success: true }
   })
 }

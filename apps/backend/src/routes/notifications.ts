@@ -13,8 +13,10 @@ export function notifyTenant(tenantId: string, event: { type: string; data?: any
 }
 
 export async function notificationRoutes(app: FastifyInstance): Promise<void> {
-  app.get('/api/ws', { websocket: true }, (connection: any, req: any) => {
-    const sock = connection.socket
+  // @fastify/websocket v11 (Fastify 5) : le handler reçoit directement la
+  // WebSocket en 1er argument (avant : un SocketStream avec `.socket`).
+  app.get('/api/ws', { websocket: true }, (socket: any, req: any) => {
+    const sock = socket
     // Auth : le navigateur ne peut pas poser d'en-tête sur un WebSocket → token en query.
     const token = (req.query?.token as string) || (req.headers?.authorization?.replace(/^Bearer\s+/i, ''))
     let payload: any
