@@ -2,6 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { Search, Eye, X, ShoppingCart, MapPin, Navigation2, Globe, Flame } from 'lucide-react'
 import { type GeoCustomer, DARK_STYLE, createMarkerIcon, getMapCfg, typeLabel, GMAPS_KEY } from '@/components/customers/customersShared'
 
+// Couleurs (hex) par type — utilisées dans le HTML du popup InfoWindow,
+// où les `var(--…)` ne peuvent pas servir au calcul d'alpha (`${color}40`).
+const POPUP_HEX: Record<string, string> = {
+  Grossiste: '#6C47FF', 'Semi-gros': '#00B8FF', 'Fidèle': '#00D084', 'Détail': '#FF9500',
+}
+// Échappe le contenu utilisateur injecté dans le HTML du popup (anti-XSS).
+const esc = (s: any): string => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
 export default function CustomerMap({
   customers, geoPositions, geocoding, mapsLoaded, fmt, lang, navigate, onOpenDetail,
 }: {
@@ -18,6 +27,7 @@ export default function CustomerMap({
   const mapObj      = useRef<any>(null)
   const markersRef  = useRef<any[]>([])
   const heatLayer   = useRef<any>(null)
+  const infoWin     = useRef<any>(null)
   const [mapReady,  setMapReady]  = useState(false)
   const [selected,  setSelected]  = useState<any>(null)
   const [filter,    setFilter]    = useState('all')
@@ -34,6 +44,72 @@ export default function CustomerMap({
     return matchType && matchSearch
   })
 
+  const L = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+
+  // HTML du popup premium (InfoWindow Google Maps) au clic sur un marqueur.
+  const buildPopupHtml = (c: any): string => {
+    const color    = POPUP_HEX[c.type] ?? '#6C47FF'
+    const initials = (c.name ?? '?').split(' ').map((n: string) => n[0] ?? '').join('').slice(0, 2).toUpperCase()
+    const totalCA  = Number(c.totalRevenue ?? c.totalCA ?? 0)
+    const loyalty  = Number(c.loyaltyPoints ?? 0)
+    const mapsUrl  = `https://maps.google.com/maps?q=${encodeURIComponent(c.address ?? '')}`
+    return `
+  <div style="font-family:var(--font),-apple-system,BlinkMacSystemFont,sans-serif;background:#0D0D1A;border:1px solid ${color}40;border-radius:14px;min-width:240px;max-width:280px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,${color},${color}CC);padding:14px 16px;display:flex;align-items:center;gap:10px;">
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;flex-shrink:0;">${esc(initials)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name)}</div>
+        <div style="display:inline-flex;align-items:center;margin-top:3px;padding:1px 8px;background:rgba(255,255,255,.2);border-radius:99px;font-size:9px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.4px;">${esc(typeLabel(c.type, lang))}</div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;">
+      ${c.address ? `
+      <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 11px;background:rgba(255,255,255,.04);border:1px solid ${color}30;border-radius:10px;margin-bottom:10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="${color}" style="flex-shrink:0;margin-top:1px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
+        <div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:#F0F0FF;line-height:1.4;">${esc(c.address)}</div>
+      </div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px 10px;">
+          <div style="font-size:9px;color:#8888A8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">${L('CA Total', 'Total rev.', 'Ing. total', 'Fatt. tot.')}</div>
+          <div style="font-size:13px;font-weight:900;color:#FF9500;font-family:var(--mono),monospace;">${esc(fmt(totalCA))}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px 10px;">
+          <div style="font-size:9px;color:#8888A8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">${L('Fidélité', 'Loyalty', 'Fidelidad', 'Fedeltà')}</div>
+          <div style="font-size:13px;font-weight:900;color:#00D084;font-family:var(--mono),monospace;">${loyalty} pts</div>
+        </div>
+      </div>
+      ${c.phone ? `<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#A0A0C0;margin-bottom:10px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A0A0C0" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.07 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 2.98 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        ${esc(c.phone)}
+      </div>` : ''}
+      <div style="display:flex;gap:6px;">
+        <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:${color}20;border:1px solid ${color}40;border-radius:8px;font-size:11px;font-weight:700;color:${color};text-decoration:none;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Google Maps
+        </a>
+        <button id="iw-detail-${esc(c.id)}" type="button" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:${color};border:none;border-radius:8px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          ${L('Voir fiche', 'View', 'Ver', 'Vedi')}
+        </button>
+      </div>
+    </div>
+  </div>`
+  }
+
+  // Ouvre le popup premium sur un marqueur + relie le bouton "Voir fiche".
+  const openInfoWindow = (customer: any, marker: any) => {
+    const google = (window as any).google
+    if (!google?.maps) return
+    if (!infoWin.current) infoWin.current = new google.maps.InfoWindow()
+    infoWin.current.setContent(buildPopupHtml(customer))
+    infoWin.current.open({ map: mapObj.current, anchor: marker })
+    google.maps.event.addListenerOnce(infoWin.current, 'domready', () => {
+      const btn = document.getElementById(`iw-detail-${customer.id}`)
+      if (btn) (btn as HTMLElement).onclick = () => { infoWin.current?.close(); onOpenDetail(customer) }
+    })
+  }
+
   // Init map
   useEffect(() => {
     if (!mapsLoaded || !mapRef.current || mapObj.current) return
@@ -46,7 +122,7 @@ export default function CustomerMap({
       backgroundColor: '#0A0A16',
     })
     mapObj.current = map
-    map.addListener('click', () => setSelected(null))
+    map.addListener('click', () => { setSelected(null); infoWin.current?.close() })
     setMapReady(true)
   }, [mapsLoaded])
 
@@ -87,6 +163,7 @@ export default function CustomerMap({
         setTimeout(() => marker.setAnimation(null), 600)
         mapObj.current.panTo(pos)
         mapObj.current.panBy(160, 0)
+        openInfoWindow(customer, marker)
       })
 
       markersRef.current.push(marker)
@@ -178,7 +255,7 @@ export default function CustomerMap({
                   mapObj.current.panTo(pos); mapObj.current.setZoom(14); mapObj.current.panBy(160, 0)
                   const google = (window as any).google
                   const mk = markersRef.current.find(m => m.getTitle?.() === customer.name)
-                  if (mk) { mk.setAnimation(google.maps.Animation.BOUNCE); setTimeout(() => mk.setAnimation(null), 600) }
+                  if (mk) { mk.setAnimation(google.maps.Animation.BOUNCE); setTimeout(() => mk.setAnimation(null), 600); openInfoWindow(customer, mk) }
                 }
               }}
                 onMouseEnter={e => { if (!isSel) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.04)' }}
@@ -226,7 +303,7 @@ export default function CustomerMap({
                     <div style={{ fontSize: 13, fontWeight: 800, color: '#F0F0FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{selected.name}</div>
                     <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99, background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.color}33`, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {typeLabel(selected.type, lang)}</span>
                   </div>
-                  <button type="button" onClick={() => setSelected(null)} style={{ width: 24, height: 24, borderRadius: 7, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer', color: 'var(--text3)', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={11} /></button>
+                  <button type="button" onClick={() => { setSelected(null); infoWin.current?.close() }} style={{ width: 24, height: 24, borderRadius: 7, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer', color: 'var(--text3)', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={11} /></button>
                 </div>
                 {/* KPIs */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5, marginBottom: 10 }}>

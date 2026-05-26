@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2 } from 'lucide-react'
+import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { exportCSV, generateInvoice } from '@/utils/export'
@@ -170,6 +170,8 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = '0 12px 32px rgba(0,0,0,.3)'; el.style.borderColor = tc.h; const a = el.querySelector('.customer-actions') as HTMLElement; if (a) { a.style.opacity = '1'; a.style.maxHeight = '48px' } }}
                   onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = ''; el.style.borderColor = isSel ? tc.h : 'var(--border)'; const a = el.querySelector('.customer-actions') as HTMLElement; if (a) { a.style.opacity = '0'; a.style.maxHeight = '0' } }}
                 >
+                  {/* Bande dégradée par type */}
+                  <div style={{ height: 3, background: `linear-gradient(135deg,${tc.h},${tc.h}CC)`, flexShrink: 0 }} />
                   {/* TOP : avatar + nom + badge + points */}
                   <div style={{ padding: '16px 16px 12px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <div style={{ width: 46, height: 46, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg,${tc.h},${tc.h}CC)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: '#fff', letterSpacing: '-0.5px', boxShadow: `0 4px 14px rgba(${tc.rgb},.35)`, position: 'relative' }}>
@@ -216,9 +218,19 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                       </div>
                     )}
                     {c.address && (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, padding: '6px 8px', background: `rgba(${tc.rgb},.05)`, border: `1px solid rgba(${tc.rgb},.12)`, borderRadius: 8 }}>
-                        <MapPin size={10} style={{ color: tc.h, flexShrink: 0, marginTop: 1 }} />
-                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.address}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 8px', background: `rgba(${tc.rgb},.05)`, border: `1px solid rgba(${tc.rgb},.12)`, borderRadius: 8 }}>
+                        <MapPin size={10} style={{ color: tc.h, flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0, fontSize: 11, fontWeight: 600, color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.address}</div>
+                        <a
+                          href={`https://maps.google.com/maps?q=${encodeURIComponent(c.address)}`}
+                          target="_blank" rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          title={i('Ouvrir dans Google Maps', 'Open in Google Maps', 'Abrir en Google Maps', 'Apri in Google Maps')}
+                          aria-label={i('Ouvrir dans Google Maps', 'Open in Google Maps', 'Abrir en Google Maps', 'Apri in Google Maps')}
+                          style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, background: `rgba(${tc.rgb},.12)`, border: `1px solid rgba(${tc.rgb},.2)`, color: tc.h, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+                        >
+                          <ExternalLink size={11} />
+                        </a>
                       </div>
                     )}
                   </div>
