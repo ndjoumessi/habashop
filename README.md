@@ -9,6 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
 [![Android](https://img.shields.io/badge/Android-✅-3DDC84?style=flat-square&logo=android)](https://play.google.com)
 [![iOS](https://img.shields.io/badge/iOS-🔜-000000?style=flat-square&logo=apple)](https://apple.com)
+![Sprint](https://img.shields.io/badge/Sprint-2_✅-00D084?style=flat-square)
 
 [📱 Télécharger l'APK](#-installation) · [🌐 Version Web](https://habashop.vercel.app) · [📚 Documentation](#-développement)
 
@@ -78,6 +79,30 @@ L'app permet aux commerçants de gérer leur activité depuis leur téléphone :
 - Conversion FX réelle via open.er-api.com (cache 6h, fallback fixe)
 - Infos boutique (plan, statut, devise) · Déconnexion sécurisée
 
+### 📷 Scanner code-barres EAN13
+- Caméra intégrée au POS (`expo-camera`)
+- Scan EAN13, EAN8, QR, Code128, Code39, UPC-A
+- Haptic feedback sur scan réussi · gestion des permissions caméra
+- Produit ajouté instantanément au panier
+
+### 📡 Mode hors-ligne
+- Détection automatique de la connexion (NetInfo)
+- Ventes sauvegardées localement si hors-ligne (file d'actions AsyncStorage)
+- Synchronisation automatique au retour du réseau
+- Badge « Hors ligne » dans le dashboard
+
+### 💬 Ticket WhatsApp
+- Reçu proposé par WhatsApp après chaque vente
+- Ticket formaté : articles + total + mode de paiement, en 4 langues
+- Lien direct vers le client si numéro connu
+- Nécessite WhatsApp installé sur l'appareil
+
+### 📊 Rapports & Analytics
+- KPIs par période : Aujourd'hui / 7j / 30j / 90j
+- CA total, nb transactions, panier moyen, meilleure journée
+- Top 5 produits + répartition des modes de paiement (barres)
+- Export CSV des ventes (partage natif) · accessible depuis le Dashboard
+
 ---
 
 ## 🚀 Installation
@@ -108,12 +133,15 @@ habashop-mobile/
 │   ├── index.tsx                 # Route '/' → redirect auth (fix écran noir en build)
 │   ├── (auth)/login.tsx          # Écran de connexion
 │   └── (app)/
-│       ├── pos/index.tsx         # Caisse (modal plein écran)
+│       ├── pos/index.tsx         # Caisse (scanner · offline · ticket WhatsApp)
+│       ├── reports/index.tsx     # Rapports & Analytics (export CSV)
 │       └── (tabs)/               # dashboard · stock · pos-tab · customers · settings
 ├── src/
 │   ├── constants/theme.ts        # Design tokens (couleurs, fonts, espacements)
 │   ├── stores/                   # authStore (JWT+SecureStore) · appStore (i18n+devise) · posStore
-│   └── services/                 # api.ts (axios) · exchangeRate.ts (FX) · notifications.ts (push)
+│   ├── hooks/                    # useNetworkStatus · useOfflineSync
+│   ├── components/pos/           # BarcodeScanner (expo-camera)
+│   └── services/                 # api · exchangeRate · notifications · offlineQueue · whatsappTicket
 ├── assets/                       # icon · icon-ios (RGB sans alpha) · adaptive-icon · splash-icon · notification-icon
 ├── app.json                      # Config Expo + EAS
 └── eas.json                      # Profils de build EAS (development / preview / production)
@@ -132,6 +160,7 @@ L'app consomme l'API HabaShop existante sur Railway. **Aucune modification backe
 | `/api/products` | GET | Liste produits |
 | `/api/products/:id` | **PUT** | Mise à jour (⚠️ PUT, pas PATCH) |
 | `/api/sales` | POST | Enregistrer une vente (`items:[{productId, qty, price}]`) |
+| `/api/sales` | GET | Historique des ventes (`?limit=N`) — utilisé par les Rapports |
 | `/api/customers` | GET | Liste clients |
 | `/api/dashboard/stats` | GET | KPIs dashboard (réponse à plat) |
 | `/api/notifications/token` | POST | Enregistrement push (idempotent) |
@@ -209,18 +238,20 @@ npx expo-doctor       # objectif 18/18 ✅
 - [x] i18n 4 langues · Conversion FX réelle
 - [x] Build APK Android (EAS) · Notifications push (infra)
 
-### 🔜 Sprint 2
-- [ ] Scanner code-barres EAN13 (expo-camera)
-- [ ] Mode hors-ligne (cache + file d'actions)
-- [ ] Ticket WhatsApp après vente
-- [ ] Écran Rapports & Analytics
-- [ ] Build iOS (App Store)
+### ✅ Sprint 2
+- [x] Scanner code-barres EAN13
+- [x] Mode hors-ligne + sync automatique
+- [x] Ticket WhatsApp après vente
+- [x] Écran Rapports & Analytics
+- [x] Export CSV des ventes
 
 ### 🔜 Sprint 3
-- [ ] RH & Planning · Dépenses & Fournisseurs
+- [ ] EAS Build iOS (App Store)
 - [ ] Biométrie (Face ID / Fingerprint)
+- [ ] Google Play Store
+- [ ] RH & Planning mobile
 - [ ] Widgets Android (CA du jour)
-- [ ] Publication Google Play Store
+- [ ] Notifications push réelles (token EAS)
 
 ---
 
@@ -233,6 +264,21 @@ npx expo-doctor       # objectif 18/18 ✅
 | 📦 Repo Web | https://github.com/ndjoumessi/habashop |
 | 📱 Repo Mobile | https://github.com/ndjoumessi/habashop-mobile |
 | 📊 EAS Builds | https://expo.dev/accounts/ndjoumessi/projects/habashop-mobile |
+
+---
+
+## 📋 Changelog
+
+### v1.1.0 — Sprint 2 (2026-05-27)
+- ✨ Scanner EAN13 dans le POS
+- ✨ Mode hors-ligne + sync automatique
+- ✨ Ticket WhatsApp après vente
+- ✨ Écran Rapports avec export CSV
+
+### v1.0.0 — Sprint 1 (2026-05-26)
+- 🎉 MVP : Login + Dashboard + POS + Stock + Clients
+- ✨ i18n 4 langues + conversion FX réelle
+- ✨ Build APK Android (EAS)
 
 ---
 

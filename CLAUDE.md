@@ -35,6 +35,9 @@ Afrique francophone) — surtout **caisse POS mobile** + stock + dashboard + cli
 | expo-camera | ~17.0.10 | Scan barcode EAN13 |
 | expo-updates | ~29.0.17 | OTA updates |
 | expo-dev-client | ~6.0.21 | Dev builds |
+| @react-native-community/netinfo | 11.4.1 | Détection réseau (offline) |
+| expo-file-system | ~19.0.22 | Export CSV (Rapports) — nouvelle API `File`/`Paths` |
+| expo-sharing | ~14.0.8 | Partage du CSV |
 
 > Lire les **docs versionnées** https://docs.expo.dev/versions/v54.0.0/ avant de coder (cf. `AGENTS.md`).
 
@@ -107,15 +110,23 @@ app/                       # Expo Router (file-based)
   (app)/_layout.tsx
     (tabs)/_layout.tsx     # tab bar
     (tabs)/dashboard|stock|customers|settings|pos-tab.tsx
-    pos/index.tsx          # caisse (fullScreenModal)
+    pos/index.tsx          # caisse (fullScreenModal) — scanner, offline, ticket WhatsApp
+    reports/index.tsx      # Rapports (KPIs période, barres CSS, top, paiements, export CSV)
 src/
   constants/theme.ts       # Colors / Spacing / BorderRadius / FontSize / Shadow
   stores/                  # authStore, appStore (useI18n/useFmt + persist), posStore
+  hooks/
+    useNetworkStatus.ts    # détecte online/offline (NetInfo)
+    useOfflineSync.ts      # sync auto de la file au retour réseau (monté via <OfflineSyncBridge/>)
   services/
-    api.ts                 # axios + interceptor JWT + authApi/productsApi/salesApi/...
+    api.ts                 # axios + interceptor JWT + authApi/productsApi/salesApi/analyticsApi
     exchangeRate.ts        # taux FX live (open.er-api.com), cache 6h, fallback
     notifications.ts       # registerForPushNotifications() + sendLocalNotification()
-  components/ ui|pos|stock|dashboard   ·   hooks/   ·   types/
+    offlineQueue.ts        # file d'actions offline (AsyncStorage) : SALE / STOCK_MOVE
+    whatsappTicket.ts      # génère + envoie le reçu WhatsApp (Linking)
+  components/
+    pos/BarcodeScanner.tsx # scanner EAN13 (expo-camera)
+  types/
 ```
 Alias TS : `@/*` → `src/*`.
 
@@ -148,8 +159,9 @@ les montants en DB sont en **XOF**, conversion **à l'affichage uniquement**. Sy
 | `/api/products` | GET | tableau **plat** `[{ id, name, sellPrice, emoji, stockQty, stockMin, category, isActive, barcode }]` |
 | `/api/products/:id` | **PUT** | ⚠️ **PUT, pas PATCH** — renvoie le produit mis à jour |
 | `/api/sales` | POST | body `{ items:[{ productId, qty, price }], total, paymentMode, discount? }` — ⚠️ `qty`, pas `quantity` |
+| `/api/sales` | GET | `?limit=N` → tableau `[{ id, total, paymentMode, discountAmount, createdAt, items }]` (filtrage par date **côté client** dans Rapports) |
 | `/api/customers` | GET | `[{ id, name, phone, email, type, loyaltyPoints, totalRevenue }]` |
-| `/api/dashboard/stats` | GET | data **plate** `{ salesToday, transactionsToday, salesMonth, totalProducts, lowStockProducts, topProducts:[{name,ca}], stockAlerts:[{name,stockQty,stockMin}] }` |
+| `/api/dashboard/stats` | GET | data **plate** `{ salesToday, transactionsToday, salesMonth, totalProducts, activeEmployees, pendingOrders, topProducts:[{name,ca}], stockAlerts:[{name,stockQty,stockMin}] }` |
 | `/api/notifications/token` | POST | upsert idempotent (déployé ✅) |
 
 ⚠️ Dashboard = **`/api/dashboard/stats`** (PAS `/api/analytics/dashboard` → 404), réponse **à plat** (pas `data.stats`).
@@ -232,9 +244,41 @@ Installer sur device : `adb install -r HabaShop-Mobile.apk` (nécessite un devic
 
 ---
 
-## Offline-first (CDC §7) — à implémenter
-Online → API ; offline → cache + file d'actions `{id,type:'SALE'|'STOCK_MOVE',payload,createdAt,synced}` ;
-retour réseau → sync (`POST /api/sales`). TTL cache : produits 24 h, clients 1 h, stock 5 min.
+## Offline-first (CDC §7) — ✅ implémenté (Sprint 2)
+`useNetworkStatus` (NetInfo) ; `offlineQueue.ts` = file d'actions `{id,type:'SALE'|'STOCK_MOVE',payload,createdAt,synced}`
+en AsyncStorage ; `useOfflineSync` rejoue la file au retour réseau (`POST /api/sales`), monté via
+`<OfflineSyncBridge/>` **sous** le `QueryClientProvider`. POS : si hors-ligne, la vente part en file ;
+badge « Hors ligne » sur le dashboard. (TTL cache produits/clients/stock = encore à affiner.)
+
+---
+
+## Notes Sprint 2 — réconciliations importantes
+
+### `useI18n()` / `useFmt()`, pas `useAppStore()`
+Dans tout composant : `const { i, lang } = useI18n()` / `const { fmt, currency } = useFmt()` (depuis
+`@/stores/appStore`). `useAppStore` n'expose **pas** `i`.
+
+### `<OfflineSyncBridge/>`
+`useOfflineSync()` appelle `useQueryClient()` → **ne peut pas** être appelé directement dans `RootLayout`
+(hors provider). Encapsulé dans `<OfflineSyncBridge/>` **sous** le `QueryClientProvider` (`app/_layout.tsx`).
+
+### expo-file-system v19 (SDK 54) — nouvelle API
+L'API legacy (`documentDirectory` + `writeAsStringAsync`) a quitté l'import par défaut (déplacée sous
+`expo-file-system/legacy`). Le code utilise la **nouvelle API** :
+```typescript
+import { File, Paths } from 'expo-file-system'
+const file = new File(Paths.cache, `rapport-${Date.now()}.csv`)
+file.create(); file.write(csv)
+await Sharing.shareAsync(file.uri, { mimeType: 'text/csv' })
+```
+
+### Graphiques = barres CSS
+Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de jours **en dur**
+(Hermes/Android ignore les options de `toLocaleDateString` — cf. `INTL_OK` dans `appStore`).
+
+### WhatsApp iOS
+`whatsapp://` nécessitera `"LSApplicationQueriesSchemes": ["whatsapp"]` dans `ios.infoPlist` (`app.json`)
+**avant un build iOS**, sinon `Linking.canOpenURL` renvoie `false` (Android OK sans rien).
 
 ---
 
@@ -254,19 +298,22 @@ retour réseau → sync (`POST /api/sales`). TTL cache : produits 24 h, clients 
 | dcce28b | fix: commit expo-updates (dépendance manquante) |
 | 799ebee | feat: icônes iOS opaque + notif silhouette blanche |
 | 77157c7 | chore: gitignore *.apk / *.aab |
+| 49629be | feat: **Sprint 2** — scanner EAN13 + offline + WhatsApp + Rapports |
 
 ---
 
 ## TODO / Prochaines étapes
 
-- [ ] Tester l'install APK sur device réel (vérifier fix écran noir → login)
-- [ ] EAS Build iOS (nécessite compte Apple Developer ; `icon-ios.png` opaque déjà prêt)
+- [x] Scanner code-barres EAN13 (`expo-camera`) ✅
+- [x] Mode hors-ligne (file d'actions + sync auto) ✅
+- [x] Ticket WhatsApp après vente ✅
+- [x] Écran Rapports + export CSV ✅
+- [ ] Tester l'install APK sur device réel (écran noir → login ; scanner/offline/WhatsApp/CSV)
+- [ ] EAS Build iOS (compte Apple Developer ; ajouter `LSApplicationQueriesSchemes:["whatsapp"]` ; `icon-ios.png` prêt)
 - [ ] Tester notifications push réelles (token EAS, dev build)
-- [ ] Scanner code-barres (`expo-camera`, EAN13)
-- [ ] Mode hors ligne (cache + file d'actions, CDC §7)
-- [ ] Écran Rapports (analytics)
+- [ ] Biométrie (Face ID / Fingerprint)
 - [ ] Google Play Store (AAB production)
 
 ---
 
-*Dernière mise à jour : Sprint 1 — 2026-05-27 (SDK 54, EAS, icônes, fix écran noir, endpoints réels vérifiés).*
+*Dernière mise à jour : Sprint 2 — 2026-05-27 (scanner EAN13, offline, ticket WhatsApp, Rapports + CSV).*
