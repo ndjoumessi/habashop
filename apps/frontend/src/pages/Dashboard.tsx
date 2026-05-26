@@ -181,19 +181,19 @@ export default function Dashboard() {
 
 
   const ALL_QUICK_ACTIONS = [
-    { Icon: ShoppingBag, label: lang === 'fr' ? 'Nouvelle vente' : 'New sale',       path: '/app/pos',     color: 'rgba(108,71,255,.12)',  ic: 'var(--p3)'    },
-    { Icon: Download,    label: lang === 'fr' ? 'Recevoir stock' : 'Receive stock',   path: '/app/stock',   color: 'rgba(0,208,132,.12)',   ic: 'var(--acc2)'  },
-    { Icon: Plus,        label: lang === 'fr' ? 'Ajouter produit': 'Add product',     path: '/app/stock',   color: 'rgba(255,149,0,.12)',   ic: 'var(--acc)'   },
-    { Icon: BarChart2,   label: lang === 'fr' ? 'Voir rapports'  : 'View reports',    path: '/app/reports', color: 'rgba(0,184,255,.12)',   ic: 'var(--acc3)'  },
-    { Icon: Users,       label: lang === 'fr' ? 'Clients'        : 'Customers',       path: '/app/customers', color: 'rgba(244,114,182,.12)', ic: '#F472B6'   },
-    { Icon: Target,      label: lang === 'fr' ? 'Objectifs'      : 'Goals',           path: '/app/goals',   color: 'rgba(139,92,246,.12)',  ic: '#8B5CF6'      },
-    { Icon: Activity,    label: lang === 'fr' ? 'Activité'       : 'Activity',        path: '/app/activity',color: 'rgba(251,146,60,.12)',  ic: '#FB923C'      },
+    { Icon: ShoppingBag, label: lang === 'en' ? 'New sale' : lang === 'es' ? 'Nueva venta' : lang === 'it' ? 'Nuova vendita' : 'Nouvelle vente',       path: '/app/pos',     color: 'rgba(108,71,255,.12)',  ic: 'var(--p3)'    },
+    { Icon: Download,    label: lang === 'en' ? 'Receive stock' : lang === 'es' ? 'Recibir stock' : lang === 'it' ? 'Ricevi stock' : 'Recevoir stock',   path: '/app/stock',   color: 'rgba(0,208,132,.12)',   ic: 'var(--acc2)'  },
+    { Icon: Plus,        label: lang === 'en' ? 'Add product' : lang === 'es' ? 'Agregar producto' : lang === 'it' ? 'Aggiungi prodotto' : 'Ajouter produit',     path: '/app/stock',   color: 'rgba(255,149,0,.12)',   ic: 'var(--acc)'   },
+    { Icon: BarChart2,   label: lang === 'en' ? 'View reports' : lang === 'es' ? 'Ver informes' : lang === 'it' ? 'Vedi rapporti' : 'Voir rapports',    path: '/app/reports', color: 'rgba(0,184,255,.12)',   ic: 'var(--acc3)'  },
+    { Icon: Users,       label: lang === 'en' ? 'Customers' : lang === 'es' ? 'Clientes' : lang === 'it' ? 'Clienti' : 'Clients',       path: '/app/customers', color: 'rgba(244,114,182,.12)', ic: '#F472B6'   },
+    { Icon: Target,      label: lang === 'en' ? 'Goals' : lang === 'es' ? 'Objetivos' : lang === 'it' ? 'Obiettivi' : 'Objectifs',           path: '/app/goals',   color: 'rgba(139,92,246,.12)',  ic: '#8B5CF6'      },
+    { Icon: Activity,    label: lang === 'en' ? 'Activity' : lang === 'es' ? 'Actividad' : lang === 'it' ? 'Attività' : 'Activité',        path: '/app/activity',color: 'rgba(251,146,60,.12)',  ic: '#FB923C'      },
     { Icon: Zap,         label: 'IA Assistant',                                        path: '/app/ai',      color: 'rgba(108,71,255,.15)',  ic: 'var(--p2)'    },
   ]
   const QUICK_ACTIONS = ALL_QUICK_ACTIONS.filter(a => canAccess(user?.role, a.path.split('/').pop() || ''))
 
   // Toutes les sections sont alimentées par l'API ; états vides sinon (pas de démo).
-  const emptyHint = lang === 'fr' ? 'Commencez par enregistrer vos premières ventes' : 'Start by recording your first sales'
+  const emptyHint = lang === 'en' ? 'Start by recording your first sales' : lang === 'es' ? 'Comience registrando sus primeras ventas' : lang === 'it' ? 'Inizia registrando le tue prime vendite' : 'Commencez par enregistrer vos premières ventes'
   const isNewTenant = stats.transactionsToday === 0 && stats.salesMonth === 0 && stats.totalProducts === 0
 
   return (
@@ -239,7 +239,7 @@ export default function Dashboard() {
             </div>
           </div>
           <button onClick={() => navigate('/app/stock')} className="btn-primary" style={{ flexShrink: 0, fontSize: 13 }}>
-            {lang === 'fr' ? '+ Ajouter des produits' : '+ Add products'}
+            {lang === 'en' ? '+ Add products' : lang === 'es' ? '+ Agregar productos' : lang === 'it' ? '+ Aggiungi prodotti' : '+ Ajouter des produits'}
           </button>
         </div>
       )}
@@ -325,15 +325,15 @@ export default function Dashboard() {
             </div>
             <select className="input" style={{ width: 'auto', fontSize: 12, minHeight: 34 }}
               value={reportPeriod} onChange={e => setReportPeriod(e.target.value)}>
-              <option value="7days">{lang === 'fr' ? '7 jours' : '7 days'}</option>
-              <option value="30days">{lang === 'fr' ? '30 jours' : '30 days'}</option>
-              <option value="3months">{lang === 'fr' ? '3 mois' : '3 months'}</option>
+              <option value="7days">{lang === 'en' ? '7 days' : lang === 'es' ? '7 días' : lang === 'it' ? '7 giorni' : '7 jours'}</option>
+              <option value="30days">{lang === 'en' ? '30 days' : lang === 'es' ? '30 días' : lang === 'it' ? '30 giorni' : '30 jours'}</option>
+              <option value="3months">{lang === 'en' ? '3 months' : lang === 'es' ? '3 meses' : lang === 'it' ? '3 mesi' : '3 mois'}</option>
             </select>
           </div>
           <div role="img" aria-label={lang === 'fr' ? 'Graphique des ventes par jour' : lang === 'en' ? 'Daily sales chart' : lang === 'es' ? 'Gráfico de ventas diarias' : 'Grafico vendite giornaliere'}>
           {salesChart.length === 0 ? (
             <div style={{ height: 190, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 13, textAlign: 'center', padding: '0 16px' }}>
-              {lang === 'fr' ? 'Aucune vente pour le moment' : 'No sales yet'}
+              {lang === 'en' ? 'No sales yet' : lang === 'es' ? 'Sin ventas por ahora' : lang === 'it' ? 'Nessuna vendita per ora' : 'Aucune vente pour le moment'}
             </div>
           ) : (
           <ResponsiveContainer width="100%" height={190}>
@@ -359,11 +359,11 @@ export default function Dashboard() {
         {/* Donut chart */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title">{lang === 'fr' ? 'CA par catégorie' : 'Revenue by category'}</span>
+            <span className="panel-title">{lang === 'en' ? 'Revenue by category' : lang === 'es' ? 'Ingresos por categoría' : lang === 'it' ? 'Ricavi per categoria' : 'CA par catégorie'}</span>
           </div>
           {catData.length === 0 ? (
             <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
-              {lang === 'fr' ? 'Aucune donnée de vente disponible' : 'No sales data available'}
+              {lang === 'en' ? 'No sales data available' : lang === 'es' ? 'No hay datos de ventas' : lang === 'it' ? 'Nessun dato di vendita' : 'Aucune donnée de vente disponible'}
             </div>
           ) : (<>
           <div style={{ position: 'relative', margin: '0 -8px', overflow: 'visible' }}>
@@ -428,7 +428,7 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {stockAlerts.length === 0 ? (
               <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--acc2)', fontSize: 13, fontWeight: 600 }}>
-                {lang === 'fr' ? '✅ Aucune alerte de stock' : '✅ No stock alerts'}
+                {lang === 'en' ? '✅ No stock alerts' : lang === 'es' ? '✅ Sin alertas de stock' : lang === 'it' ? '✅ Nessun avviso di stock' : '✅ Aucune alerte de stock'}
               </div>
             ) : stockAlerts.map((a, i) => {
               const red = (a.stockQty ?? 0) === 0
@@ -463,7 +463,7 @@ export default function Dashboard() {
               <div style={{ padding: '30px 20px', textAlign: 'center', color: 'var(--text3)' }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🛍️</div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)', marginBottom: 6 }}>
-                  {lang === 'fr' ? 'Aucune activité pour le moment' : 'No activity yet'}
+                  {lang === 'en' ? 'No activity yet' : lang === 'es' ? 'Sin actividad por ahora' : lang === 'it' ? 'Nessuna attività per ora' : 'Aucune activité pour le moment'}
                 </div>
                 <div style={{ fontSize: 12 }}>{emptyHint}</div>
               </div>
@@ -484,7 +484,7 @@ export default function Dashboard() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {lang === 'fr' ? 'Vente' : 'Sale'} #{String(a.id ?? '').slice(-6).toUpperCase()}
+                    {lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : lang === 'it' ? 'Vendita' : 'Vente'} #{String(a.id ?? '').slice(-6).toUpperCase()}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>
                     {fmt(a.total ?? 0)} · {a.paymentMode} · {ago}
@@ -503,7 +503,7 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {topProducts.length === 0 ? (
               <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
-                {lang === 'fr' ? 'Aucune vente enregistrée pour le moment' : 'No sales recorded yet'}
+                {lang === 'en' ? 'No sales recorded yet' : lang === 'es' ? 'Ninguna venta registrada' : lang === 'it' ? 'Nessuna vendita registrata' : 'Aucune vente enregistrée pour le moment'}
               </div>
             ) : topProducts.map((p, i) => {
               const maxCa = topProducts[0]?.ca || 1

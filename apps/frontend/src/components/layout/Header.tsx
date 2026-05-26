@@ -141,12 +141,12 @@ export default function Header() {
   }, [tenant, setTenant])
 
   const ALL_NEW_ITEMS = [
-    { slug: 'pos',       Icon: ShoppingCart, label: lang === 'fr' ? 'Nouvelle vente'    : 'New sale',      action: () => navigate('/app/pos') },
-    { slug: 'stock',     Icon: Package,      label: lang === 'fr' ? 'Nouveau produit'   : 'New product',   action: () => { navigate('/app/stock');     setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-product')),    300) } },
-    { slug: 'customers', Icon: User,         label: lang === 'fr' ? 'Nouveau client'    : 'New customer',  action: () => { navigate('/app/customers'); setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-customer')),  300) } },
-    { slug: 'expenses',  Icon: Receipt,      label: lang === 'fr' ? 'Nouvelle dépense'  : 'New expense',   action: () => { navigate('/app/expenses');  setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-expense')),   300) } },
-    { slug: 'hr',        Icon: Users,        label: lang === 'fr' ? 'Nouvel employé'    : 'New employee',  action: () => { navigate('/app/hr');        setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-employee')),  300) } },
-    { slug: 'suppliers', Icon: Truck,        label: lang === 'fr' ? 'Nouveau fournisseur': 'New supplier', action: () => { navigate('/app/suppliers'); setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-supplier')),  300) } },
+    { slug: 'pos',       Icon: ShoppingCart, label: lang === 'en' ? 'New sale' : lang === 'es' ? 'Nueva venta' : lang === 'it' ? 'Nuova vendita' : 'Nouvelle vente', action: () => navigate('/app/pos') },
+    { slug: 'stock',     Icon: Package,      label: lang === 'en' ? 'New product' : lang === 'es' ? 'Nuevo producto' : lang === 'it' ? 'Nuovo prodotto' : 'Nouveau produit',   action: () => { navigate('/app/stock');     setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-product')),    300) } },
+    { slug: 'customers', Icon: User,         label: lang === 'en' ? 'New customer' : lang === 'es' ? 'Nuevo cliente' : lang === 'it' ? 'Nuovo cliente' : 'Nouveau client',  action: () => { navigate('/app/customers'); setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-customer')),  300) } },
+    { slug: 'expenses',  Icon: Receipt,      label: lang === 'en' ? 'New expense' : lang === 'es' ? 'Nuevo gasto' : lang === 'it' ? 'Nuova spesa' : 'Nouvelle dépense',   action: () => { navigate('/app/expenses');  setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-expense')),   300) } },
+    { slug: 'hr',        Icon: Users,        label: lang === 'en' ? 'New employee' : lang === 'es' ? 'Nuevo empleado' : lang === 'it' ? 'Nuovo dipendente' : 'Nouvel employé',  action: () => { navigate('/app/hr');        setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-employee')),  300) } },
+    { slug: 'suppliers', Icon: Truck,        label: lang === 'en' ? 'New supplier' : lang === 'es' ? 'Nuevo proveedor' : lang === 'it' ? 'Nuovo fornitore' : 'Nouveau fournisseur', action: () => { navigate('/app/suppliers'); setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-supplier')),  300) } },
   ]
   const NEW_ITEMS = ALL_NEW_ITEMS.filter(item => canAccess(role, item.slug))
 
@@ -198,10 +198,10 @@ export default function Header() {
   const unreadCount = liveUnread + lowStockAlerts.length
 
   const liveNotifView = (n: LiveNotif): { icon: JSX.Element; title: string; message: string; route: string } => {
-    if (n.type === 'new_sale')     return { icon: <ShoppingCart size={13} />, title: lang === 'fr' ? 'Nouvelle vente' : 'New sale',     message: `${(n.data?.total ?? 0).toLocaleString('fr-FR')} FCFA · ${n.data?.paymentMode ?? ''}`, route: '/app/reports' }
-    if (n.type === 'low_stock')    return { icon: <Package size={13} />,      title: lang === 'fr' ? 'Stock bas' : 'Low stock',        message: `${n.data?.products?.length ?? 0} ${lang === 'fr' ? 'produit(s)' : 'product(s)'}`,       route: '/app/stock' }
-    if (n.type === 'new_order')    return { icon: <Receipt size={13} />,      title: lang === 'fr' ? 'Nouvelle commande' : 'New order',  message: `${n.data?.ref ?? ''}`,                                                                  route: '/app/orders' }
-    if (n.type === 'new_customer') return { icon: <User size={13} />,         title: lang === 'fr' ? 'Nouveau client' : 'New customer',  message: `${n.data?.name ?? ''}`,                                                                 route: '/app/customers' }
+    if (n.type === 'new_sale')     return { icon: <ShoppingCart size={13} />, title: lang === 'en' ? 'New sale' : lang === 'es' ? 'Nueva venta' : lang === 'it' ? 'Nuova vendita' : 'Nouvelle vente',     message: `${(n.data?.total ?? 0).toLocaleString('fr-FR')} FCFA · ${n.data?.paymentMode ?? ''}`, route: '/app/reports' }
+    if (n.type === 'low_stock')    return { icon: <Package size={13} />,      title: lang === 'en' ? 'Low stock' : lang === 'es' ? 'Stock bajo' : lang === 'it' ? 'Stock basso' : 'Stock bas',        message: `${n.data?.products?.length ?? 0} ${lang === 'en' ? 'product(s)' : lang === 'es' ? 'producto(s)' : lang === 'it' ? 'prodotto/i' : 'produit(s)'}`,       route: '/app/stock' }
+    if (n.type === 'new_order')    return { icon: <Receipt size={13} />,      title: lang === 'en' ? 'New order' : lang === 'es' ? 'Nuevo pedido' : lang === 'it' ? 'Nuovo ordine' : 'Nouvelle commande',  message: `${n.data?.ref ?? ''}`,                                                                  route: '/app/orders' }
+    if (n.type === 'new_customer') return { icon: <User size={13} />,         title: lang === 'en' ? 'New customer' : lang === 'es' ? 'Nuevo cliente' : lang === 'it' ? 'Nuovo cliente' : 'Nouveau client',  message: `${n.data?.name ?? ''}`,                                                                 route: '/app/customers' }
     return { icon: <Bell size={13} />, title: n.type, message: '', route: '/app/dashboard' }
   }
 
@@ -243,7 +243,7 @@ export default function Header() {
           display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: 'var(--warn)',
         }}>
           <WifiOff size={13} />
-          <span>{lang === 'fr' ? 'Mode hors-ligne — Synchronisation au retour de connexion' : 'Offline — Data will sync on reconnect'}</span>
+          <span>{lang === 'en' ? 'Offline — Data will sync on reconnect' : lang === 'es' ? 'Sin conexión — Los datos se sincronizarán al reconectar' : lang === 'it' ? 'Offline — I dati si sincronizzeranno alla riconnessione' : 'Mode hors-ligne — Synchronisation au retour de connexion'}</span>
         </div>
       )}
 
@@ -267,7 +267,7 @@ export default function Header() {
               type="search"
               className="input"
               style={{ paddingLeft: 32, width: 230, fontSize: 12, minHeight: 36 }}
-              aria-label={lang === 'fr' ? 'Recherche globale' : 'Global search'}
+              aria-label={lang === 'en' ? 'Global search' : lang === 'es' ? 'Búsqueda global' : lang === 'it' ? 'Ricerca globale' : 'Recherche globale'}
               aria-expanded={showResults}
               autoComplete="off"
               placeholder={
@@ -370,15 +370,15 @@ export default function Header() {
           return (
             <div
               title={trial.isTrial
-                ? (lang === 'fr' ? `Essai gratuit — ${trial.daysLeft} jour(s) restant(s)` : `Free trial — ${trial.daysLeft} day(s) left`)
-                : (lang === 'fr' ? `Plan ${planLabel}` : `${planLabel} plan`)}
+                ? (lang === 'en' ? `Free trial — ${trial.daysLeft} day(s) left` : lang === 'es' ? `Prueba gratuita — ${trial.daysLeft} día(s) restante(s)` : lang === 'it' ? `Prova gratuita — ${trial.daysLeft} giorno/i rimanente/i` : `Essai gratuit — ${trial.daysLeft} jour(s) restant(s)`)
+                : (lang === 'en' ? `${planLabel} plan` : lang === 'it' ? `Piano ${planLabel}` : `Plan ${planLabel}`)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
                 background: bg, border: `1px solid ${border}`, color, flexShrink: 0,
                 fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', cursor: 'default',
               }}>
               {trial.isTrial
-                ? <><Clock size={11} />{lang === 'fr' ? `Essai · ${trial.daysLeft}j` : `Trial · ${trial.daysLeft}d`}</>
+                ? <><Clock size={11} />{lang === 'en' ? `Trial · ${trial.daysLeft}d` : lang === 'es' ? `Prueba · ${trial.daysLeft}d` : lang === 'it' ? `Prova · ${trial.daysLeft}g` : `Essai · ${trial.daysLeft}j`}</>
                 : <><Crown size={11} />{planLabel}</>}
             </div>
           )
@@ -409,7 +409,7 @@ export default function Header() {
             }}>
               <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: 1, background: 'linear-gradient(90deg,transparent,var(--p),transparent)' }} />
               <div style={{ padding: '6px 10px 8px', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.8px', color: 'var(--text4)' }}>
-                {lang === 'fr' ? 'CRÉER RAPIDEMENT' : 'QUICK CREATE'}
+                {lang === 'en' ? 'QUICK CREATE' : lang === 'es' ? 'CREAR RÁPIDO' : lang === 'it' ? 'CREA RAPIDO' : 'CRÉER RAPIDEMENT'}
               </div>
               {NEW_ITEMS.map((item, i) => {
                 const ItemIcon = item.Icon
@@ -545,7 +545,7 @@ export default function Header() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-                        {lang === 'fr' ? 'Rupture stock' : 'Low stock'} — {product.name}
+                        {lang === 'en' ? 'Low stock' : lang === 'es' ? 'Stock bajo' : lang === 'it' ? 'Stock basso' : 'Rupture stock'} — {product.name}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text3)' }}>
                         Stock: {product.stockQty} / Seuil: {product.stockMin}
@@ -559,7 +559,7 @@ export default function Header() {
                 {liveNotifs.length === 0 && lowStockAlerts.length === 0 && (
                   <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text3)' }}>
                     <Bell size={24} style={{ opacity: .4, marginBottom: 8 }} />
-                    <div style={{ fontSize: 13 }}>{lang === 'fr' ? 'Aucune notification' : 'No notifications'}</div>
+                    <div style={{ fontSize: 13 }}>{lang === 'en' ? 'No notifications' : lang === 'es' ? 'Sin notificaciones' : lang === 'it' ? 'Nessuna notifica' : 'Aucune notification'}</div>
                   </div>
                 )}
               </div>
@@ -571,7 +571,7 @@ export default function Header() {
                   className="btn-primary"
                   style={{ width: '100%', justifyContent: 'center', fontSize: 12, padding: '9px', borderRadius: 10 }}
                 >
-                  {lang === 'fr' ? 'Voir toutes les notifications' : 'View all notifications'}
+                  {lang === 'en' ? 'View all notifications' : lang === 'es' ? 'Ver todas las notificaciones' : lang === 'it' ? 'Vedi tutte le notifiche' : 'Voir toutes les notifications'}
                 </button>
               </div>
             </div>
@@ -591,14 +591,14 @@ export default function Header() {
         }}>
           <Zap size={15} style={{ color: 'var(--p3)', flexShrink: 0 }} />
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-            {lang === 'fr' ? 'Mise à jour disponible' : 'Update available'}
+            {lang === 'en' ? 'Update available' : lang === 'es' ? 'Actualización disponible' : lang === 'it' ? 'Aggiornamento disponibile' : 'Mise à jour disponible'}
           </span>
           <button
             onClick={() => window.location.reload()}
             className="btn-primary"
             style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12, minHeight: 'auto' }}
           >
-            {lang === 'fr' ? 'Actualiser' : 'Refresh'}
+            {lang === 'en' ? 'Refresh' : lang === 'es' ? 'Actualizar' : lang === 'it' ? 'Aggiorna' : 'Actualiser'}
           </button>
           <button
             onClick={() => setSwUpdate(false)}

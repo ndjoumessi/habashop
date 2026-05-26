@@ -137,10 +137,10 @@ export default function Stock() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('nav_stock')}</h1>
-          <p className="page-subtitle">{products.length} {lang === 'fr' ? 'articles en catalogue' : 'items in catalog'}</p>
+          <p className="page-subtitle">{products.length} {lang === 'en' ? 'items in catalog' : lang === 'es' ? 'artículos en catálogo' : lang === 'it' ? 'articoli in catalogo' : 'articles en catalogue'}</p>
         </div>
         <button className="topbar-btn" onClick={() => { setEditingSku(null); setEditingId(null); setProductEditMode(true); setShowModal(true) }}>
-          <Plus size={14} /> {lang === 'fr' ? 'Nouveau produit' : 'New product'}
+          <Plus size={14} /> {lang === 'en' ? 'New product' : lang === 'es' ? 'Nuevo producto' : lang === 'it' ? 'Nuovo prodotto' : 'Nouveau produit'}
         </button>
       </div>
 
@@ -191,9 +191,9 @@ export default function Stock() {
         <div className="panel">
           <EmptyState
             icon="📦"
-            title={lang === 'fr' ? 'Aucun produit en stock' : 'No products in stock'}
-            message={lang === 'fr' ? 'Ajoutez vos premiers produits pour commencer à gérer votre inventaire.' : 'Add your first products to start managing your inventory.'}
-            action={{ label: lang === 'fr' ? '+ Ajouter un produit' : '+ Add a product', onClick: () => { resetForm(); setShowModal(true) } }}
+            title={lang === 'en' ? 'No products in stock' : lang === 'es' ? 'Sin productos en stock' : lang === 'it' ? 'Nessun prodotto in stock' : 'Aucun produit en stock'}
+            message={lang === 'en' ? 'Add your first products to start managing your inventory.' : lang === 'es' ? 'Agregue sus primeros productos para empezar a gestionar su inventario.' : lang === 'it' ? 'Aggiungi i tuoi primi prodotti per iniziare a gestire l\'inventario.' : 'Ajoutez vos premiers produits pour commencer à gérer votre inventaire.'}
+            action={{ label: lang === 'en' ? '+ Add a product' : lang === 'es' ? '+ Agregar un producto' : lang === 'it' ? '+ Aggiungi un prodotto' : '+ Ajouter un produit', onClick: () => { resetForm(); setShowModal(true) } }}
           />
         </div>
       ) : (

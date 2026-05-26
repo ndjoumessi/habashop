@@ -194,7 +194,7 @@ export default function POS() {
     { id: 'card',   label: t('pos_card'),                                    icon: '💳', color: '#5B4EE8' },
     { id: 'wave',   label: 'Wave',                                           icon: '🌊', color: '#1B9AF5' },
     { id: 'orange', label: 'Orange Money',                                   icon: '🟠', color: '#FF6600' },
-    { id: 'mobile', label: lang === 'fr' ? 'Autre mobile' : 'Other mobile', icon: '📲', color: '#F59E0B' },
+    { id: 'mobile', label: lang === 'en' ? 'Other mobile' : lang === 'es' ? 'Otro móvil' : lang === 'it' ? 'Altro mobile' : 'Autre mobile', icon: '📲', color: '#F59E0B' },
   ] as { id: 'cash'|'card'|'wave'|'orange'|'mobile'; label: string; icon: string; color: string }[]
 
   const printTicket = () => {
@@ -290,21 +290,21 @@ export default function POS() {
           phone:       fullPhone,
           items:       cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
           total:       Math.round(total),
-          paymentMode: payMode === 'cash'   ? (lang === 'fr' ? 'Espèces' : 'Cash')
-                     : payMode === 'card'   ? (lang === 'fr' ? 'Carte'   : 'Card')
+          paymentMode: payMode === 'cash'   ? (lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces')
+                     : payMode === 'card'   ? (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte')
                      : payMode === 'wave'   ? 'Wave'
                      : payMode === 'orange' ? 'Orange Money' : 'Mobile',
           discount:    discountAmount > 0 ? Math.round(discountAmount) : undefined,
           reference:   `V${Date.now().toString().slice(-6)}`,
         })
-        toast.success(lang === 'fr' ? `📱 Ticket envoyé au ${fullPhone}` : `📱 Receipt sent to ${fullPhone}`)
+        toast.success(lang === 'en' ? `📱 Receipt sent to ${fullPhone}` : lang === 'es' ? `📱 Recibo enviado al ${fullPhone}` : lang === 'it' ? `📱 Ricevuta inviata al ${fullPhone}` : `📱 Ticket envoyé au ${fullPhone}`)
       } catch (err: any) {
         const msg = err.message?.includes('inscrit sur WhatsApp')
-          ? (lang === 'fr' ? `❌ ${fullPhone} n'est pas sur WhatsApp` : `❌ ${fullPhone} is not on WhatsApp`)
+          ? (lang === 'en' ? `❌ ${fullPhone} is not on WhatsApp` : lang === 'es' ? `❌ ${fullPhone} no está en WhatsApp` : lang === 'it' ? `❌ ${fullPhone} non è su WhatsApp` : `❌ ${fullPhone} n'est pas sur WhatsApp`)
           : err.message?.includes('invalide') || err.message?.includes('Format')
-            ? (lang === 'fr' ? '❌ Format de numéro invalide' : '❌ Invalid phone format')
+            ? (lang === 'en' ? '❌ Invalid phone format' : lang === 'es' ? '❌ Formato de número inválido' : lang === 'it' ? '❌ Formato numero non valido' : '❌ Format de numéro invalide')
             : err.message?.includes('Authentification')
-              ? (lang === 'fr' ? '❌ Erreur configuration Twilio' : '❌ Twilio config error')
+              ? (lang === 'en' ? '❌ Twilio config error' : lang === 'es' ? '❌ Error de configuración Twilio' : lang === 'it' ? '❌ Errore configurazione Twilio' : '❌ Erreur configuration Twilio')
               : `❌ ${err.message ?? 'Échec envoi WhatsApp'}`
         toast.error(msg)
       } finally {

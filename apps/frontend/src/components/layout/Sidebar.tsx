@@ -103,19 +103,19 @@ export default function Sidebar() {
         }}>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)', animation: 'pulse 2s infinite', flexShrink: 0 }} />
           <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--acc2)' }}>
-            {lang === 'fr' ? 'Caisse ouverte' : 'Till open'}
+            {lang === 'en' ? 'Till open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
           </span>
           <button
             onClick={() => navigate('/app/pos')}
             style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--acc2)', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font)', padding: 0 }}
           >
-            {lang === 'fr' ? 'Fermer →' : 'Close →'}
+            {lang === 'en' ? 'Close →' : lang === 'es' ? 'Cerrar →' : lang === 'it' ? 'Chiudi →' : 'Fermer →'}
           </button>
         </div>
       )}
 
       {/* Navigation (filtered by role) */}
-      <nav role="navigation" aria-label={lang === 'fr' ? 'Navigation principale' : 'Main navigation'} style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
+      <nav role="navigation" aria-label={lang === 'en' ? 'Main navigation' : lang === 'es' ? 'Navegación principal' : lang === 'it' ? 'Navigazione principale' : 'Navigation principale'} style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
         {(() => {
           // Walk NAV: only emit a section header if at least one following item
           // (before the next section) is allowed by the current role.
@@ -221,7 +221,7 @@ export default function Sidebar() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
               <Wifi size={9} style={{ color: 'var(--acc2)' }} />
               <span style={{ fontSize: 10, color: 'var(--acc2)', fontWeight: 600 }}>
-                {lang === 'fr' ? 'En ligne' : 'Online'}
+                {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
               </span>
             </div>
           </div>
@@ -254,8 +254,8 @@ export default function Sidebar() {
           <button
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text4)', display: 'flex', alignItems: 'center', transition: 'color .15s' }}
             onClick={() => { logout(); navigate('/login') }}
-            title={lang === 'fr' ? 'Déconnexion' : 'Sign out'}
-            aria-label={lang === 'fr' ? 'Déconnexion' : 'Sign out'}
+            title={lang === 'en' ? 'Sign out' : lang === 'es' ? 'Cerrar sesión' : lang === 'it' ? 'Disconnetti' : 'Déconnexion'}
+            aria-label={lang === 'en' ? 'Sign out' : lang === 'es' ? 'Cerrar sesión' : lang === 'it' ? 'Disconnetti' : 'Déconnexion'}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text4)'}
           >
