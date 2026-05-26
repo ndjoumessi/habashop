@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "HabaShop",
-    "slug": "habashop",
+    "slug": "habashop-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
