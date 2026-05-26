@@ -1,4 +1,6 @@
 import type { FastifyInstance } from 'fastify'
+import { prisma } from '../db'
+import { authenticate } from '../middleware/authenticate'
 
 // Sockets actifs regroupés par tenant : un broadcast ne touche que la boutique concernée.
 const tenantSockets = new Map<string, Set<any>>()
@@ -13,6 +15,19 @@ export function notifyTenant(tenantId: string, event: { type: string; data?: any
 }
 
 export async function notificationRoutes(app: FastifyInstance): Promise<void> {
+  // Enregistre / met à jour le token push Expo d'un appareil (app mobile).
+  app.post('/api/notifications/token', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId, userId } = request.user
+    const { token, platform, deviceId } = request.body as { token?: string; platform?: string; deviceId?: string }
+    if (!token?.trim()) return reply.code(400).send({ error: 'Token requis' })
+    const saved = await prisma.pushToken.upsert({
+      where: { token },
+      create: { token, platform: platform ?? 'unknown', deviceId: deviceId ?? null, tenantId, userId },
+      update: { tenantId, userId, platform: platform ?? 'unknown', deviceId: deviceId ?? null },
+    })
+    return { success: true, id: saved.id }
+  })
+
   // @fastify/websocket v11 (Fastify 5) : le handler reçoit directement la
   // WebSocket en 1er argument (avant : un SocketStream avec `.socket`).
   app.get('/api/ws', { websocket: true }, (socket: any, req: any) => {

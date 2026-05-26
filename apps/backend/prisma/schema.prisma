@@ -45,6 +45,7 @@ model Tenant {
   expenses       Expense[]
   auditLogs      AuditLog[]
   planRequests   PlanRequest[]
+  pushTokens     PushToken[]
 }
 
 model PlanRequest {
@@ -88,6 +89,7 @@ model User {
   sales          Sale[]          @relation("SaleCashier")
   purchaseOrders PurchaseOrder[] @relation("OrderCreator")
   auditLogs      AuditLog[]
+  pushTokens     PushToken[]
 
   @@index([tenantId])
 }
@@ -348,4 +350,21 @@ model AuditLog {
   @@index([tenantId])
   @@index([tenantId, createdAt])
   @@index([tenantId, action])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  token     String   @unique
+  platform  String   @default("unknown") // ios / android / web
+  deviceId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
 }
