@@ -24,6 +24,21 @@ const BUDGETS_INIT: Record<Category, number> = {
 
 const CATEGORIES: Category[] = ['Loyer','Énergie','Transport','Maintenance','Fournitures','Marketing','Formation','Autre']
 
+// Libellés d'affichage des catégories (la clé reste la valeur canonique FR
+// utilisée pour le filtrage / l'API — on ne traduit que l'affichage).
+const CATEGORY_LABELS: Record<string, { fr: string; en: string; es: string; it: string }> = {
+  Loyer:       { fr:'Loyer',       en:'Rent',        es:'Alquiler',      it:'Affitto'      },
+  Énergie:     { fr:'Énergie',     en:'Energy',      es:'Energía',       it:'Energia'      },
+  Transport:   { fr:'Transport',   en:'Transport',   es:'Transporte',    it:'Trasporto'    },
+  Maintenance: { fr:'Maintenance', en:'Maintenance', es:'Mantenimiento', it:'Manutenzione' },
+  Fournitures: { fr:'Fournitures', en:'Supplies',    es:'Suministros',   it:'Forniture'    },
+  Marketing:   { fr:'Marketing',   en:'Marketing',   es:'Marketing',     it:'Marketing'    },
+  Formation:   { fr:'Formation',   en:'Training',    es:'Formación',     it:'Formazione'   },
+  Autre:       { fr:'Autre',       en:'Other',       es:'Otro',          it:'Altro'        },
+}
+const catLabel = (cat: string, lang: string): string =>
+  (CATEGORY_LABELS[cat] as Record<string, string> | undefined)?.[lang] ?? CATEGORY_LABELS[cat]?.fr ?? cat
+
 const CATEGORY_STYLE: Record<Category, { bg: string; color: string; icon: JSX.Element }> = {
   Loyer:       { bg:'rgba(124,111,240,.15)', color:'#A89CF5', icon:<Home size={14}/> },
   Énergie:     { bg:'rgba(240,165,0,.15)',   color:'#F0A500', icon:<Zap size={14}/> },
@@ -38,14 +53,14 @@ const CATEGORY_STYLE: Record<Category, { bg: string; color: string; icon: JSX.El
 const MODES = ['Espèces','Carte','Chèque','Virement','Prélèvement']
 const VAT_RATES = [0, 10, 18, 20]
 
-function CatPill({ cat }: { cat: Category }) {
+function CatPill({ cat, lang }: { cat: Category; lang: string }) {
   const s = CATEGORY_STYLE[cat]
   return (
     <span style={{
       display:'inline-flex', alignItems:'center', gap:4, padding:'2px 9px',
       borderRadius:20, fontSize:11, fontWeight:600,
       background:s.bg, color:s.color,
-    }}>{s.icon} {cat}</span>
+    }}>{s.icon} {catLabel(cat, lang)}</span>
   )
 }
 
@@ -70,6 +85,7 @@ export default function Expenses() {
   const { lang, currency } = useConfig()
   const fmt = useFormatAmount()
   const tr = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const cl = (c: string) => catLabel(c, lang)
   const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   const monthName = new Date().toLocaleDateString(locale, { month: 'long' })
   const monthYear = (() => { const m = new Date().toLocaleDateString(locale, { month: 'long', year: 'numeric' }); return m.charAt(0).toUpperCase() + m.slice(1) })()
@@ -305,7 +321,7 @@ export default function Expenses() {
             <select className="input" value={catFilter} onChange={e => setCatFilter(e.target.value as typeof catFilter)}
               style={{ width:'auto', minWidth:140 }}>
               <option value="Toutes">{tr('Toutes catégories','All categories','Todas las categorías','Tutte le categorie')}</option>
-              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+              {CATEGORIES.map(c => <option key={c} value={c}>{cl(c)}</option>)}
             </select>
             <select className="input" value={statFilter} onChange={e => setStatFilter(e.target.value as typeof statFilter)}
               style={{ width:'auto', minWidth:140 }}>
@@ -353,7 +369,7 @@ export default function Expenses() {
                         <div className="td-bold text-xs">{e.label}</div>
                         {e.recurrent && <div style={{ fontSize:10, color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> {tr('Récurrent','Recurring','Recurrente','Ricorrente')}</div>}
                       </td>
-                      <td><CatPill cat={e.category} /></td>
+                      <td><CatPill cat={e.category} lang={lang} /></td>
                       <td className="td-num text-sm">{fmt(e.amount)}</td>
                       <td style={{ fontSize:12, color:'var(--text3)' }}>{e.vat} %</td>
                       <td className="td-num text-sm" style={{ color:'var(--acc2)', fontWeight:700 }}>{fmt(ttcAmount(e))}</td>
@@ -431,7 +447,7 @@ export default function Expenses() {
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <span style={{ fontSize:18 }}>{s.icon}</span>
-                      <span style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>{cat}</span>
+                      <span style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>{cl(cat)}</span>
                     </div>
                     {over && (
                       <span className="badge badge-red">{tr('Dépassé !','Over budget!','¡Excedido!','Superato!')}</span>
@@ -503,7 +519,7 @@ export default function Expenses() {
                   <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Catégorie','Category','Categoría','Categoria')}</label>
                   <select aria-label={tr('Catégorie','Category','Categoría','Categoria')} className="input" value={nCat} onChange={e => setNCat(e.target.value as Category)}
                     style={{ width:'100%', boxSizing:'border-box' }}>
-                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                    {CATEGORIES.map(c => <option key={c} value={c}>{cl(c)}</option>)}
                   </select>
                 </div>
               </div>
@@ -613,7 +629,7 @@ export default function Expenses() {
                   </div>
                   <div>
                     {vf(lang === 'en' ? 'Category' : lang === 'es' ? 'Categoría' : lang === 'it' ? 'Categoria' : 'Catégorie', editExpForm.category)}
-                    {expEditMode && <select className="input" value={editExpForm.category} onChange={e => setEditExpForm(f => ({...f, category:e.target.value as Category}))} style={{ width:'100%', boxSizing:'border-box' }}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>}
+                    {expEditMode && <select className="input" value={editExpForm.category} onChange={e => setEditExpForm(f => ({...f, category:e.target.value as Category}))} style={{ width:'100%', boxSizing:'border-box' }}>{CATEGORIES.map(c => <option key={c} value={c}>{cl(c)}</option>)}</select>}
                   </div>
                 </div>
                 <div>
@@ -703,7 +719,7 @@ export default function Expenses() {
                 return (
                   <div key={cat} style={{ display:'flex', alignItems:'center', gap:12 }}>
                     <span style={{ fontSize:16 }}>{s.icon}</span>
-                    <span style={{ fontSize:13, fontWeight:600, color:'var(--text)', width:110, flexShrink:0 }}>{cat}</span>
+                    <span style={{ fontSize:13, fontWeight:600, color:'var(--text)', width:110, flexShrink:0 }}>{cl(cat)}</span>
                     <input className="input" type="number" value={editBudgets[cat]}
                       onChange={e => setEditBudgets(b => ({ ...b, [cat]: +e.target.value }))}
                       style={{ flex:1, boxSizing:'border-box' }} />
