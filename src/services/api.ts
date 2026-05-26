@@ -26,8 +26,9 @@ export const authApi = {
 export const productsApi = {
   list: (params?:any) =>
     apiClient.get('/api/products',{params}).then(r=>r.data),
+  // Backend = PUT /api/products/:id (update partiel, renvoie le produit mis à jour)
   update: (id:string, data:any) =>
-    apiClient.patch(`/api/products/${id}`,data).then(r=>r.data),
+    apiClient.put(`/api/products/${id}`,data).then(r=>r.data),
 }
 
 export const salesApi = {
