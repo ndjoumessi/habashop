@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "HabaShop",
+    "slug": "habashop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "habashop",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.habashop.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Scanner les codes-barres des produits",
+        "NSFaceIDUsageDescription": "Connexion rapide et sécurisée"
+      }
+    },
+    "android": {
+      "package": "com.habashop.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#07070F",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["CAMERA", "USE_BIOMETRIC", "USE_FINGERPRINT", "VIBRATE"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-font",
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#07070F"
+        }
+      ],
+      [
+        "expo-camera",
+        { "cameraPermission": "Scanner les codes-barres des produits" }
+      ],
+      [
+        "expo-notifications",
+        { "icon": "./assets/icon.png", "color": "#6C47FF" }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
