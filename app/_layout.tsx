@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
-import { Stack } from 'expo-router'
+import { Stack, router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import * as Notifications from 'expo-notifications'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
@@ -13,6 +14,7 @@ import {
 } from '@expo-google-fonts/jetbrains-mono'
 import * as SplashScreen from 'expo-splash-screen'
 import { useAuthStore } from '@/stores/authStore'
+import { registerForPushNotifications } from '@/services/notifications'
 
 SplashScreen.preventAutoHideAsync()
 const qc = new QueryClient({
@@ -31,6 +33,21 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync()
   }, [fontsLoaded])
+
+  // ── Notifications push ──
+  useEffect(() => {
+    registerForPushNotifications()
+
+    const sub1 = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notif reçue:', notification)
+    })
+    const sub2 = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as any
+      if (data?.route) router.push(data.route)
+    })
+
+    return () => { sub1.remove(); sub2.remove() }
+  }, [])
 
   if (!fontsLoaded) return null
 

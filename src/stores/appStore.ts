@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type Lang = 'fr' | 'en' | 'es' | 'it'
+export type Lang = 'fr' | 'en' | 'es' | 'it'
 
 interface AppState {
   lang: Lang; currency: string
