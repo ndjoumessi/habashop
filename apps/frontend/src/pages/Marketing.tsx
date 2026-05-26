@@ -41,6 +41,12 @@ const MK = {
     err_msg:           'Écrivez un message avant d\'envoyer',
     err_recipient:     'Sélectionnez au moins un destinataire',
     err_max:           'Maximum 20 destinataires par envoi',
+    err_send:          'Erreur envoi',
+    aria_search:       'Rechercher',
+    failed:            'échoué',
+    failed_plural:     'échoués',
+    word_message:      'message',
+    word_messages:     'messages',
     wa_render:         'RENDU WHATSAPP',
     tpl_promo:   { label: 'Promotion du jour',      msg: '🎉 *Promotion spéciale !*\n\nProfitez de nos offres exceptionnelles aujourd\'hui !\n\n👉 Venez nous rendre visite ou contactez-nous pour en savoir plus.\n\n_Votre équipe HabaShop_ 🛒' },
     tpl_stock:   { label: 'Nouveau stock',           msg: '📦 *Nouvelle arrivée en stock !*\n\nDe nouveaux produits viennent d\'arriver !\nQuantités limitées — premier arrivé, premier servi.\n\n🏪 Retrouvez-nous en boutique.\n\n_Votre équipe HabaShop_ 🛒' },
@@ -72,6 +78,12 @@ const MK = {
     err_msg:           'Write a message before sending',
     err_recipient:     'Select at least one recipient',
     err_max:           'Maximum 20 recipients per send',
+    err_send:          'Send error',
+    aria_search:       'Search',
+    failed:            'failed',
+    failed_plural:     'failed',
+    word_message:      'message',
+    word_messages:     'messages',
     wa_render:         'WHATSAPP RENDER',
     tpl_promo:   { label: 'Daily promotion',    msg: '🎉 *Special Offer!*\n\nTake advantage of our exceptional deals today!\n\n👉 Come visit us or contact us for more info.\n\n_Your HabaShop team_ 🛒' },
     tpl_stock:   { label: 'New stock',          msg: '📦 *New Stock Arrival!*\n\nFresh products just arrived!\nLimited quantities — first come, first served.\n\n🏪 Find us in store.\n\n_Your HabaShop team_ 🛒' },
@@ -103,6 +115,12 @@ const MK = {
     err_msg:           'Escribe un mensaje antes de enviar',
     err_recipient:     'Selecciona al menos un destinatario',
     err_max:           'Máximo 20 destinatarios por envío',
+    err_send:          'Error de envío',
+    aria_search:       'Buscar',
+    failed:            'fallido',
+    failed_plural:     'fallidos',
+    word_message:      'mensaje',
+    word_messages:     'mensajes',
     wa_render:         'VISTA PREVIA',
     tpl_promo:   { label: 'Promoción del día',        msg: '🎉 *¡Oferta especial!*\n\n¡Aprovecha nuestras ofertas excepcionales hoy!\n\n👉 Visítanos o contáctanos para más información.\n\n_Tu equipo HabaShop_ 🛒' },
     tpl_stock:   { label: 'Nuevo stock',              msg: '📦 *¡Nueva llegada de stock!*\n\n¡Productos frescos recién llegados!\nCantidades limitadas — primero en llegar, primero en servirse.\n\n🏪 Encuéntranos en tienda.\n\n_Tu equipo HabaShop_ 🛒' },
@@ -134,6 +152,12 @@ const MK = {
     err_msg:           'Scrivi un messaggio prima di inviare',
     err_recipient:     'Seleziona almeno un destinatario',
     err_max:           'Massimo 20 destinatari per invio',
+    err_send:          'Errore invio',
+    aria_search:       'Cerca',
+    failed:            'fallito',
+    failed_plural:     'falliti',
+    word_message:      'messaggio',
+    word_messages:     'messaggi',
     wa_render:         'ANTEPRIMA',
     tpl_promo:   { label: 'Promozione del giorno',  msg: '🎉 *Offerta speciale!*\n\nApprofittate delle nostre offerte eccezionali oggi!\n\n👉 Venite a trovarci o contattateci per maggiori informazioni.\n\n_Il tuo team HabaShop_ 🛒' },
     tpl_stock:   { label: 'Nuovo stock',            msg: '📦 *Nuovo arrivo in magazzino!*\n\nProdotti freschi appena arrivati!\nQuantità limitate — primo arrivato, primo servito.\n\n🏪 Trovaci in negozio.\n\n_Il tuo team HabaShop_ 🛒' },
@@ -236,10 +260,10 @@ export default function Marketing() {
     try {
       const res = await marketingApi.broadcast({ phones, message, lang }) as { sent: number; failed: number; errors?: string[] }
       setResult(res)
-      toast.success(`✅ ${res.sent} message${res.sent > 1 ? 's' : ''} ${mk.sent_toast} !`)
+      toast.success(`✅ ${res.sent} ${res.sent > 1 ? mk.word_messages : mk.word_message} ${mk.sent_toast} !`)
       setSelected(new Set())
     } catch (err: any) {
-      toast.error(err.message ?? 'Erreur envoi')
+      toast.error(err.message ?? mk.err_send)
     } finally {
       setSending(false)
     }
@@ -395,7 +419,7 @@ export default function Marketing() {
                     <WhatsAppInlineRenderer text={message} />
                   </div>
                   <div style={{ fontSize: 9, color: 'rgba(255,255,255,.45)', textAlign: 'right', marginTop: 4 }}>
-                    {new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })} ✓✓
+                    {new Date().toLocaleTimeString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { hour:'2-digit', minute:'2-digit' })} ✓✓
                   </div>
                 </div>
               </div>
@@ -421,7 +445,7 @@ export default function Marketing() {
             <div style={{ position: 'relative', flex: 1 }}>
               <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
               <input className="input" style={{ paddingLeft: 30, fontSize: 12 }}
-                aria-label="Rechercher" placeholder={mk.search}
+                aria-label={mk.aria_search} placeholder={mk.search}
                 value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <div style={{ fontSize: 12, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
@@ -495,7 +519,7 @@ export default function Marketing() {
             </div>
             <div style={{ fontSize: 12, color: 'var(--text2)' }}>
               {result.sent} {mk.sent_toast}
-              {result.failed > 0 && ` · ${result.failed} échoué${result.failed > 1 ? 's' : ''}`}
+              {result.failed > 0 && ` · ${result.failed} ${result.failed > 1 ? mk.failed_plural : mk.failed}`}
             </div>
           </div>
         )}

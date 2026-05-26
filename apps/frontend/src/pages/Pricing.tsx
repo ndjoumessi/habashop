@@ -14,6 +14,8 @@ const PLANS = [
     features: {
       fr: ['✅ 1 utilisateur', '✅ 100 produits max', '✅ POS complet', '✅ Export CSV', "✅ 14 jours d'essai gratuit", '❌ Rapports avancés', '❌ Multi-utilisateurs', '❌ WhatsApp', '❌ Assistant IA'],
       en: ['✅ 1 user', '✅ Up to 100 products', '✅ Full POS', '✅ CSV export', '✅ 14-day free trial', '❌ Advanced reports', '❌ Multi-users', '❌ WhatsApp', '❌ AI assistant'],
+      es: ['✅ 1 usuario', '✅ Hasta 100 productos', '✅ POS completo', '✅ Exportar CSV', '✅ Prueba gratis de 14 días', '❌ Informes avanzados', '❌ Multiusuario', '❌ WhatsApp', '❌ Asistente IA'],
+      it: ['✅ 1 utente', '✅ Fino a 100 prodotti', '✅ POS completo', '✅ Esportazione CSV', '✅ Prova gratuita di 14 giorni', '❌ Report avanzati', '❌ Multiutente', '❌ WhatsApp', '❌ Assistente IA'],
     },
     cta: { fr: 'Commencer gratuitement', en: 'Start for free', es: 'Empezar gratis', it: 'Inizia gratis' },
   },
@@ -25,6 +27,8 @@ const PLANS = [
     features: {
       fr: ['✅ 5 utilisateurs', '✅ Produits illimités', '✅ POS complet', '✅ Export CSV + PDF', '✅ Rapports avancés', '✅ WhatsApp notifications', '✅ Analytics dashboard', '✅ Multi-devises', '❌ Assistant IA'],
       en: ['✅ 5 users', '✅ Unlimited products', '✅ Full POS', '✅ CSV + PDF export', '✅ Advanced reports', '✅ WhatsApp notifications', '✅ Analytics dashboard', '✅ Multi-currency', '❌ AI assistant'],
+      es: ['✅ 5 usuarios', '✅ Productos ilimitados', '✅ POS completo', '✅ Exportar CSV + PDF', '✅ Informes avanzados', '✅ Notificaciones WhatsApp', '✅ Panel de analíticas', '✅ Multidivisa', '❌ Asistente IA'],
+      it: ['✅ 5 utenti', '✅ Prodotti illimitati', '✅ POS completo', '✅ Esportazione CSV + PDF', '✅ Report avanzati', '✅ Notifiche WhatsApp', '✅ Dashboard analitica', '✅ Multivaluta', '❌ Assistente IA'],
     },
     cta: { fr: 'Essayer Pro 14 jours', en: 'Try Pro 14 days', es: 'Probar Pro 14 días', it: 'Prova Pro 14 giorni' },
   },
@@ -36,6 +40,8 @@ const PLANS = [
     features: {
       fr: ['✅ Utilisateurs illimités', '✅ Produits illimités', '✅ POS multi-caisse', '✅ Export CSV + PDF', '✅ Rapports avancés', '✅ WhatsApp premium', '✅ Analytics complets', '✅ Assistant IA inclus', '✅ Support prioritaire'],
       en: ['✅ Unlimited users', '✅ Unlimited products', '✅ Multi-register POS', '✅ CSV + PDF export', '✅ Advanced reports', '✅ Premium WhatsApp', '✅ Full analytics', '✅ AI assistant included', '✅ Priority support'],
+      es: ['✅ Usuarios ilimitados', '✅ Productos ilimitados', '✅ POS multicaja', '✅ Exportar CSV + PDF', '✅ Informes avanzados', '✅ WhatsApp premium', '✅ Analíticas completas', '✅ Asistente IA incluido', '✅ Soporte prioritario'],
+      it: ['✅ Utenti illimitati', '✅ Prodotti illimitati', '✅ POS multicassa', '✅ Esportazione CSV + PDF', '✅ Report avanzati', '✅ WhatsApp premium', '✅ Analitica completa', '✅ Assistente IA incluso', '✅ Supporto prioritario'],
     },
     cta: { fr: 'Contacter les ventes', en: 'Contact sales', es: 'Contactar ventas', it: 'Contatta vendite' },
   },

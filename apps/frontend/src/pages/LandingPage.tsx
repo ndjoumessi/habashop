@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, convertAmount } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import type { Lang, Currency } from '@/stores/appStore'
 import {
   ShoppingCart, Package, BarChart2, Users, Briefcase, Lock,
@@ -479,6 +480,7 @@ const scrollTo = (id: string) => {
 export default function LandingPage() {
   const navigate = useNavigate()
   const { lang, setLang, currency, setCurrency } = useAppStore()
+  const { i } = useI18n()
   const lp = (LANDING_TRANSLATIONS as Record<string, typeof LANDING_TRANSLATIONS.fr>)[lang] ?? LANDING_TRANSLATIONS.fr
 
   const formatPlanPrice = (amountXOF: number): string => {
@@ -492,23 +494,38 @@ export default function LandingPage() {
     return rounded.toString()
   }
 
-  const itemsFR: Record<number, string[]> = {
-    1: ['Modes paiement multiples', 'Ticket WhatsApp', 'Mode offline'],
-    2: ['Alertes rupture auto', 'Scan codes-barres', 'Multi-entrepôts'],
-    3: ['KPIs temps réel', 'Exports CSV / PDF', 'Top produits'],
-    4: ['Points de fidélité', 'Historique achats', 'Segments clients'],
-    5: ['Planning semaine', 'Bulletins PDF', 'Suivi présences'],
-    6: ['Rôles & permissions', 'Auth 2FA TOTP', "Journal d'audit"],
+  const items: Record<number, string[]> = {
+    1: [
+      i('Modes paiement multiples', 'Multiple payment modes', 'Múltiples modos de pago', 'Multi-pagamento'),
+      i('Ticket WhatsApp', 'WhatsApp receipt', 'Ticket WhatsApp', 'Scontrino WhatsApp'),
+      i('Mode offline', 'Offline mode', 'Modo offline', 'Modalità offline'),
+    ],
+    2: [
+      i('Alertes rupture auto', 'Auto shortage alerts', 'Alertas de rotura auto', 'Avvisi esaurimento auto'),
+      i('Scan codes-barres', 'Barcode scanning', 'Escaneo de códigos de barras', 'Scansione codici a barre'),
+      i('Multi-entrepôts', 'Multi-warehouse', 'Multi-almacén', 'Multi-magazzino'),
+    ],
+    3: [
+      i('KPIs temps réel', 'Real-time KPIs', 'KPIs en tiempo real', 'KPI in tempo reale'),
+      i('Exports CSV / PDF', 'CSV / PDF exports', 'Exportaciones CSV / PDF', 'Export CSV / PDF'),
+      i('Top produits', 'Top products', 'Top productos', 'Top prodotti'),
+    ],
+    4: [
+      i('Points de fidélité', 'Loyalty points', 'Puntos de fidelidad', 'Punti fedeltà'),
+      i('Historique achats', 'Purchase history', 'Historial de compras', 'Storico acquisti'),
+      i('Segments clients', 'Customer segments', 'Segmentos de clientes', 'Segmenti clienti'),
+    ],
+    5: [
+      i('Planning semaine', 'Weekly schedule', 'Horario semanal', 'Turni settimanali'),
+      i('Bulletins PDF', 'PDF payslips', 'Nóminas PDF', 'Buste paga PDF'),
+      i('Suivi présences', 'Attendance tracking', 'Seguimiento de asistencia', 'Tracciamento presenze'),
+    ],
+    6: [
+      i('Rôles & permissions', 'Roles & permissions', 'Roles y permisos', 'Ruoli e permessi'),
+      i('Auth 2FA TOTP', '2FA TOTP auth', 'Autenticación 2FA TOTP', 'Autenticazione 2FA TOTP'),
+      i("Journal d'audit", 'Audit log', 'Registro de auditoría', 'Registro di audit'),
+    ],
   }
-  const itemsEN: Record<number, string[]> = {
-    1: ['Multiple payment modes', 'WhatsApp receipt', 'Offline mode'],
-    2: ['Auto shortage alerts', 'Barcode scanning', 'Multi-warehouse'],
-    3: ['Real-time KPIs', 'CSV / PDF exports', 'Top products'],
-    4: ['Loyalty points', 'Purchase history', 'Customer segments'],
-    5: ['Weekly schedule', 'PDF payslips', 'Attendance tracking'],
-    6: ['Roles & permissions', '2FA TOTP auth', 'Audit log'],
-  }
-  const items = lang === 'fr' ? itemsFR : itemsEN
 
   const features: { icon: JSX.Element; color: string; title: string; desc: string; items: string[] }[] = [
     { icon: <ShoppingCart size={22}/>, color: '#6C47FF', title: lp.feature1_title, desc: lp.feature1_desc, items: items[1] },
@@ -587,23 +604,23 @@ export default function LandingPage() {
   ]
 
   const trustCountries = [
-    { flag: '🇸🇳', name: 'Sénégal' },
-    { flag: '🇨🇮', name: "Côte d'Ivoire" },
-    { flag: '🇨🇲', name: 'Cameroun' },
-    { flag: '🇲🇱', name: 'Mali' },
-    { flag: '🇧🇫', name: 'Burkina Faso' },
-    { flag: '🇨🇩', name: 'RD Congo' },
-    { flag: '🇬🇭', name: 'Ghana' },
-    { flag: '🇳🇬', name: 'Nigeria' },
+    { flag: '🇸🇳', name: i('Sénégal', 'Senegal', 'Senegal', 'Senegal') },
+    { flag: '🇨🇮', name: i("Côte d'Ivoire", "Côte d'Ivoire", 'Costa de Marfil', "Costa d'Avorio") },
+    { flag: '🇨🇲', name: i('Cameroun', 'Cameroon', 'Camerún', 'Camerun') },
+    { flag: '🇲🇱', name: i('Mali', 'Mali', 'Malí', 'Mali') },
+    { flag: '🇧🇫', name: i('Burkina Faso', 'Burkina Faso', 'Burkina Faso', 'Burkina Faso') },
+    { flag: '🇨🇩', name: i('RD Congo', 'DR Congo', 'RD Congo', 'RD Congo') },
+    { flag: '🇬🇭', name: i('Ghana', 'Ghana', 'Ghana', 'Ghana') },
+    { flag: '🇳🇬', name: i('Nigeria', 'Nigeria', 'Nigeria', 'Nigeria') },
   ]
 
   const currencyChips = [
-    { code: 'XOF', flag: '🇸🇳', name: 'Franc CFA Ouest' },
-    { code: 'XAF', flag: '🇨🇲', name: 'Franc CFA Centre' },
-    { code: 'EUR', flag: '🇪🇺', name: 'Euro' },
-    { code: 'USD', flag: '🇺🇸', name: 'Dollar US' },
-    { code: 'CAD', flag: '🇨🇦', name: 'Dollar CA' },
-    { code: 'GBP', flag: '🇬🇧', name: 'Livre Sterling' },
+    { code: 'XOF', flag: '🇸🇳', name: i('Franc CFA Ouest', 'West African CFA', 'Franco CFA Oeste', 'Franco CFA Ovest') },
+    { code: 'XAF', flag: '🇨🇲', name: i('Franc CFA Centre', 'Central African CFA', 'Franco CFA Centro', 'Franco CFA Centro') },
+    { code: 'EUR', flag: '🇪🇺', name: i('Euro', 'Euro', 'Euro', 'Euro') },
+    { code: 'USD', flag: '🇺🇸', name: i('Dollar US', 'US Dollar', 'Dólar US', 'Dollaro US') },
+    { code: 'CAD', flag: '🇨🇦', name: i('Dollar CA', 'CA Dollar', 'Dólar CA', 'Dollaro CA') },
+    { code: 'GBP', flag: '🇬🇧', name: i('Livre Sterling', 'Pound Sterling', 'Libra Esterlina', 'Sterlina') },
   ]
 
   const languageChips = [
@@ -1062,25 +1079,25 @@ export default function LandingPage() {
       </section>
 
       {/* ════ PAYS COUVERTS (SEO géographique) ════ */}
-      <section aria-label="Pays disponibles" style={{ padding: '72px clamp(16px,4vw,80px)', background: D.bg, borderTop: `1px solid ${D.border}` }}>
+      <section aria-label={i('Pays disponibles', 'Available countries', 'Países disponibles', 'Paesi disponibili')} style={{ padding: '72px clamp(16px,4vw,80px)', background: D.bg, borderTop: `1px solid ${D.border}` }}>
         <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ fontSize: 'clamp(24px,3.2vw,38px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', marginBottom: 14, lineHeight: 1.2 }}>
-            {lang === 'en' ? 'Available across French-speaking Africa' : lang === 'es' ? 'Disponible en toda el África francófona' : lang === 'it' ? 'Disponibile in tutta l\'Africa francofona' : "Disponible dans toute l'Afrique francophone"}
+            {i("Disponible dans toute l'Afrique francophone", 'Available across French-speaking Africa', 'Disponible en toda el África francófona', "Disponibile in tutta l'Africa francofona")}
           </h2>
           <p style={{ fontSize: 15, color: D.text2, maxWidth: 720, margin: '0 auto 36px', lineHeight: 1.7 }}>
-            {lang === 'en' ? "HabaShop works in Senegal, Côte d'Ivoire, Mali, Burkina Faso, Guinea, Cameroon, Congo, Gabon, Togo, Benin and 150+ countries." : lang === 'es' ? 'HabaShop funciona en Senegal, Costa de Marfil, Malí, Burkina Faso, Guinea, Camerún, Congo, Gabón, Togo, Benín y más de 150 países.' : lang === 'it' ? 'HabaShop funziona in Senegal, Costa d\'Avorio, Mali, Burkina Faso, Guinea, Camerun, Congo, Gabon, Togo, Benin e oltre 150 paesi.' : "HabaShop fonctionne au Sénégal, en Côte d'Ivoire, au Mali, au Burkina Faso, en Guinée, au Cameroun, au Congo, au Gabon, au Togo, au Bénin et dans plus de 150 pays."}
+            {i("HabaShop fonctionne au Sénégal, en Côte d'Ivoire, au Mali, au Burkina Faso, en Guinée, au Cameroun, au Congo, au Gabon, au Togo, au Bénin et dans plus de 150 pays.", "HabaShop works in Senegal, Côte d'Ivoire, Mali, Burkina Faso, Guinea, Cameroon, Congo, Gabon, Togo, Benin and 150+ countries.", 'HabaShop funciona en Senegal, Costa de Marfil, Malí, Burkina Faso, Guinea, Camerún, Congo, Gabón, Togo, Benín y más de 150 países.', "HabaShop funziona in Senegal, Costa d'Avorio, Mali, Burkina Faso, Guinea, Camerun, Congo, Gabon, Togo, Benin e oltre 150 paesi.")}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
             {([
-              ['🇸🇳', 'Sénégal'], ['🇨🇮', "Côte d'Ivoire"], ['🇲🇱', 'Mali'], ['🇧🇫', 'Burkina Faso'], ['🇬🇳', 'Guinée'],
-              ['🇨🇲', 'Cameroun'], ['🇨🇬', 'Congo'], ['🇬🇦', 'Gabon'], ['🇹🇬', 'Togo'], ['🇧🇯', 'Bénin'],
+              ['🇸🇳', i('Sénégal', 'Senegal', 'Senegal', 'Senegal')], ['🇨🇮', i("Côte d'Ivoire", "Côte d'Ivoire", 'Costa de Marfil', "Costa d'Avorio")], ['🇲🇱', i('Mali', 'Mali', 'Malí', 'Mali')], ['🇧🇫', i('Burkina Faso', 'Burkina Faso', 'Burkina Faso', 'Burkina Faso')], ['🇬🇳', i('Guinée', 'Guinea', 'Guinea', 'Guinea')],
+              ['🇨🇲', i('Cameroun', 'Cameroon', 'Camerún', 'Camerun')], ['🇨🇬', i('Congo', 'Congo', 'Congo', 'Congo')], ['🇬🇦', i('Gabon', 'Gabon', 'Gabón', 'Gabon')], ['🇹🇬', i('Togo', 'Togo', 'Togo', 'Togo')], ['🇧🇯', i('Bénin', 'Benin', 'Benín', 'Benin')],
             ] as [string, string][]).map(([flag, name]) => (
               <span key={name} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', background: D.bg2, border: `1px solid ${D.border}`, borderRadius: 99, fontSize: 14, fontWeight: 600, color: D.text2 }}>
                 <span style={{ fontSize: 18 }}>{flag}</span>{name}
               </span>
             ))}
             <span style={{ display: 'inline-flex', alignItems: 'center', padding: '9px 16px', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', borderRadius: 99, fontSize: 14, fontWeight: 700, color: D.p3 }}>
-              + 140 {lang === 'en' ? 'more countries' : lang === 'es' ? 'otros países' : lang === 'it' ? 'altri paesi' : 'autres pays'}
+              + 140 {i('autres pays', 'more countries', 'otros países', 'altri paesi')}
             </span>
           </div>
         </div>
@@ -1269,9 +1286,9 @@ export default function LandingPage() {
             <Zap size={18} strokeWidth={2.6}/>{lp.cta_btn}
           </button>
           <div style={{ marginTop: 18, fontSize: 12, color: D.text3, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'en' ? '14 days free' : lang === 'es' ? '14 días gratis' : lang === 'it' ? '14 giorni gratis' : '14 jours gratuits'}</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'en' ? 'No credit card' : lang === 'es' ? 'Sin tarjeta bancaria' : lang === 'it' ? 'Senza carta di credito' : 'Sans carte bancaire'}</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'en' ? 'Easy cancellation' : lang === 'es' ? 'Cancelación fácil' : lang === 'it' ? 'Cancellazione facile' : 'Annulation facile'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{i('14 jours gratuits', '14 days free', '14 días gratis', '14 giorni gratis')}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{i('Sans carte bancaire', 'No credit card', 'Sin tarjeta bancaria', 'Senza carta di credito')}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{i('Annulation facile', 'Easy cancellation', 'Cancelación fácil', 'Cancellazione facile')}</span>
           </div>
         </div>
       </section>

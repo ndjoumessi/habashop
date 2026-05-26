@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/stores/appStore'
 import type { Lang, Currency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import {
@@ -233,6 +234,7 @@ export default function SignupPage() {
   const navigate = useNavigate()
   const { lang } = useAppStore()
   const { register } = useAuthStore()
+  const { i } = useI18n()
   const tx = TX[lang] ?? TX.fr
 
   const [form, setForm] = useState({
@@ -308,7 +310,7 @@ export default function SignupPage() {
         currency: form.currency,
         country:  form.country,
       })
-      toast.success('Bienvenue sur HabaShop')
+      toast.success(i('Bienvenue sur HabaShop', 'Welcome to HabaShop', 'Bienvenido a HabaShop', 'Benvenuto su HabaShop'))
       navigate('/onboarding')
     } catch (err: any) {
       setError(err?.message || tx.errRequired)
@@ -376,7 +378,7 @@ export default function SignupPage() {
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 380 }}>
           {/* Logo */}
           <button type="button" onClick={() => navigate('/')}
-            aria-label="HabaShop home"
+            aria-label={i('Accueil HabaShop', 'HabaShop home', 'Inicio HabaShop', 'Home HabaShop')}
             style={{
               width: 72, height: 72, borderRadius: 22,
               background: `linear-gradient(135deg,${D.p},${D.p2})`,
@@ -596,7 +598,7 @@ export default function SignupPage() {
                         <div style={{ padding: '10px 12px', borderBottom: `1px solid ${D.border}` }}>
                           <div style={{ position: 'relative' }}>
                             <Search size={13} color={D.text3} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}/>
-                            <input autoFocus type="text" aria-label="Rechercher" placeholder={tx.search_country}
+                            <input autoFocus type="text" aria-label={i('Rechercher', 'Search', 'Buscar', 'Cerca')} placeholder={tx.search_country}
                               value={countrySearch}
                               onChange={e => setCountrySearch(e.target.value)}
                               style={{
@@ -651,12 +653,12 @@ export default function SignupPage() {
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A991FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
                       backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36,
                     }}>
-                    <option value="XOF">XOF — F CFA Ouest</option>
-                    <option value="XAF">XAF — F CFA Centre</option>
-                    <option value="EUR">EUR — Euro</option>
-                    <option value="USD">USD — Dollar US</option>
-                    <option value="CAD">CAD — Dollar CA</option>
-                    <option value="GBP">GBP — Livre Sterling</option>
+                    <option value="XOF">XOF — {i('F CFA Ouest', 'West CFA Franc', 'Franco CFA Oeste', 'Franco CFA Ovest')}</option>
+                    <option value="XAF">XAF — {i('F CFA Centre', 'Central CFA Franc', 'Franco CFA Central', 'Franco CFA Centrale')}</option>
+                    <option value="EUR">EUR — {i('Euro', 'Euro', 'Euro', 'Euro')}</option>
+                    <option value="USD">USD — {i('Dollar US', 'US Dollar', 'Dólar estadounidense', 'Dollaro USA')}</option>
+                    <option value="CAD">CAD — {i('Dollar CA', 'Canadian Dollar', 'Dólar canadiense', 'Dollaro canadese')}</option>
+                    <option value="GBP">GBP — {i('Livre Sterling', 'Pound Sterling', 'Libra esterlina', 'Sterlina')}</option>
                   </select>
                 </div>
               </div>
@@ -731,7 +733,7 @@ export default function SignupPage() {
                     onFocus={focusOn} onBlur={focusOff}
                     style={{ ...inputBase, paddingLeft: 38, paddingRight: 44 }}/>
                   <button type="button" onClick={() => setShowPwd(!showPwd)}
-                    aria-label="toggle password"
+                    aria-label={i('Afficher/masquer le mot de passe', 'Toggle password', 'Mostrar/ocultar contraseña', 'Mostra/nascondi password')}
                     style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: D.text3, display: 'flex', padding: 4 }}>
                     {showPwd ? <EyeOff size={16}/> : <Eye size={16}/>}
                   </button>
@@ -770,7 +772,7 @@ export default function SignupPage() {
                         : D.border2,
                     }}/>
                   <button type="button" onClick={() => setShowConfirm(!showConfirm)}
-                    aria-label="toggle confirm"
+                    aria-label={i('Afficher/masquer la confirmation', 'Toggle confirm', 'Mostrar/ocultar confirmación', 'Mostra/nascondi conferma')}
                     style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: D.text3, display: 'flex', padding: 4 }}>
                     {showConfirm ? <EyeOff size={16}/> : <Eye size={16}/>}
                   </button>

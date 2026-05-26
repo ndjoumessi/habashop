@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
 import { Crown, Briefcase, ShoppingCart, Calculator, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -8,6 +9,7 @@ import type { LucideIcon } from 'lucide-react'
 export default function LoginPage() {
   const navigate              = useNavigate()
   const { login, clearError } = useAuthStore()
+  const { i }                 = useI18n()
 
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -18,7 +20,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim() || !password.trim()) {
-      setError('Email et mot de passe requis')
+      setError(i('Email et mot de passe requis','Email and password required','Correo y contraseña requeridos','Email e password obbligatori'))
       return
     }
     setLoading(true)
@@ -26,10 +28,10 @@ export default function LoginPage() {
     clearError()
     try {
       await login(email, password)
-      toast.success('Connexion réussie !')
+      toast.success(i('Connexion réussie !','Login successful!','¡Inicio de sesión exitoso!','Accesso riuscito!'))
       navigate('/app/dashboard')
     } catch (err: any) {
-      setError(err?.message || 'Email ou mot de passe incorrect')
+      setError(err?.message || i('Email ou mot de passe incorrect','Incorrect email or password','Correo o contraseña incorrectos','Email o password non corretti'))
     } finally {
       setLoading(false)
     }
@@ -100,16 +102,20 @@ export default function LoginPage() {
           </h1>
 
           <p style={{ fontSize: 16, color: 'var(--text2)', lineHeight: 1.7, marginBottom: 40 }}>
-            La solution de gestion commerciale
-            pensée pour les commerces africains
+            {i(
+              'La solution de gestion commerciale pensée pour les commerces africains',
+              'The business management solution designed for African businesses',
+              'La solución de gestión comercial pensada para los comercios africanos',
+              'La soluzione di gestione commerciale pensata per le attività africane',
+            )}
           </p>
 
           {[
-            { icon: '🛒', text: 'Point de vente tactile' },
-            { icon: '📦', text: 'Gestion stock en temps réel' },
-            { icon: '👥', text: 'CRM clients & fidélité' },
-            { icon: '📊', text: 'Rapports & prévisions IA' },
-            { icon: '💱', text: 'Multi-devises & Multi-langues' },
+            { icon: '🛒', text: i('Point de vente tactile','Touch point of sale','Punto de venta táctil','Punto vendita touch') },
+            { icon: '📦', text: i('Gestion stock en temps réel','Real-time inventory management','Gestión de inventario en tiempo real','Gestione magazzino in tempo reale') },
+            { icon: '👥', text: i('CRM clients & fidélité','Customer CRM & loyalty','CRM de clientes y fidelización','CRM clienti e fedeltà') },
+            { icon: '📊', text: i('Rapports & prévisions IA','AI reports & forecasts','Informes y previsiones con IA','Report e previsioni IA') },
+            { icon: '💱', text: i('Multi-devises & Multi-langues','Multi-currency & multi-language','Multidivisa y multiidioma','Multivaluta e multilingua') },
           ].map(f => (
             <div key={f.text} style={{
               display: 'flex', alignItems: 'center', gap: 12,
@@ -130,7 +136,7 @@ export default function LoginPage() {
             fontSize: 12, color: 'var(--text3)',
           }}>
             <span>🌍</span>
-            <span>Déployé dans 150+ pays</span>
+            <span>{i('Déployé dans 150+ pays','Deployed in 150+ countries','Implementado en más de 150 países','Disponibile in oltre 150 paesi')}</span>
             <span>·</span>
             <span>🇫🇷 🇬🇧 🇪🇸 🇮🇹</span>
           </div>
@@ -151,10 +157,10 @@ export default function LoginPage() {
               fontSize: 26, fontWeight: 900, color: 'var(--text)',
               letterSpacing: '-.5px', marginBottom: 8,
             }}>
-              Bon retour 👋
+              {i('Bon retour','Welcome back','Bienvenido de nuevo','Bentornato')} 👋
             </h2>
             <p style={{ fontSize: 14, color: 'var(--text3)', lineHeight: 1.6 }}>
-              Connectez-vous à votre espace HabaShop
+              {i('Connectez-vous à votre espace HabaShop','Sign in to your HabaShop workspace','Inicia sesión en tu espacio HabaShop','Accedi al tuo spazio HabaShop')}
             </p>
           </div>
 
@@ -167,7 +173,7 @@ export default function LoginPage() {
                 color: 'var(--text3)', textTransform: 'uppercase',
                 letterSpacing: '.6px', marginBottom: 7,
               }}>
-                Adresse email
+                {i('Adresse email','Email address','Correo electrónico','Indirizzo email')}
               </label>
               <div style={{ position: 'relative' }}>
                 <span style={{
@@ -178,7 +184,7 @@ export default function LoginPage() {
                   id="login-email"
                   type="email"
                   autoComplete="email"
-                  placeholder="vous@exemple.com"
+                  placeholder={i('vous@exemple.com','you@example.com','tu@ejemplo.com','tu@esempio.com')}
                   value={email}
                   onChange={e => { setEmail(e.target.value); setError('') }}
                   required
@@ -203,7 +209,7 @@ export default function LoginPage() {
                 color: 'var(--text3)', textTransform: 'uppercase',
                 letterSpacing: '.6px', marginBottom: 7,
               }}>
-                Mot de passe
+                {i('Mot de passe','Password','Contraseña','Password')}
               </label>
               <div style={{ position: 'relative' }}>
                 <span style={{
@@ -233,7 +239,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPwd(!showPwd)}
-                  aria-label={showPwd ? 'Cacher le mot de passe' : 'Afficher le mot de passe'}
+                  aria-label={showPwd ? i('Cacher le mot de passe','Hide password','Ocultar contraseña','Nascondi password') : i('Afficher le mot de passe','Show password','Mostrar contraseña','Mostra password')}
                   style={{
                     position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer',
@@ -286,26 +292,26 @@ export default function LoginPage() {
                     animation: 'spin 1s linear infinite',
                     display: 'inline-block', flexShrink: 0,
                   }}/>
-                  Connexion en cours…
+                  {i('Connexion en cours…','Signing in…','Iniciando sesión…','Accesso in corso…')}
                 </>
-              ) : <>🚀 Se connecter</>}
+              ) : <>🚀 {i('Se connecter','Sign in','Iniciar sesión','Accedi')}</>}
             </button>
 
             {/* Séparateur */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }}/>
-              <span style={{ fontSize: 11, color: 'var(--text4,var(--text3))', fontWeight: 600 }}>ACCÈS DÉMO</span>
+              <span style={{ fontSize: 11, color: 'var(--text4,var(--text3))', fontWeight: 600 }}>{i('ACCÈS DÉMO','DEMO ACCESS','ACCESO DEMO','ACCESSO DEMO')}</span>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }}/>
             </div>
 
             {/* Boutons démo (5 rôles) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(110px,1fr))', gap: 8 }}>
               {([
-                { label: 'Admin',     email: 'admin@habashop.com',      Icon: Crown,        color: 'rgba(108,71,255,.15)', border: 'rgba(108,71,255,.3)',  text: 'var(--p3)'  },
-                { label: 'Manager',   email: 'manager@habashop.com',    Icon: Briefcase,    color: 'rgba(0,208,132,.12)',  border: 'rgba(0,208,132,.28)', text: 'var(--acc2)' },
-                { label: 'Caissier',  email: 'cashier@habashop.com',    Icon: ShoppingCart, color: 'rgba(0,184,255,.1)',   border: 'rgba(0,184,255,.25)', text: 'var(--acc3,var(--acc2))' },
-                { label: 'Comptable', email: 'accountant@habashop.com', Icon: Calculator,   color: 'rgba(255,149,0,.12)',  border: 'rgba(255,149,0,.28)', text: 'var(--acc)' },
-                { label: 'RH',        email: 'hr@habashop.com',         Icon: Users,        color: 'rgba(244,114,182,.12)',border: 'rgba(244,114,182,.28)', text: '#F472B6' },
+                { label: i('Admin','Admin','Administrador','Amministratore'),     email: 'admin@habashop.com',      Icon: Crown,        color: 'rgba(108,71,255,.15)', border: 'rgba(108,71,255,.3)',  text: 'var(--p3)'  },
+                { label: i('Manager','Manager','Gerente','Manager'),   email: 'manager@habashop.com',    Icon: Briefcase,    color: 'rgba(0,208,132,.12)',  border: 'rgba(0,208,132,.28)', text: 'var(--acc2)' },
+                { label: i('Caissier','Cashier','Cajero','Cassiere'),  email: 'cashier@habashop.com',    Icon: ShoppingCart, color: 'rgba(0,184,255,.1)',   border: 'rgba(0,184,255,.25)', text: 'var(--acc3,var(--acc2))' },
+                { label: i('Comptable','Accountant','Contable','Contabile'), email: 'accountant@habashop.com', Icon: Calculator,   color: 'rgba(255,149,0,.12)',  border: 'rgba(255,149,0,.28)', text: 'var(--acc)' },
+                { label: i('RH','HR','RR. HH.','Risorse Umane'),        email: 'hr@habashop.com',         Icon: Users,        color: 'rgba(244,114,182,.12)',border: 'rgba(244,114,182,.28)', text: '#F472B6' },
               ] as { label: string; email: string; Icon: LucideIcon; color: string; border: string; text: string }[]).map(demo => (
                 <button
                   key={demo.label}
@@ -337,9 +343,9 @@ export default function LoginPage() {
             fontSize: 11, color: 'var(--text4,var(--text3))', lineHeight: 1.7,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <span>🔒</span><span>Connexion sécurisée SSL/TLS</span>
+              <span>🔒</span><span>{i('Connexion sécurisée SSL/TLS','Secure SSL/TLS connection','Conexión segura SSL/TLS','Connessione sicura SSL/TLS')}</span>
             </div>
-            <div style={{ marginTop: 4 }}>HabaShop v2.0 · © 2026 Tous droits réservés</div>
+            <div style={{ marginTop: 4 }}>HabaShop v2.0 · © 2026 {i('Tous droits réservés','All rights reserved','Todos los derechos reservados','Tutti i diritti riservati')}</div>
           </div>
         </div>
       </div>
