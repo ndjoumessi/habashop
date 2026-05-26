@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
+import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import { apiClient } from './api'
 
@@ -33,9 +34,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 
   try {
-    // NB: nécessite un projectId EAS (extra.eas.projectId). Sans EAS configuré,
-    // l'appel échoue → on retourne null silencieusement (best-effort).
-    const token = (await Notifications.getExpoPushTokenAsync()).data
+    // projectId EAS (écrit dans app.json extra.eas.projectId par `eas init`).
+    // Requis pour obtenir un token push Expo dans un dev/production build.
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId
+    const token = (await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined,
+    )).data
 
     // Envoi du token au backend (route à ajouter côté backend — fail-safe)
     await apiClient.post('/api/notifications/token', {
