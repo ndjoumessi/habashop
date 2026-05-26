@@ -7,7 +7,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "habashop",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.habashop.app",
@@ -25,7 +27,13 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["CAMERA", "USE_BIOMETRIC", "USE_FINGERPRINT", "VIBRATE"]
+      "permissions": [
+        "CAMERA",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "VIBRATE",
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -45,11 +53,16 @@
       ],
       [
         "expo-camera",
-        { "cameraPermission": "Scanner les codes-barres des produits" }
+        {
+          "cameraPermission": "Scanner les codes-barres des produits"
+        }
       ],
       [
         "expo-notifications",
-        { "icon": "./assets/icon.png", "color": "#6C47FF" }
+        {
+          "icon": "./assets/icon.png",
+          "color": "#6C47FF"
+        }
       ]
     ],
     "experiments": {
@@ -59,6 +72,12 @@
       "eas": {
         "projectId": "e7399d7a-e5ba-4e30-a333-8cff7ad10eb4"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e7399d7a-e5ba-4e30-a333-8cff7ad10eb4"
     }
   }
 }

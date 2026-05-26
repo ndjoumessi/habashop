@@ -23,16 +23,18 @@ const qc = new QueryClient({
 
 export default function RootLayout() {
   const restoreSession = useAuthStore(s=>s.restoreSession)
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Outfit_400Regular, Outfit_600SemiBold,
     Outfit_700Bold, Outfit_800ExtraBold, Outfit_900Black,
     JetBrainsMono_400Regular, JetBrainsMono_700Bold,
   })
 
   useEffect(() => { restoreSession() }, [])
+  // Cacher le splash dès que les fonts sont prêtes OU en erreur — sinon une
+  // police qui échoue au chargement fige l'app sur le splash indéfiniment.
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync()
-  }, [fontsLoaded])
+    if (fontsLoaded || fontError) SplashScreen.hideAsync()
+  }, [fontsLoaded, fontError])
 
   // ── Notifications push ──
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function RootLayout() {
     return () => { sub1.remove(); sub2.remove() }
   }, [])
 
-  if (!fontsLoaded) return null
+  if (!fontsLoaded && !fontError) return null
 
   return (
     <GestureHandlerRootView style={{flex:1}}>
