@@ -50,6 +50,42 @@ let cachedRates: Record<string, number> = {
 }
 fetchRates().then(rates => { cachedRates = rates }).catch(() => {})
 
+// Hermes/Android peut ignorer les options de toLocaleString → on détecte une
+// seule fois et on bascule sur un formatage manuel (toFixed + séparateurs) sinon.
+const INTL_OK = (() => {
+  try {
+    return (1234.5).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) === '1,234.50'
+  } catch {
+    return false
+  }
+})()
+
+// Formatage manuel robuste (identique iOS/Android) : groupe les milliers.
+function manualFormat(value: number, decimals: number, thousandSep: string, decimalSep: string): string {
+  const fixed = Math.abs(value).toFixed(decimals)
+  const [intPart, decPart] = fixed.split('.')
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSep)
+  const sign = value < 0 ? '-' : ''
+  return decPart ? `${sign}${grouped}${decimalSep}${decPart}` : `${sign}${grouped}`
+}
+
+// Formate un nombre selon la locale, avec repli manuel si Intl indisponible.
+function localeNumber(value: number, locale: string, decimals: number): string {
+  if (INTL_OK) {
+    return value.toLocaleString(locale, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    })
+  }
+  const useComma = locale === 'fr-FR' || locale === 'fr-CA'
+  return useComma
+    ? manualFormat(value, decimals, ' ', ',') // fr : 1 234,56
+    : manualFormat(value, decimals, ',', '.') // en : 1,234.56
+}
+
 // Helper devise — sélectionne `currency` + convertit XOF → devise cible.
 // Les montants backend sont en XOF ; la conversion est UNIQUEMENT à l'affichage.
 export function useFmt() {
@@ -71,17 +107,17 @@ export function useFmt() {
       case 'XOF':
       case 'XAF':
         // Franc CFA — pas de décimales, symbole F
-        return `${Math.round(converted).toLocaleString('fr-FR')} F`
+        return `${localeNumber(Math.round(converted), 'fr-FR', 0)} F`
       case 'EUR':
-        return `${converted.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+        return `${localeNumber(converted, 'fr-FR', 2)} €`
       case 'USD':
-        return `$${converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        return `$${localeNumber(converted, 'en-US', 2)}`
       case 'GBP':
-        return `£${converted.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        return `£${localeNumber(converted, 'en-GB', 2)}`
       case 'CAD':
-        return `CA$${converted.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        return `CA$${localeNumber(converted, 'fr-CA', 2)}`
       default:
-        return `${Math.round(converted).toLocaleString('fr-FR')} ${currency}`
+        return `${localeNumber(Math.round(converted), 'fr-FR', 0)} ${currency}`
     }
   }, [currency, rates])
 
