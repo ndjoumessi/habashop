@@ -15,11 +15,18 @@ import {
 import * as SplashScreen from 'expo-splash-screen'
 import { useAuthStore } from '@/stores/authStore'
 import { registerForPushNotifications } from '@/services/notifications'
+import { useOfflineSync } from '@/hooks/useOfflineSync'
 
 SplashScreen.preventAutoHideAsync()
 const qc = new QueryClient({
   defaultOptions:{ queries:{ staleTime:5*60*1000, retry:2 } }
 })
+
+// Doit vivre SOUS le QueryClientProvider (useOfflineSync utilise useQueryClient).
+function OfflineSyncBridge() {
+  useOfflineSync() // sync auto de la file offline au retour réseau
+  return null
+}
 
 export default function RootLayout() {
   const restoreSession = useAuthStore(s=>s.restoreSession)
@@ -57,6 +64,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{flex:1}}>
       <QueryClientProvider client={qc}>
         <StatusBar style="light"/>
+        <OfflineSyncBridge/>
         <Stack screenOptions={{headerShown:false}}>
           <Stack.Screen name="(auth)"/>
           <Stack.Screen name="(app)"/>

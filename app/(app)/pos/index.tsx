@@ -15,6 +15,11 @@ import { useI18n, useFmt } from '@/stores/appStore'
 import {
   Colors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
+import { useAuthStore } from '@/stores/authStore'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
+import { enqueueAction } from '@/services/offlineQueue'
+import { sendWhatsAppTicket } from '@/services/whatsappTicket'
+import BarcodeScanner from '@/components/pos/BarcodeScanner'
 
 const PAY_MODES = [
   { id: 'cash',   icon: '💵', fr: 'Espèces',  en: 'Cash',   es: 'Efectivo', it: 'Contanti' },
@@ -89,8 +94,10 @@ function CartRow({
 // ── Écran POS ────────────────────────────────────
 export default function POSScreen() {
   const insets = useSafeAreaInsets()
-  const { i } = useI18n()
-  const { fmt } = useFmt()
+  const { i, lang } = useI18n()
+  const { fmt, currency } = useFmt()
+  const { tenant } = useAuthStore()
+  const { isOnline } = useNetworkStatus()
   const qc = useQueryClient()
 
   const cart           = usePosStore(st => st.cart)
@@ -111,6 +118,7 @@ export default function POSScreen() {
   const [activeCat, setActiveCat] = useState('all')
   const [showCart, setShowCart]   = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
 
   const { data: products = [], isLoading, isError, refetch } = useQuery<any[]>({
     queryKey: ['products'],
@@ -155,18 +163,38 @@ export default function POSScreen() {
       paymentMode,
       ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
     }),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      // Capture la vente avant de vider le panier (pour le ticket WhatsApp)
+      const saleItems = [...cart]
+      const saleTotal = totalAmt
+      const saleMode  = paymentMode
       recordSale(totalAmt)
       qc.invalidateQueries({ queryKey: ['dashboard'] })
       qc.invalidateQueries({ queryKey: ['products'] })
-      const paid = fmt(totalAmt)
       clearCart()
       setShowConfirm(false)
       setShowCart(false)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
       Alert.alert(
         i('✅ Vente enregistrée', '✅ Sale recorded', '✅ Venta registrada', '✅ Vendita registrata'),
-        `${paid}`,
+        i('Envoyer le reçu par WhatsApp ?', 'Send receipt via WhatsApp?', '¿Enviar recibo por WhatsApp?', 'Inviare ricevuta via WhatsApp?'),
+        [
+          { text: i('Non merci', 'No thanks', 'No gracias', 'No grazie'), style: 'cancel' },
+          {
+            text: '💬 WhatsApp',
+            onPress: async () => {
+              const ok = await sendWhatsAppTicket({
+                items: saleItems, total: saleTotal, paymentMode: saleMode,
+                saleId: data?.id ?? Date.now().toString(),
+                shopName: tenant?.name ?? 'HabaShop',
+                currency, lang, fmt,
+              })
+              if (!ok) {
+                Alert.alert(i('WhatsApp indisponible', 'WhatsApp unavailable', 'WhatsApp no disponible', 'WhatsApp non disponibile'), '')
+              }
+            },
+          },
+        ],
       )
     },
     onError: (e: any) => {
@@ -177,6 +205,54 @@ export default function POSScreen() {
     },
   })
 
+  // ── Validation de la vente : online → API, offline → file d'attente ──
+  const confirmSale = async () => {
+    if (!isOnline) {
+      await enqueueAction('SALE', {
+        items: cart.map(c => ({ productId: c.productId, qty: c.quantity, price: c.price })),
+        total: totalAmt,
+        paymentMode,
+        ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
+      })
+      recordSale(totalAmt)
+      clearCart()
+      setShowConfirm(false)
+      setShowCart(false)
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+      Alert.alert(
+        i('✅ Vente sauvegardée', '✅ Sale saved', '✅ Venta guardada', '✅ Vendita salvata'),
+        i(
+          'Synchronisée automatiquement au retour du réseau.',
+          'Will sync automatically when back online.',
+          'Se sincronizará automáticamente al volver en línea.',
+          'Si sincronizzerà automaticamente al ritorno della rete.',
+        ),
+      )
+      return
+    }
+    saleMutation.mutate()
+  }
+
+  // ── Scan code-barres : ajoute le produit trouvé au panier ──
+  const handleBarcodeScan = (barcode: string) => {
+    setShowScanner(false)
+    const product = (products as any[]).find(
+      (p: any) => p.barcode === barcode || p.ean === barcode || p.id === barcode,
+    )
+    if (product) {
+      addItem(product)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
+      Alert.alert('✅ ' + (product.name?.trim() ?? ''), fmt(product.sellPrice ?? 0), [{ text: 'OK' }])
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
+      Alert.alert(
+        i('Produit introuvable', 'Product not found', 'Producto no encontrado', 'Prodotto non trovato'),
+        `Code: ${barcode}`,
+        [{ text: 'OK' }],
+      )
+    }
+  }
+
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
@@ -185,12 +261,17 @@ export default function POSScreen() {
           <Ionicons name="close" size={22} color={Colors.text} />
         </Pressable>
         <Text style={s.headerTitle}>{i('Caisse', 'Register', 'Caja', 'Cassa')}</Text>
-        <Pressable style={s.headerBtn} onPress={() => setShowCart(true)} hitSlop={8}>
-          <Ionicons name="cart-outline" size={22} color={Colors.text} />
-          {totalQty > 0 && (
-            <View style={s.cartBadge}><Text style={s.cartBadgeTxt}>{totalQty}</Text></View>
-          )}
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
+          <Pressable style={s.headerBtn} onPress={() => setShowScanner(true)} hitSlop={8}>
+            <Ionicons name="scan-outline" size={22} color={Colors.text} />
+          </Pressable>
+          <Pressable style={s.headerBtn} onPress={() => setShowCart(true)} hitSlop={8}>
+            <Ionicons name="cart-outline" size={22} color={Colors.text} />
+            {totalQty > 0 && (
+              <View style={s.cartBadge}><Text style={s.cartBadgeTxt}>{totalQty}</Text></View>
+            )}
+          </Pressable>
+        </View>
       </View>
 
       {/* ── Recherche ── */}
@@ -406,7 +487,7 @@ export default function POSScreen() {
               <Pressable
                 style={[s.confirmBtn, s.confirmOk, saleMutation.isPending && { opacity: 0.6 }]}
                 disabled={saleMutation.isPending}
-                onPress={() => saleMutation.mutate()}
+                onPress={confirmSale}
               >
                 {saleMutation.isPending
                   ? <ActivityIndicator color={Colors.white} size="small" />
@@ -416,6 +497,12 @@ export default function POSScreen() {
           </View>
         </View>
       </Modal>
+
+      <BarcodeScanner
+        visible={showScanner}
+        onScan={handleBarcodeScan}
+        onClose={() => setShowScanner(false)}
+      />
     </View>
   )
 }

@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { analyticsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useFmt } from '@/stores/appStore'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import {
   Colors, Spacing, BorderRadius,
   FontSize, Shadow,
@@ -66,6 +67,7 @@ export default function DashboardScreen() {
   const { user, tenant } = useAuthStore()
   const { i }   = useI18n()
   const { fmt } = useFmt()
+  const { isOnline } = useNetworkStatus()
 
   // Charge les stats dashboard (API réelle : GET /api/dashboard/stats, réponse à plat)
   const {
@@ -109,6 +111,13 @@ export default function DashboardScreen() {
               {greeting}, {firstName} 👋
             </Text>
             <Text style={s.shopName}>{tenant?.name}</Text>
+            {!isOnline && (
+              <View style={s.offlineBadge}>
+                <Text style={s.offlineBadgeText}>
+                  {i('Hors ligne', 'Offline', 'Sin conexión', 'Non in linea')}
+                </Text>
+              </View>
+            )}
           </View>
           <TouchableOpacity
             style={s.notifBtn}
@@ -237,7 +246,7 @@ export default function DashboardScreen() {
               icon="📊"
               label={i('Rapports','Reports','Informes','Rapporti')}
               color={Colors.accent}
-              onPress={() => {}}
+              onPress={() => router.push('/(app)/reports')}
             />
           </View>
         </View>
@@ -328,6 +337,17 @@ const s = StyleSheet.create({
     fontSize:FontSize.sm,
     fontFamily:'Outfit_400Regular',
     color:Colors.text3, marginTop:2,
+  },
+  offlineBadge: {
+    alignSelf:'flex-start', marginTop:6,
+    backgroundColor:'rgba(255,59,92,0.12)',
+    paddingHorizontal:Spacing.sm, paddingVertical:3,
+    borderRadius:BorderRadius.full,
+    borderWidth:1, borderColor:'rgba(255,59,92,0.25)',
+  },
+  offlineBadgeText: {
+    fontSize:10, fontFamily:'Outfit_700Bold',
+    color:Colors.danger, textTransform:'uppercase', letterSpacing:0.4,
   },
   notifBtn: {
     width:40, height:40,
