@@ -18,15 +18,15 @@ interface ReportsTabsProps {
 }
 
 const PAY_LABEL = (mode: string, lang: string) =>
-  mode === 'cash' ? (lang === 'fr' ? 'Espèces' : 'Cash') :
+  mode === 'cash' ? (lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces') :
   mode === 'mobile' ? 'Mobile' : mode === 'wave' ? 'Wave' : mode === 'orange' ? 'Orange' :
-  mode === 'card' ? (lang === 'fr' ? 'Carte' : 'Card') : mode
+  mode === 'card' ? (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte') : mode
 
 export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, paymentData, activePayIndex, setActivePayIndex, salesData, data, topProducts }: ReportsTabsProps) {
   const recentSales = salesData.slice(0, 8).map((s: any) => ({
     ref: `VNT-${String(s.id ?? '').slice(-6).toUpperCase()}`,
     date: s.createdAt,
-    client: s.customerId ? (lang === 'fr' ? 'Client' : 'Customer') : (lang === 'fr' ? 'Client direct' : 'Walk-in'),
+    client: s.customerId ? (lang === 'en' ? 'Customer' : lang === 'es' ? 'Cliente' : lang === 'it' ? 'Cliente' : 'Client') : (lang === 'en' ? 'Walk-in' : lang === 'es' ? 'Cliente directo' : lang === 'it' ? 'Cliente diretto' : 'Client direct'),
     total: s.total ?? 0,
     mode: PAY_LABEL(s.paymentMode ?? 'cash', lang),
     items: (s.items ?? []).length,
@@ -119,7 +119,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               <XAxis dataKey="day" tick={{ fill:'var(--text3)', fontSize:11 }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={v => abbr(v)} tick={{ fill:'var(--text3)', fontSize:10 }} axisLine={false} tickLine={false} width={38} />
               <Tooltip
-                formatter={(v: number) => [fmt(v), lang === 'fr' ? 'CA' : 'Revenue']}
+                formatter={(v: number) => [fmt(v), lang === 'en' ? 'Revenue' : lang === 'es' ? 'Ingresos' : lang === 'it' ? 'Ricavi' : 'CA']}
                 contentStyle={{ background:'#111125', border:'1px solid rgba(108,71,255,.3)', borderRadius:10, fontSize:12 }}
                 labelStyle={{ color:'var(--text2)', fontWeight:700 }}
                 cursor={{ stroke:'rgba(108,71,255,.3)', strokeWidth:1 }}
@@ -139,11 +139,11 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}><CreditCard size={18} style={{ color:'var(--p3)' }}/></div>
               <div>
-                <div className="panel-t">{lang === 'fr' ? 'Répartition paiements' : 'Payment breakdown'}</div>
+                <div className="panel-t">{lang === 'en' ? 'Payment breakdown' : lang === 'es' ? 'Desglose de pagos' : lang === 'it' ? 'Ripartizione pagamenti' : 'Répartition paiements'}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>
                   {salesData.length > 0
-                    ? `${salesData.length} ${lang === 'fr' ? 'transactions' : 'transactions'}`
-                    : lang === 'fr' ? 'Données de démonstration' : 'Demo data'}
+                    ? `${salesData.length} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`
+                    : lang === 'en' ? 'Demo data' : lang === 'es' ? 'Datos de demostración' : lang === 'it' ? 'Dati dimostrativi' : 'Données de démonstration'}
                 </div>
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                     {paymentData.length}
                   </div>
                   <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>
-                    {lang === 'fr' ? 'modes' : 'modes'}
+                    {lang === 'en' ? 'modes' : lang === 'es' ? 'modos' : lang === 'it' ? 'modalità' : 'modes'}
                   </div>
                 </div>
               )}
@@ -243,7 +243,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           <div className="space-y-1">
             {topProducts.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text3)', fontSize: 13 }}>
-                {lang === 'fr' ? 'Aucune vente sur la période' : 'No sales in this period'}
+                {lang === 'en' ? 'No sales in this period' : lang === 'es' ? 'Sin ventas en el período' : lang === 'it' ? 'Nessuna vendita nel periodo' : 'Aucune vente sur la période'}
               </div>
             ) : topProducts.map(p => (
               <div key={p.rank} className="flex items-center gap-3 py-2"
@@ -257,7 +257,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 }}>#{p.rank}</div>
                 <div className="flex-1">
                   <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</div>
-                  <div className="text-xs" style={{ color: 'var(--text3)' }}>{p.qty.toLocaleString('fr-FR')} {lang === 'fr' ? 'unités vendues' : 'units sold'}</div>
+                  <div className="text-xs" style={{ color: 'var(--text3)' }}>{p.qty.toLocaleString('fr-FR')} {lang === 'en' ? 'units sold' : lang === 'es' ? 'unidades vendidas' : lang === 'it' ? 'unità vendute' : 'unités vendues'}</div>
                 </div>
                 <div className="td-num text-sm" style={{ color: 'var(--acc2)' }}>{fmt(p.ca)}</div>
               </div>
@@ -305,9 +305,9 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
       {reportTab === 'stock' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {[
-            { label: lang === 'fr' ? 'Articles en stock'   : 'Items in stock',   value:'142',        color:'var(--acc2)', sub: lang === 'fr' ? 'références actives' : 'active SKUs'   },
-            { label: lang === 'fr' ? 'Valeur stock total'  : 'Total stock value', value:fmt(8420000), color:'var(--p2)',   sub: lang === 'fr' ? 'coût d\'achat'       : 'purchase cost' },
-            { label: lang === 'fr' ? 'Articles en rupture' : 'Out of stock',      value:'7',          color:'var(--danger)', sub: lang === 'fr' ? 'à commander en urgence' : 'urgent reorder' },
+            { label: lang === 'en' ? 'Items in stock' : lang === 'es' ? 'Artículos en stock' : lang === 'it' ? 'Articoli in stock' : 'Articles en stock',   value:'142',        color:'var(--acc2)', sub: lang === 'en' ? 'active SKUs' : lang === 'es' ? 'SKU activos' : lang === 'it' ? 'SKU attivi' : 'références actives'   },
+            { label: lang === 'en' ? 'Total stock value' : lang === 'es' ? 'Valor stock total' : lang === 'it' ? 'Valore stock totale' : 'Valeur stock total', value:fmt(8420000), color:'var(--p2)',   sub: lang === 'en' ? 'purchase cost' : lang === 'es' ? 'costo de compra' : lang === 'it' ? 'costo d\'acquisto' : 'coût d\'achat' },
+            { label: lang === 'en' ? 'Out of stock' : lang === 'es' ? 'Artículos agotados' : lang === 'it' ? 'Articoli esauriti' : 'Articles en rupture',      value:'7',          color:'var(--danger)', sub: lang === 'en' ? 'urgent reorder' : lang === 'es' ? 'pedir con urgencia' : lang === 'it' ? 'da ordinare con urgenza' : 'à commander en urgence' },
           ].map(k => (
             <div key={k.label} className="kpi-card" style={{ borderTop:`3px solid ${k.color}` }}>
               <div className="kpi-label">{k.label}</div>
@@ -317,7 +317,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           ))}
           <div className="panel lg:col-span-3" style={{ marginBottom:0 }}>
             <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Package size={14}/> {lang === 'fr' ? 'Rotation des stocks — Top catégories' : 'Stock rotation — Top categories'}</span>
+              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Package size={14}/> {lang === 'en' ? 'Stock rotation — Top categories' : lang === 'es' ? 'Rotación de stock — Top categorías' : lang === 'it' ? 'Rotazione stock — Top categorie' : 'Rotation des stocks — Top catégories'}</span>
             </div>
             {[
               { cat:'Céréales',   pct:82, val:fmt(2180000), color:'#818CF8' },
@@ -344,12 +344,12 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="panel" style={{ marginBottom:0 }}>
             <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Users size={14}/> {lang === 'fr' ? 'Segments clients' : 'Customer segments'}</span>
+              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Users size={14}/> {lang === 'en' ? 'Customer segments' : lang === 'es' ? 'Segmentos de clientes' : lang === 'it' ? 'Segmenti clienti' : 'Segments clients'}</span>
             </div>
             {[
-              { label: lang === 'fr' ? 'Grossistes'        : 'Wholesalers',  count:45,  ca:fmt(8400000), color:'#6C47FF', pct:52 },
-              { label: lang === 'fr' ? 'Détaillants'       : 'Retailers',    count:31,  ca:fmt(4200000), color:'#00B8FF', pct:26 },
-              { label: lang === 'fr' ? 'Clients directs'   : 'Direct',       count:13,  ca:fmt(3600000), color:'#00D084', pct:22 },
+              { label: lang === 'en' ? 'Wholesalers' : lang === 'es' ? 'Mayoristas' : lang === 'it' ? 'Grossisti' : 'Grossistes',  count:45,  ca:fmt(8400000), color:'#6C47FF', pct:52 },
+              { label: lang === 'en' ? 'Retailers' : lang === 'es' ? 'Minoristas' : lang === 'it' ? 'Dettaglianti' : 'Détaillants',    count:31,  ca:fmt(4200000), color:'#00B8FF', pct:26 },
+              { label: lang === 'en' ? 'Direct' : lang === 'es' ? 'Directos' : lang === 'it' ? 'Diretti' : 'Clients directs',       count:13,  ca:fmt(3600000), color:'#00D084', pct:22 },
             ].map(seg => (
               <div key={seg.label} style={{ padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
@@ -368,13 +368,13 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           </div>
           <div className="panel" style={{ marginBottom:0 }}>
             <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><TrendingUp size={14}/> {lang === 'fr' ? 'Métriques fidélisation' : 'Loyalty metrics'}</span>
+              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><TrendingUp size={14}/> {lang === 'en' ? 'Loyalty metrics' : lang === 'es' ? 'Métricas de fidelización' : lang === 'it' ? 'Metriche fidelizzazione' : 'Métriques fidélisation'}</span>
             </div>
             {[
-              { label: lang === 'fr' ? 'Taux de rétention' : 'Retention rate',   value:'68 %',    color:'var(--acc2)' },
-              { label: lang === 'fr' ? 'Panier moyen'      : 'Avg. basket',       value:fmt(125000), color:'var(--p2)'  },
-              { label: lang === 'fr' ? 'Achat fréquence'   : 'Purchase freq.',    value:'2.4×/mois', color:'var(--acc)' },
-              { label: lang === 'fr' ? 'NPS estimé'        : 'Estimated NPS',     value:'67',      color:'#A78BFA'    },
+              { label: lang === 'en' ? 'Retention rate' : lang === 'es' ? 'Tasa de retención' : lang === 'it' ? 'Tasso di fidelizzazione' : 'Taux de rétention',   value:'68 %',    color:'var(--acc2)' },
+              { label: lang === 'en' ? 'Avg. basket' : lang === 'es' ? 'Ticket medio' : lang === 'it' ? 'Scontrino medio' : 'Panier moyen',       value:fmt(125000), color:'var(--p2)'  },
+              { label: lang === 'en' ? 'Purchase freq.' : lang === 'es' ? 'Frec. compra' : lang === 'it' ? 'Freq. acquisto' : 'Achat fréquence',    value:'2.4×/mois', color:'var(--acc)' },
+              { label: lang === 'en' ? 'Estimated NPS' : lang === 'es' ? 'NPS estimado' : lang === 'it' ? 'NPS stimato' : 'NPS estimé',     value:'67',      color:'#A78BFA'    },
             ].map(m => (
               <div key={m.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontSize:13, color:'var(--text2)' }}>{m.label}</span>
@@ -390,14 +390,14 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="panel" style={{ marginBottom:0 }}>
             <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Wallet size={14}/> {lang === 'fr' ? 'Compte de résultat simplifié' : 'P&L summary'}</span>
+              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Wallet size={14}/> {lang === 'en' ? 'P&L summary' : lang === 'es' ? 'Cuenta de resultados simplificada' : lang === 'it' ? 'Conto economico semplificato' : 'Compte de résultat simplifié'}</span>
             </div>
             {[
-              { label: lang === 'fr' ? 'Chiffre d\'affaires' : 'Revenue',      value:fmt(data.ca),     color:'var(--acc2)', prefix:'+' },
-              { label: lang === 'fr' ? 'Coût des ventes'     : 'Cost of sales',value:fmt(Math.round(data.ca * 0.62)), color:'var(--danger)', prefix:'-' },
-              { label: lang === 'fr' ? 'Marge brute'         : 'Gross margin', value:fmt(data.margin), color:'var(--p2)', prefix:'=' },
-              { label: lang === 'fr' ? 'Charges d\'exploit.' : 'Op. expenses', value:fmt(Math.round(data.margin * 0.58)), color:'var(--acc)', prefix:'-' },
-              { label: lang === 'fr' ? 'Résultat net'        : 'Net income',   value:fmt(Math.round(data.margin * 0.42)), color:'var(--acc2)', prefix:'=' },
+              { label: lang === 'en' ? 'Revenue' : lang === 'es' ? 'Facturación' : lang === 'it' ? 'Fatturato' : 'Chiffre d\'affaires',      value:fmt(data.ca),     color:'var(--acc2)', prefix:'+' },
+              { label: lang === 'en' ? 'Cost of sales' : lang === 'es' ? 'Costo de ventas' : lang === 'it' ? 'Costo del venduto' : 'Coût des ventes',value:fmt(Math.round(data.ca * 0.62)), color:'var(--danger)', prefix:'-' },
+              { label: lang === 'en' ? 'Gross margin' : lang === 'es' ? 'Margen bruto' : lang === 'it' ? 'Margine lordo' : 'Marge brute', value:fmt(data.margin), color:'var(--p2)', prefix:'=' },
+              { label: lang === 'en' ? 'Op. expenses' : lang === 'es' ? 'Gastos op.' : lang === 'it' ? 'Spese op.' : 'Charges d\'exploit.', value:fmt(Math.round(data.margin * 0.58)), color:'var(--acc)', prefix:'-' },
+              { label: lang === 'en' ? 'Net income' : lang === 'es' ? 'Resultado neto' : lang === 'it' ? 'Risultato netto' : 'Résultat net',   value:fmt(Math.round(data.margin * 0.42)), color:'var(--acc2)', prefix:'=' },
             ].map((row, i) => (
               <div key={row.label} style={{
                 display:'flex', justifyContent:'space-between', padding:'12px 0',
@@ -411,13 +411,13 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           </div>
           <div className="panel" style={{ marginBottom:0 }}>
             <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><DollarSign size={14}/> {lang === 'fr' ? 'Ratios financiers clés' : 'Key financial ratios'}</span>
+              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><DollarSign size={14}/> {lang === 'en' ? 'Key financial ratios' : lang === 'es' ? 'Ratios financieros clave' : lang === 'it' ? 'Indici finanziari chiave' : 'Ratios financiers clés'}</span>
             </div>
             {[
-              { label: lang === 'fr' ? 'Taux de marge brute' : 'Gross margin %',  value:`${Math.round((data.margin / data.ca) * 100)} %`, color:'var(--acc2)' },
-              { label: lang === 'fr' ? 'Taux de marge nette' : 'Net margin %',    value:`${Math.round((data.margin * 0.42 / data.ca) * 100)} %`, color:'var(--p2)'  },
-              { label: lang === 'fr' ? 'Panier moyen'        : 'Avg. basket',     value:fmt(data.avgCart),  color:'var(--acc)'  },
-              { label: lang === 'fr' ? 'Transactions'        : 'Transactions',    value:String(data.transactions), color:'var(--text2)' },
+              { label: lang === 'en' ? 'Gross margin %' : lang === 'es' ? 'Margen bruto %' : lang === 'it' ? 'Margine lordo %' : 'Taux de marge brute',  value:`${Math.round((data.margin / data.ca) * 100)} %`, color:'var(--acc2)' },
+              { label: lang === 'en' ? 'Net margin %' : lang === 'es' ? 'Margen neto %' : lang === 'it' ? 'Margine netto %' : 'Taux de marge nette',    value:`${Math.round((data.margin * 0.42 / data.ca) * 100)} %`, color:'var(--p2)'  },
+              { label: lang === 'en' ? 'Avg. basket' : lang === 'es' ? 'Ticket medio' : lang === 'it' ? 'Scontrino medio' : 'Panier moyen',     value:fmt(data.avgCart),  color:'var(--acc)'  },
+              { label: lang === 'en' ? 'Transactions' : lang === 'es' ? 'Transacciones' : lang === 'it' ? 'Transazioni' : 'Transactions',    value:String(data.transactions), color:'var(--text2)' },
             ].map(r => (
               <div key={r.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontSize:13, color:'var(--text2)' }}>{r.label}</span>
@@ -432,9 +432,9 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
       {reportTab === 'rh' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {[
-            { label: lang === 'fr' ? 'Effectif total'   : 'Total staff',   value:'8',         color:'var(--p2)',    sub: lang === 'fr' ? 'collaborateurs' : 'employees' },
-            { label: lang === 'fr' ? 'Masse salariale'  : 'Payroll total', value:fmt(680000), color:'var(--acc)',   sub: lang === 'fr' ? 'par mois'       : 'per month' },
-            { label: lang === 'fr' ? 'Taux présence'    : 'Attendance',    value:'94 %',      color:'var(--acc2)', sub: lang === 'fr' ? 'ce mois'         : 'this month' },
+            { label: lang === 'en' ? 'Total staff' : lang === 'es' ? 'Plantilla total' : lang === 'it' ? 'Organico totale' : 'Effectif total',   value:'8',         color:'var(--p2)',    sub: lang === 'en' ? 'employees' : lang === 'es' ? 'colaboradores' : lang === 'it' ? 'collaboratori' : 'collaborateurs' },
+            { label: lang === 'en' ? 'Payroll total' : lang === 'es' ? 'Masa salarial' : lang === 'it' ? 'Costo del personale' : 'Masse salariale', value:fmt(680000), color:'var(--acc)',   sub: lang === 'en' ? 'per month' : lang === 'es' ? 'por mes' : lang === 'it' ? 'al mese' : 'par mois' },
+            { label: lang === 'en' ? 'Attendance' : lang === 'es' ? 'Asistencia' : lang === 'it' ? 'Presenza' : 'Taux présence',    value:'94 %',      color:'var(--acc2)', sub: lang === 'en' ? 'this month' : lang === 'es' ? 'este mes' : lang === 'it' ? 'questo mese' : 'ce mois' },
           ].map(k => (
             <div key={k.label} className="kpi-card" style={{ borderTop:`3px solid ${k.color}` }}>
               <div className="kpi-label">{k.label}</div>
@@ -444,14 +444,14 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           ))}
           <div className="panel lg:col-span-3" style={{ marginBottom:0 }}>
             <div className="panel-head">
-              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><UserCog size={14}/> {lang === 'fr' ? 'Équipe' : 'Team'}</span>
+              <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><UserCog size={14}/> {lang === 'en' ? 'Team' : lang === 'es' ? 'Equipo' : lang === 'it' ? 'Squadra' : 'Équipe'}</span>
             </div>
             {[
-              { nom:'Amara Diallo',  poste: lang === 'fr' ? 'Manager'          : 'Manager',     dept: lang === 'fr' ? 'Direction' : 'Management', salaire:fmt(180000), status:'Présent' },
-              { nom:'Fatou Sow',     poste: lang === 'fr' ? 'Caissière'        : 'Cashier',     dept:'POS',   salaire:fmt(85000),  status:'Présent' },
-              { nom:'Omar Diop',     poste: lang === 'fr' ? 'Magasinier'       : 'Warehouse',   dept: lang === 'fr' ? 'Stock' : 'Stock',  salaire:fmt(80000),  status:'Présent' },
-              { nom:'Aïssatou Ba',   poste: lang === 'fr' ? 'Comptable'        : 'Accountant',  dept: lang === 'fr' ? 'Finance' : 'Finance', salaire:fmt(120000), status: lang === 'fr' ? 'Congé' : 'Leave'  },
-              { nom:'Ibrahima Fall', poste: lang === 'fr' ? 'Livreur'          : 'Delivery',    dept: lang === 'fr' ? 'Logistique' : 'Logistics', salaire:fmt(75000),  status:'Présent' },
+              { nom:'Amara Diallo',  poste: lang === 'en' ? 'Manager' : lang === 'es' ? 'Gerente' : lang === 'it' ? 'Manager' : 'Manager',     dept: lang === 'en' ? 'Management' : lang === 'es' ? 'Dirección' : lang === 'it' ? 'Direzione' : 'Direction', salaire:fmt(180000), status:'Présent' },
+              { nom:'Fatou Sow',     poste: lang === 'en' ? 'Cashier' : lang === 'es' ? 'Cajera' : lang === 'it' ? 'Cassiera' : 'Caissière',     dept:'POS',   salaire:fmt(85000),  status:'Présent' },
+              { nom:'Omar Diop',     poste: lang === 'en' ? 'Warehouse' : lang === 'es' ? 'Almacenero' : lang === 'it' ? 'Magazziniere' : 'Magasinier',   dept: lang === 'en' ? 'Stock' : lang === 'es' ? 'Stock' : lang === 'it' ? 'Stock' : 'Stock',  salaire:fmt(80000),  status:'Présent' },
+              { nom:'Aïssatou Ba',   poste: lang === 'en' ? 'Accountant' : lang === 'es' ? 'Contable' : lang === 'it' ? 'Contabile' : 'Comptable',  dept: lang === 'en' ? 'Finance' : lang === 'es' ? 'Finanzas' : lang === 'it' ? 'Finanza' : 'Finance', salaire:fmt(120000), status: lang === 'en' ? 'Leave' : lang === 'es' ? 'Permiso' : lang === 'it' ? 'Permesso' : 'Congé'  },
+              { nom:'Ibrahima Fall', poste: lang === 'en' ? 'Delivery' : lang === 'es' ? 'Repartidor' : lang === 'it' ? 'Fattorino' : 'Livreur',    dept: lang === 'en' ? 'Logistics' : lang === 'es' ? 'Logística' : lang === 'it' ? 'Logistica' : 'Logistique', salaire:fmt(75000),  status:'Présent' },
             ].map(emp => (
               <div key={emp.nom} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
                 <div style={{ width:36, height:36, borderRadius:10, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>

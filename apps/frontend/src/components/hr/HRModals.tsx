@@ -48,8 +48,8 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:900, color:'var(--text)', margin:0, display:'flex', alignItems:'center', gap:8 }}>
                 {salaryTarget?.mode === 'raise'
-                  ? <><TrendingUp size={15} style={{color:'var(--acc2)',flexShrink:0}}/>{lang==='fr' ? 'Augmentation salariale' : 'Salary raise'}</>
-                  : <><Gift size={15} style={{color:'var(--acc)',flexShrink:0}}/>{lang==='fr' ? 'Ajouter une prime' : 'Add bonus'}{salaryTarget ? ` — ${salaryTarget.name}` : ''}</>}
+                  ? <><TrendingUp size={15} style={{color:'var(--acc2)',flexShrink:0}}/>{lang === 'en' ? 'Salary raise' : lang === 'es' ? 'Aumento salarial' : lang === 'it' ? 'Aumento salariale' : 'Augmentation salariale'}</>
+                  : <><Gift size={15} style={{color:'var(--acc)',flexShrink:0}}/>{lang === 'en' ? 'Add bonus' : lang === 'es' ? 'Agregar una prima' : lang === 'it' ? 'Aggiungi un premio' : 'Ajouter une prime'}{salaryTarget ? ` — ${salaryTarget.name}` : ''}</>}
               </h3>
               <button className="btn btn-sm" onClick={() => setShowSalaryModal(false)}>✕</button>
             </div>
@@ -112,7 +112,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               <div style={{ display:'flex', alignItems:'center', gap:14 }}>
                 <div
                   style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'var(--p)'}50`, border:`2px solid ${editEmpForm.color??'var(--p)'}40`, letterSpacing:'-1px', cursor: empEditMode ? 'pointer' : 'default', position:'relative' }}
-                  title={empEditMode ? (lang==='fr'?'Cliquer pour changer la photo':'Click to change photo') : undefined}
+                  title={empEditMode ? (lang === 'en' ? 'Click to change photo' : lang === 'es' ? 'Clic para cambiar la foto' : lang === 'it' ? 'Clicca per cambiare la foto' : 'Cliquer pour changer la photo') : undefined}
                   onClick={() => empEditMode && (document.getElementById('emp-photo-input') as HTMLInputElement)?.click()}>
                   {editEmpForm.photoUrl
                     ? <img src={editEmpForm.photoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
@@ -122,7 +122,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 <input id="emp-photo-input" type="file" accept="image/*" style={{ display:'none' }} onChange={e => {
                   const f = e.target.files?.[0]
                   if (!f) return
-                  if (f.size > 2 * 1024 * 1024) { toast.error(lang==='fr'?'Photo trop lourde (max 2MB)':'Photo too large (max 2MB)'); return }
+                  if (f.size > 2 * 1024 * 1024) { toast.error(lang === 'en' ? 'Photo too large (max 2MB)' : lang === 'es' ? 'Foto demasiado pesada (máx 2MB)' : lang === 'it' ? 'Foto troppo pesante (max 2MB)' : 'Photo trop lourde (max 2MB)'); return }
                   const r = new FileReader()
                   r.onload = ev => setEditEmpForm((fm:any) => ({ ...fm, photoUrl: ev.target?.result as string }))
                   r.readAsDataURL(f)
@@ -140,7 +140,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                       onClick={() => empEditMode && setEditEmpForm((f:any) => ({ ...f, isActive:!f.isActive }))}
                       style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 12px', borderRadius:99, border:'none', cursor: empEditMode ? 'pointer' : 'default', fontSize:11, fontWeight:700, fontFamily:'var(--font)', background: editEmpForm.isActive?'rgba(0,208,132,.15)':'rgba(255,59,92,.15)', color: editEmpForm.isActive?'var(--acc2)':'var(--danger)', transition:'all .15s' }}>
                       <div style={{ width:6, height:6, borderRadius:'50%', background: editEmpForm.isActive?'var(--acc2)':'var(--danger)', boxShadow: editEmpForm.isActive?'0 0 6px var(--acc2)':'0 0 6px var(--danger)' }} />
-                      {editEmpForm.isActive ? (lang==='fr'?'Employé actif':'Active') : (lang==='fr'?'Inactif':'Inactive')}
+                      {editEmpForm.isActive ? (lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Employé actif') : (lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')}
                     </button>
                   </div>
                 </div>
@@ -157,13 +157,13 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 ? <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:16, background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
                     <Eye size={14} style={{ color:'var(--acc3)', flexShrink:0 }} />
                     <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>
-                      {lang==='fr' ? 'Mode visualisation — cliquez sur Modifier pour éditer' : 'View mode — click Edit to make changes'}
+                      {lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}
                     </span>
                   </div>
                 : <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
                     <Pencil size={14} style={{ color:'var(--warn)', flexShrink:0 }} />
                     <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>
-                      {lang==='fr' ? 'Mode édition — modifications non sauvegardées' : 'Edit mode — unsaved changes'}
+                      {lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios no guardados' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}
                     </span>
                   </div>
               }
@@ -172,17 +172,17 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
                   <div style={{ width:16, height:16, borderRadius:4, background:`${editEmpForm.color??'var(--p)'}22`, display:'flex', alignItems:'center', justifyContent:'center', color:editEmpForm.color??'var(--p)' }}><User size={10}/></div>
-                  {lang==='fr'?'IDENTITÉ':'IDENTITY'}
+                  {lang === 'en' ? 'IDENTITY' : lang === 'es' ? 'IDENTIDAD' : lang === 'it' ? 'IDENTITÀ' : 'IDENTITÉ'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <ViewField label={lang==='fr'?'NOM COMPLET *':'FULL NAME *'} value={editEmpForm.name??''} editing={empEditMode}>
+                  <ViewField label={lang === 'en' ? 'FULL NAME *' : lang === 'es' ? 'NOMBRE COMPLETO *' : lang === 'it' ? 'NOME COMPLETO *' : 'NOM COMPLET *'} value={editEmpForm.name??''} editing={empEditMode}>
                     <ValidatedInput type="name" required autoFocus
                       value={editEmpForm.name??''}
                       onChange={val => setEditEmpForm((f:any) => ({ ...f, name:val }))}
                       placeholder="Aminata Diallo" lang={lang} />
                   </ViewField>
-                  <ViewField label={lang==='fr'?'POSTE *':'POSITION *'} value={editEmpForm.role??''} editing={empEditMode}>
-                    <input className="input" placeholder={lang==='fr'?'Ex: Caissière':'Ex: Cashier'} value={editEmpForm.role??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, role:e.target.value }))} />
+                  <ViewField label={lang === 'en' ? 'POSITION *' : lang === 'es' ? 'PUESTO *' : lang === 'it' ? 'POSIZIONE *' : 'POSTE *'} value={editEmpForm.role??''} editing={empEditMode}>
+                    <input className="input" placeholder={lang === 'en' ? 'Ex: Cashier' : lang === 'es' ? 'Ej: Cajera' : lang === 'it' ? 'Es: Cassiera' : 'Ex: Caissière'} value={editEmpForm.role??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, role:e.target.value }))} />
                   </ViewField>
                 </div>
               </div>
@@ -191,30 +191,30 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
                   <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,149,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc)' }}><FileText size={10}/></div>
-                  {lang==='fr'?'CONTRAT':'CONTRACT'}
+                  {lang === 'en' ? 'CONTRACT' : lang === 'es' ? 'CONTRATO' : lang === 'it' ? 'CONTRATTO' : 'CONTRAT'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <ViewField label={lang==='fr'?'DÉPARTEMENT':'DEPARTMENT'} value={editEmpForm.dept??''} editing={empEditMode}>
+                  <ViewField label={lang === 'en' ? 'DEPARTMENT' : lang === 'es' ? 'DEPARTAMENTO' : lang === 'it' ? 'REPARTO' : 'DÉPARTEMENT'} value={editEmpForm.dept??''} editing={empEditMode}>
                     <select className="input" value={editEmpForm.dept??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, dept:e.target.value }))}>
                       {Object.keys(DEPT_COLORS).map(d => <option key={d}>{d}</option>)}
                     </select>
                   </ViewField>
-                  <ViewField label={lang==='fr'?'TYPE CONTRAT':'CONTRACT TYPE'} value={editEmpForm.type??'CDI'} editing={empEditMode}>
+                  <ViewField label={lang === 'en' ? 'CONTRACT TYPE' : lang === 'es' ? 'TIPO CONTRATO' : lang === 'it' ? 'TIPO CONTRATTO' : 'TYPE CONTRAT'} value={editEmpForm.type??'CDI'} editing={empEditMode}>
                     <select className="input" value={editEmpForm.type??'CDI'} onChange={e => setEditEmpForm((f:any) => ({ ...f, type:e.target.value }))}>
                       {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t => <option key={t}>{t}</option>)}
                     </select>
                   </ViewField>
-                  <ViewField label={lang==='fr'?'DATE EMBAUCHE':'HIRE DATE'} value={displayDate(editEmpForm.hiredAt)} editing={empEditMode}>
+                  <ViewField label={lang === 'en' ? 'HIRE DATE' : lang === 'es' ? 'FECHA CONTRATACIÓN' : lang === 'it' ? 'DATA ASSUNZIONE' : 'DATE EMBAUCHE'} value={displayDate(editEmpForm.hiredAt)} editing={empEditMode}>
                     <input className="input" type="date" value={editEmpForm.hiredAt ?? ''} onChange={e => setEditEmpForm((f:any) => ({ ...f, hiredAt:e.target.value }))} />
                   </ViewField>
                   {editEmpForm.type === 'CDI' ? (
-                    <ViewField label={lang==='fr'?'FIN DE CONTRAT':'CONTRACT END'} value={lang==='fr'?'∞ Indéterminé':'∞ Permanent'} color="var(--acc2)" editing={empEditMode}>
+                    <ViewField label={lang === 'en' ? 'CONTRACT END' : lang === 'es' ? 'FIN DE CONTRATO' : lang === 'it' ? 'FINE CONTRATTO' : 'FIN DE CONTRAT'} value={lang === 'en' ? '∞ Permanent' : lang === 'es' ? '∞ Indefinido' : lang === 'it' ? '∞ Indeterminato' : '∞ Indéterminé'} color="var(--acc2)" editing={empEditMode}>
                       <div style={{ padding:'10px 14px', background:'rgba(0,208,132,.06)', border:'1px solid var(--c-green-bg)', borderRadius:12, fontSize:13, color:'var(--acc2)', fontWeight:600 }}>
-                        ∞ {lang==='fr'?'Contrat à durée indéterminée':'Permanent contract'}
+                        ∞ {lang === 'en' ? 'Permanent contract' : lang === 'es' ? 'Contrato indefinido' : lang === 'it' ? 'Contratto a tempo indeterminato' : 'Contrat à durée indéterminée'}
                       </div>
                     </ViewField>
                   ) : (
-                    <ViewField label={lang==='fr'?'FIN DE CONTRAT':'CONTRACT END'} value={displayDate(editEmpForm.contractEnd)} editing={empEditMode}>
+                    <ViewField label={lang === 'en' ? 'CONTRACT END' : lang === 'es' ? 'FIN DE CONTRATO' : lang === 'it' ? 'FINE CONTRATTO' : 'FIN DE CONTRAT'} value={displayDate(editEmpForm.contractEnd)} editing={empEditMode}>
                       <input className="input" type="date" value={editEmpForm.contractEnd??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, contractEnd:e.target.value }))} />
                     </ViewField>
                   )}
@@ -225,7 +225,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
                   <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,208,132,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc2)' }}><DollarSign size={10}/></div>
-                  {lang==='fr'?'RÉMUNÉRATION':'COMPENSATION'}
+                  {lang === 'en' ? 'COMPENSATION' : lang === 'es' ? 'REMUNERACIÓN' : lang === 'it' ? 'RETRIBUZIONE' : 'RÉMUNÉRATION'}
                 </div>
                 <ViewField
                   label={lang==='fr'?`SALAIRE MENSUEL BRUT (${currency})`:`MONTHLY GROSS SALARY (${currency})`}
@@ -261,10 +261,10 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
                   <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,184,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc3)' }}><User size={10}/></div>
-                  {lang==='fr'?'CONTACT':'CONTACT'}
+                  {lang === 'en' ? 'CONTACT' : lang === 'es' ? 'CONTACTO' : lang === 'it' ? 'CONTATTO' : 'CONTACT'}
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <ViewField label={lang==='fr'?'TÉLÉPHONE':'PHONE'} value={editEmpForm.phone||''} icon="📞" editing={empEditMode}>
+                  <ViewField label={lang === 'en' ? 'PHONE' : lang === 'es' ? 'TELÉFONO' : lang === 'it' ? 'TELEFONO' : 'TÉLÉPHONE'} value={editEmpForm.phone||''} icon="📞" editing={empEditMode}>
                     <PhoneInputWithCountry
                       value={editEmpForm.phone??''}
                       onChange={val => setEditEmpForm((f:any) => ({ ...f, phone:val }))}
@@ -280,7 +280,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                   {empEditMode ? (
                     <div style={{ gridColumn:'1/-1' }}>
                       <AddressAutocompleteInput
-                        label={lang==='fr' ? 'ADRESSE' : 'ADDRESS'}
+                        label={lang === 'en' ? 'ADDRESS' : lang === 'es' ? 'DIRECCIÓN' : lang === 'it' ? 'INDIRIZZO' : 'ADRESSE'}
                         value={editEmpForm.address ?? ''}
                         onChange={val => setEditEmpForm((f:any) => ({ ...f, address: val }))}
                         lang={lang}
@@ -289,14 +289,14 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                   ) : (
                     <div style={{ gridColumn:'1/-1' }}>
                       <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
-                        {lang==='fr' ? 'ADRESSE' : 'ADDRESS'}
+                        {lang === 'en' ? 'ADDRESS' : lang === 'es' ? 'DIRECCIÓN' : lang === 'it' ? 'INDIRIZZO' : 'ADRESSE'}
                       </label>
                       <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', gap:8 }}>
                         <MapPin size={13} style={{ opacity:.7, flexShrink:0, color:'var(--text3)' }} />
                         <span>
                           {editEmpForm.address?.trim()
                             ? editEmpForm.address
-                            : <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{lang==='fr' ? 'Non renseignée' : 'Not provided'}</span>
+                            : <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{lang === 'en' ? 'Not provided' : lang === 'es' ? 'No indicada' : lang === 'it' ? 'Non indicata' : 'Non renseignée'}</span>
                           }
                         </span>
                       </div>
@@ -336,7 +336,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 <div>
                   <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
                     <div style={{ width:16, height:16, borderRadius:4, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--p2)' }}><Pencil size={10}/></div>
-                    {lang==='fr'?'COULEUR AVATAR':'AVATAR COLOR'}
+                    {lang === 'en' ? 'AVATAR COLOR' : lang === 'es' ? 'COLOR AVATAR' : lang === 'it' ? 'COLORE AVATAR' : 'COULEUR AVATAR'}
                   </div>
                   <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                     {['var(--p)','var(--acc3)','var(--acc2)','var(--acc)','var(--danger)','#F472B6','var(--p3)','var(--warn)'].map(col => (
@@ -355,18 +355,18 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 <>
                   <button onClick={() => setEmpEditMode(true)}
                     style={{ flex:1, padding:'12px', background:'linear-gradient(135deg,var(--p),var(--p2))', border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'var(--sh-p)' }}>
-                    ✏️ {lang==='fr'?'Modifier':'Edit'}
+                    ✏️ {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
                   </button>
                   <button onClick={() => setShowEditEmpModal(false)}
                     style={{ padding:'12px 18px', background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
-                    {lang==='fr'?'Fermer':'Close'}
+                    {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}
                   </button>
                 </>
               ) : (
                 <>
                   <button
                     onClick={async () => {
-                      if (!editEmpForm.name?.trim()) { toast.error(lang==='fr'?'Nom requis':'Name required'); return }
+                      if (!editEmpForm.name?.trim()) { toast.error(lang === 'en' ? 'Name required' : lang === 'es' ? 'Nombre requerido' : lang === 'it' ? 'Nome richiesto' : 'Nom requis'); return }
                       const avatar = (editEmpForm.name||'??').split(' ').map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase()
                       const salaryXOF = toXOF(+salaryInput || 0)
                       const data = { ...editEmpForm, avatar, salary: Math.round(salaryXOF) }
@@ -376,7 +376,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                           hiredAt: data.hiredAt ? new Date(data.hiredAt).toISOString() : undefined,
                         })
                         setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {...e, ...data, avatar} : e))
-                        toast.success('✅ '+(lang==='fr'?'Sauvegardé !':'Saved!'))
+                        toast.success('✅ '+(lang === 'en' ? 'Saved!' : lang === 'es' ? '¡Guardado!' : lang === 'it' ? 'Salvato!' : 'Sauvegardé !'))
                       } catch {
                         setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {...e, ...data, avatar} : e))
                         toast.success('✅ Local')
@@ -385,18 +385,18 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                       setShowEditEmpModal(false)
                     }}
                     style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-                    ✅ {lang==='fr'?'Sauvegarder':'Save'}
+                    ✅ {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Sauvegarder'}
                   </button>
                   <button onClick={() => { openEditModal(selectedEmp!) }}
                     style={{ padding:'12px 16px', background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
-                    {lang==='fr'?'Annuler':'Cancel'}
+                    {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
                   </button>
                   <button
                     onClick={async () => {
-                      if (!(await confirm({ title: lang==='fr'?"Supprimer l'employé":'Delete employee', message: lang==='fr'?`Supprimer ${selectedEmp!.name} ? Cette action est irréversible.`:`Delete ${selectedEmp!.name}? This action is irreversible.`, danger: true }))) return
+                      if (!(await confirm({ title: lang === 'en' ? 'Delete employee' : lang === 'es' ? 'Eliminar empleado' : lang === 'it' ? 'Elimina dipendente' : "Supprimer l'employé", message: lang==='fr'?`Supprimer ${selectedEmp!.name} ? Cette action est irréversible.`:`Delete ${selectedEmp!.name}? This action is irreversible.`, danger: true }))) return
                       setEmployees((prev: Employee[]) => prev.filter(e=>e.id!==selectedEmp!.id))
                       setShowEditEmpModal(false)
-                      toast.success(lang==='fr'?'Supprimé':'Deleted')
+                      toast.success(lang === 'en' ? 'Deleted' : lang === 'es' ? 'Eliminado' : lang === 'it' ? 'Eliminato' : 'Supprimé')
                     }}
                     style={{ width:44, padding:'12px', background:'rgba(255,59,92,.1)', border:'1px solid rgba(255,59,92,.2)', borderRadius:12, cursor:'pointer', color:'var(--danger)', display:'flex', alignItems:'center', justifyContent:'center' }}><Trash2 size={16}/></button>
                 </>
@@ -412,45 +412,45 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
           <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, padding:28, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--sh-xl)' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
-              <h3 style={{ margin:0, fontSize:17, fontWeight:900, color:'var(--text)' }}>📄 {lang==='fr'?'Nouveau contrat':'New contract'}</h3>
+              <h3 style={{ margin:0, fontSize:17, fontWeight:900, color:'var(--text)' }}>📄 {lang === 'en' ? 'New contract' : lang === 'es' ? 'Nuevo contrato' : lang === 'it' ? 'Nuovo contratto' : 'Nouveau contrat'}</h3>
               <button onClick={()=>setShowNewContractModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)' }}><X size={18}/></button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
-                <label style={labelStyle}>{lang==='fr'?'NOM DE L\'EMPLOYÉ':'EMPLOYEE NAME'}</label>
-                <input aria-label={lang==='fr'?'NOM DE L\'EMPLOYÉ':'EMPLOYEE NAME'} className="input" placeholder={lang==='fr'?'Aminata Diallo':'Employee name'} value={contractForm.empId} onChange={e=>setContractForm(f=>({...f,empId:e.target.value}))}/>
+                <label style={labelStyle}>{lang === 'en' ? 'EMPLOYEE NAME' : lang === 'es' ? 'NOMBRE DEL EMPLEADO' : lang === 'it' ? 'NOME DEL DIPENDENTE' : 'NOM DE L\'EMPLOYÉ'}</label>
+                <input aria-label={lang === 'en' ? 'EMPLOYEE NAME' : lang === 'es' ? 'NOMBRE DEL EMPLEADO' : lang === 'it' ? 'NOME DEL DIPENDENTE' : 'NOM DE L\'EMPLOYÉ'} className="input" placeholder={lang === 'en' ? 'Employee name' : lang === 'es' ? 'Nombre del empleado' : lang === 'it' ? 'Nome del dipendente' : 'Aminata Diallo'} value={contractForm.empId} onChange={e=>setContractForm(f=>({...f,empId:e.target.value}))}/>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
-                  <label style={labelStyle}>{lang==='fr'?'POSTE':'POSITION'}</label>
-                  <input aria-label={lang==='fr'?'POSTE':'POSITION'} className="input" placeholder={lang==='fr'?'Ex: Caissière':'Ex: Cashier'} value={contractForm.role} onChange={e=>setContractForm(f=>({...f,role:e.target.value}))}/>
+                  <label style={labelStyle}>{lang === 'en' ? 'POSITION' : lang === 'es' ? 'PUESTO' : lang === 'it' ? 'POSIZIONE' : 'POSTE'}</label>
+                  <input aria-label={lang === 'en' ? 'POSITION' : lang === 'es' ? 'PUESTO' : lang === 'it' ? 'POSIZIONE' : 'POSTE'} className="input" placeholder={lang === 'en' ? 'Ex: Cashier' : lang === 'es' ? 'Ej: Cajera' : lang === 'it' ? 'Es: Cassiera' : 'Ex: Caissière'} value={contractForm.role} onChange={e=>setContractForm(f=>({...f,role:e.target.value}))}/>
                 </div>
                 <div>
-                  <label style={labelStyle}>{lang==='fr'?'DÉPARTEMENT':'DEPARTMENT'}</label>
-                  <select aria-label={lang==='fr'?'DÉPARTEMENT':'DEPARTMENT'} className="input" value={contractForm.dept} onChange={e=>setContractForm(f=>({...f,dept:e.target.value}))}>
+                  <label style={labelStyle}>{lang === 'en' ? 'DEPARTMENT' : lang === 'es' ? 'DEPARTAMENTO' : lang === 'it' ? 'REPARTO' : 'DÉPARTEMENT'}</label>
+                  <select aria-label={lang === 'en' ? 'DEPARTMENT' : lang === 'es' ? 'DEPARTAMENTO' : lang === 'it' ? 'REPARTO' : 'DÉPARTEMENT'} className="input" value={contractForm.dept} onChange={e=>setContractForm(f=>({...f,dept:e.target.value}))}>
                     {Object.keys(DEPT_COLORS).map(d=><option key={d}>{d}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>{lang==='fr'?'TYPE CONTRAT':'CONTRACT TYPE'}</label>
-                  <select aria-label={lang==='fr'?'TYPE CONTRAT':'CONTRACT TYPE'} className="input" value={contractForm.type} onChange={e=>setContractForm(f=>({...f,type:e.target.value}))}>
+                  <label style={labelStyle}>{lang === 'en' ? 'CONTRACT TYPE' : lang === 'es' ? 'TIPO CONTRATO' : lang === 'it' ? 'TIPO CONTRATTO' : 'TYPE CONTRAT'}</label>
+                  <select aria-label={lang === 'en' ? 'CONTRACT TYPE' : lang === 'es' ? 'TIPO CONTRATO' : lang === 'it' ? 'TIPO CONTRATTO' : 'TYPE CONTRAT'} className="input" value={contractForm.type} onChange={e=>setContractForm(f=>({...f,type:e.target.value}))}>
                     {['CDI','CDD','Temps partiel','Stage','Freelance'].map(t=><option key={t}>{t}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>{lang==='fr'?'DATE DÉBUT':'START DATE'}</label>
-                  <input aria-label={lang==='fr'?'DATE DÉBUT':'START DATE'} className="input" type="date" value={contractForm.hiredAt} onChange={e=>setContractForm(f=>({...f,hiredAt:e.target.value}))}/>
+                  <label style={labelStyle}>{lang === 'en' ? 'START DATE' : lang === 'es' ? 'FECHA INICIO' : lang === 'it' ? 'DATA INIZIO' : 'DATE DÉBUT'}</label>
+                  <input aria-label={lang === 'en' ? 'START DATE' : lang === 'es' ? 'FECHA INICIO' : lang === 'it' ? 'DATA INIZIO' : 'DATE DÉBUT'} className="input" type="date" value={contractForm.hiredAt} onChange={e=>setContractForm(f=>({...f,hiredAt:e.target.value}))}/>
                 </div>
                 {contractForm.type==='CDD'&&(
                   <div style={{ gridColumn:'1/-1' }}>
-                    <label style={labelStyle}>{lang==='fr'?'DATE FIN CONTRAT':'CONTRACT END DATE'}</label>
-                    <input aria-label={lang==='fr'?'DATE FIN CONTRAT':'CONTRACT END DATE'} className="input" type="date" value={contractForm.contractEnd} onChange={e=>setContractForm(f=>({...f,contractEnd:e.target.value}))}/>
+                    <label style={labelStyle}>{lang === 'en' ? 'CONTRACT END DATE' : lang === 'es' ? 'FECHA FIN CONTRATO' : lang === 'it' ? 'DATA FINE CONTRATTO' : 'DATE FIN CONTRAT'}</label>
+                    <input aria-label={lang === 'en' ? 'CONTRACT END DATE' : lang === 'es' ? 'FECHA FIN CONTRATO' : lang === 'it' ? 'DATA FINE CONTRATTO' : 'DATE FIN CONTRAT'} className="input" type="date" value={contractForm.contractEnd} onChange={e=>setContractForm(f=>({...f,contractEnd:e.target.value}))}/>
                   </div>
                 )}
                 <div style={{ gridColumn:'1/-1' }}>
-                  <label style={labelStyle}>{lang==='fr'?'SALAIRE BRUT':'GROSS SALARY'}</label>
+                  <label style={labelStyle}>{lang === 'en' ? 'GROSS SALARY' : lang === 'es' ? 'SALARIO BRUTO' : lang === 'it' ? 'STIPENDIO LORDO' : 'SALAIRE BRUT'}</label>
                   <div style={{ position:'relative' }}>
-                    <input aria-label={lang==='fr'?'SALAIRE BRUT':'GROSS SALARY'} className="input" type="number" placeholder="150000" value={contractForm.salary||''} onChange={e=>setContractForm(f=>({...f,salary:+e.target.value}))} style={{ paddingRight:60 }}/>
+                    <input aria-label={lang === 'en' ? 'GROSS SALARY' : lang === 'es' ? 'SALARIO BRUTO' : lang === 'it' ? 'STIPENDIO LORDO' : 'SALAIRE BRUT'} className="input" type="number" placeholder="150000" value={contractForm.salary||''} onChange={e=>setContractForm(f=>({...f,salary:+e.target.value}))} style={{ paddingRight:60 }}/>
                     <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>FCFA</span>
                   </div>
                   {contractForm.salary>0&&(
@@ -463,10 +463,10 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               </div>
             </div>
             <div style={{ display:'flex', gap:10, marginTop:24 }}>
-              <button className="btn" style={{ flex:1 }} onClick={()=>setShowNewContractModal(false)}>{lang==='fr'?'Annuler':'Cancel'}</button>
+              <button className="btn" style={{ flex:1 }} onClick={()=>setShowNewContractModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
               <button className="btn btn-primary" style={{ flex:1 }} onClick={()=>{
                 if (!contractForm.empId.trim()||!contractForm.role.trim()) {
-                  toast.error(lang==='fr'?'Nom et poste requis':'Name and position required'); return
+                  toast.error(lang === 'en' ? 'Name and position required' : lang === 'es' ? 'Nombre y puesto requeridos' : lang === 'it' ? 'Nome e posizione richiesti' : 'Nom et poste requis'); return
                 }
                 const newEmp: Employee = {
                   id: Date.now(),
@@ -482,9 +482,9 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                   active: true, phone:'', email:'', perf:3,
                 }
                 setEmployees(prev=>[...prev, newEmp])
-                toast.success('✅ '+(lang==='fr'?'Contrat créé !':'Contract created!'))
+                toast.success('✅ '+(lang === 'en' ? 'Contract created!' : lang === 'es' ? '¡Contrato creado!' : lang === 'it' ? 'Contratto creato!' : 'Contrat créé !'))
                 setShowNewContractModal(false)
-              }}>✅ {lang==='fr'?'Créer le contrat':'Create contract'}</button>
+              }}>✅ {lang === 'en' ? 'Create contract' : lang === 'es' ? 'Crear el contrato' : lang === 'it' ? 'Crea il contratto' : 'Créer le contrat'}</button>
             </div>
           </div>
         </div>
@@ -512,17 +512,17 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               <div style={{ display:'flex', gap:8 }}>
                 <span style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:20, background:selectedContract.type==='CDI'?'rgba(108,71,255,.15)':'rgba(14,196,126,.12)', color:selectedContract.type==='CDI'?'var(--p2)':'var(--acc2)' }}>{selectedContract.type}</span>
                 <span style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:20, background:selectedContract.active?'var(--c-green-bg)':'var(--bg3)', color:selectedContract.active?'var(--acc2)':'var(--text3)' }}>
-                  {selectedContract.active?(lang==='fr'?'Actif':'Active'):(lang==='fr'?'Inactif':'Inactive')}
+                  {selectedContract.active?(lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif'):(lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')}
                 </span>
               </div>
               <div style={{ background:'var(--bg3)', borderRadius:12, padding:16, display:'flex', flexDirection:'column', gap:10 }}>
                 {[
-                  {label:lang==='fr'?'Date d\'embauche':'Hire date', value:displayDate(selectedContract.hiredAt, lang==='fr'?'fr-FR':'en-US')},
-                  {label:lang==='fr'?'Ancienneté':'Seniority', value:calcAnciennete(selectedContract.hiredAt)},
+                  {label:lang === 'en' ? 'Hire date' : lang === 'es' ? 'Fecha de contratación' : lang === 'it' ? 'Data di assunzione' : 'Date d\'embauche', value:displayDate(selectedContract.hiredAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')},
+                  {label:lang === 'en' ? 'Seniority' : lang === 'es' ? 'Antigüedad' : lang === 'it' ? 'Anzianità' : 'Ancienneté', value:calcAnciennete(selectedContract.hiredAt)},
                   ...(selectedContract.type!=='CDI'&&selectedContract.endAt
-                    ? [{label:lang==='fr'?'Fin de contrat':'Contract end', value:displayDate(selectedContract.endAt, lang==='fr'?'fr-FR':'en-US')}]
+                    ? [{label:lang === 'en' ? 'Contract end' : lang === 'es' ? 'Fin de contrato' : lang === 'it' ? 'Fine contratto' : 'Fin de contrat', value:displayDate(selectedContract.endAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}]
                     : selectedContract.type==='CDI'
-                      ? [{label:lang==='fr'?'Fin de contrat':'Contract end', value:lang==='fr'?'∞ Indéterminé':'∞ Permanent'}]
+                      ? [{label:lang === 'en' ? 'Contract end' : lang === 'es' ? 'Fin de contrato' : lang === 'it' ? 'Fine contratto' : 'Fin de contrat', value:lang === 'en' ? '∞ Permanent' : lang === 'es' ? '∞ Indefinido' : lang === 'it' ? '∞ Indeterminato' : '∞ Indéterminé'}]
                       : []
                   ),
                 ].map(row=>(
@@ -533,12 +533,12 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 ))}
               </div>
               <div style={{ background:'var(--bg3)', borderRadius:12, padding:16 }}>
-                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:12 }}>💰 {lang==='fr'?'RÉMUNÉRATION':'COMPENSATION'}</div>
+                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:12 }}>💰 {lang === 'en' ? 'COMPENSATION' : lang === 'es' ? 'REMUNERACIÓN' : lang === 'it' ? 'RETRIBUZIONE' : 'RÉMUNÉRATION'}</div>
                 {[
-                  {label:lang==='fr'?'Salaire brut':'Gross salary', value:fmt(selectedContract.salary), color:'var(--text)'},
+                  {label:lang === 'en' ? 'Gross salary' : lang === 'es' ? 'Salario bruto' : lang === 'it' ? 'Stipendio lordo' : 'Salaire brut', value:fmt(selectedContract.salary), color:'var(--text)'},
                   {label:'CNSS (8%)', value:`− ${fmt(Math.round(selectedContract.salary*0.08))}`, color:'var(--danger)'},
                   {label:'IR (5%)', value:`− ${fmt(Math.round(selectedContract.salary*0.05))}`, color:'var(--acc)'},
-                  {label:lang==='fr'?'Net à payer':'Net salary', value:fmt(Math.round(selectedContract.salary*0.87)), color:'var(--acc2)'},
+                  {label:lang === 'en' ? 'Net salary' : lang === 'es' ? 'Neto a pagar' : lang === 'it' ? 'Netto da pagare' : 'Net à payer', value:fmt(Math.round(selectedContract.salary*0.87)), color:'var(--acc2)'},
                 ].map(row=>(
                   <div key={row.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom:'1px solid var(--border)' }}>
                     <span style={{ fontSize:12, color:'var(--text3)' }}>{row.label}</span>
@@ -551,8 +551,8 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               <button className="btn btn-primary" style={{ flex:1 }} onClick={()=>{
                 openEditModal(selectedContract)
                 setShowContractDetailModal(false)
-              }}>✏️ {lang==='fr'?'Modifier':'Edit'}</button>
-              <button className="btn" style={{ padding:'10px 16px' }} onClick={()=>setShowContractDetailModal(false)}>{lang==='fr'?'Fermer':'Close'}</button>
+              }}>✏️ {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}</button>
+              <button className="btn" style={{ padding:'10px 16px' }} onClick={()=>setShowContractDetailModal(false)}>{lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
             </div>
           </div>
         </div>
@@ -564,7 +564,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sh-xl)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
               <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: 'var(--text)' }}>
-                🌴 {lang === 'fr' ? 'Nouvelle demande' : 'New request'}
+                🌴 {lang === 'en' ? 'New request' : lang === 'es' ? 'Nueva solicitud' : lang === 'it' ? 'Nuova richiesta' : 'Nouvelle demande'}
               </h3>
               <button onClick={() => setShowLeaveModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>
                 <X size={18} />
@@ -572,40 +572,40 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={labelStyle}>{lang === 'fr' ? 'EMPLOYÉ' : 'EMPLOYEE'}</label>
-                <select aria-label={lang === 'fr' ? 'EMPLOYÉ' : 'EMPLOYEE'} className="input" style={{ width: '100%' }}
+                <label style={labelStyle}>{lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'}</label>
+                <select aria-label={lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'} className="input" style={{ width: '100%' }}
                   value={leaveForm.empId}
                   onChange={e => setLeaveForm(f => ({ ...f, empId: Number(e.target.value) }))}>
-                  <option value={0}>{lang === 'fr' ? 'Sélectionner...' : 'Select...'}</option>
+                  <option value={0}>{lang === 'en' ? 'Select...' : lang === 'es' ? 'Seleccionar...' : lang === 'it' ? 'Seleziona...' : 'Sélectionner...'}</option>
                   {(employees ?? []).filter(e => e.active).map(e => (
                     <option key={e.id} value={e.id}>{e.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>{lang === 'fr' ? 'TYPE DE CONGÉ' : 'LEAVE TYPE'}</label>
-                <select aria-label={lang === 'fr' ? 'TYPE DE CONGÉ' : 'LEAVE TYPE'} className="input" style={{ width: '100%' }}
+                <label style={labelStyle}>{lang === 'en' ? 'LEAVE TYPE' : lang === 'es' ? 'TIPO DE PERMISO' : lang === 'it' ? 'TIPO DI PERMESSO' : 'TYPE DE CONGÉ'}</label>
+                <select aria-label={lang === 'en' ? 'LEAVE TYPE' : lang === 'es' ? 'TIPO DE PERMISO' : lang === 'it' ? 'TIPO DI PERMESSO' : 'TYPE DE CONGÉ'} className="input" style={{ width: '100%' }}
                   value={leaveForm.type}
                   onChange={e => setLeaveForm(f => ({ ...f, type: e.target.value }))}>
                   {[
-                    lang === 'fr' ? 'Congé annuel'        : 'Annual leave',
-                    lang === 'fr' ? 'Congé maladie'       : 'Sick leave',
-                    lang === 'fr' ? 'Formation'           : 'Training',
-                    lang === 'fr' ? 'Personnel'           : 'Personal',
-                    lang === 'fr' ? 'Maternité/Paternité' : 'Parental leave',
+                    lang === 'en' ? 'Annual leave' : lang === 'es' ? 'Permiso anual' : lang === 'it' ? 'Ferie annuali' : 'Congé annuel',
+                    lang === 'en' ? 'Sick leave' : lang === 'es' ? 'Baja por enfermedad' : lang === 'it' ? 'Congedo malattia' : 'Congé maladie',
+                    lang === 'en' ? 'Training' : lang === 'es' ? 'Formación' : lang === 'it' ? 'Formazione' : 'Formation',
+                    lang === 'en' ? 'Personal' : lang === 'es' ? 'Personal' : lang === 'it' ? 'Personale' : 'Personnel',
+                    lang === 'en' ? 'Parental leave' : lang === 'es' ? 'Maternidad/Paternidad' : lang === 'it' ? 'Maternità/Paternità' : 'Maternité/Paternité',
                   ].map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={labelStyle}>{lang === 'fr' ? 'DU' : 'FROM'}</label>
-                  <input aria-label={lang === 'fr' ? 'DU' : 'FROM'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+                  <label style={labelStyle}>{lang === 'en' ? 'FROM' : lang === 'es' ? 'DEL' : lang === 'it' ? 'DAL' : 'DU'}</label>
+                  <input aria-label={lang === 'en' ? 'FROM' : lang === 'es' ? 'DEL' : lang === 'it' ? 'DAL' : 'DU'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
                     value={leaveForm.startDate}
                     onChange={e => setLeaveForm(f => ({ ...f, startDate: e.target.value }))} />
                 </div>
                 <div>
-                  <label style={labelStyle}>{lang === 'fr' ? 'AU' : 'TO'}</label>
-                  <input aria-label={lang === 'fr' ? 'AU' : 'TO'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+                  <label style={labelStyle}>{lang === 'en' ? 'TO' : lang === 'es' ? 'AL' : lang === 'it' ? 'AL' : 'AU'}</label>
+                  <input aria-label={lang === 'en' ? 'TO' : lang === 'es' ? 'AL' : lang === 'it' ? 'AL' : 'AU'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
                     value={leaveForm.endDate}
                     onChange={e => setLeaveForm(f => ({ ...f, endDate: e.target.value }))} />
                 </div>
@@ -613,19 +613,19 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               <div>
                 <label style={labelStyle}>NOTES / MOTIF</label>
                 <textarea aria-label="NOTES / MOTIF" className="input" rows={2} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
-                  placeholder={lang === 'fr' ? 'Motif, justificatif...' : 'Reason, justification...'}
+                  placeholder={lang === 'en' ? 'Reason, justification...' : lang === 'es' ? 'Motivo, justificante...' : lang === 'it' ? 'Motivo, giustificativo...' : 'Motif, justificatif...'}
                   value={leaveForm.notes}
                   onChange={e => setLeaveForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
               <button className="btn" style={{ flex: 1 }} onClick={() => setShowLeaveModal(false)}>
-                {lang === 'fr' ? 'Annuler' : 'Cancel'}
+                {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
               </button>
               <button className="btn btn-primary" style={{ flex: 1 }}
                 onClick={() => {
                   if (!leaveForm.empId || !leaveForm.endDate) {
-                    toast.error(lang === 'fr' ? 'Employé et dates requis' : 'Employee and dates required')
+                    toast.error(lang === 'en' ? 'Employee and dates required' : lang === 'es' ? 'Empleado y fechas requeridos' : lang === 'it' ? 'Dipendente e date richiesti' : 'Employé et dates requis')
                     return
                   }
                   const emp = (employees ?? []).find(e => e.id === leaveForm.empId)
@@ -642,10 +642,10 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                     motif: leaveForm.notes,
                     status: 'pending',
                   }])
-                  toast.success('✅ ' + (lang === 'fr' ? 'Demande soumise !' : 'Request submitted!'))
+                  toast.success('✅ ' + (lang === 'en' ? 'Request submitted!' : lang === 'es' ? '¡Solicitud enviada!' : lang === 'it' ? 'Richiesta inviata!' : 'Demande soumise !'))
                   setShowLeaveModal(false)
                 }}>
-                ✅ {lang === 'fr' ? 'Soumettre' : 'Submit'}
+                ✅ {lang === 'en' ? 'Submit' : lang === 'es' ? 'Enviar' : lang === 'it' ? 'Invia' : 'Soumettre'}
               </button>
             </div>
           </div>
@@ -866,7 +866,7 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
       {/* Salaire actuel — affiché en devise courante via fmt() */}
       <div style={{ padding:'12px 16px', background:'rgba(108,71,255,.06)', border:'1px solid var(--c-purple-bg)', borderRadius:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <span style={{ fontSize:12, color:'var(--text2)' }}>{lang==='fr' ? 'Salaire actuel' : 'Current salary'}</span>
+        <span style={{ fontSize:12, color:'var(--text2)' }}>{lang === 'en' ? 'Current salary' : lang === 'es' ? 'Salario actual' : lang === 'it' ? 'Stipendio attuale' : 'Salaire actuel'}</span>
         <span style={{ fontFamily:'var(--mono)', fontWeight:800, fontSize:16, color:'var(--text)' }}>{fmt(oldSalaryXOF)}</span>
       </div>
       <div>
@@ -887,7 +887,7 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
         {newSalaryInput && +newSalaryInput > 0 && (
           <div style={{ marginTop:6, fontSize:11, display:'flex', gap:10, flexWrap:'wrap' }}>
             <span style={{ color:'var(--text3)' }}>
-              {lang==='fr' ? 'Différence' : 'Difference'}{': '}
+              {lang === 'en' ? 'Difference' : lang === 'es' ? 'Diferencia' : lang === 'it' ? 'Differenza' : 'Différence'}{': '}
               <strong style={{ color: diff >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
                 {diff >= 0 ? '+' : ''}{fmt(Math.abs(diff))} ({pct >= 0 ? '+' : ''}{pct}%)
               </strong>
@@ -896,17 +896,17 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
         )}
       </div>
       <div>
-        <label style={lbl}>{lang==='fr' ? 'MOTIF' : 'REASON'}</label>
-        <input aria-label={lang==='fr' ? 'MOTIF' : 'REASON'} className="input" placeholder={lang==='fr' ? 'Ex: Promotion, Ancienneté...' : 'Ex: Promotion, Seniority...'} value={reason} onChange={e => setReason(e.target.value)} />
+        <label style={lbl}>{lang === 'en' ? 'REASON' : lang === 'es' ? 'MOTIVO' : lang === 'it' ? 'MOTIVO' : 'MOTIF'}</label>
+        <input aria-label={lang === 'en' ? 'REASON' : lang === 'es' ? 'MOTIVO' : lang === 'it' ? 'MOTIVO' : 'MOTIF'} className="input" placeholder={lang === 'en' ? 'Ex: Promotion, Seniority...' : lang === 'es' ? 'Ej: Promoción, Antigüedad...' : lang === 'it' ? 'Es: Promozione, Anzianità...' : 'Ex: Promotion, Ancienneté...'} value={reason} onChange={e => setReason(e.target.value)} />
       </div>
       <div style={{ display:'flex', gap:8 }}>
         <button className="btn btn-primary" style={{ flex:1 }} onClick={() => {
           if (!newSalaryInput || +newSalaryInput <= 0) return
           onConfirm(newSalaryXOF, reason || 'Augmentation')
         }}>
-          ✅ {lang==='fr' ? 'Confirmer' : 'Confirm'}
+          ✅ {lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'}
         </button>
-        <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang==='fr' ? 'Annuler' : 'Cancel'}</button>
+        <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
       </div>
     </div>
   )
@@ -936,14 +936,14 @@ function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
       <div>
-        <label style={lbl}>{lang==='fr' ? 'BÉNÉFICIAIRE' : 'RECIPIENT'}</label>
-        <select aria-label={lang==='fr' ? 'BÉNÉFICIAIRE' : 'RECIPIENT'} className="input" value={targetEmpId} onChange={e => setTargetEmpId(e.target.value)}>
-          <option value="all">🌍 {lang==='fr' ? "Toute l'équipe" : 'All team'}</option>
+        <label style={lbl}>{lang === 'en' ? 'RECIPIENT' : lang === 'es' ? 'BENEFICIARIO' : lang === 'it' ? 'BENEFICIARIO' : 'BÉNÉFICIAIRE'}</label>
+        <select aria-label={lang === 'en' ? 'RECIPIENT' : lang === 'es' ? 'BENEFICIARIO' : lang === 'it' ? 'BENEFICIARIO' : 'BÉNÉFICIAIRE'} className="input" value={targetEmpId} onChange={e => setTargetEmpId(e.target.value)}>
+          <option value="all">🌍 {lang === 'en' ? 'All team' : lang === 'es' ? 'Todo el equipo' : lang === 'it' ? 'Tutta la squadra' : "Toute l'équipe"}</option>
           {employees.map((e: any) => <option key={e.id} value={String(e.id)}>{e.name}</option>)}
         </select>
       </div>
       <div>
-        <label style={lbl}>{lang==='fr' ? 'TYPE DE PRIME' : 'BONUS TYPE'}</label>
+        <label style={lbl}>{lang === 'en' ? 'BONUS TYPE' : lang === 'es' ? 'TIPO DE PRIMA' : lang === 'it' ? 'TIPO DI PREMIO' : 'TYPE DE PRIME'}</label>
         <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
           {bTypes.map((t: string) => (
             <button key={t} type="button" onClick={() => setType(t)} style={{
@@ -974,9 +974,9 @@ function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
           if (!amountInput || +amountInput <= 0) return
           onConfirm(targetEmpId, amountXOF, type)
         }}>
-          ✅ {lang==='fr' ? 'Ajouter la prime' : 'Add bonus'}
+          ✅ {lang === 'en' ? 'Add bonus' : lang === 'es' ? 'Agregar prima' : lang === 'it' ? 'Aggiungi premio' : 'Ajouter la prime'}
         </button>
-        <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang==='fr' ? 'Annuler' : 'Cancel'}</button>
+        <button className="btn" style={{ padding:'10px 14px' }} onClick={onClose}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
       </div>
     </div>
   )
@@ -1043,7 +1043,7 @@ function AddressInputSimple({
             padding: '10px 12px 10px 4px',
             fontFamily: 'var(--font)',
           }}
-          placeholder={lang === 'fr' ? 'Adresse complète...' : 'Full address...'}
+          placeholder={lang === 'en' ? 'Full address...' : lang === 'es' ? 'Dirección completa...' : lang === 'it' ? 'Indirizzo completo...' : 'Adresse complète...'}
           value={value}
           onFocus={() => { setFocused(true); setShow(true) }}
           onBlur={() => { setFocused(false); setTimeout(() => setShow(false), 200) }}

@@ -32,9 +32,9 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
       {tab === 'contracts' && (
         <div className="panel">
           <div className="panel-h" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <span className="panel-t" style={{ display:'flex', alignItems:'center', gap:6 }}><FileText size={14}/> {lang === 'fr' ? 'Contrats en cours' : 'Active contracts'}</span>
+            <span className="panel-t" style={{ display:'flex', alignItems:'center', gap:6 }}><FileText size={14}/> {lang === 'en' ? 'Active contracts' : lang === 'es' ? 'Contratos vigentes' : lang === 'it' ? 'Contratti in corso' : 'Contrats en cours'}</span>
             <button className="btn btn-primary btn-sm" onClick={() => { setContractForm({ empId: '', type: 'CDI', hiredAt: new Date().toISOString().split('T')[0], contractEnd: '', salary: 0, role: '', dept: 'Ventes' }); setShowNewContractModal(true) }}>
-              <Plus size={14} /> {lang === 'fr' ? 'Nouveau contrat' : 'New contract'}
+              <Plus size={14} /> {lang === 'en' ? 'New contract' : lang === 'es' ? 'Nuevo contrato' : lang === 'it' ? 'Nuovo contratto' : 'Nouveau contrat'}
             </button>
           </div>
           <div className="table-wrap">
@@ -86,17 +86,17 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                         }}>{emp.type}</span>
                       </td>
                       <td style={{ fontSize: 12, color: 'var(--text2)' }}>
-                        {displayDate(emp.hiredAt, lang==='fr'?'fr-FR':'en-US')}
+                        {displayDate(emp.hiredAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}
                       </td>
                       <td style={{ fontSize: 12 }}>
                         {emp.type === 'CDI' ? (
-                          <span style={{ color:'var(--acc2)', fontWeight:600 }}>{lang==='fr'?'Indéterminé':'Permanent'}</span>
+                          <span style={{ color:'var(--acc2)', fontWeight:600 }}>{lang === 'en' ? 'Permanent' : lang === 'es' ? 'Indefinido' : lang === 'it' ? 'Indeterminato' : 'Indéterminé'}</span>
                         ) : emp.endAt ? (
                           <span style={{ color: isExpiringSoon ? 'var(--danger)' : 'var(--text2)', fontWeight: isExpiringSoon ? 700 : 400 }}>
-                            {isExpiringSoon && <AlertTriangle size={11} style={{display:'inline',verticalAlign:'middle',marginRight:3,flexShrink:0}} />}{displayDate(emp.endAt, lang==='fr'?'fr-FR':'en-US')}
+                            {isExpiringSoon && <AlertTriangle size={11} style={{display:'inline',verticalAlign:'middle',marginRight:3,flexShrink:0}} />}{displayDate(emp.endAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}
                           </span>
                         ) : (
-                          <span style={{ color:'var(--acc)', fontWeight:600 }}>{lang==='fr'?'À définir':'To define'}</span>
+                          <span style={{ color:'var(--acc)', fontWeight:600 }}>{lang === 'en' ? 'To define' : lang === 'es' ? 'Por definir' : lang === 'it' ? 'Da definire' : 'À définir'}</span>
                         )}
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700 }}>{fmt(emp.salary)}</td>
@@ -124,10 +124,10 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
           {/* Sous-onglets */}
           <div style={{ display:'flex', gap:4, background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:10, padding:4 }}>
             {([
-              { id:'grid',    icon:<DollarSign size={13}/>, label: lang==='fr' ? 'Grille'     : 'Grid'     },
-              { id:'payslip', icon:<FileText size={13}/>,   label: lang==='fr' ? 'Bulletins'  : 'Payslips' },
-              { id:'bonuses', icon:<Gift size={13}/>,        label: lang==='fr' ? 'Primes'     : 'Bonuses'  },
-              { id:'history', icon:<TrendingUp size={13}/>, label: lang==='fr' ? 'Historique' : 'History'  },
+              { id:'grid',    icon:<DollarSign size={13}/>, label: lang === 'en' ? 'Grid' : lang === 'es' ? 'Cuadrícula' : lang === 'it' ? 'Griglia' : 'Grille'     },
+              { id:'payslip', icon:<FileText size={13}/>,   label: lang === 'en' ? 'Payslips' : lang === 'es' ? 'Nóminas' : lang === 'it' ? 'Buste paga' : 'Bulletins' },
+              { id:'bonuses', icon:<Gift size={13}/>,        label: lang === 'en' ? 'Bonuses' : lang === 'es' ? 'Primas' : lang === 'it' ? 'Premi' : 'Primes'  },
+              { id:'history', icon:<TrendingUp size={13}/>, label: lang === 'en' ? 'History' : lang === 'es' ? 'Historial' : lang === 'it' ? 'Cronologia' : 'Historique'  },
             ] as const).map(t => (
               <button key={t.id} type="button"
                 onClick={() => setPayTab(t.id)}
@@ -180,16 +180,16 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                 <button className="btn btn-primary btn-sm"
                   onClick={() => generateAllPayslips()}
                   style={{display:'flex',alignItems:'center',gap:5}}>
-                  <FileText size={13} /> {lang === 'fr' ? 'Tous les bulletins' : 'All payslips'}
+                  <FileText size={13} /> {lang === 'en' ? 'All payslips' : lang === 'es' ? 'Todas las nóminas' : lang === 'it' ? 'Tutte le buste paga' : 'Tous les bulletins'}
                 </button>
               </div>
 
               {/* KPIs paie */}
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
                 {[
-                  { label: lang==='fr' ? 'Masse salariale brute' : 'Gross payroll', value: fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)), color:'var(--p2)' },
+                  { label: lang === 'en' ? 'Gross payroll' : lang === 'es' ? 'Masa salarial bruta' : lang === 'it' ? 'Costo del personale lordo' : 'Masse salariale brute', value: fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)), color:'var(--p2)' },
                   { label: 'CNSS (8%)', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08)), color:'var(--danger)' },
-                  { label: lang==='fr' ? 'Net à payer' : 'Net to pay', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.92)), color:'var(--acc2)' },
+                  { label: lang === 'en' ? 'Net to pay' : lang === 'es' ? 'Neto a pagar' : lang === 'it' ? 'Netto da pagare' : 'Net à payer', value: fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.92)), color:'var(--acc2)' },
                 ].map(k => (
                   <div key={k.label} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
                     <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
@@ -202,21 +202,21 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
               <div className="panel">
                 <div className="panel-h">
                   <span className="panel-t" style={{display:'flex',alignItems:'center',gap:6}}>
-                    <DollarSign size={14}/> {lang==='fr' ? 'Détail de la paie' : 'Payroll detail'}{' — '}
-                    {new Date(payrollMonth+'-01').toLocaleDateString(lang==='fr'?'fr-FR':'en-US',{month:'long',year:'numeric'})}
+                    <DollarSign size={14}/> {lang === 'en' ? 'Payroll detail' : lang === 'es' ? 'Detalle de nómina' : lang === 'it' ? 'Dettaglio busta paga' : 'Détail de la paie'}{' — '}
+                    {new Date(payrollMonth+'-01').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',{month:'long',year:'numeric'})}
                   </span>
                   <button className="btn btn-primary btn-sm"
                     onClick={() => { setShowSalaryModal(true); setSalaryTarget(null) }}>
-                    + {lang==='fr' ? 'Prime collective' : 'Collective bonus'}
+                    + {lang === 'en' ? 'Collective bonus' : lang === 'es' ? 'Prima colectiva' : lang === 'it' ? 'Premio collettivo' : 'Prime collective'}
                   </button>
                 </div>
                 <div className="table-wrap">
                   <table>
                     <thead>
                       <tr>
-                        <th scope="col">{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
-                        <th scope="col" style={{textAlign:'right'}}>{lang==='fr'?'BRUT':'GROSS'}</th>
-                        <th scope="col" style={{textAlign:'right'}}>{lang==='fr'?'PRIME':'BONUS'}</th>
+                        <th scope="col">{lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'}</th>
+                        <th scope="col" style={{textAlign:'right'}}>{lang === 'en' ? 'GROSS' : lang === 'es' ? 'BRUTO' : lang === 'it' ? 'LORDO' : 'BRUT'}</th>
+                        <th scope="col" style={{textAlign:'right'}}>{lang === 'en' ? 'BONUS' : lang === 'es' ? 'PRIMA' : lang === 'it' ? 'PREMIO' : 'PRIME'}</th>
                         <th scope="col" style={{textAlign:'right'}}>CNSS 8%</th>
                         <th scope="col" style={{textAlign:'right'}}>IR 5%</th>
                         <th scope="col" style={{textAlign:'right'}}>NET</th>
@@ -260,7 +260,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                             <td style={{ textAlign:'center' }}>
                               <button className="btn btn-sm" style={{ fontSize:10, padding:'3px 8px', display:'flex', alignItems:'center', gap:4 }}
                                 onClick={() => { setSalaryTarget({...emp, mode:'raise'}); setShowSalaryModal(true) }}>
-                                <TrendingUp size={11}/> {lang==='fr'?'Augmenter':'Raise'}
+                                <TrendingUp size={11}/> {lang === 'en' ? 'Raise' : lang === 'es' ? 'Aumentar' : lang === 'it' ? 'Aumenta' : 'Augmenter'}
                               </button>
                             </td>
                           </tr>
@@ -289,7 +289,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
               <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                 <label style={{ fontSize:12, fontWeight:700, color:'var(--text3)' }}>
-                  {lang==='fr' ? 'Période :' : 'Period:'}
+                  {lang === 'en' ? 'Period:' : lang === 'es' ? 'Período:' : lang === 'it' ? 'Periodo:' : 'Période :'}
                 </label>
                 <input className="input" type="month"
                   style={{ width:'auto' }}
@@ -298,7 +298,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                 <button className="topbar-btn"
                   style={{ fontSize:12, padding:'7px 14px', display:'flex', alignItems:'center', gap:6 }}
                   onClick={() => generateAllPayslips()}>
-                  <FileText size={13}/> {lang==='fr' ? 'Générer tous les bulletins' : 'Generate all payslips'}
+                  <FileText size={13}/> {lang === 'en' ? 'Generate all payslips' : lang === 'es' ? 'Generar todas las nóminas' : lang === 'it' ? 'Genera tutte le buste paga' : 'Générer tous les bulletins'}
                 </button>
               </div>
 
@@ -321,14 +321,14 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                           <div style={{ fontSize:11, color:'var(--text3)' }}>{emp.role} · {emp.dept}</div>
                         </div>
                         <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', background:'rgba(0,208,132,.1)', color:'var(--acc2)', border:'1px solid rgba(0,208,132,.2)', borderRadius:20, padding:'2px 8px' }}>
-                          {new Date(payrollMonth+'-01').toLocaleDateString(lang==='fr'?'fr-FR':'en-US', {month:'short', year:'numeric'})}
+                          {new Date(payrollMonth+'-01').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', {month:'short', year:'numeric'})}
                         </div>
                       </div>
 
                       <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:12 }}>
                         {[
-                          { label: lang==='fr'?'Salaire brut':'Gross salary', value: fmt(brut), color:'var(--text2)', sign:'' },
-                          ...(bonus > 0 ? [{ label: lang==='fr'?'Prime':'Bonus', value: fmt(bonus), color:'var(--acc2)', sign:'+' }] : []),
+                          { label: lang === 'en' ? 'Gross salary' : lang === 'es' ? 'Salario bruto' : lang === 'it' ? 'Stipendio lordo' : 'Salaire brut', value: fmt(brut), color:'var(--text2)', sign:'' },
+                          ...(bonus > 0 ? [{ label: lang === 'en' ? 'Bonus' : lang === 'es' ? 'Prima' : lang === 'it' ? 'Premio' : 'Prime', value: fmt(bonus), color:'var(--acc2)', sign:'+' }] : []),
                           { label: 'CNSS (8%)', value: fmt(cnss), color:'var(--danger)', sign:'−' },
                           { label: 'IR (5%)',   value: fmt(ir),   color:'var(--acc)',    sign:'−' },
                         ].map((row, i) => (
@@ -341,7 +341,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
 
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'rgba(0,208,132,.06)', border:'1px solid var(--c-green-bg)', borderRadius:10, marginBottom:12 }}>
                         <span style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>
-                          {lang==='fr' ? 'NET À PAYER' : 'NET TO PAY'}
+                          {lang === 'en' ? 'NET TO PAY' : lang === 'es' ? 'NETO A PAGAR' : lang === 'it' ? 'NETTO DA PAGARE' : 'NET À PAYER'}
                         </span>
                         <span style={{ fontSize:20, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>
                           {fmt(net)}
@@ -351,7 +351,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                       <button className="mini-btn"
                         style={{ width:'100%', justifyContent:'center', display:'flex', alignItems:'center', gap:5 }}
                         onClick={() => generatePayslipPDF(emp, { brut, bonus, cnss, ir, net, month: payrollMonth })}>
-                        <FileText size={13}/> {lang==='fr' ? 'Télécharger bulletin' : 'Download payslip'}
+                        <FileText size={13}/> {lang === 'en' ? 'Download payslip' : lang === 'es' ? 'Descargar nómina' : lang === 'it' ? 'Scarica busta paga' : 'Télécharger bulletin'}
                       </button>
                     </div>
                   )
@@ -366,15 +366,15 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
               <div style={{ display:'flex', justifyContent:'flex-end' }}>
                 <button className="topbar-btn"
                   onClick={() => { setSalaryTarget(null); setShowSalaryModal(true) }}>
-                  + {lang==='fr' ? 'Nouvelle prime' : 'New bonus'}
+                  + {lang === 'en' ? 'New bonus' : lang === 'es' ? 'Nueva prima' : lang === 'it' ? 'Nuovo premio' : 'Nouvelle prime'}
                 </button>
               </div>
 
               <div className="panel">
                 <div className="panel-h">
-                  <span className="panel-t" style={{display:'flex',alignItems:'center',gap:6}}><Gift size={14}/> {lang==='fr' ? 'Primes du mois' : 'Monthly bonuses'}</span>
+                  <span className="panel-t" style={{display:'flex',alignItems:'center',gap:6}}><Gift size={14}/> {lang === 'en' ? 'Monthly bonuses' : lang === 'es' ? 'Primas del mes' : lang === 'it' ? 'Premi del mese' : 'Primes du mois'}</span>
                   <span style={{ fontSize:12, color:'var(--text3)' }}>
-                    {lang==='fr' ? 'Total :' : 'Total:'}{' '}
+                    {lang === 'en' ? 'Total:' : lang === 'es' ? 'Total:' : lang === 'it' ? 'Totale:' : 'Total :'}{' '}
                     <strong style={{ color:'var(--acc2)' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</strong>
                   </span>
                 </div>
@@ -383,10 +383,10 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                   <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text3)' }}>
                     <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Gift size={36} style={{color:'var(--text4)'}}/></div>
                     <div style={{ fontSize:14, fontWeight:600 }}>
-                      {lang==='fr' ? 'Aucune prime ce mois' : 'No bonuses this month'}
+                      {lang === 'en' ? 'No bonuses this month' : lang === 'es' ? 'Sin primas este mes' : lang === 'it' ? 'Nessun premio questo mese' : 'Aucune prime ce mois'}
                     </div>
                     <div style={{ fontSize:12, marginTop:6 }}>
-                      {lang==='fr' ? 'Cliquez sur "+ Nouvelle prime" pour en ajouter' : 'Click "+ New bonus" to add one'}
+                      {lang === 'en' ? 'Click "+ New bonus" to add one' : lang === 'es' ? 'Haz clic en "+ Nueva prima" para agregar' : lang === 'it' ? 'Clicca su "+ Nuovo premio" per aggiungerne' : 'Cliquez sur "+ Nouvelle prime" pour en ajouter'}
                     </div>
                   </div>
                 ) : (
@@ -394,9 +394,9 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                     <table>
                       <thead>
                         <tr>
-                          <th scope="col">{lang==='fr'?'EMPLOYÉ':'EMPLOYEE'}</th>
-                          <th scope="col">{lang==='fr'?'MONTANT':'AMOUNT'}</th>
-                          <th scope="col">{lang==='fr'?'% DU SALAIRE':'% OF SALARY'}</th>
+                          <th scope="col">{lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'}</th>
+                          <th scope="col">{lang === 'en' ? 'AMOUNT' : lang === 'es' ? 'IMPORTE' : lang === 'it' ? 'IMPORTO' : 'MONTANT'}</th>
+                          <th scope="col">{lang === 'en' ? '% OF SALARY' : lang === 'es' ? '% DEL SALARIO' : lang === 'it' ? '% DELLO STIPENDIO' : '% DU SALAIRE'}</th>
                           <th scope="col">ACTIONS</th>
                         </tr>
                       </thead>
@@ -434,9 +434,9 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                     const ids = bonusList.filter(b => b.empId === empId).map(b => b.id)
                                     setBonusList(prev => prev.filter(b => b.empId !== empId))
                                     ids.forEach(id => { if (!id.startsWith('local-')) bonusesApi.delete(id).catch(()=>{}) })
-                                    toast.success(lang==='fr' ? 'Prime supprimée' : 'Bonus removed')
+                                    toast.success(lang === 'en' ? 'Bonus removed' : lang === 'es' ? 'Prima eliminada' : lang === 'it' ? 'Premio eliminato' : 'Prime supprimée')
                                   }}>
-                                  <Trash2 size={11}/> {lang==='fr' ? 'Supprimer' : 'Remove'}
+                                  <Trash2 size={11}/> {lang === 'en' ? 'Remove' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
                                 </button>
                               </td>
                             </tr>
@@ -452,7 +452,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                 <div style={{ padding:'14px 18px', background:'rgba(0,208,132,.05)', border:'1px solid var(--c-green-bg)', borderRadius:12, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
                   <div>
                     <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
-                      <BarChart3 size={14} style={{color:'var(--acc2)',flexShrink:0}}/> {lang==='fr' ? 'Impact sur la masse salariale' : 'Impact on payroll'}
+                      <BarChart3 size={14} style={{color:'var(--acc2)',flexShrink:0}}/> {lang === 'en' ? 'Impact on payroll' : lang === 'es' ? 'Impacto en la masa salarial' : lang === 'it' ? 'Impatto sul costo del personale' : 'Impact sur la masse salariale'}
                     </div>
                     <div style={{ fontSize:11, color:'var(--text3)' }}>
                       {lang==='fr'
@@ -464,7 +464,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                     <div style={{ fontSize:22, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
                       +{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}
                     </div>
-                    <div style={{ fontSize:11, color:'var(--text3)' }}>{lang==='fr' ? 'Total primes' : 'Total bonuses'}</div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>{lang === 'en' ? 'Total bonuses' : lang === 'es' ? 'Total primas' : lang === 'it' ? 'Totale premi' : 'Total primes'}</div>
                   </div>
                 </div>
               )}
@@ -478,12 +478,10 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 20px', textAlign:'center', background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:20 }}>
                   <div style={{ width:72, height:72, borderRadius:20, background:'rgba(108,71,255,.1)', border:'1px solid rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16 }}><TrendingUp size={32} style={{color:'var(--p2)'}}/></div>
                   <div style={{ fontSize:16, fontWeight:800, color:'var(--text)', marginBottom:8 }}>
-                    {lang==='fr' ? 'Aucune révision salariale' : 'No salary revisions yet'}
+                    {lang === 'en' ? 'No salary revisions yet' : lang === 'es' ? 'Sin revisiones salariales' : lang === 'it' ? 'Nessuna revisione salariale' : 'Aucune révision salariale'}
                   </div>
                   <div style={{ fontSize:13, color:'var(--text3)', maxWidth:300, lineHeight:1.6 }}>
-                    {lang==='fr'
-                      ? 'Les augmentations et révisions salariales apparaîtront ici avec leur historique complet.'
-                      : 'Salary increases and revisions will appear here with their complete history.'}
+                    {lang === 'en' ? 'Salary increases and revisions will appear here with their complete history.' : lang === 'es' ? 'Los aumentos y revisiones salariales aparecerán aquí con su historial completo.' : lang === 'it' ? 'Gli aumenti e le revisioni salariali appariranno qui con la cronologia completa.' : 'Les augmentations et révisions salariales apparaîtront ici avec leur historique complet.'}
                   </div>
                   <button className="topbar-btn"
                     style={{ marginTop:20, display:'flex', alignItems:'center', gap:6 }}
@@ -493,7 +491,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                         setShowSalaryModal(true)
                       }
                     }}>
-                    <TrendingUp size={14}/> {lang==='fr' ? 'Première révision salariale' : 'First salary revision'}
+                    <TrendingUp size={14}/> {lang === 'en' ? 'First salary revision' : lang === 'es' ? 'Primera revisión salarial' : lang === 'it' ? 'Prima revisione salariale' : 'Première révision salariale'}
                   </button>
                 </div>
               ) : (
@@ -521,7 +519,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                       const isPos = diff >= 0
                       const date  = h.date
                         ? new Date(h.date).toLocaleDateString(
-                            lang === 'fr' ? 'fr-FR' : 'en-US',
+                            lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',
                             { day:'numeric', month:'short', year:'numeric' }
                           )
                         : '—'
@@ -612,7 +610,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                   fontSize:14, fontWeight:800,
                                   color:'var(--text)', marginBottom:3,
                                 }}>
-                                  {emp?.name ?? (lang === 'fr' ? 'Employé' : 'Employee')}
+                                  {emp?.name ?? (lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé')}
                                 </div>
                                 <div style={{
                                   display:'flex', alignItems:'center',
@@ -716,7 +714,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                 marginTop:4,
                               }}>
                                 <span style={{ fontSize:9, color:'var(--text4)' }}>
-                                  {lang === 'fr' ? 'Évolution' : 'Evolution'}
+                                  {lang === 'en' ? 'Evolution' : lang === 'es' ? 'Evolución' : lang === 'it' ? 'Evoluzione' : 'Évolution'}
                                 </span>
                                 <span style={{
                                   fontSize:9, fontFamily:'var(--mono)',
@@ -741,17 +739,17 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                   }}>
                     {[
                       {
-                        label: lang === 'fr' ? 'Révisions' : 'Revisions',
+                        label: lang === 'en' ? 'Revisions' : lang === 'es' ? 'Revisiones' : lang === 'it' ? 'Revisioni' : 'Révisions',
                         value: salaryHistory.length,
                         icon: <FileText size={16} />, color:'var(--p2)',
                       },
                       {
-                        label: lang === 'fr' ? 'Employés' : 'Employees',
+                        label: lang === 'en' ? 'Employees' : lang === 'es' ? 'Empleados' : lang === 'it' ? 'Dipendenti' : 'Employés',
                         value: new Set(salaryHistory.map(h => h.empId)).size,
                         icon: <Users size={16} />, color:'var(--acc3)',
                       },
                       {
-                        label: lang === 'fr' ? 'Hausse moy.' : 'Avg raise',
+                        label: lang === 'en' ? 'Avg raise' : lang === 'es' ? 'Aumento medio' : lang === 'it' ? 'Aumento medio' : 'Hausse moy.',
                         value: (() => {
                           const pcts = salaryHistory.map(h =>
                             Number(h.oldSalary) > 0
@@ -764,7 +762,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                         icon: <TrendingUp size={16} />, color:'var(--acc2)',
                       },
                       {
-                        label: lang === 'fr' ? 'Impact total' : 'Total impact',
+                        label: lang === 'en' ? 'Total impact' : lang === 'es' ? 'Impacto total' : lang === 'it' ? 'Impatto totale' : 'Impact total',
                         value: fmt(salaryHistory.reduce((s, h) => s + (h.newSalary - h.oldSalary), 0)),
                         icon: <DollarSign size={16} />, color:'var(--warn)',
                       },
@@ -816,10 +814,10 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
 
       {tab === 'pointage' && (() => {
         const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: JSX.Element }> = {
-          present: { label: lang==='fr'?'Présent':'Present',  color:'var(--acc2)', bg:'rgba(0,208,132,.1)',  icon:<CheckCircle size={11}/> },
-          late:    { label: lang==='fr'?'Retard':'Late',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:<Clock size={11}/> },
-          absent:  { label: lang==='fr'?'Absent':'Absent',    color:'#EF4444', bg:'rgba(239,68,68,.1)',  icon:<XCircle size={11}/> },
-          half:    { label: lang==='fr'?'Mi-temps':'Half',    color:'#3B82F6', bg:'rgba(59,130,246,.1)', icon:<AlertTriangle size={11}/> },
+          present: { label: lang === 'en' ? 'Present' : lang === 'es' ? 'Presente' : lang === 'it' ? 'Presente' : 'Présent',  color:'var(--acc2)', bg:'rgba(0,208,132,.1)',  icon:<CheckCircle size={11}/> },
+          late:    { label: lang === 'en' ? 'Late' : lang === 'es' ? 'Retraso' : lang === 'it' ? 'Ritardo' : 'Retard',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:<Clock size={11}/> },
+          absent:  { label: lang === 'en' ? 'Absent' : lang === 'es' ? 'Ausente' : lang === 'it' ? 'Assente' : 'Absent',    color:'#EF4444', bg:'rgba(239,68,68,.1)',  icon:<XCircle size={11}/> },
+          half:    { label: lang === 'en' ? 'Half' : lang === 'es' ? 'Media jornada' : lang === 'it' ? 'Mezza giornata' : 'Mi-temps',    color:'#3B82F6', bg:'rgba(59,130,246,.1)', icon:<AlertTriangle size={11}/> },
         }
 
         const dayEmp = employees.filter(e => e.active !== false)
@@ -867,14 +865,14 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
             {/* Header toolbar */}
             <div className="panel" style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
               <span style={{ fontSize:16, fontWeight:800, color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
-                <Clock size={16}/> {lang==='fr'?'Feuille de présence':'Attendance sheet'}
+                <Clock size={16}/> {lang === 'en' ? 'Attendance sheet' : lang === 'es' ? 'Hoja de asistencia' : lang === 'it' ? 'Foglio presenze' : 'Feuille de présence'}
               </span>
               <input type="date" className="input" value={attendanceDate}
                 onChange={e => setAttendanceDate(e.target.value)}
                 style={{ width:150, height:34, fontSize:13 }} />
               <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
                 <button className="btn btn-sm" onClick={markAllPresent} style={{display:'flex',alignItems:'center',gap:5}}>
-                  <CheckCheck size={13}/> {lang==='fr'?'Tous présents':'All present'}
+                  <CheckCheck size={13}/> {lang === 'en' ? 'All present' : lang === 'es' ? 'Todos presentes' : lang === 'it' ? 'Tutti presenti' : 'Tous présents'}
                 </button>
                 <button className="btn btn-sm" onClick={exportAttendanceCSV} style={{display:'flex',alignItems:'center',gap:5}}>
                   <Download size={13}/> CSV
@@ -885,10 +883,10 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
             {/* KPI row */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
               {[
-                { icon:<CheckCircle size={20}/>, label:lang==='fr'?'Présents':'Present',  count:presentCount,          color:'var(--acc2)', hex:'var(--acc2)' },
-                { icon:<Clock size={20}/>,       label:lang==='fr'?'Retards':'Late',      count:countByStatus('late'), color:'#F59E0B', hex:'#F59E0B' },
-                { icon:<XCircle size={20}/>,     label:lang==='fr'?'Absents':'Absent',    count:countByStatus('absent'),color:'#EF4444', hex:'#EF4444' },
-                { icon:<AlertTriangle size={20}/>,label:lang==='fr'?'Mi-temps':'Half-day', count:countByStatus('half'), color:'#3B82F6', hex:'#3B82F6' },
+                { icon:<CheckCircle size={20}/>, label:lang === 'en' ? 'Present' : lang === 'es' ? 'Presentes' : lang === 'it' ? 'Presenti' : 'Présents',  count:presentCount,          color:'var(--acc2)', hex:'var(--acc2)' },
+                { icon:<Clock size={20}/>,       label:lang === 'en' ? 'Late' : lang === 'es' ? 'Retrasos' : lang === 'it' ? 'Ritardi' : 'Retards',      count:countByStatus('late'), color:'#F59E0B', hex:'#F59E0B' },
+                { icon:<XCircle size={20}/>,     label:lang === 'en' ? 'Absent' : lang === 'es' ? 'Ausentes' : lang === 'it' ? 'Assenti' : 'Absents',    count:countByStatus('absent'),color:'#EF4444', hex:'#EF4444' },
+                { icon:<AlertTriangle size={20}/>,label:lang === 'en' ? 'Half-day' : lang === 'es' ? 'Media jornada' : lang === 'it' ? 'Mezza giornata' : 'Mi-temps', count:countByStatus('half'), color:'#3B82F6', hex:'#3B82F6' },
               ].map(k => (
                 <div key={k.label} className="panel" style={{ padding:'12px 14px', position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${k.hex}18,${k.hex}06)`, border:`1px solid ${k.hex}28` }}>
                   <div style={{ position:'absolute', top:-16, right:-16, width:64, height:64, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}20 0%,transparent 70%)`, pointerEvents:'none' }} />
@@ -902,8 +900,8 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
             {/* Employee rows */}
             <div className="panel" style={{ overflow:'hidden', padding:0 }}>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 90px 90px 110px 110px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
-                <span>{lang==='fr'?'Employé':'Employee'}</span>
-                <span style={{ textAlign:'center' }}>{lang==='fr'?'Statut':'Status'}</span>
+                <span>{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</span>
+                <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</span>
                 <span style={{ textAlign:'center' }}>Arrivée</span>
                 <span style={{ textAlign:'center' }}>Départ</span>
                 <span style={{ textAlign:'center' }}>Actions</span>
@@ -973,10 +971,10 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
             {/* Summary footer */}
             <div className="panel" style={{ padding:'12px 16px', display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
               <span style={{ fontSize:12, color:'var(--text3)' }}>
-                {lang==='fr'?'Journée du':'Day of'} <strong style={{ color:'var(--text)' }}>{new Date(attendanceDate + 'T00:00:00').toLocaleDateString(lang==='fr'?'fr-FR':'en-US', { weekday:'long', day:'numeric', month:'long' })}</strong>
+                {lang === 'en' ? 'Day of' : lang === 'es' ? 'Día del' : lang === 'it' ? 'Giornata del' : 'Journée du'} <strong style={{ color:'var(--text)' }}>{new Date(attendanceDate + 'T00:00:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { weekday:'long', day:'numeric', month:'long' })}</strong>
               </span>
               <span style={{ fontSize:12, color:'var(--text3)', marginLeft:'auto' }}>
-                {presentCount}/{dayEmp.length} {lang==='fr'?'présents':'present'} · {dayEmp.length > 0 ? Math.round(presentCount/dayEmp.length*100) : 0}% {lang==='fr'?'de présence':'attendance rate'}
+                {presentCount}/{dayEmp.length} {lang === 'en' ? 'present' : lang === 'es' ? 'presentes' : lang === 'it' ? 'presenti' : 'présents'} · {dayEmp.length > 0 ? Math.round(presentCount/dayEmp.length*100) : 0}% {lang === 'en' ? 'attendance rate' : lang === 'es' ? 'de asistencia' : lang === 'it' ? 'di presenza' : 'de présence'}
               </span>
             </div>
           </div>
@@ -996,12 +994,12 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
 
           <div className="panel">
             <div className="panel-h">
-              <span className="panel-t" style={{ display:'flex', alignItems:'center', gap:6 }}><Umbrella size={14}/> {lang === 'fr' ? 'Demandes de congés' : 'Leave requests'}</span>
+              <span className="panel-t" style={{ display:'flex', alignItems:'center', gap:6 }}><Umbrella size={14}/> {lang === 'en' ? 'Leave requests' : lang === 'es' ? 'Solicitudes de permiso' : lang === 'it' ? 'Richieste di permesso' : 'Demandes de congés'}</span>
               <button className="btn btn-primary btn-sm" onClick={() => {
-                setLeaveForm({ empId: 0, type: lang === 'fr' ? 'Congé annuel' : 'Annual leave', startDate: new Date().toISOString().split('T')[0], endDate: '', notes: '' })
+                setLeaveForm({ empId: 0, type: lang === 'en' ? 'Annual leave' : lang === 'es' ? 'Permiso anual' : lang === 'it' ? 'Ferie annuali' : 'Congé annuel', startDate: new Date().toISOString().split('T')[0], endDate: '', notes: '' })
                 setShowLeaveModal(true)
               }}>
-                <Plus size={14} /> {lang === 'fr' ? 'Nouvelle demande' : 'New request'}
+                <Plus size={14} /> {lang === 'en' ? 'New request' : lang === 'es' ? 'Nueva solicitud' : lang === 'it' ? 'Nuova richiesta' : 'Nouvelle demande'}
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1031,11 +1029,11 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', background: 'rgba(14,196,126,.15)', border: '1px solid rgba(14,196,126,.3)', color: 'var(--acc2)' }}
                           onClick={() => handleLeaveAction(leave.id, 'approved')}>
-                          ✓ {lang === 'fr' ? 'Approuver' : 'Approve'}
+                          ✓ {lang === 'en' ? 'Approve' : lang === 'es' ? 'Aprobar' : lang === 'it' ? 'Approva' : 'Approuver'}
                         </button>
                         <button style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', background: 'rgba(232,64,74,.12)', border: '1px solid rgba(232,64,74,.25)', color: 'var(--danger)' }}
                           onClick={() => handleLeaveAction(leave.id, 'refused')}>
-                          ✕ {lang === 'fr' ? 'Refuser' : 'Reject'}
+                          ✕ {lang === 'en' ? 'Reject' : lang === 'es' ? 'Rechazar' : lang === 'it' ? 'Rifiuta' : 'Refuser'}
                         </button>
                       </div>
                     )}
@@ -1044,7 +1042,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
               })}
               {(leaves ?? []).length === 0 && (
                 <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)', fontSize: 14 }}>
-                  {lang === 'fr' ? 'Aucune demande de congé' : 'No leave requests'}
+                  {lang === 'en' ? 'No leave requests' : lang === 'es' ? 'Sin solicitudes de permiso' : lang === 'it' ? 'Nessuna richiesta di permesso' : 'Aucune demande de congé'}
                 </div>
               )}
             </div>
