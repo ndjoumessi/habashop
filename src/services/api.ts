@@ -38,8 +38,10 @@ export const salesApi = {
 }
 
 export const analyticsApi = {
+  // Endpoint réel du backend (réponse à plat : salesToday, salesMonth,
+  // totalProducts, activeEmployees, pendingOrders, topProducts[], stockAlerts[]…)
   dashboard: () =>
-    apiClient.get('/api/analytics/dashboard').then(r=>r.data),
+    apiClient.get('/api/dashboard/stats').then(r=>r.data),
 }
 
 export const customersApi = {
