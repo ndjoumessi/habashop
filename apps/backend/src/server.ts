@@ -22,6 +22,7 @@ import { expenseRoutes }      from './routes/expenses'
 import { analyticsRoutes }    from './routes/analytics'
 import { exportRoutes }       from './routes/export'
 import { billingRoutes }      from './routes/billing'
+import { paymentRoutes }      from './routes/payments'
 import { adminRoutes }        from './routes/admin'
 import { notificationRoutes } from './routes/notifications'
 import { whatsappRoutes }     from './routes/whatsapp'
@@ -198,6 +199,7 @@ async function start() {
   await app.register(analyticsRoutes)
   await app.register(exportRoutes)
   await app.register(billingRoutes)
+  await app.register(paymentRoutes)
   await app.register(adminRoutes)
   await app.register(notificationRoutes)
   await app.register(whatsappRoutes)

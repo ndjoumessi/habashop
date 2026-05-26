@@ -35,6 +35,7 @@ const Integrations   = lazy(() => import('@/pages/Integrations'))
 const Onboarding     = lazy(() => import('@/pages/Onboarding'))
 const Pricing        = lazy(() => import('@/pages/Pricing'))
 const UpgradePlan    = lazy(() => import('@/pages/UpgradePlan'))
+const PaymentCallback = lazy(() => import('@/pages/PaymentCallback'))
 
 function RouteFallback() {
   return (
@@ -111,7 +112,8 @@ export default function App() {
         }
       >
         <Route index element={<AppIndex />} />
-        <Route path="upgrade"       element={<UpgradePlan />} />
+        <Route path="upgrade"          element={<UpgradePlan />} />
+        <Route path="upgrade/callback" element={<PaymentCallback />} />
         <Route path="dashboard"     element={<RoleRoute slug="dashboard"><Dashboard /></RoleRoute>} />
         <Route path="pos"           element={<RoleRoute slug="pos"><POS /></RoleRoute>} />
         <Route path="stock"         element={<RoleRoute slug="stock"><Stock /></RoleRoute>} />
