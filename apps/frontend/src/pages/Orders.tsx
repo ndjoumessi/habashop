@@ -161,7 +161,7 @@ export default function Orders() {
     try { await ordersApi.updateStatus(id, LOCAL_TO_API_STATUS[status] ?? status) } catch {}
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
     setViewOrder(prev => prev?.id === id ? { ...prev, status } : prev)
-    toast.success(`Statut mis à jour → ${status}`)
+    toast.success(`${i('Statut mis à jour', 'Status updated', 'Estado actualizado', 'Stato aggiornato')} → ${orderStatusLabel(status, lang)}`)
   }
 
   const openNewOrderModal = () => {
@@ -208,8 +208,8 @@ export default function Orders() {
     setOrders(prev => [newOrder, ...prev])
     setShowNewOrderModal(false)
     toast.success(orderType === 'client'
-      ? (lang === 'fr' ? `✅ Commande créée — ${fmt(total)}` : `✅ Order created — ${fmt(total)}`)
-      : (lang === 'fr' ? `📦 Bon de commande envoyé à ${supplierObj?.name}` : `📦 PO sent to ${supplierObj?.name}`)
+      ? i(`✅ Commande créée — ${fmt(total)}`, `✅ Order created — ${fmt(total)}`, `✅ Pedido creado — ${fmt(total)}`, `✅ Ordine creato — ${fmt(total)}`)
+      : i(`📦 Bon de commande envoyé à ${supplierObj?.name}`, `📦 PO sent to ${supplierObj?.name}`, `📦 Orden enviada a ${supplierObj?.name}`, `📦 Ordine inviato a ${supplierObj?.name}`)
     )
   }
 
@@ -386,12 +386,12 @@ export default function Orders() {
                       }}>
                         <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 400, color: isToday ? 'var(--p2)' : 'var(--text2)', marginBottom: 4 }}>{day}</div>
                         {deliveries.slice(0, 2).map((o, j) => (
-                          <div key={j} style={{ fontSize: 9, fontWeight: 700, background: 'rgba(14,196,126,.15)', color: 'var(--acc2)', borderRadius: 4, padding: '2px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`Livraison: ${o.supplier}`}>
+                          <div key={j} style={{ fontSize: 9, fontWeight: 700, background: 'rgba(14,196,126,.15)', color: 'var(--acc2)', borderRadius: 4, padding: '2px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${lang === 'en' ? 'Delivery' : lang === 'es' ? 'Entrega' : lang === 'it' ? 'Consegna' : 'Livraison'}: ${o.supplier}`}>
                             ▸ {o.supplier.slice(0, 8)}
                           </div>
                         ))}
                         {ordered.slice(0, 2).map((o, j) => (
-                          <div key={j} style={{ fontSize: 9, fontWeight: 700, background: 'rgba(91,78,232,.12)', color: 'var(--p2)', borderRadius: 4, padding: '2px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`Commande: ${o.ref}`}>
+                          <div key={j} style={{ fontSize: 9, fontWeight: 700, background: 'rgba(91,78,232,.12)', color: 'var(--p2)', borderRadius: 4, padding: '2px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${lang === 'en' ? 'Order' : lang === 'es' ? 'Pedido' : lang === 'it' ? 'Ordine' : 'Commande'}: ${o.ref}`}>
                             · {o.ref.slice(-6)}
                           </div>
                         ))}
@@ -425,14 +425,14 @@ export default function Orders() {
           <div className="flex items-center gap-2">
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
               exportCSV('habashop_commandes',
-                ['Référence','Fournisseur','Date','Livraison prévue','Articles','Montant','Statut'],
-                orders.map(o => [o.ref, o.supplier, o.date, o.expectedAt, o.items.length, o.total, o.status])
+                [i('Référence', 'Reference', 'Referencia', 'Riferimento'), i('Fournisseur', 'Supplier', 'Proveedor', 'Fornitore'), i('Date', 'Date', 'Fecha', 'Data'), i('Livraison prévue', 'Expected delivery', 'Entrega prevista', 'Consegna prevista'), i('Articles', 'Items', 'Artículos', 'Articoli'), i('Montant', 'Amount', 'Importe', 'Importo'), i('Statut', 'Status', 'Estado', 'Stato')],
+                orders.map(o => [o.ref, o.supplier, o.date, o.expectedAt, o.items.length, o.total, orderStatusLabel(o.status, lang)])
               )
-              toast.success('📊 Export CSV téléchargé !')
+              toast.success(i('📊 Export CSV téléchargé !', '📊 CSV export downloaded!', '📊 ¡Exportación CSV descargada!', '📊 Esportazione CSV scaricata!'))
             }}>
               <Download size={13} /> {t('btn_export')}
             </button>
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printOrdersListPDF(); toast.success('📄 PDF ouvert !') }}>
+            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printOrdersListPDF(); toast.success(i('📄 PDF ouvert !', '📄 PDF opened!', '📄 ¡PDF abierto!', '📄 PDF aperto!')) }}>
               <Download size={13} /> PDF
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={openNewOrderModal}>
@@ -527,9 +527,9 @@ export default function Orders() {
                       }
                     </td>
                     <td className="td-bold">{o.supplier}</td>
-                    <td className="td-mono text-xs">{new Date(o.date).toLocaleDateString('fr-FR')}</td>
+                    <td className="td-mono text-xs">{new Date(o.date).toLocaleDateString(i('fr-FR', 'en-US', 'es-ES', 'it-IT'))}</td>
                     <td className="td-mono text-xs" style={{ color: isLate ? 'var(--danger)' : 'var(--text2)' }}>
-                      {new Date(o.expectedAt).toLocaleDateString('fr-FR')}
+                      {new Date(o.expectedAt).toLocaleDateString(i('fr-FR', 'en-US', 'es-ES', 'it-IT'))}
                     </td>
                     <td>
                       <span className="badge badge-gray">{o.items.length} {o.items.length > 1 ? i('articles', 'items', 'artículos', 'articoli') : i('article', 'item', 'artículo', 'articolo')}</span>
@@ -542,7 +542,7 @@ export default function Orders() {
                     </td>
                     <td>
                       <div className="flex gap-1.5">
-                        <button className="btn btn-sm btn-ghost" onClick={() => setViewOrder(o)} title="Voir détails">
+                        <button className="btn btn-sm btn-ghost" onClick={() => setViewOrder(o)} title={i('Voir détails', 'View details', 'Ver detalles', 'Vedi dettagli')}>
                           <Eye size={12} />
                         </button>
                         {o.status === 'BROUILLON' && (
@@ -575,7 +575,7 @@ export default function Orders() {
                 )
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="text-center py-10" style={{ color: 'var(--text3)' }}>Aucune commande trouvée</td></tr>
+                <tr><td colSpan={9} className="text-center py-10" style={{ color: 'var(--text3)' }}>{i('Aucune commande trouvée', 'No orders found', 'Sin pedidos', 'Nessun ordine trovato')}</td></tr>
               )}
               </>)}
             </tbody>
@@ -594,7 +594,7 @@ export default function Orders() {
                   <Package size={16}/> {viewOrder.ref}
                 </h3>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
-                  {viewOrder.supplier} · {new Date(viewOrder.date).toLocaleDateString('fr-FR')}
+                  {viewOrder.supplier} · {new Date(viewOrder.date).toLocaleDateString(i('fr-FR', 'en-US', 'es-ES', 'it-IT'))}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -608,10 +608,10 @@ export default function Orders() {
             {/* Infos */}
             <div className="grid grid-cols-2 gap-3 mb-5">
               {[
-                { label: 'Fournisseur', value: viewOrder.supplier },
-                { label: 'Livraison prévue', value: new Date(viewOrder.expectedAt).toLocaleDateString('fr-FR') },
-                { label: 'Montant total', value: fmt(viewOrder.total) },
-                { label: 'Nb articles', value: `${viewOrder.items.length} ligne${viewOrder.items.length > 1 ? 's' : ''}` },
+                { label: i('Fournisseur', 'Supplier', 'Proveedor', 'Fornitore'), value: viewOrder.supplier },
+                { label: i('Livraison prévue', 'Expected delivery', 'Entrega prevista', 'Consegna prevista'), value: new Date(viewOrder.expectedAt).toLocaleDateString(i('fr-FR', 'en-US', 'es-ES', 'it-IT')) },
+                { label: i('Montant total', 'Total amount', 'Importe total', 'Importo totale'), value: fmt(viewOrder.total) },
+                { label: i('Nb articles', 'Items count', 'Nº artículos', 'N° articoli'), value: `${viewOrder.items.length} ${viewOrder.items.length > 1 ? i('lignes', 'lines', 'líneas', 'righe') : i('ligne', 'line', 'línea', 'riga')}` },
               ].map(f => (
                 <div key={f.label} className="p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
                   <div className="text-xs uppercase tracking-wide font-semibold mb-1" style={{ color: 'var(--text3)' }}>{f.label}</div>
@@ -624,7 +624,7 @@ export default function Orders() {
             <div className="table-wrap mb-4">
               <table>
                 <thead>
-                  <tr><th scope="col">Produit</th><th scope="col">Qté</th><th scope="col">Unité</th><th scope="col">PU</th><th scope="col">Total</th></tr>
+                  <tr><th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th><th scope="col">{i('Qté', 'Qty', 'Cant.', 'Qtà')}</th><th scope="col">{i('Unité', 'Unit', 'Unidad', 'Unità')}</th><th scope="col">{i('PU', 'UP', 'PU', 'PU')}</th><th scope="col">Total</th></tr>
                 </thead>
                 <tbody>
                   {viewOrder.items.map((item, i) => (
@@ -656,24 +656,24 @@ export default function Orders() {
                 <button className="btn btn-primary flex-1 justify-center"
                   style={{ display:'flex', alignItems:'center', gap:6 }}
                   onClick={() => changeStatus(viewOrder.id, 'ENVOYÉE')}>
-                  <Send size={14}/> Envoyer au fournisseur
+                  <Send size={14}/> {i('Envoyer au fournisseur', 'Send to supplier', 'Enviar al proveedor', 'Invia al fornitore')}
                 </button>
               )}
               {viewOrder.status === 'EN TRANSIT' && (
                 <button className="btn btn-primary flex-1 justify-center"
                   style={{ background: 'linear-gradient(135deg,var(--acc2),#059669)', display:'flex', alignItems:'center', gap:6 }}
                   onClick={() => changeStatus(viewOrder.id, 'REÇUE')}>
-                  <Inbox size={14}/> Confirmer la réception
+                  <Inbox size={14}/> {i('Confirmer la réception', 'Confirm receipt', 'Confirmar recepción', 'Conferma ricezione')}
                 </button>
               )}
               {!['ANNULÉE','REÇUE'].includes(viewOrder.status) && (
                 <button className="btn btn-ghost"
                   style={{ display:'flex', alignItems:'center', gap:6 }}
                   onClick={() => { changeStatus(viewOrder.id, 'ANNULÉE'); setViewOrder(null) }}>
-                  <XCircle size={14}/> Annuler
+                  <XCircle size={14}/> {i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}
                 </button>
               )}
-              <button className="btn btn-ghost" style={{ display:'flex', alignItems:'center', gap:6 }} onClick={() => { printOrderPDF(viewOrder); toast.success('📄 PDF ouvert !') }}><Printer size={14}/> PDF</button>
+              <button className="btn btn-ghost" style={{ display:'flex', alignItems:'center', gap:6 }} onClick={() => { printOrderPDF(viewOrder); toast.success(i('📄 PDF ouvert !', '📄 PDF opened!', '📄 ¡PDF abierto!', '📄 PDF aperto!')) }}><Printer size={14}/> PDF</button>
             </div>
           </div>
         </div>
@@ -855,7 +855,7 @@ export default function Orders() {
                         <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(108,71,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Plus size={16} style={{ color:'var(--p3)' }}/></div>
                         <div>
                           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p3)' }}>
-                            {lang === 'fr' ? `Nouveau client "${newOrderForm.clientName || '…'}"` : `New client "${newOrderForm.clientName || '…'}"`}
+                            {i(`Nouveau client "${newOrderForm.clientName || '…'}"`, `New client "${newOrderForm.clientName || '…'}"`, `Nuevo cliente "${newOrderForm.clientName || '…'}"`, `Nuovo cliente "${newOrderForm.clientName || '…'}"`)}
                           </div>
                           <div style={{ fontSize: 10, color: 'var(--text3)' }}>{i('Créer et continuer', 'Create and continue', 'Crear y continuar', 'Crea e continua')}</div>
                         </div>
@@ -870,7 +870,7 @@ export default function Orders() {
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>
                         <Plus size={20} style={{ color:'var(--p3)' }}/>
                         <div style={{ textAlign: 'left' }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p3)' }}>{lang === 'fr' ? `Créer "${newOrderForm.clientName}"` : `Create "${newOrderForm.clientName}"`}</div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p3)' }}>{i(`Créer "${newOrderForm.clientName}"`, `Create "${newOrderForm.clientName}"`, `Crear "${newOrderForm.clientName}"`, `Creare "${newOrderForm.clientName}"`)}</div>
                           <div style={{ fontSize: 10, color: 'var(--text3)' }}>{i('Nouveau client — pas encore enregistré', 'New client — not yet registered', 'Nuevo cliente — aún no registrado', 'Nuovo cliente — non ancora registrato')}</div>
                         </div>
                       </button>

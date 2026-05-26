@@ -92,7 +92,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
               active: true,
             }
             setEmployees(prev => [...prev, newEmp])
-            toast.success('✅ Employé ajouté')
+            toast.success(lang === 'en' ? '✅ Employee added' : lang === 'es' ? '✅ Empleado agregado' : lang === 'it' ? '✅ Dipendente aggiunto' : '✅ Employé ajouté')
             setShowModal(false)
           }}
         />
@@ -611,8 +611,8 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 </div>
               </div>
               <div>
-                <label style={labelStyle}>NOTES / MOTIF</label>
-                <textarea aria-label="NOTES / MOTIF" className="input" rows={2} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+                <label style={labelStyle}>{lang === 'en' ? 'NOTES / REASON' : lang === 'es' ? 'NOTAS / MOTIVO' : lang === 'it' ? 'NOTE / MOTIVO' : 'NOTES / MOTIF'}</label>
+                <textarea aria-label={lang === 'en' ? 'NOTES / REASON' : lang === 'es' ? 'NOTAS / MOTIVO' : lang === 'it' ? 'NOTE / MOTIVO' : 'NOTES / MOTIF'} className="input" rows={2} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
                   placeholder={lang === 'en' ? 'Reason, justification...' : lang === 'es' ? 'Motivo, justificante...' : lang === 'it' ? 'Motivo, giustificativo...' : 'Motif, justificatif...'}
                   value={leaveForm.notes}
                   onChange={e => setLeaveForm(f => ({ ...f, notes: e.target.value }))} />
@@ -731,21 +731,21 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <ValidatedInput type="name" required autoFocus label={T('Nom complet *', 'Full name *', 'Nombre completo *', 'Nome completo *')}
-              value={name} onChange={setName} placeholder="Prénom Nom" />
+              value={name} onChange={setName} placeholder={T('Prénom Nom', 'First Last', 'Nombre Apellido', 'Nome Cognome')} />
             <ValidatedInput type="text" required label={T('Poste *', 'Position *', 'Puesto *', 'Posizione *')}
-              value={role} onChange={setRole} placeholder="Ex: Caissière" />
+              value={role} onChange={setRole} placeholder={T('Ex: Caissière', 'Ex: Cashier', 'Ej: Cajera', 'Es: Cassiera')} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label className="form-label">{T('Département', 'Department', 'Departamento', 'Dipartimento')}</label>
-              <input aria-label={T('Département', 'Department', 'Departamento', 'Dipartimento')} className="input" value={dept} onChange={e => setDept(e.target.value)} placeholder="Ex: Ventes" style={{ width: '100%', boxSizing: 'border-box' }} />
+              <input aria-label={T('Département', 'Department', 'Departamento', 'Dipartimento')} className="input" value={dept} onChange={e => setDept(e.target.value)} placeholder={T('Ex: Ventes', 'Ex: Sales', 'Ej: Ventas', 'Es: Vendite')} style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label className="form-label">{T('Contrat', 'Contract', 'Contrato', 'Contratto')}</label>
               <select aria-label={T('Contrat', 'Contract', 'Contrato', 'Contratto')} className="input" value={type} onChange={e => setType(e.target.value as 'CDI'|'CDD')} style={{ width: '100%' }}>
-                <option value="CDI">CDI</option>
-                <option value="CDD">CDD</option>
+                <option value="CDI">{T('CDI', 'Permanent', 'Indefinido', 'Indeterminato')}</option>
+                <option value="CDD">{T('CDD', 'Fixed-term', 'Temporal', 'Determinato')}</option>
               </select>
             </div>
           </div>
@@ -779,7 +779,7 @@ function EmpModal({ emp, onClose, onSave, onDelete }: {
           </div>
 
           <PhoneInputWithCountry
-            label="TÉLÉPHONE"
+            label={T('TÉLÉPHONE', 'PHONE', 'TELÉFONO', 'TELEFONO')}
             value={phone}
             onChange={setPhone}
           />

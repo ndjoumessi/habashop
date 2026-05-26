@@ -14,6 +14,18 @@ const SHIFT_TYPES = {
   leave:     { label:'Congé',      hours:'',            color:'#FF3B5C', icon:<Umbrella size={16}/>,     bg:'rgba(255,59,92,.12)'  },
 }
 
+// Libellés des types de shift i18n (par clé)
+const SHIFT_LABELS_T: Record<string, Record<string, string>> = {
+  morning:   { fr:'Matin',      en:'Morning',   es:'Mañana',   it:'Mattina'    },
+  afternoon: { fr:'Après-midi', en:'Afternoon', es:'Tarde',    it:'Pomeriggio' },
+  full:      { fr:'Journée',    en:'Full day',  es:'Jornada',  it:'Giornata'   },
+  night:     { fr:'Nuit',       en:'Night',     es:'Noche',    it:'Notte'      },
+  rest:      { fr:'Repos',      en:'Day off',   es:'Descanso', it:'Riposo'     },
+  leave:     { fr:'Congé',      en:'Leave',     es:'Permiso',  it:'Ferie'      },
+}
+const shiftLabel = (key: string, lang: string) =>
+  SHIFT_LABELS_T[key]?.[lang] ?? (SHIFT_TYPES as any)[key]?.label ?? key
+
 type ShiftType = keyof typeof SHIFT_TYPES
 
 interface PlanningEmployee { id: string; name: string; role: string; dept: string; avatar: string; color: string; isActive: boolean }
@@ -159,7 +171,7 @@ export default function Planning() {
         emp.name,
         ...weekDays.map((_,di)=>{
           const s = shifts[emp.id]?.[di]
-          return s ? `${SHIFT_TYPES[s].label} ${SHIFT_TYPES[s].hours}` : ''
+          return s ? `${shiftLabel(s, lang)} ${SHIFT_TYPES[s].hours}` : ''
         })
       ])
     ]
@@ -171,7 +183,7 @@ export default function Planning() {
     a.download=`Planning_${weekDays[0].toISOString().slice(0,10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
-    toast.success('📊 Planning exporté !')
+    toast.success(lang === 'en' ? '📊 Schedule exported!' : lang === 'es' ? '📊 ¡Planificación exportada!' : lang === 'it' ? '📊 Pianificazione esportata!' : '📊 Planning exporté !')
   }
 
   const stats = useMemo(() => {
@@ -259,7 +271,7 @@ export default function Planning() {
               transform: activeShift===key ? 'scale(1.02)' : 'scale(1)',
             }}>
             <span style={{ color: activeShift===key ? s.color : 'var(--text3)', display:'flex' }}>{s.icon}</span>
-            <span>{s.label}</span>
+            <span>{shiftLabel(key, lang)}</span>
             {s.hours && (
               <span style={{
                 fontSize:9, fontFamily:'var(--mono)', opacity:.7,
@@ -294,7 +306,7 @@ export default function Planning() {
           onChange={e=>setFilterStatus(e.target.value as any)}>
           <option value="all">{T.allStatus}</option>
           {(Object.entries(SHIFT_TYPES) as [ShiftType,any][]).map(([k,s])=>(
-            <option key={k} value={k}>{s.label}</option>
+            <option key={k} value={k}>{shiftLabel(k, lang)}</option>
           ))}
         </select>
         <div style={{
@@ -537,7 +549,7 @@ export default function Planning() {
               fontSize:10,
             }}>
               <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
-              <span style={{color:s.color,fontWeight:600}}>{s.label}</span>
+              <span style={{color:s.color,fontWeight:600}}>{shiftLabel(key, lang)}</span>
               {s.hours&&<span style={{
                 color:'var(--text3)',fontFamily:'var(--mono)',fontSize:8,
               }}>{s.hours}</span>}
@@ -607,7 +619,7 @@ export default function Planning() {
                     }}>
                     <span style={{ color: modalShift===key ? s.color : 'var(--text3)', display:'flex' }}>{s.icon}</span>
                     <div style={{ textAlign:'left' }}>
-                      <div style={{ fontSize:12, fontWeight:700 }}>{s.label}</div>
+                      <div style={{ fontSize:12, fontWeight:700 }}>{shiftLabel(key, lang)}</div>
                       {s.hours && <div style={{ fontSize:9, fontFamily:'var(--mono)', opacity:.7 }}>{s.hours}</div>}
                     </div>
                     {modalShift===key && (
@@ -621,13 +633,12 @@ export default function Planning() {
               <div style={{ display:'flex', gap:8, marginTop:8 }}>
                 <button
                   onClick={() => {
-                    const s = SHIFT_TYPES[modalShift]
                     setShifts(prev => ({
                       ...prev,
                       [shiftModal.empId]: { ...(prev[shiftModal.empId]??{}), [shiftModal.di]: modalShift }
                     }))
                     setShiftModal(null)
-                    toast.success(`${s.label} assigné${lang === 'en' ? ' → ' : lang === 'es' ? ' a ' : lang === 'it' ? ' a ' : ' à '}${shiftModal.name}`)
+                    toast.success(`${shiftLabel(modalShift, lang)} ${lang === 'en' ? 'assigned → ' : lang === 'es' ? 'asignado a ' : lang === 'it' ? 'assegnato a ' : 'assigné à '}${shiftModal.name}`)
                   }}
                   style={{
                     flex:1, padding:'11px', borderRadius:10,
@@ -680,7 +691,7 @@ export default function Planning() {
                     fontSize:9,fontWeight:700,
                     textTransform:'uppercase',
                     color:'var(--text3)',
-                  }}>{s.label}</div>
+                  }}>{shiftLabel(key, lang)}</div>
                   <div style={{
                     fontSize:20,fontWeight:900,
                     color:s.color,fontFamily:'var(--mono)',

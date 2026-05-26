@@ -29,6 +29,7 @@ interface CustomersModalsProps {
 }
 
 export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, lang, i, navigate, setDetailCustomer, setShowDetailModal, showEditCustModal, editCustomer, setShowEditCustModal, custEditMode, setCustEditMode, editCustForm, setEditCustForm, setCustomers, showCreate, setShowCreate, form, setForm, handleCreateCustomer, resetCustForm, showDetailModal, detailCustomer, setEditCustomer, loyaltyCustomer, setLoyaltyCustomer }: CustomersModalsProps) {
+  const loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   return (
     <>
       {viewCustomer && (
@@ -38,7 +39,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               <div>
                 <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Users size={15} style={{color:'var(--p2)',flexShrink:0}} /> {viewCustomer.name}</h3>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
-                  Depuis {new Date(viewCustomer.since).toLocaleDateString('fr-FR')} · Dernière visite {new Date(viewCustomer.lastPurchase).toLocaleDateString('fr-FR')}
+                  {i('Depuis', 'Since', 'Desde', 'Dal')} {new Date(viewCustomer.since).toLocaleDateString(loc)} · {i('Dernière visite', 'Last visit', 'Última visita', 'Ultima visita')} {new Date(viewCustomer.lastPurchase).toLocaleDateString(loc)}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -49,10 +50,10 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
 
             <div className="grid grid-cols-2 gap-3 mb-5">
               {[
-                { label: 'Téléphone',    value: viewCustomer.phone || '—' },
+                { label: i('Téléphone', 'Phone', 'Teléfono', 'Telefono'),    value: viewCustomer.phone || '—' },
                 { label: 'Email',        value: viewCustomer.email || '—' },
-                { label: 'CA total',     value: fmt(viewCustomer.totalCA) },
-                { label: 'Achats/mois',  value: `${viewCustomer.purchasesPerMonth} commandes` },
+                { label: i('CA total', 'Total revenue', 'CA total', 'CA totale'),     value: fmt(viewCustomer.totalCA) },
+                { label: i('Achats/mois', 'Purchases/mo', 'Compras/mes', 'Acquisti/mese'),  value: `${viewCustomer.purchasesPerMonth} ${i('commandes', 'orders', 'pedidos', 'ordini')}` },
               ].map(f => (
                 <div key={f.label} className="p-3 rounded-xl" style={{ background: 'var(--bg3)' }}>
                   <div className="text-xs uppercase tracking-wide font-semibold mb-1" style={{ color: 'var(--text3)' }}>{f.label}</div>
@@ -63,31 +64,31 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
 
             <div className="p-4 rounded-xl mb-4" style={{ background: 'var(--bg3)' }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--text3)' }}>Solde fidélité</span>
+                <span className="text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--text3)' }}>{i('Solde fidélité', 'Loyalty balance', 'Saldo fidelidad', 'Saldo fedeltà')}</span>
                 <span className="text-sm font-black" style={{ color: 'var(--acc)' }}>{viewCustomer.loyaltyPoints} pts</span>
               </div>
               <LoyaltyBar points={viewCustomer.loyaltyPoints} max={viewCustomer.maxLoyalty} />
               <p className="text-xs mt-2" style={{ color: 'var(--text3)' }}>
-                Objectif : {viewCustomer.maxLoyalty} pts · Reste {Math.max(0, viewCustomer.maxLoyalty - viewCustomer.loyaltyPoints)} pts
+                {i('Objectif', 'Target', 'Objetivo', 'Obiettivo')} : {viewCustomer.maxLoyalty} pts · {i('Reste', 'Remaining', 'Quedan', 'Restano')} {Math.max(0, viewCustomer.maxLoyalty - viewCustomer.loyaltyPoints)} pts
               </p>
             </div>
 
             <div className="mb-4">
-              <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text3)' }}>Historique achats</div>
+              <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text3)' }}>{i('Historique achats', 'Purchase history', 'Historial compras', 'Storico acquisti')}</div>
               <div className="table-wrap">
                 <table>
-                  <thead><tr><th>Référence</th><th>Date</th><th>Articles</th><th>Montant</th></tr></thead>
+                  <thead><tr><th>{i('Référence', 'Reference', 'Referencia', 'Riferimento')}</th><th>{i('Date', 'Date', 'Fecha', 'Data')}</th><th>{i('Articles', 'Items', 'Artículos', 'Articoli')}</th><th>{i('Montant', 'Amount', 'Importe', 'Importo')}</th></tr></thead>
                   <tbody>
                     {viewCustomer.purchases.map(p => (
                       <tr key={p.ref}>
                         <td className="td-mono text-xs">{p.ref}</td>
-                        <td className="td-mono text-xs">{new Date(p.date).toLocaleDateString('fr-FR')}</td>
-                        <td className="text-xs" style={{ color: 'var(--text2)' }}>{p.items} art.</td>
+                        <td className="td-mono text-xs">{new Date(p.date).toLocaleDateString(loc)}</td>
+                        <td className="text-xs" style={{ color: 'var(--text2)' }}>{p.items} {i('art.', 'items', 'art.', 'art.')}</td>
                         <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{fmt(p.total)}</td>
                       </tr>
                     ))}
                     {viewCustomer.purchases.length === 0 && (
-                      <tr><td colSpan={4} className="text-center py-4" style={{ color: 'var(--text3)' }}>Aucun achat</td></tr>
+                      <tr><td colSpan={4} className="text-center py-4" style={{ color: 'var(--text3)' }}>{i('Aucun achat', 'No purchases', 'Sin compras', 'Nessun acquisto')}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -151,11 +152,11 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             }
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-              <ViewField label="NOM / ENSEIGNE" value={editCustForm.name} fullWidth editing={custEditMode}>
+              <ViewField label={i('NOM / ENSEIGNE', 'NAME / BUSINESS', 'NOMBRE / EMPRESA', 'NOME / INSEGNA')} value={editCustForm.name} fullWidth editing={custEditMode}>
                 <input className="input text-sm" value={editCustForm.name}
                   onChange={e => setEditCustForm(f => ({...f, name:e.target.value}))} />
               </ViewField>
-              <ViewField label="TYPE" value={typeLabel(editCustForm.type, lang)} editing={custEditMode}>
+              <ViewField label={i('TYPE', 'TYPE', 'TIPO', 'TIPO')} value={typeLabel(editCustForm.type, lang)} editing={custEditMode}>
                 <select className="input text-sm" value={editCustForm.type}
                   onChange={e => setEditCustForm(f => ({...f, type:e.target.value as ClientType}))}>
                   <option value="Grossiste">{typeLabel('Grossiste', lang)}</option>
@@ -164,7 +165,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   <option value="Détail">{typeLabel('Détail', lang)}</option>
                 </select>
               </ViewField>
-              <ViewField label="TÉLÉPHONE" value={editCustForm.phone||''} icon="📞" editing={custEditMode}>
+              <ViewField label={i('TÉLÉPHONE', 'PHONE', 'TELÉFONO', 'TELEFONO')} value={editCustForm.phone||''} icon="📞" editing={custEditMode}>
                 <PhoneInputWithCountry value={editCustForm.phone} onChange={v => setEditCustForm(f => ({...f, phone:v}))} lang={lang} />
               </ViewField>
               <ViewField label="EMAIL" value={editCustForm.email||''} fullWidth editing={custEditMode}>
@@ -172,11 +173,11 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   value={editCustForm.email}
                   onChange={e => setEditCustForm(f => ({...f, email:e.target.value}))} />
               </ViewField>
-              <ViewField label="ADRESSE" value={editCustForm.address||''} fullWidth editing={custEditMode}>
+              <ViewField label={i('ADRESSE', 'ADDRESS', 'DIRECCIÓN', 'INDIRIZZO')} value={editCustForm.address||''} fullWidth editing={custEditMode}>
                 <AddressAutocompleteInput value={editCustForm.address}
                   onChange={v => setEditCustForm(f => ({...f, address:v}))} lang={lang} />
               </ViewField>
-              <ViewField label="NOTES" value={editCustForm.notes||''} fullWidth editing={custEditMode}>
+              <ViewField label={i('NOTES', 'NOTES', 'NOTAS', 'NOTE')} value={editCustForm.notes||''} fullWidth editing={custEditMode}>
                 <textarea className="input text-sm" rows={2} value={editCustForm.notes}
                   onChange={e => setEditCustForm(f => ({...f, notes:e.target.value}))} />
               </ViewField>
@@ -195,7 +196,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                         setCustomers(prev => prev.filter(c => c.id !== editCustomer.id))
                         setShowEditCustModal(false)
                         toast.success(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
-                      } catch (e: any) { toast.error(e?.message ?? 'Erreur') }
+                      } catch (e: any) { toast.error(e?.message ?? i('Erreur', 'Error', 'Error', 'Errore')) }
                     }}><Trash2 size={13} /> {i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}</button>
                   <button className="btn btn-ghost" onClick={() => setShowEditCustModal(false)}>{lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
                 </>
@@ -206,14 +207,14 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                     setCustEditMode(false)
                   }}>{t('btn_cancel')}</button>
                   <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer' }} onClick={async () => {
-                    if (!editCustForm.name) { toast.error('Nom requis'); return }
+                    if (!editCustForm.name) { toast.error(i('Nom requis', 'Name required', 'Nombre requerido', 'Nome richiesto')); return }
                     try { await customersApi.update(editCustomer.id, { name: editCustForm.name, phone: editCustForm.phone, email: editCustForm.email, address: editCustForm.address, notes: editCustForm.notes, type: editCustForm.type }) } catch {}
                     setCustomers(prev => prev.map(c =>
                       c.id === editCustomer.id ? { ...c, ...editCustForm } : c
                     ))
                     setShowEditCustModal(false)
-                    toast.success(`${editCustForm.name} mis à jour`)
-                  }}>Enregistrer</button>
+                    toast.success(`${editCustForm.name} ${i('mis à jour', 'updated', 'actualizado', 'aggiornato')}`)
+                  }}>{i('Enregistrer', 'Save', 'Guardar', 'Salva')}</button>
                 </>
               )}
             </div>

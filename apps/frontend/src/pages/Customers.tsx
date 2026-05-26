@@ -285,7 +285,7 @@ export default function Customers() {
                 {i('Carte des clients', 'Customer map', 'Mapa de clientes', 'Mappa clienti')}
               </h2>
               <p style={{ fontSize: 12, color: 'var(--text3)' }}>
-                {Object.keys(geoPositions).length} client(s) localisé(s) sur {customers.length}
+                {Object.keys(geoPositions).length} {i('client(s) localisé(s) sur', 'customer(s) located out of', 'cliente(s) localizado(s) de', 'cliente/i localizzato/i su')} {customers.length}
               </p>
             </div>
             <button
@@ -299,7 +299,7 @@ export default function Customers() {
                 opacity: geocoding || !mapsLoaded ? .6 : 1, transition: 'opacity .15s',
               }}>
               <MapPin size={12} />
-              {geocoding ? 'Localisation…' : 'Actualiser'}
+              {geocoding ? i('Localisation…', 'Locating…', 'Localizando…', 'Localizzazione…') : i('Actualiser', 'Refresh', 'Actualizar', 'Aggiorna')}
             </button>
           </div>
 
@@ -317,7 +317,7 @@ export default function Customers() {
           {customers.filter(c => !geoPositions[c.id]).length > 0 && (
             <div style={{ marginTop: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <AlertTriangle size={13} style={{flexShrink:0}} /> Clients sans adresse ({customers.filter(c => !geoPositions[c.id]).length}) — non affichés sur la carte
+                <AlertTriangle size={13} style={{flexShrink:0}} /> {i('Clients sans adresse', 'Customers without address', 'Clientes sin dirección', 'Clienti senza indirizzo')} ({customers.filter(c => !geoPositions[c.id]).length}) — {i('non affichés sur la carte', 'not shown on the map', 'no mostrados en el mapa', 'non mostrati sulla mappa')}
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {customers.filter(c => !geoPositions[c.id]).map(c => (

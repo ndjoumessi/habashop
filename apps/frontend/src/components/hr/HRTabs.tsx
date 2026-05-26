@@ -41,13 +41,13 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
             <table>
               <thead>
                 <tr>
-                  <th scope="col">Employé</th>
-                  <th scope="col">Département</th>
-                  <th scope="col" style={{ textAlign: 'center' }}>Type</th>
-                  <th scope="col">Date début</th>
-                  <th scope="col">Date fin</th>
-                  <th scope="col" style={{ textAlign: 'right' }}>Salaire brut</th>
-                  <th scope="col" style={{ textAlign: 'center' }}>Statut</th>
+                  <th scope="col">{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</th>
+                  <th scope="col">{lang === 'en' ? 'Department' : lang === 'es' ? 'Departamento' : lang === 'it' ? 'Dipartimento' : 'Département'}</th>
+                  <th scope="col" style={{ textAlign: 'center' }}>{lang === 'en' ? 'Type' : lang === 'es' ? 'Tipo' : lang === 'it' ? 'Tipo' : 'Type'}</th>
+                  <th scope="col">{lang === 'en' ? 'Start date' : lang === 'es' ? 'Fecha inicio' : lang === 'it' ? 'Data inizio' : 'Date début'}</th>
+                  <th scope="col">{lang === 'en' ? 'End date' : lang === 'es' ? 'Fecha fin' : lang === 'it' ? 'Data fine' : 'Date fin'}</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>{lang === 'en' ? 'Gross salary' : lang === 'es' ? 'Salario bruto' : lang === 'it' ? 'Stipendio lordo' : 'Salaire brut'}</th>
+                  <th scope="col" style={{ textAlign: 'center' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,7 +175,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                   const a = document.createElement('a')
                   a.href = url; a.download = `Paie_${payrollMonth}.csv`; a.click()
                   URL.revokeObjectURL(url)
-                  toast.success('📊 Export paie téléchargé !')
+                  toast.success(lang === 'en' ? '📊 Payroll export downloaded!' : lang === 'es' ? '📊 ¡Exportación de nómina descargada!' : lang === 'it' ? '📊 Esportazione buste paga scaricata!' : '📊 Export paie téléchargé !')
                 }}><Download size={14} /> CSV</button>
                 <button className="btn btn-primary btn-sm"
                   onClick={() => generateAllPayslips()}
@@ -902,8 +902,8 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
               <div style={{ display:'grid', gridTemplateColumns:'1fr 90px 90px 110px 110px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
                 <span>{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</span>
                 <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</span>
-                <span style={{ textAlign:'center' }}>Arrivée</span>
-                <span style={{ textAlign:'center' }}>Départ</span>
+                <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Arrival' : lang === 'es' ? 'Llegada' : lang === 'it' ? 'Arrivo' : 'Arrivée'}</span>
+                <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Departure' : lang === 'es' ? 'Salida' : lang === 'it' ? 'Uscita' : 'Départ'}</span>
                 <span style={{ textAlign:'center' }}>Actions</span>
               </div>
               {dayEmp.map((emp, i) => {

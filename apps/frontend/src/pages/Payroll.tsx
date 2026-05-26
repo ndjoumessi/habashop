@@ -24,6 +24,33 @@ const MONTHS = [
 const PAY_COLORS = ['#6C3FD6','#F59E0B','#10B981','#EF4444','#3B82F6','#8B5CF6','#EC4899','#F472B6']
 const currentMonthLabel = MONTHS[new Date().getMonth()] ?? MONTHS[0]
 
+// Localise un libellé de mois FR ("Mai 2026") sans changer la valeur stockée (clé de filtre)
+const FR_MONTH_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+const monthLabel = (m: string, lang: string) => {
+  const [name, yearStr] = m.split(' ')
+  const idx = FR_MONTH_NAMES.indexOf(name)
+  if (idx < 0) return m
+  const year = Number(yearStr) || new Date().getFullYear()
+  const loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+  const s = new Date(year, idx, 1).toLocaleDateString(loc, { month: 'long', year: 'numeric' })
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+// Libellés des postes employés (traduits à l'affichage, valeurs custom passent inchangées)
+const ROLE_T: Record<string, Record<string, string>> = {
+  'Caissier':   { fr:'Caissier',   en:'Cashier',     es:'Cajero',     it:'Cassiere'     },
+  'Caissière':  { fr:'Caissière',  en:'Cashier',     es:'Cajera',     it:'Cassiera'     },
+  'Vendeur':    { fr:'Vendeur',    en:'Sales rep',   es:'Vendedor',   it:'Venditore'    },
+  'Vendeuse':   { fr:'Vendeuse',   en:'Sales rep',   es:'Vendedora',  it:'Venditrice'   },
+  'Manager':    { fr:'Manager',    en:'Manager',     es:'Gerente',    it:'Manager'      },
+  'Directeur':  { fr:'Directeur',  en:'Director',    es:'Director',   it:'Direttore'    },
+  'Comptable':  { fr:'Comptable',  en:'Accountant',  es:'Contable',   it:'Contabile'    },
+  'Magasinier': { fr:'Magasinier', en:'Storekeeper', es:'Almacenero', it:'Magazziniere' },
+  'Livreur':    { fr:'Livreur',    en:'Delivery',    es:'Repartidor', it:'Fattorino'    },
+  'Sécurité':   { fr:'Sécurité',   en:'Security',    es:'Seguridad',  it:'Sicurezza'    },
+}
+const roleLabel = (r: string, lang: string) => ROLE_T[r]?.[lang] ?? r
+
 function printBulletin(bulletin: PayRecord) {
   const { currency } = useAppStore.getState()
   const fmtP = (n: number) => formatCurrency(convertCurrency(n, 'XOF', currency), currency)
@@ -192,7 +219,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
                   {record.employee}
                 </div>
                 <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>
-                  {record.role} · {lang === 'en' ? 'Permanent contract' : lang === 'es' ? 'Contrato indefinido' : lang === 'it' ? 'Contratto indeterminato' : 'Contrat CDI'}
+                  {roleLabel(record.role, lang)} · {lang === 'en' ? 'Permanent contract' : lang === 'es' ? 'Contrato indefinido' : lang === 'it' ? 'Contratto indeterminato' : 'Contrat CDI'}
                 </div>
               </div>
             </div>
@@ -395,14 +422,14 @@ export default function Payroll() {
     setRecords(prev => prev.map(r =>
       r.month === month && r.status === 'EN ATTENTE' ? { ...r, status: 'GÉNÉRÉ' } : r
     ))
-    toast.success(lang === 'en' ? `${count} payslip(s) generated for ${month}` : lang === 'es' ? `${count} nómina(s) generada(s) para ${month}` : lang === 'it' ? `${count} busta/e paga generata/e per ${month}` : `${count} bulletin(s) généré(s) pour ${month}`)
+    toast.success(lang === 'en' ? `${count} payslip(s) generated for ${monthLabel(month, lang)}` : lang === 'es' ? `${count} nómina(s) generada(s) para ${monthLabel(month, lang)}` : lang === 'it' ? `${count} busta/e paga generata/e per ${monthLabel(month, lang)}` : `${count} bulletin(s) généré(s) pour ${monthLabel(month, lang)}`)
   }
 
   function markPaid(id: number) {
     setRecords(prev => prev.map(r =>
       r.id === id ? { ...r, status: 'PAYÉ', paidAt: '14/05/2026' } : r
     ))
-    toast.success('Bulletin marqué comme payé')
+    toast.success(lang === 'en' ? 'Payslip marked as paid' : lang === 'es' ? 'Nómina marcada como pagada' : lang === 'it' ? 'Busta paga segnata come pagata' : 'Bulletin marqué comme payé')
   }
 
   return (
@@ -412,11 +439,11 @@ export default function Payroll() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{lang === 'en' ? 'Payroll' : lang === 'es' ? 'Nómina y salarios' : lang === 'it' ? 'Buste paga e stipendi' : 'Paie & Salaires'}</h1>
-          <p className="page-subtitle">{lang === 'en' ? `Period: ${month}` : lang === 'es' ? `Período: ${month}` : lang === 'it' ? `Periodo: ${month}` : `Période : ${month}`}</p>
+          <p className="page-subtitle">{lang === 'en' ? `Period: ${monthLabel(month, lang)}` : lang === 'es' ? `Período: ${monthLabel(month, lang)}` : lang === 'it' ? `Periodo: ${monthLabel(month, lang)}` : `Période : ${monthLabel(month, lang)}`}</p>
         </div>
         <button className="btn btn-ghost btn-sm" onClick={() => {
-          exportCSV('paie_' + month, ['Employé','Brut','Net','Statut'], records.map(r => [r.employee, calcBrut(r), calcNet(r), r.status]))
-          toast.success('CSV exporté')
+          exportCSV('paie_' + month, [lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé', lang === 'en' ? 'Gross' : lang === 'es' ? 'Bruto' : lang === 'it' ? 'Lordo' : 'Brut', 'Net', lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'], records.map(r => [r.employee, calcBrut(r), calcNet(r), statusLabel(r.status, lang)]))
+          toast.success(lang === 'en' ? 'CSV exported' : lang === 'es' ? 'CSV exportado' : lang === 'it' ? 'CSV esportato' : 'CSV exporté')
         }}>
           <Download size={14} /> Export
         </button>
@@ -454,7 +481,7 @@ export default function Payroll() {
       <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
         <select className="input" value={month} onChange={e => setMonth(e.target.value)}
           style={{ width:'auto', minWidth:180 }}>
-          {MONTHS.map(m => <option key={m}>{m}</option>)}
+          {MONTHS.map(m => <option key={m} value={m}>{monthLabel(m, lang)}</option>)}
         </select>
         <div style={{ flex:1 }} />
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
@@ -477,12 +504,12 @@ export default function Payroll() {
       {/* Table */}
       <div className="panel" style={{ marginBottom:0 }}>
         <div className="panel-head">
-          <span className="panel-title">Paie — {month}</span>
-          <span className="badge badge-gray">{filtered.length} employé{filtered.length > 1 ? 's' : ''}</span>
+          <span className="panel-title">{lang === 'en' ? 'Payroll' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Buste paga' : 'Paie'} — {monthLabel(month, lang)}</span>
+          <span className="badge badge-gray">{filtered.length} {filtered.length > 1 ? (lang === 'en' ? 'employees' : lang === 'es' ? 'empleados' : lang === 'it' ? 'dipendenti' : 'employés') : (lang === 'en' ? 'employee' : lang === 'es' ? 'empleado' : lang === 'it' ? 'dipendente' : 'employé')}</span>
         </div>
         {filtered.length === 0 ? (
           <div style={{ textAlign:'center', padding:'28px 0', color:'var(--text3)', fontSize:13 }}>
-            {lang === 'en' ? `No payslips for ${month}` : lang === 'es' ? `Sin nóminas para ${month}` : lang === 'it' ? `Nessuna busta paga per ${month}` : `Aucun bulletin pour ${month}`}
+            {lang === 'en' ? `No payslips for ${monthLabel(month, lang)}` : lang === 'es' ? `Sin nóminas para ${monthLabel(month, lang)}` : lang === 'it' ? `Nessuna busta paga per ${monthLabel(month, lang)}` : `Aucun bulletin pour ${monthLabel(month, lang)}`}
           </div>
         ) : (
           <div className="table-wrap">
@@ -503,7 +530,7 @@ export default function Payroll() {
                         <span className="td-bold" style={{ fontSize:12 }}>{r.employee}</span>
                       </div>
                     </td>
-                    <td style={{ fontSize:12, color:'var(--text3)' }}>{r.role}</td>
+                    <td style={{ fontSize:12, color:'var(--text3)' }}>{roleLabel(r.role, lang)}</td>
                     <td className="td-num text-sm">{fmt(r.baseSalary)}</td>
                     <td className="td-num text-sm" style={{ color:r.bonus > 0 ? 'var(--acc2)' : 'var(--text3)' }}>
                       {r.bonus > 0 ? fmt(r.bonus) : '—'}
