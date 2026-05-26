@@ -338,7 +338,11 @@ export default function Header() {
         </div>
 
         {/* ── API / online status ── */}
-        <div title={apiStatus === 'online' ? 'API connectée' : apiStatus === 'offline' ? 'API hors ligne' : 'Vérification…'}
+        <div title={apiStatus === 'online'
+            ? (lang === 'en' ? 'API connected' : lang === 'es' ? 'API conectada' : lang === 'it' ? 'API connessa' : 'API connectée')
+            : apiStatus === 'offline'
+              ? (lang === 'en' ? 'API offline' : lang === 'es' ? 'API sin conexión' : lang === 'it' ? 'API non in linea' : 'API hors ligne')
+              : (lang === 'en' ? 'Checking…' : lang === 'es' ? 'Verificando…' : lang === 'it' ? 'Verifica…' : 'Vérification…')}
           style={{
             display: 'flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 20,
             background: apiStatus === 'online' ? 'rgba(0,208,132,.1)' : apiStatus === 'offline' ? 'rgba(255,59,92,.1)' : 'rgba(255,184,0,.1)',
@@ -355,7 +359,11 @@ export default function Header() {
             fontSize: 10, fontWeight: 700,
             color: apiStatus === 'online' ? 'var(--acc2)' : apiStatus === 'offline' ? 'var(--danger)' : 'var(--warn)',
           }}>
-            {apiStatus === 'online' ? 'Live' : apiStatus === 'offline' ? 'Hors ligne' : '…'}
+            {apiStatus === 'online'
+              ? (lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne')
+              : apiStatus === 'offline'
+                ? (lang === 'en' ? 'Offline' : lang === 'es' ? 'Sin conexión' : lang === 'it' ? 'Non in linea' : 'Hors ligne')
+                : '…'}
           </span>
         </div>
 

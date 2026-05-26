@@ -12,7 +12,7 @@ import { usePagination } from '@/hooks/usePagination'
 import StockInventory from '@/components/stock/StockInventory'
 import StockModals from '@/components/stock/StockModals'
 import EmptyState from '@/components/ui/EmptyState'
-import { type ProductItem, CATEGORIES_INIT, statusOf } from '@/components/stock/stockShared'
+import { type ProductItem, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc } from '@/components/stock/stockShared'
 
 export default function Stock() {
   const { stockLowThreshold, stockShowSKU, lang } = useConfig()
@@ -151,7 +151,7 @@ export default function Stock() {
           <AlertTriangle size={18} style={{ color: 'var(--danger)', flexShrink: 0 }} />
           <div className="flex-1">
             <p className="text-sm font-bold" style={{ color: 'var(--danger)' }}>
-              {ruptures.length} article{ruptures.length > 1 ? 's' : ''} en rupture ou stock faible
+              {ruptures.length} {lang === 'en' ? `item${ruptures.length > 1 ? 's' : ''} out of stock or low` : lang === 'es' ? `artículo${ruptures.length > 1 ? 's' : ''} sin stock o bajo` : lang === 'it' ? `articol${ruptures.length > 1 ? 'i' : 'o'} esaurit${ruptures.length > 1 ? 'i' : 'o'} o in esaurimento` : `article${ruptures.length > 1 ? 's' : ''} en rupture ou stock faible`}
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
               {ruptures.map(p => p.name).join(' · ')}
@@ -159,8 +159,8 @@ export default function Stock() {
           </div>
           <button className="btn btn-sm"
             style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)' }}
-            onClick={() => toast('📦 Bon de commande groupé créé')}>
-            Commander
+            onClick={() => toast(lang === 'en' ? '📦 Bulk purchase order created' : lang === 'es' ? '📦 Pedido agrupado creado' : lang === 'it' ? '📦 Ordine raggruppato creato' : '📦 Bon de commande groupé créé')}>
+            {lang === 'en' ? 'Order' : lang === 'es' ? 'Pedir' : lang === 'it' ? 'Ordina' : 'Commander'}
           </button>
         </div>
       )}
@@ -216,9 +216,9 @@ export default function Stock() {
       {/* ── Panel Catégories ── */}
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Tag size={14} /> Gestion des catégories</span>
+          <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Tag size={14} /> {lang === 'en' ? 'Manage categories' : lang === 'es' ? 'Gestionar categorías' : lang === 'it' ? 'Gestisci categorie' : 'Gestion des catégories'}</span>
           <button className="topbar-btn" onClick={() => { setEditCat(null); setCatForm({ name:'', color:'#818CF8', icon:'📦', description:'' }); setShowCatModal(true) }}>
-            + Nouvelle catégorie
+            + {lang === 'en' ? 'New category' : lang === 'es' ? 'Nueva categoría' : lang === 'it' ? 'Nuova categoria' : 'Nouvelle catégorie'}
           </button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px,1fr))', gap:12 }}>
@@ -235,20 +235,20 @@ export default function Stock() {
                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                   <div style={{ width:36, height:36, borderRadius:10, background:`${cat.color}22`, border:`1px solid ${cat.color}44`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{cat.icon}</div>
                   <div>
-                    <div style={{ fontSize:14, fontWeight:700, color:'var(--text)' }}>{cat.name}</div>
-                    <div style={{ fontSize:11, color:'var(--text3)' }}>{cat.productsCount} produits</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:'var(--text)' }}>{stockCatLabel(cat.name, lang)}</div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>{cat.productsCount} {lang === 'en' ? 'products' : lang === 'es' ? 'productos' : lang === 'it' ? 'prodotti' : 'produits'}</div>
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:4 }}>
                   <button className="mini-btn" style={{ cursor:'pointer' }} onClick={() => { setEditCat(cat); setCatForm({ name:cat.name, color:cat.color, icon:cat.icon, description:cat.description }); setShowCatModal(true) }}><Pencil size={12} /></button>
                   <button className="mini-btn" style={{ color:'var(--danger)', cursor:'pointer' }} onClick={() => {
-                    if (cat.productsCount > 0) { toast.error('Catégorie non vide !'); return }
+                    if (cat.productsCount > 0) { toast.error(lang === 'en' ? 'Category not empty!' : lang === 'es' ? '¡Categoría no vacía!' : lang === 'it' ? 'Categoria non vuota!' : 'Catégorie non vide !'); return }
                     setCategories(prev => prev.filter(c => c.id !== cat.id))
-                    toast.success('Catégorie supprimée')
+                    toast.success(lang === 'en' ? 'Category deleted' : lang === 'es' ? 'Categoría eliminada' : lang === 'it' ? 'Categoria eliminata' : 'Catégorie supprimée')
                   }}><Trash2 size={12} /></button>
                 </div>
               </div>
-              <div style={{ fontSize:12, color:'var(--text2)' }}>{cat.description}</div>
+              <div style={{ fontSize:12, color:'var(--text2)' }}>{stockCatDesc(cat.description, lang)}</div>
               <div style={{ height:4, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
                 <div style={{ height:'100%', borderRadius:99, width:`${Math.min(100,(cat.productsCount/10)*100)}%`, background:cat.color, transition:'width .3s' }} />
               </div>

@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 import Pagination from '@/components/ui/Pagination'
-import { type ProductItem, statusOf } from '@/components/stock/stockShared'
+import { type ProductItem, statusOf, stockCatLabel } from '@/components/stock/stockShared'
 
 interface StockInventoryProps {
   products: ProductItem[]
@@ -100,7 +100,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
           </div>
           <select className="input py-2 text-sm w-auto" value={cat} onChange={e => setCat(e.target.value)}>
             <option value="">{t('pos_all')} {t('col_category').toLowerCase()}</option>
-            {cats.filter(Boolean).map(c => <option key={c}>{c}</option>)}
+            {cats.filter(Boolean).map(c => <option key={c} value={c}>{stockCatLabel(c, lang)}</option>)}
           </select>
           <select className="input py-2 text-sm w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="">{t('pos_all')} {t('col_status').toLowerCase()}</option>
@@ -192,7 +192,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                     <tr key={p.sku}>
                       {stockShowSKU && <td className="td-mono">{p.sku}</td>}
                       <td className="td-bold">{p.name}</td>
-                      <td><span className="badge badge-teal">{p.category}</span></td>
+                      <td><span className="badge badge-teal">{stockCatLabel(p.category, lang)}</span></td>
                       <td className="td-num">{fmt(p.buy)}</td>
                       <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(p.sell)}</td>
                       <td>

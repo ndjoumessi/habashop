@@ -90,6 +90,14 @@ const STATUS_CFG: Record<PayStatus, { cls: string; label: string }> = {
   'GÉNÉRÉ':     { cls:'badge-violet', label:'GÉNÉRÉ'     },
 }
 
+const STATUS_LABELS: Record<PayStatus, Record<string, string>> = {
+  'PAYÉ':       { fr:'PAYÉ',       en:'PAID',      es:'PAGADO',     it:'PAGATO'    },
+  'EN ATTENTE': { fr:'EN ATTENTE', en:'PENDING',   es:'PENDIENTE',  it:'IN ATTESA' },
+  'SUSPENDU':   { fr:'SUSPENDU',   en:'SUSPENDED', es:'SUSPENDIDO', it:'SOSPESO'   },
+  'GÉNÉRÉ':     { fr:'GÉNÉRÉ',     en:'GENERATED', es:'GENERADO',   it:'GENERATO'  },
+}
+const statusLabel = (s: PayStatus, lang: string) => STATUS_LABELS[s]?.[lang] ?? s
+
 function calcNet(r: PayRecord) {
   const absencePenalty = Math.round(r.absences * r.baseSalary / 26)
   return r.baseSalary + r.bonus + r.overtime - r.deductions - absencePenalty
@@ -115,6 +123,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
   onPay: (id: number) => void
   fmt: (n: number) => string
 }) {
+  const { lang } = useConfig()
   const absencePenalty = Math.round(record.absences * record.baseSalary / 26)
   const totalRetenues = record.deductions + absencePenalty
 
@@ -150,7 +159,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
                 HabaShop
               </div>
               <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginTop:2 }}>
-                Bulletin de Paie — {record.month}
+                {lang === 'en' ? 'Payslip' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Busta paga' : 'Bulletin de Paie'} — {record.month}
               </div>
             </div>
           </div>
@@ -183,7 +192,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
                   {record.employee}
                 </div>
                 <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>
-                  {record.role} · Contrat CDI
+                  {record.role} · {lang === 'en' ? 'Permanent contract' : lang === 'es' ? 'Contrato indefinido' : lang === 'it' ? 'Contratto indeterminato' : 'Contrat CDI'}
                 </div>
               </div>
             </div>
@@ -193,7 +202,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
               border: `1px solid ${record.status === 'PAYÉ' ? 'rgba(14,196,126,.3)' : 'rgba(240,165,0,.3)'}`,
               borderRadius:20, padding:'5px 14px',
               fontSize:12, fontWeight:700,
-            }}>{record.status}</span>
+            }}>{statusLabel(record.status, lang)}</span>
           </div>
         </div>
 
@@ -206,21 +215,21 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
               fontSize:10.5, fontWeight:700, textTransform:'uppercase',
               letterSpacing:'1px', color:'var(--text3)',
               marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border)',
-            }}>GAINS</div>
+            }}>{lang === 'en' ? 'EARNINGS' : lang === 'es' ? 'GANANCIAS' : lang === 'it' ? 'GUADAGNI' : 'GAINS'}</div>
             <div style={{
               display:'grid', gridTemplateColumns:'1fr 80px 80px 100px',
               gap:8, marginBottom:6, fontSize:10, fontWeight:700,
               color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.5px',
             }}>
-              <span>Libellé</span>
-              <span style={{ textAlign:'center' }}>Base</span>
-              <span style={{ textAlign:'center' }}>Taux</span>
-              <span style={{ textAlign:'right' }}>Montant</span>
+              <span>{lang === 'en' ? 'Label' : lang === 'es' ? 'Concepto' : lang === 'it' ? 'Voce' : 'Libellé'}</span>
+              <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Base' : lang === 'es' ? 'Base' : lang === 'it' ? 'Base' : 'Base'}</span>
+              <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Rate' : lang === 'es' ? 'Tasa' : lang === 'it' ? 'Tasso' : 'Taux'}</span>
+              <span style={{ textAlign:'right' }}>{lang === 'en' ? 'Amount' : lang === 'es' ? 'Importe' : lang === 'it' ? 'Importo' : 'Montant'}</span>
             </div>
             {([
-              { label:'Salaire de base',        base:'26j', taux:'100 %', montant:record.baseSalary, show:true },
-              { label:'Prime de performance',   base:'',    taux:'',      montant:record.bonus,       show:record.bonus > 0 },
-              { label:'Heures supplémentaires', base:`${Math.round(record.overtime / record.baseSalary * 26 * 8)}h`, taux:'25 %', montant:record.overtime, show:record.overtime > 0 },
+              { label:lang === 'en' ? 'Base salary' : lang === 'es' ? 'Salario base' : lang === 'it' ? 'Stipendio base' : 'Salaire de base',        base:'26j', taux:'100 %', montant:record.baseSalary, show:true },
+              { label:lang === 'en' ? 'Performance bonus' : lang === 'es' ? 'Prima de rendimiento' : lang === 'it' ? 'Premio di rendimento' : 'Prime de performance',   base:'',    taux:'',      montant:record.bonus,       show:record.bonus > 0 },
+              { label:lang === 'en' ? 'Overtime' : lang === 'es' ? 'Horas extra' : lang === 'it' ? 'Straordinari' : 'Heures supplémentaires', base:`${Math.round(record.overtime / record.baseSalary * 26 * 8)}h`, taux:'25 %', montant:record.overtime, show:record.overtime > 0 },
             ] as { label:string; base:string; taux:string; montant:number; show:boolean }[])
               .filter(r => r.show && r.montant > 0)
               .map((row, i) => (
@@ -244,7 +253,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
               background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)',
               borderRadius:10,
             }}>
-              <span style={{ fontSize:13, fontWeight:800, color:'var(--acc2)', letterSpacing:'.3px' }}>TOTAL BRUT</span>
+              <span style={{ fontSize:13, fontWeight:800, color:'var(--acc2)', letterSpacing:'.3px' }}>{lang === 'en' ? 'GROSS TOTAL' : lang === 'es' ? 'TOTAL BRUTO' : lang === 'it' ? 'TOTALE LORDO' : 'TOTAL BRUT'}</span>
               <span style={{ fontSize:14, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
                 {fmt(record.baseSalary + record.bonus + record.overtime)}
               </span>
@@ -257,11 +266,11 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
               fontSize:10.5, fontWeight:700, textTransform:'uppercase',
               letterSpacing:'1px', color:'var(--text3)',
               marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border)',
-            }}>RETENUES</div>
+            }}>{lang === 'en' ? 'DEDUCTIONS' : lang === 'es' ? 'DEDUCCIONES' : lang === 'it' ? 'DETRAZIONI' : 'RETENUES'}</div>
             {([
-              { label:'CNSS employé (5,6 %)',     taux:'5,6 %', montant: Math.round(record.baseSalary * 0.056) },
-              { label:'Impôt sur salaire (IRPP)', taux:'',      montant: Math.round(record.deductions - record.baseSalary * 0.056 - (record.absences * record.baseSalary / 26)) },
-              ...(record.absences > 0 ? [{ label:`Absence (${record.absences}j)`, taux:'', montant: Math.round(record.absences * record.baseSalary / 26) }] : []),
+              { label:`${lang === 'en' ? 'CNSS employee' : lang === 'es' ? 'CNSS empleado' : lang === 'it' ? 'CNSS dipendente' : 'CNSS employé'} (5,6 %)`,     taux:'5,6 %', montant: Math.round(record.baseSalary * 0.056) },
+              { label:lang === 'en' ? 'Income tax (IRPP)' : lang === 'es' ? 'Impuesto salarial (IRPP)' : lang === 'it' ? 'Imposta sul reddito (IRPP)' : 'Impôt sur salaire (IRPP)', taux:'',      montant: Math.round(record.deductions - record.baseSalary * 0.056 - (record.absences * record.baseSalary / 26)) },
+              ...(record.absences > 0 ? [{ label:`${lang === 'en' ? 'Absence' : lang === 'es' ? 'Ausencia' : lang === 'it' ? 'Assenza' : 'Absence'} (${record.absences}j)`, taux:'', montant: Math.round(record.absences * record.baseSalary / 26) }] : []),
             ] as { label:string; taux:string; montant:number }[])
               .filter(r => r.montant > 0)
               .map((row, i) => (
@@ -284,7 +293,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
               background:'rgba(232,64,74,.08)', border:'1px solid rgba(232,64,74,.2)',
               borderRadius:10,
             }}>
-              <span style={{ fontSize:13, fontWeight:800, color:'var(--danger)', letterSpacing:'.3px' }}>TOTAL RETENUES</span>
+              <span style={{ fontSize:13, fontWeight:800, color:'var(--danger)', letterSpacing:'.3px' }}>{lang === 'en' ? 'TOTAL DEDUCTIONS' : lang === 'es' ? 'TOTAL DEDUCCIONES' : lang === 'it' ? 'TOTALE DETRAZIONI' : 'TOTAL RETENUES'}</span>
               <span style={{ fontSize:14, fontWeight:900, color:'var(--danger)', fontFamily:'var(--mono)' }}>
                 − {fmt(totalRetenues)}
               </span>
@@ -299,8 +308,8 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
             border:'2px solid rgba(91,78,232,.35)', borderRadius:14,
           }}>
             <div>
-              <div style={{ fontSize:11, color:'var(--text3)', marginBottom:4, letterSpacing:'.5px' }}>NET À PAYER</div>
-              <div style={{ fontSize:12, color:'var(--text2)' }}>Virement bancaire</div>
+              <div style={{ fontSize:11, color:'var(--text3)', marginBottom:4, letterSpacing:'.5px' }}>{lang === 'en' ? 'NET PAYABLE' : lang === 'es' ? 'NETO A PAGAR' : lang === 'it' ? 'NETTO DA PAGARE' : 'NET À PAYER'}</div>
+              <div style={{ fontSize:12, color:'var(--text2)' }}>{lang === 'en' ? 'Bank transfer' : lang === 'es' ? 'Transferencia bancaria' : lang === 'it' ? 'Bonifico bancario' : 'Virement bancaire'}</div>
             </div>
             <div style={{ fontSize:28, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1.5px' }}>
               {fmt(record.baseSalary + record.bonus + record.overtime - record.deductions - (record.absences * Math.round(record.baseSalary / 26)))}
@@ -323,15 +332,15 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
               cursor:'pointer', fontFamily:'inherit',
               boxShadow:'0 4px 14px rgba(14,196,126,.3)',
             }}
-          ><CheckCircle size={14} style={{ verticalAlign:'middle', marginRight:5 }}/> Marquer comme payé</button>
+          ><CheckCircle size={14} style={{ verticalAlign:'middle', marginRight:5 }}/> {lang === 'en' ? 'Mark as paid' : lang === 'es' ? 'Marcar como pagado' : lang === 'it' ? 'Segna come pagato' : 'Marquer comme payé'}</button>
           <button
             className="mini-btn"
-            onClick={() => { printBulletin(record); toast.success('📄 PDF ouvert !') }}
+            onClick={() => { printBulletin(record); toast.success(lang === 'en' ? '📄 PDF opened!' : lang === 'es' ? '📄 ¡PDF abierto!' : lang === 'it' ? '📄 PDF aperto!' : '📄 PDF ouvert !') }}
             style={{ padding:'11px 16px', fontSize:13, display:'flex', alignItems:'center', gap:5 }}
-          ><Printer size={13}/> Imprimer</button>
+          ><Printer size={13}/> {lang === 'en' ? 'Print' : lang === 'es' ? 'Imprimir' : lang === 'it' ? 'Stampa' : 'Imprimer'}</button>
           <button
             className="mini-btn"
-            onClick={() => { printBulletin(record); toast.success('📄 PDF ouvert !') }}
+            onClick={() => { printBulletin(record); toast.success(lang === 'en' ? '📄 PDF opened!' : lang === 'es' ? '📄 ¡PDF abierto!' : lang === 'it' ? '📄 PDF aperto!' : '📄 PDF ouvert !') }}
             style={{ padding:'11px 16px', fontSize:13, display:'flex', alignItems:'center', gap:5 }}
           ><Download size={13}/> PDF</button>
         </div>
@@ -343,7 +352,6 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
 
 export default function Payroll() {
   const { lang } = useConfig()
-  void lang
   const fmt = useFormatAmount()
   const navigate = useNavigate()
 
@@ -383,11 +391,11 @@ export default function Payroll() {
 
   function generatePayroll() {
     const count = records.filter(r => r.month === month && r.status === 'EN ATTENTE').length
-    if (count === 0) { toast.error('Aucun bulletin en attente pour ce mois'); return }
+    if (count === 0) { toast.error(lang === 'en' ? 'No pending payslips for this month' : lang === 'es' ? 'Sin nóminas pendientes este mes' : lang === 'it' ? 'Nessuna busta paga in attesa per questo mese' : 'Aucun bulletin en attente pour ce mois'); return }
     setRecords(prev => prev.map(r =>
       r.month === month && r.status === 'EN ATTENTE' ? { ...r, status: 'GÉNÉRÉ' } : r
     ))
-    toast.success(`${count} bulletin(s) généré(s) pour ${month}`)
+    toast.success(lang === 'en' ? `${count} payslip(s) generated for ${month}` : lang === 'es' ? `${count} nómina(s) generada(s) para ${month}` : lang === 'it' ? `${count} busta/e paga generata/e per ${month}` : `${count} bulletin(s) généré(s) pour ${month}`)
   }
 
   function markPaid(id: number) {
@@ -404,7 +412,7 @@ export default function Payroll() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{lang === 'en' ? 'Payroll' : lang === 'es' ? 'Nómina y salarios' : lang === 'it' ? 'Buste paga e stipendi' : 'Paie & Salaires'}</h1>
-          <p className="page-subtitle">{lang === 'fr' ? `Période : ${month}` : `Period: ${month}`}</p>
+          <p className="page-subtitle">{lang === 'en' ? `Period: ${month}` : lang === 'es' ? `Período: ${month}` : lang === 'it' ? `Periodo: ${month}` : `Période : ${month}`}</p>
         </div>
         <button className="btn btn-ghost btn-sm" onClick={() => {
           exportCSV('paie_' + month, ['Employé','Brut','Net','Statut'], records.map(r => [r.employee, calcBrut(r), calcNet(r), r.status]))
@@ -417,10 +425,10 @@ export default function Payroll() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Masse salariale brute', value:fmt(totalBrut),  sub:'Tous employés',                          color:'#6C47FF', icon:<DollarSign   size={18} /> },
-          { label:'Net à payer',           value:fmt(totalNet),   sub:'Après retenues',                         color:'#00D084', icon:<TrendingDown size={18} /> },
-          { label:'Bulletins générés',     value:`${generated}/${records.length}`,sub:`${records.length - generated} restants`, color:'#F0A500', icon:<FileText     size={18} /> },
-          { label:'Bulletins payés',       value:`${paid}/${records.length}`,     sub:`${records.length - paid} non payés`,     color:'#00B8FF', icon:<CheckCircle  size={18} /> },
+          { label:lang === 'en' ? 'Gross payroll' : lang === 'es' ? 'Nómina bruta' : lang === 'it' ? 'Massa salariale lorda' : 'Masse salariale brute', value:fmt(totalBrut),  sub:lang === 'en' ? 'All employees' : lang === 'es' ? 'Todos empleados' : lang === 'it' ? 'Tutti dipendenti' : 'Tous employés',                          color:'#6C47FF', icon:<DollarSign   size={18} /> },
+          { label:lang === 'en' ? 'Net payable' : lang === 'es' ? 'Neto a pagar' : lang === 'it' ? 'Netto da pagare' : 'Net à payer',           value:fmt(totalNet),   sub:lang === 'en' ? 'After deductions' : lang === 'es' ? 'Tras deducciones' : lang === 'it' ? 'Dopo detrazioni' : 'Après retenues',                         color:'#00D084', icon:<TrendingDown size={18} /> },
+          { label:lang === 'en' ? 'Payslips generated' : lang === 'es' ? 'Nóminas generadas' : lang === 'it' ? 'Buste paga generate' : 'Bulletins générés',     value:`${generated}/${records.length}`,sub:`${records.length - generated} ${lang === 'en' ? 'remaining' : lang === 'es' ? 'restantes' : lang === 'it' ? 'rimanenti' : 'restants'}`, color:'#F0A500', icon:<FileText     size={18} /> },
+          { label:lang === 'en' ? 'Paid payslips' : lang === 'es' ? 'Nóminas pagadas' : lang === 'it' ? 'Buste paga pagate' : 'Bulletins payés',       value:`${paid}/${records.length}`,     sub:`${records.length - paid} ${lang === 'en' ? 'unpaid' : lang === 'es' ? 'sin pagar' : lang === 'it' ? 'non pagate' : 'non payés'}`,     color:'#00B8FF', icon:<CheckCircle  size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card" style={{ background:`linear-gradient(135deg,${k.color}18,${k.color}06)`, border:`1px solid ${k.color}28` }}>
             <div className="kpi-icon-w" style={{ color:k.color, background:`${k.color}20` }}>{k.icon}</div>
@@ -457,12 +465,12 @@ export default function Payroll() {
               return [r.employee, r.role, r.baseSalary, r.bonus, r.overtime, r.deductions, r.absences, net, r.status]
             })
           )
-          toast.success('📊 Export CSV téléchargé !')
+          toast.success(lang === 'en' ? '📊 CSV export downloaded!' : lang === 'es' ? '📊 ¡Exportación CSV descargada!' : lang === 'it' ? '📊 Esportazione CSV scaricata!' : '📊 Export CSV téléchargé !')
         }}>
           <Download size={13} /> Export CSV
         </button>
         <button className="btn btn-primary btn-sm gap-1.5" onClick={generatePayroll}>
-          <Zap size={13} /> Générer la paie du mois
+          <Zap size={13} /> {lang === 'en' ? 'Generate monthly payroll' : lang === 'es' ? 'Generar nómina del mes' : lang === 'it' ? 'Genera busta paga del mese' : 'Générer la paie du mois'}
         </button>
       </div>
 
@@ -474,16 +482,16 @@ export default function Payroll() {
         </div>
         {filtered.length === 0 ? (
           <div style={{ textAlign:'center', padding:'28px 0', color:'var(--text3)', fontSize:13 }}>
-            Aucun bulletin pour {month}
+            {lang === 'en' ? `No payslips for ${month}` : lang === 'es' ? `Sin nóminas para ${month}` : lang === 'it' ? `Nessuna busta paga per ${month}` : `Aucun bulletin pour ${month}`}
           </div>
         ) : (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th scope="col">Employé</th><th scope="col">Poste</th><th scope="col">Base</th>
-                  <th scope="col">Primes</th><th scope="col">Heures sup.</th><th scope="col">Retenues</th>
-                  <th scope="col">Absences</th><th scope="col">NET</th><th scope="col">Statut</th><th scope="col">Actions</th>
+                  <th scope="col">{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</th><th scope="col">{lang === 'en' ? 'Role' : lang === 'es' ? 'Puesto' : lang === 'it' ? 'Ruolo' : 'Poste'}</th><th scope="col">{lang === 'en' ? 'Base' : lang === 'es' ? 'Base' : lang === 'it' ? 'Base' : 'Base'}</th>
+                  <th scope="col">{lang === 'en' ? 'Bonuses' : lang === 'es' ? 'Primas' : lang === 'it' ? 'Premi' : 'Primes'}</th><th scope="col">{lang === 'en' ? 'Overtime' : lang === 'es' ? 'Horas extra' : lang === 'it' ? 'Straordinari' : 'Heures sup.'}</th><th scope="col">{lang === 'en' ? 'Deductions' : lang === 'es' ? 'Deducciones' : lang === 'it' ? 'Detrazioni' : 'Retenues'}</th>
+                  <th scope="col">{lang === 'en' ? 'Absences' : lang === 'es' ? 'Ausencias' : lang === 'it' ? 'Assenze' : 'Absences'}</th><th scope="col">NET</th><th scope="col">{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</th><th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -514,7 +522,7 @@ export default function Payroll() {
                     </td>
                     <td className="td-num" style={{ color:'var(--acc2)', fontSize:13 }}>{fmt(calcNet(r))}</td>
                     <td>
-                      <span className={`badge ${STATUS_CFG[r.status].cls}`}>{STATUS_CFG[r.status].label}</span>
+                      <span className={`badge ${STATUS_CFG[r.status].cls}`}>{statusLabel(r.status, lang)}</span>
                     </td>
                     <td>
                       <div style={{ display:'flex', gap:5 }}>
@@ -526,7 +534,7 @@ export default function Payroll() {
                             <Check size={11} /> Payer
                           </button>
                         )}
-                        <button className="mini-btn gap-1" onClick={() => { printBulletin(r); toast.success('📄 PDF ouvert !') }}>
+                        <button className="mini-btn gap-1" onClick={() => { printBulletin(r); toast.success(lang === 'en' ? '📄 PDF opened!' : lang === 'es' ? '📄 ¡PDF abierto!' : lang === 'it' ? '📄 PDF aperto!' : '📄 PDF ouvert !') }}>
                           <Download size={11} />
                         </button>
                       </div>

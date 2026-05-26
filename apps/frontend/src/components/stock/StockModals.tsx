@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { printProductLabels } from '@/utils/export'
 import ViewField from '@/components/ui/ViewField'
-import { type ProductItem } from '@/components/stock/stockShared'
+import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -117,9 +117,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <ViewField label="SKU" value={form.sku||'—'} editing={productEditMode}>
                     <input className="input text-sm" placeholder="PRD-001" value={form.sku} onChange={e => setForm(f => ({...f, sku:e.target.value}))} />
                   </ViewField>
-                  <ViewField label="Catégorie" value={form.category} editing={productEditMode}>
+                  <ViewField label={lang === 'en' ? 'Category' : lang === 'es' ? 'Categoría' : lang === 'it' ? 'Categoria' : 'Catégorie'} value={stockCatLabel(form.category, lang)} editing={productEditMode}>
                     <select className="input text-sm" value={form.category} onChange={e => setForm(f => ({...f, category:e.target.value}))}>
-                      {categories.map(c => <option key={c.id}>{c.icon} {c.name}</option>)}
+                      {categories.map(c => <option key={c.id} value={c.name}>{c.icon} {stockCatLabel(c.name, lang)}</option>)}
                     </select>
                   </ViewField>
                 </div>

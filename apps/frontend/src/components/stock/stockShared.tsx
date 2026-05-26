@@ -14,6 +14,34 @@ export const CATEGORIES_INIT = [
   { id:6, name:'Conserves',  color:'#A78BFA', icon:'🍅', productsCount:2, description:'Tomates, sardines, thon...' },
 ]
 
+// ─── Libellés catégories statiques i18n ─────
+// Traduit UNIQUEMENT les catégories prédéfinies de l'interface.
+// Les catégories/produits saisis par le commerçant passent inchangés (fallback).
+export const STOCK_CATS_T: Record<string, Record<string, string>> = {
+  'Céréales':   { fr:'Céréales',   en:'Cereals',      es:'Cereales',    it:'Cereali'    },
+  'Corps gras': { fr:'Corps gras', en:'Oils & Fats',  es:'Aceites',     it:'Grassi'     },
+  'Épicerie':   { fr:'Épicerie',   en:'Grocery',      es:'Comestibles', it:'Drogheria'  },
+  'Hygiène':    { fr:'Hygiène',    en:'Hygiene',      es:'Higiene',     it:'Igiene'     },
+  'Laitiers':   { fr:'Laitiers',   en:'Dairy',        es:'Lácteos',     it:'Latticini'  },
+  'Conserves':  { fr:'Conserves',  en:'Canned goods', es:'Conservas',   it:'Conserve'   },
+  'Boissons':   { fr:'Boissons',   en:'Drinks',       es:'Bebidas',     it:'Bevande'    },
+  'Condiments': { fr:'Condiments', en:'Condiments',   es:'Condimentos', it:'Condimenti' },
+}
+export const stockCatLabel = (name: string, lang: string) =>
+  STOCK_CATS_T[name]?.[lang] ?? name
+
+// Descriptions des catégories prédéfinies (fallback pour les catégories custom)
+export const STOCK_CAT_DESC_T: Record<string, Record<string, string>> = {
+  'Riz, farine, semoule...':     { fr:'Riz, farine, semoule...',     en:'Rice, flour, semolina...',  es:'Arroz, harina, sémola...',  it:'Riso, farina, semolino...'  },
+  'Huiles, beurre de karité...': { fr:'Huiles, beurre de karité...', en:'Oils, shea butter...',      es:'Aceites, manteca karité...',it:'Oli, burro di karité...'    },
+  'Sucre, café, condiments...':  { fr:'Sucre, café, condiments...',  en:'Sugar, coffee, condiments...',es:'Azúcar, café, condimentos...',it:'Zucchero, caffè, condimenti...' },
+  'Savons, détergents...':       { fr:'Savons, détergents...',       en:'Soaps, detergents...',      es:'Jabones, detergentes...',   it:'Saponi, detergenti...'      },
+  'Lait, fromage, yaourt...':    { fr:'Lait, fromage, yaourt...',    en:'Milk, cheese, yogurt...',   es:'Leche, queso, yogur...',    it:'Latte, formaggio, yogurt...'},
+  'Tomates, sardines, thon...':  { fr:'Tomates, sardines, thon...',  en:'Tomatoes, sardines, tuna...',es:'Tomates, sardinas, atún...',it:'Pomodori, sardine, tonno...'},
+}
+export const stockCatDesc = (desc: string, lang: string) =>
+  STOCK_CAT_DESC_T[desc]?.[lang] ?? desc
+
 export function statusOf(stock: number, threshold: number) {
   if (stock === 0)        return { label: t('status_out'), cls: 'badge-red'   }
   if (stock <= threshold) return { label: t('status_low'), cls: 'badge-amber' }

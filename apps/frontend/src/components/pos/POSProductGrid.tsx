@@ -1,6 +1,6 @@
 import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History } from 'lucide-react'
 import { t } from '@/stores/appStore'
-import { CATS, type PosProduct, type CartItem } from '@/components/pos/posShared'
+import { CATS, catLabel, type PosProduct, type CartItem } from '@/components/pos/posShared'
 
 interface POSProductGridProps {
   posTab: 'pos' | 'history'; setPosTab: (v: any) => void; fetchHistory: () => void
@@ -96,7 +96,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                     color: activeCat === c.id ? '#fff' : 'var(--text2)',
                     boxShadow: activeCat === c.id ? '0 4px 14px rgba(91,78,232,.35)' : 'none',
                   }}
-                >{c.id === 'all' ? t('pos_all') : c.label}</button>
+                >{catLabel(c.id, lang)}</button>
               ))}
             </div>
           )}
@@ -137,9 +137,9 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
           {/* Barre type client + remise */}
           {posTab === 'pos' && <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
             {([
-              { id:'retail',    label:'Détail'   },
-              { id:'wholesale', label:'Grossiste' },
-              { id:'semi',      label:'Demi-gros' },
+              { id:'retail',    label: lang === 'en' ? 'Retail'         : lang === 'es' ? 'Minorista'      : lang === 'it' ? 'Dettaglio'      : 'Détail'    },
+              { id:'wholesale', label: lang === 'en' ? 'Wholesaler'     : lang === 'es' ? 'Mayorista'      : lang === 'it' ? 'Grossista'      : 'Grossiste' },
+              { id:'semi',      label: lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayorista' : lang === 'it' ? 'Semi-ingrosso' : 'Demi-gros' },
             ] as { id:'retail'|'wholesale'|'semi'; label:string }[]).map(ct => (
               <button key={ct.id} onClick={() => setClientType(ct.id)} style={{
                 padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:600,
@@ -163,8 +163,8 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
               display:'flex', alignItems:'center', gap:6,
             }}>
               <Tag size={12} /> {discount
-                ? `Remise: ${discount.type === 'percent' ? discount.value + ' %' : fmt(discount.value)}`
-                : 'Appliquer une remise'}
+                ? `${lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'}: ${discount.type === 'percent' ? discount.value + ' %' : fmt(discount.value)}`
+                : (lang === 'en' ? 'Apply discount' : lang === 'es' ? 'Aplicar descuento' : lang === 'it' ? 'Applica sconto' : 'Appliquer une remise')}
             </button>
             {discount && (
               <button onClick={() => setDiscount(null)} style={{
@@ -172,10 +172,10 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                 background:'rgba(232,64,74,.1)', border:'1px solid rgba(232,64,74,.2)',
                 color:'var(--danger)', cursor:'pointer', fontFamily:'var(--font)',
                 display:'flex', alignItems:'center', gap:4,
-              }}><X size={11} /> Annuler remise</button>
+              }}><X size={11} /> {lang === 'en' ? 'Clear discount' : lang === 'es' ? 'Quitar descuento' : lang === 'it' ? 'Rimuovi sconto' : 'Annuler remise'}</button>
             )}
             <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
-              <Tag size={11} /> {filtered.filter(p => p.promotion).length} promotions actives
+              <Tag size={11} /> {filtered.filter(p => p.promotion).length} {lang === 'en' ? 'active promotions' : lang === 'es' ? 'promociones activas' : lang === 'it' ? 'promozioni attive' : 'promotions actives'}
             </div>
           </div>}
 

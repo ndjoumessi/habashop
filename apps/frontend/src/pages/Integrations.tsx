@@ -136,6 +136,19 @@ const INTEGRATIONS_LIST: Integration[] = [
   },
 ]
 
+// Descriptions des services i18n (par id d'intégration)
+const INTEGRATION_DESC_T: Record<string, Record<string, string>> = {
+  anthropic:  { fr:'Assistant IA et analyses intelligentes',             en:'AI assistant and smart analytics',                es:'Asistente IA y análisis inteligentes',               it:'Assistente IA e analisi intelligenti' },
+  twilio:     { fr:'Envoi de tickets et marketing WhatsApp',             en:'WhatsApp receipts and marketing',                 es:'Tickets y marketing por WhatsApp',                   it:'Ticket e marketing WhatsApp' },
+  resend:     { fr:'Emails transactionnels — bienvenue, rappels, rapports', en:'Transactional emails — welcome, reminders, reports', es:'Emails transaccionales — bienvenida, recordatorios, informes', it:'Email transazionali — benvenuto, promemoria, report' },
+  googlemaps: { fr:'Autocomplete adresses et carte clients',             en:'Address autocomplete and customer map',           es:'Autocompletado de direcciones y mapa clientes',      it:'Completamento indirizzi e mappa clienti' },
+  railway:    { fr:'Hébergement backend PostgreSQL + Node.js',           en:'Backend hosting PostgreSQL + Node.js',            es:'Alojamiento backend PostgreSQL + Node.js',           it:'Hosting backend PostgreSQL + Node.js' },
+  vercel:     { fr:'Déploiement frontend React + CDN global',            en:'Frontend deployment React + global CDN',          es:'Despliegue frontend React + CDN global',             it:'Deploy frontend React + CDN globale' },
+  prisma:     { fr:'Accès base de données PostgreSQL',                   en:'PostgreSQL database access',                      es:'Acceso base de datos PostgreSQL',                    it:'Accesso database PostgreSQL' },
+}
+const integrationDesc = (itg: Integration, lang: string) =>
+  INTEGRATION_DESC_T[itg.id]?.[lang] ?? itg.desc
+
 export default function Integrations() {
   const { lang } = useAppStore()
 
@@ -309,7 +322,7 @@ export default function Integrations() {
                 </div>
 
                 {/* Description */}
-                <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, margin:'0 0 12px' }}>{itg.desc}</p>
+                <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, margin:'0 0 12px' }}>{integrationDesc(itg, lang)}</p>
 
                 {/* Stats API */}
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:10 }}>

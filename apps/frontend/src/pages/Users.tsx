@@ -31,6 +31,41 @@ const PERMISSIONS: Record<Role, string[]> = {
   HR:         ['RH','Planning','Paie'],
 }
 
+// Libellés des modules i18n (par nom FR, comme la sidebar)
+const MODULE_LABELS_T: Record<string, Record<string, string>> = {
+  'Dashboard':    { fr:'Dashboard',    en:'Dashboard',  es:'Panel',          it:'Dashboard'     },
+  'POS':          { fr:'POS',          en:'POS',        es:'POS',            it:'POS'           },
+  'Stock':        { fr:'Stock',        en:'Stock',      es:'Stock',          it:'Stock'         },
+  'Commandes':    { fr:'Commandes',    en:'Orders',     es:'Pedidos',        it:'Ordini'        },
+  'Fournisseurs': { fr:'Fournisseurs', en:'Suppliers',  es:'Proveedores',    it:'Fornitori'     },
+  'Clients':      { fr:'Clients',      en:'Customers',  es:'Clientes',       it:'Clienti'       },
+  'Rapports':     { fr:'Rapports',     en:'Reports',    es:'Informes',       it:'Rapporti'      },
+  'RH':           { fr:'RH',           en:'HR',         es:'RR.HH.',         it:'HR'            },
+  'Planning':     { fr:'Planning',     en:'Schedule',   es:'Planificación',  it:'Pianificazione'},
+  'Paie':         { fr:'Paie',         en:'Payroll',    es:'Nómina',         it:'Busta paga'    },
+  'Dépenses':     { fr:'Dépenses',     en:'Expenses',   es:'Gastos',         it:'Spese'         },
+  'Prévisions':   { fr:'Prévisions',   en:'Forecasts',  es:'Previsiones',    it:'Previsioni'    },
+  'Utilisateurs': { fr:'Utilisateurs', en:'Users',      es:'Usuarios',       it:'Utenti'        },
+  'Activité':     { fr:'Activité',     en:'Activity',   es:'Actividad',      it:'Attività'      },
+  'Paramètres':   { fr:'Paramètres',   en:'Settings',   es:'Configuración',  it:'Impostazioni'  },
+}
+const READONLY_T: Record<string, string> = { fr:'lecture', en:'read-only', es:'lectura', it:'lettura' }
+const moduleLabel = (mod: string, lang: string) => {
+  const ro = mod.match(/^(.*?)\s*\(lecture\)$/)
+  if (ro) return `${MODULE_LABELS_T[ro[1]]?.[lang] ?? ro[1]} (${READONLY_T[lang] ?? 'lecture'})`
+  return MODULE_LABELS_T[mod]?.[lang] ?? mod
+}
+
+// Descriptions des rôles i18n
+const ROLE_DESC_T: Record<Role, Record<string, string>> = {
+  ADMIN:      { fr:'Accès total à tous les modules', en:'Full access to all modules',      es:'Acceso total a todos los módulos',   it:'Accesso totale a tutti i moduli' },
+  MANAGER:    { fr:'Tous modules sauf utilisateurs', en:'All modules except users',         es:'Todos los módulos excepto usuarios', it:'Tutti i moduli tranne utenti' },
+  CASHIER:    { fr:'POS uniquement',                 en:'POS only',                         es:'Solo POS',                           it:'Solo POS' },
+  ACCOUNTANT: { fr:'Ventes, dépenses, rapports',     en:'Sales, expenses, reports',         es:'Ventas, gastos, informes',          it:'Vendite, spese, rapporti' },
+  HR:         { fr:'RH, planning, paie',             en:'HR, schedule, payroll',            es:'RR.HH., planificación, nómina',      it:'HR, pianificazione, busta paga' },
+}
+const roleDesc = (role: Role, lang: string) => ROLE_DESC_T[role]?.[lang] ?? ROLE_CONFIG[role].desc
+
 const AVATAR_COLORS: Record<Role, string> = {
   ADMIN:      '#6C47FF',
   MANAGER:    '#FF9500',
@@ -173,7 +208,7 @@ export default function Users() {
                 <RoleIcon size={15} style={{ color:cfg.color, flexShrink:0 }} />
                 <div>
                   <div className="text-xs font-bold" style={{ color:'var(--text)' }}>{ROLE_LABELS[role]}</div>
-                  <div className="text-xs" style={{ color:'var(--text3)' }}>{cfg.desc}</div>
+                  <div className="text-xs" style={{ color:'var(--text3)' }}>{roleDesc(role, lang)}</div>
                 </div>
                 <span className={`badge ${cfg.cls} ml-auto`}>{users.filter(u => u.role === role).length}</span>
               </div>
@@ -187,7 +222,7 @@ export default function Users() {
             </p>
             <div className="flex flex-wrap gap-2">
               {PERMISSIONS[showPerms].map(p => (
-                <span key={p} className="badge badge-teal">{p}</span>
+                <span key={p} className="badge badge-teal">{moduleLabel(p, lang)}</span>
               ))}
             </div>
           </div>
@@ -207,7 +242,7 @@ export default function Users() {
             value={roleFilter} onChange={e => setRoleFilter(e.target.value as Role | '')}>
             <option value="">{lang === 'en' ? 'All roles' : lang === 'es' ? 'Todos los roles' : lang === 'it' ? 'Tutti i ruoli' : 'Tous les rôles'}</option>
             {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
-              <option key={r} value={r}>{ROLE_CONFIG[r].label}</option>
+              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
             ))}
           </select>
         </div>
@@ -403,7 +438,7 @@ export default function Users() {
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Rôle</label>
                   <select aria-label="Rôle" className="input text-sm" value={editForm.role} onChange={e => setEditForm(f => ({...f, role:e.target.value as Role}))}>
                     {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
-                      <option key={r} value={r}>{ROLE_CONFIG[r].label}</option>
+                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                     ))}
                   </select>
                 </div>
@@ -435,7 +470,7 @@ export default function Users() {
                     {t('users_permissions')} — {ROLE_LABELS[editForm.role]}
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {PERMISSIONS[editForm.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:10 }}>{p}</span>)}
+                    {PERMISSIONS[editForm.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:10 }}>{moduleLabel(p, lang)}</span>)}
                   </div>
                 </div>
               )}
@@ -476,7 +511,7 @@ export default function Users() {
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Rôle</label>
                   <select aria-label="Rôle" className="input text-sm" value={form.role} onChange={e => setForm(f => ({...f, role:e.target.value as Role}))}>
                     {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
-                      <option key={r} value={r}>{ROLE_CONFIG[r].label}</option>
+                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                     ))}
                   </select>
                 </div>
@@ -510,7 +545,7 @@ export default function Users() {
                     {t('users_permissions')} — {ROLE_LABELS[form.role]}
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {PERMISSIONS[form.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:10 }}>{p}</span>)}
+                    {PERMISSIONS[form.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:10 }}>{moduleLabel(p, lang)}</span>)}
                   </div>
                 </div>
               )}

@@ -29,6 +29,11 @@ export default function Goals() {
   const fmt = useFormatAmount()
   const { symbol: currencySymbol } = useCurrencyInfo()
 
+  const targetMonth = new Date().toLocaleDateString(
+    lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',
+    { month: 'long', year: 'numeric' }
+  )
+
   const [goals, setGoals] = useState<Goal[]>(() => {
     try {
       const saved = localStorage.getItem('habashop-goals')
@@ -60,7 +65,7 @@ export default function Goals() {
 
   const openModal = (goal: Goal | null) => {
     setEditGoal(goal)
-    setGoalForm(goal ? { ...goal } : { ...BLANK_GOAL, id: Date.now().toString() })
+    setGoalForm(goal ? { ...goal } : { ...BLANK_GOAL, id: Date.now().toString(), period: targetMonth })
     setShowEditModal(true)
   }
 
@@ -354,7 +359,7 @@ export default function Goals() {
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
                     {lang === 'en' ? 'Period' : lang === 'es' ? 'Período' : lang === 'it' ? 'Periodo' : 'Période'}
                   </label>
-                  <input className="input" placeholder="Mai 2026" value={goalForm.period} onChange={e => setGoalForm(f => ({...f, period:e.target.value}))} />
+                  <input className="input" placeholder={targetMonth} value={goalForm.period} onChange={e => setGoalForm(f => ({...f, period:e.target.value}))} />
                 </div>
               </div>
 
@@ -367,10 +372,10 @@ export default function Goals() {
                     }
                     if (editGoal) {
                       setGoals(prev => prev.map(g => g.id === editGoal.id ? goalForm : g))
-                      toast.success('Objectif modifié')
+                      toast.success(lang === 'en' ? 'Goal updated' : lang === 'es' ? 'Objetivo modificado' : lang === 'it' ? 'Obiettivo modificato' : 'Objectif modifié')
                     } else {
                       setGoals(prev => [...prev, goalForm])
-                      toast.success('Objectif créé')
+                      toast.success(lang === 'en' ? 'Goal created' : lang === 'es' ? 'Objetivo creado' : lang === 'it' ? 'Obiettivo creato' : 'Objectif créé')
                     }
                     setShowEditModal(false)
                   }}>
@@ -381,7 +386,7 @@ export default function Goals() {
                     onClick={() => {
                       setGoals(prev => prev.filter(g => g.id !== editGoal.id))
                       setShowEditModal(false)
-                      toast.success('Objectif supprimé')
+                      toast.success(lang === 'en' ? 'Goal deleted' : lang === 'es' ? 'Objetivo eliminado' : lang === 'it' ? 'Obiettivo eliminato' : 'Objectif supprimé')
                     }}>
                     <Trash2 size={12}/>
                   </button>

@@ -8,6 +8,19 @@ export const CATS = [
   { id: 'canned',  label: 'Conserves' },
 ]
 
+// ─── Libellés catégories i18n (par id) ──────
+export const CAT_LABELS: Record<string, Record<string, string>> = {
+  all:     { fr: 'Tous',       en: 'All',         es: 'Todo',        it: 'Tutto'     },
+  cereals: { fr: 'Céréales',   en: 'Cereals',     es: 'Cereales',    it: 'Cereali'   },
+  fat:     { fr: 'Corps gras', en: 'Oils & Fats', es: 'Grasas',      it: 'Grassi'    },
+  grocery: { fr: 'Épicerie',   en: 'Grocery',     es: 'Comestibles', it: 'Drogheria' },
+  hygiene: { fr: 'Hygiène',    en: 'Hygiene',     es: 'Higiene',     it: 'Igiene'    },
+  dairy:   { fr: 'Laitiers',   en: 'Dairy',       es: 'Lácteos',     it: 'Latticini' },
+  canned:  { fr: 'Conserves',  en: 'Canned',      es: 'Conservas',   it: 'Conserve'  },
+}
+export const catLabel = (id: string, lang: string) =>
+  CAT_LABELS[id]?.[lang] ?? CAT_LABELS[id]?.fr ?? id
+
 export const PRODUCTS = [
   { id:1,  name:'Riz parfumé 5kg',        price:4500,  priceWholesale:3800, priceSemiWholesale:4100, cat:'cereals', emoji:'🌾', stock:120, promotion:false, promotionPrice:0,    promotionEnd:'' },
   { id:2,  name:'Huile palme 1L',          price:1800,  priceWholesale:1400, priceSemiWholesale:1600, cat:'fat',     emoji:'🫙', stock:18,  promotion:true,  promotionPrice:1500, promotionEnd:'2026-05-31' },
