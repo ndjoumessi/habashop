@@ -17,7 +17,7 @@
         "NSCameraUsageDescription": "Scanner les codes-barres des produits",
         "NSFaceIDUsageDescription": "Connexion rapide et sécurisée"
       },
-      "icon": "./assets/icon.png"
+      "icon": "./assets/icon-ios.png"
     },
     "android": {
       "package": "com.habashop.app",
@@ -60,7 +60,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/notification-icon.png",
           "color": "#6C47FF"
         }
       ]
