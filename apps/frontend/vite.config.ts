@@ -13,6 +13,13 @@ export default defineConfig({
       manifest: false, // use public/manifest.json
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        // Ne jamais servir index.html (navigateFallback) pour un fichier (asset/chunk) :
+        // évite l'erreur "Expected a JS module but got text/html" quand un vieux hash
+        // n'existe plus après un redéploiement.
+        navigateFallbackDenylist: [/^\/assets\//, /\.[a-zA-Z0-9]+$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/habashop-production\.up\.railway\.app\/api\//,
