@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { ExternalLink, RotateCw, Globe } from 'lucide-react'
 import toast from 'react-hot-toast'
+import ResendMonitor from '@/components/integrations/ResendMonitor'
 
 type PingState = 'checking' | 'ok' | 'slow' | 'error'
 
@@ -138,6 +139,7 @@ const INTEGRATIONS_LIST: Integration[] = [
 export default function Integrations() {
   const { lang } = useAppStore()
 
+  const [showResendMonitor, setShowResendMonitor] = useState(false)
   const [pingStatus, setPingStatus]   = useState<Record<string, PingState>>({})
   const [pingLatency, setPingLatency] = useState<Record<string, number>>({})
 
@@ -441,6 +443,46 @@ export default function Integrations() {
                 <div style={{ fontSize:10, color:'var(--text3)', marginTop:3 }}>{stat.label}</div>
               </div>
             ))}
+          </div>
+
+          {/* ── Monitoring temps réel (accordéon, fermé par défaut) ── */}
+          <div style={{ marginTop:12 }}>
+            <button
+              type="button"
+              onClick={() => setShowResendMonitor(v => !v)}
+              aria-expanded={showResendMonitor}
+              aria-label={lang === 'fr' ? 'Afficher le monitoring temps réel' : 'Toggle real-time monitoring'}
+              style={{
+                width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+                padding:'10px 12px',
+                background: showResendMonitor ? 'rgba(108,71,255,.08)' : 'var(--bg3)',
+                border:`1px solid ${showResendMonitor ? 'rgba(108,71,255,.2)' : 'var(--border)'}`,
+                borderRadius:10, cursor:'pointer', fontFamily:'var(--font)',
+                color:'var(--text2)', fontSize:12, fontWeight:700, transition:'all .15s ease',
+              }}
+            >
+              <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+                {lang === 'fr' ? 'Monitoring temps réel' : 'Real-time monitoring'}
+                <span style={{
+                  padding:'1px 7px', borderRadius:99, fontSize:9, fontWeight:800,
+                  background:'rgba(0,208,132,.1)', color:'var(--acc2)',
+                  border:'1px solid rgba(0,208,132,.2)', textTransform:'uppercase', letterSpacing:'.3px',
+                }}>live</span>
+              </div>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                style={{ transform: showResendMonitor ? 'rotate(180deg)' : 'rotate(0)', transition:'transform .2s ease' }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {showResendMonitor && (
+              <div style={{ marginTop:8, padding:'14px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
+                <ResendMonitor lang={lang} />
+              </div>
+            )}
           </div>
         </div>
       </div>
