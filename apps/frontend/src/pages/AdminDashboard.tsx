@@ -5,15 +5,20 @@ import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { confirm } from '@/lib/confirm'
 import toast from 'react-hot-toast'
+import EmptyState from '@/components/ui/EmptyState'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Shield, Store, Users, CreditCard, Wallet, Package, TrendingUp,
   Search, X, Plus, ArrowLeft, ChevronRight, Layers, BarChart3,
-  LayoutDashboard, Inbox, Check,
+  LayoutDashboard, Inbox, Check, RefreshCw, Mail, Calendar,
 } from 'lucide-react'
+
+const APP_VERSION = '2.6.0'
 
 type Tenant = {
   id: string; name: string; plan: string; currency: string; country: string
   vatRate?: number; createdAt: string
+  status?: string; isActive?: boolean; email?: string
   _count?: { users: number; products: number; sales: number }
 }
 
@@ -25,9 +30,13 @@ const PLAN_COLOR: Record<string, string> = {
   free: 'var(--text3)', trial: 'var(--warn)', starter: 'var(--acc2)',
   pro: 'var(--p2)', business: 'var(--p2)', enterprise: 'var(--p)',
 }
+const PAID_PLANS = ['pro', 'business', 'enterprise']
 const planKey = (p?: string) => (p || 'free').toLowerCase()
 const planPrice = (p?: string) => PLAN_PRICE[planKey(p)] ?? 0
 const planColor = (p?: string) => PLAN_COLOR[planKey(p)] ?? 'var(--text3)'
+// Teinte translucide dérivée d'une couleur (token CSS) — respecte les 7 thèmes.
+const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
+const darken = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, #000)`
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -38,6 +47,7 @@ export default function AdminDashboard() {
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState<'name' | 'plan' | 'users' | 'products' | 'sales' | 'createdAt'>('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
@@ -47,12 +57,19 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'requests'>('overview')
   const [planRequests, setPlanRequests] = useState<any[]>([])
 
-  useEffect(() => {
-    Promise.all([adminApi.tenants(), adminApi.stats(), adminApi.planRequests().catch(() => [])])
-      .then(([t, s, r]) => { setTenants(t); setStats(s); setPlanRequests(r) })
-      .catch(() => toast.error(i('Accès refusé — SUPER_ADMIN requis', 'Access denied — SUPER_ADMIN required', 'Acceso denegado — SUPER_ADMIN requerido', 'Accesso negato — SUPER_ADMIN richiesto')))
-      .finally(() => setLoading(false))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const loadStats = async () => {
+    setRefreshing(true)
+    try {
+      const [t, s, r] = await Promise.all([adminApi.tenants(), adminApi.stats(), adminApi.planRequests().catch(() => [])])
+      setTenants(t); setStats(s); setPlanRequests(r)
+    } catch {
+      toast.error(i('Accès refusé — SUPER_ADMIN requis', 'Access denied — SUPER_ADMIN required', 'Acceso denegado — SUPER_ADMIN requerido', 'Accesso negato — SUPER_ADMIN richiesto'))
+    } finally {
+      setLoading(false); setRefreshing(false)
+    }
+  }
+
+  useEffect(() => { loadStats() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pendingCount = planRequests.length
 
@@ -76,6 +93,8 @@ export default function AdminDashboard() {
   }
 
   const mrr = useMemo(() => tenants.reduce((s, t) => s + planPrice(t.plan), 0), [tenants])
+  const activePlans = useMemo(() => tenants.filter(t => PAID_PLANS.includes(planKey(t.plan))).length, [tenants])
+  const activeShops = useMemo(() => tenants.filter(t => t.isActive !== false && t.status !== 'suspended').length, [tenants])
 
   const planDist = useMemo(() => {
     const m: Record<string, number> = {}
@@ -122,202 +141,297 @@ export default function AdminDashboard() {
     })
   }, [tenants, query, sortKey, sortDir])
 
-  const toggleSort = (k: typeof sortKey) => {
-    if (sortKey === k) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortKey(k); setSortDir(k === 'name' || k === 'plan' ? 'asc' : 'desc') }
-  }
-  const sortArrow = (k: typeof sortKey) => (sortKey === k ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '')
-
   const PlanBadge = ({ plan }: { plan: string }) => (
-    <span style={{ background: 'color-mix(in srgb,' + planColor(plan) + ' 14%, transparent)', color: planColor(plan), borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700, textTransform: 'capitalize' }}>{plan}</span>
+    <span style={{ background: mix(planColor(plan), 14), color: planColor(plan), borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700, textTransform: 'capitalize' }}>{plan}</span>
   )
 
+  const statusCfg = (t: Tenant): { h: string; label: string } => {
+    const st = t.status ?? (t.isActive === false ? 'suspended' : 'active')
+    if (st === 'active') return { h: 'var(--acc2)', label: i('Actif', 'Active', 'Activo', 'Attivo') }
+    if (st === 'trial') return { h: 'var(--warn)', label: i('Essai', 'Trial', 'Prueba', 'Prova') }
+    if (st === 'suspended') return { h: 'var(--danger)', label: i('Suspendu', 'Suspended', 'Suspendido', 'Sospeso') }
+    if (st === 'pending_payment') return { h: 'var(--acc)', label: i('Paiement', 'Payment', 'Pago', 'Pagamento') }
+    return { h: 'var(--text3)', label: st }
+  }
+
+  // KPIs globaux (données réelles uniquement — pas de tendances fictives)
   const kpis = stats ? [
-    { label: i('BOUTIQUES', 'SHOPS', 'TIENDAS', 'NEGOZI'), value: stats.totalTenants, color: 'var(--p2)', icon: <Store size={18} /> },
-    { label: i('UTILISATEURS', 'USERS', 'USUARIOS', 'UTENTI'), value: stats.totalUsers, color: 'var(--acc2)', icon: <Users size={18} /> },
-    { label: i('TRANSACTIONS', 'TRANSACTIONS', 'TRANSACCIONES', 'TRANSAZIONI'), value: stats.totalSales, color: 'var(--acc)', icon: <CreditCard size={18} /> },
-    { label: i('CA TOTAL', 'TOTAL REVENUE', 'INGRESOS', 'RICAVI'), value: fmt(stats.totalRevenue ?? 0), color: 'var(--p2)', icon: <Wallet size={18} /> },
-    { label: i('PRODUITS', 'PRODUCTS', 'PRODUCTOS', 'PRODOTTI'), value: stats.totalProducts, color: 'var(--acc2)', icon: <Package size={18} /> },
-    { label: i('MRR ESTIMÉ', 'EST. MRR', 'MRR EST.', 'MRR STIM.'), value: fmt(mrr), color: 'var(--p)', icon: <TrendingUp size={18} /> },
+    { label: i('Boutiques actives', 'Active shops', 'Tiendas activas', 'Negozi attivi'), value: stats.totalTenants ?? 0, sub: `${activeShops} ${i('actives', 'active', 'activas', 'attivi')}`, color: 'var(--p)', icon: <Store size={18} /> },
+    { label: i('Plans payants', 'Paid plans', 'Planes de pago', 'Piani a pagamento'), value: activePlans, sub: `${i('sur', 'of', 'de', 'su')} ${stats.totalTenants ?? 0}`, color: 'var(--acc2)', icon: <CreditCard size={18} /> },
+    { label: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), value: stats.totalUsers ?? 0, sub: i('comptes', 'accounts', 'cuentas', 'account'), color: 'var(--acc3)', icon: <Users size={18} /> },
+    { label: i('Ventes totales', 'Total sales', 'Ventas totales', 'Vendite totali'), value: stats.totalSales ?? 0, sub: i('toutes boutiques', 'all shops', 'todas las tiendas', 'tutti i negozi'), color: 'var(--acc)', icon: <Package size={18} /> },
+    { label: i('CA cumulé', 'Total GMV', 'GMV total', 'GMV totale'), value: fmt(stats.totalRevenue ?? 0), sub: i('XOF cumulé', 'XOF cumulative', 'XOF acumulado', 'XOF cumulativo'), color: 'var(--acc3)', icon: <Wallet size={18} />, isStr: true },
+    { label: i('MRR estimé', 'Est. MRR', 'MRR est.', 'MRR stim.'), value: fmt(mrr), sub: i('abonnements', 'subscriptions', 'suscripciones', 'abbonamenti'), color: 'var(--p)', icon: <TrendingUp size={18} />, isStr: true },
   ] : []
+
+  const TABS = [
+    { id: 'overview' as const, label: i("Vue d'ensemble", 'Overview', 'Resumen', 'Panoramica'), icon: <LayoutDashboard size={15} />, count: null as number | null, alert: false },
+    { id: 'tenants' as const, label: i('Boutiques', 'Shops', 'Tiendas', 'Negozi'), icon: <Store size={15} />, count: stats?.totalTenants ?? null, alert: false },
+    { id: 'requests' as const, label: i('Demandes', 'Requests', 'Solicitudes', 'Richieste'), icon: <Inbox size={15} />, count: pendingCount || null, alert: pendingCount > 0 },
+  ]
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: 24 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,var(--p),var(--p2))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+      {/* ── Header enrichi ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,var(--p),var(--p2))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, boxShadow: '0 4px 14px rgba(108,71,255,.3)' }}>
             <Shield size={22} />
           </div>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0 }}>HabaShop Admin</h1>
-            <div style={{ fontSize: 12, color: 'var(--text3)' }}>{i('Console de gestion multi-boutiques', 'Multi-shop management console', 'Consola de gestión multi-tienda', 'Console di gestione multi-negozio')}</div>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-.5px' }}>HabaShop Admin</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.25)', color: 'var(--acc2)' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)' }} />
+                {i('Système opérationnel', 'System operational', 'Sistema operativo', 'Sistema operativo')}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>v{APP_VERSION}</span>
+            </div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="mini-btn" onClick={() => navigate('/app/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ArrowLeft size={14} /> {i('Retour', 'Back', 'Volver', 'Indietro')}</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={loadStats} disabled={refreshing} aria-label={i('Actualiser les statistiques', 'Refresh stats', 'Actualizar estadísticas', 'Aggiorna statistiche')} title={i('Actualiser', 'Refresh', 'Actualizar', 'Aggiorna')}
+            style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)', cursor: refreshing ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s ease' }}>
+            <RefreshCw size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : undefined }} />
+          </button>
+          <div style={{ padding: '8px 14px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Calendar size={13} /> {new Date().toLocaleDateString(lang, { day: '2-digit', month: 'short', year: 'numeric' })}
+          </div>
+          <button className="mini-btn" onClick={() => navigate('/app/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 40 }}><ArrowLeft size={14} /> {i('Retour', 'Back', 'Volver', 'Indietro')}</button>
           <button className="topbar-btn" onClick={() => setShowNewTenant(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Plus size={14} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</button>
         </div>
       </div>
 
-      {loading && <div style={{ textAlign: 'center', padding: 60, color: 'var(--text3)' }}>{i('Chargement…', 'Loading…', 'Cargando…', 'Caricamento…')}</div>}
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-        {([
-          { id: 'overview', icon: <LayoutDashboard size={14} />, label: i("Vue d'ensemble", 'Overview', 'Resumen', 'Panoramica'), urgent: false },
-          { id: 'tenants', icon: <Store size={14} />, label: i('Boutiques', 'Shops', 'Tiendas', 'Negozi'), urgent: false },
-          { id: 'requests', icon: <Inbox size={14} />, label: `${i('Demandes', 'Requests', 'Solicitudes', 'Richieste')}${pendingCount > 0 ? ` (${pendingCount})` : ''}`, urgent: pendingCount > 0 },
-        ] as const).map(tab => (
-          <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id as any)} style={{
-            padding: '8px 16px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 6,
-            background: activeTab === tab.id ? (tab.urgent ? 'rgba(255,59,92,.15)' : 'rgba(108,71,255,.15)') : 'rgba(255,255,255,.04)',
-            border: `1px solid ${activeTab === tab.id ? (tab.urgent ? 'rgba(255,59,92,.3)' : 'rgba(108,71,255,.3)') : 'rgba(255,255,255,.08)'}`,
-            cursor: 'pointer', color: activeTab === tab.id ? (tab.urgent ? 'var(--danger)' : 'var(--p3)') : 'var(--text3)',
-            fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
-          }}>{tab.icon} {tab.label}</button>
-        ))}
-      </div>
-
-      {/* KPIs */}
-      {activeTab === 'overview' && stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14, marginBottom: 20 }}>
-          {kpis.map(k => (
-            <div key={k.label} className="kpi-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'center' }}>
-                <span className="kpi-label">{k.label}</span>
-                <span style={{ color: k.color, display: 'flex' }}>{k.icon}</span>
+      {/* ── KPIs globaux (toujours visibles) ── */}
+      {stats && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10, marginBottom: 24 }}>
+          {kpis.map((k, idx) => (
+            <div key={idx} style={{ background: 'var(--card)', border: `1px solid ${mix(k.color, 22)}`, borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, transition: 'transform .15s ease, box-shadow .15s ease' }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)' }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = '' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px' }}>{k.label}</span>
+                <span style={{ width: 32, height: 32, borderRadius: 8, background: mix(k.color, 12), display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>{k.icon}</span>
               </div>
-              <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px', lineHeight: 1 }}>
+                {k.isStr ? k.value : (k.value as number).toLocaleString('fr-FR')}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text4)', fontWeight: 600 }}>{k.sub}</div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Plan distribution + Growth */}
-      {activeTab === 'overview' && tenants.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginBottom: 20 }}>
-          <div className="panel">
-            <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={15} /> {i('Répartition des plans', 'Plan distribution', 'Distribución de planes', 'Distribuzione piani')}</span></div>
-            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {planDist.map(({ plan, count }) => {
-                const pct = Math.round((count / tenants.length) * 100)
-                return (
-                  <div key={plan}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
-                      <span style={{ color: 'var(--text)', fontWeight: 700, textTransform: 'capitalize' }}>{plan} <span style={{ color: 'var(--text3)', fontWeight: 500 }}>· {fmt(planPrice(plan))}/{i('mois', 'mo', 'mes', 'mese')}</span></span>
-                      <span style={{ color: 'var(--text3)' }}>{count} ({pct}%)</span>
+      {/* ── Onglets premium ── */}
+      <div role="tablist" style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg3)', borderRadius: 12, border: '1px solid var(--border)', marginBottom: 20, overflowX: 'auto', flexWrap: 'nowrap' }}>
+        {TABS.map(tab => {
+          const isActive = activeTab === tab.id
+          return (
+            <button key={tab.id} role="tab" aria-selected={isActive} onClick={() => setActiveTab(tab.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 9, border: 'none', background: isActive ? 'var(--card)' : 'transparent', color: isActive ? 'var(--text)' : 'var(--text3)', fontSize: 12, fontWeight: isActive ? 700 : 500, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s ease', whiteSpace: 'nowrap', boxShadow: isActive ? '0 2px 8px rgba(0,0,0,.15)' : 'none', minHeight: 40, flexShrink: 0 }}>
+              <span style={{ color: isActive ? 'var(--p3)' : 'var(--text4)', display: 'flex', transition: 'color .15s' }}>{tab.icon}</span>
+              {tab.label}
+              {tab.count !== null && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 18, height: 18, borderRadius: 99, fontSize: 9, fontWeight: 800, padding: '0 5px',
+                  background: tab.alert ? 'rgba(255,59,92,.15)' : isActive ? 'rgba(108,71,255,.15)' : 'var(--bg4)',
+                  color: tab.alert ? 'var(--danger)' : isActive ? 'var(--p3)' : 'var(--text4)',
+                  border: `1px solid ${tab.alert ? 'rgba(255,59,92,.3)' : isActive ? 'rgba(108,71,255,.2)' : 'var(--border)'}` }}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Overview : graphiques ── */}
+      {activeTab === 'overview' && (
+        loading ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16 }}>
+            <Skeleton height={220} /><Skeleton height={220} />
+          </div>
+        ) : tenants.length === 0 ? (
+          <EmptyState icon="🏪" title={i('Aucune boutique', 'No shops', 'Sin tiendas', 'Nessun negozio')} message={i('Aucun tenant inscrit pour le moment.', 'No tenants registered yet.', 'Ningún inquilino registrado todavía.', 'Nessun tenant registrato.')} action={{ label: i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio'), onClick: () => setShowNewTenant(true) }} />
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16 }}>
+            <div className="panel">
+              <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={15} /> {i('Répartition des plans', 'Plan distribution', 'Distribución de planes', 'Distribuzione piani')}</span></div>
+              <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {planDist.map(({ plan, count }) => {
+                  const pct = Math.round((count / tenants.length) * 100)
+                  return (
+                    <div key={plan}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
+                        <span style={{ color: 'var(--text)', fontWeight: 700, textTransform: 'capitalize' }}>{plan} <span style={{ color: 'var(--text3)', fontWeight: 500 }}>· {fmt(planPrice(plan))}/{i('mois', 'mo', 'mes', 'mese')}</span></span>
+                        <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{count} ({pct}%)</span>
+                      </div>
+                      <div style={{ height: 8, background: 'var(--bg)', borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: planColor(plan), borderRadius: 99, transition: 'width .4s' }} />
+                      </div>
                     </div>
-                    <div style={{ height: 8, background: 'var(--bg)', borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: planColor(plan), borderRadius: 99, transition: 'width .4s' }} />
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="panel">
+              <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><BarChart3 size={15} /> {i('Nouvelles boutiques (6 mois)', 'New shops (6 months)', 'Nuevas tiendas (6 meses)', 'Nuovi negozi (6 mesi)')}</span></div>
+              <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', gap: 10, height: 160 }}>
+                {months.map(m => (
+                  <div key={m.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{m.count}</span>
+                    <div title={`${m.label}: ${m.count}`} style={{ width: '70%', height: `${(m.count / maxMonth) * 100}%`, minHeight: m.count ? 6 : 2, background: m.count ? 'linear-gradient(180deg,var(--p2),var(--p))' : 'var(--bg)', borderRadius: '6px 6px 0 0', transition: 'height .5s' }} />
+                    <span style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'capitalize' }}>{m.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      )}
+
+      {/* ── Tenants : cartes ── */}
+      {activeTab === 'tenants' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={15} /> {i('Boutiques', 'Shops', 'Tiendas', 'Negozi')} <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)' }}>({view.length})</span></span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
+                <input className="input" style={{ paddingLeft: 32, width: 200, height: 38 }} aria-label={i('Rechercher', 'Search', 'Buscar', 'Cerca')} placeholder={i('Rechercher…', 'Search…', 'Buscar…', 'Cerca…')} value={query} onChange={e => setQuery(e.target.value)} />
+              </div>
+              <select aria-label={i('Trier par', 'Sort by', 'Ordenar por', 'Ordina per')} className="input" style={{ width: 'auto', height: 38 }} value={sortKey} onChange={e => setSortKey(e.target.value as any)}>
+                <option value="createdAt">{i('Date', 'Date', 'Fecha', 'Data')}</option>
+                <option value="name">{i('Nom', 'Name', 'Nombre', 'Nome')}</option>
+                <option value="plan">Plan</option>
+                <option value="sales">{i('Ventes', 'Sales', 'Ventas', 'Vendite')}</option>
+                <option value="products">{i('Produits', 'Products', 'Productos', 'Prodotti')}</option>
+                <option value="users">{i('Users', 'Users', 'Usuarios', 'Utenti')}</option>
+              </select>
+              <button className="mini-btn" aria-label={i('Inverser le tri', 'Toggle sort direction', 'Invertir orden', 'Inverti ordine')} title={sortDir === 'asc' ? 'A→Z' : 'Z→A'} onClick={() => setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))} style={{ width: 38, height: 38, justifyContent: 'center' }}>{sortDir === 'asc' ? '↑' : '↓'}</button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 12 }}>
+              <Skeleton height={150} /><Skeleton height={150} /><Skeleton height={150} /><Skeleton height={150} />
+            </div>
+          ) : view.length === 0 ? (
+            <EmptyState icon="🏪" title={query ? i('Aucun résultat', 'No results', 'Sin resultados', 'Nessun risultato') : i('Aucune boutique', 'No shops', 'Sin tiendas', 'Nessun negozio')} message={query ? i('Aucune boutique ne correspond à votre recherche.', 'No shop matches your search.', 'Ninguna tienda coincide con tu búsqueda.', 'Nessun negozio corrisponde alla ricerca.') : i('Aucun tenant inscrit pour le moment.', 'No tenants registered yet.', 'Ningún inquilino registrado todavía.', 'Nessun tenant registrato.')} />
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 12 }}>
+              {view.map(t => {
+                const pc = planColor(t.plan)
+                const sc = statusCfg(t)
+                const initials = (t.name || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+                const open = () => setSelected(t)
+                return (
+                  <div key={t.id} role="button" tabIndex={0} aria-label={`${t.name} — ${planKey(t.plan)}`}
+                    onClick={open}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } }}
+                    style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer', transition: 'all .15s ease' }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)'; el.style.borderColor = mix(pc, 50) }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = ''; el.style.borderColor = 'var(--border)' }}>
+                    <div style={{ height: 3, background: `linear-gradient(90deg,${pc},${mix(pc, 40)})` }} />
+                    <div style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 12 }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg,${pc},${darken(pc, 70)})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff', flexShrink: 0, boxShadow: `0 4px 10px ${mix(pc, 35)}` }}>{initials}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 5 }}>{t.name}</div>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                            <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', background: mix(pc, 12), color: pc, border: `1px solid ${mix(pc, 22)}` }}>{planKey(t.plan)}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: mix(sc.h, 14), color: sc.h, border: `1px solid ${mix(sc.h, 28)}` }}>
+                              <span style={{ width: 4, height: 4, borderRadius: '50%', background: sc.h, boxShadow: sc.label === i('Actif', 'Active', 'Activo', 'Attivo') ? `0 0 5px ${sc.h}` : 'none' }} />
+                              {sc.label}
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} style={{ color: 'var(--text4)', flexShrink: 0 }} />
+                      </div>
+
+                      <div style={{ height: 1, background: 'var(--border)', margin: '0 0 10px' }} />
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, background: 'var(--border)', borderRadius: 9, overflow: 'hidden', marginBottom: 10 }}>
+                        {[
+                          { lbl: i('Ventes', 'Sales', 'Ventas', 'Vendite'), val: String(t._count?.sales ?? 0), color: 'var(--acc)' },
+                          { lbl: i('Produits', 'Products', 'Productos', 'Prodotti'), val: String(t._count?.products ?? 0), color: 'var(--p3)' },
+                          { lbl: i('Users', 'Users', 'Usuarios', 'Utenti'), val: String(t._count?.users ?? 0), color: 'var(--acc2)' },
+                        ].map((m, idx) => (
+                          <div key={idx} style={{ background: 'var(--card)', padding: '7px 8px', textAlign: 'center' }}>
+                            <div style={{ fontSize: 12, fontWeight: 900, color: m.color, fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.val}</div>
+                            <div style={{ fontSize: 8, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 1 }}>{m.lbl}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Mail size={10} style={{ color: 'var(--text4)', flexShrink: 0 }} />
+                          {t.email || `${t.country} · ${t.currency}`}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
+                          {new Date(t.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', year: '2-digit' })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )
               })}
             </div>
-          </div>
-
-          <div className="panel">
-            <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><BarChart3 size={15} /> {i('Nouvelles boutiques (6 mois)', 'New shops (6 months)', 'Nuevas tiendas (6 meses)', 'Nuovi negozi (6 mesi)')}</span></div>
-            <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', gap: 10, height: 160 }}>
-              {months.map(m => (
-                <div key={m.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>{m.count}</span>
-                  <div title={`${m.label}: ${m.count}`} style={{ width: '70%', height: `${(m.count / maxMonth) * 100}%`, minHeight: m.count ? 6 : 2, background: m.count ? 'linear-gradient(180deg,var(--p2),var(--p))' : 'var(--bg)', borderRadius: '6px 6px 0 0', transition: 'height .5s' }} />
-                  <span style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'capitalize' }}>{m.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* Tenants table */}
-      {activeTab === 'tenants' && tenants.length > 0 && (
-        <div className="panel">
-          <div className="panel-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Store size={15} /> {i('Boutiques', 'Shops', 'Tiendas', 'Negozi')} ({view.length})</span>
-            <div style={{ position: 'relative' }}>
-              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
-              <input className="input" style={{ paddingLeft: 32, width: 220, height: 34 }} aria-label="Rechercher" placeholder={i('Rechercher…', 'Search…', 'Buscar…', 'Cerca…')} value={query} onChange={e => setQuery(e.target.value)} />
-            </div>
-          </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('name')}>{i('Boutique', 'Shop', 'Tienda', 'Negozio')}{sortArrow('name')}</th>
-                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('plan')}>{i('Plan', 'Plan', 'Plan', 'Piano')}{sortArrow('plan')}</th>
-                  <th scope="col">{i('Devise', 'Currency', 'Divisa', 'Valuta')}</th>
-                  <th scope="col">{i('Pays', 'Country', 'País', 'Paese')}</th>
-                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('users')}>{i('Users', 'Users', 'Usuarios', 'Utenti')}{sortArrow('users')}</th>
-                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('products')}>{i('Produits', 'Products', 'Productos', 'Prodotti')}{sortArrow('products')}</th>
-                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('sales')}>{i('Ventes', 'Sales', 'Ventas', 'Vendite')}{sortArrow('sales')}</th>
-                  <th scope="col" style={{ cursor: 'pointer' }} onClick={() => toggleSort('createdAt')}>{i('Créée le', 'Created', 'Creada', 'Creato')}{sortArrow('createdAt')}</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {view.map(t => (
-                  <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(t)}>
-                    <td className="td-bold">{t.name}</td>
-                    <td><PlanBadge plan={planKey(t.plan)} /></td>
-                    <td>{t.currency}</td>
-                    <td>{t.country}</td>
-                    <td className="td-mono">{t._count?.users ?? 0}</td>
-                    <td className="td-mono">{t._count?.products ?? 0}</td>
-                    <td className="td-mono">{t._count?.sales ?? 0}</td>
-                    <td style={{ fontSize: 12, color: 'var(--text3)' }}>{new Date(t.createdAt).toLocaleDateString(lang)}</td>
-                    <td><ChevronRight size={16} style={{ color: 'var(--text3)' }} /></td>
-                  </tr>
-                ))}
-                {view.length === 0 && (
-                  <tr><td colSpan={9} style={{ textAlign: 'center', padding: 30, color: 'var(--text3)' }}>{i('Aucun résultat', 'No results', 'Sin resultados', 'Nessun risultato')}</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Plan requests */}
+      {/* ── Demandes de plan ── */}
       {activeTab === 'requests' && (
-        <div className="panel">
-          <div className="panel-head">
-            <span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <CreditCard size={15} /> {i('Demandes de plans en attente', 'Pending plan requests', 'Solicitudes de planes pendientes', 'Richieste piani in attesa')}
-              {pendingCount > 0 && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,59,92,.15)', color: 'var(--danger)', fontWeight: 700 }}>{pendingCount}</span>}
-            </span>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <CreditCard size={15} /> {i('Demandes de plans en attente', 'Pending plan requests', 'Solicitudes de planes pendientes', 'Richieste piani in attesa')}
+            {pendingCount > 0 && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,59,92,.15)', color: 'var(--danger)', fontWeight: 700 }}>{pendingCount}</span>}
           </div>
-          {planRequests.length === 0 ? (
-            <div style={{ padding: 48, textAlign: 'center', color: 'var(--text3)' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
-              <div style={{ fontSize: 13 }}>{i('Aucune demande en attente', 'No pending requests', 'Sin solicitudes pendientes', 'Nessuna richiesta in attesa')}</div>
-            </div>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}><Skeleton height={92} count={3} /></div>
+          ) : planRequests.length === 0 ? (
+            <EmptyState icon="🎉" title={i('Aucune demande en attente', 'No pending requests', 'Sin solicitudes pendientes', 'Nessuna richiesta in attesa')} message={i('Toutes les demandes de plan ont été traitées.', 'All plan requests have been processed.', 'Todas las solicitudes han sido procesadas.', 'Tutte le richieste sono state elaborate.')} />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {planRequests.map(req => (
-                <div key={req.id} style={{ padding: '18px 20px', borderBottom: '1px solid var(--border,rgba(255,255,255,.04))', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 180 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>{req.tenant?.name ?? '—'}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{req.tenant?.email ?? '—'} · {req.tenant?.country ?? ''}</div>
-                    <div style={{ marginTop: 5, fontSize: 11, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(108,71,255,.12)', color: 'var(--p3)', fontWeight: 700, fontSize: 10, textTransform: 'capitalize' }}>⚡ {req.plan} · {req.period}</span>
-                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(255,184,0,.1)', color: 'var(--warn)', fontWeight: 700, fontSize: 10 }}>💳 {req.paymentMethod}</span>
-                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(255,255,255,.06)', color: 'var(--text2)', fontWeight: 700, fontSize: 10, fontFamily: 'var(--mono)' }}>{fmt(req.amount)}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {planRequests.map(req => {
+                const pm = req.paymentMethod === 'wave' ? { label: 'Wave', c: 'var(--brand-wave)' }
+                  : req.paymentMethod === 'orange_money' ? { label: 'Orange Money', c: 'var(--brand-om)' }
+                  : { label: req.paymentMethod ?? '—', c: 'var(--text3)' }
+                return (
+                  <div key={req.id} style={{ background: 'var(--card)', border: '1px solid rgba(255,149,0,.2)', borderRadius: 14, padding: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: 'rgba(255,149,0,.1)', border: '1px solid rgba(255,149,0,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--acc)' }}>
+                      <CreditCard size={18} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>{req.tenant?.name ?? '—'}</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: 'rgba(108,71,255,.1)', color: 'var(--p3)', border: '1px solid rgba(108,71,255,.2)', textTransform: 'capitalize' }}>{req.plan} · {req.period}</span>
+                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: 'rgba(255,149,0,.1)', color: 'var(--acc)', border: '1px solid rgba(255,149,0,.2)', fontFamily: 'var(--mono)' }}>{fmt(req.amount ?? 0)}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: mix(pm.c, 12), color: pm.c, border: `1px solid ${mix(pm.c, 25)}` }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: pm.c }} /> {pm.label}
+                        </span>
+                      </div>
+                      {req.paymentRef && <div style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 4 }}>Réf: {req.paymentRef}</div>}
+                      {req.notes && <div style={{ marginTop: 3, fontStyle: 'italic', color: 'var(--text4)', fontSize: 10 }}>"{req.notes}"</div>}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
+                      {req.createdAt ? new Date(req.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </div>
+                    <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
+                      <button onClick={() => handleApprove(req.id)} aria-label={`${i('Approuver', 'Approve', 'Aprobar', 'Approva')} ${req.tenant?.name ?? req.id}`}
+                        style={{ padding: '8px 16px', borderRadius: 9, background: 'linear-gradient(135deg,var(--acc2),#00875A)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
+                        <Check size={13} /> {i('Approuver', 'Approve', 'Aprobar', 'Approva')}
+                      </button>
+                      <button onClick={() => handleReject(req.id)} aria-label={`${i('Rejeter', 'Reject', 'Rechazar', 'Rifiuta')} ${req.tenant?.name ?? req.id}`}
+                        style={{ padding: '8px 14px', borderRadius: 9, background: 'rgba(255,59,92,.1)', border: '1px solid rgba(255,59,92,.2)', color: 'var(--danger)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
+                        <X size={13} /> {i('Rejeter', 'Reject', 'Rechazar', 'Rifiuta')}
+                      </button>
                     </div>
                   </div>
-                  <div style={{ minWidth: 140, fontSize: 11, color: 'var(--text3)' }}>
-                    {req.paymentRef && <div style={{ fontFamily: 'var(--mono)', color: 'var(--text2)', marginBottom: 3 }}>Réf: {req.paymentRef}</div>}
-                    <div>{new Date(req.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
-                    {req.notes && <div style={{ marginTop: 3, fontStyle: 'italic', color: 'var(--text4)', fontSize: 10 }}>"{req.notes}"</div>}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                    <button onClick={() => handleApprove(req.id)} style={{ padding: '8px 16px', borderRadius: 10, background: 'rgba(0,208,132,.12)', border: '1px solid rgba(0,208,132,.25)', cursor: 'pointer', color: 'var(--acc2)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5 }}><Check size={13} /> {i('Approuver', 'Approve', 'Aprobar', 'Approva')}</button>
-                    <button onClick={() => handleReject(req.id)} style={{ padding: '8px 14px', borderRadius: 10, background: 'rgba(255,59,92,.08)', border: '1px solid rgba(255,59,92,.2)', cursor: 'pointer', color: 'var(--danger)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5 }}><X size={13} /> {i('Rejeter', 'Reject', 'Rechazar', 'Rifiuta')}</button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -332,7 +446,7 @@ export default function AdminDashboard() {
                 <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', margin: 0 }}>{selected.name}</h3>
                 <div style={{ marginTop: 6 }}><PlanBadge plan={planKey(selected.plan)} /></div>
               </div>
-              <button className="mini-btn" onClick={() => setSelected(null)}><X size={14} /></button>
+              <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setSelected(null)}><X size={14} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
               {[
@@ -343,7 +457,7 @@ export default function AdminDashboard() {
               ].map(s => (
                 <div key={s.l} className="kpi-card" style={{ padding: 12 }}>
                   <div className="kpi-label">{s.l}</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>{s.v}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{s.v}</div>
                 </div>
               ))}
             </div>
@@ -371,7 +485,7 @@ export default function AdminDashboard() {
           <div className="modal-box" style={{ maxWidth: 480 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, alignItems: 'center' }}>
               <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={16} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</h3>
-              <button className="mini-btn" onClick={() => setShowNewTenant(false)}><X size={14} /></button>
+              <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setShowNewTenant(false)}><X size={14} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
