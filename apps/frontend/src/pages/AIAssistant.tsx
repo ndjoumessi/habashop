@@ -13,14 +13,14 @@ interface ChatMessage {
   loading?: boolean
 }
 
-const ANALYSIS_BUTTONS: { type: string; Icon: typeof BarChart2; color: string; fr: string; en: string }[] = [
-  { type:'full',      Icon: BarChart2,  color:'#6C47FF', fr:'Analyse mensuelle',   en:'Monthly analysis'   },
-  { type:'stock',     Icon: Package,    color:'#FF9500', fr:'Analyse stock',        en:'Stock analysis'     },
-  { type:'revenue',   Icon: TrendingUp, color:'#00D084', fr:'Analyse financière',   en:'Financial analysis' },
-  { type:'customers', Icon: Users,      color:'#00B8FF', fr:'Analyse clients',      en:'Customer analysis'  },
-]
-
 type Lang4 = 'fr' | 'en' | 'es' | 'it'
+
+const ANALYSIS_BUTTONS: { type: string; Icon: typeof BarChart2; color: string; label: Record<Lang4, string> }[] = [
+  { type:'full',      Icon: BarChart2,  color:'#6C47FF', label:{ fr:'Analyse mensuelle',  en:'Monthly analysis',   es:'Análisis mensual',     it:'Analisi mensile'     } },
+  { type:'stock',     Icon: Package,    color:'#FF9500', label:{ fr:'Analyse stock',      en:'Stock analysis',     es:'Análisis de stock',    it:'Analisi magazzino'   } },
+  { type:'revenue',   Icon: TrendingUp, color:'#00D084', label:{ fr:'Analyse financière', en:'Financial analysis', es:'Análisis financiero',  it:'Analisi finanziaria' } },
+  { type:'customers', Icon: Users,      color:'#00B8FF', label:{ fr:'Analyse clients',    en:'Customer analysis',  es:'Análisis de clientes', it:'Analisi clienti'     } },
+]
 interface QuickAction { Icon: typeof BarChart2; color: string; label: Record<Lang4, string>; prompt: Record<Lang4, string> }
 
 const QUICK_ACTIONS: QuickAction[] = [
@@ -153,10 +153,10 @@ export default function AIAssistant() {
     if (analyzing) return
     setActiveAnalysis(type)
     const btn   = ANALYSIS_BUTTONS.find(b => b.type === type)
-    const label = btn ? (lang === 'fr' ? btn.fr : btn.en) : type
+    const label = btn ? btn.label[lang as Lang4] : type
     setMessages(prev => [...prev, {
       id: Date.now().toString(), role:'user', time: new Date(),
-      content: lang === 'fr' ? `Lance une ${label.toLowerCase()}` : `Run a ${label.toLowerCase()}`,
+      content: T(`Lance une ${label.toLowerCase()}`, `Run a ${label.toLowerCase()}`, `Inicia un ${label.toLowerCase()}`, `Avvia un'${label.toLowerCase()}`),
     }])
     const loadingId = addLoadingMsg()
     setAnalyzing(true)
@@ -315,7 +315,7 @@ export default function AIAssistant() {
                 {activeAnalysis === btn.type
                   ? <span style={{ width:12, height:12, borderRadius:'50%', border:`2px solid ${btn.color}`, borderTopColor:'transparent', display:'inline-block', animation:'spin .6s linear infinite', flexShrink:0 }} />
                   : <btn.Icon size={13}/>}
-                {lang === 'fr' ? btn.fr : btn.en}
+                {btn.label[lang as Lang4]}
               </button>
             ))}
           </div>

@@ -42,7 +42,7 @@ export default function Onboarding() {
       localStorage.setItem('habashop_onboarded', 'true')
       setStep(5)
     } catch (e: any) {
-      toast.error(e?.message ?? 'Erreur')
+      toast.error(e?.message ?? i('Erreur', 'Error', 'Error', 'Errore'))
     } finally {
       setLoading(false)
     }

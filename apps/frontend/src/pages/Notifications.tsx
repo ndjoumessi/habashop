@@ -42,17 +42,8 @@ const NOTIF_ICON: Record<NotifType, LucideIcon> = {
   info:    Info,
 }
 
-const PREF_ROWS = [
-  { key:'stock',     label:'Alertes de stock',         desc:'Ruptures et stocks faibles'    },
-  { key:'ventes',    label:'Récap ventes',             desc:'Résumé journalier des ventes'  },
-  { key:'auth',      label:'Sécurité & connexions',    desc:'Tentatives suspectes'          },
-  { key:'paie',      label:'Bulletins de paie',        desc:'Génération et validation'      },
-  { key:'commandes', label:'Commandes fournisseurs',   desc:'Réceptions et retards'         },
-]
-
 export default function Notifications() {
   const { lang } = useAppStore()
-  void lang
   const fmt = useFormatAmount()
   void fmt
   const navigate = useNavigate()
@@ -69,11 +60,11 @@ export default function Notifications() {
   const dangerCount = notifs.filter(n => n.type === 'danger').length
 
   const prefRows = [
-    { key:'stock',     label:t('notif_stock_alert'), desc:PREF_ROWS[0].desc },
-    { key:'ventes',    label:t('notif_sales_recap'),  desc:PREF_ROWS[1].desc },
-    { key:'auth',      label:t('notif_security'),     desc:PREF_ROWS[2].desc },
-    { key:'paie',      label:t('notif_payroll'),      desc:PREF_ROWS[3].desc },
-    { key:'commandes', label:t('notif_orders'),       desc:PREF_ROWS[4].desc },
+    { key:'stock',     label:t('notif_stock_alert'), desc:lang === 'en' ? 'Stockouts and low stock' : lang === 'es' ? 'Roturas y stock bajo' : lang === 'it' ? 'Esaurimenti e scorte basse' : 'Ruptures et stocks faibles' },
+    { key:'ventes',    label:t('notif_sales_recap'),  desc:lang === 'en' ? 'Daily sales summary' : lang === 'es' ? 'Resumen diario de ventas' : lang === 'it' ? 'Riepilogo giornaliero vendite' : 'Résumé journalier des ventes' },
+    { key:'auth',      label:t('notif_security'),     desc:lang === 'en' ? 'Suspicious attempts' : lang === 'es' ? 'Intentos sospechosos' : lang === 'it' ? 'Tentativi sospetti' : 'Tentatives suspectes' },
+    { key:'paie',      label:t('notif_payroll'),      desc:lang === 'en' ? 'Generation and approval' : lang === 'es' ? 'Generación y validación' : lang === 'it' ? 'Generazione e convalida' : 'Génération et validation' },
+    { key:'commandes', label:t('notif_orders'),       desc:lang === 'en' ? 'Receipts and delays' : lang === 'es' ? 'Recepciones y retrasos' : lang === 'it' ? 'Ricezioni e ritardi' : 'Réceptions et retards' },
   ]
 
   const filtered = notifs.filter(n =>
@@ -82,8 +73,8 @@ export default function Notifications() {
   )
 
   const markRead    = (id: number) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, read:true } : n))
-  const markAllRead = () => { setNotifs(prev => prev.map(n => ({ ...n, read:true }))); toast.success('Toutes les notifications marquées comme lues') }
-  const deleteRead  = () => { setNotifs(prev => prev.filter(n => !n.read)); toast.success('Notifications lues supprimées') }
+  const markAllRead = () => { setNotifs(prev => prev.map(n => ({ ...n, read:true }))); toast.success(lang === 'en' ? 'All notifications marked as read' : lang === 'es' ? 'Todas las notificaciones marcadas como leídas' : lang === 'it' ? 'Tutte le notifiche segnate come lette' : 'Toutes les notifications marquées comme lues') }
+  const deleteRead  = () => { setNotifs(prev => prev.filter(n => !n.read)); toast.success(lang === 'en' ? 'Read notifications deleted' : lang === 'es' ? 'Notificaciones leídas eliminadas' : lang === 'it' ? 'Notifiche lette eliminate' : 'Notifications lues supprimées') }
   const deleteNotif = (id: number) => setNotifs(prev => prev.filter(n => n.id !== id))
 
   return (
@@ -199,7 +190,7 @@ export default function Notifications() {
                     }} onClick={() => {
                       const route = NOTIF_ROUTES[notif.module] ?? '/app/dashboard'
                       navigate(route)
-                      toast(`→ Redirection vers ${notif.module}`)
+                      toast(`→ ${lang === 'en' ? 'Redirecting to' : lang === 'es' ? 'Redirigiendo a' : lang === 'it' ? 'Reindirizzamento a' : 'Redirection vers'} ${notif.module}`)
                     }}>
                       → {notif.action}
                     </button>
@@ -207,11 +198,11 @@ export default function Notifications() {
                   {!notif.read && (
                     <button className="mini-btn" onClick={() => markRead(notif.id)}
                       style={{ display:'inline-flex', alignItems:'center', gap:6 }}>
-                      <Check size={12} strokeWidth={2.6} /> Marquer comme lu
+                      <Check size={12} strokeWidth={2.6} /> {lang === 'en' ? 'Mark as read' : lang === 'es' ? 'Marcar como leída' : lang === 'it' ? 'Segna come letta' : 'Marquer comme lu'}
                     </button>
                   )}
                   <button className="mini-btn"
-                    aria-label="Supprimer"
+                    aria-label={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
                     style={{ color:'var(--danger)', marginLeft:'auto', display:'inline-flex', alignItems:'center', padding:'5px 8px' }}
                     onClick={() => deleteNotif(notif.id)}>
                     <Trash2 size={13} strokeWidth={2.4} />
@@ -225,7 +216,7 @@ export default function Notifications() {
         {filtered.length === 0 && (
           <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text3)' }}>
             <Bell size={40} style={{ margin:'0 auto 12px', display:'block', opacity:.3 }} />
-            <div style={{ fontSize:14, fontWeight:600 }}>Aucune notification</div>
+            <div style={{ fontSize:14, fontWeight:600 }}>{lang === 'en' ? 'No notifications' : lang === 'es' ? 'Sin notificaciones' : lang === 'it' ? 'Nessuna notifica' : 'Aucune notification'}</div>
           </div>
         )}
       </div>
@@ -234,14 +225,14 @@ export default function Notifications() {
       <div className="panel" style={{ marginBottom:0 }}>
         <div className="panel-h">
           <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
-            <Settings size={15} /> Préférences de notifications
+            <Settings size={15} /> {lang === 'en' ? 'Notification preferences' : lang === 'es' ? 'Preferencias de notificaciones' : lang === 'it' ? 'Preferenze di notifica' : 'Préférences de notifications'}
           </span>
         </div>
         <div style={{ overflowX:'auto' }}>
           <table style={{ minWidth:600 }}>
             <thead>
               <tr>
-                <th style={{ width:220 }}>Type de notification</th>
+                <th style={{ width:220 }}>{lang === 'en' ? 'Notification type' : lang === 'es' ? 'Tipo de notificación' : lang === 'it' ? 'Tipo di notifica' : 'Type de notification'}</th>
                 <th style={{ textAlign:'center' }}>
                   <span style={{ display:'inline-flex', alignItems:'center', gap:6, justifyContent:'center' }}>
                     <Mail size={13} /> Email
@@ -294,9 +285,9 @@ export default function Notifications() {
           </table>
         </div>
         <div style={{ display:'flex', justifyContent:'flex-end', marginTop:16 }}>
-          <button className="topbar-btn" onClick={() => toast.success('Préférences sauvegardées')}
+          <button className="topbar-btn" onClick={() => toast.success(lang === 'en' ? 'Preferences saved' : lang === 'es' ? 'Preferencias guardadas' : lang === 'it' ? 'Preferenze salvate' : 'Préférences sauvegardées')}
             style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
-            <Save size={14} /> Sauvegarder les préférences
+            <Save size={14} /> {lang === 'en' ? 'Save preferences' : lang === 'es' ? 'Guardar preferencias' : lang === 'it' ? 'Salva preferenze' : 'Sauvegarder les préférences'}
           </button>
         </div>
       </div>

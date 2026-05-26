@@ -76,20 +76,20 @@ export default function AdminDashboard() {
   const handleApprove = async (id: string) => {
     if (!(await confirm({ title: i('Approuver la demande', 'Approve request', 'Aprobar solicitud', 'Approva richiesta'), message: i('Approuver cette demande et activer le plan ?', 'Approve this request and activate the plan?', '¿Aprobar esta solicitud y activar el plan?', 'Approvare questa richiesta e attivare il piano?') }))) return
     try {
-      await adminApi.reviewPlanRequest(id, { action: 'approve', adminNotes: 'Paiement validé' })
+      await adminApi.reviewPlanRequest(id, { action: 'approve', adminNotes: i('Paiement validé', 'Payment validated', 'Pago validado', 'Pagamento convalidato') })
       toast.success(i('✅ Plan activé !', '✅ Plan activated!', '✅ ¡Plan activado!', '✅ Piano attivato!'))
       setPlanRequests(prev => prev.filter(r => r.id !== id))
-    } catch (e: any) { toast.error(e?.message ?? 'Erreur') }
+    } catch (e: any) { toast.error(e?.message ?? i('Erreur', 'Error', 'Error', 'Errore')) }
   }
 
   const handleReject = async (id: string) => {
     const reason = window.prompt(i('Raison du rejet (optionnel) :', 'Rejection reason (optional):', 'Razón del rechazo (opcional):', 'Motivo del rifiuto (opzionale):'))
     if (reason === null) return
     try {
-      await adminApi.reviewPlanRequest(id, { action: 'reject', adminNotes: reason || 'Demande rejetée' })
+      await adminApi.reviewPlanRequest(id, { action: 'reject', adminNotes: reason || i('Demande rejetée', 'Request rejected', 'Solicitud rechazada', 'Richiesta rifiutata') })
       toast.success(i('Demande rejetée', 'Request rejected', 'Solicitud rechazada', 'Richiesta rifiutata'))
       setPlanRequests(prev => prev.filter(r => r.id !== id))
-    } catch (e: any) { toast.error(e?.message ?? 'Erreur') }
+    } catch (e: any) { toast.error(e?.message ?? i('Erreur', 'Error', 'Error', 'Errore')) }
   }
 
   const mrr = useMemo(() => tenants.reduce((s, t) => s + planPrice(t.plan), 0), [tenants])
@@ -413,7 +413,7 @@ export default function AdminDashboard() {
                           <span style={{ width: 5, height: 5, borderRadius: '50%', background: pm.c }} /> {pm.label}
                         </span>
                       </div>
-                      {req.paymentRef && <div style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 4 }}>Réf: {req.paymentRef}</div>}
+                      {req.paymentRef && <div style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 4 }}>{i('Réf', 'Ref', 'Ref', 'Rif')}: {req.paymentRef}</div>}
                       {req.notes && <div style={{ marginTop: 3, fontStyle: 'italic', color: 'var(--text4)', fontSize: 10 }}>"{req.notes}"</div>}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)', flexShrink: 0 }}>

@@ -41,7 +41,7 @@ export default function UpgradePlan() {
       await billingApi.requestPlan(form)
       setStep('done')
     } catch (e: any) {
-      toast.error(e?.message ?? 'Erreur lors de la demande')
+      toast.error(e?.message ?? i('Erreur lors de la demande', 'Request failed', 'Error en la solicitud', 'Errore nella richiesta'))
     } finally {
       setLoading(false)
     }
@@ -100,7 +100,7 @@ export default function UpgradePlan() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 900, color: isSelected ? (planId === 'pro' ? 'var(--p3)' : 'var(--acc)') : 'var(--text)', marginBottom: 2 }}>
                         {planId === 'pro' ? 'Pro' : 'Enterprise'}
-                        {planId === 'pro' && <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: 'rgba(108,71,255,.2)', color: 'var(--p3)' }}>POPULAIRE</span>}
+                        {planId === 'pro' && <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: 'rgba(108,71,255,.2)', color: 'var(--p3)' }}>{i('POPULAIRE', 'POPULAR', 'POPULAR', 'POPOLARE')}</span>}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text3)' }}>{planId === 'pro' ? i('5 utilisateurs · Rapports · WhatsApp', '5 users · Reports · WhatsApp', '5 usuarios · Informes · WhatsApp', '5 utenti · Report · WhatsApp') : i('Illimité · IA · Support prioritaire', 'Unlimited · AI · Priority support', 'Ilimitado · IA · Soporte prioritario', 'Illimitato · IA · Supporto prioritario')}</div>
                     </div>
