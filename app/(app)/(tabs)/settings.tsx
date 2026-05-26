@@ -26,6 +26,7 @@ const CURRENCIES = [
   { code: 'EUR', fr: 'Euro', en: 'Euro', es: 'Euro', it: 'Euro' },
   { code: 'USD', fr: 'Dollar US', en: 'US Dollar', es: 'Dólar US', it: 'Dollaro USA' },
   { code: 'GBP', fr: 'Livre Sterling', en: 'Pound Sterling', es: 'Libra Esterlina', it: 'Sterlina' },
+  { code: 'CAD', fr: 'Dollar Canadien', en: 'Canadian Dollar', es: 'Dólar Canadiense', it: 'Dollaro Canadese' },
 ]
 
 function initials(name?: string) {

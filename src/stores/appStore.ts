@@ -44,19 +44,22 @@ export function useI18n() {
 export function useFmt() {
   const currency = useAppStore(s => s.currency)
   const fmt = (n: number): string => {
-    if (!n) return currency === 'XOF' ? '0 F' : `0 ${currency}`
+    const amount = n ?? 0
     switch (currency) {
       case 'XOF':
       case 'XAF':
-        return `${Math.round(n).toLocaleString('fr-FR')} F`
+        // Franc CFA — pas de décimales, symbole F
+        return `${Math.round(amount).toLocaleString('fr-FR')} F`
       case 'EUR':
-        return `${n.toFixed(2)} €`
+        return `${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
       case 'USD':
-        return `$${n.toFixed(2)}`
+        return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       case 'GBP':
-        return `£${n.toFixed(2)}`
+        return `£${amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      case 'CAD':
+        return `CA$${amount.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       default:
-        return `${n.toFixed(2)} ${currency}`
+        return `${Math.round(amount).toLocaleString('fr-FR')} ${currency}`
     }
   }
   return { fmt, currency }
