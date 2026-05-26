@@ -3,6 +3,7 @@ import type { SaleBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
+import { invalidateTenantCache } from '../lib/cache'
 
 export async function saleRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/sales', { preHandler: authenticate }, async (request) => {
@@ -58,6 +59,9 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
 
       return newSale
     })
+
+    // Les agrégats analytics dépendent des ventes → on purge le cache du tenant.
+    invalidateTenantCache(tenantId).catch(() => {})
 
     notifyTenant(tenantId, { type: 'new_sale', data: { id: newSale.id, total, paymentMode, itemCount: Array.isArray(items) ? items.length : 0 } })
     try {

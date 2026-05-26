@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import type { ProductBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { invalidateTenantCache } from '../lib/cache'
 
 export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/products', { preHandler: authenticate }, async (request) => {
@@ -55,6 +56,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
           promotionPrice: promotionPrice || null,
         }
       })
+      invalidateTenantCache(tenantId).catch(() => {})
       return product
     } catch (err) {
       console.error('Create product error:', err)
@@ -68,7 +70,9 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.put('/api/products/:id', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
-    return prisma.product.update({ where: { id, tenantId }, data: request.body as any })
+    const updated = await prisma.product.update({ where: { id, tenantId }, data: request.body as any })
+    invalidateTenantCache(tenantId).catch(() => {})
+    return updated
   })
 
   app.delete('/api/products/:id', { preHandler: authenticate }, async (request, reply) => {
@@ -77,6 +81,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     const product = await prisma.product.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
     await prisma.product.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete
+    invalidateTenantCache(tenantId).catch(() => {})
     await prisma.auditLog.create({
       data: { tenantId, userId, module: 'products', action: 'DELETE_PRODUCT', description: JSON.stringify({ id, name: product.name }) },
     }).catch(() => {})
@@ -91,6 +96,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     const product = await prisma.product.findFirst({ where: { id, tenantId } })
     if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
     const restored = await prisma.product.update({ where: { id }, data: { deletedAt: null } })
+    invalidateTenantCache(tenantId).catch(() => {})
     await prisma.auditLog.create({
       data: { tenantId, userId, module: 'products', action: 'RESTORE_PRODUCT', description: JSON.stringify({ id, name: product.name }) },
     }).catch(() => {})
