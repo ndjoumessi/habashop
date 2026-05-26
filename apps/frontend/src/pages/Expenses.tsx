@@ -68,8 +68,11 @@ function mapApiExpense(e: any): Expense {
 
 export default function Expenses() {
   const { lang, currency } = useConfig()
-  void lang
   const fmt = useFormatAmount()
+  const tr = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+  const monthName = new Date().toLocaleDateString(locale, { month: 'long' })
+  const monthYear = (() => { const m = new Date().toLocaleDateString(locale, { month: 'long', year: 'numeric' }); return m.charAt(0).toUpperCase() + m.slice(1) })()
 
   const handleAccountingExport = async () => {
     const period = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { month: 'long', year: 'numeric' })
@@ -185,18 +188,18 @@ export default function Expenses() {
     const exp = expenses.find(e => e.id === id)
     if (exp?._apiId) { try { await expensesApi.update(exp._apiId, { status: 'PAYÉ' }) } catch {} }
     setExpenses(prev => prev.map(e => e.id === id ? { ...e, status: 'PAYÉ' } : e))
-    toast.success('Dépense marquée comme payée')
+    toast.success(tr('Dépense marquée comme payée','Expense marked as paid','Gasto marcado como pagado','Spesa contrassegnata come pagata'))
   }
 
   async function deleteExpense(id: number) {
     const exp = expenses.find(e => e.id === id)
     if (exp?._apiId) { try { await expensesApi.delete(exp._apiId) } catch {} }
     setExpenses(prev => prev.filter(e => e.id !== id))
-    toast.success('Dépense supprimée')
+    toast.success(tr('Dépense supprimée','Expense deleted','Gasto eliminado','Spesa eliminata'))
   }
 
   async function addExpense() {
-    if (!nLabel.trim() || !nHT) { toast.error('Libellé et montant requis'); return }
+    if (!nLabel.trim() || !nHT) { toast.error(tr('Libellé et montant requis','Label and amount required','Etiqueta e importe requeridos','Etichetta e importo richiesti')); return }
     const ht = Math.round(parseFloat(nHT))
     const newExp: Expense = {
       id: ++_expIdCounter, date: nDate, label: nLabel.trim(), category: nCat,
@@ -207,14 +210,14 @@ export default function Expenses() {
       newExp._apiId = created.id
     } catch {}
     setExpenses(prev => [newExp, ...prev])
-    toast.success('Dépense enregistrée')
+    toast.success(tr('Dépense enregistrée','Expense saved','Gasto registrado','Spesa registrata'))
     setAddOpen(false)
     setNLabel(''); setNHT(''); setNVat(0); setNRecurrent(false); setNNotes('')
   }
 
   function saveBudgets() {
     setBudgets({ ...editBudgets })
-    toast.success('Budgets mis à jour')
+    toast.success(tr('Budgets mis à jour','Budgets updated','Presupuestos actualizados','Budget aggiornati'))
     setBudgetOpen(false)
   }
 
@@ -240,10 +243,10 @@ export default function Expenses() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Dépenses (mai)',      value:fmt(totalMay),     sub:'Mai 2026',                color:'var(--danger)', icon:<TrendingDown size={18} /> },
-          { label:'En attente paiement', value:fmt(totalPending), sub:`${expenses.filter(e=>e.status==='EN ATTENTE').length} facture(s)`, color:'var(--acc)', icon:<Clock size={18} /> },
-          { label:'Dépenses récurrentes',value:recurrentCount,    sub:'Mensuelles / abonnements', color:'var(--p2)',    icon:<RefreshCw size={18} /> },
-          { label:'Budget restant',      value:fmt(Math.max(0, budgetLeft)), sub:'Sur budget mensuel', color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', icon:<BarChart2 size={18} /> },
+          { label:`${tr('Dépenses','Expenses','Gastos','Spese')} (${monthName})`, value:fmt(totalMay), sub:monthYear, color:'var(--danger)', icon:<TrendingDown size={18} /> },
+          { label:tr('En attente paiement','Pending payment','Pago pendiente','Pagamento in attesa'), value:fmt(totalPending), sub:`${expenses.filter(e=>e.status==='EN ATTENTE').length} ${tr('facture(s)','invoice(s)','factura(s)','fattura/e')}`, color:'var(--acc)', icon:<Clock size={18} /> },
+          { label:tr('Dépenses récurrentes','Recurring expenses','Gastos recurrentes','Spese ricorrenti'), value:recurrentCount, sub:tr('Mensuelles / abonnements','Monthly / subscriptions','Mensuales / suscripciones','Mensili / abbonamenti'), color:'var(--p2)', icon:<RefreshCw size={18} /> },
+          { label:tr('Budget restant','Remaining budget','Presupuesto restante','Budget rimanente'), value:fmt(Math.max(0, budgetLeft)), sub:tr('Sur budget mensuel','Of monthly budget','Del presupuesto mensual','Del budget mensile'), color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', icon:<BarChart2 size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card" style={{ borderTop:`3px solid ${k.color}`, overflow:'hidden' }}>
             <div className="kpi-icon-w" style={{ color:k.color, background:`color-mix(in srgb, ${k.color} 12%, transparent)` }}>{k.icon}</div>
@@ -279,7 +282,7 @@ export default function Expenses() {
           <div className="panel-head">
             <span className="panel-title">{lang === 'en' ? 'Expense log' : lang === 'es' ? 'Registro de gastos' : lang === 'it' ? 'Registro spese' : 'Journal des dépenses'}</span>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setAddOpen(true)}>
-              <Plus size={13} /> Ajouter dépense
+              <Plus size={13} /> {tr('Ajouter dépense','Add expense','Agregar gasto','Aggiungi spesa')}
             </button>
           </div>
 
@@ -295,20 +298,20 @@ export default function Expenses() {
           <div style={{ display:'flex', gap:9, marginBottom:14, flexWrap:'wrap', alignItems:'center' }}>
             <div style={{ position:'relative' }}>
               <Search size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text2)' }} />
-              <input className="input" aria-label="Rechercher" placeholder="Rechercher…" value={search}
+              <input className="input" aria-label={tr('Rechercher','Search','Buscar','Cerca')} placeholder={tr('Rechercher…','Search…','Buscar…','Cerca…')} value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ paddingLeft:30, width:200, boxSizing:'border-box' }} />
             </div>
             <select className="input" value={catFilter} onChange={e => setCatFilter(e.target.value as typeof catFilter)}
               style={{ width:'auto', minWidth:140 }}>
-              <option value="Toutes">Toutes catégories</option>
+              <option value="Toutes">{tr('Toutes catégories','All categories','Todas las categorías','Tutte le categorie')}</option>
               {CATEGORIES.map(c => <option key={c}>{c}</option>)}
             </select>
             <select className="input" value={statFilter} onChange={e => setStatFilter(e.target.value as typeof statFilter)}
               style={{ width:'auto', minWidth:140 }}>
-              <option value="Tous">Tous statuts</option>
-              <option value="PAYÉ">PAYÉ</option>
-              <option value="EN ATTENTE">EN ATTENTE</option>
+              <option value="Tous">{tr('Tous statuts','All statuses','Todos los estados','Tutti gli stati')}</option>
+              <option value="PAYÉ">{tr('Payé','Paid','Pagado','Pagato')}</option>
+              <option value="EN ATTENTE">{tr('En attente','Pending','Pendiente','In attesa')}</option>
             </select>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleAccountingExport}>
               <BarChart2 size={12}/> {lang === 'en' ? 'Accounting export' : lang === 'es' ? 'Exportación contable' : lang === 'it' ? 'Esportazione contabile' : 'Export comptable'}
@@ -331,10 +334,10 @@ export default function Expenses() {
             <table>
               <thead>
                 <tr>
-                  <th scope="col">Date</th><th scope="col">Libellé</th><th scope="col">Catégorie</th>
-                  <th scope="col">Montant HT</th><th scope="col">TVA</th><th scope="col">TTC</th>
-                  <th scope="col">Mode</th><th style={{ textAlign:'center' }}>Récurrent</th>
-                  <th scope="col">Statut</th><th scope="col">Actions</th>
+                  <th scope="col">{tr('Date','Date','Fecha','Data')}</th><th scope="col">{tr('Libellé','Label','Etiqueta','Etichetta')}</th><th scope="col">{tr('Catégorie','Category','Categoría','Categoria')}</th>
+                  <th scope="col">{tr('Montant HT','Amount excl.','Importe s/IVA','Importo netto')}</th><th scope="col">TVA</th><th scope="col">TTC</th>
+                  <th scope="col">{tr('Mode','Mode','Modo','Modo')}</th><th style={{ textAlign:'center' }}>{tr('Récurrent','Recurring','Recurrente','Ricorrente')}</th>
+                  <th scope="col">{tr('Statut','Status','Estado','Stato')}</th><th scope="col">{tr('Actions','Actions','Acciones','Azioni')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -348,7 +351,7 @@ export default function Expenses() {
                       <td className="td-mono text-xs">{e.date}</td>
                       <td>
                         <div className="td-bold text-xs">{e.label}</div>
-                        {e.recurrent && <div style={{ fontSize:10, color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> Récurrent</div>}
+                        {e.recurrent && <div style={{ fontSize:10, color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> {tr('Récurrent','Recurring','Recurrente','Ricorrente')}</div>}
                       </td>
                       <td><CatPill cat={e.category} /></td>
                       <td className="td-num text-sm">{fmt(e.amount)}</td>
@@ -371,28 +374,28 @@ export default function Expenses() {
                           border:      e.status === 'PAYÉ' ? '1px solid rgba(14,196,126,.3)' : '1px solid rgba(240,165,0,.3)',
                         }}>
                           {e.status === 'PAYÉ' ? <Check size={10}/> : <Clock size={10}/>}
-                          {e.status}
+                          {e.status === 'PAYÉ' ? tr('Payé','Paid','Pagado','Pagato') : tr('En attente','Pending','Pendiente','In attesa')}
                         </span>
                       </td>
                       <td>
                         <div style={{ display:'flex', gap:5 }}>
                           {e.status === 'EN ATTENTE' && (
-                            <button className="mini-btn" title="Marquer payé" onClick={() => markPaid(e.id)}><Check size={13}/></button>
+                            <button className="mini-btn" title={tr('Marquer payé','Mark as paid','Marcar como pagado','Segna come pagato')} onClick={() => markPaid(e.id)}><Check size={13}/></button>
                           )}
-                          <button className="mini-btn" title="Modifier" onClick={() => {
+                          <button className="mini-btn" title={tr('Modifier','Edit','Editar','Modifica')} onClick={() => {
                             setEditExpense(e)
                             setEditExpForm({ date:e.date, label:e.label, category:e.category, amountHT:e.amount, vat:e.vat, mode:e.mode, recurrent:e.recurrent, notes:'' })
                             setExpEditMode(false)
                             setShowEditExpModal(true)
                           }}><Pencil size={13}/></button>
-                          <button className="mini-btn" title="Supprimer" onClick={() => deleteExpense(e.id)}><Trash2 size={13}/></button>
+                          <button className="mini-btn" title={tr('Supprimer','Delete','Eliminar','Elimina')} onClick={() => deleteExpense(e.id)}><Trash2 size={13}/></button>
                         </div>
                       </td>
                     </tr>
                   )
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={10} style={{ textAlign:'center', color:'var(--text3)', padding:'24px', fontSize:13 }}>Aucune dépense trouvée</td></tr>
+                  <tr><td colSpan={10} style={{ textAlign:'center', color:'var(--text3)', padding:'24px', fontSize:13 }}>{tr('Aucune dépense trouvée','No expense found','Sin gastos encontrados','Nessuna spesa trovata')}</td></tr>
                 )}
                 </>)}
               </tbody>
@@ -408,7 +411,7 @@ export default function Expenses() {
           <div style={{ display:'flex', justifyContent:'flex-end' }}>
             <button className="btn btn-ghost btn-sm gap-1.5"
               onClick={() => { setEditBudgets({ ...budgets }); setBudgetOpen(true) }}>
-              <Settings size={13} /> Modifier les budgets
+              <Settings size={13} /> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}
             </button>
           </div>
 
@@ -431,12 +434,12 @@ export default function Expenses() {
                       <span style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>{cat}</span>
                     </div>
                     {over && (
-                      <span className="badge badge-red">Dépassé !</span>
+                      <span className="badge badge-red">{tr('Dépassé !','Over budget!','¡Excedido!','Superato!')}</span>
                     )}
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8, fontSize:12 }}>
-                    <span style={{ color:'var(--text3)' }}>Budget : <strong style={{ color:'var(--text2)' }}>{fmt(budget)}</strong></span>
-                    <span style={{ color:'var(--text3)' }}>Réel : <strong style={{ color: over ? 'var(--danger)' : 'var(--text)' }}>{fmt(spent)}</strong></span>
+                    <span style={{ color:'var(--text3)' }}>{tr('Budget','Budget','Presupuesto','Budget')} : <strong style={{ color:'var(--text2)' }}>{fmt(budget)}</strong></span>
+                    <span style={{ color:'var(--text3)' }}>{tr('Réel','Actual','Real','Reale')} : <strong style={{ color: over ? 'var(--danger)' : 'var(--text)' }}>{fmt(spent)}</strong></span>
                   </div>
                   <div style={{ height:9, background:'var(--bg4)', borderRadius:99, overflow:'hidden', marginBottom:8 }}>
                     <div style={{
@@ -448,7 +451,7 @@ export default function Expenses() {
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
                     <span style={{ fontWeight:700, color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
                     <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:600 }}>
-                      {over ? `Dépassé de ${fmt(spent - budget)}` : `Restant : ${fmt(budget - spent)}`}
+                      {over ? `${tr('Dépassé de','Over by','Excedido en','Superato di')} ${fmt(spent - budget)}` : `${tr('Restant','Remaining','Restante','Rimanente')} : ${fmt(budget - spent)}`}
                     </span>
                   </div>
                 </div>
@@ -465,10 +468,10 @@ export default function Expenses() {
               <span className="panel-title">{lang === 'en' ? 'Monthly summary' : lang === 'es' ? 'Resumen mensual' : lang === 'it' ? 'Riepilogo mensile' : 'Résumé mensuel'}</span>
             </div>
             {[
-              { label:'Budget total mensuel',  value:fmt(totalBudget),            color:'var(--text2)' },
-              { label:'Total dépensé',          value:fmt(Object.values(catSpent).reduce((s,v) => s+v, 0)), color:'var(--acc)' },
-              { label:'Écart',                  value:fmt(Math.abs(budgetLeft)),   color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', prefix: budgetLeft >= 0 ? '▲ +' : '▼ -' },
-              { label:'Taux d\'utilisation',    value:`${Math.round(Object.values(catSpent).reduce((s,v)=>s+v,0)/totalBudget*100)} %`, color: 'var(--p2)' },
+              { label:tr('Budget total mensuel','Total monthly budget','Presupuesto total mensual','Budget mensile totale'),  value:fmt(totalBudget),            color:'var(--text2)' },
+              { label:tr('Total dépensé','Total spent','Total gastado','Totale speso'),          value:fmt(Object.values(catSpent).reduce((s,v) => s+v, 0)), color:'var(--acc)' },
+              { label:tr('Écart','Variance','Variación','Variazione'),                  value:fmt(Math.abs(budgetLeft)),   color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', prefix: budgetLeft >= 0 ? '▲ +' : '▼ -' },
+              { label:tr("Taux d'utilisation",'Usage rate','Tasa de uso','Tasso di utilizzo'),    value:`${Math.round(Object.values(catSpent).reduce((s,v)=>s+v,0)/totalBudget*100)} %`, color: 'var(--p2)' },
             ].map(r => (
               <div key={r.label} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontSize:13, color:'var(--text3)' }}>{r.label}</span>
@@ -486,41 +489,41 @@ export default function Expenses() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={() => setAddOpen(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:480 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>Ajouter une dépense</span>
+              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>{tr('Ajouter une dépense','Add an expense','Agregar un gasto','Aggiungi una spesa')}</span>
               <button className="mini-btn" onClick={() => setAddOpen(false)}><X size={15} /></button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Date</label>
-                  <input aria-label="Date" className="input" type="date" value={nDate} onChange={e => setNDate(e.target.value)}
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Date','Date','Fecha','Data')}</label>
+                  <input aria-label={tr('Date','Date','Fecha','Data')} className="input" type="date" value={nDate} onChange={e => setNDate(e.target.value)}
                     style={{ width:'100%', boxSizing:'border-box' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Catégorie</label>
-                  <select aria-label="Catégorie" className="input" value={nCat} onChange={e => setNCat(e.target.value as Category)}
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Catégorie','Category','Categoría','Categoria')}</label>
+                  <select aria-label={tr('Catégorie','Category','Categoría','Categoria')} className="input" value={nCat} onChange={e => setNCat(e.target.value as Category)}
                     style={{ width:'100%', boxSizing:'border-box' }}>
                     {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Libellé</label>
-                <input aria-label="Libellé" className="input" type="text" placeholder="Ex: Facture EDF"
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Libellé','Label','Etiqueta','Etichetta')}</label>
+                <input aria-label={tr('Libellé','Label','Etiqueta','Etichetta')} className="input" type="text" placeholder={tr('Ex: Facture EDF','Ex: Electricity bill','Ej: Factura de luz','Es: Bolletta luce')}
                   value={nLabel} onChange={e => setNLabel(e.target.value)}
                   style={{ width:'100%', boxSizing:'border-box' }} />
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Montant HT (F CFA)</label>
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Montant HT (F CFA)','Amount excl. VAT (F CFA)','Importe s/IVA (F CFA)','Importo netto (F CFA)')}</label>
                   <ValidatedInput type="amount"
                     value={nHT} onChange={setNHT}
                     placeholder="Ex: 85000"
                     min={0} required lang={lang} />
                 </div>
                 <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Taux TVA</label>
-                  <select aria-label="Taux TVA" className="input" value={nVat} onChange={e => setNVat(+e.target.value)}
+                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Taux TVA','VAT rate','Tasa IVA','Aliquota IVA')}</label>
+                  <select aria-label={tr('Taux TVA','VAT rate','Tasa IVA','Aliquota IVA')} className="input" value={nVat} onChange={e => setNVat(+e.target.value)}
                     style={{ width:'100%', boxSizing:'border-box' }}>
                     {VAT_RATES.map(v => <option key={v} value={v}>{v} %</option>)}
                   </select>
@@ -532,15 +535,15 @@ export default function Expenses() {
                   border:'1px solid rgba(14,196,126,.25)', borderRadius:8,
                   display:'flex', justifyContent:'space-between', fontSize:13,
                 }}>
-                  <span style={{ color:'var(--text3)' }}>Montant TTC calculé :</span>
+                  <span style={{ color:'var(--text3)' }}>{tr('Montant TTC calculé :','Calculated total incl. VAT:','Importe c/IVA calculado:','Importo lordo calcolato:')}</span>
                   <span style={{ fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
                     {fmt(nTTC)}
                   </span>
                 </div>
               )}
               <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Mode de paiement</label>
-                <select aria-label="Mode de paiement" className="input" value={nMode} onChange={e => setNMode(e.target.value)}
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Mode de paiement','Payment method','Método de pago','Metodo di pagamento')}</label>
+                <select aria-label={tr('Mode de paiement','Payment method','Método de pago','Metodo di pagamento')} className="input" value={nMode} onChange={e => setNMode(e.target.value)}
                   style={{ width:'100%', boxSizing:'border-box' }}>
                   {MODES.map(m => <option key={m}>{m}</option>)}
                 </select>
@@ -550,19 +553,19 @@ export default function Expenses() {
                   onChange={e => setNRecurrent(e.target.checked)}
                   style={{ width:16, height:16, cursor:'pointer', accentColor:'var(--p2)' }} />
                 <label htmlFor="recurrent" style={{ fontSize:13, color:'var(--text2)', cursor:'pointer', fontWeight:600 }}>
-                  Dépense récurrente (mensuelle)
+                  {tr('Dépense récurrente (mensuelle)','Recurring expense (monthly)','Gasto recurrente (mensual)','Spesa ricorrente (mensile)')}
                 </label>
               </div>
               <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>Notes (optionnel)</label>
-                <input aria-label="Notes (optionnel)" className="input" type="text" placeholder="Informations supplémentaires…"
+                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Notes (optionnel)','Notes (optional)','Notas (opcional)','Note (opzionale)')}</label>
+                <input aria-label={tr('Notes (optionnel)','Notes (optional)','Notas (opcional)','Note (opzionale)')} className="input" type="text" placeholder={tr('Informations supplémentaires…','Additional information…','Información adicional…','Informazioni aggiuntive…')}
                   value={nNotes} onChange={e => setNNotes(e.target.value)}
                   style={{ width:'100%', boxSizing:'border-box' }} />
               </div>
             </div>
             <div style={{ display:'flex', gap:10, marginTop:20 }}>
-              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setAddOpen(false)}>Annuler</button>
-              <button className="btn btn-primary btn-sm" style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }} onClick={addExpense}><Check size={14}/> Enregistrer</button>
+              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setAddOpen(false)}>{tr('Annuler','Cancel','Cancelar','Annulla')}</button>
+              <button className="btn btn-primary btn-sm" style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }} onClick={addExpense}><Check size={14}/> {tr('Enregistrer','Save','Guardar','Salva')}</button>
             </div>
           </div>
         </div>
@@ -691,7 +694,7 @@ export default function Expenses() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={() => setBudgetOpen(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}><Settings size={16}/> Modifier les budgets</span>
+              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}><Settings size={16}/> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}</span>
               <button className="mini-btn" onClick={() => setBudgetOpen(false)}><X size={15} /></button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -709,8 +712,8 @@ export default function Expenses() {
               })}
             </div>
             <div style={{ display:'flex', gap:10, marginTop:20 }}>
-              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setBudgetOpen(false)}>Annuler</button>
-              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={saveBudgets}>Sauvegarder</button>
+              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setBudgetOpen(false)}>{tr('Annuler','Cancel','Cancelar','Annulla')}</button>
+              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={saveBudgets}>{tr('Sauvegarder','Save','Guardar','Salva')}</button>
             </div>
           </div>
         </div>

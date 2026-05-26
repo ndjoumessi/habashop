@@ -292,7 +292,14 @@ export const useAppStore = create<AppStore>()(
 
       // Tenant courant
       tenant: null,
-      setTenant:   (tenant) => set({ tenant }),
+      // La devise d'affichage suit la boutique connectée : sans ça, une devise
+      // persistée (ex: EUR d'une session précédente) convertissait les montants
+      // XOF d'un compte XOF en euros (500 000 XOF → 762,25 €).
+      setTenant:   (tenant) => set((state) => {
+        const tc = tenant?.currency
+        const valid = tc && (['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP'] as const).includes(tc as Currency)
+        return { tenant, currency: valid ? (tc as Currency) : state.currency }
+      }),
       clearTenant: () => set({ tenant: null }),
 
       updateConfig: (partial) => {

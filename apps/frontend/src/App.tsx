@@ -1,7 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore, canAccess, getLandingForRole } from '@/stores/authStore'
-import { authApi } from '@/lib/api'
+import { authApi, tenantApi } from '@/lib/api'
 import { useAppStore } from '@/stores/appStore'
 import AppLayout from '@/components/layout/AppLayout'
 import { ConfirmHost } from '@/lib/confirm'
@@ -80,6 +80,11 @@ export default function App() {
       authApi.me()
         .then(user => updateUser(user))
         .catch(() => logout())
+      // Re-synchronise le tenant (non persisté) au rechargement → la devise
+      // d'affichage suit la boutique (setTenant aligne currency sur tenant.currency).
+      tenantApi.get()
+        .then(t => { if (t?.id) useAppStore.getState().setTenant(t) })
+        .catch(() => {})
     }
     // Reset session caisse au démarrage
     // (évite les valeurs résiduelles du localStorage)
