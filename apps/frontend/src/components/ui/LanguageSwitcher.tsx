@@ -31,7 +31,7 @@ export default function LanguageSwitcher() {
         className="icon-btn"
         onClick={() => !settingsLocked && setOpen(o => !o)}
         title={settingsLocked
-          ? (lang === 'fr' ? 'Configuré dans Paramètres' : 'Configured in Settings')
+          ? (lang === 'en' ? 'Configured in Settings' : lang === 'es' ? 'Configurado en Ajustes' : lang === 'it' ? 'Configurato in Impostazioni' : 'Configuré dans Paramètres')
           : 'Changer la langue'}
         style={{
           gap: 4, padding: '6px 10px', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)',

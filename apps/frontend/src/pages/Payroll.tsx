@@ -403,7 +403,7 @@ export default function Payroll() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">{lang === 'fr' ? 'Paie & Salaires' : 'Payroll'}</h1>
+          <h1 className="page-title">{lang === 'en' ? 'Payroll' : lang === 'es' ? 'Nómina y salarios' : lang === 'it' ? 'Buste paga e stipendi' : 'Paie & Salaires'}</h1>
           <p className="page-subtitle">{lang === 'fr' ? `Période : ${month}` : `Period: ${month}`}</p>
         </div>
         <button className="btn btn-ghost btn-sm" onClick={() => {
@@ -435,9 +435,9 @@ export default function Payroll() {
         <div className="panel">
           <EmptyState
             icon="💰"
-            title={lang === 'fr' ? 'Aucune donnée de paie' : 'No payroll data'}
-            message={lang === 'fr' ? 'Ajoutez des employés avec leurs salaires pour gérer la paie.' : 'Add employees with their salaries to manage payroll.'}
-            action={{ label: lang === 'fr' ? 'Gérer les employés' : 'Manage employees', onClick: () => navigate('/app/hr') }}
+            title={lang === 'en' ? 'No payroll data' : lang === 'es' ? 'Sin datos de nómina' : lang === 'it' ? 'Nessun dato busta paga' : 'Aucune donnée de paie'}
+            message={lang === 'en' ? 'Add employees with their salaries to manage payroll.' : lang === 'es' ? 'Agregue empleados con sus salarios para gestionar la nómina.' : lang === 'it' ? 'Aggiungi dipendenti con i loro stipendi per gestire le buste paga.' : 'Ajoutez des employés avec leurs salaires pour gérer la paie.'}
+            action={{ label: lang === 'en' ? 'Manage employees' : lang === 'es' ? 'Gestionar empleados' : lang === 'it' ? 'Gestisci dipendenti' : 'Gérer les employés', onClick: () => navigate('/app/hr') }}
           />
         </div>
       ) : (

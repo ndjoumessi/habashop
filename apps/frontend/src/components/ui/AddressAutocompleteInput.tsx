@@ -125,7 +125,7 @@ export default function AddressAutocompleteInput({
           ref={inputRef}
           type="text"
           disabled={disabled}
-          placeholder={placeholder ?? (lang === 'fr' ? 'Adresse complète…' : 'Full address…')}
+          placeholder={placeholder ?? (lang === 'en' ? 'Full address…' : lang === 'es' ? 'Dirección completa…' : lang === 'it' ? 'Indirizzo completo…' : 'Adresse complète…')}
           value={value}
           autoComplete="off"
           onChange={e => handleChange(e.target.value)}
@@ -168,7 +168,7 @@ export default function AddressAutocompleteInput({
           borderRadius: 11, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.8)',
         }}>
           <div style={{ padding: '5px 12px', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text4)', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
-            {lang === 'fr' ? 'Suggestions Google Maps' : 'Google Maps Suggestions'}
+            {lang === 'en' ? 'Google Maps Suggestions' : lang === 'es' ? 'Sugerencias de Google Maps' : lang === 'it' ? 'Suggerimenti Google Maps' : 'Suggestions Google Maps'}
           </div>
           {suggestions.map((s, i) => (
             <button key={i} type="button" onMouseDown={() => selectSuggestion(s)}
@@ -197,7 +197,7 @@ export default function AddressAutocompleteInput({
           border: '1px solid rgba(255,184,0,.2)', borderRadius: 9,
           fontSize: 11, color: 'var(--warn)',
         }}>
-          ⚠️ {lang === 'fr' ? 'Saisie manuelle (Google Maps non configuré)' : 'Manual input (Google Maps not configured)'}
+          ⚠️ {lang === 'en' ? 'Manual input (Google Maps not configured)' : lang === 'es' ? 'Entrada manual (Google Maps no configurado)' : lang === 'it' ? 'Inserimento manuale (Google Maps non configurato)' : 'Saisie manuelle (Google Maps non configuré)'}
         </div>
       )}
     </div>

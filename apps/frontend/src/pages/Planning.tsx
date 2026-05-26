@@ -152,7 +152,7 @@ export default function Planning() {
   const exportCSVPlan = () => {
     const rows = [
       [T.employee, ...weekDays.map(d=>
-        d.toLocaleDateString(lang==='fr'?'fr-FR':'en-US',
+        d.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',
           {weekday:'short',day:'numeric',month:'short'})
       )],
       ...filtered.map(emp=>[
@@ -193,10 +193,10 @@ export default function Planning() {
         <div>
           <h1 className="page-title">{T.title}</h1>
           <p className="page-subtitle">
-            {weekDays[0].toLocaleDateString(lang==='fr'?'fr-FR':'en-US',
+            {weekDays[0].toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',
               {day:'numeric',month:'long'})}
             {' — '}
-            {weekDays[6].toLocaleDateString(lang==='fr'?'fr-FR':'en-US',
+            {weekDays[6].toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',
               {day:'numeric',month:'long',year:'numeric'})}
           </p>
         </div>
@@ -237,7 +237,7 @@ export default function Planning() {
           color:'var(--text3)', alignSelf:'center',
           marginRight:6, flexShrink:0,
         }}>
-          {lang==='fr'?'ASSIGNER :':'ASSIGN:'}
+          {lang === 'en' ? 'ASSIGN:' : lang === 'es' ? 'ASIGNAR:' : lang === 'it' ? 'ASSEGNA:' : 'ASSIGNER :'}
         </div>
         {(Object.entries(SHIFT_TYPES) as [ShiftType, typeof SHIFT_TYPES[ShiftType]][])
           .map(([key,s]) => (
@@ -572,10 +572,10 @@ export default function Planning() {
             }}>
               <div>
                 <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
-                  {lang==='fr'?'Assigner un shift':'Assign shift'}
+                  {lang === 'en' ? 'Assign shift' : lang === 'es' ? 'Asignar un turno' : lang === 'it' ? 'Assegna un turno' : 'Assigner un shift'}
                 </div>
                 <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>
-                  {shiftModal.name} · {weekDays[shiftModal.di]?.toLocaleDateString(lang==='fr'?'fr-FR':'en-US',{weekday:'short',day:'numeric',month:'short'})}
+                  {shiftModal.name} · {weekDays[shiftModal.di]?.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',{weekday:'short',day:'numeric',month:'short'})}
                 </div>
               </div>
               <button onClick={() => setShiftModal(null)} style={{
@@ -589,7 +589,7 @@ export default function Planning() {
             {/* Shift type buttons */}
             <div style={{ padding:'16px 20px', display:'flex', flexDirection:'column', gap:8 }}>
               <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:2 }}>
-                {lang==='fr'?'TYPE DE SHIFT':'SHIFT TYPE'}
+                {lang === 'en' ? 'SHIFT TYPE' : lang === 'es' ? 'TIPO DE TURNO' : lang === 'it' ? 'TIPO DI TURNO' : 'TYPE DE SHIFT'}
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                 {(Object.entries(SHIFT_TYPES) as [ShiftType, typeof SHIFT_TYPES[ShiftType]][]).map(([key,s]) => (
@@ -627,7 +627,7 @@ export default function Planning() {
                       [shiftModal.empId]: { ...(prev[shiftModal.empId]??{}), [shiftModal.di]: modalShift }
                     }))
                     setShiftModal(null)
-                    toast.success(`${s.label} assigné${lang==='fr'?' à ':' → '}${shiftModal.name}`)
+                    toast.success(`${s.label} assigné${lang === 'en' ? ' → ' : lang === 'es' ? ' a ' : lang === 'it' ? ' a ' : ' à '}${shiftModal.name}`)
                   }}
                   style={{
                     flex:1, padding:'11px', borderRadius:10,
@@ -638,7 +638,7 @@ export default function Planning() {
                     boxShadow:`0 4px 14px ${SHIFT_TYPES[modalShift].color}40`,
                     transition:'all .15s',
                   }}>
-                  {lang==='fr'?'Confirmer':'Confirm'}
+                  {lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'}
                 </button>
                 <button
                   onClick={() => setShiftModal(null)}
@@ -649,7 +649,7 @@ export default function Planning() {
                     cursor:'pointer', color:'var(--text3)',
                     fontSize:13, fontFamily:'var(--font)',
                   }}>
-                  {lang==='fr'?'Annuler':'Cancel'}
+                  {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
                 </button>
               </div>
             </div>

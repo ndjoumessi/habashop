@@ -83,7 +83,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
               <Download size={13} /> PDF
             </button>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { setSelectedForLabel(products.map(p => p.sku)); setShowLabelModal(true) }}>
-              <Tag size={13} /> {lang === 'fr' ? 'Étiquettes' : 'Labels'}
+              <Tag size={13} /> {lang === 'en' ? 'Labels' : lang === 'es' ? 'Etiquetas' : lang === 'it' ? 'Etichette' : 'Étiquettes'}
             </button>
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => { setProductEditMode(true); setShowModal(true) }}>
               <Plus size={13} /> {t('btn_add')}
@@ -139,11 +139,11 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
                     <div style={{ padding:'7px 9px', borderRadius:8, background:'var(--c-purple-bg2)', border:'1px solid rgba(108,71,255,.15)' }}>
-                      <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'fr' ? 'Achat' : 'Buy'}</div>
+                      <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Buy' : lang === 'es' ? 'Compra' : lang === 'it' ? 'Acquisto' : 'Achat'}</div>
                       <div style={{ fontSize:12, fontWeight:800, color:'var(--p3)', fontFamily:'var(--mono)' }}>{fmt(p.buy)}</div>
                     </div>
                     <div style={{ padding:'7px 9px', borderRadius:8, background:'var(--c-green-bg2)', border:'1px solid rgba(0,208,132,.15)' }}>
-                      <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'fr' ? 'Vente' : 'Sell'}</div>
+                      <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Sell' : lang === 'es' ? 'Vender' : lang === 'it' ? 'Vendi' : 'Vente'}</div>
                       <div style={{ fontSize:12, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(p.sell)}</div>
                     </div>
                   </div>
@@ -161,7 +161,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                   <div style={{ display:'flex', gap:5, marginTop:2 }}>
                     {st.cls !== 'badge-green' && (
                       <button className="mini-btn" style={{ flex:1, cursor:'pointer', justifyContent:'center', display:'flex', alignItems:'center', gap:4, fontSize:11 }} onClick={() => navigate('/app/orders')}>
-                        <Package size={11} /> {lang === 'fr' ? 'Commander' : 'Order'}
+                        <Package size={11} /> {lang === 'en' ? 'Order' : lang === 'es' ? 'Pedir' : lang === 'it' ? 'Ordina' : 'Commander'}
                       </button>
                     )}
                     <button className="mini-btn" style={{ cursor:'pointer' }} title="Modifier" onClick={() => {

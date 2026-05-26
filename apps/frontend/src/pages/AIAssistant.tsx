@@ -138,12 +138,12 @@ export default function AIAssistant() {
     } catch (err: any) {
       const msg = err.message ?? ''
       const friendly = msg.includes('authentication_error') || msg.includes('invalid x-api-key')
-        ? (lang === 'fr' ? '❌ Clé API Anthropic invalide. Vérifiez la configuration du serveur.' : '❌ Invalid Anthropic API key. Check server configuration.')
+        ? (lang === 'en' ? '❌ Invalid Anthropic API key. Check server configuration.' : lang === 'es' ? '❌ Clave API Anthropic inválida. Verifique la configuración del servidor.' : lang === 'it' ? '❌ Chiave API Anthropic non valida. Verifica la configurazione del server.' : '❌ Clé API Anthropic invalide. Vérifiez la configuration du serveur.')
         : msg.includes('503') || msg.includes('non configurée')
-          ? (lang === 'fr' ? '❌ Service IA temporairement indisponible.' : '❌ AI service temporarily unavailable.')
-          : (lang === 'fr' ? '❌ Erreur de connexion. Réessayez dans quelques instants.' : '❌ Connection error. Please try again.')
+          ? (lang === 'en' ? '❌ AI service temporarily unavailable.' : lang === 'es' ? '❌ Servicio IA temporalmente no disponible.' : lang === 'it' ? '❌ Servizio IA temporaneamente non disponibile.' : '❌ Service IA temporairement indisponible.')
+          : (lang === 'en' ? '❌ Connection error. Please try again.' : lang === 'es' ? '❌ Error de conexión. Inténtelo de nuevo en unos instantes.' : lang === 'it' ? '❌ Errore di connessione. Riprova tra qualche istante.' : '❌ Erreur de connexion. Réessayez dans quelques instants.')
       resolveMsg(loadingId, friendly)
-      toast.error(lang === 'fr' ? 'Erreur assistant IA' : 'AI assistant error')
+      toast.error(lang === 'en' ? 'AI assistant error' : lang === 'es' ? 'Error del asistente IA' : lang === 'it' ? 'Errore assistente IA' : 'Erreur assistant IA')
     } finally {
       setAnalyzing(false)
     }
@@ -173,7 +173,7 @@ export default function AIAssistant() {
 
   const clearChat = () => {
     setMessages(prev => prev.slice(0, 1))
-    toast.success(lang === 'fr' ? 'Conversation effacée' : 'Chat cleared')
+    toast.success(lang === 'en' ? 'Chat cleared' : lang === 'es' ? 'Conversación borrada' : lang === 'it' ? 'Conversazione cancellata' : 'Conversation effacée')
   }
 
   const quickActions = QUICK_ACTIONS.map(a => ({
@@ -218,7 +218,7 @@ export default function AIAssistant() {
               <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:3 }}>
                 <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--acc2)', boxShadow:'0 0 6px var(--acc2)' }} />
                 <span style={{ fontSize:10, color:'var(--acc2)', fontWeight:600 }}>
-                  {lang === 'fr' ? 'En ligne · Claude' : 'Online · Claude'}
+                  {lang === 'en' ? 'Online · Claude' : lang === 'es' ? 'En línea · Claude' : lang === 'it' ? 'Online · Claude' : 'En ligne · Claude'}
                 </span>
               </div>
             </div>
@@ -234,13 +234,13 @@ export default function AIAssistant() {
             }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.25)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.15)' }}
-          ><Plus size={13}/> {lang === 'fr' ? 'Nouvelle conversation' : 'New conversation'}</button>
+          ><Plus size={13}/> {lang === 'en' ? 'New conversation' : lang === 'es' ? 'Nueva conversación' : lang === 'it' ? 'Nuova conversazione' : 'Nouvelle conversation'}</button>
         </div>
 
         {/* Quick actions */}
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:14 }}>
           <div style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.7px', color:'var(--text3)', marginBottom:10 }}>
-            {lang === 'fr' ? 'Actions rapides' : 'Quick actions'}
+            {lang === 'en' ? 'Quick actions' : lang === 'es' ? 'Acciones rápidas' : lang === 'it' ? 'Azioni rapide' : 'Actions rapides'}
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
             {quickActions.map((action, i) => (
@@ -280,7 +280,7 @@ export default function AIAssistant() {
         {/* Shop context */}
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:14 }}>
           <div style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.7px', color:'var(--text3)', marginBottom:10 }}>
-            {lang === 'fr' ? 'Contexte boutique' : 'Shop context'}
+            {lang === 'en' ? 'Shop context' : lang === 'es' ? 'Contexto de tienda' : lang === 'it' ? 'Contesto negozio' : 'Contexte boutique'}
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {shopContext.map((item, i) => (
@@ -295,7 +295,7 @@ export default function AIAssistant() {
         {/* Analysis buttons */}
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:14 }}>
           <div style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.7px', color:'var(--text3)', marginBottom:10 }}>
-            {lang === 'fr' ? 'Analyses IA' : 'AI analyses'}
+            {lang === 'en' ? 'AI analyses' : lang === 'es' ? 'Análisis IA' : lang === 'it' ? 'Analisi IA' : 'Analyses IA'}
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
             {ANALYSIS_BUTTONS.map(btn => (
@@ -325,7 +325,7 @@ export default function AIAssistant() {
         {messages.length > 1 && (
           <button className="mini-btn" onClick={clearChat}
             style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, cursor:'pointer', color:'var(--danger)', borderColor:'rgba(232,64,74,.2)', width:'100%', padding:8 }}>
-            <Trash2 size={12}/> {lang === 'fr' ? 'Effacer la conversation' : 'Clear conversation'}
+            <Trash2 size={12}/> {lang === 'en' ? 'Clear conversation' : lang === 'es' ? 'Borrar la conversación' : lang === 'it' ? 'Cancella la conversazione' : 'Effacer la conversation'}
           </button>
         )}
       </div>
@@ -344,16 +344,14 @@ export default function AIAssistant() {
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <MessageSquare size={15} style={{ color:'var(--p3)', flexShrink:0 }} />
             <span style={{ fontSize:14, fontWeight:800, color:'var(--text)' }}>
-              {lang === 'fr' ? 'Conversation' : 'Chat'}
+              {lang === 'en' ? 'Chat' : lang === 'es' ? 'Conversación' : lang === 'it' ? 'Conversazione' : 'Conversation'}
             </span>
             <span style={{ marginLeft:'auto', fontSize:10, color:'var(--text4)', fontFamily:'var(--mono)' }}>
-              {messages.length} {lang === 'fr' ? 'messages' : 'messages'}
+              {messages.length} {lang === 'en' ? 'messages' : lang === 'es' ? 'mensajes' : lang === 'it' ? 'messaggi' : 'messages'}
             </span>
           </div>
           <p style={{ fontSize:11, color:'var(--text3)', margin:'5px 0 0', lineHeight:1.4 }}>
-            {lang === 'fr'
-              ? 'Posez vos questions ou utilisez les actions rapides du panneau gauche.'
-              : 'Ask questions or use the quick actions in the left panel.'}
+            {lang === 'en' ? 'Ask questions or use the quick actions in the left panel.' : lang === 'es' ? 'Haga sus preguntas o use las acciones rápidas del panel izquierdo.' : lang === 'it' ? 'Poni le tue domande o usa le azioni rapide nel pannello sinistro.' : 'Posez vos questions ou utilisez les actions rapides du panneau gauche.'}
           </p>
         </div>
 
@@ -392,10 +390,10 @@ export default function AIAssistant() {
                   flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
                 }}>
                   <span style={{ fontSize:11, fontWeight:700, color: msg.role === 'assistant' ? 'var(--p3)' : 'var(--text3)' }}>
-                    {msg.role === 'assistant' ? 'HabaShop AI' : (lang === 'fr' ? 'Vous' : 'You')}
+                    {msg.role === 'assistant' ? 'HabaShop AI' : (lang === 'en' ? 'You' : lang === 'es' ? 'Tú' : lang === 'it' ? 'Tu' : 'Vous')}
                   </span>
                   <span style={{ fontSize:9, color:'var(--text4)' }}>
-                    {msg.time.toLocaleTimeString(lang === 'fr' ? 'fr-FR' : 'en-US', { hour:'2-digit', minute:'2-digit' })}
+                    {msg.time.toLocaleTimeString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { hour:'2-digit', minute:'2-digit' })}
                   </span>
                 </div>
 
@@ -416,7 +414,7 @@ export default function AIAssistant() {
                         }} />
                       ))}
                       <span style={{ fontSize:11, color:'var(--text3)', marginLeft:6 }}>
-                        {lang === 'fr' ? 'HabaShop AI réfléchit...' : 'HabaShop AI is thinking...'}
+                        {lang === 'en' ? 'HabaShop AI is thinking...' : lang === 'es' ? 'HabaShop AI está pensando...' : lang === 'it' ? 'HabaShop AI sta pensando...' : 'HabaShop AI réfléchit...'}
                       </span>
                     </div>
                   ) : msg.role === 'assistant' ? (

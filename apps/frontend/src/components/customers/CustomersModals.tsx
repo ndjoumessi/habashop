@@ -139,13 +139,13 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
                   <Eye size={13} style={{ color:'var(--acc3)', flexShrink:0 }} />
                   <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>
-                    {lang==='fr' ? 'Mode visualisation — cliquez sur Modifier pour éditer' : 'View mode — click Edit to make changes'}
+                    {lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}
                   </span>
                 </div>
               : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
                   <Pencil size={13} style={{ color:'var(--warn)', flexShrink:0 }} />
                   <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>
-                    {lang==='fr' ? 'Mode édition — modifications non sauvegardées' : 'Edit mode — unsaved changes'}
+                    {lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios no guardados' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}
                   </span>
                 </div>
             }
@@ -185,7 +185,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             <div className="flex gap-2 mt-5">
               {!custEditMode ? (
                 <>
-                  <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6 }} onClick={() => setCustEditMode(true)}><Pencil size={13} /> {lang==='fr'?'Modifier':'Edit'}</button>
+                  <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6 }} onClick={() => setCustEditMode(true)}><Pencil size={13} /> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}</button>
                   <button className="btn btn-ghost" style={{ color:'var(--danger)', display:'flex', alignItems:'center', gap:6 }}
                     aria-label={i('Supprimer le client', 'Delete customer', 'Eliminar cliente', 'Elimina cliente')}
                     onClick={async () => {
@@ -197,7 +197,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                         toast.success(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
                       } catch (e: any) { toast.error(e?.message ?? 'Erreur') }
                     }}><Trash2 size={13} /> {i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}</button>
-                  <button className="btn btn-ghost" onClick={() => setShowEditCustModal(false)}>{lang==='fr'?'Fermer':'Close'}</button>
+                  <button className="btn btn-ghost" onClick={() => setShowEditCustModal(false)}>{lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
                 </>
               ) : (
                 <>
@@ -251,10 +251,10 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               }}><UserPlus size={22} color="#fff" /></div>
               <div style={{flex:1}}>
                 <h3 style={{ fontSize:17, fontWeight:900, color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
-                  {lang==='fr'?'+ Nouveau client':'+ New customer'}
+                  {lang === 'en' ? '+ New customer' : lang === 'es' ? '+ Nuevo cliente' : lang === 'it' ? '+ Nuovo cliente' : '+ Nouveau client'}
                 </h3>
                 <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>
-                  {lang==='fr'?'Ajoutez un client à votre CRM':'Add a customer to your CRM'}
+                  {lang === 'en' ? 'Add a customer to your CRM' : lang === 'es' ? 'Agregue un cliente a su CRM' : lang === 'it' ? 'Aggiungi un cliente al tuo CRM' : 'Ajoutez un client à votre CRM'}
                 </div>
               </div>
               <button type="button" onClick={()=>setShowCreate(false)} style={{
@@ -271,10 +271,10 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             }}>
               <div>
                 <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
-                  {lang==='fr'?'NOM / ENSEIGNE *':'NAME / COMPANY *'}
+                  {lang === 'en' ? 'NAME / COMPANY *' : lang === 'es' ? 'NOMBRE / EMPRESA *' : lang === 'it' ? 'NOME / INSEGNA *' : 'NOM / ENSEIGNE *'}
                 </label>
                 <input className="input" autoFocus
-                  placeholder={lang==='fr'?'Nom du client...':'Customer name...'}
+                  placeholder={lang === 'en' ? 'Customer name...' : lang === 'es' ? 'Nombre del cliente...' : lang === 'it' ? 'Nome del cliente...' : 'Nom du client...'}
                   value={form.name}
                   onChange={e=>setForm(f=>({...f,name:e.target.value}))} />
               </div>
@@ -283,15 +283,15 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>TYPE</label>
                   <select aria-label="TYPE" className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
-                    <option value="Détail">{lang==='fr'?'Détail':'Retail'}</option>
-                    <option value="Grossiste">{lang==='fr'?'Grossiste':'Wholesale'}</option>
-                    <option value="Semi-gros">{lang==='fr'?'Semi-gros':'Semi-wholesale'}</option>
-                    <option value="Fidèle">{lang==='fr'?'Fidèle':'Loyal'}</option>
+                    <option value="Détail">{lang === 'en' ? 'Retail' : lang === 'es' ? 'Minorista' : lang === 'it' ? 'Dettaglio' : 'Détail'}</option>
+                    <option value="Grossiste">{lang === 'en' ? 'Wholesale' : lang === 'es' ? 'Mayorista' : lang === 'it' ? 'Grossista' : 'Grossiste'}</option>
+                    <option value="Semi-gros">{lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayor' : lang === 'it' ? 'Semi-ingrosso' : 'Semi-gros'}</option>
+                    <option value="Fidèle">{lang === 'en' ? 'Loyal' : lang === 'es' ? 'Fiel' : lang === 'it' ? 'Fedele' : 'Fidèle'}</option>
                   </select>
                 </div>
                 <div style={{ gridColumn: '1/-1' }}>
                   <PhoneInputWithCountry
-                    label={lang==='fr'?'TÉLÉPHONE':'PHONE'}
+                    label={lang === 'en' ? 'PHONE' : lang === 'es' ? 'TELÉFONO' : lang === 'it' ? 'TELEFONO' : 'TÉLÉPHONE'}
                     value={form.phone}
                     onChange={v=>setForm(f=>({...f, phone:v}))}
                     lang={lang}
@@ -307,7 +307,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
 
               <div>
                 <AddressAutocompleteInput
-                  label={lang==='fr'?'ADRESSE':'ADDRESS'}
+                  label={lang === 'en' ? 'ADDRESS' : lang === 'es' ? 'DIRECCIÓN' : lang === 'it' ? 'INDIRIZZO' : 'ADRESSE'}
                   value={form.address}
                   onChange={v=>setForm(f=>({...f,address:v}))}
                   lang={lang}
@@ -327,7 +327,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 boxShadow:'0 4px 16px rgba(244,114,182,.4)',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               }}>
-                <CheckCircle size={15} style={{flexShrink:0}} /> {lang==='fr'?'Ajouter le client':'Add customer'}
+                <CheckCircle size={15} style={{flexShrink:0}} /> {lang === 'en' ? 'Add customer' : lang === 'es' ? 'Agregar el cliente' : lang === 'it' ? 'Aggiungi il cliente' : 'Ajouter le client'}
               </button>
               <button onClick={()=>{setShowCreate(false);resetCustForm()}} style={{
                 padding:'13px 18px', background:'rgba(255,255,255,.05)',
@@ -335,7 +335,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 cursor:'pointer', color:'var(--text2)', fontSize:13,
                 fontFamily:'var(--font)', fontWeight:600,
               }}>
-                {lang==='fr'?'Annuler':'Cancel'}
+                {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
               </button>
             </div>
           </div>

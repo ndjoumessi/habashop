@@ -106,11 +106,11 @@ export default function ResendMonitor({
 
   // Config des événements webhook
   const EVENT_CONFIG: Record<ResendEventType, { icon: string; label: string; color: string }> = {
-    delivered:  { icon: '✅', label: lang === 'fr' ? 'Livré'  : 'Delivered', color: 'var(--acc2)' },
-    bounced:    { icon: '⚠️', label: lang === 'fr' ? 'Rebond' : 'Bounced',   color: 'var(--danger)' },
-    complained: { icon: '🚫', label: lang === 'fr' ? 'Spam'   : 'Spam',      color: '#FF3B5C' },
-    opened:     { icon: '👁',  label: lang === 'fr' ? 'Ouvert' : 'Opened',    color: 'var(--acc3)' },
-    clicked:    { icon: '🖱️', label: lang === 'fr' ? 'Cliqué' : 'Clicked',   color: 'var(--p3)' },
+    delivered:  { icon: '✅', label: lang === 'en' ? 'Delivered' : lang === 'es' ? 'Entregado' : lang === 'it' ? 'Consegnato' : 'Livré', color: 'var(--acc2)' },
+    bounced:    { icon: '⚠️', label: lang === 'en' ? 'Bounced' : lang === 'es' ? 'Rebote' : lang === 'it' ? 'Rimbalzo' : 'Rebond',   color: 'var(--danger)' },
+    complained: { icon: '🚫', label: lang === 'en' ? 'Spam' : lang === 'es' ? 'Spam' : lang === 'it' ? 'Spam' : 'Spam',      color: '#FF3B5C' },
+    opened:     { icon: '👁',  label: lang === 'en' ? 'Opened' : lang === 'es' ? 'Abierto' : lang === 'it' ? 'Aperto' : 'Ouvert',    color: 'var(--acc3)' },
+    clicked:    { icon: '🖱️', label: lang === 'en' ? 'Clicked' : lang === 'es' ? 'Clicado' : lang === 'it' ? 'Cliccato' : 'Cliqué',   color: 'var(--p3)' },
   }
 
   // Calculs
@@ -182,17 +182,17 @@ export default function ResendMonitor({
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)' }}>
           <span>
             <span style={{ fontWeight: 800, color: 'var(--acc3)', fontFamily: 'var(--mono)' }}>{liveRemaining}</span>
-            /{ratelimitLimit} {lang === 'fr' ? 'req/s restantes' : 'req/s left'}
+            /{ratelimitLimit} {lang === 'en' ? 'req/s left' : lang === 'es' ? 'req/s restantes' : lang === 'it' ? 'req/s rimaste' : 'req/s restantes'}
           </span>
-          <span style={{ fontFamily: 'var(--mono)' }}>{lang === 'fr' ? 'Reset dans' : 'Reset in'} {liveReset}s</span>
+          <span style={{ fontFamily: 'var(--mono)' }}>{lang === 'en' ? 'Reset in' : lang === 'es' ? 'Reinicio en' : lang === 'it' ? 'Reset tra' : 'Reset dans'} {liveReset}s</span>
         </div>
       </div>
 
       {/* ── QUOTA JOUR + MOIS ─────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {[
-          { label: lang === 'fr' ? 'Quota Journalier' : 'Daily Quota', used: dailyQuota, total: dailyLimit, pct: dailyPct, sublabel: `${dailyLimit - dailyQuota} ${lang === 'fr' ? 'restants' : 'left'}` },
-          { label: lang === 'fr' ? 'Quota Mensuel' : 'Monthly Quota', used: monthlyQuota, total: monthlyLimit, pct: monthlyPct, sublabel: `${monthlyLimit - monthlyQuota} ${lang === 'fr' ? 'restants' : 'left'}` },
+          { label: lang === 'en' ? 'Daily Quota' : lang === 'es' ? 'Cuota diaria' : lang === 'it' ? 'Quota giornaliera' : 'Quota Journalier', used: dailyQuota, total: dailyLimit, pct: dailyPct, sublabel: `${dailyLimit - dailyQuota} ${lang === 'en' ? 'left' : lang === 'es' ? 'restantes' : lang === 'it' ? 'rimanenti' : 'restants'}` },
+          { label: lang === 'en' ? 'Monthly Quota' : lang === 'es' ? 'Cuota mensual' : lang === 'it' ? 'Quota mensile' : 'Quota Mensuel', used: monthlyQuota, total: monthlyLimit, pct: monthlyPct, sublabel: `${monthlyLimit - monthlyQuota} ${lang === 'en' ? 'left' : lang === 'es' ? 'restantes' : lang === 'it' ? 'rimanenti' : 'restants'}` },
         ].map((q, i) => {
           const color = getColor(q.used, q.total)
           return (
@@ -217,11 +217,11 @@ export default function ResendMonitor({
       {/* ── STATS D'ENVOI ─────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: 8 }}>
         {[
-          { lbl: lang === 'fr' ? 'Envoyés' : 'Sent', val: liveStats.sent, color: 'var(--acc2)' },
-          { lbl: lang === 'fr' ? 'Échoués' : 'Failed', val: liveStats.failed, color: 'var(--danger)' },
-          { lbl: lang === 'fr' ? 'Retentés' : 'Retried', val: liveStats.retried, color: 'var(--acc)' },
-          { lbl: lang === 'fr' ? 'En queue' : 'Queued', val: liveStats.queued, color: 'var(--acc3)' },
-          { lbl: lang === 'fr' ? 'Latence' : 'Latency', val: `${liveStats.avgDuration}ms`, color: liveStats.avgDuration > 2000 ? 'var(--danger)' : liveStats.avgDuration > 1000 ? 'var(--acc)' : 'var(--text2)' },
+          { lbl: lang === 'en' ? 'Sent' : lang === 'es' ? 'Enviados' : lang === 'it' ? 'Inviati' : 'Envoyés', val: liveStats.sent, color: 'var(--acc2)' },
+          { lbl: lang === 'en' ? 'Failed' : lang === 'es' ? 'Fallidos' : lang === 'it' ? 'Falliti' : 'Échoués', val: liveStats.failed, color: 'var(--danger)' },
+          { lbl: lang === 'en' ? 'Retried' : lang === 'es' ? 'Reintentados' : lang === 'it' ? 'Ritentati' : 'Retentés', val: liveStats.retried, color: 'var(--acc)' },
+          { lbl: lang === 'en' ? 'Queued' : lang === 'es' ? 'En cola' : lang === 'it' ? 'In coda' : 'En queue', val: liveStats.queued, color: 'var(--acc3)' },
+          { lbl: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', val: `${liveStats.avgDuration}ms`, color: liveStats.avgDuration > 2000 ? 'var(--danger)' : liveStats.avgDuration > 1000 ? 'var(--acc)' : 'var(--text2)' },
         ].map((s, i) => (
           <div key={i} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
             <div style={{ fontSize: 14, fontWeight: 900, color: s.color, fontFamily: 'var(--mono)', letterSpacing: '-.3px', marginBottom: 3 }}>
@@ -239,9 +239,9 @@ export default function ResendMonitor({
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--p3)" strokeWidth="2.5" strokeLinecap="round">
               <path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" />
             </svg>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{lang === 'fr' ? 'Événements Webhook' : 'Webhook Events'}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{lang === 'en' ? 'Webhook Events' : lang === 'es' ? 'Eventos Webhook' : lang === 'it' ? 'Eventi Webhook' : 'Événements Webhook'}</span>
           </div>
-          <span style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--mono)' }}>{lang === 'fr' ? 'dernières 24h' : 'last 24h'}</span>
+          <span style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--mono)' }}>{lang === 'en' ? 'last 24h' : lang === 'es' ? 'últimas 24h' : lang === 'it' ? 'ultime 24h' : 'dernières 24h'}</span>
         </div>
         <div style={{ maxHeight: 220, overflowY: 'auto' }}>
           {liveEvents.map((evt, i) => {
@@ -270,7 +270,7 @@ export default function ResendMonitor({
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text4)" strokeWidth="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
-          {lang === 'fr' ? 'Plan actuel' : 'Current plan'}
+          {lang === 'en' ? 'Current plan' : lang === 'es' ? 'Plan actual' : lang === 'it' ? 'Piano attuale' : 'Plan actuel'}
         </div>
         <span style={{
           padding: '3px 10px', borderRadius: 99, fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px',
@@ -278,7 +278,7 @@ export default function ResendMonitor({
           color: plan === 'free' ? 'var(--text3)' : plan === 'pro' ? 'var(--acc2)' : 'var(--p3)',
           border: plan === 'free' ? '1px solid var(--border)' : plan === 'pro' ? '1px solid rgba(0,208,132,.25)' : '1px solid rgba(108,71,255,.25)',
         }}>
-          {plan} · {monthlyLimit.toLocaleString('fr-FR')} {lang === 'fr' ? 'emails/mois' : 'emails/mo'}
+          {plan} · {monthlyLimit.toLocaleString('fr-FR')} {lang === 'en' ? 'emails/mo' : lang === 'es' ? 'emails/mes' : lang === 'it' ? 'email/mese' : 'emails/mois'}
         </span>
       </div>
 

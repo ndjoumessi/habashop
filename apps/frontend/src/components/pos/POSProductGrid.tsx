@@ -338,7 +338,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
             <div style={{ flex:1, overflowY:'auto', minHeight:0 }}>
               {loadingHistory ? (
                 <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
-                  ⏳ {lang === 'fr' ? 'Chargement...' : 'Loading...'}
+                  ⏳ {lang === 'en' ? 'Loading...' : lang === 'es' ? 'Cargando...' : lang === 'it' ? 'Caricamento...' : 'Chargement...'}
                 </div>
               ) : salesHistory.length === 0 ? (
                 <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
@@ -373,8 +373,8 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                               background: sale.paymentMode === 'cash' ? 'rgba(14,196,126,.12)' : sale.paymentMode === 'card' ? 'rgba(91,78,232,.12)' : 'rgba(240,165,0,.12)',
                               color: sale.paymentMode === 'cash' ? 'var(--acc2)' : sale.paymentMode === 'card' ? 'var(--p2)' : 'var(--acc)',
                             }}>
-                              {sale.paymentMode === 'cash' ? (lang === 'fr' ? 'Espèces' : 'Cash')
-                                : sale.paymentMode === 'card' ? (lang === 'fr' ? 'Carte' : 'Card') : 'Mobile'}
+                              {sale.paymentMode === 'cash' ? (lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces')
+                                : sale.paymentMode === 'card' ? (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte') : 'Mobile'}
                             </span>
                           </div>
                         </div>
@@ -392,7 +392,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                         ))}
                         {sale.items?.length > 3 && (
                           <div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>
-                            +{sale.items.length - 3} {lang === 'fr' ? 'autres articles' : 'more items'}
+                            +{sale.items.length - 3} {lang === 'en' ? 'more items' : lang === 'es' ? 'otros artículos' : lang === 'it' ? 'altri articoli' : 'autres articles'}
                           </div>
                         )}
                       </div>

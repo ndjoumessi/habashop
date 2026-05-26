@@ -372,7 +372,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
           <div className="modal-box" style={{ maxWidth: 500 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
               <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
-                <Tag size={14} /> {lang === 'fr' ? 'Imprimer des étiquettes' : 'Print labels'}
+                <Tag size={14} /> {lang === 'en' ? 'Print labels' : lang === 'es' ? 'Imprimir etiquetas' : lang === 'it' ? 'Stampa etichette' : 'Imprimer des étiquettes'}
               </h3>
               <button className="mini-btn" onClick={() => setShowLabelModal(false)}><X size={14} /></button>
             </div>
@@ -381,7 +381,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               {/* Taille */}
               <div>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
-                  {lang === 'fr' ? 'Taille des étiquettes' : 'Label size'}
+                  {lang === 'en' ? 'Label size' : lang === 'es' ? 'Tamaño de etiquetas' : lang === 'it' ? 'Dimensione etichette' : 'Taille des étiquettes'}
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                   {[
@@ -409,12 +409,12 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               {/* Options */}
               <div>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
-                  {lang === 'fr' ? 'Informations à afficher' : 'Information to display'}
+                  {lang === 'en' ? 'Information to display' : lang === 'es' ? 'Información a mostrar' : lang === 'it' ? 'Informazioni da mostrare' : 'Informations à afficher'}
                 </label>
                 {[
-                  { key: 'showPrice',   label: lang === 'fr' ? 'Prix de vente' : 'Selling price' },
+                  { key: 'showPrice',   label: lang === 'en' ? 'Selling price' : lang === 'es' ? 'Precio de venta' : lang === 'it' ? 'Prezzo di vendita' : 'Prix de vente' },
                   { key: 'showSku',     label: 'SKU / Référence' },
-                  { key: 'showBarcode', label: lang === 'fr' ? 'Code-barres' : 'Barcode' },
+                  { key: 'showBarcode', label: lang === 'en' ? 'Barcode' : lang === 'es' ? 'Código de barras' : lang === 'it' ? 'Codice a barre' : 'Code-barres' },
                 ].map(opt => (
                   <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
                     <input type="checkbox"
@@ -430,7 +430,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               {/* Copies */}
               <div>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
-                  {lang === 'fr' ? 'Copies par produit' : 'Copies per product'}
+                  {lang === 'en' ? 'Copies per product' : lang === 'es' ? 'Copias por producto' : lang === 'it' ? 'Copie per prodotto' : 'Copies par produit'}
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <button type="button" className="mini-btn"
@@ -448,14 +448,14 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               {/* Sélection produits */}
               <div>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
-                  {lang === 'fr' ? 'Produits à étiqueter' : 'Products to label'}
+                  {lang === 'en' ? 'Products to label' : lang === 'es' ? 'Productos a etiquetar' : lang === 'it' ? 'Prodotti da etichettare' : 'Produits à étiqueter'}
                 </label>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                   <button type="button" className="mini-btn" onClick={() => setSelectedForLabel(products.map(p => p.sku))}>
-                    {lang === 'fr' ? 'Tout' : 'All'}
+                    {lang === 'en' ? 'All' : lang === 'es' ? 'Todo' : lang === 'it' ? 'Tutto' : 'Tout'}
                   </button>
                   <button type="button" className="mini-btn" onClick={() => setSelectedForLabel([])}>
-                    {lang === 'fr' ? 'Aucun' : 'None'}
+                    {lang === 'en' ? 'None' : lang === 'es' ? 'Ninguno' : lang === 'it' ? 'Nessuno' : 'Aucun'}
                   </button>
                 </div>
                 <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 10, padding: 8 }}>
@@ -476,8 +476,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   ))}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
-                  {selectedForLabel.length} {lang === 'fr' ? 'sélectionné(s)' : 'selected'}
-                  {' → '}{selectedForLabel.length * labelConfig.copies} {lang === 'fr' ? 'étiquette(s)' : 'label(s)'}
+                  {selectedForLabel.length} {lang === 'en' ? 'selected' : lang === 'es' ? 'seleccionado(s)' : lang === 'it' ? 'selezionato/i' : 'sélectionné(s)'}
+                  {' → '}{selectedForLabel.length * labelConfig.copies} {lang === 'en' ? 'label(s)' : lang === 'es' ? 'etiqueta(s)' : lang === 'it' ? 'etichetta/e' : 'étiquette(s)'}
                 </div>
               </div>
             </div>
@@ -497,10 +497,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   printProductLabels(selectedProducts, fmt, { ...labelConfig, shopName: 'HabaShop', lang })
                   setShowLabelModal(false)
                 }}>
-                <Printer size={13} /> {lang === 'fr' ? 'Imprimer' : 'Print'}
+                <Printer size={13} /> {lang === 'en' ? 'Print' : lang === 'es' ? 'Imprimir' : lang === 'it' ? 'Stampa' : 'Imprimer'}
               </button>
               <button className="mini-btn" style={{ padding: '10px 16px' }} onClick={() => setShowLabelModal(false)}>
-                {lang === 'fr' ? 'Annuler' : 'Cancel'}
+                {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
               </button>
             </div>
           </div>

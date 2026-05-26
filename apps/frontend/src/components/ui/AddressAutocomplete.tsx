@@ -130,7 +130,7 @@ export default function AddressAutocomplete({
             cursor: disabled ? 'not-allowed' : 'text',
             opacity: disabled ? .5 : 1,
           }}
-          placeholder={placeholder ?? (lang === 'fr' ? 'Adresse...' : 'Address...')}
+          placeholder={placeholder ?? (lang === 'en' ? 'Address...' : lang === 'es' ? 'Dirección...' : lang === 'it' ? 'Indirizzo...' : 'Adresse...')}
           value={value}
           disabled={!!disabled}
           autoComplete="off"

@@ -133,9 +133,9 @@ export default function Activity() {
             ['Horodatage','Module','Action','Utilisateur','Description','IP','Sévérité'],
             filtered.map(log => [`${log.date} ${log.time}`, log.module, log.action, log.user, log.description, log.ip, log.severity])
           )
-          toast.success(lang === 'fr' ? 'Export téléchargé !' : 'Export downloaded!')
+          toast.success(lang === 'en' ? 'Export downloaded!' : lang === 'es' ? '¡Exportación descargada!' : lang === 'it' ? 'Esportazione scaricata!' : 'Export téléchargé !')
         }}>
-          <Download size={14} /> {lang === 'fr' ? 'Exporter CSV' : 'Export CSV'}
+          <Download size={14} /> {lang === 'en' ? 'Export CSV' : lang === 'es' ? 'Exportar CSV' : lang === 'it' ? 'Esporta CSV' : 'Exporter CSV'}
         </button>
       </div>
 
@@ -162,7 +162,7 @@ export default function Activity() {
           <div style={{ position:'relative', flex:1, minWidth:220 }}>
             <Search size={14} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
             <input className="input" style={{ paddingLeft:34, fontSize:13 }}
-              aria-label="Rechercher" placeholder={lang === 'fr' ? 'Rechercher utilisateur, action, description...' : 'Search user, action, description...'}
+              aria-label="Rechercher" placeholder={lang === 'en' ? 'Search user, action, description...' : lang === 'es' ? 'Buscar usuario, acción, descripción...' : lang === 'it' ? 'Cerca utente, azione, descrizione...' : 'Rechercher utilisateur, action, description...'}
               value={search} onChange={e => { setSearch(e.target.value); resetPage() }} />
           </div>
           <select className="input" style={{ width:'auto', fontSize:13 }}
@@ -179,13 +179,13 @@ export default function Activity() {
           </select>
           <select className="input" style={{ width:'auto', fontSize:13 }}
             value={dateFilter} onChange={e => { setDateFilter(e.target.value); resetPage() }}>
-            <option value="all">{lang === 'fr' ? 'Toutes dates' : 'All dates'}</option>
-            <option value="today">{lang === 'fr' ? "Aujourd'hui" : 'Today'}</option>
+            <option value="all">{lang === 'en' ? 'All dates' : lang === 'es' ? 'Todas las fechas' : lang === 'it' ? 'Tutte le date' : 'Toutes dates'}</option>
+            <option value="today">{lang === 'en' ? 'Today' : lang === 'es' ? 'Hoy' : lang === 'it' ? 'Oggi' : "Aujourd'hui"}</option>
           </select>
           {hasFilters && (
             <button className="mini-btn" style={{ display:'flex', alignItems:'center', gap:4, cursor:'pointer' }}
               onClick={() => { setSearch(''); setModuleFilter(''); setSeverityFilter(''); setDateFilter('all'); setCurrentPage(1) }}>
-              <X size={12} /> {lang === 'fr' ? 'Effacer' : 'Clear'}
+              <X size={12} /> {lang === 'en' ? 'Clear' : lang === 'es' ? 'Borrar' : lang === 'it' ? 'Cancella' : 'Effacer'}
             </button>
           )}
         </div>
@@ -194,7 +194,7 @@ export default function Activity() {
         <div style={{ padding:'8px 20px 20px', borderTop:'1px solid var(--border)', minHeight:200 }}>
           {paginated.length === 0 ? (
             <div style={{ textAlign:'center', padding:'60px 0', color:'var(--text3)', fontSize:14 }}>
-              {lang === 'fr' ? 'Aucun événement trouvé' : 'No events found'}
+              {lang === 'en' ? 'No events found' : lang === 'es' ? 'Sin eventos encontrados' : lang === 'it' ? 'Nessun evento trovato' : 'Aucun événement trouvé'}
             </div>
           ) : (
             <div style={{ display:'flex', flexDirection:'column', position:'relative', paddingTop:12 }}>
@@ -343,7 +343,7 @@ export default function Activity() {
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               style={{ opacity: currentPage === 1 ? 0.4 : 1, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}>
-              ← {lang === 'fr' ? 'Préc.' : 'Prev'}
+              ← {lang === 'en' ? 'Prev' : lang === 'es' ? 'Ant.' : lang === 'it' ? 'Prec.' : 'Préc.'}
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button key={page} onClick={() => setCurrentPage(page)} style={{
@@ -357,7 +357,7 @@ export default function Activity() {
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               style={{ opacity: currentPage === totalPages ? 0.4 : 1, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}>
-              {lang === 'fr' ? 'Suiv.' : 'Next'} →
+              {lang === 'en' ? 'Next' : lang === 'es' ? 'Sig.' : lang === 'it' ? 'Succ.' : 'Suiv.'} →
             </button>
           </div>
         </div>

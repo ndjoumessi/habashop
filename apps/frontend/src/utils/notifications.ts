@@ -34,7 +34,7 @@ export function notifyLowStock(products: { name: string; stock: number }[], lang
 }
 
 export function notifySale(amount: string, lang = 'fr') {
-  sendNotification(lang === 'fr' ? '✅ Vente enregistrée' : '✅ Sale recorded', {
+  sendNotification(lang === 'en' ? '✅ Sale recorded' : lang === 'es' ? '✅ Venta registrada' : lang === 'it' ? '✅ Vendita registrata' : '✅ Vente enregistrée', {
     body: amount,
     tag: 'sale',
     data: { url: '/app/pos' },

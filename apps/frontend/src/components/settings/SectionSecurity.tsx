@@ -38,7 +38,7 @@ export default function SectionSecurity() {
     try {
       const p = JSON.parse(atob(token.split('.')[1]))
       const exp = new Date(p.exp * 1000)
-      return { role: p.role, exp: exp.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' }), daysLeft: Math.ceil((exp.getTime() - Date.now()) / 86400000) }
+      return { role: p.role, exp: exp.toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }), daysLeft: Math.ceil((exp.getTime() - Date.now()) / 86400000) }
     } catch { return null }
   })() : null
 

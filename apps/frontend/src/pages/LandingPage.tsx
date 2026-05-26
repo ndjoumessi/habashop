@@ -1065,12 +1065,10 @@ export default function LandingPage() {
       <section aria-label="Pays disponibles" style={{ padding: '72px clamp(16px,4vw,80px)', background: D.bg, borderTop: `1px solid ${D.border}` }}>
         <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ fontSize: 'clamp(24px,3.2vw,38px)', fontWeight: 900, color: D.text, letterSpacing: '-1px', marginBottom: 14, lineHeight: 1.2 }}>
-            {lang === 'fr' ? "Disponible dans toute l'Afrique francophone" : 'Available across French-speaking Africa'}
+            {lang === 'en' ? 'Available across French-speaking Africa' : lang === 'es' ? 'Disponible en toda el África francófona' : lang === 'it' ? 'Disponibile in tutta l\'Africa francofona' : "Disponible dans toute l'Afrique francophone"}
           </h2>
           <p style={{ fontSize: 15, color: D.text2, maxWidth: 720, margin: '0 auto 36px', lineHeight: 1.7 }}>
-            {lang === 'fr'
-              ? "HabaShop fonctionne au Sénégal, en Côte d'Ivoire, au Mali, au Burkina Faso, en Guinée, au Cameroun, au Congo, au Gabon, au Togo, au Bénin et dans plus de 150 pays."
-              : "HabaShop works in Senegal, Côte d'Ivoire, Mali, Burkina Faso, Guinea, Cameroon, Congo, Gabon, Togo, Benin and 150+ countries."}
+            {lang === 'en' ? "HabaShop works in Senegal, Côte d'Ivoire, Mali, Burkina Faso, Guinea, Cameroon, Congo, Gabon, Togo, Benin and 150+ countries." : lang === 'es' ? 'HabaShop funciona en Senegal, Costa de Marfil, Malí, Burkina Faso, Guinea, Camerún, Congo, Gabón, Togo, Benín y más de 150 países.' : lang === 'it' ? 'HabaShop funziona in Senegal, Costa d\'Avorio, Mali, Burkina Faso, Guinea, Camerun, Congo, Gabon, Togo, Benin e oltre 150 paesi.' : "HabaShop fonctionne au Sénégal, en Côte d'Ivoire, au Mali, au Burkina Faso, en Guinée, au Cameroun, au Congo, au Gabon, au Togo, au Bénin et dans plus de 150 pays."}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
             {([
@@ -1082,7 +1080,7 @@ export default function LandingPage() {
               </span>
             ))}
             <span style={{ display: 'inline-flex', alignItems: 'center', padding: '9px 16px', background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.25)', borderRadius: 99, fontSize: 14, fontWeight: 700, color: D.p3 }}>
-              + 140 {lang === 'fr' ? 'autres pays' : 'more countries'}
+              + 140 {lang === 'en' ? 'more countries' : lang === 'es' ? 'otros países' : lang === 'it' ? 'altri paesi' : 'autres pays'}
             </span>
           </div>
         </div>
@@ -1271,9 +1269,9 @@ export default function LandingPage() {
             <Zap size={18} strokeWidth={2.6}/>{lp.cta_btn}
           </button>
           <div style={{ marginTop: 18, fontSize: 12, color: D.text3, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'fr' ? '14 jours gratuits' : '14 days free'}</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'fr' ? 'Sans carte bancaire' : 'No credit card'}</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'fr' ? 'Annulation facile' : 'Easy cancellation'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'en' ? '14 days free' : lang === 'es' ? '14 días gratis' : lang === 'it' ? '14 giorni gratis' : '14 jours gratuits'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'en' ? 'No credit card' : lang === 'es' ? 'Sin tarjeta bancaria' : lang === 'it' ? 'Senza carta di credito' : 'Sans carte bancaire'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Check size={12} color={D.acc}/>{lang === 'en' ? 'Easy cancellation' : lang === 'es' ? 'Cancelación fácil' : lang === 'it' ? 'Cancellazione facile' : 'Annulation facile'}</span>
           </div>
         </div>
       </section>

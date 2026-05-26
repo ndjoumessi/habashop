@@ -285,10 +285,10 @@ export default function Marketing() {
         gap: 10, marginBottom: 18,
       }}>
         {[
-          { label: lang === 'fr' ? 'Envoyés ce mois' : 'Sent this month', value: result?.sent ?? 0,     color:'#25D366' },
-          { label: lang === 'fr' ? 'Taux de lecture'  : 'Read rate',       value: '—',                   color:'var(--acc2)'  },
-          { label: lang === 'fr' ? 'Réponses reçues'  : 'Replies',         value: '—',                   color:'var(--p2)'    },
-          { label: lang === 'fr' ? 'Contacts actifs'  : 'Active contacts', value: customers.length,      color:'var(--acc)'   },
+          { label: lang === 'en' ? 'Sent this month' : lang === 'es' ? 'Enviados este mes' : lang === 'it' ? 'Inviati questo mese' : 'Envoyés ce mois', value: result?.sent ?? 0,     color:'#25D366' },
+          { label: lang === 'en' ? 'Read rate' : lang === 'es' ? 'Tasa de lectura' : lang === 'it' ? 'Tasso di lettura' : 'Taux de lecture',       value: '—',                   color:'var(--acc2)'  },
+          { label: lang === 'en' ? 'Replies' : lang === 'es' ? 'Respuestas recibidas' : lang === 'it' ? 'Risposte ricevute' : 'Réponses reçues',         value: '—',                   color:'var(--p2)'    },
+          { label: lang === 'en' ? 'Active contacts' : lang === 'es' ? 'Contactos activos' : lang === 'it' ? 'Contatti attivi' : 'Contacts actifs', value: customers.length,      color:'var(--acc)'   },
         ].map(k => (
           <div key={k.label} style={{
             background: 'var(--card)', border: '1px solid var(--border)',
@@ -381,7 +381,7 @@ export default function Marketing() {
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#E9EAE0' }}>HabaShop</div>
                     <div style={{ fontSize: 10, color: '#8696A0' }}>
-                      {lang === 'fr' ? 'En ligne' : 'Online'}
+                      {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
                     </div>
                   </div>
                 </div>

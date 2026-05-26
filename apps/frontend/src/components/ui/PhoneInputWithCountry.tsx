@@ -252,7 +252,7 @@ export default function PhoneInputWithCountry({
               <input
                 autoFocus
                 type="text"
-                placeholder={lang === 'fr' ? 'Pays, indicatif…' : 'Country, code…'}
+                placeholder={lang === 'en' ? 'Country, code…' : lang === 'es' ? 'País, código…' : lang === 'it' ? 'Paese, prefisso…' : 'Pays, indicatif…'}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setSearch('') } }}
@@ -275,7 +275,7 @@ export default function PhoneInputWithCountry({
           <div style={{ maxHeight: 250, overflowY: 'auto' }}>
             {filtered.length === 0 ? (
               <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>
-                {lang === 'fr' ? 'Aucun résultat' : 'No results'}
+                {lang === 'en' ? 'No results' : lang === 'es' ? 'Sin resultados' : lang === 'it' ? 'Nessun risultato' : 'Aucun résultat'}
               </div>
             ) : search ? (
               filtered.map((c, i) => (

@@ -73,7 +73,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 whiteSpace: 'nowrap', flexShrink: 0,
               }}>
                 {cart.reduce((s, i) => s + i.qty, 0)}{' '}
-                {lang === 'fr' ? 'art.' : 'items'}
+                {lang === 'en' ? 'items' : lang === 'es' ? 'art.' : lang === 'it' ? 'art.' : 'art.'}
               </span>
             )}
             {cashierSessionTx > 0 && (
@@ -96,8 +96,8 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             )}
             {cart.length > 0 && (
               <button type="button"
-                onClick={async () => { if (await confirm({ title: lang === 'fr' ? 'Vider le panier' : 'Clear cart', message: lang === 'fr' ? 'Tous les articles du panier seront retirés.' : 'All items will be removed from the cart.', danger: true })) setCart([]) }}
-                title={lang === 'fr' ? 'Vider le panier' : 'Clear cart'}
+                onClick={async () => { if (await confirm({ title: lang === 'en' ? 'Clear cart' : lang === 'es' ? 'Vaciar el carrito' : lang === 'it' ? 'Svuota il carrello' : 'Vider le panier', message: lang === 'en' ? 'All items will be removed from the cart.' : lang === 'es' ? 'Se eliminarán todos los artículos del carrito.' : lang === 'it' ? 'Tutti gli articoli del carrello saranno rimossi.' : 'Tous les articles du panier seront retirés.', danger: true })) setCart([]) }}
+                title={lang === 'en' ? 'Clear cart' : lang === 'es' ? 'Vaciar el carrito' : lang === 'it' ? 'Svuota il carrello' : 'Vider le panier'}
                 style={{
                   width: 26, height: 26, borderRadius: 7,
                   background: 'rgba(232,64,74,.1)', border: '1px solid rgba(232,64,74,.2)',
@@ -113,7 +113,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               fontFamily: 'var(--font)', fontWeight: 700, flexShrink: 0,
               whiteSpace: 'nowrap',
               display: 'flex', alignItems: 'center', gap: 4,
-            }}><Lock size={11} /> {lang === 'fr' ? 'Fermer' : 'Close'}</button>
+            }}><Lock size={11} /> {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
           </div>
 
           {/* ── LISTE ITEMS — ZONE SCROLLABLE ── */}
@@ -224,7 +224,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   borderRadius:8,
                 }}>
                   <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
-                    <Tag size={11} /> {lang === 'fr' ? 'Remise' : 'Discount'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}
+                    <Tag size={11} /> {lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}
                   </span>
                   <span style={{ fontSize:11, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
                     − {fmt(discountAmount)}
@@ -279,7 +279,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               <div style={{ marginTop:6 }}>
                 <div style={{ position:'relative' }}>
                   <input className="input" type="number"
-                    placeholder={lang === 'fr' ? 'Montant reçu...' : 'Amount received...'}
+                    placeholder={lang === 'en' ? 'Amount received...' : lang === 'es' ? 'Importe recibido...' : lang === 'it' ? 'Importo ricevuto...' : 'Montant reçu...'}
                     value={cashGiven} onChange={e => setCashGiven(e.target.value)}
                     style={{ textAlign:'right', paddingRight:50, fontSize:13 }}
                   />
@@ -299,7 +299,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                     borderRadius:10,
                   }}>
                     <span style={{ color:'var(--text2)', fontWeight:600 }}>
-                      {lang === 'fr' ? 'Monnaie à rendre' : 'Change'}
+                      {lang === 'en' ? 'Change' : lang === 'es' ? 'Cambio a devolver' : lang === 'it' ? 'Resto da dare' : 'Monnaie à rendre'}
                     </span>
                     <span style={{ fontWeight:900, fontFamily:'var(--mono)', fontSize:16, color: monnaie >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
                       {monnaie >= 0
@@ -334,7 +334,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                     fontSize:12, fontWeight:700, color:'#fff',
                     cursor:'pointer', fontFamily:'var(--font)',
                   }}>
-                  {lang === 'fr' ? 'Confirmer' : 'Confirm'}
+                  {lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'}
                 </button>
               </div>
             )}
@@ -344,7 +344,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
           <div style={{ flexShrink:0, padding:'8px 10px', borderTop:'1px solid var(--border)' }}>
             <button type="button"
               disabled={cart.length === 0}
-              onClick={() => cart.length ? setShowModal(true) : toast.error(lang === 'fr' ? 'Panier vide !' : 'Empty cart!')}
+              onClick={() => cart.length ? setShowModal(true) : toast.error(lang === 'en' ? 'Empty cart!' : lang === 'es' ? '¡Carrito vacío!' : lang === 'it' ? 'Carrello vuoto!' : 'Panier vide !')}
               style={{
                 width:'100%', padding:'13px',
                 background: cart.length === 0 ? 'var(--bg4)' : 'linear-gradient(135deg,var(--p),var(--p2))',
@@ -357,7 +357,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               }}>
               {cart.length === 0
-                ? <><ShoppingCart size={15} /> {lang === 'fr' ? 'Panier vide' : 'Empty cart'}</>
+                ? <><ShoppingCart size={15} /> {lang === 'en' ? 'Empty cart' : lang === 'es' ? 'Carrito vacío' : lang === 'it' ? 'Carrello vuoto' : 'Panier vide'}</>
                 : <>{lang === 'fr' ? 'Encaisser' : lang === 'en' ? 'Checkout' : lang === 'es' ? 'Cobrar' : 'Incassare'} — {fmt(total)}</>}
             </button>
             {cashierSessionTx > 0 && (

@@ -28,7 +28,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
               <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none', display:'flex' }}><Search size={13}/></span>
               <input className="input"
                 style={{ paddingLeft:32, height:36, fontSize:13 }}
-                aria-label="Rechercher" placeholder={lang === 'fr' ? 'Rechercher...' : 'Search...'}
+                aria-label="Rechercher" placeholder={lang === 'en' ? 'Search...' : lang === 'es' ? 'Buscar...' : lang === 'it' ? 'Cerca...' : 'Rechercher...'}
                 value={search}
                 onChange={e => setSearch(e.target.value)} />
             </div>
@@ -37,7 +37,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
               style={{ width:'auto', height:36, fontSize:12 }}
               value={deptFilter}
               onChange={e => setDeptFilter(e.target.value)}>
-              <option value="all">{lang === 'fr' ? 'Tous les depts' : 'All depts'}</option>
+              <option value="all">{lang === 'en' ? 'All depts' : lang === 'es' ? 'Todos los deptos' : lang === 'it' ? 'Tutti i reparti' : 'Tous les depts'}</option>
               {depts.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             {/* Filtre statut */}
@@ -45,9 +45,9 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
               style={{ width:'auto', height:36, fontSize:12 }}
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}>
-              <option value="all">{lang === 'fr' ? 'Tous statuts' : 'All status'}</option>
-              <option value="active">{lang === 'fr' ? 'Actif' : 'Active'}</option>
-              <option value="inactive">{lang === 'fr' ? 'Inactif' : 'Inactive'}</option>
+              <option value="all">{lang === 'en' ? 'All status' : lang === 'es' ? 'Todos los estados' : lang === 'it' ? 'Tutti gli stati' : 'Tous statuts'}</option>
+              <option value="active">{lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif'}</option>
+              <option value="inactive">{lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif'}</option>
             </select>
             {/* Toggle vue */}
             <div style={{ display:'flex', gap:2, background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8, padding:3, flexShrink:0 }}>
@@ -67,7 +67,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
             <button className="topbar-btn"
               style={{ height:36, padding:'0 14px', flexShrink:0 }}
               onClick={() => { setSelectedEmp(null); setShowModal(true) }}>
-              + {lang === 'fr' ? 'Employé' : 'Employee'}
+              + {lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}
             </button>
           </div>
 
@@ -138,14 +138,14 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                           border:`1px solid ${isActive ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
                           borderRadius:20, padding:'2px 7px', flexShrink:0,
                         }}>
-                          {isActive ? (lang==='fr'?'Actif':'Active') : (lang==='fr'?'Inactif':'Inactive')}
+                          {isActive ? (lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif') : (lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')}
                         </span>
                       </div>
                       {/* Métriques 2 cols */}
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:10 }}>
                         <div style={{ background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8, padding:'7px 9px' }}>
                           <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
-                            {lang==='fr'?'Salaire':'Salary'}
+                            {lang === 'en' ? 'Salary' : lang === 'es' ? 'Salario' : lang === 'it' ? 'Stipendio' : 'Salaire'}
                           </div>
                           <div style={{ fontSize:12, fontWeight:900, color:'var(--acc)', fontFamily:'var(--mono)' }}>{fmt(Number(emp.salary)||0)}</div>
                         </div>
@@ -177,7 +177,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
               })}
               {!loadingEmployees && filtered.length === 0 && (
                 <div style={{ gridColumn:'1/-1', textAlign:'center', padding:'40px 0', color:'var(--text3)', fontSize:14 }}>
-                  {lang==='fr' ? 'Aucun employé trouvé' : 'No employee found'}
+                  {lang === 'en' ? 'No employee found' : lang === 'es' ? 'Sin empleados encontrados' : lang === 'it' ? 'Nessun dipendente trovato' : 'Aucun employé trouvé'}
                 </div>
               )}
             </div>

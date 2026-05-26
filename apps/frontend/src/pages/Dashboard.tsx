@@ -233,9 +233,7 @@ export default function Dashboard() {
                 : `Welcome to HabaShop, ${user?.name?.split(' ')[0] ?? ''}!`}
             </div>
             <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-              {lang === 'fr'
-                ? 'Votre boutique est prête. Commencez par ajouter vos produits puis ouvrez la caisse.'
-                : 'Your shop is ready. Start by adding products then open the register.'}
+              {lang === 'en' ? 'Your shop is ready. Start by adding products then open the register.' : lang === 'es' ? 'Su tienda está lista. Comience agregando sus productos y luego abra la caja.' : lang === 'it' ? 'Il tuo negozio è pronto. Inizia aggiungendo i prodotti poi apri la cassa.' : 'Votre boutique est prête. Commencez par ajouter vos produits puis ouvrez la caisse.'}
             </div>
           </div>
           <button onClick={() => navigate('/app/stock')} className="btn-primary" style={{ flexShrink: 0, fontSize: 13 }}>

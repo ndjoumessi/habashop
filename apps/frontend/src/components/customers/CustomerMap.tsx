@@ -247,7 +247,7 @@ export default function CustomerMap({
             const isSel   = selected?.id === customer.id
             return (
               <button type="button" key={customer.id}
-                aria-label={(lang === 'fr' ? 'Voir ' : 'View ') + customer.name}
+                aria-label={(lang === 'en' ? 'View ' : lang === 'es' ? ' Ver ' : lang === 'it' ? 'Vedi' : 'Voir ') + customer.name}
                 onClick={() => {
                 setSelected(customer)
                 const pos = geoPositions[customer.id]

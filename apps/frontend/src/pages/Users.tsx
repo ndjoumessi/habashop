@@ -150,10 +150,10 @@ export default function Users() {
       <div className="panel">
         <div className="panel-head">
           <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <Shield size={15} /> {lang === 'fr' ? 'Matrice des rôles & permissions' : 'Roles & permissions matrix'}
+            <Shield size={15} /> {lang === 'en' ? 'Roles & permissions matrix' : lang === 'es' ? 'Matriz de roles y permisos' : lang === 'it' ? 'Matrice ruoli e permessi' : 'Matrice des rôles & permissions'}
           </span>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowPerms(showPerms ? null : 'ADMIN')}>
-            {showPerms ? (lang === 'fr' ? 'Masquer' : 'Hide') : (lang === 'fr' ? 'Voir détails' : 'View details')}
+            {showPerms ? (lang === 'en' ? 'Hide' : lang === 'es' ? 'Ocultar' : lang === 'it' ? 'Nascondi' : 'Masquer') : (lang === 'en' ? 'View details' : lang === 'es' ? 'Ver detalles' : lang === 'it' ? 'Vedi dettagli' : 'Voir détails')}
           </button>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -200,19 +200,19 @@ export default function Users() {
           <div style={{ position:'relative', flex:1, minWidth:200 }}>
             <Search size={14} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
             <input className="input" style={{ paddingLeft:34, fontSize:13 }}
-              placeholder={lang === 'fr' ? 'Nom, email...' : 'Name, email...'}
+              placeholder={lang === 'en' ? 'Name, email...' : lang === 'es' ? 'Nombre, email...' : lang === 'it' ? 'Nome, email...' : 'Nom, email...'}
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="input" style={{ width:'auto', fontSize:13 }}
             value={roleFilter} onChange={e => setRoleFilter(e.target.value as Role | '')}>
-            <option value="">{lang === 'fr' ? 'Tous les rôles' : 'All roles'}</option>
+            <option value="">{lang === 'en' ? 'All roles' : lang === 'es' ? 'Todos los roles' : lang === 'it' ? 'Tutti i ruoli' : 'Tous les rôles'}</option>
             {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
               <option key={r} value={r}>{ROLE_CONFIG[r].label}</option>
             ))}
           </select>
         </div>
         <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowModal(true)}>
-          <Plus size={13} /> {lang === 'fr' ? 'Inviter un utilisateur' : 'Invite user'}
+          <Plus size={13} /> {lang === 'en' ? 'Invite user' : lang === 'es' ? 'Invitar a un usuario' : lang === 'it' ? 'Invita un utente' : 'Inviter un utilisateur'}
         </button>
       </div>
 
@@ -325,10 +325,10 @@ export default function Users() {
                     borderRadius:10, padding:'8px 10px',
                   }}>
                     <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
-                      {lang === 'fr' ? 'Connexion' : 'Last login'}
+                      {lang === 'en' ? 'Last login' : lang === 'es' ? 'Último acceso' : lang === 'it' ? 'Ultimo accesso' : 'Connexion'}
                     </div>
                     <div style={{ fontSize:11, fontWeight:700, color: online ? 'var(--acc2)' : 'var(--text2)' }}>
-                      {online ? (lang === 'fr' ? 'En ligne' : 'Online') : user.lastLogin}
+                      {online ? (lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne') : user.lastLogin}
                     </div>
                   </div>
                   <div style={{
@@ -336,7 +336,7 @@ export default function Users() {
                     borderRadius:10, padding:'8px 10px',
                   }}>
                     <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
-                      {lang === 'fr' ? 'Membre depuis' : 'Member since'}
+                      {lang === 'en' ? 'Member since' : lang === 'es' ? 'Miembro desde' : lang === 'it' ? 'Membro dal' : 'Membre depuis'}
                     </div>
                     <div style={{ fontSize:11, fontWeight:700, color:'var(--text2)' }}>
                       {user.createdAt}
@@ -353,7 +353,7 @@ export default function Users() {
                       setEditForm({ name:user.name, email:user.email, role:user.role, active:user.active, twoFA:user.twoFA })
                       setShowEditModal(true)
                     }}>
-                    <Archive size={12}/> {lang === 'fr' ? 'Modifier' : 'Edit'}
+                    <Archive size={12}/> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
                   </button>
                   <button type="button"
                     style={{
@@ -364,7 +364,7 @@ export default function Users() {
                       color: user.active ? 'var(--danger)' : 'var(--acc2)',
                     }}
                     onClick={() => toggleActive(user.id)}>
-                    {user.active ? (lang === 'fr' ? 'Désactiver' : 'Disable') : (lang === 'fr' ? 'Activer' : 'Enable')}
+                    {user.active ? (lang === 'en' ? 'Disable' : lang === 'es' ? 'Desactivar' : lang === 'it' ? 'Disattiva' : 'Désactiver') : (lang === 'en' ? 'Enable' : lang === 'es' ? 'Activar' : lang === 'it' ? 'Attiva' : 'Activer')}
                   </button>
                 </div>
               </div>
@@ -377,7 +377,7 @@ export default function Users() {
             gridColumn:'1/-1', textAlign:'center', padding:'60px 0',
             color:'var(--text3)', fontSize:14,
           }}>
-            {lang === 'fr' ? 'Aucun utilisateur trouvé' : 'No users found'}
+            {lang === 'en' ? 'No users found' : lang === 'es' ? 'Sin usuarios encontrados' : lang === 'it' ? 'Nessun utente trovato' : 'Aucun utilisateur trouvé'}
           </div>
         )}
       </div>
@@ -388,8 +388,8 @@ export default function Users() {
           <div className="modal-box" style={{ maxWidth:480 }}>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>{lang === 'fr' ? 'Modifier' : 'Edit'} — {editUser.name}</h3>
-                <p className="text-xs mt-0.5" style={{ color:'var(--text3)' }}>{lang === 'fr' ? "Modifier les informations de l'utilisateur" : 'Update user information'}</p>
+                <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>{lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'} — {editUser.name}</h3>
+                <p className="text-xs mt-0.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Update user information' : lang === 'es' ? 'Actualizar la información del usuario' : lang === 'it' ? 'Aggiorna le informazioni dell\'utente' : "Modifier les informations de l'utilisateur"}</p>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowEditModal(false)}><X size={14} /></button>
             </div>
@@ -441,14 +441,14 @@ export default function Users() {
               )}
             </div>
             <div className="flex gap-2 mt-5">
-              <button className="btn btn-ghost" onClick={() => setShowEditModal(false)}>{lang === 'fr' ? 'Annuler' : 'Cancel'}</button>
+              <button className="btn btn-ghost" onClick={() => setShowEditModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
               <button className="btn btn-primary flex-1 justify-center" onClick={() => {
                 if (!editForm.name || !editForm.email) { toast.error('Nom et email requis'); return }
                 setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...editForm } : u))
                 setShowEditModal(false)
                 toast.success(`${editForm.name} mis à jour`)
               }}>
-                {lang === 'fr' ? 'Enregistrer' : 'Save'}
+                {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Enregistrer'}
               </button>
             </div>
           </div>
@@ -461,8 +461,8 @@ export default function Users() {
           <div className="modal-box">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>{lang === 'fr' ? 'Inviter un utilisateur' : 'Invite a user'}</h3>
-                <p className="text-xs mt-0.5" style={{ color:'var(--text3)' }}>{lang === 'fr' ? 'Un email de bienvenue sera envoyé' : 'A welcome email will be sent'}</p>
+                <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>{lang === 'en' ? 'Invite a user' : lang === 'es' ? 'Invitar a un usuario' : lang === 'it' ? 'Invita un utente' : 'Inviter un utilisateur'}</h3>
+                <p className="text-xs mt-0.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'A welcome email will be sent' : lang === 'es' ? 'Se enviará un email de bienvenida' : lang === 'it' ? 'Verrà inviata un\'email di benvenuto' : 'Un email de bienvenue sera envoyé'}</p>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}><X size={14} /></button>
             </div>
@@ -517,9 +517,9 @@ export default function Users() {
             </div>
             <div className="flex gap-2 mt-5">
               <button className="btn btn-primary flex-1 justify-center" onClick={invite}>
-                {lang === 'fr' ? "Envoyer l'invitation" : 'Send invitation'}
+                {lang === 'en' ? 'Send invitation' : lang === 'es' ? 'Enviar la invitación' : lang === 'it' ? 'Invia l\'invito' : "Envoyer l'invitation"}
               </button>
-              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>{lang === 'fr' ? 'Annuler' : 'Cancel'}</button>
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
             </div>
           </div>
         </div>

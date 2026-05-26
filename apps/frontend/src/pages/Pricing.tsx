@@ -107,7 +107,7 @@ export default function Pricing() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20, maxWidth: 960, margin: '0 auto 40px' }}>
         {PLANS.map(plan => {
           const displayPrice = (plan.price[billing] as Record<string, number>)[priceKey]
-          const features = plan.features[lang === 'fr' ? 'fr' : 'en'] ?? plan.features.en
+          const features = plan.features[lang === 'en' ? 'en' : lang === 'es' ? 'es' : lang === 'it' ? 'it' : 'fr'] ?? plan.features.en
           return (
             <div key={plan.id} style={{ background: plan.popular ? 'linear-gradient(160deg,#0D0D1C,#161636)' : 'linear-gradient(160deg,#0D0D1C,#111128)', border: `${plan.popular ? '2' : '1'}px solid ${plan.popular ? 'rgba(108,71,255,.4)' : 'rgba(255,255,255,.07)'}`, borderRadius: 24, overflow: 'hidden', position: 'relative', boxShadow: plan.popular ? '0 24px 64px rgba(108,71,255,.2)' : 'none' }}>
               {plan.popular && (

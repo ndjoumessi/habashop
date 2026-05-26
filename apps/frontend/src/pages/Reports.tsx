@@ -47,23 +47,23 @@ export default function Reports() {
     })
     const total = Object.values(counts).reduce((s, v) => s + v, 0)
     if (total === 0) return [
-      { name: lang === 'fr' ? 'Espèces' : 'Cash', value: 62, amount: 0, color: '#00D084' },
+      { name: lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces', value: 62, amount: 0, color: '#00D084' },
       { name: 'Mobile',                             value: 22, amount: 0, color: '#8B6FFF' },
       { name: 'Wave',                               value: 16, amount: 0, color: '#00B8FF' },
       { name: 'Orange Money',                       value:  8, amount: 0, color: '#FF3B5C' },
-      { name: lang === 'fr' ? 'Carte' : 'Card',    value:  5, amount: 0, color: '#FF9500' },
+      { name: lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte',    value:  5, amount: 0, color: '#FF9500' },
     ]
     return [
-      { name: lang === 'fr' ? 'Espèces' : 'Cash', value: Math.round(((counts.cash   ?? 0) / total) * 100), amount: totals.cash   ?? 0, color: '#00D084' },
+      { name: lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces', value: Math.round(((counts.cash   ?? 0) / total) * 100), amount: totals.cash   ?? 0, color: '#00D084' },
       { name: 'Mobile',                            value: Math.round(((counts.mobile ?? 0) / total) * 100), amount: totals.mobile ?? 0, color: '#8B6FFF' },
       { name: 'Wave',                              value: Math.round(((counts.wave   ?? 0) / total) * 100), amount: totals.wave   ?? 0, color: '#00B8FF' },
       { name: 'Orange Money',                      value: Math.round(((counts.orange ?? 0) / total) * 100), amount: totals.orange ?? 0, color: '#FF3B5C' },
-      { name: lang === 'fr' ? 'Carte' : 'Card',   value: Math.round(((counts.card   ?? 0) / total) * 100), amount: totals.card   ?? 0, color: '#FF9500' },
+      { name: lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte',   value: Math.round(((counts.card   ?? 0) / total) * 100), amount: totals.card   ?? 0, color: '#FF9500' },
     ].filter(d => d.value > 0)
   }, [salesData, lang])
 
   const handleAccountingExport = async () => {
-    const period2 = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })
+    const period2 = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { month: 'long', year: 'numeric' })
     try {
       const [sales, expenses] = await Promise.all([salesApi.list(), expensesApi.list()])
       exportAccountingExcel({ sales: sales ?? [], expenses: expenses ?? [], period: period2, shopName: 'HabaShop', currency }, fmt)
@@ -108,7 +108,7 @@ export default function Reports() {
     })
     const pmap: Record<string, { name: string; qty: number; ca: number }> = {}
     cur.forEach(s => (s.items ?? []).forEach((it: any) => {
-      const name = it.product?.name ?? (lang === 'fr' ? 'Produit' : 'Product')
+      const name = it.product?.name ?? (lang === 'en' ? 'Product' : lang === 'es' ? 'Producto' : lang === 'it' ? 'Prodotto' : 'Produit')
       pmap[name] = pmap[name] ?? { name, qty: 0, ca: 0 }
       pmap[name].qty += it.qty ?? 0; pmap[name].ca += it.total ?? 0
     }))
@@ -139,9 +139,9 @@ export default function Reports() {
       <div className="panel">
         <EmptyState
           icon="📊"
-          title={lang === 'fr' ? 'Aucune donnée disponible' : 'No data available'}
-          message={lang === 'fr' ? 'Enregistrez vos premières ventes pour générer des rapports.' : 'Record your first sales to generate reports.'}
-          action={{ label: lang === 'fr' ? 'Ouvrir la caisse' : 'Open the register', onClick: () => navigate('/app/pos') }}
+          title={lang === 'en' ? 'No data available' : lang === 'es' ? 'Sin datos disponibles' : lang === 'it' ? 'Nessun dato disponibile' : 'Aucune donnée disponible'}
+          message={lang === 'en' ? 'Record your first sales to generate reports.' : lang === 'es' ? 'Registre sus primeras ventas para generar informes.' : lang === 'it' ? 'Registra le tue prime vendite per generare report.' : 'Enregistrez vos premières ventes pour générer des rapports.'}
+          action={{ label: lang === 'en' ? 'Open the register' : lang === 'es' ? 'Abrir la caja' : lang === 'it' ? 'Apri la cassa' : 'Ouvrir la caisse', onClick: () => navigate('/app/pos') }}
         />
       </div>
     </div>
@@ -175,7 +175,7 @@ export default function Reports() {
         ))}
         <div className="flex-1" />
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleAccountingExport}>
-          <BarChart2 size={13}/> {lang === 'fr' ? 'Excel comptable' : 'Accounting Excel'}
+          <BarChart2 size={13}/> {lang === 'en' ? 'Accounting Excel' : lang === 'es' ? 'Excel contable' : lang === 'it' ? 'Excel contabile' : 'Excel comptable'}
         </button>
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
           exportCSV('habashop_rapports',
@@ -233,11 +233,11 @@ export default function Reports() {
       {/* 5 content tabs */}
       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
         {([
-          { id:'ventes',  label: lang === 'fr' ? 'Ventes'   : 'Sales',    Icon: ShoppingCart },
-          { id:'stock',   label: lang === 'fr' ? 'Stock'    : 'Stock',    Icon: Package      },
-          { id:'clients', label: lang === 'fr' ? 'Clients'  : 'Customers',Icon: Users        },
-          { id:'finance', label: lang === 'fr' ? 'Finance'  : 'Finance',  Icon: Wallet       },
-          { id:'rh',      label: lang === 'fr' ? 'RH'       : 'HR',       Icon: UserCog      },
+          { id:'ventes',  label: lang === 'en' ? 'Sales' : lang === 'es' ? 'Ventas' : lang === 'it' ? 'Vendite' : 'Ventes',    Icon: ShoppingCart },
+          { id:'stock',   label: lang === 'en' ? 'Stock' : lang === 'es' ? 'Stock' : lang === 'it' ? 'Stock' : 'Stock',    Icon: Package      },
+          { id:'clients', label: lang === 'en' ? 'Customers' : lang === 'es' ? 'Clientes' : lang === 'it' ? 'Clienti' : 'Clients',Icon: Users        },
+          { id:'finance', label: lang === 'en' ? 'Finance' : lang === 'es' ? 'Finanzas' : lang === 'it' ? 'Finanza' : 'Finance',  Icon: Wallet       },
+          { id:'rh',      label: lang === 'en' ? 'HR' : lang === 'es' ? 'RRHH' : lang === 'it' ? 'HR' : 'RH',       Icon: UserCog      },
         ] as { id: typeof reportTab; label: string; Icon: typeof ShoppingCart }[]).map(tab => (
           <button key={tab.id} onClick={() => setReportTab(tab.id)}
             style={{

@@ -105,7 +105,7 @@ export default function Goals() {
           </p>
         </div>
         <button className="topbar-btn" onClick={() => openModal(null)}>
-          <Plus size={14} /> {lang === 'fr' ? 'Nouvel objectif' : 'New goal'}
+          <Plus size={14} /> {lang === 'en' ? 'New goal' : lang === 'es' ? 'Nuevo objetivo' : lang === 'it' ? 'Nuovo obiettivo' : 'Nouvel objectif'}
         </button>
       </div>
 
@@ -113,9 +113,9 @@ export default function Goals() {
         <div className="panel">
           <EmptyState
             icon="🎯"
-            title={lang === 'fr' ? 'Aucun objectif défini' : 'No goals defined'}
-            message={lang === 'fr' ? 'Définissez vos objectifs de vente pour suivre votre progression.' : 'Set your sales goals to track your progress.'}
-            action={{ label: lang === 'fr' ? '+ Créer un objectif' : '+ Create a goal', onClick: () => openModal(null) }}
+            title={lang === 'en' ? 'No goals defined' : lang === 'es' ? 'Sin objetivos definidos' : lang === 'it' ? 'Nessun obiettivo definito' : 'Aucun objectif défini'}
+            message={lang === 'en' ? 'Set your sales goals to track your progress.' : lang === 'es' ? 'Defina sus objetivos de ventas para seguir su progreso.' : lang === 'it' ? 'Definisci i tuoi obiettivi di vendita per monitorare i progressi.' : 'Définissez vos objectifs de vente pour suivre votre progression.'}
+            action={{ label: lang === 'en' ? '+ Create a goal' : lang === 'es' ? '+ Crear un objetivo' : lang === 'it' ? '+ Crea un obiettivo' : '+ Créer un objectif', onClick: () => openModal(null) }}
           />
         </div>
       ) : (<>
@@ -128,10 +128,10 @@ export default function Goals() {
           <div>
             <div style={{ fontSize:14, fontWeight:700, color:'var(--text)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
               <Trophy size={14} style={{ color:'var(--acc)' }} />
-              {lang === 'fr' ? 'Score global du mois' : 'Monthly global score'}
+              {lang === 'en' ? 'Monthly global score' : lang === 'es' ? 'Puntuación global del mes' : lang === 'it' ? 'Punteggio globale del mese' : 'Score global du mois'}
             </div>
             <div style={{ fontSize:12, color:'var(--text3)' }}>
-              {achieved}/{goals.length} {lang === 'fr' ? 'objectifs atteints' : 'goals achieved'}
+              {achieved}/{goals.length} {lang === 'en' ? 'goals achieved' : lang === 'es' ? 'objetivos alcanzados' : lang === 'it' ? 'obiettivi raggiunti' : 'objectifs atteints'}
             </div>
           </div>
 
@@ -254,7 +254,7 @@ export default function Goals() {
                     : status === 'warning'
                       ? <ArrowUpRight size={11} strokeWidth={2.6} />
                       : <ArrowDownRight size={11} strokeWidth={2.6} />}
-                  {status === 'success' ? (lang === 'fr' ? 'Atteint' : 'Achieved') : status === 'warning' ? (lang === 'fr' ? 'En cours' : 'In progress') : (lang === 'fr' ? 'En retard' : 'Behind')}
+                  {status === 'success' ? (lang === 'en' ? 'Achieved' : lang === 'es' ? 'Alcanzado' : lang === 'it' ? 'Raggiunto' : 'Atteint') : status === 'warning' ? (lang === 'en' ? 'In progress' : lang === 'es' ? 'En curso' : lang === 'it' ? 'In corso' : 'En cours') : (lang === 'en' ? 'Behind' : lang === 'es' ? 'Atrasado' : lang === 'it' ? 'In ritardo' : 'En retard')}
                 </span>
               </div>
 
@@ -274,11 +274,11 @@ export default function Goals() {
               {/* Période + Reste + actions */}
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:6 }}>
                 <div style={{ fontSize:10, color:'var(--text3)' }}>
-                  {lang === 'fr' ? 'Objectif :' : 'Target:'} {goal.period}
+                  {lang === 'en' ? 'Target:' : lang === 'es' ? 'Objetivo:' : lang === 'it' ? 'Obiettivo:' : 'Objectif :'} {goal.period}
                 </div>
                 {pct < 100 && (
                   <div style={{ fontSize:10, color:'var(--text3)' }}>
-                    {lang === 'fr' ? 'Reste :' : 'Left:'}
+                    {lang === 'en' ? 'Left:' : lang === 'es' ? 'Queda:' : lang === 'it' ? 'Resta:' : 'Reste :'}
                     {' '}<span style={{ color:statusColor, fontWeight:700 }}>
                       {isCurrency(goal.unit)
                         ? fmt(goal.target - goal.current)
@@ -292,7 +292,7 @@ export default function Goals() {
               <button className="mini-btn"
                 style={{ width:'100%', marginTop:10, justifyContent:'center', cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}
                 onClick={() => openModal(goal)}>
-                <Pencil size={11}/> {lang === 'fr' ? 'Modifier' : 'Edit'}
+                <Pencil size={11}/> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
               </button>
             </div>
           )
@@ -307,8 +307,8 @@ export default function Goals() {
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
                 {editGoal
-                  ? <><Pencil size={14}/> {lang === 'fr' ? "Modifier l'objectif" : 'Edit goal'}</>
-                  : <><Target size={14}/> {lang === 'fr' ? 'Nouvel objectif' : 'New goal'}</>}
+                  ? <><Pencil size={14}/> {lang === 'en' ? 'Edit goal' : lang === 'es' ? 'Editar el objetivo' : lang === 'it' ? 'Modifica l\'obiettivo' : "Modifier l'objectif"}</>
+                  : <><Target size={14}/> {lang === 'en' ? 'New goal' : lang === 'es' ? 'Nuevo objetivo' : lang === 'it' ? 'Nuovo obiettivo' : 'Nouvel objectif'}</>}
               </h3>
               <button className="mini-btn" onClick={() => setShowEditModal(false)} style={{ cursor:'pointer', display:'flex', alignItems:'center' }}><X size={14}/></button>
             </div>
@@ -321,20 +321,20 @@ export default function Goals() {
                 </div>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>Label</label>
-                  <input aria-label="Label" className="input" placeholder={lang === 'fr' ? 'Ex: CA mensuel' : 'Ex: Monthly revenue'} value={goalForm.label} onChange={e => setGoalForm(f => ({...f, label:e.target.value}))} />
+                  <input aria-label="Label" className="input" placeholder={lang === 'en' ? 'Ex: Monthly revenue' : lang === 'es' ? 'Ej: Ingresos mensuales' : lang === 'it' ? 'Es: Ricavi mensili' : 'Ex: CA mensuel'} value={goalForm.label} onChange={e => setGoalForm(f => ({...f, label:e.target.value}))} />
                 </div>
               </div>
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
-                    {lang === 'fr' ? 'Objectif cible' : 'Target'}
+                    {lang === 'en' ? 'Target' : lang === 'es' ? 'Objetivo' : lang === 'it' ? 'Obiettivo' : 'Objectif cible'}
                   </label>
                   <input className="input" type="number" value={goalForm.target || ''} onChange={e => setGoalForm(f => ({...f, target:+e.target.value}))} />
                 </div>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
-                    {lang === 'fr' ? 'Valeur actuelle' : 'Current value'}
+                    {lang === 'en' ? 'Current value' : lang === 'es' ? 'Valor actual' : lang === 'it' ? 'Valore attuale' : 'Valeur actuelle'}
                   </label>
                   <input className="input" type="number" value={goalForm.current || ''} onChange={e => setGoalForm(f => ({...f, current:+e.target.value}))} />
                 </div>
@@ -352,7 +352,7 @@ export default function Goals() {
                 </div>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
-                    {lang === 'fr' ? 'Période' : 'Period'}
+                    {lang === 'en' ? 'Period' : lang === 'es' ? 'Período' : lang === 'it' ? 'Periodo' : 'Période'}
                   </label>
                   <input className="input" placeholder="Mai 2026" value={goalForm.period} onChange={e => setGoalForm(f => ({...f, period:e.target.value}))} />
                 </div>
@@ -362,7 +362,7 @@ export default function Goals() {
                 <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }}
                   onClick={() => {
                     if (!goalForm.label || !goalForm.target) {
-                      toast.error(lang === 'fr' ? 'Label et objectif requis' : 'Label and target required')
+                      toast.error(lang === 'en' ? 'Label and target required' : lang === 'es' ? 'Etiqueta y objetivo requeridos' : lang === 'it' ? 'Etichetta e obiettivo richiesti' : 'Label et objectif requis')
                       return
                     }
                     if (editGoal) {
@@ -374,7 +374,7 @@ export default function Goals() {
                     }
                     setShowEditModal(false)
                   }}>
-                  <Check size={14}/> {editGoal ? (lang === 'fr' ? 'Modifier' : 'Update') : (lang === 'fr' ? 'Créer' : 'Create')}
+                  <Check size={14}/> {editGoal ? (lang === 'en' ? 'Update' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier') : (lang === 'en' ? 'Create' : lang === 'es' ? 'Crear' : lang === 'it' ? 'Crea' : 'Créer')}
                 </button>
                 {editGoal && (
                   <button className="mini-btn" style={{ color:'var(--danger)', cursor:'pointer', display:'flex', alignItems:'center' }}
@@ -387,7 +387,7 @@ export default function Goals() {
                   </button>
                 )}
                 <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowEditModal(false)}>
-                  {lang === 'fr' ? 'Annuler' : 'Cancel'}
+                  {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
                 </button>
               </div>
             </div>
