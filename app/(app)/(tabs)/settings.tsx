@@ -46,7 +46,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets()
   const { user, tenant, logout } = useAuthStore()
   const { i, lang } = useI18n()
-  const { currency } = useFmt()
+  const { fmt, currency } = useFmt()
   const setLang = useAppStore(s => s.setLang)
   const setCurrency = useAppStore(s => s.setCurrency)
   const qc = useQueryClient()
@@ -128,6 +128,19 @@ export default function SettingsScreen() {
               </Pressable>
             )
           })}
+          {currency !== 'XOF' && currency !== 'XAF' && (
+            <View style={s.rateInfo}>
+              <Text style={s.rateText}>💱 1 000 F = {fmt(1000)}</Text>
+              <Text style={s.rateSubText}>
+                {i(
+                  'Taux mis à jour toutes les 6h',
+                  'Rate updated every 6h',
+                  'Tasa actualizada cada 6h',
+                  'Tasso aggiornato ogni 6h',
+                )}
+              </Text>
+            </View>
+          )}
         </Section>
 
         {/* D) Boutique */}
@@ -296,6 +309,16 @@ const s = StyleSheet.create({
   listRowBorderTop: { borderTopWidth: 1, borderTopColor: Colors.border },
   curCode: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text, width: 44 },
   curName: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text2 },
+  rateInfo: {
+    margin: Spacing.md,
+    padding: 10,
+    backgroundColor: 'rgba(108,71,255,0.08)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(108,71,255,0.2)',
+  },
+  rateText: { fontSize: 13, fontFamily: 'Outfit_700Bold', color: Colors.primary3, textAlign: 'center' },
+  rateSubText: { fontSize: 10, fontFamily: 'Outfit_400Regular', color: Colors.text4, textAlign: 'center', marginTop: 3 },
 
   // Boutique info
   infoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md, gap: Spacing.md },

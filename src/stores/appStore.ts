@@ -1,6 +1,8 @@
+import { useState, useEffect, useCallback } from 'react'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { fetchRates, convertFromXOF } from '@/services/exchangeRate'
 
 export type Lang = 'fr' | 'en' | 'es' | 'it'
 
@@ -40,27 +42,48 @@ export function useI18n() {
   return { i, lang }
 }
 
-// Helper devise — sélectionne `currency` → fmt se recalcule au changement.
+// Cache global des taux (en mémoire) — chargé au démarrage du module.
+let cachedRates: Record<string, number> = {
+  XOF: 1, XAF: 1,
+  EUR: 0.001524, USD: 0.001639,
+  GBP: 0.001295, CAD: 0.002237,
+}
+fetchRates().then(rates => { cachedRates = rates }).catch(() => {})
+
+// Helper devise — sélectionne `currency` + convertit XOF → devise cible.
+// Les montants backend sont en XOF ; la conversion est UNIQUEMENT à l'affichage.
 export function useFmt() {
   const currency = useAppStore(s => s.currency)
-  const fmt = (n: number): string => {
-    const amount = n ?? 0
+  const [rates, setRates] = useState(cachedRates)
+
+  useEffect(() => {
+    fetchRates().then(r => {
+      cachedRates = r
+      setRates(r)
+    }).catch(() => {})
+  }, [])
+
+  const fmt = useCallback((amountXOF: number): string => {
+    const n = amountXOF ?? 0
+    const converted = convertFromXOF(n, currency, rates)
+
     switch (currency) {
       case 'XOF':
       case 'XAF':
         // Franc CFA — pas de décimales, symbole F
-        return `${Math.round(amount).toLocaleString('fr-FR')} F`
+        return `${Math.round(converted).toLocaleString('fr-FR')} F`
       case 'EUR':
-        return `${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+        return `${converted.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
       case 'USD':
-        return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        return `$${converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       case 'GBP':
-        return `£${amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        return `£${converted.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       case 'CAD':
-        return `CA$${amount.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        return `CA$${converted.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       default:
-        return `${Math.round(amount).toLocaleString('fr-FR')} ${currency}`
+        return `${Math.round(converted).toLocaleString('fr-FR')} ${currency}`
     }
-  }
-  return { fmt, currency }
+  }, [currency, rates])
+
+  return { fmt, currency, rates }
 }
