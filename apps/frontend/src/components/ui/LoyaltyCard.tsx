@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { loyaltyApi } from '@/lib/api'
+import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
 
 interface Customer {
@@ -22,6 +23,7 @@ const TIER_CFG = {
 }
 
 export default function LoyaltyCard({ customer, onClose }: Props) {
+  const { i } = useI18n()
   const [points, setPoints] = useState(customer.loyaltyPoints ?? 0)
   const [tier,   setTier]   = useState<'Bronze'|'Silver'|'Gold'>('Bronze')
   const [loading, setLoading] = useState(true)
@@ -51,7 +53,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(`HABA-${customer.id.slice(0, 8).toUpperCase()}`).catch(() => {})
-    toast.success('ID copié !')
+    toast.success(i('ID copié !', 'ID copied!', '¡ID copiado!', 'ID copiato!'))
   }
 
   return (
@@ -59,7 +61,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
       <div className="modal-box" style={{ maxWidth: 420 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>🎁 Carte Fidélité</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>🎁 {i('Carte Fidélité', 'Loyalty Card', 'Tarjeta Fidelidad', 'Carta Fedeltà')}</h3>
           <button className="mini-btn" onClick={onClose}><X size={14} /></button>
         </div>
 
@@ -82,7 +84,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
               <div
                 style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--text3)', cursor: 'pointer' }}
                 onClick={handleCopyId}
-                title="Cliquer pour copier"
+                title={i('Cliquer pour copier', 'Click to copy', 'Clic para copiar', 'Clicca per copiare')}
               >
                 HABA-{customer.id.slice(0, 8).toUpperCase()} 📋
               </div>
@@ -114,7 +116,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
           {/* Points */}
           {loading ? (
             <div style={{ height: 40, display: 'flex', alignItems: 'center', color: 'var(--text3)', fontSize: 13 }}>
-              ⏳ Chargement...
+              ⏳ {i('Chargement...', 'Loading...', 'Cargando...', 'Caricamento...')}
             </div>
           ) : (
             <>
@@ -142,13 +144,13 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
                     }} />
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {(nextThreshold - points).toLocaleString()} pts pour passer {tier === 'Bronze' ? 'Silver' : 'Gold'} {tier === 'Bronze' ? '🥈' : '🥇'}
+                    {(nextThreshold - points).toLocaleString()} {i('pts pour passer', 'pts to reach', 'pts para alcanzar', 'pts per raggiungere')} {tier === 'Bronze' ? 'Silver' : 'Gold'} {tier === 'Bronze' ? '🥈' : '🥇'}
                   </div>
                 </>
               )}
               {!nextThreshold && (
                 <div style={{ fontSize: 12, color: cfg.color, fontWeight: 700 }}>
-                  🎉 Niveau maximum atteint !
+                  🎉 {i('Niveau maximum atteint !', 'Maximum level reached!', '¡Nivel máximo alcanzado!', 'Livello massimo raggiunto!')}
                 </div>
               )}
             </>
@@ -158,35 +160,35 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
         {/* Avantages tier */}
         <div style={{ background: 'var(--bg3)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
-            Avantages {tier}
+            {i('Avantages', 'Benefits', 'Ventajas', 'Vantaggi')} {tier}
           </div>
           {tier === 'Bronze' && (
             <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-              ✅ 1 point par tranche de 1 000 FCFA<br/>
-              ✅ Offres exclusives réservées aux membres<br/>
-              🔒 Silver à partir de 2 000 pts · Gold à 5 000 pts
+              ✅ {i('1 point par tranche de 1 000 FCFA', '1 point per 1,000 FCFA spent', '1 punto por cada 1 000 FCFA', '1 punto ogni 1.000 FCFA')}<br/>
+              ✅ {i('Offres exclusives réservées aux membres', 'Exclusive member-only offers', 'Ofertas exclusivas para miembros', 'Offerte esclusive per i membri')}<br/>
+              🔒 {i('Silver à partir de 2 000 pts · Gold à 5 000 pts', 'Silver from 2,000 pts · Gold at 5,000 pts', 'Silver desde 2 000 pts · Gold a 5 000 pts', 'Silver da 2.000 pts · Gold a 5.000 pts')}
             </div>
           )}
           {tier === 'Silver' && (
             <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-              ✅ 1,5 points par tranche de 1 000 FCFA<br/>
-              ✅ Remise de 5 % sur les achats &gt; 10 000 FCFA<br/>
-              ✅ Accès aux promotions avant tout le monde<br/>
-              🔒 Gold à partir de 5 000 pts
+              ✅ {i('1,5 points par tranche de 1 000 FCFA', '1.5 points per 1,000 FCFA spent', '1,5 puntos por cada 1 000 FCFA', '1,5 punti ogni 1.000 FCFA')}<br/>
+              ✅ {i('Remise de 5 % sur les achats', '5% discount on purchases', '5 % de descuento en compras', 'Sconto del 5% sugli acquisti')} &gt; 10 000 FCFA<br/>
+              ✅ {i('Accès aux promotions avant tout le monde', 'Early access to promotions', 'Acceso anticipado a promociones', 'Accesso anticipato alle promozioni')}<br/>
+              🔒 {i('Gold à partir de 5 000 pts', 'Gold from 5,000 pts', 'Gold desde 5 000 pts', 'Gold da 5.000 pts')}
             </div>
           )}
           {tier === 'Gold' && (
             <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-              ✅ 2 points par tranche de 1 000 FCFA<br/>
-              ✅ Remise de 10 % sur tous les achats<br/>
-              ✅ Livraison prioritaire offerte<br/>
-              ✅ Accès aux ventes privées
+              ✅ {i('2 points par tranche de 1 000 FCFA', '2 points per 1,000 FCFA spent', '2 puntos por cada 1 000 FCFA', '2 punti ogni 1.000 FCFA')}<br/>
+              ✅ {i('Remise de 10 % sur tous les achats', '10% discount on all purchases', '10 % de descuento en todas las compras', 'Sconto del 10% su tutti gli acquisti')}<br/>
+              ✅ {i('Livraison prioritaire offerte', 'Free priority delivery', 'Entrega prioritaria gratuita', 'Consegna prioritaria gratuita')}<br/>
+              ✅ {i('Accès aux ventes privées', 'Access to private sales', 'Acceso a ventas privadas', 'Accesso alle vendite private')}
             </div>
           )}
         </div>
 
         <button className="topbar-btn" style={{ width: '100%', justifyContent: 'center' }} onClick={onClose}>
-          Fermer
+          {i('Fermer', 'Close', 'Cerrar', 'Chiudi')}
         </button>
       </div>
     </div>

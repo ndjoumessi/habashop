@@ -113,8 +113,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
 
             {/* Motif */}
             <div style={{ marginBottom:20 }}>
-              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>Motif (optionnel)</label>
-              <input aria-label="Motif (optionnel)" className="input" placeholder="Ex: Client fidèle, promotion du jour..."
+              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Reason (optional)' : lang === 'es' ? 'Motivo (opcional)' : lang === 'it' ? 'Motivo (opzionale)' : 'Motif (optionnel)'}</label>
+              <input aria-label={lang === 'en' ? 'Reason (optional)' : lang === 'es' ? 'Motivo (opcional)' : lang === 'it' ? 'Motivo (opzionale)' : 'Motif (optionnel)'} className="input" placeholder={lang === 'en' ? 'Ex: Loyal customer, daily promo...' : lang === 'es' ? 'Ej: Cliente fiel, promoción del día...' : lang === 'it' ? 'Es: Cliente fedele, promo del giorno...' : 'Ex: Client fidèle, promotion du jour...'}
                 value={discountForm.reason}
                 onChange={e => setDiscountForm(f => ({...f, reason:e.target.value}))} />
             </div>
@@ -130,7 +130,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 }}>
                 Appliquer la remise
               </button>
-              <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowDiscountModal(false)}>Annuler</button>
+              <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowDiscountModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
             </div>
           </div>
         </div>

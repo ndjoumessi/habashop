@@ -50,11 +50,11 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {!productEditMode
                   ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
                       <Eye size={13} />
-                      <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>Mode visualisation — cliquez sur Modifier pour éditer</span>
+                      <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>{lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}</span>
                     </div>
                   : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
                       <Pencil size={13} />
-                      <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>Mode édition — modifications non sauvegardées</span>
+                      <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>{lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios sin guardar' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}</span>
                     </div>
                 }
               </div>
@@ -98,15 +98,15 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         }}>{em}</button>
                       ))}
                     </div>
-                    <input className="input text-sm" placeholder="Ou tapez un emoji personnalisé..."
+                    <input className="input text-sm" placeholder={lang === 'en' ? 'Or type a custom emoji...' : lang === 'es' ? 'O escribe un emoji personalizado...' : lang === 'it' ? 'O digita un emoji personalizzato...' : 'Ou tapez un emoji personnalisé...'}
                       value={form.image} onChange={e => setForm(f => ({...f, image:e.target.value}))}
                       style={{ fontSize:18, width:220 }} />
                   </div>
                 )}
 
                 {/* ── NOM PRODUIT — pleine largeur ── */}
-                <ViewField label="Nom du produit *" value={`${form.image} ${form.name}`} editing={productEditMode}>
-                  <input className="input" placeholder="Ex: Riz parfumé 5kg"
+                <ViewField label={lang === 'en' ? 'Product name *' : lang === 'es' ? 'Nombre del producto *' : lang === 'it' ? 'Nome prodotto *' : 'Nom du produit *'} value={`${form.image} ${form.name}`} editing={productEditMode}>
+                  <input className="input" placeholder={lang === 'en' ? 'Ex: Fragrant rice 5kg' : lang === 'es' ? 'Ej: Arroz aromático 5kg' : lang === 'it' ? 'Es: Riso profumato 5kg' : 'Ex: Riz parfumé 5kg'}
                     value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))}
                     style={{ width:'100%', fontSize:15, fontWeight:600 }}
                     autoFocus />
@@ -236,8 +236,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     </button>
                   </div>
                 ))}
-                <ViewField label="RÉFÉRENCE INTERNE" value="" editing={productEditMode}>
-                  <input className="input text-sm" placeholder="Référence optionnelle..." />
+                <ViewField label={lang === 'en' ? 'INTERNAL REFERENCE' : lang === 'es' ? 'REFERENCIA INTERNA' : lang === 'it' ? 'RIFERIMENTO INTERNO' : 'RÉFÉRENCE INTERNE'} value="" editing={productEditMode}>
+                  <input className="input text-sm" placeholder={lang === 'en' ? 'Optional reference...' : lang === 'es' ? 'Referencia opcional...' : lang === 'it' ? 'Riferimento opzionale...' : 'Référence optionnelle...'} />
                 </ViewField>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                   <ViewField label="POIDS (g)" value="" editing={productEditMode}>
@@ -256,8 +256,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             <div className="flex gap-2" style={{ padding:'16px 24px 20px', flexShrink:0, borderTop:'1px solid var(--border)' }}>
               {editingSku && !productEditMode ? (
                 <>
-                  <button className="btn btn-primary flex-1 justify-center gap-1.5" style={{ display:'flex', alignItems:'center' }} onClick={() => setProductEditMode(true)}><Pencil size={13} /> Modifier</button>
-                  <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>Fermer</button>
+                  <button className="btn btn-primary flex-1 justify-center gap-1.5" style={{ display:'flex', alignItems:'center' }} onClick={() => setProductEditMode(true)}><Pencil size={13} /> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}</button>
+                  <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>{lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
                 </>
               ) : (
                 <>
@@ -306,11 +306,11 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom de la catégorie</label>
-                <input aria-label="Nom de la catégorie" className="input" value={catForm.name} onChange={e => setCatForm(f => ({...f, name:e.target.value}))} placeholder="Ex: Céréales" />
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Category name' : lang === 'es' ? 'Nombre de la categoría' : lang === 'it' ? 'Nome categoria' : 'Nom de la catégorie'}</label>
+                <input aria-label={lang === 'en' ? 'Category name' : lang === 'es' ? 'Nombre de la categoría' : lang === 'it' ? 'Nome categoria' : 'Nom de la catégorie'} className="input" value={catForm.name} onChange={e => setCatForm(f => ({...f, name:e.target.value}))} placeholder={lang === 'en' ? 'Ex: Cereals' : lang === 'es' ? 'Ej: Cereales' : lang === 'it' ? 'Es: Cereali' : 'Ex: Céréales'} />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Icône (emoji)</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Icon (emoji)' : lang === 'es' ? 'Icono (emoji)' : lang === 'it' ? 'Icona (emoji)' : 'Icône (emoji)'}</label>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
                   {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🥤','🍫','🌽','🫚'].map(emoji => (
                     <button key={emoji} onClick={() => setCatForm(f => ({...f, icon:emoji}))} style={{
@@ -360,7 +360,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 }
                 setShowCatModal(false)
               }}>{editCat ? 'Modifier' : 'Créer'}</button>
-              <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowCatModal(false)}>Annuler</button>
+              <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowCatModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
             </div>
           </div>
         </div>

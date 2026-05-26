@@ -117,17 +117,17 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                           onClick={() => navigate('/app/pos', { state: { customer: c } })}>
                           <ShoppingCart size={11} />
                         </button>
-                        <button className="btn btn-sm" title="Carte fidélité"
+                        <button className="btn btn-sm" title={i('Carte fidélité', 'Loyalty card', 'Tarjeta fidelidad', 'Carta fedeltà')}
                           style={{ background: 'rgba(255,215,0,.12)', color: '#B8860B', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
                           onClick={() => setLoyaltyCustomer(c)}>
                           <Gift size={11} />
                         </button>
-                        <button className="btn btn-sm" title="Générer un devis PDF"
+                        <button className="btn btn-sm" title={i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')}
                           style={{ background: TYPE_CFG['Grossiste'].bg, color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
                           onClick={() => generateInvoice({
-                            type: 'devis', lang: 'fr',
+                            type: 'devis', lang,
                             customer: { name: c.name, phone: c.phone },
-                            items: [{ name: 'Article', qty: 1, price: 0 }],
+                            items: [{ name: i('Article', 'Item', 'Artículo', 'Articolo'), qty: 1, price: 0 }],
                           })}>
                           <FileText size={11} />
                         </button>
@@ -136,7 +136,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>Aucun client trouvé</td></tr>
+                  <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>{i('Aucun client trouvé', 'No customer found', 'Sin clientes', 'Nessun cliente trovato')}</td></tr>
                 )}
               </tbody>
             </table>

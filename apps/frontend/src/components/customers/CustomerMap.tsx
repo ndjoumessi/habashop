@@ -207,7 +207,7 @@ export default function CustomerMap({
         <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid rgba(255,255,255,.06)', background: 'linear-gradient(160deg,#0D0D1C,#111128)', flexShrink: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
             <MapPin size={14} style={{ color: 'var(--p2)' }} />
-            <span>Clients localisés</span>
+            <span>{lang === 'en' ? 'Located customers' : lang === 'es' ? 'Clientes localizados' : lang === 'it' ? 'Clienti localizzati' : 'Clients localisés'}</span>
             <span style={{ marginLeft: 'auto', fontSize: 11, background: 'rgba(108,71,255,.15)', color: 'var(--p3)', borderRadius: 99, padding: '1px 8px', fontWeight: 800 }}>{visibleList.length}</span>
           </div>
           {/* Search */}
@@ -238,7 +238,7 @@ export default function CustomerMap({
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: 8 }}>
           {visibleList.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text3)', fontSize: 12 }}>
-              <div style={{ display:'flex', justifyContent:'center', marginBottom: 8 }}><Search size={28} style={{ color: 'var(--text4)' }} /></div>Aucun client trouvé
+              <div style={{ display:'flex', justifyContent:'center', marginBottom: 8 }}><Search size={28} style={{ color: 'var(--text4)' }} /></div>{lang === 'en' ? 'No customer found' : lang === 'es' ? 'Sin clientes' : lang === 'it' ? 'Nessun cliente trovato' : 'Aucun client trouvé'}
             </div>
           ) : visibleList.map(({ customer }) => {
             const cfg     = getMapCfg(customer.type ?? 'Détail')
@@ -309,7 +309,7 @@ export default function CustomerMap({
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5, marginBottom: 10 }}>
                   {[
                     { l: 'CA', v: totalCA >= 1000000 ? `${(totalCA / 1000000).toFixed(1)}M` : totalCA >= 1000 ? `${(totalCA / 1000).toFixed(0)}k` : fmt(totalCA), c: cfg.color },
-                    { l: 'Cmds', v: `${orders}×`, c: '#F0F0FF' },
+                    { l: lang === 'en' ? 'Orders' : lang === 'es' ? 'Pedidos' : lang === 'it' ? 'Ordini' : 'Cmds', v: `${orders}×`, c: '#F0F0FF' },
                     { l: 'Pts',  v: String(loyalty), c: 'var(--warn)' },
                   ].map(k => (
                     <div key={k.l} style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 8, padding: '6px 5px', textAlign: 'center' }}>
@@ -321,7 +321,7 @@ export default function CustomerMap({
                 {/* Loyalty bar */}
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
-                    <span>Fidélité</span><span style={{ color: 'var(--warn)' }}>{loyaltyPct}%</span>
+                    <span>{lang === 'en' ? 'Loyalty' : lang === 'es' ? 'Fidelidad' : lang === 'it' ? 'Fedeltà' : 'Fidélité'}</span><span style={{ color: 'var(--warn)' }}>{loyaltyPct}%</span>
                   </div>
                   <div style={{ height: 4, background: 'rgba(255,255,255,.07)', borderRadius: 99, overflow: 'hidden' }}>
                     <div style={{ width: `${loyaltyPct}%`, height: '100%', background: 'linear-gradient(90deg,#FFB800,#FF9500)', borderRadius: 99, boxShadow: loyaltyPct > 0 ? '0 0 8px rgba(255,184,0,.5)' : 'none' }} />
@@ -339,13 +339,13 @@ export default function CustomerMap({
                     style={{ flex: 1, padding: '8px 6px', background: cfg.soft, border: `1px solid ${cfg.color}44`, borderRadius: 9, cursor: 'pointer', color: cfg.color, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'opacity .15s' }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.8'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}>
-                    <Eye size={11} /> Détail
+                    <Eye size={11} /> {lang === 'en' ? 'Details' : lang === 'es' ? 'Detalle' : lang === 'it' ? 'Dettaglio' : 'Détail'}
                   </button>
                   <button type="button" onClick={() => navigate('/app/pos', { state: { customer: selected } })}
                     style={{ flex: 1, padding: '8px 6px', background: 'rgba(0,208,132,.1)', border: '1px solid var(--c-green-border)', borderRadius: 9, cursor: 'pointer', color: 'var(--acc2)', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'opacity .15s' }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.8'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}>
-                    <ShoppingCart size={11} /> Vente
+                    <ShoppingCart size={11} /> {lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : lang === 'it' ? 'Vendita' : 'Vente'}
                   </button>
                 </div>
               </div>
@@ -357,8 +357,8 @@ export default function CustomerMap({
         {!selected && (
           <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,.06)', flexShrink: 0, display: 'flex', gap: 0, background: 'rgba(0,0,0,.2)' }}>
             {[
-              { l: 'Localisés',    v: `${geoCustomers.length}/${customers.length}`, c: 'var(--acc2)' },
-              { l: 'Sans adresse', v: String(noAddr),                                c: 'var(--warn)' },
+              { l: lang === 'en' ? 'Located' : lang === 'es' ? 'Localizados' : lang === 'it' ? 'Localizzati' : 'Localisés',    v: `${geoCustomers.length}/${customers.length}`, c: 'var(--acc2)' },
+              { l: lang === 'en' ? 'No address' : lang === 'es' ? 'Sin dirección' : lang === 'it' ? 'Senza indirizzo' : 'Sans adresse', v: String(noAddr),                                c: 'var(--warn)' },
               { l: 'VIP',          v: String(vipCount),                              c: 'var(--warn)'      },
             ].map((s, i) => (
               <div key={s.l} style={{ flex: 1, textAlign: 'center', paddingLeft: i > 0 ? 0 : 0, borderLeft: i > 0 ? '1px solid rgba(255,255,255,.06)' : 'none' }}>
@@ -377,8 +377,8 @@ export default function CustomerMap({
         {/* Overlay controls */}
         <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
           {[
-            { icon: <Navigation2 size={16} />, title: 'Ma position',  fn: centerOnMe },
-            { icon: <Globe size={16} />, title: 'Vue globale',  fn: () => { if (mapObj.current) { mapObj.current.setCenter({ lat: 14.6928, lng: -17.4467 }); mapObj.current.setZoom(6) } } },
+            { icon: <Navigation2 size={16} />, title: lang === 'en' ? 'My location' : lang === 'es' ? 'Mi ubicación' : lang === 'it' ? 'La mia posizione' : 'Ma position',  fn: centerOnMe },
+            { icon: <Globe size={16} />, title: lang === 'en' ? 'Global view' : lang === 'es' ? 'Vista global' : lang === 'it' ? 'Vista globale' : 'Vue globale',  fn: () => { if (mapObj.current) { mapObj.current.setCenter({ lat: 14.6928, lng: -17.4467 }); mapObj.current.setZoom(6) } } },
           ].map(btn => (
             <button key={btn.title} type="button" onClick={btn.fn} title={btn.title}
               style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(7,7,15,.9)', border: '1px solid rgba(255,255,255,.12)', cursor: 'pointer', color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 4px 16px rgba(0,0,0,.5)', transition: 'background .15s' }}
@@ -387,7 +387,7 @@ export default function CustomerMap({
               {btn.icon}
             </button>
           ))}
-          <button type="button" onClick={() => setShowHeat(h => !h)} title="Carte de chaleur"
+          <button type="button" onClick={() => setShowHeat(h => !h)} title={lang === 'en' ? 'Heatmap' : lang === 'es' ? 'Mapa de calor' : lang === 'it' ? 'Mappa di calore' : 'Carte de chaleur'}
             style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${showHeat ? 'rgba(108,71,255,.6)' : 'rgba(255,255,255,.12)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 4px 16px rgba(0,0,0,.5)', transition: 'all .15s', background: showHeat ? 'rgba(108,71,255,.35)' : 'rgba(7,7,15,.9)', color: showHeat ? 'var(--p3)' : 'var(--text2)' }}>
             <Flame size={16} />
           </button>
@@ -397,7 +397,7 @@ export default function CustomerMap({
         {(!mapsLoaded || geocoding) && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(7,7,15,.85)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 20 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(108,71,255,.2)', borderTopColor: 'var(--p)', animation: 'spin 1s linear infinite' }} />
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)' }}>{!mapsLoaded ? 'Chargement Google Maps…' : 'Localisation des clients…'}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)' }}>{!mapsLoaded ? (lang === 'en' ? 'Loading Google Maps…' : lang === 'es' ? 'Cargando Google Maps…' : lang === 'it' ? 'Caricamento Google Maps…' : 'Chargement Google Maps…') : (lang === 'en' ? 'Locating customers…' : lang === 'es' ? 'Localizando clientes…' : lang === 'it' ? 'Localizzazione clienti…' : 'Localisation des clients…')}</div>
           </div>
         )}
 
@@ -405,8 +405,8 @@ export default function CustomerMap({
         {!GMAPS_KEY && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(7,7,15,.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 20 }}>
             <MapPin size={44} style={{ color: 'var(--p2)' }} />
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>Google Maps non configuré</div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', maxWidth: 260 }}>Ajoutez VITE_GOOGLE_MAPS_KEY dans Vercel → Settings → Env Variables</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{lang === 'en' ? 'Google Maps not configured' : lang === 'es' ? 'Google Maps no configurado' : lang === 'it' ? 'Google Maps non configurato' : 'Google Maps non configuré'}</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', maxWidth: 260 }}>{lang === 'en' ? 'Add VITE_GOOGLE_MAPS_KEY in Vercel → Settings → Env Variables' : lang === 'es' ? 'Agregue VITE_GOOGLE_MAPS_KEY en Vercel → Settings → Env Variables' : lang === 'it' ? 'Aggiungi VITE_GOOGLE_MAPS_KEY in Vercel → Settings → Env Variables' : 'Ajoutez VITE_GOOGLE_MAPS_KEY dans Vercel → Settings → Env Variables'}</div>
           </div>
         )}
       </div>

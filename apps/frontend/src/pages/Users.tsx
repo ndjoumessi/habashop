@@ -435,8 +435,8 @@ export default function Users() {
                   <input aria-label="Nom complet" className="input text-sm" value={editForm.name} onChange={e => setEditForm(f => ({...f, name:e.target.value}))} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Rôle</label>
-                  <select aria-label="Rôle" className="input text-sm" value={editForm.role} onChange={e => setEditForm(f => ({...f, role:e.target.value as Role}))}>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle'}</label>
+                  <select aria-label={lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle'} className="input text-sm" value={editForm.role} onChange={e => setEditForm(f => ({...f, role:e.target.value as Role}))}>
                     {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
                       <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                     ))}
@@ -452,15 +452,15 @@ export default function Users() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Statut</label>
-                  <select aria-label="Statut" className="input text-sm" value={editForm.active ? 'active' : 'inactive'} onChange={e => setEditForm(f => ({...f, active:e.target.value==='active'}))}>
-                    <option value="active">Actif</option><option value="inactive">Inactif</option>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</label>
+                  <select aria-label={lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'} className="input text-sm" value={editForm.active ? 'active' : 'inactive'} onChange={e => setEditForm(f => ({...f, active:e.target.value==='active'}))}>
+                    <option value="active">{lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif'}</option><option value="inactive">{lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif'}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>2FA</label>
                   <select aria-label="2FA" className="input text-sm" value={editForm.twoFA ? 'enabled' : 'disabled'} onChange={e => setEditForm(f => ({...f, twoFA:e.target.value==='enabled'}))}>
-                    <option value="enabled">Activé</option><option value="disabled">Désactivé</option>
+                    <option value="enabled">{lang === 'en' ? 'Enabled' : lang === 'es' ? 'Activado' : lang === 'it' ? 'Attivato' : 'Activé'}</option><option value="disabled">{lang === 'en' ? 'Disabled' : lang === 'es' ? 'Desactivado' : lang === 'it' ? 'Disattivato' : 'Désactivé'}</option>
                   </select>
                 </div>
               </div>
@@ -504,12 +504,12 @@ export default function Users() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom complet</label>
-                  <input aria-label="Nom complet" className="input text-sm" placeholder="Prénom Nom" value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))} />
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Full name' : lang === 'es' ? 'Nombre completo' : lang === 'it' ? 'Nome completo' : 'Nom complet'}</label>
+                  <input aria-label={lang === 'en' ? 'Full name' : lang === 'es' ? 'Nombre completo' : lang === 'it' ? 'Nome completo' : 'Nom complet'} className="input text-sm" placeholder={lang === 'en' ? 'First Last' : lang === 'es' ? 'Nombre Apellido' : lang === 'it' ? 'Nome Cognome' : 'Prénom Nom'} value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Rôle</label>
-                  <select aria-label="Rôle" className="input text-sm" value={form.role} onChange={e => setForm(f => ({...f, role:e.target.value as Role}))}>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle'}</label>
+                  <select aria-label={lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle'} className="input text-sm" value={form.role} onChange={e => setForm(f => ({...f, role:e.target.value as Role}))}>
                     {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
                       <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                     ))}
@@ -525,18 +525,18 @@ export default function Users() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Mot de passe</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Password' : lang === 'es' ? 'Contraseña' : lang === 'it' ? 'Password' : 'Mot de passe'}</label>
                   <div className="relative">
                     <Lock size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color:'var(--text3)' }} />
                     <input className="input text-sm pl-8 pr-8" type={showPwd ? 'text' : 'password'} placeholder="••••••••" value={form.password} onChange={e => setForm(f => ({...f, password:e.target.value}))} />
-                    <button className="absolute right-2.5 top-1/2 -translate-y-1/2" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)' }} onClick={() => setShowPwd(!showPwd)} aria-label="Toggle password visibility">
+                    <button className="absolute right-2.5 top-1/2 -translate-y-1/2" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)' }} onClick={() => setShowPwd(!showPwd)} aria-label={lang === 'en' ? 'Toggle password visibility' : lang === 'es' ? 'Mostrar/ocultar contraseña' : lang === 'it' ? 'Mostra/nascondi password' : 'Afficher/masquer le mot de passe'}>
                       {showPwd ? <EyeOff size={13}/> : <Eye size={13}/>}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Confirmer</label>
-                  <input aria-label="Confirmer" className="input text-sm" type={showPwd ? 'text' : 'password'} placeholder="••••••••" value={form.confirm} onChange={e => setForm(f => ({...f, confirm:e.target.value}))} />
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'}</label>
+                  <input aria-label={lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'} className="input text-sm" type={showPwd ? 'text' : 'password'} placeholder="••••••••" value={form.confirm} onChange={e => setForm(f => ({...f, confirm:e.target.value}))} />
                 </div>
               </div>
               {form.role && (

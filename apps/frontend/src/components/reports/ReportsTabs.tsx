@@ -268,7 +268,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
         {/* Ventes récentes */}
         <div className="panel" style={{ marginBottom: 0 }}>
           <div className="panel-head">
-            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Receipt size={14}/> Ventes récentes</span>
+            <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Receipt size={14}/> {lang === 'en' ? 'Recent sales' : lang === 'es' ? 'Ventas recientes' : lang === 'it' ? 'Vendite recenti' : 'Ventes récentes'}</span>
           </div>
           <div className="table-wrap">
             <table>

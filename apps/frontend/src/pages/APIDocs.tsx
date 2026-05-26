@@ -167,7 +167,7 @@ export default function APIDocs() {
           <table>
             <thead>
               <tr>
-                <th style={{ width: 70 }}>Méthode</th>
+                <th style={{ width: 70 }}>{lang === 'en' ? 'Method' : lang === 'es' ? 'Método' : lang === 'it' ? 'Metodo' : 'Méthode'}</th>
                 <th>Endpoint</th>
                 <th>Description</th>
                 <th style={{ width: 100 }}>Auth</th>
