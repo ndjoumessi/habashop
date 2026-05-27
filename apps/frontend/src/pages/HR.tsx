@@ -69,7 +69,7 @@ export default function HR() {
   const [showLeaveModal, setShowLeaveModal] = useState(false)
   const [leaveForm, setLeaveForm] = useState({
     empId: 0,
-    type: 'Congé annuel',
+    type: lang === 'en' ? 'Annual leave' : lang === 'es' ? 'Permiso anual' : lang === 'it' ? 'Ferie annuali' : 'Congé annuel',
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     notes: '',

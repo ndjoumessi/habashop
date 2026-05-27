@@ -225,9 +225,9 @@ export default function Orders() {
       ])}
       <h2>${t('order_pdf_detail')}</h2>
       ${htmlTable(
-        [t('col_product'), t('col_qty'), 'Unité', t('col_price'), t('col_amount')],
+        [t('col_product'), t('col_qty'), i('Unité', 'Unit', 'Unidad', 'Unità'), t('col_price'), t('col_amount')],
         order.items.map(item => [
-          item.product, String(item.qty), item.unit,
+          item.product, String(item.qty), item.unit === 'unité' ? i('unité', 'unit', 'unidad', 'unità') : item.unit,
           fmt(item.unitPrice),
           fmt(item.qty * item.unitPrice),
         ]),
@@ -631,7 +631,7 @@ export default function Orders() {
                     <tr key={i}>
                       <td className="td-bold text-xs">{item.product}</td>
                       <td className="td-num text-xs">{item.qty}</td>
-                      <td className="text-xs" style={{ color: 'var(--text2)' }}>{item.unit}</td>
+                      <td className="text-xs" style={{ color: 'var(--text2)' }}>{item.unit === 'unité' ? (lang === 'en' ? 'unit' : lang === 'es' ? 'unidad' : lang === 'it' ? 'unità' : 'unité') : item.unit}</td>
                       <td className="td-num text-xs">{fmt(item.unitPrice)}</td>
                       <td className="td-num text-xs" style={{ color: 'var(--acc2)' }}>{fmt(item.qty * item.unitPrice)}</td>
                     </tr>

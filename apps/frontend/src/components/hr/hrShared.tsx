@@ -92,6 +92,7 @@ export const ROLE_LABELS: Record<string, Record<string, string>> = {
   'Sécurité':    { fr:'Sécurité',    en:'Security',    es:'Seguridad',   it:'Sicurezza'    },
   'RH':          { fr:'RH',          en:'HR',          es:'RR.HH.',      it:'HR'           },
   'Admin':       { fr:'Admin',       en:'Admin',       es:'Admin',       it:'Admin'        },
+  'Employé':     { fr:'Employé',     en:'Employee',    es:'Empleado',    it:'Dipendente'   },
 }
 export const roleLabel = (r: string, lang: string): string =>
   ROLE_LABELS[r]?.[lang] ?? r
@@ -106,6 +107,7 @@ export const DEPT_LABELS: Record<string, Record<string, string>> = {
   'RH':         { fr:'RH',         en:'HR',         es:'RR.HH.',     it:'HR'         },
   'IT':         { fr:'IT',         en:'IT',         es:'IT',         it:'IT'         },
   'Sécurité':   { fr:'Sécurité',   en:'Security',   es:'Seguridad',  it:'Sicurezza'  },
+  'Général':    { fr:'Général',    en:'General',    es:'General',    it:'Generale'   },
 }
 export const deptLabel = (d: string, lang: string): string =>
   DEPT_LABELS[d]?.[lang] ?? d

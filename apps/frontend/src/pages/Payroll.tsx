@@ -48,6 +48,7 @@ const ROLE_T: Record<string, Record<string, string>> = {
   'Magasinier': { fr:'Magasinier', en:'Storekeeper', es:'Almacenero', it:'Magazziniere' },
   'Livreur':    { fr:'Livreur',    en:'Delivery',    es:'Repartidor', it:'Fattorino'    },
   'Sécurité':   { fr:'Sécurité',   en:'Security',    es:'Seguridad',  it:'Sicurezza'    },
+  'Employé':    { fr:'Employé',    en:'Employee',    es:'Empleado',   it:'Dipendente'   },
 }
 const roleLabel = (r: string, lang: string) => ROLE_T[r]?.[lang] ?? r
 
@@ -393,7 +394,7 @@ export default function Payroll() {
         setRecords(data
           .filter((e: any) => (e.active ?? e.isActive ?? e.status !== 'inactive'))
           .map((e: any, i: number) => {
-            const name = e.name ?? (`${e.firstName ?? ''} ${e.lastName ?? ''}`.trim() || 'Employé')
+            const name = e.name ?? (`${e.firstName ?? ''} ${e.lastName ?? ''}`.trim() || (lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'))
             return {
               id: typeof e.id === 'number' ? e.id : i + 1,
               employee: name,
