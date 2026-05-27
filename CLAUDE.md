@@ -42,6 +42,7 @@ Afrique francophone) — surtout **caisse POS mobile** + stock + dashboard + cli
 | expo-image-picker | ~17.0.11 | Photo de profil (galerie/caméra) |
 | expo-image-manipulator | ~14.0.8 | Redimensionnement photo 200×200 |
 | expo-task-manager / expo-background-fetch | ~14.0.9 | Refresh widget (15 min) — ⚠️ background-fetch déprécié → `expo-background-task` |
+| DarkColors / LightColors | `theme.ts` | Thème clair/sombre/système (`useTheme()` dans `appStore`) |
 
 > Lire les **docs versionnées** https://docs.expo.dev/versions/v54.0.0/ avant de coder (cf. `AGENTS.md`).
 
@@ -100,7 +101,8 @@ Toute migration DB future = **PROD Railway** → **confirmer avec Nelson avant**
 - **Compte EAS :** `ndjoumessi` (romel.djoumessi@gmail.com)
 - **Project ID :** `e7399d7a-e5ba-4e30-a333-8cff7ad10eb4` (dans `app.json` → `expo.extra.eas.projectId`)
 - **Keystore Android :** `sH_oz3rpgx` (généré auto, stocké sur EAS)
-- **app.json :** `name: HabaShop`, `slug: habashop-mobile`, `version: 1.0.0` (pas de champ `sdkVersion` ni `owner`)
+- **app.json :** `name: HabaShop`, `slug: habashop-mobile`, `version: 1.2.0` (pas de champ `sdkVersion` ni `owner`)
+- **Versionnage :** `appVersionSource: remote` dans `eas.json` → le `versionCode` Android est **géré côté EAS** (auto-incrément) ; celui d'`app.json` est **ignoré** au build.
 
 ---
 
@@ -118,9 +120,10 @@ app/                       # Expo Router (file-based)
     reports/index.tsx      # Rapports (KPIs période, barres CSS, top, paiements, export CSV)
     sales/index.tsx        # Historique des ventes (filtres, détail, renvoi ticket WhatsApp)
     search/index.tsx       # Recherche globale (produits + clients, debounce 300 ms)
+    kiosk/index.tsx        # Mode kiosque POS plein écran (grille 4 col + panier permanent, sortie PIN)
 src/
-  constants/theme.ts       # Colors / Spacing / BorderRadius / FontSize / Shadow + withAlpha()
-  stores/                  # authStore, appStore (useI18n/useFmt + persist), posStore
+  constants/theme.ts       # Colors (sombre figé) + DarkColors/LightColors/ThemeColors + Spacing/BorderRadius/FontSize/Shadow + withAlpha()
+  stores/                  # authStore, appStore (useI18n/useFmt/useTheme + theme/kioskMode + persist), posStore
   hooks/
     useNetworkStatus.ts    # détecte online/offline (NetInfo)
     useOfflineSync.ts      # sync auto de la file au retour réseau (monté via <OfflineSyncBridge/>)
@@ -128,7 +131,7 @@ src/
   services/
     api.ts                 # axios + interceptor JWT + authApi/productsApi/salesApi/analyticsApi
     exchangeRate.ts        # taux FX live (open.er-api.com), cache 6h, fallback
-    notifications.ts       # registerForPushNotifications() + sendLocalNotification()
+    notifications.ts       # registerForPushNotifications() (durci) + sendLocalNotification() + testPushNotification()
     offlineQueue.ts        # file d'actions offline (AsyncStorage) : SALE / STOCK_MOVE
     whatsappTicket.ts      # génère + envoie le reçu WhatsApp (Linking)
     biometric.ts           # Face ID / empreinte (expo-local-authentication + SecureStore)
@@ -136,11 +139,11 @@ src/
   tasks/
     backgroundRefresh.ts   # refresh widget en arrière-plan (expo-background-fetch, 15 min)
   components/
-    ui/                    # AccessibleButton · AccessibleInput · ErrorState · Avatar
+    ui/                    # AccessibleButton · AccessibleInput · ErrorState · Avatar · ThemedView
     pos/                   # BarcodeScanner · POSProductGrid · POSCart · POSConfirmModal · payModes
   types/
 ```
-> ⚠️ Pas de `useTheme.ts` ni `themes.ts` : le thème clair/sombre **n'est pas implémenté** (voir Notes Sprint 3+).
+> Thème : `useTheme()` vit dans `appStore` (pas de fichier `useTheme.ts`/`themes.ts` séparé) ; palettes `DarkColors`/`LightColors` dans `theme.ts`. ✅ implémenté Sprint 4 (voir **Notes Sprint 4**).
 Alias TS : `@/*` → `src/*`.
 
 ---
@@ -194,6 +197,7 @@ Colors.warn     = '#FFB800'
 ```
 **Règles :** `StyleSheet.create()` (jamais de styles inline) ; toujours les tokens (jamais d'hex hardcodé) ;
 fonts `Outfit_700Bold` (titres) / `JetBrainsMono_400Regular` (chiffres).
+> ⚠️ Depuis Sprint 4, les écrans construisent leurs styles via `const s = useMemo(() => makeStyles(C), [C])` (C = palette courante via `useTheme()`), **pas** `Colors.` en direct — sauf `kiosk/index.tsx` (volontairement sombre figé) et `widgetNotification.ts`.
 
 ---
 
@@ -315,8 +319,30 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 - Produits **et** clients ; **debounce 300 ms** ; max **20** résultats.
 - ⚠️ paramètre `.map()` nommé `term` (pas `s`) pour ne pas masquer le `StyleSheet s`.
 
-### Thème clair/sombre — **NON implémenté**
-- `Colors` est **statique** (456 usages / 19 fichiers, figés au chargement des `StyleSheet`). Un `useTheme()` ne re-thèmerait rien sans migrer les 456 usages → **chantier dédié**. Aucun `themes.ts`/`useTheme` créé (décidé avec Nelson).
+### Thème clair/sombre — ✅ implémenté (Sprint 4)
+- L'ex-« chantier dédié » des 477 usages `Colors` statiques a été fait : `StyleSheet` migrés en `makeStyles(C)`. Détails ci-dessous dans **Notes Sprint 4**.
+
+---
+
+## Notes Sprint 4 — pièges à éviter
+
+### Thème clair/sombre
+- **18 fichiers migrés** : `StyleSheet.create` → `makeStyles(C)` appelé via `useMemo` dans **chaque** composant — **ne pas** revenir aux `Colors` statiques.
+- `ThemeColors = { [K in keyof typeof DarkColors]: string }` (**pas** `typeof DarkColors` : les littéraux `as const` rendent `LightColors` incompatible → `"#5535CC" ≠ "#A991FF"`).
+- `userInterfaceStyle: "automatic"` dans `app.json` **obligatoire** pour que le mode « Système » suive vraiment l'OS ; `StatusBar` rendu dynamique (`isDark ? 'light' : 'dark'`).
+- `Colors` statiques encore présents (volontairement) dans `kiosk/index.tsx` (interface caissier = sombre fixe) et `widgetNotification.ts` (couleur de marque).
+- ⚠️ Le hook `useTheme()`/`useMemo` doit être **avant** tout `return` conditionnel (règle des hooks).
+
+### Mode kiosque
+- PIN de sortie : **`1234`** (appui **LONG** sur ⚙️, `delayLongPress=600`).
+- `kioskMode` persisté dans `appStore` (AsyncStorage, via `partialize`).
+- Route `fullScreenModal` + `animation: 'fade'` (dans `app/(app)/_layout.tsx`) ; `StatusBar hidden`.
+- Branché sur l'API réelle du `posStore` (`addItem`/`updateQty`/`total`/`recordSale`/`paymentMode`).
+
+### Version 1.2.0
+- `version: 1.2.0` ; `buildNumber` iOS = `3`. Le `versionCode` Android d'`app.json` (=3) est **ignoré** (`appVersionSource: remote` → EAS auto-incrémente).
+- `runtimeVersion.policy = appVersion` → passer à 1.2.0 **change le runtime** : un `eas update` OTA ne touche **PAS** les builds 1.0.0 ; **nouveau build EAS** requis pour tester le thème.
+- OTA possible entre builds de **même runtime** (ex. fix navbar `777a5e1` poussé sur le build 1.2.0 via `eas update --branch preview`).
 
 ---
 
@@ -342,6 +368,8 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | 8449fd8 | feat: **Sprint C** — withAlpha complet + POS découpé (699→378) + cibles 44pt |
 | 22b5e95 | feat: **Sprint 3** — biométrie + widget CA (notification persistante) |
 | f76ea60 | feat: photo de profil + historique des ventes + recherche globale |
+| e1a9704 | feat: **Sprint 4** — thème clair/sombre + kiosque POS + push durci + Play Store prep |
+| 777a5e1 | fix: navbar — labels sur une ligne (fontSize 8 + numberOfLines + adjustsFontSizeToFit) |
 
 ---
 
@@ -352,12 +380,15 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 - [x] Biométrie Face ID / empreinte ✅
 - [x] Widget CA du jour (notification persistante, opt-in) ✅
 - [x] Photo de profil · Historique des ventes · Recherche globale ✅
-- [ ] **Tester sur device réel** (rien validé en runtime — cf. mémoire `runtime-verification-debt`) : biométrie, scanner, offline, widget (dev build)
-- [ ] Thème clair/sombre (migrer les 456 usages `Colors` statiques — chantier dédié)
+- [x] Thème clair/sombre/système ✅ (Sprint 4)
+- [x] Mode kiosque POS ✅ (Sprint 4)
+- [x] Push notifications durci (projectId + routing par type) ✅ (Sprint 4)
+- [x] Google Play Store — préparation (`PLAY_STORE.md`) ✅ (Sprint 4)
+- [ ] **Tester sur device réel** (rien validé en runtime — cf. mémoire `runtime-verification-debt`) : surtout **thème clair sur tous les écrans**, kiosque, biométrie, scanner, offline, widget (dev build)
+- [ ] Publier sur Google Play Store (AAB production)
 - [ ] EAS Build iOS (compte Apple Developer ; ajouter `LSApplicationQueriesSchemes:["whatsapp"]`)
-- [ ] Google Play Store (AAB production)
 - [ ] Notifications push réelles (token EAS, dev build)
 
 ---
 
-*Dernière mise à jour : Sprint 3 — 2026-05-27 (biométrie, photo de profil, historique ventes, recherche globale, widget CA, audit UI/UX A/B/C).*
+*Dernière mise à jour : Sprint 4 — 2026-05-27 (thème clair/sombre/système, mode kiosque POS, push durci, préparation Play Store, fix navbar).*

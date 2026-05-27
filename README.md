@@ -9,7 +9,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
 [![Android](https://img.shields.io/badge/Android-✅-3DDC84?style=flat-square&logo=android)](https://play.google.com)
 [![iOS](https://img.shields.io/badge/iOS-🔜-000000?style=flat-square&logo=apple)](https://apple.com)
-![Sprint](https://img.shields.io/badge/Sprint-3_✅-00D084?style=flat-square)
+![Sprint](https://img.shields.io/badge/Sprint-4_✅-00D084?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.2.0-6C47FF?style=flat-square)
 
 [📱 Télécharger l'APK](#-installation) · [🌐 Version Web](https://habashop.vercel.app) · [📚 Documentation](#-développement)
 
@@ -128,6 +129,18 @@ L'app permet aux commerçants de gérer leur activité depuis leur téléphone :
 - `accessibilityRole`/`Label`/`Hint`/`State` sur tous les écrans (Sprints A/B/C)
 - Composants `AccessibleButton` / `AccessibleInput` / `ErrorState` · cibles tactiles ≥ 44 pt
 
+### 🌙 Thème clair / sombre / système
+- 3 modes : **Sombre**, **Clair**, **Système** (suit l'OS)
+- Sélecteur dans les Réglages → **Apparence**
+- Persisté entre les sessions (AsyncStorage)
+- Appliqué sur tous les écrans (styles construits depuis le thème courant)
+
+### 🖥️ Mode kiosque caissier
+- Interface POS plein écran dédiée
+- Grille produits 4 colonnes · panier permanent sur le côté droit
+- Sortie sécurisée par **code PIN** (`1234`, appui long sur ⚙️)
+- Idéal pour une tablette/un téléphone fixe en boutique
+
 ---
 
 ## 🚀 Installation
@@ -162,14 +175,15 @@ habashop-mobile/
 │       ├── reports/index.tsx     # Rapports & Analytics (export CSV)
 │       ├── sales/index.tsx       # Historique des ventes (détail + ticket WhatsApp)
 │       ├── search/index.tsx      # Recherche globale (produits + clients)
+│       ├── kiosk/index.tsx       # Mode kiosque POS plein écran (grille 4 col + panier + PIN)
 │       └── (tabs)/               # dashboard · stock · pos-tab · customers · settings
 ├── src/
-│   ├── constants/theme.ts        # Design tokens (couleurs, fonts, espacements) + withAlpha()
-│   ├── stores/                   # authStore (JWT+SecureStore) · appStore (i18n+devise) · posStore
+│   ├── constants/theme.ts        # Design tokens + DarkColors/LightColors/ThemeColors + withAlpha()
+│   ├── stores/                   # authStore (JWT+SecureStore) · appStore (i18n+devise+thème) · posStore
 │   ├── hooks/                    # useNetworkStatus · useOfflineSync · useProfilePhoto
 │   ├── services/                 # api · exchangeRate · notifications · offlineQueue · whatsappTicket · biometric · widgetNotification
 │   ├── tasks/                    # backgroundRefresh (widget)
-│   └── components/               # ui/ (AccessibleButton·Input·ErrorState·Avatar) · pos/ (BarcodeScanner·POSCart·POSProductGrid·POSConfirmModal)
+│   └── components/               # ui/ (AccessibleButton·Input·ErrorState·Avatar·ThemedView) · pos/ (BarcodeScanner·POSCart·POSProductGrid·POSConfirmModal)
 ├── assets/                       # icon · icon-ios (RGB sans alpha) · adaptive-icon · splash-icon · notification-icon
 ├── app.json                      # Config Expo + EAS
 └── eas.json                      # Profils de build EAS (development / preview / production)
@@ -281,12 +295,17 @@ npx expo-doctor       # objectif 18/18 ✅
 - [x] Recherche globale
 - [x] Audit UI/UX (Sprints A/B/C : accessibilité 0 → 135 attributs, POS découpé)
 
-### 🔜 Sprint 4
-- [ ] Thème clair/sombre (migrer les 456 usages Colors statiques)
+### ✅ Sprint 4
+- [x] Thème clair/sombre/système
+- [x] Mode kiosque POS
+- [x] Push notifications durci (projectId + routing)
+- [x] Préparation Google Play Store (`PLAY_STORE.md`)
+
+### 🔜 Sprint 5
+- [ ] Publication Google Play Store
 - [ ] EAS Build iOS (App Store)
-- [ ] Google Play Store
-- [ ] Notifications push réelles (token EAS)
-- [ ] RH & Planning mobile
+- [ ] Tests approfondis du thème clair (tous les écrans)
+- [ ] Mode tablette optimisé
 
 ---
 
@@ -304,7 +323,14 @@ npx expo-doctor       # objectif 18/18 ✅
 
 ## 📋 Changelog
 
-### v1.2.0 — Sprint 3 (2026-05-27)
+### v1.2.0 — Sprint 4 (2026-05-27)
+- ✨ Thème clair / sombre / système (sélecteur Réglages → Apparence, persisté)
+- ✨ Mode kiosque POS (grille 4 colonnes + panier permanent + sortie PIN)
+- 🔧 Push notifications durci (garde `projectId`, logs, routing notif par type)
+- 📦 Préparation Google Play Store (`PLAY_STORE.md`, app.json v1.2.0)
+- 🐛 Navbar : labels sur une seule ligne (`fontSize` + `numberOfLines` + auto-fit)
+
+### v1.1.1 — Sprint 3 (2026-05-27)
 - ✨ Biométrie Face ID + empreinte
 - ✨ Widget CA du jour (notification persistante, opt-in)
 - ✨ Photo de profil (galerie + caméra)
