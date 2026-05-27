@@ -99,6 +99,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={s.eyeBtn}
                 onPress={()=>setShowPwd(v=>!v)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel={showPwd
                   ? i('Masquer le mot de passe','Hide password','Ocultar contraseña','Nascondi password')

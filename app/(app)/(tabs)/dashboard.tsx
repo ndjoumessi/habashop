@@ -143,6 +143,8 @@ export default function DashboardScreen() {
           <TouchableOpacity
             style={s.trialBanner}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={i('Essai gratuit — passer au Pro', 'Free trial — upgrade to Pro', 'Prueba gratuita — pasar a Pro', 'Prova gratuita — passa a Pro')}
           >
             <Text style={s.trialText}>
               ⚡ {i(
@@ -356,7 +358,7 @@ const s = StyleSheet.create({
     color:Colors.danger, textTransform:'uppercase', letterSpacing:0.4,
   },
   notifBtn: {
-    width:40, height:40,
+    width:44, height:44,
     borderRadius:BorderRadius.md,
     backgroundColor:Colors.bg3,
     alignItems:'center', justifyContent:'center',
@@ -374,10 +376,10 @@ const s = StyleSheet.create({
     justifyContent:'space-between',
     marginHorizontal:Spacing.xl,
     marginBottom:Spacing.md,
-    backgroundColor:'rgba(255,184,0,0.08)',
+    backgroundColor:withAlpha(Colors.warn, 0.08),
     borderRadius:BorderRadius.lg,
     borderWidth:1,
-    borderColor:'rgba(255,184,0,0.2)',
+    borderColor:withAlpha(Colors.warn, 0.2),
     padding:Spacing.md,
   },
   trialText: {
@@ -406,10 +408,10 @@ const s = StyleSheet.create({
     height:80,
     alignItems:'center',
     justifyContent:'center',
-    backgroundColor:'rgba(255,59,92,0.08)',
+    backgroundColor:withAlpha(Colors.danger, 0.08),
     borderRadius:BorderRadius.lg,
     borderWidth:1,
-    borderColor:'rgba(255,59,92,0.2)',
+    borderColor:withAlpha(Colors.danger, 0.2),
   },
   errorText: {
     fontSize:FontSize.sm,
@@ -478,7 +480,7 @@ const s = StyleSheet.create({
     backgroundColor:Colors.card,
     borderRadius:BorderRadius.lg,
     borderWidth:1,
-    borderColor:'rgba(255,184,0,0.2)',
+    borderColor:withAlpha(Colors.warn, 0.2),
     overflow:'hidden',
   },
   alertRow: {

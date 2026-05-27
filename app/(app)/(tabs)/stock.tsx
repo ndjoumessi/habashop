@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi } from '@/services/api'
 import { useI18n, useFmt } from '@/stores/appStore'
 import {
-  Colors, Spacing, BorderRadius, FontSize, Shadow,
+  Colors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
 
@@ -148,7 +148,7 @@ export default function StockScreen() {
         <View style={s.alertChips}>
           {outCnt > 0 && (
             <Pressable
-              style={[s.alertChip, { backgroundColor: 'rgba(255,59,92,0.1)', borderColor: 'rgba(255,59,92,0.25)' }]}
+              style={[s.alertChip, { backgroundColor: withAlpha(Colors.danger, 0.1), borderColor: withAlpha(Colors.danger, 0.25) }]}
               onPress={() => setFilter(filter === 'out' ? 'all' : 'out')}
               accessibilityRole="button"
               accessibilityLabel={`${outCnt} ${i('en rupture', 'out of stock', 'agotados', 'esauriti')}`}
@@ -160,7 +160,7 @@ export default function StockScreen() {
           )}
           {lowCnt > 0 && (
             <Pressable
-              style={[s.alertChip, { backgroundColor: 'rgba(255,184,0,0.1)', borderColor: 'rgba(255,184,0,0.25)' }]}
+              style={[s.alertChip, { backgroundColor: withAlpha(Colors.warn, 0.1), borderColor: withAlpha(Colors.warn, 0.25) }]}
               onPress={() => setFilter(filter === 'low' ? 'all' : 'low')}
               accessibilityRole="button"
               accessibilityLabel={`${lowCnt} ${i('en stock bas', 'low stock', 'stock bajo', 'scorte basse')}`}
@@ -334,7 +334,7 @@ const s = StyleSheet.create({
   title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: Colors.text },
   subtitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
   headerBtn: {
-    width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3,
+    width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3,
     borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center',
   },
 
@@ -368,7 +368,7 @@ const s = StyleSheet.create({
   tabTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: Colors.text2 },
   tabTxtOn: { color: Colors.white },
   tabBadge: { minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: Colors.bg4, alignItems: 'center', justifyContent: 'center' },
-  tabBadgeOn: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  tabBadgeOn: { backgroundColor: withAlpha(Colors.white, 0.25) },
   tabBadgeTxt: { fontSize: 10, fontFamily: 'Outfit_800ExtraBold', color: Colors.text3 },
   tabBadgeTxtOn: { color: Colors.white },
 

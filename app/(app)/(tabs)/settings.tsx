@@ -85,7 +85,7 @@ export default function SettingsScreen() {
               <Text style={s.profileName} numberOfLines={1}>{user?.name ?? '—'}</Text>
               <Text style={s.profileEmail} numberOfLines={1}>{user?.email}</Text>
               <View style={s.badgeRow}>
-                <View style={[s.badge, { backgroundColor: 'rgba(108,71,255,0.15)', borderColor: 'rgba(108,71,255,0.3)' }]}>
+                <View style={[s.badge, { backgroundColor: withAlpha(Colors.primary, 0.15), borderColor: withAlpha(Colors.primary, 0.3) }]}>
                   <Text style={[s.badgeTxt, { color: Colors.primary3 }]}>{(tenant?.plan ?? 'starter').toUpperCase()}</Text>
                 </View>
                 <View style={[s.badge, { backgroundColor: `${statusColor}1a`, borderColor: `${statusColor}40` }]}>
@@ -314,14 +314,14 @@ const s = StyleSheet.create({
     padding: Spacing.md, borderRadius: BorderRadius.md,
     backgroundColor: Colors.bg3, borderWidth: 1.5, borderColor: Colors.border, position: 'relative',
   },
-  gridItemOn: { backgroundColor: 'rgba(108,71,255,0.12)', borderColor: Colors.primary },
+  gridItemOn: { backgroundColor: withAlpha(Colors.primary, 0.12), borderColor: Colors.primary },
   gridLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
   gridLabelOn: { color: Colors.primary3 },
   gridCheck: { position: 'absolute', top: 4, right: 4 },
 
   // Devise / listes
   listRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
-  listRowOn: { backgroundColor: 'rgba(108,71,255,0.08)' },
+  listRowOn: { backgroundColor: withAlpha(Colors.primary, 0.08) },
   listRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
   listRowBorderTop: { borderTopWidth: 1, borderTopColor: Colors.border },
   curCode: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text, width: 44 },
@@ -329,10 +329,10 @@ const s = StyleSheet.create({
   rateInfo: {
     margin: Spacing.md,
     padding: 10,
-    backgroundColor: 'rgba(108,71,255,0.08)',
+    backgroundColor: withAlpha(Colors.primary, 0.08),
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(108,71,255,0.2)',
+    borderColor: withAlpha(Colors.primary, 0.2),
   },
   rateText: { fontSize: 13, fontFamily: 'Outfit_700Bold', color: Colors.primary3, textAlign: 'center' },
   rateSubText: { fontSize: 10, fontFamily: 'Outfit_400Regular', color: Colors.text4, textAlign: 'center', marginTop: 3 },

@@ -276,7 +276,7 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.md },
   title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: Colors.text },
   subtitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
-  headerBtn: { width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  headerBtn: { width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
