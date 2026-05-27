@@ -27,13 +27,17 @@ export async function isBiometricAvailable(): Promise<{
 }
 
 // Lance l'invite biométrique. true si succès.
-export async function authenticateWithBiometric(promptMessage: string): Promise<boolean> {
+// disableDeviceFallback: true → pas de fallback "mot de passe / PIN" natif :
+// l'utilisateur fait sa biométrie, ou Annule (retour à l'écran login normal).
+export async function authenticateWithBiometric(
+  promptMessage: string,
+  cancelLabel: string = 'Annuler / Cancel',
+): Promise<boolean> {
   try {
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage,
-      fallbackLabel: 'Utiliser le mot de passe',
-      cancelLabel: 'Annuler',
-      disableDeviceFallback: false,
+      cancelLabel,
+      disableDeviceFallback: true,
     })
     return result.success
   } catch {
