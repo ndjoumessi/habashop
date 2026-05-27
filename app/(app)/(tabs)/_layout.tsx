@@ -18,7 +18,12 @@ function TabIcon({ name, focused, label }:{
         size={22}
         color={focused ? C.primary : C.text3}
       />
-      <Text style={[s.lbl, focused && s.lblActive]}>
+      <Text
+        style={[s.lbl, focused && s.lblActive]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
         {label}
       </Text>
     </View>
@@ -67,8 +72,8 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor:C.bg2, borderTopColor:C.border,
     borderTopWidth:1, height:72, paddingBottom:12, paddingTop:8,
   },
-  item:{ alignItems:'center', gap:3 },
-  lbl:{ fontSize:9, color:C.text3, fontFamily:'Outfit_600SemiBold' },
+  item:{ alignItems:'center', gap:2, width:56 },
+  lbl:{ fontSize:8, color:C.text3, fontFamily:'Outfit_600SemiBold', textAlign:'center' },
   lblActive:{ color:C.primary3 },
   posWrap:{ alignItems:'center', justifyContent:'center', marginBottom:16 },
   posBtn:{
