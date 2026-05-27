@@ -59,32 +59,40 @@ const CASES: LangCase[] = [
 
 for (const c of CASES) {
   test(`i18n ${c.label} — écrans modifiés rendent correctement`, async ({ page }) => {
+    // Backend live (api.habashop.com) + cold starts → marges généreuses.
+    test.setTimeout(90_000)
+    const SCREEN = 25_000
     const errors: string[] = []
     page.on('pageerror', e => errors.push(String(e)))
 
     await login(page)
     await switchLang(page, c.label)
 
+    // Navigation SPA via la sidebar (NavLink <a href="/app/…">) — login UNIQUE, sans
+    // rechargement : l'auth reste en mémoire. Un page.goto rechargerait la page et
+    // revaliderait la session côté backend (intermittent → redirection /login).
+    const nav = (path: string) => page.locator(`a[href="${path}"]`).first().click()
+
     // ── Customers : tooltips title= traduits (correction directe) ──
-    await page.goto(`${BASE}/app/customers`)
+    await nav('/app/customers')
     await expect(page.locator(`button[title="${c.custTableView}"]`).first())
-      .toBeVisible({ timeout: 12000 })
+      .toBeVisible({ timeout: SCREEN })
     await expect(page.locator(`button[title="${c.custGridView}"]`).first())
-      .toBeVisible()
+      .toBeVisible({ timeout: SCREEN })
 
     // ── Payroll : sous-titre période localisé (zone mois/labels corrigée) ──
-    await page.goto(`${BASE}/app/payroll`)
+    await nav('/app/payroll')
     await expect(page.getByText(c.payrollPeriod).first())
-      .toBeVisible({ timeout: 12000 })
+      .toBeVisible({ timeout: SCREEN })
 
     // ── HR : la page rend bien dans la langue cible ──
-    await page.goto(`${BASE}/app/hr`)
+    await nav('/app/hr')
     await expect(page.getByText(c.hrHeader).first())
-      .toBeVisible({ timeout: 12000 })
+      .toBeVisible({ timeout: SCREEN })
 
     // ── Orders : la page rend (régression — pas d'écran blanc / crash) ──
-    await page.goto(`${BASE}/app/orders`)
-    await page.waitForLoadState('networkidle')
+    await nav('/app/orders')
+    await expect(page).toHaveURL(/\/app\/orders/, { timeout: SCREEN })
 
     // Aucune erreur JS sur l'ensemble du parcours (es/it)
     expect(errors, `Erreurs JS:\n${errors.join('\n')}`).toEqual([])
