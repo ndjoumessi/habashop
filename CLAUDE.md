@@ -44,7 +44,8 @@ src/
                  #   HR, Planning, Payroll, Goals, Expenses, Reports, Forecasts,
                  #   Users, Settings, Activity, Notifications, AIAssistant, APIDocs,
                  #   Integrations, AdminDashboard, UpgradePlan, PaymentCallback,
-                 #   Onboarding, LandingPage, SignupPage, LoginPage, Marketing, Pricing)
+                 #   Onboarding, LandingPage, SignupPage, LoginPage, Marketing, Pricing, Privacy)
+                 #   ⚠️ /privacy = route PUBLIQUE (hors auth, avant le catch-all) — URL exigée par Google Play, ne pas la passer sous ProtectedRoute
   components/    # par domaine : customers/ hr/ pos/ stock/ reports/ settings/
                  #   integrations/ layout/ (Header, Sidebar, AppLayout) ui/
                  #   → chaque domaine a souvent un `*Shared.tsx` (helpers + maps i18n)
