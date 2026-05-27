@@ -35,6 +35,7 @@ export default function LoginScreen() {
     const icon = biometricType === 'face' ? '🔐' : '👆'
     const success = await authenticateWithBiometric(
       i(`${icon} Connexion HabaShop`, `${icon} HabaShop Login`, `${icon} Acceso HabaShop`, `${icon} Accesso HabaShop`),
+      i('Annuler', 'Cancel', 'Cancelar', 'Annulla'),
     )
     if (!success) return
     const creds = await getSavedCredentials()
