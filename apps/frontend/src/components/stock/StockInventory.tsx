@@ -165,7 +165,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       </button>
                     )}
                     <button className="mini-btn" style={{ cursor:'pointer' }} title="Modifier" onClick={() => {
-                      setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: p.buy, sell: p.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, image: p.name.match(/^\S+/)?.[0] ?? '📦' }))
+                      setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: p.buy, sell: p.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, image: p.name.match(/^\S+/)?.[0] ?? '📦', barcode: p.barcode ?? '' }))
                       setEditingSku(p.sku); setEditingId(p._id ?? null); setModalTab('general'); setProductEditMode(false); setShowModal(true)
                     }}><Pencil size={11} /></button>
                   </div>
@@ -217,6 +217,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                                 category: p.category, buy: p.buy, sell: p.sell,
                                 stock: p.stock, threshold: p.threshold, supplier: p.supplier,
                                 image: p.name.match(/^\S+/)?.[0] ?? '📦',
+                                barcode: p.barcode ?? '',
                               }))
                               setEditingSku(p.sku)
                               setEditingId(p._id ?? null)

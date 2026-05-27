@@ -3,6 +3,7 @@ import { t } from '@/stores/appStore'
 export type ProductItem = {
   _id?: string; sku: string; name: string; category: string
   buy: number; sell: number; stock: number; threshold: number; supplier: string
+  barcode?: string
 }
 
 export const CATEGORIES_INIT = [

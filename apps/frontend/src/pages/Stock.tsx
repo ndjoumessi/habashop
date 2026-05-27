@@ -85,6 +85,7 @@ export default function Stock() {
         stock: p.stockQty ?? 0,
         threshold: p.stockMin ?? 5,
         supplier: '',
+        barcode: p.barcode || '',
       }))))
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -112,13 +113,14 @@ export default function Stock() {
       isActive: form.isActive,
       hasPromotion: form.hasPromotion,
       promotionPrice: form.promotionPrice || null,
+      barcode: form.barcode || null,
     }
     if (editingSku) {
       if (editingId) {
         try { await productsApi.update(editingId, apiBody) } catch {}
       }
       setProducts(prev => prev.map(p =>
-        p.sku === editingSku ? { ...p, name: form.image + ' ' + form.name, category: form.category, buy: form.buy, sell: form.sell, stock: form.stock, threshold: form.threshold, supplier: form.supplier } : p
+        p.sku === editingSku ? { ...p, name: form.image + ' ' + form.name, category: form.category, buy: form.buy, sell: form.sell, stock: form.stock, threshold: form.threshold, supplier: form.supplier, barcode: form.barcode } : p
       ))
       toast.success(`✅ ${form.name} mis à jour !`)
     } else {
