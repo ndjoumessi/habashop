@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView,
@@ -27,6 +27,8 @@ export default function LoginScreen() {
   const [biometricType,      setBiometricType]      = useState<BiometricType>('unknown')
   const [showEnableBiometric, setShowEnableBiometric] = useState(false)
   const [pendingAuth, setPendingAuth] = useState<{ token: string; user: any; tenant: any; email: string; password: string } | null>(null)
+  const [usePassword, setUsePassword] = useState(false) // bascule "utiliser le mot de passe" quand biométrie active
+  const biometricTriggered = useRef(false)              // évite le double déclenchement (StrictMode / remount)
 
   // ── Connexion par biométrie (identifiants sauvegardés) ──
   const handleBiometricLogin = async () => {
@@ -60,7 +62,10 @@ export default function LoginScreen() {
       setBiometricAvailable(available && enrolled)
       setBiometricEnabled(enabled)
       setBiometricType(type)
-      if (available && enrolled && enabled) handleBiometricLogin()
+      if (available && enrolled && enabled && !biometricTriggered.current) {
+        biometricTriggered.current = true
+        handleBiometricLogin()
+      }
     }
     checkBiometric()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,90 +134,106 @@ export default function LoginScreen() {
             {i('Se connecter','Sign in','Iniciar sesión','Accedi')}
           </Text>
 
-          <View style={s.field}>
-            <Text style={s.label}>Email</Text>
-            <TextInput style={s.input}
-              placeholder="admin@habashop.com"
-              placeholderTextColor={Colors.text4}
-              value={email} onChangeText={setEmail}
-              autoCapitalize="none" keyboardType="email-address"
-              autoComplete="email" returnKeyType="next"
-              accessibilityLabel="Email"
-              accessibilityHint={i('Entrez votre adresse email','Enter your email address','Ingrese su email','Inserisci la tua email')}/>
-          </View>
-
-          <View style={s.field}>
-            <Text style={s.label}>
-              {i('Mot de passe','Password','Contraseña','Password')}
-            </Text>
-            <View style={{position:'relative'}}>
-              <TextInput style={[s.input,{paddingRight:48}]}
-                placeholder="••••••••"
-                placeholderTextColor={Colors.text4}
-                value={password} onChangeText={setPassword}
-                secureTextEntry={!showPwd}
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-                accessibilityLabel={i('Mot de passe','Password','Contraseña','Password')}
-                accessibilityHint={i('Entrez votre mot de passe','Enter your password','Ingrese su contraseña','Inserisci la password')}/>
+          {biometricAvailable && biometricEnabled && !usePassword ? (
+            // ── Vue biométrique : AUCUN champ mot de passe affiché ──
+            <>
               <TouchableOpacity
-                style={s.eyeBtn}
-                onPress={()=>setShowPwd(v=>!v)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={s.biometricBtn}
+                onPress={handleBiometricLogin}
                 accessibilityRole="button"
-                accessibilityLabel={showPwd
-                  ? i('Masquer le mot de passe','Hide password','Ocultar contraseña','Nascondi password')
-                  : i('Afficher le mot de passe','Show password','Mostrar contraseña','Mostra password')}>
-                <Text style={{fontSize:16}}>
-                  {showPwd?'🙈':'👁️'}
+                accessibilityLabel={i(
+                  biometricType === 'face' ? 'Connexion par Face ID' : 'Connexion par empreinte',
+                  biometricType === 'face' ? 'Sign in with Face ID' : 'Sign in with fingerprint',
+                  biometricType === 'face' ? 'Acceder con Face ID' : 'Acceder con huella',
+                  biometricType === 'face' ? 'Accedi con Face ID' : 'Accedi con impronta',
+                )}
+              >
+                <Text style={s.biometricIcon}>{biometricType === 'face' ? '🔐' : '👆'}</Text>
+                <Text style={s.biometricText}>
+                  {i(
+                    biometricType === 'face' ? 'Se connecter avec Face ID' : 'Se connecter avec l\'empreinte',
+                    biometricType === 'face' ? 'Sign in with Face ID' : 'Sign in with fingerprint',
+                    biometricType === 'face' ? 'Acceder con Face ID' : 'Acceder con huella dactilar',
+                    biometricType === 'face' ? 'Accedi con Face ID' : 'Accedi con impronta digitale',
+                  )}
                 </Text>
               </TouchableOpacity>
-            </View>
-          </View>
+              <TouchableOpacity
+                style={s.usePasswordLink}
+                onPress={() => setUsePassword(true)}
+                accessibilityRole="button"
+                accessibilityLabel={i('Utiliser le mot de passe', 'Use password', 'Usar contraseña', 'Usa la password')}
+              >
+                <Text style={s.usePasswordTxt}>
+                  {i('Utiliser le mot de passe', 'Use password', 'Usar contraseña', 'Usa la password')}
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            // ── Formulaire email + mot de passe ──
+            <>
+              <View style={s.field}>
+                <Text style={s.label}>Email</Text>
+                <TextInput style={s.input}
+                  placeholder="admin@habashop.com"
+                  placeholderTextColor={Colors.text4}
+                  value={email} onChangeText={setEmail}
+                  autoCapitalize="none" keyboardType="email-address"
+                  autoComplete="email" returnKeyType="next"
+                  accessibilityLabel="Email"
+                  accessibilityHint={i('Entrez votre adresse email','Enter your email address','Ingrese su email','Inserisci la tua email')}/>
+              </View>
 
-          {biometricAvailable && biometricEnabled && (
-            <TouchableOpacity
-              style={s.biometricBtn}
-              onPress={handleBiometricLogin}
-              accessibilityRole="button"
-              accessibilityLabel={i(
-                biometricType === 'face' ? 'Connexion par Face ID' : 'Connexion par empreinte',
-                biometricType === 'face' ? 'Sign in with Face ID' : 'Sign in with fingerprint',
-                biometricType === 'face' ? 'Acceder con Face ID' : 'Acceder con huella',
-                biometricType === 'face' ? 'Accedi con Face ID' : 'Accedi con impronta',
-              )}
-            >
-              <Text style={s.biometricIcon}>{biometricType === 'face' ? '🔐' : '👆'}</Text>
-              <Text style={s.biometricText}>
-                {i(
-                  biometricType === 'face' ? 'Se connecter avec Face ID' : 'Se connecter avec l\'empreinte',
-                  biometricType === 'face' ? 'Sign in with Face ID' : 'Sign in with fingerprint',
-                  biometricType === 'face' ? 'Acceder con Face ID' : 'Acceder con huella dactilar',
-                  biometricType === 'face' ? 'Accedi con Face ID' : 'Accedi con impronta digitale',
-                )}
-              </Text>
-            </TouchableOpacity>
+              <View style={s.field}>
+                <Text style={s.label}>
+                  {i('Mot de passe','Password','Contraseña','Password')}
+                </Text>
+                <View style={{position:'relative'}}>
+                  <TextInput style={[s.input,{paddingRight:48}]}
+                    placeholder="••••••••"
+                    placeholderTextColor={Colors.text4}
+                    value={password} onChangeText={setPassword}
+                    secureTextEntry={!showPwd}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
+                    accessibilityLabel={i('Mot de passe','Password','Contraseña','Password')}
+                    accessibilityHint={i('Entrez votre mot de passe','Enter your password','Ingrese su contraseña','Inserisci la password')}/>
+                  <TouchableOpacity
+                    style={s.eyeBtn}
+                    onPress={()=>setShowPwd(v=>!v)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={showPwd
+                      ? i('Masquer le mot de passe','Hide password','Ocultar contraseña','Nascondi password')
+                      : i('Afficher le mot de passe','Show password','Mostrar contraseña','Mostra password')}>
+                    <Text style={{fontSize:16}}>
+                      {showPwd?'🙈':'👁️'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <AccessibleButton
+                label={i('Se connecter','Sign in','Iniciar sesión','Accedi')}
+                onPress={handleLogin}
+                loading={loading}
+              />
+
+              <View style={s.demoWrap}>
+                <Text style={s.demoLabel}>
+                  {i('Compte démo :','Demo:','Demo:','Demo:')}
+                </Text>
+                <TouchableOpacity onPress={()=>{
+                  setEmail('admin@habashop.com')
+                  setPassword('demo1234')
+                }}
+                  accessibilityRole="button"
+                  accessibilityLabel={i('Utiliser le compte démo','Use demo account','Usar cuenta demo','Usa account demo')}>
+                  <Text style={s.demoLink}>admin@habashop.com</Text>
+                </TouchableOpacity>
+              </View>
+            </>
           )}
-
-          <AccessibleButton
-            label={i('Se connecter','Sign in','Iniciar sesión','Accedi')}
-            onPress={handleLogin}
-            loading={loading}
-          />
-
-          <View style={s.demoWrap}>
-            <Text style={s.demoLabel}>
-              {i('Compte démo :','Demo:','Demo:','Demo:')}
-            </Text>
-            <TouchableOpacity onPress={()=>{
-              setEmail('admin@habashop.com')
-              setPassword('demo1234')
-            }}
-              accessibilityRole="button"
-              accessibilityLabel={i('Utiliser le compte démo','Use demo account','Usar cuenta demo','Usa account demo')}>
-              <Text style={s.demoLink}>admin@habashop.com</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         <Text style={s.flags}>🇸🇳 🇨🇮 🇲🇱 🇧🇫 🇬🇳 🇨🇲</Text>
@@ -338,6 +359,8 @@ const s = StyleSheet.create({
   },
   biometricIcon: { fontSize: 22 },
   biometricText: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
+  usePasswordLink: { alignItems: 'center', paddingVertical: Spacing.sm },
+  usePasswordTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text3 },
   biometricModal: {
     flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center',
     padding: Spacing.xxxl, gap: Spacing.lg,
