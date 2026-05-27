@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import * as SecureStore from 'expo-secure-store'
+import { useAppStore } from './appStore'
 
 interface User {
   id: string; name: string; email: string
@@ -17,6 +18,16 @@ interface AuthState {
   restoreSession: () => Promise<void>
 }
 
+/**
+ * Devise par défaut depuis le tenant : si l'utilisateur n'a jamais choisi de devise
+ * manuellement (appStore.currencyManuallySet=false), aligne appStore.currency sur
+ * tenant.currency. Sinon, respecte son choix (ne rien écraser).
+ */
+function syncCurrencyFromTenant(tenant: Tenant | null | undefined): void {
+  const app = useAppStore.getState()
+  if (!app.currencyManuallySet && tenant?.currency) app.setCurrency(tenant.currency)
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null, tenant: null, token: null,
   isLoading: true, isLoggedIn: false,
@@ -24,6 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: async (token, user, tenant) => {
     await SecureStore.setItemAsync('auth_token', token)
     set({ token, user, tenant, isLoggedIn: true, isLoading: false })
+    syncCurrencyFromTenant(tenant)
   },
 
   logout: async () => {
@@ -41,6 +53,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const res = await apiClient.get('/api/auth/me')
       set({ token, user:res.data.user, tenant:res.data.tenant,
             isLoggedIn:true, isLoading:false })
+      syncCurrencyFromTenant(res.data.tenant)
     } catch {
       await SecureStore.deleteItemAsync('auth_token')
       set({ isLoading: false })

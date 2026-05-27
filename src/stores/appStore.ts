@@ -12,10 +12,12 @@ export type ThemeMode = 'dark' | 'light' | 'system'
 interface AppState {
   lang:         Lang
   currency:     string
+  currencyManuallySet: boolean // true dès que l'user choisit une devise → ne plus écraser depuis le tenant
   theme:        ThemeMode
   kioskMode:    boolean
   setLang:      (l: Lang) => void
   setCurrency:  (c: string) => void
+  setCurrencyManuallySet: (v: boolean) => void
   setTheme:     (t: ThemeMode) => void
   setKioskMode: (v: boolean) => void
 }
@@ -25,10 +27,12 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       lang:         'fr',
       currency:     'XOF',
+      currencyManuallySet: false,
       theme:        'dark',
       kioskMode:    false,
       setLang:      (lang) => set({ lang }),
       setCurrency:  (currency) => set({ currency }),
+      setCurrencyManuallySet: (currencyManuallySet) => set({ currencyManuallySet }),
       setTheme:     (theme) => set({ theme }),
       setKioskMode: (kioskMode) => set({ kioskMode }),
     }),
@@ -38,6 +42,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         lang:      state.lang,
         currency:  state.currency,
+        currencyManuallySet: state.currencyManuallySet,
         theme:     state.theme,
         kioskMode: state.kioskMode,
       }),

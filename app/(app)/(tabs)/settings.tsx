@@ -50,11 +50,12 @@ export default function SettingsScreen() {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
-  const { user, tenant, logout } = useAuthStore()
+  const { user, tenant, logout, isLoading } = useAuthStore()
   const { i, lang } = useI18n()
   const { fmt, currency } = useFmt()
   const setLang = useAppStore(st => st.setLang)
   const setCurrency = useAppStore(st => st.setCurrency)
+  const setCurrencyManuallySet = useAppStore(st => st.setCurrencyManuallySet)
   const theme = useAppStore(st => st.theme)
   const setTheme = useAppStore(st => st.setTheme)
   const setKioskMode = useAppStore(st => st.setKioskMode)
@@ -108,37 +109,49 @@ export default function SettingsScreen() {
 
         {/* A) Profil */}
         <View style={s.section}>
-          <View style={s.profileCard}>
-            <Avatar
-              name={user?.name ?? 'U'}
-              photoUri={photoUri}
-              size={64}
-              loading={photoLoading}
-              showEdit
-              onPress={() => Alert.alert(
-                i('Photo de profil', 'Profile photo', 'Foto de perfil', 'Foto profilo'),
-                '',
-                [
-                  { text: i('Galerie', 'Gallery', 'Galería', 'Galleria'), onPress: pickPhoto },
-                  { text: i('Caméra', 'Camera', 'Cámara', 'Fotocamera'), onPress: takePhoto },
-                  ...(photoUri ? [{ text: i('Supprimer', 'Remove', 'Eliminar', 'Rimuovi'), style: 'destructive' as const, onPress: removePhoto }] : []),
-                  { text: i('Annuler', 'Cancel', 'Cancelar', 'Annulla'), style: 'cancel' as const },
-                ],
-              )}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={s.profileName} numberOfLines={1}>{user?.name ?? '—'}</Text>
-              <Text style={s.profileEmail} numberOfLines={1}>{user?.email}</Text>
-              <View style={s.badgeRow}>
-                <View style={[s.badge, { backgroundColor: withAlpha(C.primary, 0.15), borderColor: withAlpha(C.primary, 0.3) }]}>
-                  <Text style={[s.badgeTxt, { color: C.primary3 }]}>{(tenant?.plan ?? 'starter').toUpperCase()}</Text>
-                </View>
-                <View style={[s.badge, { backgroundColor: `${statusColor}1a`, borderColor: `${statusColor}40` }]}>
-                  <Text style={[s.badgeTxt, { color: statusColor }]}>{status.toUpperCase()}</Text>
+          {(isLoading || !user || !tenant) ? (
+            // Skeleton pendant l'hydratation user/tenant (évite le flash « U / — / STARTER »)
+            <View style={s.profileCard}>
+              <View style={s.skelAvatar} />
+              <View style={{ flex: 1, gap: Spacing.sm }}>
+                <View style={[s.skelBar, { width: '55%' }]} />
+                <View style={[s.skelBar, { width: '80%' }]} />
+                <View style={[s.skelBar, { width: '45%' }]} />
+              </View>
+            </View>
+          ) : (
+            <View style={s.profileCard}>
+              <Avatar
+                name={user.name}
+                photoUri={photoUri}
+                size={64}
+                loading={photoLoading}
+                showEdit
+                onPress={() => Alert.alert(
+                  i('Photo de profil', 'Profile photo', 'Foto de perfil', 'Foto profilo'),
+                  '',
+                  [
+                    { text: i('Galerie', 'Gallery', 'Galería', 'Galleria'), onPress: pickPhoto },
+                    { text: i('Caméra', 'Camera', 'Cámara', 'Fotocamera'), onPress: takePhoto },
+                    ...(photoUri ? [{ text: i('Supprimer', 'Remove', 'Eliminar', 'Rimuovi'), style: 'destructive' as const, onPress: removePhoto }] : []),
+                    { text: i('Annuler', 'Cancel', 'Cancelar', 'Annulla'), style: 'cancel' as const },
+                  ],
+                )}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={s.profileName} numberOfLines={1}>{user.name}</Text>
+                <Text style={s.profileEmail} numberOfLines={1}>{user.email}</Text>
+                <View style={s.badgeRow}>
+                  <View style={[s.badge, { backgroundColor: withAlpha(C.primary, 0.15), borderColor: withAlpha(C.primary, 0.3) }]}>
+                    <Text style={[s.badgeTxt, { color: C.primary3 }]}>{tenant.plan.toUpperCase()}</Text>
+                  </View>
+                  <View style={[s.badge, { backgroundColor: `${statusColor}1a`, borderColor: `${statusColor}40` }]}>
+                    <Text style={[s.badgeTxt, { color: statusColor }]}>{status.toUpperCase()}</Text>
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
+          )}
         </View>
 
         {/* B) Langue */}
@@ -194,7 +207,7 @@ export default function SettingsScreen() {
               <Pressable
                 key={c.code}
                 style={[s.listRow, idx < CURRENCIES.length - 1 && s.listRowBorder, on && s.listRowOn]}
-                onPress={() => setCurrency(c.code)}
+                onPress={() => { setCurrency(c.code); setCurrencyManuallySet(true) }}
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
                 accessibilityLabel={`${c.code} ${i(c.fr, c.en, c.es, c.it)}`}
@@ -532,6 +545,10 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   // Suppression de compte (ligne d'alerte)
   deleteAccountRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
   deleteAccountTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.danger },
+
+  // Skeleton header (pendant l'hydratation user/tenant)
+  skelAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.bg3 },
+  skelBar: { height: 14, borderRadius: BorderRadius.sm, backgroundColor: C.bg3 },
 
   // Logout
   logoutBtn: {
