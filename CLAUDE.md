@@ -38,6 +38,10 @@ Afrique francophone) — surtout **caisse POS mobile** + stock + dashboard + cli
 | @react-native-community/netinfo | 11.4.1 | Détection réseau (offline) |
 | expo-file-system | ~19.0.22 | Export CSV (Rapports) — nouvelle API `File`/`Paths` |
 | expo-sharing | ~14.0.8 | Partage du CSV |
+| expo-local-authentication | ~17.0.8 | Biométrie Face ID + empreinte |
+| expo-image-picker | ~17.0.11 | Photo de profil (galerie/caméra) |
+| expo-image-manipulator | ~14.0.8 | Redimensionnement photo 200×200 |
+| expo-task-manager / expo-background-fetch | ~14.0.9 | Refresh widget (15 min) — ⚠️ background-fetch déprécié → `expo-background-task` |
 
 > Lire les **docs versionnées** https://docs.expo.dev/versions/v54.0.0/ avant de coder (cf. `AGENTS.md`).
 
@@ -104,30 +108,39 @@ Toute migration DB future = **PROD Railway** → **confirmer avec Nelson avant**
 
 ```
 app/                       # Expo Router (file-based)
-  _layout.tsx              # root : fonts, QueryClient, restoreSession, Stack
+  _layout.tsx              # root : fonts, QueryClient, restoreSession, OfflineSyncBridge, setup widget
   index.tsx                # route '/' → Redirect dashboard/login (⚠️ fix écran noir, ne pas supprimer)
-  (auth)/_layout.tsx + login.tsx
+  (auth)/_layout.tsx + login.tsx   # login + biométrie (Face ID/empreinte)
   (app)/_layout.tsx
     (tabs)/_layout.tsx     # tab bar
     (tabs)/dashboard|stock|customers|settings|pos-tab.tsx
     pos/index.tsx          # caisse (fullScreenModal) — scanner, offline, ticket WhatsApp
     reports/index.tsx      # Rapports (KPIs période, barres CSS, top, paiements, export CSV)
+    sales/index.tsx        # Historique des ventes (filtres, détail, renvoi ticket WhatsApp)
+    search/index.tsx       # Recherche globale (produits + clients, debounce 300 ms)
 src/
-  constants/theme.ts       # Colors / Spacing / BorderRadius / FontSize / Shadow
+  constants/theme.ts       # Colors / Spacing / BorderRadius / FontSize / Shadow + withAlpha()
   stores/                  # authStore, appStore (useI18n/useFmt + persist), posStore
   hooks/
     useNetworkStatus.ts    # détecte online/offline (NetInfo)
     useOfflineSync.ts      # sync auto de la file au retour réseau (monté via <OfflineSyncBridge/>)
+    useProfilePhoto.ts     # photo de profil (image-picker + manipulator, persist AsyncStorage)
   services/
     api.ts                 # axios + interceptor JWT + authApi/productsApi/salesApi/analyticsApi
     exchangeRate.ts        # taux FX live (open.er-api.com), cache 6h, fallback
     notifications.ts       # registerForPushNotifications() + sendLocalNotification()
     offlineQueue.ts        # file d'actions offline (AsyncStorage) : SALE / STOCK_MOVE
     whatsappTicket.ts      # génère + envoie le reçu WhatsApp (Linking)
+    biometric.ts           # Face ID / empreinte (expo-local-authentication + SecureStore)
+    widgetNotification.ts  # "widget" CA = notification persistante (opt-in, flag AsyncStorage)
+  tasks/
+    backgroundRefresh.ts   # refresh widget en arrière-plan (expo-background-fetch, 15 min)
   components/
-    pos/BarcodeScanner.tsx # scanner EAN13 (expo-camera)
+    ui/                    # AccessibleButton · AccessibleInput · ErrorState · Avatar
+    pos/                   # BarcodeScanner · POSProductGrid · POSCart · POSConfirmModal · payModes
   types/
 ```
+> ⚠️ Pas de `useTheme.ts` ni `themes.ts` : le thème clair/sombre **n'est pas implémenté** (voir Notes Sprint 3+).
 Alias TS : `@/*` → `src/*`.
 
 ---
@@ -282,6 +295,31 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
+## Notes Sprint 3+ — pièges à éviter
+
+### Photo de profil (`useProfilePhoto` + `Avatar`)
+- Stockée **en local** (URI dans AsyncStorage) — **pas** uploadée au backend ; redimensionnée **200×200 JPEG**.
+- `mediaTypes: ['images']` (l'ancien `MediaTypeOptions` est déprécié SDK 54) ; `manipulateAsync` déprécié mais fonctionnel.
+
+### Biométrie (`src/services/biometric.ts`)
+- `disableDeviceFallback: true` → supprime le bouton "mot de passe/PIN" **natif** du prompt.
+- Identifiants **chiffrés** dans SecureStore ; auto-trigger au démarrage si activée ; `useRef(false)` anti-double-déclenchement.
+- Login : si biométrie activée, le **formulaire mot de passe est masqué** (vue biométrique + lien "utiliser le mot de passe"). `setAuth` **différé** pour que la modale d'activation s'affiche avant la redirection.
+
+### "Widget" CA du jour
+- **Pas un vrai widget Android** → **notification persistante** : `sticky: true` + `autoDismiss: false`. ⚠️ **PAS** de champ `ongoing` / `content.android` dans l'API expo-notifications (n'existe pas).
+- Canal `habashop-widget` importance **LOW** ; **opt-in** (flag AsyncStorage, toggle Réglages).
+- `expo-background-fetch` (déprécié) refresh 15 min → **dev build obligatoire** (ne tourne pas dans Expo Go).
+
+### Recherche globale
+- Produits **et** clients ; **debounce 300 ms** ; max **20** résultats.
+- ⚠️ paramètre `.map()` nommé `term` (pas `s`) pour ne pas masquer le `StyleSheet s`.
+
+### Thème clair/sombre — **NON implémenté**
+- `Colors` est **statique** (456 usages / 19 fichiers, figés au chargement des `StyleSheet`). Un `useTheme()` ne re-thèmerait rien sans migrer les 456 usages → **chantier dédié**. Aucun `themes.ts`/`useTheme` créé (décidé avec Nelson).
+
+---
+
 ## Historique des commits importants
 
 | Commit | Description |
@@ -299,21 +337,27 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | 799ebee | feat: icônes iOS opaque + notif silhouette blanche |
 | 77157c7 | chore: gitignore *.apk / *.aab |
 | 49629be | feat: **Sprint 2** — scanner EAN13 + offline + WhatsApp + Rapports |
+| 650370f | feat: **Sprint A** a11y — `accessibility*` sur tous les écrans (0→135) |
+| 661c517 | feat: **Sprint B** — AccessibleButton/Input/ErrorState + `withAlpha` |
+| 8449fd8 | feat: **Sprint C** — withAlpha complet + POS découpé (699→378) + cibles 44pt |
+| 22b5e95 | feat: **Sprint 3** — biométrie + widget CA (notification persistante) |
+| f76ea60 | feat: photo de profil + historique des ventes + recherche globale |
 
 ---
 
 ## TODO / Prochaines étapes
 
-- [x] Scanner code-barres EAN13 (`expo-camera`) ✅
-- [x] Mode hors-ligne (file d'actions + sync auto) ✅
-- [x] Ticket WhatsApp après vente ✅
-- [x] Écran Rapports + export CSV ✅
-- [ ] Tester l'install APK sur device réel (écran noir → login ; scanner/offline/WhatsApp/CSV)
-- [ ] EAS Build iOS (compte Apple Developer ; ajouter `LSApplicationQueriesSchemes:["whatsapp"]` ; `icon-ios.png` prêt)
-- [ ] Tester notifications push réelles (token EAS, dev build)
-- [ ] Biométrie (Face ID / Fingerprint)
+- [x] Scanner EAN13 · Mode hors-ligne · Ticket WhatsApp · Rapports + CSV ✅ (Sprint 2)
+- [x] Audit UI/UX + accessibilité (Sprints A/B/C : 0→135 attributs `accessibility*`, POS découpé) ✅
+- [x] Biométrie Face ID / empreinte ✅
+- [x] Widget CA du jour (notification persistante, opt-in) ✅
+- [x] Photo de profil · Historique des ventes · Recherche globale ✅
+- [ ] **Tester sur device réel** (rien validé en runtime — cf. mémoire `runtime-verification-debt`) : biométrie, scanner, offline, widget (dev build)
+- [ ] Thème clair/sombre (migrer les 456 usages `Colors` statiques — chantier dédié)
+- [ ] EAS Build iOS (compte Apple Developer ; ajouter `LSApplicationQueriesSchemes:["whatsapp"]`)
 - [ ] Google Play Store (AAB production)
+- [ ] Notifications push réelles (token EAS, dev build)
 
 ---
 
-*Dernière mise à jour : Sprint 2 — 2026-05-27 (scanner EAN13, offline, ticket WhatsApp, Rapports + CSV).*
+*Dernière mise à jour : Sprint 3 — 2026-05-27 (biométrie, photo de profil, historique ventes, recherche globale, widget CA, audit UI/UX A/B/C).*

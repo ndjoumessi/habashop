@@ -9,7 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
 [![Android](https://img.shields.io/badge/Android-✅-3DDC84?style=flat-square&logo=android)](https://play.google.com)
 [![iOS](https://img.shields.io/badge/iOS-🔜-000000?style=flat-square&logo=apple)](https://apple.com)
-![Sprint](https://img.shields.io/badge/Sprint-2_✅-00D084?style=flat-square)
+![Sprint](https://img.shields.io/badge/Sprint-3_✅-00D084?style=flat-square)
 
 [📱 Télécharger l'APK](#-installation) · [🌐 Version Web](https://habashop.vercel.app) · [📚 Documentation](#-développement)
 
@@ -103,6 +103,31 @@ L'app permet aux commerçants de gérer leur activité depuis leur téléphone :
 - Top 5 produits + répartition des modes de paiement (barres)
 - Export CSV des ventes (partage natif) · accessible depuis le Dashboard
 
+### 🔐 Biométrie (Face ID + empreinte)
+- Connexion instantanée par reconnaissance faciale ou empreinte
+- Activation proposée après le premier login · toggle dans les Réglages
+- Identifiants chiffrés dans SecureStore · pas de fallback PIN natif
+
+### 👤 Photo de profil
+- Galerie ou caméra · recadrage carré · redimensionnement 200×200
+- Avatar à initiales si pas de photo · visible Réglages + Dashboard
+
+### 📋 Historique des ventes
+- Liste filtrable (Aujourd'hui / 7j / 30j) · KPIs (CA, nb ventes, panier moyen)
+- Détail par vente (articles + total + paiement) · renvoi du ticket WhatsApp
+
+### 🔍 Recherche globale
+- Produits **et** clients en une recherche · debounce 300 ms
+- Suggestions rapides · résultats badgés par type
+
+### 🔔 Widget CA du jour (Android, opt-in)
+- Notification persistante : CA du jour + nb de ventes · canal discret
+- Activable dans les Réglages · ⚠️ refresh en arrière-plan = dev build requis
+
+### ♿ Accessibilité
+- `accessibilityRole`/`Label`/`Hint`/`State` sur tous les écrans (Sprints A/B/C)
+- Composants `AccessibleButton` / `AccessibleInput` / `ErrorState` · cibles tactiles ≥ 44 pt
+
 ---
 
 ## 🚀 Installation
@@ -135,13 +160,16 @@ habashop-mobile/
 │   └── (app)/
 │       ├── pos/index.tsx         # Caisse (scanner · offline · ticket WhatsApp)
 │       ├── reports/index.tsx     # Rapports & Analytics (export CSV)
+│       ├── sales/index.tsx       # Historique des ventes (détail + ticket WhatsApp)
+│       ├── search/index.tsx      # Recherche globale (produits + clients)
 │       └── (tabs)/               # dashboard · stock · pos-tab · customers · settings
 ├── src/
-│   ├── constants/theme.ts        # Design tokens (couleurs, fonts, espacements)
+│   ├── constants/theme.ts        # Design tokens (couleurs, fonts, espacements) + withAlpha()
 │   ├── stores/                   # authStore (JWT+SecureStore) · appStore (i18n+devise) · posStore
-│   ├── hooks/                    # useNetworkStatus · useOfflineSync
-│   ├── components/pos/           # BarcodeScanner (expo-camera)
-│   └── services/                 # api · exchangeRate · notifications · offlineQueue · whatsappTicket
+│   ├── hooks/                    # useNetworkStatus · useOfflineSync · useProfilePhoto
+│   ├── services/                 # api · exchangeRate · notifications · offlineQueue · whatsappTicket · biometric · widgetNotification
+│   ├── tasks/                    # backgroundRefresh (widget)
+│   └── components/               # ui/ (AccessibleButton·Input·ErrorState·Avatar) · pos/ (BarcodeScanner·POSCart·POSProductGrid·POSConfirmModal)
 ├── assets/                       # icon · icon-ios (RGB sans alpha) · adaptive-icon · splash-icon · notification-icon
 ├── app.json                      # Config Expo + EAS
 └── eas.json                      # Profils de build EAS (development / preview / production)
@@ -245,13 +273,20 @@ npx expo-doctor       # objectif 18/18 ✅
 - [x] Écran Rapports & Analytics
 - [x] Export CSV des ventes
 
-### 🔜 Sprint 3
+### ✅ Sprint 3
+- [x] Biométrie Face ID / empreinte
+- [x] Widget CA du jour (notification persistante)
+- [x] Photo de profil
+- [x] Historique des ventes
+- [x] Recherche globale
+- [x] Audit UI/UX (Sprints A/B/C : accessibilité 0 → 135 attributs, POS découpé)
+
+### 🔜 Sprint 4
+- [ ] Thème clair/sombre (migrer les 456 usages Colors statiques)
 - [ ] EAS Build iOS (App Store)
-- [ ] Biométrie (Face ID / Fingerprint)
 - [ ] Google Play Store
-- [ ] RH & Planning mobile
-- [ ] Widgets Android (CA du jour)
 - [ ] Notifications push réelles (token EAS)
+- [ ] RH & Planning mobile
 
 ---
 
@@ -268,6 +303,15 @@ npx expo-doctor       # objectif 18/18 ✅
 ---
 
 ## 📋 Changelog
+
+### v1.2.0 — Sprint 3 (2026-05-27)
+- ✨ Biométrie Face ID + empreinte
+- ✨ Widget CA du jour (notification persistante, opt-in)
+- ✨ Photo de profil (galerie + caméra)
+- ✨ Historique des ventes avec détail + renvoi ticket WhatsApp
+- ✨ Recherche globale produits + clients
+- ♿ Accessibilité : `accessibility*` sur tous les écrans (Sprints A/B/C, 0 → 135 attributs)
+- 🧩 Composants AccessibleButton/Input/ErrorState · ♻️ POS découpé (699 → 378 lignes)
 
 ### v1.1.0 — Sprint 2 (2026-05-27)
 - ✨ Scanner EAN13 dans le POS
