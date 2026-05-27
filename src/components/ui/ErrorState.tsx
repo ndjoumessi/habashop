@@ -1,6 +1,7 @@
+import { useMemo } from 'react'
 import { Text, Pressable, StyleSheet } from 'react-native'
-import { useI18n } from '@/stores/appStore'
-import { Colors, Spacing, FontSize } from '@/constants/theme'
+import { useI18n, useTheme } from '@/stores/appStore'
+import { ThemeColors, Spacing, FontSize } from '@/constants/theme'
 
 interface ErrorStateProps {
   onRetry?: () => void
@@ -10,6 +11,8 @@ interface ErrorStateProps {
 // État d'erreur standardisé + retry accessible. Remplace les blocs « ⚠️ Erreur — toucher
 // pour réessayer » dupliqués dans POS / stock / customers / reports.
 export default function ErrorState({ onRetry, message }: ErrorStateProps) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const { i } = useI18n()
   const label = message ?? i(
     'Erreur — toucher pour réessayer',
@@ -30,7 +33,7 @@ export default function ErrorState({ onRetry, message }: ErrorStateProps) {
   )
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
   wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
-  txt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.danger, textAlign: 'center' },
+  txt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger, textAlign: 'center' },
 })

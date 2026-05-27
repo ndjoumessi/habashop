@@ -1,32 +1,61 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useColorScheme } from 'react-native'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { fetchRates, convertFromXOF } from '@/services/exchangeRate'
+import { DarkColors, LightColors } from '@/constants/theme'
 
 export type Lang = 'fr' | 'en' | 'es' | 'it'
+export type ThemeMode = 'dark' | 'light' | 'system'
 
 interface AppState {
-  lang:        Lang
-  currency:    string
-  setLang:     (l: Lang) => void
-  setCurrency: (c: string) => void
+  lang:         Lang
+  currency:     string
+  theme:        ThemeMode
+  kioskMode:    boolean
+  setLang:      (l: Lang) => void
+  setCurrency:  (c: string) => void
+  setTheme:     (t: ThemeMode) => void
+  setKioskMode: (v: boolean) => void
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      lang:        'fr',
-      currency:    'XOF',
-      setLang:     (lang) => set({ lang }),
-      setCurrency: (currency) => set({ currency }),
+      lang:         'fr',
+      currency:     'XOF',
+      theme:        'dark',
+      kioskMode:    false,
+      setLang:      (lang) => set({ lang }),
+      setCurrency:  (currency) => set({ currency }),
+      setTheme:     (theme) => set({ theme }),
+      setKioskMode: (kioskMode) => set({ kioskMode }),
     }),
     {
       name:    'habashop-settings',
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        lang:      state.lang,
+        currency:  state.currency,
+        theme:     state.theme,
+        kioskMode: state.kioskMode,
+      }),
     },
   ),
 )
+
+// Hook thème — sélectionne la primitive `theme` (re-render garanti) + suit le
+// schéma système si 'system'. Retourne la palette `C` à passer à makeStyles(C).
+export function useTheme() {
+  const theme = useAppStore(s => s.theme)
+  const systemScheme = useColorScheme()
+  const isDark =
+    theme === 'dark'  ? true  :
+    theme === 'light' ? false :
+    systemScheme !== 'light' // 'system' : sombre par défaut si indéterminé
+  return { isDark, theme, C: isDark ? DarkColors : LightColors }
+}
 
 // Helper i18n — sélectionne `lang` (primitive) → re-render garanti au changement.
 export function useI18n() {

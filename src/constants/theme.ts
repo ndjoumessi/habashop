@@ -23,6 +23,38 @@ export const Colors = {
   black:    '#000000',
 } as const
 
+// ── Thèmes dynamiques (clair / sombre) ───────────────────────────────────
+// `Colors` (au-dessus) reste INCHANGÉ = thème sombre figé, conservé pour les
+// usages hors composant (ex. notification widget, couleur de marque). Les
+// écrans consomment `C` via useTheme() → C = DarkColors | LightColors.
+// DarkColors reprend exactement les valeurs de Colors (rendu identique).
+export const DarkColors = {
+  primary:  '#6C47FF', primary2: '#8B6FFF', primary3: '#A991FF',
+  accent:   '#FF9500', accent2:  '#00D084', accent3:  '#00B8FF',
+  danger:   '#FF3B5C', warn:     '#FFB800',
+  bg:       '#07070F', bg2:      '#0D0D1E', bg3:      '#12121E', bg4:      '#18182A',
+  card:     '#0F0F1E',
+  border:   'rgba(255,255,255,0.08)', border2: 'rgba(255,255,255,0.12)', border3: 'rgba(255,255,255,0.18)',
+  text:     '#F0F0FF', text2:    '#A0A0C0', text3:    '#606080', text4:    '#404060',
+  white:    '#FFFFFF', black:    '#000000',
+} as const
+
+export const LightColors = {
+  primary:  '#6C47FF', primary2: '#8B6FFF', primary3: '#5535CC',
+  accent:   '#C47300', accent2:  '#008A54', accent3:  '#0087CC',
+  danger:   '#CC1F3A', warn:     '#CC8C00',
+  bg:       '#F8F8FF', bg2:      '#F0F0FA', bg3:      '#E8E8F5', bg4:      '#E0E0EE',
+  card:     '#FFFFFF',
+  border:   'rgba(0,0,0,0.08)', border2: 'rgba(0,0,0,0.15)', border3: 'rgba(0,0,0,0.20)',
+  text:     '#0A0A1F', text2:    '#303050', text3:    '#606080', text4:    '#909098',
+  white:    '#FFFFFF', black:    '#000000',
+} as const
+
+// Forme commune (clés identiques entre Dark/Light) — signature de makeStyles(C).
+// Valeurs `string` (pas les littéraux `as const`) pour que Dark ET Light soient
+// tous deux assignables à ThemeColors (sinon "#5535CC" ≠ "#A991FF").
+export type ThemeColors = { readonly [K in keyof typeof DarkColors]: string }
+
 export const Spacing = {
   xs:4, sm:8, md:12, lg:16, xl:20, xxl:24, xxxl:32
 } as const

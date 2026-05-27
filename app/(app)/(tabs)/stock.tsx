@@ -8,9 +8,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi } from '@/services/api'
-import { useI18n, useFmt } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import {
-  Colors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
+  ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
 
@@ -23,17 +23,19 @@ function statusOf(p: any): 'ok' | 'low' | 'out' {
   if (q <= (p.stockMin ?? 0)) return 'low'
   return 'ok'
 }
-const STATUS_COLOR = { ok: Colors.accent2, low: Colors.warn, out: Colors.danger }
 
 // ── Ligne produit ────────────────────────────────
 function ProductRow({
-  product, fmt, statusLabel, onPress,
+  product, fmt, statusLabel, onPress, C,
 }: {
   product: any
   fmt: (n: number) => string
   statusLabel: (s: 'ok' | 'low' | 'out') => string
   onPress: () => void
+  C: ThemeColors
 }) {
+  const s = useMemo(() => makeStyles(C), [C])
+  const STATUS_COLOR = { ok: C.accent2, low: C.warn, out: C.danger }
   const st = statusOf(product)
   const color = STATUS_COLOR[st]
   return (
@@ -57,6 +59,8 @@ function ProductRow({
 
 // ── Écran Stock ──────────────────────────────────
 export default function StockScreen() {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
   const { i } = useI18n()
   const { fmt } = useFmt()
@@ -66,6 +70,8 @@ export default function StockScreen() {
   const [filter, setFilter]   = useState<Filter>('all')
   const [editP, setEditP]     = useState<any | null>(null)
   const [newQty, setNewQty]   = useState(0)
+
+  const STATUS_COLOR = { ok: C.accent2, low: C.warn, out: C.danger }
 
   const statusLabel = (st: 'ok' | 'low' | 'out') =>
     st === 'out' ? i('Rupture', 'Out of stock', 'Agotado', 'Esaurito')
@@ -132,15 +138,15 @@ export default function StockScreen() {
         <Pressable style={s.headerBtn} onPress={() => refetch()} hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={i('Actualiser', 'Refresh', 'Actualizar', 'Aggiorna')}>
-          <Ionicons name="refresh" size={20} color={Colors.text2} />
+          <Ionicons name="refresh" size={20} color={C.text2} />
         </Pressable>
       </View>
 
       {/* ── Stats ── */}
       <View style={s.statsRow}>
-        <StatBox label={i('Actifs', 'Active', 'Activos', 'Attivi')} value={active.length} color={Colors.text} />
-        <StatBox label={i('Stock bas', 'Low', 'Bajo', 'Basse')} value={lowCnt} color={Colors.warn} />
-        <StatBox label={i('Rupture', 'Out', 'Agotado', 'Esaurito')} value={outCnt} color={Colors.danger} />
+        <StatBox label={i('Actifs', 'Active', 'Activos', 'Attivi')} value={active.length} color={C.text} />
+        <StatBox label={i('Stock bas', 'Low', 'Bajo', 'Basse')} value={lowCnt} color={C.warn} />
+        <StatBox label={i('Rupture', 'Out', 'Agotado', 'Esaurito')} value={outCnt} color={C.danger} />
       </View>
 
       {/* ── Alertes rapides ── */}
@@ -148,24 +154,24 @@ export default function StockScreen() {
         <View style={s.alertChips}>
           {outCnt > 0 && (
             <Pressable
-              style={[s.alertChip, { backgroundColor: withAlpha(Colors.danger, 0.1), borderColor: withAlpha(Colors.danger, 0.25) }]}
+              style={[s.alertChip, { backgroundColor: withAlpha(C.danger, 0.1), borderColor: withAlpha(C.danger, 0.25) }]}
               onPress={() => setFilter(filter === 'out' ? 'all' : 'out')}
               accessibilityRole="button"
               accessibilityLabel={`${outCnt} ${i('en rupture', 'out of stock', 'agotados', 'esauriti')}`}
             >
-              <Text style={[s.alertChipTxt, { color: Colors.danger }]}>
+              <Text style={[s.alertChipTxt, { color: C.danger }]}>
                 🔴 {outCnt} {i('rupture', 'out of stock', 'agotado', 'esaurito')}{outCnt > 1 ? 's' : ''}
               </Text>
             </Pressable>
           )}
           {lowCnt > 0 && (
             <Pressable
-              style={[s.alertChip, { backgroundColor: withAlpha(Colors.warn, 0.1), borderColor: withAlpha(Colors.warn, 0.25) }]}
+              style={[s.alertChip, { backgroundColor: withAlpha(C.warn, 0.1), borderColor: withAlpha(C.warn, 0.25) }]}
               onPress={() => setFilter(filter === 'low' ? 'all' : 'low')}
               accessibilityRole="button"
               accessibilityLabel={`${lowCnt} ${i('en stock bas', 'low stock', 'stock bajo', 'scorte basse')}`}
             >
-              <Text style={[s.alertChipTxt, { color: Colors.warn }]}>
+              <Text style={[s.alertChipTxt, { color: C.warn }]}>
                 🟠 {lowCnt} {i('stock bas', 'low stock', 'stock bajo', 'scorte basse')}
               </Text>
             </Pressable>
@@ -175,11 +181,11 @@ export default function StockScreen() {
 
       {/* ── Recherche ── */}
       <View style={s.searchWrap}>
-        <Ionicons name="search" size={16} color={Colors.text3} />
+        <Ionicons name="search" size={16} color={C.text3} />
         <TextInput
           style={s.searchInput}
           placeholder={i('Rechercher…', 'Search…', 'Buscar…', 'Cerca…')}
-          placeholderTextColor={Colors.text4}
+          placeholderTextColor={C.text4}
           value={search}
           onChangeText={setSearch}
           returnKeyType="search"
@@ -189,7 +195,7 @@ export default function StockScreen() {
           <Pressable onPress={() => setSearch('')} hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={i('Effacer la recherche', 'Clear search', 'Borrar búsqueda', 'Cancella ricerca')}>
-            <Ionicons name="close-circle" size={18} color={Colors.text3} />
+            <Ionicons name="close-circle" size={18} color={C.text3} />
           </Pressable>
         )}
       </View>
@@ -217,7 +223,7 @@ export default function StockScreen() {
 
       {/* ── Liste ── */}
       {isLoading ? (
-        <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
+        <View style={s.center}><ActivityIndicator color={C.primary} size="large" /></View>
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
       ) : (
@@ -226,12 +232,12 @@ export default function StockScreen() {
           keyExtractor={(p: any) => p.id}
           contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.sm, paddingBottom: insets.bottom + Spacing.xxxl }}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.primary} colors={[Colors.primary]} />
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={C.primary} colors={[C.primary]} />
           }
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={<View style={s.center}><Text style={s.emptyTxt}>{i('Aucun produit', 'No products', 'Sin productos', 'Nessun prodotto')}</Text></View>}
           renderItem={({ item }: { item: any }) => (
-            <ProductRow product={item} fmt={fmt} statusLabel={statusLabel} onPress={() => openEdit(item)} />
+            <ProductRow product={item} fmt={fmt} statusLabel={statusLabel} onPress={() => openEdit(item)} C={C} />
           )}
         />
       )}
@@ -244,7 +250,7 @@ export default function StockScreen() {
             <Pressable onPress={() => setEditP(null)} hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={i('Fermer', 'Close', 'Cerrar', 'Chiudi')}>
-              <Ionicons name="close" size={24} color={Colors.text} />
+              <Ionicons name="close" size={24} color={C.text} />
             </Pressable>
           </View>
 
@@ -271,7 +277,7 @@ export default function StockScreen() {
                 </View>
                 <View style={s.editStat}>
                   <Text style={s.editStatLabel}>{i('Prix vente', 'Price', 'Precio', 'Prezzo')}</Text>
-                  <Text style={[s.editStatVal, { fontSize: FontSize.md, color: Colors.accent }]}>{fmt(editP.sellPrice ?? 0)}</Text>
+                  <Text style={[s.editStatVal, { fontSize: FontSize.md, color: C.accent }]}>{fmt(editP.sellPrice ?? 0)}</Text>
                 </View>
               </View>
 
@@ -282,7 +288,7 @@ export default function StockScreen() {
                   <Pressable style={s.qtyEditBtn} onPress={() => setNewQty(q => Math.max(0, q - 1))}
                     accessibilityRole="button"
                     accessibilityLabel={i('Diminuer la quantité', 'Decrease quantity', 'Disminuir cantidad', 'Diminuisci quantità')}>
-                    <Ionicons name="remove" size={22} color={Colors.text} />
+                    <Ionicons name="remove" size={22} color={C.text} />
                   </Pressable>
                   <TextInput
                     style={s.qtyEditInput}
@@ -294,7 +300,7 @@ export default function StockScreen() {
                   <Pressable style={s.qtyEditBtn} onPress={() => setNewQty(q => q + 1)}
                     accessibilityRole="button"
                     accessibilityLabel={i('Augmenter la quantité', 'Increase quantity', 'Aumentar cantidad', 'Aumenta quantità')}>
-                    <Ionicons name="add" size={22} color={Colors.text} />
+                    <Ionicons name="add" size={22} color={C.text} />
                   </Pressable>
                 </View>
               </View>
@@ -309,7 +315,7 @@ export default function StockScreen() {
                 accessibilityLabel={i('Enregistrer le stock', 'Save stock', 'Guardar stock', 'Salva stock')}
               >
                 {updateMut.isPending
-                  ? <ActivityIndicator color={Colors.white} size="small" />
+                  ? <ActivityIndicator color={C.white} size="small" />
                   : <Text style={s.saveTxt}>{i('Enregistrer', 'Save', 'Guardar', 'Salva')}</Text>}
               </Pressable>
             </View>
@@ -321,30 +327,30 @@ export default function StockScreen() {
 }
 
 // ── Styles ───────────────────────────────────────
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
-  errTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.danger, textAlign: 'center' },
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
+  errTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger, textAlign: 'center' },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.md,
   },
-  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: Colors.text },
-  subtitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
+  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: C.text },
+  subtitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   headerBtn: {
-    width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3,
-    borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center',
+    width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
+    borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center',
   },
 
   statsRow: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.xl, marginBottom: Spacing.md },
   statBox: {
-    flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1,
-    borderColor: Colors.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm,
+    flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1,
+    borderColor: C.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm,
   },
   statVal: { fontSize: FontSize.xxl, fontFamily: 'JetBrainsMono_700Bold' },
-  statLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: Colors.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  statLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
 
   alertChips: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
   alertChip: { paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full, borderWidth: 1 },
@@ -354,67 +360,67 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     marginHorizontal: Spacing.xl, marginBottom: Spacing.sm,
     paddingHorizontal: Spacing.md, height: 44,
-    backgroundColor: Colors.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
-  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text },
+  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
 
   tabs: { flexDirection: 'row', gap: Spacing.xs, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
   tab: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,
-    backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
   },
-  tabOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  tabTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: Colors.text2 },
-  tabTxtOn: { color: Colors.white },
-  tabBadge: { minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: Colors.bg4, alignItems: 'center', justifyContent: 'center' },
-  tabBadgeOn: { backgroundColor: withAlpha(Colors.white, 0.25) },
-  tabBadgeTxt: { fontSize: 10, fontFamily: 'Outfit_800ExtraBold', color: Colors.text3 },
-  tabBadgeTxtOn: { color: Colors.white },
+  tabOn: { backgroundColor: C.primary, borderColor: C.primary },
+  tabTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text2 },
+  tabTxtOn: { color: C.white },
+  tabBadge: { minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: C.bg4, alignItems: 'center', justifyContent: 'center' },
+  tabBadgeOn: { backgroundColor: withAlpha(C.white, 0.25) },
+  tabBadgeTxt: { fontSize: 10, fontFamily: 'Outfit_800ExtraBold', color: C.text3 },
+  tabBadgeTxtOn: { color: C.white },
 
   row: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
-    backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border,
     padding: Spacing.md, ...Shadow.sm,
   },
-  rowName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: Colors.text },
-  rowCat: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
+  rowName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
+  rowCat: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   rowQty: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
   statusTxt: { fontSize: 9, fontFamily: 'Outfit_700Bold' },
 
   // Sheet édition
-  sheet: { flex: 1, backgroundColor: Colors.bg },
+  sheet: { flex: 1, backgroundColor: C.bg },
   sheetHead: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: C.border,
   },
-  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
+  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   prodHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  prodName: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
-  prodCat: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
+  prodName: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
+  prodCat: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
 
   editStats: { flexDirection: 'row', gap: Spacing.sm },
   editStat: {
-    flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border,
+    flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
     padding: Spacing.md, alignItems: 'center', gap: 4,
   },
-  editStatLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: Colors.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
-  editStatVal: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text },
+  editStatLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  editStatVal: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
 
   qtyEditor: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.sm },
   qtyEditBtn: {
-    width: 52, height: 52, borderRadius: BorderRadius.md, backgroundColor: Colors.bg4,
+    width: 52, height: 52, borderRadius: BorderRadius.md, backgroundColor: C.bg4,
     alignItems: 'center', justifyContent: 'center',
   },
   qtyEditInput: {
-    flex: 1, height: 52, backgroundColor: Colors.bg3, borderRadius: BorderRadius.md,
-    borderWidth: 1, borderColor: Colors.border, textAlign: 'center',
-    fontSize: FontSize.xxl, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text,
+    flex: 1, height: 52, backgroundColor: C.bg3, borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: C.border, textAlign: 'center',
+    fontSize: FontSize.xxl, fontFamily: 'JetBrainsMono_700Bold', color: C.text,
   },
   saveBtn: {
-    backgroundColor: Colors.primary, borderRadius: BorderRadius.md, height: 52,
-    alignItems: 'center', justifyContent: 'center', ...Shadow.colored(Colors.primary),
+    backgroundColor: C.primary, borderRadius: BorderRadius.md, height: 52,
+    alignItems: 'center', justifyContent: 'center', ...Shadow.colored(C.primary),
   },
-  saveTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
+  saveTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })

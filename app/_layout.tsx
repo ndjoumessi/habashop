@@ -14,6 +14,7 @@ import {
 } from '@expo-google-fonts/jetbrains-mono'
 import * as SplashScreen from 'expo-splash-screen'
 import { useAuthStore } from '@/stores/authStore'
+import { useTheme } from '@/stores/appStore'
 import { registerForPushNotifications } from '@/services/notifications'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
 import { setupWidgetChannel, isWidgetEnabled } from '@/services/widgetNotification'
@@ -32,6 +33,7 @@ function OfflineSyncBridge() {
 
 export default function RootLayout() {
   const restoreSession = useAuthStore(s=>s.restoreSession)
+  const { isDark } = useTheme()
   const [fontsLoaded, fontError] = useFonts({
     Outfit_400Regular, Outfit_600SemiBold,
     Outfit_700Bold, Outfit_800ExtraBold, Outfit_900Black,
@@ -61,8 +63,15 @@ export default function RootLayout() {
       console.log('Notif reçue:', notification)
     })
     const sub2 = Notifications.addNotificationResponseReceivedListener(response => {
+      // Tap sur une notif → navigue vers l'écran pertinent (route explicite ou par type).
       const data = response.notification.request.content.data as any
-      if (data?.route) router.push(data.route)
+      if (data?.route) {
+        router.push(data.route)
+      } else if (data?.type === 'low_stock') {
+        router.push('/(app)/(tabs)/stock')
+      } else if (data?.type === 'new_sale' || data?.type === 'widget') {
+        router.push('/(app)/(tabs)/dashboard')
+      }
     })
 
     return () => { sub1.remove(); sub2.remove() }
@@ -73,7 +82,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{flex:1}}>
       <QueryClientProvider client={qc}>
-        <StatusBar style="light"/>
+        <StatusBar style={isDark ? 'light' : 'dark'}/>
         <OfflineSyncBridge/>
         <Stack screenOptions={{headerShown:false}}>
           <Stack.Screen name="(auth)"/>

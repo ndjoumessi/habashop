@@ -11,8 +11,8 @@ import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import * as Haptics from 'expo-haptics'
 import { salesApi, analyticsApi } from '@/services/api'
-import { useI18n, useFmt } from '@/stores/appStore'
-import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
+import { useI18n, useFmt, useTheme } from '@/stores/appStore'
+import { Spacing, BorderRadius, FontSize, Shadow, ThemeColors } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
 
 type Period = 'today' | '7d' | '30d' | '90d'
@@ -38,6 +38,8 @@ interface Sale {
 
 export default function ReportsScreen() {
   const insets = useSafeAreaInsets()
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const { i, lang } = useI18n()
   const { fmt } = useFmt()
   const [period, setPeriod] = useState<Period>('7d')
@@ -155,7 +157,7 @@ export default function ReportsScreen() {
         <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={i('Retour', 'Back', 'Atrás', 'Indietro')}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text} />
+          <Ionicons name="chevron-back" size={22} color={C.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={s.title}>{i('Rapports', 'Reports', 'Informes', 'Rapporti')}</Text>
@@ -164,7 +166,7 @@ export default function ReportsScreen() {
         <Pressable style={s.headerBtn} onPress={exportCsv} hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}>
-          <Ionicons name="download-outline" size={20} color={Colors.text} />
+          <Ionicons name="download-outline" size={20} color={C.text} />
         </Pressable>
       </View>
 
@@ -183,32 +185,32 @@ export default function ReportsScreen() {
       </ScrollView>
 
       {isLoading ? (
-        <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
+        <View style={s.center}><ActivityIndicator color={C.primary} size="large" /></View>
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.primary} colors={[Colors.primary]} />}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={C.primary} colors={[C.primary]} />}
           contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xxxl }}
         >
           {/* KPIs */}
           <View style={s.kpiGrid}>
-            <View style={[s.kpiCard, { borderColor: `${Colors.accent}30` }]}>
+            <View style={[s.kpiCard, { borderColor: `${C.accent}30` }]}>
               <Text style={s.kpiLabel}>{i('CA période', 'Period revenue', 'Ingresos período', 'Ricavi periodo')}</Text>
-              <Text style={[s.kpiValue, { color: Colors.accent }]}>{fmt(ca)}</Text>
+              <Text style={[s.kpiValue, { color: C.accent }]}>{fmt(ca)}</Text>
             </View>
-            <View style={[s.kpiCard, { borderColor: `${Colors.primary}30` }]}>
+            <View style={[s.kpiCard, { borderColor: `${C.primary}30` }]}>
               <Text style={s.kpiLabel}>{i('Transactions', 'Transactions', 'Transacciones', 'Transazioni')}</Text>
-              <Text style={[s.kpiValue, { color: Colors.primary3 }]}>{String(tx)}</Text>
+              <Text style={[s.kpiValue, { color: C.primary3 }]}>{String(tx)}</Text>
             </View>
-            <View style={[s.kpiCard, { borderColor: `${Colors.accent3}30` }]}>
+            <View style={[s.kpiCard, { borderColor: `${C.accent3}30` }]}>
               <Text style={s.kpiLabel}>{i('Panier moyen', 'Avg. basket', 'Cesta media', 'Carrello medio')}</Text>
-              <Text style={[s.kpiValue, { color: Colors.accent3 }]}>{fmt(avg)}</Text>
+              <Text style={[s.kpiValue, { color: C.accent3 }]}>{fmt(avg)}</Text>
             </View>
-            <View style={[s.kpiCard, { borderColor: `${Colors.accent2}30` }]}>
+            <View style={[s.kpiCard, { borderColor: `${C.accent2}30` }]}>
               <Text style={s.kpiLabel}>{i('Meilleure journée', 'Best day', 'Mejor día', 'Giorno migliore')}</Text>
-              <Text style={[s.kpiValue, { color: Colors.accent2 }]}>{fmt(bestDay.value)}</Text>
+              <Text style={[s.kpiValue, { color: C.accent2 }]}>{fmt(bestDay.value)}</Text>
               <Text style={s.kpiSub}>{bestDay.label}</Text>
             </View>
           </View>
@@ -281,7 +283,7 @@ export default function ReportsScreen() {
             <Pressable style={s.exportBtn} onPress={exportCsv}
               accessibilityRole="button"
               accessibilityLabel={i('Exporter les ventes en CSV', 'Export sales to CSV', 'Exportar ventas a CSV', 'Esporta vendite in CSV')}>
-              <Ionicons name="download-outline" size={18} color={Colors.white} />
+              <Ionicons name="download-outline" size={18} color={C.white} />
               <Text style={s.exportTxt}>{i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}</Text>
             </Pressable>
           </View>
@@ -291,71 +293,71 @@ export default function ReportsScreen() {
   )
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
-  errTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.danger, textAlign: 'center' },
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', padding: Spacing.lg },
+  errTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger, textAlign: 'center' },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', padding: Spacing.lg },
 
   header: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
   },
   headerBtn: {
-    width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3,
-    borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center',
+    width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
+    borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
-  subtitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 1 },
+  title: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
+  subtitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
 
   periods: { gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xs },
   chip: {
     paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full,
-    backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
   },
-  chipOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
-  chipTxtOn: { color: Colors.white },
+  chipOn: { backgroundColor: C.primary, borderColor: C.primary },
+  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
+  chipTxtOn: { color: C.white },
 
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
   kpiCard: {
-    width: '47%', backgroundColor: Colors.card, borderRadius: BorderRadius.lg,
+    width: '47%', backgroundColor: C.card, borderRadius: BorderRadius.lg,
     borderWidth: 1, padding: Spacing.md, gap: 2, ...Shadow.sm,
   },
-  kpiLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: Colors.text3 },
+  kpiLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   kpiValue: { fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', letterSpacing: -0.5 },
-  kpiSub: { fontSize: 9, fontFamily: 'Outfit_400Regular', color: Colors.text4, marginTop: 2 },
+  kpiSub: { fontSize: 9, fontFamily: 'Outfit_400Regular', color: C.text4, marginTop: 2 },
 
   section: { paddingHorizontal: Spacing.lg, marginTop: Spacing.xl },
   sectionTitle: {
-    fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: Colors.text3,
+    fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3,
     textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.md,
   },
-  card: { backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.md, gap: Spacing.md },
+  card: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, gap: Spacing.md },
 
-  chartCard: { backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.md },
+  chartCard: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md },
   chart: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm, height: 130 },
   barCol: { flex: 1, alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' },
-  barTrack: { width: '70%', flex: 1, backgroundColor: Colors.bg4, borderRadius: BorderRadius.sm, justifyContent: 'flex-end', overflow: 'hidden' },
-  barFill: { width: '100%', backgroundColor: Colors.primary, borderRadius: BorderRadius.sm },
-  barLabel: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: Colors.text3 },
+  barTrack: { width: '70%', flex: 1, backgroundColor: C.bg4, borderRadius: BorderRadius.sm, justifyContent: 'flex-end', overflow: 'hidden' },
+  barFill: { width: '100%', backgroundColor: C.primary, borderRadius: BorderRadius.sm },
+  barLabel: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
 
   topRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   topRank: { fontSize: 18, width: 26 },
-  topName: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text },
-  topCa: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent },
-  progTrack: { height: 5, backgroundColor: Colors.bg4, borderRadius: 3, marginTop: 5, overflow: 'hidden' },
-  progFill: { height: '100%', backgroundColor: Colors.accent, borderRadius: 3 },
+  topName: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
+  topCa: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
+  progTrack: { height: 5, backgroundColor: C.bg4, borderRadius: 3, marginTop: 5, overflow: 'hidden' },
+  progFill: { height: '100%', backgroundColor: C.accent, borderRadius: 3 },
 
   payRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  payLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: Colors.text, width: 110 },
-  payBarTrack: { flex: 1, height: 8, backgroundColor: Colors.bg4, borderRadius: 4, overflow: 'hidden' },
-  payBarFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 4 },
-  payPct: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text2, width: 38, textAlign: 'right' },
+  payLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text, width: 110 },
+  payBarTrack: { flex: 1, height: 8, backgroundColor: C.bg4, borderRadius: 4, overflow: 'hidden' },
+  payBarFill: { height: '100%', backgroundColor: C.primary, borderRadius: 4 },
+  payPct: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_700Bold', color: C.text2, width: 38, textAlign: 'right' },
 
   exportBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
-    backgroundColor: Colors.primary, borderRadius: BorderRadius.md, height: 50, ...Shadow.colored(Colors.primary),
+    backgroundColor: C.primary, borderRadius: BorderRadius.md, height: 50, ...Shadow.colored(C.primary),
   },
-  exportTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
+  exportTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })

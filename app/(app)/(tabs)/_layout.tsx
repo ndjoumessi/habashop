@@ -1,19 +1,22 @@
+import { useMemo } from 'react'
 import { Tabs } from 'expo-router'
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { Colors } from '@/constants/theme'
-import { useI18n } from '@/stores/appStore'
+import { ThemeColors } from '@/constants/theme'
+import { useI18n, useTheme } from '@/stores/appStore'
 
 function TabIcon({ name, focused, label }:{
   name: keyof typeof Ionicons.glyphMap
   focused:boolean; label:string
 }) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   return (
     <View style={s.item}>
       <Ionicons
         name={focused ? name : `${name}-outline` as any}
         size={22}
-        color={focused ? Colors.primary : Colors.text3}
+        color={focused ? C.primary : C.text3}
       />
       <Text style={[s.lbl, focused && s.lblActive]}>
         {label}
@@ -23,6 +26,8 @@ function TabIcon({ name, focused, label }:{
 }
 
 export default function TabLayout() {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const { i } = useI18n()
   return (
     <Tabs screenOptions={{
@@ -41,7 +46,7 @@ export default function TabLayout() {
       <Tabs.Screen name="pos-tab" options={{ tabBarIcon:({focused})=>(
         <View style={s.posWrap}>
           <View style={[s.posBtn, focused&&s.posBtnActive]}>
-            <Ionicons name="cart" size={26} color={Colors.white}/>
+            <Ionicons name="cart" size={26} color={C.white}/>
           </View>
         </View>
       )}}/>
@@ -57,21 +62,21 @@ export default function TabLayout() {
   )
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
   bar:{
-    backgroundColor:Colors.bg2, borderTopColor:Colors.border,
+    backgroundColor:C.bg2, borderTopColor:C.border,
     borderTopWidth:1, height:72, paddingBottom:12, paddingTop:8,
   },
   item:{ alignItems:'center', gap:3 },
-  lbl:{ fontSize:9, color:Colors.text3, fontFamily:'Outfit_600SemiBold' },
-  lblActive:{ color:Colors.primary3 },
+  lbl:{ fontSize:9, color:C.text3, fontFamily:'Outfit_600SemiBold' },
+  lblActive:{ color:C.primary3 },
   posWrap:{ alignItems:'center', justifyContent:'center', marginBottom:16 },
   posBtn:{
     width:58, height:58, borderRadius:18,
-    backgroundColor:Colors.primary,
+    backgroundColor:C.primary,
     alignItems:'center', justifyContent:'center',
-    shadowColor:Colors.primary, shadowOffset:{width:0,height:4},
+    shadowColor:C.primary, shadowOffset:{width:0,height:4},
     shadowOpacity:0.5, shadowRadius:12, elevation:8,
   },
-  posBtnActive:{ backgroundColor:Colors.primary2 },
+  posBtnActive:{ backgroundColor:C.primary2 },
 })

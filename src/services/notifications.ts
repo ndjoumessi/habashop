@@ -15,10 +15,11 @@ Notifications.setNotificationHandler({
   }),
 })
 
-// Enregistrement du token push
+// Enregistrement du token push (dev/production build uniquement — retiré
+// d'Expo Go depuis le SDK 53). Renvoie le token Expo ou null.
 export async function registerForPushNotifications(): Promise<string | null> {
   if (!Device.isDevice) {
-    console.log('Push: simulateur ignoré')
+    console.log('📱 Push: appareil réel requis (simulateur ignoré)')
     return null
   }
 
@@ -29,7 +30,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     finalStatus = status
   }
   if (finalStatus !== 'granted') {
-    console.log('Push: permission refusée')
+    console.log('🔔 Push: permission refusée')
     return null
   }
 
@@ -37,32 +38,57 @@ export async function registerForPushNotifications(): Promise<string | null> {
     // projectId EAS (écrit dans app.json extra.eas.projectId par `eas init`).
     // Requis pour obtenir un token push Expo dans un dev/production build.
     const projectId = Constants.expoConfig?.extra?.eas?.projectId
-    const token = (await Notifications.getExpoPushTokenAsync(
-      projectId ? { projectId } : undefined,
-    )).data
+    if (!projectId) {
+      console.log('⚠️  Push: projectId EAS manquant (app.json extra.eas.projectId)')
+      return null
+    }
 
-    // Envoi du token au backend (route à ajouter côté backend — fail-safe)
-    await apiClient.post('/api/notifications/token', {
-      token,
-      platform: Platform.OS,
-      deviceId: Device.modelName ?? 'unknown',
-    }).catch(() => {})
+    const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data
+    console.log('✅ Push token:', token)
 
-    // Canal Android
+    // Canal Android (avant l'enregistrement backend — affecte le rendu local)
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'HabaShop',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#6C47FF',
+        sound: 'default',
       })
+    }
+
+    // Envoi du token au backend (upsert idempotent par token — fail-safe)
+    try {
+      const res = await apiClient.post('/api/notifications/token', {
+        token,
+        platform:   Platform.OS,
+        deviceId:   Device.modelName ?? Device.deviceName ?? 'unknown',
+        appVersion: Constants.expoConfig?.version ?? '1.0.0',
+      })
+      console.log('✅ Token enregistré (Railway):', res.data)
+    } catch (e) {
+      console.log('⚠️  Push: échec enregistrement backend (réessai au prochain démarrage)')
     }
 
     return token
   } catch (err) {
-    console.log('Push token error:', err)
+    console.log('❌ Push token error:', err)
     return null
   }
+}
+
+// Notification locale de test (immédiate) — vérifie que le rendu fonctionne
+// sans dépendre du backend ni d'un token distant.
+export async function testPushNotification(): Promise<void> {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: '🛍️ HabaShop',
+      body:  'Notifications fonctionnelles ✅',
+      data:  { type: 'test' },
+      sound: true,
+    },
+    trigger: null, // immédiat
+  })
 }
 
 // Notification locale (test immédiat)

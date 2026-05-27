@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView,
@@ -6,9 +6,9 @@ import {
 } from 'react-native'
 import * as Haptics from 'expo-haptics'
 import { useAuthStore } from '@/stores/authStore'
-import { useI18n } from '@/stores/appStore'
+import { useI18n, useTheme } from '@/stores/appStore'
 import { authApi } from '@/services/api'
-import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
+import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
 import AccessibleButton from '@/components/ui/AccessibleButton'
 import {
   isBiometricAvailable, isBiometricEnabled, authenticateWithBiometric,
@@ -16,6 +16,8 @@ import {
 } from '@/services/biometric'
 
 export default function LoginScreen() {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const { setAuth } = useAuthStore()
   const { i } = useI18n()
   const [email, setEmail]       = useState('')
@@ -177,7 +179,7 @@ export default function LoginScreen() {
                 <Text style={s.label}>Email</Text>
                 <TextInput style={s.input}
                   placeholder="admin@habashop.com"
-                  placeholderTextColor={Colors.text4}
+                  placeholderTextColor={C.text4}
                   value={email} onChangeText={setEmail}
                   autoCapitalize="none" keyboardType="email-address"
                   autoComplete="email" returnKeyType="next"
@@ -192,7 +194,7 @@ export default function LoginScreen() {
                 <View style={{position:'relative'}}>
                   <TextInput style={[s.input,{paddingRight:48}]}
                     placeholder="••••••••"
-                    placeholderTextColor={Colors.text4}
+                    placeholderTextColor={C.text4}
                     value={password} onChangeText={setPassword}
                     secureTextEntry={!showPwd}
                     returnKeyType="done"
@@ -290,88 +292,88 @@ export default function LoginScreen() {
   )
 }
 
-const s = StyleSheet.create({
-  flex:{flex:1,backgroundColor:Colors.bg},
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
+  flex:{flex:1,backgroundColor:C.bg},
   container:{flexGrow:1,padding:Spacing.xl,
     justifyContent:'center',gap:Spacing.xl},
   logoWrap:{alignItems:'center',gap:Spacing.sm},
   logoIcon:{
     width:80,height:80,borderRadius:24,
-    backgroundColor:Colors.primary,
+    backgroundColor:C.primary,
     alignItems:'center',justifyContent:'center',
-    ...Shadow.colored(Colors.primary),
+    ...Shadow.colored(C.primary),
   },
   logoText:{
     fontSize:FontSize.xxxl,fontFamily:'Outfit_900Black',
-    color:Colors.text,
+    color:C.text,
   },
   logoSub:{
     fontSize:FontSize.sm,fontFamily:'Outfit_400Regular',
-    color:Colors.text3,textAlign:'center',
+    color:C.text3,textAlign:'center',
   },
   card:{
-    backgroundColor:Colors.card,borderRadius:BorderRadius.xl,
-    borderWidth:1,borderColor:Colors.border,
+    backgroundColor:C.card,borderRadius:BorderRadius.xl,
+    borderWidth:1,borderColor:C.border,
     padding:Spacing.xl,gap:Spacing.lg,...Shadow.md,
   },
   title:{
     fontSize:FontSize.xl,fontFamily:'Outfit_800ExtraBold',
-    color:Colors.text,
+    color:C.text,
   },
   field:{gap:Spacing.xs},
   label:{
     fontSize:FontSize.xs,fontFamily:'Outfit_700Bold',
-    color:Colors.text3,textTransform:'uppercase',
+    color:C.text3,textTransform:'uppercase',
     letterSpacing:0.5,
   },
   input:{
-    backgroundColor:Colors.bg3,borderWidth:1,
-    borderColor:Colors.border,borderRadius:BorderRadius.md,
+    backgroundColor:C.bg3,borderWidth:1,
+    borderColor:C.border,borderRadius:BorderRadius.md,
     paddingHorizontal:Spacing.md,height:48,
     fontSize:FontSize.md,fontFamily:'Outfit_400Regular',
-    color:Colors.text,
+    color:C.text,
   },
   eyeBtn:{
     position:'absolute',right:Spacing.md,
     top:0,bottom:0,justifyContent:'center',
   },
   btn:{
-    backgroundColor:Colors.primary,borderRadius:BorderRadius.md,
+    backgroundColor:C.primary,borderRadius:BorderRadius.md,
     height:52,alignItems:'center',justifyContent:'center',
-    marginTop:Spacing.xs,...Shadow.colored(Colors.primary),
+    marginTop:Spacing.xs,...Shadow.colored(C.primary),
   },
   btnText:{
     fontSize:FontSize.md,fontFamily:'Outfit_800ExtraBold',
-    color:Colors.white,letterSpacing:0.3,
+    color:C.white,letterSpacing:0.3,
   },
   demoWrap:{alignItems:'center',gap:Spacing.xs},
   demoLabel:{
     fontSize:FontSize.xs,fontFamily:'Outfit_400Regular',
-    color:Colors.text3,
+    color:C.text3,
   },
   demoLink:{
     fontSize:FontSize.sm,fontFamily:'Outfit_700Bold',
-    color:Colors.primary3,
+    color:C.primary3,
   },
   biometricBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
     paddingVertical: Spacing.md, borderRadius: BorderRadius.lg,
-    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg3,
+    borderWidth: 1, borderColor: C.border, backgroundColor: C.bg3,
   },
   biometricIcon: { fontSize: 22 },
-  biometricText: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
+  biometricText: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
   usePasswordLink: { alignItems: 'center', paddingVertical: Spacing.sm },
-  usePasswordTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text3 },
+  usePasswordTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   biometricModal: {
-    flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center',
+    flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center',
     padding: Spacing.xxxl, gap: Spacing.lg,
   },
   biometricModalIcon: { fontSize: 72 },
-  biometricModalTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: Colors.text, textAlign: 'center' },
-  biometricModalDesc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', lineHeight: 24 },
-  biometricModalBtn: { width: '100%', backgroundColor: Colors.primary, paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg, alignItems: 'center' },
-  biometricModalBtnText: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
+  biometricModalTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: C.text, textAlign: 'center' },
+  biometricModalDesc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', lineHeight: 24 },
+  biometricModalBtn: { width: '100%', backgroundColor: C.primary, paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg, alignItems: 'center' },
+  biometricModalBtnText: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   biometricModalSkip: { paddingVertical: Spacing.md },
-  biometricModalSkipText: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text3 },
+  biometricModalSkipText: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3 },
   flags:{textAlign:'center',fontSize:20,letterSpacing:6},
 })

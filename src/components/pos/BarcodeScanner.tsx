@@ -1,11 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, Modal,
 } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Haptics from 'expo-haptics'
-import { useI18n } from '@/stores/appStore'
-import { Colors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
+import { useI18n, useTheme } from '@/stores/appStore'
+import { ThemeColors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
 
 interface BarcodeScannerProps {
   visible: boolean
@@ -16,6 +16,8 @@ interface BarcodeScannerProps {
 export default function BarcodeScanner({
   visible, onScan, onClose,
 }: BarcodeScannerProps) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const { i } = useI18n()
   const [permission, requestPermission] = useCameraPermissions()
   const [scanned, setScanned] = useState(false)
@@ -126,47 +128,47 @@ const SCAN_SIZE = 260
 const CORNER_SIZE = 24
 const CORNER_WIDTH = 3
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.black },
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.black },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl, paddingTop: 60, paddingBottom: Spacing.md,
-    backgroundColor: Colors.black,
+    backgroundColor: C.black,
   },
   closeBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: withAlpha(Colors.white, 0.15), alignItems: 'center', justifyContent: 'center',
+    backgroundColor: withAlpha(C.white, 0.15), alignItems: 'center', justifyContent: 'center',
   },
-  closeBtnText: { color: Colors.white, fontSize: 16, fontFamily: 'Outfit_700Bold' },
-  title: { color: Colors.white, fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold' },
+  closeBtnText: { color: C.white, fontSize: 16, fontFamily: 'Outfit_700Bold' },
+  title: { color: C.white, fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold' },
   camera: { flex: 1 },
   overlay: { flex: 1 },
-  overlayTop: { flex: 1, backgroundColor: withAlpha(Colors.black, 0.6) },
+  overlayTop: { flex: 1, backgroundColor: withAlpha(C.black, 0.6) },
   overlayMiddle: { flexDirection: 'row', height: SCAN_SIZE },
-  overlaySide: { flex: 1, backgroundColor: withAlpha(Colors.black, 0.6) },
+  overlaySide: { flex: 1, backgroundColor: withAlpha(C.black, 0.6) },
   scanZone: { width: SCAN_SIZE, height: SCAN_SIZE, position: 'relative', alignItems: 'center', justifyContent: 'center' },
-  overlayBottom: { flex: 1, backgroundColor: withAlpha(Colors.black, 0.6), alignItems: 'center', paddingTop: Spacing.xl },
+  overlayBottom: { flex: 1, backgroundColor: withAlpha(C.black, 0.6), alignItems: 'center', paddingTop: Spacing.xl },
   hint: {
-    color: Colors.white, fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular',
+    color: C.white, fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular',
     textAlign: 'center', paddingHorizontal: Spacing.xl,
   },
-  corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE, borderColor: Colors.primary, borderWidth: CORNER_WIDTH },
+  corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE, borderColor: C.primary, borderWidth: CORNER_WIDTH },
   cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 4 },
   cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 4 },
   cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 4 },
   cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 4 },
-  scanLine: { position: 'absolute', width: SCAN_SIZE - 20, height: 2, backgroundColor: Colors.primary, opacity: 0.8 },
+  scanLine: { position: 'absolute', width: SCAN_SIZE - 20, height: 2, backgroundColor: C.primary, opacity: 0.8 },
   scanSuccess: {
-    width: 60, height: 60, borderRadius: 30, backgroundColor: Colors.accent2,
+    width: 60, height: 60, borderRadius: 30, backgroundColor: C.accent2,
     alignItems: 'center', justifyContent: 'center',
   },
-  scanSuccessText: { color: Colors.white, fontSize: 28, fontFamily: 'Outfit_900Black' },
-  permContainer: { flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
+  scanSuccessText: { color: C.white, fontSize: 28, fontFamily: 'Outfit_900Black' },
+  permContainer: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
   permIcon: { fontSize: 60, marginBottom: Spacing.xl },
-  permTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: Colors.text, marginBottom: Spacing.md, textAlign: 'center' },
-  permDesc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', marginBottom: Spacing.xxl, lineHeight: 22 },
-  permBtn: { backgroundColor: Colors.primary, paddingHorizontal: Spacing.xxxl, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: Spacing.md },
-  permBtnText: { color: Colors.white, fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold' },
+  permTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text, marginBottom: Spacing.md, textAlign: 'center' },
+  permDesc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', marginBottom: Spacing.xxl, lineHeight: 22 },
+  permBtn: { backgroundColor: C.primary, paddingHorizontal: Spacing.xxxl, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: Spacing.md },
+  permBtnText: { color: C.white, fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold' },
   permClose: { paddingVertical: Spacing.md },
-  permCloseText: { color: Colors.text3, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular' },
+  permCloseText: { color: C.text3, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular' },
 })

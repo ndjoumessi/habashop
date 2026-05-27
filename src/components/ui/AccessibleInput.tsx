@@ -1,5 +1,7 @@
+import { useMemo } from 'react'
 import { View, Text, TextInput, StyleSheet, type TextInputProps } from 'react-native'
-import { Colors, BorderRadius, FontSize, Spacing } from '@/constants/theme'
+import { ThemeColors, BorderRadius, FontSize, Spacing } from '@/constants/theme'
+import { useTheme } from '@/stores/appStore'
 
 interface AccessibleInputProps extends TextInputProps {
   label:  string
@@ -12,6 +14,8 @@ interface AccessibleInputProps extends TextInputProps {
 export default function AccessibleInput({
   label, hint, error, style, ...props
 }: AccessibleInputProps) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   return (
     <View style={s.wrap}>
       <Text style={s.label}>{label}</Text>
@@ -19,7 +23,7 @@ export default function AccessibleInput({
         {...props}
         accessibilityLabel={label}
         accessibilityHint={hint}
-        placeholderTextColor={Colors.text3}
+        placeholderTextColor={C.text3}
         style={[s.input, error ? s.inputError : null, style]}
       />
       {error
@@ -29,18 +33,18 @@ export default function AccessibleInput({
   )
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
   wrap: { gap: Spacing.xs },
   label: {
-    fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: Colors.text3,
+    fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3,
     textTransform: 'uppercase', letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
     borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, height: 48,
-    fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text,
+    fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text,
   },
-  inputError: { borderColor: Colors.danger },
-  hint:  { fontSize: 11, color: Colors.text3, fontFamily: 'Outfit_400Regular' },
-  error: { fontSize: 11, color: Colors.danger, fontFamily: 'Outfit_700Bold' },
+  inputError: { borderColor: C.danger },
+  hint:  { fontSize: 11, color: C.text3, fontFamily: 'Outfit_400Regular' },
+  error: { fontSize: 11, color: C.danger, fontFamily: 'Outfit_700Bold' },
 })

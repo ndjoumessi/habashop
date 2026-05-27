@@ -8,19 +8,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { customersApi } from '@/services/api'
-import { useI18n, useFmt } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import {
-  Colors, Spacing, BorderRadius, FontSize, Shadow,
+  ThemeColors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
-
-const TYPE_COLOR: Record<string, string> = {
-  'Grossiste': Colors.primary,
-  'Semi-gros': Colors.accent3,
-  'Fidèle':    Colors.accent2,
-  'Détail':    Colors.accent,
-}
-const typeColor = (t?: string) => TYPE_COLOR[t ?? ''] ?? Colors.primary
 
 function initials(name?: string) {
   return (name ?? '?').split(' ').map(n => n[0] ?? '').join('').slice(0, 2).toUpperCase()
@@ -29,7 +21,15 @@ const telHref = (p?: string) => `tel:${(p ?? '').replace(/[^0-9+]/g, '')}`
 const waHref  = (p?: string) => `whatsapp://send?phone=${(p ?? '').replace(/[^0-9]/g, '')}`
 
 // ── Carte client ─────────────────────────────────
-function CustomerCard({ c, fmt, onPress }: { c: any; fmt: (n: number) => string; onPress: () => void }) {
+function CustomerCard({ c, fmt, onPress, C }: { c: any; fmt: (n: number) => string; onPress: () => void; C: ThemeColors }) {
+  const s = useMemo(() => makeStyles(C), [C])
+  const TYPE_COLOR: Record<string, string> = {
+    'Grossiste': C.primary,
+    'Semi-gros': C.accent3,
+    'Fidèle':    C.accent2,
+    'Détail':    C.accent,
+  }
+  const typeColor = (t?: string) => TYPE_COLOR[t ?? ''] ?? C.primary
   const color = typeColor(c.type)
   return (
     <TouchableOpacity style={s.card} activeOpacity={0.7} onPress={onPress}
@@ -51,16 +51,26 @@ function CustomerCard({ c, fmt, onPress }: { c: any; fmt: (n: number) => string;
           {(c.loyaltyPoints ?? 0) > 0 && <Text style={s.metaPts}>⭐ {c.loyaltyPoints} pts</Text>}
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={Colors.text3} />
+      <Ionicons name="chevron-forward" size={16} color={C.text3} />
     </TouchableOpacity>
   )
 }
 
 // ── Écran Clients ────────────────────────────────
 export default function CustomersScreen() {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
   const { i } = useI18n()
   const { fmt } = useFmt()
+
+  const TYPE_COLOR: Record<string, string> = {
+    'Grossiste': C.primary,
+    'Semi-gros': C.accent3,
+    'Fidèle':    C.accent2,
+    'Détail':    C.accent,
+  }
+  const typeColor = (t?: string) => TYPE_COLOR[t ?? ''] ?? C.primary
 
   const [showSearch, setShowSearch] = useState(false)
   const [search, setSearch] = useState('')
@@ -107,18 +117,18 @@ export default function CustomersScreen() {
           accessibilityLabel={showSearch
             ? i('Fermer la recherche', 'Close search', 'Cerrar búsqueda', 'Chiudi ricerca')
             : i('Rechercher', 'Search', 'Buscar', 'Cerca')}>
-          <Ionicons name={showSearch ? 'close' : 'search'} size={20} color={Colors.text2} />
+          <Ionicons name={showSearch ? 'close' : 'search'} size={20} color={C.text2} />
         </Pressable>
       </View>
 
       {/* ── Recherche (toggle) ── */}
       {showSearch && (
         <View style={s.searchWrap}>
-          <Ionicons name="search" size={16} color={Colors.text3} />
+          <Ionicons name="search" size={16} color={C.text3} />
           <TextInput
             style={s.searchInput}
             placeholder={i('Nom, téléphone, email…', 'Name, phone, email…', 'Nombre, teléfono, email…', 'Nome, telefono, email…')}
-            placeholderTextColor={Colors.text4}
+            placeholderTextColor={C.text4}
             value={search}
             onChangeText={setSearch}
             autoFocus
@@ -129,7 +139,7 @@ export default function CustomersScreen() {
             <Pressable onPress={() => setSearch('')} hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={i('Effacer la recherche', 'Clear search', 'Borrar búsqueda', 'Cancella ricerca')}>
-              <Ionicons name="close-circle" size={18} color={Colors.text3} />
+              <Ionicons name="close-circle" size={18} color={C.text3} />
             </Pressable>
           )}
         </View>
@@ -137,14 +147,14 @@ export default function CustomersScreen() {
 
       {/* ── Stats ── */}
       <View style={s.chipsRow}>
-        <Chip label={i('Total', 'Total', 'Total', 'Totale')} value={customers.length} color={Colors.text} />
-        <Chip label={i('Grossistes', 'Wholesale', 'Mayoristas', 'Grossisti')} value={grossistes} color={Colors.primary3} />
-        <Chip label={i('Fidèles', 'Loyal', 'Fieles', 'Fedeli')} value={fideles} color={Colors.accent2} />
+        <Chip label={i('Total', 'Total', 'Total', 'Totale')} value={customers.length} color={C.text} />
+        <Chip label={i('Grossistes', 'Wholesale', 'Mayoristas', 'Grossisti')} value={grossistes} color={C.primary3} />
+        <Chip label={i('Fidèles', 'Loyal', 'Fieles', 'Fedeli')} value={fideles} color={C.accent2} />
       </View>
 
       {/* ── Liste ── */}
       {isLoading ? (
-        <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
+        <View style={s.center}><ActivityIndicator color={C.primary} size="large" /></View>
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
       ) : (
@@ -152,7 +162,7 @@ export default function CustomersScreen() {
           data={filtered}
           keyExtractor={(c: any) => c.id}
           contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.sm, paddingBottom: insets.bottom + Spacing.xxxl, flexGrow: 1 }}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.primary} colors={[Colors.primary]} />}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={C.primary} colors={[C.primary]} />}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <View style={s.center}>
@@ -162,7 +172,7 @@ export default function CustomersScreen() {
             </View>
           }
           renderItem={({ item }: { item: any }) => (
-            <CustomerCard c={item} fmt={fmt} onPress={() => setSel(item)} />
+            <CustomerCard c={item} fmt={fmt} onPress={() => setSel(item)} C={C} />
           )}
         />
       )}
@@ -175,7 +185,7 @@ export default function CustomersScreen() {
             <Pressable onPress={() => setSel(null)} hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={i('Fermer', 'Close', 'Cerrar', 'Chiudi')}>
-              <Ionicons name="close" size={24} color={Colors.text} />
+              <Ionicons name="close" size={24} color={C.text} />
             </Pressable>
           </View>
 
@@ -195,15 +205,15 @@ export default function CustomersScreen() {
               {/* KPIs */}
               <View style={s.kpis}>
                 <View style={s.kpi}>
-                  <Text style={[s.kpiVal, { color: Colors.accent }]}>{fmt(sel.totalRevenue ?? 0)}</Text>
+                  <Text style={[s.kpiVal, { color: C.accent }]}>{fmt(sel.totalRevenue ?? 0)}</Text>
                   <Text style={s.kpiLabel}>{i('CA total', 'Revenue', 'CA total', 'Ricavi')}</Text>
                 </View>
                 <View style={s.kpi}>
-                  <Text style={[s.kpiVal, { color: Colors.warn }]}>{sel.loyaltyPoints ?? 0}</Text>
+                  <Text style={[s.kpiVal, { color: C.warn }]}>{sel.loyaltyPoints ?? 0}</Text>
                   <Text style={s.kpiLabel}>{i('Points', 'Points', 'Puntos', 'Punti')}</Text>
                 </View>
                 <View style={s.kpi}>
-                  <Text style={[s.kpiVal, { color: Colors.text2, fontSize: FontSize.md }]}>
+                  <Text style={[s.kpiVal, { color: C.text2, fontSize: FontSize.md }]}>
                     {sel.createdAt ? new Date(sel.createdAt).getFullYear() : '—'}
                   </Text>
                   <Text style={s.kpiLabel}>{i('Client depuis', 'Since', 'Desde', 'Dal')}</Text>
@@ -216,23 +226,23 @@ export default function CustomersScreen() {
                   <TouchableOpacity style={s.contactRow} onPress={() => openLink(telHref(sel.phone), i('Appel impossible', 'Cannot call', 'No se puede llamar', 'Impossibile chiamare'))}
                     accessibilityRole="button"
                     accessibilityLabel={`${i('Appeler', 'Call', 'Llamar', 'Chiama')} ${sel.phone}`}>
-                    <Ionicons name="call-outline" size={18} color={Colors.accent2} />
+                    <Ionicons name="call-outline" size={18} color={C.accent2} />
                     <Text style={s.contactTxt}>{sel.phone}</Text>
-                    <Ionicons name="chevron-forward" size={15} color={Colors.text3} />
+                    <Ionicons name="chevron-forward" size={15} color={C.text3} />
                   </TouchableOpacity>
                 )}
                 {!!sel.email && (
                   <TouchableOpacity style={[s.contactRow, !!sel.phone && s.listRowBorderTop]} onPress={() => openLink(`mailto:${sel.email}`, i('Email impossible', 'Cannot email', 'No se puede enviar', 'Impossibile inviare'))}
                     accessibilityRole="button"
                     accessibilityLabel={`${i('Envoyer un email à', 'Email', 'Enviar email a', 'Invia email a')} ${sel.email}`}>
-                    <Ionicons name="mail-outline" size={18} color={Colors.accent3} />
+                    <Ionicons name="mail-outline" size={18} color={C.accent3} />
                     <Text style={s.contactTxt} numberOfLines={1}>{sel.email}</Text>
-                    <Ionicons name="chevron-forward" size={15} color={Colors.text3} />
+                    <Ionicons name="chevron-forward" size={15} color={C.text3} />
                   </TouchableOpacity>
                 )}
                 {!!sel.address && (
                   <View style={[s.contactRow, (!!sel.phone || !!sel.email) && s.listRowBorderTop]}>
-                    <Ionicons name="location-outline" size={18} color={Colors.text3} />
+                    <Ionicons name="location-outline" size={18} color={C.text3} />
                     <Text style={s.contactTxt} numberOfLines={2}>{sel.address}</Text>
                   </View>
                 )}
@@ -244,16 +254,16 @@ export default function CustomersScreen() {
               {/* Actions */}
               {!!sel.phone && (
                 <View style={s.actions}>
-                  <TouchableOpacity style={[s.actionBtn, { backgroundColor: Colors.accent2 }]} onPress={() => openLink(telHref(sel.phone), i('Appel impossible', 'Cannot call', 'No se puede llamar', 'Impossibile chiamare'))}
+                  <TouchableOpacity style={[s.actionBtn, { backgroundColor: C.accent2 }]} onPress={() => openLink(telHref(sel.phone), i('Appel impossible', 'Cannot call', 'No se puede llamar', 'Impossibile chiamare'))}
                     accessibilityRole="button"
                     accessibilityLabel={`${i('Appeler', 'Call', 'Llamar', 'Chiama')} ${sel.name?.trim() ?? ''}`}>
-                    <Ionicons name="call" size={16} color={Colors.white} />
+                    <Ionicons name="call" size={16} color={C.white} />
                     <Text style={s.actionTxt}>{i('Appeler', 'Call', 'Llamar', 'Chiama')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#25D366' }]} onPress={() => openLink(waHref(sel.phone), i('WhatsApp non installé', 'WhatsApp not installed', 'WhatsApp no instalado', 'WhatsApp non installato'))}
                     accessibilityRole="button"
                     accessibilityLabel={`WhatsApp ${sel.name?.trim() ?? ''}`}>
-                    <Ionicons name="logo-whatsapp" size={16} color={Colors.white} />
+                    <Ionicons name="logo-whatsapp" size={16} color={C.white} />
                     <Text style={s.actionTxt}>WhatsApp</Text>
                   </TouchableOpacity>
                 </View>
@@ -266,63 +276,63 @@ export default function CustomersScreen() {
   )
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl, gap: Spacing.sm },
-  errTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.danger, textAlign: 'center' },
-  emptyTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: Colors.text2, marginTop: Spacing.sm },
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', maxWidth: 260 },
+  errTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger, textAlign: 'center' },
+  emptyTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text2, marginTop: Spacing.sm },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', maxWidth: 260 },
 
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.md },
-  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: Colors.text },
-  subtitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
-  headerBtn: { width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: C.text },
+  subtitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
+  headerBtn: { width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     marginHorizontal: Spacing.xl, marginBottom: Spacing.sm, paddingHorizontal: Spacing.md, height: 44,
-    backgroundColor: Colors.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
-  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text },
+  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
 
   chipsRow: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
-  chip: { flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm },
+  chip: { flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm },
   chipVal: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold' },
-  chipLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: Colors.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  chipLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
 
-  card: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.md, ...Shadow.sm },
+  card: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, ...Shadow.sm },
   avatar: { width: 46, height: 46, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center' },
-  avatarTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_900Black', color: Colors.white },
+  avatarTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_900Black', color: C.white },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  name: { flexShrink: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
+  name: { flexShrink: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   typeBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
   typeTxt: { fontSize: 9, fontFamily: 'Outfit_700Bold' },
-  phone: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 3 },
+  phone: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: 3 },
-  metaCa: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent },
-  metaPts: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: Colors.warn },
+  metaCa: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
+  metaPts: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.warn },
 
   // Sheet
-  sheet: { flex: 1, backgroundColor: Colors.bg },
-  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
+  sheet: { flex: 1, backgroundColor: C.bg },
+  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: C.border },
+  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   detailHead: { alignItems: 'center', gap: Spacing.sm },
   detailAvatar: { width: 72, height: 72, borderRadius: BorderRadius.xl, alignItems: 'center', justifyContent: 'center', ...Shadow.md },
-  detailAvatarTxt: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: Colors.white },
-  detailName: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: Colors.text, textAlign: 'center' },
+  detailAvatarTxt: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: C.white },
+  detailName: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text, textAlign: 'center' },
 
   kpis: { flexDirection: 'row', gap: Spacing.sm },
-  kpi: { flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.md, alignItems: 'center', gap: 4 },
+  kpi: { flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, alignItems: 'center', gap: 4 },
   kpiVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold' },
-  kpiLabel: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: Colors.text3, textTransform: 'uppercase', letterSpacing: 0.4, textAlign: 'center' },
+  kpiLabel: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4, textAlign: 'center' },
 
-  contactCard: { backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  contactCard: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, overflow: 'hidden' },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
-  listRowBorderTop: { borderTopWidth: 1, borderTopColor: Colors.border },
-  contactTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text },
-  noContact: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', padding: Spacing.md },
+  listRowBorderTop: { borderTopWidth: 1, borderTopColor: C.border },
+  contactTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
+  noContact: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', padding: Spacing.md },
 
   actions: { flexDirection: 'row', gap: Spacing.sm },
   actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, height: 50, borderRadius: BorderRadius.md },
-  actionTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
+  actionTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })

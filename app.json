@@ -2,10 +2,11 @@
   "expo": {
     "name": "HabaShop",
     "slug": "habashop-mobile",
-    "version": "1.0.0",
+    "version": "1.2.0",
+    "description": "HabaShop — Logiciel de caisse et gestion commerciale pour les boutiques et superettes en Afrique francophone. POS, stock, clients, rapports et analytics.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "scheme": "habashop",
     "assetBundlePatterns": [
       "**/*"
@@ -13,6 +14,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.habashop.app",
+      "buildNumber": "3",
       "infoPlist": {
         "NSCameraUsageDescription": "Scanner les codes-barres des produits",
         "NSFaceIDUsageDescription": "Connexion rapide et sécurisée"
@@ -21,6 +23,7 @@
     },
     "android": {
       "package": "com.habashop.app",
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#6C47FF"

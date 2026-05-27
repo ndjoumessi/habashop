@@ -1,6 +1,8 @@
+import { useMemo } from 'react'
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native'
 import * as Haptics from 'expo-haptics'
-import { Colors, BorderRadius, FontSize } from '@/constants/theme'
+import { ThemeColors, BorderRadius, FontSize } from '@/constants/theme'
+import { useTheme } from '@/stores/appStore'
 
 interface AccessibleButtonProps {
   label:     string
@@ -16,6 +18,8 @@ interface AccessibleButtonProps {
 export default function AccessibleButton({
   label, onPress, variant = 'primary', disabled = false, loading = false, hint,
 }: AccessibleButtonProps) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const isDisabled = disabled || loading
   return (
     <TouchableOpacity
@@ -32,22 +36,22 @@ export default function AccessibleButton({
       style={[s.btn, s[variant], isDisabled && s.disabled]}
     >
       {loading
-        ? <ActivityIndicator color={variant === 'ghost' ? Colors.text2 : Colors.white} size="small" />
+        ? <ActivityIndicator color={variant === 'ghost' ? C.text2 : C.white} size="small" />
         : <Text style={[s.text, variant === 'ghost' ? s.textGhost : s.textOn]}>{label}</Text>}
     </TouchableOpacity>
   )
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
   btn: {
     height: 52, borderRadius: BorderRadius.lg, flexDirection: 'row',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24,
   },
-  primary: { backgroundColor: Colors.primary },
-  ghost:   { backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.border },
-  danger:  { backgroundColor: Colors.danger },
+  primary: { backgroundColor: C.primary },
+  ghost:   { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.border },
+  danger:  { backgroundColor: C.danger },
   disabled: { opacity: 0.5 },
   text:      { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold' },
-  textOn:    { color: Colors.white },
-  textGhost: { color: Colors.text2 },
+  textOn:    { color: C.white },
+  textGhost: { color: C.text2 },
 })

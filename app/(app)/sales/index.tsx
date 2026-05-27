@@ -9,10 +9,10 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { salesApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
-import { useI18n, useFmt } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { sendWhatsAppTicket } from '@/services/whatsappTicket'
 import ErrorState from '@/components/ui/ErrorState'
-import { Colors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
+import { Spacing, BorderRadius, FontSize, Shadow, withAlpha, ThemeColors } from '@/constants/theme'
 
 type Period = 'today' | '7d' | '30d'
 const PERIODS: { key: Period; days: number; fr: string; en: string; es: string; it: string }[] = [
@@ -34,6 +34,8 @@ function fmtDateTime(iso: string): string {
 
 export default function SalesScreen() {
   const insets = useSafeAreaInsets()
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const { i, lang } = useI18n()
   const { fmt, currency } = useFmt()
   const { tenant } = useAuthStore()
@@ -86,7 +88,7 @@ export default function SalesScreen() {
       <View style={s.header}>
         <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}
           accessibilityRole="button" accessibilityLabel={i('Retour', 'Back', 'Volver', 'Indietro')}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text} />
+          <Ionicons name="chevron-back" size={22} color={C.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={s.title}>{i('Historique', 'History', 'Historial', 'Storico')}</Text>
@@ -109,14 +111,14 @@ export default function SalesScreen() {
 
       {/* Stats */}
       <View style={s.statsRow}>
-        <View style={s.statBox}><Text style={[s.statVal, { color: Colors.accent }]}>{fmt(ca)}</Text><Text style={s.statLabel}>{i('CA total', 'Revenue', 'CA total', 'Ricavi')}</Text></View>
-        <View style={s.statBox}><Text style={[s.statVal, { color: Colors.primary3 }]}>{String(tx)}</Text><Text style={s.statLabel}>{i('Ventes', 'Sales', 'Ventas', 'Vendite')}</Text></View>
-        <View style={s.statBox}><Text style={[s.statVal, { color: Colors.accent3 }]}>{fmt(avg)}</Text><Text style={s.statLabel}>{i('Panier moyen', 'Avg basket', 'Cesta media', 'Carrello medio')}</Text></View>
+        <View style={s.statBox}><Text style={[s.statVal, { color: C.accent }]}>{fmt(ca)}</Text><Text style={s.statLabel}>{i('CA total', 'Revenue', 'CA total', 'Ricavi')}</Text></View>
+        <View style={s.statBox}><Text style={[s.statVal, { color: C.primary3 }]}>{String(tx)}</Text><Text style={s.statLabel}>{i('Ventes', 'Sales', 'Ventas', 'Vendite')}</Text></View>
+        <View style={s.statBox}><Text style={[s.statVal, { color: C.accent3 }]}>{fmt(avg)}</Text><Text style={s.statLabel}>{i('Panier moyen', 'Avg basket', 'Cesta media', 'Carrello medio')}</Text></View>
       </View>
 
       {/* Liste */}
       {isLoading ? (
-        <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
+        <View style={s.center}><ActivityIndicator color={C.primary} size="large" /></View>
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
       ) : (
@@ -124,7 +126,7 @@ export default function SalesScreen() {
           data={filtered}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.sm, paddingBottom: insets.bottom + Spacing.xxxl, flexGrow: 1 }}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.primary} colors={[Colors.primary]} />}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={C.primary} colors={[C.primary]} />}
           ListEmptyComponent={
             <View style={s.center}>
               <Text style={{ fontSize: 48 }}>🧾</Text>
@@ -143,7 +145,7 @@ export default function SalesScreen() {
                   {fmtDateTime(item.createdAt)} · {item.items?.length ?? 0} {i('articles', 'items', 'artículos', 'articoli')}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={Colors.text3} />
+              <Ionicons name="chevron-forward" size={16} color={C.text3} />
             </Pressable>
           )}
         />
@@ -156,7 +158,7 @@ export default function SalesScreen() {
             <Text style={s.sheetTitle}>{i('Détail de la vente', 'Sale detail', 'Detalle de venta', 'Dettaglio vendita')}</Text>
             <Pressable onPress={() => setSel(null)} hitSlop={8}
               accessibilityRole="button" accessibilityLabel={i('Fermer', 'Close', 'Cerrar', 'Chiudi')}>
-              <Ionicons name="close" size={24} color={Colors.text} />
+              <Ionicons name="close" size={24} color={C.text} />
             </Pressable>
           </View>
           {sel && (
@@ -183,7 +185,7 @@ export default function SalesScreen() {
                 {(sel.discountAmount ?? 0) > 0 && (
                   <View style={s.recapRow}>
                     <Text style={s.recapLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')}</Text>
-                    <Text style={[s.recapVal, { color: Colors.accent2 }]}>− {fmt(sel.discountAmount ?? 0)}</Text>
+                    <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(sel.discountAmount ?? 0)}</Text>
                   </View>
                 )}
                 <View style={s.recapRow}>
@@ -208,49 +210,49 @@ export default function SalesScreen() {
   )
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl, gap: Spacing.sm },
-  emptyTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: Colors.text2, marginTop: Spacing.sm },
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', maxWidth: 260 },
+  emptyTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text2, marginTop: Spacing.sm },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', maxWidth: 260 },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
-  headerBtn: { width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
-  subtitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 1 },
+  headerBtn: { width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
+  subtitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
 
   periods: { flexDirection: 'row', gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
-  chip: { paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full, backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border },
-  chipOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
-  chipTxtOn: { color: Colors.white },
+  chip: { paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border },
+  chipOn: { backgroundColor: C.primary, borderColor: C.primary },
+  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
+  chipTxtOn: { color: C.white },
 
   statsRow: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
-  statBox: { flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm },
+  statBox: { flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm },
   statVal: { fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold' },
-  statLabel: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: Colors.text3, textTransform: 'uppercase', letterSpacing: 0.4, textAlign: 'center' },
+  statLabel: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4, textAlign: 'center' },
 
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.md, ...Shadow.sm },
-  rowTotal: { fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent },
-  rowSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, ...Shadow.sm },
+  rowTotal: { fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
+  rowSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
 
-  sheet: { flex: 1, backgroundColor: Colors.bg },
-  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
+  sheet: { flex: 1, backgroundColor: C.bg },
+  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: C.border },
+  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  metaLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
-  ref: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text3 },
-  card: { backgroundColor: Colors.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.md, gap: Spacing.sm },
+  metaLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
+  ref: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.text3 },
+  card: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, gap: Spacing.sm },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  itemName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: Colors.text },
-  itemSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
-  itemTotal: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text },
+  itemName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
+  itemSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
+  itemTotal: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
   recapRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  recapLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3 },
-  recapVal: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text },
-  recapTotal: { borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: Spacing.sm, marginTop: 2 },
-  recapTotalLabel: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
-  recapTotalVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: Colors.primary3 },
-  waBtn: { backgroundColor: withAlpha(Colors.accent2, 0.12), borderWidth: 1, borderColor: withAlpha(Colors.accent2, 0.3), borderRadius: BorderRadius.md, height: 50, alignItems: 'center', justifyContent: 'center' },
-  waBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.accent2 },
+  recapLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3 },
+  recapVal: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
+  recapTotal: { borderTopWidth: 1, borderTopColor: C.border, paddingTop: Spacing.sm, marginTop: 2 },
+  recapTotalLabel: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.text },
+  recapTotalVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.primary3 },
+  waBtn: { backgroundColor: withAlpha(C.accent2, 0.12), borderWidth: 1, borderColor: withAlpha(C.accent2, 0.3), borderRadius: BorderRadius.md, height: 50, alignItems: 'center', justifyContent: 'center' },
+  waBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.accent2 },
 })

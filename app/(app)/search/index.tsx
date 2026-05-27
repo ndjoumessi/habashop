@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator,
 } from 'react-native'
@@ -6,8 +6,8 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuery } from '@tanstack/react-query'
 import { productsApi, customersApi } from '@/services/api'
-import { useI18n, useFmt } from '@/stores/appStore'
-import { Colors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
+import { useI18n, useFmt, useTheme } from '@/stores/appStore'
+import { Spacing, BorderRadius, FontSize, withAlpha, ThemeColors } from '@/constants/theme'
 
 type ResultType = 'product' | 'customer'
 interface SearchResult {
@@ -21,6 +21,8 @@ interface SearchResult {
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets()
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const { i } = useI18n()
   const { fmt } = useFmt()
 
@@ -92,7 +94,7 @@ export default function SearchScreen() {
           <TextInput
             style={s.searchInput}
             placeholder={i('Produits, clients…', 'Products, customers…', 'Productos, clientes…', 'Prodotti, clienti…')}
-            placeholderTextColor={Colors.text4}
+            placeholderTextColor={C.text4}
             value={query}
             onChangeText={setQuery}
             autoFocus
@@ -112,7 +114,7 @@ export default function SearchScreen() {
       </View>
 
       {searching ? (
-        <ActivityIndicator color={Colors.primary} style={{ marginTop: 40 }} />
+        <ActivityIndicator color={C.primary} style={{ marginTop: 40 }} />
       ) : results.length === 0 && query.length > 0 ? (
         <View style={s.emptyWrap}>
           <Text style={{ fontSize: 40 }}>🔍</Text>
@@ -173,51 +175,51 @@ export default function SearchScreen() {
   )
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.xl,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1, borderBottomColor: C.border,
   },
   backBtn: {
-    width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border,
+    width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border,
   },
-  backIcon: { fontSize: 18, color: Colors.text2, fontFamily: 'Outfit_700Bold' },
+  backIcon: { fontSize: 18, color: C.text2, fontFamily: 'Outfit_700Bold' },
   searchWrap: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    backgroundColor: Colors.bg3, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border,
     paddingHorizontal: Spacing.md, height: 44,
   },
   searchIcon: { fontSize: 16 },
-  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text },
-  clearIcon: { fontSize: 14, color: Colors.text4, padding: 4 },
+  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
+  clearIcon: { fontSize: 14, color: C.text4, padding: 4 },
   list: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.md },
   resultRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1, borderBottomColor: C.border,
   },
   resultEmoji: {
-    width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: Colors.bg3,
+    width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
     alignItems: 'center', justifyContent: 'center',
   },
-  resultTitle: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: Colors.text },
-  resultSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
+  resultTitle: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: C.text },
+  resultSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   typeBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full },
-  typeBadgeProduct: { backgroundColor: withAlpha(Colors.accent3, 0.1) },
-  typeBadgeCustomer: { backgroundColor: withAlpha(Colors.accent2, 0.1) },
+  typeBadgeProduct: { backgroundColor: withAlpha(C.accent3, 0.1) },
+  typeBadgeCustomer: { backgroundColor: withAlpha(C.accent2, 0.1) },
   typeBadgeText: { fontSize: 9, fontFamily: 'Outfit_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
-  typeBadgeTextProduct: { color: Colors.accent3 },
-  typeBadgeTextCustomer: { color: Colors.accent2 },
+  typeBadgeTextProduct: { color: C.accent3 },
+  typeBadgeTextCustomer: { color: C.accent2 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
-  emptyText: { fontSize: FontSize.lg, fontFamily: 'Outfit_700Bold', color: Colors.text },
-  emptySubtext: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3 },
+  emptyText: { fontSize: FontSize.lg, fontFamily: 'Outfit_700Bold', color: C.text },
+  emptySubtext: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3 },
   hintWrap: { padding: Spacing.xl, alignItems: 'center', gap: Spacing.lg },
-  hintText: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center' },
+  hintText: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center' },
   suggestionsRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
   suggestionChip: {
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.full,
-    backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
   },
-  suggestionText: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
+  suggestionText: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
 })

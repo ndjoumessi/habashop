@@ -10,9 +10,9 @@ import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi, salesApi } from '@/services/api'
 import { usePosStore } from '@/stores/posStore'
-import { useI18n, useFmt } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import {
-  Colors, Spacing, BorderRadius, FontSize, Shadow,
+  ThemeColors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
 import { useAuthStore } from '@/stores/authStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
@@ -27,6 +27,8 @@ import POSProductGrid from '@/components/pos/POSProductGrid'
 // ── Écran POS ────────────────────────────────────
 export default function POSScreen() {
   const insets = useSafeAreaInsets()
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const { i, lang } = useI18n()
   const { fmt, currency } = useFmt()
   const { tenant } = useAuthStore()
@@ -189,19 +191,19 @@ export default function POSScreen() {
         <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={i('Fermer la caisse', 'Close register', 'Cerrar caja', 'Chiudi cassa')}>
-          <Ionicons name="close" size={22} color={Colors.text} />
+          <Ionicons name="close" size={22} color={C.text} />
         </Pressable>
         <Text style={s.headerTitle}>{i('Caisse', 'Register', 'Caja', 'Cassa')}</Text>
         <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
           <Pressable style={s.headerBtn} onPress={() => setShowScanner(true)} hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={i('Scanner un code-barres', 'Scan a barcode', 'Escanear código', 'Scansiona codice')}>
-            <Ionicons name="scan-outline" size={22} color={Colors.text} />
+            <Ionicons name="scan-outline" size={22} color={C.text} />
           </Pressable>
           <Pressable style={s.headerBtn} onPress={() => setShowCart(true)} hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={`${i('Panier', 'Cart', 'Carrito', 'Carrello')}, ${totalQty}`}>
-            <Ionicons name="cart-outline" size={22} color={Colors.text} />
+            <Ionicons name="cart-outline" size={22} color={C.text} />
             {totalQty > 0 && (
               <View style={s.cartBadge}><Text style={s.cartBadgeTxt}>{totalQty}</Text></View>
             )}
@@ -211,11 +213,11 @@ export default function POSScreen() {
 
       {/* ── Recherche ── */}
       <View style={s.searchWrap}>
-        <Ionicons name="search" size={16} color={Colors.text3} />
+        <Ionicons name="search" size={16} color={C.text3} />
         <TextInput
           style={s.searchInput}
           placeholder={i('Rechercher un produit…', 'Search a product…', 'Buscar un producto…', 'Cerca un prodotto…')}
-          placeholderTextColor={Colors.text4}
+          placeholderTextColor={C.text4}
           value={search}
           onChangeText={setSearch}
           returnKeyType="search"
@@ -225,7 +227,7 @@ export default function POSScreen() {
           <Pressable onPress={() => setSearch('')} hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={i('Effacer la recherche', 'Clear search', 'Borrar búsqueda', 'Cancella ricerca')}>
-            <Ionicons name="close-circle" size={18} color={Colors.text3} />
+            <Ionicons name="close-circle" size={18} color={C.text3} />
           </Pressable>
         )}
       </View>
@@ -323,8 +325,8 @@ export default function POSScreen() {
 }
 
 // ── Styles ───────────────────────────────────────
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -332,47 +334,47 @@ const s = StyleSheet.create({
   },
   headerBtn: {
     width: 44, height: 44, borderRadius: BorderRadius.md,
-    backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
+  headerTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   cartBadge: {
     position: 'absolute', top: 2, right: 2, minWidth: 18, height: 18, paddingHorizontal: 4,
-    borderRadius: 9, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: Colors.bg,
+    borderRadius: 9, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: C.bg,
   },
-  cartBadgeTxt: { fontSize: 10, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
+  cartBadgeTxt: { fontSize: 10, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
     paddingHorizontal: Spacing.md, height: 44,
-    backgroundColor: Colors.bg3, borderRadius: BorderRadius.md,
-    borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: C.border,
   },
-  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text },
+  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
 
   cats: { gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xs },
   chip: {
     paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full,
-    backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border, maxWidth: 160,
+    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, maxWidth: 160,
   },
-  chipOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
-  chipTxtOn: { color: Colors.white },
+  chipOn: { backgroundColor: C.primary, borderColor: C.primary },
+  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
+  chipTxtOn: { color: C.white },
 
   totalBar: {
     position: 'absolute', left: 0, right: 0, bottom: 0,
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
     paddingHorizontal: Spacing.lg, paddingTop: Spacing.md,
-    backgroundColor: Colors.bg2, borderTopWidth: 1, borderTopColor: Colors.border,
+    backgroundColor: C.bg2, borderTopWidth: 1, borderTopColor: C.border,
   },
-  totalBarLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: Colors.text3 },
-  totalBarAmt: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text },
+  totalBarLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
+  totalBarAmt: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
   checkoutBtn: {
-    backgroundColor: Colors.primary, borderRadius: BorderRadius.md,
+    backgroundColor: C.primary, borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.xl, height: 50, alignItems: 'center', justifyContent: 'center',
-    ...Shadow.colored(Colors.primary),
+    ...Shadow.colored(C.primary),
   },
-  checkoutTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
+  checkoutTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })

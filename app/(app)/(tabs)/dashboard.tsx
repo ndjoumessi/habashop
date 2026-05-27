@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, RefreshControl, ActivityIndicator,
@@ -9,13 +9,13 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { analyticsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
-import { useI18n, useFmt } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { updateWidgetNotification, isWidgetEnabled } from '@/services/widgetNotification'
 import Avatar from '@/components/ui/Avatar'
 import { useProfilePhoto } from '@/hooks/useProfilePhoto'
 import {
-  Colors, Spacing, BorderRadius,
+  ThemeColors, Spacing, BorderRadius,
   FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
 
@@ -29,6 +29,8 @@ function KpiCard({
   color:  string
   sub?:   string
 }) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   return (
     <View style={[s.kpiCard, { borderColor:`${color}30` }]}>
       <View style={[s.kpiIcon, { backgroundColor:`${color}18` }]}>
@@ -50,6 +52,8 @@ function QuickAction({
   color:   string
   onPress: () => void
 }) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   return (
     <TouchableOpacity
       style={s.action}
@@ -69,6 +73,8 @@ function QuickAction({
 
 // ── Écran Dashboard ──────────────────────────────
 export default function DashboardScreen() {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
   const { user, tenant } = useAuthStore()
   const { i, lang } = useI18n()
@@ -114,8 +120,8 @@ export default function DashboardScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={refetch}
-            tintColor={Colors.primary}
-            colors={[Colors.primary]}
+            tintColor={C.primary}
+            colors={[C.primary]}
           />
         }
       >
@@ -160,7 +166,7 @@ export default function DashboardScreen() {
               <Ionicons
                 name="notifications-outline"
                 size={22}
-                color={Colors.text2}
+                color={C.text2}
               />
               {(d.pendingOrders ?? 0) > 0 && (
                 <View style={s.notifDot}/>
@@ -188,7 +194,7 @@ export default function DashboardScreen() {
             <Ionicons
               name="chevron-forward"
               size={14}
-              color={Colors.warn}
+              color={C.warn}
             />
           </TouchableOpacity>
         )}
@@ -202,7 +208,7 @@ export default function DashboardScreen() {
           {isLoading ? (
             <View style={s.loadingWrap}>
               <ActivityIndicator
-                color={Colors.primary}
+                color={C.primary}
                 size="large"
               />
             </View>
@@ -228,20 +234,20 @@ export default function DashboardScreen() {
                 label={i('CA du jour','Today\'s revenue','CA hoy','Ricavi oggi')}
                 value={fmt(d.salesToday ?? 0)}
                 icon="💰"
-                color={Colors.accent}
+                color={C.accent}
                 sub={`${d.transactionsToday ?? 0} ${i('ventes','sales','ventas','vendite')}`}
               />
               <KpiCard
                 label={i('Ce mois','This month','Este mes','Questo mese')}
                 value={fmt(d.salesMonth ?? 0)}
                 icon="📈"
-                color={Colors.primary}
+                color={C.primary}
               />
               <KpiCard
                 label={i('Produits','Products','Productos','Prodotti')}
                 value={String(d.totalProducts ?? 0)}
                 icon="📦"
-                color={Colors.accent3}
+                color={C.accent3}
                 sub={alerts.length > 0
                   ? `⚠️ ${alerts.length} ${i('alertes','alerts','alertas','avvisi')}`
                   : i('✅ Stock OK','✅ Stock OK','✅ Stock OK','✅ Stock OK')}
@@ -250,7 +256,7 @@ export default function DashboardScreen() {
                 label={i('Employés','Staff','Empleados','Dipendenti')}
                 value={String(d.activeEmployees ?? 0)}
                 icon="👥"
-                color={Colors.accent2}
+                color={C.accent2}
               />
             </View>
           )}
@@ -266,31 +272,31 @@ export default function DashboardScreen() {
             <QuickAction
               icon="🛒"
               label={i('Caisse','Register','Caja','Cassa')}
-              color={Colors.primary}
+              color={C.primary}
               onPress={() => router.push('/(app)/pos')}
             />
             <QuickAction
               icon="📦"
               label="Stock"
-              color={Colors.accent3}
+              color={C.accent3}
               onPress={() => router.push('/(app)/(tabs)/stock')}
             />
             <QuickAction
               icon="👥"
               label={i('Clients','Customers','Clientes','Clienti')}
-              color={Colors.accent2}
+              color={C.accent2}
               onPress={() => router.push('/(app)/(tabs)/customers')}
             />
             <QuickAction
               icon="📊"
               label={i('Rapports','Reports','Informes','Rapporti')}
-              color={Colors.accent}
+              color={C.accent}
               onPress={() => router.push('/(app)/reports')}
             />
             <QuickAction
               icon="📋"
               label={i('Historique','History','Historial','Storico')}
-              color={Colors.primary3}
+              color={C.primary3}
               onPress={() => router.push('/(app)/sales')}
             />
           </View>
@@ -364,9 +370,9 @@ export default function DashboardScreen() {
 }
 
 // ── Styles ───────────────────────────────────────
-const s = StyleSheet.create({
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: {
-    flex:1, backgroundColor:Colors.bg,
+    flex:1, backgroundColor:C.bg,
   },
   header: {
     flexDirection:'row', alignItems:'center',
@@ -376,58 +382,58 @@ const s = StyleSheet.create({
   greeting: {
     fontSize:FontSize.xl,
     fontFamily:'Outfit_800ExtraBold',
-    color:Colors.text,
+    color:C.text,
   },
   shopName: {
     fontSize:FontSize.sm,
     fontFamily:'Outfit_400Regular',
-    color:Colors.text3, marginTop:2,
+    color:C.text3, marginTop:2,
   },
   offlineBadge: {
     alignSelf:'flex-start', marginTop:6,
-    backgroundColor:withAlpha(Colors.danger, 0.12),
+    backgroundColor:withAlpha(C.danger, 0.12),
     paddingHorizontal:Spacing.sm, paddingVertical:3,
     borderRadius:BorderRadius.full,
-    borderWidth:1, borderColor:withAlpha(Colors.danger, 0.25),
+    borderWidth:1, borderColor:withAlpha(C.danger, 0.25),
   },
   offlineBadgeText: {
     fontSize:10, fontFamily:'Outfit_700Bold',
-    color:Colors.danger, textTransform:'uppercase', letterSpacing:0.4,
+    color:C.danger, textTransform:'uppercase', letterSpacing:0.4,
   },
   notifBtn: {
     width:44, height:44,
     borderRadius:BorderRadius.md,
-    backgroundColor:Colors.bg3,
+    backgroundColor:C.bg3,
     alignItems:'center', justifyContent:'center',
-    borderWidth:1, borderColor:Colors.border,
+    borderWidth:1, borderColor:C.border,
     position:'relative',
   },
   searchBtn: {
     width:44, height:44, borderRadius:BorderRadius.md,
-    backgroundColor:Colors.bg3, alignItems:'center', justifyContent:'center',
-    borderWidth:1, borderColor:Colors.border,
+    backgroundColor:C.bg3, alignItems:'center', justifyContent:'center',
+    borderWidth:1, borderColor:C.border,
   },
   notifDot: {
     position:'absolute', top:6, right:6,
     width:8, height:8, borderRadius:4,
-    backgroundColor:Colors.danger,
-    borderWidth:2, borderColor:Colors.bg2,
+    backgroundColor:C.danger,
+    borderWidth:2, borderColor:C.bg2,
   },
   trialBanner: {
     flexDirection:'row', alignItems:'center',
     justifyContent:'space-between',
     marginHorizontal:Spacing.xl,
     marginBottom:Spacing.md,
-    backgroundColor:withAlpha(Colors.warn, 0.08),
+    backgroundColor:withAlpha(C.warn, 0.08),
     borderRadius:BorderRadius.lg,
     borderWidth:1,
-    borderColor:withAlpha(Colors.warn, 0.2),
+    borderColor:withAlpha(C.warn, 0.2),
     padding:Spacing.md,
   },
   trialText: {
     fontSize:FontSize.sm,
     fontFamily:'Outfit_700Bold',
-    color:Colors.warn,
+    color:C.warn,
   },
   section: {
     paddingHorizontal:Spacing.xl,
@@ -436,7 +442,7 @@ const s = StyleSheet.create({
   sectionTitle: {
     fontSize:FontSize.xs,
     fontFamily:'Outfit_700Bold',
-    color:Colors.text3,
+    color:C.text3,
     textTransform:'uppercase',
     letterSpacing:0.6,
     marginBottom:Spacing.md,
@@ -450,15 +456,15 @@ const s = StyleSheet.create({
     height:80,
     alignItems:'center',
     justifyContent:'center',
-    backgroundColor:withAlpha(Colors.danger, 0.08),
+    backgroundColor:withAlpha(C.danger, 0.08),
     borderRadius:BorderRadius.lg,
     borderWidth:1,
-    borderColor:withAlpha(Colors.danger, 0.2),
+    borderColor:withAlpha(C.danger, 0.2),
   },
   errorText: {
     fontSize:FontSize.sm,
     fontFamily:'Outfit_600SemiBold',
-    color:Colors.danger,
+    color:C.danger,
   },
   kpiGrid: {
     flexDirection:'row',
@@ -467,7 +473,7 @@ const s = StyleSheet.create({
   },
   kpiCard: {
     width:'47%',
-    backgroundColor:Colors.card,
+    backgroundColor:C.card,
     borderRadius:BorderRadius.lg,
     borderWidth:1,
     padding:Spacing.md,
@@ -484,7 +490,7 @@ const s = StyleSheet.create({
   kpiLabel: {
     fontSize:FontSize.xs,
     fontFamily:'Outfit_600SemiBold',
-    color:Colors.text3,
+    color:C.text3,
   },
   kpiValue: {
     fontSize:FontSize.md,
@@ -494,7 +500,7 @@ const s = StyleSheet.create({
   kpiSub: {
     fontSize:9,
     fontFamily:'Outfit_400Regular',
-    color:Colors.text4,
+    color:C.text4,
     marginTop:2,
   },
   actionsGrid: {
@@ -515,14 +521,14 @@ const s = StyleSheet.create({
   actionLabel: {
     fontSize:10,
     fontFamily:'Outfit_600SemiBold',
-    color:Colors.text3,
+    color:C.text3,
     textAlign:'center',
   },
   alertsCard: {
-    backgroundColor:Colors.card,
+    backgroundColor:C.card,
     borderRadius:BorderRadius.lg,
     borderWidth:1,
-    borderColor:withAlpha(Colors.warn, 0.2),
+    borderColor:withAlpha(C.warn, 0.2),
     overflow:'hidden',
   },
   alertRow: {
@@ -533,24 +539,24 @@ const s = StyleSheet.create({
   },
   alertRowBorder: {
     borderBottomWidth:1,
-    borderBottomColor:Colors.border,
+    borderBottomColor:C.border,
   },
   alertName: {
     flex:1,
     fontSize:FontSize.sm,
     fontFamily:'Outfit_600SemiBold',
-    color:Colors.text,
+    color:C.text,
   },
   alertQty: {
     fontSize:FontSize.sm,
     fontFamily:'JetBrainsMono_700Bold',
-    color:Colors.warn,
+    color:C.warn,
   },
   topCard: {
-    backgroundColor:Colors.card,
+    backgroundColor:C.card,
     borderRadius:BorderRadius.lg,
     borderWidth:1,
-    borderColor:Colors.border,
+    borderColor:C.border,
     overflow:'hidden',
   },
   topRow: {
@@ -561,18 +567,18 @@ const s = StyleSheet.create({
   },
   topRowBorder: {
     borderBottomWidth:1,
-    borderBottomColor:Colors.border,
+    borderBottomColor:C.border,
   },
   topRank: { fontSize:18, width:28 },
   topName: {
     flex:1,
     fontSize:FontSize.sm,
     fontFamily:'Outfit_600SemiBold',
-    color:Colors.text,
+    color:C.text,
   },
   topCa: {
     fontSize:FontSize.sm,
     fontFamily:'JetBrainsMono_700Bold',
-    color:Colors.accent,
+    color:C.accent,
   },
 })

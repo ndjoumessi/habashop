@@ -1,8 +1,10 @@
+import { useMemo } from 'react'
 import { View, Text, Modal, ScrollView, Pressable, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { CartItem } from '@/stores/posStore'
-import { Colors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
+import { useTheme } from '@/stores/appStore'
+import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
 import { PAY_MODES } from './payModes'
 
 // ── Ligne panier ─────────────────────────────────
@@ -13,6 +15,8 @@ function CartRow({
   i: (fr: string, en: string, es: string, it: string) => string
   onInc: () => void; onDec: () => void; onDel: () => void
 }) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   return (
     <View style={s.cartRow}>
       <Text style={{ fontSize: 26 }}>{item.emoji}</Text>
@@ -24,19 +28,19 @@ function CartRow({
         <Pressable style={s.qtyBtn} onPress={onDec} hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={`${i('Diminuer', 'Decrease', 'Disminuir', 'Diminuisci')} ${item.name?.trim()}`}>
-          <Ionicons name="remove" size={16} color={Colors.text} />
+          <Ionicons name="remove" size={16} color={C.text} />
         </Pressable>
         <Text style={s.qtyVal}>{item.quantity}</Text>
         <Pressable style={s.qtyBtn} onPress={onInc} hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={`${i('Augmenter', 'Increase', 'Aumentar', 'Aumenta')} ${item.name?.trim()}`}>
-          <Ionicons name="add" size={16} color={Colors.text} />
+          <Ionicons name="add" size={16} color={C.text} />
         </Pressable>
       </View>
       <Pressable onPress={onDel} hitSlop={8} style={s.delBtn}
         accessibilityRole="button"
         accessibilityLabel={`${i('Supprimer', 'Remove', 'Eliminar', 'Rimuovi')} ${item.name?.trim()}`}>
-        <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+        <Ionicons name="trash-outline" size={16} color={C.danger} />
       </Pressable>
     </View>
   )
@@ -64,6 +68,8 @@ export default function POSCart({
   visible, onClose, onCheckout, cart, paymentMode, cashGiven, subtotal, total,
   onUpdateQty, onRemove, onSetPaymentMode, onSetCashGiven, onClearCart, fmt, i,
 }: POSCartProps) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
   const totalQty = cart.reduce((n, c) => n + c.quantity, 0)
   const discAmt = subtotal - total
@@ -77,7 +83,7 @@ export default function POSCart({
           <Pressable onPress={onClose} hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={i('Fermer', 'Close', 'Cerrar', 'Chiudi')}>
-            <Ionicons name="close" size={24} color={Colors.text} />
+            <Ionicons name="close" size={24} color={C.text} />
           </Pressable>
         </View>
 
@@ -107,7 +113,7 @@ export default function POSCart({
             {discAmt > 0 && (
               <View style={s.recapRow}>
                 <Text style={s.recapLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')}</Text>
-                <Text style={[s.recapVal, { color: Colors.accent2 }]}>− {fmt(discAmt)}</Text>
+                <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(discAmt)}</Text>
               </View>
             )}
             <View style={[s.recapRow, s.recapTotal]}>
@@ -144,7 +150,7 @@ export default function POSCart({
                     style={s.cashInput}
                     keyboardType="numeric"
                     placeholder="0"
-                    placeholderTextColor={Colors.text4}
+                    placeholderTextColor={C.text4}
                     value={cashGiven ? String(cashGiven) : ''}
                     onChangeText={t => onSetCashGiven(Number(t.replace(/[^0-9.]/g, '')) || 0)}
                     accessibilityLabel={i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}
@@ -152,7 +158,7 @@ export default function POSCart({
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={s.recapLabel}>{i('Monnaie', 'Change', 'Cambio', 'Resto')}</Text>
-                  <Text style={[s.changeVal, { color: change >= 0 ? Colors.accent2 : Colors.danger }]}>
+                  <Text style={[s.changeVal, { color: change >= 0 ? C.accent2 : C.danger }]}>
                     {fmt(Math.max(0, change))}
                   </Text>
                 </View>
@@ -179,62 +185,62 @@ export default function POSCart({
   )
 }
 
-const s = StyleSheet.create({
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
-  sheet: { flex: 1, backgroundColor: Colors.bg },
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
+  sheet: { flex: 1, backgroundColor: C.bg },
   sheetHead: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: C.border,
   },
-  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
+  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   sheetFoot: {
     padding: Spacing.lg, gap: Spacing.sm,
-    borderTopWidth: 1, borderTopColor: Colors.border, backgroundColor: Colors.bg2,
+    borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.bg2,
   },
   cartRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
-    backgroundColor: Colors.card, borderRadius: BorderRadius.md,
-    borderWidth: 1, borderColor: Colors.border, padding: Spacing.md,
+    backgroundColor: C.card, borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: C.border, padding: Spacing.md,
   },
-  cartName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: Colors.text },
-  cartLine: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 2 },
+  cartName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
+  cartLine: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   qtyBox: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   qtyBtn: {
-    width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.bg4,
+    width: 28, height: 28, borderRadius: 8, backgroundColor: C.bg4,
     alignItems: 'center', justifyContent: 'center',
   },
-  qtyVal: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text, minWidth: 18, textAlign: 'center' },
+  qtyVal: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.text, minWidth: 18, textAlign: 'center' },
   delBtn: { padding: 4 },
 
   recapRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  recapLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3 },
-  recapVal: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text },
-  recapTotal: { borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: Spacing.sm, marginTop: 2 },
-  recapTotalLabel: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
-  recapTotalVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: Colors.primary3 },
+  recapLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3 },
+  recapVal: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
+  recapTotal: { borderTopWidth: 1, borderTopColor: C.border, paddingTop: Spacing.sm, marginTop: 2 },
+  recapTotalLabel: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.text },
+  recapTotalVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.primary3 },
 
   payGrid: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.sm },
   payChip: {
     flex: 1, alignItems: 'center', gap: 3, paddingVertical: Spacing.sm,
-    backgroundColor: Colors.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
-  payChipOn: { backgroundColor: withAlpha(Colors.primary, 0.15), borderColor: Colors.primary },
-  payTxt: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: Colors.text3 },
-  payTxtOn: { color: Colors.primary3 },
+  payChipOn: { backgroundColor: withAlpha(C.primary, 0.15), borderColor: C.primary },
+  payTxt: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
+  payTxtOn: { color: C.primary3 },
 
   cashWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.md, marginTop: Spacing.xs },
   cashInput: {
-    backgroundColor: Colors.bg3, borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md,
+    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md, height: 44, marginTop: 4,
-    fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text,
+    fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: C.text,
   },
   changeVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', marginTop: 4 },
 
   payBtn: {
-    backgroundColor: Colors.primary, borderRadius: BorderRadius.md, height: 52,
-    alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm, ...Shadow.colored(Colors.primary),
+    backgroundColor: C.primary, borderRadius: BorderRadius.md, height: 52,
+    alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm, ...Shadow.colored(C.primary),
   },
-  payBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
+  payBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   clearBtn: { alignItems: 'center', paddingVertical: Spacing.sm },
-  clearTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.danger },
+  clearTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger },
 })

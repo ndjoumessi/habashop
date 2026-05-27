@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import type { CartItem } from '@/stores/posStore'
-import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
+import { useTheme } from '@/stores/appStore'
+import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
 
 // ── Carte produit ────────────────────────────────
@@ -12,6 +14,8 @@ function ProductCard({
   fmt: (n: number) => string
   onPress: () => void
 }) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const out = (product.stockQty ?? 0) <= 0
   return (
     <TouchableOpacity
@@ -30,7 +34,7 @@ function ProductCard({
       )}
       {out && (
         <View style={s.prodOutBadge}>
-          <Ionicons name="close" size={11} color={Colors.white} />
+          <Ionicons name="close" size={11} color={C.white} />
         </View>
       )}
       <Text style={s.prodEmoji}>{product.emoji ?? '📦'}</Text>
@@ -54,10 +58,12 @@ interface POSProductGridProps {
 export default function POSProductGrid({
   filtered, cart, onAdd, fmt, i, isLoading, isError, onRetry,
 }: POSProductGridProps) {
+  const { C } = useTheme()
+  const s = useMemo(() => makeStyles(C), [C])
   const qtyOf = (id: string) => cart.find(c => c.productId === id)?.quantity ?? 0
 
   if (isLoading) {
-    return <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
+    return <View style={s.center}><ActivityIndicator color={C.primary} size="large" /></View>
   }
   if (isError) {
     return <ErrorState onRetry={onRetry} />
@@ -87,26 +93,26 @@ export default function POSProductGrid({
   )
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: ThemeColors) => StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
   prodCard: {
-    flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.lg,
-    borderWidth: 1, borderColor: Colors.border, padding: Spacing.sm,
+    flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg,
+    borderWidth: 1, borderColor: C.border, padding: Spacing.sm,
     alignItems: 'center', gap: 4, minHeight: 110, justifyContent: 'center',
     position: 'relative', ...Shadow.sm,
   },
   prodCardOut: { opacity: 0.45 },
   prodEmoji: { fontSize: 30 },
-  prodName: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: Colors.text, textAlign: 'center' },
-  prodPrice: { fontSize: 12, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent },
+  prodName: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text, textAlign: 'center' },
+  prodPrice: { fontSize: 12, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
   prodBadge: {
     position: 'absolute', top: 5, right: 5, minWidth: 20, height: 20, paddingHorizontal: 5,
-    borderRadius: 10, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', zIndex: 2,
+    borderRadius: 10, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', zIndex: 2,
   },
-  prodBadgeTxt: { fontSize: 11, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
+  prodBadgeTxt: { fontSize: 11, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   prodOutBadge: {
     position: 'absolute', top: 5, left: 5, width: 18, height: 18, borderRadius: 9,
-    backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center', zIndex: 2,
+    backgroundColor: C.danger, alignItems: 'center', justifyContent: 'center', zIndex: 2,
   },
 })
