@@ -12,7 +12,7 @@ import { useI18n, useFmt } from '@/stores/appStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import {
   Colors, Spacing, BorderRadius,
-  FontSize, Shadow,
+  FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
 
 // ── Composant KPI Card ───────────────────────────
@@ -346,10 +346,10 @@ const s = StyleSheet.create({
   },
   offlineBadge: {
     alignSelf:'flex-start', marginTop:6,
-    backgroundColor:'rgba(255,59,92,0.12)',
+    backgroundColor:withAlpha(Colors.danger, 0.12),
     paddingHorizontal:Spacing.sm, paddingVertical:3,
     borderRadius:BorderRadius.full,
-    borderWidth:1, borderColor:'rgba(255,59,92,0.25)',
+    borderWidth:1, borderColor:withAlpha(Colors.danger, 0.25),
   },
   offlineBadgeText: {
     fontSize:10, fontFamily:'Outfit_700Bold',

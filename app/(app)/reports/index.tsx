@@ -13,6 +13,7 @@ import * as Haptics from 'expo-haptics'
 import { salesApi, analyticsApi } from '@/services/api'
 import { useI18n, useFmt } from '@/stores/appStore'
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
+import ErrorState from '@/components/ui/ErrorState'
 
 type Period = 'today' | '7d' | '30d' | '90d'
 const PERIODS: { key: Period; days: number; fr: string; en: string; es: string; it: string }[] = [
@@ -184,11 +185,7 @@ export default function ReportsScreen() {
       {isLoading ? (
         <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
       ) : isError ? (
-        <Pressable style={s.center} onPress={() => refetch()}
-          accessibilityRole="button"
-          accessibilityLabel={i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}>
-          <Text style={s.errTxt}>⚠️ {i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}</Text>
-        </Pressable>
+        <ErrorState onRetry={() => refetch()} />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}

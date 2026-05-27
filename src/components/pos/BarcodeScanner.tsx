@@ -5,7 +5,7 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Haptics from 'expo-haptics'
 import { useI18n } from '@/stores/appStore'
-import { Colors, Spacing, BorderRadius, FontSize } from '@/constants/theme'
+import { Colors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
 
 interface BarcodeScannerProps {
   visible: boolean
@@ -127,27 +127,27 @@ const CORNER_SIZE = 24
 const CORNER_WIDTH = 3
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: Colors.black },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl, paddingTop: 60, paddingBottom: Spacing.md,
-    backgroundColor: '#000',
+    backgroundColor: Colors.black,
   },
   closeBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: withAlpha(Colors.white, 0.15), alignItems: 'center', justifyContent: 'center',
   },
-  closeBtnText: { color: '#fff', fontSize: 16, fontFamily: 'Outfit_700Bold' },
-  title: { color: '#fff', fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold' },
+  closeBtnText: { color: Colors.white, fontSize: 16, fontFamily: 'Outfit_700Bold' },
+  title: { color: Colors.white, fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold' },
   camera: { flex: 1 },
   overlay: { flex: 1 },
-  overlayTop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
+  overlayTop: { flex: 1, backgroundColor: withAlpha(Colors.black, 0.6) },
   overlayMiddle: { flexDirection: 'row', height: SCAN_SIZE },
-  overlaySide: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
+  overlaySide: { flex: 1, backgroundColor: withAlpha(Colors.black, 0.6) },
   scanZone: { width: SCAN_SIZE, height: SCAN_SIZE, position: 'relative', alignItems: 'center', justifyContent: 'center' },
-  overlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', paddingTop: Spacing.xl },
+  overlayBottom: { flex: 1, backgroundColor: withAlpha(Colors.black, 0.6), alignItems: 'center', paddingTop: Spacing.xl },
   hint: {
-    color: '#fff', fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular',
+    color: Colors.white, fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular',
     textAlign: 'center', paddingHorizontal: Spacing.xl,
   },
   corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE, borderColor: Colors.primary, borderWidth: CORNER_WIDTH },
@@ -160,13 +160,13 @@ const s = StyleSheet.create({
     width: 60, height: 60, borderRadius: 30, backgroundColor: Colors.accent2,
     alignItems: 'center', justifyContent: 'center',
   },
-  scanSuccessText: { color: '#fff', fontSize: 28, fontFamily: 'Outfit_900Black' },
+  scanSuccessText: { color: Colors.white, fontSize: 28, fontFamily: 'Outfit_900Black' },
   permContainer: { flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
   permIcon: { fontSize: 60, marginBottom: Spacing.xl },
   permTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: Colors.text, marginBottom: Spacing.md, textAlign: 'center' },
   permDesc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', marginBottom: Spacing.xxl, lineHeight: 22 },
   permBtn: { backgroundColor: Colors.primary, paddingHorizontal: Spacing.xxxl, paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: Spacing.md },
-  permBtnText: { color: '#fff', fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold' },
+  permBtnText: { color: Colors.white, fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold' },
   permClose: { paddingVertical: Spacing.md },
   permCloseText: { color: Colors.text3, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular' },
 })

@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, ActivityIndicator,
+  StyleSheet, ScrollView,
   KeyboardAvoidingView, Platform, Alert,
 } from 'react-native'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n } from '@/stores/appStore'
 import { authApi } from '@/services/api'
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
+import AccessibleButton from '@/components/ui/AccessibleButton'
 
 export default function LoginScreen() {
   const { setAuth } = useAuthStore()
@@ -109,19 +110,11 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={[s.btn, loading&&{opacity:0.6}]}
-            onPress={handleLogin} disabled={loading}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: loading, busy: loading }}
-            accessibilityLabel={i('Se connecter','Sign in','Iniciar sesión','Accedi')}>
-            {loading
-              ? <ActivityIndicator color={Colors.white} size="small"/>
-              : <Text style={s.btnText}>
-                  {i('Se connecter','Sign in','Iniciar sesión','Accedi')}
-                </Text>}
-          </TouchableOpacity>
+          <AccessibleButton
+            label={i('Se connecter','Sign in','Iniciar sesión','Accedi')}
+            onPress={handleLogin}
+            loading={loading}
+          />
 
           <View style={s.demoWrap}>
             <Text style={s.demoLabel}>

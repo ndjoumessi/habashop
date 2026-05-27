@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useAppStore, useI18n, useFmt, type Lang } from '@/stores/appStore'
 import { sendLocalNotification } from '@/services/notifications'
 import {
-  Colors, Spacing, BorderRadius, FontSize, Shadow,
+  Colors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
 
 const LANGS: { code: Lang; flag: string; label: string }[] = [
@@ -345,7 +345,7 @@ const s = StyleSheet.create({
   // Toggles
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, minHeight: 48 },
   toggleLabel: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text },
-  testNotifBtn: { margin: Spacing.md, paddingVertical: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: 'rgba(108,71,255,0.12)', borderWidth: 1, borderColor: 'rgba(108,71,255,0.3)', alignItems: 'center' },
+  testNotifBtn: { margin: Spacing.md, paddingVertical: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: withAlpha(Colors.primary, 0.12), borderWidth: 1, borderColor: withAlpha(Colors.primary, 0.3), alignItems: 'center' },
   testNotifText: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: Colors.primary3 },
 
   // Actions
@@ -356,7 +356,7 @@ const s = StyleSheet.create({
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
     paddingVertical: Spacing.md, borderRadius: BorderRadius.md,
-    backgroundColor: 'rgba(255,59,92,0.1)', borderWidth: 1, borderColor: 'rgba(255,59,92,0.25)',
+    backgroundColor: withAlpha(Colors.danger, 0.1), borderWidth: 1, borderColor: withAlpha(Colors.danger, 0.25),
   },
   logoutTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.danger },
 })

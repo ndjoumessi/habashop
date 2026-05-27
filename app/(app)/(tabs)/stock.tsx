@@ -12,6 +12,7 @@ import { useI18n, useFmt } from '@/stores/appStore'
 import {
   Colors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
+import ErrorState from '@/components/ui/ErrorState'
 
 type Filter = 'all' | 'low' | 'out'
 
@@ -218,11 +219,7 @@ export default function StockScreen() {
       {isLoading ? (
         <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
       ) : isError ? (
-        <Pressable style={s.center} onPress={() => refetch()}
-          accessibilityRole="button"
-          accessibilityLabel={i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}>
-          <Text style={s.errTxt}>⚠️ {i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}</Text>
-        </Pressable>
+        <ErrorState onRetry={() => refetch()} />
       ) : (
         <FlatList
           data={filtered}

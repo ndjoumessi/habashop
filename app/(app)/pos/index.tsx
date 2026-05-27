@@ -20,6 +20,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { enqueueAction } from '@/services/offlineQueue'
 import { sendWhatsAppTicket } from '@/services/whatsappTicket'
 import BarcodeScanner from '@/components/pos/BarcodeScanner'
+import ErrorState from '@/components/ui/ErrorState'
 
 const PAY_MODES = [
   { id: 'cash',   icon: '💵', fr: 'Espèces',  en: 'Cash',   es: 'Efectivo', it: 'Contanti' },
@@ -341,9 +342,7 @@ export default function POSScreen() {
       {isLoading ? (
         <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
       ) : isError ? (
-        <Pressable style={s.center} onPress={() => refetch()}>
-          <Text style={s.errTxt}>⚠️ {i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}</Text>
-        </Pressable>
+        <ErrorState onRetry={() => refetch()} />
       ) : (
         <FlatList
           data={filtered}
