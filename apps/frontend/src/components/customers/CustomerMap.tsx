@@ -213,7 +213,7 @@ export default function CustomerMap({
           {/* Search */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 10, padding: '7px 11px', marginBottom: 8 }}>
             <Search size={12} style={{ color: 'var(--text3)', flexShrink: 0 }} />
-            <input type="text" aria-label="Rechercher" placeholder={lang === 'fr' ? 'Rechercher…' : lang === 'en' ? 'Search…' : lang === 'es' ? 'Buscar…' : 'Cerca…'} value={search} onChange={e => setSearch(e.target.value)}
+            <input type="text" aria-label={lang === 'en' ? 'Search' : lang === 'es' ? 'Buscar' : lang === 'it' ? 'Cerca' : 'Rechercher'} placeholder={lang === 'fr' ? 'Rechercher…' : lang === 'en' ? 'Search…' : lang === 'es' ? 'Buscar…' : 'Cerca…'} value={search} onChange={e => setSearch(e.target.value)}
               style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 12, fontFamily: 'var(--font)' }} />
             {search && <button type="button" onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 12, lineHeight: 1 }}><X size={12} /></button>}
           </div>

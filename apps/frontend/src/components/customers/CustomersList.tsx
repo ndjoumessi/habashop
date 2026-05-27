@@ -38,16 +38,16 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
           <span className="panel-title">{t('customers_title')}</span>
           <div className="flex items-center gap-2">
             <div style={{ display: 'flex', background: 'var(--bg3)', borderRadius: 8, padding: 3, gap: 2 }}>
-              <button title="Vue tableau" onClick={() => setViewMode('table')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'table' ? 'var(--bg)' : 'transparent', color: viewMode === 'table' ? 'var(--p2)' : 'var(--text3)' }}>
+              <button title={i('Vue tableau', 'Table view', 'Vista tabla', 'Vista tabella')} onClick={() => setViewMode('table')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'table' ? 'var(--bg)' : 'transparent', color: viewMode === 'table' ? 'var(--p2)' : 'var(--text3)' }}>
                 <LayoutList size={14} />
               </button>
-              <button title="Vue grille" onClick={() => setViewMode('grid')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'grid' ? 'var(--bg)' : 'transparent', color: viewMode === 'grid' ? 'var(--p2)' : 'var(--text3)' }}>
+              <button title={i('Vue grille', 'Grid view', 'Vista cuadrícula', 'Vista griglia')} onClick={() => setViewMode('grid')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'grid' ? 'var(--bg)' : 'transparent', color: viewMode === 'grid' ? 'var(--p2)' : 'var(--text3)' }}>
                 <Grid3X3 size={14} />
               </button>
             </div>
             <button className="btn btn-ghost btn-sm" onClick={() => {
               exportCSV('habashop_clients',
-                ['Nom','Type','Téléphone','Email','Achats/mois','CA total','Points fidélité'],
+                [i('Nom','Name','Nombre','Nome'), i('Type','Type','Tipo','Tipo'), i('Téléphone','Phone','Teléfono','Telefono'), 'Email', i('Achats/mois','Purchases/month','Compras/mes','Acquisti/mese'), i('CA total','Total revenue','Ingresos totales','Ricavi totali'), i('Points fidélité','Loyalty points','Puntos fidelidad','Punti fedeltà')],
                 customers.map(c => [c.name, c.type, c.phone, c.email ?? '', c.purchasesPerMonth, c.totalCA, c.loyaltyPoints])
               )
               toast.success(i('Export CSV téléchargé', 'CSV exported', 'CSV exportado', 'CSV esportato'))
@@ -103,16 +103,16 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} max={c.maxLoyalty} /></td>
                     <td>
                       <div className="flex gap-1.5">
-                        <button className="btn btn-sm btn-ghost" title="Voir fiche" style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>
+                        <button className="btn btn-sm btn-ghost" title={i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>
                           <Eye size={12} />
                         </button>
-                        <button className="btn btn-sm btn-ghost" title="Modifier" style={{ cursor: 'pointer' }} onClick={() => {
+                        <button className="btn btn-sm btn-ghost" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} style={{ cursor: 'pointer' }} onClick={() => {
                           setEditCustomer(c)
                           setEditCustForm({ name:c.name, type:c.type, phone:c.phone, email:c.email??'', address:c.address??'', notes:c.notes??'' })
                           setCustEditMode(false)
                           setShowEditCustModal(true)
                         }}><Pencil size={12} /></button>
-                        <button className="btn btn-sm" title="Nouvelle vente"
+                        <button className="btn btn-sm" title={i('Nouvelle vente', 'New sale', 'Nueva venta', 'Nuova vendita')}
                           style={{ background: TYPE_CFG['Fidèle'].bg, color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
                           onClick={() => navigate('/app/pos', { state: { customer: c } })}>
                           <ShoppingCart size={11} />

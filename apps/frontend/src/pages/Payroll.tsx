@@ -52,7 +52,7 @@ const ROLE_T: Record<string, Record<string, string>> = {
 const roleLabel = (r: string, lang: string) => ROLE_T[r]?.[lang] ?? r
 
 function printBulletin(bulletin: PayRecord) {
-  const { currency } = useAppStore.getState()
+  const { currency, lang } = useAppStore.getState()
   const fmtP = (n: number) => formatCurrency(convertCurrency(n, 'XOF', currency), currency)
 
   const absencePenalty = Math.round(bulletin.absences * bulletin.baseSalary / 26)
@@ -74,8 +74,8 @@ function printBulletin(bulletin: PayRecord) {
 
   const body = `
     ${htmlInfoGrid([
-      { label: t('hr_new_employee').toUpperCase(), value: `<span style="font-size:16px;font-weight:900;">${bulletin.employee}</span><br><span style="font-size:12px;color:#888;">${bulletin.role}</span>` },
-      { label: t('doc_period').toUpperCase(),      value: `${bulletin.month}<br><span style="font-size:11px;color:#888;">Statut : <strong style="color:${bulletin.status === 'PAYÉ' ? '#059669' : '#d97706'}">${bulletin.status}</strong></span>` },
+      { label: t('hr_new_employee').toUpperCase(), value: `<span style="font-size:16px;font-weight:900;">${bulletin.employee}</span><br><span style="font-size:12px;color:#888;">${roleLabel(bulletin.role, lang)}</span>` },
+      { label: t('doc_period').toUpperCase(),      value: `${monthLabel(bulletin.month, lang)}<br><span style="font-size:11px;color:#888;">${lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'} : <strong style="color:${bulletin.status === 'PAYÉ' ? '#059669' : '#d97706'}">${statusLabel(bulletin.status, lang)}</strong></span>` },
     ])}
 
     <h2>${t('payslip_gains')}</h2>
@@ -107,7 +107,7 @@ function printBulletin(bulletin: PayRecord) {
       <div><div class="signature-line">${t('doc_signature_employee')}</div></div>
     </div>
   `
-  openPDF(`${t('payslip_title')} — ${bulletin.employee} — ${bulletin.month}`, body)
+  openPDF(`${t('payslip_title')} — ${bulletin.employee} — ${monthLabel(bulletin.month, lang)}`, body)
 }
 
 const STATUS_CFG: Record<PayStatus, { cls: string; label: string }> = {
@@ -186,7 +186,7 @@ function BulletinModal({ record, onClose, onPay, fmt }: {
                 HabaShop
               </div>
               <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginTop:2 }}>
-                {lang === 'en' ? 'Payslip' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Busta paga' : 'Bulletin de Paie'} — {record.month}
+                {lang === 'en' ? 'Payslip' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Busta paga' : 'Bulletin de Paie'} — {monthLabel(record.month, lang)}
               </div>
             </div>
           </div>

@@ -283,7 +283,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>TYPE</label>
-                  <select aria-label="TYPE" className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
+                  <select aria-label={i('Type', 'Type', 'Tipo', 'Tipo')} className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
                     <option value="Détail">{lang === 'en' ? 'Retail' : lang === 'es' ? 'Minorista' : lang === 'it' ? 'Dettaglio' : 'Détail'}</option>
                     <option value="Grossiste">{lang === 'en' ? 'Wholesale' : lang === 'es' ? 'Mayorista' : lang === 'it' ? 'Grossista' : 'Grossiste'}</option>
                     <option value="Semi-gros">{lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayor' : lang === 'it' ? 'Semi-ingrosso' : 'Semi-gros'}</option>
