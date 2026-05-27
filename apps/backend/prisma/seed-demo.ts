@@ -23,6 +23,14 @@ async function seedDemo() {
   const cashierId = user.id
   console.log('✅ Tenant:', tenantId, '| cashier:', cashierId)
 
+  // ── 1. Profil admin : nom générique fictif (captures Play Store publiques, zéro donnée perso) ──
+  await prisma.user.update({ where: { id: user.id }, data: { name: 'Amadou Compte Démo' } })
+  console.log('✅ Profil admin → "Amadou Compte Démo"')
+
+  // ── 2. Devise du tenant : XOF (Franc CFA Ouest, cohérent avec Dakar — pas XAF) ──
+  await prisma.tenant.update({ where: { id: tenantId }, data: { currency: 'XOF' } })
+  console.log('✅ Devise tenant → XOF')
+
   // ── Produits (Abidjan / contexte ivoirien) — upsert idempotent par id ──
   const products = [
     { sku: 'K-004', name: 'Riz local 25kg',        category: 'Céréales',   emoji: '🌾', buyPrice: 9000, sellPrice: 11000, stockQty: 40,  stockMin: 10 },
@@ -44,18 +52,26 @@ async function seedDemo() {
   }
   console.log('✅ Produits upsert:', products.length)
 
-  // ── Clients ──
+  // ── 3. Clients fictifs sénégalais (noms d'enseignes génériques, n° +221 non-attribuables) ──
+  // Soldes (totalRevenue) variés non nuls → l'écran ne montre pas "0 FCFA" partout.
   const customers = [
-    { id: 'demo2-cust-1', name: 'Grand Marché Adjamé',   type: 'Grossiste', phone: '+225 07 00 00 01', email: 'adjame@demo.ci', address: 'Marché Adjamé, Abidjan', loyaltyPoints: 520, totalRevenue: 1450000 },
-    { id: 'demo2-cust-2', name: 'Boutique Koumassi',     type: 'Semi-gros', phone: '+225 07 00 00 02', email: 'koumassi@demo.ci', address: 'Koumassi, Abidjan',     loyaltyPoints: 240, totalRevenue: 720000 },
-    { id: 'demo2-cust-3', name: 'Maquis Le Baoulé',      type: 'Fidèle',    phone: '+225 07 00 00 03', address: 'Cocody Angré, Abidjan', loyaltyPoints: 310, totalRevenue: 540000 },
-    { id: 'demo2-cust-4', name: 'Famille Yao',           type: 'Détail',    phone: '+225 07 00 00 04', address: 'Yopougon, Abidjan',    loyaltyPoints: 60,  totalRevenue: 95000 },
+    { id: 'demo-dkr-cust-1', name: 'Boutique Teranga', type: 'Grossiste', phone: '+221 77 000 01 01', email: 'teranga@demo.sn', address: 'Médina, Dakar',     loyaltyPoints: 480, totalRevenue: 1250000 },
+    { id: 'demo-dkr-cust-2', name: 'Espace Sahel',     type: 'Semi-gros', phone: '+221 77 000 02 02', email: 'sahel@demo.sn',   address: 'Plateau, Dakar',    loyaltyPoints: 260, totalRevenue: 685000 },
+    { id: 'demo-dkr-cust-3', name: 'Marché Médina',    type: 'Grossiste', phone: '+221 77 000 03 03', email: 'medina@demo.sn',  address: 'Médina, Dakar',     loyaltyPoints: 350, totalRevenue: 940000 },
+    { id: 'demo-dkr-cust-4', name: 'Comptoir Baobab',  type: 'Détail',    phone: '+221 77 000 04 04', email: 'baobab@demo.sn',  address: 'Sacré-Cœur, Dakar', loyaltyPoints: 120, totalRevenue: 215000 },
+    { id: 'demo-dkr-cust-5', name: 'Supérette Yoff',   type: 'Détail',    phone: '+221 77 000 05 05', email: 'yoff@demo.sn',    address: 'Yoff, Dakar',       loyaltyPoints: 40,  totalRevenue: 78000 },
   ]
   for (const c of customers) {
-    await prisma.customer.upsert({ where: { id: c.id }, update: {}, create: { tenantId, ...c } })
+    const { id, ...rest } = c
+    await prisma.customer.upsert({ where: { id }, update: { ...rest, deletedAt: null }, create: { tenantId, id, ...rest } })
       .catch(e => console.warn('customer', c.name, e.message))
   }
-  console.log('✅ Clients upsert:', customers.length)
+  // Purge des clients réels (données perso) : tout client du tenant à id NON-démo → soft-delete.
+  const purged = await prisma.customer.updateMany({
+    where: { tenantId, deletedAt: null, NOT: { id: { startsWith: 'demo' } } },
+    data: { deletedAt: new Date() },
+  })
+  console.log('✅ Clients fictifs upsert:', customers.length, '| clients réels retirés (soft-delete):', purged.count)
 
   // ── Employés (avatar = initiales, requis par le schéma) ──
   const employees = [
