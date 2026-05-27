@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, RefreshControl, ActivityIndicator,
@@ -10,6 +11,7 @@ import { analyticsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useFmt } from '@/stores/appStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
+import { updateWidgetNotification, isWidgetEnabled } from '@/services/widgetNotification'
 import {
   Colors, Spacing, BorderRadius,
   FontSize, Shadow, withAlpha,
@@ -67,7 +69,7 @@ function QuickAction({
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets()
   const { user, tenant } = useAuthStore()
-  const { i }   = useI18n()
+  const { i, lang } = useI18n()
   const { fmt } = useFmt()
   const { isOnline } = useNetworkStatus()
 
@@ -85,6 +87,14 @@ export default function DashboardScreen() {
   const topProds  = data?.topProducts  ?? []
   const alerts    = data?.stockAlerts  ?? []
   const firstName = user?.name?.split(' ')[0] ?? ''
+
+  // Met à jour le widget (notification persistante) quand les stats arrivent, si activé.
+  useEffect(() => {
+    if (!data || isLoading) return
+    isWidgetEnabled().then(en => {
+      if (en) updateWidgetNotification(data.salesToday ?? 0, data.transactionsToday ?? 0, fmt, lang)
+    }).catch(() => {})
+  }, [data, isLoading, fmt, lang])
 
   // Heure du jour
   const hour = new Date().getHours()

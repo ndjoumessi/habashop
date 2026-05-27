@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, Pressable, Switch, Alert,
@@ -9,6 +9,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '@/stores/authStore'
 import { useAppStore, useI18n, useFmt, type Lang } from '@/stores/appStore'
 import { sendLocalNotification } from '@/services/notifications'
+import { isBiometricAvailable, isBiometricEnabled, disableBiometric, type BiometricType } from '@/services/biometric'
+import { isWidgetEnabled, setWidgetEnabled, refreshWidget, dismissWidget } from '@/services/widgetNotification'
+import { registerWidgetRefresh, unregisterWidgetRefresh } from '@/tasks/backgroundRefresh'
 import {
   Colors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
@@ -54,6 +57,21 @@ export default function SettingsScreen() {
   const [notifStock, setNotifStock] = useState(true)
   const [notifSales, setNotifSales] = useState(true)
   const [notifTrial, setNotifTrial] = useState(true)
+  const [biometricAvailable, setBiometricAvailable] = useState(false)
+  const [biometricEnabled, setBiometricEnabled] = useState(false)
+  const [biometricType, setBiometricType] = useState<BiometricType>('fingerprint')
+  const [widgetEnabled, setWidget] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      const { available, type, enrolled } = await isBiometricAvailable()
+      setBiometricAvailable(available && enrolled)
+      setBiometricEnabled(await isBiometricEnabled())
+      setBiometricType(type)
+      setWidget(await isWidgetEnabled())
+    }
+    load()
+  }, [])
 
   const status = tenant?.status ?? 'active'
   const statusColor = status === 'suspended' ? Colors.danger : status === 'trial' ? Colors.warn : Colors.accent2
@@ -183,6 +201,29 @@ export default function SettingsScreen() {
               />
             </View>
           ))}
+          <View style={[s.toggleRow, s.listRowBorderTop]}>
+            <Text style={s.toggleLabel}>
+              {i('Widget CA du jour', 'Daily revenue widget', 'Widget CA diario', 'Widget CA giornaliero')}
+            </Text>
+            <Switch
+              value={widgetEnabled}
+              accessibilityRole="switch"
+              accessibilityLabel={i('Widget CA du jour', 'Daily revenue widget', 'Widget CA diario', 'Widget CA giornaliero')}
+              onValueChange={async (val) => {
+                setWidget(val)
+                await setWidgetEnabled(val)
+                if (val) {
+                  await registerWidgetRefresh()
+                  await refreshWidget(fmt, lang)
+                } else {
+                  await unregisterWidgetRefresh()
+                  await dismissWidget()
+                }
+              }}
+              trackColor={{ false: Colors.bg4, true: Colors.primary }}
+              thumbColor={Colors.white}
+            />
+          </View>
           <TouchableOpacity
             style={s.testNotifBtn}
             accessibilityRole="button"
@@ -207,6 +248,31 @@ export default function SettingsScreen() {
 
         {/* F) Sécurité */}
         <Section title={i('Sécurité', 'Security', 'Seguridad', 'Sicurezza')}>
+          {biometricAvailable && (
+            <View style={[s.toggleRow, s.listRowBorder]}>
+              <Text style={s.toggleLabel}>
+                {biometricType === 'face' ? 'Face ID' : i('Empreinte digitale', 'Fingerprint', 'Huella dactilar', 'Impronta digitale')}
+              </Text>
+              <Switch
+                value={biometricEnabled}
+                accessibilityRole="switch"
+                accessibilityLabel={biometricType === 'face' ? 'Face ID' : i('Empreinte digitale', 'Fingerprint', 'Huella dactilar', 'Impronta digitale')}
+                onValueChange={async (val) => {
+                  if (!val) {
+                    await disableBiometric()
+                    setBiometricEnabled(false)
+                  } else {
+                    Alert.alert(
+                      i('Reconnectez-vous', 'Please log in again', 'Vuelva a iniciar sesión', 'Acceda di nuovo'),
+                      i('Déconnectez-vous puis reconnectez-vous pour activer la biométrie.', 'Log out and log back in to enable biometrics.', 'Cierre sesión y vuelva a iniciar para activar la biometría.', 'Disconnettersi e riaccedere per attivare la biometria.'),
+                    )
+                  }
+                }}
+                trackColor={{ false: Colors.bg4, true: Colors.primary }}
+                thumbColor={Colors.white}
+              />
+            </View>
+          )}
           <TouchableOpacity
             style={s.actionRow}
             accessibilityRole="button"

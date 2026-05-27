@@ -1,14 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ScrollView,
   KeyboardAvoidingView, Platform, Alert,
 } from 'react-native'
+import * as Haptics from 'expo-haptics'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n } from '@/stores/appStore'
 import { authApi } from '@/services/api'
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
 import AccessibleButton from '@/components/ui/AccessibleButton'
+import {
+  isBiometricAvailable, isBiometricEnabled, authenticateWithBiometric,
+  enableBiometric, getSavedCredentials, type BiometricType,
+} from '@/services/biometric'
 
 export default function LoginScreen() {
   const { setAuth } = useAuthStore()
@@ -17,6 +22,49 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
   const [showPwd, setShowPwd]   = useState(false)
+  const [biometricAvailable, setBiometricAvailable] = useState(false)
+  const [biometricEnabled,   setBiometricEnabled]   = useState(false)
+  const [biometricType,      setBiometricType]      = useState<BiometricType>('unknown')
+  const [showEnableBiometric, setShowEnableBiometric] = useState(false)
+  const [pendingAuth, setPendingAuth] = useState<{ token: string; user: any; tenant: any; email: string; password: string } | null>(null)
+
+  // ── Connexion par biométrie (identifiants sauvegardés) ──
+  const handleBiometricLogin = async () => {
+    const icon = biometricType === 'face' ? '🔐' : '👆'
+    const success = await authenticateWithBiometric(
+      i(`${icon} Connexion HabaShop`, `${icon} HabaShop Login`, `${icon} Acceso HabaShop`, `${icon} Accesso HabaShop`),
+    )
+    if (!success) return
+    const creds = await getSavedCredentials()
+    if (!creds) { setBiometricEnabled(false); return }
+    setLoading(true)
+    try {
+      const data = await authApi.login(creds.email, creds.password)
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+      await setAuth(data.token, data.user, data.tenant)
+    } catch {
+      Alert.alert(
+        i('Connexion échouée', 'Login failed', 'Error de acceso', 'Accesso fallito'),
+        i('Session expirée. Connectez-vous manuellement.', 'Session expired. Please login manually.', 'Sesión expirada. Inicie sesión manualmente.', 'Sessione scaduta. Acceda manualmente.'),
+      )
+      setBiometricEnabled(false)
+      setLoading(false)
+    }
+  }
+
+  // Vérifie la biométrie au montage + auto-déclenche si activée.
+  useEffect(() => {
+    const checkBiometric = async () => {
+      const { available, type, enrolled } = await isBiometricAvailable()
+      const enabled = await isBiometricEnabled()
+      setBiometricAvailable(available && enrolled)
+      setBiometricEnabled(enabled)
+      setBiometricType(type)
+      if (available && enrolled && enabled) handleBiometricLogin()
+    }
+    checkBiometric()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -30,7 +78,18 @@ export default function LoginScreen() {
     }
     setLoading(true)
     try {
-      const data = await authApi.login(email.trim().toLowerCase(), password)
+      const em = email.trim().toLowerCase()
+      const data = await authApi.login(em, password)
+      // Propose la biométrie si dispo & pas encore activée. On diffère setAuth :
+      // sinon la redirection post-login démonte l'écran avant d'afficher la modale.
+      const { available, enrolled } = await isBiometricAvailable()
+      const enabled = await isBiometricEnabled()
+      if (available && enrolled && !enabled) {
+        setPendingAuth({ token: data.token, user: data.user, tenant: data.tenant, email: em, password })
+        setShowEnableBiometric(true)
+        setLoading(false)
+        return
+      }
       await setAuth(data.token, data.user, data.tenant)
     } catch (err: any) {
       Alert.alert(
@@ -111,6 +170,30 @@ export default function LoginScreen() {
             </View>
           </View>
 
+          {biometricAvailable && biometricEnabled && (
+            <TouchableOpacity
+              style={s.biometricBtn}
+              onPress={handleBiometricLogin}
+              accessibilityRole="button"
+              accessibilityLabel={i(
+                biometricType === 'face' ? 'Connexion par Face ID' : 'Connexion par empreinte',
+                biometricType === 'face' ? 'Sign in with Face ID' : 'Sign in with fingerprint',
+                biometricType === 'face' ? 'Acceder con Face ID' : 'Acceder con huella',
+                biometricType === 'face' ? 'Accedi con Face ID' : 'Accedi con impronta',
+              )}
+            >
+              <Text style={s.biometricIcon}>{biometricType === 'face' ? '🔐' : '👆'}</Text>
+              <Text style={s.biometricText}>
+                {i(
+                  biometricType === 'face' ? 'Se connecter avec Face ID' : 'Se connecter avec l\'empreinte',
+                  biometricType === 'face' ? 'Sign in with Face ID' : 'Sign in with fingerprint',
+                  biometricType === 'face' ? 'Acceder con Face ID' : 'Acceder con huella dactilar',
+                  biometricType === 'face' ? 'Accedi con Face ID' : 'Accedi con impronta digitale',
+                )}
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <AccessibleButton
             label={i('Se connecter','Sign in','Iniciar sesión','Accedi')}
             onPress={handleLogin}
@@ -133,6 +216,53 @@ export default function LoginScreen() {
         </View>
 
         <Text style={s.flags}>🇸🇳 🇨🇮 🇲🇱 🇧🇫 🇬🇳 🇨🇲</Text>
+
+        <Modal visible={showEnableBiometric} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowEnableBiometric(false)}>
+          <View style={s.biometricModal}>
+            <Text style={s.biometricModalIcon}>{biometricType === 'face' ? '🔐' : '👆'}</Text>
+            <Text style={s.biometricModalTitle}>
+              {i(
+                biometricType === 'face' ? 'Activer Face ID ?' : 'Activer l\'empreinte ?',
+                biometricType === 'face' ? 'Enable Face ID?' : 'Enable fingerprint login?',
+                biometricType === 'face' ? '¿Activar Face ID?' : '¿Activar huella dactilar?',
+                biometricType === 'face' ? 'Attivare Face ID?' : 'Attivare l\'impronta digitale?',
+              )}
+            </Text>
+            <Text style={s.biometricModalDesc}>
+              {i(
+                'Connectez-vous en un instant à chaque ouverture.',
+                'Sign in instantly every time you open the app.',
+                'Inicie sesión al instante cada vez que abra la app.',
+                'Acceda istantaneamente ogni volta che apre l\'app.',
+              )}
+            </Text>
+            <TouchableOpacity
+              style={s.biometricModalBtn}
+              accessibilityRole="button"
+              accessibilityLabel={i('Activer', 'Enable', 'Activar', 'Attiva')}
+              onPress={async () => {
+                if (!pendingAuth) { setShowEnableBiometric(false); return }
+                await enableBiometric(pendingAuth.email, pendingAuth.password)
+                setShowEnableBiometric(false)
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+                await setAuth(pendingAuth.token, pendingAuth.user, pendingAuth.tenant)
+              }}
+            >
+              <Text style={s.biometricModalBtnText}>{i('Activer', 'Enable', 'Activar', 'Attiva')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.biometricModalSkip}
+              accessibilityRole="button"
+              accessibilityLabel={i('Pas maintenant', 'Not now', 'Ahora no', 'Non ora')}
+              onPress={async () => {
+                setShowEnableBiometric(false)
+                if (pendingAuth) await setAuth(pendingAuth.token, pendingAuth.user, pendingAuth.tenant)
+              }}
+            >
+              <Text style={s.biometricModalSkipText}>{i('Pas maintenant', 'Not now', 'Ahora no', 'Non ora')}</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   )
@@ -201,5 +331,23 @@ const s = StyleSheet.create({
     fontSize:FontSize.sm,fontFamily:'Outfit_700Bold',
     color:Colors.primary3,
   },
+  biometricBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+    paddingVertical: Spacing.md, borderRadius: BorderRadius.lg,
+    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg3,
+  },
+  biometricIcon: { fontSize: 22 },
+  biometricText: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
+  biometricModal: {
+    flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center',
+    padding: Spacing.xxxl, gap: Spacing.lg,
+  },
+  biometricModalIcon: { fontSize: 72 },
+  biometricModalTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: Colors.text, textAlign: 'center' },
+  biometricModalDesc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text3, textAlign: 'center', lineHeight: 24 },
+  biometricModalBtn: { width: '100%', backgroundColor: Colors.primary, paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg, alignItems: 'center' },
+  biometricModalBtnText: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
+  biometricModalSkip: { paddingVertical: Spacing.md },
+  biometricModalSkipText: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text3 },
   flags:{textAlign:'center',fontSize:20,letterSpacing:6},
 })
