@@ -63,6 +63,13 @@
           "icon": "./assets/notification-icon.png",
           "color": "#6C47FF"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choisir une photo de profil HabaShop",
+          "cameraPermission": "Prendre une photo de profil HabaShop"
+        }
       ]
     ],
     "experiments": {

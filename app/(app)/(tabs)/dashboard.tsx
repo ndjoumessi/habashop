@@ -12,6 +12,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useFmt } from '@/stores/appStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { updateWidgetNotification, isWidgetEnabled } from '@/services/widgetNotification'
+import Avatar from '@/components/ui/Avatar'
+import { useProfilePhoto } from '@/hooks/useProfilePhoto'
 import {
   Colors, Spacing, BorderRadius,
   FontSize, Shadow, withAlpha,
@@ -72,6 +74,7 @@ export default function DashboardScreen() {
   const { i, lang } = useI18n()
   const { fmt } = useFmt()
   const { isOnline } = useNetworkStatus()
+  const { photoUri } = useProfilePhoto()
 
   // Charge les stats dashboard (API réelle : GET /api/dashboard/stats, réponse à plat)
   const {
@@ -118,6 +121,14 @@ export default function DashboardScreen() {
       >
         {/* ── Header ── */}
         <View style={s.header}>
+          <View style={{ marginRight: Spacing.md }}>
+            <Avatar
+              name={user?.name ?? 'U'}
+              photoUri={photoUri}
+              size={40}
+              onPress={() => router.push('/(app)/(tabs)/settings')}
+            />
+          </View>
           <View style={{ flex:1 }}>
             <Text style={s.greeting}>
               {greeting}, {firstName} 👋
@@ -131,21 +142,31 @@ export default function DashboardScreen() {
               </View>
             )}
           </View>
-          <TouchableOpacity
-            style={s.notifBtn}
-            onPress={() => {}}
-            accessibilityRole="button"
-            accessibilityLabel={i('Notifications', 'Notifications', 'Notificaciones', 'Notifiche')}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={22}
-              color={Colors.text2}
-            />
-            {(d.pendingOrders ?? 0) > 0 && (
-              <View style={s.notifDot}/>
-            )}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
+            <TouchableOpacity
+              style={s.searchBtn}
+              onPress={() => router.push('/(app)/search')}
+              accessibilityRole="button"
+              accessibilityLabel={i('Rechercher', 'Search', 'Buscar', 'Cerca')}
+            >
+              <Text style={{ fontSize: 18 }}>🔍</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.notifBtn}
+              onPress={() => {}}
+              accessibilityRole="button"
+              accessibilityLabel={i('Notifications', 'Notifications', 'Notificaciones', 'Notifiche')}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color={Colors.text2}
+              />
+              {(d.pendingOrders ?? 0) > 0 && (
+                <View style={s.notifDot}/>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Banner essai ── */}
@@ -266,6 +287,12 @@ export default function DashboardScreen() {
               color={Colors.accent}
               onPress={() => router.push('/(app)/reports')}
             />
+            <QuickAction
+              icon="📋"
+              label={i('Historique','History','Historial','Storico')}
+              color={Colors.primary3}
+              onPress={() => router.push('/(app)/sales')}
+            />
           </View>
         </View>
 
@@ -374,6 +401,11 @@ const s = StyleSheet.create({
     alignItems:'center', justifyContent:'center',
     borderWidth:1, borderColor:Colors.border,
     position:'relative',
+  },
+  searchBtn: {
+    width:44, height:44, borderRadius:BorderRadius.md,
+    backgroundColor:Colors.bg3, alignItems:'center', justifyContent:'center',
+    borderWidth:1, borderColor:Colors.border,
   },
   notifDot: {
     position:'absolute', top:6, right:6,

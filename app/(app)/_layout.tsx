@@ -15,6 +15,8 @@ export default function AppLayout() {
       <Stack.Screen name="pos/index"
         options={{presentation:'fullScreenModal'}}/>
       <Stack.Screen name="reports/index"/>
+      <Stack.Screen name="sales/index"/>
+      <Stack.Screen name="search/index"/>
     </Stack>
   )
 }

@@ -9,6 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '@/stores/authStore'
 import { useAppStore, useI18n, useFmt, type Lang } from '@/stores/appStore'
 import { sendLocalNotification } from '@/services/notifications'
+import { useProfilePhoto } from '@/hooks/useProfilePhoto'
+import Avatar from '@/components/ui/Avatar'
 import { isBiometricAvailable, isBiometricEnabled, disableBiometric, type BiometricType } from '@/services/biometric'
 import { isWidgetEnabled, setWidgetEnabled, refreshWidget, dismissWidget } from '@/services/widgetNotification'
 import { registerWidgetRefresh, unregisterWidgetRefresh } from '@/tasks/backgroundRefresh'
@@ -53,6 +55,7 @@ export default function SettingsScreen() {
   const setLang = useAppStore(s => s.setLang)
   const setCurrency = useAppStore(s => s.setCurrency)
   const qc = useQueryClient()
+  const { photoUri, loading: photoLoading, pickPhoto, takePhoto, removePhoto } = useProfilePhoto()
 
   const [notifStock, setNotifStock] = useState(true)
   const [notifSales, setNotifSales] = useState(true)
@@ -96,9 +99,23 @@ export default function SettingsScreen() {
         {/* A) Profil */}
         <View style={s.section}>
           <View style={s.profileCard}>
-            <View style={s.avatar}>
-              <Text style={s.avatarTxt}>{initials(user?.name)}</Text>
-            </View>
+            <Avatar
+              name={user?.name ?? 'U'}
+              photoUri={photoUri}
+              size={64}
+              loading={photoLoading}
+              showEdit
+              onPress={() => Alert.alert(
+                i('Photo de profil', 'Profile photo', 'Foto de perfil', 'Foto profilo'),
+                '',
+                [
+                  { text: i('Galerie', 'Gallery', 'Galería', 'Galleria'), onPress: pickPhoto },
+                  { text: i('Caméra', 'Camera', 'Cámara', 'Fotocamera'), onPress: takePhoto },
+                  ...(photoUri ? [{ text: i('Supprimer', 'Remove', 'Eliminar', 'Rimuovi'), style: 'destructive' as const, onPress: removePhoto }] : []),
+                  { text: i('Annuler', 'Cancel', 'Cancelar', 'Annulla'), style: 'cancel' as const },
+                ],
+              )}
+            />
             <View style={{ flex: 1 }}>
               <Text style={s.profileName} numberOfLines={1}>{user?.name ?? '—'}</Text>
               <Text style={s.profileEmail} numberOfLines={1}>{user?.email}</Text>
