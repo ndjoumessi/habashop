@@ -171,7 +171,9 @@ export default function ReportsScreen() {
       </View>
 
       {/* Sélecteur période */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.periods}>
+      {/* View flex (pas ScrollView) : le ScrollView horizontal Android clippait la descendante
+          du « j » (« jours » → « iours ») même avec lineHeight ; flexWrap gère le débordement. */}
+      <View style={s.periods}>
         {PERIODS.map(p => {
           const on = period === p.key
           return (
@@ -182,7 +184,7 @@ export default function ReportsScreen() {
             </Pressable>
           )
         })}
-      </ScrollView>
+      </View>
 
       {isLoading ? (
         <View style={s.center}><ActivityIndicator color={C.primary} size="large" /></View>
@@ -310,15 +312,13 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   title: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   subtitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
 
-  periods: { gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xs },
+  periods: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xs },
   chip: {
     paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full,
     backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
   },
   chipOn: { backgroundColor: C.primary, borderColor: C.primary },
-  // lineHeight explicite : le ScrollView horizontal (Android) rognait la descendante du « j »
-  // (« jours » → « iours »). Une boîte de ligne incluant la descendante corrige le clipping.
-  chipTxt: { fontSize: FontSize.xs, lineHeight: 14, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
+  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
   chipTxtOn: { color: C.white },
 
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
