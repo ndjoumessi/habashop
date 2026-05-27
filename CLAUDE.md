@@ -129,6 +129,7 @@ src/
     useNetworkStatus.ts    # détecte online/offline (NetInfo)
     useOfflineSync.ts      # sync auto de la file au retour réseau (monté via <OfflineSyncBridge/>)
     useProfilePhoto.ts     # photo de profil (image-picker + manipulator, persist AsyncStorage)
+    useResponsive.ts       # ⚠️ prep tablette/iOS — PRÊT mais PAS encore branché (ne pas supprimer, ≠ code mort)
   services/
     api.ts                 # axios + interceptor JWT + authApi/productsApi/salesApi/analyticsApi
     exchangeRate.ts        # taux FX live (open.er-api.com), cache 6h, fallback
@@ -347,6 +348,26 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
+## Notes Sprint 5 — prep iOS + tablette (infra seule)
+
+> Seule l'**infra** a été faite (zéro changement d'écran). Les **reflows tablette sont DIFFÉRÉS jusqu'à un iPad** (décidé avec Nelson) — cf. mémoire `tablet-ios-prep-deferred`.
+
+### `useResponsive` (`src/hooks/useResponsive.ts`)
+- Dérive `isTablet` (≥768) / `isLargeTablet` (≥1024) / `isLandscape` / `columns` / `sidebarWidth` / `cardWidth` / `fontSize` / `spacing` depuis `useWindowDimensions` (réactif à la rotation).
+- ⚠️ **PRÊT mais PAS encore consommé** par les écrans — ne pas le supprimer en croyant que c'est du code mort.
+
+### Config iOS (`app.json`)
+- `ios.supportsTablet: true` ; infoPlist : `NSCamera` + `NSPhotoLibrary` + `NSFaceID` + **`LSApplicationQueriesSchemes:["whatsapp"]`** (sinon `Linking.canOpenURL('whatsapp://')` renvoie `false` sur iOS).
+- `orientation: "portrait"` global **inchangé** — activer le paysage iPad fait partie du chantier différé (passer à `"default"` + orientations `~ipad`).
+- `eas.json` : profil `preview` ios `simulator:true` (build simulateur gratuit, sans compte Apple). Pas de `resourceClass` custom (valeurs type `m1-medium` obsolètes → défaut).
+
+### Reflows tablette — NON faits (à reprendre avec un iPad)
+- Dashboard (grille KPI adaptative + 2 colonnes paysage), POS (panier latéral permanent + `numColumns={columns}` avec `key={`grid-${columns}`}` — la `key` force le re-render), tab bar.
+- ⚠️ Tab bar latérale iPad : `tabBarPosition:'left'` va dans **`screenOptions`** (PAS comme prop de `<Tabs>`) ; supporté par React Navigation 7 (Expo Router 6).
+- iOS build réel = **compte Apple Developer requis** (cf. `IOS_BUILD.md`).
+
+---
+
 ## Historique des commits importants
 
 | Commit | Description |
@@ -371,6 +392,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | f76ea60 | feat: photo de profil + historique des ventes + recherche globale |
 | e1a9704 | feat: **Sprint 4** — thème clair/sombre + kiosque POS + push durci + Play Store prep |
 | 777a5e1 | fix: navbar — labels sur une ligne (fontSize 8 + numberOfLines + adjustsFontSizeToFit) |
+| edef04b | feat: **Sprint 5 (infra)** — useResponsive + config iOS (app.json/eas.json) + IOS_BUILD.md |
 
 ---
 
@@ -384,12 +406,15 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 - [x] Thème clair/sombre/système ✅ (Sprint 4)
 - [x] Mode kiosque POS ✅ (Sprint 4)
 - [x] Push notifications durci (projectId + routing par type) ✅ (Sprint 4)
-- [x] Google Play Store — préparation (`PLAY_STORE.md`) ✅ (Sprint 4)
-- [ ] **Tester sur device réel** (rien validé en runtime — cf. mémoire `runtime-verification-debt`) : surtout **thème clair sur tous les écrans**, kiosque, biométrie, scanner, offline, widget (dev build)
-- [ ] Publier sur Google Play Store (AAB production)
-- [ ] EAS Build iOS (compte Apple Developer ; ajouter `LSApplicationQueriesSchemes:["whatsapp"]`)
+- [x] Google Play Store — préparation (`PLAY_STORE.md` + feature graphic + page `/privacy` live) ✅ (Sprint 4)
+- [x] Prep iOS + responsive — `useResponsive`, config iOS `app.json`/`eas.json`, `IOS_BUILD.md` ✅ (Sprint 5, infra seule)
+- [x] Validé device : scanner, thème clair, kiosque (vente + PIN), encaissement→API ✅ (cf. `runtime-verification-debt`)
+- [ ] **Tester sur device le reste** : biométrie, offline+resync, widget, ticket WhatsApp, balayage clair écran par écran, TalkBack
+- [ ] Publier sur Google Play Store (AAB `1f6bf56f` prêt ; captures à faire)
+- [ ] **Layouts tablette** (Dashboard/POS/tab bar) — DIFFÉRÉS jusqu'à un iPad (`useResponsive` prêt ; cf. `tablet-ios-prep-deferred`)
+- [ ] EAS Build iOS réel (compte Apple Developer requis — cf. `IOS_BUILD.md`)
 - [ ] Notifications push réelles (token EAS, dev build)
 
 ---
 
-*Dernière mise à jour : Sprint 4 — 2026-05-27 (thème clair/sombre/système, mode kiosque POS, push durci, préparation Play Store, fix navbar).*
+*Dernière mise à jour : Sprint 5 — 2026-05-27 (prep iOS + responsive : useResponsive, config iOS app.json/eas.json, IOS_BUILD.md ; reflows tablette différés jusqu'à un iPad).*

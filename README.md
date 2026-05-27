@@ -180,14 +180,15 @@ habashop-mobile/
 ├── src/
 │   ├── constants/theme.ts        # Design tokens + DarkColors/LightColors/ThemeColors + withAlpha()
 │   ├── stores/                   # authStore (JWT+SecureStore) · appStore (i18n+devise+thème) · posStore
-│   ├── hooks/                    # useNetworkStatus · useOfflineSync · useProfilePhoto
+│   ├── hooks/                    # useNetworkStatus · useOfflineSync · useProfilePhoto · useResponsive (prep tablette)
 │   ├── services/                 # api · exchangeRate · notifications · offlineQueue · whatsappTicket · biometric · widgetNotification
 │   ├── tasks/                    # backgroundRefresh (widget)
 │   └── components/               # ui/ (AccessibleButton·Input·ErrorState·Avatar·ThemedView) · pos/ (BarcodeScanner·POSCart·POSProductGrid·POSConfirmModal)
 ├── assets/                       # icon · icon-ios (RGB sans alpha) · adaptive-icon · splash-icon · notification-icon · feature_graphic.png (Play Store 1024×500) + .svg source
 ├── app.json                      # Config Expo + EAS
 ├── eas.json                      # Profils de build EAS (development / preview / production)
-└── PLAY_STORE.md                 # Fiche store 4 langues + checklist publication (privacy URL → habashop.vercel.app/privacy)
+├── PLAY_STORE.md                 # Fiche store 4 langues + checklist publication (privacy URL → habashop.vercel.app/privacy)
+└── IOS_BUILD.md                  # Guide build/soumission App Store (prep iOS)
 ```
 
 ---
@@ -302,11 +303,13 @@ npx expo-doctor       # objectif 18/18 ✅
 - [x] Push notifications durci (projectId + routing)
 - [x] Préparation Google Play Store (`PLAY_STORE.md`)
 
-### 🔜 Sprint 5
-- [ ] Publication Google Play Store
-- [ ] EAS Build iOS (App Store)
-- [ ] Tests approfondis du thème clair (tous les écrans)
-- [ ] Mode tablette optimisé
+### 🟡 Sprint 5 — prep iOS + responsive (infra)
+- [x] Hook `useResponsive` (isTablet / isLandscape / columns / fontSize / spacing)
+- [x] Config iOS `app.json` (supportsTablet, permissions, WhatsApp) + `eas.json` (simulateur) + `IOS_BUILD.md`
+- [ ] Layouts tablette Dashboard / POS / tab bar — **différés jusqu'à un iPad** (`useResponsive` prêt)
+- [ ] EAS Build iOS réel (compte Apple Developer requis)
+- [ ] Publication Google Play Store (AAB prêt ; captures à faire)
+- [ ] Tester sur device : biométrie, offline, widget, ticket WhatsApp
 
 ---
 
