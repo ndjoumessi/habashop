@@ -1,13 +1,21 @@
+import { isUserActive } from '../lib/userStatus'
+
 /**
  * Middleware d'authentification JWT.
- * Vérifie le token et injecte `request.tenantId` depuis le payload signé.
- * @throws 401 si le token est absent, invalide ou expiré.
+ * Vérifie le token, injecte `request.tenantId`, puis (durcissement) rejette les
+ * comptes supprimés/désactivés via un check léger caché ~30s (cf. `isUserActive`) :
+ * un JWT stateless reste sinon valide 7 j après suppression du compte.
+ * @throws 401 si token absent/invalide/expiré, ou si le compte est supprimé/inactif.
  */
 export async function authenticate(request, reply): Promise<void> {
   try {
     await request.jwtVerify()
-    request.tenantId = (request.user)?.tenantId
   } catch {
-    reply.code(401).send({ error: 'Non autorisé' })
+    return reply.code(401).send({ error: 'Non autorisé' })
+  }
+  request.tenantId = (request.user)?.tenantId
+
+  if (!(await isUserActive((request.user)?.userId))) {
+    return reply.code(401).send({ error: 'Compte introuvable' })
   }
 }

@@ -34,6 +34,7 @@ model Tenant {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime? // null = actif (soft delete ; suppression de boutique par l'admin)
 
   users          User[]
   products       Product[]
@@ -46,6 +47,8 @@ model Tenant {
   auditLogs      AuditLog[]
   planRequests   PlanRequest[]
   pushTokens     PushToken[]
+
+  @@index([deletedAt])
 }
 
 model PlanRequest {
@@ -84,6 +87,7 @@ model User {
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime? // null = actif (soft delete ; suppression de compte)
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
   sales          Sale[]          @relation("SaleCashier")
@@ -92,6 +96,7 @@ model User {
   pushTokens     PushToken[]
 
   @@index([tenantId])
+  @@index([tenantId, deletedAt])
 }
 
 model Product {
@@ -269,6 +274,7 @@ model Employee {
   color     String    @default("#6C3FD6")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // null = actif (soft delete ; suppression de compte)
 
   tenant        Tenant          @relation(fields: [tenantId], references: [id])
   bonuses       EmployeeBonus[]
@@ -277,6 +283,7 @@ model Employee {
   @@index([tenantId])
   @@index([tenantId, dept])
   @@index([tenantId, isActive])
+  @@index([tenantId, deletedAt])
 }
 
 model EmployeeBonus {

@@ -11,6 +11,7 @@ import { redis } from './redis'
 
 // Routes
 import { authRoutes }         from './routes/auth'
+import { accountRoutes }      from './routes/account'
 import { tenantRoutes }       from './routes/tenant'
 import { productRoutes }      from './routes/products'
 import { customerRoutes }     from './routes/customers'
@@ -194,6 +195,7 @@ async function start() {
 
   // ─── ROUTES ─────────────────────────────
   await app.register(authRoutes)
+  await app.register(accountRoutes)
   await app.register(tenantRoutes)
   await app.register(productRoutes)
   await app.register(customerRoutes)
