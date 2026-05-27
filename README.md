@@ -184,9 +184,10 @@ habashop-mobile/
 │   ├── services/                 # api · exchangeRate · notifications · offlineQueue · whatsappTicket · biometric · widgetNotification
 │   ├── tasks/                    # backgroundRefresh (widget)
 │   └── components/               # ui/ (AccessibleButton·Input·ErrorState·Avatar·ThemedView) · pos/ (BarcodeScanner·POSCart·POSProductGrid·POSConfirmModal)
-├── assets/                       # icon · icon-ios (RGB sans alpha) · adaptive-icon · splash-icon · notification-icon
+├── assets/                       # icon · icon-ios (RGB sans alpha) · adaptive-icon · splash-icon · notification-icon · feature_graphic.png (Play Store 1024×500) + .svg source
 ├── app.json                      # Config Expo + EAS
-└── eas.json                      # Profils de build EAS (development / preview / production)
+├── eas.json                      # Profils de build EAS (development / preview / production)
+└── PLAY_STORE.md                 # Fiche store 4 langues + checklist publication (privacy URL → habashop.vercel.app/privacy)
 ```
 
 ---

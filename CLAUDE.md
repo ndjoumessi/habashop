@@ -103,6 +103,7 @@ Toute migration DB future = **PROD Railway** → **confirmer avec Nelson avant**
 - **Keystore Android :** `sH_oz3rpgx` (généré auto, stocké sur EAS)
 - **app.json :** `name: HabaShop`, `slug: habashop-mobile`, `version: 1.2.0` (pas de champ `sdkVersion` ni `owner`)
 - **Versionnage :** `appVersionSource: remote` dans `eas.json` → le `versionCode` Android est **géré côté EAS** (auto-incrément) ; celui d'`app.json` est **ignoré** au build.
+- **Play Store :** AAB v1.2.0 buildé (build `1f6bf56f`). Feature graphic prêt → `assets/feature_graphic.png` (1024×500, généré via Pillow + logo réel ; source `.svg`). Politique de confidentialité **requise** = page publique **`/privacy`** du web (live : https://habashop.vercel.app/privacy, code dans `../habashop` `apps/frontend/src/pages/Privacy.tsx`). Fiche + checklist complètes → `PLAY_STORE.md`.
 
 ---
 
