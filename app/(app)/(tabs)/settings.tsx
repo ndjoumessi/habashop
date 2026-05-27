@@ -102,7 +102,9 @@ export default function SettingsScreen() {
             {LANGS.map(l => {
               const on = lang === l.code
               return (
-                <Pressable key={l.code} style={[s.gridItem, on && s.gridItemOn]} onPress={() => handleSetLang(l.code)}>
+                <Pressable key={l.code} style={[s.gridItem, on && s.gridItemOn]} onPress={() => handleSetLang(l.code)}
+                  accessibilityRole="button" accessibilityState={{ selected: on }}
+                  accessibilityLabel={`${i('Langue', 'Language', 'Idioma', 'Lingua')} ${l.label}`}>
                   <Text style={{ fontSize: 22 }}>{l.flag}</Text>
                   <Text style={[s.gridLabel, on && s.gridLabelOn]}>{l.label}</Text>
                   {on && <Ionicons name="checkmark-circle" size={16} color={Colors.primary} style={s.gridCheck} />}
@@ -121,6 +123,9 @@ export default function SettingsScreen() {
                 key={c.code}
                 style={[s.listRow, idx < CURRENCIES.length - 1 && s.listRowBorder, on && s.listRowOn]}
                 onPress={() => setCurrency(c.code)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={`${c.code} ${i(c.fr, c.en, c.es, c.it)}`}
               >
                 <Text style={[s.curCode, on && { color: Colors.primary3 }]}>{c.code}</Text>
                 <Text style={s.curName} numberOfLines={1}>{i(c.fr, c.en, c.es, c.it)}</Text>
@@ -173,11 +178,15 @@ export default function SettingsScreen() {
                 onValueChange={row.set}
                 trackColor={{ false: Colors.bg4, true: Colors.primary }}
                 thumbColor={Colors.white}
+                accessibilityRole="switch"
+                accessibilityLabel={row.label}
               />
             </View>
           ))}
           <TouchableOpacity
             style={s.testNotifBtn}
+            accessibilityRole="button"
+            accessibilityLabel={i('Tester les notifications', 'Test notifications', 'Probar notificaciones', 'Testa notifiche')}
             onPress={async () => {
               await sendLocalNotification({
                 title: '🛍️ HabaShop',
@@ -200,6 +209,8 @@ export default function SettingsScreen() {
         <Section title={i('Sécurité', 'Security', 'Seguridad', 'Sicurezza')}>
           <TouchableOpacity
             style={s.actionRow}
+            accessibilityRole="button"
+            accessibilityLabel={i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}
             onPress={() => Alert.alert(
               i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password'),
               i('Changez votre mot de passe sur habashop.vercel.app', 'Change your password on habashop.vercel.app', 'Cambie su contraseña en habashop.vercel.app', 'Cambia la password su habashop.vercel.app'),
@@ -211,6 +222,8 @@ export default function SettingsScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.actionRow, s.listRowBorderTop]}
+            accessibilityRole="button"
+            accessibilityLabel={i('Données & confidentialité', 'Data & privacy', 'Datos y privacidad', 'Dati e privacy')}
             onPress={() => Alert.alert(
               i('Données & confidentialité', 'Data & privacy', 'Datos y privacidad', 'Dati e privacy'),
               i('Vos données sont chiffrées et hébergées en Europe (RGPD). Export et suppression disponibles sur le web.', 'Your data is encrypted and hosted in Europe (GDPR). Export and deletion available on the web.', 'Sus datos están cifrados y alojados en Europa (RGPD). Exportación y eliminación en la web.', 'I tuoi dati sono crittografati e ospitati in Europa (GDPR). Esportazione ed eliminazione sul web.'),
@@ -234,6 +247,8 @@ export default function SettingsScreen() {
           </View>
           <TouchableOpacity
             style={[s.actionRow, s.listRowBorderTop]}
+            accessibilityRole="button"
+            accessibilityLabel={i('Vider le cache', 'Clear cache', 'Vaciar caché', 'Svuota cache')}
             onPress={() => { qc.clear(); Alert.alert(i('✅ Cache vidé', '✅ Cache cleared', '✅ Caché vaciado', '✅ Cache svuotata'), '') }}
           >
             <Ionicons name="trash-bin-outline" size={18} color={Colors.text2} />
@@ -246,6 +261,8 @@ export default function SettingsScreen() {
         <View style={s.section}>
           <TouchableOpacity
             style={s.logoutBtn}
+            accessibilityRole="button"
+            accessibilityLabel={i('Se déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}
             onPress={() => Alert.alert(
               i('Déconnexion', 'Logout', 'Cerrar sesión', 'Disconnetti'),
               i('Voulez-vous vraiment vous déconnecter ?', 'Do you really want to log out?', '¿Seguro que desea cerrar sesión?', 'Vuoi davvero disconnetterti?'),

@@ -36,7 +36,9 @@ function ProductRow({
   const st = statusOf(product)
   const color = STATUS_COLOR[st]
   return (
-    <TouchableOpacity style={s.row} activeOpacity={0.7} onPress={onPress}>
+    <TouchableOpacity style={s.row} activeOpacity={0.7} onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${product.name?.trim() ?? ''}, ${product.stockQty ?? 0}, ${statusLabel(st)}`}>
       <Text style={{ fontSize: 28 }}>{product.emoji ?? '📦'}</Text>
       <View style={{ flex: 1 }}>
         <Text style={s.rowName} numberOfLines={1}>{product.name?.trim()}</Text>
@@ -126,7 +128,9 @@ export default function StockScreen() {
             {active.length} {i('produits actifs', 'active products', 'productos activos', 'prodotti attivi')}
           </Text>
         </View>
-        <Pressable style={s.headerBtn} onPress={() => refetch()} hitSlop={8}>
+        <Pressable style={s.headerBtn} onPress={() => refetch()} hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={i('Actualiser', 'Refresh', 'Actualizar', 'Aggiorna')}>
           <Ionicons name="refresh" size={20} color={Colors.text2} />
         </Pressable>
       </View>
@@ -145,6 +149,8 @@ export default function StockScreen() {
             <Pressable
               style={[s.alertChip, { backgroundColor: 'rgba(255,59,92,0.1)', borderColor: 'rgba(255,59,92,0.25)' }]}
               onPress={() => setFilter(filter === 'out' ? 'all' : 'out')}
+              accessibilityRole="button"
+              accessibilityLabel={`${outCnt} ${i('en rupture', 'out of stock', 'agotados', 'esauriti')}`}
             >
               <Text style={[s.alertChipTxt, { color: Colors.danger }]}>
                 🔴 {outCnt} {i('rupture', 'out of stock', 'agotado', 'esaurito')}{outCnt > 1 ? 's' : ''}
@@ -155,6 +161,8 @@ export default function StockScreen() {
             <Pressable
               style={[s.alertChip, { backgroundColor: 'rgba(255,184,0,0.1)', borderColor: 'rgba(255,184,0,0.25)' }]}
               onPress={() => setFilter(filter === 'low' ? 'all' : 'low')}
+              accessibilityRole="button"
+              accessibilityLabel={`${lowCnt} ${i('en stock bas', 'low stock', 'stock bajo', 'scorte basse')}`}
             >
               <Text style={[s.alertChipTxt, { color: Colors.warn }]}>
                 🟠 {lowCnt} {i('stock bas', 'low stock', 'stock bajo', 'scorte basse')}
@@ -174,9 +182,12 @@ export default function StockScreen() {
           value={search}
           onChangeText={setSearch}
           returnKeyType="search"
+          accessibilityLabel={i('Rechercher un produit', 'Search a product', 'Buscar un producto', 'Cerca un prodotto')}
         />
         {search.length > 0 && (
-          <Pressable onPress={() => setSearch('')} hitSlop={8}>
+          <Pressable onPress={() => setSearch('')} hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={i('Effacer la recherche', 'Clear search', 'Borrar búsqueda', 'Cancella ricerca')}>
             <Ionicons name="close-circle" size={18} color={Colors.text3} />
           </Pressable>
         )}
@@ -191,7 +202,9 @@ export default function StockScreen() {
         ] as { key: Filter; label: string; count: number }[]).map(t => {
           const on = filter === t.key
           return (
-            <Pressable key={t.key} style={[s.tab, on && s.tabOn]} onPress={() => setFilter(t.key)}>
+            <Pressable key={t.key} style={[s.tab, on && s.tabOn]} onPress={() => setFilter(t.key)}
+              accessibilityRole="button" accessibilityState={{ selected: on }}
+              accessibilityLabel={`${t.label}, ${t.count}`}>
               <Text style={[s.tabTxt, on && s.tabTxtOn]}>{t.label}</Text>
               <View style={[s.tabBadge, on && s.tabBadgeOn]}>
                 <Text style={[s.tabBadgeTxt, on && s.tabBadgeTxtOn]}>{t.count}</Text>
@@ -205,7 +218,9 @@ export default function StockScreen() {
       {isLoading ? (
         <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
       ) : isError ? (
-        <Pressable style={s.center} onPress={() => refetch()}>
+        <Pressable style={s.center} onPress={() => refetch()}
+          accessibilityRole="button"
+          accessibilityLabel={i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}>
           <Text style={s.errTxt}>⚠️ {i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}</Text>
         </Pressable>
       ) : (
@@ -229,7 +244,9 @@ export default function StockScreen() {
         <View style={s.sheet}>
           <View style={s.sheetHead}>
             <Text style={s.sheetTitle}>{i('Modifier le stock', 'Edit stock', 'Editar stock', 'Modifica stock')}</Text>
-            <Pressable onPress={() => setEditP(null)} hitSlop={8}>
+            <Pressable onPress={() => setEditP(null)} hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={i('Fermer', 'Close', 'Cerrar', 'Chiudi')}>
               <Ionicons name="close" size={24} color={Colors.text} />
             </Pressable>
           </View>
@@ -265,7 +282,9 @@ export default function StockScreen() {
               <View>
                 <Text style={s.editStatLabel}>{i('Nouvelle quantité', 'New quantity', 'Nueva cantidad', 'Nuova quantità')}</Text>
                 <View style={s.qtyEditor}>
-                  <Pressable style={s.qtyEditBtn} onPress={() => setNewQty(q => Math.max(0, q - 1))}>
+                  <Pressable style={s.qtyEditBtn} onPress={() => setNewQty(q => Math.max(0, q - 1))}
+                    accessibilityRole="button"
+                    accessibilityLabel={i('Diminuer la quantité', 'Decrease quantity', 'Disminuir cantidad', 'Diminuisci quantità')}>
                     <Ionicons name="remove" size={22} color={Colors.text} />
                   </Pressable>
                   <TextInput
@@ -273,8 +292,11 @@ export default function StockScreen() {
                     keyboardType="numeric"
                     value={String(newQty)}
                     onChangeText={t => setNewQty(Number(t.replace(/[^0-9]/g, '')) || 0)}
+                    accessibilityLabel={i('Nouvelle quantité', 'New quantity', 'Nueva cantidad', 'Nuova quantità')}
                   />
-                  <Pressable style={s.qtyEditBtn} onPress={() => setNewQty(q => q + 1)}>
+                  <Pressable style={s.qtyEditBtn} onPress={() => setNewQty(q => q + 1)}
+                    accessibilityRole="button"
+                    accessibilityLabel={i('Augmenter la quantité', 'Increase quantity', 'Aumentar cantidad', 'Aumenta quantità')}>
                     <Ionicons name="add" size={22} color={Colors.text} />
                   </Pressable>
                 </View>
@@ -285,6 +307,9 @@ export default function StockScreen() {
                 style={[s.saveBtn, (updateMut.isPending || newQty === (editP.stockQty ?? 0)) && { opacity: 0.5 }]}
                 disabled={updateMut.isPending || newQty === (editP.stockQty ?? 0)}
                 onPress={() => updateMut.mutate({ id: editP.id, stockQty: newQty })}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: updateMut.isPending || newQty === (editP.stockQty ?? 0), busy: updateMut.isPending }}
+                accessibilityLabel={i('Enregistrer le stock', 'Save stock', 'Guardar stock', 'Salva stock')}
               >
                 {updateMut.isPending
                   ? <ActivityIndicator color={Colors.white} size="small" />

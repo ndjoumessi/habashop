@@ -49,10 +49,14 @@ export default function BarcodeScanner({
               'Consenti l\'accesso alla fotocamera per scansionare i codici a barre.',
             )}
           </Text>
-          <TouchableOpacity style={s.permBtn} onPress={requestPermission}>
+          <TouchableOpacity style={s.permBtn} onPress={requestPermission}
+            accessibilityRole="button"
+            accessibilityLabel={i('Autoriser la caméra', 'Allow camera', 'Permitir cámara', 'Consenti fotocamera')}>
             <Text style={s.permBtnText}>{i('Autoriser', 'Allow', 'Permitir', 'Consenti')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.permClose} onPress={onClose}>
+          <TouchableOpacity style={s.permClose} onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel={i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}>
             <Text style={s.permCloseText}>{i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</Text>
           </TouchableOpacity>
         </View>
@@ -64,7 +68,9 @@ export default function BarcodeScanner({
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={s.container}>
         <View style={s.header}>
-          <TouchableOpacity onPress={onClose} style={s.closeBtn}>
+          <TouchableOpacity onPress={onClose} style={s.closeBtn}
+            accessibilityRole="button"
+            accessibilityLabel={i('Fermer le scanner', 'Close scanner', 'Cerrar escáner', 'Chiudi scanner')}>
             <Text style={s.closeBtnText}>✕</Text>
           </TouchableOpacity>
           <Text style={s.title}>{i('Scanner', 'Scan', 'Escanear', 'Scansiona')}</Text>

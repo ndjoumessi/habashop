@@ -151,14 +151,18 @@ export default function ReportsScreen() {
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}>
+        <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={i('Retour', 'Back', 'Atrás', 'Indietro')}>
           <Ionicons name="chevron-back" size={22} color={Colors.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={s.title}>{i('Rapports', 'Reports', 'Informes', 'Rapporti')}</Text>
           <Text style={s.subtitle}>{periodLabel}</Text>
         </View>
-        <Pressable style={s.headerBtn} onPress={exportCsv} hitSlop={8}>
+        <Pressable style={s.headerBtn} onPress={exportCsv} hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}>
           <Ionicons name="download-outline" size={20} color={Colors.text} />
         </Pressable>
       </View>
@@ -168,7 +172,9 @@ export default function ReportsScreen() {
         {PERIODS.map(p => {
           const on = period === p.key
           return (
-            <Pressable key={p.key} onPress={() => setPeriod(p.key)} style={[s.chip, on && s.chipOn]}>
+            <Pressable key={p.key} onPress={() => setPeriod(p.key)} style={[s.chip, on && s.chipOn]}
+              accessibilityRole="button" accessibilityState={{ selected: on }}
+              accessibilityLabel={i(p.fr, p.en, p.es, p.it)}>
               <Text style={[s.chipTxt, on && s.chipTxtOn]}>{i(p.fr, p.en, p.es, p.it)}</Text>
             </Pressable>
           )
@@ -178,7 +184,9 @@ export default function ReportsScreen() {
       {isLoading ? (
         <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
       ) : isError ? (
-        <Pressable style={s.center} onPress={() => refetch()}>
+        <Pressable style={s.center} onPress={() => refetch()}
+          accessibilityRole="button"
+          accessibilityLabel={i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}>
           <Text style={s.errTxt}>⚠️ {i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}</Text>
         </Pressable>
       ) : (
@@ -273,7 +281,9 @@ export default function ReportsScreen() {
 
           {/* Export */}
           <View style={s.section}>
-            <Pressable style={s.exportBtn} onPress={exportCsv}>
+            <Pressable style={s.exportBtn} onPress={exportCsv}
+              accessibilityRole="button"
+              accessibilityLabel={i('Exporter les ventes en CSV', 'Export sales to CSV', 'Exportar ventas a CSV', 'Esporta vendite in CSV')}>
               <Ionicons name="download-outline" size={18} color={Colors.white} />
               <Text style={s.exportTxt}>{i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}</Text>
             </Pressable>

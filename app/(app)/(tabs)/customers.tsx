@@ -31,7 +31,9 @@ const waHref  = (p?: string) => `whatsapp://send?phone=${(p ?? '').replace(/[^0-
 function CustomerCard({ c, fmt, onPress }: { c: any; fmt: (n: number) => string; onPress: () => void }) {
   const color = typeColor(c.type)
   return (
-    <TouchableOpacity style={s.card} activeOpacity={0.7} onPress={onPress}>
+    <TouchableOpacity style={s.card} activeOpacity={0.7} onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${c.name?.trim() ?? ''}, ${c.type ?? ''}, ${fmt(c.totalRevenue ?? 0)}`}>
       <View style={[s.avatar, { backgroundColor: color }]}>
         <Text style={s.avatarTxt}>{initials(c.name)}</Text>
       </View>
@@ -99,7 +101,11 @@ export default function CustomersScreen() {
           <Text style={s.title}>👥 {i('Clients', 'Customers', 'Clientes', 'Clienti')}</Text>
           <Text style={s.subtitle}>{customers.length} {i('clients', 'customers', 'clientes', 'clienti')}</Text>
         </View>
-        <Pressable style={s.headerBtn} onPress={() => { setShowSearch(v => !v); if (showSearch) setSearch('') }} hitSlop={8}>
+        <Pressable style={s.headerBtn} onPress={() => { setShowSearch(v => !v); if (showSearch) setSearch('') }} hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={showSearch
+            ? i('Fermer la recherche', 'Close search', 'Cerrar búsqueda', 'Chiudi ricerca')
+            : i('Rechercher', 'Search', 'Buscar', 'Cerca')}>
           <Ionicons name={showSearch ? 'close' : 'search'} size={20} color={Colors.text2} />
         </Pressable>
       </View>
@@ -116,9 +122,12 @@ export default function CustomersScreen() {
             onChangeText={setSearch}
             autoFocus
             returnKeyType="search"
+            accessibilityLabel={i('Rechercher un client', 'Search a customer', 'Buscar un cliente', 'Cerca un cliente')}
           />
           {search.length > 0 && (
-            <Pressable onPress={() => setSearch('')} hitSlop={8}>
+            <Pressable onPress={() => setSearch('')} hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={i('Effacer la recherche', 'Clear search', 'Borrar búsqueda', 'Cancella ricerca')}>
               <Ionicons name="close-circle" size={18} color={Colors.text3} />
             </Pressable>
           )}
@@ -136,7 +145,9 @@ export default function CustomersScreen() {
       {isLoading ? (
         <View style={s.center}><ActivityIndicator color={Colors.primary} size="large" /></View>
       ) : isError ? (
-        <Pressable style={s.center} onPress={() => refetch()}>
+        <Pressable style={s.center} onPress={() => refetch()}
+          accessibilityRole="button"
+          accessibilityLabel={i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}>
           <Text style={s.errTxt}>⚠️ {i('Erreur — toucher pour réessayer', 'Error — tap to retry', 'Error — toca para reintentar', 'Errore — tocca per riprovare')}</Text>
         </Pressable>
       ) : (
@@ -164,7 +175,9 @@ export default function CustomersScreen() {
         <View style={s.sheet}>
           <View style={s.sheetHead}>
             <Text style={s.sheetTitle}>{i('Fiche client', 'Customer', 'Cliente', 'Scheda cliente')}</Text>
-            <Pressable onPress={() => setSel(null)} hitSlop={8}>
+            <Pressable onPress={() => setSel(null)} hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={i('Fermer', 'Close', 'Cerrar', 'Chiudi')}>
               <Ionicons name="close" size={24} color={Colors.text} />
             </Pressable>
           </View>
@@ -203,14 +216,18 @@ export default function CustomersScreen() {
               {/* Contact */}
               <View style={s.contactCard}>
                 {!!sel.phone && (
-                  <TouchableOpacity style={s.contactRow} onPress={() => openLink(telHref(sel.phone), i('Appel impossible', 'Cannot call', 'No se puede llamar', 'Impossibile chiamare'))}>
+                  <TouchableOpacity style={s.contactRow} onPress={() => openLink(telHref(sel.phone), i('Appel impossible', 'Cannot call', 'No se puede llamar', 'Impossibile chiamare'))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${i('Appeler', 'Call', 'Llamar', 'Chiama')} ${sel.phone}`}>
                     <Ionicons name="call-outline" size={18} color={Colors.accent2} />
                     <Text style={s.contactTxt}>{sel.phone}</Text>
                     <Ionicons name="chevron-forward" size={15} color={Colors.text3} />
                   </TouchableOpacity>
                 )}
                 {!!sel.email && (
-                  <TouchableOpacity style={[s.contactRow, !!sel.phone && s.listRowBorderTop]} onPress={() => openLink(`mailto:${sel.email}`, i('Email impossible', 'Cannot email', 'No se puede enviar', 'Impossibile inviare'))}>
+                  <TouchableOpacity style={[s.contactRow, !!sel.phone && s.listRowBorderTop]} onPress={() => openLink(`mailto:${sel.email}`, i('Email impossible', 'Cannot email', 'No se puede enviar', 'Impossibile inviare'))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${i('Envoyer un email à', 'Email', 'Enviar email a', 'Invia email a')} ${sel.email}`}>
                     <Ionicons name="mail-outline" size={18} color={Colors.accent3} />
                     <Text style={s.contactTxt} numberOfLines={1}>{sel.email}</Text>
                     <Ionicons name="chevron-forward" size={15} color={Colors.text3} />
@@ -230,11 +247,15 @@ export default function CustomersScreen() {
               {/* Actions */}
               {!!sel.phone && (
                 <View style={s.actions}>
-                  <TouchableOpacity style={[s.actionBtn, { backgroundColor: Colors.accent2 }]} onPress={() => openLink(telHref(sel.phone), i('Appel impossible', 'Cannot call', 'No se puede llamar', 'Impossibile chiamare'))}>
+                  <TouchableOpacity style={[s.actionBtn, { backgroundColor: Colors.accent2 }]} onPress={() => openLink(telHref(sel.phone), i('Appel impossible', 'Cannot call', 'No se puede llamar', 'Impossibile chiamare'))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${i('Appeler', 'Call', 'Llamar', 'Chiama')} ${sel.name?.trim() ?? ''}`}>
                     <Ionicons name="call" size={16} color={Colors.white} />
                     <Text style={s.actionTxt}>{i('Appeler', 'Call', 'Llamar', 'Chiama')}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#25D366' }]} onPress={() => openLink(waHref(sel.phone), i('WhatsApp non installé', 'WhatsApp not installed', 'WhatsApp no instalado', 'WhatsApp non installato'))}>
+                  <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#25D366' }]} onPress={() => openLink(waHref(sel.phone), i('WhatsApp non installé', 'WhatsApp not installed', 'WhatsApp no instalado', 'WhatsApp non installato'))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`WhatsApp ${sel.name?.trim() ?? ''}`}>
                     <Ionicons name="logo-whatsapp" size={16} color={Colors.white} />
                     <Text style={s.actionTxt}>WhatsApp</Text>
                   </TouchableOpacity>

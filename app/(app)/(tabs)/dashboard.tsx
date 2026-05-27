@@ -51,6 +51,8 @@ function QuickAction({
       style={s.action}
       onPress={onPress}
       activeOpacity={0.75}
+      accessibilityRole="button"
+      accessibilityLabel={label}
     >
       <View style={[s.actionIcon,
         { backgroundColor:`${color}18` }]}>
@@ -122,6 +124,8 @@ export default function DashboardScreen() {
           <TouchableOpacity
             style={s.notifBtn}
             onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel={i('Notifications', 'Notifications', 'Notificaciones', 'Notifiche')}
           >
             <Ionicons
               name="notifications-outline"
@@ -173,6 +177,8 @@ export default function DashboardScreen() {
             <TouchableOpacity
               style={s.errorWrap}
               onPress={() => refetch()}
+              accessibilityRole="button"
+              accessibilityLabel={i('Erreur — Appuyez pour réessayer', 'Error — Tap to retry', 'Error — Toca para reintentar', 'Errore — Tocca per riprovare')}
             >
               <Text style={s.errorText}>
                 ⚠️ {i(

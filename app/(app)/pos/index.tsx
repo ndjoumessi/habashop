@@ -43,6 +43,9 @@ function ProductCard({
       activeOpacity={0.7}
       disabled={out}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: out }}
+      accessibilityLabel={`${product.name?.trim() ?? ''}, ${fmt(product.sellPrice ?? 0)}`}
     >
       {qtyInCart > 0 && (
         <View style={s.prodBadge}>
@@ -63,9 +66,10 @@ function ProductCard({
 
 // ── Ligne panier ─────────────────────────────────
 function CartRow({
-  item, fmt, onInc, onDec, onDel,
+  item, fmt, i, onInc, onDec, onDel,
 }: {
   item: CartItem; fmt: (n: number) => string
+  i: (fr: string, en: string, es: string, it: string) => string
   onInc: () => void; onDec: () => void; onDel: () => void
 }) {
   return (
@@ -76,15 +80,21 @@ function CartRow({
         <Text style={s.cartLine}>{fmt(item.price)} × {item.quantity} = {fmt(item.price * item.quantity)}</Text>
       </View>
       <View style={s.qtyBox}>
-        <Pressable style={s.qtyBtn} onPress={onDec} hitSlop={6}>
+        <Pressable style={s.qtyBtn} onPress={onDec} hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={`${i('Diminuer', 'Decrease', 'Disminuir', 'Diminuisci')} ${item.name?.trim()}`}>
           <Ionicons name="remove" size={16} color={Colors.text} />
         </Pressable>
         <Text style={s.qtyVal}>{item.quantity}</Text>
-        <Pressable style={s.qtyBtn} onPress={onInc} hitSlop={6}>
+        <Pressable style={s.qtyBtn} onPress={onInc} hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={`${i('Augmenter', 'Increase', 'Aumentar', 'Aumenta')} ${item.name?.trim()}`}>
           <Ionicons name="add" size={16} color={Colors.text} />
         </Pressable>
       </View>
-      <Pressable onPress={onDel} hitSlop={8} style={s.delBtn}>
+      <Pressable onPress={onDel} hitSlop={8} style={s.delBtn}
+        accessibilityRole="button"
+        accessibilityLabel={`${i('Supprimer', 'Remove', 'Eliminar', 'Rimuovi')} ${item.name?.trim()}`}>
         <Ionicons name="trash-outline" size={16} color={Colors.danger} />
       </Pressable>
     </View>
@@ -257,15 +267,21 @@ export default function POSScreen() {
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
       <View style={s.header}>
-        <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}>
+        <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={i('Fermer la caisse', 'Close register', 'Cerrar caja', 'Chiudi cassa')}>
           <Ionicons name="close" size={22} color={Colors.text} />
         </Pressable>
         <Text style={s.headerTitle}>{i('Caisse', 'Register', 'Caja', 'Cassa')}</Text>
         <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
-          <Pressable style={s.headerBtn} onPress={() => setShowScanner(true)} hitSlop={8}>
+          <Pressable style={s.headerBtn} onPress={() => setShowScanner(true)} hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={i('Scanner un code-barres', 'Scan a barcode', 'Escanear código', 'Scansiona codice')}>
             <Ionicons name="scan-outline" size={22} color={Colors.text} />
           </Pressable>
-          <Pressable style={s.headerBtn} onPress={() => setShowCart(true)} hitSlop={8}>
+          <Pressable style={s.headerBtn} onPress={() => setShowCart(true)} hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`${i('Panier', 'Cart', 'Carrito', 'Carrello')}, ${totalQty}`}>
             <Ionicons name="cart-outline" size={22} color={Colors.text} />
             {totalQty > 0 && (
               <View style={s.cartBadge}><Text style={s.cartBadgeTxt}>{totalQty}</Text></View>
@@ -284,9 +300,12 @@ export default function POSScreen() {
           value={search}
           onChangeText={setSearch}
           returnKeyType="search"
+          accessibilityLabel={i('Rechercher un produit', 'Search a product', 'Buscar un producto', 'Cerca un prodotto')}
         />
         {search.length > 0 && (
-          <Pressable onPress={() => setSearch('')} hitSlop={8}>
+          <Pressable onPress={() => setSearch('')} hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={i('Effacer la recherche', 'Clear search', 'Borrar búsqueda', 'Cancella ricerca')}>
             <Ionicons name="close-circle" size={18} color={Colors.text3} />
           </Pressable>
         )}
@@ -307,6 +326,9 @@ export default function POSScreen() {
                 key={c.key}
                 onPress={() => setActiveCat(c.key)}
                 style={[s.chip, on && s.chipOn]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={c.label}
               >
                 <Text style={[s.chipTxt, on && s.chipTxtOn]} numberOfLines={1}>{c.label}</Text>
               </Pressable>
@@ -353,7 +375,9 @@ export default function POSScreen() {
             <Text style={s.totalBarLabel}>{totalQty} {i('articles', 'items', 'artículos', 'articoli')}</Text>
             <Text style={s.totalBarAmt}>{fmt(totalAmt)}</Text>
           </View>
-          <Pressable style={s.checkoutBtn} onPress={() => setShowCart(true)}>
+          <Pressable style={s.checkoutBtn} onPress={() => setShowCart(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(totalAmt)}`}>
             <Text style={s.checkoutTxt}>{i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} →</Text>
           </Pressable>
         </View>
@@ -364,7 +388,9 @@ export default function POSScreen() {
         <View style={s.sheet}>
           <View style={s.sheetHead}>
             <Text style={s.sheetTitle}>{i('Panier', 'Cart', 'Carrito', 'Carrello')} ({totalQty})</Text>
-            <Pressable onPress={() => setShowCart(false)} hitSlop={8}>
+            <Pressable onPress={() => setShowCart(false)} hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={i('Fermer', 'Close', 'Cerrar', 'Chiudi')}>
               <Ionicons name="close" size={24} color={Colors.text} />
             </Pressable>
           </View>
@@ -377,6 +403,7 @@ export default function POSScreen() {
                 key={item.productId}
                 item={item}
                 fmt={fmt}
+                i={i}
                 onInc={() => updateQty(item.productId, item.quantity + 1)}
                 onDec={() => updateQty(item.productId, item.quantity - 1)}
                 onDel={() => removeItem(item.productId)}
@@ -411,6 +438,9 @@ export default function POSScreen() {
                       key={m.id}
                       style={[s.payChip, on && s.payChipOn]}
                       onPress={() => setPaymentMode(m.id)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={i(m.fr, m.en, m.es, m.it)}
                     >
                       <Text style={{ fontSize: 18 }}>{m.icon}</Text>
                       <Text style={[s.payTxt, on && s.payTxtOn]}>{i(m.fr, m.en, m.es, m.it)}</Text>
@@ -431,6 +461,7 @@ export default function POSScreen() {
                       placeholderTextColor={Colors.text4}
                       value={cashGiven ? String(cashGiven) : ''}
                       onChangeText={t => setCashGiven(Number(t.replace(/[^0-9.]/g, '')) || 0)}
+                      accessibilityLabel={i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}
                     />
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
@@ -445,10 +476,14 @@ export default function POSScreen() {
               <Pressable
                 style={s.payBtn}
                 onPress={() => setShowConfirm(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(totalAmt)}`}
               >
                 <Text style={s.payBtnTxt}>{i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} {fmt(totalAmt)}</Text>
               </Pressable>
-              <Pressable style={s.clearBtn} onPress={() => clearCart()}>
+              <Pressable style={s.clearBtn} onPress={() => clearCart()}
+                accessibilityRole="button"
+                accessibilityLabel={i('Vider le panier', 'Clear cart', 'Vaciar carrito', 'Svuota carrello')}>
                 <Text style={s.clearTxt}>{i('Vider le panier', 'Clear cart', 'Vaciar carrito', 'Svuota carrello')}</Text>
               </Pressable>
             </View>
@@ -481,6 +516,8 @@ export default function POSScreen() {
                 style={[s.confirmBtn, s.confirmCancel]}
                 disabled={saleMutation.isPending}
                 onPress={() => setShowConfirm(false)}
+                accessibilityRole="button"
+                accessibilityLabel={i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}
               >
                 <Text style={s.confirmCancelTxt}>{i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</Text>
               </Pressable>
@@ -488,6 +525,9 @@ export default function POSScreen() {
                 style={[s.confirmBtn, s.confirmOk, saleMutation.isPending && { opacity: 0.6 }]}
                 disabled={saleMutation.isPending}
                 onPress={confirmSale}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: saleMutation.isPending, busy: saleMutation.isPending }}
+                accessibilityLabel={i('Valider la vente', 'Confirm sale', 'Validar venta', 'Conferma vendita')}
               >
                 {saleMutation.isPending
                   ? <ActivityIndicator color={Colors.white} size="small" />

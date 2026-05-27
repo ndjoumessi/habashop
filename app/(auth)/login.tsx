@@ -76,7 +76,9 @@ export default function LoginScreen() {
               placeholderTextColor={Colors.text4}
               value={email} onChangeText={setEmail}
               autoCapitalize="none" keyboardType="email-address"
-              autoComplete="email" returnKeyType="next"/>
+              autoComplete="email" returnKeyType="next"
+              accessibilityLabel="Email"
+              accessibilityHint={i('Entrez votre adresse email','Enter your email address','Ingrese su email','Inserisci la tua email')}/>
           </View>
 
           <View style={s.field}>
@@ -90,10 +92,16 @@ export default function LoginScreen() {
                 value={password} onChangeText={setPassword}
                 secureTextEntry={!showPwd}
                 returnKeyType="done"
-                onSubmitEditing={handleLogin}/>
+                onSubmitEditing={handleLogin}
+                accessibilityLabel={i('Mot de passe','Password','Contraseña','Password')}
+                accessibilityHint={i('Entrez votre mot de passe','Enter your password','Ingrese su contraseña','Inserisci la password')}/>
               <TouchableOpacity
                 style={s.eyeBtn}
-                onPress={()=>setShowPwd(v=>!v)}>
+                onPress={()=>setShowPwd(v=>!v)}
+                accessibilityRole="button"
+                accessibilityLabel={showPwd
+                  ? i('Masquer le mot de passe','Hide password','Ocultar contraseña','Nascondi password')
+                  : i('Afficher le mot de passe','Show password','Mostrar contraseña','Mostra password')}>
                 <Text style={{fontSize:16}}>
                   {showPwd?'🙈':'👁️'}
                 </Text>
@@ -104,7 +112,10 @@ export default function LoginScreen() {
           <TouchableOpacity
             style={[s.btn, loading&&{opacity:0.6}]}
             onPress={handleLogin} disabled={loading}
-            activeOpacity={0.85}>
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: loading, busy: loading }}
+            accessibilityLabel={i('Se connecter','Sign in','Iniciar sesión','Accedi')}>
             {loading
               ? <ActivityIndicator color={Colors.white} size="small"/>
               : <Text style={s.btnText}>
@@ -119,7 +130,9 @@ export default function LoginScreen() {
             <TouchableOpacity onPress={()=>{
               setEmail('admin@habashop.com')
               setPassword('demo1234')
-            }}>
+            }}
+              accessibilityRole="button"
+              accessibilityLabel={i('Utiliser le compte démo','Use demo account','Usar cuenta demo','Usa account demo')}>
               <Text style={s.demoLink}>admin@habashop.com</Text>
             </TouchableOpacity>
           </View>
