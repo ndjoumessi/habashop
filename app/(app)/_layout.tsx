@@ -20,6 +20,7 @@ export default function AppLayout() {
       <Stack.Screen name="reports/index"/>
       <Stack.Screen name="sales/index"/>
       <Stack.Screen name="search/index"/>
+      <Stack.Screen name="delete-account"/>
     </Stack>
   )
 }

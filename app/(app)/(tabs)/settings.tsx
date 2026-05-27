@@ -426,6 +426,20 @@ export default function SettingsScreen() {
             <Text style={s.logoutTxt}>{i('Se déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}</Text>
           </TouchableOpacity>
         </View>
+
+        {/* I) Compte — suppression (RGPD / Google Play) */}
+        <Section title={i('Compte', 'Account', 'Cuenta', 'Account')}>
+          <TouchableOpacity
+            style={s.deleteAccountRow}
+            accessibilityRole="button"
+            accessibilityLabel={i('Supprimer mon compte', 'Delete my account', 'Eliminar mi cuenta', 'Elimina il mio account')}
+            onPress={() => router.push('/(app)/delete-account')}
+          >
+            <Ionicons name="trash-outline" size={20} color={C.danger} />
+            <Text style={s.deleteAccountTxt}>{i('Supprimer mon compte', 'Delete my account', 'Eliminar mi cuenta', 'Elimina il mio account')}</Text>
+            <Ionicons name="chevron-forward" size={16} color={C.danger} />
+          </TouchableOpacity>
+        </Section>
       </ScrollView>
     </View>
   )
@@ -514,6 +528,10 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   // Actions
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
   actionTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
+
+  // Suppression de compte (ligne d'alerte)
+  deleteAccountRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
+  deleteAccountTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.danger },
 
   // Logout
   logoutBtn: {

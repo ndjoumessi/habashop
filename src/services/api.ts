@@ -48,3 +48,12 @@ export const analyticsApi = {
 export const customersApi = {
   list: () => apiClient.get('/api/customers').then(r=>r.data),
 }
+
+export const accountApi = {
+  // Liste des users du tenant (rôles inclus) → sert à anticiper le scope de suppression.
+  // ⚠️ le backend ne filtre pas deletedAt sur cette route → on filtre côté client.
+  tenantUsers: () => apiClient.get('/api/tenant/users').then(r => r.data),
+  // Suppression de compte (DELETE avec body via axios `data`).
+  deleteMe: (body: { confirmation: string; password: string }) =>
+    apiClient.delete('/api/account/me', { data: body }).then(r => r.data),
+}
