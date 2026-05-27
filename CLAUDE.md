@@ -418,3 +418,31 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 ---
 
 *Dernière mise à jour : Sprint 5 — 2026-05-27 (prep iOS + responsive : useResponsive, config iOS app.json/eas.json, IOS_BUILD.md ; reflows tablette différés jusqu'à un iPad).*
+
+---
+
+## État fin de session 2026-05-27
+
+### ✅ Validé sur device (APK 382fe2ec / OTA 39e3315)
+- Login + Dashboard + POS + Stock + Clients
+- Scanner EAN13 bout en bout
+- Thème clair/sombre/système
+- Mode kiosque (vente + sortie PIN 1234)
+- Biométrie (Face ID + Fingerprint)
+- Barcode produits corrigé (web + mobile)
+
+### ⏳ Reste à tester sur device
+- Offline + resync automatique
+- Ticket WhatsApp après vente réelle
+- Widget CA (notification persistante)
+- TalkBack accessibilité
+
+### 🔜 Prochaine session
+- Captures d'écran Play Store (8 écrans)
+  → Stock démo nettoyé et prêt
+- Publier sur Google Play Store
+  → AAB prêt : HabaShop-Mobile-v1.2.0.aab
+  → PLAY_STORE.md complet (4 langues)
+  → Page /privacy déployée sur Vercel
+- Domaine habashop.com
+- Wave + Orange Money prod
