@@ -12,12 +12,14 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.habashop.app",
       "buildNumber": "3",
       "infoPlist": {
         "NSCameraUsageDescription": "Scanner les codes-barres des produits",
-        "NSFaceIDUsageDescription": "Connexion rapide et sécurisée"
+        "NSPhotoLibraryUsageDescription": "Choisir une photo de profil HabaShop",
+        "NSFaceIDUsageDescription": "Connexion rapide et sécurisée à HabaShop",
+        "LSApplicationQueriesSchemes": ["whatsapp"]
       },
       "icon": "./assets/icon-ios.png"
     },
