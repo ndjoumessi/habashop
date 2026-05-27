@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, FlatList,
   TextInput, TouchableOpacity, StatusBar, Alert,
 } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { router } from 'expo-router'
 import * as Haptics from 'expo-haptics'
 import { productsApi, salesApi } from '@/services/api'
 import { usePosStore } from '@/stores/posStore'
@@ -26,6 +27,8 @@ export default function KioskScreen() {
   const [pin, setPin]                   = useState('')
   const [showPinModal, setShowPinModal] = useState(false)
   const [showConfirm, setShowConfirm]   = useState(false)
+  const [tapCount, setTapCount]         = useState(0)
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { data: products = [] } = useQuery<any[]>({
     queryKey: ['products'],
@@ -41,17 +44,22 @@ export default function KioskScreen() {
   const { mutate: createSale, isPending } = useMutation({
     mutationFn: salesApi.create,
     onSuccess: () => {
-      pos.recordSale(pos.total())
+      const saleTotal = pos.total() // capturer AVANT de vider le panier
+      pos.recordSale(saleTotal)
       pos.clearCart()
       setShowConfirm(false)
       qc.invalidateQueries({ queryKey: ['dashboard'] })
       qc.invalidateQueries({ queryKey: ['products'] })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+      Alert.alert(
+        i('✅ Vente enregistrée !', '✅ Sale recorded!', '✅ ¡Venta registrada!', '✅ Vendita registrata!'),
+        fmt(saleTotal),
+      )
     },
     onError: (err: any) => {
       Alert.alert(
         i('Erreur', 'Error', 'Error', 'Errore'),
-        err?.response?.data?.error ?? i('Échec', 'Failed', 'Error', 'Errore'),
+        err?.response?.data?.error ?? i("Impossible d'enregistrer la vente", 'Failed to record sale', 'Error al registrar', 'Impossibile registrare'),
       )
     },
   })
@@ -61,6 +69,7 @@ export default function KioskScreen() {
       setKioskMode(false)
       setShowPinModal(false)
       setPin('')
+      router.back() // quitte réellement l'écran kiosque (poussé via router.push)
     } else {
       Alert.alert(
         i('Code incorrect', 'Wrong PIN', 'PIN incorrecto', 'PIN errato'),
@@ -69,6 +78,24 @@ export default function KioskScreen() {
       setPin('')
     }
   }
+
+  // Ouvre le PIN après 5 taps rapides sur ⚙️ (fallback fiable de l'appui long).
+  const handleExitTap = () => {
+    if (tapTimer.current) clearTimeout(tapTimer.current)
+    const next = tapCount + 1
+    if (next >= 5) {
+      setTapCount(0)
+      setShowPinModal(true)
+      return
+    }
+    setTapCount(next)
+    tapTimer.current = setTimeout(() => setTapCount(0), 2000)
+  }
+
+  // Auto-submit dès que le PIN fait 4 chiffres (plus besoin du bouton OK).
+  useEffect(() => {
+    if (showPinModal && pin.length === 4) handleExit()
+  }, [pin, showPinModal])
 
   const cartCount = pos.cart.reduce((n, c) => n + c.quantity, 0)
 
@@ -90,13 +117,20 @@ export default function KioskScreen() {
             />
             <TouchableOpacity
               style={s.exitBtn}
-              onLongPress={() => setShowPinModal(true)}
-              delayLongPress={600}
+              onPress={handleExitTap}
+              onLongPress={() => { setTapCount(0); setShowPinModal(true) }}
+              delayLongPress={800}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               accessibilityRole="button"
               accessibilityLabel={i('Quitter le mode kiosque', 'Exit kiosk mode', 'Salir del modo kiosco', 'Esci dalla modalità kiosk')}
-              accessibilityHint={i('Appui long', 'Long press', 'Pulsación larga', 'Pressione lunga')}
+              accessibilityHint={i('Appui long ou 5 taps rapides', 'Long press or 5 quick taps', 'Pulsación larga o 5 toques rápidos', 'Pressione lunga o 5 tocchi rapidi')}
             >
               <Text style={s.exitBtnText}>⚙️</Text>
+              {tapCount > 0 && (
+                <View style={s.tapCountBadge}>
+                  <Text style={s.tapCountText}>{tapCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -331,8 +365,13 @@ const s = StyleSheet.create({
     flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: Colors.text,
     backgroundColor: Colors.bg3, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, height: 40,
   },
-  exitBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  exitBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   exitBtnText: { fontSize: 20 },
+  tapCountBadge: {
+    position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8,
+    backgroundColor: Colors.warn, alignItems: 'center', justifyContent: 'center',
+  },
+  tapCountText: { fontSize: 9, fontFamily: 'Outfit_700Bold', color: Colors.black },
   grid: { padding: Spacing.md, paddingBottom: 40 },
   productCard: {
     flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.lg,
