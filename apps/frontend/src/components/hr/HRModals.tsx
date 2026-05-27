@@ -228,7 +228,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                   {lang === 'en' ? 'COMPENSATION' : lang === 'es' ? 'REMUNERACIÓN' : lang === 'it' ? 'RETRIBUZIONE' : 'RÉMUNÉRATION'}
                 </div>
                 <ViewField
-                  label={lang==='fr'?`SALAIRE MENSUEL BRUT (${currency})`:`MONTHLY GROSS SALARY (${currency})`}
+                  label={lang === 'en' ? `MONTHLY GROSS SALARY (${currency})` : lang === 'es' ? `SALARIO BRUTO MENSUAL (${currency})` : lang === 'it' ? `STIPENDIO LORDO MENSILE (${currency})` : `SALAIRE MENSUEL BRUT (${currency})`}
                   value={fmt(+salaryInput > 0 ? toXOF(+salaryInput) : (selectedEmp?.salary ?? 0))}
                   mono
                   editing={empEditMode}>
@@ -870,7 +870,7 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
         <span style={{ fontFamily:'var(--mono)', fontWeight:800, fontSize:16, color:'var(--text)' }}>{fmt(oldSalaryXOF)}</span>
       </div>
       <div>
-        <label style={lbl}>{lang==='fr' ? `NOUVEAU SALAIRE (${currency})` : `NEW SALARY (${currency})`}</label>
+        <label style={lbl}>{lang === 'en' ? `NEW SALARY (${currency})` : lang === 'es' ? `NUEVO SALARIO (${currency})` : lang === 'it' ? `NUOVO STIPENDIO (${currency})` : `NOUVEAU SALAIRE (${currency})`}</label>
         <div style={{ position:'relative' }}>
           <ValidatedInput type="amount"
             value={newSalaryInput}
@@ -957,7 +957,7 @@ function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
         </div>
       </div>
       <div>
-        <label style={lbl}>{lang==='fr' ? `MONTANT (${currency})` : `AMOUNT (${currency})`}</label>
+        <label style={lbl}>{lang === 'en' ? `AMOUNT (${currency})` : lang === 'es' ? `IMPORTE (${currency})` : lang === 'it' ? `IMPORTO (${currency})` : `MONTANT (${currency})`}</label>
         <div style={{ position:'relative' }}>
           <ValidatedInput type="amount"
             value={amountInput}

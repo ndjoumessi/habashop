@@ -239,7 +239,7 @@ export default function HR() {
     const win = window.open('', '_blank', 'width=700,height=900')
     if (!win) return
     win.document.write(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Bulletin — ${emp.name}</title>
+<html><head><meta charset="UTF-8"><title>${lang === 'en' ? 'Payslip' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Busta paga' : 'Bulletin'} — ${emp.name}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;padding:40px;max-width:600px;margin:0 auto}
@@ -258,7 +258,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 .sign-box{border:1px solid #ddd;border-radius:8px;padding:10px 16px;text-align:center;min-width:160px;font-size:11px;color:#888}
 @media print{body{padding:20px}button{display:none!important}}
 </style></head><body>
-<button onclick="window.print()" style="position:fixed;top:16px;right:16px;background:#6C47FF;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:700">🖨️ Imprimer</button>
+<button onclick="window.print()" style="position:fixed;top:16px;right:16px;background:#6C47FF;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:700">🖨️ ${lang === 'en' ? 'Print' : lang === 'es' ? 'Imprimir' : lang === 'it' ? 'Stampa' : 'Imprimer'}</button>
 <div class="header">
   <div><div class="logo">HabaShop</div>
   <div style="font-size:12px;color:#888;margin-top:4px;">${lang === 'en' ? 'Payslip' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Busta paga' : 'Bulletin de paie'} — ${monthLabel}</div></div>
@@ -291,7 +291,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 </div>
 <div class="footer">
   <div><div style="font-weight:700;margin-bottom:4px">HabaShop</div>
-  <div>Document généré le ${new Date().toLocaleDateString('fr-FR')}</div></div>
+  <div>${lang === 'en' ? 'Document generated on' : lang === 'es' ? 'Documento generado el' : lang === 'it' ? 'Documento generato il' : 'Document généré le'} ${new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}</div></div>
   <div><div class="sign-box">${lang === 'en' ? 'Employer signature<br/><br/><br/>' : lang === 'es' ? 'Firma del empleador<br/><br/><br/>' : lang === 'it' ? 'Firma del datore di lavoro<br/><br/><br/>' : 'Signature employeur<br/><br/><br/>'}</div></div>
 </div>
 </body></html>`)
@@ -311,12 +311,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         generatePayslipPDF(emp, { brut, bonus, cnss, ir, net, month: payrollMonth })
       }, i * 300)
     })
-    toast.success(lang==='fr' ? `📄 ${actifs.length} bulletins générés !` : `📄 ${actifs.length} payslips generated!`)
+    toast.success(lang === 'en' ? `📄 ${actifs.length} payslips generated!` : lang === 'es' ? `📄 ${actifs.length} nóminas generadas !` : lang === 'it' ? `📄 ${actifs.length} buste paga generate !` : `📄 ${actifs.length} bulletins générés !`)
   }
 
   function handleLeaveAction(id: number, status: 'approved' | 'refused') {
     setLeaves(prev => prev.map(l => l.id === id ? { ...l, status } : l))
-    toast.success(status === 'approved' ? '✅ Congé approuvé' : '❌ Congé refusé')
+    toast.success(status === 'approved'
+      ? (lang === 'en' ? '✅ Leave approved' : lang === 'es' ? '✅ Permiso aprobado' : lang === 'it' ? '✅ Ferie approvate' : '✅ Congé approuvé')
+      : (lang === 'en' ? '❌ Leave refused' : lang === 'es' ? '❌ Permiso rechazado' : lang === 'it' ? '❌ Ferie rifiutate' : '❌ Congé refusé'))
   }
 
   return (

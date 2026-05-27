@@ -158,7 +158,14 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                   const BOM = '﻿'
                   const activeEmps = (employees ?? []).filter(e => e.active)
                   const rows = [
-                    ['Employé','Rôle','Brut','Prime','CNSS 8%','IR 5%','Net'],
+                    [
+                      lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé',
+                      lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle',
+                      lang === 'en' ? 'Gross' : lang === 'es' ? 'Bruto' : lang === 'it' ? 'Lordo' : 'Brut',
+                      lang === 'en' ? 'Bonus' : lang === 'es' ? 'Prima' : lang === 'it' ? 'Premio' : 'Prime',
+                      'CNSS 8%', 'IR 5%',
+                      lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net',
+                    ],
                     ...activeEmps.map(emp => {
                       const brut  = emp.salary
                       const bonus = bonuses[String(emp.id)] ?? 0
@@ -455,9 +462,13 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                       <BarChart3 size={14} style={{color:'var(--acc2)',flexShrink:0}}/> {lang === 'en' ? 'Impact on payroll' : lang === 'es' ? 'Impacto en la masa salarial' : lang === 'it' ? 'Impatto sul costo del personale' : 'Impact sur la masse salariale'}
                     </div>
                     <div style={{ fontSize:11, color:'var(--text3)' }}>
-                      {lang==='fr'
-                        ? `${Object.keys(bonuses).length} employé(s) avec prime`
-                        : `${Object.keys(bonuses).length} employee(s) with bonus`}
+                      {lang === 'en'
+                        ? `${Object.keys(bonuses).length} employee(s) with bonus`
+                        : lang === 'es'
+                        ? `${Object.keys(bonuses).length} empleado(s) con prima`
+                        : lang === 'it'
+                        ? `${Object.keys(bonuses).length} dipendente(i) con premio`
+                        : `${Object.keys(bonuses).length} employé(s) avec prime`}
                     </div>
                   </div>
                   <div style={{ textAlign:'right' }}>
