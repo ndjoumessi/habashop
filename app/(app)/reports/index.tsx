@@ -316,7 +316,9 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
   },
   chipOn: { backgroundColor: C.primary, borderColor: C.primary },
-  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
+  // lineHeight explicite : le ScrollView horizontal (Android) rognait la descendante du « j »
+  // (« jours » → « iours »). Une boîte de ligne incluant la descendante corrige le clipping.
+  chipTxt: { fontSize: FontSize.xs, lineHeight: 14, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
   chipTxtOn: { color: C.white },
 
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
