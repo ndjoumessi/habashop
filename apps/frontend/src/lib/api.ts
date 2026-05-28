@@ -176,6 +176,20 @@ export const tenantApi = {
   createUser: (data: any) => api.post<any>('/api/tenant/users', data),
 }
 
+export const usersApi = {
+  list:         () => api.get<any[]>('/api/tenant/users'),
+  invite:       (data: { name: string; email: string; role: string; password: string }) =>
+                  api.post<any>('/api/tenant/users', data),
+  update:       (id: string, data: { name?: string; email?: string; role?: string }) =>
+                  api.put<any>(`/api/tenant/users/${id}`, data),
+  toggleActive: (id: string, active: boolean) =>
+                  api.patch<any>(`/api/tenant/users/${id}/active`, { active }),
+  toggle2FA:    (id: string, twoFA: boolean) =>
+                  api.patch<any>(`/api/tenant/users/${id}/2fa`, { twoFA }),
+  delete:       (id: string) =>
+                  api.delete<any>(`/api/tenant/users/${id}`),
+}
+
 export const aiApi = {
   analyze: (type: string, lang: string) =>
     api.post<any>('/api/ai/analyze', { type, lang }),

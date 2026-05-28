@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useConfig, t } from '@/stores/appStore'
-import { tenantApi } from '@/lib/api'
+import { usersApi } from '@/lib/api'
+import { confirm } from '@/lib/confirm'
 import {
   Search, Plus, Shield, X, Mail, Lock, Eye, EyeOff,
-  Crown, Target, ShoppingCart, Archive, Calculator, UserCog,
+  Crown, Target, ShoppingCart, Archive, Calculator, UserCog, Trash2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { LucideIcon } from 'lucide-react'
@@ -80,13 +81,13 @@ function mapApiUser(u: any): User {
   const role = (VALID_ROLES.includes(u.role) ? u.role : 'CASHIER') as Role
   return {
     id: String(u.id),
-    name: u.name ?? u.email?.split('@')[0] ?? 'Utilisateur',
+    name: u.name ?? u.email?.split('@')[0] ?? '—',
     email: u.email ?? '',
     role,
-    active: u.active ?? u.isActive ?? true,
-    twoFA: u.twoFA ?? false,
-    lastLogin: u.lastLogin ?? '—',
-    createdAt: (u.createdAt ?? '').split('T')[0] ?? '',
+    active: u.isActive ?? u.active ?? true,
+    twoFA: u.twoFAEnabled ?? u.twoFA ?? false,
+    lastLogin: u.lastLoginAt ?? u.lastLogin ?? '',  // ISO ou vide
+    createdAt: u.createdAt ?? '',                    // ISO conservée pour formatage à l'affichage
   }
 }
 
@@ -94,18 +95,30 @@ function initials(name: string) {
   return name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase()
 }
 
+// En ligne = actif ET dernière activité < 5 min
 function isOnlineNow(u: User) {
-  return u.active && (u.lastLogin.includes("Aujourd") || u.lastLogin.includes(" min"))
+  if (!u.active || !u.lastLogin) return false
+  const ts = new Date(u.lastLogin).getTime()
+  if (Number.isNaN(ts)) return false
+  return Date.now() - ts < 5 * 60 * 1000
 }
 
 export default function Users() {
   const { lang } = useConfig()
   void lang
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+  const fmtDate = (iso: string) => {
+    if (!iso) return ''
+    const d = new Date(iso)
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
   const [users, setUsers]           = useState<User[]>([])
   const [search, setSearch]         = useState('')
 
   useEffect(() => {
-    tenantApi.users()
+    usersApi.list()
       .then((data: any[]) => { if (Array.isArray(data)) setUsers(data.map(mapApiUser)) })
       .catch(() => {})
   }, [])
@@ -124,28 +137,74 @@ export default function Users() {
     (!roleFilter || u.role === roleFilter)
   )
 
-  const toggleActive = (id: string) => {
-    const u = users.find(u => u.id === id)
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, active: !u.active } : u))
-    toast.success(`Compte ${u?.active ? 'désactivé' : 'activé'}`)
-  }
-
-  const toggle2FA = (id: string) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, twoFA: !u.twoFA } : u))
-    toast.success('2FA mis à jour')
-  }
-
-  const invite = () => {
-    if (!form.name || !form.email) { toast.error('Remplissez tous les champs'); return }
-    if (form.password !== form.confirm) { toast.error('Mots de passe différents'); return }
-    const newUser: User = {
-      id: String(Date.now()), name:form.name, email:form.email, role:form.role,
-      active:true, twoFA:false, lastLogin:'Jamais', createdAt: new Date().toISOString().split('T')[0],
+  const toggleActive = async (id: string) => {
+    const u = users.find(x => x.id === id)
+    if (!u) return
+    const next = !u.active
+    try {
+      await usersApi.toggleActive(id, next)
+      setUsers(prev => prev.map(x => x.id === id ? { ...x, active: next } : x))
+      toast.success(next
+        ? i('Compte activé', 'Account activated', 'Cuenta activada', 'Account attivato')
+        : i('Compte désactivé', 'Account deactivated', 'Cuenta desactivada', 'Account disattivato')
+      )
+    } catch (e: any) {
+      toast.error(`${i('Échec', 'Failed', 'Error', 'Errore')} : ${e?.message ?? ''}`)
     }
-    setUsers(prev => [...prev, newUser])
-    setShowModal(false)
-    setForm({ name:'', email:'', role:'CASHIER', password:'', confirm:'' })
-    toast.success(`${form.name} invité(e)`)
+  }
+
+  const toggle2FA = async (id: string) => {
+    const u = users.find(x => x.id === id)
+    if (!u) return
+    const next = !u.twoFA
+    try {
+      await usersApi.toggle2FA(id, next)
+      setUsers(prev => prev.map(x => x.id === id ? { ...x, twoFA: next } : x))
+      toast.success(i('2FA mis à jour', '2FA updated', '2FA actualizado', '2FA aggiornato'))
+    } catch (e: any) {
+      toast.error(`${i('Échec', 'Failed', 'Error', 'Errore')} : ${e?.message ?? ''}`)
+    }
+  }
+
+  const invite = async () => {
+    if (!form.name || !form.email) {
+      toast.error(i('Remplissez tous les champs', 'Fill in all fields', 'Complete todos los campos', 'Compila tutti i campi'))
+      return
+    }
+    if (form.password !== form.confirm) {
+      toast.error(i('Mots de passe différents', 'Passwords do not match', 'Las contraseñas no coinciden', 'Le password non corrispondono'))
+      return
+    }
+    try {
+      const created = await usersApi.invite({ name: form.name, email: form.email, role: form.role, password: form.password })
+      setUsers(prev => [...prev, mapApiUser(created)])
+      setShowModal(false)
+      setForm({ name:'', email:'', role:'CASHIER', password:'', confirm:'' })
+      toast.success(i(`${form.name} invité(e)`, `${form.name} invited`, `${form.name} invitado(a)`, `${form.name} invitato(a)`))
+    } catch (e: any) {
+      toast.error(`${i('Échec invitation', 'Invitation failed', 'Error de invitación', 'Invito fallito')} : ${e?.message ?? ''}`)
+    }
+  }
+
+  const handleDelete = async (u: User) => {
+    const ok = await confirm({
+      title: i('Supprimer cet utilisateur ?', 'Delete this user?', '¿Eliminar este usuario?', 'Eliminare questo utente?'),
+      message: i(
+        `${u.name} (${u.email}) perdra l'accès immédiatement. Cette action peut être annulée par un administrateur.`,
+        `${u.name} (${u.email}) will lose access immediately. This action can be reversed by an administrator.`,
+        `${u.name} (${u.email}) perderá el acceso inmediatamente. Esta acción puede ser revertida por un administrador.`,
+        `${u.name} (${u.email}) perderà l'accesso immediatamente. Questa azione può essere annullata da un amministratore.`,
+      ),
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await usersApi.delete(u.id)
+      setUsers(prev => prev.filter(x => x.id !== u.id))
+      toast.success(i('Utilisateur supprimé', 'User deleted', 'Usuario eliminado', 'Utente eliminato'))
+    } catch (e: any) {
+      toast.error(`${i('Échec suppression', 'Delete failed', 'Error al eliminar', 'Eliminazione fallita')} : ${e?.message ?? ''}`)
+    }
   }
 
   const stats = {
@@ -363,7 +422,9 @@ export default function Users() {
                       {lang === 'en' ? 'Last login' : lang === 'es' ? 'Último acceso' : lang === 'it' ? 'Ultimo accesso' : 'Connexion'}
                     </div>
                     <div style={{ fontSize:11, fontWeight:700, color: online ? 'var(--acc2)' : 'var(--text2)' }}>
-                      {online ? (lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne') : user.lastLogin}
+                      {online
+                        ? (lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne')
+                        : (user.lastLogin ? fmtDate(user.lastLogin) : i('Jamais', 'Never', 'Nunca', 'Mai'))}
                     </div>
                   </div>
                   <div style={{
@@ -374,7 +435,7 @@ export default function Users() {
                       {lang === 'en' ? 'Member since' : lang === 'es' ? 'Miembro desde' : lang === 'it' ? 'Membro dal' : 'Membre depuis'}
                     </div>
                     <div style={{ fontSize:11, fontWeight:700, color:'var(--text2)' }}>
-                      {user.createdAt}
+                      {fmtDate(user.createdAt) || '—'}
                     </div>
                   </div>
                 </div>
@@ -400,6 +461,21 @@ export default function Users() {
                     }}
                     onClick={() => toggleActive(user.id)}>
                     {user.active ? (lang === 'en' ? 'Disable' : lang === 'es' ? 'Desactivar' : lang === 'it' ? 'Disattiva' : 'Désactiver') : (lang === 'en' ? 'Enable' : lang === 'es' ? 'Activar' : lang === 'it' ? 'Attiva' : 'Activer')}
+                  </button>
+                  <button type="button"
+                    title={i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
+                    aria-label={i('Supprimer', 'Delete', 'Eliminar', 'Elimina') + ' ' + user.name}
+                    onClick={() => handleDelete(user)}
+                    style={{
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      padding:'6px 10px', borderRadius:9, border:'none', cursor:'pointer',
+                      background:'rgba(239,68,68,.08)', color:'var(--danger)',
+                      transition:'background .15s',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.16)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.08)' }}
+                  >
+                    <Trash2 size={12} />
                   </button>
                 </div>
               </div>
@@ -431,8 +507,8 @@ export default function Users() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Nom complet</label>
-                  <input aria-label="Nom complet" className="input text-sm" value={editForm.name} onChange={e => setEditForm(f => ({...f, name:e.target.value}))} />
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}</label>
+                  <input aria-label={i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')} className="input text-sm" value={editForm.name} onChange={e => setEditForm(f => ({...f, name:e.target.value}))} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle'}</label>
@@ -477,11 +553,27 @@ export default function Users() {
             </div>
             <div className="flex gap-2 mt-5">
               <button className="btn btn-ghost" onClick={() => setShowEditModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
-              <button className="btn btn-primary flex-1 justify-center" onClick={() => {
-                if (!editForm.name || !editForm.email) { toast.error('Nom et email requis'); return }
-                setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...editForm } : u))
-                setShowEditModal(false)
-                toast.success(`${editForm.name} mis à jour`)
+              <button className="btn btn-primary flex-1 justify-center" onClick={async () => {
+                if (!editForm.name || !editForm.email) {
+                  toast.error(i('Nom et email requis', 'Name and email required', 'Nombre y email requeridos', 'Nome ed email richiesti'))
+                  return
+                }
+                try {
+                  const updated = await usersApi.update(editUser.id, { name: editForm.name, email: editForm.email, role: editForm.role })
+                  setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...mapApiUser(updated) } : u))
+                  // Toggles isActive / twoFA gérés séparément si l'utilisateur les a changés
+                  if (editForm.active !== editUser.active) {
+                    await usersApi.toggleActive(editUser.id, editForm.active)
+                  }
+                  if (editForm.twoFA !== editUser.twoFA) {
+                    await usersApi.toggle2FA(editUser.id, editForm.twoFA)
+                  }
+                  setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, active: editForm.active, twoFA: editForm.twoFA } : u))
+                  setShowEditModal(false)
+                  toast.success(i(`${editForm.name} mis à jour`, `${editForm.name} updated`, `${editForm.name} actualizado`, `${editForm.name} aggiornato`))
+                } catch (e: any) {
+                  toast.error(`${i('Échec mise à jour', 'Update failed', 'Error al actualizar', 'Aggiornamento fallito')} : ${e?.message ?? ''}`)
+                }
               }}>
                 {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Enregistrer'}
               </button>

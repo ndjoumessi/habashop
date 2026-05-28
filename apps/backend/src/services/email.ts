@@ -382,6 +382,57 @@ export async function sendTrialExpired(opts: {
 }
 
 // ════════════════════════════════════════════
+// EMAIL — Invitation d'un nouvel utilisateur par un admin
+// ════════════════════════════════════════════
+export async function sendUserInvitationEmail(opts: {
+  to:           string
+  inviteeName:  string
+  shopName:     string
+  tempPassword: string
+  invitedBy?:   string
+}): Promise<boolean> {
+  const { to, inviteeName, shopName, tempPassword, invitedBy } = opts
+  const firstName = inviteeName.split(' ')[0]
+  const loginUrl  = 'https://habashop.vercel.app/login'
+
+  const html = baseTemplate(`
+    <h1>Vous avez été invité sur HabaShop, ${firstName} 👋</h1>
+    <p>${invitedBy ? `<strong>${invitedBy}</strong> vous a invité` : 'Vous avez été invité'}
+    à rejoindre la boutique <strong>${shopName}</strong> sur HabaShop.</p>
+
+    <div class="alert">
+      🔐 <strong>Vos identifiants temporaires :</strong>
+      <div style="margin-top:8px;font-family:monospace;font-size:13px;line-height:1.8;">
+        Email : <strong>${to}</strong><br/>
+        Mot de passe temporaire : <strong>${tempPassword}</strong>
+      </div>
+    </div>
+
+    <p>Connectez-vous et changez votre mot de passe dans
+    <strong>Paramètres → Sécurité</strong> à votre première connexion.</p>
+
+    <p style="text-align:center;">
+      <a href="${loginUrl}" class="btn">
+        🚀 Se connecter à HabaShop
+      </a>
+    </p>
+
+    <div class="divider"></div>
+
+    <p style="font-size:13px;color:#8888A8;">
+      Cet email contient un mot de passe sensible — ne le partagez avec personne.
+      Si vous n'attendiez pas cette invitation, ignorez ce message ou contactez-nous.
+    </p>
+  `)
+
+  return send({
+    to,
+    subject: `Vous avez été invité sur HabaShop — ${shopName}`,
+    html,
+  })
+}
+
+// ════════════════════════════════════════════
 // EMAIL 6 — Rapport hebdomadaire
 // ════════════════════════════════════════════
 export async function sendWeeklyReport(opts: {
