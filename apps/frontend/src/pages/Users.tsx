@@ -525,48 +525,131 @@ export default function Users() {
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowEditModal(false)}><X size={14} /></button>
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              {/* Ligne 1 : Nom complet + Rôle */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}</label>
-                  <input aria-label={i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')} className="input text-sm" value={editForm.name} onChange={e => setEditForm(f => ({...f, name:e.target.value}))} />
+                  <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+                    {i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
+                  </label>
+                  <input
+                    aria-label={i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
+                    className="input text-sm"
+                    value={editForm.name}
+                    onChange={e => setEditForm(f => ({...f, name:e.target.value}))} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle'}</label>
-                  <select aria-label={lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle'} className="input text-sm" value={editForm.role} onChange={e => setEditForm(f => ({...f, role:e.target.value as Role}))}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+                    {i('Rôle', 'Role', 'Rol', 'Ruolo')}
+                  </label>
+                  <select
+                    aria-label={i('Rôle', 'Role', 'Rol', 'Ruolo')}
+                    className="input text-sm"
+                    value={editForm.role}
+                    onChange={e => setEditForm(f => ({...f, role:e.target.value as Role}))}>
                     {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
                       <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                     ))}
                   </select>
                 </div>
               </div>
+
+              {/* Ligne 2 : Email (icône Mail intégrée) */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Email</label>
-                <div className="relative">
-                  <Mail size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color:'var(--text3)' }} />
-                  <input aria-label="Email" className="input text-sm pl-8" type="email" value={editForm.email} onChange={e => setEditForm(f => ({...f, email:e.target.value}))} />
+                <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+                  Email
+                </label>
+                <div style={{ position:'relative' }}>
+                  <Mail size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
+                  <input
+                    aria-label="Email"
+                    className="input text-sm"
+                    type="email"
+                    style={{ paddingLeft:36, width:'100%' }}
+                    value={editForm.email}
+                    onChange={e => setEditForm(f => ({...f, email:e.target.value}))} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              {/* Séparateur */}
+              <div style={{ height:1, background:'var(--border)' }} />
+
+              {/* Toggles Statut + 2FA */}
+              <div
+                onClick={() => setEditForm(f => ({...f, active:!f.active}))}
+                style={{
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'12px 16px', background:'var(--bg3)', borderRadius:12,
+                  cursor:'pointer', transition:'background .15s',
+                }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</label>
-                  <select aria-label={lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'} className="input text-sm" value={editForm.active ? 'active' : 'inactive'} onChange={e => setEditForm(f => ({...f, active:e.target.value==='active'}))}>
-                    <option value="active">{lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif'}</option><option value="inactive">{lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif'}</option>
-                  </select>
+                  <div style={{ fontWeight:600, fontSize:13, color:'var(--text)' }}>
+                    {i('Compte actif', 'Active account', 'Cuenta activa', 'Account attivo')}
+                  </div>
+                  <div style={{ fontSize:11, color:'var(--text2)' }}>
+                    {i("L'utilisateur peut se connecter", 'The user can sign in', 'El usuario puede iniciar sesión', "L'utente può accedere")}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>2FA</label>
-                  <select aria-label="2FA" className="input text-sm" value={editForm.twoFA ? 'enabled' : 'disabled'} onChange={e => setEditForm(f => ({...f, twoFA:e.target.value==='enabled'}))}>
-                    <option value="enabled">{lang === 'en' ? 'Enabled' : lang === 'es' ? 'Activado' : lang === 'it' ? 'Attivato' : 'Activé'}</option><option value="disabled">{lang === 'en' ? 'Disabled' : lang === 'es' ? 'Desactivado' : lang === 'it' ? 'Disattivato' : 'Désactivé'}</option>
-                  </select>
+                <div role="switch" aria-checked={editForm.active} aria-label={i('Compte actif', 'Active account', 'Cuenta activa', 'Account attivo')}
+                  style={{
+                    width:44, height:24, borderRadius:99,
+                    background: editForm.active ? 'var(--p)' : 'var(--bg)',
+                    border:'2px solid var(--border)',
+                    position:'relative', cursor:'pointer', flexShrink:0,
+                    transition:'background .2s',
+                  }}>
+                  <div style={{
+                    position:'absolute', top:2, left: editForm.active ? 20 : 2,
+                    width:16, height:16, borderRadius:'50%',
+                    background: editForm.active ? '#fff' : 'var(--text3)',
+                    transition:'left .2s',
+                  }} />
                 </div>
               </div>
+
+              <div
+                onClick={() => setEditForm(f => ({...f, twoFA:!f.twoFA}))}
+                style={{
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'12px 16px', background:'var(--bg3)', borderRadius:12,
+                  cursor:'pointer', transition:'background .15s',
+                }}>
+                <div>
+                  <div style={{ fontWeight:600, fontSize:13, color:'var(--text)' }}>
+                    {i('Authentification 2FA', 'Two-factor authentication', 'Autenticación 2FA', 'Autenticazione 2FA')}
+                  </div>
+                  <div style={{ fontSize:11, color:'var(--text2)' }}>
+                    {i('Sécurité renforcée à la connexion', 'Stronger sign-in security', 'Seguridad reforzada al iniciar sesión', 'Sicurezza rafforzata al login')}
+                  </div>
+                </div>
+                <div role="switch" aria-checked={editForm.twoFA} aria-label="2FA"
+                  style={{
+                    width:44, height:24, borderRadius:99,
+                    background: editForm.twoFA ? 'var(--p)' : 'var(--bg)',
+                    border:'2px solid var(--border)',
+                    position:'relative', cursor:'pointer', flexShrink:0,
+                    transition:'background .2s',
+                  }}>
+                  <div style={{
+                    position:'absolute', top:2, left: editForm.twoFA ? 20 : 2,
+                    width:16, height:16, borderRadius:'50%',
+                    background: editForm.twoFA ? '#fff' : 'var(--text3)',
+                    transition:'left .2s',
+                  }} />
+                </div>
+              </div>
+
+              {/* Preview modules accessibles */}
               {editForm.role && (
-                <div className="p-3 rounded-xl" style={{ background:`${ROLE_CONFIG[editForm.role].color}10`, border:`1px solid ${ROLE_CONFIG[editForm.role].color}25` }}>
-                  <p className="text-xs font-semibold mb-1.5" style={{ color:ROLE_CONFIG[editForm.role].color }}>
+                <div style={{
+                  padding:12, borderRadius:12,
+                  background:`${ROLE_CONFIG[editForm.role].color}10`,
+                  border:`1px solid ${ROLE_CONFIG[editForm.role].color}25`,
+                }}>
+                  <p style={{ fontSize:11, fontWeight:700, marginBottom:6, color:ROLE_CONFIG[editForm.role].color }}>
                     {t('users_permissions')} — {ROLE_LABELS[editForm.role]}
                   </p>
-                  <div className="flex flex-wrap gap-1">
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
                     {PERMISSIONS[editForm.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:10 }}>{moduleLabel(p, lang)}</span>)}
                   </div>
                 </div>
@@ -614,50 +697,111 @@ export default function Users() {
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}><X size={14} /></button>
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              {/* Ligne 1 : Nom complet + Rôle */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Full name' : lang === 'es' ? 'Nombre completo' : lang === 'it' ? 'Nome completo' : 'Nom complet'}</label>
-                  <input aria-label={lang === 'en' ? 'Full name' : lang === 'es' ? 'Nombre completo' : lang === 'it' ? 'Nome completo' : 'Nom complet'} className="input text-sm" placeholder={lang === 'en' ? 'First Last' : lang === 'es' ? 'Nombre Apellido' : lang === 'it' ? 'Nome Cognome' : 'Prénom Nom'} value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))} />
+                  <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+                    {i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
+                  </label>
+                  <input
+                    aria-label={i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
+                    className="input text-sm"
+                    placeholder={i('Prénom Nom', 'First Last', 'Nombre Apellido', 'Nome Cognome')}
+                    value={form.name}
+                    onChange={e => setForm(f => ({...f, name:e.target.value}))} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle'}</label>
-                  <select aria-label={lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle'} className="input text-sm" value={form.role} onChange={e => setForm(f => ({...f, role:e.target.value as Role}))}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+                    {i('Rôle', 'Role', 'Rol', 'Ruolo')}
+                  </label>
+                  <select
+                    aria-label={i('Rôle', 'Role', 'Rol', 'Ruolo')}
+                    className="input text-sm"
+                    value={form.role}
+                    onChange={e => setForm(f => ({...f, role:e.target.value as Role}))}>
                     {(Object.keys(ROLE_CONFIG) as Role[]).map(r => (
                       <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                     ))}
                   </select>
                 </div>
               </div>
+
+              {/* Ligne 2 : Email (pleine largeur, icône Mail intégrée) */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Email</label>
-                <div className="relative">
-                  <Mail size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color:'var(--text3)' }} />
-                  <input aria-label="Email" className="input text-sm pl-8" type="email" placeholder="email@example.com" value={form.email} onChange={e => setForm(f => ({...f, email:e.target.value}))} />
+                <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+                  Email
+                </label>
+                <div style={{ position:'relative' }}>
+                  <Mail size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
+                  <input
+                    aria-label="Email"
+                    className="input text-sm"
+                    type="email"
+                    placeholder="email@example.com"
+                    style={{ paddingLeft:36, width:'100%' }}
+                    value={form.email}
+                    onChange={e => setForm(f => ({...f, email:e.target.value}))} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              {/* Ligne 3 : Mot de passe + Confirmer (icônes Lock/Eye intégrées) */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Password' : lang === 'es' ? 'Contraseña' : lang === 'it' ? 'Password' : 'Mot de passe'}</label>
-                  <div className="relative">
-                    <Lock size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color:'var(--text3)' }} />
-                    <input className="input text-sm pl-8 pr-8" type={showPwd ? 'text' : 'password'} placeholder="••••••••" value={form.password} onChange={e => setForm(f => ({...f, password:e.target.value}))} />
-                    <button className="absolute right-2.5 top-1/2 -translate-y-1/2" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)' }} onClick={() => setShowPwd(!showPwd)} aria-label={lang === 'en' ? 'Toggle password visibility' : lang === 'es' ? 'Mostrar/ocultar contraseña' : lang === 'it' ? 'Mostra/nascondi password' : 'Afficher/masquer le mot de passe'}>
-                      {showPwd ? <EyeOff size={13}/> : <Eye size={13}/>}
+                  <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+                    {i('Mot de passe', 'Password', 'Contraseña', 'Password')}
+                  </label>
+                  <div style={{ position:'relative' }}>
+                    <Lock size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
+                    <input
+                      className="input text-sm"
+                      type={showPwd ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      style={{ paddingLeft:36, paddingRight:36, width:'100%' }}
+                      value={form.password}
+                      onChange={e => setForm(f => ({...f, password:e.target.value}))} />
+                    <button
+                      type="button"
+                      onClick={() => setShowPwd(!showPwd)}
+                      aria-label={i('Afficher/masquer le mot de passe', 'Toggle password visibility', 'Mostrar/ocultar contraseña', 'Mostra/nascondi password')}
+                      style={{
+                        position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
+                        background:'none', border:'none', cursor:'pointer', color:'var(--text3)',
+                        padding:4, display:'flex', alignItems:'center',
+                      }}>
+                      {showPwd ? <EyeOff size={14}/> : <Eye size={14}/>}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'}</label>
-                  <input aria-label={lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'} className="input text-sm" type={showPwd ? 'text' : 'password'} placeholder="••••••••" value={form.confirm} onChange={e => setForm(f => ({...f, confirm:e.target.value}))} />
+                  <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+                    {i('Confirmer', 'Confirm', 'Confirmar', 'Conferma')}
+                  </label>
+                  <div style={{ position:'relative' }}>
+                    <Lock size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
+                    <input
+                      aria-label={i('Confirmer', 'Confirm', 'Confirmar', 'Conferma')}
+                      className="input text-sm"
+                      type={showPwd ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      style={{ paddingLeft:36, width:'100%' }}
+                      value={form.confirm}
+                      onChange={e => setForm(f => ({...f, confirm:e.target.value}))} />
+                  </div>
                 </div>
               </div>
+
+              {/* Preview modules accessibles */}
               {form.role && (
-                <div className="p-3 rounded-xl" style={{ background:`${ROLE_CONFIG[form.role].color}10`, border:`1px solid ${ROLE_CONFIG[form.role].color}25` }}>
-                  <p className="text-xs font-semibold mb-1.5" style={{ color:ROLE_CONFIG[form.role].color }}>
+                <div style={{
+                  padding:12, borderRadius:12,
+                  background:`${ROLE_CONFIG[form.role].color}10`,
+                  border:`1px solid ${ROLE_CONFIG[form.role].color}25`,
+                }}>
+                  <p style={{ fontSize:11, fontWeight:700, marginBottom:6, color:ROLE_CONFIG[form.role].color }}>
                     {t('users_permissions')} — {ROLE_LABELS[form.role]}
                   </p>
-                  <div className="flex flex-wrap gap-1">
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
                     {PERMISSIONS[form.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:10 }}>{moduleLabel(p, lang)}</span>)}
                   </div>
                 </div>
