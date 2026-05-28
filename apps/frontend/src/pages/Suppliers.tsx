@@ -166,6 +166,23 @@ export default function Suppliers() {
     toast.success(i(`✅ Fournisseur ${newS.name} ajouté !`, `✅ Supplier ${newS.name} added!`, `✅ Proveedor ${newS.name} añadido!`, `✅ Fornitore ${newS.name} aggiunto!`))
   }
 
+  const handleDeleteSupplier = async (s: Supplier) => {
+    const ok = await confirm({
+      title: i('Supprimer le fournisseur', 'Delete supplier', 'Eliminar proveedor', 'Elimina fornitore'),
+      message: i(`Supprimer définitivement « ${s.name} » ? Cette action est irréversible.`, `Permanently delete "${s.name}"? This action is irreversible.`, `¿Eliminar definitivamente "${s.name}"? Esta acción es irreversible.`, `Eliminare definitivamente "${s.name}"? Questa azione è irreversibile.`),
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await suppliersApi.delete(s.id)
+      setSuppliers(prev => prev.filter(x => x.id !== s.id))
+      if (editSupplier?.id === s.id) setShowEditSuppModal(false)
+      toast.success(i('Fournisseur supprimé', 'Supplier deleted', 'Proveedor eliminado', 'Fornitore eliminato'))
+    } catch {
+      toast.error(i('Échec de la suppression — réessayer', 'Delete failed — please retry', 'Error al eliminar — reintenta', 'Eliminazione fallita — riprova'))
+    }
+  }
+
   return (
     <div className="space-y-5 animate-in">
 
@@ -305,6 +322,13 @@ export default function Suppliers() {
                         setSuppEditMode(false)
                         setShowEditSuppModal(true)
                       }}><Pencil size={12} /></button>
+                      <button className="btn btn-sm btn-ghost"
+                        title={i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
+                        aria-label={i(`Supprimer ${s.name}`, `Delete ${s.name}`, `Eliminar ${s.name}`, `Elimina ${s.name}`)}
+                        style={{ color: 'var(--danger)', cursor: 'pointer' }}
+                        onClick={e => { e.stopPropagation(); handleDeleteSupplier(s) }}>
+                        <Trash2 size={12} />
+                      </button>
                       <button className="btn btn-sm"
                         style={{ background: 'rgba(91,78,232,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
                         onClick={() => navigate('/app/orders')}>
@@ -480,18 +504,9 @@ export default function Suppliers() {
               {!suppEditMode ? (
                 <>
                   <button className="btn btn-primary flex-1 justify-center" style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:6 }} onClick={() => setSuppEditMode(true)}><Pencil size={13} /> {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>
-                  <button className="btn btn-ghost" style={{ color:'var(--danger)', display:'flex', alignItems:'center', gap:6 }}
+                  <button className="btn btn-ghost" style={{ color:'var(--danger)', display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}
                     aria-label={i('Supprimer le fournisseur', 'Delete supplier', 'Eliminar proveedor', 'Elimina fornitore')}
-                    onClick={async () => {
-                      if (!editSupplier) return
-                      if (!(await confirm({ title: i('Supprimer le fournisseur', 'Delete supplier', 'Eliminar proveedor', 'Elimina fornitore'), message: i('Cette action est irréversible.', 'This action is irreversible.', 'Esta acción es irreversible.', 'Questa azione è irreversibile.'), danger: true }))) return
-                      try {
-                        await suppliersApi.delete(editSupplier.id)
-                        setSuppliers(prev => prev.filter(s => s.id !== editSupplier.id))
-                        setShowEditSuppModal(false)
-                        toast.success(i('Fournisseur supprimé', 'Supplier deleted', 'Proveedor eliminado', 'Fornitore eliminato'))
-                      } catch (e: any) { toast.error(e?.message ?? 'Erreur') }
-                    }}><Trash2 size={13} /> {i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}</button>
+                    onClick={() => editSupplier && handleDeleteSupplier(editSupplier)}><Trash2 size={13} /> {i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}</button>
                   <button className="btn btn-ghost" onClick={() => setShowEditSuppModal(false)}>{i('Fermer', 'Close', 'Cerrar', 'Chiudi')}</button>
                 </>
               ) : (

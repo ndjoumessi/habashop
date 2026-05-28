@@ -146,9 +146,13 @@ export default function Customers() {
       message: c?.name ?? '',
     })
     if (!ok) return
-    try { await customersApi.delete(id) } catch {}
-    setCustomers(prev => prev.filter(x => x.id !== id))
-    toast.success(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
+    try {
+      await customersApi.delete(id)
+      setCustomers(prev => prev.filter(x => x.id !== id))
+      toast.success(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
+    } catch {
+      toast.error(i('Échec de la suppression — réessayer', 'Delete failed — please retry', 'Error al eliminar — reintenta', 'Eliminazione fallita — riprova'))
+    }
   }
 
   const handleCreateCustomer = async () => {
