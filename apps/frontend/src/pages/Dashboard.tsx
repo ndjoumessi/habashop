@@ -49,7 +49,7 @@ const CatTooltip = ({ active, payload }: any) => {
   const color = p.payload?.color ?? DONUT_COLORS[0]
   return (
     <div style={{
-      background: '#0A0A16',
+      background: 'var(--card)',
       border: `1px solid ${color}55`,
       borderRadius: 12, padding: '12px 16px',
       boxShadow: '0 12px 40px rgba(0,0,0,.85)',
@@ -57,13 +57,13 @@ const CatTooltip = ({ active, payload }: any) => {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}/>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{p.name}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{p.name}</span>
       </div>
-      <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', fontFamily: 'var(--mono)', marginBottom: 6 }}>
+      <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', marginBottom: 6 }}>
         {fmt(p.value)}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,.1)', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{ flex: 1, height: 4, background: 'var(--bg3)', borderRadius: 99, overflow: 'hidden' }}>
           <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 99 }}/>
         </div>
         <span style={{ fontSize: 13, fontWeight: 900, color, fontFamily: 'var(--mono)', minWidth: 36, textAlign: 'right' }}>{pct}%</span>
@@ -77,8 +77,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
     <div style={{
-      background: '#0D0D1C',
-      border: '1px solid rgba(255,255,255,.15)',
+      background: 'var(--card)',
+      border: '1px solid var(--border2)',
       borderRadius: 10, padding: '10px 14px',
       boxShadow: '0 8px 32px rgba(0,0,0,.8)',
       fontFamily: 'var(--font)',
@@ -346,7 +346,7 @@ export default function Dashboard() {
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: 'var(--text3)' }} axisLine={false} tickLine={false}
                 tickFormatter={v => abbr(v)} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,.04)', stroke: 'rgba(255,255,255,.08)', strokeWidth: 1 }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(108,71,255,.06)', stroke: 'rgba(108,71,255,.18)', strokeWidth: 1 }} />
               <Area dataKey="ventes" stroke="#00D084" strokeWidth={2.5} fill="url(#areaGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>

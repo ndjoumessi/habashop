@@ -161,6 +161,34 @@ export const DARK_STYLE = [
   { featureType: 'water',                   elementType: 'labels.text.fill',        stylers: [{ color: '#2A2A5A' }] },
 ]
 
+// Style clair assorti à la charte (teintes violet/lilas) — utilisé quand le thème
+// est en mode clair, sinon DARK_STYLE. Cf. getMapStyle() ci-dessous.
+export const LIGHT_STYLE = [
+  { elementType: 'geometry',                                                        stylers: [{ color: '#F4F5FF' }] },
+  { elementType: 'labels.text.stroke',                                              stylers: [{ color: '#FFFFFF' }] },
+  { elementType: 'labels.text.fill',                                                stylers: [{ color: '#6B7280' }] },
+  { featureType: 'administrative',          elementType: 'geometry.stroke',         stylers: [{ color: '#D8D6F0' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill',        stylers: [{ color: '#5B4BD8' }] },
+  { featureType: 'administrative.country',  elementType: 'labels.text.fill',        stylers: [{ color: '#6C47FF' }] },
+  { featureType: 'poi',                     elementType: 'geometry',                stylers: [{ color: '#ECEAFE' }] },
+  { featureType: 'poi',                     elementType: 'labels.text.fill',        stylers: [{ color: '#9893C4' }] },
+  { featureType: 'poi.park',                elementType: 'geometry',                stylers: [{ color: '#E2F5EA' }] },
+  { featureType: 'road',                    elementType: 'geometry',                stylers: [{ color: '#FFFFFF' }] },
+  { featureType: 'road',                    elementType: 'geometry.stroke',         stylers: [{ color: '#E8EBFF' }] },
+  { featureType: 'road',                    elementType: 'labels.text.fill',        stylers: [{ color: '#8E8AAE' }] },
+  { featureType: 'road.highway',            elementType: 'geometry',                stylers: [{ color: '#EAE6FF' }] },
+  { featureType: 'road.highway',            elementType: 'geometry.stroke',         stylers: [{ color: '#D5D0F5' }] },
+  { featureType: 'road.highway',            elementType: 'labels.text.fill',        stylers: [{ color: '#6C5FB0' }] },
+  { featureType: 'transit',                 elementType: 'geometry',                stylers: [{ color: '#ECEAFE' }] },
+  { featureType: 'water',                   elementType: 'geometry',                stylers: [{ color: '#DCE4FF' }] },
+  { featureType: 'water',                   elementType: 'labels.text.fill',        stylers: [{ color: '#8B6FFF' }] },
+]
+
+// Couleur de fond du conteneur carte selon le thème (affichée pendant le chargement des tuiles).
+export const MAP_BG = (theme: string) => (theme === 'light' ? '#F4F5FF' : '#0A0A16')
+// Sélectionne le style Google Maps selon le thème actif.
+export const getMapStyle = (theme: string) => (theme === 'light' ? LIGHT_STYLE : DARK_STYLE)
+
 export function createMarkerIcon(google: any, color: string, size: number, text: string) {
   const s = size
   const svg = `<svg width="${s}" height="${s + 10}" xmlns="http://www.w3.org/2000/svg">

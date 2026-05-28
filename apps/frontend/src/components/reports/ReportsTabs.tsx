@@ -44,12 +44,12 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           {(percent * 100).toFixed(0)}%
         </text>
         <text x={cx} y={cy + 14} textAnchor="middle" dominantBaseline="middle"
-          style={{ fontSize: 12, fontWeight: 700, fill: 'rgba(238,238,255,.6)', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '.5px' }}>
+          style={{ fontSize: 12, fontWeight: 700, fill: 'var(--text2)', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '.5px' }}>
           {payload.name}
         </text>
         {payload.amount > 0 && (
           <text x={cx} y={cy + 32} textAnchor="middle"
-            style={{ fontSize: 11, fill: 'rgba(238,238,255,.4)', fontFamily: 'JetBrains Mono, monospace' }}>
+            style={{ fontSize: 11, fill: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace' }}>
             {fmt(payload.amount)}
           </text>
         )}
@@ -62,19 +62,19 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
     const d = payload[0].payload
     return (
       <div style={{
-        background: '#111125', border: `1px solid ${d.color}40`,
+        background: 'var(--card)', border: `1px solid ${d.color}40`,
         borderRadius: 12, padding: '10px 14px',
         boxShadow: `0 8px 24px rgba(0,0,0,.6), 0 0 0 1px ${d.color}20`, minWidth: 140,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, boxShadow: `0 0 8px ${d.color}`, flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#EEEEFF' }}>{d.name}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{d.name}</span>
         </div>
         <div style={{ fontSize: 24, fontWeight: 900, color: d.color, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-1px', marginBottom: d.amount > 0 ? 4 : 0 }}>
           {d.value}%
         </div>
         {d.amount > 0 && (
-          <div style={{ fontSize: 11, color: 'rgba(238,238,255,.4)', fontFamily: 'JetBrains Mono, monospace' }}>{fmt(d.amount)}</div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace' }}>{fmt(d.amount)}</div>
         )}
       </div>
     )
@@ -120,7 +120,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               <YAxis tickFormatter={v => abbr(v)} tick={{ fill:'var(--text3)', fontSize:10 }} axisLine={false} tickLine={false} width={38} />
               <Tooltip
                 formatter={(v: number) => [fmt(v), lang === 'en' ? 'Revenue' : lang === 'es' ? 'Ingresos' : lang === 'it' ? 'Ricavi' : 'CA']}
-                contentStyle={{ background:'#111125', border:'1px solid rgba(108,71,255,.3)', borderRadius:10, fontSize:12 }}
+                contentStyle={{ background:'var(--card)', border:'1px solid rgba(108,71,255,.3)', borderRadius:10, fontSize:12 }}
                 labelStyle={{ color:'var(--text2)', fontWeight:700 }}
                 cursor={{ stroke:'rgba(108,71,255,.3)', strokeWidth:1 }}
               />
@@ -130,7 +130,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
         </div>
 
         {/* Modes paiement — donut premium */}
-        <div className="panel" style={{ marginBottom: 0, background: 'linear-gradient(160deg,#0D0D1C,#111125)' }}>
+        <div className="panel" style={{ marginBottom: 0, background: 'var(--grad-card)' }}>
           <div className="panel-h">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
@@ -200,8 +200,8 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '9px 12px',
-                    background: activePayIndex === i ? `${item.color}12` : 'rgba(255,255,255,.02)',
-                    border: `1px solid ${activePayIndex === i ? item.color + '35' : 'rgba(255,255,255,.05)'}`,
+                    background: activePayIndex === i ? `${item.color}12` : 'var(--bg3)',
+                    border: `1px solid ${activePayIndex === i ? item.color + '35' : 'var(--border)'}`,
                     borderRadius: 10, cursor: 'pointer', transition: 'all .15s',
                     transform: activePayIndex === i ? 'translateX(4px)' : 'none',
                   }}>

@@ -92,7 +92,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                 const isActive  = emp.active
                 return (
                   <div key={emp.id} style={{
-                    background:'linear-gradient(160deg,#0D0D1C,#111125)',
+                    background:'var(--grad-card)',
                     border:'1px solid var(--border)',
                     borderRadius:14, padding:0,
                     overflow:'hidden', cursor:'pointer',
