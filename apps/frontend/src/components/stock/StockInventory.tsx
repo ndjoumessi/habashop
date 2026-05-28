@@ -1,4 +1,4 @@
-import { Search, Download, Plus, Tag, Package, Pencil, LayoutGrid, AlignJustify } from 'lucide-react'
+import { Search, Download, Plus, Tag, Package, Pencil, Trash2, LayoutGrid, AlignJustify } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
@@ -25,9 +25,10 @@ interface StockInventoryProps {
   setEditingSku: (v: string | null) => void
   setEditingId: (v: string | null) => void
   setModalTab: (v: any) => void
+  onDeleteProduct: (p: ProductItem) => void
 }
 
-export default function StockInventory({ products, fmt, lang, stockShowSKU, navigate, stockView, setStockView, search, setSearch, cat, setCat, cats, statusFilter, setStatusFilter, pg, setSelectedForLabel, setShowLabelModal, setProductEditMode, setShowModal, setForm, setEditingSku, setEditingId, setModalTab }: StockInventoryProps) {
+export default function StockInventory({ products, fmt, lang, stockShowSKU, navigate, stockView, setStockView, search, setSearch, cat, setCat, cats, statusFilter, setStatusFilter, pg, setSelectedForLabel, setShowLabelModal, setProductEditMode, setShowModal, setForm, setEditingSku, setEditingId, setModalTab, onDeleteProduct }: StockInventoryProps) {
   return (
       <div className="panel">
         <div className="panel-head">
@@ -168,6 +169,11 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: p.buy, sell: p.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, image: p.name.match(/^\S+/)?.[0] ?? '📦', barcode: p.barcode ?? '' }))
                       setEditingSku(p.sku); setEditingId(p._id ?? null); setModalTab('general'); setProductEditMode(false); setShowModal(true)
                     }}><Pencil size={11} /></button>
+                    <button className="mini-btn" style={{ cursor:'pointer', color:'var(--danger)' }}
+                      title={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
+                      aria-label={(lang === 'en' ? 'Delete ' : lang === 'es' ? 'Eliminar ' : lang === 'it' ? 'Elimina ' : 'Supprimer ') + p.name}
+                      onClick={e => { e.stopPropagation(); onDeleteProduct(p) }}
+                    ><Trash2 size={11} /></button>
                   </div>
                 </div>
               )
@@ -225,6 +231,11 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                               setProductEditMode(false)
                               setShowModal(true)
                             }}><Pencil size={12} /></button>
+                          <button className="btn btn-sm btn-ghost" style={{ color:'var(--danger)' }}
+                            title={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
+                            aria-label={(lang === 'en' ? 'Delete ' : lang === 'es' ? 'Eliminar ' : lang === 'it' ? 'Elimina ' : 'Supprimer ') + p.name}
+                            onClick={e => { e.stopPropagation(); onDeleteProduct(p) }}
+                          ><Trash2 size={12} /></button>
                         </div>
                       </td>
                     </tr>

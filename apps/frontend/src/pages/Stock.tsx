@@ -6,6 +6,7 @@ import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
 import { productsApi } from '@/lib/api'
+import { confirm } from '@/lib/confirm'
 import Pagination from '@/components/ui/Pagination'
 import { usePagination } from '@/hooks/usePagination'
 
@@ -133,6 +134,41 @@ export default function Stock() {
     resetForm()
   }
 
+  // Suppression produit — soft delete côté backend (deletedAt), restaurable par admin.
+  // Confirmation obligatoire car le produit a possiblement un historique de ventes.
+  const handleDeleteProduct = async (p: ProductItem) => {
+    const ok = await confirm({
+      title: lang === 'en' ? 'Delete product?'
+           : lang === 'es' ? '¿Eliminar producto?'
+           : lang === 'it' ? 'Eliminare il prodotto?'
+           : 'Supprimer le produit ?',
+      message: lang === 'en' ? `Permanently delete "${p.name}"? The product will be archived and will no longer appear in stock.`
+             : lang === 'es' ? `¿Eliminar definitivamente "${p.name}"? El producto se archivará y ya no aparecerá en el stock.`
+             : lang === 'it' ? `Eliminare definitivamente "${p.name}"? Il prodotto verrà archiviato e non apparirà più nello stock.`
+             : `Supprimer définitivement « ${p.name} » ? Le produit sera archivé et n'apparaîtra plus dans le stock.`,
+      confirmLabel: lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer',
+      cancelLabel:  lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla'  : 'Annuler',
+      danger: true,
+    })
+    if (!ok) return
+    if (p._id) {
+      try {
+        await productsApi.delete(p._id)
+      } catch {
+        toast.error(lang === 'en' ? 'Delete failed — please retry'
+                  : lang === 'es' ? 'Error al eliminar — reintenta'
+                  : lang === 'it' ? 'Eliminazione fallita — riprova'
+                  : 'Échec de la suppression — réessayer')
+        return
+      }
+    }
+    setProducts(prev => prev.filter(x => x.sku !== p.sku))
+    toast.success(lang === 'en' ? `🗑️ "${p.name}" deleted`
+                : lang === 'es' ? `🗑️ "${p.name}" eliminado`
+                : lang === 'it' ? `🗑️ "${p.name}" eliminato`
+                : `🗑️ « ${p.name} » supprimé`)
+  }
+
   return (
     <div className="space-y-5 animate-in">
       {/* Header */}
@@ -212,6 +248,7 @@ export default function Stock() {
         setProductEditMode={setProductEditMode} setShowModal={setShowModal}
         setForm={setForm} setEditingSku={setEditingSku} setEditingId={setEditingId}
         setModalTab={setModalTab}
+        onDeleteProduct={handleDeleteProduct}
       />
       )}
 
