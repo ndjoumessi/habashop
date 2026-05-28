@@ -1,4 +1,4 @@
-import { Search, Download, Plus, Tag, Package, Pencil, Trash2, LayoutGrid, AlignJustify } from 'lucide-react'
+import { Search, Download, Plus, Tag, Package, Eye, Trash2, LayoutGrid, AlignJustify } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
@@ -165,10 +165,10 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                         <Package size={11} /> {lang === 'en' ? 'Order' : lang === 'es' ? 'Pedir' : lang === 'it' ? 'Ordina' : 'Commander'}
                       </button>
                     )}
-                    <button className="mini-btn" style={{ cursor:'pointer' }} title="Modifier" onClick={() => {
+                    <button className="mini-btn" style={{ cursor:'pointer' }} title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'} onClick={() => {
                       setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: p.buy, sell: p.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, supplierId: p.supplierId ?? '', image: p.name.match(/^\S+/)?.[0] ?? '📦', barcode: p.barcode ?? '', description: p.description ?? '', notes: p.notes ?? '' }))
                       setEditingSku(p.sku); setEditingId(p._id ?? null); setModalTab('general'); setProductEditMode(false); setShowModal(true)
-                    }}><Pencil size={11} /></button>
+                    }}><Eye size={11} /></button>
                     <button className="mini-btn" style={{ cursor:'pointer', color:'var(--danger)' }}
                       title={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
                       aria-label={(lang === 'en' ? 'Delete ' : lang === 'es' ? 'Eliminar ' : lang === 'it' ? 'Elimina ' : 'Supprimer ') + p.name}
@@ -216,7 +216,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                             <button className="btn btn-sm btn-ghost gap-1" title="Commander" style={{ cursor:'pointer' }}
                               onClick={() => navigate('/app/orders')}><Package size={12} /></button>
                           )}
-                          <button className="btn btn-sm btn-ghost" title="Modifier"
+                          <button className="btn btn-sm btn-ghost" title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'}
                             onClick={() => {
                               setForm(f => ({ ...f,
                                 sku: p.sku, name: p.name.replace(/^\S+\s/, ''),
@@ -233,7 +233,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                               setModalTab('general')
                               setProductEditMode(false)
                               setShowModal(true)
-                            }}><Pencil size={12} /></button>
+                            }}><Eye size={12} /></button>
                           <button className="btn btn-sm btn-ghost" style={{ color:'var(--danger)' }}
                             title={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
                             aria-label={(lang === 'en' ? 'Delete ' : lang === 'es' ? 'Eliminar ' : lang === 'it' ? 'Elimina ' : 'Supprimer ') + p.name}
