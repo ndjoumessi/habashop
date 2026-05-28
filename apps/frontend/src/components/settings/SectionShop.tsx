@@ -109,7 +109,7 @@ export default function SectionShop() {
                 <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--acc)', width: 24 }}>%</span>
               </div>
             ) : (
-              <div style={{ padding: '10px 14px', background: 'rgba(255,149,0,.06)', border: '1px solid rgba(255,149,0,.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 }}>
+              <div style={{ padding: '10px 14px', background: 'var(--c-amber-bg)', border: '1px solid var(--c-amber-border)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 }}>
                 <span style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Appliqué sur ventes', 'Applied on sales', 'Aplicado en ventas', 'Applicato sulle vendite')}</span>
                 <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{shopData.taxRate}%</span>
               </div>

@@ -50,7 +50,7 @@ export default function SectionLang() {
 
       {/* Currency */}
       <div style={panel}>
-        <Head emoji="💱" tint="var(--c-orange-bg)"
+        <Head emoji="💱" tint="var(--c-amber-bg)"
           title={i("Devise d'affichage", 'Display currency', 'Divisa de visualización', 'Valuta di visualizzazione')}
           sub={i('6 devises — conversion automatique des montants', '6 currencies — automatic conversion of amounts', '6 divisas — conversión automática de importes', '6 valute — conversione automatica degli importi')} />
         <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
@@ -58,7 +58,7 @@ export default function SectionLang() {
             const active = currency === c.code
             return (
               <button key={c.code} type="button" onClick={() => cfg.setCurrency(c.code)}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '16px 10px', borderRadius: 14, background: active ? 'var(--c-orange-bg)' : 'rgba(255,255,255,.03)', border: `1.5px solid ${active ? 'var(--c-orange-border)' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '16px 10px', borderRadius: 14, background: active ? 'var(--c-amber-bg)' : 'rgba(255,255,255,.03)', border: `1.5px solid ${active ? 'var(--c-amber-border)' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
                 {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: 'var(--warn)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#000', fontWeight: 900 }}>✓</div>}
                 <span style={{ fontSize: 26 }}>{c.flag}</span>
                 <div style={{ fontSize: 14, fontWeight: 900, color: active ? 'var(--warn)' : 'var(--text)', fontFamily: 'var(--mono)' }}>{c.code}</div>
@@ -67,7 +67,7 @@ export default function SectionLang() {
             )
           })}
         </div>
-        <div style={{ margin: '0 22px 20px', padding: 16, background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)', borderRadius: 14 }}>
+        <div style={{ margin: '0 22px 20px', padding: 16, background: 'var(--c-amber-bg)', border: '1px solid var(--c-amber-border)', borderRadius: 14 }}>
           <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', marginBottom: 12 }}>
             {i('APERÇU — Conversion temps réel', 'PREVIEW — Real-time conversion', 'VISTA PREVIA — Conversión en tiempo real', 'ANTEPRIMA — Conversione in tempo reale')}
           </div>

@@ -224,6 +224,8 @@ const LIGHT_EXTRA_VARS: Record<string, string> = {
   '--grad-card': 'linear-gradient(135deg,#F7F5FF,#EEEAFF)',
   '--text4':     '#B0ADCA',
   '--border2':   'rgba(0,0,0,0.14)',
+  '--c-amber-bg':     'rgba(255,184,0,.08)',  /* ambre légèrement plus visible en clair */
+  '--c-amber-border': 'rgba(255,184,0,.20)',
 }
 
 export function applyTheme(theme: Theme) {

@@ -11,6 +11,8 @@
   --c-green-bg2:     rgba(0,208,132,.08);
   --c-orange-bg:     rgba(255,149,0,.12);
   --c-orange-border: rgba(255,149,0,.25);
+  --c-amber-bg:      rgba(255,184,0,.05);  /* fond ambre SUBTIL (panneaux) — sombre ; clair via applyTheme */
+  --c-amber-border:  rgba(255,184,0,.12);
   --c-blue-bg:       rgba(0,184,255,.12);
   --c-blue-border:   rgba(0,184,255,.25);
   --c-red-bg:        rgba(255,59,92,.12);
