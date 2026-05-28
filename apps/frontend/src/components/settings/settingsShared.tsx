@@ -6,8 +6,8 @@ export const makeI = (lang: string) => (fr: string, en: string, es: string, it: 
 export const pick = (lang: string, o: Record<L4, string>) => o[lang as L4] ?? o.fr
 
 export const panel: React.CSSProperties = {
-  background: 'linear-gradient(160deg,#0D0D1C,#111128)',
-  border: '1px solid rgba(255,255,255,.07)', borderRadius: 20, overflow: 'hidden',
+  background: 'var(--grad-card)',
+  border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden',
 }
 
 export function Switch({ on, onClick, color, disabled }: { on: boolean; onClick: () => void; color: string; disabled?: boolean }) {

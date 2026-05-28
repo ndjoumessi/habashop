@@ -226,6 +226,7 @@ const LIGHT_EXTRA_VARS: Record<string, string> = {
   '--border2':   'rgba(0,0,0,0.14)',
   '--c-amber-bg':     'rgba(255,184,0,.08)',  /* ambre légèrement plus visible en clair */
   '--c-amber-border': 'rgba(255,184,0,.20)',
+  '--header-bg':      'rgba(248,249,255,.85)',  /* barre du haut translucide claire */
 }
 
 export function applyTheme(theme: Theme) {
