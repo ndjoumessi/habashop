@@ -189,6 +189,15 @@ select.input {
   background-repeat:no-repeat; background-position:right 12px center; padding-right:36px
 }
 textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
+/* Autofill Chrome : peint par-dessus le fond jaune/blanc forcé (suit le thème via --bg4/--text) */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px var(--bg4) inset;
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  transition: background-color 9999s ease-in-out 0s;
+}
 
 /* ── Layout ── */
 .app-layout,.app-shell { display:flex; height:100vh; overflow:hidden; background:var(--bg) }
