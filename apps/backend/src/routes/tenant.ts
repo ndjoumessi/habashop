@@ -8,9 +8,12 @@ import { sendUserInvitationEmail } from '../services/email'
 const VALID_ROLES = ['ADMIN', 'MANAGER', 'CASHIER', 'ACCOUNTANT', 'HR'] as const
 type Role = typeof VALID_ROLES[number]
 
-// Garde rôle ADMIN (renvoie true si le caller PEUT continuer, false sinon avec reply envoyée)
+const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN'] as const
+const isAdminRole = (role: unknown) => typeof role === 'string' && (ADMIN_ROLES as readonly string[]).includes(role)
+
+// Garde rôle ADMIN/SUPER_ADMIN (renvoie true si le caller PEUT continuer, false sinon avec reply envoyée)
 function requireAdmin(request: FastifyRequest, reply: FastifyReply): boolean {
-  if (request.user?.role !== 'ADMIN') {
+  if (!isAdminRole(request.user?.role)) {
     reply.code(403).send({ error: 'Accès réservé aux administrateurs' })
     return false
   }
@@ -142,9 +145,9 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Utilisateur introuvable' })
     // Empêcher la désactivation du dernier admin actif
-    if (!active && existing.role === 'ADMIN' && existing.isActive) {
+    if (!active && isAdminRole(existing.role) && existing.isActive) {
       const remainingAdmins = await prisma.user.count({
-        where: { tenantId: request.tenantId, role: 'ADMIN', isActive: true, deletedAt: null, NOT: { id } },
+        where: { tenantId: request.tenantId, role: { in: [...ADMIN_ROLES] }, isActive: true, deletedAt: null, NOT: { id } },
       })
       if (remainingAdmins === 0) return reply.code(403).send({ error: 'Impossible de désactiver le dernier administrateur actif' })
     }
@@ -165,8 +168,8 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
 
   app.patch('/api/tenant/users/:id/2fa', { preHandler: authenticate }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    // Self-service autorisé (un user peut toggler son propre 2FA) ; sinon ADMIN requis
-    if (id !== request.user.userId && request.user.role !== 'ADMIN') {
+    // Self-service autorisé (un user peut toggler son propre 2FA) ; sinon ADMIN/SUPER_ADMIN requis
+    if (id !== request.user.userId && !isAdminRole(request.user.role)) {
       return reply.code(403).send({ error: 'Accès réservé aux administrateurs ou au propriétaire du compte' })
     }
     const { twoFA } = request.body as { twoFA?: boolean }
@@ -194,9 +197,9 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     if (id === request.user.userId) return reply.code(403).send({ error: 'Vous ne pouvez pas supprimer votre propre compte' })
     const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Utilisateur introuvable' })
-    if (existing.role === 'ADMIN') {
+    if (isAdminRole(existing.role)) {
       const remainingAdmins = await prisma.user.count({
-        where: { tenantId: request.tenantId, role: 'ADMIN', isActive: true, deletedAt: null, NOT: { id } },
+        where: { tenantId: request.tenantId, role: { in: [...ADMIN_ROLES] }, isActive: true, deletedAt: null, NOT: { id } },
       })
       if (remainingAdmins === 0) return reply.code(403).send({ error: 'Impossible de supprimer le dernier administrateur actif' })
     }
