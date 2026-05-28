@@ -1,5 +1,6 @@
 import { useConfig } from '@/stores/appStore'
 import type { Lang } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import { Lock } from 'lucide-react'
 
 const LANGS: { code: Lang; flag: string; label: string }[] = [
@@ -11,11 +12,14 @@ const LANGS: { code: Lang; flag: string; label: string }[] = [
 
 export default function LanguageSwitcher() {
   const { lang } = useConfig()
+  const { i } = useI18n()
   const current = LANGS.find(l => l.code === lang) ?? LANGS[0]
-  const tooltipText = lang === 'en' ? 'Language set in Settings'
-                    : lang === 'es' ? 'Idioma configurado en Configuración'
-                    : lang === 'it' ? 'Lingua configurata in Impostazioni'
-                    : 'Langue configurée dans Paramètres'
+  const tooltipText = i(
+    'Langue configurée dans Paramètres',
+    'Language set in Settings',
+    'Idioma configurado en Configuración',
+    'Lingua configurata in Impostazioni'
+  )
 
   return (
     <div

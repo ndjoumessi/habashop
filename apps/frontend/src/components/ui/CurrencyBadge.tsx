@@ -1,5 +1,6 @@
 import { useConfig } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
+import { useI18n } from '@/hooks/useI18n'
 import { Lock } from 'lucide-react'
 
 const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
@@ -12,12 +13,15 @@ const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
 ]
 
 export default function CurrencyBadge() {
-  const { currency, lang } = useConfig()
+  const { currency } = useConfig()
+  const { i } = useI18n()
   const current = CURRENCIES.find(c => c.code === currency) ?? CURRENCIES[0]
-  const tooltipText = lang === 'en' ? 'Currency set in Settings'
-                    : lang === 'es' ? 'Divisa configurada en Configuración'
-                    : lang === 'it' ? 'Valuta configurata in Impostazioni'
-                    : 'Devise configurée dans Paramètres'
+  const tooltipText = i(
+    'Devise configurée dans Paramètres',
+    'Currency set in Settings',
+    'Divisa configurada en Configuración',
+    'Valuta configurata in Impostazioni'
+  )
 
   return (
     <div
