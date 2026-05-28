@@ -1,5 +1,6 @@
-import { lazy, Suspense, useState, useMemo } from 'react'
-import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search } from 'lucide-react'
+import { lazy, Suspense, useState, useMemo, useEffect, useRef } from 'react'
+import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy } from 'lucide-react'
+import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { printProductLabels } from '@/utils/export'
@@ -37,6 +38,26 @@ function generateEAN13(): string {
   const sum = base.split('').reduce((acc, d, i) => acc + parseInt(d, 10) * (i % 2 === 0 ? 1 : 3), 0)
   const check = (10 - (sum % 10)) % 10
   return base + String(check)
+}
+
+function BarcodeDisplay({ value }: { value: string }) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  useEffect(() => {
+    if (svgRef.current && /^\d{13}$/.test(value)) {
+      try {
+        JsBarcode(svgRef.current, value, {
+          format: 'EAN13',
+          width: 2,
+          height: 60,
+          displayValue: false,
+          margin: 8,
+          background: 'transparent',
+          lineColor: 'var(--text)',
+        })
+      } catch {}
+    }
+  }, [value])
+  return <svg ref={svgRef} />
 }
 
 export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers }: StockModalsProps) {
@@ -206,25 +227,51 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 </div>
 
                 {/* ── Code-barres + scanner ── */}
-                <ViewField label="CODE-BARRES" value={form.barcode||''} editing={productEditMode}>
-                  <div style={{ display:'flex', gap:8 }}>
-                    <input className="input text-sm" style={{ flex:1, borderColor: barcodeInvalid ? 'var(--danger)' : undefined }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
-                    <button type="button" className="mini-btn"
-                      onClick={() => {
-                        if (form.barcode && !window.confirm(lang === 'en' ? 'Replace the existing barcode?' : lang === 'es' ? '¿Reemplazar el código de barras existente?' : lang === 'it' ? 'Sostituire il codice a barre esistente?' : 'Remplacer le code-barres existant ?')) return
-                        setForm(f => ({ ...f, barcode: generateEAN13() }))
-                      }}
-                      title={lang === 'en' ? 'Generate EAN-13' : lang === 'es' ? 'Generar EAN-13' : lang === 'it' ? 'Genera EAN-13' : 'Générer EAN-13'}
-                      style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Wand2 size={18} /></button>
-                    <button type="button" className="mini-btn" onClick={() => setShowScanner(true)}
-                      title="Scanner un code-barres" style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Camera size={18} /></button>
-                  </div>
-                  {barcodeInvalid && (
-                    <div style={{ marginTop:6, fontSize:11, color:'var(--danger)' }}>
-                      {lang === 'en' ? 'Invalid barcode (13 digits required)' : lang === 'es' ? 'Código de barras inválido (13 dígitos requeridos)' : lang === 'it' ? 'Codice a barre non valido (13 cifre richieste)' : 'Code-barres invalide (13 chiffres requis)'}
+                {productEditMode ? (
+                  <ViewField label="CODE-BARRES" value={form.barcode||''} editing={true}>
+                    <div style={{ display:'flex', gap:8 }}>
+                      <input className="input text-sm" style={{ flex:1, borderColor: barcodeInvalid ? 'var(--danger)' : undefined }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
+                      <button type="button" className="mini-btn"
+                        onClick={() => {
+                          if (form.barcode && !window.confirm(lang === 'en' ? 'Replace the existing barcode?' : lang === 'es' ? '¿Reemplazar el código de barras existente?' : lang === 'it' ? 'Sostituire il codice a barre esistente?' : 'Remplacer le code-barres existant ?')) return
+                          setForm(f => ({ ...f, barcode: generateEAN13() }))
+                        }}
+                        title={lang === 'en' ? 'Generate EAN-13' : lang === 'es' ? 'Generar EAN-13' : lang === 'it' ? 'Genera EAN-13' : 'Générer EAN-13'}
+                        style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Wand2 size={18} /></button>
+                      <button type="button" className="mini-btn" onClick={() => setShowScanner(true)}
+                        title="Scanner un code-barres" style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Camera size={18} /></button>
                     </div>
-                  )}
-                </ViewField>
+                    {barcodeInvalid && (
+                      <div style={{ marginTop:6, fontSize:11, color:'var(--danger)' }}>
+                        {lang === 'en' ? 'Invalid barcode (13 digits required)' : lang === 'es' ? 'Código de barras inválido (13 dígitos requeridos)' : lang === 'it' ? 'Codice a barre non valido (13 cifre richieste)' : 'Code-barres invalide (13 chiffres requis)'}
+                      </div>
+                    )}
+                  </ViewField>
+                ) : (
+                  <div>
+                    <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>CODE-BARRES</label>
+                    {form.barcode && /^\d{13}$/.test(form.barcode) ? (
+                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+                        <BarcodeDisplay value={form.barcode} />
+                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                          <span style={{ fontFamily:'var(--mono)', fontSize:13, letterSpacing:2, color:'var(--text2)' }}>{form.barcode}</span>
+                          <button type="button" className="mini-btn"
+                            onClick={() => {
+                              navigator.clipboard.writeText(form.barcode).then(() => {
+                                toast.success(lang === 'en' ? 'Copied!' : lang === 'es' ? '¡Copiado!' : lang === 'it' ? 'Copiato!' : 'Copié !')
+                              }).catch(() => {})
+                            }}
+                            title={lang === 'en' ? 'Copy' : lang === 'es' ? 'Copiar' : lang === 'it' ? 'Copia' : 'Copier'}
+                            style={{ padding:'4px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}><Copy size={13} /></button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, minHeight:40, display:'flex', alignItems:'center' }}>
+                        <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>Non renseigné</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <ViewField label="DESCRIPTION" value={form.description||''} editing={productEditMode}>
                   <textarea className="input text-sm" rows={2} placeholder="Description courte..."
                     value={form.description} onChange={e => setForm(f => ({...f, description:e.target.value}))} />

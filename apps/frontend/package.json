@@ -18,6 +18,7 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
     "@sentry/react": "^10.53.1",
+    "@types/jsbarcode": "^3.11.4",
     "@zxing/browser": "^0.2.0",
     "@zxing/library": "^0.22.0",
     "axios": "^1.7.2",
@@ -25,6 +26,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
+    "jsbarcode": "^3.12.3",
     "lucide-react": "^0.400.0",
     "radix-ui": "^1.4.3",
     "react": "^18.3.1",
