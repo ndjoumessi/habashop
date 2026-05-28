@@ -1,5 +1,6 @@
 import { useConfig, useFormatAmount, ACCENT_PAIRS, THEMES, type Currency, type Lang, type Theme } from '@/stores/appStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
+import { tenantApi } from '@/lib/api'
 
 export default function SectionLang() {
   const cfg = useConfig()
@@ -57,7 +58,10 @@ export default function SectionLang() {
           {CURRENCIES.map(c => {
             const active = currency === c.code
             return (
-              <button key={c.code} type="button" onClick={() => cfg.setCurrency(c.code)}
+              <button key={c.code} type="button" onClick={() => {
+                cfg.setCurrency(c.code)
+                tenantApi.update({ currency: c.code }).catch(() => {})
+              }}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '16px 10px', borderRadius: 14, background: active ? 'rgba(255,184,0,.06)' : 'rgba(255,255,255,.03)', border: `1.5px solid ${active ? 'rgba(255,184,0,.18)' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
                 {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: 'var(--warn)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#000', fontWeight: 900 }}>✓</div>}
                 <span style={{ fontSize: 26 }}>{c.flag}</span>
