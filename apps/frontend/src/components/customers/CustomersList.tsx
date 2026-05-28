@@ -131,6 +131,13 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                           })}>
                           <FileText size={11} />
                         </button>
+                        <button className="btn btn-sm btn-ghost"
+                          title={i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
+                          aria-label={i(`Supprimer ${c.name}`, `Delete ${c.name}`, `Eliminar ${c.name}`, `Elimina ${c.name}`)}
+                          style={{ color: 'var(--danger)', cursor: 'pointer' }}
+                          onClick={e => { e.stopPropagation(); onDelete(c.id) }}>
+                          <Trash2 size={12} />
+                        </button>
                       </div>
                     </td>
                   </tr>
