@@ -1,6 +1,7 @@
 import { useConfig, useFormatAmount, ACCENT_PAIRS, THEMES, type Currency, type Lang, type Theme } from '@/stores/appStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
 import { tenantApi } from '@/lib/api'
+import { Check } from 'lucide-react'
 
 export default function SectionLang() {
   const cfg = useConfig()
@@ -39,13 +40,29 @@ export default function SectionLang() {
                 cfg.setLang(l.code as Lang)
                 tenantApi.update({ lang: l.code }).catch(() => {})
               }}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 14, background: active ? 'rgba(108,71,255,.12)' : 'rgba(255,255,255,.03)', border: `1.5px solid ${active ? 'rgba(108,71,255,.35)' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s' }}>
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '14px 16px', borderRadius: 12,
+                  background: active ? 'rgba(108,71,255,.10)' : 'var(--bg3)',
+                  border: `1.5px solid ${active ? 'var(--p)' : 'var(--border)'}`,
+                  boxShadow: active ? '0 0 0 3px rgba(108,71,255,.20)' : 'none',
+                  cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)',
+                  transition: 'all .15s',
+                }}>
                 <span style={{ fontSize: 28 }}>{l.flag}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? 'var(--p3)' : 'var(--text)' }}>{l.native}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? 'var(--p)' : 'var(--text)' }}>{l.native}</div>
                   <div style={{ fontSize: 10, color: 'var(--text3)' }}>{l.name}</div>
                 </div>
-                {active && <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--p2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', fontWeight: 900 }}>✓</div>}
+                {active && (
+                  <div style={{
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: 'var(--p)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Check size={12} color="#fff" />
+                  </div>
+                )}
               </button>
             )
           })}
@@ -65,8 +82,25 @@ export default function SectionLang() {
                 cfg.setCurrency(c.code)
                 tenantApi.update({ currency: c.code }).catch(() => {})
               }}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '16px 10px', borderRadius: 14, background: active ? 'rgba(255,184,0,.06)' : 'rgba(255,255,255,.03)', border: `1.5px solid ${active ? 'rgba(255,184,0,.18)' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
-                {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: 'var(--warn)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#000', fontWeight: 900 }}>✓</div>}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
+                  padding: '16px 10px', borderRadius: 12,
+                  background: active ? 'rgba(255,184,0,.08)' : 'var(--bg3)',
+                  border: `1.5px solid ${active ? 'var(--warn)' : 'var(--border)'}`,
+                  boxShadow: active ? '0 0 0 3px rgba(255,184,0,.20)' : 'none',
+                  cursor: 'pointer', fontFamily: 'var(--font)',
+                  transition: 'all .15s', position: 'relative',
+                }}>
+                {active && (
+                  <div style={{
+                    position: 'absolute', top: 6, right: 6,
+                    width: 18, height: 18, borderRadius: '50%',
+                    background: 'var(--warn)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Check size={11} color="#000" />
+                  </div>
+                )}
                 <span style={{ fontSize: 26 }}>{c.flag}</span>
                 <div style={{ fontSize: 14, fontWeight: 900, color: active ? 'var(--warn)' : 'var(--text)', fontFamily: 'var(--mono)' }}>{c.code}</div>
                 <div style={{ fontSize: 10, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.3 }}>{pick(lang, c.name)}</div>
