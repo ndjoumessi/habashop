@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import ReactDOM from 'react-dom'
 import { useConfig } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import { Lock } from 'lucide-react'
@@ -21,16 +19,17 @@ export default function CurrencyBadge() {
                     : lang === 'it' ? 'Valuta configurata in Impostazioni'
                     : 'Devise configurée dans Paramètres'
 
-  const [tip, setTip] = useState<{ x: number; y: number } | null>(null)
-
   return (
     <div
       style={{ position: 'relative' }}
       onMouseEnter={e => {
-        const r = e.currentTarget.getBoundingClientRect()
-        setTip({ x: r.left + r.width / 2, y: r.top - 8 })
+        const tip = e.currentTarget.querySelector<HTMLSpanElement>(':scope > span')
+        if (tip) tip.style.opacity = '1'
       }}
-      onMouseLeave={() => setTip(null)}
+      onMouseLeave={e => {
+        const tip = e.currentTarget.querySelector<HTMLSpanElement>(':scope > span')
+        if (tip) tip.style.opacity = '0'
+      }}
     >
       <button
         className="icon-btn"
@@ -44,27 +43,25 @@ export default function CurrencyBadge() {
         <span style={{ color: 'var(--acc)', letterSpacing: '-.3px' }}>{current.symbol}</span>
         <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />
       </button>
-      {tip && ReactDOM.createPortal(
-        <div style={{
-          position: 'fixed',
-          left: tip.x,
-          top: tip.y,
-          transform: 'translate(-50%, -100%)',
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
-          color: 'var(--text2)',
-          fontSize: 11,
-          padding: '4px 8px',
-          borderRadius: 6,
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          zIndex: 99999,
-          boxShadow: 'var(--sh-xs)',
-        }}>
-          {tooltipText}
-        </div>,
-        document.body
-      )}
+      <span style={{
+        position: 'absolute',
+        bottom: 'calc(100% + 6px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        color: 'var(--text2)',
+        fontSize: 11,
+        padding: '4px 8px',
+        borderRadius: 6,
+        whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+        opacity: 0,
+        transition: 'opacity .15s',
+        zIndex: 9999,
+      }}>
+        {tooltipText}
+      </span>
     </div>
   )
 }
