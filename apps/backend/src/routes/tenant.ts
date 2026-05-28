@@ -39,6 +39,23 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         address:  data.address,
         phone:    data.phone,
         email:    data.email,
+        lang:     data.lang,
+        // POS
+        posVatIncluded: data.posVatIncluded,
+        posAutoprint:   data.posAutoprint,
+        autoWhatsApp:   data.autoWhatsApp,
+        enableLoyalty:  data.enableLoyalty,
+        requireCashier: data.requireCashier,
+        enableScanner:  data.enableScanner,
+        priceMode:      data.priceMode,
+        posDefaultFund: data.posDefaultFund,
+        // Notifications
+        notifEmailSales:   data.notifEmailSales,
+        notifEmailStock:   data.notifEmailStock,
+        notifEmailPayroll: data.notifEmailPayroll,
+        notifSmsSales:     data.notifSmsSales,
+        notifSmsStock:     data.notifSmsStock,
+        notifPushAll:      data.notifPushAll,
       },
     })
   }

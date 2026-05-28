@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useConfig, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo } from '@/stores/appStore'
+import { tenantApi } from '@/lib/api'
 import { type L4, makeI, pick, panel, Head, ToggleCard } from '@/components/settings/settingsShared'
 
 export default function SectionPOS() {
@@ -19,6 +20,26 @@ export default function SectionPOS() {
   })
   const [draft, setDraft] = useState(snapshot())
   const [fundInput, setFundInput] = useState(fromXOF(cfg.posDefaultFund).toFixed(decimals))
+
+  // Charge les paramètres POS depuis le tenant (source de vérité backend).
+  // posTaxRate côté front = vatRate côté backend (single source of truth — pas de doublon de TVA).
+  useEffect(() => {
+    tenantApi.get().then((t: any) => {
+      if (!t) return
+      cfg.updateConfig({
+        posVatIncluded: t.posVatIncluded ?? true,
+        posAutoprint:   t.posAutoprint   ?? false,
+        autoWhatsApp:   t.autoWhatsApp   ?? false,
+        enableLoyalty:  t.enableLoyalty  ?? false,
+        requireCashier: t.requireCashier ?? false,
+        enableScanner:  t.enableScanner  ?? false,
+        priceMode:      (t.priceMode === 'HT' ? 'HT' : 'TTC') as 'TTC' | 'HT',
+        posTaxRate:     t.vatRate        ?? 18,
+        posDefaultFund: t.posDefaultFund ?? 0,
+      } as any)
+    }).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const v = editMode ? draft : snapshot()
   const startEdit = () => { setDraft(snapshot()); setFundInput(fromXOF(cfg.posDefaultFund).toFixed(decimals)); setEditMode(true) }
   const toggle = (key: keyof ReturnType<typeof snapshot>) => { if (!editMode) return; setDraft(p => ({ ...p, [key]: !(p as any)[key] })) }
@@ -37,10 +58,26 @@ export default function SectionPOS() {
     { id: 'HT', title: 'HT', sub: i('Hors taxes', 'Excl. tax', 'Sin impuestos', 'Tasse escluse') },
   ]
 
-  const save = () => {
-    cfg.updateConfig({ ...draft, posDefaultFund: toXOF(Number(fundInput) || 0) })
-    toast.success(i('✅ Config POS sauvegardée', '✅ POS config saved', '✅ Config TPV guardada', '✅ Config POS salvata'))
-    setEditMode(false)
+  const save = async () => {
+    const fundXOF = toXOF(Number(fundInput) || 0)
+    try {
+      await tenantApi.update({
+        posVatIncluded: draft.posVatIncluded,
+        posAutoprint:   draft.posAutoprint,
+        autoWhatsApp:   draft.autoWhatsApp,
+        enableLoyalty:  draft.enableLoyalty,
+        requireCashier: draft.requireCashier,
+        enableScanner:  draft.enableScanner,
+        priceMode:      draft.priceMode,
+        vatRate:        draft.posTaxRate,    // mapping → tenant.vatRate (single source of truth)
+        posDefaultFund: fundXOF,
+      })
+      cfg.updateConfig({ ...draft, posDefaultFund: fundXOF, shopVatRate: draft.posTaxRate } as any)
+      toast.success(i('✅ Config POS sauvegardée', '✅ POS config saved', '✅ Config TPV guardada', '✅ Config POS salvata'))
+      setEditMode(false)
+    } catch (e: any) {
+      toast.error(i('Échec de la sauvegarde', 'Save failed', 'Error al guardar', 'Salvataggio fallito') + (e?.message ? ` : ${e.message}` : ''))
+    }
   }
 
   return (

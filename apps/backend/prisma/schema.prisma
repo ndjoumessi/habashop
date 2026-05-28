@@ -19,6 +19,25 @@ model Tenant {
   phone     String?
   email     String?
   logo      String?
+  lang      String   @default("fr") // fr | en | es | it — langue par défaut du tenant
+
+  // ── Paramètres POS ── (vatRate ci-dessus = TVA POS, single source of truth)
+  posVatIncluded    Boolean  @default(true)
+  posAutoprint      Boolean  @default(false)
+  autoWhatsApp      Boolean  @default(false)
+  enableLoyalty     Boolean  @default(false)
+  requireCashier    Boolean  @default(false)
+  enableScanner     Boolean  @default(false)
+  priceMode         String   @default("TTC") // TTC | HT
+  posDefaultFund    Float    @default(0)
+
+  // ── Paramètres Notifications ──
+  notifEmailSales   Boolean  @default(true)
+  notifEmailStock   Boolean  @default(true)
+  notifEmailPayroll Boolean  @default(false)
+  notifSmsSales     Boolean  @default(false)
+  notifSmsStock     Boolean  @default(true)
+  notifPushAll      Boolean  @default(true)
 
   // Billing / plan lifecycle
   isActive        Boolean   @default(true)

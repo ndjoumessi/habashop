@@ -1,10 +1,28 @@
+import { useEffect } from 'react'
 import { useConfig } from '@/stores/appStore'
+import { tenantApi } from '@/lib/api'
 import { type L4, makeI, pick, panel, Head, ToggleCard } from '@/components/settings/settingsShared'
 
 export default function SectionNotif() {
   const cfg = useConfig()
   const lang = cfg.lang
   const i = makeI(lang)
+
+  // Charge depuis le tenant au mount
+  useEffect(() => {
+    tenantApi.get().then((t: any) => {
+      if (!t) return
+      cfg.updateConfig({
+        notifEmailSales:   t.notifEmailSales   ?? true,
+        notifEmailStock:   t.notifEmailStock   ?? true,
+        notifEmailPayroll: t.notifEmailPayroll ?? false,
+        notifSmsSales:     t.notifSmsSales     ?? false,
+        notifSmsStock:     t.notifSmsStock     ?? true,
+        notifPushAll:      t.notifPushAll      ?? true,
+      } as any)
+    }).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const NOTIFS: { key: any; icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string> }[] = [
     { key: 'notifEmailStock', icon: '⚠️', color: 'var(--danger)', label: { fr: 'Alertes rupture stock', en: 'Stock shortage alerts', es: 'Alertas de stock', it: 'Avvisi scorte' }, desc: { fr: 'Email quand un produit est en rupture', en: 'Email when a product runs out', es: 'Email cuando un producto se agota', it: 'Email quando un prodotto si esaurisce' } },
@@ -23,7 +41,12 @@ export default function SectionNotif() {
       <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {NOTIFS.map(n => (
           <ToggleCard key={n.key} icon={n.icon} color={n.color} label={pick(lang, n.label)} desc={pick(lang, n.desc)}
-            on={!!(cfg as any)[n.key]} onChange={() => cfg.updateConfig({ [n.key]: !(cfg as any)[n.key] } as any)} />
+            on={!!(cfg as any)[n.key]}
+            onChange={() => {
+              const newVal = !(cfg as any)[n.key]
+              cfg.updateConfig({ [n.key]: newVal } as any)
+              tenantApi.update({ [n.key]: newVal } as any).catch(() => {})
+            }} />
         ))}
       </div>
     </div>

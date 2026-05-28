@@ -35,7 +35,10 @@ export default function SectionLang() {
           {LANGS.map(l => {
             const active = lang === l.code
             return (
-              <button key={l.code} type="button" onClick={() => cfg.setLang(l.code as Lang)}
+              <button key={l.code} type="button" onClick={() => {
+                cfg.setLang(l.code as Lang)
+                tenantApi.update({ lang: l.code }).catch(() => {})
+              }}
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 14, background: active ? 'rgba(108,71,255,.12)' : 'rgba(255,255,255,.03)', border: `1.5px solid ${active ? 'rgba(108,71,255,.35)' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s' }}>
                 <span style={{ fontSize: 28 }}>{l.flag}</span>
                 <div style={{ flex: 1 }}>

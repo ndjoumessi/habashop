@@ -321,7 +321,13 @@ export const useAppStore = create<AppStore>()(
       setTenant:   (tenant) => set((state) => {
         const tc = tenant?.currency
         const valid = tc && (['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP'] as const).includes(tc as Currency)
-        return { tenant, currency: valid ? (tc as Currency) : state.currency }
+        const tl = (tenant as { lang?: string } | null)?.lang
+        const validLang = tl && (['fr', 'en', 'es', 'it'] as const).includes(tl as Lang)
+        return {
+          tenant,
+          currency: valid ? (tc as Currency) : state.currency,
+          lang:     validLang ? (tl as Lang) : state.lang,
+        }
       }),
       clearTenant: () => set({ tenant: null }),
 

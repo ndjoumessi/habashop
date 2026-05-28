@@ -49,6 +49,23 @@ export interface OrderBody {
 export interface TenantUpdateBody {
   name?: string; currency?: string; country?: string; vatRate?: number
   address?: string; phone?: string; email?: string
+  lang?: string
+  // POS
+  posVatIncluded?: boolean
+  posAutoprint?: boolean
+  autoWhatsApp?: boolean
+  enableLoyalty?: boolean
+  requireCashier?: boolean
+  enableScanner?: boolean
+  priceMode?: string
+  posDefaultFund?: number
+  // Notifications
+  notifEmailSales?: boolean
+  notifEmailStock?: boolean
+  notifEmailPayroll?: boolean
+  notifSmsSales?: boolean
+  notifSmsStock?: boolean
+  notifPushAll?: boolean
 }
 export interface InviteUserBody {
   name?: string; email?: string; password?: string; role?: string

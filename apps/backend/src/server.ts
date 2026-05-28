@@ -306,6 +306,8 @@ async function runWeeklyReports(): Promise<void> {
   for (const tenant of tenants) {
     const admin = tenant.users[0]
     if (!admin?.email) continue
+    // Respect la préférence tenant : skip si rapports ventes email désactivés
+    if ((tenant as { notifEmailSales?: boolean }).notifEmailSales === false) continue
 
     const [salesWeek, salesLastWeek, lowStock] = await Promise.all([
       prisma.sale.aggregate({ where: { tenantId: tenant.id, createdAt: { gte: weekAgo } }, _sum: { total: true }, _count: { id: true } }),
