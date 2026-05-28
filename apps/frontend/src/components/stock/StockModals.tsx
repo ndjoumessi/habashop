@@ -2,7 +2,7 @@ import { lazy, Suspense, useState, useMemo, useEffect, useRef } from 'react'
 import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
-import { t } from '@/stores/appStore'
+import { t, useAppStore } from '@/stores/appStore'
 import { printProductLabels } from '@/utils/export'
 import ViewField from '@/components/ui/ViewField'
 import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
@@ -69,6 +69,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   }, [suppliers, supSearch])
   const selectedSupplierName = suppliers.find(s => s.id === form.supplierId)?.name || ''
   const barcodeInvalid = !!form.barcode && !/^\d{13}$/.test(form.barcode)
+  const tenant = useAppStore(s => s.tenant)
   const emptyLabel = lang === 'en' ? 'Not specified' : lang === 'es' ? 'No especificado' : lang === 'it' ? 'Non specificato' : 'Non renseigné'
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
@@ -632,7 +633,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       price: p.sell,
                       emoji: p.name.split(' ')[0],
                     }))
-                  printProductLabels(selectedProducts, fmt, { ...labelConfig, shopName: 'HabaShop', lang })
+                  printProductLabels(selectedProducts, fmt, { ...labelConfig, shopName: tenant?.name ?? 'HabaShop', lang })
                   setShowLabelModal(false)
                 }}>
                 <Printer size={13} /> {lang === 'en' ? 'Print' : lang === 'es' ? 'Imprimir' : lang === 'it' ? 'Stampa' : 'Imprimer'}

@@ -102,13 +102,13 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
       {showEditEmpModal && selectedEmp && (
         <div className="modal-backdrop" role="dialog" aria-modal="true"
           onClick={e => e.target===e.currentTarget && setShowEditEmpModal(false)}>
-          <div style={{ background:'#0D0D1C', border:'1px solid rgba(255,255,255,.1)', borderRadius:24, width:'100%', maxWidth:560, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 24px 80px rgba(0,0,0,.8)', position:'relative' }}>
+          <div className="modal-box" style={{ borderRadius:24, maxWidth:560, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', padding:0 }}>
 
             {/* Ligne décorative */}
             <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:'40%', height:1, background:`linear-gradient(90deg,transparent,${editEmpForm.color??'var(--p)'},transparent)` }} />
 
             {/* HEADER */}
-            <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'}18,${editEmpForm.color??'var(--p)'}05)`, borderBottom:'1px solid rgba(255,255,255,.06)', flexShrink:0 }}>
+            <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'}18,${editEmpForm.color??'var(--p)'}05)`, borderBottom:'1px solid var(--border)', flexShrink:0 }}>
               <div style={{ display:'flex', alignItems:'center', gap:14 }}>
                 <div
                   style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'var(--p)'}50`, border:`2px solid ${editEmpForm.color??'var(--p)'}40`, letterSpacing:'-1px', cursor: empEditMode ? 'pointer' : 'default', position:'relative' }}
@@ -342,7 +342,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                     {['var(--p)','var(--acc3)','var(--acc2)','var(--acc)','var(--danger)','#F472B6','var(--p3)','var(--warn)'].map(col => (
                       <button key={col} type="button"
                         onClick={() => setEditEmpForm((f:any) => ({ ...f, color:col }))}
-                        style={{ width:28, height:28, borderRadius:'50%', background:col, border:'3px solid', borderColor: editEmpForm.color===col?'#fff':'transparent', cursor:'pointer', padding:0, boxShadow: editEmpForm.color===col?`0 0 0 3px ${col}`:'none', transition:'all .15s' }} />
+                        style={{ width:28, height:28, borderRadius:'50%', background:col, border:'3px solid', borderColor: editEmpForm.color===col?'var(--bg)':'transparent', cursor:'pointer', padding:0, boxShadow: editEmpForm.color===col?`0 0 0 3px ${col}`:'none', transition:'all .15s' }} />
                     ))}
                   </div>
                 </div>
@@ -1065,10 +1065,10 @@ function AddressInputSimple({
       {show && suggestions.length > 0 && (
         <div style={{
           position:'absolute', top:'calc(100% + 4px)', left:0, right:0,
-          zIndex:9999, background:'#0D0D1C',
-          border:'1px solid rgba(255,255,255,.1)',
+          zIndex:9999, background:'var(--card)',
+          border:'1px solid var(--border2)',
           borderRadius:10, overflow:'hidden',
-          boxShadow:'0 8px 32px rgba(0,0,0,.8)',
+          boxShadow:'var(--sh-xl)',
         }}>
           {suggestions.map((s, i) => (
             <button key={i} type="button"

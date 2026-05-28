@@ -403,6 +403,9 @@ export function printProductLabels(
   }
   const s = SIZES[options.size]
 
+  // Échappement HTML défensif (interpolations dans document.write — valeurs viennent du tenant/produits)
+  const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' } as Record<string, string>)[c])
+
   const labelHTML = (product: typeof products[0]) => `
     <div style="
       width:${s.w}px; height:${s.h}px;
@@ -413,28 +416,26 @@ export function printProductLabels(
       page-break-inside:avoid;
     ">
       <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:${s.priceSize}px;">${product.emoji ?? '📦'}</span>
+        <span style="font-size:${s.priceSize}px;">${esc(product.emoji ?? '📦')}</span>
         <div>
           <div style="font-size:${s.fontSize}px;font-weight:700;line-height:1.2;color:#1a1a2e;">
-            ${product.name.length > 20 ? product.name.slice(0, 20) + '...' : product.name}
+            ${esc(product.name.length > 20 ? product.name.slice(0, 20) + '...' : product.name)}
           </div>
-          ${options.showSku ? `<div style="font-size:9px;color:#888;">${product.sku}</div>` : ''}
+          ${options.showSku ? `<div style="font-size:9px;color:#888;">${esc(product.sku)}</div>` : ''}
         </div>
       </div>
       ${options.showPrice ? `
         <div style="font-size:${s.priceSize}px;font-weight:900;color:#5B4EE8;">
-          ${fmt(product.price)}
+          ${esc(fmt(product.price))}
         </div>
       ` : ''}
       ${options.showBarcode ? `
-        <div style="font-size:8px;color:#888;text-align:center;
-          border-top:1px solid #eee;padding-top:4px;
-          font-family:monospace;">
-          ${product.barcode ?? product.sku}
+        <div style="text-align:center;border-top:1px solid #eee;padding-top:4px;">
+          <svg class="barcode" data-barcode="${esc(product.barcode ?? '')}" data-sku="${esc(product.sku ?? '')}"></svg>
         </div>
       ` : ''}
       <div style="font-size:7px;color:#bbb;text-align:right;">
-        ${options.shopName}
+        ${esc(options.shopName)}
       </div>
     </div>
   `
@@ -452,6 +453,7 @@ export function printProductLabels(
 <head>
   <meta charset="UTF-8">
   <title>Étiquettes produits</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" integrity="sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a" crossorigin="anonymous"></script>
   <style>
     body { margin:0; padding:10px; background:white; }
     .labels { display:flex; flex-wrap:wrap; }
@@ -475,6 +477,22 @@ export function printProductLabels(
     </span>
   </div>
   <div class="labels">${allLabels}</div>
+  <script>
+    window.addEventListener('load', function() {
+      if (typeof JsBarcode === 'undefined') return
+      document.querySelectorAll('.barcode').forEach(function(svg) {
+        var val = svg.dataset.barcode
+        var sku = svg.dataset.sku
+        try {
+          if (val && /^\\d{13}$/.test(val)) {
+            JsBarcode(svg, val, { format: 'EAN13', width: 1.5, height: 40, displayValue: true, fontSize: 10, margin: 4, background: 'transparent' })
+          } else if (sku) {
+            JsBarcode(svg, sku, { format: 'CODE128', width: 1.5, height: 40, displayValue: true, fontSize: 10, margin: 4, background: 'transparent' })
+          }
+        } catch (e) {}
+      })
+    })
+  </script>
 </body>
 </html>`)
   win.document.close()
