@@ -202,15 +202,15 @@ export const THEMES: Record<Theme, { label: Record<string, string>; emoji: strin
   dark:     { label: { fr: 'Sombre', en: 'Dark', es: 'Oscuro', it: 'Scuro' }, emoji: '🌑',
     vars: { '--bg': '#07070F', '--bg2': '#0A0A16', '--bg3': '#0D0D1C', '--bg4': '#111128', '--bg5': '#161630', '--p': '#6C47FF', '--p2': '#8B6FFF', '--p3': '#A991FF', '--acc2': '#00D084', '--text': '#F0F0FF', '--text2': '#C4C4D4', '--text3': '#8888A8', '--card': '#0D0D1C', '--border': 'rgba(255,255,255,.07)' } },
   darker:   { label: { fr: 'Très sombre', en: 'Darker', es: 'Muy oscuro', it: 'Molto scuro' }, emoji: '⬛',
-    vars: { '--bg': '#020208', '--bg2': '#050510', '--bg3': '#080814', '--bg4': '#0C0C1E', '--bg5': '#101025', '--p': '#7C57FF', '--p2': '#9B7FFF', '--p3': '#B9A1FF', '--acc2': '#00E090', '--text': '#F5F5FF', '--text2': '#CCCCDD', '--text3': '#7777AA', '--card': '#080814', '--border': 'rgba(255,255,255,.05)' } },
+    vars: { '--bg': '#020208', '--bg2': '#050510', '--bg3': '#080814', '--bg4': '#0C0C1E', '--bg5': '#101025', '--p': '#7C57FF', '--p2': '#9B7FFF', '--p3': '#B9A1FF', '--acc2': '#00E090', '--text': '#F5F5FF', '--text2': '#CCCCDD', '--text3': '#7777AA', '--card': '#080814', '--card2': '#0C0C1E', '--grad-card': 'linear-gradient(160deg,#080814,#0C0C1E)', '--border': 'rgba(255,255,255,.05)', '--border2': 'rgba(255,255,255,.10)', '--text4': '#444466', '--header-bg': 'rgba(2,2,8,.88)' } },
   midnight: { label: { fr: 'Minuit', en: 'Midnight', es: 'Medianoche', it: 'Mezzanotte' }, emoji: '🌌',
-    vars: { '--bg': '#020B18', '--bg2': '#041525', '--bg3': '#061C30', '--bg4': '#0A2540', '--bg5': '#0E2E4E', '--p': '#3B82F6', '--p2': '#60A5FA', '--p3': '#93C5FD', '--acc2': '#10B981', '--text': '#F0F9FF', '--text2': '#BAE6FD', '--text3': '#7CB9D8', '--card': '#061C30', '--border': 'rgba(59,130,246,.15)' } },
+    vars: { '--bg': '#020B18', '--bg2': '#041525', '--bg3': '#061C30', '--bg4': '#0A2540', '--bg5': '#0E2E4E', '--p': '#3B82F6', '--p2': '#60A5FA', '--p3': '#93C5FD', '--acc2': '#10B981', '--text': '#F0F9FF', '--text2': '#BAE6FD', '--text3': '#7CB9D8', '--card': '#061C30', '--card2': '#0A2540', '--grad-card': 'linear-gradient(160deg,#061C30,#0A2540)', '--border': 'rgba(59,130,246,.15)', '--border2': 'rgba(59,130,246,.28)', '--text4': '#52789A', '--header-bg': 'rgba(2,11,24,.88)' } },
   forest:   { label: { fr: 'Forêt', en: 'Forest', es: 'Bosque', it: 'Foresta' }, emoji: '🌲',
-    vars: { '--bg': '#030D08', '--bg2': '#051408', '--bg3': '#071A0C', '--bg4': '#0A2212', '--bg5': '#0E2C18', '--p': '#22C55E', '--p2': '#4ADE80', '--p3': '#86EFAC', '--acc2': '#34D399', '--text': '#F0FDF4', '--text2': '#BBF7D0', '--text3': '#6EE7B7', '--card': '#071A0C', '--border': 'rgba(34,197,94,.15)' } },
+    vars: { '--bg': '#030D08', '--bg2': '#051408', '--bg3': '#071A0C', '--bg4': '#0A2212', '--bg5': '#0E2C18', '--p': '#22C55E', '--p2': '#4ADE80', '--p3': '#86EFAC', '--acc2': '#34D399', '--text': '#F0FDF4', '--text2': '#BBF7D0', '--text3': '#6EE7B7', '--card': '#071A0C', '--card2': '#0A2212', '--grad-card': 'linear-gradient(160deg,#071A0C,#0A2212)', '--border': 'rgba(34,197,94,.15)', '--border2': 'rgba(34,197,94,.28)', '--text4': '#4E876A', '--header-bg': 'rgba(3,13,8,.88)' } },
   ocean:    { label: { fr: 'Océan', en: 'Ocean', es: 'Océano', it: 'Oceano' }, emoji: '🌊',
-    vars: { '--bg': '#020A14', '--bg2': '#041220', '--bg3': '#061A2E', '--bg4': '#0A2440', '--bg5': '#0E2E52', '--p': '#06B6D4', '--p2': '#22D3EE', '--p3': '#67E8F9', '--acc2': '#2DD4BF', '--text': '#ECFEFF', '--text2': '#A5F3FC', '--text3': '#67C8D8', '--card': '#061A2E', '--border': 'rgba(6,182,212,.15)' } },
+    vars: { '--bg': '#020A14', '--bg2': '#041220', '--bg3': '#061A2E', '--bg4': '#0A2440', '--bg5': '#0E2E52', '--p': '#06B6D4', '--p2': '#22D3EE', '--p3': '#67E8F9', '--acc2': '#2DD4BF', '--text': '#ECFEFF', '--text2': '#A5F3FC', '--text3': '#67C8D8', '--card': '#061A2E', '--card2': '#0A2440', '--grad-card': 'linear-gradient(160deg,#061A2E,#0A2440)', '--border': 'rgba(6,182,212,.15)', '--border2': 'rgba(6,182,212,.28)', '--text4': '#4A7E92', '--header-bg': 'rgba(2,10,20,.88)' } },
   sunset:   { label: { fr: 'Coucher de soleil', en: 'Sunset', es: 'Atardecer', it: 'Tramonto' }, emoji: '🌅',
-    vars: { '--bg': '#140A02', '--bg2': '#200F04', '--bg3': '#2C1506', '--bg4': '#3C1E0A', '--bg5': '#4A2610', '--p': '#F97316', '--p2': '#FB923C', '--p3': '#FDBA74', '--acc2': '#FCD34D', '--text': '#FFF7ED', '--text2': '#FED7AA', '--text3': '#F8A96B', '--card': '#2C1506', '--border': 'rgba(249,115,22,.15)' } },
+    vars: { '--bg': '#140A02', '--bg2': '#200F04', '--bg3': '#2C1506', '--bg4': '#3C1E0A', '--bg5': '#4A2610', '--p': '#F97316', '--p2': '#FB923C', '--p3': '#FDBA74', '--acc2': '#FCD34D', '--text': '#FFF7ED', '--text2': '#FED7AA', '--text3': '#F8A96B', '--card': '#2C1506', '--card2': '#3C1E0A', '--grad-card': 'linear-gradient(160deg,#2C1506,#3C1E0A)', '--border': 'rgba(249,115,22,.15)', '--border2': 'rgba(249,115,22,.28)', '--text4': '#8A6446', '--header-bg': 'rgba(20,10,2,.88)' } },
   light:    { label: { fr: 'Clair', en: 'Light', es: 'Claro', it: 'Chiaro' }, emoji: '☀️',
     vars: { '--bg': '#F8F9FF', '--bg2': '#F0F2FF', '--bg3': '#E8EBFF', '--bg4': '#FFFFFF', '--bg5': '#F4F5FF', '--p': '#6C47FF', '--p2': '#8B6FFF', '--p3': '#6C47FF', '--acc2': '#059669', '--text': '#1A1A2E', '--text2': '#374151', '--text3': '#6B7280', '--card': '#FFFFFF', '--border': 'rgba(0,0,0,.1)' } },
 }
@@ -233,10 +233,12 @@ export function applyTheme(theme: Theme) {
   const t = THEMES[theme] ?? THEMES.dark
   const root = document.documentElement
   Object.entries(t.vars).forEach(([k, val]) => root.style.setProperty(k, val))
-  // Surfaces manquantes : valeurs claires en mode clair, sinon retrait (→ :root sombre).
+  // Surfaces manquantes : valeurs claires en mode clair ; sinon retrait → :root sombre,
+  // SAUF si le thème actuel définit déjà la clé dans ses vars (cas des thèmes sombres
+  // colorés qui surchargent --grad-card, --card2, --border2, --text4, --header-bg).
   Object.entries(LIGHT_EXTRA_VARS).forEach(([k, val]) => {
     if (theme === 'light') root.style.setProperty(k, val)
-    else root.style.removeProperty(k)
+    else if (!(k in t.vars)) root.style.removeProperty(k)
   })
   // Rendu natif des contrôles (popup <select>, autofill Chrome, scrollbars).
   root.style.setProperty('color-scheme', theme === 'light' ? 'light' : 'dark')
