@@ -436,7 +436,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
           <div className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
-                {editCat ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
+                {editCat
+                  ? i('Modifier la catégorie', 'Edit category', 'Editar categoría', 'Modifica categoria')
+                  : i('Nouvelle catégorie', 'New category', 'Nueva categoría', 'Nuova categoria')}
               </h3>
               <button className="mini-btn" onClick={() => setShowCatModal(false)}><X size={14} /></button>
             </div>
@@ -456,10 +458,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     }}>{emoji}</button>
                   ))}
                 </div>
-                <input className="input" value={catForm.icon} onChange={e => setCatForm(f => ({...f, icon:e.target.value}))} placeholder="Ou tapez un emoji..." style={{ fontSize:20 }} />
+                <input className="input" value={catForm.icon} onChange={e => setCatForm(f => ({...f, icon:e.target.value}))} placeholder={i('Ou tapez un emoji...', 'Or type an emoji...', 'O escribe un emoji...', 'O digita un emoji...')} style={{ fontSize:20 }} />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Couleur</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{i('Couleur', 'Color', 'Color', 'Colore')}</label>
                 <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:8 }}>
                   {['#818CF8','#F59E0B','#34D399','#F472B6','#60A5FA','#A78BFA','#EF4444','#14B8A6','#F97316','#84CC16'].map(color => (
                     <button key={color} onClick={() => setCatForm(f => ({...f, color}))} style={{
@@ -472,30 +474,30 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   style={{ width:'100%', height:36, borderRadius:8, border:'1px solid var(--border)', cursor:'pointer', background:'none' }} />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>Description</label>
-                <textarea aria-label="Description" className="input" rows={2} value={catForm.description} onChange={e => setCatForm(f => ({...f, description:e.target.value}))} placeholder="Description courte..." />
+                <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{i('Description', 'Description', 'Descripción', 'Descrizione')}</label>
+                <textarea aria-label={i('Description', 'Description', 'Descripción', 'Descrizione')} className="input" rows={2} value={catForm.description} onChange={e => setCatForm(f => ({...f, description:e.target.value}))} placeholder={i('Description courte...', 'Short description...', 'Descripción corta...', 'Descrizione breve...')} />
               </div>
               {/* Preview */}
               <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', borderLeft:`4px solid ${catForm.color}` }}>
                 <div style={{ width:36, height:36, borderRadius:10, background:`${catForm.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>{catForm.icon}</div>
                 <div>
-                  <div style={{ fontWeight:700, color:'var(--text)' }}>{catForm.name || 'Nom catégorie'}</div>
-                  <div style={{ fontSize:11, color:'var(--text3)' }}>{catForm.description || 'Description...'}</div>
+                  <div style={{ fontWeight:700, color:'var(--text)' }}>{catForm.name || i('Nom catégorie', 'Category name', 'Nombre categoría', 'Nome categoria')}</div>
+                  <div style={{ fontSize:11, color:'var(--text3)' }}>{catForm.description || i('Description...', 'Description...', 'Descripción...', 'Descrizione...')}</div>
                 </div>
               </div>
             </div>
             <div style={{ display:'flex', gap:8, marginTop:20 }}>
               <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }} onClick={() => {
-                if (!catForm.name) { toast.error('Nom requis'); return }
+                if (!catForm.name) { toast.error(i('Nom requis', 'Name required', 'Nombre requerido', 'Nome richiesto')); return }
                 if (editCat) {
                   setCategories(prev => prev.map(c => c.id === editCat.id ? {...c, ...catForm} : c))
-                  toast.success(`✅ Catégorie "${catForm.name}" modifiée`)
+                  toast.success(`✅ ${i('Catégorie', 'Category', 'Categoría', 'Categoria')} "${catForm.name}" ${i('modifiée', 'updated', 'actualizada', 'aggiornata')}`)
                 } else {
                   setCategories(prev => [...prev, { id:Date.now(), ...catForm, productsCount:0 }])
-                  toast.success(`✅ Catégorie "${catForm.name}" créée`)
+                  toast.success(`✅ ${i('Catégorie', 'Category', 'Categoría', 'Categoria')} "${catForm.name}" ${i('créée', 'created', 'creada', 'creata')}`)
                 }
                 setShowCatModal(false)
-              }}>{editCat ? 'Modifier' : 'Créer'}</button>
+              }}>{editCat ? i('Modifier', 'Edit', 'Editar', 'Modifica') : i('Créer', 'Create', 'Crear', 'Crea')}</button>
               <button className="mini-btn" style={{ padding:'10px 16px' }} onClick={() => setShowCatModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>
             </div>
           </div>
@@ -521,9 +523,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                   {[
-                    { id: 'small',  label: 'Petite\n150×80px'   },
-                    { id: 'medium', label: 'Moyenne\n200×100px' },
-                    { id: 'large',  label: 'Grande\n280×140px'  },
+                    { id: 'small',  label: i('Petite',  'Small',  'Pequeña', 'Piccola') + '\n150×80px'   },
+                    { id: 'medium', label: i('Moyenne', 'Medium', 'Mediana', 'Media')   + '\n200×100px' },
+                    { id: 'large',  label: i('Grande',  'Large',  'Grande',  'Grande')  + '\n280×140px' },
                   ].map(size => (
                     <button key={size.id} type="button"
                       onClick={() => setLabelConfig(f => ({ ...f, size: size.id as any }))}
@@ -549,7 +551,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 </label>
                 {[
                   { key: 'showPrice',   label: lang === 'en' ? 'Selling price' : lang === 'es' ? 'Precio de venta' : lang === 'it' ? 'Prezzo di vendita' : 'Prix de vente' },
-                  { key: 'showSku',     label: 'SKU / Référence' },
+                  { key: 'showSku',     label: 'SKU / ' + i('Référence', 'Reference', 'Referencia', 'Riferimento') },
                   { key: 'showBarcode', label: lang === 'en' ? 'Barcode' : lang === 'es' ? 'Código de barras' : lang === 'it' ? 'Codice a barre' : 'Code-barres' },
                 ].map(opt => (
                   <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
