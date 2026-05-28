@@ -3,9 +3,10 @@ import Skeleton from '@/components/ui/skeleton'
 import { useAppStore, t } from '@/stores/appStore'
 import {
   Search, Download, X,
-  ShoppingCart, Package, Lock, UserCog, ClipboardList,
-  Users, Settings, Wallet, Heart,
+  ShoppingCart, Package, PackageCheck, PackageX, Lock, UserCog, ClipboardList,
+  Users, UserPlus, UserMinus, UserX, Settings, Wallet, Heart,
   CheckCircle, Info, AlertTriangle, AlertOctagon,
+  Shield, ToggleLeft, LogIn, LogOut, Truck, Trash2, Activity as ActivityIcon,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV } from '@/utils/export'
@@ -15,6 +16,85 @@ import type { LucideIcon } from 'lucide-react'
 const MODULE_NORMALIZE: Record<string, string> = {
   orders: 'COMMANDES', customers: 'CLIENTS', products: 'STOCK', suppliers: 'COMMANDES',
   billing: 'PARAMÈTRES', employees: 'RH', auth: 'AUTH', tenant: 'PARAMÈTRES',
+  // Codes backend en majuscules (audit logs créés directement avec ces noms)
+  USERS: 'UTILISATEURS', PRODUCTS: 'STOCK', CUSTOMERS: 'CLIENTS', SUPPLIERS: 'COMMANDES',
+  SALES: 'POS', EMPLOYEES: 'RH', TENANT: 'PARAMÈTRES', AUTH: 'AUTH',
+}
+
+// Labels lisibles d'actions techniques en 4 langues
+const ACTION_LABELS: Record<string, [string, string, string, string]> = {
+  INVITE_USER:        ['Utilisateur invité',     'User invited',          'Usuario invitado',         'Utente invitato'],
+  DELETE_USER:        ['Utilisateur supprimé',   'User deleted',          'Usuario eliminado',        'Utente eliminato'],
+  UPDATE_USER:        ['Utilisateur modifié',    'User updated',          'Usuario actualizado',      'Utente aggiornato'],
+  TOGGLE_USER_ACTIVE: ['Statut compte modifié',  'Account status changed','Estado de cuenta cambiado','Stato account modificato'],
+  TOGGLE_USER_2FA:    ['2FA modifié',            '2FA changed',           '2FA cambiado',             '2FA modificato'],
+  CREATE_PRODUCT:     ['Produit créé',           'Product created',       'Producto creado',          'Prodotto creato'],
+  UPDATE_PRODUCT:     ['Produit modifié',        'Product updated',       'Producto actualizado',     'Prodotto aggiornato'],
+  DELETE_PRODUCT:     ['Produit supprimé',       'Product deleted',       'Producto eliminado',       'Prodotto eliminato'],
+  CREATE_CUSTOMER:    ['Client créé',            'Customer created',      'Cliente creado',           'Cliente creato'],
+  DELETE_CUSTOMER:    ['Client supprimé',        'Customer deleted',      'Cliente eliminado',        'Cliente eliminato'],
+  CREATE_SUPPLIER:    ['Fournisseur créé',       'Supplier created',      'Proveedor creado',         'Fornitore creato'],
+  DELETE_SUPPLIER:    ['Fournisseur supprimé',   'Supplier deleted',      'Proveedor eliminado',      'Fornitore eliminato'],
+  CREATE_SALE:        ['Vente enregistrée',      'Sale recorded',         'Venta registrada',         'Vendita registrata'],
+  CREATE_EMPLOYEE:    ['Employé créé',           'Employee created',      'Empleado creado',          'Dipendente creato'],
+  DELETE_EMPLOYEE:    ['Employé supprimé',       'Employee deleted',      'Empleado eliminado',       'Dipendente eliminato'],
+  LOGIN:              ['Connexion',              'Login',                 'Inicio de sesión',         'Accesso'],
+  LOGOUT:             ['Déconnexion',            'Logout',                'Cierre de sesión',         'Disconnessione'],
+  UPDATE_TENANT:      ['Boutique mise à jour',   'Shop updated',          'Tienda actualizada',      'Negozio aggiornato'],
+  CHANGE_PASSWORD:    ['Mot de passe changé',    'Password changed',      'Contraseña cambiada',      'Password cambiata'],
+  RESTORE_PRODUCT:    ['Produit restauré',       'Product restored',      'Producto restaurado',      'Prodotto ripristinato'],
+  RESTORE_SUPPLIER:   ['Fournisseur restauré',   'Supplier restored',     'Proveedor restaurado',     'Fornitore ripristinato'],
+}
+
+const ACTION_ICONS: Record<string, LucideIcon> = {
+  INVITE_USER:        UserPlus,
+  DELETE_USER:        UserMinus,
+  UPDATE_USER:        UserCog,
+  TOGGLE_USER_ACTIVE: ToggleLeft,
+  TOGGLE_USER_2FA:    Shield,
+  CREATE_PRODUCT:     Package,
+  UPDATE_PRODUCT:     PackageCheck,
+  DELETE_PRODUCT:     PackageX,
+  CREATE_CUSTOMER:    Users,
+  DELETE_CUSTOMER:    UserX,
+  CREATE_SUPPLIER:    Truck,
+  DELETE_SUPPLIER:    Trash2,
+  CREATE_SALE:        ShoppingCart,
+  CREATE_EMPLOYEE:    UserPlus,
+  DELETE_EMPLOYEE:    UserMinus,
+  LOGIN:              LogIn,
+  LOGOUT:             LogOut,
+  UPDATE_TENANT:      Settings,
+  CHANGE_PASSWORD:    Lock,
+  RESTORE_PRODUCT:    Package,
+  RESTORE_SUPPLIER:   Truck,
+}
+
+function actionLabel(action: string, lang: string): string {
+  const labels = ACTION_LABELS[action]
+  if (!labels) {
+    // Fallback : SNAKE_CASE → Title Case (e.g. "CREATE_FOO" → "Create Foo")
+    return action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+  }
+  const idx = lang === 'en' ? 1 : lang === 'es' ? 2 : lang === 'it' ? 3 : 0
+  return labels[idx]
+}
+
+// Extrait une info utile (nom, email, id) du JSON stocké dans la description backend.
+// Évite d'afficher le code action en double (ex: "DELETE_USER" comme description).
+function parseDescription(raw: unknown, action: string): string {
+  const s = typeof raw === 'string' ? raw : ''
+  if (!s || s === action) return ''
+  if (s.startsWith('{')) {
+    try {
+      const obj = JSON.parse(s)
+      const v = obj.name || obj.email || obj.ref || obj.id || ''
+      return typeof v === 'string' ? v : ''
+    } catch {
+      return ''
+    }
+  }
+  return s
 }
 
 type Severity = 'success' | 'info' | 'warning' | 'danger'
@@ -22,6 +102,7 @@ type Severity = 'success' | 'info' | 'warning' | 'danger'
 interface ActivityEntry {
   id: number; module: string; action: string; user: string
   avatar: string; color: string; description: string
+  rawDescription: string; createdAt: string
   ip: string; date: string; time: string; severity: Severity
 }
 
@@ -45,15 +126,13 @@ const SEVERITY_CONFIG: Record<Severity, { color: string; bg: string; Icon: Lucid
 }
 
 function mapAuditLog(l: any, idx: number): ActivityEntry {
-  const mod = (MODULE_NORMALIZE[l.module] ?? String(l.module ?? 'PARAMÈTRES')).toUpperCase()
+  const rawModule = l.module ?? ''
+  const mod = (MODULE_NORMALIZE[rawModule] ?? String(rawModule || 'PARAMÈTRES')).toUpperCase()
   const cfg = MODULE_CONFIG[mod] ?? MODULE_CONFIG['PARAMÈTRES']
-  let detail = l.description ?? ''
-  if (typeof detail === 'string' && detail.startsWith('{')) {
-    try { const o = JSON.parse(detail); detail = o.name ?? o.ref ?? o.id ?? '' } catch {}
-  }
   const name = l.user?.name ?? 'Système'
   const d = new Date(l.createdAt)
   const sev: Severity = (['success', 'info', 'warning', 'danger'].includes(l.severity) ? l.severity : 'info') as Severity
+  const rawDescription = typeof l.description === 'string' ? l.description : ''
   return {
     id: idx + 1,
     module: mod,
@@ -61,7 +140,9 @@ function mapAuditLog(l: any, idx: number): ActivityEntry {
     user: name,
     avatar: name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
     color: cfg.color,
-    description: `${l.action ?? ''}${detail ? ' — ' + detail : ''}`.trim(),
+    rawDescription,
+    createdAt: isNaN(d.getTime()) ? '' : d.toISOString(),
+    description: rawDescription, // conservé pour la recherche, mais le rendu utilise parseDescription
     ip: l.ip ?? '—',
     date: isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10),
     time: isNaN(d.getTime()) ? '' : d.toTimeString().slice(0, 5),
@@ -75,6 +156,8 @@ const ITEMS_PER_PAGE = 8
 
 export default function Activity() {
   const { lang } = useAppStore()
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([])
 
   const [search,         setSearch]         = useState('')
@@ -92,12 +175,14 @@ export default function Activity() {
   }, [])
 
   const filtered = useMemo(() => activityLog.filter(log => {
-    const matchSearch   = !search || log.description.toLowerCase().includes(search.toLowerCase()) || log.user.toLowerCase().includes(search.toLowerCase())
+    const q = search.toLowerCase()
+    const haystack = `${log.user} ${actionLabel(log.action, lang)} ${parseDescription(log.rawDescription, log.action)} ${log.action} ${log.module}`.toLowerCase()
+    const matchSearch   = !q || haystack.includes(q)
     const matchModule   = !moduleFilter || log.module === moduleFilter
     const matchSeverity = !severityFilter || log.severity === severityFilter
     const matchDate     = dateFilter === 'today' ? log.date === TODAY_ISO : true
     return matchSearch && matchModule && matchSeverity && matchDate
-  }), [activityLog, search, moduleFilter, severityFilter, dateFilter])
+  }), [activityLog, search, moduleFilter, severityFilter, dateFilter, lang])
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1
   const paginated  = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
@@ -172,10 +257,11 @@ export default function Activity() {
           </select>
           <select className="input" style={{ width:'auto', fontSize:13 }}
             value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); resetPage() }}>
-            <option value="">{t('activity_all')}</option>
-            {(['success','info','warning','danger'] as Severity[]).map(s => (
-              <option key={s} value={s}>{SEVERITY_CONFIG[s].label}</option>
-            ))}
+            <option value="">{i('Toutes', 'All', 'Todas', 'Tutte')}</option>
+            <option value="success">{i('Succès', 'Success', 'Éxito', 'Successo')}</option>
+            <option value="info">Info</option>
+            <option value="warning">{i('Alerte', 'Warning', 'Alerta', 'Avviso')}</option>
+            <option value="danger">{i('Danger', 'Danger', 'Peligro', 'Pericolo')}</option>
           </select>
           <select className="input" style={{ width:'auto', fontSize:13 }}
             value={dateFilter} onChange={e => { setDateFilter(e.target.value); resetPage() }}>
@@ -206,122 +292,95 @@ export default function Activity() {
               }} />
 
               {paginated.map(log => {
-                const mod     = MODULE_CONFIG[log.module]
-                const sev     = SEVERITY_CONFIG[log.severity]
-                const ModIcon = mod?.Icon ?? Settings
-                const SevIcon = sev.Icon
-                const isDanger  = log.severity === 'danger'
-                const isWarning = log.severity === 'warning'
+                const mod         = MODULE_CONFIG[log.module]
+                const sev         = SEVERITY_CONFIG[log.severity]
+                const moduleColor = mod?.color ?? 'var(--text3)'
+                const ActionIcon  = ACTION_ICONS[log.action] ?? mod?.Icon ?? ActivityIcon
+                const labelHuman  = actionLabel(log.action, lang)
+                const detail      = parseDescription(log.rawDescription, log.action)
+                const localeStr   = lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+                const dt          = log.createdAt ? new Date(log.createdAt) : null
+                const timeStr     = dt ? dt.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' }) : log.time
+                const dateStr     = dt ? dt.toLocaleDateString(localeStr, { day: 'numeric', month: 'short' }) : log.date
+                const sevLabel    = log.severity === 'success' ? i('Succès', 'Success', 'Éxito', 'Successo')
+                                  : log.severity === 'warning' ? i('Alerte', 'Warning', 'Alerta', 'Avviso')
+                                  : log.severity === 'danger'  ? i('Danger', 'Danger', 'Peligro', 'Pericolo')
+                                  : 'Info'
 
                 return (
-                  <div key={log.id} style={{ display:'flex', gap:14, marginBottom:12, position:'relative' }}>
-                    {/* Icône module */}
-                    <div style={{ width:40, flexShrink:0, paddingTop:2 }}>
-                      <div style={{
-                        width:40, height:40, borderRadius:12,
-                        background: mod ? `${mod.color}15` : 'rgba(255,255,255,.04)',
-                        border:`2px solid ${mod ? `${mod.color}40` : 'rgba(255,255,255,.08)'}`,
-                        display:'flex', alignItems:'center', justifyContent:'center',
-                        color: mod?.color ?? 'var(--text3)',
-                        position:'relative', zIndex:1,
-                        boxShadow: mod ? `0 4px 12px ${mod.color}15` : 'none',
-                      }}>
-                        <ModIcon size={16} />
-                      </div>
+                  <div key={log.id}
+                    style={{
+                      display:'flex', alignItems:'flex-start', gap:14,
+                      padding:'14px 18px',
+                      background:'var(--card)',
+                      border:'1px solid var(--border)',
+                      borderLeft:`3px solid ${sev.color}`,
+                      borderRadius:12,
+                      marginBottom:8,
+                      transition:'transform .15s, box-shadow .15s',
+                    }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.transform = 'translateX(3px)'
+                      el.style.boxShadow = '0 4px 16px rgba(0,0,0,.10)'
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.transform = 'none'
+                      el.style.boxShadow = 'none'
+                    }}>
+                    {/* Icône d'action dans cercle coloré module */}
+                    <div style={{
+                      width:38, height:38, borderRadius:'50%', flexShrink:0,
+                      background: `${moduleColor}18`,
+                      border:`1px solid ${moduleColor}30`,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                    }}>
+                      <ActionIcon size={16} color={moduleColor} />
                     </div>
 
-                    {/* Carte */}
-                    <div
-                      style={{
-                        flex:1, background:'var(--card)',
-                        border:`1px solid ${isDanger ? 'rgba(239,68,68,.2)' : isWarning ? 'rgba(245,158,11,.18)' : 'var(--border)'}`,
-                        borderLeft:`3px solid ${isDanger ? 'var(--danger)' : isWarning ? 'var(--acc)' : (mod?.color ?? 'transparent')}`,
-                        borderRadius:14, padding:'11px 14px',
-                        transition:'transform .18s, box-shadow .18s',
-                      }}
-                      onMouseEnter={e => {
-                        const el = e.currentTarget as HTMLElement
-                        el.style.transform = 'translateX(3px)'
-                        el.style.boxShadow = '0 4px 16px rgba(0,0,0,.12)'
-                      }}
-                      onMouseLeave={e => {
-                        const el = e.currentTarget as HTMLElement
-                        el.style.transform = 'none'
-                        el.style.boxShadow = 'none'
-                      }}
-                    >
-                      {/* Ligne 1 : avatar + user + badges + heure */}
-                      <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:5, flexWrap:'wrap' }}>
+                    {/* Contenu */}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      {/* Ligne 1 : action lisible + badge sévérité */}
+                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
+                        <span style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>
+                          {labelHuman}
+                        </span>
+                        <span style={{
+                          fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99,
+                          background: sev.bg, color: sev.color,
+                          textTransform:'uppercase', letterSpacing:'.4px',
+                        }}>
+                          {sevLabel}
+                        </span>
+                      </div>
+
+                      {/* Ligne 2 : auteur · module */}
+                      <div style={{ fontSize:12, color:'var(--text2)', marginBottom: detail ? 4 : 0 }}>
+                        <span style={{ fontWeight:600 }}>{log.user}</span>
+                        <span style={{ opacity: 0.5 }}> · </span>
+                        <span>{mod?.label ?? log.module}</span>
+                      </div>
+
+                      {/* Ligne 3 : détail parsé (nom, email…) si dispo */}
+                      {detail && (
                         <div style={{
-                          width:22, height:22, borderRadius:6,
-                          background:log.color, flexShrink:0,
-                          display:'flex', alignItems:'center', justifyContent:'center',
-                          fontSize:8, fontWeight:900, color:'#fff',
+                          fontSize:12, color:'var(--text3)', fontStyle:'italic',
+                          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                         }}>
-                          {log.avatar}
+                          {detail}
                         </div>
-                        <span style={{ fontSize:11, fontWeight:700, color:'var(--text2)' }}>{log.user}</span>
-                        {mod && (
-                          <span style={{
-                            fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.4px',
-                            padding:'2px 7px', borderRadius:99,
-                            background:mod.bg, color:mod.color,
-                            border:`1px solid ${mod.color}33`,
-                          }}>
-                            {mod.label}
-                          </span>
-                        )}
-                        <span style={{
-                          fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.4px',
-                          padding:'2px 7px', borderRadius:99,
-                          display:'inline-flex', alignItems:'center', gap:3,
-                          background:sev.bg, color:sev.color,
-                        }}>
-                          <SevIcon size={8} /> {sev.label}
-                        </span>
-                        <span style={{
-                          marginLeft:'auto', fontSize:10, color:'var(--text3)',
-                          whiteSpace:'nowrap', fontFamily:'var(--mono)',
-                        }}>
-                          {log.time} · {log.date}
-                        </span>
-                      </div>
+                      )}
+                    </div>
 
-                      {/* Action */}
-                      <div style={{
-                        fontSize:11, fontWeight:800, color:'var(--text)', marginBottom:3,
-                        textTransform:'uppercase', letterSpacing:'.3px',
-                      }}>
-                        {log.action}
-                      </div>
-
-                      {/* Description */}
-                      <div style={{ fontSize:12, color:'var(--text2)', lineHeight:1.5 }}>
-                        {log.description}
-                      </div>
-
-                      {/* IP */}
-                      <div style={{ marginTop:7 }}>
-                        <span style={{
-                          fontSize:10, fontFamily:'var(--mono)',
-                          padding:'2px 8px', borderRadius:6,
-                          background:'rgba(255,255,255,.04)',
-                          border:'1px solid rgba(255,255,255,.06)',
-                          color: log.ip.startsWith('41.') ? 'var(--danger)' : 'var(--text3)',
-                          fontWeight: log.ip.startsWith('41.') ? 700 : 400,
-                        }}>
-                          {log.ip === 'système' ? 'système' : `IP: ${log.ip}`}
-                        </span>
-                        {log.ip.startsWith('41.') && (
-                          <span style={{
-                            marginLeft:6, fontSize:9, fontWeight:800,
-                            color:'var(--danger)', background:'rgba(239,68,68,.12)',
-                            padding:'2px 7px', borderRadius:99,
-                          }}>
-                            IP SUSPECTE
-                          </span>
-                        )}
-                      </div>
+                    {/* Date à droite */}
+                    <div style={{
+                      fontSize:11, color:'var(--text3)',
+                      flexShrink:0, textAlign:'right',
+                      display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2,
+                    }}>
+                      <span style={{ fontFamily:'var(--mono)' }}>{timeStr}</span>
+                      <span>{dateStr}</span>
                     </div>
                   </div>
                 )
