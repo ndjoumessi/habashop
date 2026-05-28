@@ -381,6 +381,13 @@ export async function sendTrialExpired(opts: {
   })
 }
 
+// Échappement HTML — défense contre injection via shopName / userName / tempPassword
+function escHtml(v: unknown): string {
+  return String(v ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]
+  )
+}
+
 // ════════════════════════════════════════════
 // EMAIL — Invitation d'un nouvel utilisateur par un admin
 // ════════════════════════════════════════════
@@ -395,16 +402,24 @@ export async function sendUserInvitationEmail(opts: {
   const firstName = inviteeName.split(' ')[0]
   const loginUrl  = 'https://habashop.vercel.app/login'
 
+  // Toutes les valeurs interpolées dans le HTML viennent de données tenant/admin
+  // potentiellement contrôlées — on les échappe pour éviter HTML/script injection.
+  const eFirst = escHtml(firstName)
+  const eShop  = escHtml(shopName)
+  const eBy    = invitedBy ? escHtml(invitedBy) : ''
+  const eTo    = escHtml(to)
+  const ePwd   = escHtml(tempPassword)
+
   const html = baseTemplate(`
-    <h1>Vous avez été invité sur HabaShop, ${firstName} 👋</h1>
-    <p>${invitedBy ? `<strong>${invitedBy}</strong> vous a invité` : 'Vous avez été invité'}
-    à rejoindre la boutique <strong>${shopName}</strong> sur HabaShop.</p>
+    <h1>Vous avez été invité sur HabaShop, ${eFirst} 👋</h1>
+    <p>${eBy ? `<strong>${eBy}</strong> vous a invité` : 'Vous avez été invité'}
+    à rejoindre la boutique <strong>${eShop}</strong> sur HabaShop.</p>
 
     <div class="alert">
       🔐 <strong>Vos identifiants temporaires :</strong>
       <div style="margin-top:8px;font-family:monospace;font-size:13px;line-height:1.8;">
-        Email : <strong>${to}</strong><br/>
-        Mot de passe temporaire : <strong>${tempPassword}</strong>
+        Email : <strong>${eTo}</strong><br/>
+        Mot de passe temporaire : <strong>${ePwd}</strong>
       </div>
     </div>
 

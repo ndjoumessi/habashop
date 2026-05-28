@@ -1,9 +1,21 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { TenantUpdateBody, InviteUserBody } from '../types'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { sendUserInvitationEmail } from '../services/email'
+
+const VALID_ROLES = ['ADMIN', 'MANAGER', 'CASHIER', 'ACCOUNTANT', 'HR'] as const
+type Role = typeof VALID_ROLES[number]
+
+// Garde rôle ADMIN (renvoie true si le caller PEUT continuer, false sinon avec reply envoyée)
+function requireAdmin(request: FastifyRequest, reply: FastifyReply): boolean {
+  if (request.user?.role !== 'ADMIN') {
+    reply.code(403).send({ error: 'Accès réservé aux administrateurs' })
+    return false
+  }
+  return true
+}
 
 export async function tenantRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/tenant', { preHandler: authenticate }, async (request) => {
@@ -40,9 +52,13 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/tenant/users', { preHandler: authenticate }, async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
     const { name, email, password, role } = request.body as InviteUserBody
     if (!name?.trim() || !email?.trim() || !password) {
       return reply.code(400).send({ error: 'Nom, email et mot de passe requis' })
+    }
+    if (role && !VALID_ROLES.includes(role as Role)) {
+      return reply.code(400).send({ error: `Rôle invalide. Valides : ${VALID_ROLES.join(', ')}` })
     }
     const existing = await prisma.user.findUnique({ where: { email: email.trim() } })
     if (existing) return reply.code(409).send({ error: 'Email déjà utilisé' })
@@ -52,7 +68,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         name: name.trim(),
         email: email.trim(),
         passwordHash,
-        role: role ?? 'CASHIER',
+        role: (role as Role) ?? 'CASHIER',
         tenantId: request.tenantId,
       },
     })
@@ -82,8 +98,12 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.put('/api/tenant/users/:id', { preHandler: authenticate }, async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
     const body = request.body as { name?: string; email?: string; role?: string }
+    if (body.role && !VALID_ROLES.includes(body.role as Role)) {
+      return reply.code(400).send({ error: `Rôle invalide. Valides : ${VALID_ROLES.join(', ')}` })
+    }
     const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Utilisateur introuvable' })
     // Si l'email change, vérifier unicité globale
@@ -96,7 +116,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       data: {
         name:  body.name?.trim() ?? undefined,
         email: body.email?.trim() ?? undefined,
-        role:  body.role ?? undefined,
+        role:  (body.role as Role | undefined) ?? undefined,
       },
     })
     await prisma.auditLog.create({
@@ -114,6 +134,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.patch('/api/tenant/users/:id/active', { preHandler: authenticate }, async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
     const { active } = request.body as { active?: boolean }
     if (typeof active !== 'boolean') return reply.code(400).send({ error: 'active (boolean) requis' })
@@ -144,6 +165,10 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
 
   app.patch('/api/tenant/users/:id/2fa', { preHandler: authenticate }, async (request, reply) => {
     const { id } = request.params as { id: string }
+    // Self-service autorisé (un user peut toggler son propre 2FA) ; sinon ADMIN requis
+    if (id !== request.user.userId && request.user.role !== 'ADMIN') {
+      return reply.code(403).send({ error: 'Accès réservé aux administrateurs ou au propriétaire du compte' })
+    }
     const { twoFA } = request.body as { twoFA?: boolean }
     if (typeof twoFA !== 'boolean') return reply.code(400).send({ error: 'twoFA (boolean) requis' })
     const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
@@ -164,6 +189,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.delete('/api/tenant/users/:id', { preHandler: authenticate }, async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
     if (id === request.user.userId) return reply.code(403).send({ error: 'Vous ne pouvez pas supprimer votre propre compte' })
     const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
