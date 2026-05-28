@@ -70,6 +70,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   const selectedSupplierName = suppliers.find(s => s.id === form.supplierId)?.name || ''
   const barcodeInvalid = !!form.barcode && !/^\d{13}$/.test(form.barcode)
   const emptyLabel = lang === 'en' ? 'Not specified' : lang === 'es' ? 'No especificado' : lang === 'it' ? 'Non specificato' : 'Non renseigné'
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   return (
     <>
       {/* ── Modal produit enrichi ── */}
@@ -79,7 +81,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             {/* Fixed header */}
             <div className="flex items-center justify-between" style={{ padding:'20px 24px 0', flexShrink:0 }}>
               <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>
-                {editingSku ? (form.name || editingSku) : `${t('btn_new')} produit`}
+                {editingSku ? (form.name || editingSku) : i('Nouveau produit', 'New product', 'Nuevo producto', 'Nuovo prodotto')}
               </h3>
               <button className="btn btn-ghost btn-sm" onClick={() => { setShowModal(false); resetForm() }}><X size={14} /></button>
             </div>
@@ -104,9 +106,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             <div style={{ padding:'16px 24px 0', flexShrink:0 }}>
               <div style={{ display:'flex', gap:4, background:'var(--bg3)', borderRadius:10, padding:4 }}>
                 {([
-                  { id:'general', label:'Général' },
-                  { id:'prix',    label:'Prix & Stock' },
-                  { id:'avance',  label:'Avancé' },
+                  { id:'general', label: i('Général', 'General', 'General', 'Generale') },
+                  { id:'prix',    label: i('Prix & Stock', 'Price & Stock', 'Precio & Stock', 'Prezzo & Stock') },
+                  { id:'avance',  label: i('Avancé', 'Advanced', 'Avanzado', 'Avanzato') },
                 ] as { id:'general'|'prix'|'avance'; label:string }[]).map(tb => (
                   <button key={tb.id} onClick={() => setModalTab(tb.id)} style={{
                     flex:1, padding:'7px 12px', borderRadius:8, fontSize:12, fontWeight:600,
@@ -173,12 +175,12 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
                 {/* ── Unité + Fournisseur ── */}
                 <div className="grid grid-cols-2 gap-3">
-                  <ViewField label="Unité" value={form.unit} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Unité', 'Unit', 'Unidad', 'Unità')} value={form.unit} editing={productEditMode} emptyLabel={emptyLabel}>
                     <select className="input text-sm" value={form.unit} onChange={e => setForm(f => ({...f, unit:e.target.value}))}>
                       {['unité','kg','g','litre','ml','carton','sac','boîte','palette','douzaine'].map(u => <option key={u}>{u}</option>)}
                     </select>
                   </ViewField>
-                  <ViewField label="Fournisseur" value={selectedSupplierName || '—'} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Fournisseur', 'Supplier', 'Proveedor', 'Fornitore')} value={selectedSupplierName || '—'} editing={productEditMode} emptyLabel={emptyLabel}>
                     <div style={{ position:'relative' }}>
                       <div style={{ position:'relative' }}>
                         <Search size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
@@ -229,7 +231,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
                 {/* ── Code-barres + scanner ── */}
                 {productEditMode ? (
-                  <ViewField label="CODE-BARRES" value={form.barcode||''} editing={true}>
+                  <ViewField label={i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')} value={form.barcode||''} editing={true}>
                     <div style={{ display:'flex', gap:8 }}>
                       <input className="input text-sm" style={{ flex:1, borderColor: barcodeInvalid ? 'var(--danger)' : undefined }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
                       <button type="button" className="mini-btn"
@@ -240,7 +242,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         title={lang === 'en' ? 'Generate EAN-13' : lang === 'es' ? 'Generar EAN-13' : lang === 'it' ? 'Genera EAN-13' : 'Générer EAN-13'}
                         style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Wand2 size={18} /></button>
                       <button type="button" className="mini-btn" onClick={() => setShowScanner(true)}
-                        title="Scanner un code-barres" style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Camera size={18} /></button>
+                        title={i('Scanner un code-barres', 'Scan a barcode', 'Escanear un código de barras', 'Scansiona un codice a barre')} style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Camera size={18} /></button>
                     </div>
                     {barcodeInvalid && (
                       <div style={{ marginTop:6, fontSize:11, color:'var(--danger)' }}>
@@ -250,7 +252,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   </ViewField>
                 ) : (
                   <div>
-                    <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>CODE-BARRES</label>
+                    <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
                       <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
                         <BarcodeDisplay value={form.barcode} />
@@ -268,17 +270,18 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       </div>
                     ) : (
                       <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, minHeight:40, display:'flex', alignItems:'center' }}>
-                        <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>Non renseigné</span>
+                        <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{emptyLabel}</span>
                       </div>
                     )}
                   </div>
                 )}
-                <ViewField label="DESCRIPTION" value={form.description||''} editing={productEditMode} emptyLabel={emptyLabel} multiline>
-                  <textarea className="input text-sm" rows={2} placeholder="Description courte..."
+                <ViewField label={i('DESCRIPTION', 'DESCRIPTION', 'DESCRIPCIÓN', 'DESCRIZIONE')} value={form.description||''} editing={productEditMode} emptyLabel={emptyLabel} multiline>
+                  <textarea className="input text-sm" rows={2} placeholder={i('Description courte...', 'Short description...', 'Descripción corta...', 'Descrizione breve...')}
                     value={form.description} onChange={e => setForm(f => ({...f, description:e.target.value}))} />
                 </ViewField>
-                <ViewField label="NOTES INTERNES" value={form.notes||''} editing={productEditMode} emptyLabel={emptyLabel} multiline>
-                  <input className="input text-sm" placeholder="Remarques..." value={form.notes} onChange={e => setForm(f => ({...f, notes:e.target.value}))} />
+                <ViewField label={i('NOTES INTERNES', 'INTERNAL NOTES', 'NOTAS INTERNAS', 'NOTE INTERNE')} value={form.notes||''} editing={productEditMode} emptyLabel={emptyLabel} multiline>
+                  <textarea className="input text-sm" rows={2} placeholder={i('Remarques...', 'Remarks...', 'Observaciones...', 'Note...')}
+                    value={form.notes} onChange={e => setForm(f => ({...f, notes:e.target.value}))} />
                 </ViewField>
               </div>
             )}
@@ -287,34 +290,34 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             {modalTab === 'prix' && (
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                 <div className="grid grid-cols-2 gap-3">
-                  <ViewField label="Prix achat HT *" value={fmt(form.buy)} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Prix achat HT *', 'Purchase price excl. tax *', 'Precio de compra sin impuestos *', "Prezzo d'acquisto IVA escl. *")} value={fmt(form.buy)} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.buy || ''} onChange={e => setForm(f => ({...f, buy:+e.target.value}))} />
                   </ViewField>
-                  <ViewField label="Prix vente TTC *" value={fmt(form.sell)} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Prix vente TTC *', 'Selling price incl. tax *', 'Precio de venta con impuestos *', 'Prezzo di vendita IVA incl. *')} value={fmt(form.sell)} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.sell || ''} onChange={e => setForm(f => ({...f, sell:+e.target.value}))} />
                   </ViewField>
-                  <ViewField label="Prix grossiste" value={form.priceWholesale ? fmt(form.priceWholesale) : '—'} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Prix grossiste', 'Wholesale price', 'Precio mayorista', "Prezzo all'ingrosso")} value={form.priceWholesale ? fmt(form.priceWholesale) : '—'} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.priceWholesale || ''} onChange={e => setForm(f => ({...f, priceWholesale:+e.target.value}))} />
                   </ViewField>
-                  <ViewField label="Prix demi-grossiste" value={form.priceSemiWholesale ? fmt(form.priceSemiWholesale) : '—'} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Prix demi-grossiste', 'Semi-wholesale price', 'Precio semi-mayorista', "Prezzo semi-ingrosso")} value={form.priceSemiWholesale ? fmt(form.priceSemiWholesale) : '—'} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.priceSemiWholesale || ''} onChange={e => setForm(f => ({...f, priceSemiWholesale:+e.target.value}))} />
                   </ViewField>
                 </div>
                 {/* Marge calculée */}
                 {form.buy > 0 && form.sell > 0 && (
                   <div style={{ padding:'10px 14px', background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)', borderRadius:10, fontSize:13 }}>
-                    Marge : <strong style={{ color:'var(--acc2)' }}>{((form.sell - form.buy) / form.buy * 100).toFixed(1)} %</strong>
-                    <span style={{ color:'var(--text3)', marginLeft:12 }}>({fmt(form.sell - form.buy)} / unité)</span>
+                    {i('Marge', 'Margin', 'Margen', 'Margine')} : <strong style={{ color:'var(--acc2)' }}>{((form.sell - form.buy) / form.buy * 100).toFixed(1)} %</strong>
+                    <span style={{ color:'var(--text3)', marginLeft:12 }}>({fmt(form.sell - form.buy)} / {i('unité', 'unit', 'unidad', 'unità')})</span>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
-                  <ViewField label="Stock initial *" value={String(form.stock)} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Stock initial *', 'Initial stock *', 'Stock inicial *', 'Stock iniziale *')} value={String(form.stock)} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.stock || ''} onChange={e => setForm(f => ({...f, stock:+e.target.value}))} />
                   </ViewField>
-                  <ViewField label="Seuil alerte *" value={String(form.threshold)} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Seuil alerte *', 'Alert threshold *', 'Umbral de alerta *', 'Soglia di allerta *')} value={String(form.threshold)} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.threshold || ''} onChange={e => setForm(f => ({...f, threshold:+e.target.value}))} />
                   </ViewField>
-                  <ViewField label="Taux TVA" value={`${form.taxRate} %`} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Taux TVA', 'VAT rate', 'Tasa de IVA', 'Aliquota IVA')} value={`${form.taxRate} %`} editing={productEditMode} emptyLabel={emptyLabel}>
                     <select className="input text-sm" value={form.taxRate} onChange={e => setForm(f => ({...f, taxRate:+e.target.value}))}>
                       {[0,5,10,18,20].map(r => <option key={r} value={r}>{r} %</option>)}
                     </select>
@@ -323,8 +326,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {/* Toggle promotion */}
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Produit en promotion</div>
-                    <div style={{ fontSize:11, color:'var(--text3)' }}>Affiche un badge PROMO au POS</div>
+                    <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}</div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>{i('Affiche un badge PROMO au POS', 'Shows a PROMO badge at POS', 'Muestra una insignia PROMO en POS', 'Mostra un badge PROMO al POS')}</div>
                   </div>
                   <button onClick={() => setForm(f => ({...f, hasPromotion:!f.hasPromotion}))} style={{
                     width:48, height:26, borderRadius:99, position:'relative',
@@ -335,10 +338,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 </div>
                 {form.hasPromotion && (
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                    <ViewField label="PRIX PROMOTION" value={form.promotionPrice ? fmt(form.promotionPrice) : ''} editing={productEditMode} emptyLabel={emptyLabel}>
+                    <ViewField label={i('PRIX PROMOTION', 'PROMO PRICE', 'PRECIO PROMO', 'PREZZO PROMO')} value={form.promotionPrice ? fmt(form.promotionPrice) : ''} editing={productEditMode} emptyLabel={emptyLabel}>
                       <input className="input text-sm" type="number" value={form.promotionPrice || ''} onChange={e => setForm(f => ({...f, promotionPrice:+e.target.value}))} />
                     </ViewField>
-                    <ViewField label="DATE FIN PROMO" value={form.promotionEnd||''} editing={productEditMode} emptyLabel={emptyLabel}>
+                    <ViewField label={i('DATE FIN PROMO', 'PROMO END DATE', 'FECHA FIN PROMO', 'DATA FINE PROMO')} value={form.promotionEnd||''} editing={productEditMode} emptyLabel={emptyLabel}>
                       <input className="input text-sm" type="date" value={form.promotionEnd} onChange={e => setForm(f => ({...f, promotionEnd:e.target.value}))} />
                     </ViewField>
                   </div>
@@ -350,7 +353,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             {modalTab === 'avance' && (
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                 {[
-                  { label:'Produit actif', sub:'Visible dans les listes', key:'isActive' as const },
+                  { label: i('Produit actif', 'Active product', 'Producto activo', 'Prodotto attivo'),
+                    sub:   i('Visible dans les listes', 'Visible in lists', 'Visible en las listas', 'Visibile negli elenchi'),
+                    key:'isActive' as const },
                 ].map(tog => (
                   <div key={tog.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
                     <div>
@@ -369,11 +374,11 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <input className="input text-sm" placeholder={lang === 'en' ? 'Optional reference...' : lang === 'es' ? 'Referencia opcional...' : lang === 'it' ? 'Riferimento opzionale...' : 'Référence optionnelle...'} />
                 </ViewField>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                  <ViewField label="POIDS (g)" value="" editing={productEditMode} emptyLabel={emptyLabel}>
-                    <input className="input text-sm" type="number" placeholder="Ex: 500" />
+                  <ViewField label={i('POIDS (g)', 'WEIGHT (g)', 'PESO (g)', 'PESO (g)')} value="" editing={productEditMode} emptyLabel={emptyLabel}>
+                    <input className="input text-sm" type="number" placeholder={i('Ex: 500', 'Ex: 500', 'Ej: 500', 'Es: 500')} />
                   </ViewField>
-                  <ViewField label="DIMENSIONS" value="" editing={productEditMode} emptyLabel={emptyLabel}>
-                    <input className="input text-sm" placeholder="L × l × h cm" />
+                  <ViewField label={i('DIMENSIONS', 'DIMENSIONS', 'DIMENSIONES', 'DIMENSIONI')} value="" editing={productEditMode} emptyLabel={emptyLabel}>
+                    <input className="input text-sm" placeholder={i('L × l × h cm', 'L × W × H cm', 'L × A × H cm', 'L × P × A cm')} />
                   </ViewField>
                 </div>
               </div>
@@ -391,7 +396,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               ) : (
                 <>
                   <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct} disabled={barcodeInvalid}>
-                    {editingSku ? 'Enregistrer les modifications' : `${t('btn_add')} le produit`}
+                    {editingSku
+                      ? i('Enregistrer les modifications', 'Save changes', 'Guardar cambios', 'Salva modifiche')
+                      : i('Ajouter le produit', 'Add product', 'Agregar producto', 'Aggiungi prodotto')}
                   </button>
                   {editingSku ? (
                     <button className="btn btn-ghost" onClick={() => {
@@ -416,7 +423,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             onScan={barcode => {
               setForm(f => ({ ...f, barcode }))
               setShowScanner(false)
-              toast.success(`✅ Code-barres : ${barcode}`)
+              toast.success(`✅ ${i('Code-barres', 'Barcode', 'Código de barras', 'Codice a barre')} : ${barcode}`)
             }}
             onClose={() => setShowScanner(false)}
           />
