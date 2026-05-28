@@ -93,6 +93,7 @@ async function start() {
       cb(new Error('CORS not allowed'), false)
     },
     credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   })
 
   // ─── HELMET (en-têtes de sécurité) ──────
