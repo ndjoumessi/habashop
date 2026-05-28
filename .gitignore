@@ -38,3 +38,6 @@ coverage/
 playwright-report/
 test-results/
 .playwright/
+
+# Local deploy helper (auto-deploy Vercel actif, script obsolète)
+deploy.sh
