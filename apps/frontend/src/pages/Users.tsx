@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useConfig, t } from '@/stores/appStore'
+import { useAuthStore } from '@/stores/authStore'
 import { usersApi } from '@/lib/api'
 import { confirm } from '@/lib/confirm'
 import {
@@ -108,6 +109,10 @@ export default function Users() {
   void lang
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const currentUser = useAuthStore(s => s.user)
+  const currentRole = String(currentUser?.role ?? '').toUpperCase()
+  const isAdmin = currentRole === 'ADMIN' || currentRole === 'SUPER_ADMIN'
+  const canToggle2FA = (uid: string) => isAdmin || uid === currentUser?.id
   const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   const fmtDate = (iso: string) => {
     if (!iso) return ''
@@ -305,9 +310,11 @@ export default function Users() {
             ))}
           </select>
         </div>
-        <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowModal(true)}>
-          <Plus size={13} /> {lang === 'en' ? 'Invite user' : lang === 'es' ? 'Invitar a un usuario' : lang === 'it' ? 'Invita un utente' : 'Inviter un utilisateur'}
-        </button>
+        {isAdmin && (
+          <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowModal(true)}>
+            <Plus size={13} /> {lang === 'en' ? 'Invite user' : lang === 'es' ? 'Invitar a un usuario' : lang === 'it' ? 'Invita un utente' : 'Inviter un utilisateur'}
+          </button>
+        )}
       </div>
 
       {/* ── Grid de cartes ── */}
@@ -394,22 +401,34 @@ export default function Users() {
                     </span>
                   </div>
 
-                  {/* 2FA badge */}
-                  <button
-                    type="button"
-                    onClick={() => toggle2FA(user.id)}
-                    style={{
-                      padding:'4px 8px', borderRadius:8, border:'none', cursor:'pointer',
+                  {/* 2FA badge — bouton si admin OU self, sinon badge lecture seule */}
+                  {canToggle2FA(user.id) ? (
+                    <button
+                      type="button"
+                      onClick={() => toggle2FA(user.id)}
+                      style={{
+                        padding:'4px 8px', borderRadius:8, border:'none', cursor:'pointer',
+                        fontFamily:'var(--font)', fontSize:9, fontWeight:800,
+                        background: user.twoFA ? 'rgba(16,185,129,.12)' : 'rgba(255,255,255,.05)',
+                        color: user.twoFA ? 'var(--acc2)' : 'var(--text3)',
+                        flexShrink:0,
+                      }}
+                      title={i('Activer/désactiver 2FA', 'Toggle 2FA', 'Activar/desactivar 2FA', 'Attiva/disattiva 2FA')}
+                      aria-label={i('Activer/désactiver 2FA', 'Toggle 2FA', 'Activar/desactivar 2FA', 'Attiva/disattiva 2FA')}
+                    >
+                      2FA
+                    </button>
+                  ) : (
+                    <span style={{
+                      padding:'4px 8px', borderRadius:8,
                       fontFamily:'var(--font)', fontSize:9, fontWeight:800,
                       background: user.twoFA ? 'rgba(16,185,129,.12)' : 'rgba(255,255,255,.05)',
                       color: user.twoFA ? 'var(--acc2)' : 'var(--text3)',
                       flexShrink:0,
-                    }}
-                    title="Toggle 2FA"
-                    aria-label="Toggle 2FA"
-                  >
-                    2FA
-                  </button>
+                    }}>
+                      2FA
+                    </span>
+                  )}
                 </div>
 
                 {/* Infos grid */}
@@ -440,44 +459,46 @@ export default function Users() {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div style={{ display:'flex', gap:6 }}>
-                  <button type="button" className="btn btn-sm btn-ghost"
-                    style={{ flex:1, justifyContent:'center', cursor:'pointer' }}
-                    onClick={() => {
-                      setEditUser(user)
-                      setEditForm({ name:user.name, email:user.email, role:user.role, active:user.active, twoFA:user.twoFA })
-                      setShowEditModal(true)
-                    }}>
-                    <Archive size={12}/> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
-                  </button>
-                  <button type="button"
-                    style={{
-                      flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-                      padding:'6px', borderRadius:9, border:'none', cursor:'pointer',
-                      fontFamily:'var(--font)', fontSize:11, fontWeight:700,
-                      background: user.active ? 'rgba(239,68,68,.1)' : 'rgba(16,185,129,.1)',
-                      color: user.active ? 'var(--danger)' : 'var(--acc2)',
-                    }}
-                    onClick={() => toggleActive(user.id)}>
-                    {user.active ? (lang === 'en' ? 'Disable' : lang === 'es' ? 'Desactivar' : lang === 'it' ? 'Disattiva' : 'Désactiver') : (lang === 'en' ? 'Enable' : lang === 'es' ? 'Activar' : lang === 'it' ? 'Attiva' : 'Activer')}
-                  </button>
-                  <button type="button"
-                    title={i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
-                    aria-label={i('Supprimer', 'Delete', 'Eliminar', 'Elimina') + ' ' + user.name}
-                    onClick={() => handleDelete(user)}
-                    style={{
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      padding:'6px 10px', borderRadius:9, border:'none', cursor:'pointer',
-                      background:'rgba(239,68,68,.08)', color:'var(--danger)',
-                      transition:'background .15s',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.16)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.08)' }}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
+                {/* Actions — admin only ; non-admins voient la carte en lecture seule */}
+                {isAdmin && (
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button type="button" className="btn btn-sm btn-ghost"
+                      style={{ flex:1, justifyContent:'center', cursor:'pointer' }}
+                      onClick={() => {
+                        setEditUser(user)
+                        setEditForm({ name:user.name, email:user.email, role:user.role, active:user.active, twoFA:user.twoFA })
+                        setShowEditModal(true)
+                      }}>
+                      <Archive size={12}/> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
+                    </button>
+                    <button type="button"
+                      style={{
+                        flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+                        padding:'6px', borderRadius:9, border:'none', cursor:'pointer',
+                        fontFamily:'var(--font)', fontSize:11, fontWeight:700,
+                        background: user.active ? 'rgba(239,68,68,.1)' : 'rgba(16,185,129,.1)',
+                        color: user.active ? 'var(--danger)' : 'var(--acc2)',
+                      }}
+                      onClick={() => toggleActive(user.id)}>
+                      {user.active ? (lang === 'en' ? 'Disable' : lang === 'es' ? 'Desactivar' : lang === 'it' ? 'Disattiva' : 'Désactiver') : (lang === 'en' ? 'Enable' : lang === 'es' ? 'Activar' : lang === 'it' ? 'Attiva' : 'Activer')}
+                    </button>
+                    <button type="button"
+                      title={i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
+                      aria-label={i('Supprimer', 'Delete', 'Eliminar', 'Elimina') + ' ' + user.name}
+                      onClick={() => handleDelete(user)}
+                      style={{
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        padding:'6px 10px', borderRadius:9, border:'none', cursor:'pointer',
+                        background:'rgba(239,68,68,.08)', color:'var(--danger)',
+                        transition:'background .15s',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.16)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.08)' }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )
