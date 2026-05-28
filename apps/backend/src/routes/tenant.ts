@@ -203,7 +203,16 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       })
       if (remainingAdmins === 0) return reply.code(403).send({ error: 'Impossible de supprimer le dernier administrateur actif' })
     }
-    await prisma.user.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } })
+    // Suffixe l'email pour libérer la contrainte @unique globale (permet réinvitation immédiate).
+    // L'email original reste lisible dans l'audit log ci-dessous + dans le préfixe.
+    await prisma.user.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        isActive: false,
+        email: `${existing.email}_deleted_${Date.now()}`,
+      },
+    })
     await prisma.auditLog.create({
       data: {
         tenantId: request.tenantId,
