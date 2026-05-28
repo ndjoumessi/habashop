@@ -156,6 +156,13 @@ export const salaryHistoryApi = {
   delete:         (id: string) => api.delete<any>(`/api/salary-history/${id}`),
 }
 
+export const goalsApi = {
+  list:   ()                       => api.get<any[]>('/api/goals'),
+  create: (data: any)              => api.post<any>('/api/goals', data),
+  update: (id: string, data: any)  => api.put<any>(`/api/goals/${id}`, data),
+  delete: (id: string)             => api.delete<any>(`/api/goals/${id}`),
+}
+
 export const expensesApi = {
   list:   () => api.get<any[]>('/api/expenses'),
   create: (data: any) => api.post<any>('/api/expenses', data),

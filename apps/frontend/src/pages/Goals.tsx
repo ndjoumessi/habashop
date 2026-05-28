@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import Skeleton from '@/components/ui/skeleton'
 import { useAppStore, useFormatAmount, useCurrencyInfo } from '@/stores/appStore'
-import { dashboardApi } from '@/lib/api'
+import { dashboardApi, goalsApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { Plus, Trophy, Pencil, X, Check, Trash2, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
@@ -16,9 +16,10 @@ interface Goal {
   color: string
   icon: string
   category: 'revenue' | 'stock' | 'customers' | 'team'
+  linkedMetric?: string | null  // salesMonth | transactionsMonth | avgBasket | null
 }
 
-const BLANK_GOAL: Goal = { id:'', label:'', target:0, current:0, unit:'currency', period:'Mai 2026', color:'#6C47FF', icon:'🎯', category:'revenue' }
+const BLANK_GOAL: Goal = { id:'', label:'', target:0, current:0, unit:'currency', period:'Mai 2026', color:'#6C47FF', icon:'🎯', category:'revenue', linkedMetric: null }
 
 const isCurrency = (unit: string) => unit === 'currency' || unit === 'FCFA'
 
@@ -40,34 +41,38 @@ export default function Goals() {
     : u === 'transactions' ? (lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions')
     : u
 
-  const [goals, setGoals] = useState<Goal[]>(() => {
-    try {
-      const saved = localStorage.getItem('habashop-goals')
-      return saved ? JSON.parse(saved) : []
-    } catch { return [] }
-  })
+  const [goals, setGoals] = useState<Goal[]>([])
   const [showEditModal, setShowEditModal] = useState(false)
   const [editGoal, setEditGoal]           = useState<Goal | null>(null)
   const [goalForm, setGoalForm]           = useState<Goal>(BLANK_GOAL)
   const [loading, setLoading]             = useState(true)
 
+  // Charge depuis le backend au mount
   useEffect(() => {
-    dashboardApi.stats()
-      .then(data => {
-        setGoals(prev => prev.map(g => {
-          if (g.id === '1') return { ...g, current: data.salesMonth ?? 0 }
-          if (g.id === '2') return { ...g, current: data.transactionsMonth ?? 0 }
-          if (g.id === '3') return { ...g, current: data.transactionsMonth > 0 ? Math.round(data.salesMonth / data.transactionsMonth) : 0 }
-          return g
-        }))
-      })
+    goalsApi.list()
+      .then((data: any[]) => setGoals(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
+  // Enrichissement "live" : applique les stats du dashboard aux goals
+  // dont linkedMetric correspond. Pas de PUT — mise à jour locale uniquement.
   useEffect(() => {
-    localStorage.setItem('habashop-goals', JSON.stringify(goals))
-  }, [goals])
+    if (goals.length === 0) return
+    dashboardApi.stats()
+      .then(data => {
+        setGoals(prev => prev.map(g => {
+          if (g.linkedMetric === 'salesMonth')         return { ...g, current: data.salesMonth ?? 0 }
+          if (g.linkedMetric === 'transactionsMonth')  return { ...g, current: data.transactionsMonth ?? 0 }
+          if (g.linkedMetric === 'avgBasket')          return { ...g, current: data.transactionsMonth > 0 ? Math.round(data.salesMonth / data.transactionsMonth) : 0 }
+          return g
+        }))
+      })
+      .catch(() => {})
+    // Volontairement re-déclenché à chaque changement de goals (le `current` local
+    // n'est pas persisté, juste affiché ; la fonction est idempotente sur les goals sans linkedMetric).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goals.length])
 
   const openModal = (goal: Goal | null) => {
     setEditGoal(goal)
@@ -371,28 +376,44 @@ export default function Goals() {
 
               <div style={{ display:'flex', gap:8, marginTop:6 }}>
                 <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }}
-                  onClick={() => {
+                  onClick={async () => {
                     if (!goalForm.label || !goalForm.target) {
                       toast.error(lang === 'en' ? 'Label and target required' : lang === 'es' ? 'Etiqueta y objetivo requeridos' : lang === 'it' ? 'Etichetta e obiettivo richiesti' : 'Label et objectif requis')
                       return
                     }
-                    if (editGoal) {
-                      setGoals(prev => prev.map(g => g.id === editGoal.id ? goalForm : g))
-                      toast.success(lang === 'en' ? 'Goal updated' : lang === 'es' ? 'Objetivo modificado' : lang === 'it' ? 'Obiettivo modificato' : 'Objectif modifié')
-                    } else {
-                      setGoals(prev => [...prev, goalForm])
-                      toast.success(lang === 'en' ? 'Goal created' : lang === 'es' ? 'Objetivo creado' : lang === 'it' ? 'Obiettivo creato' : 'Objectif créé')
+                    const payload = {
+                      label: goalForm.label, target: goalForm.target, current: goalForm.current,
+                      unit: goalForm.unit, period: goalForm.period, color: goalForm.color,
+                      icon: goalForm.icon, category: goalForm.category, linkedMetric: goalForm.linkedMetric ?? null,
                     }
-                    setShowEditModal(false)
+                    try {
+                      if (editGoal) {
+                        const updated = await goalsApi.update(editGoal.id, payload)
+                        setGoals(prev => prev.map(g => g.id === editGoal.id ? updated : g))
+                        toast.success(lang === 'en' ? 'Goal updated' : lang === 'es' ? 'Objetivo modificado' : lang === 'it' ? 'Obiettivo modificato' : 'Objectif modifié')
+                      } else {
+                        const created = await goalsApi.create(payload)
+                        setGoals(prev => [...prev, created])
+                        toast.success(lang === 'en' ? 'Goal created' : lang === 'es' ? 'Objetivo creado' : lang === 'it' ? 'Obiettivo creato' : 'Objectif créé')
+                      }
+                      setShowEditModal(false)
+                    } catch (e: any) {
+                      toast.error(`${lang === 'en' ? 'Save failed' : lang === 'es' ? 'Error al guardar' : lang === 'it' ? 'Salvataggio fallito' : 'Échec sauvegarde'} : ${e?.message ?? ''}`)
+                    }
                   }}>
                   <Check size={14}/> {editGoal ? (lang === 'en' ? 'Update' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier') : (lang === 'en' ? 'Create' : lang === 'es' ? 'Crear' : lang === 'it' ? 'Crea' : 'Créer')}
                 </button>
                 {editGoal && (
                   <button className="mini-btn" style={{ color:'var(--danger)', cursor:'pointer', display:'flex', alignItems:'center' }}
-                    onClick={() => {
-                      setGoals(prev => prev.filter(g => g.id !== editGoal.id))
-                      setShowEditModal(false)
-                      toast.success(lang === 'en' ? 'Goal deleted' : lang === 'es' ? 'Objetivo eliminado' : lang === 'it' ? 'Obiettivo eliminato' : 'Objectif supprimé')
+                    onClick={async () => {
+                      try {
+                        await goalsApi.delete(editGoal.id)
+                        setGoals(prev => prev.filter(g => g.id !== editGoal.id))
+                        setShowEditModal(false)
+                        toast.success(lang === 'en' ? 'Goal deleted' : lang === 'es' ? 'Objetivo eliminado' : lang === 'it' ? 'Obiettivo eliminato' : 'Objectif supprimé')
+                      } catch (e: any) {
+                        toast.error(`${lang === 'en' ? 'Delete failed' : lang === 'es' ? 'Error al eliminar' : lang === 'it' ? 'Eliminazione fallita' : 'Échec suppression'} : ${e?.message ?? ''}`)
+                      }
                     }}>
                     <Trash2 size={12}/>
                   </button>

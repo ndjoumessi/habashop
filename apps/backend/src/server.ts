@@ -30,11 +30,13 @@ import { notificationRoutes } from './routes/notifications'
 import { whatsappRoutes }     from './routes/whatsapp'
 import { aiRoutes }           from './routes/ai'
 import { docsRoutes }         from './routes/docs'
+import { goalsRoutes }        from './routes/goals'
 import {
   sendTrialReminder7Days,
   sendTrialReminder3Days,
   sendTrialExpired,
   sendWeeklyReport,
+  sendStockAlertEmail,
 } from './services/email'
 
 // ─── Validation des variables d'environnement obligatoires ───
@@ -215,6 +217,7 @@ async function start() {
   await app.register(whatsappRoutes)
   await app.register(aiRoutes)
   await app.register(docsRoutes)
+  await app.register(goalsRoutes)
 
   // ─── CRONS EMAIL (rappels essai + rapport hebdo) ──
   // Rappels d'essai — toutes les heures
@@ -227,6 +230,13 @@ async function start() {
     const now = new Date()
     if (now.getDay() !== 1 || now.getHours() !== 8 || now.getMinutes() > 5) return
     runWeeklyReports().catch(err => console.error('❌ Cron weekly reports:', err))
+  }, 60 * 60 * 1000)
+
+  // Alertes stock — quotidien 7h (vérifié chaque heure)
+  setInterval(() => {
+    const now = new Date()
+    if (now.getHours() !== 7 || now.getMinutes() > 5) return
+    runDailyStockAlerts().catch(err => console.error('❌ Cron stock alerts:', err))
   }, 60 * 60 * 1000)
 
   // ─── DÉMARRAGE ──────────────────────────
@@ -337,6 +347,62 @@ async function runWeeklyReports(): Promise<void> {
   }
 
   console.log(`📊 Rapports hebdo envoyés: ${tenants.length}`)
+}
+
+// ─── Alertes stock quotidiennes ──────────────────────────────────────────
+async function runDailyStockAlerts(): Promise<void> {
+  // Tenants actifs/trial avec préférence notifEmailStock activée
+  const tenants = await prisma.tenant.findMany({
+    where: {
+      isActive: true,
+      status: { in: ['trial', 'active'] },
+      notifEmailStock: true,
+    },
+    select: { id: true, name: true },
+  })
+
+  let sent = 0
+  for (const tenant of tenants) {
+    try {
+      // Produits actifs en rupture (stockQty = 0) ou stock bas (stockQty <= stockMin)
+      const lowStockProducts = await prisma.product.findMany({
+        where: {
+          tenantId: tenant.id,
+          isActive: true,
+          deletedAt: null,
+          stockQty: { lte: prisma.product.fields.stockMin },
+        },
+        select: { name: true, stockQty: true, stockMin: true },
+        orderBy: [{ stockQty: 'asc' }, { name: 'asc' }],
+      })
+
+      if (lowStockProducts.length === 0) continue
+
+      // Email admin du tenant
+      const admin = await prisma.user.findFirst({
+        where: {
+          tenantId: tenant.id,
+          role: { in: ['ADMIN', 'SUPER_ADMIN'] },
+          isActive: true,
+          deletedAt: null,
+        },
+        select: { email: true, name: true },
+      })
+
+      if (!admin?.email) continue
+
+      const ok = await sendStockAlertEmail({
+        to: admin.email,
+        shopName: tenant.name,
+        products: lowStockProducts,
+      })
+      if (ok) sent++
+    } catch (err: any) {
+      console.warn(`⚠️ Stock alert failed for tenant ${tenant.id}:`, err?.message)
+    }
+  }
+
+  console.log(`📦 Alertes stock envoyées: ${sent}/${tenants.length} tenants`)
 }
 
 // Filets de sécurité process : on logge toujours ; en prod on ne crashe pas

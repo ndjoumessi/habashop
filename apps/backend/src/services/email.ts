@@ -389,6 +389,95 @@ function escHtml(v: unknown): string {
 }
 
 // ════════════════════════════════════════════
+// EMAIL — Alerte stock bas (cron quotidien)
+// ════════════════════════════════════════════
+export async function sendStockAlertEmail(opts: {
+  to:           string
+  shopName:     string
+  products:     { name: string; stockQty: number; stockMin: number }[]
+}): Promise<boolean> {
+  const { to, shopName, products } = opts
+  const stockUrl = 'https://habashop.vercel.app/app/stock'
+  const eShop = escHtml(shopName)
+  const totalCount = products.length
+  const outOfStock = products.filter(p => p.stockQty === 0).length
+  const lowStock = totalCount - outOfStock
+
+  // Tableau HTML des produits (limité à 20 pour ne pas exploser le mail)
+  const rows = products.slice(0, 20).map(p => {
+    const isOut = p.stockQty === 0
+    return `
+      <tr>
+        <td style="padding:8px 10px;border-bottom:1px solid #EBEBF0;">${escHtml(p.name)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #EBEBF0;text-align:right;color:${isOut ? '#A32D2D' : '#856404'};font-weight:700;font-family:monospace;">
+          ${isOut ? '⚠️ RUPTURE' : p.stockQty}
+        </td>
+        <td style="padding:8px 10px;border-bottom:1px solid #EBEBF0;text-align:right;color:#8888A8;font-family:monospace;">
+          ${p.stockMin}
+        </td>
+      </tr>`
+  }).join('')
+
+  const moreNote = totalCount > 20
+    ? `<p style="font-size:12px;color:#8888A8;text-align:center;">…et ${totalCount - 20} autre(s) — voir la liste complète dans l'app.</p>`
+    : ''
+
+  const html = baseTemplate(`
+    <h1>⚠️ Alerte stock — ${eShop}</h1>
+    <p>Bonjour, votre boutique <strong>${eShop}</strong> a
+    <strong>${totalCount} produit${totalCount > 1 ? 's' : ''}</strong> qui nécessite${totalCount > 1 ? 'nt' : ''} votre attention :</p>
+
+    <div class="kpi-row">
+      ${outOfStock > 0 ? `
+      <div class="kpi">
+        <div class="kpi-val" style="color:#A32D2D;">${outOfStock}</div>
+        <div class="kpi-lbl">Rupture totale</div>
+      </div>` : ''}
+      ${lowStock > 0 ? `
+      <div class="kpi">
+        <div class="kpi-val" style="color:#856404;">${lowStock}</div>
+        <div class="kpi-lbl">Stock bas</div>
+      </div>` : ''}
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:13px;">
+      <thead>
+        <tr style="background:#F8F8FC;">
+          <th style="padding:10px;text-align:left;font-weight:700;color:#1A1A2E;">Produit</th>
+          <th style="padding:10px;text-align:right;font-weight:700;color:#1A1A2E;">Stock</th>
+          <th style="padding:10px;text-align:right;font-weight:700;color:#1A1A2E;">Seuil</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    ${moreNote}
+
+    <p style="text-align:center;">
+      <a href="${stockUrl}" class="btn">
+        📦 Voir le stock
+      </a>
+    </p>
+
+    <div class="alert">
+      💡 <strong>Conseil :</strong> Pensez à réapprovisionner ces produits ou créer
+      des bons de commande fournisseur depuis l'onglet Commandes.
+    </div>
+
+    <p style="font-size:12px;color:#8888A8;">
+      Vous recevez cet email car les <strong>alertes stock</strong> sont activées
+      dans vos préférences. Désactivez-les depuis Paramètres → Notifications si nécessaire.
+    </p>
+  `)
+
+  return send({
+    to,
+    subject: `⚠️ ${shopName} — ${totalCount} produit${totalCount > 1 ? 's' : ''} en alerte stock`,
+    html,
+  })
+}
+
+// ════════════════════════════════════════════
 // EMAIL — Invitation d'un nouvel utilisateur par un admin
 // ════════════════════════════════════════════
 export async function sendUserInvitationEmail(opts: {
