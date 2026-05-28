@@ -348,7 +348,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   {editingSku ? (
                     <button className="btn btn-ghost" onClick={() => {
                       const p = products.find(p => p.sku === editingSku)
-                      if (p) setForm(f => ({ ...f, sku:p.sku, name:p.name.replace(/^\S+\s/,''), category:p.category, buy:p.buy, sell:p.sell, stock:p.stock, threshold:p.threshold, supplier:p.supplier, supplierId:p.supplierId??'', image:p.name.match(/^\S+/)?.[0]??'📦', barcode:p.barcode??'' }))
+                      if (p) setForm(f => ({ ...f, sku:p.sku, name:p.name.replace(/^\S+\s/,''), category:p.category, buy:p.buy, sell:p.sell, stock:p.stock, threshold:p.threshold, supplier:p.supplier, supplierId:p.supplierId??'', image:p.name.match(/^\S+/)?.[0]??'📦', barcode:p.barcode??'', description:p.description??'', notes:p.notes??'' }))
                       setProductEditMode(false)
                     }}>{t('btn_cancel')}</button>
                   ) : (

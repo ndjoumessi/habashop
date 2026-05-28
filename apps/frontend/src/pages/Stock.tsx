@@ -92,6 +92,8 @@ export default function Stock() {
           supplier: supMap.get(p.supplierId) || '',
           supplierId: p.supplierId || '',
           barcode: p.barcode || '',
+          description: p.description || '',
+          notes: p.notes || '',
         })))
       })
       .catch(() => {})
@@ -129,13 +131,15 @@ export default function Stock() {
       promotionPrice: form.promotionPrice || null,
       barcode: form.barcode || null,
       supplierId: form.supplierId || null,
+      description: form.description || '',
+      notes: form.notes || '',
     }
     if (editingSku) {
       if (editingId) {
         try { await productsApi.update(editingId, apiBody) } catch {}
       }
       setProducts(prev => prev.map(p =>
-        p.sku === editingSku ? { ...p, name: form.image + ' ' + form.name, category: form.category, buy: form.buy, sell: form.sell, stock: form.stock, threshold: form.threshold, supplier: supplierName, supplierId: form.supplierId, barcode: form.barcode } : p
+        p.sku === editingSku ? { ...p, name: form.image + ' ' + form.name, category: form.category, buy: form.buy, sell: form.sell, stock: form.stock, threshold: form.threshold, supplier: supplierName, supplierId: form.supplierId, barcode: form.barcode, description: form.description, notes: form.notes } : p
       ))
       toast.success(`✅ ${form.name} mis à jour !`)
     } else {
@@ -155,6 +159,7 @@ export default function Stock() {
         stock: form.stock, threshold: form.threshold,
         supplier: supplierName, supplierId: form.supplierId,
         barcode: form.barcode,
+        description: form.description, notes: form.notes,
       }])
       toast.success('✅ Produit ajouté !')
     }

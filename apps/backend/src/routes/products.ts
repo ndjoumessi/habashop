@@ -18,7 +18,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       description, barcode, isActive,
       wholesalePrice, semiWholesalePrice,
       hasPromotion, promotionPrice,
-      supplierId,
+      supplierId, notes,
     } = request.body as ProductBody
 
     if (!name?.trim()) {
@@ -60,6 +60,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
           hasPromotion: hasPromotion || false,
           promotionPrice: promotionPrice || null,
           supplierId: supplierId || null,
+          notes: notes || '',
         }
       })
       invalidateTenantCache(tenantId).catch(() => {})

@@ -28,6 +28,7 @@ export interface ProductBody {
   emoji?: string; wholesalePrice?: number; semiWholesalePrice?: number
   hasPromotion?: boolean; promotionPrice?: number
   supplierId?: string | null
+  notes?: string
 }
 export interface CustomerBody {
   name?: string; type?: string; phone?: string; email?: string; address?: string
