@@ -1,5 +1,5 @@
-import { useState, Fragment } from 'react'
-import { Download, Plus, Users, DollarSign, FileText, TrendingUp, Clock, Umbrella, CheckCircle, XCircle, AlertTriangle, Gift, Trash2, BarChart3, Calendar, CheckCheck, ChevronDown, ChevronRight } from 'lucide-react'
+import { useState, useEffect, Fragment } from 'react'
+import { Download, Plus, Users, DollarSign, FileText, TrendingUp, TrendingDown, Clock, Umbrella, CheckCircle, XCircle, AlertTriangle, Gift, Trash2, BarChart3, Calendar, CheckCheck, ChevronDown, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { bonusesApi } from '@/lib/api'
 import { type Employee, type LeaveRequest, DEPT_COLORS, LEAVE_STATUS_CFG, EmpAvatar, displayDate, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusLabel, leaveStatusLabel } from '@/components/hr/hrShared'
@@ -12,13 +12,14 @@ function bonusReasonColor(reason: string): { bg: string; border: string; text: s
   return { bg: 'rgba(108,71,255,.12)', border: 'rgba(108,71,255,.25)', text: 'var(--p3)' }
 }
 
-// Couleur de badge selon la raison d'augmentation salariale
+// Couleur de badge selon la raison d'augmentation salariale (bg + text pour badge pilule)
 function raiseReasonColor(reason: string): { bg: string; border: string; text: string } {
   const r = (reason || '').toLowerCase()
-  if (r.includes('promotion') || r.includes('promoción') || r.includes('promozione')) return { bg: 'rgba(108,71,255,.12)', border: 'rgba(108,71,255,.25)', text: 'var(--p3)' }
-  if (r.includes('ajust') || r.includes('adjust')) return { bg: 'rgba(245,158,11,.12)', border: 'rgba(245,158,11,.25)', text: 'var(--warn)' }
-  if (r.includes('augment') || r.includes('aumento') || r.includes('increase') || r.includes('raise')) return { bg: 'rgba(0,208,132,.12)', border: 'rgba(0,208,132,.25)', text: 'var(--acc2)' }
-  return { bg: 'rgba(120,120,140,.12)', border: 'rgba(120,120,140,.25)', text: 'var(--text2)' }
+  if (r.includes('promotion') || r.includes('promoción') || r.includes('promozione')) return { bg: 'rgba(108,71,255,.12)', border: 'rgba(108,71,255,.25)', text: 'var(--p)' }
+  if (r.includes('ancien') || r.includes('senior') || r.includes('antigü') || r.includes('anzian')) return { bg: 'rgba(245,158,11,.12)', border: 'rgba(245,158,11,.25)', text: '#F59E0B' }
+  if (r.includes('ajust') || r.includes('adjust')) return { bg: 'rgba(99,102,241,.12)', border: 'rgba(99,102,241,.25)', text: '#6366F1' }
+  if (r.includes('augment') || r.includes('aumento') || r.includes('increase') || r.includes('raise')) return { bg: 'rgba(0,200,83,.12)', border: 'rgba(0,200,83,.25)', text: '#00C853' }
+  return { bg: 'var(--bg3)', border: 'var(--border)', text: 'var(--text2)' }
 }
 
 interface HRTabsProps {
@@ -48,6 +49,13 @@ interface HRTabsProps {
 export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, payrollMonth, setPayrollMonth, bonuses, setBonuses, bonusList, setBonusList, salaryHistory, onDeleteSalaryHistory, generateAllPayslips, generatePayslipPDF, setSalaryTarget, setShowSalaryModal, setSelectedContract, setShowContractDetailModal, setContractForm, setShowNewContractModal, attendance, setAttendance, attendanceDate, setAttendanceDate, pendingLeaves, leaves, setLeaveForm, setShowLeaveModal, handleLeaveAction }: HRTabsProps) {
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 640)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onResize = () => setIsMobile(window.innerWidth < 640)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   const [expandedEmpBonuses, setExpandedEmpBonuses] = useState<Set<string>>(new Set())
   const toggleExpandEmp = (empId: string) => setExpandedEmpBonuses(prev => {
     const next = new Set(prev)
@@ -628,270 +636,207 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                 </div>
               ) : (
                 <>
-                  {/* Timeline verticale enrichie */}
-                  <div style={{
-                    display:'flex', flexDirection:'column', gap:0,
-                    position:'relative',
-                  }}>
-                    {/* Ligne verticale centrale */}
+                  {/* Timeline zigzag — cards alternées gauche/droite (colonne unique sur mobile) */}
+                  <div style={{ position:'relative', padding:'20px 0' }}>
+                    {/* Axe central */}
                     <div style={{
                       position:'absolute',
-                      left:28, top:20, bottom:20,
-                      width:2,
-                      background:'linear-gradient(180deg,var(--p),var(--p2),var(--acc2))',
-                      borderRadius:99,
-                      opacity:.3,
+                      left: isMobile ? 12 : '50%',
+                      top:0, bottom:0,
+                      width:2, background:'var(--border)',
+                      transform: isMobile ? 'none' : 'translateX(-50%)',
                     }}/>
 
                     {(() => {
                       const sorted = salaryHistory
                         .slice()
                         .sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime())
-                      const maxNewSalary = Math.max(1, ...sorted.map(h => Number(h.newSalary) || 0))
                       return sorted.map((h, idx) => {
                       const emp   = employees.find(e => String(e.id) === (h.empId ?? (h as any).employeeId))
-                      const diff  = h.newSalary - h.oldSalary
+                      const diff  = (h.newSalary ?? 0) - (h.oldSalary ?? 0)
                       const pct   = Number(h.oldSalary) > 0
                         ? ((diff / Number(h.oldSalary)) * 100) : 0
-                      const isPos = diff >= 0
-                      const date  = h.date
-                        ? new Date(h.date).toLocaleDateString(
-                            lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',
-                            { day:'numeric', month:'short', year:'numeric' }
+                      const isUp  = diff >= 0
+                      const date  = h.date || (h as any).createdAt
+                        ? new Date(h.date || (h as any).createdAt).toLocaleDateString(
+                            lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',
+                            { day:'numeric', month:'long', year:'numeric' }
                           )
                         : '—'
                       const reasonClr = raiseReasonColor(h.reason ?? '')
-                      const barPct    = Math.max(2, (Number(h.newSalary) / maxNewSalary) * 100)
+                      const isLeft = !isMobile && idx % 2 === 0
+                      const initials = emp?.avatar ?? (emp ? emp.name.split(' ').map((w: string) => w[0]).join('').slice(0,2).toUpperCase() : '?')
 
                       return (
                         <div key={h.id ?? idx} style={{
-                          display:'flex', gap:0,
-                          alignItems:'stretch',
+                          display:'flex',
+                          justifyContent: isMobile ? 'flex-start' : (isLeft ? 'flex-end' : 'flex-start'),
+                          paddingLeft:  isMobile ? 32 : (isLeft ? 0 : 'calc(50% + 24px)'),
+                          paddingRight: isMobile ? 0  : (isLeft ? 'calc(50% + 24px)' : 0),
+                          marginBottom: 32,
+                          position:'relative',
                         }}>
-                          {/* Colonne gauche : point */}
+                          {/* Point sur l'axe */}
                           <div style={{
-                            width:58, flexShrink:0,
-                            display:'flex', flexDirection:'column',
-                            alignItems:'center',
+                            position:'absolute',
+                            left: isMobile ? 12 : '50%',
+                            top: 24,
+                            transform:'translate(-50%, 0)',
+                            width:14, height:14,
+                            borderRadius:'50%',
+                            background: isUp ? '#00C853' : 'var(--danger)',
+                            border:'3px solid var(--bg)',
+                            zIndex:1,
+                            boxShadow: `0 0 0 3px ${isUp ? 'rgba(0,200,83,.2)' : 'rgba(255,59,92,.2)'}`,
+                          }}/>
+
+                          {/* Card */}
+                          <div style={{
+                            background:'var(--card)',
+                            border:'1px solid var(--border)',
+                            borderRadius:16,
+                            padding:'16px 20px',
+                            width:'calc(100% - 16px)',
+                            maxWidth: 380,
+                            boxShadow:'var(--sh-xs)',
                             position:'relative',
                           }}>
+                            {/* Flèche vers l'axe */}
                             <div style={{
-                              width:18, height:18,
-                              borderRadius:'50%', flexShrink:0,
-                              marginTop:20,
-                              background: isPos
-                                ? 'linear-gradient(135deg,var(--acc2),var(--p2))'
-                                : 'linear-gradient(135deg,var(--danger),var(--warn))',
-                              boxShadow: isPos
-                                ? '0 0 12px rgba(0,208,132,.5)'
-                                : '0 0 12px rgba(255,59,92,.5)',
-                              border:'2px solid var(--bg)',
-                              zIndex:1,
-                              display:'flex', alignItems:'center',
-                              justifyContent:'center',
-                              fontSize:9, color:'#fff', fontWeight:900,
-                            }}>
-                              {isPos ? '↑' : '↓'}
-                            </div>
-                          </div>
-
-                          {/* Carte principale */}
-                          <div style={{
-                            flex:1, marginBottom:12,
-                            background:'var(--grad-card)',
-                            border:`1px solid ${isPos
-                              ? 'rgba(0,208,132,.15)' : 'rgba(255,59,92,.15)'}`,
-                            borderRadius:16,
-                            overflow:'hidden',
-                            transition:'all .2s',
-                          }}
-                            onMouseEnter={e => {
-                              (e.currentTarget as HTMLElement).style.transform = 'translateX(4px)'
-                              ;(e.currentTarget as HTMLElement).style.boxShadow =
-                                isPos ? '0 4px 20px rgba(0,208,132,.1)' : '0 4px 20px rgba(255,59,92,.1)'
-                            }}
-                            onMouseLeave={e => {
-                              (e.currentTarget as HTMLElement).style.transform = 'none'
-                              ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
-                            }}
-                          >
-                            {/* Bande couleur haut */}
-                            <div style={{
-                              height:3,
-                              background: isPos
-                                ? 'linear-gradient(90deg,var(--acc2),var(--p2)33)'
-                                : 'linear-gradient(90deg,var(--danger),var(--warn)33)',
+                              position:'absolute',
+                              top: 20,
+                              ...(isMobile
+                                ? { left: -8, borderRight: '8px solid var(--border)' }
+                                : isLeft
+                                  ? { right: -8, borderLeft: '8px solid var(--border)' }
+                                  : { left: -8, borderRight: '8px solid var(--border)' }
+                              ),
+                              width: 0, height: 0,
+                              borderTop: '8px solid transparent',
+                              borderBottom: '8px solid transparent',
                             }}/>
 
-                            <div style={{
-                              padding:'14px 18px',
-                              display:'flex', alignItems:'center',
-                              gap:14, flexWrap:'wrap',
-                            }}>
-                              {/* Avatar employé */}
+                            {/* Header : avatar + nom + badge type */}
+                            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
                               <div style={{
-                                width:42, height:42, borderRadius:12,
+                                width:36, height:36, borderRadius:'50%',
+                                background: emp?.color ?? 'var(--p)',
+                                display:'flex', alignItems:'center', justifyContent:'center',
+                                fontSize:13, fontWeight:700, color:'#fff',
                                 flexShrink:0,
-                                background:`${emp?.color ?? 'var(--p)'}22`,
-                                border:`2px solid ${emp?.color ?? 'var(--p)'}33`,
-                                display:'flex', alignItems:'center',
-                                justifyContent:'center',
-                                fontSize:14, fontWeight:900,
-                                color:emp?.color ?? 'var(--p)',
-                                boxShadow:`0 2px 8px ${emp?.color ?? 'var(--p)'}25`,
                               }}>
-                                {emp?.avatar ?? '??'}
+                                {initials}
                               </div>
-
-                              {/* Infos employé */}
-                              <div style={{ flex:1, minWidth:140 }}>
+                              <div style={{ flex:1, minWidth:0 }}>
                                 <div style={{
-                                  fontSize:14, fontWeight:800,
-                                  color:'var(--text)', marginBottom:3,
+                                  fontWeight:700, fontSize:14,
+                                  color:'var(--text)',
+                                  whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
                                 }}>
-                                  {emp?.name ?? i('Employé', 'Employee', 'Empleado', 'Dipendente')}
+                                  {emp?.name ?? i('Employé inconnu', 'Unknown', 'Desconocido', 'Sconosciuto')}
                                 </div>
                                 {emp && (emp.role || emp.dept) && (
-                                  <div style={{ fontSize:10, color:'var(--text3)', marginBottom:4 }}>
+                                  <div style={{ fontSize:11, color:'var(--text2)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                                     {emp.role ? roleLabel(emp.role, lang) : ''}
                                     {emp.role && emp.dept ? ' · ' : ''}
                                     {emp.dept ? deptLabel(emp.dept, lang) : ''}
                                   </div>
                                 )}
-                                <div style={{
-                                  display:'flex', alignItems:'center',
-                                  gap:6, flexWrap:'wrap',
-                                }}>
-                                  <span style={{ fontSize:10, color:'var(--text3)', display:'inline-flex', alignItems:'center', gap:3 }}>
-                                    <Calendar size={9}/> {date}
-                                  </span>
-                                  {h.reason && (
-                                    <span style={{
-                                      fontSize:10, fontWeight:600,
-                                      background: reasonClr.bg,
-                                      color: reasonClr.text,
-                                      border: `1px solid ${reasonClr.border}`,
-                                      borderRadius:99, padding:'1px 7px',
-                                    }}>
-                                      {h.reason}
-                                    </span>
-                                  )}
-                                </div>
                               </div>
-
-                              {/* Évolution salaire */}
-                              <div style={{
-                                display:'flex', flexDirection:'column',
-                                alignItems:'flex-end', gap:4,
+                              <span style={{
+                                fontSize:10, fontWeight:700,
+                                padding:'3px 8px', borderRadius:99,
+                                background: reasonClr.bg,
+                                color: reasonClr.text,
+                                border: `1px solid ${reasonClr.border}`,
+                                flexShrink:0,
                               }}>
-                                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                                  <span style={{
-                                    fontSize:13, color:'var(--text3)',
-                                    fontFamily:'var(--mono)',
-                                    textDecoration:'line-through',
-                                    opacity:.6,
-                                  }}>
-                                    {fmt(h.oldSalary)}
-                                  </span>
-                                  <div style={{ width:24, height:1, background:'var(--border2)' }}/>
-                                  <span style={{
-                                    fontSize:16, fontWeight:900,
-                                    color:'var(--text)',
-                                    fontFamily:'var(--mono)',
-                                    letterSpacing:'-.5px',
-                                  }}>
-                                    {fmt(h.newSalary)}
-                                  </span>
-                                </div>
+                                {h.reason || i('Augmentation', 'Increase', 'Aumento', 'Aumento')}
+                              </span>
+                            </div>
 
-                                {/* Badge % */}
-                                <div style={{
-                                  display:'inline-flex',
-                                  alignItems:'center', gap:5,
-                                  padding:'4px 12px',
-                                  background: isPos
-                                    ? 'rgba(0,208,132,.1)'
-                                    : 'rgba(255,59,92,.1)',
-                                  border:`1px solid ${isPos
-                                    ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
-                                  borderRadius:99,
-                                }}>
-                                  <span style={{ fontSize:11 }}>{isPos ? '↗' : '↘'}</span>
-                                  <span style={{
-                                    fontSize:13, fontWeight:900,
-                                    color: isPos ? 'var(--acc2)' : 'var(--danger)',
-                                    fontFamily:'var(--mono)',
-                                  }}>
-                                    {isPos ? '+' : ''}{pct.toFixed(1)}%
-                                  </span>
-                                  <span style={{
-                                    fontSize:11,
-                                    color: isPos ? 'var(--acc2)' : 'var(--danger)',
-                                    opacity:.75,
-                                  }}>
-                                    ({isPos ? '+' : ''}{fmt(Math.abs(diff))})
-                                  </span>
-                                </div>
+                            {/* Date */}
+                            <div style={{
+                              fontSize:11, color:'var(--text3)',
+                              marginBottom:10,
+                              display:'flex', alignItems:'center', gap:4,
+                            }}>
+                              <Calendar size={11} />
+                              {date}
+                            </div>
+
+                            {/* Salaires ancien → nouveau */}
+                            <div style={{
+                              display:'flex', alignItems:'center',
+                              gap:8, marginBottom:10,
+                              fontSize:14,
+                            }}>
+                              <span style={{
+                                color:'var(--text3)',
+                                textDecoration:'line-through',
+                                fontFamily:'var(--mono)',
+                              }}>
+                                {fmt(h.oldSalary)}
+                              </span>
+                              <span style={{ color:'var(--text2)' }}>→</span>
+                              <span style={{
+                                fontWeight:900, color:'var(--text)',
+                                fontFamily:'var(--mono)',
+                                fontSize:16,
+                              }}>
+                                {fmt(h.newSalary)}
+                              </span>
+                            </div>
+
+                            {/* Delta */}
+                            <div style={{
+                              display:'flex', alignItems:'center',
+                              gap:6, marginBottom: h.reason ? 8 : 0,
+                            }}>
+                              {isUp
+                                ? <TrendingUp size={14} color="#00C853" />
+                                : <TrendingDown size={14} color="var(--danger)" />}
+                              <span style={{
+                                fontSize:13, fontWeight:700,
+                                color: isUp ? '#00C853' : 'var(--danger)',
+                                fontFamily:'var(--mono)',
+                              }}>
+                                {isUp ? '+' : ''}{fmt(diff)} ({isUp ? '+' : ''}{pct.toFixed(1)}%)
+                              </span>
+                            </div>
+
+                            {/* Raison en italique */}
+                            {h.reason && (
+                              <div style={{
+                                fontSize:12, color:'var(--text2)',
+                                fontStyle:'italic', marginBottom:8,
+                              }}>
+                                "{h.reason}"
                               </div>
+                            )}
 
-                              {onDeleteSalaryHistory && h.id && (
+                            {/* Bouton supprimer */}
+                            {onDeleteSalaryHistory && h.id && (
+                              <div style={{ display:'flex', justifyContent:'flex-end', marginTop:4 }}>
                                 <button
                                   type="button"
                                   onClick={() => onDeleteSalaryHistory(h.id!)}
-                                  title={lang === 'en' ? 'Delete revision' : lang === 'es' ? 'Eliminar revisión' : lang === 'it' ? 'Elimina revisione' : 'Supprimer la révision'}
-                                  aria-label={lang === 'en' ? 'Delete revision' : lang === 'es' ? 'Eliminar revisión' : lang === 'it' ? 'Elimina revisione' : 'Supprimer la révision'}
+                                  title={i('Supprimer la révision', 'Delete revision', 'Eliminar revisión', 'Elimina revisione')}
                                   style={{
-                                    background:'transparent', border:'none', cursor:'pointer',
-                                    color:'var(--text3)', padding:6, borderRadius:8,
-                                    display:'flex', alignItems:'center', justifyContent:'center',
-                                    transition:'all .15s', flexShrink:0,
+                                    color:'var(--danger)', cursor:'pointer',
+                                    background:'none', border:'none',
+                                    display:'flex', alignItems:'center', gap:4,
+                                    fontSize:11, opacity:0.7, padding:0,
+                                    fontFamily:'var(--font)',
                                   }}
-                                  onMouseEnter={e => {
-                                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,59,92,.08)'
-                                    ;(e.currentTarget as HTMLElement).style.color = 'var(--danger)'
-                                  }}
-                                  onMouseLeave={e => {
-                                    (e.currentTarget as HTMLElement).style.background = 'transparent'
-                                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text3)'
-                                  }}
+                                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}
                                 >
-                                  <Trash2 size={14} />
+                                  <Trash2 size={11} />
+                                  {i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
                                 </button>
-                              )}
-                            </div>
-
-                            {/* Barre progression — relative au max newSalary de l'historique */}
-                            <div style={{ padding:'0 18px 14px' }}>
-                              <div style={{
-                                height:4,
-                                background:'rgba(255,255,255,.06)',
-                                borderRadius:99, overflow:'hidden',
-                              }}>
-                                <div style={{
-                                  height:'100%',
-                                  width:`${Math.min(100, barPct)}%`,
-                                  background:'linear-gradient(90deg,var(--p),var(--p2))',
-                                  borderRadius:99,
-                                  transition:'width .6s ease',
-                                  boxShadow:'0 0 8px rgba(108,71,255,.35)',
-                                }}/>
                               </div>
-                              <div style={{
-                                display:'flex', justifyContent:'space-between',
-                                marginTop:4,
-                              }}>
-                                <span style={{ fontSize:9, color:'var(--text4)' }}>
-                                  {i('Salaire / max historique', 'Salary / max history', 'Salario / máx historial', 'Stipendio / max storico')}
-                                </span>
-                                <span style={{
-                                  fontSize:9, fontFamily:'var(--mono)',
-                                  color: isPos ? 'var(--acc2)' : 'var(--danger)',
-                                  fontWeight:700,
-                                }}>
-                                  {isPos ? '+' : ''}{pct.toFixed(1)}%
-                                </span>
-                              </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                       )
