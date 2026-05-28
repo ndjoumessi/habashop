@@ -24,6 +24,7 @@
 }
 
 :root {
+  color-scheme: dark; /* rendu natif sombre (popup <select>, autofill, scrollbars) ; applyTheme l'override par thème */
   --p:    #6C47FF;
   --p2:   #8B6FFF;
   --p3:   #A991FF;

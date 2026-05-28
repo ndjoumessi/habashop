@@ -215,10 +215,28 @@ export const THEMES: Record<Theme, { label: Record<string, string>; emoji: strin
     vars: { '--bg': '#F8F9FF', '--bg2': '#F0F2FF', '--bg3': '#E8EBFF', '--bg4': '#FFFFFF', '--bg5': '#F4F5FF', '--p': '#6C47FF', '--p2': '#8B6FFF', '--p3': '#6C47FF', '--acc2': '#059669', '--text': '#1A1A2E', '--text2': '#374151', '--text3': '#6B7280', '--card': '#FFFFFF', '--border': 'rgba(0,0,0,.1)' } },
 }
 
+// Vars de surface NON couvertes par THEMES[*].vars (sinon issues du :root sombre d'index.css).
+// Injectées en mode CLAIR ; retirées sinon → le :root (sombre) reprend (pas de valeur claire "collée").
+const LIGHT_EXTRA_VARS: Record<string, string> = {
+  '--card2':     '#F0EEFF',
+  '--card3':     '#EBE8FF',
+  '--bg6':       '#FAFAFE',
+  '--grad-card': 'linear-gradient(135deg,#F7F5FF,#EEEAFF)',
+  '--text4':     '#B0ADCA',
+  '--border2':   'rgba(0,0,0,0.14)',
+}
+
 export function applyTheme(theme: Theme) {
   const t = THEMES[theme] ?? THEMES.dark
   const root = document.documentElement
   Object.entries(t.vars).forEach(([k, val]) => root.style.setProperty(k, val))
+  // Surfaces manquantes : valeurs claires en mode clair, sinon retrait (→ :root sombre).
+  Object.entries(LIGHT_EXTRA_VARS).forEach(([k, val]) => {
+    if (theme === 'light') root.style.setProperty(k, val)
+    else root.style.removeProperty(k)
+  })
+  // Rendu natif des contrôles (popup <select>, autofill Chrome, scrollbars).
+  root.style.setProperty('color-scheme', theme === 'light' ? 'light' : 'dark')
   root.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark')
   document.body.className = `theme-${theme}`
 }
