@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useConfig } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
@@ -15,6 +16,7 @@ const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
 export default function CurrencyBadge() {
   const { currency } = useConfig()
   const { i } = useI18n()
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const current = CURRENCIES.find(c => c.code === currency) ?? CURRENCIES[0]
   const tooltipText = i(
     'Devise configurée dans Paramètres',
@@ -26,14 +28,8 @@ export default function CurrencyBadge() {
   return (
     <div
       style={{ position: 'relative' }}
-      onMouseEnter={e => {
-        const tip = e.currentTarget.querySelector<HTMLSpanElement>(':scope > span')
-        if (tip) tip.style.opacity = '1'
-      }}
-      onMouseLeave={e => {
-        const tip = e.currentTarget.querySelector<HTMLSpanElement>(':scope > span')
-        if (tip) tip.style.opacity = '0'
-      }}
+      onMouseMove={e => setPos({ x: e.clientX, y: e.clientY - 36 })}
+      onMouseLeave={() => setPos(null)}
     >
       <button
         className="icon-btn"
@@ -47,25 +43,26 @@ export default function CurrencyBadge() {
         <span style={{ color: 'var(--acc)', letterSpacing: '-.3px' }}>{current.symbol}</span>
         <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />
       </button>
-      <span style={{
-        position: 'absolute',
-        bottom: 'calc(100% + 6px)',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'var(--card)',
-        border: '1px solid var(--border)',
-        color: 'var(--text2)',
-        fontSize: 11,
-        padding: '4px 8px',
-        borderRadius: 6,
-        whiteSpace: 'nowrap',
-        pointerEvents: 'none',
-        opacity: 0,
-        transition: 'opacity .15s',
-        zIndex: 9999,
-      }}>
-        {tooltipText}
-      </span>
+      {pos && (
+        <div style={{
+          position: 'fixed',
+          left: pos.x,
+          top: pos.y,
+          transform: 'translateX(-50%)',
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          color: 'var(--text2)',
+          fontSize: 11,
+          padding: '4px 8px',
+          borderRadius: 6,
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          zIndex: 99999,
+          boxShadow: 'var(--sh-xs)',
+        }}>
+          {tooltipText}
+        </div>
+      )}
     </div>
   )
 }
