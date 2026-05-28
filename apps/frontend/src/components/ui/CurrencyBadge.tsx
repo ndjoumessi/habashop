@@ -14,22 +14,22 @@ const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
 ]
 
 export default function CurrencyBadge() {
-  const { currency } = useConfig()
+  const { currency, settingsLocked } = useConfig()
   const { i } = useI18n()
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const current = CURRENCIES.find(c => c.code === currency) ?? CURRENCIES[0]
   const tooltipText = i(
-    'Devise configurée dans Paramètres',
-    'Currency set in Settings',
-    'Divisa configurada en Configuración',
-    'Valuta configurata in Impostazioni'
+    'Devise verrouillée dans Paramètres → Sécurité',
+    'Currency locked in Settings → Security',
+    'Divisa bloqueada en Configuración → Seguridad',
+    'Valuta bloccata in Impostazioni → Sicurezza'
   )
 
   return (
     <div
       style={{ position: 'relative' }}
-      onMouseMove={e => setPos({ x: e.clientX, y: e.clientY - 36 })}
-      onMouseLeave={() => setPos(null)}
+      onMouseMove={settingsLocked ? e => setPos({ x: e.clientX, y: e.clientY - 36 }) : undefined}
+      onMouseLeave={settingsLocked ? () => setPos(null) : undefined}
     >
       <button
         className="icon-btn"
@@ -41,9 +41,9 @@ export default function CurrencyBadge() {
       >
         <span>{current.flag}</span>
         <span style={{ color: 'var(--acc)', letterSpacing: '-.3px' }}>{current.symbol}</span>
-        <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />
+        {settingsLocked && <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />}
       </button>
-      {pos && (
+      {settingsLocked && pos && (
         <div style={{
           position: 'fixed',
           left: pos.x,
