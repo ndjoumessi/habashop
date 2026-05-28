@@ -411,7 +411,40 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                       <tbody>
                         {Object.entries(bonuses).map(([empId, amount]) => {
                           const emp = employees.find(e => String(e.id) === empId)
-                          if (!emp) return null
+                          if (!emp) {
+                            return (
+                              <tr key={empId} style={{ opacity: 0.6 }}>
+                                <td colSpan={3}>
+                                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                    <div style={{ width:30, height:30, borderRadius:8, background:'rgba(255,59,92,.12)', border:'1px solid rgba(255,59,92,.25)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:'var(--danger)' }}>⚠️</div>
+                                    <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+                                      <span style={{ fontSize:12, fontWeight:700, color:'var(--text2)' }}>
+                                        {lang === 'en' ? 'Unknown employee' : lang === 'es' ? 'Empleado desconocido' : lang === 'it' ? 'Dipendente sconosciuto' : 'Employé inconnu'}
+                                        {' '}— +{fmt(amount)}
+                                      </span>
+                                      <span style={{ fontSize:10, color:'var(--text3)', fontFamily:'var(--mono)' }}>ID: {empId}</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <button className="mini-btn"
+                                    style={{ fontSize:10, padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)', display:'flex', alignItems:'center', gap:4 }}
+                                    title={lang === 'en' ? 'Delete orphan bonuses for this id' : lang === 'es' ? 'Eliminar primas huérfanas de este id' : lang === 'it' ? 'Elimina premi orfani per questo id' : 'Supprimer les primes orphelines de cet id'}
+                                    onClick={() => {
+                                      const nb = {...bonuses}
+                                      delete nb[empId]
+                                      setBonuses(nb)
+                                      const ids = bonusList.filter(b => b.empId === empId).map(b => b.id)
+                                      setBonusList((prev: any[]) => prev.filter(b => b.empId !== empId))
+                                      ids.forEach(id => { if (!id.startsWith('local-')) bonusesApi.delete(id).catch(()=>{}) })
+                                      toast.success(lang === 'en' ? 'Orphan bonuses removed' : lang === 'es' ? 'Primas huérfanas eliminadas' : lang === 'it' ? 'Premi orfani eliminati' : 'Primes orphelines supprimées')
+                                    }}>
+                                    <Trash2 size={11}/> {lang === 'en' ? 'Remove' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
+                                  </button>
+                                </td>
+                              </tr>
+                            )
+                          }
                           const pct = Number(emp.salary) > 0 ? Math.round((amount/Number(emp.salary))*100) : 0
                           return (
                             <tr key={empId}>
