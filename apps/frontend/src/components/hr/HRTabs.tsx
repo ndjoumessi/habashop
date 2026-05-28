@@ -49,10 +49,10 @@ interface HRTabsProps {
 export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, payrollMonth, setPayrollMonth, bonuses, setBonuses, bonusList, setBonusList, salaryHistory, onDeleteSalaryHistory, generateAllPayslips, generatePayslipPDF, setSalaryTarget, setShowSalaryModal, setSelectedContract, setShowContractDetailModal, setContractForm, setShowNewContractModal, attendance, setAttendance, attendanceDate, setAttendanceDate, pendingLeaves, leaves, setLeaveForm, setShowLeaveModal, handleLeaveAction }: HRTabsProps) {
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
-  const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 640)
+  const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 880)
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const onResize = () => setIsMobile(window.innerWidth < 640)
+    const onResize = () => setIsMobile(window.innerWidth < 880)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
@@ -637,7 +637,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
               ) : (
                 <>
                   {/* Timeline zigzag — cards alternées gauche/droite (colonne unique sur mobile) */}
-                  <div style={{ position:'relative', padding:'20px 0' }}>
+                  <div style={{ position:'relative', padding:'20px 0', paddingLeft: isMobile ? 20 : 0 }}>
                     {/* Axe central */}
                     <div style={{
                       position:'absolute',
@@ -671,7 +671,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                         <div key={h.id ?? idx} style={{
                           display:'flex',
                           justifyContent: isMobile ? 'flex-start' : (isLeft ? 'flex-end' : 'flex-start'),
-                          paddingLeft:  isMobile ? 32 : (isLeft ? 0 : 'calc(50% + 24px)'),
+                          paddingLeft:  isMobile ? 12 : (isLeft ? 0 : 'calc(50% + 24px)'),
                           paddingRight: isMobile ? 0  : (isLeft ? 'calc(50% + 24px)' : 0),
                           marginBottom: 32,
                           position:'relative',
@@ -706,7 +706,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                               position:'absolute',
                               top: 20,
                               ...(isMobile
-                                ? { left: -8, borderRight: '8px solid var(--border)' }
+                                ? { left: -19, borderRight: '8px solid var(--border)' }
                                 : isLeft
                                   ? { right: -8, borderLeft: '8px solid var(--border)' }
                                   : { left: -8, borderRight: '8px solid var(--border)' }
@@ -750,6 +750,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                 color: reasonClr.text,
                                 border: `1px solid ${reasonClr.border}`,
                                 flexShrink:0,
+                                whiteSpace:'nowrap',
                               }}>
                                 {h.reason || i('Augmentation', 'Increase', 'Aumento', 'Aumento')}
                               </span>
@@ -821,12 +822,15 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                 <button
                                   type="button"
                                   onClick={() => onDeleteSalaryHistory(h.id!)}
-                                  title={i('Supprimer la révision', 'Delete revision', 'Eliminar revisión', 'Elimina revisione')}
+                                  title={i('Supprimer la révision salariale', 'Delete salary revision', 'Eliminar revisión salarial', 'Elimina revisione salariale')}
+                                  aria-label={i('Supprimer la révision salariale', 'Delete salary revision', 'Eliminar revisión salarial', 'Elimina revisione salariale')}
                                   style={{
                                     color:'var(--danger)', cursor:'pointer',
                                     background:'none', border:'none',
                                     display:'flex', alignItems:'center', gap:4,
-                                    fontSize:11, opacity:0.7, padding:0,
+                                    fontSize:11, opacity:0.7,
+                                    padding:'8px 12px', minHeight:44,
+                                    borderRadius:8,
                                     fontFamily:'var(--font)',
                                   }}
                                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
