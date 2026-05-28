@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { X, Eye, Pencil, Camera, Tag, Printer } from 'lucide-react'
+import { lazy, Suspense, useState, useMemo } from 'react'
+import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { printProductLabels } from '@/utils/export'
@@ -27,9 +27,27 @@ interface StockModalsProps {
   lang: string
   labelConfig: any; setLabelConfig: (v: any) => void
   selectedForLabel: string[]; setSelectedForLabel: (v: any) => void
+  suppliers: { id: string; name: string }[]
 }
 
-export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel }: StockModalsProps) {
+function generateEAN13(): string {
+  const prefix = '200'
+  const random = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10)).join('')
+  const base = prefix + random
+  const sum = base.split('').reduce((acc, d, i) => acc + parseInt(d, 10) * (i % 2 === 0 ? 1 : 3), 0)
+  const check = (10 - (sum % 10)) % 10
+  return base + String(check)
+}
+
+export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers }: StockModalsProps) {
+  const [supSearch, setSupSearch] = useState('')
+  const [supOpen, setSupOpen] = useState(false)
+  const filteredSuppliers = useMemo(() => {
+    const q = supSearch.trim().toLowerCase()
+    return q ? suppliers.filter(s => s.name.toLowerCase().includes(q)) : suppliers
+  }, [suppliers, supSearch])
+  const selectedSupplierName = suppliers.find(s => s.id === form.supplierId)?.name || ''
+  const barcodeInvalid = !!form.barcode && !/^\d{13}$/.test(form.barcode)
   return (
     <>
       {/* ── Modal produit enrichi ── */}
@@ -115,7 +133,14 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {/* ── SKU + Catégorie ── */}
                 <div className="grid grid-cols-2 gap-3">
                   <ViewField label="SKU" value={form.sku||'—'} editing={productEditMode}>
-                    <input className="input text-sm" placeholder="PRD-001" value={form.sku} onChange={e => setForm(f => ({...f, sku:e.target.value}))} />
+                    <input
+                      className="input text-sm"
+                      readOnly
+                      value={form.sku}
+                      placeholder={lang === 'en' ? 'Auto-generated' : lang === 'es' ? 'Auto-generado' : lang === 'it' ? 'Auto-generato' : 'Auto-généré'}
+                      style={{ cursor: 'default', opacity: 0.6 }}
+                      title={lang === 'en' ? 'SKU is generated automatically on save' : lang === 'es' ? 'El SKU se genera automáticamente al guardar' : lang === 'it' ? 'Lo SKU viene generato automaticamente al salvataggio' : 'Le SKU est généré automatiquement à l\'enregistrement'}
+                    />
                   </ViewField>
                   <ViewField label={lang === 'en' ? 'Category' : lang === 'es' ? 'Categoría' : lang === 'it' ? 'Categoria' : 'Catégorie'} value={stockCatLabel(form.category, lang)} editing={productEditMode}>
                     <select className="input text-sm" value={form.category} onChange={e => setForm(f => ({...f, category:e.target.value}))}>
@@ -131,18 +156,74 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       {['unité','kg','g','litre','ml','carton','sac','boîte','palette','douzaine'].map(u => <option key={u}>{u}</option>)}
                     </select>
                   </ViewField>
-                  <ViewField label="Fournisseur" value={form.supplier||'—'} editing={productEditMode}>
-                    <input className="input text-sm" placeholder="SENRIZ, SONACO..." value={form.supplier} onChange={e => setForm(f => ({...f, supplier:e.target.value}))} />
+                  <ViewField label="Fournisseur" value={selectedSupplierName || '—'} editing={productEditMode}>
+                    <div style={{ position:'relative' }}>
+                      <div style={{ position:'relative' }}>
+                        <Search size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', pointerEvents:'none' }} />
+                        <input
+                          className="input text-sm"
+                          style={{ paddingLeft:30, width:'100%' }}
+                          placeholder={selectedSupplierName || (lang === 'en' ? 'Search a supplier...' : lang === 'es' ? 'Buscar un proveedor...' : lang === 'it' ? 'Cerca un fornitore...' : 'Rechercher un fournisseur...')}
+                          value={supOpen ? supSearch : selectedSupplierName}
+                          onFocus={() => { setSupOpen(true); setSupSearch('') }}
+                          onBlur={() => setTimeout(() => setSupOpen(false), 150)}
+                          onChange={e => { setSupSearch(e.target.value); setSupOpen(true) }}
+                        />
+                      </div>
+                      {supOpen && (
+                        <div style={{
+                          position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:10,
+                          background:'var(--card)', border:'1px solid var(--border)', borderRadius:8,
+                          maxHeight:200, overflowY:'auto', boxShadow:'var(--sh-md)',
+                        }}>
+                          <button type="button" onMouseDown={() => { setForm(f => ({...f, supplierId:'', supplier:''})); setSupOpen(false) }} style={{
+                            width:'100%', textAlign:'left', padding:'8px 12px', background:'transparent', border:'none',
+                            borderBottom:'1px solid var(--border)', cursor:'pointer', fontSize:12, color:'var(--text3)', fontStyle:'italic',
+                          }}>
+                            {lang === 'en' ? 'No supplier' : lang === 'es' ? 'Sin proveedor' : lang === 'it' ? 'Nessun fornitore' : 'Aucun fournisseur'}
+                          </button>
+                          {filteredSuppliers.length === 0 ? (
+                            <div style={{ padding:'10px 12px', fontSize:12, color:'var(--text3)' }}>
+                              {lang === 'en' ? 'No supplier found' : lang === 'es' ? 'No se encontró ningún proveedor' : lang === 'it' ? 'Nessun fornitore trovato' : 'Aucun fournisseur trouvé'}
+                            </div>
+                          ) : (
+                            filteredSuppliers.map(s => (
+                              <button key={s.id} type="button"
+                                onMouseDown={() => { setForm(f => ({...f, supplierId:s.id, supplier:s.name})); setSupOpen(false) }}
+                                style={{
+                                  width:'100%', textAlign:'left', padding:'8px 12px', background: form.supplierId === s.id ? 'rgba(91,78,232,.1)' : 'transparent',
+                                  border:'none', cursor:'pointer', fontSize:13, color:'var(--text)',
+                                  borderBottom:'1px solid var(--border)',
+                                }}>
+                                {s.name}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </ViewField>
                 </div>
 
                 {/* ── Code-barres + scanner ── */}
                 <ViewField label="CODE-BARRES" value={form.barcode||''} editing={productEditMode}>
                   <div style={{ display:'flex', gap:8 }}>
-                    <input className="input text-sm" style={{ flex:1 }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
+                    <input className="input text-sm" style={{ flex:1, borderColor: barcodeInvalid ? 'var(--danger)' : undefined }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
+                    <button type="button" className="mini-btn"
+                      onClick={() => {
+                        if (form.barcode && !window.confirm(lang === 'en' ? 'Replace the existing barcode?' : lang === 'es' ? '¿Reemplazar el código de barras existente?' : lang === 'it' ? 'Sostituire il codice a barre esistente?' : 'Remplacer le code-barres existant ?')) return
+                        setForm(f => ({ ...f, barcode: generateEAN13() }))
+                      }}
+                      title={lang === 'en' ? 'Generate EAN-13' : lang === 'es' ? 'Generar EAN-13' : lang === 'it' ? 'Genera EAN-13' : 'Générer EAN-13'}
+                      style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Wand2 size={18} /></button>
                     <button type="button" className="mini-btn" onClick={() => setShowScanner(true)}
                       title="Scanner un code-barres" style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Camera size={18} /></button>
                   </div>
+                  {barcodeInvalid && (
+                    <div style={{ marginTop:6, fontSize:11, color:'var(--danger)' }}>
+                      {lang === 'en' ? 'Invalid barcode (13 digits required)' : lang === 'es' ? 'Código de barras inválido (13 dígitos requeridos)' : lang === 'it' ? 'Codice a barre non valido (13 cifre richieste)' : 'Code-barres invalide (13 chiffres requis)'}
+                    </div>
+                  )}
                 </ViewField>
                 <ViewField label="DESCRIPTION" value={form.description||''} editing={productEditMode}>
                   <textarea className="input text-sm" rows={2} placeholder="Description courte..."
@@ -261,13 +342,13 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 </>
               ) : (
                 <>
-                  <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct}>
+                  <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct} disabled={barcodeInvalid}>
                     {editingSku ? 'Enregistrer les modifications' : `${t('btn_add')} le produit`}
                   </button>
                   {editingSku ? (
                     <button className="btn btn-ghost" onClick={() => {
                       const p = products.find(p => p.sku === editingSku)
-                      if (p) setForm(f => ({ ...f, sku:p.sku, name:p.name.replace(/^\S+\s/,''), category:p.category, buy:p.buy, sell:p.sell, stock:p.stock, threshold:p.threshold, supplier:p.supplier, image:p.name.match(/^\S+/)?.[0]??'📦', barcode:p.barcode??'' }))
+                      if (p) setForm(f => ({ ...f, sku:p.sku, name:p.name.replace(/^\S+\s/,''), category:p.category, buy:p.buy, sell:p.sell, stock:p.stock, threshold:p.threshold, supplier:p.supplier, supplierId:p.supplierId??'', image:p.name.match(/^\S+/)?.[0]??'📦', barcode:p.barcode??'' }))
                       setProductEditMode(false)
                     }}>{t('btn_cancel')}</button>
                   ) : (

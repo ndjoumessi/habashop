@@ -27,6 +27,7 @@ export interface ProductBody {
   taxRate?: number; description?: string; barcode?: string; isActive?: boolean
   emoji?: string; wholesalePrice?: number; semiWholesalePrice?: number
   hasPromotion?: boolean; promotionPrice?: number
+  supplierId?: string | null
 }
 export interface CustomerBody {
   name?: string; type?: string; phone?: string; email?: string; address?: string

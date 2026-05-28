@@ -5,7 +5,7 @@ import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen, Tag, Prin
 import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
-import { productsApi } from '@/lib/api'
+import { productsApi, suppliersApi } from '@/lib/api'
 import { confirm } from '@/lib/confirm'
 import Pagination from '@/components/ui/Pagination'
 import { usePagination } from '@/hooks/usePagination'
@@ -22,6 +22,7 @@ export default function Stock() {
   void lang // for t() reactivity
 
   const [products, setProducts] = useState<ProductItem[]>([])
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading]   = useState(true)
   const [search, setSearch]     = useState('')
   const [cat, setCat]           = useState('')
@@ -35,7 +36,7 @@ export default function Stock() {
   const [form, setForm] = useState({
     sku: '', name: '', description: '', category: 'Céréales', unit: 'unité',
     buy: 0, sell: 0, priceWholesale: 0, priceSemiWholesale: 0,
-    stock: 0, threshold: stockLowThreshold, supplier: '',
+    stock: 0, threshold: stockLowThreshold, supplier: '', supplierId: '',
     barcode: '', taxRate: 18, isActive: true,
     hasPromotion: false, promotionPrice: 0, promotionEnd: '',
     image: '📦', notes: '',
@@ -68,26 +69,31 @@ export default function Stock() {
   useEffect(() => { pg.reset() }, [search, cat, statusFilter])
 
   const resetForm = () => {
-    setForm({ sku:'', name:'', description:'', category:'Céréales', unit:'unité', buy:0, sell:0, priceWholesale:0, priceSemiWholesale:0, stock:0, threshold:stockLowThreshold, supplier:'', barcode:'', taxRate:18, isActive:true, hasPromotion:false, promotionPrice:0, promotionEnd:'', image:'📦', notes:'' })
+    setForm({ sku:'', name:'', description:'', category:'Céréales', unit:'unité', buy:0, sell:0, priceWholesale:0, priceSemiWholesale:0, stock:0, threshold:stockLowThreshold, supplier:'', supplierId:'', barcode:'', taxRate:18, isActive:true, hasPromotion:false, promotionPrice:0, promotionEnd:'', image:'📦', notes:'' })
     setModalTab('general')
     setEditingSku(null)
     setEditingId(null)
   }
 
   useEffect(() => {
-    productsApi.list()
-      .then(data => setProducts(data.map((p: any): ProductItem => ({
-        _id: p.id,
-        sku: p.sku || p.id.slice(-8),
-        name: `${p.emoji || '📦'} ${p.name}`,
-        category: p.category || 'Épicerie',
-        buy: p.buyPrice ?? 0,
-        sell: p.sellPrice ?? 0,
-        stock: p.stockQty ?? 0,
-        threshold: p.stockMin ?? 5,
-        supplier: '',
-        barcode: p.barcode || '',
-      }))))
+    Promise.all([productsApi.list(), suppliersApi.list().catch(() => [])])
+      .then(([prods, sups]) => {
+        setSuppliers(sups)
+        const supMap = new Map(sups.map((s: any) => [s.id, s.name]))
+        setProducts(prods.map((p: any): ProductItem => ({
+          _id: p.id,
+          sku: p.sku || p.id.slice(-8),
+          name: `${p.emoji || '📦'} ${p.name}`,
+          category: p.category || 'Épicerie',
+          buy: p.buyPrice ?? 0,
+          sell: p.sellPrice ?? 0,
+          stock: p.stockQty ?? 0,
+          threshold: p.stockMin ?? 5,
+          supplier: supMap.get(p.supplierId) || '',
+          supplierId: p.supplierId || '',
+          barcode: p.barcode || '',
+        })))
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -99,9 +105,16 @@ export default function Stock() {
   }, [])
 
   const saveProduct = async () => {
-    const sku = form.sku || `PRD-${String(Date.now()).slice(-4)}`
+    // Validation code-barres : si rempli, doit être 13 chiffres (EAN-13).
+    if (form.barcode && !/^\d{13}$/.test(form.barcode)) {
+      toast.error(lang === 'en' ? 'Invalid barcode (13 digits required)'
+                : lang === 'es' ? 'Código de barras inválido (13 dígitos requeridos)'
+                : lang === 'it' ? 'Codice a barre non valido (13 cifre richieste)'
+                : 'Code-barres invalide (13 chiffres requis)')
+      return
+    }
+    const supplierName = suppliers.find(s => s.id === form.supplierId)?.name || ''
     const apiBody = {
-      sku,
       name: form.name,
       emoji: form.image,
       category: form.category,
@@ -115,19 +128,34 @@ export default function Stock() {
       hasPromotion: form.hasPromotion,
       promotionPrice: form.promotionPrice || null,
       barcode: form.barcode || null,
+      supplierId: form.supplierId || null,
     }
     if (editingSku) {
       if (editingId) {
         try { await productsApi.update(editingId, apiBody) } catch {}
       }
       setProducts(prev => prev.map(p =>
-        p.sku === editingSku ? { ...p, name: form.image + ' ' + form.name, category: form.category, buy: form.buy, sell: form.sell, stock: form.stock, threshold: form.threshold, supplier: form.supplier, barcode: form.barcode } : p
+        p.sku === editingSku ? { ...p, name: form.image + ' ' + form.name, category: form.category, buy: form.buy, sell: form.sell, stock: form.stock, threshold: form.threshold, supplier: supplierName, supplierId: form.supplierId, barcode: form.barcode } : p
       ))
       toast.success(`✅ ${form.name} mis à jour !`)
     } else {
       let apiId: string | undefined
-      try { const created = await productsApi.create(apiBody); apiId = created.id } catch {}
-      setProducts(prev => [...prev, { _id: apiId, ...form, sku, name: form.image + ' ' + form.name }])
+      let createdSku = form.sku
+      try {
+        const created = await productsApi.create(apiBody)
+        apiId = created.id
+        createdSku = created.sku || createdSku
+      } catch {}
+      setProducts(prev => [...prev, {
+        _id: apiId,
+        sku: createdSku,
+        name: form.image + ' ' + form.name,
+        category: form.category,
+        buy: form.buy, sell: form.sell,
+        stock: form.stock, threshold: form.threshold,
+        supplier: supplierName, supplierId: form.supplierId,
+        barcode: form.barcode,
+      }])
       toast.success('✅ Produit ajouté !')
     }
     setShowModal(false)
@@ -310,6 +338,7 @@ export default function Stock() {
         showLabelModal={showLabelModal} setShowLabelModal={setShowLabelModal}
         lang={lang} labelConfig={labelConfig} setLabelConfig={setLabelConfig}
         selectedForLabel={selectedForLabel} setSelectedForLabel={setSelectedForLabel}
+        suppliers={suppliers}
       />
     </div>
   )

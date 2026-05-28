@@ -13,11 +13,12 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/products', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user
     const {
-      sku, name, category, buyPrice, sellPrice,
+      name, category, buyPrice, sellPrice,
       stockQty, stockMin, unit, emoji, taxRate,
       description, barcode, isActive,
       wholesalePrice, semiWholesalePrice,
       hasPromotion, promotionPrice,
+      supplierId,
     } = request.body as ProductBody
 
     if (!name?.trim()) {
@@ -33,11 +34,15 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'Le stock ne peut pas être négatif' })
     }
 
+    // SKU séquentiel par tenant (inclut soft-deleted pour éviter les collisions de réutilisation).
+    const count = await prisma.product.count({ where: { tenantId } })
+    const generatedSku = `PRD-${String(count + 1).padStart(4, '0')}`
+
     try {
       const product = await prisma.product.create({
         data: {
           tenantId,
-          sku: sku || `PRD-${Date.now()}`,
+          sku: generatedSku,
           name: name.trim(),
           category: category || 'Général',
           buyPrice: buyPrice || 0,
@@ -54,6 +59,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
           semiWholesalePrice: semiWholesalePrice || null,
           hasPromotion: hasPromotion || false,
           promotionPrice: promotionPrice || null,
+          supplierId: supplierId || null,
         }
       })
       invalidateTenantCache(tenantId).catch(() => {})
@@ -70,7 +76,10 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.put('/api/products/:id', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
-    const updated = await prisma.product.update({ where: { id, tenantId }, data: request.body as any })
+    // SKU est immutable (auto-généré à la création) — on retire tout sku envoyé par le client.
+    const { sku: _ignored, ...data } = request.body as Record<string, unknown>
+    void _ignored
+    const updated = await prisma.product.update({ where: { id, tenantId }, data: data as any })
     invalidateTenantCache(tenantId).catch(() => {})
     return updated
   })
