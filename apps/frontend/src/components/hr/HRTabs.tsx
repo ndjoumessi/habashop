@@ -1,7 +1,25 @@
-import { Download, Plus, Users, DollarSign, FileText, TrendingUp, Clock, Umbrella, CheckCircle, XCircle, AlertTriangle, Gift, Trash2, BarChart3, Calendar, CheckCheck } from 'lucide-react'
+import { useState, Fragment } from 'react'
+import { Download, Plus, Users, DollarSign, FileText, TrendingUp, Clock, Umbrella, CheckCircle, XCircle, AlertTriangle, Gift, Trash2, BarChart3, Calendar, CheckCheck, ChevronDown, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { bonusesApi } from '@/lib/api'
 import { type Employee, type LeaveRequest, DEPT_COLORS, LEAVE_STATUS_CFG, EmpAvatar, displayDate, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusLabel, leaveStatusLabel } from '@/components/hr/hrShared'
+
+// Couleur de badge selon la raison de la prime
+function bonusReasonColor(reason: string): { bg: string; border: string; text: string } {
+  const r = (reason || '').toLowerCase()
+  if (r.includes('performance')) return { bg: 'rgba(0,208,132,.12)', border: 'rgba(0,208,132,.25)', text: 'var(--acc2)' }
+  if (r.includes('fête') || r.includes('fete') || r.includes('holiday') || r.includes('fiesta') || r.includes('festa')) return { bg: 'rgba(245,158,11,.12)', border: 'rgba(245,158,11,.25)', text: 'var(--warn)' }
+  return { bg: 'rgba(108,71,255,.12)', border: 'rgba(108,71,255,.25)', text: 'var(--p3)' }
+}
+
+// Couleur de badge selon la raison d'augmentation salariale
+function raiseReasonColor(reason: string): { bg: string; border: string; text: string } {
+  const r = (reason || '').toLowerCase()
+  if (r.includes('promotion') || r.includes('promoción') || r.includes('promozione')) return { bg: 'rgba(108,71,255,.12)', border: 'rgba(108,71,255,.25)', text: 'var(--p3)' }
+  if (r.includes('ajust') || r.includes('adjust')) return { bg: 'rgba(245,158,11,.12)', border: 'rgba(245,158,11,.25)', text: 'var(--warn)' }
+  if (r.includes('augment') || r.includes('aumento') || r.includes('increase') || r.includes('raise')) return { bg: 'rgba(0,208,132,.12)', border: 'rgba(0,208,132,.25)', text: 'var(--acc2)' }
+  return { bg: 'rgba(120,120,140,.12)', border: 'rgba(120,120,140,.25)', text: 'var(--text2)' }
+}
 
 interface HRTabsProps {
   tab: string
@@ -28,6 +46,26 @@ interface HRTabsProps {
 }
 
 export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, payrollMonth, setPayrollMonth, bonuses, setBonuses, bonusList, setBonusList, salaryHistory, onDeleteSalaryHistory, generateAllPayslips, generatePayslipPDF, setSalaryTarget, setShowSalaryModal, setSelectedContract, setShowContractDetailModal, setContractForm, setShowNewContractModal, attendance, setAttendance, attendanceDate, setAttendanceDate, pendingLeaves, leaves, setLeaveForm, setShowLeaveModal, handleLeaveAction }: HRTabsProps) {
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const [expandedEmpBonuses, setExpandedEmpBonuses] = useState<Set<string>>(new Set())
+  const toggleExpandEmp = (empId: string) => setExpandedEmpBonuses(prev => {
+    const next = new Set(prev)
+    if (next.has(empId)) next.delete(empId); else next.add(empId)
+    return next
+  })
+  const deleteOneBonus = (bonusId: string, empId: string, amount: number) => {
+    setBonusList((prev: any[]) => prev.filter(b => b.id !== bonusId))
+    setBonuses((prev: Record<string, number>) => {
+      const next = { ...prev }
+      const remaining = (next[empId] ?? 0) - amount
+      if (remaining <= 0.0001) delete next[empId]
+      else next[empId] = remaining
+      return next
+    })
+    if (!bonusId.startsWith('local-')) bonusesApi.delete(bonusId).catch(() => {})
+    toast.success(i('Prime supprimée', 'Bonus removed', 'Prima eliminada', 'Premio eliminato'))
+  }
   return (
     <>
       {tab === 'contracts' && (
@@ -446,41 +484,90 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                             )
                           }
                           const pct = Number(emp.salary) > 0 ? Math.round((amount/Number(emp.salary))*100) : 0
+                          const isExpanded = expandedEmpBonuses.has(empId)
+                          const empBonuses = bonusList
+                            .filter(b => b.empId === empId)
+                            .slice()
+                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                           return (
-                            <tr key={empId}>
-                              <td>
-                                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                                  <div style={{ width:30, height:30, borderRadius:8, background:`${emp.color??'var(--p)'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, color:emp.color??'var(--p)' }}>
-                                    {emp.avatar ?? '??'}
+                            <Fragment key={empId}>
+                              <tr>
+                                <td>
+                                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                    <button type="button"
+                                      onClick={() => toggleExpandEmp(empId)}
+                                      title={isExpanded ? i('Masquer le détail', 'Hide details', 'Ocultar detalles', 'Nascondi dettagli') : i('Voir le détail', 'Show details', 'Ver detalles', 'Mostra dettagli')}
+                                      style={{ background:'transparent', border:'none', cursor:'pointer', color:'var(--text3)', padding:2, display:'flex', alignItems:'center' }}>
+                                      {isExpanded ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
+                                    </button>
+                                    <div style={{ width:30, height:30, borderRadius:8, background:`${emp.color??'var(--p)'}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, color:emp.color??'var(--p)' }}>
+                                      {emp.avatar ?? '??'}
+                                    </div>
+                                    <span style={{ fontWeight:700, fontSize:13 }}>{emp.name}</span>
+                                    <span style={{ fontSize:10, color:'var(--text3)', background:'var(--bg3)', padding:'2px 6px', borderRadius:99 }}>{empBonuses.length}</span>
                                   </div>
-                                  <span style={{ fontWeight:700, fontSize:13 }}>{emp.name}</span>
-                                </div>
-                              </td>
-                              <td style={{ fontFamily:'var(--mono)', color:'var(--acc2)', fontWeight:800 }}>+{fmt(amount)}</td>
-                              <td>
-                                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                                  <div style={{ flex:1, height:6, background:'var(--bg5)', borderRadius:99, overflow:'hidden', maxWidth:100 }}>
-                                    <div style={{ height:'100%', width:`${Math.min(100,pct)}%`, background:'linear-gradient(90deg,var(--acc2),var(--p2))', borderRadius:99 }} />
+                                </td>
+                                <td style={{ fontFamily:'var(--mono)', color:'var(--acc2)', fontWeight:800 }}>+{fmt(amount)}</td>
+                                <td>
+                                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                    <div style={{ flex:1, height:6, background:'var(--bg5)', borderRadius:99, overflow:'hidden', maxWidth:100 }}>
+                                      <div style={{ height:'100%', width:`${Math.min(100,pct)}%`, background:'linear-gradient(90deg,var(--acc2),var(--p2))', borderRadius:99 }} />
+                                    </div>
+                                    <span style={{ fontSize:11, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:700 }}>{pct}%</span>
                                   </div>
-                                  <span style={{ fontSize:11, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:700 }}>{pct}%</span>
-                                </div>
-                              </td>
-                              <td>
-                                <button className="mini-btn"
-                                  style={{ fontSize:10, padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)', display:'flex', alignItems:'center', gap:4 }}
-                                  onClick={() => {
-                                    const nb = {...bonuses}
-                                    delete nb[empId]
-                                    setBonuses(nb)
-                                    const ids = bonusList.filter(b => b.empId === empId).map(b => b.id)
-                                    setBonusList(prev => prev.filter(b => b.empId !== empId))
-                                    ids.forEach(id => { if (!id.startsWith('local-')) bonusesApi.delete(id).catch(()=>{}) })
-                                    toast.success(lang === 'en' ? 'Bonus removed' : lang === 'es' ? 'Prima eliminada' : lang === 'it' ? 'Premio eliminato' : 'Prime supprimée')
-                                  }}>
-                                  <Trash2 size={11}/> {lang === 'en' ? 'Remove' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
-                                </button>
-                              </td>
-                            </tr>
+                                </td>
+                                <td>
+                                  <button className="mini-btn"
+                                    style={{ fontSize:10, padding:'3px 8px', color:'var(--danger)', borderColor:'rgba(255,59,92,.2)', display:'flex', alignItems:'center', gap:4 }}
+                                    onClick={() => {
+                                      const nb = {...bonuses}
+                                      delete nb[empId]
+                                      setBonuses(nb)
+                                      const ids = bonusList.filter(b => b.empId === empId).map(b => b.id)
+                                      setBonusList(prev => prev.filter(b => b.empId !== empId))
+                                      ids.forEach(id => { if (!id.startsWith('local-')) bonusesApi.delete(id).catch(()=>{}) })
+                                      toast.success(lang === 'en' ? 'Bonus removed' : lang === 'es' ? 'Prima eliminada' : lang === 'it' ? 'Premio eliminato' : 'Prime supprimée')
+                                    }}>
+                                    <Trash2 size={11}/> {lang === 'en' ? 'Remove' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
+                                  </button>
+                                </td>
+                              </tr>
+                              {isExpanded && empBonuses.map(b => {
+                                const rc = bonusReasonColor(b.reason)
+                                const d = b.date ? new Date(b.date).toLocaleDateString(
+                                  lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',
+                                  { day:'2-digit', month:'short', year:'numeric' }) : '—'
+                                return (
+                                  <tr key={b.id} style={{ background:'var(--bg3)' }}>
+                                    <td style={{ paddingLeft:32 }}>
+                                      <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, color:'var(--text2)' }}>
+                                        <Calendar size={11} style={{ color:'var(--text3)' }} />
+                                        <span>{d}</span>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span style={{ fontFamily:'var(--mono)', fontSize:12, color:'var(--acc2)', fontWeight:700 }}>+{fmt(b.amount)}</span>
+                                    </td>
+                                    <td>
+                                      <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background:rc.bg, border:`1px solid ${rc.border}`, color:rc.text }}>
+                                        {b.reason || '—'}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <button type="button"
+                                        title={i('Supprimer cette prime', 'Delete this bonus', 'Eliminar esta prima', 'Elimina questo premio')}
+                                        aria-label={i('Supprimer cette prime', 'Delete this bonus', 'Eliminar esta prima', 'Elimina questo premio')}
+                                        onClick={() => deleteOneBonus(b.id, empId, b.amount)}
+                                        style={{ background:'transparent', border:'none', cursor:'pointer', color:'var(--text3)', padding:4, borderRadius:6, display:'flex', alignItems:'center' }}
+                                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--danger)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,59,92,.08)' }}
+                                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text3)'; (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+                                        <Trash2 size={12}/>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </Fragment>
                           )
                         })}
                       </tbody>
@@ -556,7 +643,12 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                       opacity:.3,
                     }}/>
 
-                    {[...salaryHistory].reverse().map((h, i) => {
+                    {(() => {
+                      const sorted = salaryHistory
+                        .slice()
+                        .sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime())
+                      const maxNewSalary = Math.max(1, ...sorted.map(h => Number(h.newSalary) || 0))
+                      return sorted.map((h, idx) => {
                       const emp   = employees.find(e => String(e.id) === (h.empId ?? (h as any).employeeId))
                       const diff  = h.newSalary - h.oldSalary
                       const pct   = Number(h.oldSalary) > 0
@@ -568,9 +660,11 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                             { day:'numeric', month:'short', year:'numeric' }
                           )
                         : '—'
+                      const reasonClr = raiseReasonColor(h.reason ?? '')
+                      const barPct    = Math.max(2, (Number(h.newSalary) / maxNewSalary) * 100)
 
                       return (
-                        <div key={i} style={{
+                        <div key={h.id ?? idx} style={{
                           display:'flex', gap:0,
                           alignItems:'stretch',
                         }}>
@@ -655,8 +749,15 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                   fontSize:14, fontWeight:800,
                                   color:'var(--text)', marginBottom:3,
                                 }}>
-                                  {emp?.name ?? (lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé')}
+                                  {emp?.name ?? i('Employé', 'Employee', 'Empleado', 'Dipendente')}
                                 </div>
+                                {emp && (emp.role || emp.dept) && (
+                                  <div style={{ fontSize:10, color:'var(--text3)', marginBottom:4 }}>
+                                    {emp.role ? roleLabel(emp.role, lang) : ''}
+                                    {emp.role && emp.dept ? ' · ' : ''}
+                                    {emp.dept ? deptLabel(emp.dept, lang) : ''}
+                                  </div>
+                                )}
                                 <div style={{
                                   display:'flex', alignItems:'center',
                                   gap:6, flexWrap:'wrap',
@@ -667,9 +768,9 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                   {h.reason && (
                                     <span style={{
                                       fontSize:10, fontWeight:600,
-                                      background:'rgba(108,71,255,.1)',
-                                      color:'var(--p3)',
-                                      border:'1px solid rgba(108,71,255,.15)',
+                                      background: reasonClr.bg,
+                                      color: reasonClr.text,
+                                      border: `1px solid ${reasonClr.border}`,
                                       borderRadius:99, padding:'1px 7px',
                                     }}>
                                       {h.reason}
@@ -759,7 +860,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                               )}
                             </div>
 
-                            {/* Barre progression */}
+                            {/* Barre progression — relative au max newSalary de l'historique */}
                             <div style={{ padding:'0 18px 14px' }}>
                               <div style={{
                                 height:4,
@@ -768,15 +869,11 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                               }}>
                                 <div style={{
                                   height:'100%',
-                                  width:`${Math.min(100, Math.abs(pct) * 1.5)}%`,
-                                  background: isPos
-                                    ? 'linear-gradient(90deg,var(--acc2),var(--p2))'
-                                    : 'linear-gradient(90deg,var(--danger),var(--warn))',
+                                  width:`${Math.min(100, barPct)}%`,
+                                  background:'linear-gradient(90deg,var(--p),var(--p2))',
                                   borderRadius:99,
                                   transition:'width .6s ease',
-                                  boxShadow: isPos
-                                    ? '0 0 8px rgba(0,208,132,.4)'
-                                    : '0 0 8px rgba(255,59,92,.4)',
+                                  boxShadow:'0 0 8px rgba(108,71,255,.35)',
                                 }}/>
                               </div>
                               <div style={{
@@ -784,7 +881,7 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                 marginTop:4,
                               }}>
                                 <span style={{ fontSize:9, color:'var(--text4)' }}>
-                                  {lang === 'en' ? 'Evolution' : lang === 'es' ? 'Evolución' : lang === 'it' ? 'Evoluzione' : 'Évolution'}
+                                  {i('Salaire / max historique', 'Salary / max history', 'Salario / máx historial', 'Stipendio / max storico')}
                                 </span>
                                 <span style={{
                                   fontSize:9, fontFamily:'var(--mono)',
@@ -798,7 +895,8 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                           </div>
                         </div>
                       )
-                    })}
+                    })
+                    })()}
                   </div>
 
                   {/* Stats résumé en bas */}
