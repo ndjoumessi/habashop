@@ -1,19 +1,22 @@
 import React from 'react'
 
 interface ViewFieldProps {
-  label:      string
-  value?:     string | number | null
-  icon?:      string
-  mono?:      boolean
-  color?:     string
-  editing:    boolean
-  fullWidth?: boolean
-  children:   React.ReactNode
+  label:       string
+  value?:      string | number | null
+  icon?:       string
+  mono?:       boolean
+  color?:      string
+  editing:     boolean
+  fullWidth?:  boolean
+  multiline?:  boolean
+  emptyLabel?: string
+  children:    React.ReactNode
 }
 
 export default function ViewField({
   label, value, icon, mono, color,
-  editing, fullWidth, children,
+  editing, fullWidth, multiline, emptyLabel,
+  children,
 }: ViewFieldProps) {
 
   const labelStyle: React.CSSProperties = {
@@ -21,6 +24,10 @@ export default function ViewField({
     textTransform:'uppercase', letterSpacing:'.6px',
     color:'var(--text3)', marginBottom:5,
   }
+
+  const valueSpanStyle: React.CSSProperties = multiline
+    ? { flex:1, whiteSpace:'pre-wrap', overflow:'visible' }
+    : { flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }
 
   return (
     <div style={fullWidth ? {gridColumn:'1/-1'} : {}}>
@@ -40,7 +47,10 @@ export default function ViewField({
           color: color ?? 'var(--text2)',
           fontFamily: mono ? 'var(--mono)' : 'var(--font)',
           minHeight:40,
-          display:'flex', alignItems:'center', gap:8,
+          height: multiline ? 'auto' : undefined,
+          display:'flex',
+          alignItems: multiline ? 'flex-start' : 'center',
+          gap:8,
           userSelect:'text', cursor:'default',
           letterSpacing: mono ? '-.2px' : 'normal',
         }}>
@@ -49,15 +59,12 @@ export default function ViewField({
               {icon}
             </span>
           )}
-          <span style={{
-            flex:1, overflow:'hidden',
-            textOverflow:'ellipsis', whiteSpace:'nowrap',
-          }}>
+          <span style={valueSpanStyle}>
             {value !== null && value !== undefined && String(value).trim() !== ''
               ? value
               : (
                 <span style={{color:'var(--text4)',fontStyle:'italic',fontSize:12}}>
-                  Non renseigné
+                  {emptyLabel ?? 'Non renseigné'}
                 </span>
               )
             }
