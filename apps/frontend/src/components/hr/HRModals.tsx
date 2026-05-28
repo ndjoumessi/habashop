@@ -70,7 +70,7 @@ export default function HRModals({ showSalaryModal, setShowSalaryModal, salaryTa
                 lang={lang}
                 fmt={fmt}
                 onConfirm={(empId: string|'all', amount: number, reason?: string) => {
-                  handleConfirmBonus(empId, amount, reason ?? 'Performance')
+                  handleConfirmBonus(empId, amount, reason ?? '')
                 }}
                 onClose={() => setShowSalaryModal(false)}
               />
@@ -902,7 +902,7 @@ function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
       <div style={{ display:'flex', gap:8 }}>
         <button className="btn btn-primary" style={{ flex:1 }} onClick={() => {
           if (!newSalaryInput || +newSalaryInput <= 0) return
-          onConfirm(newSalaryXOF, reason || 'Augmentation')
+          onConfirm(newSalaryXOF, reason || '')
         }}>
           ✅ {lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'}
         </button>

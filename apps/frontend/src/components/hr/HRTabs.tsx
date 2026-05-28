@@ -13,6 +13,7 @@ interface HRTabsProps {
   bonuses: Record<string, number>; setBonuses: (v: any) => void
   bonusList: { id: string; empId: string; amount: number; reason: string; date: string }[]; setBonusList: (v: any) => void
   salaryHistory: any[]
+  onDeleteSalaryHistory?: (id: string) => void
   generateAllPayslips: () => void
   generatePayslipPDF: (emp: any, data: any) => void
   setSalaryTarget: (v: any) => void; setShowSalaryModal: (b: boolean) => void
@@ -26,7 +27,7 @@ interface HRTabsProps {
   handleLeaveAction: (id: number, status: 'approved' | 'refused') => void
 }
 
-export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, payrollMonth, setPayrollMonth, bonuses, setBonuses, bonusList, setBonusList, salaryHistory, generateAllPayslips, generatePayslipPDF, setSalaryTarget, setShowSalaryModal, setSelectedContract, setShowContractDetailModal, setContractForm, setShowNewContractModal, attendance, setAttendance, attendanceDate, setAttendanceDate, pendingLeaves, leaves, setLeaveForm, setShowLeaveModal, handleLeaveAction }: HRTabsProps) {
+export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, payrollMonth, setPayrollMonth, bonuses, setBonuses, bonusList, setBonusList, salaryHistory, onDeleteSalaryHistory, generateAllPayslips, generatePayslipPDF, setSalaryTarget, setShowSalaryModal, setSelectedContract, setShowContractDetailModal, setContractForm, setShowNewContractModal, attendance, setAttendance, attendanceDate, setAttendanceDate, pendingLeaves, leaves, setLeaveForm, setShowLeaveModal, handleLeaveAction }: HRTabsProps) {
   return (
     <>
       {tab === 'contracts' && (
@@ -698,6 +699,31 @@ export default function HRTabs({ tab, employees, fmt, lang, payTab, setPayTab, p
                                   </span>
                                 </div>
                               </div>
+
+                              {onDeleteSalaryHistory && h.id && (
+                                <button
+                                  type="button"
+                                  onClick={() => onDeleteSalaryHistory(h.id!)}
+                                  title={lang === 'en' ? 'Delete revision' : lang === 'es' ? 'Eliminar revisión' : lang === 'it' ? 'Elimina revisione' : 'Supprimer la révision'}
+                                  aria-label={lang === 'en' ? 'Delete revision' : lang === 'es' ? 'Eliminar revisión' : lang === 'it' ? 'Elimina revisione' : 'Supprimer la révision'}
+                                  style={{
+                                    background:'transparent', border:'none', cursor:'pointer',
+                                    color:'var(--text3)', padding:6, borderRadius:8,
+                                    display:'flex', alignItems:'center', justifyContent:'center',
+                                    transition:'all .15s', flexShrink:0,
+                                  }}
+                                  onMouseEnter={e => {
+                                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,59,92,.08)'
+                                    ;(e.currentTarget as HTMLElement).style.color = 'var(--danger)'
+                                  }}
+                                  onMouseLeave={e => {
+                                    (e.currentTarget as HTMLElement).style.background = 'transparent'
+                                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text3)'
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
                             </div>
 
                             {/* Barre progression */}

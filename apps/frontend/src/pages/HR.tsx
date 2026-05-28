@@ -29,6 +29,8 @@ export default function HR() {
   const fromXOF = useConvertFromXOF()
   const { symbol: currencySymbol, decimals: currencyDecimals } = useCurrencyInfo()
   const { lang, currency } = useAppStore()
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const [salaryInput, setSalaryInput] = useState('')
   const [tab, setTab] = useState<'team'|'contracts'|'pointage'|'leaves'|'payroll'>('team')
   const [viewMode, setViewMode] = useState<'grid'|'table'>('grid')
@@ -169,51 +171,138 @@ export default function HR() {
   const handleConfirmRaise = async (empId: string, newSalaryXOF: number, reason: string) => {
     const emp = employees.find(e => String(e.id) === empId)
     const oldSalaryXOF = Number(emp?.salary) || 0
+    const finalReason = reason || i('Augmentation', 'Salary increase', 'Aumento', 'Aumento')
 
-    setEmployees((prev: Employee[]) => prev.map(e =>
-      String(e.id) === empId ? { ...e, salary: newSalaryXOF } : e
-    ))
-    setSalaryHistory(prev => [{
-      id: `local_${Date.now()}`,
-      empId,
-      employeeId: empId,
-      oldSalary: oldSalaryXOF,
-      newSalary: newSalaryXOF,
-      reason: reason || 'Augmentation',
-      date: new Date().toISOString(),
-    }, ...prev])
+    try {
+      await employeesApi.update(empId, { salary: newSalaryXOF })
+      const entry = await salaryHistoryApi.create({
+        employeeId: empId,
+        oldSalary: oldSalaryXOF,
+        newSalary: newSalaryXOF,
+        reason: finalReason,
+      })
 
-    employeesApi.update(empId, { salary: newSalaryXOF })
-      .catch(err => console.warn('employee update:', err.message))
-    salaryHistoryApi.create({ employeeId: empId, oldSalary: oldSalaryXOF, newSalary: newSalaryXOF, reason: reason || 'Augmentation' })
-      .catch(err => console.warn('salary-history create:', err.message))
+      setEmployees((prev: Employee[]) => prev.map(e =>
+        String(e.id) === empId ? { ...e, salary: newSalaryXOF } : e
+      ))
+      setSalaryHistory(prev => [{
+        id: entry.id,
+        empId,
+        employeeId: empId,
+        oldSalary: oldSalaryXOF,
+        newSalary: newSalaryXOF,
+        reason: finalReason,
+        date: entry.date ?? new Date().toISOString(),
+      }, ...prev])
 
-    toast.success(`✅ Salaire mis à jour : ${fmt(newSalaryXOF)}`)
-    setShowSalaryModal(false)
+      toast.success(i(
+        `✅ Salaire mis à jour : ${fmt(newSalaryXOF)}`,
+        `✅ Salary updated: ${fmt(newSalaryXOF)}`,
+        `✅ Salario actualizado: ${fmt(newSalaryXOF)}`,
+        `✅ Stipendio aggiornato: ${fmt(newSalaryXOF)}`,
+      ))
+      setShowSalaryModal(false)
+    } catch (err: any) {
+      console.warn('raise failed:', err?.message)
+      toast.error(i(
+        'Échec de la mise à jour — réessayer',
+        'Update failed — please retry',
+        'Error al actualizar — reintentar',
+        'Aggiornamento fallito — riprovare',
+      ))
+    }
   }
 
-  const handleConfirmBonus = (_empId: string | 'all', amountXOF: number, type: string) => {
+  const handleConfirmBonus = async (_empId: string | 'all', amountXOF: number, type: string) => {
     const targets = _empId === 'all'
       ? employees.filter(e => e.active !== false)
       : employees.filter(e => String(e.id) === _empId)
+    const finalReason = type || i('Prime', 'Bonus', 'Prima', 'Premio')
 
-    targets.forEach(emp => {
-      const eid = String(emp.id)
-      setBonuses(prev => ({ ...prev, [eid]: (prev[eid] ?? 0) + amountXOF }))
-      bonusesApi.create({ employeeId: eid, amount: amountXOF, reason: type || 'Performance' })
-        .then(b => setBonusList(prev => [...prev, { id: b.id, empId: eid, amount: amountXOF, reason: b.reason, date: b.date }]))
-        .catch(err => {
-          console.warn('bonus create:', err.message)
-          setBonusList(prev => [...prev, { id: `local-${Date.now()}-${eid}`, empId: eid, amount: amountXOF, reason: type || 'Performance', date: new Date().toISOString() }])
-        })
-    })
+    const results = await Promise.allSettled(
+      targets.map(emp => bonusesApi.create({
+        employeeId: String(emp.id),
+        amount: amountXOF,
+        reason: finalReason,
+        date: new Date().toISOString(),
+      }))
+    )
 
-    if (_empId === 'all') {
-      toast.success(`✅ Prime collective ${fmt(amountXOF)} (${targets.length})`)
-    } else {
-      toast.success(`✅ Prime ${fmt(amountXOF)} → ${targets[0]?.name}`)
+    const created = results
+      .map((r, idx) => r.status === 'fulfilled' ? { res: r.value, eid: String(targets[idx].id) } : null)
+      .filter((x): x is { res: any; eid: string } => x !== null)
+    const failed = results.length - created.length
+
+    if (created.length > 0) {
+      setBonusList(prev => [...prev, ...created.map(({ res, eid }) => ({
+        id: res.id, empId: eid, amount: amountXOF, reason: res.reason ?? finalReason, date: res.date,
+      }))])
+      setBonuses(prev => {
+        const next = { ...prev }
+        for (const { eid } of created) next[eid] = (next[eid] ?? 0) + amountXOF
+        return next
+      })
     }
-    setShowSalaryModal(false)
+
+    if (failed === 0 && created.length > 0) {
+      if (_empId === 'all') {
+        toast.success(i(
+          `✅ Prime collective ${fmt(amountXOF)} (${created.length})`,
+          `✅ Group bonus ${fmt(amountXOF)} (${created.length})`,
+          `✅ Prima colectiva ${fmt(amountXOF)} (${created.length})`,
+          `✅ Premio collettivo ${fmt(amountXOF)} (${created.length})`,
+        ))
+      } else {
+        toast.success(i(
+          `✅ Prime de ${fmt(amountXOF)} ajoutée`,
+          `✅ Bonus of ${fmt(amountXOF)} added`,
+          `✅ Prima de ${fmt(amountXOF)} añadida`,
+          `✅ Premio di ${fmt(amountXOF)} aggiunto`,
+        ))
+      }
+      setShowSalaryModal(false)
+    } else if (created.length > 0 && failed > 0) {
+      toast.error(i(
+        `Échecs partiels : ${failed}/${results.length} primes non enregistrées`,
+        `Partial failures: ${failed}/${results.length} bonuses not saved`,
+        `Fallos parciales: ${failed}/${results.length} primas no guardadas`,
+        `Fallimenti parziali: ${failed}/${results.length} premi non salvati`,
+      ))
+    } else {
+      toast.error(i(
+        "Échec de l'ajout — réessayer",
+        'Failed to add — please retry',
+        'Error al agregar — reintentar',
+        'Aggiunta fallita — riprovare',
+      ))
+    }
+  }
+
+  const handleDeleteSalaryHistory = async (id: string) => {
+    if (!id || id.startsWith('local_')) {
+      // Entrée pas encore persistée — retrait local seul (rare, ne devrait plus arriver après refactor).
+      setSalaryHistory(prev => prev.filter(h => h.id !== id))
+      return
+    }
+    const ok = await confirm({
+      title: i('Supprimer cette révision ?', 'Delete this revision?', '¿Eliminar esta revisión?', 'Eliminare questa revisione?'),
+      message: i(
+        "Cette entrée d'historique sera supprimée définitivement. Le salaire actuel de l'employé n'est pas modifié.",
+        "This history entry will be deleted permanently. The employee's current salary is not changed.",
+        'Esta entrada del historial se eliminará permanentemente. El salario actual del empleado no cambia.',
+        'Questa voce di cronologia sarà eliminata definitivamente. Lo stipendio attuale del dipendente non cambia.',
+      ),
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await salaryHistoryApi.delete(id)
+      setSalaryHistory(prev => prev.filter(h => h.id !== id))
+      toast.success(i('Révision supprimée', 'Revision deleted', 'Revisión eliminada', 'Revisione eliminata'))
+    } catch (err: any) {
+      console.warn('salary-history delete:', err?.message)
+      toast.error(i('Échec de la suppression', 'Deletion failed', 'Error al eliminar', 'Eliminazione fallita'))
+    }
   }
 
   const filtered = useMemo(() => (employees ?? []).filter(e => {
@@ -425,6 +514,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         bonuses={bonuses} setBonuses={setBonuses}
         bonusList={bonusList} setBonusList={setBonusList}
         salaryHistory={salaryHistory}
+        onDeleteSalaryHistory={handleDeleteSalaryHistory}
         generateAllPayslips={generateAllPayslips}
         generatePayslipPDF={generatePayslipPDF}
         setSalaryTarget={setSalaryTarget} setShowSalaryModal={setShowSalaryModal}

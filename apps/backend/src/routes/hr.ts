@@ -91,4 +91,13 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(500).send({ error: err.message })
     }
   })
+
+  app.delete('/api/salary-history/:id', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
+    const { id } = request.params as { id: string }
+    const entry = await prisma.salaryHistory.findFirst({ where: { id, tenantId } })
+    if (!entry) return reply.code(404).send({ error: 'Entrée introuvable' })
+    await prisma.salaryHistory.delete({ where: { id } })
+    return { success: true }
+  })
 }
