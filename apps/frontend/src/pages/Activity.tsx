@@ -97,7 +97,7 @@ export default function Activity() {
     const matchSeverity = !severityFilter || log.severity === severityFilter
     const matchDate     = dateFilter === 'today' ? log.date === TODAY_ISO : true
     return matchSearch && matchModule && matchSeverity && matchDate
-  }), [search, moduleFilter, severityFilter, dateFilter])
+  }), [activityLog, search, moduleFilter, severityFilter, dateFilter])
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1
   const paginated  = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
