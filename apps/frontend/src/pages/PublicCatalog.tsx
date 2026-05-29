@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { ShoppingCart, MessageCircle, Minus, Plus, Search, Share2, AlertCircle } from 'lucide-react'
 import { publicApi } from '@/lib/api'
+import { convertAmount, formatInCurrency } from '@/stores/appStore'
 
 type TenantPublic = {
   id: string
@@ -32,20 +33,12 @@ type Lang = 'fr' | 'en' | 'es' | 'it'
 const i = (lang: Lang, fr: string, en: string, es: string, it: string) =>
   lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
 
-// ─── Formatage standalone (pas useFormatAmount qui dépend du store auth) ────
-// Symbole monnaie minimal pour les principales devises ; fallback ISO sinon.
-const SYMBOLS: Record<string, string> = {
-  XOF: 'FCFA', XAF: 'FCFA',
-  EUR: '€', USD: '$', GBP: '£', CAD: 'CA$',
-}
-function formatPrice(amount: number, currency: string, lang: Lang): string {
-  const sym = SYMBOLS[currency] ?? currency
-  // XOF/XAF sans décimales ; EUR/USD/... avec 2 décimales
-  const noDecimals = currency === 'XOF' || currency === 'XAF'
-  const value = noDecimals
-    ? Math.round(amount).toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR')
-    : amount.toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  return `${value} ${sym}`
+// ─── Formatage prix : convertit XOF (DB) → devise du tenant + format localisé ──
+// On utilise convertAmount + formatInCurrency d'appStore (fonctions PURES, pas de hook),
+// pour rester cohérent avec le reste de l'app (POS, Stock, etc.).
+function formatPrice(amountXOF: number, currency: string): string {
+  const converted = convertAmount(amountXOF, 'XOF', currency)
+  return formatInCurrency(converted, currency)
 }
 
 function CatalogSkeleton() {
@@ -139,12 +132,12 @@ export default function PublicCatalog() {
   const composeWhatsAppMessage = () => {
     if (!data) return ''
     const t = data.tenant
-    const items = cartItems.map(it => `• ${it.qty}× ${it.name} (${formatPrice(it.qty * it.price, t.currency, lang)})`).join('\n')
+    const items = cartItems.map(it => `• ${it.qty}× ${it.name} (${formatPrice(it.qty * it.price, t.currency)})`).join('\n')
     const greeting = i(lang, `Bonjour ${t.name}`, `Hello ${t.name}`, `Hola ${t.name}`, `Salve ${t.name}`)
     const want = i(lang, 'Je voudrais commander :', 'I would like to order:', 'Quisiera pedir:', 'Vorrei ordinare:')
     const totalLabel = i(lang, '*Total estimé*', '*Estimated total*', '*Total estimado*', '*Totale stimato*')
     const thanks = i(lang, 'Merci.', 'Thanks.', 'Gracias.', 'Grazie.')
-    return `${greeting},\n\n${want}\n${items}\n\n${totalLabel} : ${formatPrice(cartTotal, t.currency, lang)}\n\n${thanks}`
+    return `${greeting},\n\n${want}\n${items}\n\n${totalLabel} : ${formatPrice(cartTotal, t.currency)}\n\n${thanks}`
   }
 
   const orderViaWhatsApp = () => {
@@ -273,11 +266,11 @@ export default function PublicCatalog() {
               </div>
               <div style={{ display:'flex', alignItems:'baseline', gap:6, flexWrap:'wrap' }}>
                 <span style={{ fontSize:16, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>
-                  {formatPrice(finalPrice, t.currency, lang)}
+                  {formatPrice(finalPrice, t.currency)}
                 </span>
                 {onPromo && (
                   <span style={{ fontSize:11, color:'var(--text3)', textDecoration:'line-through' }}>
-                    {formatPrice(p.sellPrice, t.currency, lang)}
+                    {formatPrice(p.sellPrice, t.currency)}
                   </span>
                 )}
               </div>
@@ -334,7 +327,7 @@ export default function PublicCatalog() {
               {cartCount} {i(lang, cartCount > 1 ? 'articles' : 'article', cartCount > 1 ? 'items' : 'item', cartCount > 1 ? 'artículos' : 'artículo', cartCount > 1 ? 'articoli' : 'articolo')}
             </div>
             <div style={{ fontSize:18, fontWeight:900, color:'var(--text)', fontFamily:'var(--mono)' }}>
-              {formatPrice(cartTotal, t.currency, lang)}
+              {formatPrice(cartTotal, t.currency)}
             </div>
           </div>
           <button
