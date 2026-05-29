@@ -118,6 +118,8 @@ export default function Dashboard() {
     lowStockProducts: 0,
     activeEmployees: 0,
     pendingOrders: 0,
+    totalReceivables: 0,
+    nbDebtors: 0,
   })
   const [salesChart, setSalesChart] = useState<any[]>([])
   const [topProducts, setTopProducts] = useState<any[]>([])
@@ -138,6 +140,8 @@ export default function Dashboard() {
           lowStockProducts:  data.lowStockProducts  ?? stats.lowStockProducts,
           activeEmployees:   data.activeEmployees   ?? stats.activeEmployees,
           pendingOrders:     data.pendingOrders     ?? stats.pendingOrders,
+          totalReceivables:  data.totalReceivables  ?? stats.totalReceivables,
+          nbDebtors:         data.nbDebtors         ?? stats.nbDebtors,
         })
         setTopProducts(data?.topProducts ?? [])
         setStockAlerts(data?.stockAlerts ?? [])
@@ -249,6 +253,10 @@ export default function Dashboard() {
           { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} ${lang === 'en' ? 'stock alerts' : lang === 'es' ? 'alertas stock' : lang === 'it' ? 'avvisi stock' : 'alertes stock'}`,   evol: '−3',   up: false, Icon: Package,    color: 'var(--acc)',  hex: '#FF9500', bg: 'rgba(255,149,0,.14)'  },
           { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} ${lang === 'en' ? 'pending orders' : lang === 'es' ? 'ped. pendientes' : lang === 'it' ? 'ord. in attesa' : 'cmd. en attente'}`,   evol: '',     up: null,  Icon: Users,      color: 'var(--acc2)', hex: '#00D084', bg: 'rgba(0,208,132,.14)'  },
           { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),         sub: lang === 'en' ? 'vs last month' : lang === 'es' ? 'vs mes pasado' : lang === 'it' ? 'vs mese scorso' : 'vs mois dernier',                           evol: '+7%',  up: true,  Icon: TrendingUp, color: 'var(--acc3)', hex: '#00B8FF', bg: 'rgba(0,184,255,.14)'  },
+          { label: lang === 'en' ? 'Receivables' : lang === 'es' ? 'Cuentas por cobrar' : lang === 'it' ? 'Crediti clienti' : 'Créances clients',
+            value: fmt(stats.totalReceivables),
+            sub: `${stats.nbDebtors} ${lang === 'en' ? 'debtors' : lang === 'es' ? 'deudores' : lang === 'it' ? 'debitori' : 'débiteurs'}`,
+            evol: '', up: null, Icon: CreditCard, color: '#F59E0B', hex: '#F59E0B', bg: 'rgba(245,158,11,.14)' },
         ].map(k => (
           <div key={k.label} className="kpi-card" style={{
             background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,

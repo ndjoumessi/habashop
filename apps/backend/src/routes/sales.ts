@@ -20,13 +20,41 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/sales', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId } = request.user
-    const { items, paymentMode, total, discount } = request.body as SaleBody
+    const { items, paymentMode, total, discount, customerId, paymentStatus, amountPaid } = request.body as SaleBody
 
     if (!items?.length) {
       return reply.code(400).send({ error: 'Une vente doit contenir au moins un article' })
     }
-    if (total < 0) {
+    if (total == null || total < 0) {
       return reply.code(400).send({ error: 'Le total ne peut pas être négatif' })
+    }
+
+    const status: 'paid' | 'credit' | 'partial' = paymentStatus ?? 'paid'
+    const paid =
+      status === 'paid'    ? total :
+      status === 'credit'  ? 0     :
+                              Math.max(0, Math.min(total, amountPaid ?? 0))
+    const due = total - paid
+
+    if (status !== 'paid' && !customerId) {
+      return reply.code(400).send({ error: 'Client obligatoire pour une vente à crédit ou partielle' })
+    }
+    if (status === 'partial' && (amountPaid == null || amountPaid <= 0 || amountPaid >= total)) {
+      return reply.code(400).send({ error: 'Acompte invalide : doit être > 0 et < total' })
+    }
+
+    // Vérif plafond crédit
+    if (status !== 'paid' && customerId) {
+      const cust = await prisma.customer.findFirst({ where: { id: customerId, tenantId, deletedAt: null } })
+      if (!cust) return reply.code(404).send({ error: 'Client introuvable' })
+      if (cust.creditLimit != null && cust.creditBalance + due > cust.creditLimit) {
+        return reply.code(403).send({
+          error: 'Plafond de crédit dépassé',
+          creditLimit: cust.creditLimit,
+          currentBalance: cust.creditBalance,
+          attempted: cust.creditBalance + due,
+        })
+      }
     }
 
     const newSale = await prisma.$transaction(async (tx) => {
@@ -36,8 +64,11 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
           cashierId: userId,
           total,
           paymentMode,
+          paymentStatus: status,
+          amountPaid: paid,
           discountAmount: discount?.amount ?? 0,
           discountType: discount?.type ?? null,
+          customerId: customerId ?? null,
         },
       })
 
@@ -57,13 +88,38 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
         })
       }
 
+      if (customerId) {
+        await tx.customer.update({
+          where: { id: customerId },
+          data: {
+            totalRevenue: { increment: total },
+            ...(due > 0 ? { creditBalance: { increment: due } } : {}),
+          },
+        })
+      }
+
       return newSale
     })
+
+    if (status !== 'paid' && customerId) {
+      await prisma.auditLog.create({
+        data: {
+          tenantId,
+          userId,
+          module: 'sales',
+          action: 'CREATE_SALE_CREDIT',
+          description: JSON.stringify({ saleId: newSale.id, customerId, total, amountPaid: paid, due, status }),
+        },
+      }).catch(() => {})
+    }
 
     // Les agrégats analytics dépendent des ventes → on purge le cache du tenant.
     invalidateTenantCache(tenantId).catch(() => {})
 
-    notifyTenant(tenantId, { type: 'new_sale', data: { id: newSale.id, total, paymentMode, itemCount: Array.isArray(items) ? items.length : 0 } })
+    notifyTenant(tenantId, {
+      type: 'new_sale',
+      data: { id: newSale.id, total, paymentMode, paymentStatus: status, itemCount: Array.isArray(items) ? items.length : 0 },
+    })
     try {
       const ids = (items ?? []).map((i) => i.productId)
       const sold = await prisma.product.findMany({

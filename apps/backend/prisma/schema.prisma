@@ -67,6 +67,7 @@ model Tenant {
   planRequests   PlanRequest[]
   pushTokens     PushToken[]
   goals          Goal[]
+  customerPayments CustomerPayment[]
 
   @@index([deletedAt])
 }
@@ -162,6 +163,8 @@ model Sale {
   cashierId      String
   total          Float
   paymentMode    String   @default("cash")
+  paymentStatus  String   @default("paid") // paid | credit | partial
+  amountPaid     Float    @default(0)
   discountAmount Float    @default(0)
   discountType   String?
   discountReason String?
@@ -169,13 +172,16 @@ model Sale {
   customerId     String?
   createdAt      DateTime @default(now())
 
-  tenant  Tenant     @relation(fields: [tenantId], references: [id])
-  cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
-  items   SaleItem[]
+  tenant   Tenant            @relation(fields: [tenantId], references: [id])
+  cashier  User              @relation("SaleCashier", fields: [cashierId], references: [id])
+  items    SaleItem[]
+  payments CustomerPayment[]
 
   @@index([tenantId])
   @@index([tenantId, createdAt])
   @@index([tenantId, paymentMode])
+  @@index([tenantId, paymentStatus])
+  @@index([tenantId, customerId])
 }
 
 model SaleItem {
@@ -203,16 +209,39 @@ model Customer {
   address       String?
   loyaltyPoints Int      @default(0)
   totalRevenue  Float    @default(0)
+  creditBalance Float    @default(0) // > 0 = client doit ; 0 = soldé ; < 0 = avoir
+  creditLimit   Float?              // null = pas de plafond
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   deletedAt     DateTime? // null = actif (soft delete)
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenant   Tenant            @relation(fields: [tenantId], references: [id])
+  payments CustomerPayment[]
 
   @@index([tenantId])
   @@index([tenantId, totalRevenue])
   @@index([tenantId, type])
   @@index([tenantId, deletedAt])
+  @@index([tenantId, creditBalance])
+}
+
+model CustomerPayment {
+  id          String   @id @default(cuid())
+  tenantId    String
+  customerId  String
+  amount      Float
+  paymentMode String   // cash | wave | orange | mtn | card
+  saleId      String?  // optionnel : règlement ciblé sur une vente précise
+  note        String?
+  recordedBy  String   // userId qui a enregistré le paiement
+  createdAt   DateTime @default(now())
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  sale     Sale?    @relation(fields: [saleId], references: [id])
+
+  @@index([tenantId, customerId, createdAt])
+  @@index([saleId])
 }
 
 model Supplier {

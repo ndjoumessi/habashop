@@ -1,4 +1,4 @@
-import { Trash2, ShoppingCart, Lock, Tag, Banknote, CreditCard, Smartphone, BarChart3 } from 'lucide-react'
+import { Trash2, ShoppingCart, Lock, Tag, Banknote, CreditCard, Smartphone, BarChart3, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { confirm } from '@/lib/confirm'
 import { type CartItem } from '@/components/pos/posShared'
@@ -19,9 +19,18 @@ interface POSCartProps {
   setShowModal: (b: boolean) => void
   updateQty: (id: any, delta: number) => void
   isMobile: boolean; mobileView: string
+  // Crédit client
+  customers: { id: string; name: string; phone?: string; creditBalance?: number; creditLimit?: number | null }[]
+  selectedCustomerId: string; setSelectedCustomerId: (v: string) => void
+  selectedCustomer: { id: string; name: string; creditBalance?: number; creditLimit?: number | null } | null
+  partial: boolean; setPartial: (v: boolean) => void
+  partialAmount: string; setPartialAmount: (v: string) => void
+  canCheckout: boolean
 }
 
-export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView }: POSCartProps) {
+export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, customers, selectedCustomerId, setSelectedCustomerId, selectedCustomer, partial, setPartial, partialAmount, setPartialAmount, canCheckout }: POSCartProps) {
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   return (
         <div style={{
           width: isMobile ? '100%' : 320,
@@ -250,13 +259,46 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             </div>
           )}
 
-          {/* ── MODES PAIEMENT — 5 colonnes ── */}
+          {/* ── SÉLECTEUR CLIENT (toujours visible, obligatoire si crédit) ── */}
           <div style={{ flexShrink: 0, padding: '8px 10px', borderTop: '1px solid var(--border)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 4, marginBottom: 6 }}>
+            <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:4 }}>
+              <User size={11} /> {i('Client', 'Customer', 'Cliente', 'Cliente')}
+              {payMode === 'credit' && <span style={{ color:'var(--danger)' }}> *</span>}
+            </label>
+            <select
+              value={selectedCustomerId}
+              onChange={e => setSelectedCustomerId(e.target.value)}
+              style={{
+                width:'100%', padding:'7px 8px', fontSize:12,
+                background:'var(--bg3)', border:`1.5px solid ${payMode === 'credit' && !selectedCustomerId ? 'var(--danger)' : 'var(--border)'}`,
+                borderRadius:8, color:'var(--text)', fontFamily:'inherit',
+              }}
+            >
+              <option value="">{i('— Aucun client —', '— No customer —', '— Sin cliente —', '— Nessun cliente —')}</option>
+              {customers.map(c => (
+                <option key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ''}</option>
+              ))}
+            </select>
+            {selectedCustomer && (selectedCustomer.creditBalance ?? 0) > 0 && (
+              <div style={{
+                marginTop:6, padding:'6px 10px', borderRadius:8,
+                background:'rgba(245,158,11,.12)', border:'1px solid rgba(245,158,11,.3)',
+                display:'flex', justifyContent:'space-between', alignItems:'center',
+                fontSize:11, fontWeight:700, color:'#F59E0B',
+              }}>
+                <span>{i('Dette en cours', 'Outstanding debt', 'Deuda actual', 'Debito attuale')}</span>
+                <span style={{ fontFamily:'var(--mono)', fontWeight:900 }}>{fmt(selectedCustomer.creditBalance ?? 0)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* ── MODES PAIEMENT — 3 cols × 2 rangées ── */}
+          <div style={{ flexShrink: 0, padding: '8px 10px', borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 4, marginBottom: 6 }}>
               {PAY_MODES.map(mode => (
                 <button key={mode.id} type="button" onClick={() => setPayMode(mode.id)}
                   style={{
-                    padding: '6px 2px', borderRadius: 8, fontSize: 9, fontWeight: 700,
+                    padding: '6px 2px', borderRadius: 8, fontSize: 10, fontWeight: 700,
                     cursor: 'pointer', fontFamily: 'var(--font)',
                     background: payMode === mode.id ? `${mode.color}20` : 'var(--bg3)',
                     border: `1.5px solid ${payMode === mode.id ? mode.color : 'var(--border)'}`,
@@ -268,12 +310,46 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                      mode.id === 'card'   ? <CreditCard size={14} /> :
                      mode.id === 'wave'   ? <span style={{ fontWeight:900, fontSize:10, lineHeight:1 }}>W</span>  :
                      mode.id === 'orange' ? <span style={{ fontWeight:900, fontSize:9, lineHeight:1 }}>OM</span>  :
+                     mode.id === 'credit' ? <CreditCard size={14} /> :
                                             <Smartphone size={14} />}
                   </span>
                   {mode.label}
                 </button>
               ))}
             </div>
+
+            {payMode === 'credit' && (
+              <div style={{
+                marginTop:6, padding:'8px 10px',
+                background:'rgba(245,158,11,.08)', border:'1px solid rgba(245,158,11,.25)',
+                borderRadius:8,
+              }}>
+                <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:12, fontWeight:600, color:'var(--text2)' }}>
+                  <input type="checkbox" checked={partial} onChange={e => { setPartial(e.target.checked); if (!e.target.checked) setPartialAmount('') }} />
+                  {i('Acompte versé', 'Down payment', 'Anticipo recibido', 'Acconto versato')}
+                </label>
+                {partial && (
+                  <div style={{ position:'relative', marginTop:6 }}>
+                    <input className="input" type="number"
+                      placeholder={i('Montant de l\'acompte…', 'Down payment amount…', 'Importe del anticipo…', 'Importo dell\'acconto…')}
+                      value={partialAmount} onChange={e => setPartialAmount(e.target.value)}
+                      style={{ textAlign:'right', paddingRight:50, fontSize:13 }}
+                    />
+                    <span style={{
+                      position:'absolute', right:12, top:'50%',
+                      transform:'translateY(-50%)',
+                      fontSize:11, fontWeight:700, color:'var(--text3)',
+                      pointerEvents:'none',
+                    }}>{currencySymbol}</span>
+                  </div>
+                )}
+                <div style={{ marginTop:6, fontSize:10, color:'var(--text3)' }}>
+                  {partial && partialAmount
+                    ? <>{i('Reste dû', 'Remaining due', 'Saldo pendiente', 'Resto dovuto')} : <strong style={{ color:'#F59E0B' }}>{fmt(Math.max(0, total - (parseFloat(partialAmount)||0)))}</strong></>
+                    : i('Le client paiera plus tard. La dette s\'ajoute à son solde.', 'Customer will pay later. The debt is added to their balance.', 'El cliente pagará más tarde. La deuda se añade a su saldo.', 'Il cliente pagherà dopo. Il debito è aggiunto al suo saldo.')}
+                </div>
+              </div>
+            )}
 
             {payMode === 'cash' && (
               <div style={{ marginTop:6 }}>
@@ -343,22 +419,27 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
           {/* ── BOUTON ENCAISSER ── */}
           <div style={{ flexShrink:0, padding:'8px 10px', borderTop:'1px solid var(--border)' }}>
             <button type="button"
-              disabled={cart.length === 0}
-              onClick={() => cart.length ? setShowModal(true) : toast.error(lang === 'en' ? 'Empty cart!' : lang === 'es' ? '¡Carrito vacío!' : lang === 'it' ? 'Carrello vuoto!' : 'Panier vide !')}
+              disabled={cart.length === 0 || !canCheckout}
+              onClick={() => {
+                if (!cart.length) { toast.error(i('Panier vide !', 'Empty cart!', '¡Carrito vacío!', 'Carrello vuoto!')); return }
+                if (payMode === 'credit' && !selectedCustomerId) { toast.error(i('Sélectionnez un client pour une vente à crédit', 'Select a customer for a credit sale', 'Selecciona un cliente para una venta a crédito', 'Seleziona un cliente per una vendita a credito')); return }
+                if (payMode === 'credit' && partial && !canCheckout) { toast.error(i('Acompte invalide : doit être > 0 et < total', 'Invalid down payment: must be > 0 and < total', 'Anticipo no válido: debe ser > 0 y < total', 'Acconto non valido: deve essere > 0 e < totale')); return }
+                setShowModal(true)
+              }}
               style={{
                 width:'100%', padding:'13px',
-                background: cart.length === 0 ? 'var(--bg4)' : 'linear-gradient(135deg,var(--p),var(--p2))',
+                background: (cart.length === 0 || !canCheckout) ? 'var(--bg4)' : 'linear-gradient(135deg,var(--p),var(--p2))',
                 border:'none', borderRadius:11, fontSize:14, fontWeight:800,
-                color: cart.length === 0 ? 'var(--text3)' : '#fff',
-                cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
+                color: (cart.length === 0 || !canCheckout) ? 'var(--text3)' : '#fff',
+                cursor: (cart.length === 0 || !canCheckout) ? 'not-allowed' : 'pointer',
                 fontFamily:'var(--font)',
-                boxShadow: cart.length === 0 ? 'none' : '0 4px 16px rgba(91,78,232,.4)',
+                boxShadow: (cart.length === 0 || !canCheckout) ? 'none' : '0 4px 16px rgba(91,78,232,.4)',
                 transition:'all .2s',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               }}>
               {cart.length === 0
-                ? <><ShoppingCart size={15} /> {lang === 'en' ? 'Empty cart' : lang === 'es' ? 'Carrito vacío' : lang === 'it' ? 'Carrello vuoto' : 'Panier vide'}</>
-                : <>{lang === 'fr' ? 'Encaisser' : lang === 'en' ? 'Checkout' : lang === 'es' ? 'Cobrar' : 'Incassare'} — {fmt(total)}</>}
+                ? <><ShoppingCart size={15} /> {i('Panier vide', 'Empty cart', 'Carrito vacío', 'Carrello vuoto')}</>
+                : <>{i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} — {fmt(total)}</>}
             </button>
             {cashierSessionTx > 0 && (
               <div style={{

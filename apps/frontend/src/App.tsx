@@ -15,6 +15,7 @@ const Stock          = lazy(() => import('@/pages/Stock'))
 const Orders         = lazy(() => import('@/pages/Orders'))
 const Suppliers      = lazy(() => import('@/pages/Suppliers'))
 const Customers      = lazy(() => import('@/pages/Customers'))
+const CustomerDetail = lazy(() => import('@/pages/CustomerDetail'))
 const Reports        = lazy(() => import('@/pages/Reports'))
 const HR             = lazy(() => import('@/pages/HR'))
 const Planning       = lazy(() => import('@/pages/Planning'))
@@ -127,6 +128,7 @@ export default function App() {
         <Route path="orders"        element={<RoleRoute slug="orders"><Orders /></RoleRoute>} />
         <Route path="suppliers"     element={<RoleRoute slug="suppliers"><Suppliers /></RoleRoute>} />
         <Route path="customers"     element={<RoleRoute slug="customers"><Customers /></RoleRoute>} />
+        <Route path="customers/:id" element={<RoleRoute slug="customers"><CustomerDetail /></RoleRoute>} />
         <Route path="reports"       element={<RoleRoute slug="reports"><Reports /></RoleRoute>} />
         <Route path="hr"            element={<RoleRoute slug="hr"><HR /></RoleRoute>} />
         <Route path="planning"      element={<RoleRoute slug="planning"><Planning /></RoleRoute>} />

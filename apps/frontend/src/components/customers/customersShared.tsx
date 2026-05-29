@@ -10,6 +10,7 @@ export interface Customer {
   address: string; purchasesPerMonth: number; totalCA: number
   loyaltyPoints: number; maxLoyalty: number; since: string; lastPurchase: string
   purchases: Purchase[]; notes: string
+  creditBalance: number; creditLimit: number | null
 }
 
 export const TYPE_CFG: Record<ClientType, { cls: string; color: string; bg: string }> = {
@@ -90,6 +91,8 @@ export function mapApiCustomer(c: any): Customer {
     lastPurchase: c.updatedAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     purchases: [],
     notes: c.notes || '',
+    creditBalance: c.creditBalance ?? 0,
+    creditLimit: c.creditLimit ?? null,
   }
 }
 

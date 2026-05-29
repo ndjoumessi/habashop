@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, formatCurrency, t, convertAmount, formatInCurrency } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import { salesApi, productsApi, whatsappApi } from '@/lib/api'
+import { salesApi, productsApi, whatsappApi, customersApi } from '@/lib/api'
 import { generateInvoice } from '@/utils/export'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
@@ -63,8 +63,17 @@ export default function POS() {
   const [cart, setCart]           = useState<CartItem[]>([])
   const [activeCat, setActiveCat] = useState('all')
   const [search, setSearch]       = useState('')
-  const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mobile'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile')
-  useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile') }, [posDefaultPayment])
+  type PayMode = 'cash'|'card'|'wave'|'orange'|'mobile'|'credit'
+  const [payMode, setPayMode]     = useState<PayMode>(() => (posDefaultPayment ?? 'cash') as PayMode)
+  useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as PayMode) }, [posDefaultPayment])
+  const [customers, setCustomers] = useState<{ id: string; name: string; phone?: string; creditBalance?: number; creditLimit?: number | null }[]>([])
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('')
+  const [partial, setPartial] = useState(false)
+  const [partialAmount, setPartialAmount] = useState('')
+
+  useEffect(() => {
+    customersApi.list().then(setCustomers).catch(() => {})
+  }, [])
   const [waCountryCode, setWaCountryCode]         = useState('+221')
   const [waCountryFlag, setWaCountryFlag]         = useState('🇸🇳')
   const [showCountryPicker, setShowCountryPicker] = useState(false)
@@ -195,7 +204,16 @@ export default function POS() {
     { id: 'wave',   label: 'Wave',                                           icon: '🌊', color: '#1B9AF5' },
     { id: 'orange', label: 'Orange Money',                                   icon: '🟠', color: '#FF6600' },
     { id: 'mobile', label: lang === 'en' ? 'Other mobile' : lang === 'es' ? 'Otro móvil' : lang === 'it' ? 'Altro mobile' : 'Autre mobile', icon: '📲', color: '#F59E0B' },
-  ] as { id: 'cash'|'card'|'wave'|'orange'|'mobile'; label: string; icon: string; color: string }[]
+    { id: 'credit', label: lang === 'en' ? 'Credit' : lang === 'es' ? 'Crédito' : lang === 'it' ? 'Credito' : 'Crédit', icon: '🧾', color: '#F59E0B' },
+  ] as { id: PayMode; label: string; icon: string; color: string }[]
+
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId) || null
+  const partialAmountNum = parseFloat(partialAmount) || 0
+  const partialValid = partial && partialAmountNum > 0 && partialAmountNum < total
+  const canCheckout =
+    payMode !== 'credit'
+      ? true
+      : !!selectedCustomerId && (partial ? partialValid : true)
 
   const printTicket = () => {
     const win = window.open('', '_blank', 'width=400,height=600')
@@ -264,6 +282,12 @@ export default function POS() {
 
   const confirmSale = async () => {
     setIsSaving(true)
+    const isCredit  = payMode === 'credit'
+    const isPartial = isCredit && partial && partialValid
+    const status: 'paid' | 'credit' | 'partial' = isPartial ? 'partial' : isCredit ? 'credit' : 'paid'
+    const paid    = isPartial ? partialAmountNum : isCredit ? 0 : total
+    // Pour le crédit/partiel, on stocke 'cash' comme paymentMode du back (le règlement futur portera le vrai mode)
+    const backendPayMode = isCredit ? 'cash' : payMode
     try {
       await salesApi.create({
         items: cart.map(i => ({
@@ -273,11 +297,26 @@ export default function POS() {
           qty: i.qty,
           price: i.price,
         })),
-        paymentMode: payMode,
+        paymentMode: backendPayMode,
         total,
         discount: discount ? { type: discount.type, amount: discountAmount } : null,
+        customerId: selectedCustomerId || null,
+        paymentStatus: status,
+        amountPaid: paid,
       })
-    } catch {
+    } catch (err: any) {
+      // Erreurs métier crédit → on stoppe avec un toast et on ne réinitialise pas le panier
+      const msg = String(err?.message ?? '')
+      if (/Plafond/i.test(msg)) {
+        toast.error(lang === 'en' ? 'Credit limit exceeded' : lang === 'es' ? 'Límite de crédito superado' : lang === 'it' ? 'Limite di credito superato' : 'Plafond de crédit dépassé')
+        setIsSaving(false)
+        return
+      }
+      if (/obligatoire|Acompte/i.test(msg)) {
+        toast.error(msg)
+        setIsSaving(false)
+        return
+      }
       // Hors-ligne : la vente est quand même enregistrée localement
     }
 
@@ -320,6 +359,9 @@ export default function POS() {
     setDiscount(null)
     setSendWhatsApp(false)
     setWaNumber('')
+    setSelectedCustomerId('')
+    setPartial(false)
+    setPartialAmount('')
     setIsSaving(false)
   }
 
@@ -507,6 +549,12 @@ export default function POS() {
           setShowModal={setShowModal}
           updateQty={updateQty}
           isMobile={isMobile} mobileView={mobileView}
+          customers={customers}
+          selectedCustomerId={selectedCustomerId} setSelectedCustomerId={setSelectedCustomerId}
+          selectedCustomer={selectedCustomer}
+          partial={partial} setPartial={setPartial}
+          partialAmount={partialAmount} setPartialAmount={setPartialAmount}
+          canCheckout={canCheckout}
         />
       </div>
 

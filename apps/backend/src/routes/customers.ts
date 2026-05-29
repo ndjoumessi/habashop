@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify'
-import type { CustomerBody } from '../types'
+import type { CustomerBody, CustomerPaymentBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
+import { invalidateTenantCache } from '../lib/cache'
 
 export async function customerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/customers', { preHandler: authenticate }, async (request) => {
@@ -66,6 +67,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
           phone: data.phone,
           email: data.email,
           address: data.address,
+          ...(data.creditLimit !== undefined ? { creditLimit: data.creditLimit } : {}),
         }
       })
     } catch (err) {
@@ -128,5 +130,135 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     } catch {
       return { points: points }
     }
+  })
+
+  // ─── DETAIL CLIENT ────────────────────
+  app.get('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
+    const { id } = request.params as { id: string }
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+    const [nbSales, nbPayments, lastSale] = await Promise.all([
+      prisma.sale.count({ where: { tenantId, customerId: id } }),
+      prisma.customerPayment.count({ where: { tenantId, customerId: id } }),
+      prisma.sale.findFirst({ where: { tenantId, customerId: id }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+    ])
+    return { ...customer, stats: { nbSales, nbPayments, lastSaleAt: lastSale?.createdAt ?? null } }
+  })
+
+  // ─── TIMELINE TRANSACTIONS ────────────
+  app.get('/api/customers/:id/transactions', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
+    const { id } = request.params as { id: string }
+    const { limit = 50, offset = 0 } = request.query as { limit?: number; offset?: number }
+
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+
+    const [sales, payments] = await Promise.all([
+      prisma.sale.findMany({
+        where: { tenantId, customerId: id },
+        orderBy: { createdAt: 'desc' },
+        take: Number(limit) + Number(offset),
+        include: { items: { include: { product: true } } },
+      }),
+      prisma.customerPayment.findMany({
+        where: { tenantId, customerId: id },
+        orderBy: { createdAt: 'desc' },
+        take: Number(limit) + Number(offset),
+      }),
+    ])
+
+    const unified = [
+      ...sales.map((s) => ({
+        type: 'sale' as const,
+        id: s.id,
+        date: s.createdAt,
+        amount: s.total,
+        amountPaid: s.amountPaid,
+        due: s.total - s.amountPaid,
+        paymentStatus: s.paymentStatus,
+        paymentMode: s.paymentMode,
+        items: s.items.map((it) => ({ name: it.product?.name, qty: it.qty, total: it.total })),
+      })),
+      ...payments.map((p) => ({
+        type: 'payment' as const,
+        id: p.id,
+        date: p.createdAt,
+        amount: p.amount,
+        paymentMode: p.paymentMode,
+        saleId: p.saleId,
+        note: p.note,
+      })),
+    ]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(Number(offset), Number(offset) + Number(limit))
+
+    return unified
+  })
+
+  // ─── ENREGISTRER UN PAIEMENT ──────────
+  app.post('/api/customers/:id/payments', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId, userId } = request.user
+    const { id } = request.params as { id: string }
+    const { amount, paymentMode, saleId, note } = request.body as CustomerPaymentBody
+
+    if (amount == null || amount <= 0) {
+      return reply.code(400).send({ error: 'Montant invalide' })
+    }
+    if (!paymentMode) {
+      return reply.code(400).send({ error: 'Mode de paiement requis' })
+    }
+
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+
+    if (saleId) {
+      const sale = await prisma.sale.findFirst({ where: { id: saleId, tenantId, customerId: id } })
+      if (!sale) return reply.code(404).send({ error: 'Vente introuvable ou ne correspond pas à ce client' })
+    }
+
+    const payment = await prisma.$transaction(async (tx) => {
+      const payment = await tx.customerPayment.create({
+        data: {
+          tenantId,
+          customerId: id,
+          amount,
+          paymentMode,
+          saleId: saleId ?? null,
+          note: note ?? null,
+          recordedBy: userId,
+        },
+      })
+      await tx.customer.update({
+        where: { id },
+        data: { creditBalance: { decrement: amount } },
+      })
+      // Si paiement ciblé sur une vente, on ajuste amountPaid + paymentStatus de cette vente
+      if (saleId) {
+        const sale = await tx.sale.findUnique({ where: { id: saleId } })
+        if (sale) {
+          const newPaid = Math.min(sale.total, sale.amountPaid + amount)
+          const newStatus = newPaid >= sale.total ? 'paid' : newPaid > 0 ? 'partial' : sale.paymentStatus
+          await tx.sale.update({ where: { id: saleId }, data: { amountPaid: newPaid, paymentStatus: newStatus } })
+        }
+      }
+      return payment
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        userId,
+        module: 'customers',
+        action: 'CUSTOMER_PAYMENT',
+        description: JSON.stringify({ paymentId: payment.id, customerId: id, customerName: customer.name, amount, paymentMode, saleId: saleId ?? null }),
+      },
+    }).catch(() => {})
+
+    invalidateTenantCache(tenantId).catch(() => {})
+    notifyTenant(tenantId, { type: 'customer_payment', data: { customerId: id, amount, paymentMode } })
+
+    return payment
   })
 }

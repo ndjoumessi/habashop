@@ -188,6 +188,7 @@ export default function Customers() {
         lastPurchase: new Date().toISOString().split('T')[0],
         purchases: [],
         notes: '',
+        creditBalance: 0, creditLimit: null,
       }])
       toast.success(i('Client créé (local)', 'Customer created (local)', 'Cliente creado (local)', 'Cliente creato (locale)'))
       setShowCreate(false)

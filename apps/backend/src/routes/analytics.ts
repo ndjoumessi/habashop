@@ -11,7 +11,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       today.setHours(0, 0, 0, 0)
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
 
-      const [salesToday, salesMonth, totalProducts, activeEmployees, pendingOrders, allProducts] =
+      const [salesToday, salesMonth, totalProducts, activeEmployees, pendingOrders, allProducts, receivables] =
         await Promise.all([
           prisma.sale.aggregate({
             where: { tenantId, createdAt: { gte: today } },
@@ -29,6 +29,11 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
           prisma.product.findMany({
             where: { tenantId, isActive: true, deletedAt: null },
             select: { stockQty: true, stockMin: true },
+          }),
+          prisma.customer.aggregate({
+            where: { tenantId, deletedAt: null, creditBalance: { gt: 0 } },
+            _sum: { creditBalance: true },
+            _count: true,
           }),
         ])
 
@@ -89,6 +94,8 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
         stockAlerts: stockAlertsRaw,
         recentActivity,
         categoryBreakdown,
+        totalReceivables: receivables._sum.creditBalance ?? 0,
+        nbDebtors: receivables._count,
       }
     })
   })
