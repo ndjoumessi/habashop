@@ -53,11 +53,10 @@ export default function TabLayout() {
       <Tabs.Screen name="pos-tab" options={{ tabBarIcon:({focused})=>(
         <View style={s.posWrap}>
           <View style={[
-            s.posBtn,
             focused ? s.posBtnActive : s.posBtnInactive,
             { transform: [{ scale: focused ? 1.08 : 1 }] },
           ]}>
-            <Ionicons name="cart" size={26} color={focused ? '#fff' : C.text2}/>
+            <Ionicons name="cart" size={26} color={focused ? '#fff' : C.primary}/>
           </View>
         </View>
       )}}/>
@@ -91,30 +90,32 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   lbl:{ fontSize:9, color:C.text3, fontFamily:'Outfit_600SemiBold', textAlign:'center' },
   lblActive:{ color:C.primary3 },
-  posWrap:{ alignItems:'center', justifyContent:'center', marginBottom:16 },
-  // Base du bouton POS — props communs ; le reste est appliqué par les variantes active/inactive
-  posBtn:{
-    width:58, height:58, borderRadius:18,
-    alignItems:'center', justifyContent:'center',
-  },
+  posWrap:{ alignItems:'center', justifyContent:'center' },
+  // FAB POS : outlined inactif (violet clair + bordure violette) → filled actif (violet plein)
   posBtnActive:{
+    width:58, height:58,
+    borderRadius:18,
+    alignItems:'center', justifyContent:'center',
+    marginBottom:16,
     backgroundColor:C.primary,
-    borderWidth:0,
-    borderColor:'transparent',
     shadowColor:C.primary,
     shadowOffset:{ width:0, height:4 },
-    shadowOpacity:0.35,
-    shadowRadius:8,
-    elevation:6,
+    shadowOpacity:0.4,
+    shadowRadius:10,
+    elevation:8,
   },
   posBtnInactive:{
-    backgroundColor:C.bg3,
+    width:58, height:58,
+    borderRadius:18,
+    alignItems:'center', justifyContent:'center',
+    marginBottom:16,
+    backgroundColor:withAlpha(C.primary, 0.15),
     borderWidth:1.5,
-    borderColor:C.border,
+    borderColor:withAlpha(C.primary, 0.5),
     shadowColor:'#000',
     shadowOffset:{ width:0, height:2 },
-    shadowOpacity:0.10,
-    shadowRadius:3,
+    shadowOpacity:0.08,
+    shadowRadius:4,
     elevation:2,
   },
 })
