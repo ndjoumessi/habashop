@@ -2,7 +2,7 @@ import { lazy, Suspense, useState, useMemo, useEffect, useRef } from 'react'
 import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy, Trash2 } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
-import { t, useAppStore } from '@/stores/appStore'
+import { t, useAppStore, formatInCurrency } from '@/stores/appStore'
 import { printProductLabels } from '@/utils/export'
 import ViewField from '@/components/ui/ViewField'
 import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
@@ -71,6 +71,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   const selectedSupplierName = suppliers.find(s => s.id === form.supplierId)?.name || ''
   const barcodeInvalid = !!form.barcode && !/^\d{13}$/.test(form.barcode)
   const tenant = useAppStore(s => s.tenant)
+  const currency = useAppStore(s => s.currency)
+  // Format direct sans conversion (form state = devise d'affichage, pas XOF)
+  const fmtForm = (n: number) => formatInCurrency(n, currency)
   const emptyLabel = lang === 'en' ? 'Not specified' : lang === 'es' ? 'No especificado' : lang === 'it' ? 'Non specificato' : 'Non renseigné'
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
@@ -295,13 +298,13 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <ViewField label={i('Prix achat HT *', 'Purchase price excl. tax *', 'Precio de compra sin impuestos *', "Prezzo d'acquisto IVA escl. *")} value={fmt(form.buy)} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.buy || ''} onChange={e => setForm(f => ({...f, buy:+e.target.value}))} />
                   </ViewField>
-                  <ViewField label={i('Prix vente TTC *', 'Selling price incl. tax *', 'Precio de venta con impuestos *', 'Prezzo di vendita IVA incl. *')} value={fmt(form.sell)} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Prix vente TTC *', 'Selling price incl. tax *', 'Precio de venta con impuestos *', 'Prezzo di vendita IVA incl. *')} value={fmtForm(form.sell)} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.sell || ''} onChange={e => setForm(f => ({...f, sell:+e.target.value}))} />
                   </ViewField>
-                  <ViewField label={i('Prix grossiste', 'Wholesale price', 'Precio mayorista', "Prezzo all'ingrosso")} value={form.priceWholesale ? fmt(form.priceWholesale) : '—'} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Prix grossiste', 'Wholesale price', 'Precio mayorista', "Prezzo all'ingrosso")} value={form.priceWholesale ? fmtForm(form.priceWholesale) : '—'} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.priceWholesale || ''} onChange={e => setForm(f => ({...f, priceWholesale:+e.target.value}))} />
                   </ViewField>
-                  <ViewField label={i('Prix demi-grossiste', 'Semi-wholesale price', 'Precio semi-mayorista', "Prezzo semi-ingrosso")} value={form.priceSemiWholesale ? fmt(form.priceSemiWholesale) : '—'} editing={productEditMode} emptyLabel={emptyLabel}>
+                  <ViewField label={i('Prix demi-grossiste', 'Semi-wholesale price', 'Precio semi-mayorista', "Prezzo semi-ingrosso")} value={form.priceSemiWholesale ? fmtForm(form.priceSemiWholesale) : '—'} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.priceSemiWholesale || ''} onChange={e => setForm(f => ({...f, priceSemiWholesale:+e.target.value}))} />
                   </ViewField>
                 </div>
@@ -309,7 +312,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {form.buy > 0 && form.sell > 0 && (
                   <div style={{ padding:'10px 14px', background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)', borderRadius:10, fontSize:13 }}>
                     {i('Marge', 'Margin', 'Margen', 'Margine')} : <strong style={{ color:'var(--acc2)' }}>{((form.sell - form.buy) / form.buy * 100).toFixed(1)} %</strong>
-                    <span style={{ color:'var(--text3)', marginLeft:12 }}>({fmt(form.sell - form.buy)} / {i('unité', 'unit', 'unidad', 'unità')})</span>
+                    <span style={{ color:'var(--text3)', marginLeft:12 }}>({fmtForm(form.sell - form.buy)} / {i('unité', 'unit', 'unidad', 'unità')})</span>
                   </div>
                 )}
 
@@ -374,7 +377,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                                   const v = parseFloat(e.target.value) || 0
                                   setForm(f => ({ ...f, priceTiers: f.priceTiers!.map((t, i2) => i2 === idx ? { ...t, price: v } : t) }))
                                 }} />
-                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--acc2)' }}>{fmt(tier.price)}</span>}
+                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--acc2)' }}>{fmtForm(tier.price)}</span>}
                             {productEditMode ? (
                               <input className="input text-sm" type="text"
                                 placeholder={i('ex: demi-gros', 'e.g.: semi-wholesale', 'ej.: semi-mayorista', 'es.: semi-ingrosso')}
@@ -400,8 +403,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         {[...form.priceTiers].sort((a,b) => a.minQty - b.minQty).reduce((acc, t, idx, arr) => {
                           const next = arr[idx + 1]
                           const range = next ? `${t.minQty}-${next.minQty - 1}` : `${t.minQty}+`
-                          return acc + (acc ? ' · ' : '') + `${range} → ${fmt(t.price)}`
-                        }, `1-${form.priceTiers[0].minQty - 1} → ${fmt(form.sell || 0)} · `)}
+                          return acc + (acc ? ' · ' : '') + `${range} → ${fmtForm(t.price)}`
+                        }, `1-${form.priceTiers[0].minQty - 1} → ${fmtForm(form.sell || 0)} · `)}
                       </div>
                       {/* Warnings validation */}
                       {(() => {

@@ -1,7 +1,8 @@
 import { Search, Download, Plus, Tag, Package, Eye, Trash2, LayoutGrid, AlignJustify } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { t } from '@/stores/appStore'
+import { t, useAppStore } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
+import { hydratePricesFromApi } from '@/lib/productCurrency'
 import Pagination from '@/components/ui/Pagination'
 import { type ProductItem, statusOf, stockCatLabel } from '@/components/stock/stockShared'
 
@@ -36,6 +37,16 @@ interface StockInventoryProps {
 export default function StockInventory({ products, fmt, lang, stockShowSKU, navigate, stockView, setStockView, search, setSearch, cat, setCat, cats, statusFilter, setStatusFilter, pg, setSelectedForLabel, setShowLabelModal, setProductEditMode, setShowModal, setForm, setEditingSku, setEditingId, setModalTab, onDeleteProduct, selectedSkus, onToggleSelect, onSelectAllVisible, onClearSelection }: StockInventoryProps) {
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const currency = useAppStore(s => s.currency)
+  // ProductItem est en XOF (cohérence DB). On hydrate vers la devise d'affichage
+  // au moment de remplir le form (form fonctionne dans la devise du tenant).
+  const hydrate = (p: ProductItem) => hydratePricesFromApi({
+    buyPrice:           p.buy,
+    sellPrice:          p.sell,
+    wholesalePrice:     p.priceWholesale ?? 0,
+    semiWholesalePrice: p.priceSemiWholesale ?? 0,
+    priceTiers:         p.priceTiers ?? [],
+  }, currency)
   // Calcul état "tout sélectionné" (indeterminate si partiel sur la page courante)
   const visibleSkus: string[] = pg.paginated.map((p: ProductItem) => p.sku)
   const visibleSelectedCount = visibleSkus.filter(s => selectedSkus.has(s)).length
@@ -192,7 +203,8 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       </button>
                     )}
                     <button className="mini-btn" style={{ cursor:'pointer' }} title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'} onClick={() => {
-                      setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: p.buy, sell: p.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, supplierId: p.supplierId ?? '', image: p.name.match(/^\S+/)?.[0] ?? '📦', barcode: p.barcode ?? '', description: p.description ?? '', notes: p.notes ?? '', priceWholesale: p.priceWholesale ?? 0, priceSemiWholesale: p.priceSemiWholesale ?? 0, priceTiers: p.priceTiers ?? [] }))
+                      const h = hydrate(p)
+                      setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: h.buy, sell: h.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, supplierId: p.supplierId ?? '', image: p.name.match(/^\S+/)?.[0] ?? '📦', barcode: p.barcode ?? '', description: p.description ?? '', notes: p.notes ?? '', priceWholesale: h.priceWholesale, priceSemiWholesale: h.priceSemiWholesale, priceTiers: h.priceTiers }))
                       setEditingSku(p.sku); setEditingId(p._id ?? null); setModalTab('general'); setProductEditMode(false); setShowModal(true)
                     }}><Eye size={11} /></button>
                     <button className="mini-btn" style={{ cursor:'pointer', color:'var(--danger)' }}
@@ -264,18 +276,19 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                           )}
                           <button className="btn btn-sm btn-ghost" title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'}
                             onClick={() => {
+                              const h = hydrate(p)
                               setForm(f => ({ ...f,
                                 sku: p.sku, name: p.name.replace(/^\S+\s/, ''),
-                                category: p.category, buy: p.buy, sell: p.sell,
+                                category: p.category, buy: h.buy, sell: h.sell,
                                 stock: p.stock, threshold: p.threshold, supplier: p.supplier,
                                 supplierId: p.supplierId ?? '',
                                 image: p.name.match(/^\S+/)?.[0] ?? '📦',
                                 barcode: p.barcode ?? '',
                                 description: p.description ?? '',
                                 notes: p.notes ?? '',
-                                priceWholesale: p.priceWholesale ?? 0,
-                                priceSemiWholesale: p.priceSemiWholesale ?? 0,
-                                priceTiers: p.priceTiers ?? [],
+                                priceWholesale: h.priceWholesale,
+                                priceSemiWholesale: h.priceSemiWholesale,
+                                priceTiers: h.priceTiers,
                               }))
                               setEditingSku(p.sku)
                               setEditingId(p._id ?? null)

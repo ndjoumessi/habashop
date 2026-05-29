@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, t, useAppStore } from '@/stores/appStore'
+import { hydratePricesFromApi, dehydratePricesForApi } from '@/lib/productCurrency'
 import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen, Tag, Printer, Camera, Pencil, Package, X, Eye, Trash2, LayoutGrid, AlignJustify } from 'lucide-react'
 import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
@@ -18,6 +19,7 @@ import { type ProductItem, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDes
 export default function Stock() {
   const { stockLowThreshold, stockShowSKU, lang } = useConfig()
   const fmt = useFormatAmount()
+  const currency = useAppStore(s => s.currency)
   const navigate = useNavigate()
   void lang // for t() reactivity
 
@@ -94,6 +96,10 @@ export default function Stock() {
       .then(([prods, sups]) => {
         setSuppliers(sups)
         const supMap = new Map(sups.map((s: any) => [s.id, s.name]))
+        // ProductItem conserve les prix EN XOF (convention DB) — la conversion vers
+        // la devise d'affichage est gérée par fmt()/useFormatAmount() à l'affichage.
+        // La conversion XOF → display ne se fait QUE lors du chargement dans le form
+        // d'édition (cf. StockInventory.tsx Eye onClick → hydratePricesFromApi).
         setProducts(prods.map((p: any): ProductItem => ({
           _id: p.id,
           sku: p.sku || p.id.slice(-8),
@@ -133,33 +139,46 @@ export default function Stock() {
       return
     }
     const supplierName = suppliers.find(s => s.id === form.supplierId)?.name || ''
+    // Conversion display currency (form state) → XOF (DB) sur tous les champs prix
+    const dh = dehydratePricesForApi(form, currency)
     const apiBody = {
       name: form.name,
       emoji: form.image,
       category: form.category,
-      buyPrice: form.buy,
-      sellPrice: form.sell,
+      buyPrice: dh.buyPrice,
+      sellPrice: dh.sellPrice,
       stockQty: form.stock,
       stockMin: form.threshold,
       unit: form.unit,
       taxRate: form.taxRate,
       isActive: form.isActive,
       hasPromotion: form.hasPromotion,
-      promotionPrice: form.promotionPrice || null,
+      promotionPrice: dh.promotionPrice,
       barcode: form.barcode || null,
       supplierId: form.supplierId || null,
       description: form.description || '',
       notes: form.notes || '',
-      wholesalePrice: form.priceWholesale || null,
-      semiWholesalePrice: form.priceSemiWholesale || null,
-      priceTiers: form.priceTiers && form.priceTiers.length ? form.priceTiers : null,
+      wholesalePrice: dh.wholesalePrice,
+      semiWholesalePrice: dh.semiWholesalePrice,
+      priceTiers: dh.priceTiers,
     }
     if (editingSku) {
       if (editingId) {
         try { await productsApi.update(editingId, apiBody) } catch {}
       }
+      // Local state ProductItem est en XOF (cohérence DB) — on stocke les valeurs déhydratées
       setProducts(prev => prev.map(p =>
-        p.sku === editingSku ? { ...p, name: form.image + ' ' + form.name, category: form.category, buy: form.buy, sell: form.sell, stock: form.stock, threshold: form.threshold, supplier: supplierName, supplierId: form.supplierId, barcode: form.barcode, description: form.description, notes: form.notes } : p
+        p.sku === editingSku ? {
+          ...p,
+          name: form.image + ' ' + form.name, category: form.category,
+          buy: dh.buyPrice, sell: dh.sellPrice,
+          priceWholesale: dh.wholesalePrice ?? 0,
+          priceSemiWholesale: dh.semiWholesalePrice ?? 0,
+          priceTiers: dh.priceTiers ?? [],
+          stock: form.stock, threshold: form.threshold,
+          supplier: supplierName, supplierId: form.supplierId,
+          barcode: form.barcode, description: form.description, notes: form.notes,
+        } : p
       ))
       toast.success(`✅ ${form.name} mis à jour !`)
     } else {
@@ -175,7 +194,10 @@ export default function Stock() {
         sku: createdSku,
         name: form.image + ' ' + form.name,
         category: form.category,
-        buy: form.buy, sell: form.sell,
+        buy: dh.buyPrice, sell: dh.sellPrice,
+        priceWholesale: dh.wholesalePrice ?? 0,
+        priceSemiWholesale: dh.semiWholesalePrice ?? 0,
+        priceTiers: dh.priceTiers ?? [],
         stock: form.stock, threshold: form.threshold,
         supplier: supplierName, supplierId: form.supplierId,
         barcode: form.barcode,
