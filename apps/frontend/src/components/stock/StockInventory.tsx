@@ -26,9 +26,21 @@ interface StockInventoryProps {
   setEditingId: (v: string | null) => void
   setModalTab: (v: any) => void
   onDeleteProduct: (p: ProductItem) => void
+  // Sélection inline pour impression étiquettes
+  selectedSkus: Set<string>
+  onToggleSelect: (sku: string) => void
+  onSelectAllVisible: () => void
+  onClearSelection: () => void
 }
 
-export default function StockInventory({ products, fmt, lang, stockShowSKU, navigate, stockView, setStockView, search, setSearch, cat, setCat, cats, statusFilter, setStatusFilter, pg, setSelectedForLabel, setShowLabelModal, setProductEditMode, setShowModal, setForm, setEditingSku, setEditingId, setModalTab, onDeleteProduct }: StockInventoryProps) {
+export default function StockInventory({ products, fmt, lang, stockShowSKU, navigate, stockView, setStockView, search, setSearch, cat, setCat, cats, statusFilter, setStatusFilter, pg, setSelectedForLabel, setShowLabelModal, setProductEditMode, setShowModal, setForm, setEditingSku, setEditingId, setModalTab, onDeleteProduct, selectedSkus, onToggleSelect, onSelectAllVisible, onClearSelection }: StockInventoryProps) {
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  // Calcul état "tout sélectionné" (indeterminate si partiel sur la page courante)
+  const visibleSkus: string[] = pg.paginated.map((p: ProductItem) => p.sku)
+  const visibleSelectedCount = visibleSkus.filter(s => selectedSkus.has(s)).length
+  const allVisibleSelected   = visibleSkus.length > 0 && visibleSelectedCount === visibleSkus.length
+  const someVisibleSelected  = visibleSelectedCount > 0 && !allVisibleSelected
   return (
       <div className="panel">
         <div className="panel-head">
@@ -117,16 +129,30 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
             {pg.paginated.map(p => {
               const st = statusOf(p.stock, p.threshold)
               const pct = Math.min(100, (p.stock / Math.max(p.threshold, 1)) * 100)
+              const isSelected = selectedSkus.has(p.sku)
               return (
                 <div key={p.sku} style={{
-                  background:'var(--card)', border:'1px solid var(--border)',
+                  background: isSelected ? 'rgba(91,78,232,0.06)' : 'var(--card)',
+                  border: `1px solid ${isSelected ? 'var(--p)' : 'var(--border)'}`,
+                  borderLeft: `3px solid ${isSelected ? 'var(--p)' : 'var(--border)'}`,
                   borderRadius:14, padding:16, display:'flex', flexDirection:'column', gap:10,
-                  transition:'all .18s',
+                  transition:'all .18s', position:'relative',
                 }}
                   onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)' }}
                   onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = '' }}
                 >
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <input
+                    type="checkbox"
+                    aria-label={`${i('Sélectionner', 'Select', 'Seleccionar', 'Seleziona')} ${p.name}`}
+                    checked={isSelected}
+                    onChange={() => onToggleSelect(p.sku)}
+                    onClick={e => e.stopPropagation()}
+                    style={{
+                      position: 'absolute', top: 10, right: 10,
+                      width: 18, height: 18, accentColor: 'var(--p)', cursor: 'pointer', zIndex: 1,
+                    }}
+                  />
+                  <div style={{ display:'flex', alignItems:'center', gap:10, paddingRight: 28 }}>
                     <div style={{ width:42, height:42, borderRadius:12, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>
                       {p.name.match(/^\S+/)?.[0]}
                     </div>
@@ -184,6 +210,16 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
             <table>
               <thead>
                 <tr>
+                  <th scope="col" style={{ width: 36, padding: '0 8px' }}>
+                    <input
+                      type="checkbox"
+                      aria-label={i('Tout sélectionner', 'Select all', 'Seleccionar todo', 'Seleziona tutto')}
+                      checked={allVisibleSelected}
+                      ref={el => { if (el) el.indeterminate = someVisibleSelected }}
+                      onChange={() => (allVisibleSelected ? onClearSelection() : onSelectAllVisible())}
+                      style={{ width: 16, height: 16, accentColor: 'var(--p)', cursor: 'pointer' }}
+                    />
+                  </th>
                   {stockShowSKU && <th scope="col">{t('col_ref')}</th>}
                   <th scope="col">{t('col_product')}</th><th scope="col">{t('col_category')}</th>
                   <th scope="col">{t('col_buy_price')}</th><th scope="col">{t('col_sell_price')}</th>
@@ -194,8 +230,18 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
               <tbody>
                 {pg.paginated.map(p => {
                   const st = statusOf(p.stock, p.threshold)
+                  const isSelected = selectedSkus.has(p.sku)
                   return (
-                    <tr key={p.sku}>
+                    <tr key={p.sku} style={isSelected ? { background: 'rgba(91,78,232,0.06)' } : undefined}>
+                      <td style={{ padding: '0 8px', borderLeft: isSelected ? '3px solid var(--p)' : '3px solid transparent' }}>
+                        <input
+                          type="checkbox"
+                          aria-label={`${i('Sélectionner', 'Select', 'Seleccionar', 'Seleziona')} ${p.name}`}
+                          checked={isSelected}
+                          onChange={() => onToggleSelect(p.sku)}
+                          style={{ width: 16, height: 16, accentColor: 'var(--p)', cursor: 'pointer' }}
+                        />
+                      </td>
                       {stockShowSKU && <td className="td-mono">{p.sku}</td>}
                       <td className="td-bold">{p.name}</td>
                       <td><span className="badge badge-teal">{stockCatLabel(p.category, lang)}</span></td>

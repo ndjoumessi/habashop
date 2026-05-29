@@ -29,6 +29,7 @@ interface StockModalsProps {
   labelConfig: any; setLabelConfig: (v: any) => void
   selectedForLabel: string[]; setSelectedForLabel: (v: any) => void
   suppliers: { id: string; name: string }[]
+  hideProductSelection?: boolean
 }
 
 function generateEAN13(): string {
@@ -60,7 +61,7 @@ function BarcodeDisplay({ value }: { value: string }) {
   return <svg ref={svgRef} />
 }
 
-export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers }: StockModalsProps) {
+export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection }: StockModalsProps) {
   const [supSearch, setSupSearch] = useState('')
   const [supOpen, setSupOpen] = useState(false)
   const filteredSuppliers = useMemo(() => {
@@ -517,10 +518,38 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {/* Taille */}
+              {/* Format de planche Avery */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                  {i('Format de planche', 'Sheet format', 'Formato de hoja', 'Formato foglio')}
+                </label>
+                <select
+                  className="input"
+                  value={labelConfig.averyPreset ?? 'L7160'}
+                  onChange={e => setLabelConfig(f => ({ ...f, averyPreset: e.target.value }))}
+                  style={{ fontSize: 13 }}
+                >
+                  <option value="L7160">Avery L7160 — 63.5×38.1mm — 21/page</option>
+                  <option value="L7163">Avery L7163 — 99.1×38.1mm — 14/page</option>
+                  <option value="L7165">Avery L7165 — 99.1×67.7mm — 8/page</option>
+                  <option value="L7651">Avery L7651 — 38.1×21.2mm — 65/page</option>
+                  <option value="CUSTOM">{i('Personnalisé (sans grille A4)', 'Custom (no A4 grid)', 'Personalizado (sin cuadrícula A4)', 'Personalizzato (senza griglia A4)')}</option>
+                </select>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6, lineHeight: 1.4 }}>
+                  {i(
+                    'Insérez une planche d\'étiquettes Avery correspondante dans votre imprimante avant l\'impression.',
+                    'Insert a matching Avery label sheet into your printer before printing.',
+                    'Inserte una hoja de etiquetas Avery correspondiente en su impresora antes de imprimir.',
+                    'Inserisci un foglio di etichette Avery corrispondente nella stampante prima di stampare.',
+                  )}
+                </div>
+              </div>
+
+              {/* Taille (utilisé seulement en mode CUSTOM) */}
               <div>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {lang === 'en' ? 'Label size' : lang === 'es' ? 'Tamaño de etiquetas' : lang === 'it' ? 'Dimensione etichette' : 'Taille des étiquettes'}
+                  {(labelConfig.averyPreset ?? 'L7160') !== 'CUSTOM' && <span style={{ marginLeft: 6, color: 'var(--text4)', fontWeight: 400, textTransform: 'none' }}>({i('utilisée en mode personnalisé', 'used in custom mode', 'usado en modo personalizado', 'usato in modalità personalizzata')})</span>}
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                   {[
@@ -584,7 +613,24 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 </div>
               </div>
 
-              {/* Sélection produits */}
+              {/* Sélection produits — masquée si ouvert depuis sélection inline (les produits sont déjà choisis) */}
+              {hideProductSelection ? (
+                <div style={{
+                  padding: '10px 14px', borderRadius: 8,
+                  background: 'rgba(91,78,232,.08)', border: '1px solid rgba(91,78,232,.2)',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  fontSize: 12, color: 'var(--text2)',
+                }}>
+                  <Tag size={14} style={{ color: 'var(--p2)' }} />
+                  <span>
+                    <strong>{selectedForLabel.length}</strong>{' '}
+                    {i('produit(s) sélectionné(s)', 'product(s) selected', 'producto(s) seleccionado(s)', 'prodotto(i) selezionato(i)')}
+                    {' → '}
+                    <strong>{selectedForLabel.length * labelConfig.copies}</strong>{' '}
+                    {i('étiquette(s)', 'label(s)', 'etiqueta(s)', 'etichetta/e')}
+                  </span>
+                </div>
+              ) : (
               <div>
                 <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {lang === 'en' ? 'Products to label' : lang === 'es' ? 'Productos a etiquetar' : lang === 'it' ? 'Prodotti da etichettare' : 'Produits à étiqueter'}
@@ -619,6 +665,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   {' → '}{selectedForLabel.length * labelConfig.copies} {lang === 'en' ? 'label(s)' : lang === 'es' ? 'etiqueta(s)' : lang === 'it' ? 'etichetta/e' : 'étiquette(s)'}
                 </div>
               </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>

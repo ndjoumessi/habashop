@@ -48,8 +48,21 @@ export default function Stock() {
   const [labelConfig, setLabelConfig] = useState({
     size: 'medium' as 'small' | 'medium' | 'large',
     showPrice: true, showSku: true, showBarcode: true, copies: 1,
+    averyPreset: 'L7160' as 'L7160' | 'L7163' | 'L7165' | 'L7651' | 'CUSTOM',
   })
   const [selectedForLabel, setSelectedForLabel] = useState<string[]>([])
+  // ── Sélection inline (multi-select dans la liste/grille produits)
+  const [selectedSkus, setSelectedSkus] = useState<Set<string>>(new Set())
+  // Hide modal product-list when modal was opened from inline selection
+  const [labelModalFromSelection, setLabelModalFromSelection] = useState(false)
+  const toggleSelect = (sku: string) => {
+    setSelectedSkus(prev => {
+      const next = new Set(prev)
+      if (next.has(sku)) next.delete(sku); else next.add(sku)
+      return next
+    })
+  }
+  const clearSelection = () => setSelectedSkus(new Set())
   const [editCat, setEditCat] = useState<typeof CATEGORIES_INIT[0] | null>(null)
   const [catForm, setCatForm] = useState({ name:'', color:'#818CF8', icon:'📦', description:'' })
 
@@ -282,7 +295,59 @@ export default function Stock() {
         setForm={setForm} setEditingSku={setEditingSku} setEditingId={setEditingId}
         setModalTab={setModalTab}
         onDeleteProduct={handleDeleteProduct}
+        selectedSkus={selectedSkus}
+        onToggleSelect={toggleSelect}
+        onSelectAllVisible={() => setSelectedSkus(new Set([...selectedSkus, ...pg.paginated.map((p: ProductItem) => p.sku)]))}
+        onClearSelection={clearSelection}
       />
+      )}
+
+      {/* ── ACTION BAR : visible quand >= 1 produit sélectionné ── */}
+      {selectedSkus.size > 0 && (
+        <div role="toolbar"
+          aria-label={lang === 'en' ? 'Selection actions' : lang === 'es' ? 'Acciones de selección' : lang === 'it' ? 'Azioni di selezione' : 'Actions de sélection'}
+          style={{
+            position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 100, display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 18px', borderRadius: 12,
+            background: 'var(--card2, var(--card))', border: '1.5px solid var(--p)',
+            boxShadow: '0 12px 32px rgba(0,0,0,.35)',
+            fontFamily: 'var(--font)',
+            animation: 'habashop-slide-up .18s ease-out',
+            maxWidth: 'calc(100% - 40px)',
+          }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+            {selectedSkus.size} {lang === 'en' ? `product${selectedSkus.size > 1 ? 's' : ''} selected` : lang === 'es' ? `producto${selectedSkus.size > 1 ? 's' : ''} seleccionado${selectedSkus.size > 1 ? 's' : ''}` : lang === 'it' ? `prodott${selectedSkus.size > 1 ? 'i' : 'o'} selezionat${selectedSkus.size > 1 ? 'i' : 'o'}` : `produit${selectedSkus.size > 1 ? 's' : ''} sélectionné${selectedSkus.size > 1 ? 's' : ''}`}
+          </span>
+          <button
+            onClick={() => {
+              setSelectedForLabel(Array.from(selectedSkus))
+              setLabelModalFromSelection(true)
+              setShowLabelModal(true)
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px', borderRadius: 8,
+              background: 'linear-gradient(135deg, var(--p), var(--p2))',
+              border: 'none', color: '#fff', fontSize: 13, fontWeight: 700,
+              cursor: 'pointer', fontFamily: 'inherit',
+              boxShadow: '0 4px 12px rgba(91,78,232,.4)',
+            }}>
+            <Printer size={14} /> {lang === 'en' ? 'Print labels' : lang === 'es' ? 'Imprimir etiquetas' : lang === 'it' ? 'Stampa etichette' : 'Imprimer les étiquettes'}
+          </button>
+          <button
+            onClick={clearSelection}
+            style={{
+              padding: '6px 12px', borderRadius: 8,
+              background: 'transparent', border: 'none',
+              color: 'var(--text3)', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'inherit',
+              textDecoration: 'underline', textUnderlineOffset: 3,
+            }}>
+            {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
+          </button>
+          <style>{`@keyframes habashop-slide-up { from { transform: translate(-50%, 20px); opacity: 0 } to { transform: translate(-50%, 0); opacity: 1 } }`}</style>
+        </div>
       )}
 
       {/* ── Panel Catégories ── */}
@@ -340,10 +405,11 @@ export default function Stock() {
         fmt={fmt} products={products} saveProduct={saveProduct}
         showCatModal={showCatModal} setShowCatModal={setShowCatModal}
         editCat={editCat} catForm={catForm} setCatForm={setCatForm}
-        showLabelModal={showLabelModal} setShowLabelModal={setShowLabelModal}
+        showLabelModal={showLabelModal} setShowLabelModal={(b: boolean) => { setShowLabelModal(b); if (!b) setLabelModalFromSelection(false) }}
         lang={lang} labelConfig={labelConfig} setLabelConfig={setLabelConfig}
         selectedForLabel={selectedForLabel} setSelectedForLabel={setSelectedForLabel}
         suppliers={suppliers}
+        hideProductSelection={labelModalFromSelection}
       />
     </div>
   )

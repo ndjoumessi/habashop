@@ -383,6 +383,43 @@ export function generateInvoice(opts: InvoiceOptions) {
 }
 
 // ─── ÉTIQUETTES PRODUITS ─────────────────────
+export const AVERY_PRESETS = {
+  L7160: {  // 63.5 x 38.1 mm — 21/page (3×7)
+    label: 'Avery L7160 (21/page)',
+    cols: 3, rows: 7,
+    labelWidth: '63.5mm', labelHeight: '38.1mm',
+    pageMarginTop: '15.1mm', pageMarginLeft: '7.21mm',
+    gapX: '2.5mm', gapY: '0mm',
+  },
+  L7163: {  // 99.1 x 38.1 mm — 14/page (2×7)
+    label: 'Avery L7163 (14/page)',
+    cols: 2, rows: 7,
+    labelWidth: '99.1mm', labelHeight: '38.1mm',
+    pageMarginTop: '15.1mm', pageMarginLeft: '4.65mm',
+    gapX: '2.5mm', gapY: '0mm',
+  },
+  L7165: {  // 99.1 x 67.7 mm — 8/page (2×4)
+    label: 'Avery L7165 (8/page)',
+    cols: 2, rows: 4,
+    labelWidth: '99.1mm', labelHeight: '67.7mm',
+    pageMarginTop: '13.0mm', pageMarginLeft: '4.65mm',
+    gapX: '2.5mm', gapY: '0mm',
+  },
+  L7651: {  // 38.1 x 21.2 mm — 65/page (5×13)
+    label: 'Avery L7651 (65/page)',
+    cols: 5, rows: 13,
+    labelWidth: '38.1mm', labelHeight: '21.2mm',
+    pageMarginTop: '10.7mm', pageMarginLeft: '4.7mm',
+    gapX: '2.5mm', gapY: '0mm',
+  },
+  CUSTOM: {  // garder le comportement actuel flex-wrap (pas d'alignement A4 strict)
+    label: 'Personnalisé (sans grille)',
+    cols: null, rows: null,
+  },
+} as const
+
+export type AveryPreset = keyof typeof AVERY_PRESETS
+
 export function printProductLabels(
   products: { name: string; sku: string; price: number; barcode?: string; emoji?: string }[],
   fmt: (amount: number) => string,
@@ -394,6 +431,7 @@ export function printProductLabels(
     copies: number
     shopName: string
     lang: string
+    averyPreset?: AveryPreset
   }
 ) {
   const SIZES = {
@@ -406,15 +444,25 @@ export function printProductLabels(
   // Échappement HTML défensif (interpolations dans document.write — valeurs viennent du tenant/produits)
   const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' } as Record<string, string>)[c])
 
+  // ── Mode d'affichage : grille Avery vs flex-wrap (custom/legacy) ──
+  type GridPreset = {
+    label: string
+    cols: number; rows: number
+    labelWidth: string; labelHeight: string
+    pageMarginTop: string; pageMarginLeft: string
+    gapX: string; gapY: string
+  }
+  const presetKey = options.averyPreset
+  const useGrid = !!presetKey && presetKey !== 'CUSTOM'
+  const preset: GridPreset | null = useGrid ? (AVERY_PRESETS[presetKey] as unknown as GridPreset) : null
+
+  // En mode grille, la taille du label est imposée par le preset (mm) ; sinon px du SIZES
+  const labelCellStyle = useGrid && preset
+    ? `width:${preset.labelWidth}; height:${preset.labelHeight}; padding:6px; overflow:hidden; box-sizing:border-box; background:white; display:flex; flex-direction:column; justify-content:space-between; page-break-inside:avoid;`
+    : `width:${s.w}px; height:${s.h}px; border:1px solid #ddd; border-radius:6px; padding:8px; margin:4px; display:inline-flex; flex-direction:column; justify-content:space-between; background:white; page-break-inside:avoid;`
+
   const labelHTML = (product: typeof products[0]) => `
-    <div style="
-      width:${s.w}px; height:${s.h}px;
-      border:1px solid #ddd; border-radius:6px;
-      padding:8px; display:inline-flex;
-      flex-direction:column; justify-content:space-between;
-      margin:4px; background:white;
-      page-break-inside:avoid;
-    ">
+    <div class="label" style="${labelCellStyle}">
       <div style="display:flex;align-items:center;gap:6px;">
         <span style="font-size:${s.priceSize}px;">${esc(product.emoji ?? '📦')}</span>
         <div>
@@ -445,7 +493,38 @@ export function printProductLabels(
     .map(labelHTML)
     .join('')
 
-  const win = window.open('', '_blank', 'width=800,height=600')
+  // CSS différent selon le mode
+  const gridCSS = useGrid && preset ? `
+    @page { size: A4; margin: ${preset.pageMarginTop} ${preset.pageMarginLeft}; }
+    body { margin:0; padding:0; background:white; }
+    .labels {
+      display: grid;
+      grid-template-columns: repeat(${preset.cols}, ${preset.labelWidth});
+      grid-auto-rows: ${preset.labelHeight};
+      column-gap: ${preset.gapX};
+      row-gap: ${preset.gapY};
+    }
+    /* Sur écran : ajouter une bordure visuelle pour preview ; cachée à l'impression */
+    @media screen {
+      body { padding:10mm; }
+      .label { outline: 1px dashed #ccc; }
+    }
+    @media print {
+      body { padding:0; }
+      .label { outline: none; }
+      button, .toolbar, .toolbar * { display:none !important; }
+    }
+  ` : `
+    body { margin:0; padding:10px; background:white; }
+    .labels { display:flex; flex-wrap:wrap; }
+    @media print {
+      body { margin:0; padding:5px; }
+      @page { margin:0.5cm; }
+      button, .toolbar, .toolbar * { display:none !important; }
+    }
+  `
+
+  const win = window.open('', '_blank', 'width=900,height=700')
   if (!win) { alert('Autorisez les popups pour imprimer les étiquettes'); return }
 
   win.document.write(`<!DOCTYPE html>
@@ -454,26 +533,18 @@ export function printProductLabels(
   <meta charset="UTF-8">
   <title>Étiquettes produits</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" integrity="sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a" crossorigin="anonymous"></script>
-  <style>
-    body { margin:0; padding:10px; background:white; }
-    .labels { display:flex; flex-wrap:wrap; }
-    @media print {
-      body { margin:0; padding:5px; }
-      @page { margin:0.5cm; }
-      button { display:none !important; }
-    }
-  </style>
+  <style>${gridCSS}</style>
 </head>
 <body>
-  <div style="margin-bottom:10px;display:flex;gap:8px;">
+  <div class="toolbar" style="margin-bottom:10px;display:flex;gap:8px;align-items:center;">
     <button onclick="window.print()" style="padding:8px 16px;background:#5B4EE8;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;">
       🖨️ Imprimer
     </button>
     <button onclick="window.close()" style="padding:8px 16px;background:#eee;color:#333;border:none;border-radius:8px;cursor:pointer;font-size:13px;">
       ✕ Fermer
     </button>
-    <span style="font-size:12px;color:#888;align-self:center;">
-      ${products.length} produit(s) × ${options.copies} copie(s) = ${products.length * options.copies} étiquette(s)
+    <span style="font-size:12px;color:#888;">
+      ${products.length} produit(s) × ${options.copies} copie(s) = ${products.length * options.copies} étiquette(s)${useGrid && preset ? ` — ${esc(preset.label)}` : ''}
     </span>
   </div>
   <div class="labels">${allLabels}</div>
