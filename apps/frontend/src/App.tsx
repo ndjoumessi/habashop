@@ -37,6 +37,7 @@ const Pricing        = lazy(() => import('@/pages/Pricing'))
 const UpgradePlan    = lazy(() => import('@/pages/UpgradePlan'))
 const PaymentCallback = lazy(() => import('@/pages/PaymentCallback'))
 const Privacy        = lazy(() => import('@/pages/Privacy'))
+const PublicCatalog  = lazy(() => import('@/pages/PublicCatalog'))
 
 function RouteFallback() {
   return (
@@ -109,6 +110,7 @@ export default function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/c/:slug" element={<PublicCatalog />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route
         path="/app"

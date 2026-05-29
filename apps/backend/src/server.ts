@@ -31,6 +31,7 @@ import { whatsappRoutes }     from './routes/whatsapp'
 import { aiRoutes }           from './routes/ai'
 import { docsRoutes }         from './routes/docs'
 import { goalsRoutes }        from './routes/goals'
+import { publicRoutes }       from './routes/public'
 import {
   sendTrialReminder7Days,
   sendTrialReminder3Days,
@@ -218,6 +219,7 @@ async function start() {
   await app.register(aiRoutes)
   await app.register(docsRoutes)
   await app.register(goalsRoutes)
+  await app.register(publicRoutes) // routes publiques (sans authentification) — /api/public/*
 
   // ─── CRONS EMAIL (rappels essai + rapport hebdo) ──
   // Rappels d'essai — toutes les heures

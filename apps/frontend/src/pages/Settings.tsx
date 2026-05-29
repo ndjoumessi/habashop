@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useConfig } from '@/stores/appStore'
 import { makeI, pick } from '@/components/settings/settingsShared'
-import { Store, ShoppingCart, Globe, Bell, Lock, FileText } from 'lucide-react'
+import { Store, ShoppingCart, Globe, Bell, Lock, FileText, Share2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import SectionShop from '@/components/settings/SectionShop'
 import SectionPOS from '@/components/settings/SectionPOS'
@@ -9,8 +9,9 @@ import SectionLang from '@/components/settings/SectionLang'
 import SectionNotif from '@/components/settings/SectionNotif'
 import SectionSecurity from '@/components/settings/SectionSecurity'
 import SectionDocs from '@/components/settings/SectionDocs'
+import SectionCatalog from '@/components/settings/SectionCatalog'
 
-type SectionId = 'shop' | 'pos' | 'lang' | 'notif' | 'security' | 'docs'
+type SectionId = 'shop' | 'pos' | 'catalog' | 'lang' | 'notif' | 'security' | 'docs'
 
 interface SectionDef {
   id:    SectionId
@@ -23,6 +24,7 @@ interface SectionDef {
 const SECTIONS: SectionDef[] = [
   { id: 'shop',     Icon: Store,        color: 'var(--p2)',           label: { fr: 'Boutique',         en: 'Shop',                es: 'Tienda',             it: 'Negozio'             }, desc: { fr: 'Infos générales',     en: 'General info',     es: 'Info general',     it: 'Info generali'      } },
   { id: 'pos',      Icon: ShoppingCart, color: 'var(--acc2)',         label: { fr: 'Config POS',       en: 'POS Config',          es: 'Config TPV',         it: 'Config POS'          }, desc: { fr: 'Caisse & TVA',        en: 'Cashier & VAT',    es: 'Caja & IVA',       it: 'Cassa & IVA'        } },
+  { id: 'catalog',  Icon: Share2,       color: '#25D366',             label: { fr: 'Catalogue WhatsApp', en: 'WhatsApp Catalog',  es: 'Catálogo WhatsApp',  it: 'Catalogo WhatsApp'   }, desc: { fr: 'Lien public partageable', en: 'Public shareable link', es: 'Enlace público compartible', it: 'Link pubblico condivisibile' } },
   { id: 'lang',     Icon: Globe,        color: 'var(--acc3,#00B8FF)', label: { fr: 'Langue & Devise',  en: 'Language & Currency', es: 'Idioma & Divisa',    it: 'Lingua & Valuta'     }, desc: { fr: 'Localisation & thème',en: 'Localization & theme', es: 'Localización & tema', it: 'Localizzazione & tema' } },
   { id: 'notif',    Icon: Bell,         color: 'var(--warn)',         label: { fr: 'Notifications',    en: 'Notifications',       es: 'Notificaciones',     it: 'Notifiche'           }, desc: { fr: 'Alertes & rapports',  en: 'Alerts & reports', es: 'Alertas & reportes',it: 'Avvisi & rapporti'  } },
   { id: 'security', Icon: Lock,         color: 'var(--danger)',       label: { fr: 'Sécurité',         en: 'Security',            es: 'Seguridad',          it: 'Sicurezza'           }, desc: { fr: 'Accès & sessions',    en: 'Access & sessions', es: 'Acceso & sesiones',it: 'Accesso & sessioni' } },
@@ -154,6 +156,7 @@ export default function Settings() {
         }}>
           {activeSection === 'shop'     && <SectionShop />}
           {activeSection === 'pos'      && <SectionPOS />}
+          {activeSection === 'catalog'  && <SectionCatalog />}
           {activeSection === 'lang'     && <SectionLang />}
           {activeSection === 'notif'    && <SectionNotif />}
           {activeSection === 'security' && <SectionSecurity />}

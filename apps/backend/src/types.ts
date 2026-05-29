@@ -68,6 +68,10 @@ export interface TenantUpdateBody {
   notifSmsSales?: boolean
   notifSmsStock?: boolean
   notifPushAll?: boolean
+  // Catalogue public
+  description?: string
+  whatsappPhone?: string
+  catalogVisible?: boolean
 }
 export interface InviteUserBody {
   name?: string; email?: string; password?: string; role?: string

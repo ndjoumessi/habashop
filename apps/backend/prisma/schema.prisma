@@ -39,6 +39,12 @@ model Tenant {
   notifSmsStock     Boolean  @default(true)
   notifPushAll      Boolean  @default(true)
 
+  // ── Catalogue public partageable ──
+  slug             String?  @unique // habashop.vercel.app/c/{slug}
+  description      String?         // tagline boutique (max 200)
+  whatsappPhone    String?         // numéro WhatsApp commercial (E.164) ; fallback sur phone
+  catalogVisible   Boolean  @default(true)
+
   // Billing / plan lifecycle
   isActive        Boolean   @default(true)
   status          String    @default("active") // trial / active / pending_payment / suspended / cancelled (new signups set "trial" explicitly)

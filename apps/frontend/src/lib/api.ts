@@ -179,8 +179,19 @@ export const dashboardApi = {
 export const tenantApi = {
   get:        () => api.get<any>('/api/tenant'),
   update:     (data: any) => api.patch<any>('/api/tenant', data),
+  setSlug:    (slug: string) => api.patch<any>('/api/tenant/slug', { slug }),
   users:      () => api.get<any[]>('/api/tenant/users'),
   createUser: (data: any) => api.post<any>('/api/tenant/users', data),
+}
+
+// Catalogue public — fetch direct sans JWT (n'utilise pas le wrapper api.ts qui ajoute le token).
+export const publicApi = {
+  catalog: async (slug: string): Promise<{ tenant: any; products: any[] } | null> => {
+    const res = await fetch(`${BASE_URL}/api/public/catalog/${encodeURIComponent(slug)}`)
+    if (res.status === 404) return null
+    if (!res.ok) throw new Error(`Erreur ${res.status}`)
+    return res.json()
+  },
 }
 
 export const usersApi = {

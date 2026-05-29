@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { TenantUpdateBody, InviteUserBody } from '../types'
+import { isValidSlug, RESERVED_SLUGS } from '../utils/slug'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
@@ -56,11 +57,42 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         notifSmsSales:     data.notifSmsSales,
         notifSmsStock:     data.notifSmsStock,
         notifPushAll:      data.notifPushAll,
+        // Catalogue public
+        description:    data.description,
+        whatsappPhone:  data.whatsappPhone,
+        catalogVisible: data.catalogVisible,
       },
     })
   }
   app.put('/api/tenant',   { preHandler: authenticate }, updateTenantHandler)
   app.patch('/api/tenant', { preHandler: authenticate }, updateTenantHandler)
+
+  // ─── SLUG (catalogue public) ──────────
+  // PATCH dédié pour vérifier l'unicité + valider le format avant l'écriture
+  app.patch('/api/tenant/slug', { preHandler: authenticate }, async (request, reply) => {
+    const tenantId = request.tenantId
+    const { slug } = request.body as { slug?: string }
+    if (typeof slug !== 'string' || !slug.trim()) {
+      return reply.code(400).send({ error: 'Slug requis' })
+    }
+    const normalized = slug.trim().toLowerCase()
+    if (!isValidSlug(normalized)) {
+      if (RESERVED_SLUGS.has(normalized)) {
+        return reply.code(400).send({ error: 'Ce nom est réservé, choisissez-en un autre' })
+      }
+      return reply.code(400).send({ error: 'Format invalide : 3-50 caractères, lettres minuscules, chiffres et tirets uniquement' })
+    }
+    const collision = await prisma.tenant.findFirst({
+      where: { slug: normalized, NOT: { id: tenantId } },
+    })
+    if (collision) {
+      return reply.code(409).send({ error: 'Ce lien est déjà pris' })
+    }
+    return prisma.tenant.update({
+      where: { id: tenantId },
+      data: { slug: normalized },
+    })
+  })
 
   // ─── TENANT USERS ─────────────────────
   app.get('/api/tenant/users', { preHandler: authenticate }, async (request) => {
