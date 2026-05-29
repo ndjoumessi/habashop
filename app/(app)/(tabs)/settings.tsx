@@ -69,6 +69,9 @@ export default function SettingsScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false)
   const [biometricType, setBiometricType] = useState<BiometricType>('fingerprint')
   const [widgetEnabled, setWidget] = useState(false)
+  // Fallback de sécurité : si l'hydratation user/tenant prend > 3s,
+  // on débloque l'écran (affiche un fallback compact au lieu du skeleton infini).
+  const [profileFallbackReady, setProfileFallbackReady] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -79,6 +82,11 @@ export default function SettingsScreen() {
       setWidget(await isWidgetEnabled())
     }
     load()
+  }, [])
+
+  useEffect(() => {
+    const t = setTimeout(() => setProfileFallbackReady(true), 3000)
+    return () => clearTimeout(t)
   }, [])
 
   const status = tenant?.status ?? 'active'
@@ -109,7 +117,7 @@ export default function SettingsScreen() {
 
         {/* A) Profil */}
         <View style={s.section}>
-          {(isLoading || !user || !tenant) ? (
+          {((isLoading || !user || !tenant) && !profileFallbackReady) ? (
             // Skeleton pendant l'hydratation user/tenant (évite le flash « U / — / STARTER »)
             <View style={s.profileCard}>
               <View style={s.skelAvatar} />
@@ -117,6 +125,18 @@ export default function SettingsScreen() {
                 <View style={[s.skelBar, { width: '55%' }]} />
                 <View style={[s.skelBar, { width: '80%' }]} />
                 <View style={[s.skelBar, { width: '45%' }]} />
+              </View>
+            </View>
+          ) : (!user || !tenant) ? (
+            // Fallback compact si le timeout expire sans user/tenant (réseau down, état corrompu…)
+            // Permet au moins d'accéder aux autres sections (langue, thème, logout…).
+            <View style={s.profileCard}>
+              <Avatar name="?" photoUri={null} size={64} />
+              <View style={{ flex: 1, gap: Spacing.xs }}>
+                <Text style={s.profileName} numberOfLines={1}>—</Text>
+                <Text style={s.profileEmail} numberOfLines={1}>
+                  {i('Profil indisponible', 'Profile unavailable', 'Perfil no disponible', 'Profilo non disponibile')}
+                </Text>
               </View>
             </View>
           ) : (

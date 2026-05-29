@@ -188,7 +188,15 @@ export default function POSScreen() {
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
       <View style={s.header}>
-        <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}
+        <Pressable
+          style={s.headerBtn}
+          onPress={() => {
+            // Cas froid (deeplink, app killed) : router.back() ne fait rien.
+            // Fallback : navigation explicite vers le dashboard.
+            if (router.canGoBack()) router.back()
+            else router.replace('/(app)/(tabs)/dashboard')
+          }}
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={i('Fermer la caisse', 'Close register', 'Cerrar caja', 'Chiudi cassa')}>
           <Ionicons name="close" size={22} color={C.text} />
