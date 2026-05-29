@@ -84,9 +84,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
               <thead>
                 <tr>
                   <th scope="col">{t('col_client')}</th><th scope="col">{t('col_type')}</th><th scope="col">{t('col_phone')}</th>
-                  <th scope="col">{t('customers_purchases')}</th><th scope="col">{t('customers_total_revenue')}</th>
-                  <th scope="col">{i('Dette', 'Debt', 'Deuda', 'Debito')}</th>
-                  <th scope="col">{t('col_loyalty')}</th><th scope="col">{t('col_actions')}</th>
+                  <th scope="col">{t('customers_purchases')}</th><th scope="col">{t('customers_total_revenue')}</th><th scope="col">{t('col_loyalty')}</th><th scope="col">{t('col_actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -102,19 +100,10 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     <td className="td-mono">{c.phone}</td>
                     <td className="td-num" style={{ color: 'var(--text2)' }}>{c.purchasesPerMonth}×</td>
                     <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(c.totalCA)}</td>
-                    <td className="td-num">
-                      {(c.creditBalance ?? 0) > 0 ? (
-                        <span style={{
-                          display:'inline-block', padding:'2px 8px', borderRadius:99,
-                          background:'rgba(245,158,11,.15)', color:'var(--warn)',
-                          fontWeight:700, fontFamily:'var(--mono)', fontSize:11,
-                        }}>{fmt(c.creditBalance)}</span>
-                      ) : <span style={{ color:'var(--text3)' }}>—</span>}
-                    </td>
                     <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} max={c.maxLoyalty} /></td>
                     <td>
                       <div className="flex gap-1.5">
-                        <button className="btn btn-sm btn-ghost" title={i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} style={{ cursor: 'pointer' }} onClick={() => navigate(`/app/customers/${c.id}`)}>
+                        <button className="btn btn-sm btn-ghost" title={i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>
                           <Eye size={12} />
                         </button>
                         <button className="btn btn-sm btn-ghost" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} style={{ cursor: 'pointer' }} onClick={() => {
@@ -154,7 +143,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="text-center py-10" style={{ color: 'var(--text3)' }}>{i('Aucun client trouvé', 'No customer found', 'Sin clientes', 'Nessun cliente trovato')}</td></tr>
+                  <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>{i('Aucun client trouvé', 'No customer found', 'Sin clientes', 'Nessun cliente trovato')}</td></tr>
                 )}
               </tbody>
             </table>
@@ -171,7 +160,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                 : c.type === 'Semi-gros' ? { h: '#00B8FF', rgb: '0,184,255' }
                 : c.type === 'Fidèle' ? { h: '#00D084', rgb: '0,208,132' }
                 : { h: '#FF9500', rgb: '255,149,0' }
-              const openDetail = () => { setSelectedId(c.id); navigate(`/app/customers/${c.id}`) }
+              const openDetail = () => { setSelectedId(c.id); setDetailCustomer(c); setShowDetailModal(true) }
               return (
                 <div key={c.id}
                   role="button" tabIndex={0}

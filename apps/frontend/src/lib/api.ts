@@ -116,19 +116,9 @@ export const salesApi = {
 
 export const customersApi = {
   list:   () => api.get<any[]>('/api/customers'),
-  get:    (id: string) => api.get<any>(`/api/customers/${id}`),
   create: (data: any) => api.post<any>('/api/customers', data),
   update: (id: string, data: any) => api.put<any>(`/api/customers/${id}`, data),
   delete: (id: string) => api.delete<void>(`/api/customers/${id}`),
-  transactions: (id: string, opts?: { limit?: number; offset?: number }) => {
-    const q = new URLSearchParams()
-    if (opts?.limit  != null) q.set('limit',  String(opts.limit))
-    if (opts?.offset != null) q.set('offset', String(opts.offset))
-    const qs = q.toString()
-    return api.get<any[]>(`/api/customers/${id}/transactions${qs ? `?${qs}` : ''}`)
-  },
-  recordPayment: (id: string, data: { amount: number; paymentMode: string; saleId?: string | null; note?: string }) =>
-    api.post<any>(`/api/customers/${id}/payments`, data),
 }
 
 export const suppliersApi = {

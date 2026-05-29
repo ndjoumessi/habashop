@@ -33,7 +33,6 @@ export interface ProductBody {
 export interface CustomerBody {
   name?: string; type?: string; phone?: string; email?: string; address?: string
   loyaltyPoints?: number; totalRevenue?: number
-  creditLimit?: number | null
 }
 export interface EmployeeBody {
   name?: string; role?: string; dept?: string; type?: string; salary?: number
@@ -44,14 +43,6 @@ export interface SaleBody {
   items?: any[]; paymentMode?: string; total?: number
   discount?: { amount?: number; type?: string }
   customerId?: string | null
-  paymentStatus?: 'paid' | 'credit' | 'partial'
-  amountPaid?: number
-}
-export interface CustomerPaymentBody {
-  amount?: number
-  paymentMode?: string
-  saleId?: string | null
-  note?: string
 }
 export interface OrderBody {
   supplierId?: string; items?: any[]; expectedAt?: string; notes?: string; status?: string
