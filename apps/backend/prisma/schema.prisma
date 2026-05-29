@@ -142,6 +142,9 @@ model Product {
   promotionEnd       DateTime?
   emoji              String    @default("📦")
   notes              String?
+  // Paliers de prix par quantité — Format : [{ minQty: number, price: number, label?: string }]
+  // null OU [] = pas de paliers, on utilise sellPrice (+ promotion si active)
+  priceTiers         Json?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime? // null = actif (soft delete ; distinct de isActive)
@@ -179,12 +182,13 @@ model Sale {
 }
 
 model SaleItem {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   saleId    String
   productId String
   qty       Int
   unitPrice Float
   total     Float
+  tierLabel String? // label du palier appliqué au moment de la vente (null = prix de base)
 
   sale    Sale    @relation(fields: [saleId], references: [id])
   product Product @relation(fields: [productId], references: [id])

@@ -36,7 +36,10 @@ export const PRODUCTS = [
   { id:12, name:'Lait concentré 397g',     price:1100,  priceWholesale:880,  priceSemiWholesale:990,  cat:'dairy',   emoji:'🥤', stock:95,  promotion:false, promotionPrice:0,    promotionEnd:'' },
 ]
 
-export type PosProduct = typeof PRODUCTS[0] & { id: number | string }
+export type PosProduct = typeof PRODUCTS[0] & {
+  id: number | string
+  priceTiers?: { minQty: number; price: number; label?: string }[]
+}
 
 export interface CartItem {
   id: number | string
@@ -44,6 +47,7 @@ export interface CartItem {
   price: number
   qty: number
   emoji: string
+  tierLabel?: string
 }
 
 // ─── INDICATIFS PAYS ────────────────────────

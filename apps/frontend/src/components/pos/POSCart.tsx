@@ -166,6 +166,19 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                       <div style={{ fontSize:10, color:'var(--text3)', marginTop:1, fontFamily:'var(--mono)' }}>
                         {fmt(item.price)} / unité
                       </div>
+                      {item.tierLabel && (
+                        <span style={{
+                          display: 'inline-block',
+                          background: 'rgba(0,184,255,.12)',
+                          color: 'var(--acc3)',
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          fontSize: 9,
+                          fontWeight: 700,
+                          marginTop: 3,
+                          letterSpacing: '.2px',
+                        }}>📊 {item.tierLabel}</span>
+                      )}
                     </div>
 
                     <div style={{

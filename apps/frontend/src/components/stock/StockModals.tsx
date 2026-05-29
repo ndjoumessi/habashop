@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useMemo, useEffect, useRef } from 'react'
-import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy } from 'lucide-react'
+import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy, Trash2 } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
 import { t, useAppStore } from '@/stores/appStore'
@@ -312,6 +312,117 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     <span style={{ color:'var(--text3)', marginLeft:12 }}>({fmt(form.sell - form.buy)} / {i('unité', 'unit', 'unidad', 'unità')})</span>
                   </div>
                 )}
+
+                {/* ── Tarification par palier ── */}
+                <div style={{
+                  padding: '14px', borderRadius: 10,
+                  background: 'var(--bg3)', border: '1px solid var(--border)',
+                }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                        {i('Tarification par palier', 'Tiered pricing', 'Precios por escala', 'Prezzi a scaglioni')}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                        {i(
+                          'Définissez des prix automatiques selon la quantité achetée',
+                          'Set automatic prices based on quantity purchased',
+                          'Defina precios automáticos según la cantidad comprada',
+                          'Imposta prezzi automatici in base alla quantità acquistata',
+                        )}
+                      </div>
+                    </div>
+                    {productEditMode && (
+                      <button type="button" className="mini-btn"
+                        onClick={() => {
+                          const last = form.priceTiers?.[form.priceTiers.length - 1]
+                          const nextMin = last ? last.minQty + 10 : 10
+                          const nextPrice = last ? Math.max(0, Math.round(last.price * 0.95)) : form.sell || 0
+                          setForm(f => ({ ...f, priceTiers: [...(f.priceTiers ?? []), { minQty: nextMin, price: nextPrice, label: '' }] }))
+                        }}>
+                        + {i('Ajouter un palier', 'Add tier', 'Añadir escala', 'Aggiungi scaglione')}
+                      </button>
+                    )}
+                  </div>
+
+                  {form.priceTiers && form.priceTiers.length > 0 ? (
+                    <>
+                      <div style={{ display:'grid', gridTemplateColumns: productEditMode ? '110px 140px 1fr 32px' : '110px 140px 1fr', gap: 8, fontSize: 10, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 4, padding: '0 4px' }}>
+                        <span>{i('Quantité min', 'Min quantity', 'Cantidad mín', 'Quantità min')}</span>
+                        <span>{i('Prix unitaire', 'Unit price', 'Precio unitario', 'Prezzo unitario')}</span>
+                        <span>{i('Étiquette', 'Label', 'Etiqueta', 'Etichetta')} ({i('optionnelle', 'optional', 'opcional', 'opzionale')})</span>
+                        {productEditMode && <span></span>}
+                      </div>
+                      {form.priceTiers.map((tier, idx) => {
+                        const dup = form.priceTiers!.filter(t => t.minQty === tier.minQty).length > 1
+                        const prev = idx > 0 ? form.priceTiers![idx - 1] : null
+                        const orderWarn = prev && tier.minQty <= prev.minQty
+                        return (
+                          <div key={idx} style={{ display:'grid', gridTemplateColumns: productEditMode ? '110px 140px 1fr 32px' : '110px 140px 1fr', gap: 8, padding: '4px', alignItems:'center', borderRadius: 6, background: dup || orderWarn ? 'rgba(255,59,92,.08)' : 'transparent' }}>
+                            {productEditMode ? (
+                              <input className="input text-sm" type="number" min={1} step={1}
+                                value={tier.minQty || ''}
+                                onChange={e => {
+                                  const v = parseInt(e.target.value, 10) || 0
+                                  setForm(f => ({ ...f, priceTiers: f.priceTiers!.map((t, i2) => i2 === idx ? { ...t, minQty: v } : t) }))
+                                }} />
+                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:13, fontWeight:700, color:'var(--text)' }}>{tier.minQty}+</span>}
+                            {productEditMode ? (
+                              <input className="input text-sm" type="number" min={0}
+                                value={tier.price || ''}
+                                onChange={e => {
+                                  const v = parseFloat(e.target.value) || 0
+                                  setForm(f => ({ ...f, priceTiers: f.priceTiers!.map((t, i2) => i2 === idx ? { ...t, price: v } : t) }))
+                                }} />
+                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--acc2)' }}>{fmt(tier.price)}</span>}
+                            {productEditMode ? (
+                              <input className="input text-sm" type="text"
+                                placeholder={i('ex: demi-gros', 'e.g.: semi-wholesale', 'ej.: semi-mayorista', 'es.: semi-ingrosso')}
+                                value={tier.label ?? ''}
+                                onChange={e => {
+                                  const v = e.target.value
+                                  setForm(f => ({ ...f, priceTiers: f.priceTiers!.map((t, i2) => i2 === idx ? { ...t, label: v } : t) }))
+                                }} />
+                            ) : <span style={{ fontSize:12, color:'var(--text2)' }}>{tier.label || '—'}</span>}
+                            {productEditMode && (
+                              <button type="button" className="mini-btn"
+                                aria-label={i('Supprimer le palier', 'Delete tier', 'Eliminar escala', 'Elimina scaglione')}
+                                onClick={() => setForm(f => ({ ...f, priceTiers: f.priceTiers!.filter((_, i2) => i2 !== idx) }))}
+                                style={{ color:'var(--danger)', padding: '4px 6px' }}>
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
+                      {/* Preview lecture */}
+                      <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 6, background: 'rgba(0,184,255,.08)', border:'1px solid rgba(0,184,255,.18)', fontSize: 11, color: 'var(--text2)', fontFamily:'var(--mono)' }}>
+                        {[...form.priceTiers].sort((a,b) => a.minQty - b.minQty).reduce((acc, t, idx, arr) => {
+                          const next = arr[idx + 1]
+                          const range = next ? `${t.minQty}-${next.minQty - 1}` : `${t.minQty}+`
+                          return acc + (acc ? ' · ' : '') + `${range} → ${fmt(t.price)}`
+                        }, `1-${form.priceTiers[0].minQty - 1} → ${fmt(form.sell || 0)} · `)}
+                      </div>
+                      {/* Warnings validation */}
+                      {(() => {
+                        const seen = new Set<number>()
+                        const dup = form.priceTiers.some(t => { if (seen.has(t.minQty)) return true; seen.add(t.minQty); return false })
+                        const sorted = [...form.priceTiers].sort((a,b) => a.minQty - b.minQty)
+                        const priceUp = sorted.some((t, i) => i > 0 && t.price > sorted[i-1].price)
+                        return (
+                          <>
+                            {dup && <div style={{ marginTop:6, fontSize:11, color:'var(--danger)' }}>⚠️ {i('Quantité min en double — corrigez avant d\'enregistrer', 'Duplicate min quantity — fix before saving', 'Cantidad mín duplicada — corrija antes de guardar', 'Quantità min duplicata — correggi prima di salvare')}</div>}
+                            {priceUp && !dup && <div style={{ marginTop:6, fontSize:11, color:'var(--warn)' }}>ℹ️ {i('Prix qui augmentent avec la quantité — vérifiez si voulu', 'Prices increase with quantity — verify if intended', 'Precios que aumentan con la cantidad — verifique si es intencional', 'Prezzi che aumentano con la quantità — verifica se voluto')}</div>}
+                          </>
+                        )
+                      })()}
+                    </>
+                  ) : (
+                    <div style={{ padding: '12px', borderRadius: 6, background: 'var(--bg4)', fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>
+                      {i('Aucun palier défini. Le prix de vente s\'applique pour toutes les quantités.', 'No tiers defined. Selling price applies to all quantities.', 'Sin escalas. El precio de venta se aplica a todas las cantidades.', 'Nessuno scaglione definito. Il prezzo di vendita si applica a tutte le quantità.')}
+                    </div>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <ViewField label={i('Stock initial *', 'Initial stock *', 'Stock inicial *', 'Stock iniziale *')} value={String(form.stock)} editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" value={form.stock || ''} onChange={e => setForm(f => ({...f, stock:+e.target.value}))} />

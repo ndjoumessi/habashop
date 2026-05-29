@@ -6,6 +6,9 @@ export type ProductItem = {
   supplier: string; supplierId?: string
   barcode?: string
   description?: string; notes?: string
+  priceWholesale?: number
+  priceSemiWholesale?: number
+  priceTiers?: { minQty: number; price: number; label?: string }[]
 }
 
 export const CATEGORIES_INIT = [

@@ -5,6 +5,7 @@ import type { Currency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi } from '@/lib/api'
 import { generateInvoice } from '@/utils/export'
+import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 import { Search, Minus, Plus, Trash2, ShoppingCart, X, Lock, Unlock, Camera, User, Factory, Package, Tag, Banknote, CreditCard, Smartphone, ClipboardList, Printer, FileText, BarChart3, CheckCircle, AlertTriangle, History } from 'lucide-react'
@@ -55,6 +56,7 @@ export default function POS() {
         promotion: p.hasPromotion ?? false,
         promotionPrice: p.promotionPrice ?? 0,
         promotionEnd: p.promotionEnd?.split('T')[0] ?? '',
+        priceTiers: Array.isArray(p.priceTiers) ? p.priceTiers : undefined,
       }))))
       .catch(() => {})
       .finally(() => setLoadingProducts(false))
@@ -142,12 +144,19 @@ export default function POS() {
   const displayFund = formatInCurrency(inputValue, currency)
   const fundPreview = null
 
-  // Prix selon type client
-  const getPrice = (p: PosProduct) => {
+  // basePrice selon type client (retail/semi/wholesale). La promo et les paliers s'appliquent ensuite.
+  const getBasePrice = (p: PosProduct) => {
     if (clientType === 'wholesale') return p.priceWholesale
     if (clientType === 'semi')      return p.priceSemiWholesale
-    return p.promotion ? p.promotionPrice || p.price : p.price
+    return p.price
   }
+  // Calcule prix + tierLabel pour un produit à une quantité donnée (promo > tier > base).
+  const computePriceForItem = (p: PosProduct, qty: number): { price: number; tierLabel?: string } => {
+    const basePrice = getBasePrice(p)
+    return resolveTierPrice(qty, basePrice, p.priceTiers ?? null, { active: !!p.promotion, price: p.promotionPrice })
+  }
+  // Compat : getPrice(p) = qty=1 (utilisé pour affichage prix sur la tuile produit)
+  const getPrice = (p: PosProduct) => computePriceForItem(p, 1).price
 
   // Filtrage produits
   const filtered = posProducts.filter(p =>
@@ -155,20 +164,44 @@ export default function POS() {
     p.name.toLowerCase().includes(search.toLowerCase())
   )
 
-  // Actions panier
+  // Index produits par id pour recalcul rapide
+  const productById = new Map<number | string, PosProduct>(posProducts.map(p => [p.id, p] as [number | string, PosProduct]))
+
+  // Actions panier — recalcule price + tierLabel à chaque mutation de qty (promo/tier dynamique)
   const addItem = (p: PosProduct) => {
-    const price = getPrice(p)
     setCart(prev => {
       const ex = prev.find(i => i.id === p.id)
-      if (ex) return prev.map(i => i.id === p.id ? { ...i, qty: i.qty + 1 } : i)
-      return [...prev, { id: p.id, name: p.name, price, qty: 1, emoji: p.emoji }]
+      const newQty = ex ? ex.qty + 1 : 1
+      const { price, tierLabel } = computePriceForItem(p, newQty)
+      if (ex) {
+        return prev.map(i => i.id === p.id ? { ...i, qty: newQty, price, tierLabel } : i)
+      }
+      return [...prev, { id: p.id, name: p.name, price, qty: 1, emoji: p.emoji, tierLabel }]
     })
   }
 
   const updateQty = (id: number | string, delta: number) => {
     setCart(prev =>
-      prev.map(i => i.id === id ? { ...i, qty: i.qty + delta } : i)
-          .filter(i => i.qty > 0)
+      prev.map(i => {
+        if (i.id !== id) return i
+        const newQty = i.qty + delta
+        if (newQty <= 0) return { ...i, qty: newQty }
+        const product = productById.get(id)
+        if (!product) return { ...i, qty: newQty }
+        const { price, tierLabel } = computePriceForItem(product, newQty)
+        // Toast discret quand le palier change (UX : transparence prix)
+        if ((i.tierLabel ?? '') !== (tierLabel ?? '')) {
+          const label = tierLabel ?? (lang === 'en' ? 'standard' : lang === 'es' ? 'estándar' : lang === 'it' ? 'standard' : 'standard')
+          toast.success(
+            lang === 'en' ? `Price tier: ${label}` :
+            lang === 'es' ? `Tarifa: ${label}` :
+            lang === 'it' ? `Tariffa: ${label}` :
+            `Prix : ${label}`,
+            { id: `tier-${id}`, duration: 1800 },
+          )
+        }
+        return { ...i, qty: newQty, price, tierLabel }
+      }).filter(i => i.qty > 0)
     )
   }
 
@@ -272,6 +305,7 @@ export default function POS() {
             : String(i.id),
           qty: i.qty,
           price: i.price,
+          tierLabel: i.tierLabel ?? null,
         })),
         paymentMode: payMode,
         total,

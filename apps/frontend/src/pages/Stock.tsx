@@ -40,6 +40,7 @@ export default function Stock() {
     barcode: '', taxRate: 18, isActive: true,
     hasPromotion: false, promotionPrice: 0, promotionEnd: '',
     image: '📦', notes: '',
+    priceTiers: [] as { minQty: number; price: number; label?: string }[],
   })
   const [categories, setCategories] = useState(CATEGORIES_INIT)
   const [showCatModal, setShowCatModal] = useState(false)
@@ -82,7 +83,7 @@ export default function Stock() {
   useEffect(() => { pg.reset() }, [search, cat, statusFilter])
 
   const resetForm = () => {
-    setForm({ sku:'', name:'', description:'', category:'Céréales', unit:'unité', buy:0, sell:0, priceWholesale:0, priceSemiWholesale:0, stock:0, threshold:stockLowThreshold, supplier:'', supplierId:'', barcode:'', taxRate:18, isActive:true, hasPromotion:false, promotionPrice:0, promotionEnd:'', image:'📦', notes:'' })
+    setForm({ sku:'', name:'', description:'', category:'Céréales', unit:'unité', buy:0, sell:0, priceWholesale:0, priceSemiWholesale:0, stock:0, threshold:stockLowThreshold, supplier:'', supplierId:'', barcode:'', taxRate:18, isActive:true, hasPromotion:false, promotionPrice:0, promotionEnd:'', image:'📦', notes:'', priceTiers:[] })
     setModalTab('general')
     setEditingSku(null)
     setEditingId(null)
@@ -107,6 +108,9 @@ export default function Stock() {
           barcode: p.barcode || '',
           description: p.description || '',
           notes: p.notes || '',
+          priceWholesale: p.wholesalePrice ?? 0,
+          priceSemiWholesale: p.semiWholesalePrice ?? 0,
+          priceTiers: Array.isArray(p.priceTiers) ? p.priceTiers : [],
         })))
       })
       .catch(() => {})
@@ -146,6 +150,9 @@ export default function Stock() {
       supplierId: form.supplierId || null,
       description: form.description || '',
       notes: form.notes || '',
+      wholesalePrice: form.priceWholesale || null,
+      semiWholesalePrice: form.priceSemiWholesale || null,
+      priceTiers: form.priceTiers && form.priceTiers.length ? form.priceTiers : null,
     }
     if (editingSku) {
       if (editingId) {

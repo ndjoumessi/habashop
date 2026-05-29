@@ -29,6 +29,7 @@ export interface ProductBody {
   hasPromotion?: boolean; promotionPrice?: number
   supplierId?: string | null
   notes?: string
+  priceTiers?: { minQty: number; price: number; label?: string }[] | null
 }
 export interface CustomerBody {
   name?: string; type?: string; phone?: string; email?: string; address?: string

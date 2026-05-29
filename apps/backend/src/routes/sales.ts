@@ -4,6 +4,7 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 import { invalidateTenantCache } from '../lib/cache'
+import { resolveTierPrice, type PriceTier } from '../utils/pricing'
 
 export async function saleRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/sales', { preHandler: authenticate }, async (request) => {
@@ -29,6 +30,14 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'Le total ne peut pas être négatif' })
     }
 
+    // Pré-fetch des produits pour recalculer prix unitaire côté backend (sécurité tier/promo)
+    const productIds = items.map((i: any) => i.productId)
+    const productsList = await prisma.product.findMany({
+      where: { tenantId, id: { in: productIds } },
+      select: { id: true, sellPrice: true, hasPromotion: true, promotionPrice: true, priceTiers: true },
+    })
+    const productMap = new Map(productsList.map(p => [p.id, p]))
+
     const newSale = await prisma.$transaction(async (tx) => {
       const newSale = await tx.sale.create({
         data: {
@@ -43,13 +52,38 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       })
 
       for (const item of items) {
+        const product = productMap.get(item.productId)
+        // basePrice = ce que le frontend a calculé (inclut le tarif client retail/semi/wholesale)
+        // Si le produit existe, on applique tier + promo par-dessus (sécurité backend).
+        const frontendBasePrice = Number(item.price) || 0
+        let unitPrice = frontendBasePrice
+        let tierLabel: string | undefined = undefined
+
+        if (product) {
+          const rawTiers = product.priceTiers as unknown
+          const tiers = Array.isArray(rawTiers) ? (rawTiers as PriceTier[]) : null
+          const promotion = { active: !!product.hasPromotion, price: product.promotionPrice }
+          const r = resolveTierPrice(item.qty, frontendBasePrice, tiers, promotion)
+          unitPrice = r.price
+          tierLabel = r.tierLabel
+          if (unitPrice !== frontendBasePrice) {
+            // Le backend a calculé un prix différent (palier matché ou promo). Comportement normal.
+            // On logge en debug si l'écart est inattendu (frontend devrait être aligné).
+            const frontendTierLabel = item.tierLabel ?? null
+            if (frontendTierLabel !== (tierLabel ?? null) || Number(item.price) !== unitPrice) {
+              console.warn(`[sales] prix ajusté pour ${product.id}: frontend=${frontendBasePrice}/${frontendTierLabel} → backend=${unitPrice}/${tierLabel ?? '—'}`)
+            }
+          }
+        }
+
         await tx.saleItem.create({
           data: {
             saleId: newSale.id,
             productId: item.productId,
             qty: item.qty,
-            unitPrice: item.price,
-            total: item.price * item.qty,
+            unitPrice,
+            total: unitPrice * item.qty,
+            tierLabel: tierLabel ?? null,
           },
         })
         await tx.product.update({

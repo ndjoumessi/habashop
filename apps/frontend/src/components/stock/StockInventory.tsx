@@ -192,7 +192,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       </button>
                     )}
                     <button className="mini-btn" style={{ cursor:'pointer' }} title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'} onClick={() => {
-                      setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: p.buy, sell: p.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, supplierId: p.supplierId ?? '', image: p.name.match(/^\S+/)?.[0] ?? '📦', barcode: p.barcode ?? '', description: p.description ?? '', notes: p.notes ?? '' }))
+                      setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: p.buy, sell: p.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, supplierId: p.supplierId ?? '', image: p.name.match(/^\S+/)?.[0] ?? '📦', barcode: p.barcode ?? '', description: p.description ?? '', notes: p.notes ?? '', priceWholesale: p.priceWholesale ?? 0, priceSemiWholesale: p.priceSemiWholesale ?? 0, priceTiers: p.priceTiers ?? [] }))
                       setEditingSku(p.sku); setEditingId(p._id ?? null); setModalTab('general'); setProductEditMode(false); setShowModal(true)
                     }}><Eye size={11} /></button>
                     <button className="mini-btn" style={{ cursor:'pointer', color:'var(--danger)' }}
@@ -273,6 +273,9 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                                 barcode: p.barcode ?? '',
                                 description: p.description ?? '',
                                 notes: p.notes ?? '',
+                                priceWholesale: p.priceWholesale ?? 0,
+                                priceSemiWholesale: p.priceSemiWholesale ?? 0,
+                                priceTiers: p.priceTiers ?? [],
                               }))
                               setEditingSku(p.sku)
                               setEditingId(p._id ?? null)

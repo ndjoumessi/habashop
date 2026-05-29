@@ -3,6 +3,7 @@ import type { ProductBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
+import { validatePriceTiers } from '../utils/pricing'
 
 export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/products', { preHandler: authenticate }, async (request) => {
@@ -19,6 +20,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       wholesalePrice, semiWholesalePrice,
       hasPromotion, promotionPrice,
       supplierId, notes,
+      priceTiers,
     } = request.body as ProductBody
 
     if (!name?.trim()) {
@@ -33,6 +35,12 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     if (stockQty !== undefined && stockQty < 0) {
       return reply.code(400).send({ error: 'Le stock ne peut pas être négatif' })
     }
+
+    const tiersResult = validatePriceTiers(priceTiers)
+    if (!tiersResult.ok) {
+      return reply.code(400).send({ error: `Paliers invalides : ${(tiersResult as { error: string }).error}` })
+    }
+    const tiersOk = tiersResult as { ok: true; tiers: { minQty: number; price: number; label?: string }[] }
 
     // SKU séquentiel par tenant (inclut soft-deleted pour éviter les collisions de réutilisation).
     const count = await prisma.product.count({ where: { tenantId } })
@@ -61,6 +69,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
           promotionPrice: promotionPrice || null,
           supplierId: supplierId || null,
           notes: notes || '',
+          priceTiers: tiersOk.tiers.length ? (tiersOk.tiers as any) : undefined,
         }
       })
       invalidateTenantCache(tenantId).catch(() => {})
@@ -74,12 +83,19 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.put('/api/products/:id', { preHandler: authenticate }, async (request) => {
+  app.put('/api/products/:id', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
     // SKU est immutable (auto-généré à la création) — on retire tout sku envoyé par le client.
-    const { sku: _ignored, ...data } = request.body as Record<string, unknown>
+    const { sku: _ignored, priceTiers: rawTiers, ...data } = request.body as Record<string, unknown>
     void _ignored
+    // Si priceTiers présent (même null/[]), valider et normaliser
+    if (rawTiers !== undefined) {
+      const r = validatePriceTiers(rawTiers)
+      if (!r.ok) return reply.code(400).send({ error: `Paliers invalides : ${(r as { error: string }).error}` })
+      const ok = r as { ok: true; tiers: { minQty: number; price: number; label?: string }[] }
+      ;(data as any).priceTiers = ok.tiers.length ? ok.tiers : null
+    }
     const updated = await prisma.product.update({ where: { id, tenantId }, data: data as any })
     invalidateTenantCache(tenantId).catch(() => {})
     return updated
