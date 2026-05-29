@@ -161,9 +161,14 @@ export default function SectionCatalog() {
                 <button onClick={copyLink} className="topbar-btn" style={{ flex:1, minWidth:140, justifyContent:'center' }}>
                   {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? i('Copié !', 'Copied!', '¡Copiado!', 'Copiato!') : i('Copier', 'Copy', 'Copiar', 'Copia')}
                 </button>
-                <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="topbar-btn" style={{ flex:1, minWidth:140, justifyContent:'center', textDecoration:'none' }}>
+                <button
+                  onClick={() => window.open(`${fullUrl}?v=${Date.now()}`, '_blank', 'noopener,noreferrer')}
+                  className="topbar-btn"
+                  style={{ flex:1, minWidth:140, justifyContent:'center' }}
+                  title={i('Ouvre le catalogue avec les données fraîches', 'Opens catalog with fresh data', 'Abre el catálogo con datos frescos', 'Apre il catalogo con dati freschi')}
+                >
                   <ExternalLink size={13} /> {i('Voir', 'View', 'Ver', 'Vedi')}
-                </a>
+                </button>
                 <button onClick={shareLink} className="topbar-btn" style={{ flex:1, minWidth:140, justifyContent:'center', background:'rgba(37,211,102,.12)', color:'#25D366', borderColor:'rgba(37,211,102,.3)' }}>
                   <Share2 size={13} /> {i('Partager', 'Share', 'Compartir', 'Condividi')}
                 </button>

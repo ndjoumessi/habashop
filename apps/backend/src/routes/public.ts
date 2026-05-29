@@ -50,8 +50,10 @@ export async function publicRoutes(app: FastifyInstance): Promise<void> {
       orderBy: [{ stockQty: 'desc' }, { name: 'asc' }],
     })
 
-    // Cache CDN — Vercel Edge cache 5 min + stale-while-revalidate 10 min
-    reply.header('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    // Pas de cache CDN : Railway répond <100ms et le commerçant peut changer ses prix /
+    // devise / catalogVisible à tout moment. La page est légère, le coût d'un fetch live
+    // par visite est négligeable vs l'incohérence qu'introduirait un cache 5min.
+    reply.header('Cache-Control', 'public, s-maxage=0, must-revalidate')
 
     return {
       tenant: {

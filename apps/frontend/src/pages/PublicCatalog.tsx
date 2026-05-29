@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { ShoppingCart, MessageCircle, Minus, Plus, Search, Share2, AlertCircle } from 'lucide-react'
 import { publicApi } from '@/lib/api'
 import { convertAmount, formatInCurrency } from '@/stores/appStore'
@@ -51,6 +51,10 @@ function CatalogSkeleton() {
 
 export default function PublicCatalog() {
   const { slug } = useParams<{ slug: string }>()
+  // Query param ?v=timestamp = cache-buster déclenché par "Voir" depuis Settings ;
+  // force un refetch quand le commerçant vient de modifier sa devise / ses produits.
+  const [searchParams] = useSearchParams()
+  const version = searchParams.get('v') ?? ''
   const [data, setData] = useState<{ tenant: TenantPublic; products: CatalogProduct[] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -60,14 +64,15 @@ export default function PublicCatalog() {
 
   useEffect(() => {
     if (!slug) { setNotFound(true); setLoading(false); return }
+    setLoading(true)
     publicApi.catalog(slug)
       .then(res => {
         if (!res) setNotFound(true)
-        else setData(res)
+        else { setData(res); setNotFound(false) }
       })
       .catch((err: any) => setError(err?.message ?? 'Erreur'))
       .finally(() => setLoading(false))
-  }, [slug])
+  }, [slug, version])
 
   // Inject meta tags (V1 client-side — bot-scrapers basiques peuvent rater)
   useEffect(() => {
