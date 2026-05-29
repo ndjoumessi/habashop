@@ -50,7 +50,7 @@ export default function SettingsScreen() {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
-  const { user, tenant, logout, isLoading } = useAuthStore()
+  const { user, tenant, logout, isLoading, isLoggedIn, restoreSession } = useAuthStore()
   const { i, lang } = useI18n()
   const { fmt, currency } = useFmt()
   const setLang = useAppStore(st => st.setLang)
@@ -69,9 +69,6 @@ export default function SettingsScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false)
   const [biometricType, setBiometricType] = useState<BiometricType>('fingerprint')
   const [widgetEnabled, setWidget] = useState(false)
-  // Fallback de sécurité : si l'hydratation user/tenant prend > 3s,
-  // on débloque l'écran (affiche un fallback compact au lieu du skeleton infini).
-  const [profileFallbackReady, setProfileFallbackReady] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -84,10 +81,14 @@ export default function SettingsScreen() {
     load()
   }, [])
 
+  // Garde-fou contre incohérence du store : si on est marqué connecté mais
+  // user/tenant manquent (ex: token restauré mais /me a partiellement répondu,
+  // ou race condition au cold start), refetch /me automatiquement.
   useEffect(() => {
-    const t = setTimeout(() => setProfileFallbackReady(true), 3000)
-    return () => clearTimeout(t)
-  }, [])
+    if (isLoggedIn && !isLoading && (!user || !tenant)) {
+      restoreSession()
+    }
+  }, [isLoggedIn, isLoading, user, tenant, restoreSession])
 
   const status = tenant?.status ?? 'active'
   const statusColor = status === 'suspended' ? C.danger : status === 'trial' ? C.warn : C.accent2
@@ -117,26 +118,15 @@ export default function SettingsScreen() {
 
         {/* A) Profil */}
         <View style={s.section}>
-          {((isLoading || !user || !tenant) && !profileFallbackReady) ? (
-            // Skeleton pendant l'hydratation user/tenant (évite le flash « U / — / STARTER »)
+          {(isLoading || !user || !tenant) ? (
+            // Skeleton pendant l'hydratation user/tenant (évite le flash « U / — / STARTER »).
+            // Si le store reste incohérent, le useEffect ci-dessus refetch /me automatiquement.
             <View style={s.profileCard}>
               <View style={s.skelAvatar} />
               <View style={{ flex: 1, gap: Spacing.sm }}>
                 <View style={[s.skelBar, { width: '55%' }]} />
                 <View style={[s.skelBar, { width: '80%' }]} />
                 <View style={[s.skelBar, { width: '45%' }]} />
-              </View>
-            </View>
-          ) : (!user || !tenant) ? (
-            // Fallback compact si le timeout expire sans user/tenant (réseau down, état corrompu…)
-            // Permet au moins d'accéder aux autres sections (langue, thème, logout…).
-            <View style={s.profileCard}>
-              <Avatar name="?" photoUri={null} size={64} />
-              <View style={{ flex: 1, gap: Spacing.xs }}>
-                <Text style={s.profileName} numberOfLines={1}>—</Text>
-                <Text style={s.profileEmail} numberOfLines={1}>
-                  {i('Profil indisponible', 'Profile unavailable', 'Perfil no disponible', 'Profilo non disponibile')}
-                </Text>
               </View>
             </View>
           ) : (
@@ -162,6 +152,11 @@ export default function SettingsScreen() {
                 <Text style={s.profileName} numberOfLines={1}>{user.name}</Text>
                 <Text style={s.profileEmail} numberOfLines={1}>{user.email}</Text>
                 <View style={s.badgeRow}>
+                  {!!user.role && (
+                    <View style={[s.badge, { backgroundColor: withAlpha(C.accent3, 0.15), borderColor: withAlpha(C.accent3, 0.3) }]}>
+                      <Text style={[s.badgeTxt, { color: C.accent3 }]}>{user.role.toUpperCase()}</Text>
+                    </View>
+                  )}
                   <View style={[s.badge, { backgroundColor: withAlpha(C.primary, 0.15), borderColor: withAlpha(C.primary, 0.3) }]}>
                     <Text style={[s.badgeTxt, { color: C.primary3 }]}>{tenant.plan.toUpperCase()}</Text>
                   </View>
