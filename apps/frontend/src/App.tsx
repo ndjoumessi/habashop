@@ -88,15 +88,21 @@ export default function App() {
         .then(t => { if (t?.id) useAppStore.getState().setTenant(t) })
         .catch(() => {})
     }
-    // Reset session caisse au démarrage
-    // (évite les valeurs résiduelles du localStorage)
-    useAppStore.setState({
-      cashierOpen:        false,
-      cashierOpenedAt:    null,
-      cashierOpeningFund: 0,
-      cashierSessionTx:   0,
-      cashierSessionCA:   0,
-    })
+    // Reset session caisse UNIQUEMENT s'il n'y a PAS de session authentifiée active
+    // (évite les valeurs résiduelles d'un logout brutal sans casser le refresh d'un
+    // caissier connecté — la session caisse étant persistée via zustand persist).
+    // Les changements d'utilisateur sont déjà gérés par closeCashier() dans
+    // authStore.login() (ligne 86, 110) et authStore.logout() (ligne 141).
+    const hasActiveSession = !!token || !!localStorage.getItem('habashop_token')
+    if (!hasActiveSession) {
+      useAppStore.setState({
+        cashierOpen:        false,
+        cashierOpenedAt:    null,
+        cashierOpeningFund: 0,
+        cashierSessionTx:   0,
+        cashierSessionCA:   0,
+      })
+    }
     // Mise à jour des taux de change au démarrage
     useAppStore.getState().fetchExchangeRates()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
