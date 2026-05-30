@@ -186,7 +186,7 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
 - **Action ops — `ORANGE_MONEY_WEBHOOK_SECRET` à poser sur Railway** : sans lui, `verifyOrangeWebhook` rejette **tous** les webhooks Orange (fail-closed = sûr mais **auto-activation Orange inerte**). Mécanisme détaillé en *Patterns / pièges* (webhooks sécurisés). **S**
 
 ### 🟡 Important
-- **7 pages > 600L à découper** (Users 821L, Expenses 739L, Planning 708L, Suppliers 619L, Payroll 601L, POS 576L, HR 555L). Pattern : extraire les modals + sous-composants comme déjà fait pour Stock/HR/Customers/**Orders** (Orders 1104→296L, voir Sprint 9). **L par page**
+- **6 pages > 600L à découper** (Expenses 739L, Planning 708L, POS 627L, Suppliers 619L, Payroll 601L, HR 555L). Pattern : extraire les modals + sous-composants comme déjà fait pour Stock/HR/Customers/**Orders**/**Users** (Users 821→219L + `components/users/` 7 fichiers + `users.anchor.test.tsx` 8 cas, voir Sprint 9). **L par page**
 - ~~**`HRTabs.tsx` (1171L) + `HRModals.tsx` (1096L)** à splitter + i18n. **XL**~~ ✅ **CLOS** (voir Sprint 9 « HR XL »). Méthode suivie : **test d'ancrage d'abord** (`hrmodals.anchor.test.tsx` 10 cas, `EditEmployeeModal` en priorité — la modale la plus riche en props/état), **découpe à comportement identique**, **i18n ensuite** (7 chaînes résiduelles : placeholders + headers). 84/84 tests.
 - **431 boutons icon-only sans aria-label** — beaucoup ont du texte (OK), mais les Trash2/Eye/Pencil isolés posent problème screen reader. **L**
 - **Bundle recharts 411KB + barcode 443KB** à optimiser (code-split charts par graph type, ou lib plus légère type visx). **L**
