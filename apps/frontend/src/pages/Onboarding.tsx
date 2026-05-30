@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import { useAppStore, type Currency, type Lang } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { tenantApi, productsApi } from '@/lib/api'
-import { currencyForCountry } from '@/utils/countryCurrency'
+import { suggestedCurrencyForCountry } from '@/utils/countryCurrency'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 
 const STEPS = [
@@ -121,7 +121,7 @@ export default function Onboarding() {
 
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>{i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE')}</label>
-              <select aria-label={i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE')} className="input" value={form.country} onChange={e => set({ country: e.target.value, ...(currencyTouched ? {} : { currency: currencyForCountry(e.target.value) }) })}>
+              <select aria-label={i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE')} className="input" value={form.country} onChange={e => { const sug = suggestedCurrencyForCountry(e.target.value); set({ country: e.target.value, ...(!currencyTouched && sug ? { currency: sug } : {}) }) }}>
                 {[['Sénégal', '🇸🇳'], ["Côte d'Ivoire", '🇨🇮'], ['Mali', '🇲🇱'], ['Burkina Faso', '🇧🇫'], ['Guinée', '🇬🇳'], ['Cameroun', '🇨🇲'], ['Congo RDC', '🇨🇩'], ['Gabon', '🇬🇦'], ['Togo', '🇹🇬'], ['Bénin', '🇧🇯'], ['Niger', '🇳🇪'], ['Tchad', '🇹🇩'], ['France', '🇫🇷'], ['Belgique', '🇧🇪'], ['Canada', '🇨🇦'], ['Autre', '🌍']].map(([c, f]) => <option key={c} value={c}>{f} {c}</option>)}
               </select>
             </div>

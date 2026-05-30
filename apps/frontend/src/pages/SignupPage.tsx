@@ -4,7 +4,7 @@ import { useAppStore } from '@/stores/appStore'
 import type { Lang, Currency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n } from '@/hooks/useI18n'
-import { currencyForCountry } from '@/utils/countryCurrency'
+import { suggestedCurrencyForCountry } from '@/utils/countryCurrency'
 import toast from 'react-hot-toast'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import {
@@ -620,7 +620,8 @@ export default function SignupPage() {
                           ) : filteredCountries.map(c => (
                             <button key={c.code} type="button"
                               onMouseDown={() => {
-                                setForm(f => ({ ...f, country: c.code, ...(currencyTouched ? {} : { currency: currencyForCountry(c.code) }) }))
+                                const sug = suggestedCurrencyForCountry(c.code)
+                                setForm(f => ({ ...f, country: c.code, ...(!currencyTouched && sug ? { currency: sug } : {}) }))
                                 setShowCountry(false); setCountrySearch('')
                               }}
                               style={{
@@ -656,8 +657,8 @@ export default function SignupPage() {
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A991FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
                       backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36,
                     }}>
-                    <option value="XOF">XOF — {i('F CFA Ouest', 'West CFA Franc', 'Franco CFA Oeste', 'Franco CFA Ovest')}</option>
-                    <option value="XAF">XAF — {i('F CFA Centre', 'Central CFA Franc', 'Franco CFA Central', 'Franco CFA Centrale')}</option>
+                    <option value="XOF">XOF — {i('FCFA Ouest', 'West CFA Franc', 'Franco CFA Oeste', 'Franco CFA Ovest')}</option>
+                    <option value="XAF">XAF — {i('FCFA Centre', 'Central CFA Franc', 'Franco CFA Central', 'Franco CFA Centrale')}</option>
                     <option value="EUR">EUR — {i('Euro', 'Euro', 'Euro', 'Euro')}</option>
                     <option value="USD">USD — {i('Dollar US', 'US Dollar', 'Dólar estadounidense', 'Dollaro USA')}</option>
                     <option value="CAD">CAD — {i('Dollar CA', 'Canadian Dollar', 'Dólar canadiense', 'Dollaro canadese')}</option>

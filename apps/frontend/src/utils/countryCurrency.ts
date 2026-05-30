@@ -1,8 +1,9 @@
 import type { Currency } from '@/stores/appStore'
 
 // Auto-détection devise selon le pays choisi à l'inscription / onboarding.
-// Les pays sans devise supportée (Ghana=GHS, Nigeria=NGN, Maroc=MAD, Kenya=KES,
-// Suisse=CHF…) retombent sur XOF (fallback).
+// Maghreb & Suisse : devise locale non supportée (MAD/DZD/TND/CHF) → EUR par défaut
+// (choix pragmatique). Les autres pays non mappés (Ghana=GHS, Nigeria=NGN, Kenya=KES,
+// Guinée=GNF…) retombent sur XOF (fallback).
 //
 // Deux formats de clé coexistent dans les formulaires :
 //   - SignupPage.tsx : codes ISO-2 ('SN', 'FR', 'US'…)
@@ -11,11 +12,14 @@ import type { Currency } from '@/stores/appStore'
 
 const ISO_TO_CURRENCY: Record<string, Currency> = {
   // Franc CFA Ouest (UEMOA)
-  SN: 'XOF', CI: 'XOF', ML: 'XOF', BF: 'XOF', NE: 'XOF', TG: 'XOF', BJ: 'XOF',
+  SN: 'XOF', CI: 'XOF', ML: 'XOF', BF: 'XOF', NE: 'XOF', TG: 'XOF', BJ: 'XOF', GW: 'XOF',
   // Franc CFA Centre (CEMAC)
-  CM: 'XAF', CG: 'XAF', CF: 'XAF', GA: 'XAF', TD: 'XAF', GQ: 'XAF',
+  CM: 'XAF', CG: 'XAF', CD: 'XAF', CF: 'XAF', GA: 'XAF', TD: 'XAF', GQ: 'XAF',
   // Zone Euro
-  FR: 'EUR', BE: 'EUR', ES: 'EUR', IT: 'EUR', DE: 'EUR', PT: 'EUR',
+  FR: 'EUR', DE: 'EUR', IT: 'EUR', ES: 'EUR', BE: 'EUR', NL: 'EUR',
+  PT: 'EUR', AT: 'EUR', FI: 'EUR', IE: 'EUR', GR: 'EUR', LU: 'EUR',
+  // Maghreb / Suisse : devise locale non supportée → EUR par défaut
+  CH: 'EUR', MA: 'EUR', DZ: 'EUR', TN: 'EUR',
   // Anglo / Amérique du Nord
   US: 'USD', CA: 'CAD', GB: 'GBP',
 }
@@ -35,9 +39,13 @@ const NAME_TO_ISO: Record<string, string> = {
   'Tunisie': 'TN', 'Kenya': 'KE',
 }
 
-/** Devise par défaut pour un pays (code ISO-2 ou nom FR). Fallback XOF. */
-export function currencyForCountry(country: string): Currency {
-  if (!country) return 'XOF'
+/**
+ * Devise SUGGÉRÉE pour un pays (code ISO-2 ou nom FR), ou undefined si le pays
+ * n'est pas mappé. Les appelants ne préremplissent que si une suggestion existe
+ * → un pays non mappé laisse la devise inchangée (le défaut du formulaire reste XOF).
+ */
+export function suggestedCurrencyForCountry(country: string): Currency | undefined {
+  if (!country) return undefined
   const iso = country.length === 2 ? country.toUpperCase() : (NAME_TO_ISO[country] ?? country)
-  return ISO_TO_CURRENCY[iso] ?? 'XOF'
+  return ISO_TO_CURRENCY[iso]
 }
