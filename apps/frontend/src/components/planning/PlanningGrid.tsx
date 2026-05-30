@@ -1,0 +1,267 @@
+import Skeleton from '@/components/ui/skeleton'
+import { Users, MousePointer2 } from 'lucide-react'
+import { deptLabel } from '@/components/hr/hrShared'
+import { SHIFT_TYPES, shiftLabel, getDayLabels, buildT } from './planningShared'
+import type { ShiftType, PlanningEmployee } from './planningShared'
+
+interface Props {
+  lang: string
+  loading: boolean
+  filtered: PlanningEmployee[]
+  weekDays: Date[]
+  shifts: Record<string,Record<number,ShiftType>>
+  activeShift: ShiftType
+  onAssign: (empId: string, di: number) => void
+  onOpenModal: (empId: string, di: number, name: string) => void
+  onClearShift: (empId: string, di: number) => void
+}
+
+export default function PlanningGrid(props: Props) {
+  const { lang, loading, filtered, weekDays, shifts, activeShift, onAssign, onOpenModal, onClearShift } = props
+  const T = buildT(lang)
+  const DAY_LABELS = getDayLabels(lang)
+
+  return (
+    <div style={{
+      background:'var(--grad-card)',
+      border:'1px solid var(--border)',
+      borderRadius:16, overflow:'hidden',
+    }}>
+      <div style={{overflowX:'auto'}}>
+        <table style={{
+          width:'100%', borderCollapse:'collapse', minWidth:720,
+        }}>
+          <thead>
+            <tr style={{
+              background:'linear-gradient(135deg,var(--bg4),var(--bg3))',
+              borderBottom:'2px solid var(--border)',
+            }}>
+              <th style={{
+                padding:'12px 16px', textAlign:'left',
+                width:160, fontSize:10, fontWeight:800,
+                textTransform:'uppercase', letterSpacing:'.6px',
+                color:'var(--text3)',
+                position:'sticky', left:0, zIndex:2,
+                background:'linear-gradient(135deg,var(--bg4),var(--bg3))',
+              }}>
+                {T.employee}
+              </th>
+              {weekDays.map((day,di)=>{
+                const isToday = day.toDateString()===new Date().toDateString()
+                const isWeekend = day.getDay()===0||day.getDay()===6
+                return (
+                  <th key={di} style={{
+                    padding:'10px 6px', textAlign:'center',
+                    background: isToday
+                      ? 'rgba(108,71,255,.12)' : 'transparent',
+                    position:'relative',
+                  }}>
+                    {isToday && (
+                      <div style={{
+                        position:'absolute', top:0, left:0, right:0,
+                        height:2,
+                        background:'linear-gradient(90deg,transparent,var(--p),transparent)',
+                      }}/>
+                    )}
+                    <div style={{
+                      fontSize:10, fontWeight:700,
+                      color: isWeekend ? 'var(--text4)' : 'var(--text3)',
+                      textTransform:'uppercase', letterSpacing:'.4px',
+                    }}>
+                      {DAY_LABELS[di]}
+                    </div>
+                    <div style={{
+                      fontSize:18, fontWeight:900, marginTop:2,
+                      color: isToday ? 'var(--p2)'
+                        : isWeekend ? 'var(--text3)'
+                        : 'var(--text)',
+                    }}>
+                      {day.getDate()}
+                    </div>
+                    {isToday && (
+                      <div style={{
+                        width:5, height:5, borderRadius:'50%',
+                        background:'var(--p)',
+                        margin:'3px auto 0',
+                        boxShadow:'0 0 6px var(--p2)',
+                      }}/>
+                    )}
+                  </th>
+                )
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={8} style={{ padding: '8px 14px' }}><Skeleton height={40} count={5} radius={8} /></td></tr>
+            ) : filtered.length===0 ? (
+              <tr>
+                <td colSpan={8} style={{
+                  textAlign:'center', padding:'48px',
+                  color:'var(--text3)', fontSize:14,
+                }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}><Users size={16}/> {T.noEmp}</div>
+                </td>
+              </tr>
+            ) : filtered.map((emp,ri)=>(
+              <tr key={emp.id} style={{
+                borderBottom:'1px solid var(--border)',
+                background: ri%2===0
+                  ? 'transparent' : 'rgba(255,255,255,.01)',
+              }}>
+                <td style={{
+                  padding:'8px 16px',
+                  position:'sticky', left:0, zIndex:1,
+                  background: ri%2===0 ? 'var(--card)' : 'var(--bg2)',
+                  boxShadow:'2px 0 6px rgba(0,0,0,.15)',
+                }}>
+                  <div style={{
+                    display:'flex', alignItems:'center', gap:8,
+                  }}>
+                    <div style={{
+                      width:34, height:34, borderRadius:10,
+                      background:`linear-gradient(135deg,
+                        ${emp.color},${emp.color}66)`,
+                      display:'flex', alignItems:'center',
+                      justifyContent:'center',
+                      fontSize:11, fontWeight:900, color:'#fff',
+                      flexShrink:0,
+                      boxShadow:`0 2px 8px ${emp.color}35`,
+                    }}>
+                      {emp.avatar}
+                    </div>
+                    <div>
+                      <div style={{
+                        fontSize:12, fontWeight:700,
+                        color:'var(--text)', whiteSpace:'nowrap',
+                      }}>
+                        {emp.name.split(' ')[0]}
+                      </div>
+                      <div style={{
+                        fontSize:9, color:'var(--text3)',
+                        whiteSpace:'nowrap',
+                      }}>{deptLabel(emp.dept, lang)}</div>
+                    </div>
+                  </div>
+                </td>
+
+                {weekDays.map((_,di)=>{
+                  const shiftKey = shifts[emp.id]?.[di]
+                  const s = shiftKey ? SHIFT_TYPES[shiftKey] : null
+                  const isWeekend = weekDays[di].getDay()===0
+                    || weekDays[di].getDay()===6
+                  const isToday = weekDays[di].toDateString()===new Date().toDateString()
+                  const preview = SHIFT_TYPES[activeShift]
+
+                  return (
+                    <td key={di} style={{
+                      padding:'4px 3px',
+                      background: isToday
+                        ? 'rgba(108,71,255,.03)' : 'transparent',
+                    }}>
+                      <div
+                        onClick={()=>{
+                          if (!shiftKey) {
+                            onOpenModal(emp.id, di, emp.name.split(' ')[0])
+                          } else {
+                            onAssign(emp.id,di)
+                          }
+                        }}
+                        onDoubleClick={()=>onClearShift(emp.id,di)}
+                        style={{
+                          minHeight:58, borderRadius:10,
+                          cursor:'pointer',
+                          display:'flex', flexDirection:'column',
+                          alignItems:'center', justifyContent:'center',
+                          gap:3, padding:'4px 2px',
+                          border:`1px solid ${s
+                            ? `${s.color}35`
+                            : isWeekend
+                              ? 'rgba(255,255,255,.03)'
+                              : 'var(--border)'}`,
+                          background: s
+                            ? s.bg
+                            : isWeekend
+                              ? 'rgba(0,0,0,.1)'
+                              : 'var(--bg4)',
+                          opacity: isWeekend&&!s ? .5 : 1,
+                          transition:'all .1s',
+                          userSelect:'none',
+                          position:'relative',
+                          overflow:'hidden',
+                        }}
+                        onMouseEnter={e=>{
+                          if (!s) {
+                            const el=e.currentTarget as HTMLElement
+                            el.style.background=`${preview.color}18`
+                            el.style.borderColor=`${preview.color}40`
+                            el.style.transform='scale(1.03)'
+                          }
+                        }}
+                        onMouseLeave={e=>{
+                          if (!s) {
+                            const el=e.currentTarget as HTMLElement
+                            el.style.background=isWeekend
+                              ?'rgba(0,0,0,.1)':'var(--bg4)'
+                            el.style.borderColor=isWeekend
+                              ?'rgba(255,255,255,.03)':'var(--border)'
+                            el.style.transform='scale(1)'
+                          }
+                        }}
+                      >
+                        {s ? (
+                          <>
+                            <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
+                            {s.hours && (
+                              <span style={{
+                                fontSize:8, fontWeight:800,
+                                color:s.color,
+                                fontFamily:'var(--mono)',
+                                letterSpacing:'-.3px',
+                                lineHeight:1,
+                              }}>{s.hours}</span>
+                            )}
+                          </>
+                        ) : (
+                          <span style={{
+                            fontSize:20, color:'var(--text4)',
+                            opacity:.3, fontWeight:200,
+                          }}>+</span>
+                        )}
+                      </div>
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer : légende */}
+      <div style={{
+        padding:'10px 16px',
+        borderTop:'1px solid var(--border)',
+        background:'var(--bg3)',
+        display:'flex', gap:14, flexWrap:'wrap',
+        alignItems:'center',
+      }}>
+        {(Object.entries(SHIFT_TYPES) as [ShiftType,any][]).map(([key,s])=>(
+          <div key={key} style={{
+            display:'flex', alignItems:'center', gap:4,
+            fontSize:10,
+          }}>
+            <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
+            <span style={{color:s.color,fontWeight:600}}>{shiftLabel(key, lang)}</span>
+            {s.hours&&<span style={{
+              color:'var(--text3)',fontFamily:'var(--mono)',fontSize:8,
+            }}>{s.hours}</span>}
+          </div>
+        ))}
+        <div style={{marginLeft:'auto',fontSize:9,color:'var(--text3)', display:'flex', alignItems:'center', gap:4}}>
+          <MousePointer2 size={9}/> {T.clearTip}
+        </div>
+      </div>
+    </div>
+  )
+}
