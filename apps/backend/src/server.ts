@@ -22,6 +22,7 @@ import { employeeRoutes }     from './routes/employees'
 import { hrRoutes }           from './routes/hr'
 import { expenseRoutes }      from './routes/expenses'
 import { analyticsRoutes }    from './routes/analytics'
+import { reportsRoutes }      from './routes/reports'
 import { exportRoutes }       from './routes/export'
 import { billingRoutes }      from './routes/billing'
 import { paymentRoutes }      from './routes/payments'
@@ -210,6 +211,7 @@ async function start() {
   await app.register(hrRoutes)
   await app.register(expenseRoutes)
   await app.register(analyticsRoutes)
+  await app.register(reportsRoutes)
   await app.register(exportRoutes)
   await app.register(billingRoutes)
   await app.register(paymentRoutes)

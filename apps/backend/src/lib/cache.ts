@@ -41,7 +41,12 @@ export async function getCached<T>(
 export async function invalidateTenantCache(tenantId: string): Promise<void> {
   if (!redis || !tenantId) return
   try {
-    const keys = await redis.keys(`analytics:${tenantId}:*`)
+    // analytics:* (dashboard/reports/sales) + reports:accounting:* (rapport comptable)
+    const [analyticsKeys, reportKeys] = await Promise.all([
+      redis.keys(`analytics:${tenantId}:*`),
+      redis.keys(`reports:accounting:${tenantId}:*`),
+    ])
+    const keys = [...analyticsKeys, ...reportKeys]
     if (keys.length > 0) {
       await redis.del(...keys)
     }

@@ -176,6 +176,23 @@ export const dashboardApi = {
     api.get<any>(`/api/reports/sales?period=${period}`),
 }
 
+export const reportsApi = {
+  // Rapport comptable mensuel. month = 'YYYY-MM' (défaut backend = mois courant).
+  accounting: (month?: string) =>
+    api.get<AccountingReport>(`/api/reports/accounting${month ? `?month=${month}` : ''}`),
+}
+
+export interface AccountingReport {
+  month: string
+  currency: string
+  revenue: { total: number; count: number }
+  expenses: { total: number; byCategory: { category: string; amountTtc: number }[] }
+  payroll: { total: number; projected: boolean }
+  net: number
+  margin: number | null
+  generatedAt: string
+}
+
 export const tenantApi = {
   get:        () => api.get<any>('/api/tenant'),
   update:     (data: any) => api.patch<any>('/api/tenant', data),
