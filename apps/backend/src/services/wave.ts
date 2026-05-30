@@ -9,7 +9,6 @@ import crypto from 'crypto'
  */
 
 const WAVE_API_KEY = process.env.WAVE_API_KEY
-const WAVE_SECRET  = process.env.WAVE_WEBHOOK_SECRET
 const BASE_URL     = 'https://api.wave.com/v1'
 
 // ── Créer un lien de paiement Wave ───────────
@@ -106,17 +105,16 @@ export async function verifyWavePayment(
 }
 
 // ── Valider la signature du webhook Wave ──────
-export function verifyWaveWebhook(
-  payload:   string,
-  signature: string
-): boolean {
-  if (!WAVE_SECRET) return true // sandbox
+// FAIL CLOSED (parité avec verifyOrangeWebhook) : sans `WAVE_WEBHOOK_SECRET`
+// configuré OU sans signature → on REJETTE. Aucun chemin n'accepte un webhook
+// non signé, même en dev/sandbox : poser `WAVE_WEBHOOK_SECRET` dans l'env.
+// HMAC-SHA256 sur le RAW body, comparaison timing-safe.
+export function verifyWaveWebhook(payload: string, signature?: string): boolean {
+  const secret = process.env.WAVE_WEBHOOK_SECRET
+  if (!secret) return false      // fail closed : pas de secret → on rejette
   if (!signature) return false
 
-  const expected = crypto
-    .createHmac('sha256', WAVE_SECRET)
-    .update(payload)
-    .digest('hex')
+  const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex')
 
   const sigBuf = Buffer.from(signature)
   const expBuf = Buffer.from(expected)

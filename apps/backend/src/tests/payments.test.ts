@@ -1,7 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import crypto from 'crypto'
 import { verifyOrangeWebhook } from '../services/orangeMoney'
-import { decideOrangeWebhook } from '../routes/payments'
+import { verifyWaveWebhook } from '../services/wave'
+import { decideOrangeWebhook, decideWaveWebhook } from '../routes/payments'
 
 const SECRET = 'test-om-secret'
 const sign = (payload: string, secret = SECRET) =>
@@ -86,4 +87,82 @@ describe('decideOrangeWebhook — fail closed + validation contre le record', ()
   // Isolation tenant : la décision ne porte aucun tenantId. Le handler retrouve le record
   // par paymentRef (scopé orange_money) et active via les données du RECORD (planReq.tenantId
   // / planReq.amount), JAMAIS via le payload → un webhook forgé ne peut pas viser un autre tenant.
+})
+
+// ── Wave : MIROIR d'Orange, fail CLOSED (corrige l'ancien `return true` fail-open) ──
+describe('verifyWaveWebhook — HMAC raw body, FAIL CLOSED (parité Orange)', () => {
+  const body = JSON.stringify({ type: 'checkout.session.completed', data: { client_reference: 'HABA-x', amount: 24900 } })
+  afterEach(() => { delete process.env.WAVE_WEBHOOK_SECRET })
+
+  it('secret non configuré → false (fail closed — plus de `return true`)', () => {
+    delete process.env.WAVE_WEBHOOK_SECRET
+    expect(verifyWaveWebhook(body, sign(body))).toBe(false)
+  })
+
+  it('no signature → false', () => {
+    process.env.WAVE_WEBHOOK_SECRET = SECRET
+    expect(verifyWaveWebhook(body, undefined)).toBe(false)
+  })
+
+  it('wrong signature (wrong secret or garbage) → false', () => {
+    process.env.WAVE_WEBHOOK_SECRET = SECRET
+    expect(verifyWaveWebhook(body, sign(body, 'other-secret'))).toBe(false)
+    expect(verifyWaveWebhook(body, 'deadbeef')).toBe(false)
+  })
+
+  it('tampered body (signature sur un autre body) → false', () => {
+    process.env.WAVE_WEBHOOK_SECRET = SECRET
+    expect(verifyWaveWebhook(body, sign('{"amount":1}'))).toBe(false)
+  })
+
+  it('valid HMAC sur le raw body exact → true', () => {
+    process.env.WAVE_WEBHOOK_SECRET = SECRET
+    expect(verifyWaveWebhook(body, sign(body))).toBe(true)
+  })
+})
+
+describe('decideWaveWebhook — fail closed + validation contre le record', () => {
+  const pending = { status: 'pending_payment', amount: 24900, currency: 'XOF' }
+  const ok = { signatureValid: true, reference: 'HABA-x', planReq: pending, amount: 24900, currency: 'XOF', status: 'SUCCESS' }
+
+  it('POST forgé sans signature valide → 401, AUCUNE activation', () => {
+    expect(decideWaveWebhook({ ...ok, signatureValid: false }))
+      .toEqual({ code: 401, activate: false, reason: 'invalid_signature' })
+  })
+
+  it('signé mais référence manquante → 400, pas d\'activation', () => {
+    const d = decideWaveWebhook({ ...ok, reference: undefined })
+    expect(d.activate).toBe(false)
+    expect(d.code).toBe(400)
+  })
+
+  it('signé + référence inconnue → 404, pas d\'activation', () => {
+    expect(decideWaveWebhook({ ...ok, planReq: null }))
+      .toEqual({ code: 404, activate: false, reason: 'unknown_reference' })
+  })
+
+  it('signé mais montant ≠ record → 403 (ferme l\'attaque amount du payload Wave)', () => {
+    expect(decideWaveWebhook({ ...ok, amount: 100 }))
+      .toEqual({ code: 403, activate: false, reason: 'amount_mismatch' })
+    expect(decideWaveWebhook({ ...ok, amount: NaN }).activate).toBe(false)
+  })
+
+  it('signé mais devise ≠ record → 403', () => {
+    expect(decideWaveWebhook({ ...ok, currency: 'EUR' }))
+      .toEqual({ code: 403, activate: false, reason: 'currency_mismatch' })
+  })
+
+  it('événement ≠ completed (status ≠ SUCCESS) → 200 acquitté, pas d\'activation', () => {
+    expect(decideWaveWebhook({ ...ok, status: 'OTHER' }))
+      .toEqual({ code: 200, activate: false, reason: 'not_success' })
+  })
+
+  it('idempotence : record déjà traité → 200, pas de double activation (rejeu)', () => {
+    expect(decideWaveWebhook({ ...ok, planReq: { ...pending, status: 'active' } }))
+      .toEqual({ code: 200, activate: false, reason: 'already_processed' })
+  })
+
+  it('signé + montant/devise concordants + completed → activation (200, une fois)', () => {
+    expect(decideWaveWebhook(ok)).toEqual({ code: 200, activate: true, reason: 'ok' })
+  })
 })

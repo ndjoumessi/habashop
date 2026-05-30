@@ -61,6 +61,32 @@ export function decideOrangeWebhook(input: {
   return { code: 200, activate: true, reason: 'ok' }
 }
 
+/**
+ * Décision pure (testable) de traitement d'un webhook Wave — MIROIR EXACT
+ * d'Orange (mêmes codes/raisons/idempotence). Fail CLOSED : le payload n'est
+ * jamais cru tant que `signatureValid` n'est pas vrai, et montant/devise/statut
+ * sont validés CONTRE le record en attente. `status` est dérivé par le handler
+ * du type d'événement Wave (`checkout.session.completed` ⇒ 'SUCCESS').
+ */
+export function decideWaveWebhook(input: {
+  signatureValid: boolean
+  reference?: string
+  planReq: { status: string; amount: number; currency: string } | null
+  amount: number       // montant fourni par le payload (authentifié via signature)
+  currency: string
+  status: string
+}): { code: number; activate: boolean; reason: string } {
+  if (!input.signatureValid)                          return { code: 401, activate: false, reason: 'invalid_signature' }
+  if (!input.reference)                               return { code: 400, activate: false, reason: 'missing_reference' }
+  if (!input.planReq)                                 return { code: 404, activate: false, reason: 'unknown_reference' }
+  if (input.planReq.status !== 'pending_payment')     return { code: 200, activate: false, reason: 'already_processed' } // idempotence
+  if (!Number.isFinite(input.amount) || input.amount !== input.planReq.amount)
+                                                      return { code: 403, activate: false, reason: 'amount_mismatch' }
+  if (input.currency !== input.planReq.currency)      return { code: 403, activate: false, reason: 'currency_mismatch' }
+  if (input.status !== 'SUCCESS')                     return { code: 200, activate: false, reason: 'not_success' }
+  return { code: 200, activate: true, reason: 'ok' }
+}
+
 export async function paymentRoutes(app: FastifyInstance): Promise<void> {
   // Capture le corps brut (rawBody) pour la vérification de signature des
   // webhooks. Encapsulé : ne s'applique qu'aux routes de ce plugin.
@@ -194,27 +220,45 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // ── POST /api/payments/wave/webhook ──────────
-  // Webhook Wave — active automatiquement le plan après paiement
+  // Webhook Wave — SÉCURISÉ (fail closed, parité EXACTE avec Orange).
+  // 1) Signature HMAC obligatoire (sinon rejet, aucune requête DB).
+  // 2) Validation montant/devise/référence CONTRE le record en attente.
+  // 3) Idempotence (un rejeu n'active pas deux fois). Le payload n'est jamais
+  //    cru tant que la signature n'est pas valide ; l'activation lit le RECORD.
   app.post('/api/payments/wave/webhook', async (request: any, reply: any) => {
-    const signature = request.headers['x-wave-signature'] as string
-    const payload   = (request.rawBody ?? JSON.stringify(request.body)) as string
+    const event     = (request.body ?? {}) as any
+    const rawBody   = (request.rawBody ?? JSON.stringify(event)) as string
+    const signature = request.headers['x-wave-signature'] as string | undefined
+    const reference = event.data?.client_reference as string | undefined
 
-    // Vérifie la signature
-    if (!verifyWaveWebhook(payload, signature)) {
-      return reply.code(401).send({ error: 'Signature invalide' })
+    const signatureValid = verifyWaveWebhook(rawBody, signature)
+
+    // Aucune requête DB tant que la requête n'est pas authentifiée.
+    const planReq = signatureValid && reference
+      ? await prisma.planRequest.findFirst({ where: { paymentRef: reference, paymentMethod: 'wave' } })
+      : null
+
+    const decision = decideWaveWebhook({
+      signatureValid,
+      reference,
+      planReq:  planReq ? { status: planReq.status, amount: planReq.amount, currency: planReq.currency } : null,
+      amount:   Number(event.data?.amount),
+      currency: (event.data?.currency ?? 'XOF') as string,
+      // Wave : seul `checkout.session.completed` vaut un paiement réussi.
+      status:   event.type === 'checkout.session.completed' ? 'SUCCESS' : 'OTHER',
+    })
+
+    if (!decision.activate) {
+      if (decision.code >= 400) {
+        request.log.warn({ reference, reason: decision.reason }, 'wave webhook rejeté') // jamais le secret
+      }
+      return reply.code(decision.code).send({ received: decision.code < 400, reason: decision.reason })
     }
 
-    const event = request.body as any
-
-    if (event.type === 'checkout.session.completed') {
-      await activatePlan({
-        reference: event.data?.client_reference,
-        amount:    event.data?.amount,
-        method:    'wave',
-      })
-    }
-
-    return { received: true }
+    // Activation à partir des données du RECORD (jamais du payload) → tenant sûr.
+    // activatePlan reste idempotent (ne traite que les PlanRequest `pending_payment`).
+    await activatePlan({ reference: planReq!.paymentRef!, amount: planReq!.amount, method: 'wave' })
+    return reply.code(200).send({ received: true, activated: true })
   })
 
   // ── POST /api/payments/orange/webhook ────────
