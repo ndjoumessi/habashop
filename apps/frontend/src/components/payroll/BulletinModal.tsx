@@ -1,7 +1,7 @@
 import { useConfig } from '@/stores/appStore'
 import { X, CheckCircle, Printer, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { monthLabel, roleLabel, statusLabel, printBulletin } from './payrollShared'
+import { monthLabel, roleLabel, statusLabel, printBulletin, payrollBreakdown } from './payrollShared'
 import type { PayRecord } from './payrollShared'
 
 export default function BulletinModal({ record, onClose, onPay, fmt }: {
@@ -11,8 +11,9 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
   fmt: (n: number) => string
 }) {
   const { lang } = useConfig()
-  const absencePenalty = Math.round(record.absences * record.baseSalary / 26)
-  const totalRetenues = record.deductions + absencePenalty
+  // Source unique du calcul (cohérent avec le bulletin PDF et la table paie).
+  const bd = payrollBreakdown(record)
+  const totalRetenues = bd.totalDeductions
 
   return (
     <div style={{
@@ -142,7 +143,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
             }}>
               <span style={{ fontSize:13, fontWeight:800, color:'var(--acc2)', letterSpacing:'.3px' }}>{lang === 'en' ? 'GROSS TOTAL' : lang === 'es' ? 'TOTAL BRUTO' : lang === 'it' ? 'TOTALE LORDO' : 'TOTAL BRUT'}</span>
               <span style={{ fontSize:14, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
-                {fmt(record.baseSalary + record.bonus + record.overtime)}
+                {fmt(bd.brut)}
               </span>
             </div>
           </div>
@@ -155,9 +156,9 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border)',
             }}>{lang === 'en' ? 'DEDUCTIONS' : lang === 'es' ? 'DEDUCCIONES' : lang === 'it' ? 'DETRAZIONI' : 'RETENUES'}</div>
             {([
-              { label:`${lang === 'en' ? 'CNSS employee' : lang === 'es' ? 'CNSS empleado' : lang === 'it' ? 'CNSS dipendente' : 'CNSS employé'} (5,6 %)`,     taux:'5,6 %', montant: Math.round(record.baseSalary * 0.056) },
-              { label:lang === 'en' ? 'Income tax (IRPP)' : lang === 'es' ? 'Impuesto salarial (IRPP)' : lang === 'it' ? 'Imposta sul reddito (IRPP)' : 'Impôt sur salaire (IRPP)', taux:'',      montant: Math.round(record.deductions - record.baseSalary * 0.056 - (record.absences * record.baseSalary / 26)) },
-              ...(record.absences > 0 ? [{ label:`${lang === 'en' ? 'Absence' : lang === 'es' ? 'Ausencia' : lang === 'it' ? 'Assenza' : 'Absence'} (${record.absences}j)`, taux:'', montant: Math.round(record.absences * record.baseSalary / 26) }] : []),
+              { label:`${lang === 'en' ? 'CNSS employee' : lang === 'es' ? 'CNSS empleado' : lang === 'it' ? 'CNSS dipendente' : 'CNSS employé'} (5,6 %)`,     taux:'5,6 %', montant: bd.cnss },
+              { label:lang === 'en' ? 'Income tax (IRPP)' : lang === 'es' ? 'Impuesto salarial (IRPP)' : lang === 'it' ? 'Imposta sul reddito (IRPP)' : 'Impôt sur salaire (IRPP)', taux:'',      montant: bd.irpp },
+              ...(record.absences > 0 ? [{ label:`${lang === 'en' ? 'Absence' : lang === 'es' ? 'Ausencia' : lang === 'it' ? 'Assenza' : 'Absence'} (${record.absences}j)`, taux:'', montant: bd.absencePenalty }] : []),
             ] as { label:string; taux:string; montant:number }[])
               .filter(r => r.montant > 0)
               .map((row, i) => (
@@ -199,7 +200,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               <div style={{ fontSize:12, color:'var(--text2)' }}>{lang === 'en' ? 'Bank transfer' : lang === 'es' ? 'Transferencia bancaria' : lang === 'it' ? 'Bonifico bancario' : 'Virement bancaire'}</div>
             </div>
             <div style={{ fontSize:28, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1.5px' }}>
-              {fmt(record.baseSalary + record.bonus + record.overtime - record.deductions - (record.absences * Math.round(record.baseSalary / 26)))}
+              {fmt(bd.net)}
             </div>
           </div>
 

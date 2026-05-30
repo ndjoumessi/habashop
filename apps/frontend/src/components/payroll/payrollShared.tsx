@@ -61,13 +61,41 @@ const STATUS_LABELS: Record<PayStatus, Record<string, string>> = {
 }
 export const statusLabel = (s: PayStatus, lang: string) => STATUS_LABELS[s]?.[lang] ?? s
 
-export function calcNet(r: PayRecord) {
+// Taux CNSS salarié (part employé). Base de calcul = salaire de base (XOF).
+export const CNSS_RATE = 0.056
+
+export interface PayrollBreakdown {
+  brut: number             // salaire de base + primes + heures sup
+  absencePenalty: number   // retenue pour absences = round(absences × base / 26)
+  cnss: number             // cotisation CNSS = round(base × 5,6 %)
+  irpp: number             // impôt sur salaire (résiduel) = round(retenues − CNSS − pénalité absence)
+  totalDeductions: number  // retenues totales affichées = retenues saisies + pénalité absence
+  net: number              // net à payer = brut − retenues saisies − pénalité absence
+}
+
+// Source UNIQUE du calcul de paie (bulletin PDF, modale bulletin, table paie) —
+// fonction pure (base XOF). Évite les divergences d'arrondi entre les vues.
+export function payrollBreakdown(r: Pick<PayRecord, 'baseSalary' | 'bonus' | 'overtime' | 'deductions' | 'absences'>): PayrollBreakdown {
+  const brut = r.baseSalary + r.bonus + r.overtime
   const absencePenalty = Math.round(r.absences * r.baseSalary / 26)
-  return r.baseSalary + r.bonus + r.overtime - r.deductions - absencePenalty
+  const cnss = Math.round(r.baseSalary * CNSS_RATE)
+  const irpp = Math.round(r.deductions - cnss - absencePenalty)
+  return {
+    brut,
+    absencePenalty,
+    cnss,
+    irpp,
+    totalDeductions: r.deductions + absencePenalty,
+    net: brut - r.deductions - absencePenalty,
+  }
+}
+
+export function calcNet(r: PayRecord) {
+  return payrollBreakdown(r).net
 }
 
 export function calcBrut(r: PayRecord) {
-  return r.baseSalary + r.bonus + r.overtime
+  return payrollBreakdown(r).brut
 }
 
 export function EmpAvatar({ r, size = 32 }: { r: PayRecord; size?: number }) {
@@ -84,11 +112,7 @@ export function printBulletin(bulletin: PayRecord) {
   const { currency, lang } = useAppStore.getState()
   const fmtP = (n: number) => formatCurrency(convertCurrency(n, 'XOF', currency), currency)
 
-  const absencePenalty = Math.round(bulletin.absences * bulletin.baseSalary / 26)
-  const brut = bulletin.baseSalary + bulletin.bonus + bulletin.overtime
-  const net  = brut - bulletin.deductions - absencePenalty
-  const cnss = Math.round(bulletin.baseSalary * 0.056)
-  const irpp = Math.round(bulletin.deductions - cnss - absencePenalty)
+  const { brut, absencePenalty, cnss, irpp, net } = payrollBreakdown(bulletin)
 
   const gainsRows: string[][] = [
     [t('payslip_base_salary'), '26 j', '100 %', fmtP(bulletin.baseSalary)],
