@@ -148,7 +148,7 @@ export default function PhoneInputWithCountry({
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '0 10px',
-            background: 'rgba(255,255,255,.04)',
+            background: 'var(--bg3)',
             border: 'none',
             borderRight: '1px solid var(--border)',
             cursor: disabled ? 'not-allowed' : 'pointer',
@@ -156,9 +156,9 @@ export default function PhoneInputWithCountry({
             transition: 'background .12s',
           }}
           onMouseEnter={e => !disabled &&
-            ((e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.08)')}
+            ((e.currentTarget as HTMLElement).style.background = 'var(--bg4)')}
           onMouseLeave={e =>
-            ((e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.04)')}
+            ((e.currentTarget as HTMLElement).style.background = 'var(--bg3)')}
         >
           <span style={{ fontSize: 18 }}>{flag}</span>
           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{code}</span>
@@ -207,7 +207,7 @@ export default function PhoneInputWithCountry({
             {!disabled && (
               <button type="button" onClick={() => { setNumber(''); onChange(code) }} style={{
                 width: 18, height: 18, borderRadius: '50%',
-                background: 'rgba(255,255,255,.08)', border: 'none',
+                background: 'var(--bg4)', border: 'none',
                 cursor: 'pointer', color: 'var(--text3)', fontSize: 11,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>✕</button>
@@ -231,21 +231,21 @@ export default function PhoneInputWithCountry({
         <div style={{
           position: 'absolute', top: 'calc(100% + 4px)',
           left: 0, right: 0, zIndex: 9999,
-          background: '#0D0D1C',
-          border: '1px solid rgba(255,255,255,.1)',
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
           borderRadius: 12, overflow: 'hidden',
           boxShadow: '0 16px 48px rgba(0,0,0,.85)',
         }}>
           {/* Recherche */}
           <div style={{
             padding: '8px 10px',
-            borderBottom: '1px solid rgba(255,255,255,.06)',
-            background: '#0D0D1C', position: 'sticky', top: 0, zIndex: 1,
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--card)', position: 'sticky', top: 0, zIndex: 1,
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 7,
-              background: 'rgba(255,255,255,.06)',
-              border: '1px solid rgba(255,255,255,.1)',
+              background: 'var(--bg3)',
+              border: '1px solid var(--border)',
               borderRadius: 8, padding: '6px 10px',
             }}>
               <span style={{ color: 'var(--text3)', fontSize: 12 }}>🔍</span>
@@ -290,7 +290,7 @@ export default function PhoneInputWithCountry({
                     <div style={{
                       padding: '6px 12px 3px', fontSize: 9, fontWeight: 800,
                       textTransform: 'uppercase', letterSpacing: '.7px',
-                      color: 'var(--text4)', background: 'rgba(255,255,255,.02)',
+                      color: 'var(--text4)', background: 'var(--bg3)',
                     }}>{region}</div>
                     {items.map((c, i) => (
                       <CountryRow key={i} c={c} selected={code === c.code && flag === c.flag} onSelect={() => select(c)} />
@@ -317,8 +317,8 @@ function CountryRow({ c, selected, onSelect }: { c: CountryEntry; selected: bool
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
         width: '100%', padding: '8px 12px',
-        background: selected ? 'rgba(108,71,255,.12)' : hov ? 'rgba(255,255,255,.04)' : 'transparent',
-        border: 'none', borderBottom: '1px solid rgba(255,255,255,.03)',
+        background: selected ? 'rgba(108,71,255,.12)' : hov ? 'var(--bg3)' : 'transparent',
+        border: 'none', borderBottom: '1px solid var(--border)',
         cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)',
       }}
     >
@@ -331,7 +331,7 @@ function CountryRow({ c, selected, onSelect }: { c: CountryEntry; selected: bool
       <span style={{
         fontSize: 11, fontWeight: 700, fontFamily: 'var(--mono)',
         color: selected ? 'var(--p3)' : 'var(--text3)',
-        background: selected ? 'rgba(108,71,255,.15)' : 'rgba(255,255,255,.06)',
+        background: selected ? 'rgba(108,71,255,.15)' : 'var(--bg3)',
         padding: '2px 7px', borderRadius: 6, flexShrink: 0,
       }}>{c.code}</span>
       {selected && <span style={{ color: 'var(--p3)', fontSize: 11 }}>✓</span>}

@@ -143,7 +143,7 @@ export default function AddressAutocompleteInput({
           {loading && (
             <span style={{
               width: 13, height: 13, borderRadius: '50%',
-              border: '2px solid rgba(255,255,255,.1)',
+              border: '2px solid var(--border)',
               borderTopColor: 'var(--p2)',
               animation: 'spin 1s linear infinite',
               display: 'inline-block', flexShrink: 0,
@@ -152,7 +152,7 @@ export default function AddressAutocompleteInput({
           {value && !disabled && (
             <button type="button" onClick={() => { onChange(''); setSuggestions([]) }} style={{
               width: 18, height: 18, borderRadius: '50%',
-              background: 'rgba(255,255,255,.08)', border: 'none',
+              background: 'var(--bg4)', border: 'none',
               cursor: 'pointer', color: 'var(--text3)', fontSize: 11,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>✕</button>
@@ -164,10 +164,10 @@ export default function AddressAutocompleteInput({
       {showDropdown && suggestions.length > 0 && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 9999,
-          background: '#0D0D1C', border: '1px solid rgba(255,255,255,.1)',
+          background: 'var(--card)', border: '1px solid var(--border)',
           borderRadius: 11, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.8)',
         }}>
-          <div style={{ padding: '5px 12px', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text4)', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
+          <div style={{ padding: '5px 12px', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text4)', borderBottom: '1px solid var(--border)' }}>
             {lang === 'en' ? 'Google Maps Suggestions' : lang === 'es' ? 'Sugerencias de Google Maps' : lang === 'it' ? 'Suggerimenti Google Maps' : 'Suggestions Google Maps'}
           </div>
           {suggestions.map((s, i) => (
@@ -176,7 +176,7 @@ export default function AddressAutocompleteInput({
                 display: 'flex', alignItems: 'center', gap: 10,
                 width: '100%', padding: '9px 14px',
                 background: 'transparent', border: 'none',
-                borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                borderBottom: i < suggestions.length - 1 ? '1px solid var(--border)' : 'none',
                 cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'background .1s',
               }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.08)'}

@@ -156,8 +156,8 @@ export default function AddressAutocomplete({
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)',
           left: 0, right: 0, zIndex: 9999,
-          background: '#0D0D1C',
-          border: '1px solid rgba(255,255,255,.1)',
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
           borderRadius: 12, overflow: 'hidden',
           boxShadow: '0 12px 40px rgba(0,0,0,.8)',
         }}>
@@ -169,7 +169,7 @@ export default function AddressAutocomplete({
                 width: '100%', padding: '10px 14px',
                 background: 'transparent', border: 'none',
                 borderBottom: i < Math.min(suggestions.length, 5) - 1
-                  ? '1px solid rgba(255,255,255,.04)' : 'none',
+                  ? '1px solid var(--border)' : 'none',
                 cursor: 'pointer', textAlign: 'left',
                 fontFamily: 'var(--font)', transition: 'background .1s',
               }}
