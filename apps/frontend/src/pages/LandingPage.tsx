@@ -767,17 +767,21 @@ export default function LandingPage() {
 
         {/* Content */}
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 820, width: '100%' }}>
-          {/* Badge */}
+          {/* Badge — pattern Linear/Vercel : fond translucide + bordure violette subtile */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '6px 16px', background: 'rgba(108,71,255,.12)',
-            border: '1px solid transparent', borderRadius: 99, marginBottom: 28,
-            backgroundImage: `linear-gradient(rgba(108,71,255,.12),rgba(108,71,255,.12)),linear-gradient(135deg,${D.p2},${D.gold})`,
-            backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box',
+            padding: '6px 16px', background: 'rgba(124,58,237,.12)',
+            border: '1px solid rgba(139,92,246,.35)', borderRadius: 999,
+            marginBottom: 28, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
           }}>
             <span className="public-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: D.gold, animation: 'lp-pulse 2s infinite', display: 'inline-block' }}/>
-            <Sparkles size={12} strokeWidth={2.4} color={D.gold2}/>
-            <span style={{ fontSize: 12, fontWeight: 700, color: D.p3 }}>{lp.badge}</span>
+            <Sparkles size={12} strokeWidth={2.4} color="#EAB308"/>
+            <span style={{
+              fontSize: 13, fontWeight: 500,
+              background: 'linear-gradient(90deg,#A78BFA 0%,#EAB308 100%)',
+              WebkitBackgroundClip: 'text', backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent', color: '#E2D9F3',
+            }}>{lp.badge}</span>
           </div>
 
           {/* Title */}
