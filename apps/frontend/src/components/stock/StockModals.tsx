@@ -259,7 +259,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <div>
                     <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
-                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
                         <BarcodeDisplay value={form.barcode} />
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <span style={{ fontFamily:'var(--mono)', fontSize:13, letterSpacing:2, color:'var(--text2)' }}>{form.barcode}</span>
@@ -274,7 +274,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         </div>
                       </div>
                     ) : (
-                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, minHeight:40, display:'flex', alignItems:'center' }}>
+                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, minHeight:40, display:'flex', alignItems:'center' }}>
                         <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{emptyLabel}</span>
                       </div>
                     )}
