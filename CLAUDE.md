@@ -195,7 +195,7 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
 
 ### 🟢 Nice-to-have
 - **302 couleurs `#RRGGBB` hardcodées** → `var(--*)` (migration progressive, cohérence multi-thème). **L**
-- **`og-image.png` 53KB** → conversion WebP (~15KB). **S**
+- ~~**`og-image.png` 53KB** → WebP~~ ✅ **FAIT** (`5ad07f8e`) : `og-image.webp` **24,6KB** (−53%) via `sharp` q80 (1200×630). Refs MAJ : `index.html` (og:image + twitter:image + JSON-LD screenshot, + `og:image:type`) et `manifest.json` ; PNG source supprimé. Conversion sans outil système (sips ne sait pas *écrire* le webp ; `cwebp`/`magick` absents) → **`sharp` (déjà en dépendance) pour tout besoin de conversion d'image**.
 - **Tests unitaires métier HR/Stock/Users** : la suite couvre désormais le rendu/câblage (137 front via les `*.anchor.test.tsx` + 145 back), mais **0 test de logique métier pure** (calcul paie/CNSS/IR, paliers de prix POS, RBAC). **XL**
 - **`npm audit` (note permanente, pas un blocage)** : audit fonctionnel (racine + par app) ; **6 vulns modérées DEV-only** (chaîne esbuild→vite→vitest→vite-plugin-pwa, advisory serveur-de-dev uniquement, jamais en prod). Aucun fix non-breaking — corrigeable seulement via vite 5→8 / vitest 1→3 (**majeur**), à planifier comme upgrade outillage dédié.
 - **i18n résiduel** : seule la page **Marketing** (secondaire) reste à auditer pour d'éventuelles chaînes FR hardcodées. **Customers / Planning / Payroll / Goals = i18n-OK** (lots antérieurs + revue de cette session : vraie dette = 0 ; les chaînes FR apparentes sont le pattern **valeur-FR-comme-clé** — filtres/data — à NE PAS toucher). **S**
