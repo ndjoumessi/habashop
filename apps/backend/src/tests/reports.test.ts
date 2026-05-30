@@ -113,6 +113,53 @@ describe('computeReport', () => {
   })
 })
 
+describe('computeReport — conversion EUR/USD : arrondis & cas limites', () => {
+  const base = { monthStr: '2026-05', generatedAt: '2026-05-30T00:00:00.000Z', payrollTotal: 0, revenueCount: 0, expenses: [] as { category: string; amountTTC: number | null }[] }
+
+  it('arrondit XOF→EUR sur un montant NON rond : round(xof / 655.957)', () => {
+    const r = computeReport({ ...base, currency: 'EUR', revenueTotal: 100_000, revenueCount: 3 })
+    expect(r.revenue.total).toBe(152) // 100 000 / 655.957 = 152.449 → 152
+  })
+
+  it('total dépenses = somme des catégories CONVERTIES (parts cohérentes ≠ conv(somme))', () => {
+    // 2 catégories à 1000 XOF : chacune round(1.524)=2 € → total 4 € ;
+    // conv(2000)=round(3.048)=3 € → prouve que le total agrège les PARTS arrondies.
+    const r = computeReport({ ...base, currency: 'EUR', revenueTotal: 0, expenses: [
+      { category: 'Loyer', amountTTC: 1000 }, { category: 'Énergie', amountTTC: 1000 },
+    ] })
+    expect(r.expenses.byCategory.map(c => c.amountTtc)).toEqual([2, 2])
+    expect(r.expenses.total).toBe(4)
+    // cohérence interne : Σ parts == total affiché (pas de "les parts ne tombent pas juste")
+    expect(r.expenses.byCategory.reduce((s, c) => s + c.amountTtc, 0)).toBe(r.expenses.total)
+  })
+
+  it('montant ZÉRO en EUR → 0 (pas de NaN), marge null', () => {
+    const r = computeReport({ ...base, currency: 'EUR', revenueTotal: 0, revenueCount: 0, expenses: [] })
+    expect(r.revenue.total).toBe(0)
+    expect(r.expenses.total).toBe(0)
+    expect(r.resultBeforePayroll).toBe(0)
+    expect(r.margin).toBeNull()
+  })
+
+  it('USD : round(xof / 602) + résultats cohérents', () => {
+    const r = computeReport({ ...base, currency: 'USD', revenueTotal: 602_000, revenueCount: 10, payrollTotal: 120_400, expenses: [{ category: 'Loyer', amountTTC: 60_200 }] })
+    expect(r.revenue.total).toBe(1000)
+    expect(r.expenses.total).toBe(100)
+    expect(r.payroll.total).toBe(200)
+    expect(r.resultBeforePayroll).toBe(900)
+    expect(r.resultAfterPayrollEstimate).toBe(700)
+  })
+
+  it('⚠️ devise INCONNUE (absente de TO_XOF_RATES) → taux ?? 1 → IDENTITÉ (aucune conversion)', () => {
+    // Comportement défensif documenté : un tenant à devise non supportée verrait des
+    // montants d'ordre XOF étiquetés dans sa devise. Voir RAPPORT (risque latent, non corrigé).
+    const r = computeReport({ ...base, currency: 'JPY', revenueTotal: 5000, revenueCount: 1, expenses: [{ category: 'Loyer', amountTTC: 300 }] })
+    expect(r.currency).toBe('JPY')
+    expect(r.revenue.total).toBe(5000) // inchangé
+    expect(r.expenses.total).toBe(300) // inchangé
+  })
+})
+
 describe('buildAccountingReport — tenant isolation', () => {
   it('always scopes queries by the tenantId passed (from JWT), never the query', async () => {
     const db: any = {
