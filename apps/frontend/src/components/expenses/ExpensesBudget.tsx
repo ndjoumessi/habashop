@@ -1,0 +1,96 @@
+import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { Settings } from 'lucide-react'
+import { CATEGORIES, CATEGORY_STYLE, catLabel } from './expensesShared'
+import type { Category } from './expensesShared'
+
+interface Props {
+  budgets: Record<Category, number>
+  catSpent: Record<Category, number>
+  totalBudget: number
+  budgetLeft: number
+  onEditBudgets: () => void
+}
+
+export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetLeft, onEditBudgets }: Props) {
+  const { lang } = useConfig()
+  const fmt = useFormatAmount()
+  const tr = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const cl = (c: string) => catLabel(c, lang)
+
+  return (
+    <div className="space-y-4">
+      <div style={{ display:'flex', justifyContent:'flex-end' }}>
+        <button className="btn btn-ghost btn-sm gap-1.5" onClick={onEditBudgets}>
+          <Settings size={13} /> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}
+        </button>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:12 }}>
+        {CATEGORIES.filter(cat => budgets[cat] > 0).map(cat => {
+          const spent = catSpent[cat] ?? 0
+          const budget = budgets[cat]
+          const pct = Math.min(100, Math.round(spent / budget * 100))
+          const over = spent > budget
+          const barColor = pct < 70 ? 'var(--acc2)' : pct < 90 ? 'var(--acc)' : 'var(--danger)'
+          const s = CATEGORY_STYLE[cat]
+          return (
+            <div key={cat} style={{
+              background:'var(--card)', border:'1px solid var(--border)',
+              borderRadius:14, padding:'16px 18px',
+            }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <span style={{ fontSize:18 }}>{s.icon}</span>
+                  <span style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>{cl(cat)}</span>
+                </div>
+                {over && (
+                  <span className="badge badge-red">{tr('Dépassé !','Over budget!','¡Excedido!','Superato!')}</span>
+                )}
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8, fontSize:12 }}>
+                <span style={{ color:'var(--text3)' }}>{tr('Budget','Budget','Presupuesto','Budget')} : <strong style={{ color:'var(--text2)' }}>{fmt(budget)}</strong></span>
+                <span style={{ color:'var(--text3)' }}>{tr('Réel','Actual','Real','Reale')} : <strong style={{ color: over ? 'var(--danger)' : 'var(--text)' }}>{fmt(spent)}</strong></span>
+              </div>
+              <div style={{ height:9, background:'var(--bg4)', borderRadius:99, overflow:'hidden', marginBottom:8 }}>
+                <div style={{
+                  width:`${pct}%`, height:'100%',
+                  background: barColor,
+                  borderRadius:99, transition:'width .4s',
+                }} />
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
+                <span style={{ fontWeight:700, color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
+                <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:600 }}>
+                  {over ? `${tr('Dépassé de','Over by','Excedido en','Superato di')} ${fmt(spent - budget)}` : `${tr('Restant','Remaining','Restante','Rimanente')} : ${fmt(budget - spent)}`}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Résumé total */}
+      <div style={{
+        background:'var(--card)', border:'1px solid var(--border)',
+        borderRadius:14, padding:'18px 20px',
+      }}>
+        <div className="panel-head" style={{ marginBottom:16 }}>
+          <span className="panel-title">{lang === 'en' ? 'Monthly summary' : lang === 'es' ? 'Resumen mensual' : lang === 'it' ? 'Riepilogo mensile' : 'Résumé mensuel'}</span>
+        </div>
+        {[
+          { label:tr('Budget total mensuel','Total monthly budget','Presupuesto total mensual','Budget mensile totale'),  value:fmt(totalBudget),            color:'var(--text2)' },
+          { label:tr('Total dépensé','Total spent','Total gastado','Totale speso'),          value:fmt(Object.values(catSpent).reduce((s,v) => s+v, 0)), color:'var(--acc)' },
+          { label:tr('Écart','Variance','Variación','Variazione'),                  value:fmt(Math.abs(budgetLeft)),   color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', prefix: budgetLeft >= 0 ? '▲ +' : '▼ -' },
+          { label:tr("Taux d'utilisation",'Usage rate','Tasa de uso','Tasso di utilizzo'),    value:`${Math.round(Object.values(catSpent).reduce((s,v)=>s+v,0)/totalBudget*100)} %`, color: 'var(--p2)' },
+        ].map(r => (
+          <div key={r.label} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
+            <span style={{ fontSize:13, color:'var(--text3)' }}>{r.label}</span>
+            <span style={{ fontSize:13, fontWeight:700, color:r.color, fontFamily:'var(--mono)' }}>
+              {(r as { prefix?: string }).prefix ?? ''}{r.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

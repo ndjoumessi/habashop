@@ -1,94 +1,24 @@
 import { useState, useEffect } from 'react'
-import Skeleton from '@/components/ui/skeleton'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import { expensesApi, salesApi } from '@/lib/api'
-import { Download, Plus, X, Search, Settings, TrendingDown, Clock, RefreshCw, BarChart2, Home, Zap, Car, Wrench, Package, Megaphone, GraduationCap, Tag, Check, Pencil, Trash2, FileText } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
-import ValidatedInput from '@/components/ui/ValidatedInput'
-import EmptyState from '@/components/ui/EmptyState'
-
-type Category = 'Loyer' | 'Énergie' | 'Transport' | 'Maintenance' | 'Fournitures' | 'Marketing' | 'Formation' | 'Autre'
-type ExpStatus = 'PAYÉ' | 'EN ATTENTE'
-
-interface Expense {
-  id: number; _apiId?: string; date: string; label: string; category: Category
-  amount: number; vat: number; mode: string
-  status: ExpStatus; recurrent: boolean
-}
-
-const BUDGETS_INIT: Record<Category, number> = {
-  Loyer: 500000, Énergie: 150000, Transport: 100000, Maintenance: 200000,
-  Fournitures: 50000, Marketing: 100000, Formation: 200000, Autre: 50000,
-}
-
-const CATEGORIES: Category[] = ['Loyer','Énergie','Transport','Maintenance','Fournitures','Marketing','Formation','Autre']
-
-// Libellés d'affichage des catégories (la clé reste la valeur canonique FR
-// utilisée pour le filtrage / l'API — on ne traduit que l'affichage).
-const CATEGORY_LABELS: Record<string, { fr: string; en: string; es: string; it: string }> = {
-  Loyer:       { fr:'Loyer',       en:'Rent',        es:'Alquiler',      it:'Affitto'      },
-  Énergie:     { fr:'Énergie',     en:'Energy',      es:'Energía',       it:'Energia'      },
-  Transport:   { fr:'Transport',   en:'Transport',   es:'Transporte',    it:'Trasporto'    },
-  Maintenance: { fr:'Maintenance', en:'Maintenance', es:'Mantenimiento', it:'Manutenzione' },
-  Fournitures: { fr:'Fournitures', en:'Supplies',    es:'Suministros',   it:'Forniture'    },
-  Marketing:   { fr:'Marketing',   en:'Marketing',   es:'Marketing',     it:'Marketing'    },
-  Formation:   { fr:'Formation',   en:'Training',    es:'Formación',     it:'Formazione'   },
-  Autre:       { fr:'Autre',       en:'Other',       es:'Otro',          it:'Altro'        },
-}
-const catLabel = (cat: string, lang: string): string =>
-  (CATEGORY_LABELS[cat] as Record<string, string> | undefined)?.[lang] ?? CATEGORY_LABELS[cat]?.fr ?? cat
-
-const CATEGORY_STYLE: Record<Category, { bg: string; color: string; icon: JSX.Element }> = {
-  Loyer:       { bg:'rgba(124,111,240,.15)', color:'#A89CF5', icon:<Home size={14}/> },
-  Énergie:     { bg:'rgba(240,165,0,.15)',   color:'#F0A500', icon:<Zap size={14}/> },
-  Transport:   { bg:'rgba(59,130,246,.15)',  color:'#60A5FA', icon:<Car size={14}/> },
-  Maintenance: { bg:'rgba(251,146,60,.15)',  color:'#FB923C', icon:<Wrench size={14}/> },
-  Fournitures: { bg:'rgba(20,184,166,.15)',  color:'#2DD4BF', icon:<Package size={14}/> },
-  Marketing:   { bg:'rgba(236,72,153,.15)',  color:'#F472B6', icon:<Megaphone size={14}/> },
-  Formation:   { bg:'rgba(14,196,126,.15)',  color:'#0EC47E', icon:<GraduationCap size={14}/> },
-  Autre:       { bg:'rgba(136,134,168,.15)', color:'#8886A8', icon:<Tag size={14}/> },
-}
-
-const MODES = ['Espèces','Carte','Chèque','Virement','Prélèvement']
-const VAT_RATES = [0, 10, 18, 20]
-
-function CatPill({ cat, lang }: { cat: Category; lang: string }) {
-  const s = CATEGORY_STYLE[cat]
-  return (
-    <span style={{
-      display:'inline-flex', alignItems:'center', gap:4, padding:'2px 9px',
-      borderRadius:20, fontSize:11, fontWeight:600,
-      background:s.bg, color:s.color,
-    }}>{s.icon} {catLabel(cat, lang)}</span>
-  )
-}
-
-let _expIdCounter = 1000
-
-function mapApiExpense(e: any): Expense {
-  return {
-    id: ++_expIdCounter,
-    _apiId: e.id,
-    date: e.date?.split('T')[0] ?? e.createdAt?.split('T')[0] ?? '',
-    label: e.label,
-    category: (e.category || 'Autre') as Category,
-    amount: e.amountHT ?? 0,
-    vat: e.vat ?? 0,
-    mode: e.mode || 'Espèces',
-    status: (e.status === 'PAYÉ' ? 'PAYÉ' : 'EN ATTENTE') as ExpStatus,
-    recurrent: e.recurrent ?? false,
-  }
-}
+import {
+  BUDGETS_INIT, CATEGORIES, ttcAmount, mapApiExpense, nextExpId,
+  type Category, type Expense, type ExpStatus,
+} from '@/components/expenses/expensesShared'
+import ExpensesKpis from '@/components/expenses/ExpensesKpis'
+import ExpensesJournal from '@/components/expenses/ExpensesJournal'
+import ExpensesBudget from '@/components/expenses/ExpensesBudget'
+import AddExpenseModal from '@/components/expenses/AddExpenseModal'
+import ExpenseDetailModal from '@/components/expenses/ExpenseDetailModal'
+import EditBudgetsModal from '@/components/expenses/EditBudgetsModal'
 
 export default function Expenses() {
   const { lang, currency } = useConfig()
   const fmt = useFormatAmount()
   const tr = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
-  const cl = (c: string) => catLabel(c, lang)
-  const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
-  const monthName = new Date().toLocaleDateString(locale, { month: 'long' })
-  const monthYear = (() => { const m = new Date().toLocaleDateString(locale, { month: 'long', year: 'numeric' }); return m.charAt(0).toUpperCase() + m.slice(1) })()
 
   const handleAccountingExport = async () => {
     const period = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { month: 'long', year: 'numeric' })
@@ -138,7 +68,6 @@ export default function Expenses() {
     date: '', label: '', category: 'Loyer' as Category,
     amountHT: 0, vat: 0, mode: '', recurrent: false, notes: '',
   })
-  const editExpTTC = Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100))
 
   // New expense form
   const [nDate,      setNDate]      = useState(new Date().toISOString().split('T')[0])
@@ -156,6 +85,7 @@ export default function Expenses() {
   const may = expenses.filter(e => e.date.startsWith('2026-05'))
   const totalMay   = may.reduce((s, e) => s + e.amount, 0)
   const totalPending = expenses.filter(e => e.status === 'EN ATTENTE').reduce((s, e) => s + e.amount, 0)
+  const pendingCount = expenses.filter(e => e.status === 'EN ATTENTE').length
   const recurrentCount = expenses.filter(e => e.recurrent).length
   const totalBudget = Object.values(budgets).reduce((s, v) => s + v, 0)
   const budgetLeft  = totalBudget - totalMay
@@ -167,8 +97,6 @@ export default function Expenses() {
     if (statFilter !== 'Tous' && e.status !== statFilter) return false
     return true
   })
-
-  function ttcAmount(e: Expense) { return Math.round(e.amount * (1 + e.vat / 100)) }
 
   const printExpensesPDF = () => {
     const total = expenses.reduce((s, e) => s + ttcAmount(e), 0)
@@ -200,6 +128,14 @@ export default function Expenses() {
     openPDF(t('expense_pdf_title'), body)
   }
 
+  const csvExport = () => {
+    exportCSV('habashop_depenses',
+      ['Date','Libellé','Catégorie','Montant HT','TVA','TTC','Mode','Récurrent','Statut'],
+      expenses.map(e => [e.date, e.label, e.category, e.amount, e.vat + ' %', Math.round(e.amount * (1 + e.vat / 100)), e.mode, e.recurrent ? 'Oui' : 'Non', e.status])
+    )
+    toast.success('📊 Export dépenses téléchargé !')
+  }
+
   async function markPaid(id: number) {
     const exp = expenses.find(e => e.id === id)
     if (exp?._apiId) { try { await expensesApi.update(exp._apiId, { status: 'PAYÉ' }) } catch {} }
@@ -218,7 +154,7 @@ export default function Expenses() {
     if (!nLabel.trim() || !nHT) { toast.error(tr('Libellé et montant requis','Label and amount required','Etiqueta e importe requeridos','Etichetta e importo richiesti')); return }
     const ht = Math.round(parseFloat(nHT))
     const newExp: Expense = {
-      id: ++_expIdCounter, date: nDate, label: nLabel.trim(), category: nCat,
+      id: nextExpId(), date: nDate, label: nLabel.trim(), category: nCat,
       amount: ht, vat: nVat, mode: nMode, status: 'EN ATTENTE', recurrent: nRecurrent,
     }
     try {
@@ -235,6 +171,21 @@ export default function Expenses() {
     setBudgets({ ...editBudgets })
     toast.success(tr('Budgets mis à jour','Budgets updated','Presupuestos actualizados','Budget aggiornati'))
     setBudgetOpen(false)
+  }
+
+  const saveEditExpense = async () => {
+    if (!editExpense) return
+    if (!editExpForm.label || !editExpForm.amountHT) { toast.error(lang === 'en' ? 'Label and amount required' : lang === 'es' ? 'Etiqueta e importe requeridos' : lang === 'it' ? 'Etichetta e importo richiesti' : 'Libellé et montant requis'); return }
+    if (editExpense._apiId) {
+      try { await expensesApi.update(editExpense._apiId, { date: new Date(editExpForm.date).toISOString(), label: editExpForm.label, category: editExpForm.category, amountHT: editExpForm.amountHT, vat: editExpForm.vat, amountTTC: Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100)), mode: editExpForm.mode, recurrent: editExpForm.recurrent }) } catch {}
+    }
+    setExpenses(prev => prev.map(e =>
+      e.id === editExpense.id
+        ? { ...e, date:editExpForm.date, label:editExpForm.label, category:editExpForm.category, amount:editExpForm.amountHT, vat:editExpForm.vat, mode:editExpForm.mode, recurrent:editExpForm.recurrent }
+        : e
+    ))
+    setExpEditMode(false)
+    toast.success(`✅ ${lang === 'en' ? 'Expense updated' : lang === 'es' ? 'Gasto modificado' : lang === 'it' ? 'Spesa modificata' : 'Dépense modifiée'}`)
   }
 
   const catSpent: Record<Category, number> = CATEGORIES.reduce((acc, cat) => {
@@ -256,24 +207,13 @@ export default function Expenses() {
         </button>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label:`${tr('Dépenses','Expenses','Gastos','Spese')} (${monthName})`, value:fmt(totalMay), sub:monthYear, color:'var(--danger)', icon:<TrendingDown size={18} /> },
-          { label:tr('En attente paiement','Pending payment','Pago pendiente','Pagamento in attesa'), value:fmt(totalPending), sub:`${expenses.filter(e=>e.status==='EN ATTENTE').length} ${tr('facture(s)','invoice(s)','factura(s)','fattura/e')}`, color:'var(--acc)', icon:<Clock size={18} /> },
-          { label:tr('Dépenses récurrentes','Recurring expenses','Gastos recurrentes','Spese ricorrenti'), value:recurrentCount, sub:tr('Mensuelles / abonnements','Monthly / subscriptions','Mensuales / suscripciones','Mensili / abbonamenti'), color:'var(--p2)', icon:<RefreshCw size={18} /> },
-          { label:tr('Budget restant','Remaining budget','Presupuesto restante','Budget rimanente'), value:fmt(Math.max(0, budgetLeft)), sub:tr('Sur budget mensuel','Of monthly budget','Del presupuesto mensual','Del budget mensile'), color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', icon:<BarChart2 size={18} /> },
-        ].map(k => (
-          <div key={k.label} className="kpi-card" style={{ borderTop:`3px solid ${k.color}`, overflow:'hidden' }}>
-            <div className="kpi-icon-w" style={{ color:k.color, background:`color-mix(in srgb, ${k.color} 12%, transparent)` }}>{k.icon}</div>
-            <div className="kpi-label">{k.label}</div>
-            <div className="kpi-value" style={{ color:k.color, fontSize: typeof k.value === 'number' ? 28 : 18 }}>
-              {k.value}
-            </div>
-            <div className="kpi-sub">{k.sub}</div>
-          </div>
-        ))}
-      </div>
+      <ExpensesKpis
+        totalMay={totalMay}
+        totalPending={totalPending}
+        pendingCount={pendingCount}
+        recurrentCount={recurrentCount}
+        budgetLeft={budgetLeft}
+      />
 
       {/* Tabs */}
       <div style={{ display:'flex', gap:6 }}>
@@ -292,447 +232,75 @@ export default function Expenses() {
         ))}
       </div>
 
-      {/* ── ONGLET JOURNAL ── */}
       {tab === 'journal' && (
-        <div className="panel" style={{ marginBottom:0 }}>
-          <div className="panel-head">
-            <span className="panel-title">{lang === 'en' ? 'Expense log' : lang === 'es' ? 'Registro de gastos' : lang === 'it' ? 'Registro spese' : 'Journal des dépenses'}</span>
-            <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setAddOpen(true)}>
-              <Plus size={13} /> {tr('Ajouter dépense','Add expense','Agregar gasto','Aggiungi spesa')}
-            </button>
-          </div>
-
-          {!loading && expenses.length === 0 ? (
-            <EmptyState
-              icon="💸"
-              title={lang === 'en' ? 'No expenses recorded' : lang === 'es' ? 'Sin gastos registrados' : lang === 'it' ? 'Nessuna spesa registrata' : 'Aucune dépense enregistrée'}
-              message={lang === 'en' ? 'Record your expenses to track your costs.' : lang === 'es' ? 'Registre sus gastos para controlar sus costos.' : lang === 'it' ? 'Registra le tue spese per monitorare i costi.' : 'Enregistrez vos dépenses pour suivre vos charges.'}
-              action={{ label: lang === 'en' ? '+ Add an expense' : lang === 'es' ? '+ Agregar un gasto' : lang === 'it' ? '+ Aggiungi una spesa' : '+ Ajouter une dépense', onClick: () => setAddOpen(true) }}
-            />
-          ) : (<>
-          {/* Filtres */}
-          <div style={{ display:'flex', gap:9, marginBottom:14, flexWrap:'wrap', alignItems:'center' }}>
-            <div style={{ position:'relative' }}>
-              <Search size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text2)' }} />
-              <input className="input" aria-label={tr('Rechercher','Search','Buscar','Cerca')} placeholder={tr('Rechercher…','Search…','Buscar…','Cerca…')} value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ paddingLeft:30, width:200, boxSizing:'border-box' }} />
-            </div>
-            <select className="input" value={catFilter} onChange={e => setCatFilter(e.target.value as typeof catFilter)}
-              style={{ width:'auto', minWidth:140 }}>
-              <option value="Toutes">{tr('Toutes catégories','All categories','Todas las categorías','Tutte le categorie')}</option>
-              {CATEGORIES.map(c => <option key={c} value={c}>{cl(c)}</option>)}
-            </select>
-            <select className="input" value={statFilter} onChange={e => setStatFilter(e.target.value as typeof statFilter)}
-              style={{ width:'auto', minWidth:140 }}>
-              <option value="Tous">{tr('Tous statuts','All statuses','Todos los estados','Tutti gli stati')}</option>
-              <option value="PAYÉ">{tr('Payé','Paid','Pagado','Pagato')}</option>
-              <option value="EN ATTENTE">{tr('En attente','Pending','Pendiente','In attesa')}</option>
-            </select>
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleAccountingExport}>
-              <BarChart2 size={12}/> {lang === 'en' ? 'Accounting export' : lang === 'es' ? 'Exportación contable' : lang === 'it' ? 'Esportazione contabile' : 'Export comptable'}
-            </button>
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printExpensesPDF(); toast.success('📄 PDF ouvert !') }}>
-              <Download size={12} /> PDF
-            </button>
-            <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
-              exportCSV('habashop_depenses',
-                ['Date','Libellé','Catégorie','Montant HT','TVA','TTC','Mode','Récurrent','Statut'],
-                expenses.map(e => [e.date, e.label, e.category, e.amount, e.vat + ' %', Math.round(e.amount * (1 + e.vat / 100)), e.mode, e.recurrent ? 'Oui' : 'Non', e.status])
-              )
-              toast.success('📊 Export dépenses téléchargé !')
-            }}>
-              <Download size={12} /> Export
-            </button>
-          </div>
-
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">{tr('Date','Date','Fecha','Data')}</th><th scope="col">{tr('Libellé','Label','Etiqueta','Etichetta')}</th><th scope="col">{tr('Catégorie','Category','Categoría','Categoria')}</th>
-                  <th scope="col">{tr('Montant HT','Amount excl.','Importe s/IVA','Importo netto')}</th><th scope="col">TVA</th><th scope="col">TTC</th>
-                  <th scope="col">{tr('Mode','Mode','Modo','Modo')}</th><th style={{ textAlign:'center' }}>{tr('Récurrent','Recurring','Recurrente','Ricorrente')}</th>
-                  <th scope="col">{tr('Statut','Status','Estado','Stato')}</th><th scope="col">{tr('Actions','Actions','Acciones','Azioni')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan={10} style={{ padding: '8px 14px' }}><Skeleton height={32} count={6} radius={8} /></td></tr>
-                ) : (<>
-                {filtered.map(e => {
-                  const catStyle = CATEGORY_STYLE[e.category]
-                  return (
-                    <tr key={e.id} style={{ borderLeft:`3px solid ${catStyle.color}40` }}>
-                      <td className="td-mono text-xs">{e.date}</td>
-                      <td>
-                        <div className="td-bold text-xs">{e.label}</div>
-                        {e.recurrent && <div style={{ fontSize:10, color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> {tr('Récurrent','Recurring','Recurrente','Ricorrente')}</div>}
-                      </td>
-                      <td><CatPill cat={e.category} lang={lang} /></td>
-                      <td className="td-num text-sm">{fmt(e.amount)}</td>
-                      <td style={{ fontSize:12, color:'var(--text3)' }}>{e.vat} %</td>
-                      <td className="td-num text-sm" style={{ color:'var(--acc2)', fontWeight:700 }}>{fmt(ttcAmount(e))}</td>
-                      <td>
-                        <span className="badge badge-gray">{e.mode}</span>
-                      </td>
-                      <td style={{ textAlign:'center' }}>
-                        {e.recurrent
-                          ? <RefreshCw size={14} style={{ color:'var(--p2)', margin:'0 auto' }}/>
-                          : <span style={{ color:'var(--text3)' }}>—</span>}
-                      </td>
-                      <td>
-                        <span style={{
-                          display:'inline-flex', alignItems:'center', gap:4,
-                          padding:'3px 9px', borderRadius:20, fontSize:11, fontWeight:700,
-                          background: e.status === 'PAYÉ' ? 'rgba(14,196,126,.15)' : 'rgba(240,165,0,.15)',
-                          color:       e.status === 'PAYÉ' ? 'var(--acc2)'         : 'var(--acc)',
-                          border:      e.status === 'PAYÉ' ? '1px solid rgba(14,196,126,.3)' : '1px solid rgba(240,165,0,.3)',
-                        }}>
-                          {e.status === 'PAYÉ' ? <Check size={10}/> : <Clock size={10}/>}
-                          {e.status === 'PAYÉ' ? tr('Payé','Paid','Pagado','Pagato') : tr('En attente','Pending','Pendiente','In attesa')}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display:'flex', gap:5 }}>
-                          {e.status === 'EN ATTENTE' && (
-                            <button className="mini-btn" title={tr('Marquer payé','Mark as paid','Marcar como pagado','Segna come pagato')} onClick={() => markPaid(e.id)}><Check size={13}/></button>
-                          )}
-                          <button className="mini-btn" title={tr('Modifier','Edit','Editar','Modifica')} onClick={() => {
-                            setEditExpense(e)
-                            setEditExpForm({ date:e.date, label:e.label, category:e.category, amountHT:e.amount, vat:e.vat, mode:e.mode, recurrent:e.recurrent, notes:'' })
-                            setExpEditMode(false)
-                            setShowEditExpModal(true)
-                          }}><Pencil size={13}/></button>
-                          <button className="mini-btn" title={tr('Supprimer','Delete','Eliminar','Elimina')} onClick={() => deleteExpense(e.id)}><Trash2 size={13}/></button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={10} style={{ textAlign:'center', color:'var(--text3)', padding:'24px', fontSize:13 }}>{tr('Aucune dépense trouvée','No expense found','Sin gastos encontrados','Nessuna spesa trovata')}</td></tr>
-                )}
-                </>)}
-              </tbody>
-            </table>
-          </div>
-          </>)}
-        </div>
+        <ExpensesJournal
+          loading={loading}
+          expenses={expenses}
+          filtered={filtered}
+          search={search} setSearch={setSearch}
+          catFilter={catFilter} setCatFilter={setCatFilter}
+          statFilter={statFilter} setStatFilter={setStatFilter}
+          onAdd={() => setAddOpen(true)}
+          onAccountingExport={handleAccountingExport}
+          onPrintPDF={() => { printExpensesPDF(); toast.success('📄 PDF ouvert !') }}
+          onCSVExport={csvExport}
+          onMarkPaid={markPaid}
+          onDelete={deleteExpense}
+          onEdit={(e) => {
+            setEditExpense(e)
+            setEditExpForm({ date:e.date, label:e.label, category:e.category, amountHT:e.amount, vat:e.vat, mode:e.mode, recurrent:e.recurrent, notes:'' })
+            setExpEditMode(false)
+            setShowEditExpModal(true)
+          }}
+        />
       )}
 
-      {/* ── ONGLET BUDGET VS RÉEL ── */}
       {tab === 'budget' && (
-        <div className="space-y-4">
-          <div style={{ display:'flex', justifyContent:'flex-end' }}>
-            <button className="btn btn-ghost btn-sm gap-1.5"
-              onClick={() => { setEditBudgets({ ...budgets }); setBudgetOpen(true) }}>
-              <Settings size={13} /> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}
-            </button>
-          </div>
-
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:12 }}>
-            {CATEGORIES.filter(cat => budgets[cat] > 0).map(cat => {
-              const spent = catSpent[cat] ?? 0
-              const budget = budgets[cat]
-              const pct = Math.min(100, Math.round(spent / budget * 100))
-              const over = spent > budget
-              const barColor = pct < 70 ? 'var(--acc2)' : pct < 90 ? 'var(--acc)' : 'var(--danger)'
-              const s = CATEGORY_STYLE[cat]
-              return (
-                <div key={cat} style={{
-                  background:'var(--card)', border:'1px solid var(--border)',
-                  borderRadius:14, padding:'16px 18px',
-                }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <span style={{ fontSize:18 }}>{s.icon}</span>
-                      <span style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>{cl(cat)}</span>
-                    </div>
-                    {over && (
-                      <span className="badge badge-red">{tr('Dépassé !','Over budget!','¡Excedido!','Superato!')}</span>
-                    )}
-                  </div>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8, fontSize:12 }}>
-                    <span style={{ color:'var(--text3)' }}>{tr('Budget','Budget','Presupuesto','Budget')} : <strong style={{ color:'var(--text2)' }}>{fmt(budget)}</strong></span>
-                    <span style={{ color:'var(--text3)' }}>{tr('Réel','Actual','Real','Reale')} : <strong style={{ color: over ? 'var(--danger)' : 'var(--text)' }}>{fmt(spent)}</strong></span>
-                  </div>
-                  <div style={{ height:9, background:'var(--bg4)', borderRadius:99, overflow:'hidden', marginBottom:8 }}>
-                    <div style={{
-                      width:`${pct}%`, height:'100%',
-                      background: barColor,
-                      borderRadius:99, transition:'width .4s',
-                    }} />
-                  </div>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
-                    <span style={{ fontWeight:700, color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
-                    <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:600 }}>
-                      {over ? `${tr('Dépassé de','Over by','Excedido en','Superato di')} ${fmt(spent - budget)}` : `${tr('Restant','Remaining','Restante','Rimanente')} : ${fmt(budget - spent)}`}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Résumé total */}
-          <div style={{
-            background:'var(--card)', border:'1px solid var(--border)',
-            borderRadius:14, padding:'18px 20px',
-          }}>
-            <div className="panel-head" style={{ marginBottom:16 }}>
-              <span className="panel-title">{lang === 'en' ? 'Monthly summary' : lang === 'es' ? 'Resumen mensual' : lang === 'it' ? 'Riepilogo mensile' : 'Résumé mensuel'}</span>
-            </div>
-            {[
-              { label:tr('Budget total mensuel','Total monthly budget','Presupuesto total mensual','Budget mensile totale'),  value:fmt(totalBudget),            color:'var(--text2)' },
-              { label:tr('Total dépensé','Total spent','Total gastado','Totale speso'),          value:fmt(Object.values(catSpent).reduce((s,v) => s+v, 0)), color:'var(--acc)' },
-              { label:tr('Écart','Variance','Variación','Variazione'),                  value:fmt(Math.abs(budgetLeft)),   color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', prefix: budgetLeft >= 0 ? '▲ +' : '▼ -' },
-              { label:tr("Taux d'utilisation",'Usage rate','Tasa de uso','Tasso di utilizzo'),    value:`${Math.round(Object.values(catSpent).reduce((s,v)=>s+v,0)/totalBudget*100)} %`, color: 'var(--p2)' },
-            ].map(r => (
-              <div key={r.label} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
-                <span style={{ fontSize:13, color:'var(--text3)' }}>{r.label}</span>
-                <span style={{ fontSize:13, fontWeight:700, color:r.color, fontFamily:'var(--mono)' }}>
-                  {(r as { prefix?: string }).prefix ?? ''}{r.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ExpensesBudget
+          budgets={budgets}
+          catSpent={catSpent}
+          totalBudget={totalBudget}
+          budgetLeft={budgetLeft}
+          onEditBudgets={() => { setEditBudgets({ ...budgets }); setBudgetOpen(true) }}
+        />
       )}
 
-      {/* ── MODAL Ajouter dépense ── */}
       {addOpen && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={() => setAddOpen(false)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:480 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>{tr('Ajouter une dépense','Add an expense','Agregar un gasto','Aggiungi una spesa')}</span>
-              <button className="mini-btn" onClick={() => setAddOpen(false)}><X size={15} /></button>
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Date','Date','Fecha','Data')}</label>
-                  <input aria-label={tr('Date','Date','Fecha','Data')} className="input" type="date" value={nDate} onChange={e => setNDate(e.target.value)}
-                    style={{ width:'100%', boxSizing:'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Catégorie','Category','Categoría','Categoria')}</label>
-                  <select aria-label={tr('Catégorie','Category','Categoría','Categoria')} className="input" value={nCat} onChange={e => setNCat(e.target.value as Category)}
-                    style={{ width:'100%', boxSizing:'border-box' }}>
-                    {CATEGORIES.map(c => <option key={c} value={c}>{cl(c)}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Libellé','Label','Etiqueta','Etichetta')}</label>
-                <input aria-label={tr('Libellé','Label','Etiqueta','Etichetta')} className="input" type="text" placeholder={tr('Ex: Facture EDF','Ex: Electricity bill','Ej: Factura de luz','Es: Bolletta luce')}
-                  value={nLabel} onChange={e => setNLabel(e.target.value)}
-                  style={{ width:'100%', boxSizing:'border-box' }} />
-              </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Montant HT (F CFA)','Amount excl. VAT (F CFA)','Importe s/IVA (F CFA)','Importo netto (F CFA)')}</label>
-                  <ValidatedInput type="amount"
-                    value={nHT} onChange={setNHT}
-                    placeholder="Ex: 85000"
-                    min={0} required lang={lang} />
-                </div>
-                <div>
-                  <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Taux TVA','VAT rate','Tasa IVA','Aliquota IVA')}</label>
-                  <select aria-label={tr('Taux TVA','VAT rate','Tasa IVA','Aliquota IVA')} className="input" value={nVat} onChange={e => setNVat(+e.target.value)}
-                    style={{ width:'100%', boxSizing:'border-box' }}>
-                    {VAT_RATES.map(v => <option key={v} value={v}>{v} %</option>)}
-                  </select>
-                </div>
-              </div>
-              {nHT && (
-                <div style={{
-                  padding:'10px 13px', background:'rgba(14,196,126,.1)',
-                  border:'1px solid rgba(14,196,126,.25)', borderRadius:8,
-                  display:'flex', justifyContent:'space-between', fontSize:13,
-                }}>
-                  <span style={{ color:'var(--text3)' }}>{tr('Montant TTC calculé :','Calculated total incl. VAT:','Importe c/IVA calculado:','Importo lordo calcolato:')}</span>
-                  <span style={{ fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
-                    {fmt(nTTC)}
-                  </span>
-                </div>
-              )}
-              <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Mode de paiement','Payment method','Método de pago','Metodo di pagamento')}</label>
-                <select aria-label={tr('Mode de paiement','Payment method','Método de pago','Metodo di pagamento')} className="input" value={nMode} onChange={e => setNMode(e.target.value)}
-                  style={{ width:'100%', boxSizing:'border-box' }}>
-                  {MODES.map(m => <option key={m}>{m}</option>)}
-                </select>
-              </div>
-              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <input type="checkbox" id="recurrent" checked={nRecurrent}
-                  onChange={e => setNRecurrent(e.target.checked)}
-                  style={{ width:16, height:16, cursor:'pointer', accentColor:'var(--p2)' }} />
-                <label htmlFor="recurrent" style={{ fontSize:13, color:'var(--text2)', cursor:'pointer', fontWeight:600 }}>
-                  {tr('Dépense récurrente (mensuelle)','Recurring expense (monthly)','Gasto recurrente (mensual)','Spesa ricorrente (mensile)')}
-                </label>
-              </div>
-              <div>
-                <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Notes (optionnel)','Notes (optional)','Notas (opcional)','Note (opzionale)')}</label>
-                <input aria-label={tr('Notes (optionnel)','Notes (optional)','Notas (opcional)','Note (opzionale)')} className="input" type="text" placeholder={tr('Informations supplémentaires…','Additional information…','Información adicional…','Informazioni aggiuntive…')}
-                  value={nNotes} onChange={e => setNNotes(e.target.value)}
-                  style={{ width:'100%', boxSizing:'border-box' }} />
-              </div>
-            </div>
-            <div style={{ display:'flex', gap:10, marginTop:20 }}>
-              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setAddOpen(false)}>{tr('Annuler','Cancel','Cancelar','Annulla')}</button>
-              <button className="btn btn-primary btn-sm" style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }} onClick={addExpense}><Check size={14}/> {tr('Enregistrer','Save','Guardar','Salva')}</button>
-            </div>
-          </div>
-        </div>
+        <AddExpenseModal
+          nDate={nDate} setNDate={setNDate}
+          nLabel={nLabel} setNLabel={setNLabel}
+          nCat={nCat} setNCat={setNCat}
+          nHT={nHT} setNHT={setNHT}
+          nVat={nVat} setNVat={setNVat}
+          nMode={nMode} setNMode={setNMode}
+          nRecurrent={nRecurrent} setNRecurrent={setNRecurrent}
+          nNotes={nNotes} setNNotes={setNNotes}
+          nTTC={nTTC}
+          onClose={() => setAddOpen(false)}
+          onSubmit={addExpense}
+        />
       )}
 
-      {/* ── MODAL Dépense (vue/édition) ── */}
-      {showEditExpModal && editExpense && (() => {
-        const vf = (label: string, value: string | number, mono = false) => (
-          <div>
-            <label style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>{label}</label>
-            {expEditMode ? null : (
-              <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, fontWeight:500, color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', fontFamily: mono ? 'var(--mono)' : 'var(--font)' }}>
-                {value || <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{lang === 'en' ? 'Not set' : lang === 'es' ? 'No indicado' : lang === 'it' ? 'Non indicato' : 'Non renseigné'}</span>}
-              </div>
-            )}
-          </div>
-        )
-        const handleSave = async () => {
-          if (!editExpForm.label || !editExpForm.amountHT) { toast.error(lang === 'en' ? 'Label and amount required' : lang === 'es' ? 'Etiqueta e importe requeridos' : lang === 'it' ? 'Etichetta e importo richiesti' : 'Libellé et montant requis'); return }
-          if (editExpense._apiId) {
-            try { await expensesApi.update(editExpense._apiId, { date: new Date(editExpForm.date).toISOString(), label: editExpForm.label, category: editExpForm.category, amountHT: editExpForm.amountHT, vat: editExpForm.vat, amountTTC: Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100)), mode: editExpForm.mode, recurrent: editExpForm.recurrent }) } catch {}
-          }
-          setExpenses(prev => prev.map(e =>
-            e.id === editExpense.id
-              ? { ...e, date:editExpForm.date, label:editExpForm.label, category:editExpForm.category, amount:editExpForm.amountHT, vat:editExpForm.vat, mode:editExpForm.mode, recurrent:editExpForm.recurrent }
-              : e
-          ))
-          setExpEditMode(false)
-          toast.success(`✅ ${lang === 'en' ? 'Expense updated' : lang === 'es' ? 'Gasto modificado' : lang === 'it' ? 'Spesa modificata' : 'Dépense modifiée'}`)
-        }
-        return (
-          <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && setShowEditExpModal(false)}>
-            <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-                <span style={{ fontWeight:800, fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}>
-                  {expEditMode ? <><Pencil size={15}/> {lang === 'en' ? 'Edit expense' : lang === 'es' ? 'Editar el gasto' : lang === 'it' ? 'Modifica la spesa' : 'Modifier la dépense'}</> : <><FileText size={15}/> {lang === 'en' ? 'Expense detail' : lang === 'es' ? 'Detalle del gasto' : lang === 'it' ? 'Dettaglio spesa' : 'Détail dépense'}</>}
-                </span>
-                <button className="mini-btn" onClick={() => { setShowEditExpModal(false); setExpEditMode(false) }}><X size={15} /></button>
-              </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <div>
-                    {vf(lang === 'en' ? 'Date' : lang === 'es' ? 'Fecha' : lang === 'it' ? 'Data' : 'Date', editExpForm.date)}
-                    {expEditMode && <input className="input" type="date" value={editExpForm.date} onChange={e => setEditExpForm(f => ({...f, date:e.target.value}))} style={{ width:'100%', boxSizing:'border-box' }} />}
-                  </div>
-                  <div>
-                    {vf(lang === 'en' ? 'Category' : lang === 'es' ? 'Categoría' : lang === 'it' ? 'Categoria' : 'Catégorie', editExpForm.category)}
-                    {expEditMode && <select className="input" value={editExpForm.category} onChange={e => setEditExpForm(f => ({...f, category:e.target.value as Category}))} style={{ width:'100%', boxSizing:'border-box' }}>{CATEGORIES.map(c => <option key={c} value={c}>{cl(c)}</option>)}</select>}
-                  </div>
-                </div>
-                <div>
-                  {vf(lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé', editExpForm.label)}
-                  {expEditMode && <input className="input" value={editExpForm.label} onChange={e => setEditExpForm(f => ({...f, label:e.target.value}))} placeholder={lang === 'en' ? 'Description...' : lang === 'es' ? 'Descripción...' : lang === 'it' ? 'Descrizione...' : 'Description...'} style={{ width:'100%', boxSizing:'border-box' }} />}
-                </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
-                  <div>
-                    {vf(lang === 'en' ? 'Amount excl.' : lang === 'es' ? 'Importe s/IVA' : lang === 'it' ? 'Importo netto' : 'Montant HT', fmt(editExpForm.amountHT), true)}
-                    {expEditMode && <input className="input" type="number" value={editExpForm.amountHT || ''} onChange={e => setEditExpForm(f => ({...f, amountHT:+e.target.value}))} style={{ width:'100%', boxSizing:'border-box' }} />}
-                  </div>
-                  <div>
-                    {vf('TVA', `${editExpForm.vat} %`)}
-                    {expEditMode && <select className="input" value={editExpForm.vat} onChange={e => setEditExpForm(f => ({...f, vat:+e.target.value}))} style={{ width:'100%', boxSizing:'border-box' }}>{VAT_RATES.map(v => <option key={v} value={v}>{v} %</option>)}</select>}
-                  </div>
-                  <div>
-                    <label style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>TTC</label>
-                    <div style={{ padding:'9px 13px', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, fontWeight:700, color:'var(--acc2)', fontFamily:'var(--mono)', minHeight:40, display:'flex', alignItems:'center' }}>{fmt(editExpTTC)}</div>
-                  </div>
-                </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <div>
-                    {vf(lang === 'en' ? 'Payment mode' : lang === 'es' ? 'Modo de pago' : lang === 'it' ? 'Metodo pagamento' : 'Mode paiement', editExpForm.mode)}
-                    {expEditMode && <select className="input" value={editExpForm.mode} onChange={e => setEditExpForm(f => ({...f, mode:e.target.value}))} style={{ width:'100%', boxSizing:'border-box' }}>{MODES.map(m => <option key={m}>{m}</option>)}</select>}
-                  </div>
-                  <div style={{ display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
-                    {!expEditMode ? (
-                      <div>
-                        <label style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', display:'block', marginBottom:5 }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</label>
-                        <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, fontWeight:500, color: editExpForm.recurrent ? 'var(--acc2)' : 'var(--text3)', minHeight:40, display:'flex', alignItems:'center' }}>
-                          {editExpForm.recurrent ? `✅ ${lang === 'en' ? 'Yes' : lang === 'es' ? 'Sí' : lang === 'it' ? 'Sì' : 'Oui'}` : `— ${lang === 'en' ? 'No' : lang === 'es' ? 'No' : lang === 'it' ? 'No' : 'Non'}`}
-                        </div>
-                      </div>
-                    ) : (
-                      <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', paddingBottom:2 }}>
-                        <button type="button" onClick={() => setEditExpForm(f => ({...f, recurrent:!f.recurrent}))}
-                          style={{ width:44, height:24, borderRadius:99, background: editExpForm.recurrent ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0 }}>
-                          <div style={{ position:'absolute', top:2, left: editExpForm.recurrent ? 22 : 2, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
-                        </button>
-                        <span style={{ fontSize:13, color:'var(--text2)' }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</span>
-                      </label>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div style={{ display:'flex', gap:8, marginTop:20 }}>
-                {!expEditMode ? (
-                  <>
-                    <button className="topbar-btn" style={{ flex:1, justifyContent:'center', display:'flex', alignItems:'center', gap:6 }} onClick={() => setExpEditMode(true)}>
-                      <Pencil size={14}/> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
-                    </button>
-                    <button className="mini-btn" onClick={() => setShowEditExpModal(false)}>
-                      {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}
-                    </button>
-                    <button className="mini-btn" style={{ color:'var(--danger)', borderColor:'rgba(255,59,92,.2)' }}
-                      onClick={() => { deleteExpense(editExpense.id); setShowEditExpModal(false) }}>
-                      <Trash2 size={13}/>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button className="topbar-btn" style={{ flex:1, justifyContent:'center', display:'flex', alignItems:'center', gap:6 }} onClick={handleSave}>
-                      <Check size={14}/> {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Sauvegarder'}
-                    </button>
-                    <button className="mini-btn" onClick={() => setExpEditMode(false)}>
-                      {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-      })()}
+      {showEditExpModal && editExpense && (
+        <ExpenseDetailModal
+          editExpense={editExpense}
+          editExpForm={editExpForm}
+          setEditExpForm={setEditExpForm}
+          expEditMode={expEditMode}
+          setExpEditMode={setExpEditMode}
+          onClose={() => { setShowEditExpModal(false); setExpEditMode(false) }}
+          onSave={saveEditExpense}
+          onDelete={() => { deleteExpense(editExpense.id); setShowEditExpModal(false) }}
+        />
+      )}
 
-      {/* ── MODAL Modifier budgets ── */}
       {budgetOpen && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={() => setBudgetOpen(false)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-              <span style={{ fontWeight:800, fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}><Settings size={16}/> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}</span>
-              <button className="mini-btn" onClick={() => setBudgetOpen(false)}><X size={15} /></button>
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              {CATEGORIES.map(cat => {
-                const s = CATEGORY_STYLE[cat]
-                return (
-                  <div key={cat} style={{ display:'flex', alignItems:'center', gap:12 }}>
-                    <span style={{ fontSize:16 }}>{s.icon}</span>
-                    <span style={{ fontSize:13, fontWeight:600, color:'var(--text)', width:110, flexShrink:0 }}>{cl(cat)}</span>
-                    <input className="input" type="number" value={editBudgets[cat]}
-                      onChange={e => setEditBudgets(b => ({ ...b, [cat]: +e.target.value }))}
-                      style={{ flex:1, boxSizing:'border-box' }} />
-                  </div>
-                )
-              })}
-            </div>
-            <div style={{ display:'flex', gap:10, marginTop:20 }}>
-              <button className="btn btn-ghost btn-sm" style={{ flex:1 }} onClick={() => setBudgetOpen(false)}>{tr('Annuler','Cancel','Cancelar','Annulla')}</button>
-              <button className="btn btn-primary btn-sm" style={{ flex:1 }} onClick={saveBudgets}>{tr('Sauvegarder','Save','Guardar','Salva')}</button>
-            </div>
-          </div>
-        </div>
+        <EditBudgetsModal
+          editBudgets={editBudgets}
+          setEditBudgets={setEditBudgets}
+          onClose={() => setBudgetOpen(false)}
+          onSave={saveBudgets}
+        />
       )}
     </div>
   )
