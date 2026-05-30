@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { isUserActive } from '../lib/userStatus'
+import { decideWsAuth } from '../lib/wsAuth'
 
 // Sockets actifs regroupés par tenant : un broadcast ne touche que la boutique concernée.
 const tenantSockets = new Map<string, Set<any>>()
@@ -30,19 +32,20 @@ export async function notificationRoutes(app: FastifyInstance): Promise<void> {
 
   // @fastify/websocket v11 (Fastify 5) : le handler reçoit directement la
   // WebSocket en 1er argument (avant : un SocketStream avec `.socket`).
-  app.get('/api/ws', { websocket: true }, (socket: any, req: any) => {
+  app.get('/api/ws', { websocket: true }, async (socket: any, req: any) => {
     const sock = socket
+    const closeUnauthorized = (message: string) => {
+      try { sock.send(JSON.stringify({ type: 'error', data: { message } })) } catch {}
+      sock.close(1008, message)
+    }
     // Auth : le navigateur ne peut pas poser d'en-tête sur un WebSocket → token en query.
     const token = (req.query?.token as string) || (req.headers?.authorization?.replace(/^Bearer\s+/i, ''))
-    let payload: any
-    try {
-      payload = app.jwt.verify(token)
-    } catch {
-      try { sock.send(JSON.stringify({ type: 'error', data: { message: 'unauthorized' } })) } catch {}
-      sock.close(1008, 'unauthorized')
-      return
-    }
-    const { tenantId, userId } = payload as any
+    const auth = decideWsAuth(token, (t) => app.jwt.verify(t))
+    if (!auth.ok) { closeUnauthorized('unauthorized'); return }
+    const { tenantId, userId } = auth
+    // Parité avec l'auth HTTP : un JWT reste valide 7 j après suppression/désactivation
+    // du compte → on rejette les comptes inactifs ici aussi (check caché ~30s).
+    if (!(await isUserActive(userId))) { closeUnauthorized('account-inactive'); return }
     if (!tenantSockets.has(tenantId)) tenantSockets.set(tenantId, new Set())
     tenantSockets.get(tenantId)!.add(sock)
     try { sock.send(JSON.stringify({ type: 'connected', data: { userId, tenantId } })) } catch {}

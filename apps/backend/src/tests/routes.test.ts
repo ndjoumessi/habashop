@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { decideWsAuth } from '../lib/wsAuth'
 
 describe('Rate-limiting config', () => {
   it('Login : max 10 / 15 min', () => {
@@ -105,6 +106,30 @@ describe('WebSocket', () => {
   })
   it('Délai reconnexion 5s', () => {
     expect(5000).toBe(5000)
+  })
+})
+
+describe('WebSocket auth — decideWsAuth (fail-closed)', () => {
+  const verifyOK  = (_t: string) => ({ tenantId: 't1', userId: 'u1', role: 'ADMIN' })
+  const verifyBad = (_t: string) => { throw new Error('invalid signature') }
+
+  it('refuse l’absence de token', () => {
+    expect(decideWsAuth(undefined, verifyOK)).toEqual({ ok: false, reason: 'no-token' })
+    expect(decideWsAuth('', verifyOK)).toEqual({ ok: false, reason: 'no-token' })
+  })
+  it('refuse un token invalide (verify throw)', () => {
+    expect(decideWsAuth('xxx', verifyBad)).toEqual({ ok: false, reason: 'invalid-token' })
+  })
+  it('refuse un JWT valide mais sans tenantId', () => {
+    const r = decideWsAuth('tok', () => ({ userId: 'u1' }))
+    expect(r).toEqual({ ok: false, reason: 'no-tenant' })
+  })
+  it('accepte un JWT valide et expose tenantId/userId', () => {
+    const r = decideWsAuth('tok', verifyOK)
+    expect(r).toEqual({ ok: true, tenantId: 't1', userId: 'u1' })
+  })
+  it('ne propage jamais une exception (verify hostile)', () => {
+    expect(() => decideWsAuth('tok', () => { throw 'boom' })).not.toThrow()
   })
 })
 
