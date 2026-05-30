@@ -134,7 +134,7 @@ export default function OrdersListPanel({
                   <td>
                     <div className="flex items-center gap-2">
                       <span className="td-mono">{o.ref}</span>
-                      {isLate && <span className="badge badge-red text-xs">Retard</span>}
+                      {isLate && <span className="badge badge-red text-xs">{i('Retard', 'Late', 'Retrasado', 'In ritardo')}</span>}
                     </div>
                   </td>
                   <td>

@@ -73,3 +73,57 @@ describe('Orders — test d’ancrage (comportement à figer avant/après décou
     await waitFor(() => expect(ordersApi.updateStatus).toHaveBeenCalled())
   })
 })
+
+describe('Orders — NewOrderModal : flux de création (câblage props/état)', () => {
+  const openModal = async () => {
+    render(<Orders />)
+    await waitFor(() => expect(screen.getByText('PO-001')).toBeInTheDocument())
+    fireEvent.click(screen.getAllByText(/Nouvelle commande/i)[0]) // bouton header
+    return screen.findByRole('dialog')
+  }
+
+  it('ouvre la modale, bouton créer désactivé tant que client + article manquent', async () => {
+    const dialog = await openModal()
+    expect(within(dialog).getByText(/Commande client/)).toBeInTheDocument()
+    const createBtn = within(dialog).getByRole('button', { name: /Créer la commande/ })
+    expect(createBtn).toBeDisabled()
+  })
+
+  it('crée une commande CLIENT : client + produit → handleCreateOrder appelle ordersApi.create', async () => {
+    const { ordersApi } = await import('@/lib/api') as any
+    const dialog = await openModal()
+    // saisir un client
+    fireEvent.change(within(dialog).getByPlaceholderText(/Rechercher ou saisir un client/), { target: { value: 'Client Test' } })
+    // sélectionner un produit via le picker (fixture: "Riz")
+    fireEvent.click(within(dialog).getByText('Riz'))
+    const createBtn = within(dialog).getByRole('button', { name: /Créer la commande/ })
+    expect(createBtn).toBeEnabled()
+    fireEvent.click(createBtn)
+    await waitFor(() => expect(ordersApi.create).toHaveBeenCalledTimes(1))
+    expect(ordersApi.create).toHaveBeenCalledWith(expect.objectContaining({ type: 'client', clientName: 'Client Test' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument()) // modale fermée
+  })
+
+  it('bascule type fournisseur → picker fournisseur, crée un BON DE COMMANDE', async () => {
+    const { ordersApi } = await import('@/lib/api') as any
+    const dialog = await openModal()
+    fireEvent.click(within(dialog).getByText(/Bon de commande/)) // toggle supplier
+    // le picker fournisseur affiche la fixture "Fournisseur Alpha"
+    fireEvent.click(within(dialog).getByText('Fournisseur Alpha'))
+    fireEvent.click(within(dialog).getByText('Riz'))
+    const createBtn = within(dialog).getByRole('button', { name: /Créer le bon de commande/ })
+    expect(createBtn).toBeEnabled()
+    fireEvent.click(createBtn)
+    await waitFor(() => expect(ordersApi.create).toHaveBeenCalledTimes(1))
+    expect(ordersApi.create).toHaveBeenCalledWith(expect.objectContaining({ type: 'supplier', supplierId: 's1' }))
+  })
+
+  it('le picker produit ajoute/retire au panier (récap reflète la sélection)', async () => {
+    const dialog = await openModal()
+    // après ajout, "Riz" apparaît dans le picker ET le récap → cibler le picker (1er dans le DOM)
+    fireEvent.click(within(dialog).getAllByText('Riz')[0]) // ajoute
+    expect(within(dialog).getByText(/RÉCAPITULATIF/)).toBeInTheDocument()
+    fireEvent.click(within(dialog).getAllByText('Riz')[0]) // retire (toggle)
+    expect(within(dialog).queryByText(/RÉCAPITULATIF/)).not.toBeInTheDocument()
+  })
+})
