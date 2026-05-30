@@ -86,55 +86,57 @@ export default function SectionSecurity() {
         }
     : null
 
-  // Card "block" : wrapper visuel uniforme
-  const blockStyle: React.CSSProperties = {
-    padding: 16,
-    background: 'var(--bg3)',
+  // Card "block" : wrapper visuel uniforme harmonisé au thème
+  const cardBase: React.CSSProperties = {
+    background: 'var(--card)',
     border: '1px solid var(--border)',
-    borderRadius: 14,
+    borderRadius: 16,
+    padding: '20px 24px',
+  }
+  const blockStyle: React.CSSProperties = {
+    ...cardBase,
     display: 'flex',
     flexDirection: 'column',
-    gap: 12,
+    gap: 14,
   }
 
   return (
     <div style={{ ...panel, animation: 'slideUp .3s ease both' }}>
-      <Head emoji="🔒" tint="rgba(255,59,92,.04)" title={i('Sécurité & Accès', 'Security & Access', 'Seguridad & Acceso', 'Sicurezza & Accesso')} />
-      <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <Head emoji="🔒" tint="rgba(255,59,92,.04)"
+        title={i('Sécurité & Accès', 'Security & Access', 'Seguridad & Acceso', 'Sicurezza & Accesso')}
+        sub={i('Gérez vos accès et la sécurité de votre compte', 'Manage your access and account security', 'Gestione su acceso y la seguridad de su cuenta', 'Gestisci i tuoi accessi e la sicurezza dell\'account')} />
+      <div style={{ padding: '20px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* Lock toggle */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 14, padding: 16,
-          background: 'var(--bg3)',
-          border: `1px solid ${locked ? 'var(--warn)' : 'var(--border)'}`,
-          borderRadius: 14,
-        }}>
+        <div style={{ ...cardBase, display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
             width: 44, height: 44, borderRadius: 13,
-            background: locked ? 'rgba(245,158,11,.12)' : 'rgba(0,208,132,.10)',
+            background: locked ? 'color-mix(in srgb, var(--p) 12%, transparent)' : 'color-mix(in srgb, var(--acc2) 12%, transparent)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>
             {locked
-              ? <Lock size={20} color="var(--warn)" />
+              ? <Lock size={20} color="var(--p)" />
               : <Unlock size={20} color="var(--acc2)" />}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: locked ? 'var(--warn)' : 'var(--acc2)' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
               {locked ? i('Paramètres verrouillés', 'Settings locked', 'Ajustes bloqueados', 'Impostazioni bloccate') : i('Paramètres déverrouillés', 'Settings unlocked', 'Ajustes desbloqueados', 'Impostazioni sbloccate')}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+            <div style={{ fontSize: 13, color: 'var(--text3)' }}>
               {i('Verrouille langue & devise dans le header', 'Locks language & currency in the header', 'Bloquea idioma y divisa en el encabezado', 'Blocca lingua e valuta nell\'header')}
             </div>
           </div>
           <button type="button"
             onClick={() => locked ? cfg.unlockSettings() : cfg.lockSettings()}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--p)'; el.style.color = 'var(--p)' }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text)' }}
             style={{
               padding: '8px 16px', borderRadius: 10,
-              background: locked ? 'rgba(245,158,11,.12)' : 'rgba(0,208,132,.10)',
-              border: `1px solid ${locked ? 'var(--warn)' : 'var(--acc2)'}`,
+              background: 'transparent',
+              border: '1px solid var(--border)',
               cursor: 'pointer', fontFamily: 'var(--font)',
-              color: locked ? 'var(--warn)' : 'var(--acc2)',
-              fontSize: 12, fontWeight: 700, transition: 'all .15s',
+              color: 'var(--text)',
+              fontSize: 12, fontWeight: 700, transition: 'all .15s', flexShrink: 0,
             }}>
             {locked ? i('Déverrouiller', 'Unlock', 'Desbloquear', 'Sblocca') : i('Verrouiller', 'Lock', 'Bloquear', 'Blocca')}
           </button>
@@ -142,25 +144,21 @@ export default function SectionSecurity() {
 
         {/* JWT session */}
         {tokenInfo && jwtStatus && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 14, padding: 16,
-            background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14,
-          }}>
+          <div style={{ ...cardBase, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{
               width: 44, height: 44, borderRadius: 13,
-              background: 'rgba(108,71,255,.12)',
+              background: 'color-mix(in srgb, var(--p) 12%, transparent)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
               <Key size={20} color="var(--p)" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
                 JWT · {i('Rôle', 'Role', 'Rol', 'Ruolo')}: {tokenInfo.role}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 13, color: 'var(--text3)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 <span>{i('Expire le', 'Expires on', 'Expira el', 'Scade il')} {tokenInfo.exp}</span>
-                <span>·</span>
-                <span style={{ color: jwtStatus.color, fontWeight: 600 }}>{jwtStatus.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: jwtStatus.color, background: `color-mix(in srgb, ${jwtStatus.color} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${jwtStatus.color} 30%, transparent)`, borderRadius: 99, padding: '2px 10px', whiteSpace: 'nowrap' }}>{jwtStatus.label}</span>
               </div>
               {jwtStatus.suggest && (
                 <div style={{ fontSize: 10, color: 'var(--danger)', marginTop: 4, fontStyle: 'italic' }}>
@@ -168,9 +166,11 @@ export default function SectionSecurity() {
                 </div>
               )}
             </div>
-            <button type="button" className="btn btn-ghost"
-              style={{ padding: '7px 14px', fontSize: 11, cursor: 'pointer' }}
-              onClick={handleLogout}>
+            <button type="button"
+              onClick={handleLogout}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.2)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.1)' }}
+              style={{ padding: '8px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer', borderRadius: 10, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.2)', color: '#EF4444', fontFamily: 'var(--font)', transition: 'background .15s', flexShrink: 0 }}>
               {i('Déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}
             </button>
           </div>
@@ -181,16 +181,16 @@ export default function SectionSecurity() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{
               width: 44, height: 44, borderRadius: 13,
-              background: 'rgba(255,184,0,.12)',
+              background: 'color-mix(in srgb, var(--acc2) 12%, transparent)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
-              <ShieldCheck size={20} color="var(--warn)" />
+              <ShieldCheck size={20} color="var(--acc2)" />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
                 {i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+              <div style={{ fontSize: 13, color: 'var(--text3)' }}>
                 {i('Au moins 8 caractères', 'At least 8 characters', 'Al menos 8 caracteres', 'Almeno 8 caratteri')}
               </div>
             </div>
@@ -216,9 +216,13 @@ export default function SectionSecurity() {
           )}
           <button type="button" className="btn btn-primary" disabled={pwLoading}
             onClick={handleChangePassword}
+            onMouseEnter={e => { if (!pwLoading) (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none' }}
             style={{
-              alignSelf: 'flex-start', padding: '8px 16px', fontSize: 12,
+              alignSelf: 'flex-start', padding: '11px 22px', fontSize: 13, fontWeight: 600,
+              borderRadius: 12, boxShadow: pwLoading ? 'none' : '0 4px 16px rgba(124,58,237,.25)',
               cursor: pwLoading ? 'not-allowed' : 'pointer', opacity: pwLoading ? .6 : 1,
+              transition: 'transform .15s, box-shadow .15s',
             }}>
             {pwLoading ? i('Modification…', 'Changing…', 'Cambiando…', 'Modifica…') : i('Modifier le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}
           </button>
