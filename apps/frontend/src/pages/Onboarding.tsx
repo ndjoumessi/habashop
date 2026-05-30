@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { useAppStore, type Currency, type Lang } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { tenantApi, productsApi } from '@/lib/api'
+import { currencyForCountry } from '@/utils/countryCurrency'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 
 const STEPS = [
@@ -17,6 +18,8 @@ export default function Onboarding() {
 
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+  // La devise est auto-déduite du pays tant que l'utilisateur n'y a pas touché manuellement.
+  const [currencyTouched, setCurrencyTouched] = useState(false)
   const [form, setForm] = useState({
     shopName: '', ownerName: '', shopType: 'retail',
     country: 'Sénégal', city: '', address: '', phone: '',
@@ -118,7 +121,7 @@ export default function Onboarding() {
 
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>{i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE')}</label>
-              <select aria-label={i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE')} className="input" value={form.country} onChange={e => set({ country: e.target.value })}>
+              <select aria-label={i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE')} className="input" value={form.country} onChange={e => set({ country: e.target.value, ...(currencyTouched ? {} : { currency: currencyForCountry(e.target.value) }) })}>
                 {[['Sénégal', '🇸🇳'], ["Côte d'Ivoire", '🇨🇮'], ['Mali', '🇲🇱'], ['Burkina Faso', '🇧🇫'], ['Guinée', '🇬🇳'], ['Cameroun', '🇨🇲'], ['Congo RDC', '🇨🇩'], ['Gabon', '🇬🇦'], ['Togo', '🇹🇬'], ['Bénin', '🇧🇯'], ['Niger', '🇳🇪'], ['Tchad', '🇹🇩'], ['France', '🇫🇷'], ['Belgique', '🇧🇪'], ['Canada', '🇨🇦'], ['Autre', '🌍']].map(([c, f]) => <option key={c} value={c}>{f} {c}</option>)}
               </select>
             </div>
@@ -151,7 +154,7 @@ export default function Onboarding() {
               <label style={lbl}>{i('DEVISE', 'CURRENCY', 'DIVISA', 'VALUTA')}</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
                 {([['XOF', '🇸🇳', 'CFA Ouest'], ['XAF', '🇨🇲', 'CFA Centre'], ['EUR', '🇪🇺', 'Euro'], ['USD', '🇺🇸', 'Dollar US'], ['CAD', '🇨🇦', 'Dollar CA'], ['GBP', '🇬🇧', 'Livre £']] as const).map(([code, flag, name]) => (
-                  <button key={code} type="button" onClick={() => set({ currency: code as Currency })} style={{ padding: '10px 8px', borderRadius: 10, background: form.currency === code ? 'rgba(255,184,0,.12)' : 'rgba(255,255,255,.04)', border: `1.5px solid ${form.currency === code ? 'rgba(255,184,0,.4)' : 'rgba(255,255,255,.08)'}`, cursor: 'pointer', textAlign: 'center', fontFamily: 'var(--font)', transition: 'all .15s' }}>
+                  <button key={code} type="button" onClick={() => { setCurrencyTouched(true); set({ currency: code as Currency }) }} style={{ padding: '10px 8px', borderRadius: 10, background: form.currency === code ? 'rgba(255,184,0,.12)' : 'rgba(255,255,255,.04)', border: `1.5px solid ${form.currency === code ? 'rgba(255,184,0,.4)' : 'rgba(255,255,255,.08)'}`, cursor: 'pointer', textAlign: 'center', fontFamily: 'var(--font)', transition: 'all .15s' }}>
                     <div style={{ fontSize: 20 }}>{flag}</div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: form.currency === code ? 'var(--warn)' : 'var(--text2)', marginTop: 3 }}>{code}</div>
                     <div style={{ fontSize: 9, color: 'var(--text3)' }}>{name}</div>

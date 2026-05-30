@@ -4,6 +4,7 @@ import { useAppStore } from '@/stores/appStore'
 import type { Lang, Currency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n } from '@/hooks/useI18n'
+import { currencyForCountry } from '@/utils/countryCurrency'
 import toast from 'react-hot-toast'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import {
@@ -253,6 +254,8 @@ export default function SignupPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
+  // La devise est auto-déduite du pays tant que l'utilisateur n'y a pas touché manuellement.
+  const [currencyTouched, setCurrencyTouched] = useState(false)
 
   // Country dropdown
   const [showCountry, setShowCountry] = useState(false)
@@ -617,7 +620,7 @@ export default function SignupPage() {
                           ) : filteredCountries.map(c => (
                             <button key={c.code} type="button"
                               onMouseDown={() => {
-                                setForm(f => ({ ...f, country: c.code }))
+                                setForm(f => ({ ...f, country: c.code, ...(currencyTouched ? {} : { currency: currencyForCountry(c.code) }) }))
                                 setShowCountry(false); setCountrySearch('')
                               }}
                               style={{
@@ -647,7 +650,7 @@ export default function SignupPage() {
                 <div>
                   <Label icon={Coins}>{tx.currency}</Label>
                   <select value={form.currency}
-                    onChange={e => setForm(f => ({ ...f, currency: e.target.value as Currency }))}
+                    onChange={e => { setCurrencyTouched(true); setForm(f => ({ ...f, currency: e.target.value as Currency })) }}
                     onFocus={focusOn} onBlur={focusOff}
                     style={{ ...inputBase, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none',
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A991FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
