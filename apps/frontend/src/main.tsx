@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import App from './App'
 import './index.css'
+import './styles/public.css'
 import * as Sentry from '@sentry/react'
 
 // Sentry : actif uniquement si un DSN est fourni ET en build production (inerte sinon).

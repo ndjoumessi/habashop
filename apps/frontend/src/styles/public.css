@@ -1,0 +1,121 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Public pages design system — Landing / Signup / Login / Onboarding
+   Palette : Violet + Gold/Or (premium, africain). Style SaaS moderne.
+   Tokens scopés en .public-scope pour ne pas polluer l'app authentifiée.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.public-scope {
+  --public-bg:          #0A0A0F;
+  --public-bg2:         #0F0F1A;
+  --public-border:      rgba(139, 92, 246, 0.15);
+  --public-border-gold: rgba(234, 179, 8, 0.25);
+  --public-primary:     #7C3AED;
+  --public-primary-2:   #8B5CF6;
+  --public-gold:        #EAB308;
+  --public-gold-2:      #FCD34D;
+  --public-text:        #F8FAFC;
+  --public-text-2:      #94A3B8;
+  --public-text-3:      #64748B;
+
+  --grad-hero: linear-gradient(135deg, #7C3AED 0%, #5B21B6 50%, #1E1B4B 100%);
+  --grad-gold: linear-gradient(135deg, #EAB308 0%, #F59E0B 100%);
+  --grad-card: linear-gradient(135deg, rgba(124,58,237,0.10) 0%, rgba(234,179,8,0.05) 100%);
+}
+
+/* ─── Inputs ─── */
+.public-input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  color: #F8FAFC;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.public-input::placeholder { color: #64748B; }
+.public-input:focus {
+  border-color: #7C3AED;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+/* ─── Boutons ─── */
+.public-btn-primary {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+.public-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(124, 58, 237, 0.4);
+}
+.public-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.public-btn-gold {
+  border: 1px solid rgba(234, 179, 8, 0.5);
+  color: #EAB308;
+  border-radius: 12px;
+  font-weight: 600;
+  background: rgba(234, 179, 8, 0.05);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+.public-btn-gold:hover {
+  background: rgba(234, 179, 8, 0.1);
+  border-color: #EAB308;
+  transform: translateY(-1px);
+}
+
+/* ─── Cards ─── */
+.public-card {
+  background: rgba(15, 15, 26, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 16px;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+.public-card:hover {
+  border-color: rgba(234, 179, 8, 0.3);
+  box-shadow: 0 8px 32px rgba(234, 179, 8, 0.05);
+  transform: translateY(-4px);
+}
+
+/* ─── Texte doré (gradient clip) ─── */
+.gold-text {
+  background: linear-gradient(135deg, #EAB308 0%, #FCD34D 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ─── Glow violet réutilisable (pseudo-fond radial) ─── */
+.public-glow-violet {
+  position: absolute;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.25) 0%, transparent 70%);
+  filter: blur(40px);
+}
+
+/* ─── Animation pulse subtile (badge hero ✦) ─── */
+@keyframes publicPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.82); }
+}
+.public-pulse { animation: publicPulse 2.2s ease-in-out infinite; }
+
+/* ─── Accessibilité : couper les animations si demandé ─── */
+@media (prefers-reduced-motion: reduce) {
+  .public-pulse { animation: none; }
+  .public-card:hover,
+  .public-btn-primary:hover,
+  .public-btn-gold:hover { transform: none; }
+  .public-scope * { transition: none !important; scroll-behavior: auto !important; }
+}

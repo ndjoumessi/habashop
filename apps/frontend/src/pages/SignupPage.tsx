@@ -32,6 +32,8 @@ type ST = {
   search_country: string; no_country: string
   errRequired: string; errPassword: string; errPasswordLen: string; errTerms: string
   adv_free: string; adv_secure: string; adv_whatsapp: string; adv_countries: string
+  stat_shops: string; stat_countries: string
+  testimonial: string
 }
 
 const TX: Record<Lang, ST> = {
@@ -66,6 +68,8 @@ const TX: Record<Lang, ST> = {
     adv_secure: 'Données sécurisées SSL/TLS',
     adv_whatsapp: 'Support WhatsApp inclus',
     adv_countries: '150+ pays, 6 devises supportées',
+    stat_shops: 'boutiques actives', stat_countries: 'pays',
+    testimonial: "HabaShop a transformé ma boutique. Je gère tout depuis mon téléphone.",
   },
   en: {
     brand_title: 'Join HabaShop',
@@ -98,6 +102,8 @@ const TX: Record<Lang, ST> = {
     adv_secure: 'Secure SSL/TLS data',
     adv_whatsapp: 'WhatsApp support included',
     adv_countries: '150+ countries, 6 currencies',
+    stat_shops: 'active shops', stat_countries: 'countries',
+    testimonial: "HabaShop transformed my shop. I manage everything from my phone.",
   },
   es: {
     brand_title: 'Únete a HabaShop',
@@ -130,6 +136,8 @@ const TX: Record<Lang, ST> = {
     adv_secure: 'Datos seguros SSL/TLS',
     adv_whatsapp: 'Soporte WhatsApp incluido',
     adv_countries: '150+ países, 6 divisas',
+    stat_shops: 'tiendas activas', stat_countries: 'países',
+    testimonial: "HabaShop transformó mi tienda. Lo gestiono todo desde mi teléfono.",
   },
   it: {
     brand_title: 'Unisciti a HabaShop',
@@ -162,6 +170,8 @@ const TX: Record<Lang, ST> = {
     adv_secure: 'Dati sicuri SSL/TLS',
     adv_whatsapp: 'Supporto WhatsApp incluso',
     adv_countries: '150+ paesi, 6 valute',
+    stat_shops: 'negozi attivi', stat_countries: 'paesi',
+    testimonial: "HabaShop ha trasformato il mio negozio. Gestisco tutto dal telefono.",
   },
 }
 
@@ -198,24 +208,26 @@ const COUNTRIES = [
 ]
 
 const D = {
-  bg:      '#07070F',
-  bg2:     '#0D0D1C',
-  bg3:     '#111128',
-  bg4:     '#161636',
-  p:       '#6C47FF',
-  p2:      '#8B6FFF',
-  p3:      '#A991FF',
-  text:    '#F0F0FF',
-  text2:   'rgba(240,240,255,.66)',
-  text3:   'rgba(240,240,255,.42)',
-  text4:   'rgba(240,240,255,.22)',
-  border:  'rgba(255,255,255,.08)',
-  border2: 'rgba(255,255,255,.15)',
-  acc:     '#00D084',
-  acc2:    '#00B8FF',
-  acc3:    '#FF9500',
+  bg:      '#0A0A0F',
+  bg2:     '#0F0F1A',
+  bg3:     '#13132A',
+  bg4:     'rgba(255,255,255,.03)',
+  p:       '#7C3AED',
+  p2:      '#8B5CF6',
+  p3:      '#A78BFA',
+  gold:    '#EAB308',
+  gold2:   '#FCD34D',
+  text:    '#F8FAFC',
+  text2:   '#94A3B8',
+  text3:   '#64748B',
+  text4:   'rgba(148,163,184,.45)',
+  border:  'rgba(139,92,246,.15)',
+  border2: 'rgba(139,92,246,.25)',
+  acc:     '#22C55E',
+  acc2:    '#38BDF8',
+  acc3:    '#EAB308',
   warn:    '#FBBF24',
-  danger:  '#FF3B5C',
+  danger:  '#F43F5E',
 }
 
 const FONT = "'Outfit', system-ui, -apple-system, sans-serif"
@@ -325,9 +337,9 @@ export default function SignupPage() {
   const inputBase: React.CSSProperties = {
     width: '100%',
     padding: '11px 14px',
-    background: D.bg4,
-    border: `1.5px solid ${D.border2}`,
-    borderRadius: 10,
+    background: 'rgba(255,255,255,.03)',
+    border: `1.5px solid rgba(139,92,246,.2)`,
+    borderRadius: 12,
     fontSize: 14,
     fontFamily: FONT,
     color: D.text,
@@ -338,10 +350,10 @@ export default function SignupPage() {
 
   const focusOn = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
     e.target.style.borderColor = D.p2
-    e.target.style.boxShadow = '0 0 0 3px rgba(124,111,240,.15)'
+    e.target.style.boxShadow = '0 0 0 3px rgba(124,58,237,.15)'
   }
   const focusOff = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
-    e.target.style.borderColor = D.border2
+    e.target.style.borderColor = 'rgba(139,92,246,.2)'
     e.target.style.boxShadow = 'none'
   }
 
@@ -357,123 +369,121 @@ export default function SignupPage() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: D.bg, fontFamily: FONT }} className="su-grid">
+    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--public-bg)', fontFamily: FONT }} className="public-scope su-grid">
 
       {/* ════ LEFT: Branding ════ */}
       <div className="su-left" style={{
         position: 'relative', overflow: 'hidden',
-        background: `linear-gradient(160deg,${D.bg} 0%,${D.bg2} 50%,#0A0718 100%)`,
+        background: 'linear-gradient(160deg,#0F0A2E 0%,#0A0A0F 60%,#0A0A0F 100%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '60px 48px',
+        padding: '56px 48px',
       }}>
         {/* Grid */}
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundImage: `linear-gradient(rgba(108,71,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(108,71,255,.07) 1px,transparent 1px)`,
+          backgroundImage: `linear-gradient(rgba(124,58,237,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,.07) 1px,transparent 1px)`,
           backgroundSize: '40px 40px',
           maskImage: 'radial-gradient(ellipse at center,black 40%,transparent 80%)',
           WebkitMaskImage: 'radial-gradient(ellipse at center,black 40%,transparent 80%)',
         }}/>
-        {/* Orbs */}
-        <div style={{ position: 'absolute', top: '12%', left: '20%', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle,rgba(108,71,255,.2),transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none', animation: 'su-float 7s ease-in-out infinite' }}/>
-        <div style={{ position: 'absolute', bottom: '18%', right: '15%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,208,132,.14),transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none', animation: 'su-float 9s ease-in-out infinite reverse' }}/>
+        {/* Violet glow top-left */}
+        <div className="public-glow-violet" style={{ position: 'absolute', top: '-10%', left: '-10%', width: 480, height: 480, pointerEvents: 'none' }}/>
+        {/* Gold orb bottom */}
+        <div style={{ position: 'absolute', bottom: '12%', right: '12%', width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle,rgba(234,179,8,.12),transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none', animation: 'su-float 9s ease-in-out infinite reverse' }}/>
 
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 380 }}>
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 400 }}>
           {/* Logo */}
           <button type="button" onClick={() => navigate('/')}
             aria-label={i('Accueil HabaShop', 'HabaShop home', 'Inicio HabaShop', 'Home HabaShop')}
             style={{
-              width: 72, height: 72, borderRadius: 22,
+              width: 64, height: 64, borderRadius: 20,
               background: `linear-gradient(135deg,${D.p},${D.p2})`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 22px', color: '#fff', cursor: 'pointer', border: 'none',
-              boxShadow: '0 16px 48px rgba(108,71,255,.5)',
+              margin: '0 auto 20px', color: '#fff', cursor: 'pointer', border: 'none',
+              boxShadow: '0 16px 48px rgba(124,58,237,.5)',
               transition: 'transform .2s',
             }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'none'}
           >
-            <ShoppingCart size={32} strokeWidth={2.4}/>
+            <ShoppingCart size={30} strokeWidth={2.4}/>
           </button>
 
-          <h1 style={{ fontSize: 30, fontWeight: 900, color: D.text, letterSpacing: '-1px', marginBottom: 12, lineHeight: 1.1 }}>
+          <h1 style={{ fontSize: 30, fontWeight: 900, color: D.text, letterSpacing: '-1px', marginBottom: 10, lineHeight: 1.1 }}>
             {tx.brand_title.split(' ').slice(0, -1).join(' ')}{' '}
-            <span style={{ background: `linear-gradient(135deg,${D.p2},${D.p3})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              HabaShop
-            </span>
+            <span className="gold-text">HabaShop</span>
           </h1>
-          <p style={{ fontSize: 14, color: D.text2, lineHeight: 1.7, marginBottom: 32 }}>
+          <p style={{ fontSize: 14, color: D.text2, lineHeight: 1.7, marginBottom: 28 }}>
             {tx.brand_sub}
           </p>
 
-          {/* Progress steps */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 14 }}>
-            {[1, 2].map(s => {
-              const active = step >= s
-              const done = step > s
-              return (
-                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: '50%',
-                    background: active ? `linear-gradient(135deg,${D.p},${D.p2})` : 'rgba(255,255,255,.06)',
-                    border: `2px solid ${active ? 'transparent' : D.border2}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 13, fontWeight: 900,
-                    color: active ? '#fff' : D.text4, transition: 'all .3s',
-                    boxShadow: step === s ? '0 4px 14px rgba(108,71,255,.45)' : 'none',
-                  }}>
-                    {done ? <Check size={15} strokeWidth={3}/> : s}
-                  </div>
-                  {s < 2 && (
-                    <div style={{
-                      width: 42, height: 2, borderRadius: 99,
-                      background: step > s ? D.p : 'rgba(255,255,255,.1)',
-                      transition: 'background .3s',
-                    }}/>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, textAlign: 'center', marginBottom: 32 }}>
+          {/* Stats */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 40, marginBottom: 30 }}>
             {[
-              { n: 1, label: tx.step1_label },
-              { n: 2, label: tx.step2_label },
+              { value: '500+', label: tx.stat_shops },
+              { value: '12',   label: tx.stat_countries },
             ].map(s => (
-              <div key={s.n} style={{
-                fontSize: 11, fontWeight: 700,
-                color: step >= s.n ? D.p3 : D.text4,
-                transition: 'color .3s',
-              }}>{s.label}</div>
-            ))}
-          </div>
-
-          {/* Advantages */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {[
-              { Icon: Check,         label: tx.adv_free,      color: D.acc  },
-              { Icon: Shield,        label: tx.adv_secure,    color: D.acc2 },
-              { Icon: MessageSquare, label: tx.adv_whatsapp,  color: '#25D366' },
-              { Icon: Globe,         label: tx.adv_countries, color: D.acc3 },
-            ].map(a => (
-              <div key={a.label} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '9px 12px',
-                background: 'rgba(255,255,255,.04)',
-                border: `1px solid ${D.border}`,
-                borderRadius: 10, textAlign: 'left',
-              }}>
-                <span style={{
-                  width: 22, height: 22, borderRadius: 7,
-                  background: `${a.color}1F`, color: a.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  <a.Icon size={12} strokeWidth={2.4}/>
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: D.text2 }}>{a.label}</span>
+              <div key={s.label} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, marginBottom: 6 }} className="gold-text">{s.value}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: D.text2 }}>{s.label}</div>
               </div>
             ))}
+          </div>
+
+          {/* Features */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 30 }}>
+            {[
+              { Icon: Check,         label: tx.adv_free      },
+              { Icon: Shield,        label: tx.adv_secure    },
+              { Icon: MessageSquare, label: tx.adv_whatsapp  },
+              { Icon: Globe,         label: tx.adv_countries },
+            ].map(a => (
+              <div key={a.label} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                textAlign: 'left',
+              }}>
+                <span style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: 'rgba(124,58,237,.16)',
+                  border: `1px solid ${D.border2}`,
+                  color: D.p3,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <a.Icon size={15} strokeWidth={2.4}/>
+                </span>
+                <span style={{ fontSize: 13.5, fontWeight: 600, color: D.text }}>{a.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Testimonial */}
+          <div style={{
+            textAlign: 'left',
+            padding: '18px 20px',
+            background: 'var(--grad-card)',
+            border: '1px solid var(--public-border-gold)',
+            borderRadius: 16,
+          }}>
+            <div style={{ display: 'flex', gap: 2, marginBottom: 10, color: D.gold }}>
+              {[0, 1, 2, 3, 4].map(i => (
+                <span key={i} style={{ fontSize: 14, lineHeight: 1 }}>★</span>
+              ))}
+            </div>
+            <p style={{ fontSize: 13.5, color: D.text, lineHeight: 1.6, marginBottom: 14, fontStyle: 'italic' }}>
+              “{tx.testimonial}”
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+              <span style={{
+                width: 38, height: 38, borderRadius: '50%',
+                background: `linear-gradient(135deg,${D.p},${D.p2})`,
+                color: '#fff', fontSize: 13, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>AK</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: D.text }}>Aminata Koné</div>
+                <div style={{ fontSize: 11.5, color: D.text2 }}>Superette Dakar</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -483,28 +493,54 @@ export default function SignupPage() {
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         padding: '40px clamp(20px,4vw,56px)',
-        background: D.bg2,
+        background: 'var(--public-bg2)',
         overflowY: 'auto',
       }}>
         <div style={{ width: '100%', maxWidth: 420 }}>
 
+          {/* Steps indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 22 }}>
+            {[1, 2].map(s => {
+              const active = step >= s
+              const done = step > s
+              return (
+                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: s < 2 ? 1 : 'none' }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: active ? `linear-gradient(135deg,${D.p},${D.p2})` : 'rgba(255,255,255,.05)',
+                    border: `2px solid ${active ? 'transparent' : D.border2}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, fontWeight: 900,
+                    color: active ? '#fff' : D.text4, transition: 'all .3s',
+                    boxShadow: step === s ? '0 4px 14px rgba(124,58,237,.45)' : 'none',
+                    flexShrink: 0,
+                  }}>
+                    {done ? <Check size={15} strokeWidth={3}/> : s}
+                  </div>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: active ? D.p3 : D.text4, transition: 'color .3s' }}>
+                    {s === 1 ? tx.step1_label : tx.step2_label}
+                  </span>
+                  {s < 2 && (
+                    <div style={{
+                      flex: 1, height: 2, borderRadius: 99, marginLeft: 4,
+                      background: step > s ? 'var(--grad-hero)' : 'rgba(255,255,255,.08)',
+                      transition: 'background .3s',
+                    }}/>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
           {/* Header */}
           <div style={{ marginBottom: 24 }}>
-            <h2 style={{
-              fontSize: 22, fontWeight: 900, color: D.text,
-              letterSpacing: '-.5px', marginBottom: 6,
-              display: 'flex', alignItems: 'center', gap: 10,
+            <h2 className="gold-text" style={{
+              fontSize: 30, fontWeight: 900,
+              letterSpacing: '-.8px', marginBottom: 6, lineHeight: 1.1,
             }}>
-              <span style={{
-                width: 34, height: 34, borderRadius: 10,
-                background: `${D.p}22`, color: D.p3,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {step === 1 ? <Store size={18} strokeWidth={2.4}/> : <Lock size={18} strokeWidth={2.4}/>}
-              </span>
               {step === 1 ? tx.step1_head : tx.step2_head}
             </h2>
-            <p style={{ fontSize: 13, color: D.text3, paddingLeft: 44 }}>
+            <p style={{ fontSize: 13.5, color: D.text2 }}>
               {step === 1 ? tx.step1_sub : tx.step2_sub}
             </p>
           </div>
@@ -627,7 +663,7 @@ export default function SignupPage() {
                               style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
                                 width: '100%', padding: '9px 14px',
-                                background: form.country === c.code ? 'rgba(108,71,255,.12)' : 'transparent',
+                                background: form.country === c.code ? 'rgba(124,58,237,.14)' : 'transparent',
                                 border: 'none', borderBottom: `1px solid ${D.border}`,
                                 cursor: 'pointer', fontFamily: FONT,
                                 fontSize: 12, textAlign: 'left',
@@ -654,7 +690,7 @@ export default function SignupPage() {
                     onChange={e => { setCurrencyTouched(true); setForm(f => ({ ...f, currency: e.target.value as Currency })) }}
                     onFocus={focusOn} onBlur={focusOff}
                     style={{ ...inputBase, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none',
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A991FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A78BFA' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
                       backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36,
                     }}>
                     <option value="XOF">XOF — {i('FCFA Ouest', 'West CFA Franc', 'Franco CFA Oeste', 'Franco CFA Ovest')}</option>
@@ -686,7 +722,7 @@ export default function SignupPage() {
                   fontSize: 14, fontWeight: 800,
                   cursor: step1Valid ? 'pointer' : 'not-allowed',
                   fontFamily: FONT,
-                  boxShadow: step1Valid ? '0 6px 20px rgba(108,71,255,.4)' : 'none',
+                  boxShadow: step1Valid ? '0 6px 20px rgba(124,58,237,.4)' : 'none',
                   transition: 'all .2s',
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
@@ -837,7 +873,7 @@ export default function SignupPage() {
                   fontSize: 14, fontWeight: 800,
                   cursor: step2Valid && !loading ? 'pointer' : 'not-allowed',
                   fontFamily: FONT,
-                  boxShadow: step2Valid && !loading ? '0 6px 20px rgba(108,71,255,.4)' : 'none',
+                  boxShadow: step2Valid && !loading ? '0 6px 20px rgba(124,58,237,.4)' : 'none',
                   transition: 'all .2s',
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}

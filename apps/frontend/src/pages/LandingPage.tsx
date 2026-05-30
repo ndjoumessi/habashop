@@ -458,6 +458,8 @@ const D = {
   p:       '#6C47FF',
   p2:      '#8B6FFF',
   p3:      '#A991FF',
+  gold:    '#EAB308',
+  gold2:   '#FCD34D',
   text:    '#F0F0FF',
   text2:   'rgba(240,240,255,.66)',
   text3:   'rgba(240,240,255,.65)',
@@ -631,7 +633,7 @@ export default function LandingPage() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: D.bg, color: D.text, fontFamily: FONT, overflowX: 'hidden' }}>
+    <div className="public-scope" style={{ minHeight: '100vh', background: D.bg, color: D.text, fontFamily: FONT, overflowX: 'hidden' }}>
 
       {/* ════ NAVBAR ════ */}
       <nav style={{
@@ -761,7 +763,7 @@ export default function LandingPage() {
         {/* Orbs */}
         <div style={{ position: 'absolute', top: '8%', left: '8%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(108,71,255,.16),transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', animation: 'lp-float 6s ease-in-out infinite' }}/>
         <div style={{ position: 'absolute', bottom: '12%', right: '8%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,208,132,.11),transparent 70%)', filter: 'blur(50px)', pointerEvents: 'none', animation: 'lp-float 8s ease-in-out infinite reverse' }}/>
-        <div style={{ position: 'absolute', top: '38%', right: '32%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,184,255,.09),transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none' }}/>
+        <div style={{ position: 'absolute', top: '38%', right: '30%', width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle,rgba(234,179,8,.12),transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }}/>
 
         {/* Content */}
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 820, width: '100%' }}>
@@ -769,10 +771,12 @@ export default function LandingPage() {
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '6px 16px', background: 'rgba(108,71,255,.12)',
-            border: '1px solid rgba(108,71,255,.3)', borderRadius: 99, marginBottom: 28,
+            border: '1px solid transparent', borderRadius: 99, marginBottom: 28,
+            backgroundImage: `linear-gradient(rgba(108,71,255,.12),rgba(108,71,255,.12)),linear-gradient(135deg,${D.p2},${D.gold})`,
+            backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box',
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: D.p2, animation: 'lp-pulse 2s infinite', display: 'inline-block' }}/>
-            <Sparkles size={12} strokeWidth={2.4} color={D.p3}/>
+            <span className="public-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: D.gold, animation: 'lp-pulse 2s infinite', display: 'inline-block' }}/>
+            <Sparkles size={12} strokeWidth={2.4} color={D.gold2}/>
             <span style={{ fontSize: 12, fontWeight: 700, color: D.p3 }}>{lp.badge}</span>
           </div>
 
@@ -785,7 +789,7 @@ export default function LandingPage() {
             <span style={{ display: 'block' }}>{lp.h1a}</span>
             <span style={{
               display: 'block',
-              background: `linear-gradient(135deg,${D.p},${D.p3} 50%,${D.acc})`,
+              background: `linear-gradient(135deg,${D.p2},${D.gold} 55%,${D.gold2})`,
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>{lp.h1b}</span>
           </h1>
@@ -815,17 +819,34 @@ export default function LandingPage() {
             <button type="button" onClick={() => navigate('/login')}
               style={{
                 padding: '15px 28px', borderRadius: 14,
-                background: 'rgba(255,255,255,.06)',
-                border: `1px solid ${D.border2}`, color: D.text,
-                fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT,
+                background: 'rgba(234,179,8,.08)',
+                border: `1px solid ${D.gold}`, color: D.gold2,
+                fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: FONT,
                 transition: 'all .2s',
                 display: 'inline-flex', alignItems: 'center', gap: 8,
               }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.1)'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.06)'}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(234,179,8,.16)'; el.style.boxShadow = '0 8px 24px rgba(234,179,8,.3)' }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(234,179,8,.08)'; el.style.boxShadow = 'none' }}
             >
-              <Play size={14} strokeWidth={2.6}/>{lp.cta2}
+              <Play size={14} strokeWidth={2.6} color={D.gold2}/>{lp.cta2}
             </button>
+          </div>
+
+          {/* Stats row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(20px,5vw,44px)', flexWrap: 'wrap', marginBottom: 48 }}>
+            {[
+              { v: '500+',  l: i('Boutiques', 'Shops', 'Tiendas', 'Negozi') },
+              { v: '12',    l: i('Pays', 'Countries', 'Países', 'Paesi') },
+              { v: '99.9%', l: i('Disponibilité', 'Uptime', 'Disponibilidad', 'Disponibilità') },
+            ].map((s, idx) => (
+              <div key={s.l} style={{ display: 'flex', alignItems: 'center', gap: 'clamp(20px,5vw,44px)' }}>
+                {idx > 0 && <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,.1)' }}/>}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 'clamp(24px,3vw,30px)', fontWeight: 900, color: D.gold, fontFamily: MONO, letterSpacing: '-1px', lineHeight: 1.1 }}>{s.v}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: D.text2, marginTop: 4 }}>{s.l}</div>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Social proof */}
@@ -911,8 +932,8 @@ export default function LandingPage() {
       <section id="section-features" style={{ padding: '88px clamp(16px,4vw,80px)', background: D.bg2 }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <span style={{
-            display: 'inline-block', background: 'rgba(108,71,255,.1)',
-            border: '1px solid rgba(108,71,255,.25)', color: D.p3,
+            display: 'inline-block', background: 'rgba(234,179,8,.1)',
+            border: '1px solid rgba(234,179,8,.3)', color: D.gold2,
             fontSize: 11, fontWeight: 800, padding: '5px 14px', borderRadius: 99,
             letterSpacing: '.8px',
           }}>{lp.features_label}</span>
@@ -925,33 +946,33 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(290px,1fr))', gap: 16, maxWidth: 1100, margin: '0 auto' }}>
           {features.map(f => (
             <div key={f.title} style={{
-              background: `linear-gradient(160deg,${D.bg2},${D.bg3})`,
-              border: `1px solid ${D.border}`, borderRadius: 20, padding: 24,
-              transition: 'all .25s cubic-bezier(.34,1.56,.64,1)',
+              background: 'rgba(15,15,26,.8)',
+              border: '1px solid rgba(139,92,246,.15)', borderRadius: 16, padding: 24,
+              transition: 'all .3s ease',
               position: 'relative', overflow: 'hidden', cursor: 'default',
             }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-5px)'; el.style.borderColor = `${f.color}40`; el.style.boxShadow = `0 20px 50px rgba(0,0,0,.5),0 0 0 1px ${f.color}22` }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.borderColor = D.border; el.style.boxShadow = 'none' }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-4px)'; el.style.borderColor = D.gold; el.style.boxShadow = '0 16px 40px rgba(234,179,8,.12)' }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.borderColor = 'rgba(139,92,246,.15)'; el.style.boxShadow = 'none' }}
             >
               <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: `radial-gradient(circle,${f.color}1F,transparent 70%)`, pointerEvents: 'none' }}/>
 
               <div style={{
-                width: 52, height: 52, borderRadius: 16,
-                background: `${f.color}18`, border: `1px solid ${f.color}33`,
+                width: 52, height: 52, borderRadius: '50%',
+                background: `linear-gradient(135deg,${D.p},#4F46E5)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 16, color: f.color,
-                boxShadow: `0 8px 24px ${f.color}26`,
+                marginBottom: 16, color: '#fff',
+                boxShadow: `0 8px 24px ${D.p}40`,
               }}>{f.icon}</div>
 
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: D.text, marginBottom: 8, letterSpacing: '-.2px' }}>{f.title}</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: D.text, marginBottom: 8, letterSpacing: '-.2px' }}>{f.title}</h3>
               <p style={{ fontSize: 13, color: D.text2, lineHeight: 1.7, marginBottom: 16 }}>{f.desc}</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {f.items.map(it => (
-                  <div key={it} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: D.text2 }}>
+                  <div key={it} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: D.p3 }}>
                     <span style={{
                       width: 18, height: 18, borderRadius: '50%',
-                      background: `${f.color}22`, color: f.color, flexShrink: 0,
+                      background: 'rgba(124,58,237,.18)', color: D.p2, flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <Check size={11} strokeWidth={3}/>
@@ -1121,13 +1142,13 @@ export default function LandingPage() {
               background: p.pop
                 ? `linear-gradient(160deg,${D.p},${D.p2} 70%,${D.p3})`
                 : `linear-gradient(160deg,${D.bg2},${D.bg3})`,
-              border: `1.5px solid ${p.pop ? 'transparent' : D.border}`,
+              border: `1.5px solid ${p.pop ? D.gold : 'rgba(139,92,246,.25)'}`,
               borderRadius: 22, padding: '32px 28px',
               position: 'relative',
               transition: 'all .2s',
               transform: p.pop ? 'scale(1.03)' : 'none',
               boxShadow: p.pop
-                ? '0 24px 60px rgba(108,71,255,.5),0 0 0 1px rgba(108,71,255,.2)'
+                ? '0 24px 60px rgba(108,71,255,.5),0 0 0 1px rgba(234,179,8,.4)'
                 : '0 2px 12px rgba(0,0,0,.2)',
             }}
               onMouseEnter={e => { if (!p.pop) { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = '0 20px 50px rgba(0,0,0,.5)' } }}
@@ -1136,13 +1157,13 @@ export default function LandingPage() {
               {p.tag && (
                 <div style={{
                   position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)',
-                  background: '#fff', color: D.p,
+                  background: `linear-gradient(135deg,${D.gold},${D.gold2})`, color: '#1A1A2E',
                   fontSize: 10, fontWeight: 900, padding: '5px 14px', borderRadius: 99,
                   textTransform: 'uppercase', letterSpacing: '.7px',
-                  boxShadow: '0 6px 18px rgba(0,0,0,.3)',
+                  boxShadow: '0 6px 18px rgba(234,179,8,.45)',
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                 }}>
-                  <Star size={11} fill={D.acc3} color={D.acc3}/>{p.tag}
+                  <Star size={11} fill="#1A1A2E" color="#1A1A2E"/>{p.tag}
                 </div>
               )}
 
@@ -1154,7 +1175,7 @@ export default function LandingPage() {
               </div>
 
               <div style={{ marginBottom: 22 }}>
-                <div style={{ fontSize: p.xof === 0 ? 26 : 40, fontWeight: 900, letterSpacing: '-1.5px', lineHeight: 1, color: p.pop ? '#fff' : D.text }}>
+                <div style={{ fontSize: p.xof === 0 ? 26 : 40, fontWeight: 900, letterSpacing: '-1.5px', lineHeight: 1, color: p.xof === 0 ? (p.pop ? '#fff' : D.text) : (p.pop ? D.gold2 : D.gold) }}>
                   {p.xof === 0 ? lp.on_estimate : formatPlanPrice(p.xof)}
                 </div>
                 {p.xof !== 0 && (
@@ -1296,7 +1317,8 @@ export default function LandingPage() {
       {/* ════ FOOTER ════ */}
       <footer style={{
         padding: '40px clamp(16px,4vw,80px) 28px',
-        borderTop: `1px solid ${D.border}`,
+        borderTop: '1px solid transparent',
+        borderImage: `linear-gradient(90deg,${D.p},transparent 50%,${D.p}) 1`,
         background: D.bg,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 22 }}>
@@ -1314,11 +1336,11 @@ export default function LandingPage() {
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
             {lp.footer_links.map(link => (
               <a key={link} href="#" style={{
-                fontSize: 12, color: D.text3, textDecoration: 'none',
+                fontSize: 12, color: D.text2, textDecoration: 'none',
                 transition: 'color .15s', cursor: 'pointer',
               }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = D.text}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = D.text3}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#fff'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = D.text2}
               >{link}</a>
             ))}
           </div>
