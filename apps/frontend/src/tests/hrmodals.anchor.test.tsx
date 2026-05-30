@@ -182,16 +182,16 @@ describe('HRModals — modale demande de congé', () => {
   })
 })
 
-describe('HRModals — NewContractModal : suffixe devise dynamique (SYMBOLE)', () => {
-  it('affiche le SYMBOLE de la devise officielle du tenant (EUR → "€"), pas le code ni "FCFA" hardcodé', () => {
-    const p = makeProps({ showNewContractModal: true, tenantCurrency: 'EUR' })
+describe('HRModals — NewContractModal : suffixe = devise d\'AFFICHAGE (SYMBOLE)', () => {
+  it('affiche le SYMBOLE de la devise d\'affichage (EUR → "€"), pas le code ni "FCFA" hardcodé', () => {
+    const p = makeProps({ showNewContractModal: true, currencySymbol: '€' })
     render(<HRModals {...p} />)
     expect(screen.getByText('€')).toBeInTheDocument()
     expect(screen.queryByText('EUR')).toBeNull()
     expect(screen.queryByText('FCFA')).toBeNull()
   })
-  it('tenant XOF → suffixe "FCFA" (symbole)', () => {
-    const p = makeProps({ showNewContractModal: true, tenantCurrency: 'XOF' })
+  it('devise XOF → suffixe "FCFA" (symbole)', () => {
+    const p = makeProps({ showNewContractModal: true, currencySymbol: 'FCFA' })
     render(<HRModals {...p} />)
     expect(screen.getByText('FCFA')).toBeInTheDocument()
   })

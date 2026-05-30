@@ -20,6 +20,7 @@ import HRTabs from '@/components/hr/HRTabs'
 import HRModals from '@/components/hr/HRModals'
 import EmptyState from '@/components/ui/EmptyState'
 import { type Employee, type LeaveRequest, COLORS, toInputDate, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
+import { writeLeaveShiftsToPlanning } from '@/components/planning/planningShared'
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -407,6 +408,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
 
   function handleLeaveAction(id: number, status: 'approved' | 'refused') {
     setLeaves(prev => prev.map(l => l.id === id ? { ...l, status } : l))
+    // Congé approuvé → reporte des shifts "Congé" sur le planning (localStorage partagé,
+    // lu par la page Planning à son montage). Voir writeLeaveShiftsToPlanning (limite : modèle par jour de semaine).
+    if (status === 'approved') {
+      const leave = leaves.find(l => l.id === id)
+      if (leave?.empId != null && leave.from && leave.to) {
+        writeLeaveShiftsToPlanning(String(leave.empId), leave.from, leave.to)
+      }
+    }
     toast.success(status === 'approved'
       ? (lang === 'en' ? '✅ Leave approved' : lang === 'es' ? '✅ Permiso aprobado' : lang === 'it' ? '✅ Ferie approvate' : '✅ Congé approuvé')
       : (lang === 'en' ? '❌ Leave refused' : lang === 'es' ? '❌ Permiso rechazado' : lang === 'it' ? '❌ Ferie rifiutate' : '❌ Congé refusé'))

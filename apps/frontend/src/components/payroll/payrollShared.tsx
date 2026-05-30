@@ -1,4 +1,4 @@
-import { useAppStore, formatCurrency, convertCurrency, t } from '@/stores/appStore'
+import { useAppStore, formatAmount, t } from '@/stores/appStore'
 import { openPDF, htmlTable, htmlInfoGrid } from '@/utils/export'
 
 export type PayStatus = 'PAYÉ' | 'EN ATTENTE' | 'SUSPENDU' | 'GÉNÉRÉ'
@@ -110,7 +110,10 @@ export function EmpAvatar({ r, size = 32 }: { r: PayRecord; size?: number }) {
 
 export function printBulletin(bulletin: PayRecord) {
   const { currency, lang } = useAppStore.getState()
-  const fmtP = (n: number) => formatCurrency(convertCurrency(n, 'XOF', currency), currency)
+  // Montants en base XOF. formatAmount convertit XOF→devise PUIS formate — exactement
+  // ce que fait useFormatAmount à l'écran. (Bug corrigé : ne PAS pré-convertir avant,
+  // sinon double conversion → PDF ≠ écran, ex. 686,02 € affiché en ~1,05 €.)
+  const fmtP = (n: number) => formatAmount(n, currency)
 
   const { brut, absencePenalty, cnss, irpp, net } = payrollBreakdown(bulletin)
 

@@ -3,7 +3,7 @@ import { useAppStore } from '@/stores/appStore'
 import { employeesApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import {
-  SHIFT_TYPES, shiftLabel, localeFor, buildT,
+  SHIFT_TYPES, shiftLabel, localeFor, buildT, SHIFTS_STORAGE_KEY,
   type ShiftType, type PlanningEmployee,
 } from '@/components/planning/planningShared'
 import PlanningHeader from '@/components/planning/PlanningHeader'
@@ -19,7 +19,7 @@ export default function Planning() {
   const [loading, setLoading] = useState(true)
   const [activeShift, setActiveShift] = useState<ShiftType>('full')
   const [shifts, setShifts] = useState<Record<string,Record<number,ShiftType>>>(() => {
-    try { return JSON.parse(localStorage.getItem('habashop_shifts') ?? 'null') ?? {} } catch { return {} }
+    try { return JSON.parse(localStorage.getItem(SHIFTS_STORAGE_KEY) ?? 'null') ?? {} } catch { return {} }
   })
   const [filterDept, setFilterDept] = useState('all')
   const [filterStatus, setFilterStatus] = useState<ShiftType|'all'>('all')
@@ -31,15 +31,16 @@ export default function Planning() {
     employeesApi.list().then((data:any[]) => {
       if (data?.length > 0) setEmployees(data.map((e:any) => ({
         id: e.id, name: e.name??'', role: e.role??'',
-        dept: e.dept??'', avatar: (e.name??'??').split(' ')
+        // L'API renvoie `department` (HR mappe pareil) ; lire `dept` seul → '' → filtre département inopérant.
+        dept: e.department ?? e.dept ?? '', avatar: (e.name??'??').split(' ')
           .map((n:string)=>n[0]??'').join('').slice(0,2).toUpperCase(),
-        color: e.color??'#6C47FF', isActive: e.isActive!==false,
+        color: e.color??'#6C47FF', isActive: e.active ?? e.isActive ?? e.status !== 'inactive',
       })))
     }).catch(()=>{}).finally(()=>setLoading(false))
   }, [])
 
   useEffect(() => {
-    localStorage.setItem('habashop_shifts', JSON.stringify(shifts))
+    localStorage.setItem(SHIFTS_STORAGE_KEY, JSON.stringify(shifts))
   }, [shifts])
 
   const weekDays = useMemo(() => {

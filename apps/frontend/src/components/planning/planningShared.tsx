@@ -32,6 +32,41 @@ export const getDayLabels = (lang: string) => ({
   it:['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],
 }[lang as 'fr'|'en'|'es'|'it'] ?? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
 
+// Stockage local des shifts (clé partagée Planning ⇄ écriture depuis l'approbation de congés HR).
+export const SHIFTS_STORAGE_KEY = 'habashop_shifts'
+
+// Mappe un intervalle [from,to] (YYYY-MM-DD) sur des INDEX de jour de semaine (Lun=0…Dim=6),
+// modèle de la grille planning. Fonction pure (testable). Borne dure à 366 j (anti-boucle).
+export function weekdayIndicesForRange(from: string, to: string): number[] {
+  const start = new Date(from), end = new Date(to)
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return []
+  const out = new Set<number>()
+  const d = new Date(start)
+  let guard = 0
+  while (d <= end && guard++ < 366) {
+    const js = d.getDay()              // 0=Dim…6=Sam (convention JS)
+    out.add(js === 0 ? 6 : js - 1)     // → Lun=0…Dim=6 (convention grille)
+    d.setDate(d.getDate() + 1)
+  }
+  return [...out].sort((a, b) => a - b)
+}
+
+// Écrit des shifts "Congé" dans le store planning (localStorage) pour un employé sur les
+// jours couverts par l'intervalle. Best-effort (localStorage peut être indisponible).
+// ⚠️ Le modèle planning est indexé par jour de semaine (0-6), AGNOSTIQUE de la semaine :
+// le congé s'affiche donc sur ces jours quelle que soit la semaine affichée (limite connue).
+export function writeLeaveShiftsToPlanning(empId: string, from: string, to: string): void {
+  try {
+    const indices = weekdayIndicesForRange(from, to)
+    if (indices.length === 0) return
+    const raw = JSON.parse(localStorage.getItem(SHIFTS_STORAGE_KEY) ?? 'null') ?? {}
+    const empShifts = { ...(raw[empId] ?? {}) }
+    indices.forEach(di => { empShifts[di] = 'leave' as ShiftType })
+    raw[empId] = empShifts
+    localStorage.setItem(SHIFTS_STORAGE_KEY, JSON.stringify(raw))
+  } catch { /* localStorage indisponible : best-effort, on ignore */ }
+}
+
 export const localeFor = (lang: string) =>
   lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
 

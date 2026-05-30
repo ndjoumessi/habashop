@@ -1,22 +1,24 @@
 import { X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { CURRENCY_SYMBOLS, type Currency } from '@/stores/appStore'
 import { type Employee, COLORS, DEPT_COLORS, labelStyle, deptLabel, contractLabel } from '@/components/hr/hrShared'
 
 interface Props {
   lang: string
   fmt: (n: number) => string
-  // Devise OFFICIELLE du tenant (le salaire est un montant contractuel), pas la
-  // devise d'affichage locale. Storage inchangé (salaires en XOF en base).
-  tenantCurrency: string
+  // Devise d'AFFICHAGE locale (même pattern qu'EmpModal) : le champ se saisit dans
+  // la devise vue à l'écran, converti en XOF au submit (storage inchangé, base XOF).
+  currencySymbol: string
+  toXOF: (n: number) => number
   employees: Employee[]; setEmployees: (v: any) => void
   contractForm: any; setContractForm: (v: any) => void
   setShowNewContractModal: (b: boolean) => void
 }
 
-export default function NewContractModal({ lang, fmt, tenantCurrency, employees, setEmployees, contractForm, setContractForm, setShowNewContractModal }: Props) {
-  // Suffixe = SYMBOLE de la devise (cohérent avec le reste de l'UI : "FCFA", "€", "CA$"…), pas le code ISO.
-  const currencySuffix = CURRENCY_SYMBOLS[tenantCurrency as Currency] ?? tenantCurrency
+export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, employees, setEmployees, contractForm, setContractForm, setShowNewContractModal }: Props) {
+  // Suffixe = SYMBOLE de la devise d'affichage (cohérent avec la grille Paie : "€" si EUR, "FCFA" si XOF…).
+  const currencySuffix = currencySymbol
+  // Montant saisi (devise d'affichage) → XOF pour les aperçus et le storage.
+  const salaryXOF = toXOF(contractForm.salary || 0)
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
       <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, padding:28, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--sh-xl)' }}>
@@ -64,8 +66,8 @@ export default function NewContractModal({ lang, fmt, tenantCurrency, employees,
               </div>
               {contractForm.salary>0&&(
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
-                  <span>CNSS: <strong style={{color:'var(--danger)'}}>−{fmt(Math.round(contractForm.salary*0.08))}</strong></span>
-                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmt(Math.round(contractForm.salary*0.87))}</strong></span>
+                  <span>CNSS: <strong style={{color:'var(--danger)'}}>−{fmt(Math.round(salaryXOF*0.08))}</strong></span>
+                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmt(Math.round(salaryXOF*0.87))}</strong></span>
                 </div>
               )}
             </div>
@@ -82,7 +84,7 @@ export default function NewContractModal({ lang, fmt, tenantCurrency, employees,
               name: contractForm.empId.trim(),
               role: contractForm.role,
               dept: contractForm.dept,
-              salary: contractForm.salary,
+              salary: toXOF(contractForm.salary || 0),  // saisi en devise d'affichage → stocké en XOF (base)
               type: contractForm.type as 'CDI'|'CDD',
               hiredAt: contractForm.hiredAt ? new Date(contractForm.hiredAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR'),
               endAt: contractForm.type==='CDD'&&contractForm.contractEnd ? new Date(contractForm.contractEnd).toLocaleDateString('fr-FR') : undefined,
