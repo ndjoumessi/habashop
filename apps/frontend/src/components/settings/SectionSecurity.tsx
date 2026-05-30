@@ -100,6 +100,23 @@ export default function SectionSecurity() {
     gap: 14,
   }
 
+  // Inputs mot de passe : fond var(--bg3) DISTINCT de la card (var(--card)) — sinon ils
+  // se fondent dans la card blanche en thème clair. Focus violet géré en JS (le style
+  // inline prime sur .input:focus). className="input" conservé pour ::placeholder + autofill.
+  const pwInputStyle: React.CSSProperties = {
+    width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)',
+    borderRadius: 12, color: 'var(--text)', padding: '12px 16px', fontSize: 14,
+    fontFamily: 'var(--font)', outline: 'none', transition: 'border-color .2s, box-shadow .2s',
+  }
+  const onPwFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--p)'
+    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.1)'
+  }
+  const onPwBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--border)'
+    e.currentTarget.style.boxShadow = 'none'
+  }
+
   return (
     <div style={{ ...panel, animation: 'slideUp .3s ease both' }}>
       <Head emoji="🔒" tint="rgba(255,59,92,.04)"
@@ -197,14 +214,17 @@ export default function SectionSecurity() {
           </div>
           <div style={{ display: 'grid', gap: 8 }}>
             <input className="input" type="password" autoComplete="current-password"
+              style={pwInputStyle} onFocus={onPwFocus} onBlur={onPwBlur}
               aria-label={i('Mot de passe actuel', 'Current password', 'Contraseña actual', 'Password attuale')}
               placeholder={i('Mot de passe actuel', 'Current password', 'Contraseña actual', 'Password attuale')}
               value={pwForm.current} onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))} />
             <input className="input" type="password" autoComplete="new-password"
+              style={pwInputStyle} onFocus={onPwFocus} onBlur={onPwBlur}
               aria-label={i('Nouveau mot de passe', 'New password', 'Nueva contraseña', 'Nuova password')}
               placeholder={i('Nouveau mot de passe', 'New password', 'Nueva contraseña', 'Nuova password')}
               value={pwForm.next} onChange={e => setPwForm(f => ({ ...f, next: e.target.value }))} />
             <input className="input" type="password" autoComplete="new-password"
+              style={pwInputStyle} onFocus={onPwFocus} onBlur={onPwBlur}
               aria-label={i('Confirmer le mot de passe', 'Confirm password', 'Confirmar contraseña', 'Conferma password')}
               placeholder={i('Confirmer le nouveau mot de passe', 'Confirm new password', 'Confirmar nueva contraseña', 'Conferma nuova password')}
               value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} />
