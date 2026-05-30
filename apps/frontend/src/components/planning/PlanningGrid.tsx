@@ -177,7 +177,7 @@ export default function PlanningGrid(props: Props) {
                           border:`1px solid ${s
                             ? `${s.color}35`
                             : isWeekend
-                              ? 'rgba(255,255,255,.03)'
+                              ? 'var(--border)'
                               : 'var(--border)'}`,
                           background: s
                             ? s.bg
@@ -204,7 +204,7 @@ export default function PlanningGrid(props: Props) {
                             el.style.background=isWeekend
                               ?'rgba(0,0,0,.1)':'var(--bg4)'
                             el.style.borderColor=isWeekend
-                              ?'rgba(255,255,255,.03)':'var(--border)'
+                              ?'var(--border)':'var(--border)'
                             el.style.transform='scale(1)'
                           }
                         }}

@@ -172,8 +172,8 @@ export default function NewOrderModal({
 
               {/* Dropdown suggestions */}
               {showClientDropdown && clientSuggestions.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
-                  <div style={{ padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,.06)', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
+                  <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', display: 'flex', justifyContent: 'space-between' }}>
                     <span>{i('CLIENTS EXISTANTS', 'EXISTING CLIENTS', 'CLIENTES EXISTENTES', 'CLIENTI ESISTENTI')}</span>
                     <span>{clientSuggestions.length} {i('résultat', 'result', 'resultado', 'risultato')}{clientSuggestions.length > 1 ? 's' : ''}</span>
                   </div>
@@ -187,7 +187,7 @@ export default function NewOrderModal({
                           setNewOrderForm(f => ({ ...f, clientName: customer.name, clientPhone: customer.phone ?? '' }))
                           setShowClientDropdown(false)
                         }}
-                        style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: i < clientSuggestions.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'background .1s' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: i < clientSuggestions.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'background .1s' }}
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.08)'}
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
                         <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, background: bgAlpha, color }}>
@@ -223,7 +223,7 @@ export default function NewOrderModal({
 
               {/* Aucun résultat */}
               {showClientDropdown && clientSuggestions.length === 0 && newOrderForm.clientName.trim().length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
                   <button type="button" onMouseDown={() => setShowClientDropdown(false)}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>
                     <Plus size={20} style={{ color:'var(--p3)' }}/>
@@ -254,7 +254,7 @@ export default function NewOrderModal({
                       }}>
                       <div style={{
                         width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                        background: isSel ? 'rgba(240,165,0,.15)' : 'rgba(255,255,255,.05)',
+                        background: isSel ? 'rgba(240,165,0,.15)' : 'var(--bg3)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}><Truck size={18} style={{ color: isSel ? 'var(--acc)' : 'var(--text3)' }}/></div>
                       <div style={{ flex: 1, minWidth: 0 }}>

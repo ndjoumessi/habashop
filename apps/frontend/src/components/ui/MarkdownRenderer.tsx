@@ -283,7 +283,7 @@ function MarkdownTable({ lines }: { lines: string[] }) {
                   padding: '8px 12px', fontSize: 12,
                   color: 'var(--text2)',
                   borderBottom: i < rows.length - 1
-                    ? '1px solid rgba(255,255,255,.04)' : 'none',
+                    ? '1px solid var(--border)' : 'none',
                 }}>
                   {renderInline(cell)}
                 </td>

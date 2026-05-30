@@ -154,7 +154,7 @@ export default function Goals() {
           {/* Gauge globale SVG */}
           <div style={{ position:'relative', width:80, height:80, flexShrink:0 }}>
             <svg width="80" height="80" style={{ transform:'rotate(-90deg)' }}>
-              <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="7"/>
+              <circle cx="40" cy="40" r="30" fill="none" stroke="var(--border)" strokeWidth="7"/>
               <circle cx="40" cy="40" r="30" fill="none"
                 stroke={globalPct >= 80 ? 'var(--acc2)' : globalPct >= 50 ? 'var(--acc)' : 'var(--danger)'}
                 strokeWidth="7" strokeLinecap="round"
@@ -220,7 +220,7 @@ export default function Goals() {
                 <div style={{ position:'relative', width:100, height:100 }}>
                   <svg width="100" height="100" style={{ transform:'rotate(-90deg)' }}>
                     <circle cx="50" cy="50" r="36"
-                      fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="8"/>
+                      fill="none" stroke="var(--border)" strokeWidth="8"/>
                     <circle cx="50" cy="50" r="36"
                       fill="none"
                       stroke={isOnTrack ? goal.color : 'var(--danger)'}
@@ -275,7 +275,7 @@ export default function Goals() {
               </div>
 
               {/* Barre progression */}
-              <div style={{ height:5, background:'rgba(255,255,255,.06)', borderRadius:99, overflow:'hidden', marginBottom:8 }}>
+              <div style={{ height:5, background:'var(--bg4)', borderRadius:99, overflow:'hidden', marginBottom:8 }}>
                 <div style={{
                   height:'100%', width:`${pct}%`,
                   background: isOnTrack

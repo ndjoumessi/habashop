@@ -65,7 +65,7 @@ export default function Forecasts() {
             display:'flex', alignItems:'center', justifyContent:'center',
             flexShrink:0,
             boxShadow:'0 8px 24px rgba(108,71,255,.4)',
-            border:'1px solid rgba(255,255,255,.1)',
+            border:'1px solid var(--border)',
           }}><Bot size={28} style={{ color:'#fff' }}/></div>
           <div style={{ flex:1 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
@@ -109,7 +109,7 @@ export default function Forecasts() {
               ].map((cap, i) => (
                 <span key={i} style={{
                   fontSize:10, fontWeight:600, color:'var(--text3)',
-                  background:'rgba(255,255,255,.04)', border:'1px solid var(--border)',
+                  background:'var(--bg3)', border:'1px solid var(--border)',
                   borderRadius:20, padding:'2px 8px',
                   display:'flex', alignItems:'center', gap:4,
                 }}>
