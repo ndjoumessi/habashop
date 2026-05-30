@@ -17,7 +17,13 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, se
         <div style={{ padding: '14px 16px', background: 'rgba(240,165,0,.1)', border: '1px solid rgba(240,165,0,.25)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
           <Clock size={18} style={{ color: 'var(--acc)', flexShrink: 0 }} />
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--acc)' }}>
-            {pendingLeaves} demande{pendingLeaves > 1 ? 's' : ''} de congé en attente de validation
+            {lang === 'en'
+              ? `${pendingLeaves} leave request${pendingLeaves > 1 ? 's' : ''} pending approval`
+              : lang === 'es'
+              ? `${pendingLeaves} solicitud${pendingLeaves > 1 ? 'es' : ''} de permiso pendiente${pendingLeaves > 1 ? 's' : ''} de aprobación`
+              : lang === 'it'
+              ? `${pendingLeaves} richiest${pendingLeaves > 1 ? 'e' : 'a'} di permesso in attesa di approvazione`
+              : `${pendingLeaves} demande${pendingLeaves > 1 ? 's' : ''} de congé en attente de validation`}
           </span>
         </div>
       )}
@@ -48,7 +54,7 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, se
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{displayName}</div>
                   <div style={{ fontSize: 12, color: 'var(--text3)' }}>
-                    {leave.type} · {leave.from} → {leave.to} · <strong>{leave.days}j</strong>
+                    {leave.type} · {leave.from} → {leave.to} · <strong>{leave.days}{lang === 'en' ? 'd' : lang === 'es' ? 'd' : lang === 'it' ? 'g' : 'j'}</strong>
                   </div>
                   {leave.motif && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>"{leave.motif}"</div>}
                 </div>

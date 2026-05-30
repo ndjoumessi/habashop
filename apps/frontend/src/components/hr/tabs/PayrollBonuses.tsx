@@ -78,7 +78,7 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
                   <th scope="col">{lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'}</th>
                   <th scope="col">{lang === 'en' ? 'AMOUNT' : lang === 'es' ? 'IMPORTE' : lang === 'it' ? 'IMPORTO' : 'MONTANT'}</th>
                   <th scope="col">{lang === 'en' ? '% OF SALARY' : lang === 'es' ? '% DEL SALARIO' : lang === 'it' ? '% DELLO STIPENDIO' : '% DU SALAIRE'}</th>
-                  <th scope="col">ACTIONS</th>
+                  <th scope="col">{lang === 'en' ? 'ACTIONS' : lang === 'es' ? 'ACCIONES' : lang === 'it' ? 'AZIONI' : 'ACTIONS'}</th>
                 </tr>
               </thead>
               <tbody>

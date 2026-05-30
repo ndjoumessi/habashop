@@ -28,7 +28,14 @@ export default function HRAttendanceTab({ employees, lang, attendance, setAttend
       const a = attendance[key]
       return [e.name, roleLabel(e.role, lang), attendStatusLabel(a?.status ?? 'absent', lang), a?.in ?? '—', a?.out ?? '—']
     })
-    const lines = [['Employé','Poste','Statut','Arrivée','Départ'], ...rows]
+    const header = [
+      lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé',
+      lang === 'en' ? 'Role' : lang === 'es' ? 'Puesto' : lang === 'it' ? 'Ruolo' : 'Poste',
+      lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut',
+      lang === 'en' ? 'Arrival' : lang === 'es' ? 'Llegada' : lang === 'it' ? 'Arrivo' : 'Arrivée',
+      lang === 'en' ? 'Departure' : lang === 'es' ? 'Salida' : lang === 'it' ? 'Uscita' : 'Départ',
+    ]
+    const lines = [header, ...rows]
     const csv = lines.map(r => r.join(';')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -100,7 +107,7 @@ export default function HRAttendanceTab({ employees, lang, attendance, setAttend
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Arrival' : lang === 'es' ? 'Llegada' : lang === 'it' ? 'Arrivo' : 'Arrivée'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Departure' : lang === 'es' ? 'Salida' : lang === 'it' ? 'Uscita' : 'Départ'}</span>
-          <span style={{ textAlign:'center' }}>Actions</span>
+          <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Actions' : lang === 'es' ? 'Acciones' : lang === 'it' ? 'Azioni' : 'Actions'}</span>
         </div>
         {dayEmp.map((emp, i) => {
           const key = `${String(emp.id)}_${todayKey}`

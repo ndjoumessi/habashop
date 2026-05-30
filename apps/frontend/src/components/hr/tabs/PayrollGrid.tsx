@@ -93,8 +93,8 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
                 <th scope="col" style={{textAlign:'right'}}>{lang === 'en' ? 'BONUS' : lang === 'es' ? 'PRIMA' : lang === 'it' ? 'PREMIO' : 'PRIME'}</th>
                 <th scope="col" style={{textAlign:'right'}}>CNSS 8%</th>
                 <th scope="col" style={{textAlign:'right'}}>IR 5%</th>
-                <th scope="col" style={{textAlign:'right'}}>NET</th>
-                <th scope="col" style={{textAlign:'center'}}>ACTIONS</th>
+                <th scope="col" style={{textAlign:'right'}}>{lang === 'en' ? 'NET' : lang === 'es' ? 'NETO' : lang === 'it' ? 'NETTO' : 'NET'}</th>
+                <th scope="col" style={{textAlign:'center'}}>{lang === 'en' ? 'ACTIONS' : lang === 'es' ? 'ACCIONES' : lang === 'it' ? 'AZIONI' : 'ACTIONS'}</th>
               </tr>
             </thead>
             <tbody>
@@ -143,7 +143,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
             </tbody>
             <tfoot>
               <tr style={{ background:'var(--bg4)' }}>
-                <td style={{ fontWeight:800, color:'var(--text)', padding:'12px 14px' }}>TOTAL</td>
+                <td style={{ fontWeight:800, color:'var(--text)', padding:'12px 14px' }}>{lang === 'en' ? 'TOTAL' : lang === 'es' ? 'TOTAL' : lang === 'it' ? 'TOTALE' : 'TOTAL'}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:800, color:'var(--p2)', padding:'12px 14px' }}>{fmt(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0))}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08))}</td>

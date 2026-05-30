@@ -87,7 +87,9 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
                       background: emp.active ? 'rgba(14,196,126,.12)' : 'var(--bg3)',
                       color: emp.active ? 'var(--acc2)' : 'var(--text3)',
                     }}>
-                      {emp.active ? '✓ Actif' : '○ Inactif'}
+                      {emp.active
+                        ? (lang === 'en' ? '✓ Active' : lang === 'es' ? '✓ Activo' : lang === 'it' ? '✓ Attivo' : '✓ Actif')
+                        : (lang === 'en' ? '○ Inactive' : lang === 'es' ? '○ Inactivo' : lang === 'it' ? '○ Inattivo' : '○ Inactif')}
                     </span>
                   </td>
                 </tr>

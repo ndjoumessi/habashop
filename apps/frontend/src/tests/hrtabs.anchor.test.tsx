@@ -94,6 +94,46 @@ describe('HRTabs — onglet Paie (primes) [extraction la plus riche en props/ét
   })
 })
 
+describe('HRTabs — onglet Paie (bulletins)', () => {
+  it('rend une carte bulletin par employé actif + "Télécharger" et "Générer tous" câblés', () => {
+    const p = makeProps({ tab: 'payroll', payTab: 'payslip', bonuses: { '1': 5000 } })
+    render(<HRTabs {...p} />)
+    expect(screen.getByText('Marie Bakayoko')).toBeInTheDocument()
+    expect(screen.getAllByText(/NET À PAYER/).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByText(/Générer tous les bulletins/))
+    expect(p.generateAllPayslips).toHaveBeenCalled()
+    fireEvent.click(screen.getAllByText(/Télécharger bulletin/)[0])
+    expect(p.generatePayslipPDF).toHaveBeenCalled()
+  })
+})
+
+describe('HRTabs — onglet Paie (historique) [isMobile + useEffect resize]', () => {
+  it('état vide : "Aucune révision" + bouton première révision câblé', () => {
+    const p = makeProps({ tab: 'payroll', payTab: 'history', salaryHistory: [] })
+    render(<HRTabs {...p} />)
+    expect(screen.getByText(/Aucune révision salariale/)).toBeInTheDocument()
+    fireEvent.click(screen.getByText(/Première révision salariale/))
+    expect(p.setSalaryTarget).toHaveBeenCalled()
+    expect(p.setShowSalaryModal).toHaveBeenCalledWith(true)
+  })
+
+  it('rend la timeline + survit à un resize (effet isMobile) + supprime une révision', () => {
+    const p = makeProps({
+      tab: 'payroll', payTab: 'history',
+      salaryHistory: [{ id: 'h1', empId: '1', oldSalary: 180000, newSalary: 200000, reason: 'Promotion', date: '2026-04-01' }],
+    })
+    render(<HRTabs {...p} />)
+    expect(screen.getByText('Marie Bakayoko')).toBeInTheDocument()
+    expect(screen.getByText('Promotion')).toBeInTheDocument()
+    // l'effet resize/isMobile ne doit pas casser le rendu
+    fireEvent(window, new Event('resize'))
+    expect(screen.getByText('Marie Bakayoko')).toBeInTheDocument()
+    // suppression d'une révision (onDeleteSalaryHistory + h.id présents)
+    fireEvent.click(screen.getByText(/Supprimer/))
+    expect(p.onDeleteSalaryHistory).toHaveBeenCalledWith('h1')
+  })
+})
+
 describe('HRTabs — onglet Pointage', () => {
   it('affiche la feuille de présence + "Tous présents" et un bouton de statut écrivent attendance', () => {
     const p = makeProps({ tab: 'pointage' })
