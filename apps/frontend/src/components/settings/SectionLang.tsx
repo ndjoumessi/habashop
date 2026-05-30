@@ -73,14 +73,17 @@ export default function SectionLang() {
       <div style={panel}>
         <Head emoji="💱" tint="rgba(255,184,0,.03)"
           title={i("Devise d'affichage", 'Display currency', 'Divisa de visualización', 'Valuta di visualizzazione')}
-          sub={i('6 devises — conversion automatique des montants', '6 currencies — automatic conversion of amounts', '6 divisas — conversión automática de importes', '6 valute — conversione automatica degli importi')} />
+          sub={i('6 devises — affichage par appareil, conversion automatique des montants', '6 currencies — per-device display, automatic amount conversion', '6 divisas — visualización por dispositivo, conversión automática', '6 valute — visualizzazione per dispositivo, conversione automatica')} />
         <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
           {CURRENCIES.map(c => {
             const active = currency === c.code
             return (
               <button key={c.code} type="button" onClick={() => {
+                // Devise = préférence d'affichage LOCALE (par appareil). On ne la
+                // pousse PAS au tenant : un visiteur ne doit pas changer la devise
+                // officielle de la boutique pour tout le monde (cf. démos publiques),
+                // et les montants restent stockés en base XOF + convertis à l'affichage.
                 cfg.setCurrency(c.code)
-                tenantApi.update({ currency: c.code }).catch(() => {})
               }}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,

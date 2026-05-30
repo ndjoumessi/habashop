@@ -335,17 +335,23 @@ export const useAppStore = create<AppStore>()(
 
       // Tenant courant
       tenant: null,
-      // La devise d'affichage suit la boutique connectée : sans ça, une devise
-      // persistée (ex: EUR d'une session précédente) convertissait les montants
-      // XOF d'un compte XOF en euros (500 000 XOF → 762,25 €).
+      // La devise est une préférence d'AFFICHAGE locale (par appareil), pas un
+      // attribut partagé du tenant. On adopte la devise de la boutique UNIQUEMENT
+      // à la connexion d'une boutique *différente* (changement de tenant) : ça
+      // évite qu'une devise persistée (ex: EUR d'une autre session) convertisse
+      // les XOF d'un compte XOF en euros, SANS pour autant écraser le choix
+      // d'affichage de l'utilisateur à chaque refresh (setTenant est rappelé sur
+      // /me et au montage du Header). La devise réelle du tenant est fixée à
+      // l'onboarding et n'est plus mutée par le sélecteur d'affichage.
       setTenant:   (tenant) => set((state) => {
         const tc = tenant?.currency
         const valid = tc && (['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP'] as const).includes(tc as Currency)
         const tl = (tenant as { lang?: string } | null)?.lang
         const validLang = tl && (['fr', 'en', 'es', 'it'] as const).includes(tl as Lang)
+        const tenantChanged = (tenant?.id ?? null) !== (state.tenant?.id ?? null)
         return {
           tenant,
-          currency: valid ? (tc as Currency) : state.currency,
+          currency: tenantChanged && valid ? (tc as Currency) : state.currency,
           lang:     validLang ? (tl as Lang) : state.lang,
         }
       }),
