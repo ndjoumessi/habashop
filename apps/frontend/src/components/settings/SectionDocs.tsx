@@ -1,14 +1,39 @@
 import type React from 'react'
 import { useRef } from 'react'
 import toast from 'react-hot-toast'
-import { useConfig } from '@/stores/appStore'
+import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { salesApi, expensesApi } from '@/lib/api'
+import { exportAccountingExcel } from '@/utils/export'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
 
 export default function SectionDocs() {
   const cfg = useConfig()
   const lang = cfg.lang
   const i = makeI(lang)
+  const fmt = useFormatAmount()
   const importRef = useRef<HTMLInputElement>(null)
+
+  // Rapport comptable du mois en cours : ventes + dépenses du mois → CSV (résumé + détail).
+  const generateAccountingReport = async () => {
+    const now = new Date()
+    const y = now.getFullYear(), m = now.getMonth()
+    const inMonth = (d: string | number | Date) => {
+      const dt = new Date(d)
+      return dt.getFullYear() === y && dt.getMonth() === m
+    }
+    const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+    const period = now.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+    const tId = toast.loading(i('Génération du rapport…', 'Generating report…', 'Generando informe…', 'Generazione report…'))
+    try {
+      const [allSales, allExpenses] = await Promise.all([salesApi.list(), expensesApi.list()])
+      const sales    = (allSales ?? []).filter(s => inMonth(s.createdAt))
+      const expenses = (allExpenses ?? []).filter(e => inMonth(e.date))
+      exportAccountingExcel({ sales, expenses, period, shopName: cfg.shopName, currency: cfg.currency }, fmt)
+      toast.success(i(`📊 Rapport « ${period} » téléchargé`, `📊 "${period}" report downloaded`, `📊 Informe « ${period} » descargado`, `📊 Report « ${period} » scaricato`), { id: tId })
+    } catch {
+      toast.error(i('Échec de la génération du rapport', 'Report generation failed', 'Error al generar el informe', 'Generazione report fallita'), { id: tId })
+    }
+  }
 
   const exportConfig = () => {
     const blob = new Blob([cfg.exportConfig()], { type: 'application/json' })
@@ -28,7 +53,7 @@ export default function SectionDocs() {
   const DOCS: { icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string>; action: () => void }[] = [
     { icon: '📥', color: 'var(--p2)', label: { fr: 'Exporter la configuration', en: 'Export configuration', es: 'Exportar configuración', it: 'Esporta configurazione' }, desc: { fr: 'Sauvegarde tous vos paramètres (JSON)', en: 'Back up all your settings (JSON)', es: 'Respalda todos tus ajustes (JSON)', it: 'Backup di tutte le impostazioni (JSON)' }, action: exportConfig },
     { icon: '📤', color: 'var(--acc3,#00B8FF)', label: { fr: 'Importer la configuration', en: 'Import configuration', es: 'Importar configuración', it: 'Importa configurazione' }, desc: { fr: 'Restaure depuis un fichier JSON', en: 'Restore from a JSON file', es: 'Restaurar desde un archivo JSON', it: 'Ripristina da un file JSON' }, action: () => importRef.current?.click() },
-    { icon: '💰', color: 'var(--warn)', label: { fr: 'Rapport comptable', en: 'Accounting report', es: 'Reporte contable', it: 'Report contabile' }, desc: { fr: 'Dépenses et revenus du mois', en: 'Monthly expenses and revenue', es: 'Gastos e ingresos del mes', it: 'Spese e ricavi del mese' }, action: () => toast(i('Bientôt disponible', 'Coming soon', 'Próximamente', 'Prossimamente')) },
+    { icon: '💰', color: 'var(--warn)', label: { fr: 'Rapport comptable', en: 'Accounting report', es: 'Reporte contable', it: 'Report contabile' }, desc: { fr: 'Dépenses et revenus du mois', en: 'Monthly expenses and revenue', es: 'Gastos e ingresos del mes', it: 'Spese e ricavi del mese' }, action: generateAccountingReport },
     { icon: '📋', color: 'var(--p3)', label: { fr: 'Documentation', en: 'Documentation', es: 'Documentación', it: 'Documentazione' }, desc: { fr: 'Dépôt GitHub HabaShop', en: 'HabaShop GitHub repo', es: 'Repo GitHub HabaShop', it: 'Repo GitHub HabaShop' }, action: () => window.open('https://github.com/ndjoumessi/habashop', '_blank') },
     { icon: '🖨️', color: 'var(--text2)', label: { fr: 'Imprimer la configuration', en: 'Print configuration', es: 'Imprimir configuración', it: 'Stampa configurazione' }, desc: { fr: 'Imprime les paramètres actuels', en: 'Print current settings', es: 'Imprimir ajustes actuales', it: 'Stampa impostazioni correnti' }, action: () => window.print() },
     { icon: '♻️', color: 'var(--danger)', label: { fr: 'Réinitialiser', en: 'Reset', es: 'Restablecer', it: 'Ripristina' }, desc: { fr: 'Restaure les paramètres par défaut', en: 'Restore default settings', es: 'Restaurar ajustes por defecto', it: 'Ripristina impostazioni predefinite' }, action: () => { cfg.resetConfig(); toast.success(i('♻️ Paramètres réinitialisés', '♻️ Settings reset', '♻️ Ajustes restablecidos', '♻️ Impostazioni ripristinate')) } },
