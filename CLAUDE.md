@@ -228,3 +228,45 @@ i18n complété en 8 lots (sept. 2024–mai 2026) : tout le texte d'interface (i
 Refonte design complète : Settings (commit `5503c161`), Activity (commit `2c379360`), modales Users (commit `08545a01`), timeline HR salaires (commit `93de0d09` + `e797310b`).
 
 Sécurité & multi-tenant : routes user management durcies admin-only + validation role whitelist + HTML escape email (commits `c66d9adb` + `4b76a395`), libération email au soft-delete (commit `c577cac2`).
+
+## Sprint 9 — session 30 mai 2026
+
+### Mobile (`habashop-mobile`)
+- Navbar FAB POS outlined/filled selon état actif
+- Settings : bloc profil avec avatar initiales + badge rôle (ADMIN/MANAGER/etc.)
+- Fix `GO_BACK` Caisse (guard `router.canGoBack`)
+
+### Web (`habashop`) — features métier
+- **Étiquettes prix imprimables** : sélection inline (checkbox par ligne) + presets Avery (L7160/L7163/L7165/L7651) + ActionBar contextuelle
+- **Multi-prix par paliers de quantité** : `priceTiers` JSON sur `Product` + fix bug `updateQty` POS (recalcul prix au franchissement de palier)
+- **Catalogue WhatsApp partageable** (`/c/:slug`) : route publique + section Settings + message `wa.me` pré-rempli + slugs auto-générés (backfill 6 tenants)
+- **Auto-détection devise selon pays** dans Signup/Onboarding (util `currencyForCountry`/`suggestedCurrencyForCountry`, fallback XOF, préremplissage jusqu'à choix manuel)
+
+### Web — bugs corrigés
+- Devise form Stock : conversion XOF↔devise aux frontières I/O (helpers hydrate/dehydrate)
+- Prix catalogue public : conversion XOF→devise
+- Cache-busting devise catalogue (`s-maxage=0`)
+- Caisse après refresh : reset conditionnel dans `App.tsx` (seulement si pas de session active)
+- Panier POS après navigation/refresh : `cart` déplacé dans `appStore` (Zustand persist)
+- `clearCart()` au login ET logout (panier vide à chaque nouvelle session)
+- Guard cash POS : encaissement bloqué si montant reçu < total (modes Wave/Orange/Carte non concernés)
+- Thème modales customers : fond `#0D0D1C` hardcodé → `var(--card)` (détail + création)
+- Bannière PWA : mémorisée 7 jours après « Plus tard » (`localStorage` `pwa-install-dismissed`)
+- Libellé FCFA sans espace (« F CFA » → « FCFA »)
+- Badge hero landing lisible (fond translucide + bordure violette + texte gradient)
+
+### Web — design
+- **Thème « Violet & Or ✨ » (`gold`)** ajouté comme thème par défaut (`DEFAULT_CONFIG.theme = 'gold'`) — violet `#7C3AED` verrouillé via `applyAccentColor` (indépendant de l'accent), or via `--acc2` (`#EAB308`, 203 usages)
+- Refonte **landing/login/signup** : palette violet+gold (design system `src/styles/public.css`, scope `.public-scope`), stats hero (500+ boutiques · 12 pays · 99.9%), témoignage client, inputs premium
+- **Tarifs** : équivalence EUR sous les prix FCFA (taux fixe 1 €=655,957 XOF)
+- **Onboarding** aligné palette violet+gold
+- **Section Sécurité** Settings harmonisée (cards `var(--card)`, inputs `var(--bg3)` distincts de la card)
+- **Page API Docs** thémée (fond sombre, code block dark + coloration syntaxique)
+- **Page Intégrations API** : cards statut coloré (vert/orange/rouge) + glow + bouton « Tester » live (spinner + toast)
+
+### Patterns / pièges nouveaux
+- **`appStore` persiste tout par défaut** : la `partialize` utilise `...rest` → toute nouvelle state ajoutée à `appStore` est persistée dans `localStorage`. Penser à **resetter les états de session** (cart, cashier) dans `authStore` login/logout, ou les exclure de `partialize`.
+- **PWA banner** : headless Chromium ne fire jamais `beforeinstallprompt` → le **dispatcher synthétiquement** dans les tests Playwright (`window.dispatchEvent(new Event('beforeinstallprompt'))`).
+- **`applyAccentColor()` écrase `--p/--p2/--p3`** (appelé APRÈS `applyTheme`) → pour verrouiller une couleur primaire dans un thème, poser les valeurs **dans `applyAccentColor()`** quand `body.className === 'theme-gold'` (une seule source de vérité, couvre updateConfig/setTheme/rehydrate/reset).
+- **Animation `slideUp` sans `fill-mode forwards`** (`index.css`) : opacity+transform animés → un screenshot CI peut capturer l'élément transparent/décalé. **Attendre ~500ms** avant capture.
+- **Catalogue public** : NE PAS utiliser `useFormatAmount` (hook lié au store auth) → utiliser `convertAmount` + `formatInCurrency` (fonctions pures exportées d'`appStore`).
