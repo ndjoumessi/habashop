@@ -182,12 +182,13 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
   - Modèle Prisma `PushToken` prêt mais inutilisé
   - SW PWA existe (`public/sw.js`, 39 lignes) mais sans handler `push`/`notificationclick`
   - Pipeline complet à créer : route POST/DELETE `/api/push-tokens`, service `sendPushNotification(userId, payload)`, SW handlers, frontend `pushManager.subscribe()` + bouton "Activer" dans SectionNotif, émetteurs sur 3-5 events (vente importante, rupture stock, paiement reçu, objectif atteint, invite user)
+- **Wave webhook — fail-OPEN en sandbox** (`services/wave.ts`) : `verifyWaveWebhook` fait `if (!WAVE_SECRET) return true` → toute signature passe sans `WAVE_WEBHOOK_SECRET`. Sûr tant que sandbox, **bloquant go-live** : avant passage Wave **prod**, poser `WAVE_WEBHOOK_SECRET` (Railway) ET vérifier que le chemin prod **rejette** réellement une signature invalide (mesurer un POST signé KO → 401). **S** (≠ Orange, déjà fail-closed)
+- **Action ops — `ORANGE_MONEY_WEBHOOK_SECRET` à poser sur Railway** : sans lui, `verifyOrangeWebhook` rejette **tous** les webhooks Orange (fail-closed = sûr mais **auto-activation Orange inerte**). Mécanisme détaillé en *Patterns / pièges* (webhooks sécurisés). **S**
 
 ### 🟡 Important
-- **8 pages > 600L à découper** (Orders 1104L, Users 821L, Expenses 739L, Planning 708L, Suppliers 619L, Payroll 601L, POS 576L, HR 555L). Pattern : extraire les modals + sous-composants comme déjà fait pour Stock/HR/Customers. **L par page**
-- **`HRTabs.tsx` (1171L) + `HRModals.tsx` (1096L)** à splitter en sous-tabs/sous-modals dédiés. **XL**
+- **7 pages > 600L à découper** (Users 821L, Expenses 739L, Planning 708L, Suppliers 619L, Payroll 601L, POS 576L, HR 555L). Pattern : extraire les modals + sous-composants comme déjà fait pour Stock/HR/Customers/**Orders** (Orders 1104→296L, voir Sprint 9). **L par page**
+- ~~**`HRTabs.tsx` (1171L) + `HRModals.tsx` (1096L)** à splitter + i18n. **XL**~~ ✅ **CLOS** (voir Sprint 9 « HR XL »). Méthode suivie : **test d'ancrage d'abord** (`hrmodals.anchor.test.tsx` 10 cas, `EditEmployeeModal` en priorité — la modale la plus riche en props/état), **découpe à comportement identique**, **i18n ensuite** (7 chaînes résiduelles : placeholders + headers). 84/84 tests.
 - **431 boutons icon-only sans aria-label** — beaucoup ont du texte (OK), mais les Trash2/Eye/Pencil isolés posent problème screen reader. **L**
-- **`console.log` API debug en prod** : `apps/frontend/src/lib/api.ts:43` exécuté à chaque requête (leak token presence + bruit DevTools). Migrer vers `logger.log`. **S**
 - **Bundle recharts 411KB + barcode 443KB** à optimiser (code-split charts par graph type, ou lib plus légère type visx). **L**
 - **WebSocket `/api/ws` auth** à vérifier (`notifications.ts:33` sans `preHandler` visible). **M**
 - **SectionLang devise** : `.catch(()=>{})` silencieux, divergence possible local/serveur. **S**
@@ -198,7 +199,7 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
 - **`og-image.png` 53KB** → conversion WebP (~15KB). **S**
 - **Tests unitaires HR/Stock/Users** : 0 test métier actuellement (43 tests sont UI/pagination/currency). **XL**
 - **`npm audit` cassé** au niveau workspace (`Cannot read property 'concurrently' of undefined`). Bloque la surveillance des vulnérabilités. **S**
-- **i18n résiduel** : Planning/Payroll/Marketing pages secondaires probablement avec quelques chaînes FR hardcodées. **M**
+- **i18n résiduel** : seule la page **Marketing** (secondaire) reste à auditer pour d'éventuelles chaînes FR hardcodées. **Customers / Planning / Payroll / Goals = i18n-OK** (lots antérieurs + revue de cette session : vraie dette = 0 ; les chaînes FR apparentes sont le pattern **valeur-FR-comme-clé** — filtres/data — à NE PAS toucher). **S**
 - **Émojis dans Head shared** (`settingsShared.tsx`) → migration Lucide pour cohérence avec le redesign Settings parent. **S** (touche toutes les sections)
 
 ## Application mobile
@@ -245,6 +246,27 @@ Sécurité & multi-tenant : routes user management durcies admin-only + validati
   - JSON dédoublé pour ne pas tromper : `resultBeforePayroll` (= revenu − dépenses Expense) **et** `resultAfterPayrollEstimate` (= − payroll, ESTIMATION). Pas de champ orphelin `net`.
   - Frontend `AccountingReportModal.tsx` : sélecteur mois localisé, KPIs (« Résultat avant masse salariale » + bannière « Résultat estimé après paie » badge *estimé*, masquée si paie=0), ventilation par catégorie (barres), états loading/erreur/vide, export PDF+CSV (réutilise `openPDF`/`htmlKPIs`/`htmlTable`/`exportCSV`), i18n fr/en/es/it.
 
+### Backend — récap paie mensuel (livré)
+- **Cron récap paie mensuel** (`runMonthlyPayrollReports`, `services/payrollReport.ts`) : honore enfin le toggle `notifEmailPayroll` — 1er du mois ~8h, **opt-in strict**, **idempotent** via `Tenant.lastPayrollReportMonth` (filtre `null` ou `≠ mois`), montants convertis en **devise du tenant**, email **localisé** fr/en/es/it, destinataire = **ADMIN du tenant dérivé serveur** (jamais d'email client en entrée).
+- **Route admin `POST /api/admin/payroll-report/run`** : déclenchement à la demande pour test, **`dryRun:true` par défaut** (calcule + renvoie le récap, AUCUN email/marqueur), RBAC ADMIN, **cœur partagé** avec le cron (zéro duplication).
+- **Migration `lastPayrollReportMonth` régularisée** : colonne jadis ajoutée par `db push` (hors historique) → migration additive **idempotente** (`ADD COLUMN IF NOT EXISTS`, `20260530140000_add_payroll_report_marker`) + `migrate resolve --applied` sur prod → `migrate status` propre, aucune ré-exécution.
+> Mécanisme (cron `setInterval` + garde fenêtre-temps, idempotence, régularisation `db push`) détaillé dans **Patterns / pièges nouveaux**.
+
+### Web — refonte architecture (découpage Orders) ✅ CLOS
+- **`Orders.tsx` découpé 1104 → 296L** (conteneur fin : état, effets de chargement, handlers, orchestration — alimente 6 enfants par props). Découpe **à comportement strictement identique** (JSX déplacé verbatim, substitutions mécaniques seulement).
+- **6 composants `components/orders/`** :
+  - `ordersShared.tsx` — types (`Order`/`OrderStatus`/`OrderItem`) + `STATUS_CONFIG`/`STATUSES` + `ORDER_STATUS_LABELS` (4-langues) + `orderStatusLabel` + `API_TO_LOCAL_STATUS`/`LOCAL_TO_API_STATUS` + `mapApiOrder`.
+  - `OrdersKpis` / `OrdersCalendar` / `OrdersListPanel` / `OrderDetailModal` / `NewOrderModal` (460L, le plus riche en props/état) — **présentationnels**, appellent `useConfig`/`useI18n`/`useFormatAmount`/`t` en interne.
+- **Contrat de comportement** : `src/tests/orders.anchor.test.tsx` (**9 cas**) couvre load+KPIs / filtre recherche / modale détail / onglet calendrier / changement de statut **+ flux de création** (commande client, bon de commande fournisseur, bouton créer désactivé tant que client+article manquent, picker ajout/retrait panier). **À garder vert avec assertions inchangées** : c'est lui qui prouve le câblage props/état au runtime (tsc ne le couvre pas) et protège l'i18n.
+- **i18n Orders : CLOS** — tout en `i()`/`t()`/ternaire 4-langues ; seule dette d'affichage restante (badge « Retard ») passée en clé 4-langues. Pattern **FR=clé intact** : `STATUS_CONFIG`/`STATUSES`, `unit:'unité'` (data), filtres → **non touchés** (valeur FR = clé de données/filtre, seul l'affichage est traduit via `orderStatusLabel`).
+
+### Web — HR XL : découpe + i18n ✅ CLOS
+Dernier module in-app monolithique traité (même méthode qu'Orders : **test d'ancrage d'abord → découpe à comportement identique → i18n ensuite**).
+- **`HRTabs.tsx` 1172 → 82L** (conteneur fin) + **8 composants `components/hr/tabs/`** : `HRContractsTab`, `HRPayrollTab` (conteneur des 4 sous-onglets) + `PayrollGrid`/`PayrollPayslips`/`PayrollBonuses`/`PayrollHistory`, `HRAttendanceTab`, `HRLeavesTab`. **État co-localisé** : `isMobile`+resize → `PayrollHistory`, `expandedEmpBonuses`/`deleteOneBonus` → `PayrollBonuses`. Ancrage `src/tests/hrtabs.anchor.test.tsx` **8 cas** (étendu en cours de session : `PayrollHistory`/`PayrollPayslips` couverts après la découpe initiale).
+- **`HRModals.tsx` 1097 → 118L** (dispatcher fin : flag d'ouverture → composant) + **8 composants `components/hr/modals/`** : `SalaryModal` (+ `SalaryRaiseForm`, `BonusForm`), `EmpModal` (ajout), `EditEmployeeModal` (édition premium, **333L — la plus riche en props/état**), `NewContractModal`, `ContractDetailModal`, `LeaveRequestModal`. **`AddressInputSimple` (code mort, 0 référence) supprimé.** Ancrage `src/tests/hrmodals.anchor.test.tsx` **10 cas** (priorité `EditEmployeeModal` : save→`employeesApi.update`, cancel→`openEditModal`, delete→`confirm`).
+- **i18n** : **9 chaînes HRTabs** (Actif/Inactif, bannière congés en attente + suffixe jours, en-têtes CSV + colonne Actions, NET/ACTIONS/TOTAL) + **7 chaînes HRModals** (PERFORMANCE, Net preview ×2, placeholders date `JJ/MM/AAAA` + emails) passées en 4-langues. **Validation & soumission déjà localisées.** Pattern **FR=clé intact** : `CDI`/`CDD`/types contrat, rôles, départements (traduits à l'affichage via `contractLabel`/`roleLabel`/`deptLabel`), codes `CNSS`/`IR`, noms propres (exemples) → non touchés.
+- Total après lots HR : **tsc 0, 84/84 tests, build OK**. HRTabs/HRModals = derniers monolithes in-app ⇒ dette « découpe + i18n in-app » close (les 7 pages de la ligne dette 🟡 restent ouvertes, fichiers non traités).
+
 ### Web — bugs corrigés
 - Devise form Stock : conversion XOF↔devise aux frontières I/O (helpers hydrate/dehydrate)
 - Prix catalogue public : conversion XOF→devise
@@ -258,6 +280,7 @@ Sécurité & multi-tenant : routes user management durcies admin-only + validati
 - Libellé FCFA sans espace (« F CFA » → « FCFA »)
 - Badge hero landing lisible (fond translucide + bordure violette + texte gradient)
 - **Payroll : année réelle dans les clés/labels de mois** — `MONTHS` ne code plus `2026` en dur (`buildMonths(new Date().getFullYear())`). Le mois n'est qu'une **clé d'affichage/filtre côté client** (records générés depuis `employeesApi`, jamais persistés) → blast radius nul ; format de clé `"Mois AAAA"` inchangé, affichage localisé via `monthLabel` (`Intl`). `buildMonths`/`monthLabel` exportés + testés (passage 2027, 4 langues).
+- **`console.log` API debug → `logger.log` DEV-gated** (`api.ts:43`) : ne s'exécute plus en prod (`logger` filtre sur `import.meta.env.DEV`) et ne logge que la **présence** du token (`✅/❌`), jamais sa valeur. Retiré de la dette 🟡.
 
 ### Web — design
 - **Thème « Violet & Or ✨ » (`gold`)** ajouté comme thème par défaut (`DEFAULT_CONFIG.theme = 'gold'`) — violet `#7C3AED` verrouillé via `applyAccentColor` (indépendant de l'accent), or via `--acc2` (`#EAB308`, 203 usages)
@@ -269,6 +292,7 @@ Sécurité & multi-tenant : routes user management durcies admin-only + validati
 - **Page Intégrations API** : cards statut coloré (vert/orange/rouge) + glow + bouton « Tester » live (spinner + toast)
 
 ### Patterns / pièges nouveaux
+- **Découper un gros composant SANS tests → écrire d'abord un test d'ancrage** (rendu + interactions clés, en priorité les flux les plus riches en props/état — ex. la modale de création). Il doit passer **à l'identique AVANT et APRÈS** la découpe : `tsc` valide les types mais **ne couvre pas le câblage de props au runtime** (un `onClose`/`setState` mal rebranché compile), c'est le test qui le prouve. Ensuite seulement, faire l'i18n par-dessus (mêmes assertions = filet anti-régression). Cas vécu : Orders 1104→296L + 6 composants, `orders.anchor.test.tsx` 5→9 cas.
 - **`appStore` persiste tout par défaut** : la `partialize` utilise `...rest` → toute nouvelle state ajoutée à `appStore` est persistée dans `localStorage`. Penser à **resetter les états de session** (cart, cashier) dans `authStore` login/logout, ou les exclure de `partialize`.
 - **PWA banner** : headless Chromium ne fire jamais `beforeinstallprompt` → le **dispatcher synthétiquement** dans les tests Playwright (`window.dispatchEvent(new Event('beforeinstallprompt'))`).
 - **`applyAccentColor()` écrase `--p/--p2/--p3`** (appelé APRÈS `applyTheme`) → pour verrouiller une couleur primaire dans un thème, poser les valeurs **dans `applyAccentColor()`** quand `body.className === 'theme-gold'` (une seule source de vérité, couvre updateConfig/setTheme/rehydrate/reset).
