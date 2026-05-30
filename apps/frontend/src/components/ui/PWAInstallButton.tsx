@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import toast from 'react-hot-toast'
 
+const DISMISS_KEY = 'pwa-install-dismissed'
+const ONE_WEEK    = 7 * 24 * 60 * 60 * 1000
+
+// Bannière masquée pendant 7 jours après un "Plus tard" (comportement standard PWA)
+function recentlyDismissed() {
+  const dismissed = localStorage.getItem(DISMISS_KEY)
+  return !!dismissed && Date.now() - Number(dismissed) < ONE_WEEK
+}
+
 export default function PWAInstallButton() {
   const { lang } = useAppStore()
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
@@ -16,7 +25,8 @@ export default function PWAInstallButton() {
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e)
-      setShowBanner(true)
+      // Ne pas réafficher la bannière si "Plus tard" a été cliqué il y a < 7 jours
+      if (!recentlyDismissed()) setShowBanner(true)
     }
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
@@ -79,7 +89,7 @@ export default function PWAInstallButton() {
           fontSize:12, fontWeight:700, color:'#fff',
           cursor:'pointer', fontFamily:'var(--font)', whiteSpace:'nowrap',
         }}>{tx.btn}</button>
-        <button onClick={() => setShowBanner(false)} style={{
+        <button onClick={() => { localStorage.setItem(DISMISS_KEY, Date.now().toString()); setShowBanner(false) }} style={{
           background:'none', border:'none', fontSize:11,
           color:'var(--text3)', cursor:'pointer', fontFamily:'var(--font)',
         }}>{tx.dismiss}</button>
