@@ -15,18 +15,18 @@ interface PayRecord {
   absences: number; status: PayStatus; paidAt: string | null; month: string
 }
 
-const MONTHS = [
-  'Janvier 2026','Février 2026','Mars 2026','Avril 2026','Mai 2026',
-  'Juin 2026','Juillet 2026','Août 2026','Septembre 2026','Octobre 2026',
-  'Novembre 2026','Décembre 2026',
-]
+// Noms de mois FR = base des CLÉS de mois ("Mois AAAA"). L'année est RÉELLE (jamais codée en dur).
+const FR_MONTH_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+export function buildMonths(year: number): string[] {
+  return FR_MONTH_NAMES.map(n => `${n} ${year}`)
+}
+const MONTHS = buildMonths(new Date().getFullYear())
 
 const PAY_COLORS = ['#6C3FD6','#F59E0B','#10B981','#EF4444','#3B82F6','#8B5CF6','#EC4899','#F472B6']
 const currentMonthLabel = MONTHS[new Date().getMonth()] ?? MONTHS[0]
 
-// Localise un libellé de mois FR ("Mai 2026") sans changer la valeur stockée (clé de filtre)
-const FR_MONTH_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
-const monthLabel = (m: string, lang: string) => {
+// Localise un libellé de mois FR ("Mai 2026" → mois localisé + année RÉELLE de la clé) ; clé inchangée.
+export const monthLabel = (m: string, lang: string) => {
   const [name, yearStr] = m.split(' ')
   const idx = FR_MONTH_NAMES.indexOf(name)
   if (idx < 0) return m
