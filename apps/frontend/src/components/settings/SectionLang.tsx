@@ -1,7 +1,7 @@
 import { useConfig, useFormatAmount, ACCENT_PAIRS, THEMES, type Currency, type Lang, type Theme } from '@/stores/appStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
 import { tenantApi } from '@/lib/api'
-import { Check } from 'lucide-react'
+import { Check, Lock } from 'lucide-react'
 
 export default function SectionLang() {
   const cfg = useConfig()
@@ -157,11 +157,18 @@ export default function SectionLang() {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Couleur d\'accent', 'Accent color', 'Color de acento', 'Colore d\'accento')}</div>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {i('Couleur d\'accent', 'Accent color', 'Color de acento', 'Colore d\'accento')}
+              {cfg.theme === 'gold' && (
+                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'none', letterSpacing: 0, color: 'var(--acc2)', background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.25)', borderRadius: 99, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <Lock size={9} /> {i('Verrouillé sur le violet premium', 'Locked to premium violet', 'Bloqueado en violeta premium', 'Bloccato sul viola premium')}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', opacity: cfg.theme === 'gold' ? 0.4 : 1, pointerEvents: cfg.theme === 'gold' ? 'none' : 'auto', transition: 'opacity .2s' }}>
               {Object.keys(ACCENT_PAIRS).map(hex => (
-                <button key={hex} type="button" onClick={() => cfg.updateConfig({ accentColor: hex })} aria-label={hex}
-                  style={{ width: 36, height: 36, borderRadius: 10, background: hex, border: 'none', cursor: 'pointer', outline: cfg.accentColor === hex ? `3px solid ${hex}` : '3px solid transparent', outlineOffset: 2, boxShadow: cfg.accentColor === hex ? `0 0 0 2px rgba(255,255,255,.25)` : 'none', transition: 'all .15s', transform: cfg.accentColor === hex ? 'scale(1.12)' : 'none' }} />
+                <button key={hex} type="button" disabled={cfg.theme === 'gold'} onClick={() => cfg.updateConfig({ accentColor: hex })} aria-label={hex}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: hex, border: 'none', cursor: cfg.theme === 'gold' ? 'not-allowed' : 'pointer', outline: cfg.accentColor === hex ? `3px solid ${hex}` : '3px solid transparent', outlineOffset: 2, boxShadow: cfg.accentColor === hex ? `0 0 0 2px rgba(255,255,255,.25)` : 'none', transition: 'all .15s', transform: cfg.accentColor === hex ? 'scale(1.12)' : 'none' }} />
               ))}
             </div>
           </div>
