@@ -96,6 +96,15 @@
   color: transparent;
 }
 
+/* ─── Onboarding réutilise les boutons .btn de l'app → re-teinte violet public ─── */
+.public-scope .btn-primary {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+}
+.public-scope .btn-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 28px rgba(124, 58, 237, 0.42);
+}
+
 /* ─── Glow violet réutilisable (pseudo-fond radial) ─── */
 .public-glow-violet {
   position: absolute;
