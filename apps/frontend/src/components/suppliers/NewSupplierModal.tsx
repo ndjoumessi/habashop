@@ -27,7 +27,7 @@ export default function NewSupplierModal({ form, setForm, onClose, onCreate }: P
       <div className="modal-box" style={{ maxWidth: 540 }}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Plus size={15}/> {i('Nouveau fournisseur', 'New supplier', 'Nuevo proveedor', 'Nuovo fornitore')}</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+          <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[
@@ -50,7 +50,7 @@ export default function NewSupplierModal({ form, setForm, onClose, onCreate }: P
             <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text3)' }}>{i('Note (1-5)', 'Rating (1-5)', 'Valoración (1-5)', 'Valutazione (1-5)')}</label>
             <div style={{ display: 'flex', gap: 4, height: 38, alignItems: 'center' }}>
               {[1, 2, 3, 4, 5].map(s => (
-                <button key={s} type="button" onClick={() => setForm(p => ({ ...p, rating: s }))}
+                <button aria-label={`${i('Note', 'Rating', 'Valoración', 'Valutazione')} ${s}/5`} key={s} type="button" onClick={() => setForm(p => ({ ...p, rating: s }))}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 1px', display: 'flex' }}>
                   <Star size={20} style={{ color: s <= form.rating ? '#F0A500' : 'var(--border2)', fill: s <= form.rating ? '#F0A500' : 'none', transition: 'all .15s' }} />
                 </button>

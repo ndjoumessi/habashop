@@ -162,7 +162,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                             <Star key={s} size={9} style={{ color:'#F59E0B', opacity: s<=(emp.perf??3) ? 1 : .2, fill: s<=(emp.perf??3) ? '#F59E0B' : 'none' }} />
                           ))}
                         </div>
-                        <button type="button"
+                        <button aria-label={lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'} type="button"
                           onClick={e => { e.stopPropagation(); openEditModal(emp) }}
                           style={{
                             width:26, height:26, borderRadius:7,

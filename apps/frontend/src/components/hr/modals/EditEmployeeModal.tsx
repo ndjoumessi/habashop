@@ -239,7 +239,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
             {empEditMode ? (
               <div style={{ display:'flex', gap:4 }}>
                 {[1,2,3,4,5].map(s => (
-                  <button key={s} type="button"
+                  <button aria-label={`${lang === 'en' ? 'Rating' : lang === 'es' ? 'Valoración' : lang === 'it' ? 'Valutazione' : 'Note'} ${s}/5`} key={s} type="button"
                     onClick={() => setEditEmpForm((f:any) => ({ ...f, perf:s }))}
                     style={{ background:'none', border:'none', cursor:'pointer', padding:'2px', color: s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'var(--border)', display:'flex', alignItems:'center' }}>
                     <Star size={22} fill={s<=(editEmpForm.perf??3) ? 'var(--warn)' : 'none'} />

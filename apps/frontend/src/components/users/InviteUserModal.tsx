@@ -28,7 +28,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
             <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>{lang === 'en' ? 'Invite a user' : lang === 'es' ? 'Invitar a un usuario' : lang === 'it' ? 'Invita un utente' : 'Inviter un utilisateur'}</h3>
             <p className="text-xs mt-0.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'A welcome email will be sent' : lang === 'es' ? 'Se enviará un email de bienvenida' : lang === 'it' ? 'Verrà inviata un\'email di benvenuto' : 'Un email de bienvenue sera envoyé'}</p>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+          <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
           {/* Ligne 1 : Nom complet + Rôle */}

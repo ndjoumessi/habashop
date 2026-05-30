@@ -57,7 +57,7 @@ export default function NewOrderModal({
           <h2 style={{ fontSize: 17, fontWeight: 900, color: 'var(--text)', margin: 0, display:'flex', alignItems:'center', gap:8 }}>
             <ClipboardList size={18}/> {lang === 'fr' ? 'Nouvelle commande' : lang === 'en' ? 'New order' : lang === 'es' ? 'Nueva orden' : 'Nuovo ordine'}
           </h2>
-          <button onClick={onClose} style={{
+          <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={onClose} style={{
             width: 32, height: 32, borderRadius: 9,
             background: 'var(--bg3)', border: '1px solid var(--border)',
             cursor: 'pointer', color: 'var(--text3)', fontSize: 15,
@@ -140,7 +140,7 @@ export default function NewOrderModal({
                   onBlur={() => setTimeout(() => setShowClientDropdown(false), 200)}
                 />
                 {(newOrderForm.clientName || selectedClient) && (
-                  <button type="button" tabIndex={-1}
+                  <button aria-label={i('Effacer', 'Clear', 'Borrar', 'Cancella')} type="button" tabIndex={-1}
                     onClick={() => {
                       setNewOrderForm(f => ({ ...f, clientName: '', clientPhone: '' }))
                       setSelectedClient(null)
@@ -383,7 +383,7 @@ export default function NewOrderModal({
                         style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--bg4)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text2)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                     </div>
                     <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 12, color: 'var(--acc)', minWidth: 70, textAlign: 'right' }}>{fmt(item.price * item.qty)}</span>
-                    <button type="button"
+                    <button aria-label={i('Retirer', 'Remove', 'Quitar', 'Rimuovi')} type="button"
                       onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.filter(i => i.id !== item.id) }))}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: 15, padding: '2px 4px', display:'flex', alignItems:'center' }}><X size={13}/></button>
                   </div>

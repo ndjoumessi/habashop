@@ -25,7 +25,7 @@ export default function SupplierViewModal({ supplier, onClose, onNewOrder }: Pro
           </div>
           <div className="flex items-center gap-2">
             <span className={`badge ${STATUS_CFG[supplier.status].cls}`}>{statusLabel(supplier.status, lang)}</span>
-            <button className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+            <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
           </div>
         </div>
 

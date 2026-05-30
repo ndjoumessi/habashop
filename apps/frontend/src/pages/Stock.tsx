@@ -406,8 +406,8 @@ export default function Stock() {
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:4 }}>
-                  <button className="mini-btn" style={{ cursor:'pointer' }} onClick={() => { setEditCat(cat); setCatForm({ name:cat.name, color:cat.color, icon:cat.icon, description:cat.description }); setShowCatModal(true) }}><Pencil size={12} /></button>
-                  <button className="mini-btn" style={{ color:'var(--danger)', cursor:'pointer' }} onClick={() => {
+                  <button aria-label={lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'} className="mini-btn" style={{ cursor:'pointer' }} onClick={() => { setEditCat(cat); setCatForm({ name:cat.name, color:cat.color, icon:cat.icon, description:cat.description }); setShowCatModal(true) }}><Pencil size={12} /></button>
+                  <button aria-label={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'} className="mini-btn" style={{ color:'var(--danger)', cursor:'pointer' }} onClick={() => {
                     if (cat.productsCount > 0) { toast.error(lang === 'en' ? 'Category not empty!' : lang === 'es' ? '¡Categoría no vacía!' : lang === 'it' ? 'Categoria non vuota!' : 'Catégorie non vide !'); return }
                     setCategories(prev => prev.filter(c => c.id !== cat.id))
                     toast.success(lang === 'en' ? 'Category deleted' : lang === 'es' ? 'Categoría eliminada' : lang === 'it' ? 'Categoria eliminata' : 'Catégorie supprimée')

@@ -50,7 +50,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               </div>
             </div>
           </div>
-          <button onClick={onClose} style={{
+          <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={onClose} style={{
             background:'rgba(255,255,255,.15)',
             border:'1px solid rgba(255,255,255,.25)',
             borderRadius:9, padding:'6px 10px',

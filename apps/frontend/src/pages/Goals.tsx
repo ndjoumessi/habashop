@@ -326,7 +326,7 @@ export default function Goals() {
                   ? <><Pencil size={14}/> {lang === 'en' ? 'Edit goal' : lang === 'es' ? 'Editar el objetivo' : lang === 'it' ? 'Modifica l\'obiettivo' : "Modifier l'objectif"}</>
                   : <><Target size={14}/> {lang === 'en' ? 'New goal' : lang === 'es' ? 'Nuevo objetivo' : lang === 'it' ? 'Nuovo obiettivo' : 'Nouvel objectif'}</>}
               </h3>
-              <button className="mini-btn" onClick={() => setShowEditModal(false)} style={{ cursor:'pointer', display:'flex', alignItems:'center' }}><X size={14}/></button>
+              <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" onClick={() => setShowEditModal(false)} style={{ cursor:'pointer', display:'flex', alignItems:'center' }}><X size={14}/></button>
             </div>
 
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -404,7 +404,7 @@ export default function Goals() {
                   <Check size={14}/> {editGoal ? (lang === 'en' ? 'Update' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier') : (lang === 'en' ? 'Create' : lang === 'es' ? 'Crear' : lang === 'it' ? 'Crea' : 'Créer')}
                 </button>
                 {editGoal && (
-                  <button className="mini-btn" style={{ color:'var(--danger)', cursor:'pointer', display:'flex', alignItems:'center' }}
+                  <button aria-label={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'} className="mini-btn" style={{ color:'var(--danger)', cursor:'pointer', display:'flex', alignItems:'center' }}
                     onClick={async () => {
                       try {
                         await goalsApi.delete(editGoal.id)

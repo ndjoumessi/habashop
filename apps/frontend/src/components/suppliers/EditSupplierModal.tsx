@@ -33,7 +33,7 @@ export default function EditSupplierModal(props: Props) {
       <div className="modal-box" style={{ maxWidth: 540 }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Factory size={15}/> {editSupplier.name}</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+          <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
         </div>
 
         {/* Mode banner */}

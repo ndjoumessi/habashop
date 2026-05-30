@@ -88,7 +88,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>
                 {editingSku ? (form.name || editingSku) : i('Nouveau produit', 'New product', 'Nuevo producto', 'Nuovo prodotto')}
               </h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setShowModal(false); resetForm() }}><X size={14} /></button>
+              <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={() => { setShowModal(false); resetForm() }}><X size={14} /></button>
             </div>
 
             {/* Mode banner (edit only, not for new products) */}
@@ -556,7 +556,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   ? i('Modifier la catégorie', 'Edit category', 'Editar categoría', 'Modifica categoria')
                   : i('Nouvelle catégorie', 'New category', 'Nueva categoría', 'Nuova categoria')}
               </h3>
-              <button className="mini-btn" onClick={() => setShowCatModal(false)}><X size={14} /></button>
+              <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="mini-btn" onClick={() => setShowCatModal(false)}><X size={14} /></button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>

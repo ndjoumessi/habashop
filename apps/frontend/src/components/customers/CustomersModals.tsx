@@ -44,7 +44,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               </div>
               <div className="flex items-center gap-2">
                 <span className={`badge ${TYPE_CFG[viewCustomer.type].cls}`}>{typeLabel(viewCustomer.type, lang)}</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setViewCustomer(null)}><X size={14} /></button>
+                <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="btn btn-ghost btn-sm" onClick={() => setViewCustomer(null)}><X size={14} /></button>
               </div>
             </div>
 
@@ -132,7 +132,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
           <div className="modal-box" style={{ maxWidth: 480 }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>👤 {editCustomer.name}</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowEditCustModal(false)}><X size={14} /></button>
+              <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="btn btn-ghost btn-sm" onClick={() => setShowEditCustModal(false)}><X size={14} /></button>
             </div>
 
             {/* Mode banner */}

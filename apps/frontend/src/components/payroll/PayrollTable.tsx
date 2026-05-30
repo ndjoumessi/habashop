@@ -96,7 +96,7 @@ export default function PayrollTable(props: Props) {
                             <Check size={11} /> Payer
                           </button>
                         )}
-                        <button className="mini-btn gap-1" onClick={() => onPrintPDF(r)}>
+                        <button aria-label={lang === 'en' ? 'Download PDF' : lang === 'es' ? 'Descargar PDF' : lang === 'it' ? 'Scarica PDF' : 'Télécharger le PDF'} className="mini-btn gap-1" onClick={() => onPrintPDF(r)}>
                           <Download size={11} />
                         </button>
                       </div>

@@ -94,7 +94,7 @@ export default function Forecasts() {
                 </span>
               </div>
               {aiAnalysis && (
-                <button className="mini-btn" style={{ marginLeft:8 }} onClick={() => { setAiAnalysis(null); setAiData(null) }}><X size={14}/></button>
+                <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" style={{ marginLeft:8 }} onClick={() => { setAiAnalysis(null); setAiData(null) }}><X size={14}/></button>
               )}
             </div>
             <p style={{ fontSize:12, color:'var(--text3)', margin:0, lineHeight:1.5 }}>

@@ -608,7 +608,7 @@ export default function Header() {
           >
             {lang === 'en' ? 'Refresh' : lang === 'es' ? 'Actualizar' : lang === 'it' ? 'Aggiorna' : 'Actualiser'}
           </button>
-          <button
+          <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}
             onClick={() => setSwUpdate(false)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text4)', display: 'flex', alignItems: 'center', padding: 2 }}
           >

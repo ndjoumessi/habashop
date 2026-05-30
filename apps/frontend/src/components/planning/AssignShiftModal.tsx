@@ -43,7 +43,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
               {shiftModal.name} · {weekDays[shiftModal.di]?.toLocaleDateString(locale,{weekday:'short',day:'numeric',month:'short'})}
             </div>
           </div>
-          <button onClick={onClose} style={{
+          <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={onClose} style={{
             width:30, height:30, borderRadius:8,
             background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)',
             cursor:'pointer', color:'var(--text3)',

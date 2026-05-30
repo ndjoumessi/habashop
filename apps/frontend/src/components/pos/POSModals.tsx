@@ -260,7 +260,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   </div>
                 </div>
               </div>
-              <button className="mini-btn" onClick={() => setShowModal(false)}>
+              <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" onClick={() => setShowModal(false)}>
                 <X size={14} />
               </button>
             </div>
@@ -508,7 +508,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 style={{ padding: '12px 16px', fontSize: 13, opacity: blocked ? 0.6 : 1, cursor: blocked ? 'not-allowed' : 'pointer' }}
                 className="mini-btn"
               ><Printer size={13} /> Ticket</button>
-              <button
+              <button aria-label={lang === 'en' ? 'Invoice' : lang === 'es' ? 'Factura' : lang === 'it' ? 'Fattura' : 'Facture'}
                 onClick={() => {
                   generateInvoice({
                     type: 'facture',

@@ -31,7 +31,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
             <span className={`badge ${STATUS_CONFIG[order.status].cls} flex items-center gap-1`}>
               {STATUS_CONFIG[order.status].icon} {orderStatusLabel(order.status, lang)}
             </span>
-            <button className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+            <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
           </div>
         </div>
 
