@@ -110,7 +110,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
               style={{
                 padding:'4px 8px', borderRadius:8, border:'none', cursor:'pointer',
                 fontFamily:'var(--font)', fontSize:9, fontWeight:800,
-                background: user.twoFA ? 'rgba(16,185,129,.12)' : 'rgba(255,255,255,.05)',
+                background: user.twoFA ? 'rgba(16,185,129,.12)' : 'var(--bg3)',
                 color: user.twoFA ? 'var(--acc2)' : 'var(--text3)',
                 flexShrink:0,
               }}
@@ -123,7 +123,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
             <span style={{
               padding:'4px 8px', borderRadius:8,
               fontFamily:'var(--font)', fontSize:9, fontWeight:800,
-              background: user.twoFA ? 'rgba(16,185,129,.12)' : 'rgba(255,255,255,.05)',
+              background: user.twoFA ? 'rgba(16,185,129,.12)' : 'var(--bg3)',
               color: user.twoFA ? 'var(--acc2)' : 'var(--text3)',
               flexShrink:0,
             }}>
@@ -135,7 +135,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
         {/* Infos grid */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
           <div style={{
-            background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.06)',
+            background:'var(--bg3)', border:'1px solid var(--border)',
             borderRadius:10, padding:'8px 10px',
           }}>
             <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
@@ -148,7 +148,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
             </div>
           </div>
           <div style={{
-            background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.06)',
+            background:'var(--bg3)', border:'1px solid var(--border)',
             borderRadius:10, padding:'8px 10px',
           }}>
             <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>

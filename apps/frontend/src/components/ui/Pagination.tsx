@@ -31,7 +31,7 @@ export default function Pagination({
 
   const navBtn = (disabled: boolean): React.CSSProperties => ({
     width: 34, height: 34, borderRadius: 9,
-    background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)',
+    background: 'var(--bg3)', border: '1px solid var(--border)',
     cursor: disabled ? 'not-allowed' : 'pointer',
     color: disabled ? 'var(--text4)' : 'var(--text2)',
     fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -53,8 +53,8 @@ export default function Pagination({
             <button key={p} type="button" onClick={() => onPage(p as number)}
               style={{
                 width: 34, height: 34, borderRadius: 9,
-                background: page === p ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : 'rgba(255,255,255,.04)',
-                border: `1px solid ${page === p ? 'transparent' : 'rgba(255,255,255,.08)'}`,
+                background: page === p ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : 'var(--bg3)',
+                border: `1px solid ${page === p ? 'transparent' : 'var(--border)'}`,
                 cursor: 'pointer', color: page === p ? '#fff' : 'var(--text2)',
                 fontSize: 13, fontWeight: page === p ? 800 : 500,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -69,7 +69,7 @@ export default function Pagination({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text3)' }}>
           <span>{i('Par page', 'Per page', 'Por página', 'Per pagina')} :</span>
           <select value={pageSize} onChange={e => onPageSize(Number(e.target.value))}
-            style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 8, padding: '4px 8px', color: 'var(--text2)', fontSize: 12, fontFamily: 'var(--font)', cursor: 'pointer' }}>
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 8px', color: 'var(--text2)', fontSize: 12, fontFamily: 'var(--font)', cursor: 'pointer' }}>
             {[10, 20, 50, 100].map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
