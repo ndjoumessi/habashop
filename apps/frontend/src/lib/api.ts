@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger'
+
 const BASE_URL: string = (import.meta as any).env?.VITE_API_URL
   ?? 'https://habashop-production.up.railway.app'
 
@@ -40,7 +42,8 @@ async function request<T>(
   }
 
   const url = BASE_URL + path
-  console.log(`API ${method} ${path} | token: ${token ? '✅' : '❌'}`)
+  // DEV-only ; ne logge JAMAIS la valeur du token, seulement sa présence (booléen).
+  logger.log(`API ${method} ${path} | token: ${token ? '✅' : '❌'}`)
 
   try {
     const res = await fetch(url, {
