@@ -29,11 +29,12 @@ describe('computeReport', () => {
     expect(r.revenue).toEqual({ total: 0, count: 0 })
     expect(r.expenses.total).toBe(0)
     expect(r.expenses.byCategory).toEqual([])
-    expect(r.net).toBe(0)
+    expect(r.resultBeforePayroll).toBe(0)
+    expect(r.resultAfterPayrollEstimate).toBe(0)
     expect(r.margin).toBeNull()
   })
 
-  it('aggregates expenses by category (sorted desc) and computes net = revenue − expenses', () => {
+  it('aggregates expenses by category (sorted desc); resultBeforePayroll = revenue − expenses', () => {
     const r = computeReport({
       ...base,
       revenueTotal: 1000,
@@ -49,11 +50,11 @@ describe('computeReport', () => {
       { category: 'Loyer', amountTtc: 250 },
       { category: 'Énergie', amountTtc: 100 },
     ])
-    expect(r.net).toBe(650)
-    expect(r.margin).toBeCloseTo(65)
+    expect(r.resultBeforePayroll).toBe(650)
+    expect(r.margin).toBeCloseTo(65) // marge AVANT masse salariale
   })
 
-  it('payroll is surfaced separately and NOT subtracted from net (no double count)', () => {
+  it('payroll is projected, excluded from resultBeforePayroll, subtracted only in the after estimate', () => {
     const r = computeReport({
       ...base,
       payrollTotal: 400,
@@ -62,7 +63,21 @@ describe('computeReport', () => {
       expenses: [{ category: 'Loyer', amountTTC: 100 }],
     })
     expect(r.payroll).toEqual({ total: 400, projected: true })
-    expect(r.net).toBe(900) // 1000 − 100 only ; payroll excluded
+    expect(r.resultBeforePayroll).toBe(900)         // 1000 − 100 ; paie exclue
+    expect(r.resultAfterPayrollEstimate).toBe(500)  // 900 − 400 (estimation)
+  })
+
+  it('payroll = 0 → after estimate equals before (no phantom payroll)', () => {
+    const r = computeReport({
+      ...base,
+      payrollTotal: 0,
+      revenueTotal: 500,
+      revenueCount: 3,
+      expenses: [{ category: 'Loyer', amountTTC: 100 }],
+    })
+    expect(r.payroll.total).toBe(0)
+    expect(r.resultBeforePayroll).toBe(400)
+    expect(r.resultAfterPayrollEstimate).toBe(400) // identique → l'UI masquera la ligne
   })
 })
 
@@ -88,6 +103,7 @@ describe('buildAccountingReport — tenant isolation', () => {
       where: expect.objectContaining({ tenantId: 'TENANT_1', isActive: true, deletedAt: null }),
     }))
     expect(r.currency).toBe('EUR')
-    expect(r.net).toBe(0)
+    expect(r.resultBeforePayroll).toBe(0)
+    expect(r.resultAfterPayrollEstimate).toBe(0)
   })
 })

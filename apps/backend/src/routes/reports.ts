@@ -6,13 +6,14 @@ import { getCached } from '../lib/cache'
 const ALLOWED_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'ACCOUNTANT'])
 
 export interface AccountingReport {
-  month: string                 // 'YYYY-MM'
+  month: string                       // 'YYYY-MM'
   currency: string
   revenue: { total: number; count: number }
   expenses: { total: number; byCategory: { category: string; amountTtc: number }[] }
-  payroll: { total: number; projected: boolean }
-  net: number                   // revenue.total − expenses.total (dépenses RÉELLES uniquement)
-  margin: number | null         // % ; null si revenu = 0
+  payroll: { total: number; projected: boolean } // masse salariale PROJETÉE (effectif actuel)
+  resultBeforePayroll: number         // = revenue.total − expenses.total (dépenses RÉELLES)
+  resultAfterPayrollEstimate: number  // = resultBeforePayroll − payroll.total (ESTIMATION)
+  margin: number | null               // marge avant masse salariale (%) ; null si revenu = 0
   generatedAt: string
 }
 
@@ -65,15 +66,19 @@ export function computeReport(input: {
     .map(([category, amountTtc]) => ({ category, amountTtc }))
     .sort((a, b) => b.amountTtc - a.amountTtc)
   const expensesTotal = byCategory.reduce((s, c) => s + c.amountTtc, 0)
-  const net = input.revenueTotal - expensesTotal
+  // Résultat AVANT masse salariale (= dépenses réellement enregistrées seulement).
+  const resultBeforePayroll = input.revenueTotal - expensesTotal
+  // Résultat APRÈS paie = estimation (masse salariale projetée sur l'effectif actuel).
+  const resultAfterPayrollEstimate = resultBeforePayroll - input.payrollTotal
   return {
     month: input.monthStr,
     currency: input.currency,
     revenue: { total: input.revenueTotal, count: input.revenueCount },
     expenses: { total: expensesTotal, byCategory },
     payroll: { total: input.payrollTotal, projected: true },
-    net,
-    margin: input.revenueTotal > 0 ? (net / input.revenueTotal) * 100 : null,
+    resultBeforePayroll,
+    resultAfterPayrollEstimate,
+    margin: input.revenueTotal > 0 ? (resultBeforePayroll / input.revenueTotal) * 100 : null,
     generatedAt: input.generatedAt,
   }
 }

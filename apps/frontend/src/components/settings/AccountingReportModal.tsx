@@ -70,7 +70,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
     const kpis = htmlKPIs([
       { label: i('Revenus', 'Revenue', 'Ingresos', 'Ricavi'), value: fmt(data.revenue.total) },
       { label: i('Dépenses', 'Expenses', 'Gastos', 'Spese'), value: fmt(data.expenses.total) },
-      { label: i('Résultat net', 'Net result', 'Resultado neto', 'Risultato netto'), value: fmt(data.net) },
+      { label: i('Résultat avant masse salariale', 'Result before payroll', 'Resultado antes de nómina', 'Risultato prima del personale'), value: fmt(data.resultBeforePayroll) },
       { label: i('Marge', 'Margin', 'Margen', 'Margine'), value: data.margin != null ? `${data.margin.toFixed(1)}%` : '—' },
     ])
     const rows = data.expenses.byCategory.map(c => [catLabel(c.category, lang), fmt(c.amountTtc)])
@@ -79,10 +79,11 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
       rows,
       [i('Total dépenses', 'Total expenses', 'Total gastos', 'Totale spese'), fmt(data.expenses.total)],
     )
-    const note = `<p style="color:#666;font-size:12px;margin-top:16px">${i(
-      'Masse salariale (projetée, non incluse dans le résultat net) : ', 'Payroll (projected, excluded from net result): ',
-      'Masa salarial (proyectada, no incluida en el resultado neto): ', 'Massa salariale (proiettata, esclusa dal risultato netto): ',
-    )}${fmt(data.payroll.total)}</p>`
+    const payrollLine = `${i('Masse salariale (projection — effectif actuel, non historique) : ', 'Payroll (projection — current headcount, not historical): ', 'Masa salarial (proyección — plantilla actual, no histórica): ', 'Massa salariale (proiezione — organico attuale, non storica): ')}${fmt(data.payroll.total)}`
+    const afterLine = data.payroll.total > 0
+      ? `<br/>${i('Résultat estimé après paie (estimation, non un résultat réel) : ', 'Estimated result after payroll (estimate, not an actual result): ', 'Resultado estimado tras nómina (estimación, no un resultado real): ', 'Risultato stimato dopo personale (stima, non un risultato reale): ')}${fmt(data.resultAfterPayrollEstimate)}`
+      : ''
+    const note = `<p style="color:#666;font-size:12px;margin-top:16px">${payrollLine}${afterLine}</p>`
     openPDF(`${i('Rapport comptable', 'Accounting report', 'Reporte contable', 'Report contabile')} — ${monthLabel(month)}`, kpis + table + note)
   }
 
@@ -92,9 +93,10 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
       [i('Revenus', 'Revenue', 'Ingresos', 'Ricavi'), data.revenue.total],
       [i('Nb ventes', 'Sales count', 'Nº ventas', 'N. vendite'), data.revenue.count],
       [i('Dépenses', 'Expenses', 'Gastos', 'Spese'), data.expenses.total],
-      [i('Résultat net', 'Net result', 'Resultado neto', 'Risultato netto'), data.net],
-      [i('Marge %', 'Margin %', 'Margen %', 'Margine %'), data.margin != null ? data.margin.toFixed(1) : '—'],
-      [i('Masse salariale (projetée)', 'Payroll (projected)', 'Masa salarial (proyectada)', 'Massa salariale (proiettata)'), data.payroll.total],
+      [i('Résultat avant masse salariale', 'Result before payroll', 'Resultado antes de nómina', 'Risultato prima del personale'), data.resultBeforePayroll],
+      [i('Marge % (avant paie)', 'Margin % (before payroll)', 'Margen % (antes de nómina)', 'Margine % (prima del personale)'), data.margin != null ? data.margin.toFixed(1) : '—'],
+      [i('Masse salariale (projection — effectif actuel)', 'Payroll (projection — current headcount)', 'Masa salarial (proyección — plantilla actual)', 'Massa salariale (proiezione — organico attuale)'), data.payroll.total],
+      [i('Résultat estimé après paie (estimation, non réel)', 'Estimated result after payroll (estimate, not actual)', 'Resultado estimado tras nómina (estimación, no real)', 'Risultato stimato dopo personale (stima, non reale)'), data.payroll.total > 0 ? data.resultAfterPayrollEstimate : '—'],
       ['', ''],
       [i('Catégorie de dépense', 'Expense category', 'Categoría de gasto', 'Categoria di spesa'), i('Montant TTC', 'Amount incl. VAT', 'Importe IVA inc.', 'Importo IVA incl.')],
       ...data.expenses.byCategory.map(c => [catLabel(c.category, lang), c.amountTtc] as (string | number)[]),
@@ -156,8 +158,8 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                 {[
                   { label: i('Revenus', 'Revenue', 'Ingresos', 'Ricavi'), value: fmt(data.revenue.total), color: 'var(--acc2)', Icon: TrendingUp, sub: `${data.revenue.count} ${i('ventes', 'sales', 'ventas', 'vendite')}` },
                   { label: i('Dépenses', 'Expenses', 'Gastos', 'Spese'), value: fmt(data.expenses.total), color: 'var(--danger)', Icon: TrendingDown, sub: `${data.expenses.byCategory.length} ${i('catégories', 'categories', 'categorías', 'categorie')}` },
-                  { label: i('Résultat net', 'Net result', 'Resultado neto', 'Risultato netto'), value: fmt(data.net), color: data.net >= 0 ? 'var(--acc2)' : 'var(--danger)', Icon: Scale, sub: data.margin != null ? `${i('marge', 'margin', 'margen', 'margine')} ${data.margin.toFixed(1)}%` : '—' },
-                  { label: i('Masse salariale', 'Payroll', 'Masa salarial', 'Massa salariale'), value: fmt(data.payroll.total), color: 'var(--p3)', Icon: Users, sub: i('projetée — hors net', 'projected — excl. net', 'proyectada — fuera neto', 'proiettata — escl. netto') },
+                  { label: i('Résultat avant masse salariale', 'Result before payroll', 'Resultado antes de nómina', 'Risultato prima del personale'), value: fmt(data.resultBeforePayroll), color: data.resultBeforePayroll >= 0 ? 'var(--acc2)' : 'var(--danger)', Icon: Scale, sub: data.margin != null ? `${i('marge', 'margin', 'margen', 'margine')} ${data.margin.toFixed(1)}%` : '—' },
+                  { label: i('Masse salariale', 'Payroll', 'Masa salarial', 'Massa salariale'), value: fmt(data.payroll.total), color: 'var(--p3)', Icon: Users, sub: i('projection — effectif actuel', 'projection — current headcount', 'proyección — plantilla actual', 'proiezione — organico attuale') },
                 ].map(k => (
                   <div key={k.label} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -169,6 +171,25 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                   </div>
                 ))}
               </div>
+
+              {/* Résultat estimé après paie — masqué si aucune masse salariale (évite le doublon) */}
+              {data.payroll.total > 0 && (() => {
+                const after = data.resultAfterPayrollEstimate
+                const c = after >= 0 ? 'var(--acc2)' : 'var(--danger)'
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', marginBottom: 16, borderRadius: 12, background: 'var(--bg3)', border: `1px solid color-mix(in srgb, ${c} 30%, transparent)` }}>
+                    <Scale size={18} color={c} style={{ flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)' }}>{i('Résultat estimé après paie', 'Estimated result after payroll', 'Resultado estimado tras nómina', 'Risultato stimato dopo personale')}</span>
+                        <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--warn)', background: 'color-mix(in srgb, var(--warn) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius: 99, padding: '2px 8px' }}>{i('estimé', 'estimated', 'estimado', 'stimato')}</span>
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 2 }}>{i("Projection basée sur l'effectif actuel, non historique", 'Projection based on current headcount, not historical', 'Proyección basada en la plantilla actual, no histórica', "Proiezione basata sull'organico attuale, non storica")}</div>
+                    </div>
+                    <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'var(--mono)', letterSpacing: '-.5px', color: c, flexShrink: 0 }}>{fmt(after)}</div>
+                  </div>
+                )
+              })()}
 
               {/* Ventilation des dépenses */}
               <div style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>

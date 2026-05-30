@@ -188,7 +188,8 @@ export interface AccountingReport {
   revenue: { total: number; count: number }
   expenses: { total: number; byCategory: { category: string; amountTtc: number }[] }
   payroll: { total: number; projected: boolean }
-  net: number
+  resultBeforePayroll: number        // revenue.total − expenses.total
+  resultAfterPayrollEstimate: number // resultBeforePayroll − payroll.total (estimation)
   margin: number | null
   generatedAt: string
 }
