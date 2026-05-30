@@ -225,12 +225,12 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
       {showCreate && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
           <div style={{
-            background:'#0D0D1C',
-            border:'1px solid rgba(255,255,255,.1)',
+            background:'var(--card)',
+            border:'1px solid var(--border)',
             borderRadius:24, width:'100%', maxWidth:480,
             maxHeight:'90vh', overflow:'hidden',
             display:'flex', flexDirection:'column',
-            boxShadow:'0 24px 80px rgba(0,0,0,.8)',
+            boxShadow:'0 24px 80px var(--shadow, rgba(0,0,0,.8))',
             position:'relative',
           }}>
             <div style={{
@@ -241,7 +241,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             }} />
             <div style={{
               padding:'20px 24px 16px',
-              borderBottom:'1px solid rgba(255,255,255,.06)',
+              borderBottom:'1px solid var(--border)',
               flexShrink:0, display:'flex', alignItems:'center', gap:12,
             }}>
               <div style={{
@@ -260,7 +260,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               </div>
               <button type="button" onClick={()=>setShowCreate(false)} style={{
                 width:30, height:30, borderRadius:9,
-                background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)',
+                background:'var(--bg3)', border:'1px solid var(--border)',
                 cursor:'pointer', fontSize:14, color:'var(--text3)',
                 display:'flex', alignItems:'center', justifyContent:'center',
               }}>✕</button>
@@ -317,7 +317,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             </div>
 
             <div style={{
-              padding:'16px 24px', borderTop:'1px solid rgba(255,255,255,.06)',
+              padding:'16px 24px', borderTop:'1px solid var(--border)',
               flexShrink:0, display:'flex', gap:8,
             }}>
               <button onClick={handleCreateCustomer} style={{
@@ -331,8 +331,8 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 <CheckCircle size={15} style={{flexShrink:0}} /> {lang === 'en' ? 'Add customer' : lang === 'es' ? 'Agregar el cliente' : lang === 'it' ? 'Aggiungi il cliente' : 'Ajouter le client'}
               </button>
               <button onClick={()=>{setShowCreate(false);resetCustForm()}} style={{
-                padding:'13px 18px', background:'rgba(255,255,255,.05)',
-                border:'1px solid rgba(255,255,255,.08)', borderRadius:12,
+                padding:'13px 18px', background:'var(--bg3)',
+                border:'1px solid var(--border)', borderRadius:12,
                 cursor:'pointer', color:'var(--text2)', fontSize:13,
                 fontFamily:'var(--font)', fontWeight:600,
               }}>
@@ -346,12 +346,12 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
       {showDetailModal && detailCustomer && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowDetailModal(false)}>
           <div style={{
-            background: '#0D0D1C',
-            border: '1px solid rgba(255,255,255,.1)',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
             borderRadius: 24, width: '100%', maxWidth: 600,
             maxHeight: '92vh', overflow: 'hidden',
             display: 'flex', flexDirection: 'column',
-            boxShadow: '0 24px 80px rgba(0,0,0,.85)',
+            boxShadow: '0 24px 80px var(--shadow, rgba(0,0,0,.85))',
             position: 'relative',
           }}>
             {/* Bande déco */}
@@ -371,7 +371,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             {/* Header */}
             <div style={{
               padding: '24px 24px 20px',
-              borderBottom: '1px solid rgba(255,255,255,.06)',
+              borderBottom: '1px solid var(--border)',
               flexShrink: 0,
               background: 'linear-gradient(135deg,rgba(108,71,255,.06),transparent)',
             }}>
@@ -420,7 +420,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 </div>
                 <button type="button" onClick={() => setShowDetailModal(false)} style={{
                   width: 32, height: 32, borderRadius: 10,
-                  background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)',
+                  background: 'var(--bg3)', border: '1px solid var(--border)',
                   cursor: 'pointer', color: 'var(--text3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 15, flexShrink: 0,
@@ -459,7 +459,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   ].map(item => (
                     <div key={item.label} style={{
                       gridColumn: item.full ? '1 / -1' : 'auto',
-                      background: 'var(--bg3)', border: '1px solid rgba(255,255,255,.04)', borderRadius: 10, padding: '10px 12px',
+                      background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px',
                     }}>
                       <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
                         {item.icon}{item.label}
@@ -553,7 +553,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             </div>
 
             {/* Footer */}
-            <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,.06)', flexShrink: 0, display: 'flex', gap: 8, background: 'rgba(0,0,0,.15)' }}>
+            <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 8, background: 'var(--bg2)' }}>
               <button onClick={() => { setShowDetailModal(false); navigate('/app/pos', { state: { customer: detailCustomer } }) }} style={{
                 flex: 1, padding: '12px',
                 background: 'linear-gradient(135deg,var(--p),var(--p2))',
@@ -572,8 +572,8 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 setCustEditMode(false)
                 setShowEditCustModal(true)
               }} style={{
-                padding: '12px 16px', background: 'rgba(255,255,255,.05)',
-                border: '1px solid rgba(255,255,255,.08)', borderRadius: 12,
+                padding: '12px 16px', background: 'var(--bg3)',
+                border: '1px solid var(--border)', borderRadius: 12,
                 cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
                 fontFamily: 'var(--font)', fontWeight: 600,
                 display: 'flex', alignItems: 'center', gap: 6,
@@ -581,8 +581,8 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 <Pencil size={13} /> {i('Modifier', 'Edit', 'Editar', 'Modifica')}
               </button>
               <button onClick={() => setShowDetailModal(false)} style={{
-                padding: '12px 16px', background: 'rgba(255,255,255,.05)',
-                border: '1px solid rgba(255,255,255,.08)', borderRadius: 12,
+                padding: '12px 16px', background: 'var(--bg3)',
+                border: '1px solid var(--border)', borderRadius: 12,
                 cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
                 fontFamily: 'var(--font)', fontWeight: 600,
               }}>

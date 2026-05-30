@@ -298,6 +298,20 @@ export default function POS() {
   }
 
   const confirmSale = async () => {
+    // Garde-fou cash : refuser si le montant reçu (converti en XOF) < total.
+    // Les modes Wave/Orange/Carte/Mobile n'ont pas de saisie de montant → pas concernés.
+    if (payMode === 'cash') {
+      const given = toXOF(parseFloat(cashGiven) || 0)
+      if (given < total) {
+        toast.error(
+          lang === 'en' ? 'Insufficient amount — please enter amount received' :
+          lang === 'es' ? 'Monto insuficiente — ingrese el monto recibido' :
+          lang === 'it' ? "Importo insufficiente — inserire l'importo ricevuto" :
+          'Montant insuffisant — veuillez saisir le montant reçu',
+        )
+        return
+      }
+    }
     setIsSaving(true)
     try {
       await salesApi.create({
@@ -576,6 +590,7 @@ export default function POS() {
         isSaving={isSaving} waSending={waSending}
         printTicket={printTicket}
         discount={discount} payMode={payMode}
+        cashGiven={cashGiven} toXOF={toXOF}
       />
 
       {/* FAB mobile — voir panier */}

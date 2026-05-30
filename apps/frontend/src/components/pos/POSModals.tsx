@@ -31,9 +31,14 @@ interface POSModalsProps {
   isSaving: boolean; waSending: boolean
   printTicket: () => void
   discount: any; payMode: string
+  cashGiven: string; toXOF: (v: number) => number
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF }: POSModalsProps) {
+  // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
+  // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
+  const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
+  const blocked = isSaving || waSending || !cashOK
   return (
     <>
       {showDiscountModal && (
@@ -474,19 +479,21 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 onClick={confirmSale}
-                disabled={isSaving || waSending}
+                disabled={blocked}
+                title={!cashOK ? (lang==='en' ? 'Enter the amount received' : lang==='es' ? 'Ingrese el monto recibido' : lang==='it' ? "Inserire l'importo ricevuto" : 'Saisissez le montant reçu') : undefined}
                 style={{
                   flex: 1,
-                  background: (isSaving || waSending) ? 'var(--bg4)' : 'linear-gradient(135deg, var(--acc2), #059669)',
+                  background: blocked ? 'var(--bg4)' : 'linear-gradient(135deg, var(--acc2), #059669)',
                   border: 'none',
                   borderRadius: 10,
                   padding: '12px',
                   fontSize: 14,
                   fontWeight: 700,
-                  color: (isSaving || waSending) ? 'var(--text3)' : '#fff',
-                  cursor: (isSaving || waSending) ? 'not-allowed' : 'pointer',
+                  color: blocked ? 'var(--text3)' : '#fff',
+                  cursor: blocked ? 'not-allowed' : 'pointer',
+                  opacity: blocked ? 0.6 : 1,
                   fontFamily: 'inherit',
-                  boxShadow: (isSaving || waSending) ? 'none' : '0 4px 16px rgba(14,196,126,.35)',
+                  boxShadow: blocked ? 'none' : '0 4px 16px rgba(14,196,126,.35)',
                 }}
               >
                 {waSending
@@ -496,9 +503,10 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   : t('pos_validate')}
               </button>
               <button
-                onClick={() => { printTicket(); confirmSale() }}
+                onClick={() => { if (blocked) { confirmSale(); return } printTicket(); confirmSale() }}
+                disabled={blocked}
+                style={{ padding: '12px 16px', fontSize: 13, opacity: blocked ? 0.6 : 1, cursor: blocked ? 'not-allowed' : 'pointer' }}
                 className="mini-btn"
-                style={{ padding: '12px 16px', fontSize: 13 }}
               ><Printer size={13} /> Ticket</button>
               <button
                 onClick={() => {
