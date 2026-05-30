@@ -1,15 +1,15 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Skeleton from '@/components/ui/skeleton'
 import EmptyState from '@/components/ui/EmptyState'
 import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, BarChart2, CreditCard, Trophy, Package, Users, Wallet, UserCog } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 import { salesApi, expensesApi } from '@/lib/api'
 
-import ReportsTabs from '@/components/reports/ReportsTabs'
+// ReportsTabs porte les graphes recharts (chunk `charts`) → lazy pour alléger le shell Reports
+const ReportsTabs = lazy(() => import('@/components/reports/ReportsTabs'))
 import { type Period, Trend } from '@/components/reports/reportsShared'
 
 const WEEK_ABBR: Record<string, string[]> = {
@@ -255,16 +255,18 @@ export default function Reports() {
       </div>
 
       {/* Onglets détaillés */}
-      <ReportsTabs
-        reportTab={reportTab}
-        fmt={fmt} abbr={abbr} lang={lang}
-        chartData={chartData}
-        paymentData={paymentData}
-        activePayIndex={activePayIndex} setActivePayIndex={setActivePayIndex}
-        salesData={salesData}
-        data={data}
-        topProducts={topProducts}
-      />
+      <Suspense fallback={<div style={{ minHeight: 200 }} />}>
+        <ReportsTabs
+          reportTab={reportTab}
+          fmt={fmt} abbr={abbr} lang={lang}
+          chartData={chartData}
+          paymentData={paymentData}
+          activePayIndex={activePayIndex} setActivePayIndex={setActivePayIndex}
+          salesData={salesData}
+          data={data}
+          topProducts={topProducts}
+        />
+      </Suspense>
 
     </div>
   )

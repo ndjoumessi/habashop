@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import { useNavigate } from 'react-router-dom'
@@ -8,10 +8,9 @@ import {
   BarChart2, Activity, Target, Zap,
 } from 'lucide-react'
 import { dashboardApi } from '@/lib/api'
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
-} from 'recharts'
+// Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
+const DashSalesArea = lazy(() => import('@/components/charts/DashSalesArea'))
+const DashCategoryDonut = lazy(() => import('@/components/charts/DashCategoryDonut'))
 
 const DONUT_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#00B8FF', '#FF3B5C', '#FFB800']
 
@@ -334,22 +333,9 @@ export default function Dashboard() {
               {lang === 'en' ? 'No sales yet' : lang === 'es' ? 'Sin ventas por ahora' : lang === 'it' ? 'Nessuna vendita per ora' : 'Aucune vente pour le moment'}
             </div>
           ) : (
-          <ResponsiveContainer width="100%" height={190}>
-            <AreaChart data={salesChart} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-              <defs>
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00D084" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#00D084" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: 'var(--text3)' }} axisLine={false} tickLine={false}
-                tickFormatter={v => abbr(v)} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(108,71,255,.06)', stroke: 'rgba(108,71,255,.18)', strokeWidth: 1 }} />
-              <Area dataKey="ventes" stroke="#00D084" strokeWidth={2.5} fill="url(#areaGrad)" dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<div style={{ height: 190 }} />}>
+            <DashSalesArea data={salesChart} abbr={abbr} tooltip={<CustomTooltip />} />
+          </Suspense>
           )}
           </div>
         </div>
@@ -365,20 +351,9 @@ export default function Dashboard() {
             </div>
           ) : (<>
           <div style={{ position: 'relative', margin: '0 -8px', overflow: 'visible' }}>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={catData} cx="50%" cy="50%"
-                  innerRadius={68} outerRadius={108}
-                  stroke="none" paddingAngle={2}
-                  dataKey="value"
-                  label={RenderDonutLabel} labelLine={false}
-                >
-                  {catData.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i]} />)}
-                </Pie>
-                <Tooltip content={<CatTooltip />} wrapperStyle={{ zIndex: 9999, pointerEvents: 'none' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <Suspense fallback={<div style={{ height: 220 }} />}>
+              <DashCategoryDonut data={catData} colors={DONUT_COLORS} label={RenderDonutLabel} tooltip={<CatTooltip />} />
+            </Suspense>
             <div style={{
               position: 'absolute', top: 110, left: '50%',
               transform: 'translate(-50%,-50%)',
