@@ -1,6 +1,13 @@
 import { prisma } from '../db'
 import { sendPayrollSummaryEmail } from './email'
 
+// Montants stockés en base XOF (cf. conversion aux frontières I/O des forms).
+// Taux fixes (miroir du frontend) pour convertir vers la devise du tenant dans l'email.
+const TO_XOF_RATES: Record<string, number> = { XOF: 1, XAF: 1, EUR: 655.957, USD: 602, CAD: 443, GBP: 763 }
+function xofToCurrency(amountXOF: number, currency: string): number {
+  return Math.round(amountXOF / (TO_XOF_RATES[currency] ?? 1))
+}
+
 /**
  * Mois à reporter = mois PRÉCÉDENT (qui vient de se clôturer le 1er).
  * Retourne le libellé 'YYYY-MM' + les bornes [start, end) du mois (heure serveur).
@@ -52,15 +59,18 @@ export async function buildPayrollReport(
       _sum: { amount: true },
     }),
   ])
-  const headcount = salaryAgg._count.id ?? 0
-  const payroll   = salaryAgg._sum.salary ?? 0
-  const bonuses   = bonusAgg._sum.amount ?? 0
-  const admin     = tenant.users[0]
+  const headcount   = salaryAgg._count.id ?? 0
+  const payrollXOF  = salaryAgg._sum.salary ?? 0
+  const bonusesXOF  = bonusAgg._sum.amount ?? 0
+  // Conversion base XOF → devise du tenant (un seul point ; XOF/XAF = identité).
+  const payroll = xofToCurrency(payrollXOF, tenant.currency)
+  const bonuses = xofToCurrency(bonusesXOF, tenant.currency)
+  const admin   = tenant.users[0]
   return {
     tenantId: tenant.id, shopName: tenant.name, ownerName: admin?.name ?? tenant.name,
     recipient: admin?.email ?? null, month, lang: tenant.lang, currency: tenant.currency,
     headcount, payroll, bonuses, total: payroll + bonuses,
-    hasData: headcount > 0 || bonuses > 0,
+    hasData: headcount > 0 || bonusesXOF > 0, // basé sur l'effectif/primes réels (avant conversion/arrondi)
   }
 }
 

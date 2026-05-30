@@ -12,7 +12,7 @@ const { db, sendSpy } = vi.hoisted(() => ({
 vi.mock('../db', () => ({ prisma: db }))
 vi.mock('../services/email', () => ({ sendPayrollSummaryEmail: sendSpy }))
 
-import { runMonthlyPayrollReports, resolveReportMonth } from '../services/payrollReport'
+import { runMonthlyPayrollReports, resolveReportMonth, buildPayrollReport } from '../services/payrollReport'
 
 const MAY_1 = new Date(2026, 4, 1) // 1 mai 2026 → récap d'avril
 const tenant = (over: Record<string, any> = {}) => ({
@@ -39,6 +39,28 @@ describe('resolveReportMonth', () => {
   })
   it('1er janvier → décembre de l’année précédente', () => {
     expect(resolveReportMonth(new Date(2026, 0, 1)).month).toBe('2025-12')
+  })
+})
+
+describe('buildPayrollReport — conversion base XOF → devise tenant', () => {
+  const tn = (currency: string) => ({ id: 'X', name: 'Shop', lang: 'fr', currency, users: [{ email: 'a@a.com', name: 'A' }] })
+
+  it('tenant XOF → montants inchangés (identité)', async () => {
+    db.employee.aggregate.mockResolvedValue({ _sum: { salary: 500000 }, _count: { id: 2 } })
+    db.employeeBonus.aggregate.mockResolvedValue({ _sum: { amount: 30000 } })
+    const r = await buildPayrollReport(db as any, tn('XOF'), MAY_1)
+    expect(r.payroll).toBe(500000)
+    expect(r.bonuses).toBe(30000)
+    expect(r.total).toBe(530000)
+  })
+
+  it('tenant EUR → conversion au taux fixe (1 € = 655,957 XOF)', async () => {
+    db.employee.aggregate.mockResolvedValue({ _sum: { salary: 2197456 }, _count: { id: 5 } })
+    db.employeeBonus.aggregate.mockResolvedValue({ _sum: { amount: 0 } })
+    const r = await buildPayrollReport(db as any, tn('EUR'), MAY_1)
+    expect(r.currency).toBe('EUR')
+    expect(r.payroll).toBe(3350) // 2 197 456 / 655,957 ≈ 3350
+    expect(r.hasData).toBe(true)
   })
 })
 
