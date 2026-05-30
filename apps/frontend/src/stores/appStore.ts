@@ -5,7 +5,7 @@ import type { CartItem } from '@/components/pos/posShared'
 
 export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP'
 export type Lang     = 'fr' | 'en' | 'es' | 'it'
-export type Theme    = 'dark' | 'darker' | 'midnight' | 'forest' | 'ocean' | 'sunset' | 'light'
+export type Theme    = 'dark' | 'darker' | 'midnight' | 'forest' | 'ocean' | 'sunset' | 'light' | 'gold'
 export type AppTheme = Theme
 
 // ─── Taux par rapport à XOF (devise de base) ──────────────────────────────────
@@ -139,7 +139,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   shopSiret: 'SN-2026-001234',
 
   lang: 'fr',
-  theme: 'dark',
+  theme: 'gold',
   sidebarCollapsed: false,
 
   currency: 'XOF',
@@ -190,9 +190,19 @@ export const ACCENT_PAIRS: Record<string, { p: string; p2: string; p3: string }>
 }
 
 function applyAccentColor(color: string) {
+  const root = document.documentElement
+  // Thème "gold" : on force le violet premium, indépendamment de l'accent choisi
+  // (l'or vit dans --acc2). applyTheme() pose body.className='theme-gold' AVANT chaque
+  // appel à applyAccentColor() → couvre tous les chemins (updateConfig UI, setTheme,
+  // rehydrate, reset) sans devoir patcher chacun.
+  if (document.body.className === 'theme-gold') {
+    root.style.setProperty('--p',  '#7C3AED')
+    root.style.setProperty('--p2', '#6D28D9')
+    root.style.setProperty('--p3', '#8B5CF6')
+    return
+  }
   const pair = ACCENT_PAIRS[color]
   if (!pair) return
-  const root = document.documentElement
   root.style.setProperty('--p',  pair.p)
   root.style.setProperty('--p2', pair.p2)
   root.style.setProperty('--p3', pair.p3)
@@ -214,6 +224,8 @@ export const THEMES: Record<Theme, { label: Record<string, string>; emoji: strin
     vars: { '--bg': '#140A02', '--bg2': '#200F04', '--bg3': '#2C1506', '--bg4': '#3C1E0A', '--bg5': '#4A2610', '--p': '#F97316', '--p2': '#FB923C', '--p3': '#FDBA74', '--acc2': '#FCD34D', '--text': '#FFF7ED', '--text2': '#FED7AA', '--text3': '#F8A96B', '--card': '#2C1506', '--card2': '#3C1E0A', '--grad-card': 'linear-gradient(160deg,#2C1506,#3C1E0A)', '--border': 'rgba(249,115,22,.15)', '--border2': 'rgba(249,115,22,.28)', '--text4': '#8A6446', '--header-bg': 'rgba(20,10,2,.88)' } },
   light:    { label: { fr: 'Clair', en: 'Light', es: 'Claro', it: 'Chiaro' }, emoji: '☀️',
     vars: { '--bg': '#F8F9FF', '--bg2': '#F0F2FF', '--bg3': '#E8EBFF', '--bg4': '#FFFFFF', '--bg5': '#F4F5FF', '--p': '#6C47FF', '--p2': '#8B6FFF', '--p3': '#6C47FF', '--acc2': '#059669', '--text': '#1A1A2E', '--text2': '#374151', '--text3': '#6B7280', '--card': '#FFFFFF', '--border': 'rgba(0,0,0,.1)' } },
+  gold:     { label: { fr: 'Violet & Or', en: 'Violet & Gold', es: 'Violeta & Oro', it: 'Viola & Oro' }, emoji: '✨',
+    vars: { '--bg': '#0A0A0F', '--bg2': '#0F0F1A', '--bg3': '#141428', '--bg4': '#1A1A35', '--bg5': '#1F1F40', '--p': '#7C3AED', '--p2': '#6D28D9', '--p3': '#8B5CF6', '--acc2': '#EAB308', '--acc3': '#FCD34D', '--text': '#F8FAFC', '--text2': '#CBD5E1', '--text3': '#94A3B8', '--text4': '#64748B', '--card': '#0F0F1A', '--card2': '#141428', '--border': 'rgba(139,92,246,0.2)', '--border2': 'rgba(234,179,8,0.2)', '--grad-card': 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(234,179,8,0.04) 100%)', '--header-bg': 'rgba(10,10,15,0.85)', '--shadow': 'rgba(0,0,0,0.6)', '--danger': '#EF4444', '--warn': '#F59E0B', '--acc': '#10B981' } },
 }
 
 // Vars de surface NON couvertes par THEMES[*].vars (sinon issues du :root sombre d'index.css).
