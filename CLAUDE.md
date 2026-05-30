@@ -192,7 +192,6 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
 - **`console.log` API debug en prod** : `apps/frontend/src/lib/api.ts:43` exécuté à chaque requête (leak token presence + bruit DevTools). Migrer vers `logger.log`. **S**
 - **Bundle recharts 411KB + barcode 443KB** à optimiser (code-split charts par graph type, ou lib plus légère type visx). **L**
 - **WebSocket `/api/ws` auth** à vérifier (`notifications.ts:33` sans `preHandler` visible). **M**
-- **Rapport comptable "Bientôt disponible"** (`SectionDocs.tsx:31`) à implémenter ou retirer. **M**
 - **SectionLang devise** : `.catch(()=>{})` silencieux, divergence possible local/serveur. **S**
 
 ### 🟢 Nice-to-have
@@ -241,6 +240,12 @@ Sécurité & multi-tenant : routes user management durcies admin-only + validati
 - **Multi-prix par paliers de quantité** : `priceTiers` JSON sur `Product` + fix bug `updateQty` POS (recalcul prix au franchissement de palier)
 - **Catalogue WhatsApp partageable** (`/c/:slug`) : route publique + section Settings + message `wa.me` pré-rempli + slugs auto-générés (backfill 6 tenants)
 - **Auto-détection devise selon pays** dans Signup/Onboarding (util `currencyForCountry`/`suggestedCurrencyForCountry`, fallback XOF, préremplissage jusqu'à choix manuel)
+- **Rapport comptable mensuel** (remplace le stub « Bientôt disponible » de `SectionDocs`) :
+  - Backend `GET /api/reports/accounting?month=YYYY-MM` (`routes/reports.ts`) : RBAC ADMIN/SUPER_ADMIN/MANAGER/ACCOUNTANT, `tenantId` STRICT depuis le JWT, cache Redis `reports:accounting:{tenant}:{YYYY-MM}` (TTL 5 min mois courant / 30 min passés, invalidé sur vente/dépense via `invalidateTenantCache` étendu). Helpers purs `resolveMonth`/`computeReport`/`buildAccountingReport` (testés : mois vide→0, agrégation, isolation tenant, paie=0).
+  - **Source revenus = `Sale.total`** sur `createdAt ∈ [new Date(y,m,1), mois+1)` (heure serveur) → **réconcilie exactement** avec le `caMonth` du dashboard (`prisma.sale.aggregate({_sum:{total}})`). Pas de modèle Order client (`PurchaseOrder` = fournisseurs).
+  - **Salaires = source unique `Employee.salary`** (employés actifs) = masse salariale **projetée** (aucune catégorie dépense « Salaires » ni table Payroll). JAMAIS dans le net.
+  - JSON dédoublé pour ne pas tromper : `resultBeforePayroll` (= revenu − dépenses Expense) **et** `resultAfterPayrollEstimate` (= − payroll, ESTIMATION). Pas de champ orphelin `net`.
+  - Frontend `AccountingReportModal.tsx` : sélecteur mois localisé, KPIs (« Résultat avant masse salariale » + bannière « Résultat estimé après paie » badge *estimé*, masquée si paie=0), ventilation par catégorie (barres), états loading/erreur/vide, export PDF+CSV (réutilise `openPDF`/`htmlKPIs`/`htmlTable`/`exportCSV`), i18n fr/en/es/it.
 
 ### Web — bugs corrigés
 - Devise form Stock : conversion XOF↔devise aux frontières I/O (helpers hydrate/dehydrate)
@@ -270,3 +275,6 @@ Sécurité & multi-tenant : routes user management durcies admin-only + validati
 - **`applyAccentColor()` écrase `--p/--p2/--p3`** (appelé APRÈS `applyTheme`) → pour verrouiller une couleur primaire dans un thème, poser les valeurs **dans `applyAccentColor()`** quand `body.className === 'theme-gold'` (une seule source de vérité, couvre updateConfig/setTheme/rehydrate/reset).
 - **Animation `slideUp` sans `fill-mode forwards`** (`index.css`) : opacity+transform animés → un screenshot CI peut capturer l'élément transparent/décalé. **Attendre ~500ms** avant capture.
 - **Catalogue public** : NE PAS utiliser `useFormatAmount` (hook lié au store auth) → utiliser `convertAmount` + `formatInCurrency` (fonctions pures exportées d'`appStore`).
+- **Agrégats financiers = réconcilier avec le dashboard** : tout nouveau total CA/revenus DOIT réutiliser la source du dashboard (`Sale.total`, bornes `new Date(y,m,1)` heure serveur) pour éviter le double comptage. Modèles réels : `Sale` (revenu POS), `Expense` (dépenses, catégories Loyer/Énergie/Transport/Maintenance/Fournitures/Marketing/Formation/Autre — **pas** de « Salaires »), **pas** de table `Payroll` ni `Transaction`/`Order` client. Salaires = `Employee.salary` (projeté).
+- **Tests backend = prisma mocké** (`vi.mock('../db')`, vitest) → ne JAMAIS toucher la DB prod. Extraire la logique en helpers purs (`computeReport`, `resolveMonth`) pour les tester sans Fastify.
+- **Déploiement back+front couplé** : quand un changement de forme JSON touche back ET front, déployer **Railway d'abord** (route/champ dispo) puis Vercel, sinon le front lit des champs `undefined`.
