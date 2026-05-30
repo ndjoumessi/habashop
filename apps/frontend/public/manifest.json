@@ -12,9 +12,9 @@
   "categories": ["business", "productivity", "finance"],
   "screenshots": [
     {
-      "src": "/og-image.png",
+      "src": "/og-image.webp",
       "sizes": "1200x630",
-      "type": "image/png",
+      "type": "image/webp",
       "label": "Dashboard HabaShop"
     }
   ],
