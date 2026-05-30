@@ -1,22 +1,20 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, formatCurrency, t, convertAmount, formatInCurrency } from '@/stores/appStore'
-import type { Currency } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi } from '@/lib/api'
-import { generateInvoice } from '@/utils/export'
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
-import { Search, Minus, Plus, Trash2, ShoppingCart, X, Lock, Unlock, Camera, User, Factory, Package, Tag, Banknote, CreditCard, Smartphone, ClipboardList, Printer, FileText, BarChart3, CheckCircle, AlertTriangle, History } from 'lucide-react'
+import { ShoppingCart } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { confirm } from '@/lib/confirm'
-
 
 import POSProductGrid from '@/components/pos/POSProductGrid'
 import POSCart from '@/components/pos/POSCart'
 import POSModals from '@/components/pos/POSModals'
-import { type PosProduct, type CartItem, CASHIER_TEXTS } from '@/components/pos/posShared'
+import POSCashierClosed from '@/components/pos/POSCashierClosed'
+import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
+import { type PosProduct, CASHIER_TEXTS } from '@/components/pos/posShared'
 
 export default function POS() {
   const {
@@ -144,7 +142,6 @@ export default function POS() {
   // Fond de caisse : l'input est dans la devise configurée, stockage direct
   const inputValue  = parseFloat(openingFundInput) || 0
   const displayFund = formatInCurrency(inputValue, currency)
-  const fundPreview = null
 
   // basePrice selon type client (retail/semi/wholesale). La promo et les paliers s'appliquent ensuite.
   const getBasePrice = (p: PosProduct) => {
@@ -232,70 +229,10 @@ export default function POS() {
     { id: 'mobile', label: lang === 'en' ? 'Other mobile' : lang === 'es' ? 'Otro móvil' : lang === 'it' ? 'Altro mobile' : 'Autre mobile', icon: '📲', color: '#F59E0B' },
   ] as { id: 'cash'|'card'|'wave'|'orange'|'mobile'; label: string; icon: string; color: string }[]
 
-  const printTicket = () => {
-    const win = window.open('', '_blank', 'width=400,height=600')
-    if (!win) return
-    const now = new Date()
-    const html = `<!DOCTYPE html>
-<html lang="${lang}">
-<head>
-  <meta charset="UTF-8">
-  <title>${t('pos_print_ticket')}</title>
-  <style>
-    * { box-sizing:border-box; margin:0; padding:0; }
-    body { font-family:'Courier New',monospace; font-size:12px; color:#000; padding:10px; max-width:300px; margin:0 auto; }
-    .center { text-align:center; }
-    .bold { font-weight:bold; }
-    .big { font-size:16px; font-weight:900; }
-    .divider { border-top:1px dashed #000; margin:8px 0; }
-    .row { display:flex; justify-content:space-between; margin:4px 0; }
-    .total { font-size:15px; font-weight:900; }
-    .footer { margin-top:12px; font-size:10px; }
-    @media print { @page { size:80mm auto; margin:0; } }
-  </style>
-</head>
-<body>
-  <div class="center">
-    <div class="big">HabaShop</div>
-    <div style="font-size:10px;color:#555;">${t('pos_ticket_subtitle')}</div>
-  </div>
-  <div class="divider"></div>
-  <div class="row"><span>${t('pos_ticket_date')}</span><span>${now.toLocaleDateString(locale)}</span></div>
-  <div class="row"><span>${t('pos_ticket_time')}</span><span>${now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</span></div>
-  <div class="row"><span>${t('pos_ticket_cashier_label')}</span><span>${t('pos_cashier')} 1</span></div>
-  <div class="row"><span>${t('pos_ticket_number')}</span><span>#V${Date.now().toString().slice(-6)}</span></div>
-  <div class="divider"></div>
-  <div class="bold" style="margin-bottom:6px;">${t('pos_ticket_articles')}</div>
-  ${cart.map(item => `
-    <div class="row">
-      <span style="flex:1;">${item.name}</span>
-      <span style="margin:0 8px;">x${item.qty}</span>
-      <span>${fmt(item.price * item.qty)}</span>
-    </div>
-  `).join('')}
-  <div class="divider"></div>
-  ${discount && discountAmount > 0 ? `<div class="row" style="color:green;font-weight:bold;"><span>${discount.type === 'percent' ? `Remise (${discount.value} %)` : 'Remise'} :</span><span>− ${fmt(discountAmount)}</span></div>` : ''}
-  <div class="row"><span>${t('pos_subtotal')} :</span><span>${fmt(Math.round(totalHT))}</span></div>
-  <div class="row"><span>${t('pos_vat')} (${posTaxRate} %) :</span><span>${fmt(Math.round(tva))}</span></div>
-  <div class="divider"></div>
-  <div class="row total"><span>${t('pos_total')} :</span><span>${fmt(total)}</span></div>
-  <div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span>${payMode === 'cash' ? t('pos_cash') : payMode === 'card' ? t('pos_card') : t('pos_mobile')}</span></div>
-  ${cashGiven ? `
-    <div class="row"><span>${t('pos_ticket_received')}</span><span>${formatInCurrency(parseFloat(cashGiven), currency)}</span></div>
-    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${fmt(Math.max(monnaie, 0))}</span></div>
-  ` : ''}
-  <div class="divider"></div>
-  <div class="center footer">
-    <div>${t('pos_ticket_thanks')}</div>
-    <div style="margin-top:4px;">${t('pos_ticket_keep')}</div>
-    <div style="margin-top:8px;font-size:9px;">HabaShop — ${now.toLocaleDateString(locale)}</div>
-  </div>
-  <script>window.onload=function(){setTimeout(function(){window.print();window.close();},300);}<\/script>
-</body>
-</html>`
-    win.document.write(html)
-    win.document.close()
-  }
+  const printTicket = () => buildAndPrintTicket({
+    lang, locale, cart, discount, discountAmount,
+    totalHT, tva, posTaxRate, total, payMode, cashGiven, currency, monnaie, fmt,
+  })
 
   const confirmSale = async () => {
     // Garde-fou cash : refuser si le montant reçu (converti en XOF) < total.
@@ -377,89 +314,20 @@ export default function POS() {
 
   if (!cashierOpen) {
     return (
-      <div style={{
-        display:'flex', alignItems:'center', justifyContent:'center',
-        height:'calc(100vh - 54px)', background:'var(--bg)',
-      }}>
-        <div style={{
-          background:'var(--card)', border:'1px solid var(--border)',
-          borderRadius:20, padding:'40px 48px',
-          maxWidth:480, width:'100%', textAlign:'center',
-          boxShadow:'0 20px 60px rgba(0,0,0,.3)',
-        }}>
-          <div style={{
-            width:80, height:80, borderRadius:'50%',
-            background:'rgba(91,78,232,.12)', border:'2px solid rgba(91,78,232,.25)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            margin:'0 auto 20px',
-          }}><Lock size={36} style={{ color:'var(--p2)' }} /></div>
-          <h2 style={{ fontSize:22, fontWeight:900, color:'var(--text)', marginBottom:8, letterSpacing:'-0.5px' }}>
-            {ct.closed_title}
-          </h2>
-          <p style={{ fontSize:13, color:'var(--text2)', marginBottom:28, lineHeight:1.6 }}>
-            {ct.closed_sub}
-          </p>
-          <div style={{ marginBottom:20, textAlign:'left' }}>
-            <label style={{
-              display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase',
-              letterSpacing:'.5px', color:'var(--text3)', marginBottom:6,
-            }}>{ct.fund_label}</label>
-            <div style={{ position:'relative' }}>
-              <input
-                className="input"
-                type="number"
-                placeholder={ct.fund_placeholder}
-                value={openingFundInput}
-                onChange={e => setOpeningFundInput(e.target.value)}
-                style={{ fontSize:16, textAlign:'right', paddingRight:60 }}
-              />
-              <span style={{
-                position:'absolute', right:12, top:'50%', transform:'translateY(-50%)',
-                fontSize:12, fontWeight:700, color:'var(--text3)',
-              }}>{currencySymbol}</span>
-            </div>
-            {openingFundInput && (
-              <div style={{ marginTop:6, fontSize:12, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:600 }}>
-                {fundPreview ?? displayFund}
-              </div>
-            )}
-          </div>
-          <div style={{
-            padding:'12px 16px', borderRadius:10,
-            background:'var(--bg3)', border:'1px solid var(--border)',
-            display:'flex', alignItems:'center', gap:12,
-            marginBottom:24, textAlign:'left',
-          }}>
-            <div style={{
-              width:36, height:36, borderRadius:'50%',
-              background:'linear-gradient(135deg,var(--p),var(--p2))',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              color:'#fff', fontSize:14, fontWeight:800, flexShrink:0,
-            }}>{cashierInitial}</div>
-            <div>
-              <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{cashierName}</div>
-              <div style={{ fontSize:11, color:'var(--text3)' }}>
-                {ct.cashier_label} · {new Date().toLocaleDateString(locale, { weekday:'long', day:'numeric', month:'long' })}
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              openCashier(inputValue)
-              toast.success(`✅ ${ct.cashier_label} ouverte — Fond: ${displayFund}`)
-            }}
-            style={{
-              width:'100%',
-              background:'linear-gradient(135deg,var(--p),var(--p2))',
-              border:'none', borderRadius:12, padding:'14px',
-              fontSize:15, fontWeight:800, color:'#fff',
-              cursor:'pointer', fontFamily:'var(--font)',
-              boxShadow:'0 6px 20px rgba(91,78,232,.4)',
-              display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-            }}
-          ><Unlock size={16} /> {ct.open_btn}</button>
-        </div>
-      </div>
+      <POSCashierClosed
+        ct={ct}
+        currency={currency}
+        currencySymbol={currencySymbol}
+        openingFundInput={openingFundInput}
+        setOpeningFundInput={setOpeningFundInput}
+        cashierName={cashierName}
+        cashierInitial={cashierInitial}
+        locale={locale}
+        onOpen={() => {
+          openCashier(inputValue)
+          toast.success(`✅ ${ct.cashier_label} ouverte — Fond: ${displayFund}`)
+        }}
+      />
     )
   }
 
