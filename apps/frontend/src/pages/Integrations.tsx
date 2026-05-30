@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/stores/appStore'
-import { ExternalLink, RotateCw, Globe } from 'lucide-react'
+import { ExternalLink, RotateCw, Globe, Zap, Settings2, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ResendMonitor from '@/components/integrations/ResendMonitor'
 
@@ -149,6 +149,17 @@ const INTEGRATION_DESC_T: Record<string, Record<string, string>> = {
 const integrationDesc = (itg: Integration, lang: string) =>
   INTEGRATION_DESC_T[itg.id]?.[lang] ?? itg.desc
 
+// Bordure + glow d'une card selon le statut de ping :
+//   ok (<500ms) vert · slow (≥500ms) orange · error (injoignable) rouge · sinon neutre
+function statusVisual(status: PingState | undefined): { border: string; glow: string } {
+  switch (status) {
+    case 'ok':    return { border: '#10B981', glow: 'rgba(16,185,129,.15)' }
+    case 'slow':  return { border: '#F59E0B', glow: 'rgba(245,158,11,.15)' }
+    case 'error': return { border: '#EF4444', glow: 'rgba(239,68,68,.15)' }
+    default:      return { border: 'var(--border)', glow: 'transparent' }
+  }
+}
+
 export default function Integrations() {
   const { lang } = useAppStore()
 
@@ -156,17 +167,30 @@ export default function Integrations() {
   const [pingStatus, setPingStatus]   = useState<Record<string, PingState>>({})
   const [pingLatency, setPingLatency] = useState<Record<string, number>>({})
 
-  const pingIntegration = async (id: string, url: string) => {
+  const pingIntegration = async (id: string, url: string): Promise<{ status: PingState; ms: number }> => {
     setPingStatus(s => ({ ...s, [id]: 'checking' }))
     const start = Date.now()
     try {
       await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout(5000) })
       const ms = Date.now() - start
+      const status: PingState = ms < 500 ? 'ok' : 'slow' // joignable → ok/slow ; échec → error (catch)
       setPingLatency(p => ({ ...p, [id]: ms }))
-      setPingStatus(s => ({ ...s, [id]: ms < 500 ? 'ok' : ms < 2000 ? 'slow' : 'error' }))
+      setPingStatus(s => ({ ...s, [id]: status }))
+      return { status, ms }
     } catch {
       setPingLatency(p => ({ ...p, [id]: 0 }))
       setPingStatus(s => ({ ...s, [id]: 'error' }))
+      return { status: 'error', ms: 0 }
+    }
+  }
+
+  // Bouton "Tester la connexion" : ping live + toast résultat
+  const testConnection = async (itg: Integration) => {
+    const { status, ms } = await pingIntegration(itg.id, itg.pingUrl)
+    if (status === 'error') {
+      toast.error(lang === 'en' ? '✗ Connection failed — check your configuration' : lang === 'es' ? '✗ Conexión fallida — verifique su configuración' : lang === 'it' ? '✗ Connessione fallita — verifica la configurazione' : '✗ Connexion échouée — vérifiez votre configuration')
+    } else {
+      toast.success(lang === 'en' ? `✓ ${itg.name} — Connection OK (${ms}ms)` : lang === 'es' ? `✓ ${itg.name} — Conexión OK (${ms}ms)` : lang === 'it' ? `✓ ${itg.name} — Connessione OK (${ms}ms)` : `✓ ${itg.name} — Connexion OK (${ms}ms)`)
     }
   }
 
@@ -186,7 +210,7 @@ export default function Integrations() {
     const c = configs[status]
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: c.bg, color: c.color }}>
-        <span style={{ width: 5, height: 5, borderRadius: '50%', background: c.dot, boxShadow: status === 'ok' ? `0 0 5px ${c.dot}` : 'none', animation: status === 'checking' ? 'pulse 1s infinite' : 'none' }} />
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: c.dot, boxShadow: status === 'ok' ? `0 0 5px ${c.dot}` : 'none', animation: (status === 'checking' || status === 'ok') ? 'pulse 1.5s infinite' : 'none' }} />
         {status === 'checking' ? (lang === 'fr' ? 'Vérification...' : lang === 'es' ? 'Verificando...' : lang === 'it' ? 'Verifica...' : 'Checking...') : c.label}
       </span>
     )
@@ -246,10 +270,10 @@ export default function Integrations() {
       {/* ── KPIs ── */}
       <div className="kpi-grid">
         {[
-          { label:lang === 'en' ? 'Integrations' : lang === 'es' ? 'Integraciones' : lang === 'it' ? 'Integrazioni' : 'Intégrations', value:INTEGRATIONS_LIST.length, color:'var(--p2)'    },
-          { label:lang === 'en' ? 'Connected' : lang === 'es' ? 'Conectadas' : lang === 'it' ? 'Connesse' : 'Connectées',    value:totalConnected,            color:'var(--acc2)'  },
-          { label:lang === 'en' ? 'API Calls' : lang === 'es' ? 'Llamadas API' : lang === 'it' ? 'Chiamate API' : 'Appels API',    value:`${(totalCalls/1000).toFixed(0)}K+`, color:'var(--acc)' },
-          { label:lang === 'en' ? 'Uptime' : lang === 'es' ? 'Disponibilidad' : lang === 'it' ? 'Disponibilità' : 'Disponibilité',       value:'99.9%',                   color:'var(--p3)'    },
+          { label:lang === 'en' ? 'Integrations' : lang === 'es' ? 'Integraciones' : lang === 'it' ? 'Integrazioni' : 'Intégrations', value:INTEGRATIONS_LIST.length, color:'var(--text)'  },
+          { label:lang === 'en' ? 'Connected' : lang === 'es' ? 'Conectadas' : lang === 'it' ? 'Connesse' : 'Connectées',    value:totalConnected,            color:'var(--acc)'   },
+          { label:lang === 'en' ? 'API Calls' : lang === 'es' ? 'Llamadas API' : lang === 'it' ? 'Chiamate API' : 'Appels API',    value:`${(totalCalls/1000).toFixed(0)}K+`, color:'var(--acc2)' },
+          { label:lang === 'en' ? 'Uptime' : lang === 'es' ? 'Disponibilidad' : lang === 'it' ? 'Disponibilità' : 'Disponibilité',       value:'99.9%',                   color:'var(--p)'     },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-label">{k.label}</div>
@@ -286,15 +310,18 @@ export default function Integrations() {
         {INTEGRATIONS_LIST.map(itg => {
           const isActive = itg.status === 'connected'
           const { IconSvg } = itg
+          const sv = statusVisual(pingStatus[itg.id])
+          const glowHover = sv.glow.replace('.15)', '.30)')
 
           return (
             <div key={itg.id} style={{
-              background:'var(--card)', border:'1px solid var(--border)',
-              borderRadius:16, overflow:'hidden', transition:'all .18s ease',
+              background:'var(--card)', border:`1px solid ${sv.border}`,
+              borderRadius:20, overflow:'hidden', transition:'all .3s ease',
               display:'flex', flexDirection:'column',
+              boxShadow:`0 0 20px ${sv.glow}`,
             }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = '0 12px 32px rgba(0,0,0,.4)'; el.style.borderColor = 'var(--border3)' }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = ''; el.style.borderColor = 'var(--border)' }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = `0 8px 32px ${glowHover}` }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = `0 0 20px ${sv.glow}` }}
             >
               {/* Bande statut */}
               <div style={{ height:3, background: isActive ? 'linear-gradient(90deg,var(--acc2),#00B574)' : 'var(--border)' }} />
@@ -357,18 +384,38 @@ export default function Integrations() {
                 >
                   <ExternalLink size={11} /> Docs
                 </a>
-                <button type="button" onClick={() => configure(itg)}
-                  aria-label={`${lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'} ${itg.name}`}
-                  style={{
-                    padding:'7px 14px', background:'rgba(108,71,255,.1)', border:'1px solid rgba(108,71,255,.2)',
-                    borderRadius:8, fontSize:11, fontWeight:700, color:'var(--p3)', cursor:'pointer',
-                    fontFamily:'var(--font)', minHeight:32, transition:'background .15s',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(108,71,255,.2)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(108,71,255,.1)' }}
-                >
-                  {lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'}
-                </button>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <button type="button" onClick={() => testConnection(itg)}
+                    disabled={pingStatus[itg.id] === 'checking'}
+                    aria-label={`${lang === 'fr' ? 'Tester' : lang === 'es' ? 'Probar' : lang === 'it' ? 'Testa' : 'Test'} ${itg.name}`}
+                    style={{
+                      display:'inline-flex', alignItems:'center', gap:5, padding:'7px 12px',
+                      background:'color-mix(in srgb, var(--p) 12%, transparent)', border:'1px solid var(--p)',
+                      borderRadius:8, fontSize:11, fontWeight:700, color:'var(--p3)',
+                      cursor: pingStatus[itg.id] === 'checking' ? 'wait' : 'pointer',
+                      fontFamily:'var(--font)', minHeight:32, transition:'background .15s',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'color-mix(in srgb, var(--p) 22%, transparent)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'color-mix(in srgb, var(--p) 12%, transparent)' }}
+                  >
+                    {pingStatus[itg.id] === 'checking'
+                      ? <Loader2 size={11} style={{ animation:'spin .8s linear infinite' }} />
+                      : <Zap size={11} />}
+                    {lang === 'fr' ? 'Tester' : lang === 'en' ? 'Test' : lang === 'es' ? 'Probar' : 'Testa'}
+                  </button>
+                  <button type="button" onClick={() => configure(itg)}
+                    aria-label={`${lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'} ${itg.name}`}
+                    style={{
+                      display:'inline-flex', alignItems:'center', gap:5, padding:'7px 12px', background:'transparent',
+                      border:'1px solid var(--border)', borderRadius:8, fontSize:11, fontWeight:700,
+                      color:'var(--text3)', cursor:'pointer', fontFamily:'var(--font)', minHeight:32, transition:'all .15s',
+                    }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = 'var(--text)'; el.style.borderColor = 'var(--border2)' }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = 'var(--text3)'; el.style.borderColor = 'var(--border)' }}
+                  >
+                    <Settings2 size={11} /> {lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'}
+                  </button>
+                </div>
               </div>
             </div>
           )
