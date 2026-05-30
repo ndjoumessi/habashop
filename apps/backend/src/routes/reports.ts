@@ -1,6 +1,7 @@
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { getCached } from '../lib/cache'
+import { xofToCurrency } from '../lib/currency'
 
 // Rôles autorisés à lire le rapport comptable (lecture seule).
 const ALLOWED_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'ACCOUNTANT'])
@@ -48,6 +49,12 @@ export function resolveMonth(raw: string | undefined, now: Date): MonthMeta {
  * Met en forme le rapport à partir des agrégats bruts (fonction pure → testable).
  * net = revenu − dépenses RÉELLES. La paie est projetée (Employee.salary) et exposée
  * à part, JAMAIS incluse dans le net (pas de catégorie dépense "Salaires" ni table Payroll).
+ *
+ * Montants d'entrée en base XOF → convertis en sortie vers `input.currency`
+ * (même pattern que le récap paie). XOF/XAF = identité. Les totaux/résultats sont
+ * dérivés des composants DÉJÀ convertis → cohérence interne (parties = total,
+ * résultat = revenu − dépenses) dans la devise affichée. La marge est un ratio,
+ * calculée sur les valeurs XOF (indépendante de la devise, sans dérive d'arrondi).
  */
 export function computeReport(input: {
   monthStr: string
@@ -58,27 +65,35 @@ export function computeReport(input: {
   payrollTotal: number
   generatedAt: string
 }): AccountingReport {
+  const conv = (xof: number) => xofToCurrency(xof, input.currency)
+
   const catMap = new Map<string, number>()
   for (const e of input.expenses) {
     catMap.set(e.category, (catMap.get(e.category) ?? 0) + (e.amountTTC ?? 0))
   }
+  // Tri sur les montants XOF (ordre identique avant/après conversion), puis conversion.
   const byCategory = [...catMap.entries()]
-    .map(([category, amountTtc]) => ({ category, amountTtc }))
-    .sort((a, b) => b.amountTtc - a.amountTtc)
+    .sort((a, b) => b[1] - a[1])
+    .map(([category, amountTtcXOF]) => ({ category, amountTtc: conv(amountTtcXOF) }))
+  // Total = somme des catégories CONVERTIES → cohérent avec l'affichage des parts.
   const expensesTotal = byCategory.reduce((s, c) => s + c.amountTtc, 0)
-  // Résultat AVANT masse salariale (= dépenses réellement enregistrées seulement).
-  const resultBeforePayroll = input.revenueTotal - expensesTotal
+  const revenueTotalConv = conv(input.revenueTotal)
+  const payrollTotalConv = conv(input.payrollTotal)
+  // Résultat AVANT masse salariale (dépenses réellement enregistrées), en devise affichée.
+  const resultBeforePayroll = revenueTotalConv - expensesTotal
   // Résultat APRÈS paie = estimation (masse salariale projetée sur l'effectif actuel).
-  const resultAfterPayrollEstimate = resultBeforePayroll - input.payrollTotal
+  const resultAfterPayrollEstimate = resultBeforePayroll - payrollTotalConv
+  // Marge AVANT masse salariale : ratio sur valeurs XOF (devise-indépendant).
+  const resultBeforePayrollXOF = input.revenueTotal - [...catMap.values()].reduce((s, v) => s + v, 0)
   return {
     month: input.monthStr,
     currency: input.currency,
-    revenue: { total: input.revenueTotal, count: input.revenueCount },
+    revenue: { total: revenueTotalConv, count: input.revenueCount },
     expenses: { total: expensesTotal, byCategory },
-    payroll: { total: input.payrollTotal, projected: true },
+    payroll: { total: payrollTotalConv, projected: true },
     resultBeforePayroll,
     resultAfterPayrollEstimate,
-    margin: input.revenueTotal > 0 ? (resultBeforePayroll / input.revenueTotal) * 100 : null,
+    margin: input.revenueTotal > 0 ? (resultBeforePayrollXOF / input.revenueTotal) * 100 : null,
     generatedAt: input.generatedAt,
   }
 }
@@ -132,7 +147,8 @@ export async function reportsRoutes(app: any) {
     // TTL : mois courant court (5 min), mois passés plus long (30 min).
     const ttl = meta.isCurrentMonth ? 300 : 1800
     return getCached(
-      `reports:accounting:${tenantId}:${meta.monthStr}`,
+      // v2 : conversion devise ajoutée → invalide les entrées pré-conversion en cache.
+      `reports:accounting:v2:${tenantId}:${meta.monthStr}`,
       ttl,
       () => buildAccountingReport(prisma, tenantId, meta, now),
     )

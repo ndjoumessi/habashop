@@ -1,12 +1,7 @@
 import { prisma } from '../db'
 import { sendPayrollSummaryEmail } from './email'
-
-// Montants stockés en base XOF (cf. conversion aux frontières I/O des forms).
-// Taux fixes (miroir du frontend) pour convertir vers la devise du tenant dans l'email.
-const TO_XOF_RATES: Record<string, number> = { XOF: 1, XAF: 1, EUR: 655.957, USD: 602, CAD: 443, GBP: 763 }
-function xofToCurrency(amountXOF: number, currency: string): number {
-  return Math.round(amountXOF / (TO_XOF_RATES[currency] ?? 1))
-}
+// Conversion base XOF → devise du tenant : source unique partagée avec le rapport comptable.
+import { xofToCurrency } from '../lib/currency'
 
 /**
  * Mois à reporter = mois PRÉCÉDENT (qui vient de se clôturer le 1er).

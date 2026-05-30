@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, FileDown, FileText, TrendingUp, TrendingDown, Scale, Users, RefreshCw, Loader2, BarChart3, AlertTriangle } from 'lucide-react'
-import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { useConfig, formatInCurrency } from '@/stores/appStore'
 import { reportsApi, type AccountingReport } from '@/lib/api'
 import { openPDF, htmlKPIs, htmlTable, exportCSV } from '@/utils/export'
 import { type L4, makeI } from '@/components/settings/settingsShared'
@@ -35,7 +35,6 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
   const cfg = useConfig()
   const lang = cfg.lang as L4
   const i = makeI(lang)
-  const fmt = useFormatAmount()
   const locale = localeOf(lang)
   const months = lastMonths(12)
 
@@ -43,6 +42,11 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
   const [data, setData]       = useState<AccountingReport | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(false)
+
+  // Le backend renvoie déjà les montants dans la devise du tenant (data.currency).
+  // On formate SANS reconvertir (≠ useFormatAmount qui convertirait depuis XOF →
+  // double conversion). Pour un tenant XOF c'est identique au comportement précédent.
+  const money = (n: number) => formatInCurrency(n, data?.currency ?? 'XOF')
 
   const monthLabel = (m: string) => {
     const [y, mo] = m.split('-').map(Number)
@@ -68,20 +72,20 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
   const exportPdf = () => {
     if (!data) return
     const kpis = htmlKPIs([
-      { label: i('Revenus', 'Revenue', 'Ingresos', 'Ricavi'), value: fmt(data.revenue.total) },
-      { label: i('Dépenses', 'Expenses', 'Gastos', 'Spese'), value: fmt(data.expenses.total) },
-      { label: i('Résultat avant masse salariale', 'Result before payroll', 'Resultado antes de nómina', 'Risultato prima del personale'), value: fmt(data.resultBeforePayroll) },
+      { label: i('Revenus', 'Revenue', 'Ingresos', 'Ricavi'), value: money(data.revenue.total) },
+      { label: i('Dépenses', 'Expenses', 'Gastos', 'Spese'), value: money(data.expenses.total) },
+      { label: i('Résultat avant masse salariale', 'Result before payroll', 'Resultado antes de nómina', 'Risultato prima del personale'), value: money(data.resultBeforePayroll) },
       { label: i('Marge', 'Margin', 'Margen', 'Margine'), value: data.margin != null ? `${data.margin.toFixed(1)}%` : '—' },
     ])
-    const rows = data.expenses.byCategory.map(c => [catLabel(c.category, lang), fmt(c.amountTtc)])
+    const rows = data.expenses.byCategory.map(c => [catLabel(c.category, lang), money(c.amountTtc)])
     const table = htmlTable(
       [i('Catégorie', 'Category', 'Categoría', 'Categoria'), i('Montant TTC', 'Amount incl. VAT', 'Importe IVA inc.', 'Importo IVA incl.')],
       rows,
-      [i('Total dépenses', 'Total expenses', 'Total gastos', 'Totale spese'), fmt(data.expenses.total)],
+      [i('Total dépenses', 'Total expenses', 'Total gastos', 'Totale spese'), money(data.expenses.total)],
     )
-    const payrollLine = `${i('Masse salariale (projection — effectif actuel, non historique) : ', 'Payroll (projection — current headcount, not historical): ', 'Masa salarial (proyección — plantilla actual, no histórica): ', 'Massa salariale (proiezione — organico attuale, non storica): ')}${fmt(data.payroll.total)}`
+    const payrollLine = `${i('Masse salariale (projection — effectif actuel, non historique) : ', 'Payroll (projection — current headcount, not historical): ', 'Masa salarial (proyección — plantilla actual, no histórica): ', 'Massa salariale (proiezione — organico attuale, non storica): ')}${money(data.payroll.total)}`
     const afterLine = data.payroll.total > 0
-      ? `<br/>${i('Résultat estimé après paie (estimation, non un résultat réel) : ', 'Estimated result after payroll (estimate, not an actual result): ', 'Resultado estimado tras nómina (estimación, no un resultado real): ', 'Risultato stimato dopo personale (stima, non un risultato reale): ')}${fmt(data.resultAfterPayrollEstimate)}`
+      ? `<br/>${i('Résultat estimé après paie (estimation, non un résultat réel) : ', 'Estimated result after payroll (estimate, not an actual result): ', 'Resultado estimado tras nómina (estimación, no un resultado real): ', 'Risultato stimato dopo personale (stima, non un risultato reale): ')}${money(data.resultAfterPayrollEstimate)}`
       : ''
     const note = `<p style="color:#666;font-size:12px;margin-top:16px">${payrollLine}${afterLine}</p>`
     openPDF(`${i('Rapport comptable', 'Accounting report', 'Reporte contable', 'Report contabile')} — ${monthLabel(month)}`, kpis + table + note)
@@ -156,10 +160,10 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
               {/* KPIs */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 16 }}>
                 {[
-                  { label: i('Revenus', 'Revenue', 'Ingresos', 'Ricavi'), value: fmt(data.revenue.total), color: 'var(--acc2)', Icon: TrendingUp, sub: `${data.revenue.count} ${i('ventes', 'sales', 'ventas', 'vendite')}` },
-                  { label: i('Dépenses', 'Expenses', 'Gastos', 'Spese'), value: fmt(data.expenses.total), color: 'var(--danger)', Icon: TrendingDown, sub: `${data.expenses.byCategory.length} ${i('catégories', 'categories', 'categorías', 'categorie')}` },
-                  { label: i('Résultat avant masse salariale', 'Result before payroll', 'Resultado antes de nómina', 'Risultato prima del personale'), value: fmt(data.resultBeforePayroll), color: data.resultBeforePayroll >= 0 ? 'var(--acc2)' : 'var(--danger)', Icon: Scale, sub: data.margin != null ? `${i('marge', 'margin', 'margen', 'margine')} ${data.margin.toFixed(1)}%` : '—' },
-                  { label: i('Masse salariale', 'Payroll', 'Masa salarial', 'Massa salariale'), value: fmt(data.payroll.total), color: 'var(--p3)', Icon: Users, sub: i('projection — effectif actuel', 'projection — current headcount', 'proyección — plantilla actual', 'proiezione — organico attuale') },
+                  { label: i('Revenus', 'Revenue', 'Ingresos', 'Ricavi'), value: money(data.revenue.total), color: 'var(--acc2)', Icon: TrendingUp, sub: `${data.revenue.count} ${i('ventes', 'sales', 'ventas', 'vendite')}` },
+                  { label: i('Dépenses', 'Expenses', 'Gastos', 'Spese'), value: money(data.expenses.total), color: 'var(--danger)', Icon: TrendingDown, sub: `${data.expenses.byCategory.length} ${i('catégories', 'categories', 'categorías', 'categorie')}` },
+                  { label: i('Résultat avant masse salariale', 'Result before payroll', 'Resultado antes de nómina', 'Risultato prima del personale'), value: money(data.resultBeforePayroll), color: data.resultBeforePayroll >= 0 ? 'var(--acc2)' : 'var(--danger)', Icon: Scale, sub: data.margin != null ? `${i('marge', 'margin', 'margen', 'margine')} ${data.margin.toFixed(1)}%` : '—' },
+                  { label: i('Masse salariale', 'Payroll', 'Masa salarial', 'Massa salariale'), value: money(data.payroll.total), color: 'var(--p3)', Icon: Users, sub: i('projection — effectif actuel', 'projection — current headcount', 'proyección — plantilla actual', 'proiezione — organico attuale') },
                 ].map(k => (
                   <div key={k.label} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -186,7 +190,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                       </div>
                       <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 2 }}>{i("Projection basée sur l'effectif actuel, non historique", 'Projection based on current headcount, not historical', 'Proyección basada en la plantilla actual, no histórica', "Proiezione basata sull'organico attuale, non storica")}</div>
                     </div>
-                    <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'var(--mono)', letterSpacing: '-.5px', color: c, flexShrink: 0 }}>{fmt(after)}</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'var(--mono)', letterSpacing: '-.5px', color: c, flexShrink: 0 }}>{money(after)}</div>
                   </div>
                 )
               })()}
@@ -204,7 +208,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                     <div key={c.category}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
                         <span style={{ color: 'var(--text2)', fontWeight: 600 }}>{catLabel(c.category, lang)}</span>
-                        <span style={{ color: 'var(--text)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{fmt(c.amountTtc)}</span>
+                        <span style={{ color: 'var(--text)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{money(c.amountTtc)}</span>
                       </div>
                       <div style={{ height: 7, borderRadius: 99, background: 'var(--bg4)', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${Math.max(2, (c.amountTtc / maxCat) * 100)}%`, borderRadius: 99, background: 'linear-gradient(90deg, var(--p), var(--p2))' }} />

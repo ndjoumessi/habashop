@@ -79,6 +79,38 @@ describe('computeReport', () => {
     expect(r.resultBeforePayroll).toBe(400)
     expect(r.resultAfterPayrollEstimate).toBe(400) // identique → l'UI masquera la ligne
   })
+
+  it('XOF → identité (aucune conversion sur un tenant XOF)', () => {
+    const r = computeReport({
+      ...base, currency: 'XOF',
+      revenueTotal: 12_539_800, revenueCount: 362, payrollTotal: 1_660_000,
+      expenses: [{ category: 'Loyer', amountTTC: 200_000 }, { category: 'Énergie', amountTTC: 53_100 }],
+    })
+    expect(r.revenue.total).toBe(12_539_800)
+    expect(r.expenses.total).toBe(253_100)
+    expect(r.payroll.total).toBe(1_660_000)
+    expect(r.resultBeforePayroll).toBe(12_286_700)
+    expect(r.resultAfterPayrollEstimate).toBe(10_626_700)
+  })
+
+  it('tenant EUR → montants convertis (base XOF / 655.957), marge inchangée', () => {
+    const r = computeReport({
+      ...base, currency: 'EUR',
+      revenueTotal: 6_559_570,           // = 10 000 € exactement
+      revenueCount: 100,
+      payrollTotal: 1_311_914,           // = 2 000 €
+      expenses: [{ category: 'Loyer', amountTTC: 655_957 }], // = 1 000 €
+    })
+    expect(r.currency).toBe('EUR')
+    expect(r.revenue.total).toBe(10_000)
+    expect(r.expenses.total).toBe(1_000)
+    expect(r.expenses.byCategory).toEqual([{ category: 'Loyer', amountTtc: 1_000 }])
+    expect(r.payroll.total).toBe(2_000)
+    expect(r.resultBeforePayroll).toBe(9_000)        // 10 000 − 1 000 (en €)
+    expect(r.resultAfterPayrollEstimate).toBe(7_000) // 9 000 − 2 000
+    // marge = ratio XOF, identique quelle que soit la devise : (6 559 570 − 655 957) / 6 559 570
+    expect(r.margin).toBeCloseTo(90)
+  })
 })
 
 describe('buildAccountingReport — tenant isolation', () => {
