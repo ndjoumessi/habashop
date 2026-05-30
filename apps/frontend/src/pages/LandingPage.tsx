@@ -1187,6 +1187,12 @@ export default function LandingPage() {
                     {lp.per_month}
                   </div>
                 )}
+                {/* Équivalence EUR sous le prix FCFA (conversion approx. au taux fixe 1€=655,957 XOF) */}
+                {p.xof !== 0 && (currency === 'XOF' || currency === 'XAF') && (
+                  <div style={{ fontSize: 11, color: p.pop ? 'rgba(255,255,255,.5)' : D.text4, marginTop: 4, fontFamily: MONO }}>
+                    ≈ {new Intl.NumberFormat(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(convertAmount(p.xof, 'XOF', 'EUR'))} € {lp.per_month}
+                  </div>
+                )}
                 {p.xof !== 0 && currency !== 'XOF' && currency !== 'XAF' && (
                   <div style={{ fontSize: 11, color: p.pop ? 'rgba(255,255,255,.5)' : D.text4, marginTop: 4, fontFamily: MONO }}>
                     ≈ {new Intl.NumberFormat('fr-FR').format(p.xof)} FCFA
