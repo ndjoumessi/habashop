@@ -611,3 +611,72 @@ export async function sendWeeklyReport(opts: {
     html,
   })
 }
+
+// ── Récap paie mensuel (cron) — localisé 4 langues ──
+// Source de données : Employee.salary (effectif actif) = masse salariale PROJETÉE
+// (aucun modèle Payroll/Payslip historique) + EmployeeBonus du mois (réel).
+type L4 = 'fr' | 'en' | 'es' | 'it'
+const PAYROLL_I18N: Record<L4, {
+  subject: string; title: string; greeting: string; intro: string
+  headcount: string; payroll: string; projected: string; bonuses: string; total: string; note: string
+}> = {
+  fr: {
+    subject: 'Récap paie', title: '💼 Récap paie', greeting: 'Bonjour',
+    intro: 'Voici le récapitulatif de la paie de votre boutique',
+    headcount: 'Effectif actif', payroll: 'Masse salariale', projected: 'projection — effectif actuel',
+    bonuses: 'Primes versées sur le mois', total: 'Total estimé',
+    note: 'La masse salariale est une projection basée sur l’effectif actuel (HabaShop ne stocke pas de bulletins historiques). Les primes correspondent aux primes réellement enregistrées sur le mois.',
+  },
+  en: {
+    subject: 'Payroll summary', title: '💼 Payroll summary', greeting: 'Hello',
+    intro: 'Here is the payroll summary for your shop',
+    headcount: 'Active headcount', payroll: 'Payroll', projected: 'projection — current headcount',
+    bonuses: 'Bonuses paid during the month', total: 'Estimated total',
+    note: 'Payroll is a projection based on the current headcount (HabaShop does not store historical payslips). Bonuses reflect the bonuses actually recorded during the month.',
+  },
+  es: {
+    subject: 'Resumen de nómina', title: '💼 Resumen de nómina', greeting: 'Hola',
+    intro: 'Aquí está el resumen de nómina de tu tienda',
+    headcount: 'Plantilla activa', payroll: 'Masa salarial', projected: 'proyección — plantilla actual',
+    bonuses: 'Primas pagadas en el mes', total: 'Total estimado',
+    note: 'La masa salarial es una proyección basada en la plantilla actual (HabaShop no almacena nóminas históricas). Las primas reflejan las primas realmente registradas en el mes.',
+  },
+  it: {
+    subject: 'Riepilogo stipendi', title: '💼 Riepilogo stipendi', greeting: 'Ciao',
+    intro: 'Ecco il riepilogo degli stipendi del tuo negozio',
+    headcount: 'Organico attivo', payroll: 'Massa salariale', projected: 'proiezione — organico attuale',
+    bonuses: 'Premi erogati nel mese', total: 'Totale stimato',
+    note: 'La massa salariale è una proiezione basata sull’organico attuale (HabaShop non conserva buste paga storiche). I premi riflettono i premi effettivamente registrati nel mese.',
+  },
+}
+
+export async function sendPayrollSummaryEmail(opts: {
+  to: string; shopName: string; ownerName: string
+  lang: string; currency: string; month: string // 'YYYY-MM'
+  headcount: number; payroll: number; bonuses: number
+}): Promise<boolean> {
+  const L = PAYROLL_I18N[(opts.lang as L4)] ?? PAYROLL_I18N.fr
+  const locale = opts.lang === 'en' ? 'en-US' : opts.lang === 'es' ? 'es-ES' : opts.lang === 'it' ? 'it-IT' : 'fr-FR'
+  const money = (n: number) => `${new Intl.NumberFormat(locale).format(Math.round(n))} ${opts.currency}`
+  const [y, m] = opts.month.split('-').map(Number)
+  const monthName = new Date(y, m - 1, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+  const total = opts.payroll + opts.bonuses
+  const eShop = escHtml(opts.shopName)
+  const row = (label: string, value: string, strong = false) =>
+    `<tr><td style="padding:10px 12px;border-bottom:1px solid #EBEBF0;${strong ? 'font-weight:700;' : ''}">${label}</td>` +
+    `<td style="padding:10px 12px;border-bottom:1px solid #EBEBF0;text-align:right;font-family:monospace;${strong ? 'font-weight:700;' : ''}">${value}</td></tr>`
+
+  const html = baseTemplate(`
+    <h2 style="margin:0 0 6px;color:#1A1A2E;">${L.title} — ${escHtml(monthName)}</h2>
+    <p style="color:#555;">${L.greeting} ${escHtml(opts.ownerName)},</p>
+    <p style="color:#555;">${L.intro} <strong>${eShop}</strong> :</p>
+    <table style="width:100%;border-collapse:collapse;margin:14px 0;background:#FAFAFE;border-radius:10px;overflow:hidden;">
+      ${row(L.headcount, String(opts.headcount))}
+      ${row(`${L.payroll} <em style="color:#888;font-style:italic;">(${L.projected})</em>`, money(opts.payroll))}
+      ${row(L.bonuses, money(opts.bonuses))}
+      ${row(L.total, money(total), true)}
+    </table>
+    <p style="font-size:12px;color:#999;line-height:1.5;">${L.note}</p>
+  `)
+  return send({ to: opts.to, subject: `${L.subject} ${eShop} — ${monthName}`, html })
+}

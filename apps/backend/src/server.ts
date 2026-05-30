@@ -40,6 +40,7 @@ import {
   sendWeeklyReport,
   sendStockAlertEmail,
 } from './services/email'
+import { runMonthlyPayrollReports } from './services/payrollReport'
 
 // ─── Validation des variables d'environnement obligatoires ───
 const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET']
@@ -241,6 +242,13 @@ async function start() {
     const now = new Date()
     if (now.getHours() !== 7 || now.getMinutes() > 5) return
     runDailyStockAlerts().catch(err => console.error('❌ Cron stock alerts:', err))
+  }, 60 * 60 * 1000)
+
+  // Récap paie — 1er du mois 8h (vérifié chaque heure) ; récap du mois qui vient de se clôturer
+  setInterval(() => {
+    const now = new Date()
+    if (now.getDate() !== 1 || now.getHours() !== 8 || now.getMinutes() > 5) return
+    runMonthlyPayrollReports().catch(err => console.error('❌ Cron récap paie:', err))
   }, 60 * 60 * 1000)
 
   // ─── DÉMARRAGE ──────────────────────────

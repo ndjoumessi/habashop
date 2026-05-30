@@ -38,6 +38,8 @@ model Tenant {
   notifSmsSales     Boolean  @default(false)
   notifSmsStock     Boolean  @default(true)
   notifPushAll      Boolean  @default(true)
+  // Idempotence du cron récap paie : 'YYYY-MM' du dernier récap envoyé (null = jamais).
+  lastPayrollReportMonth String?
 
   // ── Catalogue public partageable ──
   slug             String?  @unique // habashop.vercel.app/c/{slug}
