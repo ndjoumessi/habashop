@@ -6,9 +6,31 @@
  * Docs : https://developer.orange.com
  */
 
+import crypto from 'crypto'
+
 const OM_CLIENT_ID     = process.env.ORANGE_CLIENT_ID
 const OM_CLIENT_SECRET = process.env.ORANGE_CLIENT_SECRET
 const OM_BASE_URL      = 'https://api.orange.com/orange-money-webpay/dev/v1'
+
+/**
+ * Vérifie l'authenticité d'un webhook Orange Money — HMAC-SHA256 du RAW body
+ * avec `ORANGE_MONEY_WEBHOOK_SECRET`, comparaison timing-safe (calqué sur Wave).
+ *
+ * ⚠️ FAIL CLOSED (différence volontaire avec `verifyWaveWebhook` qui fail-open en
+ * sandbox) : sans secret configuré OU sans signature → rejet. Un webhook Orange
+ * ne peut donc JAMAIS activer un plan sur une requête forgée non signée.
+ * Secret lu à l'appel (et non au chargement du module) pour robustesse env.
+ */
+export function verifyOrangeWebhook(payload: string, signature?: string): boolean {
+  const secret = process.env.ORANGE_MONEY_WEBHOOK_SECRET
+  if (!secret) return false      // fail closed : pas de secret → on rejette
+  if (!signature) return false
+  const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex')
+  const sigBuf = Buffer.from(signature)
+  const expBuf = Buffer.from(expected)
+  if (sigBuf.length !== expBuf.length) return false
+  return crypto.timingSafeEqual(sigBuf, expBuf)
+}
 
 let omToken: { value: string; expiresAt: number } | null = null
 

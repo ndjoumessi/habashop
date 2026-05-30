@@ -7,6 +7,7 @@ import {
 } from '../services/wave'
 import {
   createOMPayment,
+  verifyOrangeWebhook,
 } from '../services/orangeMoney'
 import { sendUpgradeConfirmation } from '../services/email'
 
@@ -34,6 +35,32 @@ const PRICES: Record<string, Record<string, number>> = {
  * webhooks et l'URL de callback ; le token prestataire est conservé dans
  * `notes` pour le débogage.
  */
+/**
+ * Décision pure (testable) de traitement d'un webhook Orange Money.
+ * Fail CLOSED : tout échec d'authenticité / de validation ⇒ activate=false.
+ * On ne fait JAMAIS confiance au payload tant que `signatureValid` n'est pas vrai,
+ * et le montant/devise/statut sont validés contre le record en attente.
+ * Codes : 2xx = acquitté · 4xx = rejet définitif · (5xx géré côté handler = retry).
+ */
+export function decideOrangeWebhook(input: {
+  signatureValid: boolean
+  reference?: string
+  planReq: { status: string; amount: number; currency: string } | null
+  amount: number       // montant fourni par le payload (authentifié via signature)
+  currency: string
+  status: string
+}): { code: number; activate: boolean; reason: string } {
+  if (!input.signatureValid)                          return { code: 401, activate: false, reason: 'invalid_signature' }
+  if (!input.reference)                               return { code: 400, activate: false, reason: 'missing_reference' }
+  if (!input.planReq)                                 return { code: 404, activate: false, reason: 'unknown_reference' }
+  if (input.planReq.status !== 'pending_payment')     return { code: 200, activate: false, reason: 'already_processed' } // idempotence
+  if (!Number.isFinite(input.amount) || input.amount !== input.planReq.amount)
+                                                      return { code: 403, activate: false, reason: 'amount_mismatch' }
+  if (input.currency !== input.planReq.currency)      return { code: 403, activate: false, reason: 'currency_mismatch' }
+  if (input.status !== 'SUCCESS')                     return { code: 200, activate: false, reason: 'not_success' }
+  return { code: 200, activate: true, reason: 'ok' }
+}
+
 export async function paymentRoutes(app: FastifyInstance): Promise<void> {
   // Capture le corps brut (rawBody) pour la vérification de signature des
   // webhooks. Encapsulé : ne s'applique qu'aux routes de ce plugin.
@@ -191,19 +218,44 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // ── POST /api/payments/orange/webhook ────────
-  // Webhook Orange Money
-  app.post('/api/payments/orange/webhook', async (request: any) => {
-    const data = request.body as any
+  // Webhook Orange Money — SÉCURISÉ (fail closed, miroir du pattern Wave).
+  // 1) Signature HMAC obligatoire (sinon rejet, aucune requête DB).
+  // 2) Validation montant/devise/référence CONTRE le record en attente.
+  // 3) Idempotence (un rejeu n'active pas deux fois). Le payload n'est jamais
+  //    cru tant que la signature n'est pas valide.
+  app.post('/api/payments/orange/webhook', async (request: any, reply: any) => {
+    const data      = (request.body ?? {}) as any
+    const rawBody   = (request.rawBody ?? JSON.stringify(data)) as string
+    const signature = request.headers['x-orange-signature'] as string | undefined
+    const reference = (data.order_id ?? data.txnid) as string | undefined
 
-    if (data.status === 'SUCCESS') {
-      await activatePlan({
-        reference: data.order_id ?? data.txnid,
-        amount:    data.amount,
-        method:    'orange_money',
-      })
+    const signatureValid = verifyOrangeWebhook(rawBody, signature)
+
+    // Aucune requête DB tant que la requête n'est pas authentifiée.
+    const planReq = signatureValid && reference
+      ? await prisma.planRequest.findFirst({ where: { paymentRef: reference, paymentMethod: 'orange_money' } })
+      : null
+
+    const decision = decideOrangeWebhook({
+      signatureValid,
+      reference,
+      planReq:  planReq ? { status: planReq.status, amount: planReq.amount, currency: planReq.currency } : null,
+      amount:   Number(data.amount),
+      currency: (data.currency ?? 'XOF') as string,
+      status:   data.status as string,
+    })
+
+    if (!decision.activate) {
+      if (decision.code >= 400) {
+        request.log.warn({ reference, reason: decision.reason }, 'orange webhook rejeté') // jamais le secret
+      }
+      return reply.code(decision.code).send({ received: decision.code < 400, reason: decision.reason })
     }
 
-    return { received: true }
+    // Activation à partir des données du RECORD (jamais du payload) → tenant sûr.
+    // activatePlan reste idempotent (ne traite que les PlanRequest `pending_payment`).
+    await activatePlan({ reference: planReq!.paymentRef!, amount: planReq!.amount, method: 'orange_money' })
+    return reply.code(200).send({ received: true, activated: true })
   })
 
   // ── GET /api/payments/status/:reference ──────
