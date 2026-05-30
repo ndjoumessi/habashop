@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
+import { ClipboardList } from 'lucide-react'
 import { useConfig } from '@/stores/appStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
 import AccountingReportModal from '@/components/settings/AccountingReportModal'
@@ -38,7 +39,7 @@ export default function SectionDocs() {
 
   return (
     <div style={{ ...panel, animation: 'slideUp .3s ease both' }}>
-      <Head emoji="📋" tint="rgba(255,149,0,.04)"
+      <Head icon={<ClipboardList size={16} />} tint="rgba(255,149,0,.04)"
         title={i('Documents & Configuration', 'Documents & Configuration', 'Documentos & Configuración', 'Documenti & Configurazione')}
         sub={i('Exportez vos données et votre configuration', 'Export your data and configuration', 'Exporta tus datos y configuración', 'Esporta i tuoi dati e la configurazione')} />
       <input ref={importRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={importConfig} />

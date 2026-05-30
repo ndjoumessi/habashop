@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useConfig, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo } from '@/stores/appStore'
+import { ShoppingCart } from 'lucide-react'
 import { tenantApi } from '@/lib/api'
 import { type L4, makeI, pick, panel, Head, ToggleCard } from '@/components/settings/settingsShared'
 
@@ -83,7 +84,7 @@ export default function SectionPOS() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'slideUp .3s ease both' }}>
       <div style={panel}>
-        <Head emoji="🛒" tint="rgba(0,208,132,.05)"
+        <Head icon={<ShoppingCart size={16} />} tint="rgba(0,208,132,.05)"
           title={i('Configuration POS', 'POS Configuration', 'Configuración TPV', 'Configurazione POS')}
           sub={i('Caisse, TVA et paiements', 'Cashier, VAT and payments', 'Caja, IVA y pagos', 'Cassa, IVA e pagamenti')}
           right={editMode

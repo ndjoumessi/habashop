@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useConfig } from '@/stores/appStore'
+import { Store } from 'lucide-react'
 import { tenantApi, dashboardApi, customersApi } from '@/lib/api'
 import { makeI, panel, Head } from '@/components/settings/settingsShared'
 
@@ -69,7 +70,7 @@ export default function SectionShop() {
       </div>
 
       <div style={panel}>
-        <Head emoji="🏪" tint="rgba(108,71,255,.06)"
+        <Head icon={<Store size={16} />} tint="rgba(108,71,255,.06)"
           title={i('Informations boutique', 'Shop information', 'Información de la tienda', 'Informazioni negozio')}
           sub={i('Nom, adresse et coordonnées', 'Name, address and contact', 'Nombre, dirección y contacto', 'Nome, indirizzo e contatti')}
           right={editMode ? (

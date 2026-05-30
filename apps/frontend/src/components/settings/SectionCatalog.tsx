@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { Copy, ExternalLink, Share2, AlertTriangle, MessageCircle, Eye, EyeOff, Check } from 'lucide-react'
+import { Copy, ExternalLink, Share2, AlertTriangle, MessageCircle, Eye, EyeOff, Check, Link2, Pencil } from 'lucide-react'
 import { useConfig } from '@/stores/appStore'
 import { tenantApi } from '@/lib/api'
 import { makeI, panel, Head } from '@/components/settings/settingsShared'
@@ -106,7 +106,7 @@ export default function SectionCatalog() {
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
       {/* ── État du catalogue ── */}
       <div style={panel}>
-        <Head emoji={form.catalogVisible ? '🟢' : '⚪'} title={i('État du catalogue', 'Catalog status', 'Estado del catálogo', 'Stato del catalogo')} sub={i('Activez pour rendre votre catalogue visible publiquement', 'Enable to make your catalog publicly visible', 'Active para hacer su catálogo visible públicamente', 'Attiva per rendere il tuo catalogo pubblicamente visibile')} tint="#25D366" />
+        <Head icon={form.catalogVisible ? <Eye size={16} /> : <EyeOff size={16} />} title={i('État du catalogue', 'Catalog status', 'Estado del catálogo', 'Stato del catalogo')} sub={i('Activez pour rendre votre catalogue visible publiquement', 'Enable to make your catalog publicly visible', 'Active para hacer su catálogo visible públicamente', 'Attiva per rendere il tuo catalogo pubblicamente visibile')} tint="#25D366" />
         <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderTop:'1px solid var(--border)', cursor:'pointer' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {form.catalogVisible ? <Eye size={16} style={{ color:'var(--acc2)' }} /> : <EyeOff size={16} style={{ color:'var(--text3)' }} />}
@@ -123,7 +123,7 @@ export default function SectionCatalog() {
 
       {/* ── Lien du catalogue ── */}
       <div style={panel}>
-        <Head emoji="🔗" title={i('Lien du catalogue', 'Catalog link', 'Enlace del catálogo', 'Link del catalogo')} sub={i('URL publique à partager avec vos clients', 'Public URL to share with your customers', 'URL pública para compartir con sus clientes', 'URL pubblico da condividere con i clienti')} tint="var(--p2)" />
+        <Head icon={<Link2 size={16} />} title={i('Lien du catalogue', 'Catalog link', 'Enlace del catálogo', 'Link del catalogo')} sub={i('URL publique à partager avec vos clients', 'Public URL to share with your customers', 'URL pública para compartir con sus clientes', 'URL pubblico da condividere con i clienti')} tint="var(--p2)" />
         <div style={{ padding:'14px 16px', borderTop:'1px solid var(--border)', display:'flex', flexDirection:'column', gap:12 }}>
           {/* Slug edit */}
           <div>
@@ -180,7 +180,7 @@ export default function SectionCatalog() {
 
       {/* ── Description boutique ── */}
       <div style={panel}>
-        <Head emoji="✍️" title={i('Description', 'Description', 'Descripción', 'Descrizione')} sub={i('Tagline affichée en haut du catalogue', 'Tagline displayed at the top of the catalog', 'Eslogan mostrado en la parte superior del catálogo', 'Slogan mostrato in cima al catalogo')} tint="var(--acc)" />
+        <Head icon={<Pencil size={16} />} title={i('Description', 'Description', 'Descripción', 'Descrizione')} sub={i('Tagline affichée en haut du catalogue', 'Tagline displayed at the top of the catalog', 'Eslogan mostrado en la parte superior del catálogo', 'Slogan mostrato in cima al catalogo')} tint="var(--acc)" />
         <div style={{ padding:'14px 16px', borderTop:'1px solid var(--border)' }}>
           <textarea value={form.description}
             onChange={e => setForm(f => ({ ...f, description: e.target.value.slice(0, 200) }))}
@@ -195,7 +195,7 @@ export default function SectionCatalog() {
 
       {/* ── WhatsApp commercial ── */}
       <div style={panel}>
-        <Head emoji="💬" title={i('WhatsApp commercial', 'Sales WhatsApp', 'WhatsApp comercial', 'WhatsApp commerciale')} sub={i('Numéro qui recevra les commandes via le catalogue', 'Number that will receive orders via the catalog', 'Número que recibirá pedidos a través del catálogo', 'Numero che riceverà gli ordini tramite il catalogo')} tint="#25D366" />
+        <Head icon={<MessageCircle size={16} />} title={i('WhatsApp commercial', 'Sales WhatsApp', 'WhatsApp comercial', 'WhatsApp commerciale')} sub={i('Numéro qui recevra les commandes via le catalogue', 'Number that will receive orders via the catalog', 'Número que recibirá pedidos a través del catálogo', 'Numero che riceverà gli ordini tramite il catalogo')} tint="#25D366" />
         <div style={{ padding:'14px 16px', borderTop:'1px solid var(--border)' }}>
           <input type="tel" value={form.whatsappPhone}
             onChange={e => setForm(f => ({ ...f, whatsappPhone: e.target.value }))}

@@ -37,12 +37,16 @@ export function ToggleCard({ icon, color, label, desc, on, onChange, disabled }:
   )
 }
 
-export function Head({ emoji, title, sub, tint, right }: { emoji: string; title: string; sub?: string; tint: string; right?: React.ReactNode }) {
+// `icon` = élément Lucide (ex. <Store size={16}/>) — cohérent avec le reste de l'UI (plus d'emoji).
+export function Head({ icon, title, sub, tint, right }: { icon: React.ReactNode; title: string; sub?: string; tint: string; right?: React.ReactNode }) {
   return (
-    <div style={{ padding: '18px 22px', borderBottom: '1px solid rgba(255,255,255,.06)', background: `linear-gradient(135deg,${tint},transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-      <div style={{ minWidth: 0 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', margin: 0, marginBottom: sub ? 3 : 0 }}>{emoji} {title}</h2>
-        {sub && <p style={{ fontSize: 11, color: 'var(--text3)', margin: 0 }}>{sub}</p>}
+    <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', background: `linear-gradient(135deg,${tint},transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ display: 'flex', color: 'var(--p2)', flexShrink: 0 }}>{icon}</span>
+        <div style={{ minWidth: 0 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', margin: 0, marginBottom: sub ? 3 : 0 }}>{title}</h2>
+          {sub && <p style={{ fontSize: 11, color: 'var(--text3)', margin: 0 }}>{sub}</p>}
+        </div>
       </div>
       {right}
     </div>

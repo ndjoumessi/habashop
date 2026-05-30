@@ -119,7 +119,7 @@ export default function SectionSecurity() {
 
   return (
     <div style={{ ...panel, animation: 'slideUp .3s ease both' }}>
-      <Head emoji="🔒" tint="rgba(255,59,92,.04)"
+      <Head icon={<Lock size={16} />} tint="rgba(255,59,92,.04)"
         title={i('Sécurité & Accès', 'Security & Access', 'Seguridad & Acceso', 'Sicurezza & Accesso')}
         sub={i('Gérez vos accès et la sécurité de votre compte', 'Manage your access and account security', 'Gestione su acceso y la seguridad de su cuenta', 'Gestisci i tuoi accessi e la sicurezza dell\'account')} />
       <div style={{ padding: '20px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>

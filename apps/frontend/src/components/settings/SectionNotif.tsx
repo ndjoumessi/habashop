@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Bell } from 'lucide-react'
 import { useConfig } from '@/stores/appStore'
 import { tenantApi } from '@/lib/api'
 import { type L4, makeI, pick, panel, Head, ToggleCard } from '@/components/settings/settingsShared'
@@ -35,7 +36,7 @@ export default function SectionNotif() {
 
   return (
     <div style={{ ...panel, animation: 'slideUp .3s ease both' }}>
-      <Head emoji="🔔" tint="rgba(255,59,92,.04)"
+      <Head icon={<Bell size={16} />} tint="rgba(255,59,92,.04)"
         title={i('Notifications', 'Notifications', 'Notificaciones', 'Notifiche')}
         sub={i('Gérez vos alertes et rapports automatiques', 'Manage your alerts and automatic reports', 'Gestiona tus alertas y reportes automáticos', 'Gestisci i tuoi avvisi e report automatici')} />
       <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>

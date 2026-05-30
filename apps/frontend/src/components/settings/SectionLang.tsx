@@ -1,7 +1,7 @@
 import { useConfig, useFormatAmount, ACCENT_PAIRS, THEMES, type Currency, type Lang, type Theme } from '@/stores/appStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
 import { tenantApi } from '@/lib/api'
-import { Check, Lock } from 'lucide-react'
+import { Check, Lock, Globe, Coins, Palette } from 'lucide-react'
 
 export default function SectionLang() {
   const cfg = useConfig()
@@ -29,7 +29,7 @@ export default function SectionLang() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'slideUp .3s ease both' }}>
       {/* Language */}
       <div style={panel}>
-        <Head emoji="🌍" tint="rgba(0,184,255,.05)"
+        <Head icon={<Globe size={16} />} tint="rgba(0,184,255,.05)"
           title={i("Langue de l'interface", 'Interface language', 'Idioma de la interfaz', "Lingua dell'interfaccia")}
           sub={i('4 langues — changement immédiat', '4 languages — instant change', '4 idiomas — cambio inmediato', '4 lingue — cambio immediato')} />
         <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -71,7 +71,7 @@ export default function SectionLang() {
 
       {/* Currency */}
       <div style={panel}>
-        <Head emoji="💱" tint="rgba(255,184,0,.03)"
+        <Head icon={<Coins size={16} />} tint="rgba(255,184,0,.03)"
           title={i("Devise d'affichage", 'Display currency', 'Divisa de visualización', 'Valuta di visualizzazione')}
           sub={i('6 devises — affichage par appareil, conversion automatique des montants', '6 currencies — per-device display, automatic amount conversion', '6 divisas — visualización por dispositivo, conversión automática', '6 valute — visualizzazione per dispositivo, conversione automatica')} />
         <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
@@ -128,7 +128,7 @@ export default function SectionLang() {
 
       {/* Appearance (theme + accent) */}
       <div style={panel}>
-        <Head emoji="🎨" tint="rgba(108,71,255,.05)"
+        <Head icon={<Palette size={16} />} tint="rgba(108,71,255,.05)"
           title={i('Apparence', 'Appearance', 'Apariencia', 'Aspetto')}
           sub={i('Thème et couleur d\'accent', 'Theme and accent color', 'Tema y color de acento', 'Tema e colore d\'accento')} />
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
