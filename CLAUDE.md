@@ -145,7 +145,7 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
 ### Settings — persistance backend complète
 - **Shop** : nom/email/phone/address/country/vatRate → `tenantApi.update`
 - **POS** : 9 paramètres (vatRate, posVatIncluded, posAutoprint, autoWhatsApp, enableLoyalty, requireCashier, enableScanner, priceMode, posDefaultFund) → backend (commit `ca85f932`)
-- **Notifications** : 6 toggles persistés (notifEmail×3, notifSms×2, notifPush) ; **consommés par les crons** : `notifEmailSales` (weekly), `notifEmailStock` (daily 7h, commit `7336bd60`)
+- **Notifications** : 6 toggles persistés (notifEmail×3, notifSms×2, notifPush) ; **consommés par les crons** : `notifEmailSales` (weekly), `notifEmailStock` (daily 7h, commit `7336bd60`), `notifEmailPayroll` (récap paie mensuel, 1er du mois 8h)
 - **Lang & Currency** : `cfg.setLang` + `tenantApi.update({lang})`, currency idem. `setTenant` restore lang au login.
 - **Security** : changePassword backend (`PATCH /api/auth/password`), JWT info avec edge cases (expiré/expire aujourd'hui/actif), confirmation logout, settingsLocked **conditionnel** dans Header (commit `f6efe49d`)
 
@@ -156,7 +156,7 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
 - Backend `requireAdmin` helper + validation `body.role` whitelist sur tous les writes users
 
 ### Emails Resend
-- Welcome (signup), trial reminder 7d/3d, trial expired, upgrade confirmation, weekly report, user invitation, stock alert (daily, nouveau)
+- Welcome (signup), trial reminder 7d/3d, trial expired, upgrade confirmation, weekly report, user invitation, stock alert (daily), **récap paie mensuel** (`sendPayrollSummaryEmail`, localisé fr/en/es/it + devise tenant)
 - Helper `escHtml()` appliqué aux interpolations (defense-in-depth XSS)
 - Template `baseTemplate()` cohérent avec footer désabonnement
 
@@ -176,8 +176,6 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
 ## Dette technique — points à fixer
 
 ### 🔴 Critique
-- **Webhooks Wave/Orange sans vérification signature** (`apps/backend/src/routes/payments.ts:171, 195`) — risque fraude financière. À auditer + ajouter HMAC validation. **L**
-- **`notifEmailPayroll`** : cron mensuel à implémenter (le 25 du mois, récap bulletins à générer aux ADMIN). **M**
 - **`notifSmsSales` + `notifSmsStock`** : infra SMS à choisir (recommandé : **Africa's Talking** pour XOF/XAF pricing). Crée `services/sms.ts`, env `SMS_API_KEY`, gère format international. **XL**
 - **`notifPushAll`** : web-push PWA à implémenter. **XL** (révisé après audit)
   - VAPID keys à générer + ajouter Railway (backend) + Vercel (frontend `VITE_VAPID_PUBLIC_KEY`)
@@ -278,3 +276,5 @@ Sécurité & multi-tenant : routes user management durcies admin-only + validati
 - **Agrégats financiers = réconcilier avec le dashboard** : tout nouveau total CA/revenus DOIT réutiliser la source du dashboard (`Sale.total`, bornes `new Date(y,m,1)` heure serveur) pour éviter le double comptage. Modèles réels : `Sale` (revenu POS), `Expense` (dépenses, catégories Loyer/Énergie/Transport/Maintenance/Fournitures/Marketing/Formation/Autre — **pas** de « Salaires »), **pas** de table `Payroll` ni `Transaction`/`Order` client. Salaires = `Employee.salary` (projeté).
 - **Tests backend = prisma mocké** (`vi.mock('../db')`, vitest) → ne JAMAIS toucher la DB prod. Extraire la logique en helpers purs (`computeReport`, `resolveMonth`) pour les tester sans Fastify.
 - **Déploiement back+front couplé** : quand un changement de forme JSON touche back ET front, déployer **Railway d'abord** (route/champ dispo) puis Vercel, sinon le front lit des champs `undefined`.
+- **Crons = `setInterval` horaire + garde fenêtre-temps** (`server.ts`, ex. `getDate()===1 && getHours()===8 && getMinutes()<=5`). Pour une vraie idempotence (resists restart/rejeu), ajouter un **marqueur en base** (ex. `Tenant.lastPayrollReportMonth`) et filtrer dessus dans le `findMany`. Logique extraite en service exporté (`runMonthlyPayrollReports`) pour la tester (prisma + Resend mockés).
+- **Webhooks paiement sécurisés (`payments.ts`)** : Wave ET Orange Money vérifient désormais une signature **HMAC-SHA256 du raw body** (`timingSafeEqual`). Orange est **fail CLOSED** (`verifyOrangeWebhook` : sans secret ni signature → rejet) + validation montant/devise/référence contre la `PlanRequest` en attente + idempotence. **Env requise** : `ORANGE_MONEY_WEBHOOK_SECRET` (à poser sur Railway pour réactiver l'auto-activation Orange ; sinon tous les webhooks Orange sont rejetés = sûr mais inerte). `WAVE_WEBHOOK_SECRET` côté Wave.
