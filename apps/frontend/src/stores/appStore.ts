@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { translations } from '@/i18n'
+import type { CartItem } from '@/components/pos/posShared'
 
 export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP'
 export type Lang     = 'fr' | 'en' | 'es' | 'it'
@@ -303,6 +304,13 @@ interface AppStore extends AppConfig {
   openCashier: (fund: number) => void
   closeCashier: () => void
   addCashierSale: (amount: number) => void
+  // Panier POS persisté (survit nav + refresh)
+  cart: CartItem[]
+  addCartItem:    (item: CartItem) => void
+  updateCartQty:  (id: number | string, delta: number, newPrice?: number, tierLabel?: string) => void
+  removeCartItem: (id: number | string) => void
+  setCart:        (cart: CartItem[]) => void
+  clearCart:      () => void
   // Taux de change live (runtime only, non persisté)
   currencyRates: Record<string, number>
   fetchExchangeRates: () => Promise<void>
@@ -398,6 +406,38 @@ export const useAppStore = create<AppStore>()(
         cashierSessionTx: state.cashierSessionTx + 1,
         cashierSessionCA: state.cashierSessionCA + amount,
       })),
+
+      // ── Panier POS persisté ──
+      // Le price (et tierLabel) sont calculés par POS.tsx via resolveTierPrice
+      // (logique métier qui dépend du tenant + clientType) et passés au store.
+      cart: [],
+
+      addCartItem: (item) => set(s => ({
+        cart: s.cart.some(i => i.id === item.id)
+          ? s.cart.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i)
+          : [...s.cart, item],
+      })),
+
+      updateCartQty: (id, delta, newPrice, tierLabel) => set(s => ({
+        cart: s.cart
+          .map(i => i.id === id
+            ? {
+                ...i,
+                qty: i.qty + delta,
+                ...(newPrice !== undefined ? { price: newPrice } : {}),
+                ...(tierLabel !== undefined ? { tierLabel } : {}),
+              }
+            : i)
+          .filter(i => i.qty > 0),
+      })),
+
+      removeCartItem: (id) => set(s => ({
+        cart: s.cart.filter(i => i.id !== id),
+      })),
+
+      setCart: (cart) => set({ cart }),
+
+      clearCart: () => set({ cart: [] }),
 
       // Taux de change live
       currencyRates: { ...TO_XOF_RATES },

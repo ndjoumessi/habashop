@@ -27,6 +27,8 @@ export default function POS() {
     posTaxRate, posShowStockOnTile, posDefaultFund,
     posDefaultPayment, priceMode,
     enableScanner: posEnableScanner, autoWhatsApp: posAutoWhatsApp,
+    // Panier persisté dans le store (survit nav + refresh)
+    cart, addCartItem, updateCartQty, setCart, clearCart,
   } = useAppStore()
   const fmt    = useFormatAmount()
   const toXOF  = useConvertToXOF()
@@ -62,7 +64,7 @@ export default function POS() {
       .finally(() => setLoadingProducts(false))
   }, [])
 
-  const [cart, setCart]           = useState<CartItem[]>([])
+  // cart est désormais dans useAppStore (persisté zustand). Voir destructuring ci-dessus.
   const [activeCat, setActiveCat] = useState('all')
   const [search, setSearch]       = useState('')
   const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mobile'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile')
@@ -167,45 +169,45 @@ export default function POS() {
   // Index produits par id pour recalcul rapide
   const productById = new Map<number | string, PosProduct>(posProducts.map(p => [p.id, p] as [number | string, PosProduct]))
 
-  // Actions panier — recalcule price + tierLabel à chaque mutation de qty (promo/tier dynamique)
+  // Actions panier — calcul price+tierLabel via computePriceForItem (logique métier
+  // qui dépend de clientType + promo + tiers), puis délégation au store pour mutation.
   const addItem = (p: PosProduct) => {
-    setCart(prev => {
-      const ex = prev.find(i => i.id === p.id)
-      const newQty = ex ? ex.qty + 1 : 1
-      const { price, tierLabel } = computePriceForItem(p, newQty)
-      if (ex) {
-        return prev.map(i => i.id === p.id ? { ...i, qty: newQty, price, tierLabel } : i)
-      }
-      return [...prev, { id: p.id, name: p.name, price, qty: 1, emoji: p.emoji, tierLabel }]
-    })
+    const existing = cart.find(i => i.id === p.id)
+    const newQty = existing ? existing.qty + 1 : 1
+    const { price, tierLabel } = computePriceForItem(p, newQty)
+    if (existing) {
+      // produit déjà au panier → +1 et recalcule price (utile si on franchit un palier)
+      updateCartQty(p.id, 1, price, tierLabel)
+    } else {
+      addCartItem({ id: p.id, name: p.name, price, qty: 1, emoji: p.emoji, tierLabel })
+    }
   }
 
   const updateQty = (id: number | string, delta: number) => {
-    setCart(prev =>
-      prev.map(i => {
-        if (i.id !== id) return i
-        const newQty = i.qty + delta
-        if (newQty <= 0) return { ...i, qty: newQty }
-        const product = productById.get(id)
-        if (!product) return { ...i, qty: newQty }
-        const { price, tierLabel } = computePriceForItem(product, newQty)
-        // Toast discret quand le palier change (UX : transparence prix)
-        if ((i.tierLabel ?? '') !== (tierLabel ?? '')) {
-          const label = tierLabel ?? (lang === 'en' ? 'standard' : lang === 'es' ? 'estándar' : lang === 'it' ? 'standard' : 'standard')
-          toast.success(
-            lang === 'en' ? `Price tier: ${label}` :
-            lang === 'es' ? `Tarifa: ${label}` :
-            lang === 'it' ? `Tariffa: ${label}` :
-            `Prix : ${label}`,
-            { id: `tier-${id}`, duration: 1800 },
-          )
-        }
-        return { ...i, qty: newQty, price, tierLabel }
-      }).filter(i => i.qty > 0)
-    )
+    const item = cart.find(i => i.id === id)
+    if (!item) return
+    const newQty = item.qty + delta
+    if (newQty <= 0) {
+      // Le store filtrera (qty<=0 retiré) — pas besoin de calculer le prix
+      updateCartQty(id, delta)
+      return
+    }
+    const product = productById.get(id)
+    if (!product) { updateCartQty(id, delta); return }
+    const { price, tierLabel } = computePriceForItem(product, newQty)
+    // Toast discret quand le palier change (UX : transparence prix)
+    if ((item.tierLabel ?? '') !== (tierLabel ?? '')) {
+      const label = tierLabel ?? (lang === 'en' ? 'standard' : lang === 'es' ? 'estándar' : lang === 'it' ? 'standard' : 'standard')
+      toast.success(
+        lang === 'en' ? `Price tier: ${label}` :
+        lang === 'es' ? `Tarifa: ${label}` :
+        lang === 'it' ? `Tariffa: ${label}` :
+        `Prix : ${label}`,
+        { id: `tier-${id}`, duration: 1800 },
+      )
+    }
+    updateCartQty(id, delta, price, tierLabel)
   }
-
-  const removeItem = (id: number | string) => setCart(prev => prev.filter(i => i.id !== id))
 
   // Calculs
   const VAT_RATE = posTaxRate / 100
@@ -348,7 +350,7 @@ export default function POS() {
 
     addCashierSale(total)
     toast.success('✅ Vente encaissée !')
-    setCart([])
+    clearCart()
     setShowModal(false)
     setCashGiven('')
     setDiscount(null)
