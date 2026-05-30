@@ -54,6 +54,22 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
     expect(screen.getByText('Kofi')).toBeInTheDocument()
   })
 
+  it('le filtre par type de shift réduit la liste (employés sans ce shift exclus)', async () => {
+    // Marie (emp1) a un shift "matin" (index 0) ; Kofi (emp2) n'a aucun shift.
+    localStorage.setItem('habashop_shifts', JSON.stringify({ emp1: { 0: 'morning' } }))
+    render(<Planning />)
+    await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
+    const shiftSelect = screen.getByDisplayValue('Tous les shifts')
+    // Filtre "Matin" → seul Marie reste
+    fireEvent.change(shiftSelect, { target: { value: 'morning' } })
+    expect(screen.getByText('Marie')).toBeInTheDocument()
+    expect(screen.queryByText('Kofi')).not.toBeInTheDocument()
+    // Filtre "Après-midi" → personne (aucun n'a ce shift)
+    fireEvent.change(shiftSelect, { target: { value: 'afternoon' } })
+    expect(screen.queryByText('Marie')).not.toBeInTheDocument()
+    expect(screen.queryByText('Kofi')).not.toBeInTheDocument()
+  })
+
   it('clic sur une case vide ouvre la modale d’assignation', async () => {
     render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
