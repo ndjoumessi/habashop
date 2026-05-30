@@ -341,8 +341,8 @@ export default function Integrations() {
                     <PingBadge id={itg.id} />
                   </div>
                   <button type="button" onClick={() => pingIntegration(itg.id, itg.pingUrl)}
-                    title={lang === 'fr' ? 'Tester la connexion' : lang === 'es' ? 'Probar conexión' : lang === 'it' ? 'Testa connessione' : 'Test connection'}
-                    aria-label={`${lang === 'fr' ? 'Tester' : lang === 'es' ? 'Probar' : lang === 'it' ? 'Testa' : 'Test'} ${itg.name}`}
+                    title={lang === 'fr' ? 'Rafraîchir le statut' : lang === 'es' ? 'Actualizar el estado' : lang === 'it' ? 'Aggiorna lo stato' : 'Refresh status'}
+                    aria-label={`${lang === 'fr' ? 'Rafraîchir' : lang === 'es' ? 'Actualizar' : lang === 'it' ? 'Aggiorna' : 'Refresh'} ${itg.name}`}
                     style={{ width:28, height:28, borderRadius:8, flexShrink:0, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <RotateCw size={12} style={{ animation: pingStatus[itg.id] === 'checking' ? 'spin .8s linear infinite' : 'none' }} />
                   </button>
