@@ -1,0 +1,107 @@
+import { X } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { type Employee, labelStyle } from '@/components/hr/hrShared'
+
+interface Props {
+  lang: string
+  employees: Employee[]
+  leaveForm: any; setLeaveForm: (v: any) => void
+  setShowLeaveModal: (b: boolean) => void
+  setLeaves: (v: any) => void
+}
+
+export default function LeaveRequestModal({ lang, employees, leaveForm, setLeaveForm, setShowLeaveModal, setLeaves }: Props) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
+      onClick={e => { if (e.target === e.currentTarget) setShowLeaveModal(false) }}>
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sh-xl)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: 'var(--text)' }}>
+            🌴 {lang === 'en' ? 'New request' : lang === 'es' ? 'Nueva solicitud' : lang === 'it' ? 'Nuova richiesta' : 'Nouvelle demande'}
+          </h3>
+          <button onClick={() => setShowLeaveModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>
+            <X size={18} />
+          </button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>{lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'}</label>
+            <select aria-label={lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'} className="input" style={{ width: '100%' }}
+              value={leaveForm.empId}
+              onChange={e => setLeaveForm(f => ({ ...f, empId: Number(e.target.value) }))}>
+              <option value={0}>{lang === 'en' ? 'Select...' : lang === 'es' ? 'Seleccionar...' : lang === 'it' ? 'Seleziona...' : 'Sélectionner...'}</option>
+              {(employees ?? []).filter(e => e.active).map(e => (
+                <option key={e.id} value={e.id}>{e.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>{lang === 'en' ? 'LEAVE TYPE' : lang === 'es' ? 'TIPO DE PERMISO' : lang === 'it' ? 'TIPO DI PERMESSO' : 'TYPE DE CONGÉ'}</label>
+            <select aria-label={lang === 'en' ? 'LEAVE TYPE' : lang === 'es' ? 'TIPO DE PERMISO' : lang === 'it' ? 'TIPO DI PERMESSO' : 'TYPE DE CONGÉ'} className="input" style={{ width: '100%' }}
+              value={leaveForm.type}
+              onChange={e => setLeaveForm(f => ({ ...f, type: e.target.value }))}>
+              {[
+                lang === 'en' ? 'Annual leave' : lang === 'es' ? 'Permiso anual' : lang === 'it' ? 'Ferie annuali' : 'Congé annuel',
+                lang === 'en' ? 'Sick leave' : lang === 'es' ? 'Baja por enfermedad' : lang === 'it' ? 'Congedo malattia' : 'Congé maladie',
+                lang === 'en' ? 'Training' : lang === 'es' ? 'Formación' : lang === 'it' ? 'Formazione' : 'Formation',
+                lang === 'en' ? 'Personal' : lang === 'es' ? 'Personal' : lang === 'it' ? 'Personale' : 'Personnel',
+                lang === 'en' ? 'Parental leave' : lang === 'es' ? 'Maternidad/Paternidad' : lang === 'it' ? 'Maternità/Paternità' : 'Maternité/Paternité',
+              ].map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>{lang === 'en' ? 'FROM' : lang === 'es' ? 'DEL' : lang === 'it' ? 'DAL' : 'DU'}</label>
+              <input aria-label={lang === 'en' ? 'FROM' : lang === 'es' ? 'DEL' : lang === 'it' ? 'DAL' : 'DU'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+                value={leaveForm.startDate}
+                onChange={e => setLeaveForm(f => ({ ...f, startDate: e.target.value }))} />
+            </div>
+            <div>
+              <label style={labelStyle}>{lang === 'en' ? 'TO' : lang === 'es' ? 'AL' : lang === 'it' ? 'AL' : 'AU'}</label>
+              <input aria-label={lang === 'en' ? 'TO' : lang === 'es' ? 'AL' : lang === 'it' ? 'AL' : 'AU'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
+                value={leaveForm.endDate}
+                onChange={e => setLeaveForm(f => ({ ...f, endDate: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>{lang === 'en' ? 'NOTES / REASON' : lang === 'es' ? 'NOTAS / MOTIVO' : lang === 'it' ? 'NOTE / MOTIVO' : 'NOTES / MOTIF'}</label>
+            <textarea aria-label={lang === 'en' ? 'NOTES / REASON' : lang === 'es' ? 'NOTAS / MOTIVO' : lang === 'it' ? 'NOTE / MOTIVO' : 'NOTES / MOTIF'} className="input" rows={2} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+              placeholder={lang === 'en' ? 'Reason, justification...' : lang === 'es' ? 'Motivo, justificante...' : lang === 'it' ? 'Motivo, giustificativo...' : 'Motif, justificatif...'}
+              value={leaveForm.notes}
+              onChange={e => setLeaveForm(f => ({ ...f, notes: e.target.value }))} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+          <button className="btn" style={{ flex: 1 }} onClick={() => setShowLeaveModal(false)}>
+            {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
+          </button>
+          <button className="btn btn-primary" style={{ flex: 1 }}
+            onClick={() => {
+              if (!leaveForm.empId || !leaveForm.endDate) {
+                toast.error(lang === 'en' ? 'Employee and dates required' : lang === 'es' ? 'Empleado y fechas requeridos' : lang === 'it' ? 'Dipendente e date richiesti' : 'Employé et dates requis')
+                return
+              }
+              const emp = (employees ?? []).find(e => e.id === leaveForm.empId)
+              const start = new Date(leaveForm.startDate)
+              const end   = new Date(leaveForm.endDate)
+              const days  = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+              setLeaves(prev => [...prev, {
+                id: Date.now(),
+                empId: leaveForm.empId,
+                type: leaveForm.type,
+                from: leaveForm.startDate,
+                to: leaveForm.endDate,
+                days,
+                motif: leaveForm.notes,
+                status: 'pending',
+              }])
+              toast.success('✅ ' + (lang === 'en' ? 'Request submitted!' : lang === 'es' ? '¡Solicitud enviada!' : lang === 'it' ? 'Richiesta inviata!' : 'Demande soumise !'))
+              setShowLeaveModal(false)
+            }}>
+            ✅ {lang === 'en' ? 'Submit' : lang === 'es' ? 'Enviar' : lang === 'it' ? 'Invia' : 'Soumettre'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
