@@ -5,7 +5,7 @@ import ValidatedInput from '@/components/ui/ValidatedInput'
 export default function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: any) {
   const fromXOF = useConvertFromXOF()
   const toXOF   = useConvertToXOF()
-  const { currency, symbol, decimals } = useCurrencyInfo()
+  const { symbol, decimals } = useCurrencyInfo()
 
   const oldSalaryXOF = Number(emp.salary) || 0
   const [newSalaryInput, setNewSalaryInput] = useState(
@@ -27,7 +27,7 @@ export default function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: 
         <span style={{ fontFamily:'var(--mono)', fontWeight:800, fontSize:16, color:'var(--text)' }}>{fmt(oldSalaryXOF)}</span>
       </div>
       <div>
-        <label style={lbl}>{lang === 'en' ? `NEW SALARY (${currency})` : lang === 'es' ? `NUEVO SALARIO (${currency})` : lang === 'it' ? `NUOVO STIPENDIO (${currency})` : `NOUVEAU SALAIRE (${currency})`}</label>
+        <label style={lbl}>{lang === 'en' ? `NEW SALARY (${symbol})` : lang === 'es' ? `NUEVO SALARIO (${symbol})` : lang === 'it' ? `NUOVO STIPENDIO (${symbol})` : `NOUVEAU SALAIRE (${symbol})`}</label>
         <div style={{ position:'relative' }}>
           <ValidatedInput type="amount"
             value={newSalaryInput}

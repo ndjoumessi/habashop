@@ -4,7 +4,7 @@ import ValidatedInput from '@/components/ui/ValidatedInput'
 
 export default function BonusForm({ emp, employees, lang, fmt, onConfirm, onClose }: any) {
   const toXOF  = useConvertToXOF()
-  const { currency, symbol } = useCurrencyInfo()
+  const { symbol } = useCurrencyInfo()
 
   const [targetEmpId, setTargetEmpId] = useState(emp?.id != null ? String(emp.id) : 'all')
   const [amountInput, setAmountInput] = useState('')
@@ -45,7 +45,7 @@ export default function BonusForm({ emp, employees, lang, fmt, onConfirm, onClos
         </div>
       </div>
       <div>
-        <label style={lbl}>{lang === 'en' ? `AMOUNT (${currency})` : lang === 'es' ? `IMPORTE (${currency})` : lang === 'it' ? `IMPORTO (${currency})` : `MONTANT (${currency})`}</label>
+        <label style={lbl}>{lang === 'en' ? `AMOUNT (${symbol})` : lang === 'es' ? `IMPORTE (${symbol})` : lang === 'it' ? `IMPORTO (${symbol})` : `MONTANT (${symbol})`}</label>
         <div style={{ position:'relative' }}>
           <ValidatedInput type="amount"
             value={amountInput}

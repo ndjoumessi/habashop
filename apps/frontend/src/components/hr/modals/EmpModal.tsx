@@ -100,7 +100,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
           </div>
 
           <div>
-            <label className="form-label">{T('Salaire brut', 'Gross salary', 'Salario bruto', 'Stipendio lordo')} ({code})</label>
+            <label className="form-label">{T('Salaire brut', 'Gross salary', 'Salario bruto', 'Stipendio lordo')} ({symbol})</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type="number" value={salary} onChange={e => setSalary(e.target.value)} placeholder={code === 'XOF' || code === 'XAF' ? '350000' : '500'} style={{ width: '100%', boxSizing: 'border-box', paddingRight: 50 }} />
               <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--acc2)', fontSize: 12, fontWeight: 800, pointerEvents: 'none' }}>{symbol}</span>

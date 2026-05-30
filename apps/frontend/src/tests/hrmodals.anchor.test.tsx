@@ -16,6 +16,7 @@ vi.mock('@/stores/appStore', () => ({
   useConvertFromXOF: () => (n: number) => n,
   useCurrencyInfo: () => ({ code: 'XOF', symbol: 'F', decimals: 0, currency: 'XOF' }),
   useAppStore: (sel: any) => sel({ lang: 'fr' }),
+  CURRENCY_SYMBOLS: { XOF: 'FCFA', XAF: 'FCFA', EUR: '€', USD: '$', CAD: 'CA$', GBP: '£' },
 }))
 // UI inputs lourds mockés en inputs simples (mêmes signatures onChange(val))
 vi.mock('@/components/ui/ValidatedInput', () => ({ default: ({ label, value, onChange, placeholder }: any) => <input aria-label={label || placeholder || 'vi'} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} /> }))
@@ -181,11 +182,17 @@ describe('HRModals — modale demande de congé', () => {
   })
 })
 
-describe('HRModals — NewContractModal : suffixe devise dynamique', () => {
-  it('affiche la devise officielle du tenant (EUR) au lieu de "FCFA" hardcodé', () => {
+describe('HRModals — NewContractModal : suffixe devise dynamique (SYMBOLE)', () => {
+  it('affiche le SYMBOLE de la devise officielle du tenant (EUR → "€"), pas le code ni "FCFA" hardcodé', () => {
     const p = makeProps({ showNewContractModal: true, tenantCurrency: 'EUR' })
     render(<HRModals {...p} />)
-    expect(screen.getByText('EUR')).toBeInTheDocument()
+    expect(screen.getByText('€')).toBeInTheDocument()
+    expect(screen.queryByText('EUR')).toBeNull()
     expect(screen.queryByText('FCFA')).toBeNull()
+  })
+  it('tenant XOF → suffixe "FCFA" (symbole)', () => {
+    const p = makeProps({ showNewContractModal: true, tenantCurrency: 'XOF' })
+    render(<HRModals {...p} />)
+    expect(screen.getByText('FCFA')).toBeInTheDocument()
   })
 })

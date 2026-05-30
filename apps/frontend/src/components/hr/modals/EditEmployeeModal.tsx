@@ -23,7 +23,7 @@ interface Props {
   openEditModal: (emp: Employee) => void
 }
 
-export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm, setEditEmpForm, empEditMode, setEmpEditMode, salaryInput, setSalaryInput, toXOF, currency, currencySymbol, setEmployees, setShowEditEmpModal, openEditModal }: Props) {
+export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm, setEditEmpForm, empEditMode, setEmpEditMode, salaryInput, setSalaryInput, toXOF, currencySymbol, setEmployees, setShowEditEmpModal, openEditModal }: Props) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true"
       onClick={e => e.target===e.currentTarget && setShowEditEmpModal(false)}>
@@ -153,7 +153,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               {lang === 'en' ? 'COMPENSATION' : lang === 'es' ? 'REMUNERACIÓN' : lang === 'it' ? 'RETRIBUZIONE' : 'RÉMUNÉRATION'}
             </div>
             <ViewField
-              label={lang === 'en' ? `MONTHLY GROSS SALARY (${currency})` : lang === 'es' ? `SALARIO BRUTO MENSUAL (${currency})` : lang === 'it' ? `STIPENDIO LORDO MENSILE (${currency})` : `SALAIRE MENSUEL BRUT (${currency})`}
+              label={lang === 'en' ? `MONTHLY GROSS SALARY (${currencySymbol})` : lang === 'es' ? `SALARIO BRUTO MENSUAL (${currencySymbol})` : lang === 'it' ? `STIPENDIO LORDO MENSILE (${currencySymbol})` : `SALAIRE MENSUEL BRUT (${currencySymbol})`}
               value={fmt(+salaryInput > 0 ? toXOF(+salaryInput) : (selectedEmp?.salary ?? 0))}
               mono
               editing={empEditMode}>
