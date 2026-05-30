@@ -257,6 +257,7 @@ Sécurité & multi-tenant : routes user management durcies admin-only + validati
 - Bannière PWA : mémorisée 7 jours après « Plus tard » (`localStorage` `pwa-install-dismissed`)
 - Libellé FCFA sans espace (« F CFA » → « FCFA »)
 - Badge hero landing lisible (fond translucide + bordure violette + texte gradient)
+- **Payroll : année réelle dans les clés/labels de mois** — `MONTHS` ne code plus `2026` en dur (`buildMonths(new Date().getFullYear())`). Le mois n'est qu'une **clé d'affichage/filtre côté client** (records générés depuis `employeesApi`, jamais persistés) → blast radius nul ; format de clé `"Mois AAAA"` inchangé, affichage localisé via `monthLabel` (`Intl`). `buildMonths`/`monthLabel` exportés + testés (passage 2027, 4 langues).
 
 ### Web — design
 - **Thème « Violet & Or ✨ » (`gold`)** ajouté comme thème par défaut (`DEFAULT_CONFIG.theme = 'gold'`) — violet `#7C3AED` verrouillé via `applyAccentColor` (indépendant de l'accent), or via `--acc2` (`#EAB308`, 203 usages)
