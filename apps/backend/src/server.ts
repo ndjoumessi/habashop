@@ -41,6 +41,7 @@ import {
   sendStockAlertEmail,
 } from './services/email'
 import { runMonthlyPayrollReports } from './services/payrollReport'
+import { payrollRoutes } from './routes/payroll'
 
 // ─── Validation des variables d'environnement obligatoires ───
 const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET']
@@ -213,6 +214,7 @@ async function start() {
   await app.register(expenseRoutes)
   await app.register(analyticsRoutes)
   await app.register(reportsRoutes)
+  await app.register(payrollRoutes)
   await app.register(exportRoutes)
   await app.register(billingRoutes)
   await app.register(paymentRoutes)
