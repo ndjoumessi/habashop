@@ -46,9 +46,9 @@ export default function SectionDocs() {
       <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {DOCS.map(d => (
           <button key={pick(lang, d.label)} type="button" onClick={d.action}
-            style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s' }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,.06)'; el.style.borderColor = 'rgba(255,255,255,.12)'; el.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,.03)'; el.style.borderColor = 'rgba(255,255,255,.07)'; el.style.transform = 'none' }}>
+            style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s' }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--bg3)'; el.style.borderColor = 'var(--border)'; el.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--bg3)'; el.style.borderColor = 'var(--border)'; el.style.transform = 'none' }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `${d.color}15`, border: `1px solid ${d.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{d.icon}</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>{pick(lang, d.label)}</div>

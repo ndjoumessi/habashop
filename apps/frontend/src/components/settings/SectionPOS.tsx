@@ -104,7 +104,7 @@ export default function SectionPOS() {
           <div style={{ display: 'flex', gap: 10 }}>
             {PRICE_MODES.map(m => (
               <button key={m.id} type="button" disabled={!editMode} onClick={() => editMode && setDraft(p => ({ ...p, priceMode: m.id }))}
-                style={{ flex: 1, padding: 14, borderRadius: 12, cursor: editMode ? 'pointer' : 'default', opacity: editMode ? 1 : .7, textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', background: v.priceMode === m.id ? 'rgba(108,71,255,.1)' : 'rgba(255,255,255,.02)', border: `2px solid ${v.priceMode === m.id ? 'var(--p)' : 'rgba(255,255,255,.06)'}` }}>
+                style={{ flex: 1, padding: 14, borderRadius: 12, cursor: editMode ? 'pointer' : 'default', opacity: editMode ? 1 : .7, textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', background: v.priceMode === m.id ? 'rgba(108,71,255,.1)' : 'var(--bg3)', border: `2px solid ${v.priceMode === m.id ? 'var(--p)' : 'var(--border)'}` }}>
                 <div style={{ fontSize: 15, fontWeight: 900, color: v.priceMode === m.id ? 'var(--p3)' : 'var(--text)' }}>{m.title}{v.priceMode === m.id ? ' ✓' : ''}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{m.sub}</div>
               </button>
@@ -112,7 +112,7 @@ export default function SectionPOS() {
           </div>
 
           {/* VAT rate */}
-          <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+          <div style={{ padding: '14px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,149,0,.12)', border: '1px solid rgba(255,149,0,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📊</div>
               <div>
@@ -131,7 +131,7 @@ export default function SectionPOS() {
           </div>
 
           {/* Opening fund — currency dynamic */}
-          <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+          <div style={{ padding: '14px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💵</div>
               <div>

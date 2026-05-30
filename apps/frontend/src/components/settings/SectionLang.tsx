@@ -117,7 +117,7 @@ export default function SectionLang() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
             {[100000, 500000, 1000000].map(xof => (
-              <div key={xof} style={{ textAlign: 'center', padding: 10, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 10 }}>
+              <div key={xof} style={{ textAlign: 'center', padding: 10, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10 }}>
                 <div style={{ fontSize: 9, color: 'var(--text3)', marginBottom: 4 }}>{xof.toLocaleString('fr-FR')} XOF</div>
                 <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{fmt(xof)}</div>
               </div>
@@ -140,9 +140,9 @@ export default function SectionLang() {
                 const tbg = th.vars['--bg']; const tp = th.vars['--p']; const tacc = th.vars['--acc2']; const ttext = th.vars['--text']
                 return (
                   <button key={key} type="button" onClick={() => cfg.updateConfig({ theme: key })}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', borderRadius: 14, background: active ? `${tp}18` : 'rgba(255,255,255,.03)', border: `2px solid ${active ? tp + '66' : 'rgba(255,255,255,.07)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', borderRadius: 14, background: active ? `${tp}18` : 'var(--bg3)', border: `2px solid ${active ? tp + '66' : 'var(--border)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
                     {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: tp, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff', fontWeight: 900 }}>✓</div>}
-                    <div style={{ width: 72, height: 46, borderRadius: 9, background: tbg, border: '1px solid rgba(255,255,255,.1)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: 72, height: 46, borderRadius: 9, background: tbg, border: '1px solid var(--border)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, background: tp + '33', borderRight: `1px solid ${tp}22` }} />
                       <div style={{ position: 'absolute', left: 20, top: 6, right: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
                         <div style={{ height: 4, borderRadius: 99, background: tp, width: '60%' }} />

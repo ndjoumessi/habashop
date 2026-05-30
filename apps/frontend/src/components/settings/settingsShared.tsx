@@ -14,7 +14,7 @@ export function Switch({ on, onClick, color, disabled }: { on: boolean; onClick:
   return (
     <button type="button" disabled={disabled} onClick={onClick} aria-pressed={on} style={{
       width: 48, height: 26, borderRadius: 99, flexShrink: 0,
-      background: on ? color : 'rgba(255,255,255,.1)', border: 'none',
+      background: on ? color : 'var(--bg4)', border: 'none',
       cursor: disabled ? 'default' : 'pointer', transition: 'all .25s', position: 'relative',
     }}>
       <div style={{ position: 'absolute', top: 3, left: on ? 24 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .25s', boxShadow: '0 2px 6px rgba(0,0,0,.3)' }} />
@@ -26,7 +26,7 @@ export function ToggleCard({ icon, color, label, desc, on, onChange, disabled }:
   icon: string; color: string; label: string; desc: string; on: boolean; onChange: () => void; disabled?: boolean
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(255,255,255,.03)', border: `1px solid ${disabled ? 'rgba(255,255,255,.05)' : 'rgba(255,255,255,.09)'}`, borderRadius: 14, transition: 'border-color .2s' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--bg3)', border: `1px solid var(--border)`, borderRadius: 14, transition: 'border-color .2s' }}>
       <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{label}</div>

@@ -310,7 +310,7 @@ export default function Header() {
                       borderBottom: i < searchResults.length - 1 ? '1px solid var(--border)' : 'none',
                       cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left', transition: 'background .1s',
                     }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.04)'}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'none'}
                   >
                     <div style={{
@@ -456,12 +456,12 @@ export default function Header() {
             aria-expanded={showNotifs}
             onClick={() => { setShowNotifs(v => { if (!v) markNotifsRead(); return !v }); setShowNewMenu(false); setShowResults(false) }}
             style={{
-              background: 'rgba(255,255,255,.04)', border: '1px solid var(--border)',
+              background: 'var(--bg3)', border: '1px solid var(--border)',
               borderRadius: 10, padding: '7px 9px', cursor: 'pointer', position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s',
             }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.08)'}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.04)'}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg4)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'}
           >
             <Bell size={15} style={{ color: 'var(--text2)' }} />
             {unreadCount > 0 && (
