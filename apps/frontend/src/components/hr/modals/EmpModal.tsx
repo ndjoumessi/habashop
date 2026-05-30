@@ -117,12 +117,12 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label className="form-label">{T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')}</label>
-              <input aria-label={T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')} className="input" value={hiredAt} onChange={e => setHiredAt(e.target.value)} placeholder="JJ/MM/AAAA" style={{ width: '100%', boxSizing: 'border-box' }} />
+              <input aria-label={T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')} className="input" value={hiredAt} onChange={e => setHiredAt(e.target.value)} placeholder={T('JJ/MM/AAAA', 'DD/MM/YYYY', 'DD/MM/AAAA', 'GG/MM/AAAA')} style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
             {type === 'CDD' && (
               <div>
                 <label className="form-label">{T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')}</label>
-                <input aria-label={T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')} className="input" value={endAt} onChange={e => setEndAt(e.target.value)} placeholder="JJ/MM/AAAA" style={{ width: '100%', boxSizing: 'border-box' }} />
+                <input aria-label={T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')} className="input" value={endAt} onChange={e => setEndAt(e.target.value)} placeholder={T('JJ/MM/AAAA', 'DD/MM/YYYY', 'DD/MM/AAAA', 'GG/MM/AAAA')} style={{ width: '100%', boxSizing: 'border-box' }} />
               </div>
             )}
           </div>
@@ -135,7 +135,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
 
           <ValidatedInput type="email" label="Email"
             value={email} onChange={setEmail}
-            placeholder="prenom@boutique.com" />
+            placeholder={T('prenom@boutique.com', 'name@store.com', 'nombre@tienda.com', 'nome@negozio.com')} />
 
           <div>
             <label className="form-label">{T('Performance', 'Performance', 'Rendimiento', 'Prestazione')}</label>

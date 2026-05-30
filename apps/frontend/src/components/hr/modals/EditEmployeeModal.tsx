@@ -176,7 +176,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:16, flexWrap:'wrap' }}>
                   <span>CNSS (8%): <strong style={{color:'var(--danger)'}}>− {fmt(cnss)}</strong></span>
                   <span>IR (5%): <strong style={{color:'var(--acc)'}}>− {fmt(ir)}</strong></span>
-                  <span>Net: <strong style={{color:'var(--acc2)'}}>{fmt(net)}</strong></span>
+                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmt(net)}</strong></span>
                 </div>
               )
             })()}
@@ -200,7 +200,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 <ValidatedInput type="email"
                   value={editEmpForm.email??''}
                   onChange={val => setEditEmpForm((f:any) => ({ ...f, email:val }))}
-                  placeholder="nom@email.com" lang={lang} />
+                  placeholder={lang === 'en' ? 'name@email.com' : lang === 'es' ? 'nombre@email.com' : lang === 'it' ? 'nome@email.com' : 'nom@email.com'} lang={lang} />
               </ViewField>
               {empEditMode ? (
                 <div style={{ gridColumn:'1/-1' }}>
@@ -234,7 +234,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
           <div style={{ marginBottom:20 }}>
             <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
               <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,184,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--warn)' }}><Star size={10}/></div>
-              PERFORMANCE
+              {lang === 'en' ? 'PERFORMANCE' : lang === 'es' ? 'RENDIMIENTO' : lang === 'it' ? 'PRESTAZIONE' : 'PERFORMANCE'}
             </div>
             {empEditMode ? (
               <div style={{ display:'flex', gap:4 }}>

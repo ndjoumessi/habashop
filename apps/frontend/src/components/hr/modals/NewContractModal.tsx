@@ -59,7 +59,7 @@ export default function NewContractModal({ lang, fmt, employees, setEmployees, c
               {contractForm.salary>0&&(
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
                   <span>CNSS: <strong style={{color:'var(--danger)'}}>−{fmt(Math.round(contractForm.salary*0.08))}</strong></span>
-                  <span>Net: <strong style={{color:'var(--acc2)'}}>{fmt(Math.round(contractForm.salary*0.87))}</strong></span>
+                  <span>{lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'}: <strong style={{color:'var(--acc2)'}}>{fmt(Math.round(contractForm.salary*0.87))}</strong></span>
                 </div>
               )}
             </div>
