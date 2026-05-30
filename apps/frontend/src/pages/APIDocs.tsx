@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { api } from '@/lib/api'
 import { generateCDC } from '@/utils/export'
@@ -23,6 +23,55 @@ const TESTER_ENDPOINTS = [
   'POST /api/ai/chat',
 ]
 
+// Coloration syntaxique minimale (thémée) : commentaires, strings, mots-clés.
+// Tokeniseur char-par-char qui suit l'état "string" → les `//` dans une URL
+// ('https://…') ne sont PAS pris pour des commentaires.
+const JS_KEYWORDS = new Set([
+  'const', 'let', 'var', 'async', 'await', 'function', 'return', 'new',
+  'require', 'for', 'if', 'else', 'catch', 'try', 'of', 'in',
+])
+
+function highlightCode(code: string): ReactNode[] {
+  const out: ReactNode[] = []
+  let key = 0
+  const lines = code.split('\n')
+  lines.forEach((line, li) => {
+    let i = 0
+    let plain = ''
+    const flushPlain = () => {
+      if (!plain) return
+      plain.split(/(\b[A-Za-z_]\w*\b)/).forEach(part => {
+        if (!part) return
+        if (JS_KEYWORDS.has(part)) out.push(<span key={key++} style={{ color: 'var(--p3)' }}>{part}</span>)
+        else out.push(<span key={key++}>{part}</span>)
+      })
+      plain = ''
+    }
+    while (i < line.length) {
+      const c = line[i]
+      if (c === '/' && line[i + 1] === '/') {
+        flushPlain()
+        out.push(<span key={key++} style={{ color: 'var(--text3)', fontStyle: 'italic' }}>{line.slice(i)}</span>)
+        i = line.length
+        break
+      }
+      if (c === "'" || c === '"' || c === '`') {
+        flushPlain()
+        let j = i + 1
+        while (j < line.length && line[j] !== c) j++
+        out.push(<span key={key++} style={{ color: 'var(--acc2)' }}>{line.slice(i, j + 1)}</span>)
+        i = j + 1
+        continue
+      }
+      plain += c
+      i++
+    }
+    flushPlain()
+    if (li < lines.length - 1) out.push('\n')
+  })
+  return out
+}
+
 export default function APIDocs() {
   const { lang } = useAppStore()
   const [testerEndpoint, setTesterEndpoint] = useState('GET /api/dashboard/stats')
@@ -34,7 +83,7 @@ export default function APIDocs() {
     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
         <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-          <Link2 size={20} strokeWidth={2.2} color="var(--p3)" />
+          <Link2 size={20} strokeWidth={2.2} color="var(--acc2)" />
           {lang === 'fr' ? 'API & Intégrations'
             : lang === 'en' ? 'API & Integrations'
             : lang === 'es' ? 'API & Integraciones'
@@ -205,16 +254,18 @@ export default function APIDocs() {
                     {e.auth ? (
                       <span style={{
                         fontSize: 10, fontWeight: 700,
-                        color: 'var(--danger)',
-                        background: 'rgba(232,64,74,.1)',
+                        color: 'var(--p)',
+                        background: 'color-mix(in srgb, var(--p) 12%, transparent)',
+                        border: '1px solid color-mix(in srgb, var(--p) 35%, transparent)',
                         borderRadius: 6, padding: '2px 8px',
                         display: 'inline-flex', alignItems: 'center', gap: 4,
                       }}><Lock size={10} strokeWidth={2.6}/> JWT</span>
                     ) : (
                       <span style={{
                         fontSize: 10, fontWeight: 700,
-                        color: 'var(--acc2)',
-                        background: 'rgba(14,196,126,.1)',
+                        color: 'var(--acc)',
+                        background: 'color-mix(in srgb, var(--acc) 12%, transparent)',
+                        border: '1px solid color-mix(in srgb, var(--acc) 35%, transparent)',
                         borderRadius: 6, padding: '2px 8px',
                         display: 'inline-flex', alignItems: 'center', gap: 4,
                       }}><Globe size={10} strokeWidth={2.6}/> Public</span>
@@ -244,15 +295,15 @@ export default function APIDocs() {
           </button>
         </div>
         <pre id="api-example-code" style={{
-          background: 'var(--bg3)',
+          background: 'var(--bg)',
           border: '1px solid var(--border)',
-          borderRadius: 10, padding: '16px',
-          fontSize: 12, color: 'var(--p2)',
+          borderRadius: 12, padding: '16px',
+          fontSize: 12, color: 'var(--text2)',
           fontFamily: 'var(--mono)',
           overflow: 'auto',
           lineHeight: 1.8,
         }}>
-{`// JavaScript / Node.js
+{highlightCode(`// JavaScript / Node.js
 const axios = require('axios')
 const BASE = 'https://habashop-production.up.railway.app'
 
@@ -284,7 +335,7 @@ async function main() {
   console.log(chat.response)
 }
 
-main().catch(console.error)`}
+main().catch(console.error)`)}
         </pre>
       </div>
       {/* Testeur interactif */}
@@ -351,7 +402,7 @@ main().catch(console.error)`}
           const display = isError ? testerResult.slice(7) : testerResult
           return (
             <div style={{
-              background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10,
+              background:'var(--bg)', border:'1px solid var(--border)', borderRadius:10,
               padding:14, fontSize:12, lineHeight:1.7, overflow:'auto', maxHeight:340,
               color: isError ? 'var(--danger)' : 'var(--acc2)',
               fontFamily:'var(--mono)',
