@@ -24,6 +24,7 @@ interface HRModalsProps {
   toXOF: (n: number) => number
   currency: string
   currencySymbol: string
+  tenantCurrency: string  // devise officielle du tenant (salaire contractuel)
   openEditModal: (emp: Employee) => void
   showNewContractModal: boolean; setShowNewContractModal: (b: boolean) => void
   contractForm: any; setContractForm: (v: any) => void
@@ -40,7 +41,7 @@ export default function HRModals(props: HRModalsProps) {
     showSalaryModal, setShowSalaryModal, salaryTarget, lang, fmt, employees, setEmployees,
     handleConfirmRaise, handleConfirmBonus, showModal, setShowModal,
     showEditEmpModal, setShowEditEmpModal, selectedEmp, editEmpForm, setEditEmpForm,
-    empEditMode, setEmpEditMode, salaryInput, setSalaryInput, toXOF, currency, currencySymbol,
+    empEditMode, setEmpEditMode, salaryInput, setSalaryInput, toXOF, currency, currencySymbol, tenantCurrency,
     openEditModal, showNewContractModal, setShowNewContractModal, contractForm, setContractForm,
     showContractDetailModal, setShowContractDetailModal, selectedContract,
     showLeaveModal, setShowLeaveModal, leaveForm, setLeaveForm, setLeaves,
@@ -91,7 +92,7 @@ export default function HRModals(props: HRModalsProps) {
       {/* ── MODAL NOUVEAU CONTRAT ── */}
       {showNewContractModal && (
         <NewContractModal
-          lang={lang} fmt={fmt} employees={employees} setEmployees={setEmployees}
+          lang={lang} fmt={fmt} tenantCurrency={tenantCurrency} employees={employees} setEmployees={setEmployees}
           contractForm={contractForm} setContractForm={setContractForm}
           setShowNewContractModal={setShowNewContractModal}
         />

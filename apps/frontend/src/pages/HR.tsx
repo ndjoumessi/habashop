@@ -28,7 +28,9 @@ export default function HR() {
   const toXOF  = useConvertToXOF()
   const fromXOF = useConvertFromXOF()
   const { symbol: currencySymbol, decimals: currencyDecimals } = useCurrencyInfo()
-  const { lang, currency } = useAppStore()
+  const { lang, currency, tenant } = useAppStore()
+  // Devise officielle de la boutique (salaire contractuel) ≠ devise d'affichage locale.
+  const tenantCurrency = tenant?.currency ?? 'XOF'
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const [salaryInput, setSalaryInput] = useState('')
@@ -70,7 +72,7 @@ export default function HR() {
   // Leave modal
   const [showLeaveModal, setShowLeaveModal] = useState(false)
   const [leaveForm, setLeaveForm] = useState({
-    empId: 0,
+    empId: '' as string | number,  // id employé (cuid string en prod ; '' = aucun)
     type: lang === 'en' ? 'Annual leave' : lang === 'es' ? 'Permiso anual' : lang === 'it' ? 'Ferie annuali' : 'Congé annuel',
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
@@ -540,7 +542,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         editEmpForm={editEmpForm} setEditEmpForm={setEditEmpForm}
         empEditMode={empEditMode} setEmpEditMode={setEmpEditMode}
         salaryInput={salaryInput} setSalaryInput={setSalaryInput}
-        toXOF={toXOF} currency={currency} currencySymbol={currencySymbol}
+        toXOF={toXOF} currency={currency} currencySymbol={currencySymbol} tenantCurrency={tenantCurrency}
         openEditModal={openEditModal}
         showNewContractModal={showNewContractModal} setShowNewContractModal={setShowNewContractModal}
         contractForm={contractForm} setContractForm={setContractForm}

@@ -27,11 +27,11 @@ export default function LeaveRequestModal({ lang, employees, leaveForm, setLeave
           <div>
             <label style={labelStyle}>{lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'}</label>
             <select aria-label={lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'} className="input" style={{ width: '100%' }}
-              value={leaveForm.empId}
-              onChange={e => setLeaveForm(f => ({ ...f, empId: Number(e.target.value) }))}>
-              <option value={0}>{lang === 'en' ? 'Select...' : lang === 'es' ? 'Seleccionar...' : lang === 'it' ? 'Seleziona...' : 'Sélectionner...'}</option>
+              value={String(leaveForm.empId ?? '')}
+              onChange={e => setLeaveForm(f => ({ ...f, empId: e.target.value }))}>
+              <option value="">{lang === 'en' ? 'Select...' : lang === 'es' ? 'Seleccionar...' : lang === 'it' ? 'Seleziona...' : 'Sélectionner...'}</option>
               {(employees ?? []).filter(e => e.active).map(e => (
-                <option key={e.id} value={e.id}>{e.name}</option>
+                <option key={e.id} value={String(e.id)}>{e.name}</option>
               ))}
             </select>
           </div>
@@ -81,7 +81,7 @@ export default function LeaveRequestModal({ lang, employees, leaveForm, setLeave
                 toast.error(lang === 'en' ? 'Employee and dates required' : lang === 'es' ? 'Empleado y fechas requeridos' : lang === 'it' ? 'Dipendente e date richiesti' : 'Employé et dates requis')
                 return
               }
-              const emp = (employees ?? []).find(e => e.id === leaveForm.empId)
+              const emp = (employees ?? []).find(e => String(e.id) === String(leaveForm.empId))
               const start = new Date(leaveForm.startDate)
               const end   = new Date(leaveForm.endDate)
               const days  = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1

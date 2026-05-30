@@ -24,15 +24,15 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
     }} onClick={e => e.target===e.currentTarget && onClose()}>
       <div style={{
         width:'100%', maxWidth:400,
-        background:'#0D0D1C', border:'1px solid rgba(255,255,255,.1)',
+        background:'var(--card)', border:'1px solid var(--border)',
         borderRadius:20, overflow:'hidden',
-        boxShadow:'0 32px 80px rgba(0,0,0,.8)',
+        boxShadow:'var(--sh-xl)',
       }}>
         {/* Header */}
         <div style={{
           padding:'18px 20px 14px',
-          background:'linear-gradient(135deg,rgba(108,71,255,.15),rgba(0,184,255,.06))',
-          borderBottom:'1px solid rgba(255,255,255,.06)',
+          background:'var(--bg3)',
+          borderBottom:'1px solid var(--border)',
           display:'flex', alignItems:'center', justifyContent:'space-between',
         }}>
           <div>
@@ -45,7 +45,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
           </div>
           <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={onClose} style={{
             width:30, height:30, borderRadius:8,
-            background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)',
+            background:'var(--bg3)', border:'1px solid var(--border)',
             cursor:'pointer', color:'var(--text3)',
             display:'flex', alignItems:'center', justifyContent:'center',
           }}><X size={14}/></button>
@@ -63,8 +63,8 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
                 style={{
                   display:'flex', alignItems:'center', gap:8,
                   padding:'10px 12px', borderRadius:10,
-                  border:`1.5px solid ${modalShift===key ? s.color : 'rgba(255,255,255,.06)'}`,
-                  background: modalShift===key ? s.bg : 'rgba(255,255,255,.02)',
+                  border:`1.5px solid ${modalShift===key ? s.color : 'var(--border)'}`,
+                  background: modalShift===key ? s.bg : 'var(--bg3)',
                   cursor:'pointer', fontFamily:'var(--font)',
                   fontSize:12, fontWeight:700,
                   color: modalShift===key ? s.color : 'var(--text3)',
@@ -101,8 +101,8 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
               onClick={onClose}
               style={{
                 padding:'11px 16px', borderRadius:10,
-                background:'rgba(255,255,255,.04)',
-                border:'1px solid rgba(255,255,255,.08)',
+                background:'var(--bg3)',
+                border:'1px solid var(--border)',
                 cursor:'pointer', color:'var(--text3)',
                 fontSize:13, fontFamily:'var(--font)',
               }}>

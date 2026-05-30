@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { useState } from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import HRModals from '@/components/hr/HRModals'
 
@@ -38,7 +39,7 @@ function makeProps(overrides: any = {}) {
     editEmpForm: { ...EMP, isActive: true, contractEnd: '', address: '', photoUrl: '' }, setEditEmpForm: vi.fn(),
     empEditMode: false, setEmpEditMode: vi.fn(),
     salaryInput: '', setSalaryInput: vi.fn(),
-    toXOF: (n: number) => n, currency: 'XOF', currencySymbol: 'F',
+    toXOF: (n: number) => n, currency: 'XOF', currencySymbol: 'F', tenantCurrency: 'XOF',
     openEditModal: vi.fn(),
     showNewContractModal: false, setShowNewContractModal: vi.fn(),
     contractForm: { empId: '', role: '', dept: 'Ventes', type: 'CDI', hiredAt: '2026-05-01', contractEnd: '', salary: 0 }, setContractForm: vi.fn(),
@@ -156,5 +157,35 @@ describe('HRModals — modale demande de congé', () => {
     fireEvent.click(screen.getByText(/Soumettre/))
     expect(p.setLeaves).toHaveBeenCalled()
     expect(p.setShowLeaveModal).toHaveBeenCalledWith(false)
+  })
+
+  // Bug : le dropdown employé doit lister les employés ACTIFS et la sélection doit
+  // marcher avec des id STRING (cuid en prod, ex. 'demo-emp-Marie') — pas seulement
+  // des id numériques. Avant le fix, onChange faisait Number(cuid)=NaN → injélectable.
+  it('liste les employés actifs et sélectionne via un id string (cuid)', () => {
+    const EMP_S = { ...EMP, id: 'demo-emp-marie', name: 'Marie Bakayoko', active: true }
+    const EMP_INACTIVE = { ...EMP, id: 'demo-emp-bob', name: 'Bob Inactif', active: false }
+    // Harnais stateful : le select contrôlé doit réellement retenir la sélection.
+    function Harness() {
+      const [leaveForm, setLeaveForm] = useState<any>({ empId: '', type: 'Congé annuel', startDate: '', endDate: '', notes: '' })
+      return <HRModals {...makeProps({ showLeaveModal: true, employees: [EMP_S, EMP_INACTIVE], leaveForm, setLeaveForm })} />
+    }
+    render(<Harness />)
+    // option active présente, option inactive absente
+    expect(screen.getByRole('option', { name: 'Marie Bakayoko' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Bob Inactif' })).toBeNull()
+    // sélection par id STRING → la valeur reste (avec l'ancien Number(cuid)=NaN, elle retombait à '')
+    const select = screen.getByLabelText('EMPLOYÉ') as HTMLSelectElement
+    fireEvent.change(select, { target: { value: 'demo-emp-marie' } })
+    expect(select.value).toBe('demo-emp-marie')
+  })
+})
+
+describe('HRModals — NewContractModal : suffixe devise dynamique', () => {
+  it('affiche la devise officielle du tenant (EUR) au lieu de "FCFA" hardcodé', () => {
+    const p = makeProps({ showNewContractModal: true, tenantCurrency: 'EUR' })
+    render(<HRModals {...p} />)
+    expect(screen.getByText('EUR')).toBeInTheDocument()
+    expect(screen.queryByText('FCFA')).toBeNull()
   })
 })

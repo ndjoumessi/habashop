@@ -5,12 +5,15 @@ import { type Employee, COLORS, DEPT_COLORS, labelStyle, deptLabel, contractLabe
 interface Props {
   lang: string
   fmt: (n: number) => string
+  // Devise OFFICIELLE du tenant (le salaire est un montant contractuel), pas la
+  // devise d'affichage locale. Storage inchangé (salaires en XOF en base).
+  tenantCurrency: string
   employees: Employee[]; setEmployees: (v: any) => void
   contractForm: any; setContractForm: (v: any) => void
   setShowNewContractModal: (b: boolean) => void
 }
 
-export default function NewContractModal({ lang, fmt, employees, setEmployees, contractForm, setContractForm, setShowNewContractModal }: Props) {
+export default function NewContractModal({ lang, fmt, tenantCurrency, employees, setEmployees, contractForm, setContractForm, setShowNewContractModal }: Props) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
       <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, padding:28, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--sh-xl)' }}>
@@ -54,7 +57,7 @@ export default function NewContractModal({ lang, fmt, employees, setEmployees, c
               <label style={labelStyle}>{lang === 'en' ? 'GROSS SALARY' : lang === 'es' ? 'SALARIO BRUTO' : lang === 'it' ? 'STIPENDIO LORDO' : 'SALAIRE BRUT'}</label>
               <div style={{ position:'relative' }}>
                 <input aria-label={lang === 'en' ? 'GROSS SALARY' : lang === 'es' ? 'SALARIO BRUTO' : lang === 'it' ? 'STIPENDIO LORDO' : 'SALAIRE BRUT'} className="input" type="number" placeholder="150000" value={contractForm.salary||''} onChange={e=>setContractForm(f=>({...f,salary:+e.target.value}))} style={{ paddingRight:60 }}/>
-                <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>FCFA</span>
+                <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>{tenantCurrency}</span>
               </div>
               {contractForm.salary>0&&(
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>
