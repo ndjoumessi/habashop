@@ -7,6 +7,29 @@ const prisma = new PrismaClient()
 // Surchargeable : SEED_EMAIL=admin@habashop.com npx tsx prisma/seed-demo.ts
 const TARGET_EMAIL = process.env.SEED_EMAIL ?? 'kone@habashop.com'
 
+// PRNG déterministe (mulberry32) → données identiques à chaque exécution (idempotent).
+function rng(seed: number) {
+  let a = seed >>> 0
+  return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+// Épicerie de quartier (Abidjan) : CA mensuel réaliste 4–5M XOF sur 3 mois récents.
+const DEMO_MONTHS = [
+  { ym: '2026-03', year: 2026, month: 2, target: 4_200_000 },
+  { ym: '2026-04', year: 2026, month: 3, target: 4_500_000 },
+  { ym: '2026-05', year: 2026, month: 4, target: 4_800_000 },
+]
+const DEMO_MONTHLY_EXPENSES = [
+  { slug: 'loyer',       label: 'Loyer boutique',          category: 'Loyer',       amountHT: 120_000, vat: 0,  mode: 'Virement', status: 'PAYÉ',       recurrent: true },
+  { slug: 'energie',     label: 'Électricité (CIE)',       category: 'Énergie',     amountHT: 38_000,  vat: 18, mode: 'Espèces',  status: 'PAYÉ',       recurrent: true },
+  { slug: 'transport',   label: 'Transport marchandises',  category: 'Transport',   amountHT: 30_000,  vat: 0,  mode: 'Espèces',  status: 'PAYÉ',       recurrent: false },
+  { slug: 'fournitures', label: 'Fournitures bureau',      category: 'Fournitures', amountHT: 15_000,  vat: 18, mode: 'Espèces',  status: 'EN ATTENTE', recurrent: false },
+]
+
 async function seedDemo() {
   console.log(`🌱 Seed démo pour ${TARGET_EMAIL}…`)
 
@@ -80,7 +103,8 @@ async function seedDemo() {
     { id: 'demo2-emp-3', name: 'Moussa Bamba',       role: 'Magasinier', dept: 'Stock',  type: 'CDD', salary: 120000, phone: '+225 07 00 00 12', avatar: 'MB', color: '#F59E0B', perf: 3, hiredAt: new Date('2024-07-01') },
   ]
   for (const e of employees) {
-    await prisma.employee.upsert({ where: { id: e.id }, update: {}, create: { tenantId, isActive: true, ...e } })
+    // update applique le salaire → re-run soigne une éventuelle dérive de valeur.
+    await prisma.employee.upsert({ where: { id: e.id }, update: { salary: e.salary, isActive: true }, create: { tenantId, isActive: true, ...e } })
       .catch(er => console.warn('employee', e.name, er.message))
   }
   console.log('✅ Employés upsert:', employees.length)
@@ -97,46 +121,71 @@ async function seedDemo() {
   }
   console.log('✅ Fournisseurs upsert:', suppliers.length)
 
-  // ── Ventes (uniquement si aucune — pas d'id naturel) ──
-  const existingSales = await prisma.sale.count({ where: { tenantId } })
-  if (existingSales === 0) {
-    const prods = await prisma.product.findMany({ where: { tenantId, deletedAt: null }, take: 12 })
-    const payModes = ['cash', 'wave', 'orange', 'card']
-    const now = Date.now()
-    let created = 0
-    for (let i = 0; i < 24; i++) {
-      const prod = prods[Math.floor(Math.random() * prods.length)]
-      if (!prod) break
-      const qty = Math.floor(Math.random() * 5) + 1
-      const total = prod.sellPrice * qty
+  // ── Ventes : delete + regenerate déterministe (idempotent) → CA réaliste / mois ──
+  const prods = await prisma.product.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, sellPrice: true } })
+  const oldSaleIds = (await prisma.sale.findMany({ where: { tenantId }, select: { id: true } })).map(s => s.id)
+  if (oldSaleIds.length) {
+    await prisma.saleItem.deleteMany({ where: { saleId: { in: oldSaleIds } } })
+    await prisma.sale.deleteMany({ where: { tenantId } })
+  }
+  const payModes = ['cash', 'wave', 'orange', 'card', 'cash', 'cash']
+  let totalSales = 0
+  for (let mi = 0; mi < DEMO_MONTHS.length; mi++) {
+    const m = DEMO_MONTHS[mi]
+    const rand = rng(2000 + mi)
+    const pick = <T,>(arr: T[]) => arr[Math.floor(rand() * arr.length)]
+    let monthCA = 0, n = 0
+    while (monthCA < m.target && n <= 2000) {
+      const roll = rand()
+      const tier = roll < 0.78 ? 'small' : roll < 0.96 ? 'medium' : 'large' // épicerie → surtout du détail
+      const nLines = tier === 'large' ? 2 + Math.floor(rand() * 2) : 1
+      const items: { productId: string; qty: number; unitPrice: number; total: number }[] = []
+      let saleTotal = 0
+      for (let l = 0; l < nLines; l++) {
+        const p = pick(prods)
+        if (!p) break
+        const qty = tier === 'large' ? 15 + Math.floor(rand() * 25)
+                  : tier === 'medium' ? 4 + Math.floor(rand() * 10)
+                  : 1 + Math.floor(rand() * 4)
+        const lineTotal = Math.round(p.sellPrice * qty)
+        items.push({ productId: p.id, qty, unitPrice: p.sellPrice, total: lineTotal })
+        saleTotal += lineTotal
+      }
+      if (saleTotal === 0) break
       await prisma.sale.create({
         data: {
-          tenantId, cashierId, total,
-          paymentMode: payModes[Math.floor(Math.random() * payModes.length)],
-          clientType: 'retail',
-          createdAt: new Date(now - Math.floor(Math.random() * 30) * 86400000),
-          items: { create: [{ productId: prod.id, qty, unitPrice: prod.sellPrice, total }] },
+          tenantId, cashierId, total: saleTotal,
+          paymentMode: pick(payModes),
+          clientType: tier === 'large' ? 'wholesale' : tier === 'medium' ? 'semi' : 'retail',
+          createdAt: new Date(Date.UTC(m.year, m.month, 1 + Math.floor(rand() * 27), 8 + Math.floor(rand() * 11), Math.floor(rand() * 60))),
+          items: { create: items },
         },
-      }).then(() => { created++ }).catch(e => console.warn('sale', e.message))
+      }).catch(e => console.warn('sale', e.message))
+      monthCA += saleTotal; n++
     }
-    console.log('✅ Ventes créées:', created)
-  } else {
-    console.log('ℹ️  Ventes déjà présentes:', existingSales)
+    totalSales += n
+    console.log(`   ${m.ym}: ${n} ventes, CA ${monthCA.toLocaleString('fr-FR')} XOF`)
   }
+  console.log('✅ Ventes recréées:', totalSales)
 
-  // ── Dépenses (amountHT + amountTTC + mode requis) ──
-  const expenses = [
-    { id: 'demo2-exp-1', label: 'Loyer boutique',          category: 'Loyer',      amountHT: 200000, vat: 0,  mode: 'Virement', status: 'PAYÉ',       date: new Date('2026-05-01') },
-    { id: 'demo2-exp-2', label: 'Électricité (CIE)',       category: 'Énergie',    amountHT: 38000,  vat: 18, mode: 'Espèces',  status: 'PAYÉ',       date: new Date('2026-05-06') },
-    { id: 'demo2-exp-3', label: 'Transport marchandises',  category: 'Transport',  amountHT: 30000,  vat: 0,  mode: 'Espèces',  status: 'EN ATTENTE', date: new Date('2026-05-12') },
-    { id: 'demo2-exp-4', label: 'Fournitures bureau',      category: 'Fournitures',amountHT: 15000,  vat: 18, mode: 'Espèces',  status: 'PAYÉ',       date: new Date('2026-05-15') },
-  ]
-  for (const e of expenses) {
-    const amountTTC = Math.round(e.amountHT * (1 + e.vat / 100))
-    await prisma.expense.upsert({ where: { id: e.id }, update: {}, create: { tenantId, amountTTC, ...e } })
-      .catch(er => console.warn('expense', e.label, er.message))
+  // ── Dépenses : delete + recreate cohérent sur les 3 mois (ids stables, idempotent) ──
+  await prisma.expense.deleteMany({ where: { tenantId } })
+  let expCount = 0
+  for (const m of DEMO_MONTHS) {
+    for (const e of DEMO_MONTHLY_EXPENSES) {
+      const amountTTC = Math.round(e.amountHT * (1 + e.vat / 100))
+      await prisma.expense.create({
+        data: {
+          id: `demo-exp-${tenantId}-${m.ym}-${e.slug}`,
+          tenantId, date: new Date(Date.UTC(m.year, m.month, 5)),
+          label: e.label, category: e.category, amountHT: e.amountHT, vat: e.vat,
+          amountTTC, mode: e.mode, status: e.status, recurrent: e.recurrent,
+        },
+      }).catch(er => console.warn('expense', e.label, er.message))
+      expCount++
+    }
   }
-  console.log('✅ Dépenses upsert:', expenses.length)
+  console.log('✅ Dépenses recréées:', expCount, `(${DEMO_MONTHLY_EXPENSES.reduce((s, e) => s + e.amountHT, 0).toLocaleString('fr-FR')} XOF HT / mois)`)
 
   console.log('🎉 Seed démo terminé pour', TARGET_EMAIL)
 }
