@@ -71,12 +71,7 @@ export default function Reports() {
   const [customTo,   setCustomTo]   = useState('')
   // Filtres additionnels (locaux) : catégorie produit (Ventes/Stock) + employé (Paie).
   const [filterCat,  setFilterCat]  = useState('')
-  const [filterEmp,  setFilterEmp]  = useState('')
-  const [employees,  setEmployees]  = useState<any[]>([])
   const i = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
-
-  // Liste employés (dropdown filtre Paie) — chargée une fois.
-  useEffect(() => { employeesApi.list().then((d: any[]) => Array.isArray(d) && setEmployees(d)).catch(() => {}) }, [])
 
   // Dropdown « Exporter » : état ouvert/fermé + fermeture au clic extérieur.
   const [exportOpen, setExportOpen] = useState(false)
@@ -124,7 +119,7 @@ export default function Reports() {
       const sheets = buildReportSheets({
         lang, currency, range,
         sales: sales ?? [], expenses: expenses ?? [], products: products ?? [], employees: emps ?? [],
-        filterCat, filterEmp,
+        filterCat,
       })
       const fromStr = new Date(range.from).toISOString().slice(0, 10)
       const toStr = new Date(range.to).toISOString().slice(0, 10)
@@ -315,20 +310,15 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Filtres additionnels — catégorie (Ventes/Stock) + employé (Paie) ; portée : Top produits + exports */}
+      {/* Filtre catégorie produit ; portée : Top produits + feuilles Ventes/Stock de l'export */}
       <div className="flex flex-wrap gap-2 items-center">
         <select className="input" style={{ width: 'auto', minWidth: 170, height: 36, fontSize: 12 }}
           value={filterCat} onChange={e => setFilterCat(e.target.value)} aria-label={i('Filtre catégorie', 'Category filter', 'Filtro categoría', 'Filtro categoria')}>
           <option value="">{i('Toutes les catégories', 'All categories', 'Todas las categorías', 'Tutte le categorie')}</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select className="input" style={{ width: 'auto', minWidth: 170, height: 36, fontSize: 12 }}
-          value={filterEmp} onChange={e => setFilterEmp(e.target.value)} aria-label={i('Filtre employé', 'Employee filter', 'Filtro empleado', 'Filtro dipendente')}>
-          <option value="">{i('Tous les employés', 'All employees', 'Todos los empleados', 'Tutti i dipendenti')}</option>
-          {employees.map(e => <option key={String(e.id)} value={String(e.id)}>{e.name}</option>)}
-        </select>
-        {(filterCat || filterEmp) && (
-          <button className="btn btn-ghost btn-sm" onClick={() => { setFilterCat(''); setFilterEmp('') }}>
+        {filterCat && (
+          <button className="btn btn-ghost btn-sm" onClick={() => setFilterCat('')}>
             {i('Réinitialiser', 'Reset', 'Reiniciar', 'Reimposta')}
           </button>
         )}

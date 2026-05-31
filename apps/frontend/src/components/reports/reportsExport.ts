@@ -13,13 +13,12 @@ export interface ReportExportInput {
   products: any[]
   employees: any[]
   filterCat: string  // '' = toutes catégories
-  filterEmp: string  // '' = tous employés (sinon id employé)
 }
 
 const localeOf = (lang: string) => lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
 
 export function buildReportSheets(input: ReportExportInput): XlsxSheet[] {
-  const { lang, currency, range, sales, expenses, products, employees, filterCat, filterEmp } = input
+  const { lang, currency, range, sales, expenses, products, employees, filterCat } = input
   const i = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const loc = localeOf(lang)
   const cv = (xof: number) => Math.round(convertFromXOF(xof ?? 0, currency) * 100) / 100 // XOF → devise, 2 déc.
@@ -74,14 +73,13 @@ export function buildReportSheets(input: ReportExportInput): XlsxSheet[] {
     ]),
   }
 
-  // ── Paie (filtrée employé) ──
-  const empF = filterEmp ? employees.filter(e => String(e.id) === filterEmp) : employees
+  // ── Paie (tous les employés) ──
   const paie: XlsxSheet = {
     name: i('Paie', 'Payroll', 'Nómina', 'Paghe'),
     headers: [i('Employé', 'Employee', 'Empleado', 'Dipendente'), i('Rôle', 'Role', 'Rol', 'Ruolo'),
       i('Département', 'Department', 'Departamento', 'Reparto'),
       cur(i('Salaire mensuel', 'Monthly salary', 'Salario mensual', 'Stipendio mensile'))],
-    rows: empF.map(e => [e.name ?? '', e.role ?? '', e.department ?? e.dept ?? '', cv(e.salary ?? 0)]),
+    rows: employees.map(e => [e.name ?? '', e.role ?? '', e.department ?? e.dept ?? '', cv(e.salary ?? 0)]),
   }
 
   return [ventes, stock, depenses, paie]
