@@ -10,7 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import * as Haptics from 'expo-haptics'
-import { salesApi, analyticsApi } from '@/services/api'
+import { salesApi, analyticsApi, apiErrorMessage } from '@/services/api'
+import type { SaleRecord, DashboardTopProduct } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { Spacing, BorderRadius, FontSize, Shadow, ThemeColors } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
@@ -31,11 +32,6 @@ const WEEKDAYS: Record<string, string[]> = {
   it: ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'],
 }
 
-interface Sale {
-  id: string; total: number; paymentMode: string
-  createdAt: string; items?: any[]
-}
-
 export default function ReportsScreen() {
   const insets = useSafeAreaInsets()
   const { C } = useTheme()
@@ -44,18 +40,15 @@ export default function ReportsScreen() {
   const { fmt } = useFmt()
   const [period, setPeriod] = useState<Period>('7d')
 
-  const { data: sales = [], isLoading, isError, refetch, isRefetching } = useQuery<Sale[]>({
+  const { data: sales = [], isLoading, isError, refetch, isRefetching } = useQuery<SaleRecord[]>({
     queryKey: ['sales', 'reports'],
-    queryFn: async () => {
-      const r = await salesApi.list({ limit: 500 })
-      return Array.isArray(r) ? r : (r?.data ?? r?.sales ?? [])
-    },
+    queryFn: () => salesApi.list({ limit: 500 }),
     staleTime: 2 * 60 * 1000,
   })
   const { data: dash } = useQuery({
     queryKey: ['dashboard'], queryFn: analyticsApi.dashboard, staleTime: 5 * 60 * 1000,
   })
-  const topProds: any[] = dash?.topProducts ?? []
+  const topProds: DashboardTopProduct[] = dash?.topProducts ?? []
 
   const periodDays = PERIODS.find(p => p.key === period)!.days
   const since = useMemo(() => {
@@ -108,7 +101,7 @@ export default function ReportsScreen() {
     mode === 'card'   ? '💳 ' + i('Carte', 'Card', 'Tarjeta', 'Carta') :
     mode
 
-  const maxTop = Math.max(1, ...topProds.map((p: any) => p.ca ?? 0))
+  const maxTop = Math.max(1, ...topProds.map((p) => p.ca ?? 0))
 
   // Export CSV
   const exportCsv = async () => {
@@ -143,8 +136,8 @@ export default function ReportsScreen() {
         UTI: 'public.comma-separated-values-text',
       })
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
-    } catch (e: any) {
-      Alert.alert(i('Erreur export', 'Export error', 'Error exportación', 'Errore esportazione'), String(e?.message ?? e))
+    } catch (e: unknown) {
+      Alert.alert(i('Erreur export', 'Export error', 'Error exportación', 'Errore esportazione'), apiErrorMessage(e) ?? String(e))
     }
   }
 
@@ -239,7 +232,7 @@ export default function ReportsScreen() {
             <View style={s.section}>
               <Text style={s.sectionTitle}>🏆 {i('Top produits', 'Top products', 'Mejores productos', 'Prodotti top')}</Text>
               <View style={s.card}>
-                {topProds.slice(0, 5).map((p: any, idx: number) => (
+                {topProds.slice(0, 5).map((p, idx: number) => (
                   <View key={idx} style={s.topRow}>
                     <Text style={s.topRank}>{['🥇', '🥈', '🥉', '4️⃣', '5️⃣'][idx]}</Text>
                     <View style={{ flex: 1 }}>

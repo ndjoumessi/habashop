@@ -15,7 +15,7 @@ function TabIcon({ name, focused, label }:{
     <View style={s.item}>
       <View style={focused ? s.iconPillActive : s.iconPill}>
         <Ionicons
-          name={focused ? name : `${name}-outline` as any}
+          name={focused ? name : `${name}-outline` as keyof typeof Ionicons.glyphMap}
           size={22}
           color={focused ? C.primary : C.text3}
         />

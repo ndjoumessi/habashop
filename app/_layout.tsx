@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger'
 import { useEffect } from 'react'
-import { Stack, router } from 'expo-router'
+import { Stack, router, type Href } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as Notifications from 'expo-notifications'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -65,9 +65,10 @@ export default function RootLayout() {
     })
     const sub2 = Notifications.addNotificationResponseReceivedListener(response => {
       // Tap sur une notif → navigue vers l'écran pertinent (route explicite ou par type).
-      const data = response.notification.request.content.data as any
+      const data = response.notification.request.content.data as { route?: string; type?: string }
       if (data?.route) {
-        router.push(data.route)
+        // route arbitraire issue du payload de notif → typée Href pour expo-router.
+        router.push(data.route as Href)
       } else if (data?.type === 'low_stock') {
         router.push('/(app)/(tabs)/stock')
       } else if (data?.type === 'new_sale' || data?.type === 'widget') {

@@ -7,7 +7,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { productsApi } from '@/services/api'
+import { productsApi, apiErrorMessage } from '@/services/api'
+import type { Product } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
@@ -17,7 +18,7 @@ import ErrorState from '@/components/ui/ErrorState'
 type Filter = 'all' | 'low' | 'out'
 
 // Statut de stock d'un produit
-function statusOf(p: any): 'ok' | 'low' | 'out' {
+function statusOf(p: Product): 'ok' | 'low' | 'out' {
   const q = p.stockQty ?? 0
   if (q <= 0) return 'out'
   if (q <= (p.stockMin ?? 0)) return 'low'
@@ -28,7 +29,7 @@ function statusOf(p: any): 'ok' | 'low' | 'out' {
 function ProductRow({
   product, fmt, statusLabel, onPress, C,
 }: {
-  product: any
+  product: Product
   fmt: (n: number) => string
   statusLabel: (s: 'ok' | 'low' | 'out') => string
   onPress: () => void
@@ -78,19 +79,19 @@ export default function StockScreen() {
     : st === 'low' ? i('Stock bas', 'Low stock', 'Stock bajo', 'Scorte basse')
     : i('En stock', 'In stock', 'En stock', 'In stock')
 
-  const { data: products = [], isLoading, isError, refetch, isRefetching } = useQuery<any[]>({
+  const { data: products = [], isLoading, isError, refetch, isRefetching } = useQuery<Product[]>({
     queryKey: ['products'],
     queryFn:  () => productsApi.list(),
     staleTime: 2 * 60 * 1000,
   })
 
-  const active  = useMemo(() => (products ?? []).filter((p: any) => p.isActive !== false), [products])
-  const outCnt  = useMemo(() => active.filter((p: any) => statusOf(p) === 'out').length, [active])
-  const lowCnt  = useMemo(() => active.filter((p: any) => statusOf(p) === 'low').length, [active])
+  const active  = useMemo(() => (products ?? []).filter((p) => p.isActive !== false), [products])
+  const outCnt  = useMemo(() => active.filter((p) => statusOf(p) === 'out').length, [active])
+  const lowCnt  = useMemo(() => active.filter((p) => statusOf(p) === 'low').length, [active])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return active.filter((p: any) => {
+    return active.filter((p) => {
       const st = statusOf(p)
       if (filter === 'low' && st !== 'low') return false
       if (filter === 'out' && st !== 'out') return false
@@ -108,15 +109,15 @@ export default function StockScreen() {
       setEditP(null)
       Alert.alert(i('✅ Stock mis à jour', '✅ Stock updated', '✅ Stock actualizado', '✅ Stock aggiornato'), '')
     },
-    onError: (e: any) => {
+    onError: (e: unknown) => {
       Alert.alert(
         i('Erreur', 'Error', 'Error', 'Errore'),
-        e?.response?.data?.error ?? i('Échec de la mise à jour', 'Update failed', 'Error al actualizar', 'Aggiornamento fallito'),
+        apiErrorMessage(e) ?? i('Échec de la mise à jour', 'Update failed', 'Error al actualizar', 'Aggiornamento fallito'),
       )
     },
   })
 
-  const openEdit = (p: any) => { setEditP(p); setNewQty(p.stockQty ?? 0) }
+  const openEdit = (p: Product) => { setEditP(p); setNewQty(p.stockQty ?? 0) }
 
   const StatBox = ({ label, value, color }: { label: string; value: number; color: string }) => (
     <View style={s.statBox}>
@@ -229,14 +230,14 @@ export default function StockScreen() {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(p: any) => p.id}
+          keyExtractor={(p) => p.id}
           contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.sm, paddingBottom: insets.bottom + Spacing.xxxl }}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={C.primary} colors={[C.primary]} />
           }
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={<View style={s.center}><Text style={s.emptyTxt}>{i('Aucun produit', 'No products', 'Sin productos', 'Nessun prodotto')}</Text></View>}
-          renderItem={({ item }: { item: any }) => (
+          renderItem={({ item }: { item: Product }) => (
             <ProductRow product={item} fmt={fmt} statusLabel={statusLabel} onPress={() => openEdit(item)} C={C} />
           )}
         />

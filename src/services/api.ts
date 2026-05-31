@@ -1,5 +1,11 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import * as SecureStore from 'expo-secure-store'
+import type {
+  LoginResponse, MeResponse,
+  Product, ProductUpdate,
+  SalePayload, SaleResponse, SaleRecord,
+  DashboardStats, Customer, TenantUser,
+} from '@/types'
 
 const BASE = process.env.EXPO_PUBLIC_API_URL
   ?? 'https://habashop-production.up.railway.app'
@@ -17,43 +23,58 @@ apiClient.interceptors.request.use(async (config) => {
   return config
 })
 
+// Extrait un message d'erreur lisible d'une exception axios/inconnue (sans `any`).
+// Le backend renvoie typiquement { error: string }.
+export function apiErrorMessage(err: unknown): string | undefined {
+  const ax = err as AxiosError<{ error?: string }>
+  return ax?.response?.data?.error ?? (err instanceof Error ? err.message : undefined)
+}
+
+// Code HTTP d'une erreur axios (ex. 401, 410), sans `any`.
+export function apiErrorStatus(err: unknown): number | undefined {
+  return (err as AxiosError)?.response?.status
+}
+
 export const authApi = {
-  login: (email:string, password:string) =>
-    apiClient.post('/api/auth/login',{email,password}).then(r=>r.data),
-  me: () => apiClient.get('/api/auth/me').then(r=>r.data),
+  login: (email: string, password: string): Promise<LoginResponse> =>
+    apiClient.post<LoginResponse>('/api/auth/login', { email, password }).then(r => r.data),
+  me: (): Promise<MeResponse> =>
+    apiClient.get<MeResponse>('/api/auth/me').then(r => r.data),
 }
 
 export const productsApi = {
-  list: (params?:any) =>
-    apiClient.get('/api/products',{params}).then(r=>r.data),
+  list: (params?: Record<string, string | number>): Promise<Product[]> =>
+    apiClient.get<Product[]>('/api/products', { params }).then(r => r.data),
   // Backend = PUT /api/products/:id (update partiel, renvoie le produit mis à jour)
-  update: (id:string, data:any) =>
-    apiClient.put(`/api/products/${id}`,data).then(r=>r.data),
+  update: (id: string, data: ProductUpdate): Promise<Product> =>
+    apiClient.put<Product>(`/api/products/${id}`, data).then(r => r.data),
 }
 
 export const salesApi = {
-  create: (data:any) =>
-    apiClient.post('/api/sales',data).then(r=>r.data),
-  list: (params?:any) =>
-    apiClient.get('/api/sales',{params}).then(r=>r.data),
+  create: (data: SalePayload): Promise<SaleResponse> =>
+    apiClient.post<SaleResponse>('/api/sales', data).then(r => r.data),
+  list: (params?: Record<string, string | number>): Promise<SaleRecord[]> =>
+    apiClient.get<SaleRecord[]>('/api/sales', { params }).then(r => r.data),
 }
 
 export const analyticsApi = {
   // Endpoint réel du backend (réponse à plat : salesToday, salesMonth,
   // totalProducts, activeEmployees, pendingOrders, topProducts[], stockAlerts[]…)
-  dashboard: () =>
-    apiClient.get('/api/dashboard/stats').then(r=>r.data),
+  dashboard: (): Promise<DashboardStats> =>
+    apiClient.get<DashboardStats>('/api/dashboard/stats').then(r => r.data),
 }
 
 export const customersApi = {
-  list: () => apiClient.get('/api/customers').then(r=>r.data),
+  list: (): Promise<Customer[]> =>
+    apiClient.get<Customer[]>('/api/customers').then(r => r.data),
 }
 
 export const accountApi = {
   // Liste des users du tenant (rôles inclus) → sert à anticiper le scope de suppression.
   // ⚠️ le backend ne filtre pas deletedAt sur cette route → on filtre côté client.
-  tenantUsers: () => apiClient.get('/api/tenant/users').then(r => r.data),
+  tenantUsers: (): Promise<TenantUser[]> =>
+    apiClient.get<TenantUser[]>('/api/tenant/users').then(r => r.data),
   // Suppression de compte (DELETE avec body via axios `data`).
-  deleteMe: (body: { confirmation: string; password: string }) =>
+  deleteMe: (body: { confirmation: string; password: string }): Promise<{ success?: boolean }> =>
     apiClient.delete('/api/account/me', { data: body }).then(r => r.data),
 }

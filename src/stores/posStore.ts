@@ -1,7 +1,9 @@
 import { create } from 'zustand'
+import type { PriceTier, Product } from '@/types'
 
-// Palier de prix par quantité (forme alignée sur le backend : utils/pricing.ts).
-export interface PriceTier { minQty: number; price: number; label?: string }
+export type { PriceTier }
+
+export type PaymentMode = 'cash' | 'wave' | 'orange' | 'card'
 
 export interface CartItem {
   productId: string; name: string
@@ -23,9 +25,9 @@ export interface CartItem {
 
 interface PosState {
   cart: CartItem[]; discount: number
-  paymentMode: 'cash'|'wave'|'orange'|'card'
+  paymentMode: PaymentMode
   cashGiven: number; sessionTx: number; sessionCA: number
-  addItem: (p: any) => void
+  addItem: (p: Product) => void
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clearCart: () => void

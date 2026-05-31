@@ -8,7 +8,8 @@ import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { productsApi, salesApi } from '@/services/api'
+import { productsApi, salesApi, apiErrorMessage } from '@/services/api'
+import type { Product, SaleResponse } from '@/types'
 import { usePosStore } from '@/stores/posStore'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import {
@@ -54,23 +55,23 @@ export default function POSScreen() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
 
-  const { data: products = [], isLoading, isError, refetch } = useQuery<any[]>({
+  const { data: products = [], isLoading, isError, refetch } = useQuery<Product[]>({
     queryKey: ['products'],
     queryFn:  () => productsApi.list(),
     staleTime: 2 * 60 * 1000,
   })
 
   const active = useMemo(
-    () => (products ?? []).filter((p: any) => p.isActive !== false),
+    () => (products ?? []).filter((p) => p.isActive !== false),
     [products],
   )
   const categories = useMemo(
-    () => Array.from(new Set(active.map((p: any) => p.category).filter(Boolean))) as string[],
+    () => Array.from(new Set(active.map((p) => p.category).filter(Boolean))) as string[],
     [active],
   )
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return active.filter((p: any) =>
+    return active.filter((p) =>
       (activeCat === 'all' || p.category === activeCat) &&
       (!q || p.name?.toLowerCase().includes(q) || p.barcode?.includes(q)),
     )
@@ -81,7 +82,7 @@ export default function POSScreen() {
   const subAmt     = subtotal()
   const discAmt    = subAmt - totalAmt
 
-  const onAdd = (p: any) => {
+  const onAdd = (p: Product) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {})
     addItem(p)
   }
@@ -94,7 +95,7 @@ export default function POSScreen() {
       paymentMode,
       ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
     }),
-    onSuccess: (data: any) => {
+    onSuccess: (data: SaleResponse) => {
       // Capture la vente avant de vider le panier (pour le ticket WhatsApp)
       const saleItems = [...cart]
       const saleTotal = totalAmt
@@ -128,10 +129,10 @@ export default function POSScreen() {
         ],
       )
     },
-    onError: (e: any) => {
+    onError: (e: unknown) => {
       Alert.alert(
         i('Erreur', 'Error', 'Error', 'Errore'),
-        e?.response?.data?.error ?? i('Échec de l\'enregistrement', 'Failed to record sale', 'Error al registrar', 'Registrazione fallita'),
+        apiErrorMessage(e) ?? i('Échec de l\'enregistrement', 'Failed to record sale', 'Error al registrar', 'Registrazione fallita'),
       )
     },
   })
@@ -183,8 +184,8 @@ export default function POSScreen() {
   // ── Scan code-barres : ajoute le produit trouvé au panier ──
   const handleBarcodeScan = (barcode: string) => {
     setShowScanner(false)
-    const product = (products as any[]).find(
-      (p: any) => p.barcode === barcode || p.ean === barcode || p.id === barcode,
+    const product = products.find(
+      (p) => p.barcode === barcode || p.ean === barcode || p.id === barcode,
     )
     if (product) {
       addItem(product)

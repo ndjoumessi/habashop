@@ -11,7 +11,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useTheme } from '@/stores/appStore'
 import { Spacing, BorderRadius, FontSize, withAlpha, ThemeColors } from '@/constants/theme'
-import { accountApi } from '@/services/api'
+import { accountApi, apiErrorStatus } from '@/services/api'
+import type { TenantUser } from '@/types'
 import { purgeLocalAccountData } from '@/services/accountCleanup'
 
 type Scope = 'tenant' | 'user'
@@ -41,7 +42,7 @@ export default function DeleteAccountScreen() {
       try {
         const users = await accountApi.tenantUsers()
         const others = (Array.isArray(users) ? users : []).filter(
-          (u: any) => u?.role === 'ADMIN' && !u?.deletedAt && u?.id !== user?.id,
+          (u: TenantUser) => u?.role === 'ADMIN' && !u?.deletedAt && u?.id !== user?.id,
         ).length
         if (mounted) setScope(others === 0 ? 'tenant' : 'user')
       } catch (e) {
@@ -113,8 +114,8 @@ export default function DeleteAccountScreen() {
     try {
       await accountApi.deleteMe({ confirmation: 'SUPPRIMER', password })
       await afterSuccess()
-    } catch (e: any) {
-      const status = e?.response?.status
+    } catch (e: unknown) {
+      const status = apiErrorStatus(e)
       if (status === 410) { await afterSuccess(); return } // déjà supprimé = succès silencieux
       setSubmitting(false)
       if (status === 401) {

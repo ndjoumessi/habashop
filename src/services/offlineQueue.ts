@@ -1,12 +1,13 @@
 import { logger } from '@/lib/logger'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import type { SalePayload } from '@/types'
 
 const QUEUE_KEY = 'habashop_offline_queue'
 
 export interface OfflineAction {
   id:        string
   type:      'SALE' | 'STOCK_MOVE'
-  payload:   any
+  payload:   SalePayload
   createdAt: string
   synced:    boolean
 }
@@ -14,7 +15,7 @@ export interface OfflineAction {
 // Ajoute une action à la file
 export async function enqueueAction(
   type: OfflineAction['type'],
-  payload: any,
+  payload: SalePayload,
 ): Promise<void> {
   try {
     const queue = await getQueue()

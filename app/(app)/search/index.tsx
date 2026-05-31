@@ -6,6 +6,7 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuery } from '@tanstack/react-query'
 import { productsApi, customersApi } from '@/services/api'
+import type { Product, Customer } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { Spacing, BorderRadius, FontSize, withAlpha, ThemeColors } from '@/constants/theme'
 
@@ -16,7 +17,7 @@ interface SearchResult {
   title: string
   subtitle: string
   emoji: string
-  data: any
+  data: Product | Customer
 }
 
 export default function SearchScreen() {
@@ -30,12 +31,12 @@ export default function SearchScreen() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
 
-  const { data: products = [] } = useQuery<any[]>({
+  const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['search-products'],
-    queryFn: () => productsApi.list({ active: true }),
+    queryFn: () => productsApi.list(),
     staleTime: 10 * 60 * 1000,
   })
-  const { data: customers = [] } = useQuery<any[]>({
+  const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['search-customers'],
     queryFn: () => customersApi.list(),
     staleTime: 10 * 60 * 1000,

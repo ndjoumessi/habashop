@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { View, Text, Modal, ScrollView, Pressable, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import type { CartItem } from '@/stores/posStore'
+import type { CartItem, PaymentMode } from '@/stores/posStore'
 import { useTheme } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
 import { PAY_MODES } from './payModes'
@@ -62,7 +62,7 @@ interface POSCartProps {
   total:            number
   onUpdateQty:      (id: string, qty: number) => void
   onRemove:         (id: string) => void
-  onSetPaymentMode: (mode: any) => void
+  onSetPaymentMode: (mode: PaymentMode) => void
   onSetCashGiven:   (n: number) => void
   onClearCart:      () => void
   fmt:              (n: number) => string

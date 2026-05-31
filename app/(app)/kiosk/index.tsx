@@ -6,7 +6,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import * as Haptics from 'expo-haptics'
-import { productsApi, salesApi } from '@/services/api'
+import { productsApi, salesApi, apiErrorMessage } from '@/services/api'
+import type { Product } from '@/types'
 import { usePosStore } from '@/stores/posStore'
 import { useI18n, useFmt, useAppStore } from '@/stores/appStore'
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
@@ -30,13 +31,13 @@ export default function KioskScreen() {
   const [tapCount, setTapCount]         = useState(0)
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { data: products = [] } = useQuery<any[]>({
+  const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['products'],
     queryFn:  () => productsApi.list(),
     staleTime: 2 * 60 * 1000,
   })
 
-  const filtered = (products as any[]).filter(p =>
+  const filtered = products.filter(p =>
     p.isActive !== false &&
     (!search || p.name?.toLowerCase().includes(search.toLowerCase())),
   )
@@ -56,10 +57,10 @@ export default function KioskScreen() {
         fmt(saleTotal),
       )
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       Alert.alert(
         i('Erreur', 'Error', 'Error', 'Errore'),
-        err?.response?.data?.error ?? i("Impossible d'enregistrer la vente", 'Failed to record sale', 'Error al registrar', 'Impossibile registrare'),
+        apiErrorMessage(err) ?? i("Impossible d'enregistrer la vente", 'Failed to record sale', 'Error al registrar', 'Impossibile registrare'),
       )
     },
   })

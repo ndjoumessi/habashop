@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import type { CartItem } from '@/stores/posStore'
+import type { Product } from '@/types'
 import { useTheme } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
@@ -10,7 +11,7 @@ import ErrorState from '@/components/ui/ErrorState'
 function ProductCard({
   product, qtyInCart, fmt, onPress,
 }: {
-  product: any; qtyInCart: number
+  product: Product; qtyInCart: number
   fmt: (n: number) => string
   onPress: () => void
 }) {
@@ -45,9 +46,9 @@ function ProductCard({
 }
 
 interface POSProductGridProps {
-  filtered:  any[]
+  filtered:  Product[]
   cart:      CartItem[]
-  onAdd:     (product: any) => void
+  onAdd:     (product: Product) => void
   fmt:       (n: number) => string
   i:         (fr: string, en: string, es: string, it: string) => string
   isLoading: boolean
@@ -71,7 +72,7 @@ export default function POSProductGrid({
   return (
     <FlatList
       data={filtered}
-      keyExtractor={(p: any) => p.id}
+      keyExtractor={(p) => p.id}
       numColumns={3}
       columnWrapperStyle={{ gap: Spacing.sm, paddingHorizontal: Spacing.lg }}
       contentContainerStyle={{ gap: Spacing.sm, paddingTop: Spacing.sm, paddingBottom: cart.length > 0 ? 110 : Spacing.xl }}
@@ -81,7 +82,7 @@ export default function POSProductGrid({
           <Text style={s.emptyTxt}>{i('Aucun produit', 'No products', 'Sin productos', 'Nessun prodotto')}</Text>
         </View>
       }
-      renderItem={({ item }: { item: any }) => (
+      renderItem={({ item }: { item: Product }) => (
         <ProductCard
           product={item}
           qtyInCart={qtyOf(item.id)}

@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { customersApi } from '@/services/api'
+import type { Customer } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow,
@@ -21,7 +22,7 @@ const telHref = (p?: string) => `tel:${(p ?? '').replace(/[^0-9+]/g, '')}`
 const waHref  = (p?: string) => `whatsapp://send?phone=${(p ?? '').replace(/[^0-9]/g, '')}`
 
 // ── Carte client ─────────────────────────────────
-function CustomerCard({ c, fmt, onPress, C }: { c: any; fmt: (n: number) => string; onPress: () => void; C: ThemeColors }) {
+function CustomerCard({ c, fmt, onPress, C }: { c: Customer; fmt: (n: number) => string; onPress: () => void; C: ThemeColors }) {
   const s = useMemo(() => makeStyles(C), [C])
   const TYPE_COLOR: Record<string, string> = {
     'Grossiste': C.primary,
@@ -76,19 +77,19 @@ export default function CustomersScreen() {
   const [search, setSearch] = useState('')
   const [sel, setSel] = useState<any | null>(null)
 
-  const { data: customers = [], isLoading, isError, refetch, isRefetching } = useQuery<any[]>({
+  const { data: customers = [], isLoading, isError, refetch, isRefetching } = useQuery<Customer[]>({
     queryKey: ['customers'],
     queryFn:  () => customersApi.list(),
     staleTime: 2 * 60 * 1000,
   })
 
-  const grossistes = useMemo(() => customers.filter((c: any) => c.type === 'Grossiste').length, [customers])
-  const fideles    = useMemo(() => customers.filter((c: any) => (c.loyaltyPoints ?? 0) > 0).length, [customers])
+  const grossistes = useMemo(() => customers.filter((c) => c.type === 'Grossiste').length, [customers])
+  const fideles    = useMemo(() => customers.filter((c) => (c.loyaltyPoints ?? 0) > 0).length, [customers])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return customers
-    return customers.filter((c: any) =>
+    return customers.filter((c) =>
       c.name?.toLowerCase().includes(q) || c.phone?.includes(q) || c.email?.toLowerCase().includes(q),
     )
   }, [customers, search])
@@ -160,7 +161,7 @@ export default function CustomersScreen() {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(c: any) => c.id}
+          keyExtractor={(c) => c.id}
           contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.sm, paddingBottom: insets.bottom + Spacing.xxxl, flexGrow: 1 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={C.primary} colors={[C.primary]} />}
           keyboardShouldPersistTaps="handled"
@@ -171,7 +172,7 @@ export default function CustomersScreen() {
               <Text style={s.emptyTxt}>{i('Ajoutez vos clients depuis le web ou la caisse.', 'Add customers from the web or the register.', 'Agregue clientes desde la web o la caja.', 'Aggiungi clienti dal web o dalla cassa.')}</Text>
             </View>
           }
-          renderItem={({ item }: { item: any }) => (
+          renderItem={({ item }: { item: Customer }) => (
             <CustomerCard c={item} fmt={fmt} onPress={() => setSel(item)} C={C} />
           )}
         />

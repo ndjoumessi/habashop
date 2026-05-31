@@ -7,7 +7,8 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useTheme } from '@/stores/appStore'
-import { authApi } from '@/services/api'
+import { authApi, apiErrorMessage } from '@/services/api'
+import type { User, Tenant } from '@/types'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
 import AccessibleButton from '@/components/ui/AccessibleButton'
 import {
@@ -39,7 +40,7 @@ export default function LoginScreen() {
   const [biometricEnabled,   setBiometricEnabled]   = useState(false)
   const [biometricType,      setBiometricType]      = useState<BiometricType>('unknown')
   const [showEnableBiometric, setShowEnableBiometric] = useState(false)
-  const [pendingAuth, setPendingAuth] = useState<{ token: string; user: any; tenant: any; email: string; password: string } | null>(null)
+  const [pendingAuth, setPendingAuth] = useState<{ token: string; user: User; tenant: Tenant; email: string; password: string } | null>(null)
   const [usePassword, setUsePassword] = useState(false) // bascule "utiliser le mot de passe" quand biométrie active
   const biometricTriggered = useRef(false)              // évite le double déclenchement (StrictMode / remount)
 
@@ -110,10 +111,10 @@ export default function LoginScreen() {
         return
       }
       await setAuth(data.token, data.user, data.tenant)
-    } catch (err: any) {
+    } catch (err: unknown) {
       Alert.alert(
         i('Connexion échouée','Login failed','Error de acceso','Accesso fallito'),
-        err?.response?.data?.error ??
+        apiErrorMessage(err) ??
           i('Email ou mot de passe incorrect.',
             'Invalid email or password.',
             'Email o contraseña incorrectos.',

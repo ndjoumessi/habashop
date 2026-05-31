@@ -310,7 +310,7 @@ export default function DashboardScreen() {
                     'Alertas stock','Avvisi stock')}
             </Text>
             <View style={s.alertsCard}>
-              {alerts.slice(0,3).map((a: any, idx: number) => (
+              {alerts.slice(0,3).map((a, idx: number) => (
                 <View
                   key={idx}
                   style={[
@@ -341,7 +341,7 @@ export default function DashboardScreen() {
                     'Mejores productos','Prodotti top')}
             </Text>
             <View style={s.topCard}>
-              {topProds.slice(0,5).map((p: any, idx: number) => (
+              {topProds.slice(0,5).map((p, idx: number) => (
                 <View
                   key={idx}
                   style={[

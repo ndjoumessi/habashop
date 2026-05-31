@@ -8,6 +8,7 @@ import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { salesApi } from '@/services/api'
+import type { SaleRecord } from '@/types'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { sendWhatsAppTicket } from '@/services/whatsappTicket'
@@ -21,9 +22,6 @@ const PERIODS: { key: Period; days: number; fr: string; en: string; es: string; 
   { key: '30d',   days: 30, fr: '30 jours',    en: '30 days', es: '30 días', it: '30 giorni'},
 ]
 const PAY_ICON: Record<string, string> = { cash: '💵', wave: '🌊', orange: '🟠', card: '💳' }
-
-interface SaleItem { id: string; productId: string; qty: number; unitPrice: number; total: number; product?: { name?: string; emoji?: string } }
-interface Sale { id: string; total: number; paymentMode: string; discountAmount?: number; createdAt: string; items?: SaleItem[] }
 
 function fmtDateTime(iso: string): string {
   const d = new Date(iso)
@@ -40,14 +38,11 @@ export default function SalesScreen() {
   const { fmt, currency } = useFmt()
   const { tenant } = useAuthStore()
   const [period, setPeriod] = useState<Period>('7d')
-  const [sel, setSel] = useState<Sale | null>(null)
+  const [sel, setSel] = useState<SaleRecord | null>(null)
 
-  const { data: sales = [], isLoading, isError, refetch, isRefetching } = useQuery<Sale[]>({
+  const { data: sales = [], isLoading, isError, refetch, isRefetching } = useQuery<SaleRecord[]>({
     queryKey: ['sales', 'history'],
-    queryFn: async () => {
-      const r = await salesApi.list({ limit: 500 })
-      return Array.isArray(r) ? r : (r?.data ?? r?.sales ?? [])
-    },
+    queryFn: () => salesApi.list({ limit: 500 }),
     staleTime: 2 * 60 * 1000,
   })
 
@@ -64,7 +59,7 @@ export default function SalesScreen() {
   const tx = filtered.length
   const avg = tx > 0 ? ca / tx : 0
 
-  const resendWhatsApp = async (sale: Sale) => {
+  const resendWhatsApp = async (sale: SaleRecord) => {
     const items = (sale.items ?? []).map(it => ({
       productId: it.productId,
       name: it.product?.name ?? '—',
