@@ -321,7 +321,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
               >
                 <div style={{
                   width:34, height:34, borderRadius:10,
-                  background:'rgba(255,255,255,.04)',
+                  background:'var(--bg3)',
                   display:'flex', alignItems:'center',
                   justifyContent:'center', color:k.color,
                   flexShrink:0,

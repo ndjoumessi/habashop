@@ -59,7 +59,7 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
                   { label: 'CNSS (8%)', value: fmt(cnss), color:'var(--danger)', sign:'−' },
                   { label: 'IR (5%)',   value: fmt(ir),   color:'var(--acc)',    sign:'−' },
                 ].map((row, i) => (
-                  <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'4px 0', borderBottom:'1px solid rgba(255,255,255,.04)' }}>
+                  <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'4px 0', borderBottom:'1px solid var(--border)' }}>
                     <span style={{ color:'var(--text3)' }}>{row.label}</span>
                     <span style={{ color:row.color, fontFamily:'var(--mono)', fontWeight:600 }}>{row.sign} {row.value}</span>
                   </div>
