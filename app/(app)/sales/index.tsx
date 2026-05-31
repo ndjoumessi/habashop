@@ -70,7 +70,7 @@ export default function SalesScreen() {
     }))
     const ok = await sendWhatsAppTicket({
       items, total: sale.total ?? 0, paymentMode: sale.paymentMode,
-      saleId: sale.id, shopName: tenant?.name ?? 'HabaShop', currency, lang, fmt,
+      saleId: sale.id, shopName: tenant?.name ?? 'HabaShop', currency, lang, fmt, vatRate: tenant?.vatRate,
     })
     if (!ok) {
       Alert.alert(i('WhatsApp indisponible', 'WhatsApp unavailable', 'WhatsApp no disponible', 'WhatsApp non disponibile'), '')

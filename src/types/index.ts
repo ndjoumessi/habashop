@@ -24,6 +24,8 @@ export interface Tenant {
   status: string
   country?: string
   vatRate?: number
+  posVatIncluded?: boolean
+  priceMode?: string
   [key: string]: unknown
 }
 

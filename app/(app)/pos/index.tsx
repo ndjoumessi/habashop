@@ -133,7 +133,7 @@ export default function POSScreen() {
                 items: saleItems, total: saleTotal, paymentMode: saleMode,
                 saleId: data?.id ?? Date.now().toString(),
                 shopName: tenant?.name ?? 'HabaShop',
-                currency, lang, fmt,
+                currency, lang, fmt, vatRate: tenant?.vatRate,
               })
               if (!ok) {
                 Alert.alert(i('WhatsApp indisponible', 'WhatsApp unavailable', 'WhatsApp no disponible', 'WhatsApp non disponibile'), '')
@@ -343,6 +343,7 @@ export default function POSScreen() {
         customer={customer}
         onOpenCustomer={() => setShowCustomerPicker(true)}
         onClearCustomer={() => setCustomer(null)}
+        vatRate={tenant?.vatRate}
         fmt={fmt}
         i={i}
       />
@@ -362,6 +363,7 @@ export default function POSScreen() {
         cart={cart}
         total={totalAmt}
         paymentMode={paymentMode}
+        vatRate={tenant?.vatRate}
         fmt={fmt}
         i={i}
       />

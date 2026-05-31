@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { View, Text, Modal, ScrollView, Pressable, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { vatBreakdown } from '@/stores/posStore'
 import type { CartItem, PaymentMode } from '@/stores/posStore'
 import type { Customer } from '@/types'
 import { useTheme, useFmt } from '@/stores/appStore'
@@ -70,6 +71,7 @@ interface POSCartProps {
   customer?:        Customer | null
   onOpenCustomer:   () => void
   onClearCustomer:  () => void
+  vatRate?:         number
   fmt:              (n: number) => string
   i:                (fr: string, en: string, es: string, it: string) => string
 }
@@ -77,7 +79,7 @@ interface POSCartProps {
 export default function POSCart({
   visible, onClose, onCheckout, cart, paymentMode, cashGiven, subtotal, total,
   onUpdateQty, onRemove, onSetPaymentMode, onSetCashGiven, onClearCart,
-  customer, onOpenCustomer, onClearCustomer, fmt, i,
+  customer, onOpenCustomer, onClearCustomer, vatRate, fmt, i,
 }: POSCartProps) {
   const { C } = useTheme()
   const { currency, rates } = useFmt()
@@ -85,6 +87,7 @@ export default function POSCart({
   const insets = useSafeAreaInsets()
   const totalQty = cart.reduce((n, c) => n + c.quantity, 0)
   const discAmt = subtotal - total
+  const vat = vatBreakdown(total, vatRate)
   // `cashGiven` est saisi dans la devise d'AFFICHAGE → on le ramène en XOF de base pour
   // comparer/monnaie (total est en XOF). En XOF/XAF la conversion est l'identité.
   const cashGivenXOF = convertToXOF(cashGiven, currency, rates)
@@ -163,8 +166,20 @@ export default function POSCart({
                 <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(discAmt)}</Text>
               </View>
             )}
+            {vat.rate > 0 && (
+              <>
+                <View style={s.recapRow}>
+                  <Text style={s.recapLabel}>{i('Total HT', 'Net (excl. tax)', 'Total sin IVA', 'Totale netto')}</Text>
+                  <Text style={s.recapVal}>{fmt(vat.ht)}</Text>
+                </View>
+                <View style={s.recapRow}>
+                  <Text style={s.recapLabel}>{i('TVA', 'VAT', 'IVA', 'IVA')} {vat.rate}%</Text>
+                  <Text style={s.recapVal}>{fmt(vat.tva)}</Text>
+                </View>
+              </>
+            )}
             <View style={[s.recapRow, s.recapTotal]}>
-              <Text style={s.recapTotalLabel}>Total</Text>
+              <Text style={s.recapTotalLabel}>Total{vat.rate > 0 ? ' ' + i('TTC', 'incl. tax', 'con IVA', 'IVA incl.') : ''}</Text>
               <Text style={s.recapTotalVal}>{fmt(total)}</Text>
             </View>
 

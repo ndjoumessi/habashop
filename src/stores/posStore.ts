@@ -60,6 +60,16 @@ export function resolveLinePrice(
   return applied ? { price: applied.price, tierLabel: applied.label } : { price: basePrice }
 }
 
+// Ventile un total TTC en HT + TVA selon un taux (%). Les prix POS sont TTC (posVatIncluded) :
+// la TVA n'est PAS stockée côté backend → calcul d'affichage/ticket, miroir du web
+// (totalHT = total / (1 + taux), tva = total − totalHT). Taux ≤ 0 → pas de TVA.
+export function vatBreakdown(totalTTC: number, ratePct?: number): { ht: number; tva: number; rate: number } {
+  const rate = ratePct && ratePct > 0 ? ratePct : 0
+  if (!rate) return { ht: totalTTC, tva: 0, rate: 0 }
+  const ht = totalTTC / (1 + rate / 100)
+  return { ht, tva: totalTTC - ht, rate }
+}
+
 // Recalcule les champs prix d'une ligne pour une nouvelle quantité (immutable).
 function repriceLine(item: CartItem, qty: number): CartItem {
   const base = item.basePrice ?? item.price

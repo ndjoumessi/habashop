@@ -1,4 +1,5 @@
 import { Linking } from 'react-native'
+import { vatBreakdown } from '@/stores/posStore'
 import type { CartItem } from '@/stores/posStore'
 
 interface TicketOptions {
@@ -9,6 +10,7 @@ interface TicketOptions {
   shopName:    string
   currency:    string
   lang:        string
+  vatRate?:    number
   fmt:         (n: number) => string
 }
 
@@ -17,6 +19,9 @@ const LABELS: Record<string, Record<string, string>> = {
   title:   { fr: 'Reçu de vente', en: 'Sales receipt', es: 'Recibo de venta', it: 'Ricevuta di vendita' },
   thanks:  { fr: 'Merci pour votre achat !', en: 'Thank you for your purchase!', es: '¡Gracias por su compra!', it: 'Grazie per il suo acquisto!' },
   total:   { fr: 'Total', en: 'Total', es: 'Total', it: 'Totale' },
+  ht:      { fr: 'Total HT', en: 'Net (excl. tax)', es: 'Total sin IVA', it: 'Totale netto' },
+  vat:     { fr: 'TVA', en: 'VAT', es: 'IVA', it: 'IVA' },
+  ttc:     { fr: 'TTC', en: 'incl. tax', es: 'con IVA', it: 'IVA incl.' },
   payment: { fr: 'Paiement', en: 'Payment', es: 'Pago', it: 'Pagamento' },
   cash:    { fr: 'Espèces', en: 'Cash', es: 'Efectivo', it: 'Contanti' },
   ref:     { fr: 'Réf', en: 'Ref', es: 'Ref', it: 'Rif' },
@@ -27,7 +32,8 @@ function t(key: string, lang: string): string {
 }
 
 export function buildWhatsAppTicket(opts: TicketOptions, phone?: string): string {
-  const { items, total, paymentMode, saleId, shopName, lang, fmt } = opts
+  const { items, total, paymentMode, saleId, shopName, lang, vatRate, fmt } = opts
+  const vat = vatBreakdown(total, vatRate)
 
   const date = new Date().toLocaleDateString(
     lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR',
@@ -46,7 +52,11 @@ export function buildWhatsAppTicket(opts: TicketOptions, phone?: string): string
   }
 
   lines.push('─────────────────')
-  lines.push(`💰 *${t('total', lang)}: ${fmt(total)}*`)
+  if (vat.rate > 0) {
+    lines.push(`${t('ht', lang)}: ${fmt(vat.ht)}`)
+    lines.push(`${t('vat', lang)} ${vat.rate}%: ${fmt(vat.tva)}`)
+  }
+  lines.push(`💰 *${t('total', lang)}${vat.rate > 0 ? ' ' + t('ttc', lang) : ''}: ${fmt(total)}*`)
 
   const payLabel =
     paymentMode === 'cash'   ? t('cash', lang) :

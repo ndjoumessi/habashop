@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { View, Text, Modal, Pressable, ActivityIndicator, StyleSheet } from 'react-native'
+import { vatBreakdown } from '@/stores/posStore'
 import type { CartItem } from '@/stores/posStore'
 import { useTheme } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
@@ -13,16 +14,18 @@ interface POSConfirmModalProps {
   cart:        CartItem[]
   total:       number
   paymentMode: string
+  vatRate?:    number
   fmt:         (n: number) => string
   i:           (fr: string, en: string, es: string, it: string) => string
 }
 
 export default function POSConfirmModal({
-  visible, onClose, onConfirm, isSelling, cart, total, paymentMode, fmt, i,
+  visible, onClose, onConfirm, isSelling, cart, total, paymentMode, vatRate, fmt, i,
 }: POSConfirmModalProps) {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
   const totalQty = cart.reduce((n, c) => n + c.quantity, 0)
+  const vat = vatBreakdown(total, vatRate)
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={s.confirmBackdrop}>
@@ -38,8 +41,14 @@ export default function POSConfirmModal({
               {(() => { const m = PAY_MODES.find(x => x.id === paymentMode)!; return `${m.icon} ${i(m.fr, m.en, m.es, m.it)}` })()}
             </Text>
           </View>
+          {vat.rate > 0 && (
+            <View style={s.confirmRow}>
+              <Text style={s.recapLabel}>{i('Dont TVA', 'Incl. VAT', 'IVA incl.', 'IVA incl.')} {vat.rate}%</Text>
+              <Text style={s.recapVal}>{fmt(vat.tva)}</Text>
+            </View>
+          )}
           <View style={[s.confirmRow, s.recapTotal]}>
-            <Text style={s.recapTotalLabel}>Total</Text>
+            <Text style={s.recapTotalLabel}>Total{vat.rate > 0 ? ' ' + i('TTC', 'incl. tax', 'con IVA', 'IVA incl.') : ''}</Text>
             <Text style={s.recapTotalVal}>{fmt(total)}</Text>
           </View>
 

@@ -1,15 +1,8 @@
 import { create } from 'zustand'
 import * as SecureStore from 'expo-secure-store'
 import { useAppStore } from './appStore'
+import type { User, Tenant } from '@/types'
 
-interface User {
-  id: string; name: string; email: string
-  role: string; tenantId: string
-}
-interface Tenant {
-  id: string; name: string; plan: string
-  currency: string; lang: string; status: string
-}
 interface AuthState {
   user: User | null; tenant: Tenant | null
   token: string | null; isLoading: boolean; isLoggedIn: boolean
