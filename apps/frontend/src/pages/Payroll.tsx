@@ -67,8 +67,10 @@ export default function Payroll() {
   }
 
   function markPaid(id: number) {
+    // Date de paiement = aujourd'hui (était figée à '14/05/2026'), localisée selon la langue.
+    const paidAt = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')
     setRecords(prev => prev.map(r =>
-      r.id === id ? { ...r, status: 'PAYÉ', paidAt: '14/05/2026' } : r
+      r.id === id ? { ...r, status: 'PAYÉ', paidAt } : r
     ))
     toast.success(lang === 'en' ? 'Payslip marked as paid' : lang === 'es' ? 'Nómina marcada como pagada' : lang === 'it' ? 'Busta paga segnata come pagata' : 'Bulletin marqué comme payé')
   }
