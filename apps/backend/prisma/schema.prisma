@@ -76,6 +76,8 @@ model Tenant {
   pushTokens     PushToken[]
   goals          Goal[]
   attendance     Attendance[]
+  shifts         Shift[]
+  leaveRequests  LeaveRequest[]
 
   @@index([deletedAt])
 }
@@ -315,6 +317,8 @@ model Employee {
   bonuses       EmployeeBonus[]
   salaryHistory SalaryHistory[]
   attendance    Attendance[]
+  shifts        Shift[]
+  leaveRequests LeaveRequest[]
 
   @@index([tenantId])
   @@index([tenantId, dept])
@@ -375,6 +379,56 @@ model Attendance {
   @@unique([tenantId, employeeId, date])
   @@index([tenantId, date])
   @@index([employeeId])
+}
+
+// Shift planning DATÉ (Phase 5). Le localStorage frontend stockait UN type par (empId, index
+// jour-de-semaine 0-6) → ici on passe à une vraie DATE. `shiftTypeKey` = clé SHIFT_TYPES
+// frontend (morning|afternoon|full|night|rest|leave). `@@unique([tenantId,employeeId,date])`
+// = 1 shift/jour/employé (miroir du modèle localStorage : une seule valeur par case). Les
+// horaires/label/couleur viennent de SHIFT_TYPES côté front, mais on accepte des overrides.
+model Shift {
+  id           String   @id @default(cuid())
+  tenantId     String
+  employeeId   String
+  date         String   // "YYYY-MM-DD"
+  shiftTypeKey String   // morning | afternoon | full | night | rest | leave
+  startTime    String?  // "HH:MM"
+  endTime      String?  // "HH:MM"
+  label        String?
+  color        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, date])
+  @@index([tenantId, date])
+  @@index([employeeId])
+}
+
+// Demande de congé persistée (Phase 5). `status` = String PENDING|APPROVED|REFUSED (validé
+// route → 400). Dates String "YYYY-MM-DD". Approbation transactionnelle (route dédiée) :
+// status→APPROVED + approvedBy/approvedAt + génère Shifts Congé + Attendance LEAVE par jour.
+model LeaveRequest {
+  id         String    @id @default(cuid())
+  tenantId   String
+  employeeId String
+  startDate  String    // "YYYY-MM-DD"
+  endDate    String    // "YYYY-MM-DD"
+  leaveType  String    // ex. "Congé annuel", "Congé maladie"… (valeur libre, comme le front)
+  status     String    @default("PENDING") // PENDING | APPROVED | REFUSED
+  reason     String?
+  approvedBy String?   // userId (JWT) de l'approbateur
+  approvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([tenantId, employeeId])
 }
 
 model Expense {

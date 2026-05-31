@@ -33,6 +33,8 @@ import { aiRoutes }           from './routes/ai'
 import { docsRoutes }         from './routes/docs'
 import { goalsRoutes }        from './routes/goals'
 import { attendanceRoutes }   from './routes/attendance'
+import { shiftRoutes }        from './routes/shifts'
+import { leaveRequestRoutes } from './routes/leaveRequests'
 import { publicRoutes }       from './routes/public'
 import {
   sendTrialReminder7Days,
@@ -213,6 +215,8 @@ async function start() {
   await app.register(employeeRoutes)
   await app.register(hrRoutes)
   await app.register(attendanceRoutes)
+  await app.register(shiftRoutes)
+  await app.register(leaveRequestRoutes)
   await app.register(expenseRoutes)
   await app.register(analyticsRoutes)
   await app.register(reportsRoutes)
