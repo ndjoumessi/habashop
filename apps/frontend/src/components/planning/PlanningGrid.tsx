@@ -1,5 +1,5 @@
 import Skeleton from '@/components/ui/skeleton'
-import { Users, MousePointer2 } from 'lucide-react'
+import { Users, MousePointer2, Lock } from 'lucide-react'
 import { deptLabel } from '@/components/hr/hrShared'
 import { SHIFT_TYPES, shiftLabel, getDayLabels, buildT } from './planningShared'
 import type { ShiftType, PlanningEmployee } from './planningShared'
@@ -10,6 +10,7 @@ interface Props {
   filtered: PlanningEmployee[]
   weekDays: Date[]
   shifts: Record<string,Record<number,ShiftType>>
+  lockedShifts?: Record<string,Record<number,boolean>>  // cellules congé approuvé = non modifiables
   activeShift: ShiftType
   onAssign: (empId: string, di: number) => void
   onOpenModal: (empId: string, di: number, name: string) => void
@@ -17,9 +18,13 @@ interface Props {
 }
 
 export default function PlanningGrid(props: Props) {
-  const { lang, loading, filtered, weekDays, shifts, activeShift, onAssign, onOpenModal, onClearShift } = props
+  const { lang, loading, filtered, weekDays, shifts, lockedShifts, activeShift, onAssign, onOpenModal, onClearShift } = props
   const T = buildT(lang)
   const DAY_LABELS = getDayLabels(lang)
+  const lockedTitle = lang === 'en' ? 'Approved leave — cannot be modified'
+    : lang === 'es' ? 'Permiso aprobado — no modificable'
+    : lang === 'it' ? 'Congedo approvato — non modificabile'
+    : 'Congé approuvé — non modifiable'
 
   return (
     <div style={{
@@ -148,6 +153,7 @@ export default function PlanningGrid(props: Props) {
                 {weekDays.map((_,di)=>{
                   const shiftKey = shifts[emp.id]?.[di]
                   const s = shiftKey ? SHIFT_TYPES[shiftKey] : null
+                  const isLocked = !!lockedShifts?.[emp.id]?.[di]  // congé approuvé → non modifiable
                   const isWeekend = weekDays[di].getDay()===0
                     || weekDays[di].getDay()===6
                   const isToday = weekDays[di].toDateString()===new Date().toDateString()
@@ -160,17 +166,19 @@ export default function PlanningGrid(props: Props) {
                         ? 'rgba(108,71,255,.03)' : 'transparent',
                     }}>
                       <div
+                        title={isLocked ? lockedTitle : undefined}
                         onClick={()=>{
+                          if (isLocked) return  // congé approuvé : assignation bloquée
                           if (!shiftKey) {
                             onOpenModal(emp.id, di, emp.name.split(' ')[0])
                           } else {
                             onAssign(emp.id,di)
                           }
                         }}
-                        onDoubleClick={()=>onClearShift(emp.id,di)}
+                        onDoubleClick={()=>{ if (!isLocked) onClearShift(emp.id,di) }}
                         style={{
                           minHeight:58, borderRadius:10,
-                          cursor:'pointer',
+                          cursor: isLocked ? 'not-allowed' : 'pointer',
                           display:'flex', flexDirection:'column',
                           alignItems:'center', justifyContent:'center',
                           gap:3, padding:'4px 2px',
@@ -184,14 +192,14 @@ export default function PlanningGrid(props: Props) {
                             : isWeekend
                               ? 'rgba(0,0,0,.1)'
                               : 'var(--bg4)',
-                          opacity: isWeekend&&!s ? .5 : 1,
+                          opacity: isLocked ? .6 : (isWeekend&&!s ? .5 : 1),
                           transition:'all .1s',
                           userSelect:'none',
                           position:'relative',
                           overflow:'hidden',
                         }}
                         onMouseEnter={e=>{
-                          if (!s) {
+                          if (!s && !isLocked) {
                             const el=e.currentTarget as HTMLElement
                             el.style.background=`${preview.color}18`
                             el.style.borderColor=`${preview.color}40`
@@ -199,7 +207,7 @@ export default function PlanningGrid(props: Props) {
                           }
                         }}
                         onMouseLeave={e=>{
-                          if (!s) {
+                          if (!s && !isLocked) {
                             const el=e.currentTarget as HTMLElement
                             el.style.background=isWeekend
                               ?'rgba(0,0,0,.1)':'var(--bg4)'
@@ -209,6 +217,11 @@ export default function PlanningGrid(props: Props) {
                           }
                         }}
                       >
+                        {isLocked && (
+                          <span style={{ position:'absolute', top:2, right:3, display:'flex', color:'var(--text3)', opacity:.85, pointerEvents:'none' }}>
+                            <Lock size={9} />
+                          </span>
+                        )}
                         {s ? (
                           <>
                             <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>

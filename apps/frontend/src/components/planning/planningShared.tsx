@@ -34,6 +34,14 @@ export const getDayLabels = (lang: string) => ({
 
 // Stockage local des shifts (clé partagée Planning ⇄ écriture depuis l'approbation de congés HR).
 export const SHIFTS_STORAGE_KEY = 'habashop_shifts'
+// Carte parallèle des cellules VERROUILLÉES (congé approuvé) : `${empId}` → `${dayIndex}` → true.
+// Séparée du store shifts (qui ne stocke qu'une string par case) → non invasif. Posée par
+// writeLeaveShiftsToPlanning, lue par Planning/PlanningGrid. (Sera remplacée en Phase 6 par
+// LeaveRequest.status=APPROVED quand le planning devient API-backed.)
+export const LOCKED_SHIFTS_KEY = 'habashop_shifts_locked'
+export function readLockedShifts(): Record<string, Record<number, boolean>> {
+  try { return JSON.parse(localStorage.getItem(LOCKED_SHIFTS_KEY) ?? 'null') ?? {} } catch { return {} }
+}
 
 // Mappe un intervalle [from,to] (YYYY-MM-DD) sur des INDEX de jour de semaine (Lun=0…Dim=6),
 // modèle de la grille planning. Fonction pure (testable). Borne dure à 366 j (anti-boucle).
@@ -64,6 +72,12 @@ export function writeLeaveShiftsToPlanning(empId: string, from: string, to: stri
     indices.forEach(di => { empShifts[di] = 'leave' as ShiftType })
     raw[empId] = empShifts
     localStorage.setItem(SHIFTS_STORAGE_KEY, JSON.stringify(raw))
+    // Verrouille ces cellules (congé approuvé → non modifiable dans la grille).
+    const locked = readLockedShifts()
+    const empLocked = { ...(locked[empId] ?? {}) }
+    indices.forEach(di => { empLocked[di] = true })
+    locked[empId] = empLocked
+    localStorage.setItem(LOCKED_SHIFTS_KEY, JSON.stringify(locked))
   } catch { /* localStorage indisponible : best-effort, on ignore */ }
 }
 

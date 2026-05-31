@@ -3,7 +3,7 @@ import { useAppStore } from '@/stores/appStore'
 import { employeesApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import {
-  SHIFT_TYPES, shiftLabel, localeFor, buildT, SHIFTS_STORAGE_KEY,
+  SHIFT_TYPES, shiftLabel, localeFor, buildT, SHIFTS_STORAGE_KEY, readLockedShifts,
   type ShiftType, type PlanningEmployee,
 } from '@/components/planning/planningShared'
 import PlanningHeader from '@/components/planning/PlanningHeader'
@@ -21,6 +21,8 @@ export default function Planning() {
   const [shifts, setShifts] = useState<Record<string,Record<number,ShiftType>>>(() => {
     try { return JSON.parse(localStorage.getItem(SHIFTS_STORAGE_KEY) ?? 'null') ?? {} } catch { return {} }
   })
+  // Cellules verrouillées (congé approuvé) — lecture seule au montage (posées par l'approbation HR).
+  const [lockedShifts] = useState(() => readLockedShifts())
   const [filterDept, setFilterDept] = useState('all')
   const [filterStatus, setFilterStatus] = useState<ShiftType|'all'>('all')
   const [planningWeek, setPlanningWeek] = useState(new Date())
@@ -167,6 +169,7 @@ export default function Planning() {
         filtered={filtered}
         weekDays={weekDays}
         shifts={shifts}
+        lockedShifts={lockedShifts}
         activeShift={activeShift}
         onAssign={assignShift}
         onOpenModal={(empId, di, name) => { setModalShift(activeShift); setShiftModal({ empId, di, name }) }}
