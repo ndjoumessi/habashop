@@ -335,23 +335,20 @@ export const useAppStore = create<AppStore>()(
 
       // Tenant courant
       tenant: null,
-      // La devise est une préférence d'AFFICHAGE locale (par appareil), pas un
-      // attribut partagé du tenant. On adopte la devise de la boutique UNIQUEMENT
-      // à la connexion d'une boutique *différente* (changement de tenant) : ça
-      // évite qu'une devise persistée (ex: EUR d'une autre session) convertisse
-      // les XOF d'un compte XOF en euros, SANS pour autant écraser le choix
-      // d'affichage de l'utilisateur à chaque refresh (setTenant est rappelé sur
-      // /me et au montage du Header). La devise réelle du tenant est fixée à
-      // l'onboarding et n'est plus mutée par le sélecteur d'affichage.
+      // Option C — lang ET devise sont des settings TENANT stricts (contrôlés par
+      // l'ADMIN uniquement, cf. PATCH /api/tenant gardé côté backend). setTenant
+      // RESTAURE donc lang ET currency depuis le serveur à CHAQUE appel (/me, montage
+      // Header, changement de boutique) → tous les membres voient la même langue/devise,
+      // plus d'override per-device. La valeur persistée localStorage n'est qu'un cache
+      // d'amorçage (pré-/me), toujours écrasé par celle du tenant.
       setTenant:   (tenant) => set((state) => {
         const tc = tenant?.currency
         const valid = tc && (['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP'] as const).includes(tc as Currency)
         const tl = (tenant as { lang?: string } | null)?.lang
         const validLang = tl && (['fr', 'en', 'es', 'it'] as const).includes(tl as Lang)
-        const tenantChanged = (tenant?.id ?? null) !== (state.tenant?.id ?? null)
         return {
           tenant,
-          currency: tenantChanged && valid ? (tc as Currency) : state.currency,
+          currency: valid ? (tc as Currency) : state.currency,
           lang:     validLang ? (tl as Lang) : state.lang,
         }
       }),

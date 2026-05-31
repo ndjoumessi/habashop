@@ -1,7 +1,25 @@
 import { useConfig, useFormatAmount, ACCENT_PAIRS, THEMES, type Currency, type Lang, type Theme } from '@/stores/appStore'
+import { useAuthStore } from '@/stores/authStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
 import { tenantApi } from '@/lib/api'
 import { Check, Lock, Globe, Coins, Palette } from 'lucide-react'
+
+// Affichage LECTURE SEULE d'un réglage géré par l'admin (langue ou devise active) + note.
+function ReadOnlyValue({ flag, value, note }: { flag: string; value: string; note: string }) {
+  return (
+    <div style={{ padding: '16px 22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+        <span style={{ fontSize: 26 }}>{flag}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{value}</div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+            <Lock size={11} /> {note}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function SectionLang() {
   const cfg = useConfig()
@@ -9,6 +27,11 @@ export default function SectionLang() {
   const currency = cfg.currency
   const fmt = useFormatAmount()
   const i = makeI(lang)
+  // Option C — lang & devise = settings tenant ADMIN-only. Les non-admin voient ces
+  // réglages en LECTURE SEULE (le backend rejette aussi tout PATCH lang/currency 403).
+  const role = useAuthStore(s => s.user?.role)
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  const managedNote = i("Géré par l'administrateur", 'Managed by administrator', 'Administrado por el administrador', "Gestito dall'amministratore")
 
   const LANGS = [
     { code: 'fr', flag: '🇫🇷', name: 'Français', native: 'Français' },
@@ -31,59 +54,74 @@ export default function SectionLang() {
       <div style={panel}>
         <Head icon={<Globe size={16} />} tint="rgba(0,184,255,.05)"
           title={i("Langue de l'interface", 'Interface language', 'Idioma de la interfaz', "Lingua dell'interfaccia")}
-          sub={i('4 langues — changement immédiat', '4 languages — instant change', '4 idiomas — cambio inmediato', '4 lingue — cambio immediato')} />
-        <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {LANGS.map(l => {
-            const active = lang === l.code
-            return (
-              <button key={l.code} type="button" onClick={() => {
-                cfg.setLang(l.code as Lang)
-                tenantApi.update({ lang: l.code }).catch(() => {})
-              }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '14px 16px', borderRadius: 12,
-                  background: active ? 'rgba(108,71,255,.10)' : 'var(--bg3)',
-                  border: `1.5px solid ${active ? 'var(--p)' : 'var(--border)'}`,
-                  boxShadow: active ? '0 0 0 3px rgba(108,71,255,.20)' : 'none',
-                  cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)',
-                  transition: 'all .15s',
-                }}>
-                <span style={{ fontSize: 28 }}>{l.flag}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? 'var(--p)' : 'var(--text)' }}>{l.native}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text3)' }}>{l.name}</div>
-                </div>
-                {active && (
-                  <div style={{
-                    width: 20, height: 20, borderRadius: '50%',
-                    background: 'var(--p)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+          sub={i('4 langues — réglage de la boutique', '4 languages — shop-wide setting', '4 idiomas — ajuste de la tienda', '4 lingue — impostazione del negozio')} />
+        {isAdmin ? (
+          <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {LANGS.map(l => {
+              const active = lang === l.code
+              return (
+                <button key={l.code} type="button" onClick={() => {
+                  cfg.setLang(l.code as Lang)
+                  tenantApi.update({ lang: l.code }).catch(() => {})
+                }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '14px 16px', borderRadius: 12,
+                    background: active ? 'rgba(108,71,255,.10)' : 'var(--bg3)',
+                    border: `1.5px solid ${active ? 'var(--p)' : 'var(--border)'}`,
+                    boxShadow: active ? '0 0 0 3px rgba(108,71,255,.20)' : 'none',
+                    cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)',
+                    transition: 'all .15s',
                   }}>
-                    <Check size={12} color="#fff" />
+                  <span style={{ fontSize: 28 }}>{l.flag}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: active ? 'var(--p)' : 'var(--text)' }}>{l.native}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{l.name}</div>
                   </div>
-                )}
-              </button>
-            )
-          })}
-        </div>
+                  {active && (
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%',
+                      background: 'var(--p)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Check size={12} color="#fff" />
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <ReadOnlyValue
+            flag={LANGS.find(l => l.code === lang)?.flag ?? '🌐'}
+            value={LANGS.find(l => l.code === lang)?.native ?? lang}
+            note={managedNote}
+          />
+        )}
       </div>
 
       {/* Currency */}
       <div style={panel}>
         <Head icon={<Coins size={16} />} tint="rgba(255,184,0,.03)"
-          title={i("Devise d'affichage", 'Display currency', 'Divisa de visualización', 'Valuta di visualizzazione')}
-          sub={i('6 devises — affichage par appareil, conversion automatique des montants', '6 currencies — per-device display, automatic amount conversion', '6 divisas — visualización por dispositivo, conversión automática', '6 valute — visualizzazione per dispositivo, conversione automatica')} />
+          title={i('Devise de la boutique', 'Shop currency', 'Divisa de la tienda', 'Valuta del negozio')}
+          sub={i('6 devises — réglage commun à toute la boutique, conversion automatique des montants', '6 currencies — shop-wide setting, automatic amount conversion', '6 divisas — ajuste común para toda la tienda, conversión automática', '6 valute — impostazione comune a tutto il negozio, conversione automatica')} />
+        {!isAdmin ? (
+          <ReadOnlyValue
+            flag={CURRENCIES.find(c => c.code === currency)?.flag ?? '💱'}
+            value={`${currency} — ${pick(lang, CURRENCIES.find(c => c.code === currency)?.name ?? { fr: currency, en: currency, es: currency, it: currency })}`}
+            note={managedNote}
+          />
+        ) : (
         <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
           {CURRENCIES.map(c => {
             const active = currency === c.code
             return (
               <button key={c.code} type="button" onClick={() => {
-                // Devise = préférence d'affichage LOCALE (par appareil). On ne la
-                // pousse PAS au tenant : un visiteur ne doit pas changer la devise
-                // officielle de la boutique pour tout le monde (cf. démos publiques),
-                // et les montants restent stockés en base XOF + convertis à l'affichage.
+                // Option C : devise = setting TENANT (admin only ici). On met à jour le
+                // store local pour un retour immédiat ET on pousse au tenant ; setTenant
+                // restaurera cette devise pour tous les membres à chaque /me.
                 cfg.setCurrency(c.code)
+                tenantApi.update({ currency: c.code }).catch(() => {})
               }}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
@@ -111,6 +149,7 @@ export default function SectionLang() {
             )
           })}
         </div>
+        )}
         <div style={{ margin: '0 22px 20px', padding: 16, background: 'rgba(255,184,0,.03)', border: '1px solid rgba(255,184,0,.08)', borderRadius: 14 }}>
           <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', marginBottom: 12 }}>
             {i('APERÇU — Conversion temps réel', 'PREVIEW — Real-time conversion', 'VISTA PREVIA — Conversión en tiempo real', 'ANTEPRIMA — Conversione in tempo reale')}

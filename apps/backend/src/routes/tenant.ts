@@ -27,9 +27,19 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     return prisma.tenant.findUnique({ where: { id: tenantId } })
   })
 
-  const updateTenantHandler = async (request) => {
+  const updateTenantHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     const tenantId = request.tenantId
     const data = request.body as TenantUpdateBody
+    // Option C — lang & devise = settings TENANT stricts : modifiables UNIQUEMENT par
+    // ADMIN/SUPER_ADMIN (cohérence pour tous les membres). Tout autre rôle → 403 si le
+    // body touche `lang` ou `currency` (les autres champs restent permis à leur niveau).
+    const touchesLocale = data.lang !== undefined || data.currency !== undefined
+    if (touchesLocale && !isAdminRole(request.user?.role)) {
+      return reply.code(403).send({
+        error: "Langue et devise : modification réservée à l'administrateur",
+        code: 'LOCALE_ADMIN_ONLY',
+      })
+    }
     return prisma.tenant.update({
       where: { id: tenantId },
       data: {
