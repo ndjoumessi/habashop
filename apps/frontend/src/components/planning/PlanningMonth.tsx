@@ -66,6 +66,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
               const leaveCount = leaveDays[dateStr] ?? 0
               return (
                 <div key={idx}
+                  data-testid={`month-day-${dateStr}`}
                   onClick={()=>onPickDay(day)}
                   title={`${day.toLocaleDateString(lang==='en'?'en-US':lang==='es'?'es-ES':lang==='it'?'it-IT':'fr-FR',{weekday:'long',day:'numeric',month:'long'})}`}
                   style={{
