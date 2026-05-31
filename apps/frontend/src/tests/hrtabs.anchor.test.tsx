@@ -31,7 +31,7 @@ function makeProps(overrides: any = {}) {
     setSalaryTarget: vi.fn(), setShowSalaryModal: vi.fn(),
     setSelectedContract: vi.fn(), setShowContractDetailModal: vi.fn(),
     setContractForm: vi.fn(), setShowNewContractModal: vi.fn(),
-    attendance: {} as any, setAttendance: vi.fn(),
+    attendance: {} as any, onSaveAttendance: vi.fn(),
     attendanceDate: '2026-05-15', setAttendanceDate: vi.fn(),
     pendingLeaves: 1,
     leaves: [{ id: 1, empId: 1, type: 'Congé annuel', from: '2026-05-01', to: '2026-05-05', days: 5, motif: 'Repos', status: 'pending' as const }] as any,
@@ -140,7 +140,7 @@ describe('HRTabs — onglet Pointage', () => {
     render(<HRTabs {...p} />)
     expect(screen.getByText(/Feuille de présence/)).toBeInTheDocument()
     fireEvent.click(screen.getByText(/Tous présents/))
-    expect(p.setAttendance).toHaveBeenCalled()
+    expect(p.onSaveAttendance).toHaveBeenCalled()
   })
 })
 

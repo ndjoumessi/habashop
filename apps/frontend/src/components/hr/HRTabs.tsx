@@ -1,4 +1,4 @@
-import { type Employee, type LeaveRequest } from '@/components/hr/hrShared'
+import { type Employee, type LeaveRequest, type AttendUiStatus } from '@/components/hr/hrShared'
 import HRContractsTab from '@/components/hr/tabs/HRContractsTab'
 import HRPayrollTab from '@/components/hr/tabs/HRPayrollTab'
 import HRAttendanceTab from '@/components/hr/tabs/HRAttendanceTab'
@@ -20,7 +20,8 @@ interface HRTabsProps {
   setSalaryTarget: (v: any) => void; setShowSalaryModal: (b: boolean) => void
   setSelectedContract: (e: any) => void; setShowContractDetailModal: (b: boolean) => void
   setContractForm: (v: any) => void; setShowNewContractModal: (b: boolean) => void
-  attendance: Record<string, { in: string | null; out: string | null; status: 'present' | 'absent' | 'late' | 'half' }>; setAttendance: (v: any) => void
+  attendance: Record<string, { in: string | null; out: string | null; status: AttendUiStatus }>
+  onSaveAttendance: (empId: string, date: string, entry: { in: string | null; out: string | null; status: AttendUiStatus }) => void
   attendanceDate: string; setAttendanceDate: (v: string) => void
   pendingLeaves: number
   leaves: LeaveRequest[]
@@ -35,7 +36,7 @@ export default function HRTabs(props: HRTabsProps) {
     bonuses, setBonuses, bonusList, setBonusList, salaryHistory, onDeleteSalaryHistory,
     generateAllPayslips, generatePayslipPDF, setSalaryTarget, setShowSalaryModal,
     setSelectedContract, setShowContractDetailModal, setContractForm, setShowNewContractModal,
-    attendance, setAttendance, attendanceDate, setAttendanceDate,
+    attendance, onSaveAttendance, attendanceDate, setAttendanceDate,
     pendingLeaves, leaves, setLeaveForm, setShowLeaveModal, handleLeaveAction,
   } = props
   return (
@@ -64,7 +65,7 @@ export default function HRTabs(props: HRTabsProps) {
       {tab === 'pointage' && (
         <HRAttendanceTab
           employees={employees} lang={lang}
-          attendance={attendance} setAttendance={setAttendance}
+          attendance={attendance} onSaveAttendance={onSaveAttendance}
           attendanceDate={attendanceDate} setAttendanceDate={setAttendanceDate}
         />
       )}

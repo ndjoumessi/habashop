@@ -3,7 +3,9 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 
 // Statuts de présence — convention String du projet (pas d'enum Prisma) ; validés ici.
-export const ATTENDANCE_STATUSES = ['PRESENT', 'LATE', 'ABSENT', 'LEAVE', 'REST'] as const
+// HALF = mi-temps (utilisé par la feuille de présence frontend) ; LEAVE/REST réservés
+// (congé/repos, ex. report planning). Tous acceptés par l'API.
+export const ATTENDANCE_STATUSES = ['PRESENT', 'LATE', 'ABSENT', 'HALF', 'LEAVE', 'REST'] as const
 export type AttendanceStatus = typeof ATTENDANCE_STATUSES[number]
 
 // Écriture (POST/PATCH/DELETE) : ADMIN/SUPER_ADMIN/MANAGER/HR. Lecture : tout membre.

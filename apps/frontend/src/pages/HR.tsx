@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import React from 'react'
 import { useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
-import { employeesApi, bonusesApi, salaryHistoryApi } from '@/lib/api'
+import { employeesApi, bonusesApi, salaryHistoryApi, attendanceApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
 import { Download, Plus, X, Users, DollarSign, FileText, TrendingUp, Star, Pencil, Clock, Umbrella, Search, LayoutGrid, AlignJustify, CheckCircle, XCircle, AlertTriangle, Gift, Trash2, BarChart3, Calendar, User, Eye, CheckCheck, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -19,7 +19,7 @@ import HREmployeeGrid from '@/components/hr/HREmployeeGrid'
 import HRTabs from '@/components/hr/HRTabs'
 import HRModals from '@/components/hr/HRModals'
 import EmptyState from '@/components/ui/EmptyState'
-import { type Employee, type LeaveRequest, COLORS, toInputDate, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
+import { type Employee, type LeaveRequest, type AttendUiStatus, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi } from '@/components/hr/hrShared'
 import { writeLeaveShiftsToPlanning } from '@/components/planning/planningShared'
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -64,11 +64,10 @@ export default function HR() {
   const [salaryTarget, setSalaryTarget] = useState<any>(null)
   const [salaryHistory, setSalaryHistory] = useState<{id?:string; empId:string; date:string; oldSalary:number; newSalary:number; reason:string}[]>([])
 
-  // Présences / Pointage
+  // Présences / Pointage — Phase 2 : source de vérité = backend (/api/attendance), plus de
+  // localStorage. État keyé `${empId}_${date}` (status UI minuscule), chargé par mois.
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0])
-  const [attendance, setAttendance] = useState<Record<string, { in: string|null; out: string|null; status: 'present'|'absent'|'late'|'half' }>>(() => {
-    try { return JSON.parse(localStorage.getItem('habashop_attendance') ?? 'null') ?? {} } catch { return {} }
-  })
+  const [attendance, setAttendance] = useState<Record<string, { in: string|null; out: string|null; status: AttendUiStatus }>>({})
 
   // Leave modal
   const [showLeaveModal, setShowLeaveModal] = useState(false)
@@ -165,9 +164,38 @@ export default function HR() {
     return () => window.removeEventListener('habashop:new-employee', handler)
   }, [])
 
+  // Charge les présences du MOIS de la date sélectionnée depuis le backend (remplace les
+  // entrées de ce mois ; clé `${empId}_${date}`). Refetch au changement de mois.
+  const attendanceMonth = attendanceDate.slice(0, 7) // "YYYY-MM"
   useEffect(() => {
-    localStorage.setItem('habashop_attendance', JSON.stringify(attendance))
-  }, [attendance])
+    let cancelled = false
+    attendanceApi.list(attendanceMonth)
+      .then((rows: any[]) => {
+        if (cancelled || !Array.isArray(rows)) return
+        const map: Record<string, { in: string|null; out: string|null; status: AttendUiStatus }> = {}
+        for (const r of rows) {
+          map[`${r.employeeId}_${r.date}`] = {
+            in: r.arriveTime ?? null, out: r.departTime ?? null, status: attendStatusFromApi(r.status),
+          }
+        }
+        // Remplace les clés du mois courant (clé `${empId}_${YYYY-MM}-DD`), conserve les autres mois.
+        setAttendance(prev => {
+          const kept = Object.fromEntries(Object.entries(prev).filter(([k]) => !k.includes(`_${attendanceMonth}-`)))
+          return { ...kept, ...map }
+        })
+      })
+      .catch(() => { /* lecture best-effort */ })
+    return () => { cancelled = true }
+  }, [attendanceMonth])
+
+  // Enregistre une entrée de présence : MAJ optimiste locale + upsert backend (status → API).
+  const saveAttendance = (empId: string, date: string, entry: { in: string|null; out: string|null; status: AttendUiStatus }) => {
+    setAttendance(prev => ({ ...prev, [`${empId}_${date}`]: entry }))
+    attendanceApi.upsert({
+      employeeId: empId, date, status: attendStatusToApi[entry.status],
+      arriveTime: entry.in, departTime: entry.out,
+    }).catch(() => toast.error(i('Échec de l\'enregistrement de la présence', 'Failed to save attendance', 'Error al guardar la asistencia', 'Salvataggio presenza fallito')))
+  }
 
   const depts = useMemo(() => Array.from(new Set(employees.map(e => e.dept))), [employees])
 
@@ -531,7 +559,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         setSalaryTarget={setSalaryTarget} setShowSalaryModal={setShowSalaryModal}
         setSelectedContract={setSelectedContract} setShowContractDetailModal={setShowContractDetailModal}
         setContractForm={setContractForm} setShowNewContractModal={setShowNewContractModal}
-        attendance={attendance} setAttendance={setAttendance}
+        attendance={attendance} onSaveAttendance={saveAttendance}
         attendanceDate={attendanceDate} setAttendanceDate={setAttendanceDate}
         pendingLeaves={pendingLeaves}
         leaves={leaves}

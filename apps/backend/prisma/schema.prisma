@@ -354,7 +354,7 @@ model SalaryHistory {
 }
 
 // Présence quotidienne d'un employé. `status` = String (convention du projet : pas d'enum
-// Prisma ; valeurs PRESENT|LATE|ABSENT|LEAVE|REST validées au niveau route → 400 sinon).
+// Prisma ; valeurs PRESENT|LATE|ABSENT|HALF|LEAVE|REST validées au niveau route → 400 sinon).
 // `date` = String "YYYY-MM-DD" (date-only) : clé d'unicité jour/employé sans dérive de
 // fuseau, miroir de la clé localStorage frontend `${empId}_${date}` (compat Phase 2).
 model Attendance {

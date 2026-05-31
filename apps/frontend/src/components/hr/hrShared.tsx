@@ -132,6 +132,20 @@ export const ATTEND_LABELS: Record<string, Record<string, string>> = {
 export const attendStatusLabel = (s: string, lang: string): string =>
   ATTEND_LABELS[s]?.[lang] ?? (STATUS_CFG as any)[s]?.label ?? s
 
+// Mapping statut feuille de présence (frontend, minuscule) ⇄ API Attendance (MAJUSCULE).
+// La feuille gère present/late/absent/half ; LEAVE/REST de l'API (congé/repos planning) →
+// repliés sur 'absent' à l'affichage de la feuille (non gérés par ce tab).
+export type AttendUiStatus = 'present' | 'late' | 'absent' | 'half'
+export const attendStatusToApi: Record<AttendUiStatus, string> = {
+  present: 'PRESENT', late: 'LATE', absent: 'ABSENT', half: 'HALF',
+}
+export function attendStatusFromApi(s: string): AttendUiStatus {
+  const m: Record<string, AttendUiStatus> = {
+    PRESENT: 'present', LATE: 'late', ABSENT: 'absent', HALF: 'half', LEAVE: 'absent', REST: 'absent',
+  }
+  return m[s] ?? 'absent'
+}
+
 export const LEAVE_LABELS: Record<string, Record<string, string>> = {
   pending:  { fr:'En attente', en:'Pending',  es:'Pendiente', it:'In attesa' },
   approved: { fr:'Approuvé',   en:'Approved', es:'Aprobado',  it:'Approvato' },

@@ -288,6 +288,14 @@ export const alertsApi = {
   lowStock: () => api.get<any[]>('/api/products/low-stock'),
 }
 
+export const attendanceApi = {
+  list:   (month?: string) => api.get<any[]>(`/api/attendance${month ? `?month=${month}` : ''}`),
+  upsert: (data: { employeeId: string; date: string; status: string; arriveTime?: string | null; departTime?: string | null; note?: string | null }) =>
+    api.post<any>('/api/attendance', data),
+  update: (id: string, data: any) => api.patch<any>(`/api/attendance/${id}`, data),
+  remove: (id: string) => api.delete<{ success: boolean }>(`/api/attendance/${id}`),
+}
+
 export const auditApi = {
   list: () => api.get<any[]>('/api/audit-logs'),
 }

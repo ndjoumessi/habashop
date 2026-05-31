@@ -1,14 +1,17 @@
 import { Clock, CheckCircle, XCircle, AlertTriangle, CheckCheck, Download } from 'lucide-react'
-import { type Employee, roleLabel, attendStatusLabel } from '@/components/hr/hrShared'
+import { type Employee, type AttendUiStatus, roleLabel, attendStatusLabel } from '@/components/hr/hrShared'
 
+type AttendEntry = { in: string | null; out: string | null; status: AttendUiStatus }
 interface Props {
   employees: Employee[]
   lang: string
-  attendance: Record<string, { in: string | null; out: string | null; status: 'present' | 'absent' | 'late' | 'half' }>; setAttendance: (v: any) => void
+  attendance: Record<string, AttendEntry>
+  // Phase 2 : persistance backend (upsert) gérée par le parent ; ce tab fournit l'entrée complète.
+  onSaveAttendance: (empId: string, date: string, entry: AttendEntry) => void
   attendanceDate: string; setAttendanceDate: (v: string) => void
 }
 
-export default function HRAttendanceTab({ employees, lang, attendance, setAttendance, attendanceDate, setAttendanceDate }: Props) {
+export default function HRAttendanceTab({ employees, lang, attendance, onSaveAttendance, attendanceDate, setAttendanceDate }: Props) {
   const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: JSX.Element }> = {
     present: { label: lang === 'en' ? 'Present' : lang === 'es' ? 'Presente' : lang === 'it' ? 'Presente' : 'Présent',  color:'var(--acc2)', bg:'rgba(0,208,132,.1)',  icon:<CheckCircle size={11}/> },
     late:    { label: lang === 'en' ? 'Late' : lang === 'es' ? 'Retraso' : lang === 'it' ? 'Ritardo' : 'Retard',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:<Clock size={11}/> },
@@ -47,20 +50,12 @@ export default function HRAttendanceTab({ employees, lang, attendance, setAttend
   const markAllPresent = () => {
     const now = new Date()
     const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
-    const updates: typeof attendance = {}
-    dayEmp.forEach(e => {
-      const key = `${String(e.id)}_${todayKey}`
-      updates[key] = { in: hhmm, out: null, status: 'present' }
-    })
-    setAttendance((prev: typeof attendance) => ({ ...prev, ...updates }))
+    dayEmp.forEach(e => onSaveAttendance(String(e.id), todayKey, { in: hhmm, out: null, status: 'present' }))
   }
 
   const setEmpField = (empId: string, field: 'in'|'out'|'status', value: string) => {
-    const key = `${empId}_${todayKey}`
-    setAttendance((prev: typeof attendance) => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? { in: null, out: null, status: 'absent' }), [field]: value },
-    }))
+    const prevEntry = attendance[`${empId}_${todayKey}`] ?? { in: null, out: null, status: 'absent' as AttendUiStatus }
+    onSaveAttendance(empId, todayKey, { ...prevEntry, [field]: value } as AttendEntry)
   }
 
   return (

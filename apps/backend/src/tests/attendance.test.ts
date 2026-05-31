@@ -77,6 +77,13 @@ describe('POST /api/attendance (upsert)', () => {
     expect(arg.create.status).toBe('PRESENT')
     expect(arg.update.status).toBe('PRESENT')
   })
+  it('status HALF (mi-temps, feuille de présence frontend) accepté → 200', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/attendance', headers: H('MANAGER'),
+      payload: { employeeId: 'e1', date: '2026-05-18', status: 'HALF' } })
+    expect(res.statusCode).toBe(200)
+    expect(db.attendance.upsert).toHaveBeenCalled()
+  })
   it('status invalide → 400 (aucun upsert)', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'POST', url: '/api/attendance', headers: H('HR'),
