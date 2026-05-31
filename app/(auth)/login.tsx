@@ -15,6 +15,17 @@ import {
   enableBiometric, getSavedCredentials, type BiometricType,
 } from '@/services/biometric'
 
+// Les 5 comptes démo seedés dans le backend (mot de passe commun « demo1234 »).
+// Un tap préremplit email + mot de passe → connexion réelle au backend Railway.
+const DEMO_PASSWORD = 'demo1234'
+const DEMO_ACCOUNTS = [
+  { label: 'Admin',      email: 'admin@habashop.com' },
+  { label: 'Manager',    email: 'manager@habashop.com' },
+  { label: 'Caissier',   email: 'cashier@habashop.com' },
+  { label: 'Comptable',  email: 'accountant@habashop.com' },
+  { label: 'RH',         email: 'hr@habashop.com' },
+] as const
+
 export default function LoginScreen() {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
@@ -224,16 +235,25 @@ export default function LoginScreen() {
 
               <View style={s.demoWrap}>
                 <Text style={s.demoLabel}>
-                  {i('Compte démo :','Demo:','Demo:','Demo:')}
+                  {i('Comptes démo :','Demo accounts:','Cuentas demo:','Account demo:')}
                 </Text>
-                <TouchableOpacity onPress={()=>{
-                  setEmail('admin@habashop.com')
-                  setPassword('demo1234')
-                }}
-                  accessibilityRole="button"
-                  accessibilityLabel={i('Utiliser le compte démo','Use demo account','Usar cuenta demo','Usa account demo')}>
-                  <Text style={s.demoLink}>admin@habashop.com</Text>
-                </TouchableOpacity>
+                <View style={s.demoRow}>
+                  {DEMO_ACCOUNTS.map(acc => (
+                    <TouchableOpacity
+                      key={acc.email}
+                      style={s.demoChip}
+                      onPress={() => { setEmail(acc.email); setPassword(DEMO_PASSWORD) }}
+                      accessibilityRole="button"
+                      accessibilityLabel={i(
+                        `Préremplir le compte démo ${acc.label}`,
+                        `Prefill ${acc.label} demo account`,
+                        `Rellenar la cuenta demo ${acc.label}`,
+                        `Precompila l'account demo ${acc.label}`,
+                      )}>
+                      <Text style={s.demoChipTxt}>{acc.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             </>
           )}
@@ -346,13 +366,22 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     fontSize:FontSize.md,fontFamily:'Outfit_800ExtraBold',
     color:C.white,letterSpacing:0.3,
   },
-  demoWrap:{alignItems:'center',gap:Spacing.xs},
+  demoWrap:{alignItems:'center',gap:Spacing.sm},
   demoLabel:{
     fontSize:FontSize.xs,fontFamily:'Outfit_400Regular',
     color:C.text3,
   },
-  demoLink:{
-    fontSize:FontSize.sm,fontFamily:'Outfit_700Bold',
+  demoRow:{
+    flexDirection:'row',flexWrap:'wrap',
+    justifyContent:'center',gap:Spacing.xs,
+  },
+  demoChip:{
+    paddingHorizontal:Spacing.md,paddingVertical:6,
+    borderRadius:BorderRadius.full,
+    backgroundColor:C.bg3,borderWidth:1,borderColor:C.border,
+  },
+  demoChipTxt:{
+    fontSize:FontSize.xs,fontFamily:'Outfit_700Bold',
     color:C.primary3,
   },
   biometricBtn: {

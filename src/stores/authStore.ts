@@ -50,10 +50,26 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (!token) { set({ isLoading: false }); return }
       const { apiClient } = await import('../services/api')
       apiClient.defaults.headers.common.Authorization = `Bearer ${token}`
-      const res = await apiClient.get('/api/auth/me')
-      set({ token, user:res.data.user, tenant:res.data.tenant,
-            isLoggedIn:true, isLoading:false })
-      syncCurrencyFromTenant(res.data.tenant)
+      // GET /api/auth/me renvoie un objet À PLAT { id, name, email, role, shopName, currency }
+      // (et PAS { user, tenant }). On reconstruit donc `user` depuis ces champs et on récupère
+      // le tenant complet via GET /api/tenant — sinon `tenant` restait undefined, ce qui
+      // (1) cassait Settings (tenant.plan.toUpperCase()) et (2) déclenchait une boucle de
+      // refetch /me infinie (le garde-fou Settings relançait restoreSession en boucle).
+      const [meRes, tenantRes] = await Promise.all([
+        apiClient.get('/api/auth/me'),
+        apiClient.get('/api/tenant').catch(() => null),
+      ])
+      const me = meRes.data
+      const tenant: Tenant = tenantRes?.data ?? {
+        id: '', name: me?.shopName ?? 'HabaShop', plan: '',
+        currency: me?.currency ?? 'XOF', lang: 'fr', status: 'active',
+      }
+      const user: User = {
+        id: me.id, name: me.name, email: me.email,
+        role: me.role, tenantId: tenant.id,
+      }
+      set({ token, user, tenant, isLoggedIn: true, isLoading: false })
+      syncCurrencyFromTenant(tenant)
     } catch {
       await SecureStore.deleteItemAsync('auth_token')
       set({ isLoading: false })
