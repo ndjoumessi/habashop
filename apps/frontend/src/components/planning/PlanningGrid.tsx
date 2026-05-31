@@ -15,10 +15,11 @@ interface Props {
   onAssign: (empId: string, di: number) => void
   onOpenModal: (empId: string, di: number, name: string) => void
   onClearShift: (empId: string, di: number) => void
+  onMoveShift?: (srcEmpId: string, srcDi: number, dstEmpId: string, dstDi: number) => void
 }
 
 export default function PlanningGrid(props: Props) {
-  const { lang, loading, filtered, weekDays, shifts, lockedShifts, activeShift, onAssign, onOpenModal, onClearShift } = props
+  const { lang, loading, filtered, weekDays, shifts, lockedShifts, activeShift, onAssign, onOpenModal, onClearShift, onMoveShift } = props
   const T = buildT(lang)
   const DAY_LABELS = getDayLabels(lang)
   const lockedTitle = lang === 'en' ? 'Approved leave — cannot be modified'
@@ -167,6 +168,19 @@ export default function PlanningGrid(props: Props) {
                     }}>
                       <div
                         title={isLocked ? lockedTitle : undefined}
+                        // Drag&drop : on glisse une case PLEINE (non verrouillée) → on dépose sur
+                        // une autre case (non verrouillée) → le shift est DÉPLACÉ (upsert cible + delete source).
+                        draggable={!!shiftKey && !isLocked && !!onMoveShift}
+                        onDragStart={e=>{ e.dataTransfer.setData('text/plain', JSON.stringify({ empId: emp.id, di })); e.dataTransfer.effectAllowed = 'move' }}
+                        onDragOver={e=>{ if (!isLocked && onMoveShift) e.preventDefault() }}
+                        onDrop={e=>{
+                          if (isLocked || !onMoveShift) return
+                          e.preventDefault()
+                          try {
+                            const src = JSON.parse(e.dataTransfer.getData('text/plain'))
+                            if (src && typeof src.empId === 'string' && typeof src.di === 'number') onMoveShift(src.empId, src.di, emp.id, di)
+                          } catch { /* drop non-shift ignoré */ }
+                        }}
                         onClick={()=>{
                           if (isLocked) return  // congé approuvé : assignation bloquée
                           if (!shiftKey) {
@@ -178,7 +192,7 @@ export default function PlanningGrid(props: Props) {
                         onDoubleClick={()=>{ if (!isLocked) onClearShift(emp.id,di) }}
                         style={{
                           minHeight:58, borderRadius:10,
-                          cursor: isLocked ? 'not-allowed' : 'pointer',
+                          cursor: isLocked ? 'not-allowed' : (shiftKey ? 'grab' : 'pointer'),
                           display:'flex', flexDirection:'column',
                           alignItems:'center', justifyContent:'center',
                           gap:3, padding:'4px 2px',

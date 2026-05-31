@@ -125,4 +125,24 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
     const nextMonday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     await waitFor(() => expect(shiftsApi.upsert).toHaveBeenCalledWith(expect.objectContaining({ employeeId: 'emp1', date: nextMonday, shiftTypeKey: 'morning' })))
   })
+
+  it('Phase 7 — drag&drop : déplace le shift (upsert cible + delete source)', async () => {
+    // Marie (emp1) a un shift matin lundi (id s1) ; on le glisse vers la case lundi de Kofi (emp2).
+    ;(shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    const { container } = render(<Planning />)
+    await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('08:00-13:00').length).toBeGreaterThanOrEqual(2))
+    // lignes employés (Marie=0, Kofi=1). `td > div` = [div nom, div lundi, div mardi, …] →
+    // la case du lundi (di=0) est à l'index 1 (index 0 = cellule nom/avatar).
+    const rows = container.querySelectorAll('tbody tr')
+    const marieMon = rows[0].querySelectorAll('td > div')[1] as HTMLElement
+    const kofiMon  = rows[1].querySelectorAll('td > div')[1] as HTMLElement
+    const store: Record<string, string> = {}
+    const dataTransfer = { setData: (k: string, v: string) => { store[k] = v }, getData: (k: string) => store[k] ?? '', effectAllowed: '' }
+    fireEvent.dragStart(marieMon, { dataTransfer })
+    fireEvent.drop(kofiMon, { dataTransfer })
+    // upsert du shift matin sur Kofi (cible) + suppression du shift source (id s1)
+    await waitFor(() => expect(shiftsApi.upsert).toHaveBeenCalledWith(expect.objectContaining({ employeeId: 'emp2', date: mondayYmd(), shiftTypeKey: 'morning' })))
+    expect(shiftsApi.remove).toHaveBeenCalledWith('s1')
+  })
 })

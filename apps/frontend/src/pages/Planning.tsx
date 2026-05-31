@@ -155,6 +155,19 @@ export default function Planning() {
   }
   const clearShift = (empId:string, di:number) => removeCell(empId, di)
 
+  // Drag&drop : DÉPLACE le shift source vers la case cible (upsert cible + delete source).
+  // Respecte le verrouillage (source ou cible congé approuvé → ignoré) et ignore les congés.
+  const moveShift = (srcEmpId:string, srcDi:number, dstEmpId:string, dstDi:number) => {
+    if (srcEmpId === dstEmpId && srcDi === dstDi) return
+    const srcKey = cellKey(srcEmpId, ymd(weekDays[srcDi]))
+    const dstKey = cellKey(dstEmpId, ymd(weekDays[dstDi]))
+    if (lockedDates.has(srcKey) || lockedDates.has(dstKey)) return
+    const src = shiftsByDate[srcKey]
+    if (!src || src.type === 'leave') return // rien à déplacer / congé non déplaçable
+    setCell(dstEmpId, dstDi, src.type) // pose à la cible
+    removeCell(srcEmpId, srcDi)        // retire de la source
+  }
+
   const exportCSVPlan = () => {
     const locale = localeFor(lang)
     const T = buildT(lang)
@@ -240,6 +253,7 @@ export default function Planning() {
         onAssign={assignShift}
         onOpenModal={(empId, di, name) => { setModalShift(activeShift); setShiftModal({ empId, di, name }) }}
         onClearShift={clearShift}
+        onMoveShift={moveShift}
       />
 
       {shiftModal && (
