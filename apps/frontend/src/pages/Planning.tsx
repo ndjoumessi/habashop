@@ -181,6 +181,39 @@ export default function Planning() {
     return counts
   }, [shifts])
 
+  // Phase 7 — copie la semaine affichée vers la suivante (mêmes shifts à J+7). Ignore les
+  // congés ('leave', pilotés par les demandes) et ne remplace pas un congé approuvé cible.
+  const copyWeekToNext = async () => {
+    const dateToIndex: Record<string, number> = {}
+    weekDays.forEach((d, i) => { dateToIndex[ymd(d)] = i })
+    const targetDates = weekDays.map(d => { const t = new Date(d); t.setDate(t.getDate() + 7); return ymd(t) })
+    const toCopy: { empId: string; date: string; type: ShiftType }[] = []
+    for (const [key, v] of Object.entries(shiftsByDate)) {
+      const i = key.lastIndexOf('_'); const empId = key.slice(0, i); const date = key.slice(i + 1)
+      const di = dateToIndex[date]
+      if (di === undefined || v.type === 'leave') continue // hors semaine affichée ou congé → ignoré
+      const targetDate = targetDates[di]
+      if (lockedDates.has(cellKey(empId, targetDate))) continue // ne pas écraser un congé approuvé cible
+      toCopy.push({ empId, date: targetDate, type: v.type })
+    }
+    if (toCopy.length === 0) {
+      toast(lang === 'en' ? 'No shift to copy this week' : lang === 'es' ? 'Ningún turno que copiar esta semana' : lang === 'it' ? 'Nessun turno da copiare questa settimana' : 'Aucun shift à copier cette semaine')
+      return
+    }
+    try {
+      const created = await Promise.all(toCopy.map(c => shiftsApi.upsert({ employeeId: c.empId, date: c.date, shiftTypeKey: c.type })))
+      setShiftsByDate(prev => {
+        const next = { ...prev }
+        created.forEach((r, idx) => { next[cellKey(toCopy[idx].empId, toCopy[idx].date)] = { type: toCopy[idx].type, id: String(r.id) } })
+        return next
+      })
+      toast.success(`${toCopy.length} ${lang === 'en' ? 'shifts copied → next week' : lang === 'es' ? 'turnos copiados → próxima semana' : lang === 'it' ? 'turni copiati → settimana succ.' : 'shifts copiés → semaine suivante'}`)
+      const next = new Date(planningWeek); next.setDate(next.getDate() + 7); setPlanningWeek(next) // affiche le résultat
+    } catch {
+      toast.error(lang === 'en' ? 'Copy failed' : lang === 'es' ? 'Error al copiar' : lang === 'it' ? 'Copia fallita' : 'Échec de la copie')
+    }
+  }
+
   const confirmShift = () => {
     if (!shiftModal) return
     setCell(shiftModal.empId, shiftModal.di, modalShift)
@@ -190,7 +223,7 @@ export default function Planning() {
 
   return (
     <div className="animate-in" style={{ display:'flex', flexDirection:'column', gap:16 }}>
-      <PlanningHeader lang={lang} weekDays={weekDays} planningWeek={planningWeek} setPlanningWeek={setPlanningWeek} onExport={exportCSVPlan} />
+      <PlanningHeader lang={lang} weekDays={weekDays} planningWeek={planningWeek} setPlanningWeek={setPlanningWeek} onExport={exportCSVPlan} onCopyWeek={copyWeekToNext} />
 
       <ShiftSelector lang={lang} activeShift={activeShift} setActiveShift={setActiveShift} />
 

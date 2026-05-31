@@ -112,4 +112,17 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
     // "Journée" (full = shift par défaut) apparaît dans la légende ET dans les stats
     await waitFor(() => expect(screen.getAllByText('Journée').length).toBeGreaterThan(1))
   })
+
+  it('Phase 7 — "Copier → suiv." duplique les shifts à J+7 (upsert /api/shifts)', async () => {
+    ;(shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    render(<Planning />)
+    await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
+    // attend que le shift source soit chargé dans la grille (cellule + légende = ≥2 occurrences)
+    await waitFor(() => expect(screen.getAllByText('08:00-13:00').length).toBeGreaterThanOrEqual(2))
+    fireEvent.click(screen.getByText(/Copier/i))
+    // upsert du même shift au lundi suivant (mondayYmd + 7 j)
+    const d = new Date(); d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1) + 7)
+    const nextMonday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    await waitFor(() => expect(shiftsApi.upsert).toHaveBeenCalledWith(expect.objectContaining({ employeeId: 'emp1', date: nextMonday, shiftTypeKey: 'morning' })))
+  })
 })

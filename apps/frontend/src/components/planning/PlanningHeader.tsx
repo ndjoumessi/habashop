@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react'
+import { Download, CopyPlus } from 'lucide-react'
 import { buildT, localeFor } from './planningShared'
 
 interface Props {
@@ -7,11 +7,13 @@ interface Props {
   planningWeek: Date
   setPlanningWeek: (d: Date) => void
   onExport: () => void
+  onCopyWeek: () => void
 }
 
-export default function PlanningHeader({ lang, weekDays, planningWeek, setPlanningWeek, onExport }: Props) {
+export default function PlanningHeader({ lang, weekDays, planningWeek, setPlanningWeek, onExport, onCopyWeek }: Props) {
   const T = buildT(lang)
   const locale = localeFor(lang)
+  const copyLabel = lang === 'en' ? 'Copy → next' : lang === 'es' ? 'Copiar → sig.' : lang === 'it' ? 'Copia → succ.' : 'Copier → suiv.'
 
   return (
     <div className="page-header">
@@ -40,6 +42,9 @@ export default function PlanningHeader({ lang, weekDays, planningWeek, setPlanni
             d.setDate(d.getDate()+7)
             setPlanningWeek(d)
           }}>{T.next} →</button>
+        <button className="mini-btn" onClick={onCopyWeek} title={copyLabel} style={{ display:'flex', alignItems:'center', gap:4 }}>
+          <CopyPlus size={12}/> {copyLabel}
+        </button>
         <button className="mini-btn" onClick={onExport} style={{ display:'flex', alignItems:'center', gap:4 }}>
           <Download size={12}/> {T.export}
         </button>
