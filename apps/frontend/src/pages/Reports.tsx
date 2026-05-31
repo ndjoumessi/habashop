@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect, lazy, Suspense } from 'react'
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Skeleton from '@/components/ui/skeleton'
 import EmptyState from '@/components/ui/EmptyState'
 import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
-import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, BarChart2, CreditCard, Trophy, Package, Users, Wallet, UserCog } from 'lucide-react'
+import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, CreditCard, Trophy, Package, Users, Wallet, UserCog, ChevronDown, FileText, FileSpreadsheet } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 import { writeXlsx } from '@/utils/xlsxWriter'
@@ -77,6 +77,24 @@ export default function Reports() {
 
   // Liste employés (dropdown filtre Paie) — chargée une fois.
   useEffect(() => { employeesApi.list().then((d: any[]) => Array.isArray(d) && setEmployees(d)).catch(() => {}) }, [])
+
+  // Dropdown « Exporter » : état ouvert/fermé + fermeture au clic extérieur.
+  const [exportOpen, setExportOpen] = useState(false)
+  const exportRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!exportOpen) return
+    const onDown = (e: MouseEvent) => { if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [exportOpen])
+  const menuItemStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+    padding: '8px 12px', border: 'none', background: 'transparent', borderRadius: 8,
+    cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'inherit',
+  }
+  const itemHover = (on: boolean) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    (e.currentTarget as HTMLElement).style.background = on ? 'var(--bg3)' : 'transparent'
+  }
 
   // Catégories présentes dans les ventes chargées (dropdown filtre catégorie).
   const categories = useMemo(() => {
@@ -236,45 +254,64 @@ export default function Reports() {
               style={{ border: 'none', background: 'transparent', color: 'var(--text3)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px' }}>×</button>
           )}
         </div>
-        {/* Groupe d'exports : reste soudé et aligné à droite (wrap en bloc sur petits écrans) */}
-        <div className="flex flex-wrap gap-2 items-center" style={{ marginLeft: 'auto' }}>
-        <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleExcelExport}>
-          <BarChart2 size={13}/> {i('Exporter Excel', 'Export Excel', 'Exportar Excel', 'Esporta Excel')}
-        </button>
-        <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
-          exportCSV('habashop_rapports',
-            ['Période','CA','Marge','Transactions','Panier moyen'],
-            [[periodLabel, data.ca, data.margin, data.transactions, data.avgCart]]
-          )
-          toast.success('📊 Export CSV téléchargé !')
-        }}>
-          <Download size={13} /> {t('btn_export')} CSV
-        </button>
-        <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
-          const body = `
-            ${htmlKPIs([
-              { label: t('reports_revenue'),      value: fmt(data.ca) },
-              { label: t('reports_margin'),       value: fmt(data.margin) },
-              { label: t('reports_transactions'), value: String(data.transactions) },
-              { label: t('reports_avg_cart'),     value: fmt(data.avgCart) },
-            ])}
-            <h2>${t('report_pdf_payment')}</h2>
-            ${htmlTable(
-              [t('expenses_mode'), t('reports_transactions'), t('col_amount'), '%'],
-              paymentModes.map(m => [m.label, '—', fmt(m.amount), m.pct + ' %']),
-              [`<strong>${t('common_total')}</strong>`, '—', `<strong>${fmt(paymentModes.reduce((s,m) => s + m.amount, 0))}</strong>`, '100 %']
-            )}
-            <h2>${t('report_pdf_top')}</h2>
-            ${htmlTable(
-              ['#', t('col_product'), t('col_qty'), t('reports_revenue')],
-              topProducts.map(p => [String(p.rank), p.name, String(p.qty), fmt(p.ca)])
-            )}
-          `
-          openPDF(`${t('report_pdf_title')} — ${periodLabel}`, body)
-          toast.success('📄 PDF ouvert !')
-        }}>
-          <Download size={13} /> {t('btn_export')} PDF
-        </button>
+        {/* Dropdown « Exporter ▾ » — un seul déclencheur, aligné à droite ; 3 options au clic */}
+        <div ref={exportRef} style={{ position: 'relative', marginLeft: 'auto' }}>
+          <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => setExportOpen(o => !o)}
+            aria-haspopup="menu" aria-expanded={exportOpen}>
+            <Download size={13} /> {i('Exporter', 'Export', 'Exportar', 'Esporta')}
+            <ChevronDown size={13} style={{ transition: 'transform .15s', transform: exportOpen ? 'rotate(180deg)' : 'none' }} />
+          </button>
+          {exportOpen && (
+            <div role="menu" style={{
+              position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 30, minWidth: 210,
+              background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12,
+              boxShadow: 'var(--sh-xl, 0 12px 32px rgba(0,0,0,.28))', padding: 6,
+              display: 'flex', flexDirection: 'column', gap: 2,
+            }}>
+              <button role="menuitem" style={menuItemStyle} onMouseEnter={itemHover(true)} onMouseLeave={itemHover(false)}
+                onClick={() => { setExportOpen(false); handleExcelExport() }}>
+                <FileSpreadsheet size={15} style={{ color: 'var(--p2)' }} /> {i('Exporter Excel', 'Export Excel', 'Exportar Excel', 'Esporta Excel')}
+              </button>
+              <button role="menuitem" style={menuItemStyle} onMouseEnter={itemHover(true)} onMouseLeave={itemHover(false)}
+                onClick={() => {
+                  setExportOpen(false)
+                  exportCSV('habashop_rapports',
+                    ['Période','CA','Marge','Transactions','Panier moyen'],
+                    [[periodLabel, data.ca, data.margin, data.transactions, data.avgCart]]
+                  )
+                  toast.success('📊 Export CSV téléchargé !')
+                }}>
+                <FileText size={15} style={{ color: 'var(--acc)' }} /> {i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}
+              </button>
+              <button role="menuitem" style={menuItemStyle} onMouseEnter={itemHover(true)} onMouseLeave={itemHover(false)}
+                onClick={() => {
+                  setExportOpen(false)
+                  const body = `
+                    ${htmlKPIs([
+                      { label: t('reports_revenue'),      value: fmt(data.ca) },
+                      { label: t('reports_margin'),       value: fmt(data.margin) },
+                      { label: t('reports_transactions'), value: String(data.transactions) },
+                      { label: t('reports_avg_cart'),     value: fmt(data.avgCart) },
+                    ])}
+                    <h2>${t('report_pdf_payment')}</h2>
+                    ${htmlTable(
+                      [t('expenses_mode'), t('reports_transactions'), t('col_amount'), '%'],
+                      paymentModes.map(m => [m.label, '—', fmt(m.amount), m.pct + ' %']),
+                      [`<strong>${t('common_total')}</strong>`, '—', `<strong>${fmt(paymentModes.reduce((s,m) => s + m.amount, 0))}</strong>`, '100 %']
+                    )}
+                    <h2>${t('report_pdf_top')}</h2>
+                    ${htmlTable(
+                      ['#', t('col_product'), t('col_qty'), t('reports_revenue')],
+                      topProducts.map(p => [String(p.rank), p.name, String(p.qty), fmt(p.ca)])
+                    )}
+                  `
+                  openPDF(`${t('report_pdf_title')} — ${periodLabel}`, body)
+                  toast.success('📄 PDF ouvert !')
+                }}>
+                <FileText size={15} style={{ color: 'var(--danger)' }} /> {i('Exporter PDF', 'Export PDF', 'Exportar PDF', 'Esporta PDF')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
