@@ -5,8 +5,10 @@ import EmptyState from '@/components/ui/EmptyState'
 import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
 import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, BarChart2, CreditCard, Trophy, Package, Users, Wallet, UserCog } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
-import { salesApi, expensesApi } from '@/lib/api'
+import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
+import { writeXlsx } from '@/utils/xlsxWriter'
+import { buildReportSheets } from '@/components/reports/reportsExport'
+import { salesApi, expensesApi, productsApi, employeesApi } from '@/lib/api'
 
 // ReportsTabs porte les graphes recharts (chunk `charts`) → lazy pour alléger le shell Reports
 const ReportsTabs = lazy(() => import('@/components/reports/ReportsTabs'))
@@ -62,19 +64,58 @@ export default function Reports() {
     ].filter(d => d.value > 0)
   }, [salesData, lang])
 
-  const handleAccountingExport = async () => {
-    const period2 = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { month: 'long', year: 'numeric' })
-    try {
-      const [sales, expenses] = await Promise.all([salesApi.list(), expensesApi.list()])
-      exportAccountingExcel({ sales: sales ?? [], expenses: expenses ?? [], period: period2, shopName: 'HabaShop', currency }, fmt)
-      toast.success('📊 Export comptable téléchargé !')
-    } catch {
-      exportAccountingExcel({ sales: [], expenses: [], period: period2, shopName: 'HabaShop', currency }, fmt)
-      toast.success('📊 Export téléchargé')
-    }
-  }
   const [period,     setPeriod]     = useState<Period>('30days')
   const [reportTab,  setReportTab]  = useState<'ventes' | 'stock' | 'clients' | 'finance' | 'rh'>('ventes')
+  // Plage de dates personnalisée ("YYYY-MM-DD") : si from+to renseignés, elle PRIME sur les presets.
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo,   setCustomTo]   = useState('')
+  // Filtres additionnels (locaux) : catégorie produit (Ventes/Stock) + employé (Paie).
+  const [filterCat,  setFilterCat]  = useState('')
+  const [filterEmp,  setFilterEmp]  = useState('')
+  const [employees,  setEmployees]  = useState<any[]>([])
+  const i = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+
+  // Liste employés (dropdown filtre Paie) — chargée une fois.
+  useEffect(() => { employeesApi.list().then((d: any[]) => Array.isArray(d) && setEmployees(d)).catch(() => {}) }, [])
+
+  // Catégories présentes dans les ventes chargées (dropdown filtre catégorie).
+  const categories = useMemo(() => {
+    const set = new Set<string>()
+    salesData.forEach((s: any) => (s.items ?? []).forEach((it: any) => { const c = it.product?.category; if (c) set.add(c) }))
+    return [...set].sort()
+  }, [salesData])
+
+  // Plage active (ms) : personnalisée si from+to, sinon dérivée du preset.
+  const range = useMemo(() => {
+    const now = Date.now(); const DAY = 86400000
+    if (customFrom && customTo) {
+      const from = new Date(`${customFrom}T00:00:00`).getTime()
+      const to   = new Date(`${customTo}T23:59:59`).getTime()
+      if (Number.isFinite(from) && Number.isFinite(to) && to >= from) return { from, to, custom: true }
+    }
+    const span = ({ today: DAY, '7days': 7 * DAY, '30days': 30 * DAY, '3months': 90 * DAY, year: 365 * DAY } as Record<Period, number>)[period]
+    return { from: now - span, to: now, custom: false }
+  }, [period, customFrom, customTo])
+
+  // Export Excel (.xlsx multi-feuilles, sans dépendance) des données BRUTES de la plage active.
+  const handleExcelExport = async () => {
+    try {
+      const [sales, expenses, products, emps] = await Promise.all([
+        salesApi.list(), expensesApi.list(), productsApi.list(), employeesApi.list(),
+      ])
+      const sheets = buildReportSheets({
+        lang, currency, range,
+        sales: sales ?? [], expenses: expenses ?? [], products: products ?? [], employees: emps ?? [],
+        filterCat, filterEmp,
+      })
+      const fromStr = new Date(range.from).toISOString().slice(0, 10)
+      const toStr = new Date(range.to).toISOString().slice(0, 10)
+      writeXlsx(`HabaShop_Rapports_${fromStr}_${toStr}`, sheets)
+      toast.success(i('📊 Excel téléchargé !', '📊 Excel downloaded!', '📊 ¡Excel descargado!', '📊 Excel scaricato!'))
+    } catch {
+      toast.error(i('Échec de l\'export Excel', 'Excel export failed', 'Error al exportar Excel', 'Esportazione Excel fallita'))
+    }
+  }
 
   const PERIOD_LABELS: Record<Period, string> = {
     today:    t('reports_today'),
@@ -83,15 +124,20 @@ export default function Reports() {
     '3months':t('reports_3months'),
     year:     t('reports_year'),
   }
+  const _loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+  // Libellé de période affiché : plage custom si active, sinon le preset.
+  const periodLabel = range.custom
+    ? `${new Date(range.from).toLocaleDateString(_loc)} → ${new Date(range.to).toLocaleDateString(_loc)}`
+    : PERIOD_LABELS[period]
 
   // KPIs + graphique 7j + top produits calculés depuis les vraies ventes
   // (les items incluent product.buyPrice → vraie marge brute = CA − coût d'achat).
   const { data, chartData, topProducts } = useMemo(() => {
     const now = Date.now(); const DAY = 86400000
-    const span = ({ today: DAY, '7days': 7*DAY, '30days': 30*DAY, '3months': 90*DAY, year: 365*DAY } as Record<Period, number>)[period]
     const ts = (s: any) => new Date(s.createdAt).getTime()
-    const cur  = salesData.filter(s => ts(s) >= now - span)
-    const prev = salesData.filter(s => ts(s) >= now - 2*span && ts(s) < now - span)
+    const winLen = range.to - range.from
+    const cur  = salesData.filter(s => ts(s) >= range.from && ts(s) <= range.to)
+    const prev = salesData.filter(s => ts(s) >= range.from - winLen && ts(s) < range.from)
     const agg = (arr: any[]) => {
       const ca = arr.reduce((s, x) => s + (x.total ?? 0), 0)
       const margin = arr.reduce((s, x) => s + (x.items ?? []).reduce((m: number, it: any) => m + (((it.unitPrice ?? 0) - (it.product?.buyPrice ?? 0)) * (it.qty ?? 0)), 0), 0)
@@ -108,17 +154,18 @@ export default function Reports() {
     })
     const pmap: Record<string, { name: string; qty: number; ca: number }> = {}
     cur.forEach(s => (s.items ?? []).forEach((it: any) => {
+      if (filterCat && (it.product?.category ?? '') !== filterCat) return // filtre catégorie (niveau item)
       const name = it.product?.name ?? (lang === 'en' ? 'Product' : lang === 'es' ? 'Producto' : lang === 'it' ? 'Prodotto' : 'Produit')
       pmap[name] = pmap[name] ?? { name, qty: 0, ca: 0 }
       pmap[name].qty += it.qty ?? 0; pmap[name].ca += it.total ?? 0
     }))
-    const top = Object.values(pmap).sort((a, b) => b.ca - a.ca).slice(0, 5).map((p2, i) => ({ rank: i + 1, ...p2 }))
+    const top = Object.values(pmap).sort((a, b) => b.ca - a.ca).slice(0, 5).map((p2, idx) => ({ rank: idx + 1, ...p2 }))
     return {
       data: { ...c, caEvol: evol(c.ca, p.ca), marginEvol: evol(c.margin, p.margin), txEvol: evol(c.transactions, p.transactions), cartEvol: evol(c.avgCart, p.avgCart) },
       chartData: chart,
       topProducts: top,
     }
-  }, [salesData, period, lang])
+  }, [salesData, range, lang, filterCat])
 
   const paymentModes = paymentData.map(p => ({ label: p.name, pct: p.value, color: p.color, amount: p.amount }))
 
@@ -133,7 +180,7 @@ export default function Reports() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('nav_reports')}</h1>
-          <p className="page-subtitle">{PERIOD_LABELS[period]}</p>
+          <p className="page-subtitle">{periodLabel}</p>
         </div>
       </div>
       <div className="panel">
@@ -154,33 +201,49 @@ export default function Reports() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('nav_reports')}</h1>
-          <p className="page-subtitle">{PERIOD_LABELS[period]}</p>
+          <p className="page-subtitle">{periodLabel}</p>
         </div>
       </div>
 
-      {/* Sélecteur période + exports */}
+      {/* Sélecteur période (presets + plage personnalisée) + exports */}
       <div className="flex flex-wrap gap-2 items-center">
-        {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
-          <button key={p}
-            className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-            style={{
-              background: period === p ? 'var(--p)' : 'var(--card)',
-              color: period === p ? '#fff' : 'var(--text2)',
-              border: period === p ? 'none' : '1px solid var(--border)',
-              cursor: 'pointer', fontFamily: 'inherit',
-              boxShadow: period === p ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
-            }}
-            onClick={() => setPeriod(p)}
-          >{PERIOD_LABELS[p]}</button>
-        ))}
+        {(Object.keys(PERIOD_LABELS) as Period[]).map(p => {
+          const active = !range.custom && period === p
+          return (
+            <button key={p}
+              className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              style={{
+                background: active ? 'var(--p)' : 'var(--card)',
+                color: active ? '#fff' : 'var(--text2)',
+                border: active ? 'none' : '1px solid var(--border)',
+                cursor: 'pointer', fontFamily: 'inherit',
+                boxShadow: active ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
+              }}
+              onClick={() => { setCustomFrom(''); setCustomTo(''); setPeriod(p) }}
+            >{PERIOD_LABELS[p]}</button>
+          )
+        })}
+        {/* Plage de dates personnalisée */}
+        <div className="flex items-center gap-1.5" style={{ padding: '4px 10px', borderRadius: 12, border: `1px solid ${range.custom ? 'var(--p)' : 'var(--border)'}`, background: 'var(--card)' }}>
+          <span style={{ fontSize: 12, color: 'var(--text3)' }}>{i('Du', 'From', 'Desde', 'Dal')}</span>
+          <input type="date" value={customFrom} max={customTo || undefined} onChange={e => setCustomFrom(e.target.value)}
+            className="input" style={{ height: 32, width: 'auto', fontSize: 12, padding: '2px 8px' }} aria-label={i('Date de début', 'Start date', 'Fecha de inicio', 'Data inizio')} />
+          <span style={{ fontSize: 12, color: 'var(--text3)' }}>{i('au', 'to', 'hasta', 'al')}</span>
+          <input type="date" value={customTo} min={customFrom || undefined} onChange={e => setCustomTo(e.target.value)}
+            className="input" style={{ height: 32, width: 'auto', fontSize: 12, padding: '2px 8px' }} aria-label={i('Date de fin', 'End date', 'Fecha de fin', 'Data fine')} />
+          {range.custom && (
+            <button onClick={() => { setCustomFrom(''); setCustomTo('') }} title={i('Effacer', 'Clear', 'Borrar', 'Cancella')}
+              style={{ border: 'none', background: 'transparent', color: 'var(--text3)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px' }}>×</button>
+          )}
+        </div>
         <div className="flex-1" />
-        <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleAccountingExport}>
-          <BarChart2 size={13}/> {lang === 'en' ? 'Accounting Excel' : lang === 'es' ? 'Excel contable' : lang === 'it' ? 'Excel contabile' : 'Excel comptable'}
+        <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleExcelExport}>
+          <BarChart2 size={13}/> {i('Exporter Excel', 'Export Excel', 'Exportar Excel', 'Esporta Excel')}
         </button>
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
           exportCSV('habashop_rapports',
             ['Période','CA','Marge','Transactions','Panier moyen'],
-            [[PERIOD_LABELS[period], data.ca, data.margin, data.transactions, data.avgCart]]
+            [[periodLabel, data.ca, data.margin, data.transactions, data.avgCart]]
           )
           toast.success('📊 Export CSV téléchargé !')
         }}>
@@ -206,11 +269,30 @@ export default function Reports() {
               topProducts.map(p => [String(p.rank), p.name, String(p.qty), fmt(p.ca)])
             )}
           `
-          openPDF(`${t('report_pdf_title')} — ${PERIOD_LABELS[period]}`, body)
+          openPDF(`${t('report_pdf_title')} — ${periodLabel}`, body)
           toast.success('📄 PDF ouvert !')
         }}>
           <Download size={13} /> {t('btn_export')} PDF
         </button>
+      </div>
+
+      {/* Filtres additionnels — catégorie (Ventes/Stock) + employé (Paie) ; portée : Top produits + exports */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <select className="input" style={{ width: 'auto', minWidth: 170, height: 36, fontSize: 12 }}
+          value={filterCat} onChange={e => setFilterCat(e.target.value)} aria-label={i('Filtre catégorie', 'Category filter', 'Filtro categoría', 'Filtro categoria')}>
+          <option value="">{i('Toutes les catégories', 'All categories', 'Todas las categorías', 'Tutte le categorie')}</option>
+          {categories.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select className="input" style={{ width: 'auto', minWidth: 170, height: 36, fontSize: 12 }}
+          value={filterEmp} onChange={e => setFilterEmp(e.target.value)} aria-label={i('Filtre employé', 'Employee filter', 'Filtro empleado', 'Filtro dipendente')}>
+          <option value="">{i('Tous les employés', 'All employees', 'Todos los empleados', 'Tutti i dipendenti')}</option>
+          {employees.map(e => <option key={String(e.id)} value={String(e.id)}>{e.name}</option>)}
+        </select>
+        {(filterCat || filterEmp) && (
+          <button className="btn btn-ghost btn-sm" onClick={() => { setFilterCat(''); setFilterEmp('') }}>
+            {i('Réinitialiser', 'Reset', 'Reiniciar', 'Reimposta')}
+          </button>
+        )}
       </div>
 
       {/* KPIs */}
