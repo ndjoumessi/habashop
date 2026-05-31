@@ -162,4 +162,37 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
     // les DEUX types coexistent dans la case (2 chips draggables : matin + journée)
     await waitFor(() => expect(marieMon.querySelectorAll('[draggable="true"]').length).toBe(2))
   })
+
+  it('vue Mois : la bascule affiche la grille calendaire et agrège les shifts en pastilles', async () => {
+    const today = new Date()
+    const ym = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+    const mid = `${ym}-15` // 15 du mois courant
+    // mock fidèle à l'API : ne renvoie le shift que pour le mois demandé (la grille mois interroge ≤3 mois).
+    ;(shiftsApi.list as any).mockImplementation((m: string) => Promise.resolve(m === ym ? [{ id: 's1', employeeId: 'emp1', date: mid, shiftTypeKey: 'morning' }] : []))
+    render(<Planning />)
+    await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
+    // bascule vers la vue mois
+    fireEvent.click(screen.getByRole('button', { name: 'Mois' }))
+    // la grille du mois affiche le numéro de jour 15 (cellule avec title = date)
+    await waitFor(() => expect(screen.getByText('15')).toBeInTheDocument())
+    const cell15 = screen.getByText('15').closest('[title]') as HTMLElement
+    // la cellule agrège le shift matin → compteur "1"
+    await waitFor(() => expect(within(cell15).getByText('1')).toBeInTheDocument())
+    // le bouton "Copier" (semaine uniquement) est masqué en vue mois
+    expect(screen.queryByText(/Copier/)).not.toBeInTheDocument()
+  })
+
+  it('vue Mois : cliquer un jour ramène à la vue semaine (drill)', async () => {
+    const today = new Date()
+    const ym = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+    const mid = `${ym}-15`
+    ;(shiftsApi.list as any).mockImplementation((m: string) => Promise.resolve(m === ym ? [{ id: 's1', employeeId: 'emp1', date: mid, shiftTypeKey: 'morning' }] : []))
+    render(<Planning />)
+    await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Mois' }))
+    await waitFor(() => expect(screen.queryByText(/Copier/)).not.toBeInTheDocument()) // confirme vue mois
+    fireEvent.click(screen.getByText('15')) // drill sur le 15
+    // retour vue semaine : le bouton "Copier" réapparaît
+    await waitFor(() => expect(screen.getByText(/Copier/)).toBeInTheDocument())
+  })
 })

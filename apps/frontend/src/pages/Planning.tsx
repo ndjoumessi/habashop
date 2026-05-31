@@ -4,19 +4,17 @@ import { employeesApi, shiftsApi, leaveRequestsApi } from '@/lib/api'
 import { eachDateInclusive } from '@/components/hr/hrShared'
 import toast from 'react-hot-toast'
 import {
-  SHIFT_TYPES, shiftLabel, localeFor, buildT,
+  SHIFT_TYPES, shiftLabel, localeFor, buildT, ymd,
   type ShiftType, type PlanningEmployee,
 } from '@/components/planning/planningShared'
 import PlanningHeader from '@/components/planning/PlanningHeader'
 import ShiftSelector from '@/components/planning/ShiftSelector'
 import PlanningFilters from '@/components/planning/PlanningFilters'
 import PlanningGrid from '@/components/planning/PlanningGrid'
+import PlanningMonth from '@/components/planning/PlanningMonth'
 import AssignShiftModal from '@/components/planning/AssignShiftModal'
 import PlanningStats from '@/components/planning/PlanningStats'
 
-// Date locale → "YYYY-MM-DD" (clé Shift backend ; local, pas UTC, pour coller à weekDays).
-const ymd = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const cellKey = (empId: string, date: string) => `${empId}_${date}`
 
 export default function Planning() {
@@ -35,6 +33,7 @@ export default function Planning() {
   const [lockedDates, setLockedDates] = useState<Set<string>>(new Set())
   const [filterDept, setFilterDept] = useState('all')
   const [filterStatus, setFilterStatus] = useState<ShiftType|'all'>('all')
+  const [view, setView] = useState<'week'|'month'>('week')
   const [planningWeek, setPlanningWeek] = useState(new Date())
   const [shiftModal, setShiftModal] = useState<{empId:string; di:number; name:string} | null>(null)
   const [modalShift, setModalShift] = useState<ShiftType>('full')
@@ -76,9 +75,21 @@ export default function Planning() {
     })
   }, [planningWeek])
 
-  // Charge les shifts du/des mois couverts par la semaine affichée (fusion dans l'état maître).
+  // Mois affiché (vue mois) : 1er du mois de planningWeek (ancre du sous-titre / « jour hors mois »).
+  const monthAnchor = useMemo(() => new Date(planningWeek.getFullYear(), planningWeek.getMonth(), 1), [planningWeek])
+  // Grille calendaire 6×7 (42 cases), lundi-first, débordant sur les mois adjacents.
+  const monthGridDays = useMemo(() => {
+    const first = monthAnchor
+    const day = first.getDay()
+    const start = new Date(first)
+    start.setDate(first.getDate() + (day===0 ? -6 : 1 - day)) // recule au lundi de la 1ʳᵉ semaine
+    return Array(42).fill(null).map((_,i) => { const d = new Date(start); d.setDate(start.getDate()+i); return d })
+  }, [monthAnchor])
+
+  // Charge les shifts du/des mois couverts par la plage affichée (semaine OU grille mois). Fusion dans l'état maître.
   const loadWeek = useCallback(async () => {
-    const months = [...new Set([ymd(weekDays[0]).slice(0, 7), ymd(weekDays[6]).slice(0, 7)])]
+    const range = view === 'month' ? monthGridDays : weekDays
+    const months = [...new Set(range.map(d => ymd(d).slice(0, 7)))] // tous les mois touchés (≤3 en vue mois)
     try {
       const results = await Promise.all(months.map(m => shiftsApi.list(m)))
       // Regroupe les lignes en TABLEAUX par cellule (plusieurs shifts/jour possibles).
@@ -101,7 +112,7 @@ export default function Planning() {
     } catch {
       toast.error(lang === 'en' ? 'Failed to load schedule' : lang === 'es' ? 'Error al cargar la planificación' : lang === 'it' ? 'Caricamento pianificazione fallito' : 'Échec du chargement du planning')
     }
-  }, [weekDays, lang])
+  }, [view, weekDays, monthGridDays, lang])
   useEffect(() => { loadWeek() }, [loadWeek])
 
   // Vues dérivées indexées par jour (0-6) de la semaine affichée → la grille/filtres/stats
@@ -194,31 +205,46 @@ export default function Planning() {
     removeCell(srcEmpId, srcDi, moving.type) // retire ce type de la source
   }
 
+  // Export CSV de la plage affichée (semaine = 7 jours ; mois = jours du mois). Lit shiftsByDate
+  // par date → fonctionne pour les deux vues, multi-shift joint par ' + '.
   const exportCSVPlan = () => {
     const locale = localeFor(lang)
     const T = buildT(lang)
+    const days = view === 'month' ? monthGridDays.filter(d => d.getMonth() === monthAnchor.getMonth()) : weekDays
     const rows = [
-      [T.employee, ...weekDays.map(d=> d.toLocaleDateString(locale, {weekday:'short',day:'numeric',month:'short'}))],
+      [T.employee, ...days.map(d=> d.toLocaleDateString(locale, {weekday:'short',day:'numeric',month:'short'}))],
       ...filtered.map(emp=>[
         emp.name,
-        ...weekDays.map((_,di)=>(shifts[emp.id]?.[di] ?? []).map(s => `${shiftLabel(s.type, lang)} ${SHIFT_TYPES[s.type].hours}`.trim()).join(' + '))
+        ...days.map(d=>(shiftsByDate[cellKey(emp.id, ymd(d))] ?? []).map(s => `${shiftLabel(s.type, lang)} ${SHIFT_TYPES[s.type].hours}`.trim()).join(' + '))
       ])
     ]
     const csv = '﻿' + rows.map(r=>r.join(';')).join('\r\n')
     const blob = new Blob([csv],{type:'text/csv;charset=utf-8'})
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href=url; a.download=`Planning_${ymd(weekDays[0])}.csv`; a.click()
+    a.href=url; a.download=`Planning_${ymd(days[0])}.csv`; a.click()
     URL.revokeObjectURL(url)
     toast.success(lang === 'en' ? '📊 Schedule exported!' : lang === 'es' ? '📊 ¡Planificación exportada!' : lang === 'it' ? '📊 Pianificazione esportata!' : '📊 Planning exporté !')
   }
 
   // Résumé de la semaine affichée (dérivé de la vue di).
-  const stats = useMemo(() => {
+  const weekStats = useMemo(() => {
     const counts: Record<string,number> = {}
     Object.values(shifts).forEach(days => Object.values(days).forEach(arr => arr.forEach(s => { counts[s.type] = (counts[s.type]??0)+1 })))
     return counts
   }, [shifts])
+  // Résumé du mois affiché (dates IN-month, hors débordement) à partir de shiftsByDate.
+  const monthStats = useMemo(() => {
+    const inMonth = new Set(monthGridDays.filter(d => d.getMonth() === monthAnchor.getMonth()).map(ymd))
+    const counts: Record<string,number> = {}
+    for (const [key, arr] of Object.entries(shiftsByDate)) {
+      const date = key.slice(key.lastIndexOf('_') + 1)
+      if (!inMonth.has(date)) continue
+      arr.forEach(s => { counts[s.type] = (counts[s.type]??0)+1 })
+    }
+    return counts
+  }, [shiftsByDate, monthGridDays, monthAnchor])
+  const stats = view === 'month' ? monthStats : weekStats
 
   // Phase 7 — copie la semaine affichée vers la suivante (mêmes shifts à J+7). Ignore les
   // congés ('leave', pilotés par les demandes) et ne remplace pas un congé approuvé cible.
@@ -268,25 +294,39 @@ export default function Planning() {
 
   return (
     <div className="animate-in" style={{ display:'flex', flexDirection:'column', gap:16 }}>
-      <PlanningHeader lang={lang} weekDays={weekDays} planningWeek={planningWeek} setPlanningWeek={setPlanningWeek} onExport={exportCSVPlan} onCopyWeek={copyWeekToNext} />
+      <PlanningHeader lang={lang} view={view} setView={setView} weekDays={weekDays} monthAnchor={monthAnchor} planningWeek={planningWeek} setPlanningWeek={setPlanningWeek} onExport={exportCSVPlan} onCopyWeek={copyWeekToNext} />
 
-      <ShiftSelector lang={lang} activeShift={activeShift} setActiveShift={setActiveShift} />
+      {/* Le sélecteur de type ne sert qu'à l'assignation au clic (vue semaine). */}
+      {view === 'week' && <ShiftSelector lang={lang} activeShift={activeShift} setActiveShift={setActiveShift} />}
 
       <PlanningFilters lang={lang} filterDept={filterDept} setFilterDept={setFilterDept} filterStatus={filterStatus} setFilterStatus={setFilterStatus} depts={depts} />
 
-      <PlanningGrid
-        lang={lang}
-        loading={loading}
-        filtered={filtered}
-        weekDays={weekDays}
-        shifts={shifts}
-        lockedShifts={lockedForWeek}
-        activeShift={activeShift}
-        onAssign={assignShift}
-        onOpenModal={(empId, di, name) => { setModalShift(activeShift); setShiftModal({ empId, di, name }) }}
-        onClearShift={clearShift}
-        onMoveShift={moveShift}
-      />
+      {view === 'month' ? (
+        <PlanningMonth
+          lang={lang}
+          loading={loading}
+          monthGridDays={monthGridDays}
+          monthAnchor={monthAnchor}
+          shiftsByDate={shiftsByDate}
+          filtered={filtered}
+          lockedDates={lockedDates}
+          onPickDay={(d) => { setPlanningWeek(d); setView('week') }}  // drill : ouvre la semaine du jour cliqué
+        />
+      ) : (
+        <PlanningGrid
+          lang={lang}
+          loading={loading}
+          filtered={filtered}
+          weekDays={weekDays}
+          shifts={shifts}
+          lockedShifts={lockedForWeek}
+          activeShift={activeShift}
+          onAssign={assignShift}
+          onOpenModal={(empId, di, name) => { setModalShift(activeShift); setShiftModal({ empId, di, name }) }}
+          onClearShift={clearShift}
+          onMoveShift={moveShift}
+        />
+      )}
 
       {shiftModal && (
         <AssignShiftModal lang={lang} shiftModal={shiftModal} modalShift={modalShift} setModalShift={setModalShift} weekDays={weekDays} onConfirm={confirmShift} onClose={() => setShiftModal(null)} />

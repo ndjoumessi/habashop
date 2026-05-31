@@ -40,9 +40,13 @@ export const getDayLabels = (lang: string) => ({
 export const localeFor = (lang: string) =>
   lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
 
+// Date locale → "YYYY-MM-DD" (clé Shift backend ; local, pas UTC, pour coller à weekDays/monthGrid).
+export const ymd = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 export const buildT = (lang: string) => ({
   fr:{
-    title:'Planning', week:'Semaine', today:'Aujourd\'hui',
+    title:'Planning', week:'Semaine', month:'Mois', today:'Aujourd\'hui',
     prev:'Préc.', next:'Suiv.', employee:'Employé',
     allDepts:'Tous les départements', allStatus:'Tous les shifts',
     assignTip:'Sélectionnez un type puis cliquez sur une case',
@@ -51,7 +55,7 @@ export const buildT = (lang: string) => ({
     noEmp:'Aucun employé',
   },
   en:{
-    title:'Planning', week:'Week', today:'Today',
+    title:'Planning', week:'Week', month:'Month', today:'Today',
     prev:'Prev', next:'Next', employee:'Employee',
     allDepts:'All departments', allStatus:'All shifts',
     assignTip:'Select a type then click a cell',
@@ -60,7 +64,7 @@ export const buildT = (lang: string) => ({
     noEmp:'No employees',
   },
   es:{
-    title:'Planificación', week:'Semana', today:'Hoy',
+    title:'Planificación', week:'Semana', month:'Mes', today:'Hoy',
     prev:'Ant.', next:'Sig.', employee:'Empleado',
     allDepts:'Todos los departamentos', allStatus:'Todos los turnos',
     assignTip:'Seleccione un tipo y haga clic en una celda',
@@ -69,7 +73,7 @@ export const buildT = (lang: string) => ({
     noEmp:'Sin empleados',
   },
   it:{
-    title:'Pianificazione', week:'Settimana', today:'Oggi',
+    title:'Pianificazione', week:'Settimana', month:'Mese', today:'Oggi',
     prev:'Prec.', next:'Succ.', employee:'Dipendente',
     allDepts:'Tutti i reparti', allStatus:'Tutti i turni',
     assignTip:'Seleziona un tipo poi clicca una cella',
@@ -78,7 +82,7 @@ export const buildT = (lang: string) => ({
     noEmp:'Nessun dipendente',
   },
 }[lang as 'fr'|'en'|'es'|'it'] ?? {
-  title:'Planning',week:'Week',today:'Today',prev:'Prev',next:'Next',
+  title:'Planning',week:'Week',month:'Month',today:'Today',prev:'Prev',next:'Next',
   employee:'Employee',allDepts:'All depts',allStatus:'All',
   assignTip:'Select type then click',clearTip:'Dbl-click to clear',
   export:'Export',stats:'Summary',noEmp:'No employees',
