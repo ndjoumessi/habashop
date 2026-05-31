@@ -236,7 +236,8 @@ export default function Reports() {
               style={{ border: 'none', background: 'transparent', color: 'var(--text3)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px' }}>×</button>
           )}
         </div>
-        <div className="flex-1" />
+        {/* Groupe d'exports : reste soudé et aligné à droite (wrap en bloc sur petits écrans) */}
+        <div className="flex flex-wrap gap-2 items-center" style={{ marginLeft: 'auto' }}>
         <button className="btn btn-ghost btn-sm gap-1.5" onClick={handleExcelExport}>
           <BarChart2 size={13}/> {i('Exporter Excel', 'Export Excel', 'Exportar Excel', 'Esporta Excel')}
         </button>
@@ -274,6 +275,7 @@ export default function Reports() {
         }}>
           <Download size={13} /> {t('btn_export')} PDF
         </button>
+        </div>
       </div>
 
       {/* Filtres additionnels — catégorie (Ventes/Stock) + employé (Paie) ; portée : Top produits + exports */}
