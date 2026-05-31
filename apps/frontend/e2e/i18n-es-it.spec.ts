@@ -18,6 +18,13 @@ import { test, expect, type Page } from '@playwright/test'
 
 const BASE = process.env.E2E_BASE ?? 'https://habashop.vercel.app'
 
+// Le LanguageSwitcher de l'en-tête est devenu un INDICATEUR en lecture seule (plus de
+// menu) ; la bascule de langue vit désormais dans Paramètres → Langue & Devise (setLang).
+// setLang persiste AUSSI au tenant (PATCH /api/tenant) et setTenant RESTAURE lang à chaque
+// /me → on doit attendre le PATCH avant tout reload. Le tenant démo étant PARTAGÉ : ces
+// tests tournent en SÉRIE et afterEach REMET le français (sinon la démo resterait en es/it).
+test.describe.configure({ mode: 'serial' })
+
 async function login(page: Page) {
   await page.goto(`${BASE}/login`)
   await page.fill('input[type="email"]', 'admin@habashop.com')
@@ -26,18 +33,37 @@ async function login(page: Page) {
   await page.waitForURL(/\/app\/dashboard/, { timeout: 12000 })
 }
 
-// Bascule via le LanguageSwitcher de l'en-tête. Contexte neuf => langue = fr au départ,
-// donc le libellé cible (ES/IT) est unique vs le trigger qui affiche "FR".
-async function switchLang(page: Page, label: 'ES' | 'IT') {
-  const trigger = page.locator('button[title="Changer la langue"]').first()
-  await trigger.click()                                  // ouvre le menu
-  await page.getByText(label, { exact: true }).click()   // <span>ES</span> / <span>IT</span>
-  await expect(trigger).toContainText(label)             // confirme le switch
+// Choisit une langue dans Paramètres → Langue & Devise, en NAVIGATION SPA (clic sidebar,
+// sans page.goto) : un reload revalide la session côté backend et redirige par intermittence
+// vers /login (cold start). Le libellé de section peut être dans n'importe quelle langue
+// (selon l'état courant) → regex 4-langues ; le clic auto-attend le montage SPA de Settings.
+async function setLangUI(page: Page, nativeName: string) {
+  await page.locator('a[href="/app/settings"]').first().click()
+  await page.getByRole('button', { name: /Langue & Devise|Language & Currency|Idioma & Divisa|Lingua & Valuta/ })
+    .first().click({ timeout: 20_000 })
+  // Clic sur le nom natif (texte exact du <div>) → l'événement remonte au <button> parent ;
+  // plus robuste que le nom accessible (qui inclut le drapeau emoji + le nom anglais).
+  await page.getByText(nativeName, { exact: true }).first().click({ timeout: 10_000 })
 }
+
+async function switchLang(page: Page, c: LangCase) {
+  await setLangUI(page, c.native)
+  await expect(page.getByRole('button', { name: c.langNav }).first()) // confirme : chrome localisé
+    .toBeVisible({ timeout: 5000 })
+}
+
+// Le tenant démo est partagé → on le remet en français après chaque test (best-effort).
+// La session persiste dans le contexte de la page (token localStorage) → pas de re-login.
+test.afterEach(async ({ page }) => {
+  try {
+    await setLangUI(page, 'Français')
+  } catch { /* best-effort : ne pas faire échouer la suite sur le nettoyage */ }
+})
 
 type LangCase = {
   code: 'es' | 'it'
-  label: 'ES' | 'IT'
+  native: string   // nom natif de la langue (bouton de sélection, libellé statique)
+  langNav: string  // libellé localisé de la section "Langue & Devise" (confirme le switch)
   custTableView: string
   custGridView: string
   payrollPeriod: RegExp
@@ -46,19 +72,19 @@ type LangCase = {
 
 const CASES: LangCase[] = [
   {
-    code: 'es', label: 'ES',
+    code: 'es', native: 'Español', langNav: 'Idioma & Divisa',
     custTableView: 'Vista tabla', custGridView: 'Vista cuadrícula',
     payrollPeriod: /Período/, hrHeader: /Recursos Humanos/,
   },
   {
-    code: 'it', label: 'IT',
+    code: 'it', native: 'Italiano', langNav: 'Lingua & Valuta',
     custTableView: 'Vista tabella', custGridView: 'Vista griglia',
     payrollPeriod: /Periodo/, hrHeader: /Risorse Umane/,
   },
 ]
 
 for (const c of CASES) {
-  test(`i18n ${c.label} — écrans modifiés rendent correctement`, async ({ page }) => {
+  test(`i18n ${c.code.toUpperCase()} — écrans modifiés rendent correctement`, async ({ page }) => {
     // Backend live (api.habashop.com) + cold starts → marges généreuses.
     test.setTimeout(90_000)
     const SCREEN = 25_000
@@ -66,11 +92,11 @@ for (const c of CASES) {
     page.on('pageerror', e => errors.push(String(e)))
 
     await login(page)
-    await switchLang(page, c.label)
+    await switchLang(page, c)
 
     // Navigation SPA via la sidebar (NavLink <a href="/app/…">) — login UNIQUE, sans
-    // rechargement : l'auth reste en mémoire. Un page.goto rechargerait la page et
-    // revaliderait la session côté backend (intermittent → redirection /login).
+    // rechargement : la langue choisie reste en mémoire et la session n'est pas revalidée
+    // (un page.goto redirige par intermittence vers /login sur cold start backend).
     const nav = (path: string) => page.locator(`a[href="${path}"]`).first().click()
 
     // ── Customers : tooltips title= traduits (correction directe) ──
