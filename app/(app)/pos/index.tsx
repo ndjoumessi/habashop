@@ -138,6 +138,22 @@ export default function POSScreen() {
 
   // ── Validation de la vente : online → API, offline → file d'attente ──
   const confirmSale = async () => {
+    // Garde espèces : interdit l'encaissement si le montant reçu est < total (mode cash
+    // uniquement ; Wave/Orange/Carte non concernés). Filet défensif — le bouton « Encaisser »
+    // est déjà désactivé côté panier dans ce cas.
+    if (paymentMode === 'cash' && cashGiven < totalAmt) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
+      Alert.alert(
+        i('Montant insuffisant', 'Insufficient amount', 'Monto insuficiente', 'Importo insufficiente'),
+        i(
+          'Le montant reçu est inférieur au total à payer.',
+          'The amount received is less than the total due.',
+          'El monto recibido es inferior al total a pagar.',
+          'L\'importo ricevuto è inferiore al totale da pagare.',
+        ),
+      )
+      return
+    }
     if (!isOnline) {
       await enqueueAction('SALE', {
         items: cart.map(c => ({ productId: c.productId, qty: c.quantity, price: c.price })),

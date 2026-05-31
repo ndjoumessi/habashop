@@ -74,6 +74,8 @@ export default function POSCart({
   const totalQty = cart.reduce((n, c) => n + c.quantity, 0)
   const discAmt = subtotal - total
   const change = cashGiven - total
+  // Garde espèces : en mode cash, montant reçu < total → encaissement bloqué.
+  const cashShort = paymentMode === 'cash' && cashGiven < total
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -165,10 +167,22 @@ export default function POSCart({
               </View>
             )}
 
+            {cashShort && (
+              <Text style={s.cashWarn}>
+                {i(
+                  'Montant reçu insuffisant',
+                  'Insufficient amount received',
+                  'Monto recibido insuficiente',
+                  'Importo ricevuto insufficiente',
+                )}
+              </Text>
+            )}
             <Pressable
-              style={s.payBtn}
+              style={[s.payBtn, cashShort && s.payBtnDisabled]}
               onPress={onCheckout}
+              disabled={cashShort}
               accessibilityRole="button"
+              accessibilityState={{ disabled: cashShort }}
               accessibilityLabel={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(total)}`}
             >
               <Text style={s.payBtnTxt}>{i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} {fmt(total)}</Text>
@@ -241,6 +255,8 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm, ...Shadow.colored(C.primary),
   },
   payBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
+  payBtnDisabled: { opacity: 0.45 },
+  cashWarn: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.danger, textAlign: 'center' },
   clearBtn: { alignItems: 'center', paddingVertical: Spacing.sm },
   clearTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger },
 })
