@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { Trophy, Receipt, CreditCard, Package, Users, TrendingUp, Wallet, DollarSign, UserCog } from 'lucide-react'
 import { t } from '@/stores/appStore'
+import { useThemeColor } from '@/hooks/useThemeColor'
 import { RADIAN } from '@/components/reports/reportsShared'
 
 interface ReportsTabsProps {
@@ -23,6 +24,9 @@ const PAY_LABEL = (mode: string, lang: string) =>
   mode === 'card' ? (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte') : mode
 
 export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, paymentData, activePayIndex, setActivePayIndex, salesData, data, topProducts }: ReportsTabsProps) {
+  // var() non résolu en attribut SVG recharts → couleurs résolues en JS, réactives au thème.
+  const gridColor = useThemeColor('--border')
+  const tickColor = useThemeColor('--text3', '#888')
   const recentSales = salesData.slice(0, 8).map((s: any) => ({
     ref: `VNT-${String(s.id ?? '').slice(-6).toUpperCase()}`,
     date: s.createdAt,
@@ -115,9 +119,9 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                   <stop offset="100%" stopColor="#6C47FF" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)" vertical={false} />
-              <XAxis dataKey="day" tick={{ fill:'var(--text3)', fontSize:11 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={v => abbr(v)} tick={{ fill:'var(--text3)', fontSize:10 }} axisLine={false} tickLine={false} width={38} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+              <XAxis dataKey="day" tick={{ fill:tickColor, fontSize:11 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={v => abbr(v)} tick={{ fill:tickColor, fontSize:10 }} axisLine={false} tickLine={false} width={38} />
               <Tooltip
                 formatter={(v: number) => [fmt(v), lang === 'en' ? 'Revenue' : lang === 'es' ? 'Ingresos' : lang === 'it' ? 'Ricavi' : 'CA']}
                 contentStyle={{ background:'var(--card)', border:'1px solid rgba(108,71,255,.3)', borderRadius:10, fontSize:12 }}
