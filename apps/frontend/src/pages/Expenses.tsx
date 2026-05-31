@@ -82,13 +82,17 @@ export default function Expenses() {
   const nTTC = nHT ? Math.round(parseFloat(nHT) * (1 + nVat / 100)) : 0
 
   // Computed
-  const may = expenses.filter(e => e.date.startsWith('2026-05'))
-  const totalMay   = may.reduce((s, e) => s + e.amount, 0)
+  // Préfixe AAAA-MM du mois COURANT (heure locale) — plus de mois figé en dur.
+  // Le libellé KPI est déjà dynamique (ExpensesKpis : new Date()) ; on aligne la donnée.
+  const now = new Date()
+  const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const thisMonth = expenses.filter(e => e.date.startsWith(monthPrefix))
+  const totalThisMonth = thisMonth.reduce((s, e) => s + e.amount, 0)
   const totalPending = expenses.filter(e => e.status === 'EN ATTENTE').reduce((s, e) => s + e.amount, 0)
   const pendingCount = expenses.filter(e => e.status === 'EN ATTENTE').length
   const recurrentCount = expenses.filter(e => e.recurrent).length
   const totalBudget = Object.values(budgets).reduce((s, v) => s + v, 0)
-  const budgetLeft  = totalBudget - totalMay
+  const budgetLeft  = totalBudget - totalThisMonth
 
   // Filtered journal
   const filtered = expenses.filter(e => {
@@ -208,7 +212,7 @@ export default function Expenses() {
       </div>
 
       <ExpensesKpis
-        totalMay={totalMay}
+        totalThisMonth={totalThisMonth}
         totalPending={totalPending}
         pendingCount={pendingCount}
         recurrentCount={recurrentCount}
