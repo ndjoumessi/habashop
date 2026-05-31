@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { toInputDate, displayDate, calcAnciennete, calcHeures, calcPonctualite } from '@/components/hr/hrShared'
+import { toInputDate, displayDate, calcAnciennete } from '@/components/hr/hrShared'
 
 // Logique métier HR pure (hrShared) — verrouille le comportement après la découpe HR.
 // Paie (calcNet/calcBrut/payrollBreakdown, buildMonths/monthLabel) déjà couverte par
-// payroll-calc.test.ts + payroll-months.test.ts → ici : DATES/CONTRATS + PRÉSENCES.
+// payroll-calc.test.ts + payroll-months.test.ts → ici : DATES/CONTRATS.
 
 // ─── CONTRATS : cohérence des dates ───────────────────────────────────────────
 describe('toInputDate — normalisation de date (entrée formulaires contrat)', () => {
@@ -64,34 +64,5 @@ describe('calcAnciennete — ancienneté contrat', () => {
   })
 })
 
-// ─── PRÉSENCES : agrégation heures / ponctualité ──────────────────────────────
-// ⚠️ NOTE (documentée) : calcHeures/calcPonctualite lisent la fixture STATIQUE POINTAGE
-// (par index 1-6), pas des données de présence réelles → valeurs de démo. Voir RAPPORT.
-describe('calcHeures — agrégation des heures travaillées (arrivée→départ)', () => {
-  it('somme la semaine de l\'employé 1 = 43h36', () => {
-    // 538 + 547 + 445 + 541 + 545 = 2616 min = 43h36 (jours repos ignorés)
-    expect(calcHeures(1)).toBe('43h36')
-  })
-  it('minutes < 10 → zéro-paddées (emp 2 = 55h05)', () => {
-    // 600+595+610+600+600+300 = 3305 min = 55h05 → vérifie le padStart(2,"0") des minutes
-    expect(calcHeures(2)).toBe('55h05')
-  })
-  it('jours sans arrivée/départ (congé/repos) ignorés → emp 5 (tout congé) = 0h', () => {
-    expect(calcHeures(5)).toBe('0h')
-  })
-  it('employé inconnu → 0h (POINTAGE absent)', () => {
-    expect(calcHeures(999)).toBe('0h')
-  })
-})
-
-describe('calcPonctualite — % de ponctualité (present/retard comptés, absent non)', () => {
-  it('aucun absent → 100 % (emp 1)', () => {
-    expect(calcPonctualite(1)).toBe(100)
-  })
-  it('1 absent sur 5 jours travaillés → 80 % (emp 3)', () => {
-    expect(calcPonctualite(3)).toBe(80)
-  })
-  it('aucun jour travaillé (tout congé/repos) → 100 % par défaut (emp 5)', () => {
-    expect(calcPonctualite(5)).toBe(100)
-  })
-})
+// (calcHeures/calcPonctualite + fixture POINTAGE supprimés en Phase 3 : code orphelin,
+//  jamais branché à l'UI ; les présences réelles passent par l'API Attendance.)

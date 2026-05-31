@@ -1,4 +1,4 @@
-import { Clock, CheckCircle, XCircle, AlertTriangle, CheckCheck, Download } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, AlertTriangle, CheckCheck, Download, Umbrella, Coffee } from 'lucide-react'
 import { type Employee, type AttendUiStatus, roleLabel, attendStatusLabel } from '@/components/hr/hrShared'
 
 type AttendEntry = { in: string | null; out: string | null; status: AttendUiStatus }
@@ -17,6 +17,8 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
     late:    { label: lang === 'en' ? 'Late' : lang === 'es' ? 'Retraso' : lang === 'it' ? 'Ritardo' : 'Retard',      color:'#F59E0B', bg:'rgba(245,158,11,.1)', icon:<Clock size={11}/> },
     absent:  { label: lang === 'en' ? 'Absent' : lang === 'es' ? 'Ausente' : lang === 'it' ? 'Assente' : 'Absent',    color:'#EF4444', bg:'rgba(239,68,68,.1)',  icon:<XCircle size={11}/> },
     half:    { label: lang === 'en' ? 'Half' : lang === 'es' ? 'Media jornada' : lang === 'it' ? 'Mezza giornata' : 'Mi-temps',    color:'#3B82F6', bg:'rgba(59,130,246,.1)', icon:<AlertTriangle size={11}/> },
+    leave:   { label: lang === 'en' ? 'Leave' : lang === 'es' ? 'Permiso' : lang === 'it' ? 'Congedo' : 'Congé',  color:'#14B8A6', bg:'rgba(20,184,166,.12)', icon:<Umbrella size={11}/> },
+    rest:    { label: lang === 'en' ? 'Rest' : lang === 'es' ? 'Descanso' : lang === 'it' ? 'Riposo' : 'Repos',   color:'#64748B', bg:'rgba(100,116,139,.14)', icon:<Coffee size={11}/> },
   }
 
   const dayEmp = employees.filter(e => e.active !== false)
@@ -97,7 +99,7 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
 
       {/* Employee rows */}
       <div className="panel" style={{ overflow:'hidden', padding:0 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 90px 90px 110px 110px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 80px 80px 96px 188px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
           <span>{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Arrival' : lang === 'es' ? 'Llegada' : lang === 'it' ? 'Arrivo' : 'Arrivée'}</span>
@@ -110,7 +112,7 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
           const sc = STATUS_CONFIG[a.status]
           return (
             <div key={emp.id} style={{
-              display:'grid', gridTemplateColumns:'1fr 90px 90px 110px 110px',
+              display:'grid', gridTemplateColumns:'1fr 80px 80px 96px 188px',
               alignItems:'center', gap:0,
               padding:'10px 16px',
               borderBottom: i < dayEmp.length-1 ? '1px solid var(--border)' : 'none',
@@ -145,8 +147,8 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
                   style={{ width:80, height:30, fontSize:12, textAlign:'center', padding:'0 4px' }} />
               </div>
               {/* Boutons statut */}
-              <div style={{ display:'flex', justifyContent:'center', gap:4 }}>
-                {(['present','late','absent','half'] as const).map(s => (
+              <div style={{ display:'flex', justifyContent:'center', gap:4, flexWrap:'wrap' }}>
+                {(['present','late','absent','half','leave','rest'] as const).map(s => (
                   <button key={s} type="button"
                     onClick={() => setEmpField(String(emp.id), 'status', s)}
                     title={STATUS_CONFIG[s].label}

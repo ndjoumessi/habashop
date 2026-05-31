@@ -189,12 +189,24 @@ export default function HR() {
   }, [attendanceMonth])
 
   // Enregistre une entrée de présence : MAJ optimiste locale + upsert backend (status → API).
+  // En cas d'échec : ROLLBACK atomique (restaure l'entrée précédente, ou retire la clé si
+  // c'était une nouvelle entrée) → état local recollé à la DB, pas d'incohérence persistante.
   const saveAttendance = (empId: string, date: string, entry: { in: string|null; out: string|null; status: AttendUiStatus }) => {
-    setAttendance(prev => ({ ...prev, [`${empId}_${date}`]: entry }))
+    const key = `${empId}_${date}`
+    const prevEntry = attendance[key] // valeur avant l'édition (closure = état au rendu courant)
+    setAttendance(prev => ({ ...prev, [key]: entry }))
     attendanceApi.upsert({
       employeeId: empId, date, status: attendStatusToApi[entry.status],
       arriveTime: entry.in, departTime: entry.out,
-    }).catch(() => toast.error(i('Échec de l\'enregistrement de la présence', 'Failed to save attendance', 'Error al guardar la asistencia', 'Salvataggio presenza fallito')))
+    }).catch(() => {
+      setAttendance(prev => {
+        const next = { ...prev }
+        if (prevEntry === undefined) delete next[key] // était une nouvelle entrée → on l'enlève
+        else next[key] = prevEntry                    // sinon → on restaure l'ancienne
+        return next
+      })
+      toast.error(i('Échec de l\'enregistrement de la présence', 'Failed to save attendance', 'Error al guardar la asistencia', 'Salvataggio presenza fallito'))
+    })
   }
 
   const depts = useMemo(() => Array.from(new Set(employees.map(e => e.dept))), [employees])

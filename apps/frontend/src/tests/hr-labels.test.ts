@@ -74,6 +74,20 @@ describe('attendStatusLabel — statut de présence', () => {
     expect(attendStatusLabel('conge', 'en')).toBe('On leave')
     expect(attendStatusLabel('repos', 'es')).toBe('Descanso')
   })
+  it('statuts feuille late/half traduits (clés UI du tab)', () => {
+    expect(attendStatusLabel('late', 'fr')).toBe('Retard')
+    expect(attendStatusLabel('half', 'en')).toBe('Half-day')
+  })
+  it('leave / rest traduits (Phase 3 — surfacés dans la feuille)', () => {
+    expect(attendStatusLabel('leave', 'fr')).toBe('Congé')
+    expect(attendStatusLabel('leave', 'en')).toBe('Leave')
+    expect(attendStatusLabel('leave', 'es')).toBe('Permiso')
+    expect(attendStatusLabel('leave', 'it')).toBe('Congedo')
+    expect(attendStatusLabel('rest', 'fr')).toBe('Repos')
+    expect(attendStatusLabel('rest', 'en')).toBe('Rest')
+    expect(attendStatusLabel('rest', 'es')).toBe('Descanso')
+    expect(attendStatusLabel('rest', 'it')).toBe('Riposo')
+  })
   it('statut inconnu → repli final sur la clé', () => {
     expect(attendStatusLabel('inconnu', 'en')).toBe('inconnu')
   })

@@ -35,15 +35,6 @@ export interface LeaveRequest {
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
-export const POINTAGE: Record<number, Record<number, { status: 'present'|'retard'|'absent'|'conge'|'repos'; arrive?: string; depart?: string }>> = {
-  1: { 0:{status:'present',arrive:'08:02',depart:'17:00'}, 1:{status:'present',arrive:'07:58',depart:'17:05'}, 2:{status:'retard',arrive:'09:35',depart:'17:00'}, 3:{status:'present',arrive:'08:01',depart:'17:02'}, 4:{status:'present',arrive:'07:55',depart:'17:00'}, 5:{status:'repos'}, 6:{status:'repos'} },
-  2: { 0:{status:'present',arrive:'08:00',depart:'18:00'}, 1:{status:'present',arrive:'08:05',depart:'18:00'}, 2:{status:'present',arrive:'07:50',depart:'18:00'}, 3:{status:'present',arrive:'08:00',depart:'18:00'}, 4:{status:'present',arrive:'08:00',depart:'18:00'}, 5:{status:'present',arrive:'08:00',depart:'13:00'}, 6:{status:'repos'} },
-  3: { 0:{status:'present',arrive:'08:30',depart:'17:00'}, 1:{status:'absent'}, 2:{status:'present',arrive:'08:25',depart:'17:00'}, 3:{status:'present',arrive:'08:30',depart:'17:00'}, 4:{status:'present',arrive:'08:28',depart:'17:00'}, 5:{status:'repos'}, 6:{status:'repos'} },
-  4: { 0:{status:'present',arrive:'13:00',depart:'18:00'}, 1:{status:'present',arrive:'08:00',depart:'13:00'}, 2:{status:'present',arrive:'08:00',depart:'18:00'}, 3:{status:'retard',arrive:'14:20',depart:'18:00'}, 4:{status:'present',arrive:'08:00',depart:'13:00'}, 5:{status:'repos'}, 6:{status:'repos'} },
-  5: { 0:{status:'conge'}, 1:{status:'conge'}, 2:{status:'conge'}, 3:{status:'conge'}, 4:{status:'conge'}, 5:{status:'repos'}, 6:{status:'repos'} },
-  6: { 0:{status:'repos'}, 1:{status:'repos'}, 2:{status:'repos'}, 3:{status:'repos'}, 4:{status:'repos'}, 5:{status:'repos'}, 6:{status:'repos'} },
-}
-
 export const COLORS = ['#6C3FD6','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#8B5CF6','#F472B6']
 export const DEPT_COLORS: Record<string, string> = {
   'Ventes':     '#6C3FD6',
@@ -123,25 +114,28 @@ export const contractLabel = (t: string, lang: string): string =>
   CONTRACT_LABELS[t]?.[lang] ?? t
 
 export const ATTEND_LABELS: Record<string, Record<string, string>> = {
-  present: { fr:'Présent', en:'Present',  es:'Presente',   it:'Presente' },
-  retard:  { fr:'Retard',  en:'Late',     es:'Retraso',    it:'Ritardo'  },
-  absent:  { fr:'Absent',  en:'Absent',   es:'Ausente',    it:'Assente'  },
-  conge:   { fr:'Congé',   en:'On leave', es:'De permiso', it:'In ferie' },
-  repos:   { fr:'Repos',   en:'Day off',  es:'Descanso',   it:'Riposo'   },
+  present: { fr:'Présent',  en:'Present',  es:'Presente',      it:'Presente'       },
+  retard:  { fr:'Retard',   en:'Late',     es:'Retraso',       it:'Ritardo'        },
+  late:    { fr:'Retard',   en:'Late',     es:'Retraso',       it:'Ritardo'        },
+  absent:  { fr:'Absent',   en:'Absent',   es:'Ausente',       it:'Assente'        },
+  half:    { fr:'Mi-temps', en:'Half-day', es:'Media jornada', it:'Mezza giornata' },
+  conge:   { fr:'Congé',    en:'On leave', es:'De permiso',    it:'In ferie'       },
+  repos:   { fr:'Repos',    en:'Day off',  es:'Descanso',      it:'Riposo'         },
+  leave:   { fr:'Congé',    en:'Leave',    es:'Permiso',       it:'Congedo'        },
+  rest:    { fr:'Repos',    en:'Rest',     es:'Descanso',      it:'Riposo'         },
 }
 export const attendStatusLabel = (s: string, lang: string): string =>
   ATTEND_LABELS[s]?.[lang] ?? (STATUS_CFG as any)[s]?.label ?? s
 
 // Mapping statut feuille de présence (frontend, minuscule) ⇄ API Attendance (MAJUSCULE).
-// La feuille gère present/late/absent/half ; LEAVE/REST de l'API (congé/repos planning) →
-// repliés sur 'absent' à l'affichage de la feuille (non gérés par ce tab).
-export type AttendUiStatus = 'present' | 'late' | 'absent' | 'half'
+// La feuille gère present/late/absent/half/leave/rest (1:1 avec l'API depuis Phase 3).
+export type AttendUiStatus = 'present' | 'late' | 'absent' | 'half' | 'leave' | 'rest'
 export const attendStatusToApi: Record<AttendUiStatus, string> = {
-  present: 'PRESENT', late: 'LATE', absent: 'ABSENT', half: 'HALF',
+  present: 'PRESENT', late: 'LATE', absent: 'ABSENT', half: 'HALF', leave: 'LEAVE', rest: 'REST',
 }
 export function attendStatusFromApi(s: string): AttendUiStatus {
   const m: Record<string, AttendUiStatus> = {
-    PRESENT: 'present', LATE: 'late', ABSENT: 'absent', HALF: 'half', LEAVE: 'absent', REST: 'absent',
+    PRESENT: 'present', LATE: 'late', ABSENT: 'absent', HALF: 'half', LEAVE: 'leave', REST: 'rest',
   }
   return m[s] ?? 'absent'
 }
@@ -188,26 +182,6 @@ export function calcAnciennete(hiredAt: string, lang: string = 'fr', now: Date =
   const mLabel = (n: number) => lang === 'en' ? `${n}mo` : lang === 'es' ? `${n} mes${n > 1 ? 'es' : ''}` : lang === 'it' ? `${n} mese${n > 1 ? 'i' : ''}` : `${n} mois`
   if (years >= 1) return `${yLabel(years)}${rem > 0 ? ` ${mLabel(rem)}` : ''}`
   return mLabel(months)
-}
-
-export function calcHeures(empId: number): string {
-  let total = 0
-  Object.values(POINTAGE[empId] ?? {}).forEach(p => {
-    if (p.arrive && p.depart) {
-      const [ah, am] = p.arrive.split(':').map(Number)
-      const [dh, dm] = p.depart.split(':').map(Number)
-      total += (dh * 60 + dm) - (ah * 60 + am)
-    }
-  })
-  return `${Math.floor(total / 60)}h${total % 60 > 0 ? String(total % 60).padStart(2, '0') : ''}`
-}
-
-export function calcPonctualite(empId: number): number {
-  let work = 0, ontime = 0
-  Object.values(POINTAGE[empId] ?? {}).forEach(p => {
-    if (['present','retard','absent'].includes(p.status)) { work++; if (p.status !== 'absent') ontime++ }
-  })
-  return work === 0 ? 100 : Math.round((ontime / work) * 100)
 }
 
 
