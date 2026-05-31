@@ -6,20 +6,21 @@ const BASE = 'https://habashop.vercel.app'
 // l'écran en devise EUR — régression BUG 2 (double conversion : 686,02 € → 1,05 €).
 // NOTE : /api/auth/login est rate-limité (10 / 15 min / IP) → un seul login ici.
 test('Bulletin PDF = écran en EUR (pas de double conversion)', async ({ page }) => {
-  // 1) Auth via storageState (projet `setup`). On charge d'abord la page (origine établie →
-  //    localStorage accessible ; sans login UI il n'y a plus de navigation préalable).
-  await page.goto(`${BASE}/app/payroll`)
-
-  // 2) Force la devise d'AFFICHAGE = EUR dans le store persisté, puis reload.
-  //    (Le fix "currency device-local" garantit que setTenant n'écrase PAS la devise
-  //     sur un refresh même tenant → EUR survit, comme pour un vrai utilisateur.)
-  await page.evaluate(() => {
-    const raw = localStorage.getItem('habashop-config')
-    const cfg = raw ? JSON.parse(raw) : { state: {}, version: 0 }
-    cfg.state = { ...(cfg.state ?? {}), currency: 'EUR' }
-    localStorage.setItem('habashop-config', JSON.stringify(cfg))
+  // 1) Force la devise d'AFFICHAGE = EUR AVANT toute navigation (init script → s'exécute sur
+  //    l'origine, après le seed storageState, avant le code de l'app). Évite l'evaluate sur
+  //    about:blank (SecurityError) ET un reload (2ᵉ nav qui annulerait le /me de montage → logout).
+  //    Le fix "currency device-local" garantit que setTenant n'écrase PAS la devise (EUR survit).
+  await page.addInitScript(() => {
+    try {
+      const raw = localStorage.getItem('habashop-config')
+      const cfg = raw ? JSON.parse(raw) : { state: {}, version: 0 }
+      cfg.state = { ...(cfg.state ?? {}), currency: 'EUR' }
+      localStorage.setItem('habashop-config', JSON.stringify(cfg))
+    } catch { /* origine sans localStorage → ignoré */ }
   })
-  await page.reload()
+
+  // 2) Auth via storageState (projet `setup`). UNE seule navigation vers Paie (EUR déjà posée).
+  await page.goto(`${BASE}/app/payroll`)
   await page.waitForLoadState('networkidle')
 
   // 3) Cible la ligne de Fatoumata Ndiaye (450 000 XOF, sans retenue → net = brut).

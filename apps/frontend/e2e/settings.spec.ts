@@ -26,7 +26,8 @@ test('Settings — all 6 sections render', async ({ page }) => {
 
   // Lang & Currency
   await page.getByRole('button', { name: /Langue & Devise|Language & Currency/ }).first().click()
-  await expect(page.getByText(/Devise d'affichage|Display currency/).first()).toBeVisible({ timeout: 5000 })
+  // Libellé actuel = « Devise de la boutique » (anciennement « Devise d'affichage » — assertion réalignée).
+  await expect(page.getByText(/Devise de la boutique|Shop currency/).first()).toBeVisible({ timeout: 5000 })
   await expect(page.getByText(/Apparence|Appearance/).first()).toBeVisible()
 
   // Notifications — target the nav button by its unique description (avoids the header bell)
