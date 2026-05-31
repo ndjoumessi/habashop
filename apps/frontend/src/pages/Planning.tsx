@@ -26,7 +26,11 @@ export default function Planning() {
   const [activeShift, setActiveShift] = useState<ShiftType>('full')
   // Phase 6-planning : shifts DATÉS via /api/shifts. État maître keyé "empId_YYYY-MM-DD"
   // (lookup O(1), shifts datés — lundi 25/05 ≠ lundi 01/06). `id` gardé pour DELETE.
-  const [shiftsByDate, setShiftsByDate] = useState<Record<string, { type: ShiftType; id: string }>>({})
+  // Multi-shift/jour : VALEUR = TABLEAU de shifts (ex. matin + soir le même jour). Choix d'un
+  // tableau (vs map par type) car il mappe 1:1 le rendu « N chips empilés dans une case » et la
+  // vue dérivée par index de jour ; l'unicité par type est garantie côté ADD (setCell skip-if-present)
+  // et côté contrainte SQL @@unique([tenantId,employeeId,date,shiftTypeKey]).
+  const [shiftsByDate, setShiftsByDate] = useState<Record<string, { type: ShiftType; id: string }[]>>({})
   // Verrouillage : jours de congé APPROUVÉ (remplace l'ancienne carte localStorage transitoire).
   const [lockedDates, setLockedDates] = useState<Set<string>>(new Set())
   const [filterDept, setFilterDept] = useState('all')
@@ -77,9 +81,21 @@ export default function Planning() {
     const months = [...new Set([ymd(weekDays[0]).slice(0, 7), ymd(weekDays[6]).slice(0, 7)])]
     try {
       const results = await Promise.all(months.map(m => shiftsApi.list(m)))
+      // Regroupe les lignes en TABLEAUX par cellule (plusieurs shifts/jour possibles).
+      const grouped: Record<string, { type: ShiftType; id: string }[]> = {}
+      for (const r of results.flat()) {
+        const k = cellKey(String(r.employeeId), String(r.date))
+        ;(grouped[k] ??= []).push({ type: r.shiftTypeKey as ShiftType, id: String(r.id) })
+      }
+      const monthSet = new Set(months)
       setShiftsByDate(prev => {
-        const next = { ...prev }
-        for (const r of results.flat()) next[cellKey(String(r.employeeId), String(r.date))] = { type: r.shiftTypeKey as ShiftType, id: String(r.id) }
+        const next: Record<string, { type: ShiftType; id: string }[]> = {}
+        // Conserve les clés hors des mois rechargés ; remplace celles des mois chargés (gère aussi les suppressions distantes).
+        for (const [k, v] of Object.entries(prev)) {
+          const date = k.slice(k.lastIndexOf('_') + 1)
+          if (!monthSet.has(date.slice(0, 7))) next[k] = v
+        }
+        for (const [k, v] of Object.entries(grouped)) next[k] = v
         return next
       })
     } catch {
@@ -93,13 +109,13 @@ export default function Planning() {
   const { shifts, lockedForWeek } = useMemo(() => {
     const dateToIndex: Record<string, number> = {}
     weekDays.forEach((d, i) => { dateToIndex[ymd(d)] = i })
-    const sh: Record<string, Record<number, ShiftType>> = {}
+    const sh: Record<string, Record<number, { type: ShiftType; id: string }[]>> = {}
     const lk: Record<string, Record<number, boolean>> = {}
     const parse = (key: string) => { const i = key.lastIndexOf('_'); return { empId: key.slice(0, i), date: key.slice(i + 1) } }
-    for (const [key, v] of Object.entries(shiftsByDate)) {
+    for (const [key, arr] of Object.entries(shiftsByDate)) {
       const { empId, date } = parse(key); const di = dateToIndex[date]
       if (di === undefined) continue
-      ;(sh[empId] ??= {})[di] = v.type
+      ;(sh[empId] ??= {})[di] = arr
     }
     lockedDates.forEach(key => {
       const { empId, date } = parse(key); const di = dateToIndex[date]
@@ -116,56 +132,66 @@ export default function Planning() {
       if (!e.isActive) return false
       if (filterDept !== 'all' && e.dept !== filterDept) return false
       if (filterStatus !== 'all') {
-        const hasShift = weekDays.some((_,di) => shifts[e.id]?.[di] === filterStatus)
+        const hasShift = weekDays.some((_,di) => (shifts[e.id]?.[di] ?? []).some(s => s.type === filterStatus))
         if (!hasShift) return false
       }
       return true
     })
   }, [employees, filterDept, filterStatus, shifts, weekDays])
 
-  // Upsert d'une case (date = weekDays[di]) — bloqué si verrouillé ; optimiste + ROLLBACK atomique.
+  // AJOUTE un shift d'un type donné à une case (date = weekDays[di]) — n'écrase PAS les autres
+  // types déjà posés. Bloqué si verrouillé ; no-op si ce type est déjà présent ; optimiste + ROLLBACK.
   const setCell = (empId: string, di: number, type: ShiftType) => {
     const date = ymd(weekDays[di]); const key = cellKey(empId, date)
     if (lockedDates.has(key)) return
-    const prev = shiftsByDate[key]
-    setShiftsByDate(p => ({ ...p, [key]: { type, id: prev?.id ?? '' } }))
+    if ((shiftsByDate[key] ?? []).some(s => s.type === type)) return // type déjà présent → no-op
+    setShiftsByDate(p => ({ ...p, [key]: [...(p[key] ?? []), { type, id: '' }] })) // optimiste (id provisoire)
     shiftsApi.upsert({ employeeId: empId, date, shiftTypeKey: type })
-      .then(r => setShiftsByDate(p => ({ ...p, [key]: { type, id: String(r.id) } })))
+      .then(r => setShiftsByDate(p => ({ ...p, [key]: (p[key] ?? []).map(s => (s.type === type && !s.id) ? { type, id: String(r.id) } : s) })))
       .catch(() => {
-        setShiftsByDate(p => { const n = { ...p }; if (prev) n[key] = prev; else delete n[key]; return n })
+        setShiftsByDate(p => {
+          const arr = (p[key] ?? []).filter(s => !(s.type === type && !s.id)) // retire l'entrée optimiste
+          const n = { ...p }; if (arr.length) n[key] = arr; else delete n[key]; return n
+        })
         toast.error(lang === 'en' ? 'Save failed' : lang === 'es' ? 'Error al guardar' : lang === 'it' ? 'Salvataggio fallito' : 'Échec de l\'enregistrement')
       })
   }
 
-  const removeCell = (empId: string, di: number) => {
+  // RETIRE un shift : `type` fourni → seulement ce type ; sinon → TOUS les shifts de la case.
+  const removeCell = (empId: string, di: number, type?: ShiftType) => {
     const key = cellKey(empId, ymd(weekDays[di]))
     if (lockedDates.has(key)) return
     const prev = shiftsByDate[key]
-    if (!prev) return
-    setShiftsByDate(p => { const n = { ...p }; delete n[key]; return n })
-    if (prev.id) shiftsApi.remove(prev.id).catch(() => {
-      setShiftsByDate(p => ({ ...p, [key]: prev }))
+    if (!prev || prev.length === 0) return
+    const toRemove = type ? prev.filter(s => s.type === type) : prev
+    if (toRemove.length === 0) return
+    setShiftsByDate(p => {
+      const remaining = type ? (p[key] ?? []).filter(s => s.type !== type) : []
+      const n = { ...p }; if (remaining.length) n[key] = remaining; else delete n[key]; return n
+    })
+    const ids = toRemove.map(s => s.id).filter(Boolean)
+    if (ids.length) Promise.all(ids.map(id => shiftsApi.remove(id))).catch(() => {
+      setShiftsByDate(p => ({ ...p, [key]: prev })) // rollback : restaure le tableau complet
       toast.error(lang === 'en' ? 'Delete failed' : lang === 'es' ? 'Error al eliminar' : lang === 'it' ? 'Eliminazione fallita' : 'Échec de la suppression')
     })
   }
 
-  const assignShift = (empId:string, di:number) => {
-    if (shifts[empId]?.[di] === activeShift) removeCell(empId, di) // re-clic même type → retire
-    else setCell(empId, di, activeShift)
-  }
-  const clearShift = (empId:string, di:number) => removeCell(empId, di)
+  // Clic sur une case pleine → AJOUTE le shift actif (conserve les autres types déjà posés).
+  const assignShift = (empId:string, di:number) => setCell(empId, di, activeShift)
+  // Double-clic → retire UNIQUEMENT le type actif (les autres shifts de la case restent).
+  const clearShift = (empId:string, di:number) => removeCell(empId, di, activeShift)
 
-  // Drag&drop : DÉPLACE le shift source vers la case cible (upsert cible + delete source).
+  // Drag&drop : DÉPLACE le shift du TYPE source précis vers la case cible (upsert cible + delete source).
   // Respecte le verrouillage (source ou cible congé approuvé → ignoré) et ignore les congés.
-  const moveShift = (srcEmpId:string, srcDi:number, dstEmpId:string, dstDi:number) => {
+  const moveShift = (srcEmpId:string, srcDi:number, dstEmpId:string, dstDi:number, type: ShiftType) => {
     if (srcEmpId === dstEmpId && srcDi === dstDi) return
     const srcKey = cellKey(srcEmpId, ymd(weekDays[srcDi]))
     const dstKey = cellKey(dstEmpId, ymd(weekDays[dstDi]))
     if (lockedDates.has(srcKey) || lockedDates.has(dstKey)) return
-    const src = shiftsByDate[srcKey]
-    if (!src || src.type === 'leave') return // rien à déplacer / congé non déplaçable
-    setCell(dstEmpId, dstDi, src.type) // pose à la cible
-    removeCell(srcEmpId, srcDi)        // retire de la source
+    const moving = (shiftsByDate[srcKey] ?? []).find(s => s.type === type)
+    if (!moving || moving.type === 'leave') return // rien à déplacer / congé non déplaçable
+    setCell(dstEmpId, dstDi, moving.type)    // pose ce type à la cible
+    removeCell(srcEmpId, srcDi, moving.type) // retire ce type de la source
   }
 
   const exportCSVPlan = () => {
@@ -175,7 +201,7 @@ export default function Planning() {
       [T.employee, ...weekDays.map(d=> d.toLocaleDateString(locale, {weekday:'short',day:'numeric',month:'short'}))],
       ...filtered.map(emp=>[
         emp.name,
-        ...weekDays.map((_,di)=>{ const s = shifts[emp.id]?.[di]; return s ? `${shiftLabel(s, lang)} ${SHIFT_TYPES[s].hours}` : '' })
+        ...weekDays.map((_,di)=>(shifts[emp.id]?.[di] ?? []).map(s => `${shiftLabel(s.type, lang)} ${SHIFT_TYPES[s.type].hours}`.trim()).join(' + '))
       ])
     ]
     const csv = '﻿' + rows.map(r=>r.join(';')).join('\r\n')
@@ -190,7 +216,7 @@ export default function Planning() {
   // Résumé de la semaine affichée (dérivé de la vue di).
   const stats = useMemo(() => {
     const counts: Record<string,number> = {}
-    Object.values(shifts).forEach(days => Object.values(days).forEach(s => { counts[s] = (counts[s]??0)+1 }))
+    Object.values(shifts).forEach(days => Object.values(days).forEach(arr => arr.forEach(s => { counts[s.type] = (counts[s.type]??0)+1 })))
     return counts
   }, [shifts])
 
@@ -201,13 +227,13 @@ export default function Planning() {
     weekDays.forEach((d, i) => { dateToIndex[ymd(d)] = i })
     const targetDates = weekDays.map(d => { const t = new Date(d); t.setDate(t.getDate() + 7); return ymd(t) })
     const toCopy: { empId: string; date: string; type: ShiftType }[] = []
-    for (const [key, v] of Object.entries(shiftsByDate)) {
+    for (const [key, arr] of Object.entries(shiftsByDate)) {
       const i = key.lastIndexOf('_'); const empId = key.slice(0, i); const date = key.slice(i + 1)
       const di = dateToIndex[date]
-      if (di === undefined || v.type === 'leave') continue // hors semaine affichée ou congé → ignoré
+      if (di === undefined) continue // hors semaine affichée → ignoré
       const targetDate = targetDates[di]
       if (lockedDates.has(cellKey(empId, targetDate))) continue // ne pas écraser un congé approuvé cible
-      toCopy.push({ empId, date: targetDate, type: v.type })
+      for (const s of arr) { if (s.type === 'leave') continue; toCopy.push({ empId, date: targetDate, type: s.type }) } // copie TOUS les types de la case
     }
     if (toCopy.length === 0) {
       toast(lang === 'en' ? 'No shift to copy this week' : lang === 'es' ? 'Ningún turno que copiar esta semana' : lang === 'it' ? 'Nessun turno da copiare questa settimana' : 'Aucun shift à copier cette semaine')
@@ -217,7 +243,13 @@ export default function Planning() {
       const created = await Promise.all(toCopy.map(c => shiftsApi.upsert({ employeeId: c.empId, date: c.date, shiftTypeKey: c.type })))
       setShiftsByDate(prev => {
         const next = { ...prev }
-        created.forEach((r, idx) => { next[cellKey(toCopy[idx].empId, toCopy[idx].date)] = { type: toCopy[idx].type, id: String(r.id) } })
+        created.forEach((r, idx) => {
+          const k = cellKey(toCopy[idx].empId, toCopy[idx].date); const t = toCopy[idx].type
+          const arr = next[k] ?? []
+          next[k] = arr.some(s => s.type === t)
+            ? arr.map(s => s.type === t ? { type: t, id: String(r.id) } : s)
+            : [...arr, { type: t, id: String(r.id) }]
+        })
         return next
       })
       toast.success(`${toCopy.length} ${lang === 'en' ? 'shifts copied → next week' : lang === 'es' ? 'turnos copiados → próxima semana' : lang === 'it' ? 'turni copiati → settimana succ.' : 'shifts copiés → semaine suivante'}`)

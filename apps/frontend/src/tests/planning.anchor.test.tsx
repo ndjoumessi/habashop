@@ -137,12 +137,29 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
     const rows = container.querySelectorAll('tbody tr')
     const marieMon = rows[0].querySelectorAll('td > div')[1] as HTMLElement
     const kofiMon  = rows[1].querySelectorAll('td > div')[1] as HTMLElement
+    // Multi-shift : le SHIFT (chip draggable) porte son type ; on glisse le chip, on dépose sur la case cible.
+    const marieMonChip = marieMon.querySelector('[draggable="true"]') as HTMLElement
     const store: Record<string, string> = {}
     const dataTransfer = { setData: (k: string, v: string) => { store[k] = v }, getData: (k: string) => store[k] ?? '', effectAllowed: '' }
-    fireEvent.dragStart(marieMon, { dataTransfer })
+    fireEvent.dragStart(marieMonChip, { dataTransfer })
     fireEvent.drop(kofiMon, { dataTransfer })
     // upsert du shift matin sur Kofi (cible) + suppression du shift source (id s1)
     await waitFor(() => expect(shiftsApi.upsert).toHaveBeenCalledWith(expect.objectContaining({ employeeId: 'emp2', date: mondayYmd(), shiftTypeKey: 'morning' })))
     expect(shiftsApi.remove).toHaveBeenCalledWith('s1')
+  })
+
+  it('multi-shift : cliquer une case déjà pleine AJOUTE le shift actif (les deux types coexistent)', async () => {
+    // Marie a un shift matin lundi ; le shift actif par défaut = "full" (Journée).
+    ;(shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    const { container } = render(<Planning />)
+    await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('08:00-13:00').length).toBeGreaterThanOrEqual(2))
+    const rows = container.querySelectorAll('tbody tr')
+    const marieMon = rows[0].querySelectorAll('td > div')[1] as HTMLElement
+    fireEvent.click(marieMon) // case pleine → AJOUTE le type actif (full), n'écrase pas matin
+    // upsert du 2ᵉ type (full) le même jour
+    await waitFor(() => expect(shiftsApi.upsert).toHaveBeenCalledWith(expect.objectContaining({ employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'full' })))
+    // les DEUX types coexistent dans la case (2 chips draggables : matin + journée)
+    await waitFor(() => expect(marieMon.querySelectorAll('[draggable="true"]').length).toBe(2))
   })
 })

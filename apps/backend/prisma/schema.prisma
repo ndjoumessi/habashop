@@ -383,9 +383,9 @@ model Attendance {
 
 // Shift planning DATÉ (Phase 5). Le localStorage frontend stockait UN type par (empId, index
 // jour-de-semaine 0-6) → ici on passe à une vraie DATE. `shiftTypeKey` = clé SHIFT_TYPES
-// frontend (morning|afternoon|full|night|rest|leave). `@@unique([tenantId,employeeId,date])`
-// = 1 shift/jour/employé (miroir du modèle localStorage : une seule valeur par case). Les
-// horaires/label/couleur viennent de SHIFT_TYPES côté front, mais on accepte des overrides.
+// frontend (morning|afternoon|full|night|rest|leave). `@@unique([tenantId,employeeId,date,
+// shiftTypeKey])` = **plusieurs shifts/jour/employé** (ex. matin + soir), mais pas 2× le même
+// type le même jour. Les horaires/label/couleur viennent de SHIFT_TYPES côté front (overrides ok).
 model Shift {
   id           String   @id @default(cuid())
   tenantId     String
@@ -402,7 +402,7 @@ model Shift {
   tenant   Tenant   @relation(fields: [tenantId], references: [id])
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
-  @@unique([tenantId, employeeId, date])
+  @@unique([tenantId, employeeId, date, shiftTypeKey])
   @@index([tenantId, date])
   @@index([employeeId])
 }

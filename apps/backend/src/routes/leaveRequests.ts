@@ -26,7 +26,7 @@ async function applyApprovedLeaveSideEffects(tenantId: string, employeeId: strin
   for (const date of eachDateInclusive(startDate, endDate)) {
     try {
       await prisma.shift.upsert({
-        where: { tenantId_employeeId_date: { tenantId, employeeId, date } },
+        where: { tenantId_employeeId_date_shiftTypeKey: { tenantId, employeeId, date, shiftTypeKey: 'leave' } },
         create: { tenantId, employeeId, date, shiftTypeKey: 'leave', startTime: null, endTime: null, label: null, color: null },
         update: { shiftTypeKey: 'leave' },
       })

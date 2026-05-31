@@ -56,15 +56,31 @@ describe('GET /api/shifts', () => {
 })
 
 describe('POST /api/shifts', () => {
-  it('upsert (tenantId,employeeId,date)', async () => {
+  it('upsert (tenantId,employeeId,date,shiftTypeKey)', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'POST', url: '/api/shifts', headers: H('MANAGER'),
       payload: { employeeId: 'e1', date: '2026-06-02', shiftTypeKey: 'morning' } })
     expect(res.statusCode).toBe(200)
     expect(db.shift.upsert).toHaveBeenCalledWith(expect.objectContaining({
-      where: { tenantId_employeeId_date: { tenantId: 'T1', employeeId: 'e1', date: '2026-06-02' } },
+      where: { tenantId_employeeId_date_shiftTypeKey: { tenantId: 'T1', employeeId: 'e1', date: '2026-06-02', shiftTypeKey: 'morning' } },
     }))
     expect(db.attendance.upsert).not.toHaveBeenCalled() // pas REST → pas d'Attendance auto
+  })
+  it('multi-shift : deux types différents le même jour → 2 upserts ciblant des clés composites distinctes', async () => {
+    const app = await buildApp()
+    // 1ᵉʳ shift : matin
+    await app.inject({ method: 'POST', url: '/api/shifts', headers: H('MANAGER'),
+      payload: { employeeId: 'e1', date: '2026-06-02', shiftTypeKey: 'morning' } })
+    // 2ᵉ shift le MÊME jour : soir (night) → ne doit PAS écraser le matin (clé composite différente)
+    await app.inject({ method: 'POST', url: '/api/shifts', headers: H('MANAGER'),
+      payload: { employeeId: 'e1', date: '2026-06-02', shiftTypeKey: 'night' } })
+    expect(db.shift.upsert).toHaveBeenCalledTimes(2)
+    expect(db.shift.upsert).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      where: { tenantId_employeeId_date_shiftTypeKey: { tenantId: 'T1', employeeId: 'e1', date: '2026-06-02', shiftTypeKey: 'morning' } },
+    }))
+    expect(db.shift.upsert).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: { tenantId_employeeId_date_shiftTypeKey: { tenantId: 'T1', employeeId: 'e1', date: '2026-06-02', shiftTypeKey: 'night' } },
+    }))
   })
   it('shift REST → Attendance REST auto (best-effort)', async () => {
     const app = await buildApp()

@@ -57,7 +57,8 @@ export async function shiftRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
-  // POST /api/shifts — upsert (tenantId, employeeId, date) ; REST auto si 'rest'.
+  // POST /api/shifts — upsert (tenantId, employeeId, date, shiftTypeKey) ; REST auto si 'rest'.
+  // Multi-shift : cible le type précis → un 2ᵉ type le même jour CRÉE une 2ᵉ ligne (n'écrase pas).
   app.post('/api/shifts', { preHandler: authenticate }, async (request, reply) => {
     if (!requireWrite(request, reply)) return
     const tenantId = request.tenantId!
@@ -70,7 +71,7 @@ export async function shiftRoutes(app: FastifyInstance): Promise<void> {
     if (!emp) return reply.code(404).send({ error: 'Employé introuvable dans ce tenant' })
     const fields = { shiftTypeKey: b.shiftTypeKey, startTime: b.startTime ?? null, endTime: b.endTime ?? null, label: b.label ?? null, color: b.color ?? null }
     const shift = await prisma.shift.upsert({
-      where: { tenantId_employeeId_date: { tenantId, employeeId: b.employeeId, date: b.date } },
+      where: { tenantId_employeeId_date_shiftTypeKey: { tenantId, employeeId: b.employeeId, date: b.date, shiftTypeKey: b.shiftTypeKey } },
       create: { tenantId, employeeId: b.employeeId, date: b.date, ...fields },
       update: fields,
     })

@@ -9,13 +9,13 @@ interface Props {
   loading: boolean
   filtered: PlanningEmployee[]
   weekDays: Date[]
-  shifts: Record<string,Record<number,ShiftType>>
+  shifts: Record<string,Record<number,{ type: ShiftType; id: string }[]>>  // multi-shift : TABLEAU par case
   lockedShifts?: Record<string,Record<number,boolean>>  // cellules congé approuvé = non modifiables
   activeShift: ShiftType
   onAssign: (empId: string, di: number) => void
   onOpenModal: (empId: string, di: number, name: string) => void
   onClearShift: (empId: string, di: number) => void
-  onMoveShift?: (srcEmpId: string, srcDi: number, dstEmpId: string, dstDi: number) => void
+  onMoveShift?: (srcEmpId: string, srcDi: number, dstEmpId: string, dstDi: number, type: ShiftType) => void
 }
 
 export default function PlanningGrid(props: Props) {
@@ -152,8 +152,9 @@ export default function PlanningGrid(props: Props) {
                 </td>
 
                 {weekDays.map((_,di)=>{
-                  const shiftKey = shifts[emp.id]?.[di]
-                  const s = shiftKey ? SHIFT_TYPES[shiftKey] : null
+                  const arr = shifts[emp.id]?.[di] ?? []
+                  const hasShifts = arr.length > 0
+                  const single = arr.length === 1 ? SHIFT_TYPES[arr[0].type] : null // 1 shift → cellule colorée (look mono-shift conservé)
                   const isLocked = !!lockedShifts?.[emp.id]?.[di]  // congé approuvé → non modifiable
                   const isWeekend = weekDays[di].getDay()===0
                     || weekDays[di].getDay()===6
@@ -168,52 +169,46 @@ export default function PlanningGrid(props: Props) {
                     }}>
                       <div
                         title={isLocked ? lockedTitle : undefined}
-                        // Drag&drop : on glisse une case PLEINE (non verrouillée) → on dépose sur
-                        // une autre case (non verrouillée) → le shift est DÉPLACÉ (upsert cible + delete source).
-                        draggable={!!shiftKey && !isLocked && !!onMoveShift}
-                        onDragStart={e=>{ e.dataTransfer.setData('text/plain', JSON.stringify({ empId: emp.id, di })); e.dataTransfer.effectAllowed = 'move' }}
+                        // Drop target uniquement : on dépose un shift glissé (depuis un chip) sur cette
+                        // case (non verrouillée) → le shift de ce TYPE est DÉPLACÉ (upsert cible + delete source).
                         onDragOver={e=>{ if (!isLocked && onMoveShift) e.preventDefault() }}
                         onDrop={e=>{
                           if (isLocked || !onMoveShift) return
                           e.preventDefault()
                           try {
                             const src = JSON.parse(e.dataTransfer.getData('text/plain'))
-                            if (src && typeof src.empId === 'string' && typeof src.di === 'number') onMoveShift(src.empId, src.di, emp.id, di)
+                            if (src && typeof src.empId === 'string' && typeof src.di === 'number' && typeof src.type === 'string') onMoveShift(src.empId, src.di, emp.id, di, src.type)
                           } catch { /* drop non-shift ignoré */ }
                         }}
                         onClick={()=>{
                           if (isLocked) return  // congé approuvé : assignation bloquée
-                          if (!shiftKey) {
+                          if (!hasShifts) {
                             onOpenModal(emp.id, di, emp.name.split(' ')[0])
                           } else {
-                            onAssign(emp.id,di)
+                            onAssign(emp.id,di)  // AJOUTE le shift actif (conserve les autres types)
                           }
                         }}
                         onDoubleClick={()=>{ if (!isLocked) onClearShift(emp.id,di) }}
                         style={{
                           minHeight:58, borderRadius:10,
-                          cursor: isLocked ? 'not-allowed' : (shiftKey ? 'grab' : 'pointer'),
+                          cursor: isLocked ? 'not-allowed' : 'pointer',
                           display:'flex', flexDirection:'column',
                           alignItems:'center', justifyContent:'center',
                           gap:3, padding:'4px 2px',
-                          border:`1px solid ${s
-                            ? `${s.color}35`
-                            : isWeekend
-                              ? 'var(--border)'
-                              : 'var(--border)'}`,
-                          background: s
-                            ? s.bg
-                            : isWeekend
+                          border:`1px solid ${single ? `${single.color}35` : 'var(--border)'}`,
+                          background: single
+                            ? single.bg
+                            : isWeekend && !hasShifts
                               ? 'rgba(0,0,0,.1)'
                               : 'var(--bg4)',
-                          opacity: isLocked ? .6 : (isWeekend&&!s ? .5 : 1),
+                          opacity: isLocked ? .6 : (isWeekend&&!hasShifts ? .5 : 1),
                           transition:'all .1s',
                           userSelect:'none',
                           position:'relative',
                           overflow:'hidden',
                         }}
                         onMouseEnter={e=>{
-                          if (!s && !isLocked) {
+                          if (!hasShifts && !isLocked) {
                             const el=e.currentTarget as HTMLElement
                             el.style.background=`${preview.color}18`
                             el.style.borderColor=`${preview.color}40`
@@ -221,12 +216,11 @@ export default function PlanningGrid(props: Props) {
                           }
                         }}
                         onMouseLeave={e=>{
-                          if (!s && !isLocked) {
+                          if (!hasShifts && !isLocked) {
                             const el=e.currentTarget as HTMLElement
                             el.style.background=isWeekend
                               ?'rgba(0,0,0,.1)':'var(--bg4)'
-                            el.style.borderColor=isWeekend
-                              ?'var(--border)':'var(--border)'
+                            el.style.borderColor='var(--border)'
                             el.style.transform='scale(1)'
                           }
                         }}
@@ -236,19 +230,41 @@ export default function PlanningGrid(props: Props) {
                             <Lock size={9} />
                           </span>
                         )}
-                        {s ? (
-                          <>
-                            <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
-                            {s.hours && (
-                              <span style={{
-                                fontSize:8, fontWeight:800,
-                                color:s.color,
-                                fontFamily:'var(--mono)',
-                                letterSpacing:'-.3px',
-                                lineHeight:1,
-                              }}>{s.hours}</span>
-                            )}
-                          </>
+                        {hasShifts ? (
+                          // Shifts empilés : chaque chip est draggable et porte SON type (drag&drop déplace ce type précis).
+                          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, width:'100%' }}>
+                            {arr.map(sh=>{
+                              const s = SHIFT_TYPES[sh.type]
+                              const draggableChip = !isLocked && !!onMoveShift && sh.type!=='leave'
+                              return (
+                                <div key={sh.type}
+                                  title={shiftLabel(sh.type, lang)}
+                                  draggable={draggableChip}
+                                  onDragStart={e=>{ e.stopPropagation(); e.dataTransfer.setData('text/plain', JSON.stringify({ empId: emp.id, di, type: sh.type })); e.dataTransfer.effectAllowed='move' }}
+                                  onClick={e=>{ if (arr.length>1) e.stopPropagation() }}
+                                  style={{
+                                    display:'flex', alignItems:'center', justifyContent:'center', gap:3,
+                                    cursor: draggableChip ? 'grab' : 'default',
+                                    ...(arr.length>1 ? {
+                                      background:`${s.color}1a`, border:`1px solid ${s.color}40`,
+                                      borderRadius:6, padding:'1px 5px', width:'100%',
+                                    } : null),
+                                  }}
+                                >
+                                  <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
+                                  {s.hours && (
+                                    <span style={{
+                                      fontSize:8, fontWeight:800,
+                                      color:s.color,
+                                      fontFamily:'var(--mono)',
+                                      letterSpacing:'-.3px',
+                                      lineHeight:1,
+                                    }}>{s.hours}</span>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
                         ) : (
                           <span style={{
                             fontSize:20, color:'var(--text4)',
