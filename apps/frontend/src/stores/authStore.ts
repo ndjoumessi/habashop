@@ -87,38 +87,13 @@ export const useAuthStore = create<AuthState>()(
           useAppStore.getState().clearCart()    // panier vide à chaque nouvelle session
           set({ user, token, isAuthenticated: true, isLoading: false })
         } catch (err: any) {
-          // Fallback démo sans backend
-          const demoAccounts: Record<string, { id: string; name: string; role: UserRole }> = {
-            'admin@habashop.com':      { id: 'demo-admin',      name: 'Nelson Djoumessi', role: 'ADMIN'      },
-            'manager@habashop.com':    { id: 'demo-manager',    name: 'Ibrahim Touré',    role: 'MANAGER'    },
-            'cashier@habashop.com':    { id: 'demo-cashier',    name: 'Aminata Touré',    role: 'CASHIER'    },
-            'accountant@habashop.com': { id: 'demo-accountant', name: 'Fatou Sow',        role: 'ACCOUNTANT' },
-            'hr@habashop.com':         { id: 'demo-hr',         name: 'Marie Bakayoko',   role: 'HR'         },
-          }
-          const demo = demoAccounts[email]
-          if (demo && password === 'demo1234') {
-            const demoToken = 'demo-token-local'
-            localStorage.setItem('habashop_token', demoToken)
-            useAppStore.getState().setTenant({
-              id: 'demo-tenant-001',
-              name: 'HabaShop — Dakar Central',
-              plan: 'business',
-              currency: 'XOF',
-              country: 'SN',
-              vatRate: 18,
-              createdAt: new Date().toISOString(),
-            })
-            useAppStore.getState().closeCashier()
-            useAppStore.getState().clearCart()
-            set({
-              user: { ...demo, email, shopName: 'HabaShop — Dakar Central' },
-              token: demoToken,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null,
-            })
-            return
-          }
+          // ⚠️ PAS de fallback démo « hors-ligne » ici. Les 5 comptes démo existent dans le backend
+          // réel (mot de passe demo1234) → un login normal renvoie un VRAI JWT. L'ancien fallback
+          // posait `habashop_token='demo-token-local'` quand authApi.login échouait (réseau / backend
+          // down / 429 rate-limit), mais getToken() (lib/api.ts) EXCLUT cette valeur → tous les appels
+          // authentifiés partaient sans Authorization → 401 → l'intercepteur 401 effaçait le token et
+          // redirigeait vers /login (= déconnexion immédiate après « login »). On surface l'erreur à la
+          // place : l'utilisateur reste sur /login avec un message clair (ex. « Trop de tentatives »).
           set({ error: err.message, isLoading: false })
           throw err
         }

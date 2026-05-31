@@ -14,8 +14,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         errorResponseBuilder: (_req: any, context: any) => ({
           statusCode: 429,
           error: 'Too Many Requests',
-          message: `Trop de tentatives. Réessayez dans ${Math.ceil(context.after / 60000)} minute(s).`,
-          retryAfter: context.after,
+          // context.ttl = ms restants (number) ; context.after = libellé (string) → diviser `after`
+          // donnait « NaN minute(s) ». On calcule les minutes depuis ttl.
+          message: `Trop de tentatives. Réessayez dans ${Math.max(1, Math.ceil((context.ttl ?? 0) / 60000))} minute(s).`,
+          retryAfter: Math.ceil((context.ttl ?? 0) / 1000),
         }),
       },
     },
@@ -58,8 +60,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         errorResponseBuilder: (_req: any, context: any) => ({
           statusCode: 429,
           error: 'Too Many Requests',
-          message: `Trop d'inscriptions. Réessayez dans ${Math.ceil(context.after / 60000)} minute(s).`,
-          retryAfter: context.after,
+          message: `Trop d'inscriptions. Réessayez dans ${Math.max(1, Math.ceil((context.ttl ?? 0) / 60000))} minute(s).`,
+          retryAfter: Math.ceil((context.ttl ?? 0) / 1000),
         }),
       },
     },
