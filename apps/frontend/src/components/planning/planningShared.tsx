@@ -32,54 +32,10 @@ export const getDayLabels = (lang: string) => ({
   it:['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],
 }[lang as 'fr'|'en'|'es'|'it'] ?? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
 
-// Stockage local des shifts (clé partagée Planning ⇄ écriture depuis l'approbation de congés HR).
-export const SHIFTS_STORAGE_KEY = 'habashop_shifts'
-// Carte parallèle des cellules VERROUILLÉES (congé approuvé) : `${empId}` → `${dayIndex}` → true.
-// Séparée du store shifts (qui ne stocke qu'une string par case) → non invasif. Posée par
-// writeLeaveShiftsToPlanning, lue par Planning/PlanningGrid. (Sera remplacée en Phase 6 par
-// LeaveRequest.status=APPROVED quand le planning devient API-backed.)
-export const LOCKED_SHIFTS_KEY = 'habashop_shifts_locked'
-export function readLockedShifts(): Record<string, Record<number, boolean>> {
-  try { return JSON.parse(localStorage.getItem(LOCKED_SHIFTS_KEY) ?? 'null') ?? {} } catch { return {} }
-}
-
-// Mappe un intervalle [from,to] (YYYY-MM-DD) sur des INDEX de jour de semaine (Lun=0…Dim=6),
-// modèle de la grille planning. Fonction pure (testable). Borne dure à 366 j (anti-boucle).
-export function weekdayIndicesForRange(from: string, to: string): number[] {
-  const start = new Date(from), end = new Date(to)
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return []
-  const out = new Set<number>()
-  const d = new Date(start)
-  let guard = 0
-  while (d <= end && guard++ < 366) {
-    const js = d.getDay()              // 0=Dim…6=Sam (convention JS)
-    out.add(js === 0 ? 6 : js - 1)     // → Lun=0…Dim=6 (convention grille)
-    d.setDate(d.getDate() + 1)
-  }
-  return [...out].sort((a, b) => a - b)
-}
-
-// Écrit des shifts "Congé" dans le store planning (localStorage) pour un employé sur les
-// jours couverts par l'intervalle. Best-effort (localStorage peut être indisponible).
-// ⚠️ Le modèle planning est indexé par jour de semaine (0-6), AGNOSTIQUE de la semaine :
-// le congé s'affiche donc sur ces jours quelle que soit la semaine affichée (limite connue).
-export function writeLeaveShiftsToPlanning(empId: string, from: string, to: string): void {
-  try {
-    const indices = weekdayIndicesForRange(from, to)
-    if (indices.length === 0) return
-    const raw = JSON.parse(localStorage.getItem(SHIFTS_STORAGE_KEY) ?? 'null') ?? {}
-    const empShifts = { ...(raw[empId] ?? {}) }
-    indices.forEach(di => { empShifts[di] = 'leave' as ShiftType })
-    raw[empId] = empShifts
-    localStorage.setItem(SHIFTS_STORAGE_KEY, JSON.stringify(raw))
-    // Verrouille ces cellules (congé approuvé → non modifiable dans la grille).
-    const locked = readLockedShifts()
-    const empLocked = { ...(locked[empId] ?? {}) }
-    indices.forEach(di => { empLocked[di] = true })
-    locked[empId] = empLocked
-    localStorage.setItem(LOCKED_SHIFTS_KEY, JSON.stringify(locked))
-  } catch { /* localStorage indisponible : best-effort, on ignore */ }
-}
+// (Phase 6-planning : planning DATÉ via /api/shifts. Les helpers localStorage transitoires
+//  — SHIFTS_STORAGE_KEY, LOCKED_SHIFTS_KEY/readLockedShifts, weekdayIndicesForRange,
+//  writeLeaveShiftsToPlanning — ont été SUPPRIMÉS. Le verrouillage des congés approuvés est
+//  désormais dérivé de LeaveRequest.status=APPROVED côté Planning.)
 
 export const localeFor = (lang: string) =>
   lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'

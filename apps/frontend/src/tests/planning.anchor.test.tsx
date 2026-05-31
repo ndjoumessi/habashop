@@ -10,8 +10,16 @@ const { EMPLOYEES } = vi.hoisted(() => ({
   ],
 }))
 vi.mock('@/lib/api', () => ({
-  employeesApi: { list: vi.fn().mockResolvedValue(EMPLOYEES) },
+  employeesApi:     { list: vi.fn().mockResolvedValue(EMPLOYEES) },
+  shiftsApi:        { list: vi.fn().mockResolvedValue([]), upsert: vi.fn().mockResolvedValue({ id: 's1' }), remove: vi.fn().mockResolvedValue({ success: true }) },
+  leaveRequestsApi: { list: vi.fn().mockResolvedValue([]) },
 }))
+
+// Lundi de la semaine courante en "YYYY-MM-DD" (même calcul que Planning.weekDays[0]).
+const mondayYmd = () => {
+  const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() - day + (day === 0 ? -6 : 1))
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
 // store : lang fr, en gardant les vraies fns
 vi.mock('@/stores/appStore', async (orig) => {
@@ -23,10 +31,12 @@ vi.mock('@/stores/appStore', async (orig) => {
 })
 
 import Planning from '@/pages/Planning'
+import { shiftsApi } from '@/lib/api'
 
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  ;(shiftsApi.list as any).mockResolvedValue([]) // défaut : aucun shift (réinitialisé par test)
 })
 
 describe('Planning — test d’ancrage (comportement à figer avant/après découpe)', () => {
@@ -55,18 +65,20 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
   })
 
   it('le filtre par type de shift réduit la liste (employés sans ce shift exclus)', async () => {
-    // Marie (emp1) a un shift "matin" (index 0) ; Kofi (emp2) n'a aucun shift.
-    localStorage.setItem('habashop_shifts', JSON.stringify({ emp1: { 0: 'morning' } }))
+    // Marie (emp1) a un shift "matin" lundi (via /api/shifts) ; Kofi (emp2) aucun.
+    ;(shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
     render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     const shiftSelect = screen.getByDisplayValue('Tous les shifts')
-    // Filtre "Matin" → seul Marie reste
+    // Filtre "Matin" → seul Marie reste (waitFor : les shifts arrivent en async depuis l'API)
     fireEvent.change(shiftSelect, { target: { value: 'morning' } })
-    expect(screen.getByText('Marie')).toBeInTheDocument()
-    expect(screen.queryByText('Kofi')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Marie')).toBeInTheDocument()
+      expect(screen.queryByText('Kofi')).not.toBeInTheDocument()
+    })
     // Filtre "Après-midi" → personne (aucun n'a ce shift)
     fireEvent.change(shiftSelect, { target: { value: 'afternoon' } })
-    expect(screen.queryByText('Marie')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Marie')).not.toBeInTheDocument())
     expect(screen.queryByText('Kofi')).not.toBeInTheDocument()
   })
 
@@ -79,15 +91,15 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
     expect(await screen.findByText(/Assigner un shift/i)).toBeInTheDocument()
   })
 
-  it('confirme l’assignation d’un shift → persiste et ferme la modale', async () => {
+  it('confirme l’assignation d’un shift → upsert /api/shifts et ferme la modale', async () => {
     render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     fireEvent.click(screen.getAllByText('+')[0])
     await screen.findByText(/Assigner un shift/i)
     fireEvent.click(screen.getByText(/Confirmer/i))
     await waitFor(() => expect(screen.queryByText(/Assigner un shift/i)).not.toBeInTheDocument())
-    // un shift a été écrit dans localStorage
-    expect(localStorage.getItem('habashop_shifts')).toBeTruthy()
+    // le shift est persisté via l'API (plus de localStorage)
+    expect(shiftsApi.upsert).toHaveBeenCalledWith(expect.objectContaining({ employeeId: 'emp1', shiftTypeKey: 'full' }))
   })
 
   it('affiche le résumé de stats après assignation', async () => {

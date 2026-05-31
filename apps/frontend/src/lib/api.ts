@@ -288,6 +288,14 @@ export const alertsApi = {
   lowStock: () => api.get<any[]>('/api/products/low-stock'),
 }
 
+export const shiftsApi = {
+  list:   (month?: string) => api.get<any[]>(`/api/shifts${month ? `?month=${month}` : ''}`),
+  upsert: (data: { employeeId: string; date: string; shiftTypeKey: string; startTime?: string | null; endTime?: string | null; label?: string | null; color?: string | null }) =>
+    api.post<any>('/api/shifts', data),
+  update: (id: string, data: any) => api.patch<any>(`/api/shifts/${id}`, data),
+  remove: (id: string) => api.delete<{ success: boolean }>(`/api/shifts/${id}`),
+}
+
 export const leaveRequestsApi = {
   list:    (status?: string) => api.get<any[]>(`/api/leave-requests${status ? `?status=${status}` : ''}`),
   create:  (data: { employeeId: string; startDate: string; endDate: string; leaveType?: string; reason?: string | null }) =>
