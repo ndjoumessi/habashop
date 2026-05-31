@@ -23,6 +23,11 @@ function CartRow({
       <View style={{ flex: 1 }}>
         <Text style={s.cartName} numberOfLines={1}>{item.name?.trim()}</Text>
         <Text style={s.cartLine}>{fmt(item.price)} × {item.quantity} = {fmt(item.price * item.quantity)}</Text>
+        {(item.hasPromotion && item.promotionPrice != null) ? (
+          <Text style={s.cartTag}>{i('Promo', 'Promo', 'Promo', 'Promo')}</Text>
+        ) : item.tierLabel ? (
+          <Text style={s.cartTag}>{item.tierLabel}</Text>
+        ) : null}
       </View>
       <View style={s.qtyBox}>
         <Pressable style={s.qtyBtn} onPress={onDec} hitSlop={8}
@@ -218,6 +223,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   cartName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
   cartLine: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
+  cartTag: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.accent2, marginTop: 2 },
   qtyBox: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   qtyBtn: {
     width: 28, height: 28, borderRadius: 8, backgroundColor: C.bg4,
