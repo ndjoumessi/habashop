@@ -162,10 +162,12 @@ export function displayDate(dateStr: string | undefined | null, locale = 'fr-FR'
   return new Date(iso).toLocaleDateString(locale)
 }
 
-export function calcAnciennete(hiredAt: string, lang: string = 'fr'): string {
+// `now` = date de référence ("aujourd'hui"), injectable pour des tests déterministes ;
+// par défaut la date du jour réelle (la prod calcule donc une ancienneté qui avance).
+export function calcAnciennete(hiredAt: string, lang: string = 'fr', now: Date = new Date()): string {
   const iso = toInputDate(hiredAt)
   if (!iso) return '—'
-  const months = Math.floor((new Date('2026-05-18').getTime() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24 * 30))
+  const months = Math.floor((now.getTime() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24 * 30))
   if (months < 0) return '—'
   const years = Math.floor(months / 12), rem = months % 12
   const yLabel = (n: number) => lang === 'en' ? `${n}y` : lang === 'es' ? `${n} año${n > 1 ? 's' : ''}` : lang === 'it' ? `${n} anno${n > 1 ? 'i' : ''}` : `${n} an${n > 1 ? 's' : ''}`

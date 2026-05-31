@@ -36,25 +36,31 @@ describe('displayDate — affichage localisé', () => {
 })
 
 describe('calcAnciennete — ancienneté contrat', () => {
-  // ⚠️ BUG LATENT (documenté, non corrigé) : la référence "aujourd'hui" est CODÉE EN DUR
-  // (new Date('2026-05-18')) au lieu de la date réelle → l'ancienneté est GELÉE au 18/05/2026
-  // et n'avance jamais. Voir RAPPORT. Ces tests verrouillent le comportement ACTUEL.
+  // Bug corrigé : la date de référence ("aujourd'hui") est désormais INJECTABLE (3e param,
+  // défaut new Date()). On l'injecte ici (NOW figé) → tests déterministes sans dépendre
+  // d'une date codée en dur dans la fonction ni de la date système réelle.
+  const NOW = new Date('2026-05-18')
   it('≥ 1 an → "N ans [M mois]" (fr)', () => {
-    expect(calcAnciennete('2024-05-18')).toBe('2 ans') // 730 j / 30 ≈ 24 mois
+    expect(calcAnciennete('2024-05-18', 'fr', NOW)).toBe('2 ans') // 730 j / 30 ≈ 24 mois
   })
   it('< 1 an → "N mois"', () => {
-    expect(calcAnciennete('2026-04-01')).toBe('1 mois') // 47 j / 30 = 1
+    expect(calcAnciennete('2026-04-01', 'fr', NOW)).toBe('1 mois') // 47 j / 30 = 1
   })
   it('embauche dans le futur (réf.) → "—"', () => {
-    expect(calcAnciennete('2027-01-01')).toBe('—')
+    expect(calcAnciennete('2027-01-01', 'fr', NOW)).toBe('—')
   })
   it('date vide → "—"', () => {
-    expect(calcAnciennete('')).toBe('—')
+    expect(calcAnciennete('', 'fr', NOW)).toBe('—')
   })
   it('i18n en/es/it', () => {
-    expect(calcAnciennete('2024-05-18', 'en')).toBe('2y')
-    expect(calcAnciennete('2026-04-01', 'es')).toBe('1 mes')
-    expect(calcAnciennete('2026-04-01', 'it')).toBe('1 mese')
+    expect(calcAnciennete('2024-05-18', 'en', NOW)).toBe('2y')
+    expect(calcAnciennete('2026-04-01', 'es', NOW)).toBe('1 mes')
+    expect(calcAnciennete('2026-04-01', 'it', NOW)).toBe('1 mese')
+  })
+  it('par défaut (sans now) utilise la date du jour → ancienneté qui avance (≥ 1 an pour 2 ans en arrière)', () => {
+    // embauche il y a ~2 ans relativement à aujourd'hui → contient "an" (fr), prouve que la réf. n'est plus figée
+    const twoYearsAgo = new Date(); twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
+    expect(calcAnciennete(twoYearsAgo.toISOString().slice(0, 10))).toMatch(/an/)
   })
 })
 
