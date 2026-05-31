@@ -78,3 +78,17 @@ export function convertFromXOF(
   if (!rate) return amountXOF
   return amountXOF * rate
 }
+
+// Convertit un montant saisi en devise d'affichage → XOF de base (inverse de convertFromXOF).
+// Sert à ramener un montant tapé par l'utilisateur (ex. espèces reçues) dans l'unité de base.
+export function convertToXOF(
+  amount: number,
+  sourceCurrency: string,
+  rates: Record<string, number>,
+): number {
+  if (sourceCurrency === 'XOF') return amount
+  if (sourceCurrency === 'XAF') return amount // parité fixe
+  const rate = rates[sourceCurrency]
+  if (!rate) return amount
+  return amount / rate
+}

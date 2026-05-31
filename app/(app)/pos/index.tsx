@@ -18,6 +18,7 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { enqueueAction } from '@/services/offlineQueue'
+import { convertToXOF } from '@/services/exchangeRate'
 import { sendWhatsAppTicket } from '@/services/whatsappTicket'
 import BarcodeScanner from '@/components/pos/BarcodeScanner'
 import ErrorState from '@/components/ui/ErrorState'
@@ -32,7 +33,7 @@ export default function POSScreen() {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
   const { i, lang } = useI18n()
-  const { fmt, currency } = useFmt()
+  const { fmt, currency, rates } = useFmt()
   const { tenant } = useAuthStore()
   const { isOnline } = useNetworkStatus()
   const qc = useQueryClient()
@@ -154,8 +155,9 @@ export default function POSScreen() {
   const confirmSale = async () => {
     // Garde espèces : interdit l'encaissement si le montant reçu est < total (mode cash
     // uniquement ; Wave/Orange/Carte non concernés). Filet défensif — le bouton « Encaisser »
-    // est déjà désactivé côté panier dans ce cas.
-    if (paymentMode === 'cash' && cashGiven < totalAmt) {
+    // est déjà désactivé côté panier dans ce cas. `cashGiven` est saisi en devise d'affichage
+    // → ramené en XOF de base (comme totalAmt) avant comparaison.
+    if (paymentMode === 'cash' && convertToXOF(cashGiven, currency, rates) < totalAmt) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
       Alert.alert(
         i('Montant insuffisant', 'Insufficient amount', 'Monto insuficiente', 'Importo insufficiente'),

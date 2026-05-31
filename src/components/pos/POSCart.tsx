@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { CartItem, PaymentMode } from '@/stores/posStore'
 import type { Customer } from '@/types'
-import { useTheme } from '@/stores/appStore'
+import { useTheme, useFmt } from '@/stores/appStore'
+import { convertToXOF } from '@/services/exchangeRate'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
 import { PAY_MODES } from './payModes'
 
@@ -79,13 +80,17 @@ export default function POSCart({
   customer, onOpenCustomer, onClearCustomer, fmt, i,
 }: POSCartProps) {
   const { C } = useTheme()
+  const { currency, rates } = useFmt()
   const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
   const totalQty = cart.reduce((n, c) => n + c.quantity, 0)
   const discAmt = subtotal - total
-  const change = cashGiven - total
+  // `cashGiven` est saisi dans la devise d'AFFICHAGE → on le ramène en XOF de base pour
+  // comparer/monnaie (total est en XOF). En XOF/XAF la conversion est l'identité.
+  const cashGivenXOF = convertToXOF(cashGiven, currency, rates)
+  const change = cashGivenXOF - total
   // Garde espèces : en mode cash, montant reçu < total → encaissement bloqué.
-  const cashShort = paymentMode === 'cash' && cashGiven < total
+  const cashShort = paymentMode === 'cash' && cashGivenXOF < total
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
