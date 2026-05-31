@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toInputDate, displayDate, calcAnciennete } from '@/components/hr/hrShared'
+import { toInputDate, displayDate, calcAnciennete, eachDateInclusive } from '@/components/hr/hrShared'
 
 // Logique métier HR pure (hrShared) — verrouille le comportement après la découpe HR.
 // Paie (calcNet/calcBrut/payrollBreakdown, buildMonths/monthLabel) déjà couverte par
@@ -66,3 +66,21 @@ describe('calcAnciennete — ancienneté contrat', () => {
 
 // (calcHeures/calcPonctualite + fixture POINTAGE supprimés en Phase 3 : code orphelin,
 //  jamais branché à l'UI ; les présences réelles passent par l'API Attendance.)
+
+// ─── eachDateInclusive : report congé approuvé → jours Attendance LEAVE (Phase 4) ──────
+describe('eachDateInclusive', () => {
+  it('intervalle multi-jours INCLUS (3 jours)', () => {
+    expect(eachDateInclusive('2026-06-01', '2026-06-03')).toEqual(['2026-06-01', '2026-06-02', '2026-06-03'])
+  })
+  it('un seul jour → [ce jour]', () => {
+    expect(eachDateInclusive('2026-06-10', '2026-06-10')).toEqual(['2026-06-10'])
+  })
+  it('traverse une fin de mois (sans dérive UTC)', () => {
+    expect(eachDateInclusive('2026-05-30', '2026-06-01')).toEqual(['2026-05-30', '2026-05-31', '2026-06-01'])
+  })
+  it('to < from ou date invalide → []', () => {
+    expect(eachDateInclusive('2026-06-03', '2026-06-01')).toEqual([])
+    expect(eachDateInclusive('', '2026-06-01')).toEqual([])
+    expect(eachDateInclusive('03/06/2026', '2026-06-01')).toEqual([])
+  })
+})

@@ -19,7 +19,7 @@ import HREmployeeGrid from '@/components/hr/HREmployeeGrid'
 import HRTabs from '@/components/hr/HRTabs'
 import HRModals from '@/components/hr/HRModals'
 import EmptyState from '@/components/ui/EmptyState'
-import { type Employee, type LeaveRequest, type AttendUiStatus, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi } from '@/components/hr/hrShared'
+import { type Employee, type LeaveRequest, type AttendUiStatus, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi, eachDateInclusive } from '@/components/hr/hrShared'
 import { writeLeaveShiftsToPlanning } from '@/components/planning/planningShared'
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -454,6 +454,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       const leave = leaves.find(l => l.id === id)
       if (leave?.empId != null && leave.from && leave.to) {
         writeLeaveShiftsToPlanning(String(leave.empId), leave.from, leave.to)
+        // Phase 4 — LEAVE auto : upsert une entrée Attendance LEAVE par jour couvert
+        // (best-effort, silencieux : l'approbation ne doit pas échouer si l'API tombe).
+        const empId = String(leave.empId)
+        for (const date of eachDateInclusive(leave.from, leave.to)) {
+          attendanceApi.upsert({ employeeId: empId, date, status: 'LEAVE' }).catch(() => {})
+        }
       }
     }
     toast.success(status === 'approved'

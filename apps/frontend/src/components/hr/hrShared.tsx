@@ -140,6 +140,23 @@ export function attendStatusFromApi(s: string): AttendUiStatus {
   return m[s] ?? 'absent'
 }
 
+// Tous les jours calendaires "YYYY-MM-DD" de `from` à `to` INCLUS (UTC, sans dérive de
+// fuseau). Pur (testable). Borne dure 366 j. Utilisé pour reporter un congé approuvé en
+// entrées Attendance LEAVE jour par jour.
+export function eachDateInclusive(from: string, to: string): string[] {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) return []
+  const start = new Date(`${from}T00:00:00Z`), end = new Date(`${to}T00:00:00Z`)
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return []
+  const out: string[] = []
+  const d = new Date(start)
+  let guard = 0
+  while (d <= end && guard++ < 366) {
+    out.push(d.toISOString().slice(0, 10))
+    d.setUTCDate(d.getUTCDate() + 1)
+  }
+  return out
+}
+
 export const LEAVE_LABELS: Record<string, Record<string, string>> = {
   pending:  { fr:'En attente', en:'Pending',  es:'Pendiente', it:'In attesa' },
   approved: { fr:'Approuvé',   en:'Approved', es:'Aprobado',  it:'Approvato' },
