@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import * as Notifications from 'expo-notifications'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { analyticsApi } from './api'
@@ -66,7 +67,7 @@ export async function updateWidgetNotification(
       trigger: null,
     })
   } catch (err) {
-    console.log('Widget update error:', err)
+    logger.error('Widget update error:', err)
   }
 }
 

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { useEffect, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNetworkStatus } from './useNetworkStatus'
@@ -14,7 +15,7 @@ export function useOfflineSync() {
     const pending = queue.filter(a => !a.synced)
     if (pending.length === 0) return
 
-    console.log(`Syncing ${pending.length} offline actions...`)
+    logger.log(`Syncing ${pending.length} offline actions...`)
     for (const action of pending) {
       try {
         if (action.type === 'SALE') {
@@ -22,13 +23,13 @@ export function useOfflineSync() {
           await markSynced(action.id)
         }
       } catch (err) {
-        console.log(`Sync failed for ${action.id}:`, err)
+        logger.warn(`Sync failed for ${action.id}:`, err)
       }
     }
     await clearSynced()
     qc.invalidateQueries({ queryKey: ['dashboard'] })
     qc.invalidateQueries({ queryKey: ['products'] })
-    console.log('Sync complete')
+    logger.log('Sync complete')
   }, [isOnline, qc])
 
   // Sync automatique au retour du réseau

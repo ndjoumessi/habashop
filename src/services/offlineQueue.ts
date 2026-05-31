@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const QUEUE_KEY = 'habashop_offline_queue'
@@ -26,7 +27,7 @@ export async function enqueueAction(
     }
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify([...queue, action]))
   } catch (err) {
-    console.log('enqueueAction error:', err)
+    logger.error('enqueueAction error:', err)
   }
 }
 

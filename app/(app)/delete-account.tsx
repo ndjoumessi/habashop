@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { useState, useEffect, useMemo } from 'react'
 import {
   View, Text, ScrollView, StyleSheet, TextInput,
@@ -45,7 +46,7 @@ export default function DeleteAccountScreen() {
         if (mounted) setScope(others === 0 ? 'tenant' : 'user')
       } catch (e) {
         // Fallback PRUDENT décidé : on sous-vend (scope user = "la boutique survit").
-        console.warn('[delete-account] GET /api/tenant/users a échoué, fallback scope=user', e)
+        logger.warn('[delete-account] GET /api/tenant/users a échoué, fallback scope=user', e)
         if (mounted) setScope('user')
       } finally {
         if (mounted) setScopeLoading(false)

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { useEffect } from 'react'
 import { Stack, router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -60,7 +61,7 @@ export default function RootLayout() {
     registerForPushNotifications()
 
     const sub1 = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notif reçue:', notification)
+      logger.log('Notif reçue:', notification)
     })
     const sub2 = Notifications.addNotificationResponseReceivedListener(response => {
       // Tap sur une notif → navigue vers l'écran pertinent (route explicite ou par type).

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import Constants from 'expo-constants'
@@ -19,7 +20,7 @@ Notifications.setNotificationHandler({
 // d'Expo Go depuis le SDK 53). Renvoie le token Expo ou null.
 export async function registerForPushNotifications(): Promise<string | null> {
   if (!Device.isDevice) {
-    console.log('📱 Push: appareil réel requis (simulateur ignoré)')
+    logger.log('📱 Push: appareil réel requis (simulateur ignoré)')
     return null
   }
 
@@ -30,7 +31,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     finalStatus = status
   }
   if (finalStatus !== 'granted') {
-    console.log('🔔 Push: permission refusée')
+    logger.log('🔔 Push: permission refusée')
     return null
   }
 
@@ -39,12 +40,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
     // Requis pour obtenir un token push Expo dans un dev/production build.
     const projectId = Constants.expoConfig?.extra?.eas?.projectId
     if (!projectId) {
-      console.log('⚠️  Push: projectId EAS manquant (app.json extra.eas.projectId)')
+      logger.warn('⚠️  Push: projectId EAS manquant (app.json extra.eas.projectId)')
       return null
     }
 
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data
-    console.log('✅ Push token:', token)
+    logger.log('✅ Push token:', token)
 
     // Canal Android (avant l'enregistrement backend — affecte le rendu local)
     if (Platform.OS === 'android') {
@@ -65,14 +66,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
         deviceId:   Device.modelName ?? Device.deviceName ?? 'unknown',
         appVersion: Constants.expoConfig?.version ?? '1.0.0',
       })
-      console.log('✅ Token enregistré (Railway):', res.data)
+      logger.log('✅ Token enregistré (Railway):', res.data)
     } catch (e) {
-      console.log('⚠️  Push: échec enregistrement backend (réessai au prochain démarrage)')
+      logger.warn('⚠️  Push: échec enregistrement backend (réessai au prochain démarrage)')
     }
 
     return token
   } catch (err) {
-    console.log('❌ Push token error:', err)
+    logger.error('❌ Push token error:', err)
     return null
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import * as TaskManager from 'expo-task-manager'
 import * as BackgroundFetch from 'expo-background-fetch'
 import { refreshWidget } from '@/services/widgetNotification'
@@ -26,7 +27,7 @@ export async function registerWidgetRefresh(): Promise<void> {
       startOnBoot: true,
     })
   } catch (err) {
-    console.log('Background fetch register error:', err)
+    logger.error('Background fetch register error:', err)
   }
 }
 

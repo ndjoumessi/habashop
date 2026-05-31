@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const CACHE_KEY = 'habashop_fx_rates'
@@ -50,7 +51,7 @@ export async function fetchRates(): Promise<Record<string, number>> {
 
     return rates
   } catch (err) {
-    console.log('FX rates fetch failed, using fallback:', err)
+    logger.warn('FX rates fetch failed, using fallback:', err)
 
     // Essaie le cache même périmé
     try {
