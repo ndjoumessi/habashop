@@ -24,6 +24,7 @@ import ErrorState from '@/components/ui/ErrorState'
 import POSConfirmModal from '@/components/pos/POSConfirmModal'
 import POSCart from '@/components/pos/POSCart'
 import POSProductGrid from '@/components/pos/POSProductGrid'
+import CustomerPicker from '@/components/pos/CustomerPicker'
 
 // ── Écran POS ────────────────────────────────────
 export default function POSScreen() {
@@ -41,6 +42,8 @@ export default function POSScreen() {
   const removeItem     = usePosStore(st => st.removeItem)
   const updateQty      = usePosStore(st => st.updateQty)
   const clearCart      = usePosStore(st => st.clearCart)
+  const customer       = usePosStore(st => st.customer)
+  const setCustomer    = usePosStore(st => st.setCustomer)
   const paymentMode    = usePosStore(st => st.paymentMode)
   const setPaymentMode = usePosStore(st => st.setPaymentMode)
   const cashGiven      = usePosStore(st => st.cashGiven)
@@ -54,6 +57,7 @@ export default function POSScreen() {
   const [showCart, setShowCart]   = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
+  const [showCustomerPicker, setShowCustomerPicker] = useState(false)
 
   const { data: products = [], isLoading, isError, refetch } = useQuery<Product[]>({
     queryKey: ['products'],
@@ -94,22 +98,31 @@ export default function POSScreen() {
       total: totalAmt,
       paymentMode,
       ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
+      ...(customer ? { customerId: customer.id } : {}),
     }),
     onSuccess: (data: SaleResponse) => {
       // Capture la vente avant de vider le panier (pour le ticket WhatsApp)
       const saleItems = [...cart]
       const saleTotal = totalAmt
       const saleMode  = paymentMode
+      const saleCustomer = customer
       recordSale(totalAmt)
       qc.invalidateQueries({ queryKey: ['dashboard'] })
       qc.invalidateQueries({ queryKey: ['products'] })
+      // Le backend a incrémenté le CA cumulé du client → on rafraîchit la liste clients.
+      if (saleCustomer) qc.invalidateQueries({ queryKey: ['customers'] })
       clearCart()
       setShowConfirm(false)
       setShowCart(false)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+      // Le backend ne renvoie pas de points crédités → toast neutre « Client : X — vente liée »
+      // + solde de points actuel. Prépend au message si un client est lié.
+      const linked = saleCustomer
+        ? `${i('Client', 'Customer', 'Cliente', 'Cliente')} : ${saleCustomer.name} — ${i('vente liée', 'sale linked', 'venta vinculada', 'vendita collegata')} (${saleCustomer.loyaltyPoints ?? 0} ${i('pts', 'pts', 'pts', 'pti')})\n\n`
+        : ''
       Alert.alert(
         i('✅ Vente enregistrée', '✅ Sale recorded', '✅ Venta registrada', '✅ Vendita registrata'),
-        i('Envoyer le reçu par WhatsApp ?', 'Send receipt via WhatsApp?', '¿Enviar recibo por WhatsApp?', 'Inviare ricevuta via WhatsApp?'),
+        linked + i('Envoyer le reçu par WhatsApp ?', 'Send receipt via WhatsApp?', '¿Enviar recibo por WhatsApp?', 'Inviare ricevuta via WhatsApp?'),
         [
           { text: i('Non merci', 'No thanks', 'No gracias', 'No grazie'), style: 'cancel' },
           {
@@ -161,6 +174,7 @@ export default function POSScreen() {
         total: totalAmt,
         paymentMode,
         ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
+        ...(customer ? { customerId: customer.id } : {}),
       })
       recordSale(totalAmt)
       clearCart()
@@ -324,8 +338,18 @@ export default function POSScreen() {
         onSetPaymentMode={setPaymentMode}
         onSetCashGiven={setCashGiven}
         onClearCart={clearCart}
+        customer={customer}
+        onOpenCustomer={() => setShowCustomerPicker(true)}
+        onClearCustomer={() => setCustomer(null)}
         fmt={fmt}
         i={i}
+      />
+
+      <CustomerPicker
+        visible={showCustomerPicker}
+        selectedId={customer?.id ?? null}
+        onSelect={(c) => { setCustomer(c); setShowCustomerPicker(false) }}
+        onClose={() => setShowCustomerPicker(false)}
       />
 
       <POSConfirmModal

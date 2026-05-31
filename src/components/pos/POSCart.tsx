@@ -3,6 +3,7 @@ import { View, Text, Modal, ScrollView, Pressable, TextInput, StyleSheet } from 
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { CartItem, PaymentMode } from '@/stores/posStore'
+import type { Customer } from '@/types'
 import { useTheme } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
 import { PAY_MODES } from './payModes'
@@ -65,13 +66,17 @@ interface POSCartProps {
   onSetPaymentMode: (mode: PaymentMode) => void
   onSetCashGiven:   (n: number) => void
   onClearCart:      () => void
+  customer?:        Customer | null
+  onOpenCustomer:   () => void
+  onClearCustomer:  () => void
   fmt:              (n: number) => string
   i:                (fr: string, en: string, es: string, it: string) => string
 }
 
 export default function POSCart({
   visible, onClose, onCheckout, cart, paymentMode, cashGiven, subtotal, total,
-  onUpdateQty, onRemove, onSetPaymentMode, onSetCashGiven, onClearCart, fmt, i,
+  onUpdateQty, onRemove, onSetPaymentMode, onSetCashGiven, onClearCart,
+  customer, onOpenCustomer, onClearCustomer, fmt, i,
 }: POSCartProps) {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
@@ -112,6 +117,36 @@ export default function POSCart({
 
         {cart.length > 0 && (
           <View style={[s.sheetFoot, { paddingBottom: insets.bottom + Spacing.md }]}>
+            {/* Client (optionnel) */}
+            {customer ? (
+              <View style={s.custChip}>
+                <Ionicons name="person" size={16} color={C.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.custName} numberOfLines={1}>{customer.name}</Text>
+                  <Text style={s.custSub} numberOfLines={1}>
+                    {customer.loyaltyPoints ?? 0} {i('points', 'points', 'puntos', 'punti')}
+                    {customer.type ? ` · ${customer.type}` : ''}
+                  </Text>
+                </View>
+                <Pressable onPress={onOpenCustomer} hitSlop={8} accessibilityRole="button"
+                  accessibilityLabel={i('Changer de client', 'Change customer', 'Cambiar cliente', 'Cambia cliente')}>
+                  <Text style={s.custChange}>{i('Changer', 'Change', 'Cambiar', 'Cambia')}</Text>
+                </Pressable>
+                <Pressable onPress={onClearCustomer} hitSlop={8} accessibilityRole="button"
+                  accessibilityLabel={i('Retirer le client', 'Remove customer', 'Quitar cliente', 'Rimuovi cliente')}>
+                  <Ionicons name="close-circle" size={18} color={C.text3} />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable style={s.custBtn} onPress={onOpenCustomer} accessibilityRole="button"
+                accessibilityLabel={i('Ajouter un client', 'Add a customer', 'Añadir un cliente', 'Aggiungi un cliente')}>
+                <Ionicons name="person-add-outline" size={16} color={C.primary} />
+                <Text style={s.custBtnTxt}>
+                  {i('Ajouter un client (optionnel)', 'Add a customer (optional)', 'Añadir un cliente (opcional)', 'Aggiungi un cliente (opzionale)')}
+                </Text>
+              </Pressable>
+            )}
+
             {/* Récap montants */}
             <View style={s.recapRow}>
               <Text style={s.recapLabel}>{i('Sous-total', 'Subtotal', 'Subtotal', 'Subtotale')}</Text>
@@ -263,6 +298,20 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   payBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   payBtnDisabled: { opacity: 0.45 },
   cashWarn: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.danger, textAlign: 'center' },
+  custBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+    paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: C.border, borderStyle: 'dashed', backgroundColor: C.bg3,
+  },
+  custBtnTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.primary3 },
+  custChip: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: withAlpha(C.primary, 0.4), backgroundColor: withAlpha(C.primary, 0.08),
+  },
+  custName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
+  custSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
+  custChange: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.primary3 },
   clearBtn: { alignItems: 'center', paddingVertical: Spacing.sm },
   clearTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger },
 })

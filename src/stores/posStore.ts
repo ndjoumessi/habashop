@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { PriceTier, Product } from '@/types'
+import type { PriceTier, Product, Customer } from '@/types'
 
 export type { PriceTier }
 
@@ -26,11 +26,14 @@ export interface CartItem {
 interface PosState {
   cart: CartItem[]; discount: number
   paymentMode: PaymentMode
+  /** Client lié à la vente en cours (optionnel) — fidélité/historique. */
+  customer: Customer | null
   cashGiven: number; sessionTx: number; sessionCA: number
   addItem: (p: Product) => void
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clearCart: () => void
+  setCustomer: (c: Customer | null) => void
   setDiscount: (d: number) => void
   setPaymentMode: (m: PosState['paymentMode']) => void
   setCashGiven: (a: number) => void
@@ -66,6 +69,7 @@ function repriceLine(item: CartItem, qty: number): CartItem {
 
 export const usePosStore = create<PosState>((set, get) => ({
   cart:[], discount:0, paymentMode:'cash',
+  customer:null,
   cashGiven:0, sessionTx:0, sessionCA:0,
 
   addItem: (p) => {
@@ -92,7 +96,8 @@ export const usePosStore = create<PosState>((set, get) => ({
     if (qty<=0) { get().removeItem(id); return }
     set({ cart:get().cart.map(i=>i.productId===id ? repriceLine(i, qty) : i) })
   },
-  clearCart: () => set({ cart:[], discount:0, cashGiven:0 }),
+  clearCart: () => set({ cart:[], discount:0, cashGiven:0, customer:null }),
+  setCustomer: (customer) => set({ customer }),
   setDiscount: (d) => set({ discount:d }),
   setPaymentMode: (m) => set({ paymentMode:m }),
   setCashGiven: (a) => set({ cashGiven:a }),
