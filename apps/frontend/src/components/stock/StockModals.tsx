@@ -6,6 +6,7 @@ import { t, useAppStore, formatInCurrency } from '@/stores/appStore'
 import { printProductLabels } from '@/utils/export'
 import ViewField from '@/components/ui/ViewField'
 import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
+import { lookupProductByEan } from '@/lib/productLookup'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -77,6 +78,51 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   const emptyLabel = lang === 'en' ? 'Not specified' : lang === 'es' ? 'No especificado' : lang === 'it' ? 'Non specificato' : 'Non renseigné'
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+
+  // ── Auto-remplissage Open Food Facts (frontend, sans clé) ──────────────────
+  const UNIT_OPTIONS = ['unité', 'kg', 'g', 'litre', 'ml', 'carton', 'sac', 'boîte', 'palette', 'douzaine']
+  const [offLooking, setOffLooking] = useState(false)
+  const [offFilled, setOffFilled] = useState<string[]>([]) // champs pré-remplis (badge)
+  const lastEanLookedUp = useRef('')
+  // Pré-remplit (jamais de sauvegarde auto ; tout reste éditable). Seulement en AJOUT
+  // (pas en édition d'un produit existant, pour ne pas écraser des données saisies).
+  async function runOffLookup(ean: string) {
+    if (editingSku) return
+    if (!/^\d{13}$/.test(ean) || ean === lastEanLookedUp.current) return
+    lastEanLookedUp.current = ean
+    setOffLooking(true)
+    try {
+      const r = await lookupProductByEan(ean)
+      if (r.found) {
+        const data = r.data
+        const filled: string[] = []
+        setForm((f: any) => {
+          const next = { ...f }
+          if (data.name) {
+            // Pas de champ "marque" dédié → on l'accole au nom si absent.
+            let nm = data.name
+            if (data.brand && !nm.toLowerCase().includes(data.brand.toLowerCase())) nm = `${nm} ${data.brand}`
+            next.name = nm; filled.push('name')
+          }
+          // Catégorie/unité = <select> à options fixes → on n'applique que si ça matche une option.
+          if (data.category) {
+            const match = categories.find((c: any) => String(c.name).toLowerCase() === data.category!.toLowerCase())
+            if (match) { next.category = match.name; filled.push('category') }
+          }
+          if (data.unit && UNIT_OPTIONS.includes(data.unit)) { next.unit = data.unit; filled.push('unit') }
+          return next
+        })
+        setOffFilled(filled)
+        toast.success(i('Produit trouvé ✨ champs pré-remplis', 'Product found ✨ fields pre-filled', 'Producto encontrado ✨ campos rellenados', 'Prodotto trovato ✨ campi precompilati'))
+      } else {
+        if (r.reason === 'network') toast.error(i('Impossible de contacter la base produits', 'Could not reach the product database', 'No se pudo contactar la base de productos', 'Impossibile contattare il database prodotti'))
+        else toast(i('Produit introuvable dans la base, saisie manuelle', 'Product not found in the database, manual entry', 'Producto no encontrado, entrada manual', 'Prodotto non trovato, inserimento manuale'))
+        setOffFilled([])
+      }
+    } finally {
+      setOffLooking(false)
+    }
+  }
   return (
     <>
       {/* ── Modal produit enrichi ── */}
@@ -238,7 +284,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {productEditMode ? (
                   <ViewField label={i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')} value={form.barcode||''} editing={true}>
                     <div style={{ display:'flex', gap:8 }}>
-                      <input className="input text-sm" style={{ flex:1, borderColor: barcodeInvalid ? 'var(--danger)' : undefined }} placeholder="EAN-13..." value={form.barcode} onChange={e => setForm(f => ({...f, barcode:e.target.value}))} />
+                      <input className="input text-sm" style={{ flex:1, borderColor: barcodeInvalid ? 'var(--danger)' : undefined }} placeholder="EAN-13..." value={form.barcode} onChange={e => { const v = e.target.value; setForm(f => ({...f, barcode:v})); runOffLookup(v) }} />
                       <button type="button" className="mini-btn"
                         onClick={() => {
                           if (form.barcode && !window.confirm(lang === 'en' ? 'Replace the existing barcode?' : lang === 'es' ? '¿Reemplazar el código de barras existente?' : lang === 'it' ? 'Sostituire il codice a barre esistente?' : 'Remplacer le code-barres existant ?')) return
@@ -252,6 +298,18 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     {barcodeInvalid && (
                       <div style={{ marginTop:6, fontSize:11, color:'var(--danger)' }}>
                         {lang === 'en' ? 'Invalid barcode (13 digits required)' : lang === 'es' ? 'Código de barras inválido (13 dígitos requeridos)' : lang === 'it' ? 'Codice a barre non valido (13 cifre richieste)' : 'Code-barres invalide (13 chiffres requis)'}
+                      </div>
+                    )}
+                    {/* État du lookup Open Food Facts (ajout seulement) */}
+                    {!editingSku && offLooking && (
+                      <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
+                        <span style={{ width:11, height:11, border:'2px solid var(--border)', borderTopColor:'var(--p2)', borderRadius:'50%', display:'inline-block', animation:'spin .7s linear infinite' }} />
+                        {i('Recherche du produit…', 'Looking up product…', 'Buscando producto…', 'Ricerca prodotto…')}
+                      </div>
+                    )}
+                    {!editingSku && !offLooking && offFilled.length > 0 && (
+                      <div style={{ marginTop:6, fontSize:11, color:'var(--acc2)', fontWeight:600, display:'flex', alignItems:'center', gap:5 }}>
+                        <Wand2 size={12} /> {i('Pré-rempli via Open Food Facts — modifiable', 'Pre-filled via Open Food Facts — editable', 'Rellenado vía Open Food Facts — editable', 'Precompilato via Open Food Facts — modificabile')}
                       </div>
                     )}
                   </ViewField>
@@ -539,7 +597,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             onScan={barcode => {
               setForm(f => ({ ...f, barcode }))
               setShowScanner(false)
-              toast.success(`✅ ${i('Code-barres', 'Barcode', 'Código de barras', 'Codice a barre')} : ${barcode}`)
+              // En AJOUT : auto-remplissage Open Food Facts (qui toaste le résultat).
+              // En ÉDITION : on confirme juste le code scanné (pas d'écrasement de champs).
+              if (!editingSku) runOffLookup(barcode)
+              else toast.success(`✅ ${i('Code-barres', 'Barcode', 'Código de barras', 'Codice a barre')} : ${barcode}`)
             }}
             onClose={() => setShowScanner(false)}
           />
