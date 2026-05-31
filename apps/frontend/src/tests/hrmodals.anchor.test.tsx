@@ -48,7 +48,7 @@ function makeProps(overrides: any = {}) {
     selectedContract: EMP as any,
     showLeaveModal: false, setShowLeaveModal: vi.fn(),
     leaveForm: { empId: 0, type: 'Congé annuel', startDate: '2026-05-01', endDate: '', notes: '' }, setLeaveForm: vi.fn(),
-    setLeaves: vi.fn(),
+    onSubmitLeave: vi.fn(),
     ...overrides,
   }
 }
@@ -152,11 +152,11 @@ describe('HRModals — modale détail contrat', () => {
 })
 
 describe('HRModals — modale demande de congé', () => {
-  it('demande valide + "Soumettre" → setLeaves + ferme', () => {
+  it('demande valide + "Soumettre" → onSubmitLeave(form) + ferme (POST géré par le parent)', () => {
     const p = makeProps({ showLeaveModal: true, leaveForm: { empId: 1, type: 'Congé annuel', startDate: '2026-05-01', endDate: '2026-05-05', notes: 'Repos' } })
     render(<HRModals {...p} />)
     fireEvent.click(screen.getByText(/Soumettre/))
-    expect(p.setLeaves).toHaveBeenCalled()
+    expect(p.onSubmitLeave).toHaveBeenCalled()
     expect(p.setShowLeaveModal).toHaveBeenCalledWith(false)
   })
 

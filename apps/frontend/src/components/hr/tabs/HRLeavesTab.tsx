@@ -5,12 +5,12 @@ interface Props {
   employees: Employee[]
   lang: string
   pendingLeaves: number
-  leaves: LeaveRequest[]
+  leaves: LeaveRequest[]; leavesLoading?: boolean
   setLeaveForm: (v: any) => void; setShowLeaveModal: (b: boolean) => void
-  handleLeaveAction: (id: number, status: 'approved' | 'refused') => void
+  handleLeaveAction: (id: string, status: 'approved' | 'refused') => void
 }
 
-export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, setLeaveForm, setShowLeaveModal, handleLeaveAction }: Props) {
+export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, leavesLoading, setLeaveForm, setShowLeaveModal, handleLeaveAction }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {pendingLeaves > 0 && (
@@ -40,7 +40,7 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, se
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {(leaves ?? []).map(leave => {
-            const emp = (employees ?? []).find(e => e.id === leave.empId || Number(e.id) === leave.empId)
+            const emp = (employees ?? []).find(e => String(e.id) === String(leave.empId))
             const displayName = emp?.name ?? leave.empName ?? '—'
             const statusCfg = LEAVE_STATUS_CFG[leave.status]
             return (
@@ -76,7 +76,12 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, se
               </div>
             )
           })}
-          {(leaves ?? []).length === 0 && (
+          {leavesLoading && (leaves ?? []).length === 0 && (
+            <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)', fontSize: 14 }}>
+              {lang === 'en' ? 'Loading…' : lang === 'es' ? 'Cargando…' : lang === 'it' ? 'Caricamento…' : 'Chargement…'}
+            </div>
+          )}
+          {!leavesLoading && (leaves ?? []).length === 0 && (
             <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)', fontSize: 14 }}>
               {lang === 'en' ? 'No leave requests' : lang === 'es' ? 'Sin solicitudes de permiso' : lang === 'it' ? 'Nessuna richiesta di permesso' : 'Aucune demande de congé'}
             </div>

@@ -24,9 +24,9 @@ interface HRTabsProps {
   onSaveAttendance: (empId: string, date: string, entry: { in: string | null; out: string | null; status: AttendUiStatus }) => void
   attendanceDate: string; setAttendanceDate: (v: string) => void
   pendingLeaves: number
-  leaves: LeaveRequest[]
+  leaves: LeaveRequest[]; leavesLoading?: boolean
   setLeaveForm: (v: any) => void; setShowLeaveModal: (b: boolean) => void
-  handleLeaveAction: (id: number, status: 'approved' | 'refused') => void
+  handleLeaveAction: (id: string, status: 'approved' | 'refused') => void
 }
 
 // Conteneur fin : aiguille vers le composant d'onglet (découpe à comportement identique).
@@ -37,7 +37,7 @@ export default function HRTabs(props: HRTabsProps) {
     generateAllPayslips, generatePayslipPDF, setSalaryTarget, setShowSalaryModal,
     setSelectedContract, setShowContractDetailModal, setContractForm, setShowNewContractModal,
     attendance, onSaveAttendance, attendanceDate, setAttendanceDate,
-    pendingLeaves, leaves, setLeaveForm, setShowLeaveModal, handleLeaveAction,
+    pendingLeaves, leaves, leavesLoading, setLeaveForm, setShowLeaveModal, handleLeaveAction,
   } = props
   return (
     <>
@@ -73,7 +73,7 @@ export default function HRTabs(props: HRTabsProps) {
       {tab === 'leaves' && (
         <HRLeavesTab
           employees={employees} lang={lang}
-          pendingLeaves={pendingLeaves} leaves={leaves}
+          pendingLeaves={pendingLeaves} leaves={leaves} leavesLoading={leavesLoading}
           setLeaveForm={setLeaveForm} setShowLeaveModal={setShowLeaveModal}
           handleLeaveAction={handleLeaveAction}
         />

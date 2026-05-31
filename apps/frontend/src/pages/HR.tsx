@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import React from 'react'
 import { useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
-import { employeesApi, bonusesApi, salaryHistoryApi, attendanceApi } from '@/lib/api'
+import { employeesApi, bonusesApi, salaryHistoryApi, attendanceApi, leaveRequestsApi } from '@/lib/api'
 import { exportCSV } from '@/utils/export'
 import { Download, Plus, X, Users, DollarSign, FileText, TrendingUp, Star, Pencil, Clock, Umbrella, Search, LayoutGrid, AlignJustify, CheckCircle, XCircle, AlertTriangle, Gift, Trash2, BarChart3, Calendar, User, Eye, CheckCheck, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -19,8 +19,7 @@ import HREmployeeGrid from '@/components/hr/HREmployeeGrid'
 import HRTabs from '@/components/hr/HRTabs'
 import HRModals from '@/components/hr/HRModals'
 import EmptyState from '@/components/ui/EmptyState'
-import { type Employee, type LeaveRequest, type AttendUiStatus, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi, eachDateInclusive } from '@/components/hr/hrShared'
-import { writeLeaveShiftsToPlanning } from '@/components/planning/planningShared'
+import { type Employee, type LeaveRequest, type AttendUiStatus, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi, mapApiLeave } from '@/components/hr/hrShared'
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -43,6 +42,7 @@ export default function HR() {
   const [loadingEmployees, setLoadingEmployees] = useState(true)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [leaves, setLeaves] = useState<LeaveRequest[]>([])
+  const [leavesLoading, setLeavesLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null)
   const [showEditEmpModal, setShowEditEmpModal] = useState(false)
@@ -156,6 +156,15 @@ export default function HR() {
         logger.log('✅ Salary history chargé:', normalized.length)
       })
       .catch(err => logger.warn('salary-history load:', err.message))
+  }, [])
+
+  // Phase 6 — charge les demandes de congé depuis l'API (remplace l'état in-memory).
+  useEffect(() => {
+    setLeavesLoading(true)
+    leaveRequestsApi.list()
+      .then((rows: any[]) => { if (Array.isArray(rows)) setLeaves(rows.map(mapApiLeave)) })
+      .catch(() => toast.error(lang === 'en' ? 'Failed to load leave requests' : lang === 'es' ? 'Error al cargar permisos' : lang === 'it' ? 'Caricamento ferie fallito' : 'Échec du chargement des congés'))
+      .finally(() => setLeavesLoading(false))
   }, [])
 
   useEffect(() => {
@@ -446,25 +455,38 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
     toast.success(lang === 'en' ? `📄 ${actifs.length} payslips generated!` : lang === 'es' ? `📄 ${actifs.length} nóminas generadas !` : lang === 'it' ? `📄 ${actifs.length} buste paga generate !` : `📄 ${actifs.length} bulletins générés !`)
   }
 
-  function handleLeaveAction(id: number, status: 'approved' | 'refused') {
-    setLeaves(prev => prev.map(l => l.id === id ? { ...l, status } : l))
-    // Congé approuvé → reporte des shifts "Congé" sur le planning (localStorage partagé,
-    // lu par la page Planning à son montage). Voir writeLeaveShiftsToPlanning (limite : modèle par jour de semaine).
-    if (status === 'approved') {
-      const leave = leaves.find(l => l.id === id)
-      if (leave?.empId != null && leave.from && leave.to) {
-        writeLeaveShiftsToPlanning(String(leave.empId), leave.from, leave.to)
-        // Phase 4 — LEAVE auto : upsert une entrée Attendance LEAVE par jour couvert
-        // (best-effort, silencieux : l'approbation ne doit pas échouer si l'API tombe).
-        const empId = String(leave.empId)
-        for (const date of eachDateInclusive(leave.from, leave.to)) {
-          attendanceApi.upsert({ employeeId: empId, date, status: 'LEAVE' }).catch(() => {})
-        }
-      }
+  // Phase 6 — approbation/refus via l'API. Le backend /approve crée déjà le Shift Congé +
+  // l'Attendance LEAVE (eachDateInclusive) → plus de writeLeaveShiftsToPlanning ni d'upsert
+  // Attendance côté front. MAJ optimiste du statut local + revert si l'API échoue.
+  async function handleLeaveAction(id: string, status: 'approved' | 'refused') {
+    const prev = leaves
+    setLeaves(p => p.map(l => l.id === id ? { ...l, status } : l))
+    try {
+      await (status === 'approved' ? leaveRequestsApi.approve(id) : leaveRequestsApi.refuse(id))
+      toast.success(status === 'approved'
+        ? (lang === 'en' ? '✅ Leave approved' : lang === 'es' ? '✅ Permiso aprobado' : lang === 'it' ? '✅ Ferie approvate' : '✅ Congé approuvé')
+        : (lang === 'en' ? '❌ Leave refused' : lang === 'es' ? '❌ Permiso rechazado' : lang === 'it' ? '❌ Ferie rifiutate' : '❌ Congé refusé'))
+    } catch {
+      setLeaves(prev) // revert : l'API a échoué
+      toast.error(lang === 'en' ? 'Action failed' : lang === 'es' ? 'Acción fallida' : lang === 'it' ? 'Azione fallita' : 'Échec de l\'action')
     }
-    toast.success(status === 'approved'
-      ? (lang === 'en' ? '✅ Leave approved' : lang === 'es' ? '✅ Permiso aprobado' : lang === 'it' ? '✅ Ferie approvate' : '✅ Congé approuvé')
-      : (lang === 'en' ? '❌ Leave refused' : lang === 'es' ? '❌ Permiso rechazado' : lang === 'it' ? '❌ Ferie rifiutate' : '❌ Congé refusé'))
+  }
+
+  // Crée une demande de congé via l'API (depuis la modale) → ajoute au state.
+  async function createLeave(form: { empId: string | number; type: string; startDate: string; endDate: string; notes: string }) {
+    try {
+      const r = await leaveRequestsApi.create({
+        employeeId: String(form.empId), startDate: form.startDate, endDate: form.endDate,
+        leaveType: form.type, reason: form.notes || null,
+      })
+      const created = mapApiLeave(r)
+      // empName depuis l'employé local si l'API ne le renvoie pas
+      if (!created.empName) created.empName = employees.find(e => String(e.id) === String(form.empId))?.name
+      setLeaves(p => [created, ...p])
+      toast.success('✅ ' + (lang === 'en' ? 'Request submitted!' : lang === 'es' ? '¡Solicitud enviada!' : lang === 'it' ? 'Richiesta inviata!' : 'Demande soumise !'))
+    } catch {
+      toast.error(lang === 'en' ? 'Submission failed' : lang === 'es' ? 'Envío fallido' : lang === 'it' ? 'Invio fallito' : 'Échec de la soumission')
+    }
   }
 
   return (
@@ -580,7 +602,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         attendance={attendance} onSaveAttendance={saveAttendance}
         attendanceDate={attendanceDate} setAttendanceDate={setAttendanceDate}
         pendingLeaves={pendingLeaves}
-        leaves={leaves}
+        leaves={leaves} leavesLoading={leavesLoading}
         setLeaveForm={setLeaveForm} setShowLeaveModal={setShowLeaveModal}
         handleLeaveAction={handleLeaveAction}
       />
@@ -605,7 +627,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         selectedContract={selectedContract}
         showLeaveModal={showLeaveModal} setShowLeaveModal={setShowLeaveModal}
         leaveForm={leaveForm} setLeaveForm={setLeaveForm}
-        setLeaves={setLeaves}
+        onSubmitLeave={createLeave}
       />
     </div>
   )

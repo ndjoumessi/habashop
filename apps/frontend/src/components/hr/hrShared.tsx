@@ -22,8 +22,8 @@ export interface Employee {
 }
 
 export interface LeaveRequest {
-  id: number
-  empId: number
+  id: string          // cuid backend (LeaveRequest.id)
+  empId: string       // employeeId
   empName?: string
   type: string
   from: string
@@ -31,6 +31,22 @@ export interface LeaveRequest {
   days: number
   motif: string
   status: 'pending' | 'approved' | 'refused'
+}
+
+// Mappe une demande de congé API (status MAJUSCULE, employeeId/startDate/endDate/leaveType/reason)
+// → forme frontend LeaveRequest (status minuscule, from/to/type/motif). `days` recalculé.
+export function mapApiLeave(r: any): LeaveRequest {
+  const from = String(r.startDate ?? ''), to = String(r.endDate ?? '')
+  const days = (from && to) ? eachDateInclusive(from, to).length : 0
+  return {
+    id: String(r.id),
+    empId: String(r.employeeId ?? ''),
+    empName: r.employee?.name,
+    type: r.leaveType ?? 'Congé',
+    from, to, days,
+    motif: r.reason ?? '',
+    status: (String(r.status ?? 'PENDING').toLowerCase() as LeaveRequest['status']),
+  }
 }
 
 // ─── Static data ──────────────────────────────────────────────────────────────

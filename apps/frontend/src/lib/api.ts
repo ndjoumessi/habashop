@@ -288,6 +288,15 @@ export const alertsApi = {
   lowStock: () => api.get<any[]>('/api/products/low-stock'),
 }
 
+export const leaveRequestsApi = {
+  list:    (status?: string) => api.get<any[]>(`/api/leave-requests${status ? `?status=${status}` : ''}`),
+  create:  (data: { employeeId: string; startDate: string; endDate: string; leaveType?: string; reason?: string | null }) =>
+    api.post<any>('/api/leave-requests', data),
+  approve: (id: string) => api.post<any>(`/api/leave-requests/${id}/approve`, {}),
+  refuse:  (id: string) => api.post<any>(`/api/leave-requests/${id}/refuse`, {}),
+  update:  (id: string, data: any) => api.patch<any>(`/api/leave-requests/${id}`, data),
+}
+
 export const attendanceApi = {
   list:   (month?: string) => api.get<any[]>(`/api/attendance${month ? `?month=${month}` : ''}`),
   upsert: (data: { employeeId: string; date: string; status: string; arriveTime?: string | null; departTime?: string | null; note?: string | null }) =>

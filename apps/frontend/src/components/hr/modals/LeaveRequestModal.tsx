@@ -7,10 +7,10 @@ interface Props {
   employees: Employee[]
   leaveForm: any; setLeaveForm: (v: any) => void
   setShowLeaveModal: (b: boolean) => void
-  setLeaves: (v: any) => void
+  onSubmitLeave: (form: any) => void  // Phase 6 : POST /api/leave-requests géré par le parent
 }
 
-export default function LeaveRequestModal({ lang, employees, leaveForm, setLeaveForm, setShowLeaveModal, setLeaves }: Props) {
+export default function LeaveRequestModal({ lang, employees, leaveForm, setLeaveForm, setShowLeaveModal, onSubmitLeave }: Props) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) setShowLeaveModal(false) }}>
@@ -81,21 +81,8 @@ export default function LeaveRequestModal({ lang, employees, leaveForm, setLeave
                 toast.error(lang === 'en' ? 'Employee and dates required' : lang === 'es' ? 'Empleado y fechas requeridos' : lang === 'it' ? 'Dipendente e date richiesti' : 'Employé et dates requis')
                 return
               }
-              const emp = (employees ?? []).find(e => String(e.id) === String(leaveForm.empId))
-              const start = new Date(leaveForm.startDate)
-              const end   = new Date(leaveForm.endDate)
-              const days  = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-              setLeaves(prev => [...prev, {
-                id: Date.now(),
-                empId: leaveForm.empId,
-                type: leaveForm.type,
-                from: leaveForm.startDate,
-                to: leaveForm.endDate,
-                days,
-                motif: leaveForm.notes,
-                status: 'pending',
-              }])
-              toast.success('✅ ' + (lang === 'en' ? 'Request submitted!' : lang === 'es' ? '¡Solicitud enviada!' : lang === 'it' ? 'Richiesta inviata!' : 'Demande soumise !'))
+              // Le parent (HR.tsx createLeave) POST /api/leave-requests + ajoute au state + toast.
+              onSubmitLeave(leaveForm)
               setShowLeaveModal(false)
             }}>
             ✅ {lang === 'en' ? 'Submit' : lang === 'es' ? 'Enviar' : lang === 'it' ? 'Invia' : 'Soumettre'}

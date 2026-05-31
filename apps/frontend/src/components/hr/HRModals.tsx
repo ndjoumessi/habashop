@@ -32,7 +32,7 @@ interface HRModalsProps {
   selectedContract: any
   showLeaveModal: boolean; setShowLeaveModal: (b: boolean) => void
   leaveForm: any; setLeaveForm: (v: any) => void
-  setLeaves: (v: any) => void
+  onSubmitLeave: (form: any) => void
 }
 
 // Dispatcher fin : rend la modale active selon les flags d'ouverture (découpe à comportement identique).
@@ -44,7 +44,7 @@ export default function HRModals(props: HRModalsProps) {
     empEditMode, setEmpEditMode, salaryInput, setSalaryInput, toXOF, currency, currencySymbol,
     openEditModal, showNewContractModal, setShowNewContractModal, contractForm, setContractForm,
     showContractDetailModal, setShowContractDetailModal, selectedContract,
-    showLeaveModal, setShowLeaveModal, leaveForm, setLeaveForm, setLeaves,
+    showLeaveModal, setShowLeaveModal, leaveForm, setLeaveForm, onSubmitLeave,
   } = props
   return (
     <>
@@ -111,7 +111,7 @@ export default function HRModals(props: HRModalsProps) {
         <LeaveRequestModal
           lang={lang} employees={employees}
           leaveForm={leaveForm} setLeaveForm={setLeaveForm}
-          setShowLeaveModal={setShowLeaveModal} setLeaves={setLeaves}
+          setShowLeaveModal={setShowLeaveModal} onSubmitLeave={onSubmitLeave}
         />
       )}
     </>
