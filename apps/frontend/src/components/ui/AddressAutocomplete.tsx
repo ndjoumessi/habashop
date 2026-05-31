@@ -195,7 +195,7 @@ export default function AddressAutocomplete({
           ))}
           <div style={{
             padding: '5px 14px', fontSize: 9, color: 'var(--text4)',
-            textAlign: 'right', background: 'rgba(0,0,0,.15)',
+            textAlign: 'right', background: 'var(--bg3)',
           }}>
             Powered by Google
           </div>
