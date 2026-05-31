@@ -50,16 +50,10 @@ export default function TabLayout() {
         <TabIcon name="cube" focused={focused}
           label={i('Stock','Stock','Stock','Stock')}/>
       }}/>
-      <Tabs.Screen name="pos-tab" options={{ tabBarIcon:({focused})=>(
-        <View style={s.posWrap}>
-          <View style={[
-            focused ? s.posBtnActive : s.posBtnInactive,
-            { transform: [{ scale: focused ? 1.08 : 1 }] },
-          ]}>
-            <Ionicons name="cart" size={26} color={focused ? '#fff' : C.primary}/>
-          </View>
-        </View>
-      )}}/>
+      <Tabs.Screen name="pos-tab" options={{ tabBarIcon:({focused})=>
+        <TabIcon name="cart" focused={focused}
+          label={i('Caisse','Register','Caja','Cassa')}/>
+      }}/>
       <Tabs.Screen name="customers" options={{ tabBarIcon:({focused})=>
         <TabIcon name="people" focused={focused}
           label={i('Clients','Clients','Clientes','Clienti')}/>
@@ -90,32 +84,4 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   lbl:{ fontSize:9, color:C.text3, fontFamily:'Outfit_600SemiBold', textAlign:'center' },
   lblActive:{ color:C.primary3 },
-  posWrap:{ alignItems:'center', justifyContent:'center' },
-  // FAB POS : outlined inactif (violet clair + bordure violette) → filled actif (violet plein)
-  posBtnActive:{
-    width:58, height:58,
-    borderRadius:18,
-    alignItems:'center', justifyContent:'center',
-    marginBottom:16,
-    backgroundColor:C.primary,
-    shadowColor:C.primary,
-    shadowOffset:{ width:0, height:4 },
-    shadowOpacity:0.4,
-    shadowRadius:10,
-    elevation:8,
-  },
-  posBtnInactive:{
-    width:58, height:58,
-    borderRadius:18,
-    alignItems:'center', justifyContent:'center',
-    marginBottom:16,
-    backgroundColor:withAlpha(C.primary, 0.15),
-    borderWidth:1.5,
-    borderColor:withAlpha(C.primary, 0.5),
-    shadowColor:'#000',
-    shadowOffset:{ width:0, height:2 },
-    shadowOpacity:0.08,
-    shadowRadius:4,
-    elevation:2,
-  },
 })
