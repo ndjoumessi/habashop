@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { loyaltyApi } from '@/lib/api'
 import { useI18n } from '@/hooks/useI18n'
+import { useFormatAmount } from '@/stores/appStore'
 import toast from 'react-hot-toast'
 
 interface Customer {
@@ -24,6 +25,8 @@ const TIER_CFG = {
 
 export default function LoyaltyCard({ customer, onClose }: Props) {
   const { i } = useI18n()
+  // Seuils de fidélité formatés dans la devise du tenant (1 000 / 10 000 XOF en base).
+  const fmt = useFormatAmount()
   const [points, setPoints] = useState(customer.loyaltyPoints ?? 0)
   const [tier,   setTier]   = useState<'Bronze'|'Silver'|'Gold'>('Bronze')
   const [loading, setLoading] = useState(true)
@@ -164,22 +167,22 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
           </div>
           {tier === 'Bronze' && (
             <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-              ✅ {i('1 point par tranche de 1 000 FCFA', '1 point per 1,000 FCFA spent', '1 punto por cada 1 000 FCFA', '1 punto ogni 1.000 FCFA')}<br/>
+              ✅ {i(`1 point par tranche de ${fmt(1000)}`, `1 point per ${fmt(1000)} spent`, `1 punto por cada ${fmt(1000)}`, `1 punto ogni ${fmt(1000)}`)}<br/>
               ✅ {i('Offres exclusives réservées aux membres', 'Exclusive member-only offers', 'Ofertas exclusivas para miembros', 'Offerte esclusive per i membri')}<br/>
               🔒 {i('Silver à partir de 2 000 pts · Gold à 5 000 pts', 'Silver from 2,000 pts · Gold at 5,000 pts', 'Silver desde 2 000 pts · Gold a 5 000 pts', 'Silver da 2.000 pts · Gold a 5.000 pts')}
             </div>
           )}
           {tier === 'Silver' && (
             <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-              ✅ {i('1,5 points par tranche de 1 000 FCFA', '1.5 points per 1,000 FCFA spent', '1,5 puntos por cada 1 000 FCFA', '1,5 punti ogni 1.000 FCFA')}<br/>
-              ✅ {i('Remise de 5 % sur les achats', '5% discount on purchases', '5 % de descuento en compras', 'Sconto del 5% sugli acquisti')} &gt; 10 000 FCFA<br/>
+              ✅ {i(`1,5 points par tranche de ${fmt(1000)}`, `1.5 points per ${fmt(1000)} spent`, `1,5 puntos por cada ${fmt(1000)}`, `1,5 punti ogni ${fmt(1000)}`)}<br/>
+              ✅ {i('Remise de 5 % sur les achats', '5% discount on purchases', '5 % de descuento en compras', 'Sconto del 5% sugli acquisti')} &gt; {fmt(10000)}<br/>
               ✅ {i('Accès aux promotions avant tout le monde', 'Early access to promotions', 'Acceso anticipado a promociones', 'Accesso anticipato alle promozioni')}<br/>
               🔒 {i('Gold à partir de 5 000 pts', 'Gold from 5,000 pts', 'Gold desde 5 000 pts', 'Gold da 5.000 pts')}
             </div>
           )}
           {tier === 'Gold' && (
             <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-              ✅ {i('2 points par tranche de 1 000 FCFA', '2 points per 1,000 FCFA spent', '2 puntos por cada 1 000 FCFA', '2 punti ogni 1.000 FCFA')}<br/>
+              ✅ {i(`2 points par tranche de ${fmt(1000)}`, `2 points per ${fmt(1000)} spent`, `2 puntos por cada ${fmt(1000)}`, `2 punti ogni ${fmt(1000)}`)}<br/>
               ✅ {i('Remise de 10 % sur tous les achats', '10% discount on all purchases', '10 % de descuento en todas las compras', 'Sconto del 10% su tutti gli acquisti')}<br/>
               ✅ {i('Livraison prioritaire offerte', 'Free priority delivery', 'Entrega prioritaria gratuita', 'Consegna prioritaria gratuita')}<br/>
               ✅ {i('Accès aux ventes privées', 'Access to private sales', 'Acceso a ventas privadas', 'Accesso alle vendite private')}
