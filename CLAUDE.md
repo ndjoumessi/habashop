@@ -220,7 +220,7 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
 
 ## Comptes démo
 
-Démo bypass auth via `authStore.ts:90+` — mot de passe `demo1234` accepté pour ces comptes :
+Les 5 comptes démo sont **seedés dans le backend réel** (`demo1234`) → un login normal renvoie un **vrai JWT**. ⚠️ **L'ancien fallback démo « hors-ligne » d'`authStore.login` a été SUPPRIMÉ** (commit `19f21bd8`) : il posait `habashop_token='demo-token-local'` quand `authApi.login` échouait (réseau / backend down / **429 rate-limit**), mais `getToken()` (`lib/api.ts`) **exclut** cette valeur → appels authentifiés sans `Authorization` → 401 → l'intercepteur 401 effaçait le token + redirigeait `/login` ⇒ **déconnexion immédiate après « login » (P0)**. Désormais un login échoué surface l'erreur (reste sur `/login`). Les boutons démo de `LoginPage` **préremplissent** juste le formulaire → login réel. (Garde-fous résiduels `token !== 'demo-token-local'` dans `App.tsx`/`notificationStore`/`api.ts` = inoffensifs, valeur jamais plus posée.) Comptes :
 - `admin@habashop.com` / `demo1234` (rôle ADMIN sur `demo-tenant-001`)
 - `manager@habashop.com` / `demo1234` (rôle MANAGER)
 - `cashier@habashop.com` / `demo1234` (rôle CASHIER)
