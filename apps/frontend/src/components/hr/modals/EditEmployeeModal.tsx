@@ -70,7 +70,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               </div>
             </div>
             <button type="button" onClick={() => setShowEditEmpModal(false)}
-              style={{ width:32, height:32, borderRadius:10, background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)', cursor:'pointer', fontSize:16, color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+              style={{ width:32, height:32, borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', cursor:'pointer', fontSize:16, color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
           </div>
         </div>
 
@@ -216,7 +216,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                   <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
                     {lang === 'en' ? 'ADDRESS' : lang === 'es' ? 'DIRECCIÓN' : lang === 'it' ? 'INDIRIZZO' : 'ADRESSE'}
                   </label>
-                  <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid rgba(255,255,255,.06)', borderRadius:10, fontSize:13, color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', gap:8 }}>
                     <MapPin size={13} style={{ opacity:.7, flexShrink:0, color:'var(--text3)' }} />
                     <span>
                       {editEmpForm.address?.trim()
@@ -275,7 +275,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
         </div>
 
         {/* FOOTER */}
-        <div style={{ padding:'16px 24px', borderTop:'1px solid rgba(255,255,255,.06)', background:'rgba(0,0,0,.2)', flexShrink:0, display:'flex', gap:8 }}>
+        <div style={{ padding:'16px 24px', borderTop:'1px solid var(--border)', background:'var(--bg3)', flexShrink:0, display:'flex', gap:8 }}>
           {!empEditMode ? (
             <>
               <button onClick={() => setEmpEditMode(true)}
@@ -283,7 +283,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 ✏️ {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
               </button>
               <button onClick={() => setShowEditEmpModal(false)}
-                style={{ padding:'12px 18px', background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
+                style={{ padding:'12px 18px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
                 {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}
               </button>
             </>
@@ -313,7 +313,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 ✅ {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Sauvegarder'}
               </button>
               <button onClick={() => { openEditModal(selectedEmp!) }}
-                style={{ padding:'12px 16px', background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
+                style={{ padding:'12px 16px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
                 {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
               </button>
               <button

@@ -93,7 +93,7 @@ export default function SectionShop() {
                     value={(shopData as any)[f.key] ?? ''} onChange={e => setShopData(d => ({ ...d, [f.key]: e.target.value }))} />
                 </div>
               ) : (
-                <div style={{ padding: '10px 14px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 10, fontSize: 13, color: 'var(--text2)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, minHeight: 42 }}>
+                <div style={{ padding: '10px 14px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, color: 'var(--text2)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, minHeight: 42 }}>
                   <span style={{ opacity: .5 }}>{f.icon}</span>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {(shopData as any)[f.key] || <span style={{ color: 'var(--text4)', fontStyle: 'italic' }}>{i('Non renseigné', 'Not set', 'No especificado', 'Non impostato')}</span>}

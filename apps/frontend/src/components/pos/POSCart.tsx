@@ -144,7 +144,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 {cart.map((item, idx) => (
                   <div key={item.id} style={{
                     display:'flex', alignItems:'center', gap:8, padding:'9px 10px',
-                    borderBottom: idx < cart.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                    borderBottom: idx < cart.length - 1 ? '1px solid var(--border)' : 'none',
                     borderRadius:10, transition:'background .1s',
                   }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(91,78,232,.06)'}

@@ -41,7 +41,7 @@ export default function ViewField({
         <div style={{
           padding:'9px 13px',
           background:'transparent',
-          border:'1px solid rgba(255,255,255,.06)',
+          border:'1px solid var(--border)',
           borderRadius:10,
           fontSize:13, fontWeight:500,
           color: color ?? 'var(--text2)',

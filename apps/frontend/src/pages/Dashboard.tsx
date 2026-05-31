@@ -372,7 +372,7 @@ export default function Dashboard() {
                 <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i], flexShrink: 0 }} />
                   <span style={{ flex: 1, color: 'var(--text2)' }}>{d.name}</span>
-                  <div style={{ width: 48, height: 4, background: 'rgba(255,255,255,.08)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ width: 48, height: 4, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
                     <div style={{ width: `${pct}%`, height: '100%', background: DONUT_COLORS[i], borderRadius: 99 }} />
                   </div>
                   <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: DONUT_COLORS[i], minWidth: 28, textAlign: 'right' }}>{pct}%</span>
