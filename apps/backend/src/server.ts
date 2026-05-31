@@ -32,6 +32,7 @@ import { whatsappRoutes }     from './routes/whatsapp'
 import { aiRoutes }           from './routes/ai'
 import { docsRoutes }         from './routes/docs'
 import { goalsRoutes }        from './routes/goals'
+import { attendanceRoutes }   from './routes/attendance'
 import { publicRoutes }       from './routes/public'
 import {
   sendTrialReminder7Days,
@@ -211,6 +212,7 @@ async function start() {
   await app.register(orderRoutes)
   await app.register(employeeRoutes)
   await app.register(hrRoutes)
+  await app.register(attendanceRoutes)
   await app.register(expenseRoutes)
   await app.register(analyticsRoutes)
   await app.register(reportsRoutes)

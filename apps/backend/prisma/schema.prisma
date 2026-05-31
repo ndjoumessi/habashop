@@ -75,6 +75,7 @@ model Tenant {
   planRequests   PlanRequest[]
   pushTokens     PushToken[]
   goals          Goal[]
+  attendance     Attendance[]
 
   @@index([deletedAt])
 }
@@ -313,6 +314,7 @@ model Employee {
   tenant        Tenant          @relation(fields: [tenantId], references: [id])
   bonuses       EmployeeBonus[]
   salaryHistory SalaryHistory[]
+  attendance    Attendance[]
 
   @@index([tenantId])
   @@index([tenantId, dept])
@@ -348,6 +350,30 @@ model SalaryHistory {
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([employeeId])
+}
+
+// Présence quotidienne d'un employé. `status` = String (convention du projet : pas d'enum
+// Prisma ; valeurs PRESENT|LATE|ABSENT|LEAVE|REST validées au niveau route → 400 sinon).
+// `date` = String "YYYY-MM-DD" (date-only) : clé d'unicité jour/employé sans dérive de
+// fuseau, miroir de la clé localStorage frontend `${empId}_${date}` (compat Phase 2).
+model Attendance {
+  id         String   @id @default(cuid())
+  tenantId   String
+  employeeId String
+  date       String   // "YYYY-MM-DD"
+  status     String   // PRESENT | LATE | ABSENT | LEAVE | REST
+  arriveTime String?  // "HH:MM"
+  departTime String?  // "HH:MM"
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, date])
+  @@index([tenantId, date])
   @@index([employeeId])
 }
 
