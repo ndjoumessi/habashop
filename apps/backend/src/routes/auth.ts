@@ -9,7 +9,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/auth/login', {
     config: {
       rateLimit: {
-        max: 10,
+        // 30/15min/IP : compromis brute-force ↔ CGNAT mobile (Afrique de l'Ouest), où de nombreux
+        // utilisateurs légitimes partagent une même IP publique opérateur (max:10 les épuisait).
+        max: 30,
         timeWindow: '15 minutes',
         errorResponseBuilder: (_req: any, context: any) => ({
           statusCode: 429,

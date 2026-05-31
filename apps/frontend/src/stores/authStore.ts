@@ -89,11 +89,11 @@ export const useAuthStore = create<AuthState>()(
         } catch (err: any) {
           // ⚠️ PAS de fallback démo « hors-ligne » ici. Les 5 comptes démo existent dans le backend
           // réel (mot de passe demo1234) → un login normal renvoie un VRAI JWT. L'ancien fallback
-          // posait `habashop_token='demo-token-local'` quand authApi.login échouait (réseau / backend
-          // down / 429 rate-limit), mais getToken() (lib/api.ts) EXCLUT cette valeur → tous les appels
-          // authentifiés partaient sans Authorization → 401 → l'intercepteur 401 effaçait le token et
-          // redirigeait vers /login (= déconnexion immédiate après « login »). On surface l'erreur à la
-          // place : l'utilisateur reste sur /login avec un message clair (ex. « Trop de tentatives »).
+          // posait un token factice NON authentifiable quand authApi.login échouait (réseau / backend
+          // down / 429 rate-limit) → tous les appels authentifiés partaient sans Authorization → 401 →
+          // l'intercepteur 401 effaçait le token et redirigeait vers /login (= déconnexion immédiate
+          // après « login »). On surface l'erreur à la place : l'utilisateur reste sur /login avec un
+          // message clair (ex. « Trop de tentatives »).
           set({ error: err.message, isLoading: false })
           throw err
         }

@@ -9,11 +9,7 @@ const BASE = process.env.E2E_BASE ?? 'https://habashop.vercel.app'
 // ⚠️ Crée une vraie demande sur le tenant démo (pas de route DELETE leave → accumulation assumée).
 // NOTE : /api/auth/login rate-limité (10 / 15 min / IP) → un seul login.
 test('Congé : création + approbation via API → statut Approuvé', async ({ page }) => {
-  await page.goto(`${BASE}/login`)
-  await page.fill('input[type="email"]', 'admin@habashop.com')
-  await page.fill('input[type="password"]', 'demo1234')
-  await page.click('button[type="submit"]')
-  await page.waitForURL(/\/app\/dashboard/, { timeout: 15000 })
+  // Auth via storageState (projet `setup`).
 
   // HR → onglet Congés
   await page.goto(`${BASE}/app/hr`)

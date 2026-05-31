@@ -17,7 +17,7 @@ function getToken(): string | null {
   for (const source of sources) {
     try {
       const token = source()
-      if (token && token !== 'null' && token !== 'undefined' && token !== 'demo-token-local') {
+      if (token && token !== 'null' && token !== 'undefined') {
         return token
       }
     } catch {}

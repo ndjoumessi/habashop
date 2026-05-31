@@ -9,13 +9,12 @@ const API = process.env.E2E_API ?? 'https://habashop-production.up.railway.app'
 // Les 2 shifts sont créés/supprimés via l'API (setup/cleanup) pour rester déterministe et propre.
 // NOTE : /api/auth/login rate-limité (10 / 15 min / IP) → un seul login.
 test('Planning : vue Mois — calendrier 6×7, agrégation multi-shift, drill semaine', async ({ page }) => {
-  await page.goto(`${BASE}/login`)
-  await page.fill('input[type="email"]', 'admin@habashop.com')
-  await page.fill('input[type="password"]', 'demo1234')
-  await page.click('button[type="submit"]')
-  await page.waitForURL(/\/app\/dashboard/, { timeout: 15000 })
+  // Auth via storageState (projet `setup`). UNE SEULE navigation (pas de goto dashboard préalable
+  // qui annulerait le /me de montage). On lit le token depuis la page Planning chargée.
+  await page.goto(`${BASE}/app/planning`)
+  await expect(page.getByRole('button', { name: /Copier|Copy/ })).toBeVisible({ timeout: 15000 })
 
-  // Token JWT réel (admin@habashop.com est un user seedé accepté par le backend) → appels API directs.
+  // Token JWT réel (depuis localStorage de la page chargée) → appels API directs.
   const token = await page.evaluate(() => localStorage.getItem('habashop_token'))
   expect(token, 'token JWT en localStorage').toBeTruthy()
   const auth = { Authorization: `Bearer ${token}`, 'content-type': 'application/json' }
@@ -39,11 +38,7 @@ test('Planning : vue Mois — calendrier 6×7, agrégation multi-shift, drill se
   }
 
   try {
-    await page.goto(`${BASE}/app/planning`)
-    // Vue semaine par défaut : le bouton « Copier → suiv. » est présent.
-    await expect(page.getByRole('button', { name: /Copier|Copy/ })).toBeVisible({ timeout: 15000 })
-
-    // Bascule vers la vue Mois.
+    // Bascule vers la vue Mois (le changement de vue refetch les shifts → inclut ceux créés ci-dessus).
     await page.getByRole('button', { name: /^Mois$|^Month$/ }).click()
 
     // Le calendrier du mois affiche le jour 15 (présent dans tout mois) et masque « Copier ».

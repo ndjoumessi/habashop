@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test'
 
 const BASE = 'https://habashop.vercel.app'
 
+// Smoke = parcours PUBLICS + flux de login RÉELS → on ignore la session partagée
+// (storageState du projet) et on part déconnecté. Les tests connectés d'ici se loguent eux-mêmes.
+test.use({ storageState: { cookies: [], origins: [] } })
+
 // NOTE : les tests connectés font un login UI réel. Le endpoint /api/auth/login
 // est rate-limité (10 / 15 min par IP) → éviter de relancer la suite en rafale.
 

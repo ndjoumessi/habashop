@@ -1,1 +1,4 @@
 .vercel
+
+# Playwright auth state (vrai JWT — ne pas committer)
+e2e/.auth/

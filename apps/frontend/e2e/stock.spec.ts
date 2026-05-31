@@ -3,11 +3,10 @@ import { test, expect } from '@playwright/test'
 const BASE = process.env.STOCK_BASE ?? 'https://habashop.vercel.app'
 
 async function login(page: import('@playwright/test').Page) {
-  await page.goto(`${BASE}/login`)
-  await page.fill('input[type="email"]', 'admin@habashop.com')
-  await page.fill('input[type="password"]', 'demo1234')
-  await page.click('button[type="submit"]')
-  await page.waitForURL(/\/app\/dashboard/, { timeout: 12000 })
+  // Auth via storageState (projet `setup`) → aucun login UI. Chaque test enchaîne avec UN SEUL
+  // page.goto(`/app/...`) : pas de double navigation (qui annulerait le /me de montage →
+  // catch(logout) → effacement du token → bounce /login).
+  void page
 }
 
 test('Stock — page renders, product/label/category modals open', async ({ page }) => {

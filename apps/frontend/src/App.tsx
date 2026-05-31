@@ -78,7 +78,7 @@ export default function App() {
   const { token, logout, updateUser } = useAuthStore()
 
   useEffect(() => {
-    if (token && token !== 'demo-token-local') {
+    if (token) {
       authApi.me()
         .then(user => updateUser(user))
         .catch(() => logout())

@@ -35,7 +35,7 @@ export const useNotificationStore = create<NotifState>((set, get) => ({
   connected: false,
 
   connect: (token) => {
-    if (!token || token === 'demo-token-local') return
+    if (!token) return
     if (ws && currentToken === token && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return
     currentToken = token
     manualClose = false

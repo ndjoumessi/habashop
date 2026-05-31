@@ -6,12 +6,9 @@ const BASE = 'https://habashop.vercel.app'
 // l'écran en devise EUR — régression BUG 2 (double conversion : 686,02 € → 1,05 €).
 // NOTE : /api/auth/login est rate-limité (10 / 15 min / IP) → un seul login ici.
 test('Bulletin PDF = écran en EUR (pas de double conversion)', async ({ page }) => {
-  // 1) Login démo
-  await page.goto(`${BASE}/login`)
-  await page.fill('input[type="email"]', 'admin@habashop.com')
-  await page.fill('input[type="password"]', 'demo1234')
-  await page.click('button[type="submit"]')
-  await page.waitForURL(/\/app\/dashboard/, { timeout: 15000 })
+  // 1) Auth via storageState (projet `setup`). On charge d'abord la page (origine établie →
+  //    localStorage accessible ; sans login UI il n'y a plus de navigation préalable).
+  await page.goto(`${BASE}/app/payroll`)
 
   // 2) Force la devise d'AFFICHAGE = EUR dans le store persisté, puis reload.
   //    (Le fix "currency device-local" garantit que setTenant n'écrase PAS la devise
@@ -22,7 +19,7 @@ test('Bulletin PDF = écran en EUR (pas de double conversion)', async ({ page })
     cfg.state = { ...(cfg.state ?? {}), currency: 'EUR' }
     localStorage.setItem('habashop-config', JSON.stringify(cfg))
   })
-  await page.goto(`${BASE}/app/payroll`)
+  await page.reload()
   await page.waitForLoadState('networkidle')
 
   // 3) Cible la ligne de Fatoumata Ndiaye (450 000 XOF, sans retenue → net = brut).

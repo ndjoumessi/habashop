@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { decideWsAuth } from '../lib/wsAuth'
 
 describe('Rate-limiting config', () => {
-  it('Login : max 10 / 15 min', () => {
-    expect({ max:10, timeWindow:'15 minutes' }.max).toBe(10)
+  it('Login : max 30 / 15 min (relevé pour CGNAT mobile)', () => {
+    expect({ max:30, timeWindow:'15 minutes' }.max).toBe(30)
   })
   it('Register : max 5 / 1h', () => {
     expect({ max:5, timeWindow:'1 hour' }.max).toBe(5)

@@ -26,11 +26,10 @@ const BASE = process.env.E2E_BASE ?? 'https://habashop.vercel.app'
 test.describe.configure({ mode: 'serial' })
 
 async function login(page: Page) {
-  await page.goto(`${BASE}/login`)
-  await page.fill('input[type="email"]', 'admin@habashop.com')
-  await page.fill('input[type="password"]', 'demo1234')
-  await page.click('button[type="submit"]')
-  await page.waitForURL(/\/app\/dashboard/, { timeout: 12000 })
+  // Auth via storageState (projet `setup`) → aucun login UI (anti rate-limit). On charge
+  // l'app pour exposer la session + la sidebar SPA.
+  await page.goto(`${BASE}/app/dashboard`)
+  await page.waitForURL(/\/app\/dashboard/, { timeout: 15000 })
 }
 
 // Choisit une langue dans Paramètres → Langue & Devise, en NAVIGATION SPA (clic sidebar,
