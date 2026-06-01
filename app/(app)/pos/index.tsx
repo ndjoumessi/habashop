@@ -343,53 +343,61 @@ export default function POSScreen() {
         </View>
       )}
 
-      <POSCart
-        visible={showCart}
-        onClose={() => setShowCart(false)}
-        onCheckout={() => setShowConfirm(true)}
-        cart={cart}
-        paymentMode={paymentMode}
-        cashGiven={cashGiven}
-        subtotal={subAmt}
-        total={totalAmt}
-        onUpdateQty={updateQty}
-        onRemove={removeItem}
-        onSetPaymentMode={setPaymentMode}
-        onSetCashGiven={setCashGiven}
-        onClearCart={clearCart}
-        customer={customer}
-        onOpenCustomer={() => setShowCustomerPicker(true)}
-        onClearCustomer={() => setCustomer(null)}
-        discount={discount}
-        onSetDiscount={setDiscount}
-        vatRate={tenant?.vatRate}
-        fmt={fmt}
-        i={i}
-      />
+      {/* Overlays montés À LA DEMANDE (pas tous montés visible={false} en même temps).
+          Crash Fabric/New Arch « addViewAt: failed to insert view » : empiler plusieurs
+          <Modal> au montage de l'écran fait planter la réconciliation de vues. On ne monte
+          chaque modal que lorsqu'il est ouvert → aucun Modal présent à l'ouverture de la caisse. */}
+      {showCart && (
+        <POSCart
+          visible
+          onClose={() => setShowCart(false)}
+          onCheckout={() => setShowConfirm(true)}
+          cart={cart}
+          paymentMode={paymentMode}
+          cashGiven={cashGiven}
+          subtotal={subAmt}
+          total={totalAmt}
+          onUpdateQty={updateQty}
+          onRemove={removeItem}
+          onSetPaymentMode={setPaymentMode}
+          onSetCashGiven={setCashGiven}
+          onClearCart={clearCart}
+          customer={customer}
+          onOpenCustomer={() => setShowCustomerPicker(true)}
+          onClearCustomer={() => setCustomer(null)}
+          discount={discount}
+          onSetDiscount={setDiscount}
+          vatRate={tenant?.vatRate}
+          fmt={fmt}
+          i={i}
+        />
+      )}
 
-      <CustomerPicker
-        visible={showCustomerPicker}
-        selectedId={customer?.id ?? null}
-        onSelect={(c) => { setCustomer(c); setShowCustomerPicker(false) }}
-        onClose={() => setShowCustomerPicker(false)}
-      />
+      {showCustomerPicker && (
+        <CustomerPicker
+          visible
+          selectedId={customer?.id ?? null}
+          onSelect={(c) => { setCustomer(c); setShowCustomerPicker(false) }}
+          onClose={() => setShowCustomerPicker(false)}
+        />
+      )}
 
-      <POSConfirmModal
-        visible={showConfirm}
-        onClose={() => setShowConfirm(false)}
-        onConfirm={confirmSale}
-        isSelling={saleMutation.isPending}
-        cart={cart}
-        total={totalAmt}
-        paymentMode={paymentMode}
-        vatRate={tenant?.vatRate}
-        fmt={fmt}
-        i={i}
-      />
+      {showConfirm && (
+        <POSConfirmModal
+          visible
+          onClose={() => setShowConfirm(false)}
+          onConfirm={confirmSale}
+          isSelling={saleMutation.isPending}
+          cart={cart}
+          total={totalAmt}
+          paymentMode={paymentMode}
+          vatRate={tenant?.vatRate}
+          fmt={fmt}
+          i={i}
+        />
+      )}
 
-      {/* Monté à la demande : le hook caméra (useCameraPermissions) ne s'initialise
-          qu'au premier scan, pas à chaque ouverture de la caisse (évite un crash natif
-          d'init caméra au montage en build release). */}
+      {/* Idem scanner : monté à la demande (le hook caméra ne s'initialise qu'au 1er scan). */}
       {showScanner && (
         <BarcodeScanner
           visible
