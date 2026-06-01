@@ -14,7 +14,7 @@ import POSCart from '@/components/pos/POSCart'
 import POSModals from '@/components/pos/POSModals'
 import POSCashierClosed from '@/components/pos/POSCashierClosed'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
-import { type PosProduct, CASHIER_TEXTS } from '@/components/pos/posShared'
+import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
 
 export default function POS() {
   const {
@@ -23,7 +23,7 @@ export default function POS() {
     cashierOpeningFund, cashierSessionTx, cashierSessionCA,
     openCashier, closeCashier, addCashierSale,
     posTaxRate, posShowStockOnTile, posDefaultFund,
-    posDefaultPayment, priceMode,
+    posDefaultPayment, priceMode, posVatIncluded, posAutoprint, requireCashier,
     enableScanner: posEnableScanner, autoWhatsApp: posAutoWhatsApp,
     // Panier persisté dans le store (survit nav + refresh)
     cart, addCartItem, updateCartQty, setCart, clearCart,
@@ -207,16 +207,17 @@ export default function POS() {
   }
 
   // Calculs
-  const VAT_RATE = posTaxRate / 100
   const subtotalBeforeDiscount = cart.reduce((s, i) => s + i.price * i.qty, 0)
   const discountAmount = discount
     ? discount.type === 'percent'
       ? subtotalBeforeDiscount * discount.value / 100
       : Math.min(discount.value, subtotalBeforeDiscount)
     : 0
-  const total   = subtotalBeforeDiscount - discountAmount
-  const totalHT = total / (1 + VAT_RATE)
-  const tva     = total - totalHT
+  const sub     = subtotalBeforeDiscount - discountAmount
+  // Application de la config TVA (helper pur testable) : prix TTC (défaut) → TVA extraite ;
+  // prix HT (posVatIncluded=false OU priceMode='HT') → TVA ajoutée au-dessus.
+  const pricesIncludeVat = posVatIncluded && priceMode !== 'HT'
+  const { totalHT, tva, total } = computePosVat(sub, posTaxRate, pricesIncludeVat)
   const cashGivenAmount = parseFloat(cashGiven) || 0
   // cashGiven est dans la devise courante → convertir en XOF pour comparer avec total (XOF)
   const monnaie = toXOF(cashGivenAmount) - total
@@ -301,6 +302,7 @@ export default function POS() {
 
     addCashierSale(total)
     toast.success('✅ Vente encaissée !')
+    if (posAutoprint) printTicket() // impression auto du ticket (config POS) — avant le vidage du panier
     clearCart()
     setShowModal(false)
     setCashGiven('')
@@ -312,7 +314,9 @@ export default function POS() {
 
   // ─── RENDER ──────────────────────────────
 
-  if (!cashierOpen) {
+  // Ouverture de caisse exigée seulement si la config `requireCashier` est ON
+  // (sinon, la caisse peut vendre directement sans cérémonie d'ouverture).
+  if (requireCashier && !cashierOpen) {
     return (
       <POSCashierClosed
         ct={ct}

@@ -1,3 +1,21 @@
+// ─── Calcul TVA POS (pur, testable) ─────────
+// Applique la config POS : si les prix incluent la TVA (TTC, défaut) → on EXTRAIT la TVA
+// du sous-total ; sinon (HT) → on AJOUTE la TVA au-dessus.
+//   pricesIncludeVat = posVatIncluded && priceMode !== 'HT'
+export function computePosVat(
+  subtotalAfterDiscount: number,
+  vatRatePct: number,
+  pricesIncludeVat: boolean,
+): { totalHT: number; tva: number; total: number } {
+  const r = Math.max(0, vatRatePct) / 100
+  if (pricesIncludeVat) {
+    const totalHT = subtotalAfterDiscount / (1 + r)
+    return { totalHT, tva: subtotalAfterDiscount - totalHT, total: subtotalAfterDiscount }
+  }
+  const tva = subtotalAfterDiscount * r
+  return { totalHT: subtotalAfterDiscount, tva, total: subtotalAfterDiscount + tva }
+}
+
 export const CATS = [
   { id: 'all',     label: 'Tous' },
   { id: 'cereals', label: 'Céréales' },

@@ -9,7 +9,8 @@ const { mockState } = vi.hoisted(() => ({
     cashierOpeningFund: 50000, cashierSessionTx: 0, cashierSessionCA: 0,
     openCashier: vi.fn(), closeCashier: vi.fn(), addCashierSale: vi.fn(),
     posTaxRate: 18, posShowStockOnTile: true, posDefaultFund: 50000,
-    posDefaultPayment: 'cash', priceMode: 'retail',
+    posDefaultPayment: 'cash', priceMode: 'TTC', posVatIncluded: true, posAutoprint: false,
+    requireCashier: true, // ce test couvre le flux d'ouverture de caisse → la config l'exige
     enableScanner: true, autoWhatsApp: false,
     cart: [] as any[], addCartItem: vi.fn(), updateCartQty: vi.fn(), setCart: vi.fn(), clearCart: vi.fn(),
   },
