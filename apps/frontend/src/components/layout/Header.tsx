@@ -5,7 +5,7 @@ import { useAppStore, t, getTrialInfo } from '@/stores/appStore'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import CurrencyBadge from '@/components/ui/CurrencyBadge'
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { useNetworkStatus } from '@/hooks/useOnlineStatus'
 import toast from 'react-hot-toast'
 import { alertsApi, tenantApi } from '@/lib/api'
 import { useNotificationStore, type LiveNotif } from '@/stores/notificationStore'
@@ -119,14 +119,16 @@ export default function Header() {
   const location = useLocation()
   const navigate  = useNavigate()
   const { lang }  = useAppStore()
-  const isOnline  = useOnlineStatus()
+  // Statut réseau : source unique partagée (ping /health). Le badge ET la bannière
+  // hors-ligne du header lisent le même état → plus de signaux contradictoires.
+  const apiStatus = useNetworkStatus()
+  const isOnline  = apiStatus !== 'offline'
 
   const [showNewMenu,   setShowNewMenu]   = useState(false)
   const [showNotifs,    setShowNotifs]    = useState(false)
   const [searchQuery,   setSearchQuery]   = useState('')
   const [searchResults, setSearchResults] = useState<typeof SEARCH_INDEX>([])
   const [showResults,   setShowResults]   = useState(false)
-  const [apiStatus,     setApiStatus]     = useState<'online'|'offline'|'checking'>('checking')
   const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([])
   const [swUpdate,      setSwUpdate]      = useState(false)
 
@@ -149,13 +151,6 @@ export default function Header() {
     { slug: 'suppliers', Icon: Truck,        label: lang === 'en' ? 'New supplier' : lang === 'es' ? 'Nuevo proveedor' : lang === 'it' ? 'Nuovo fornitore' : 'Nouveau fournisseur', action: () => { navigate('/app/suppliers'); setTimeout(() => window.dispatchEvent(new CustomEvent('habashop:new-supplier')),  300) } },
   ]
   const NEW_ITEMS = ALL_NEW_ITEMS.filter(item => canAccess(role, item.slug))
-
-  useEffect(() => {
-    const BASE = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:3001'
-    fetch(`${BASE}/health`, { signal: AbortSignal.timeout(4000) })
-      .then(r => setApiStatus(r.ok ? 'online' : 'offline'))
-      .catch(() => setApiStatus('offline'))
-  }, [])
 
   useEffect(() => {
     alertsApi.lowStock()

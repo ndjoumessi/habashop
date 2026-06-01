@@ -1,35 +1,31 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '@/hooks/useI18n'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 export default function OfflineBanner() {
   const { i } = useI18n()
-  const [offline, setOffline] = useState(!navigator.onLine)
-  const [wasOffline, setWasOffline] = useState(false)
+  // Source de vérité partagée (ping backend), pas navigator.onLine → plus de
+  // contradiction avec le badge header, ni de faux « hors-ligne » au chargement.
+  const offline = !useOnlineStatus()
+  const wasOffline = useRef(false)
   const [showOnline, setShowOnline] = useState(false)
 
   useEffect(() => {
-    const onOffline = () => {
-      setOffline(true)
-      setWasOffline(true)
+    if (offline) {
+      wasOffline.current = true
       setShowOnline(false)
+      return
     }
-    const onOnline = () => {
-      setOffline(false)
-      if (wasOffline) {
-        setShowOnline(true)
-        setTimeout(() => {
-          setShowOnline(false)
-          setWasOffline(false)
-        }, 3000)
-      }
+    // Retour en ligne après une coupure : message transitoire « Connexion rétablie »
+    if (wasOffline.current) {
+      setShowOnline(true)
+      const t = setTimeout(() => {
+        setShowOnline(false)
+        wasOffline.current = false
+      }, 3000)
+      return () => clearTimeout(t)
     }
-    window.addEventListener('offline', onOffline)
-    window.addEventListener('online', onOnline)
-    return () => {
-      window.removeEventListener('offline', onOffline)
-      window.removeEventListener('online', onOnline)
-    }
-  }, [wasOffline])
+  }, [offline])
 
   if (!offline && !showOnline) return null
 
