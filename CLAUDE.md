@@ -172,9 +172,10 @@ les montants en DB sont en **XOF**, conversion **à l'affichage uniquement**. Sy
 
 | Endpoint | Méthode | Forme |
 |----------|---------|-------|
-| `/api/auth/login` | POST | `{ token, user, tenant }` |
-| `/api/auth/me` | GET | `{ user, tenant }` |
-| `/api/products` | GET | tableau **plat** `[{ id, name, sellPrice, emoji, stockQty, stockMin, category, isActive, barcode }]` |
+| `/api/auth/login` | POST | `{ token, user, tenant }` (tenant **complet** : vatRate, posVatIncluded, plan, status…) |
+| `/api/auth/me` | GET | ⚠️ objet **À PLAT** `{ id, name, email, role, shopName, currency }` — **PAS** `{ user, tenant }` (vérifié live). `restoreSession` reconstruit `user` depuis ces champs + `GET /api/tenant` pour le tenant complet. |
+| `/api/tenant` | GET | tenant complet (id, name, currency, **vatRate, posVatIncluded, priceMode**, plan, status, lang…) |
+| `/api/products` | GET | tableau **plat** `[{ id, name, sellPrice, emoji, stockQty, stockMin, category, isActive, barcode, priceTiers?, hasPromotion?, promotionPrice? }]` |
 | `/api/products/:id` | **PUT** | ⚠️ **PUT, pas PATCH** — renvoie le produit mis à jour |
 | `/api/sales` | POST | body `{ items:[{ productId, qty, price }], total, paymentMode, discount? }` — ⚠️ `qty`, pas `quantity` |
 | `/api/sales` | GET | `?limit=N` → tableau `[{ id, total, paymentMode, discountAmount, createdAt, items }]` (filtrage par date **côté client** dans Rapports) |
@@ -213,7 +214,8 @@ cd /Users/nelson/Documents/Projets/habashop-mobile
 lsof -ti tcp:8081 | xargs kill 2>/dev/null   # libère le port si besoin
 npx expo start --clear            # Expo Go SDK 54 (scanner le QR) — exp://<ton-IP-LAN>:8081
 npx expo start --dev-client       # dev build
-npx tsc --noEmit                  # TypeScript : 0 erreur
+npx tsc --noEmit                  # TypeScript : 0 erreur (0 `any` dans app/ + src/)
+npm test                          # jest-expo — 31 tests (logique pure POS) doivent passer
 npx expo-doctor                   # objectif 18/18 ✅
 ```
 
@@ -417,7 +419,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
-*Dernière mise à jour : Sprint 5 — 2026-05-27 (prep iOS + responsive : useResponsive, config iOS app.json/eas.json, IOS_BUILD.md ; reflows tablette différés jusqu'à un iPad).*
+*Dernière mise à jour : 2026-06-01 — durcissement POS + qualité (garde/devise espèces, promo/paliers, typage API 0 any, client/fidélité, TVA, anti sur-vente, remise, jest-expo 31 tests) + build APK **1.3.0**. Détail en bas de fichier.*
 
 ---
 
@@ -446,3 +448,37 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
   → Page /privacy déployée sur Vercel
 - Domaine habashop.com
 - Wave + Orange Money prod
+
+---
+
+## Session 2026-06-01 — durcissement POS + qualité (APK 1.3.0)
+
+> Toutes ces améliorations sont sur `main` (poussées), `tsc` 0, **0 `any`**, **31 tests verts**.
+
+### Livré (commits sur `main`)
+- **`fix(auth)`** — `restoreSession` reconstruit `user` depuis le `/api/auth/me` **plat** + `GET /api/tenant` (avant : lisait `res.data.user/tenant` inexistants → user/tenant `undefined` + **boucle de refetch** depuis Settings). 5 boutons démo au login.
+- **`chore(logging)`** — `src/lib/logger.ts` (DEV-gated sur `__DEV__`, même pattern que le web) ; 16 `console.*` remplacés (flux→log, échec→warn, erreur→error).
+- **`fix(pos)` garde espèces** — encaissement bloqué si montant reçu < total (mode cash) ; bouton « Encaisser » désactivé + message.
+- **`fix(pos)` devise espèces** — `cashGiven` saisi en **devise d'affichage** → ramené en XOF via **`convertToXOF`** (nouvel inverse de `convertFromXOF`) avant comparaison/monnaie. XOF/XAF = identité. ⚠️ **Pattern** : tout montant tapé par l'utilisateur est en devise d'affichage → convertir en XOF avant de comparer aux totaux (qui sont en XOF base).
+- **`feat(pos)` promotions + paliers** — `posStore.resolveLinePrice` = **miroir exact** du backend `resolveTierPrice` (promo > palier `minQty≤qty` le plus haut > base), recalculé à chaque changement de quantité. `item.price` = prix effectif → total écran = ticket = backend.
+- **`types(api)`** — `src/types/index.ts` (Product, Customer, User, Tenant, Sale*, DashboardStats, PriceTier…) ; `api.ts` 100% typé + helpers **`apiErrorMessage`/`apiErrorStatus`** ; propagation aux écrans → **0 `any`**. `authStore` utilise désormais les types `@/types`.
+- **`feat(pos)` client/fidélité** — `CustomerPicker` (modal recherche nom/tél, `GET /api/customers`, points + type) ; `customerId` envoyé à `POST /api/sales` (online + offline) ; toast « Client : X — vente liée ». ⚠️ Le backend incrémente `totalRevenue` mais **pas** `loyaltyPoints` (crédit fidélité = évolution backend).
+- **`feat(pos)` TVA** — `vatBreakdown(total, tenant.vatRate)` (prix **TTC**, miroir web : `HT = total/(1+taux)`, `tva = total−HT`) affiché panier + confirmation + ticket WhatsApp. ⚠️ Mode **HT** (`posVatIncluded:false`) **non géré** (changerait le total envoyé au backend).
+- **`fix(pos)` anti sur-vente** — **`capToStock`** plafonne la quantité au `stockQty` dans `addItem`/`updateQty` (filet sûr tous chemins, dont kiosque) ; bouton `+` désactivé au max + alerte à l'ajout.
+- **`feat(pos)` remise** — champ « Remise % » (0–100) branché sur `discount`/`setDiscount` (la logique existait déjà ; seule la saisie manquait).
+- **`test`** — **jest-expo** posé (`babel.config.js`, `jest.config.js` mapper `@/` + mock AsyncStorage, `npm test`). 3 suites / **31 tests** : `pricing` (resolveLinePrice/capToStock/vatBreakdown), `exchangeRate` (convert*), `cartStore` (plafond/promo/palier/remise/clearCart).
+
+### Nouveaux fichiers
+`src/lib/logger.ts` · `src/types/index.ts` · `src/components/pos/CustomerPicker.tsx` · `babel.config.js` · `jest.config.js` · `jest.setup.js` · `src/__tests__/*`.
+
+### Build APK 1.3.0
+- `app.json` : **version 1.3.0**, versionCode 4 (⚠️ **ignoré** : `appVersionSource: remote` → EAS gère le code à distance ; le profil `preview` n'a pas d'`autoIncrement` → versionCode resté à **3**).
+- Build EAS Android `preview` (APK, keystore `sH_oz3rpgx`) → **FINISHED** : build `088afe30-76df-40f0-90b2-739e7f29aca7`.
+  - Dashboard : https://expo.dev/accounts/ndjoumessi/projects/habashop-mobile/builds/088afe30-76df-40f0-90b2-739e7f29aca7
+  - APK : https://expo.dev/artifacts/eas/24bKjgB5o1U5TufwW1tMdB.apk
+
+### Pistes restantes (audit)
+- Mode kiosque sans TVA/client/remise (UI séparée, ne réutilise pas `POSCart`).
+- Reçu **imprimable/PDF** (`expo-print` installé mais inutilisé).
+- 8 `catch {}` vides ; pas de **Sentry**/Error Boundary ; `expo-background-fetch` déprécié → `expo-background-task`.
+- Fidélité non créditée côté backend ; layouts tablette différés ; Wave/Orange réel ; publication Play Store.
