@@ -76,6 +76,8 @@ interface POSCartProps {
   customer?:        Customer | null
   onOpenCustomer:   () => void
   onClearCustomer:  () => void
+  discount:         number
+  onSetDiscount:    (d: number) => void
   vatRate?:         number
   fmt:              (n: number) => string
   i:                (fr: string, en: string, es: string, it: string) => string
@@ -84,7 +86,7 @@ interface POSCartProps {
 export default function POSCart({
   visible, onClose, onCheckout, cart, paymentMode, cashGiven, subtotal, total,
   onUpdateQty, onRemove, onSetPaymentMode, onSetCashGiven, onClearCart,
-  customer, onOpenCustomer, onClearCustomer, vatRate, fmt, i,
+  customer, onOpenCustomer, onClearCustomer, discount, onSetDiscount, vatRate, fmt, i,
 }: POSCartProps) {
   const { C } = useTheme()
   const { currency, rates } = useFmt()
@@ -159,6 +161,26 @@ export default function POSCart({
                 </Text>
               </Pressable>
             )}
+
+            {/* Remise (%) */}
+            <View style={s.discountRow}>
+              <Text style={s.recapLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')} (%)</Text>
+              <View style={s.discountInputWrap}>
+                <TextInput
+                  style={s.discountInput}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={C.text4}
+                  value={discount ? String(discount) : ''}
+                  onChangeText={t => {
+                    const n = Math.max(0, Math.min(100, Number(t.replace(/[^0-9.]/g, '')) || 0))
+                    onSetDiscount(n)
+                  }}
+                  accessibilityLabel={i('Remise en pourcentage', 'Discount percentage', 'Descuento en porcentaje', 'Sconto in percentuale')}
+                />
+                <Text style={s.discountPct}>%</Text>
+              </View>
+            </View>
 
             {/* Récap montants */}
             <View style={s.recapRow}>
@@ -339,6 +361,16 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   custName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
   custSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
   custChange: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.primary3 },
+  discountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  discountInputWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
+    paddingHorizontal: Spacing.md, height: 38, minWidth: 80,
+  },
+  discountInput: {
+    flex: 1, textAlign: 'right', fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: C.text, padding: 0,
+  },
+  discountPct: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text3 },
   clearBtn: { alignItems: 'center', paddingVertical: Spacing.sm },
   clearTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger },
 })

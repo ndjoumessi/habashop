@@ -45,6 +45,8 @@ export default function POSScreen() {
   const clearCart      = usePosStore(st => st.clearCart)
   const customer       = usePosStore(st => st.customer)
   const setCustomer    = usePosStore(st => st.setCustomer)
+  const discount       = usePosStore(st => st.discount)
+  const setDiscount    = usePosStore(st => st.setDiscount)
   const paymentMode    = usePosStore(st => st.paymentMode)
   const setPaymentMode = usePosStore(st => st.setPaymentMode)
   const cashGiven      = usePosStore(st => st.cashGiven)
@@ -358,6 +360,8 @@ export default function POSScreen() {
         customer={customer}
         onOpenCustomer={() => setShowCustomerPicker(true)}
         onClearCustomer={() => setCustomer(null)}
+        discount={discount}
+        onSetDiscount={setDiscount}
         vatRate={tenant?.vatRate}
         fmt={fmt}
         i={i}
