@@ -224,6 +224,12 @@ export default function Sidebar() {
                 {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
               </span>
             </div>
+            {/* Identifiant de build : permet de vérifier d'un coup d'œil qu'on est
+                bien sur la dernière version (et non une copie en cache). */}
+            <div title={lang === 'en' ? 'Build version' : 'Version du build'}
+              style={{ fontSize: 8, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {__BUILD_ID__}
+            </div>
           </div>
         )}
 

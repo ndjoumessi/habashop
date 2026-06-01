@@ -3,8 +3,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import { execFileSync } from 'node:child_process'
+
+// Identifiant de build visible dans l'app (sidebar) → permet de voir d'un coup d'œil
+// si on est sur la dernière version ou sur une copie en cache (service worker / PWA).
+// Horodatage toujours présent (change à chaque build) + SHA court si dispo (git ou Vercel).
+// execFileSync (pas de shell) + args fixes → aucune injection possible.
+const BUILD_SHA =
+  process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ||
+  (() => { try { return execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim() } catch { return '' } })()
+const BUILD_ID = new Date().toISOString().slice(0, 16).replace('T', ' ') + (BUILD_SHA ? ` · ${BUILD_SHA}` : '')
 
 export default defineConfig({
+  define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   plugins: [
     react(),
     VitePWA({
