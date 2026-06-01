@@ -23,7 +23,7 @@ export default function POS() {
     cashierOpeningFund, cashierSessionTx, cashierSessionCA,
     openCashier, closeCashier, addCashierSale,
     posTaxRate, posShowStockOnTile, posDefaultFund,
-    posDefaultPayment, priceMode, posVatIncluded, posAutoprint, requireCashier,
+    posDefaultPayment, priceMode, posAutoprint, requireCashier,
     enableScanner: posEnableScanner, autoWhatsApp: posAutoWhatsApp,
     // Panier persisté dans le store (survit nav + refresh)
     cart, addCartItem, updateCartQty, setCart, clearCart,
@@ -214,9 +214,9 @@ export default function POS() {
       : Math.min(discount.value, subtotalBeforeDiscount)
     : 0
   const sub     = subtotalBeforeDiscount - discountAmount
-  // Application de la config TVA (helper pur testable) : prix TTC (défaut) → TVA extraite ;
-  // prix HT (posVatIncluded=false OU priceMode='HT') → TVA ajoutée au-dessus.
-  const pricesIncludeVat = posVatIncluded && priceMode !== 'HT'
+  // Application de la config TVA (helper pur testable) — le mode TTC/HT est l'unique pilote :
+  // TTC → prix catalogue incluent la TVA (extraite) ; HT → TVA ajoutée au-dessus.
+  const pricesIncludeVat = priceMode !== 'HT'
   const { totalHT, tva, total } = computePosVat(sub, posTaxRate, pricesIncludeVat)
   const cashGivenAmount = parseFloat(cashGiven) || 0
   // cashGiven est dans la devise courante → convertir en XOF pour comparer avec total (XOF)

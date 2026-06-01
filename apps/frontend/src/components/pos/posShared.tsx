@@ -1,7 +1,7 @@
 // ─── Calcul TVA POS (pur, testable) ─────────
 // Applique la config POS : si les prix incluent la TVA (TTC, défaut) → on EXTRAIT la TVA
 // du sous-total ; sinon (HT) → on AJOUTE la TVA au-dessus.
-//   pricesIncludeVat = posVatIncluded && priceMode !== 'HT'
+//   pricesIncludeVat = priceMode !== 'HT'   (le mode TTC/HT est l'unique pilote)
 export function computePosVat(
   subtotalAfterDiscount: number,
   vatRatePct: number,

@@ -286,12 +286,13 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   color:var(--text3); font-size:13px; font-weight:500; cursor:pointer; text-align:left;
   font-family:var(--font); transition:all .12s var(--ease); text-decoration:none;
 }
-.nav-item:hover,.sidebar-item:hover { background:rgba(255,255,255,.05); color:var(--text); border-color:var(--border) }
-.nav-item.active,.sidebar-item.active { background:rgba(108,71,255,.12); color:var(--p3); border-color:var(--border3); font-weight:700 }
+.nav-item:hover,.sidebar-item:hover { background:rgba(255,255,255,.06); color:var(--text); border-color:var(--border) }
+.nav-item.active,.sidebar-item.active { background:rgba(108,71,255,.12); color:var(--p3); border-color:var(--border3); font-weight:800; font-size:13.5px }
 .nav-badge { margin-left:auto; background:var(--danger); color:#fff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:var(--r-full); min-width:20px; text-align:center }
-.nav-section { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:var(--text4); padding:14px 20px 5px }
+.nav-section { font-size:8px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:var(--text4); padding:9px 20px 3px }
 .nav-icon-wrap { width:28px; height:28px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background .15s }
 .nav-item.active .nav-icon-wrap { background:rgba(108,71,255,.18); box-shadow:0 0 0 1px rgba(108,71,255,.2) }
+.nav-item.active .nav-icon-wrap svg,.sidebar-item.active .nav-icon-wrap svg { width:17px; height:17px }
 .nav-item:hover .nav-icon-wrap { background:rgba(255,255,255,.04) }
 
 /* sidebar misc */

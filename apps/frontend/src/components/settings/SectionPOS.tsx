@@ -45,8 +45,9 @@ export default function SectionPOS() {
   const startEdit = () => { setDraft(snapshot()); setFundInput(fromXOF(cfg.posDefaultFund).toFixed(decimals)); setEditMode(true) }
   const toggle = (key: keyof ReturnType<typeof snapshot>) => { if (!editMode) return; setDraft(p => ({ ...p, [key]: !(p as any)[key] })) }
 
+  // Le mode TTC/HT est l'unique contrôle TVA (cf. sélecteur PRICE_MODES) ;
+  // posVatIncluded est dérivé de priceMode à la sauvegarde (TTC → true, HT → false).
   const TOGGLES: { key: any; icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string> }[] = [
-    { key: 'posVatIncluded', icon: '💰', color: 'var(--acc2)', label: { fr: 'TVA incluse', en: 'VAT included', es: 'IVA incluido', it: 'IVA inclusa' }, desc: { fr: 'Prix affichés TVA comprise', en: 'Prices shown VAT-inclusive', es: 'Precios con IVA', it: 'Prezzi IVA inclusa' } },
     { key: 'posAutoprint', icon: '🖨️', color: 'var(--p2)', label: { fr: 'Impression auto', en: 'Auto print', es: 'Impresión auto', it: 'Stampa auto' }, desc: { fr: 'Imprime le ticket après vente', en: 'Print receipt after sale', es: 'Imprimir ticket tras venta', it: 'Stampa ricevuta dopo vendita' } },
     { key: 'autoWhatsApp', icon: '💬', color: '#25D366', label: { fr: 'Ticket WhatsApp', en: 'WhatsApp receipt', es: 'Ticket WhatsApp', it: 'Ricevuta WhatsApp' }, desc: { fr: 'Envoie le ticket par WhatsApp', en: 'Send receipt via WhatsApp', es: 'Enviar ticket por WhatsApp', it: 'Invia ricevuta via WhatsApp' } },
     { key: 'enableLoyalty', icon: '⭐', color: 'var(--warn)', label: { fr: 'Programme fidélité', en: 'Loyalty program', es: 'Programa fidelidad', it: 'Programma fedeltà' }, desc: { fr: 'Active les points de fidélité', en: 'Enable loyalty points', es: 'Activar puntos de fidelidad', it: 'Abilita punti fedeltà' } },
@@ -63,7 +64,7 @@ export default function SectionPOS() {
     const fundXOF = toXOF(Number(fundInput) || 0)
     try {
       await tenantApi.update({
-        posVatIncluded: draft.posVatIncluded,
+        posVatIncluded: draft.priceMode !== 'HT',   // dérivé du mode TTC/HT (contrôle unique)
         posAutoprint:   draft.posAutoprint,
         autoWhatsApp:   draft.autoWhatsApp,
         enableLoyalty:  draft.enableLoyalty,
@@ -73,7 +74,7 @@ export default function SectionPOS() {
         vatRate:        draft.posTaxRate,    // mapping → tenant.vatRate (single source of truth)
         posDefaultFund: fundXOF,
       })
-      cfg.updateConfig({ ...draft, posDefaultFund: fundXOF, shopVatRate: draft.posTaxRate } as any)
+      cfg.updateConfig({ ...draft, posVatIncluded: draft.priceMode !== 'HT', posDefaultFund: fundXOF, shopVatRate: draft.posTaxRate } as any)
       toast.success(i('✅ Config POS sauvegardée', '✅ POS config saved', '✅ Config TPV guardada', '✅ Config POS salvata'))
       setEditMode(false)
     } catch (e: any) {

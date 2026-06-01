@@ -125,6 +125,17 @@ export default function Dashboard() {
   const [catData, setCatData] = useState<any[]>([])
   const [reportPeriod, setReportPeriod] = useState('7days')
   const catTotal = catData.reduce((s, d) => s + (d.value ?? 0), 0)
+  // % par catégorie : diviseur = CA total toutes catégories (y compris « Autre ») ;
+  // arrondi Math.round puis correction du dernier slice → somme garantie = 100 %.
+  const catPcts = (() => {
+    if (catTotal <= 0) return catData.map(() => 0)
+    const rounded = catData.map(d => Math.round(((d.value ?? 0) / catTotal) * 100))
+    if (rounded.length) {
+      const sumOthers = rounded.slice(0, -1).reduce((s, p) => s + p, 0)
+      rounded[rounded.length - 1] = 100 - sumOthers
+    }
+    return rounded
+  })()
 
   useEffect(() => {
     dashboardApi.stats()
@@ -367,7 +378,7 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 6, padding: '0 4px' }}>
             {catData.map((d, i) => {
-              const pct = Math.round((d.value / catTotal) * 100)
+              const pct = catPcts[i]
               return (
                 <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i], flexShrink: 0 }} />
