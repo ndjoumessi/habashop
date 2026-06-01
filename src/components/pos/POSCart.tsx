@@ -20,6 +20,8 @@ function CartRow({
 }) {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
+  // Bouton « + » bloqué quand la quantité atteint le stock (cohérent avec le plafond du store).
+  const atMax = item.stockQty > 0 && item.quantity >= item.stockQty
   return (
     <View style={s.cartRow}>
       <Text style={{ fontSize: 26 }}>{item.emoji}</Text>
@@ -31,6 +33,7 @@ function CartRow({
         ) : item.tierLabel ? (
           <Text style={s.cartTag}>{item.tierLabel}</Text>
         ) : null}
+        {atMax && <Text style={s.cartMax}>{i('Stock max', 'Max stock', 'Stock máx.', 'Stock max')}</Text>}
       </View>
       <View style={s.qtyBox}>
         <Pressable style={s.qtyBtn} onPress={onDec} hitSlop={8}
@@ -39,10 +42,12 @@ function CartRow({
           <Ionicons name="remove" size={16} color={C.text} />
         </Pressable>
         <Text style={s.qtyVal}>{item.quantity}</Text>
-        <Pressable style={s.qtyBtn} onPress={onInc} hitSlop={8}
+        <Pressable style={[s.qtyBtn, atMax && s.qtyBtnDisabled]} onPress={onInc} hitSlop={8}
+          disabled={atMax}
           accessibilityRole="button"
+          accessibilityState={{ disabled: atMax }}
           accessibilityLabel={`${i('Augmenter', 'Increase', 'Aumentar', 'Aumenta')} ${item.name?.trim()}`}>
-          <Ionicons name="add" size={16} color={C.text} />
+          <Ionicons name="add" size={16} color={atMax ? C.text3 : C.text} />
         </Pressable>
       </View>
       <Pressable onPress={onDel} hitSlop={8} style={s.delBtn}
@@ -279,11 +284,13 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   cartName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
   cartLine: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   cartTag: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.accent2, marginTop: 2 },
+  cartMax: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.warn, marginTop: 2 },
   qtyBox: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   qtyBtn: {
     width: 28, height: 28, borderRadius: 8, backgroundColor: C.bg4,
     alignItems: 'center', justifyContent: 'center',
   },
+  qtyBtnDisabled: { opacity: 0.4 },
   qtyVal: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.text, minWidth: 18, textAlign: 'center' },
   delBtn: { padding: 4 },
 

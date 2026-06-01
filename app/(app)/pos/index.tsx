@@ -88,6 +88,21 @@ export default function POSScreen() {
   const discAmt    = subAmt - totalAmt
 
   const onAdd = (p: Product) => {
+    // Anti sur-vente : refuse d'ajouter au-delà du stock (le store plafonne aussi par sécurité).
+    const inCart = cart.find(c => c.productId === p.id)?.quantity ?? 0
+    if (p.stockQty > 0 && inCart >= p.stockQty) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {})
+      Alert.alert(
+        i('Stock maximum', 'Maximum stock', 'Stock máximo', 'Stock massimo'),
+        i(
+          `Il ne reste que ${p.stockQty} en stock pour « ${p.name} ».`,
+          `Only ${p.stockQty} left in stock for "${p.name}".`,
+          `Solo quedan ${p.stockQty} en stock de «${p.name}».`,
+          `Restano solo ${p.stockQty} in stock per "${p.name}".`,
+        ),
+      )
+      return
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {})
     addItem(p)
   }

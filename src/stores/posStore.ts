@@ -70,6 +70,13 @@ export function vatBreakdown(totalTTC: number, ratePct?: number): { ht: number; 
   return { ht, tva: totalTTC - ht, rate }
 }
 
+// Plafonne une quantité au stock disponible (évite la sur-vente → stock négatif côté backend).
+// stockQty ≤ 0 ou absent (ex. produit sans suivi de stock) → pas de plafond.
+export function capToStock(qty: number, stockQty?: number): number {
+  if (stockQty != null && stockQty > 0) return Math.min(qty, stockQty)
+  return qty
+}
+
 // Recalcule les champs prix d'une ligne pour une nouvelle quantité (immutable).
 function repriceLine(item: CartItem, qty: number): CartItem {
   const base = item.basePrice ?? item.price
@@ -86,8 +93,8 @@ export const usePosStore = create<PosState>((set, get) => ({
     const cart = get().cart
     const ex = cart.find(i => i.productId === p.id)
     if (ex) {
-      // Ligne existante → +1 et recalcul du prix (un palier peut se déclencher).
-      set({ cart: cart.map(i => i.productId===p.id ? repriceLine(i, i.quantity+1) : i) })
+      // Ligne existante → +1 (plafonné au stock) et recalcul du prix (un palier peut se déclencher).
+      set({ cart: cart.map(i => i.productId===p.id ? repriceLine(i, capToStock(i.quantity+1, i.stockQty)) : i) })
     } else {
       const base = Number(p.sellPrice) || 0
       const tiers = Array.isArray(p.priceTiers) ? (p.priceTiers as PriceTier[]) : null
@@ -104,7 +111,7 @@ export const usePosStore = create<PosState>((set, get) => ({
   removeItem: (id) => set({ cart:get().cart.filter(i=>i.productId!==id) }),
   updateQty: (id, qty) => {
     if (qty<=0) { get().removeItem(id); return }
-    set({ cart:get().cart.map(i=>i.productId===id ? repriceLine(i, qty) : i) })
+    set({ cart:get().cart.map(i=>i.productId===id ? repriceLine(i, capToStock(qty, i.stockQty)) : i) })
   },
   clearCart: () => set({ cart:[], discount:0, cashGiven:0, customer:null }),
   setCustomer: (customer) => set({ customer }),
