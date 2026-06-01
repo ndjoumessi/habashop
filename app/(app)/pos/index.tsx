@@ -387,11 +387,16 @@ export default function POSScreen() {
         i={i}
       />
 
-      <BarcodeScanner
-        visible={showScanner}
-        onScan={handleBarcodeScan}
-        onClose={() => setShowScanner(false)}
-      />
+      {/* Monté à la demande : le hook caméra (useCameraPermissions) ne s'initialise
+          qu'au premier scan, pas à chaque ouverture de la caisse (évite un crash natif
+          d'init caméra au montage en build release). */}
+      {showScanner && (
+        <BarcodeScanner
+          visible
+          onScan={handleBarcodeScan}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </View>
   )
 }
