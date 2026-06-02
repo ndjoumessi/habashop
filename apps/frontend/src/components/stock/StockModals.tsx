@@ -52,24 +52,22 @@ function BarcodeDisplay({ value }: { value: string }) {
         // displayValue:true + quiet zones blanches = EAN-13 conforme GS1, scannable.
         JsBarcode(svgRef.current, value, {
           format: 'EAN13',
-          width: 2,
-          height: 70,
+          width: 1.5,
+          height: 55,
           displayValue: true,
-          fontSize: 13,
+          fontSize: 11,
           fontOptions: 'bold',
           textMargin: 4,
-          margin: 4,
-          marginTop: 8,
-          marginBottom: 8,
+          margin: 3,
           background: '#FFFFFF',
           lineColor: '#000000',
         })
       } catch {}
     }
   }, [value])
-  // width 100% → le barcode remplit la largeur du container (le viewBox de JsBarcode
-  // préserve le ratio) ; height auto évite tout espace vide en haut/bas.
-  return <svg ref={svgRef} style={{ display: 'block', width: '100%', height: 'auto', borderRadius: 4 }} />
+  // Dimensions naturelles du barcode (pas de width:100% qui l'étirerait) ;
+  // le container fit-content s'adapte à cette taille.
+  return <svg ref={svgRef} style={{ display: 'block', borderRadius: 4 }} />
 }
 
 export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection }: StockModalsProps) {
@@ -328,7 +326,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
                       <div style={{ display:'flex', flexDirection:'column', alignItems:'stretch', gap:8 }}>
-                        <div style={{ padding:12, background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:8, width:'100%' }}>
+                        <div style={{ width:'fit-content', margin:'0 auto', padding:'8px 12px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:6 }}>
                           <BarcodeDisplay value={form.barcode} />
                         </div>
                         <button type="button" className="mini-btn"
