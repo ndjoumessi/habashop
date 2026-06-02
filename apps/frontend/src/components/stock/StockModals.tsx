@@ -47,19 +47,24 @@ function BarcodeDisplay({ value }: { value: string }) {
   useEffect(() => {
     if (svgRef.current && /^\d{13}$/.test(value)) {
       try {
+        // ⚠️ Barres NOIRES sur fond BLANC (jamais var(--text)/transparent : en thème
+        // sombre ça donne un code inversé que les lecteurs physiques refusent).
+        // displayValue:true + quiet zones blanches = EAN-13 conforme GS1, scannable.
         JsBarcode(svgRef.current, value, {
           format: 'EAN13',
           width: 2,
-          height: 60,
-          displayValue: false,
-          margin: 8,
-          background: 'transparent',
-          lineColor: 'var(--text)',
+          height: 80,
+          displayValue: true,
+          fontSize: 16,
+          textMargin: 4,
+          margin: 10,
+          background: '#FFFFFF',
+          lineColor: '#000000',
         })
       } catch {}
     }
   }, [value])
-  return <svg ref={svgRef} />
+  return <svg ref={svgRef} style={{ display: 'block', maxWidth: '100%', borderRadius: 6 }} />
 }
 
 export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection }: StockModalsProps) {
@@ -317,8 +322,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <div>
                     <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
-                      <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
-                        <BarcodeDisplay value={form.barcode} />
+                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+                        <div style={{ padding:'12px 13px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:10, display:'flex', justifyContent:'center', width:'100%' }}>
+                          <BarcodeDisplay value={form.barcode} />
+                        </div>
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <span style={{ fontFamily:'var(--mono)', fontSize:13, letterSpacing:2, color:'var(--text2)' }}>{form.barcode}</span>
                           <button type="button" className="mini-btn"
