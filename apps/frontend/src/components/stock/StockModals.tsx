@@ -55,7 +55,8 @@ function BarcodeDisplay({ value }: { value: string }) {
           width: 2,
           height: 80,
           displayValue: true,
-          fontSize: 16,
+          fontSize: 14,
+          fontOptions: 'bold',
           textMargin: 4,
           margin: 10,
           background: '#FFFFFF',
@@ -326,17 +327,14 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         <div style={{ padding:'12px 13px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:10, display:'flex', justifyContent:'center', width:'100%' }}>
                           <BarcodeDisplay value={form.barcode} />
                         </div>
-                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                          <span style={{ fontFamily:'var(--mono)', fontSize:13, letterSpacing:2, color:'var(--text2)' }}>{form.barcode}</span>
-                          <button type="button" className="mini-btn"
-                            onClick={() => {
-                              navigator.clipboard.writeText(form.barcode).then(() => {
-                                toast.success(lang === 'en' ? 'Copied!' : lang === 'es' ? '¡Copiado!' : lang === 'it' ? 'Copiato!' : 'Copié !')
-                              }).catch(() => {})
-                            }}
-                            title={lang === 'en' ? 'Copy' : lang === 'es' ? 'Copiar' : lang === 'it' ? 'Copia' : 'Copier'}
-                            style={{ padding:'4px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}><Copy size={13} /></button>
-                        </div>
+                        <button type="button" className="mini-btn"
+                          onClick={() => {
+                            navigator.clipboard.writeText(form.barcode).then(() => {
+                              toast.success(lang === 'en' ? 'Copied!' : lang === 'es' ? '¡Copiado!' : lang === 'it' ? 'Copiato!' : 'Copié !')
+                            }).catch(() => {})
+                          }}
+                          title={lang === 'en' ? 'Copy' : lang === 'es' ? 'Copiar' : lang === 'it' ? 'Copia' : 'Copier'}
+                          style={{ padding:'5px 12px', cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}><Copy size={13} />{i('Copier', 'Copy', 'Copiar', 'Copia')}</button>
                       </div>
                     ) : (
                       <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, minHeight:40, display:'flex', alignItems:'center' }}>
