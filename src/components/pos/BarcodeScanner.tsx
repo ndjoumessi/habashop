@@ -2,7 +2,7 @@ import { useState, useRef, useMemo } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, Modal,
 } from 'react-native'
-import { CameraView, useCameraPermissions } from 'expo-camera'
+import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera'
 import * as Haptics from 'expo-haptics'
 import { useI18n, useTheme } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
@@ -22,10 +22,35 @@ export default function BarcodeScanner({
   const [permission, requestPermission] = useCameraPermissions()
   const [scanned, setScanned] = useState(false)
   const lastScan = useRef<string>('')
+  const lastScanTime = useRef<number>(0)
+  // Taille réelle de la vue caméra (px) — pour situer `bounds` dans la frame.
+  const camSize = useRef<{ w: number; h: number }>({ w: 0, h: 0 })
 
-  const handleBarcode = ({ data }: { data: string }) => {
-    if (scanned || data === lastScan.current) return // évite les doubles scans
+  // ── Region Of Interest logicielle ──
+  // expo-camera n'expose PAS de `regionOfInterest` natif, mais chaque scan
+  // renvoie `bounds` (origine + taille du code dans la frame). On rejette donc
+  // toute lecture dont le centre tombe HORS du viseur central → évite de
+  // capturer un code voisin (emballage adjacent, produit à côté).
+  const withinROI = (bounds?: BarcodeScanningResult['bounds']): boolean => {
+    const { w, h } = camSize.current
+    if (!w || !h) return true                                  // pas encore mesuré → ne bloque pas
+    if (!bounds || (!bounds.size.width && !bounds.size.height)) return true // bounds absentes (certains Android) → ne bloque pas
+    const cx = bounds.origin.x + bounds.size.width / 2
+    const cy = bounds.origin.y + bounds.size.height / 2
+    return (
+      cx >= ROI.x * w && cx <= (ROI.x + ROI.width) * w &&
+      cy >= ROI.y * h && cy <= (ROI.y + ROI.height) * h
+    )
+  }
+
+  const handleBarcode = ({ data, bounds }: BarcodeScanningResult) => {
+    // Cooldown 1.5 s : ignore les frames partielles/transitoires que ML Kit
+    // décode mal juste après un scan accepté (lectures fantômes).
+    const now = Date.now()
+    if (scanned || now - lastScanTime.current < SCAN_COOLDOWN_MS || data === lastScan.current) return
+    if (!withinROI(bounds)) return // code hors du viseur central → ignoré
     lastScan.current = data
+    lastScanTime.current = now
     setScanned(true)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
     onScan(data)
@@ -83,40 +108,38 @@ export default function BarcodeScanner({
           style={s.camera}
           facing="back"
           barcodeScannerSettings={{
-            barcodeTypes: ['ean13', 'ean8', 'qr', 'code128', 'code39', 'upc_a'],
+            // Restreint aux codes produits réels (EAN/Code128). Retiré : qr,
+            // code39, upc_a/upc_e — leurs lectures parasites (codes prix, QR
+            // d'emballage) polluaient la détection de l'EAN-13 principal.
+            barcodeTypes: ['ean13', 'ean8', 'code128'],
           }}
           onBarcodeScanned={scanned ? undefined : handleBarcode}
         >
-          <View style={s.overlay}>
-            <View style={s.overlayTop} />
-            <View style={s.overlayMiddle}>
-              <View style={s.overlaySide} />
-              <View style={s.scanZone}>
-                <View style={[s.corner, s.cornerTL]} />
-                <View style={[s.corner, s.cornerTR]} />
-                <View style={[s.corner, s.cornerBL]} />
-                <View style={[s.corner, s.cornerBR]} />
-                {!scanned && <View style={s.scanLine} />}
-                {scanned && (
-                  <View style={s.scanSuccess}>
-                    <Text style={s.scanSuccessText}>✓</Text>
-                  </View>
-                )}
-              </View>
-              <View style={s.overlaySide} />
+          <View
+            style={s.overlay}
+            onLayout={(e) => {
+              const { width, height } = e.nativeEvent.layout
+              camSize.current = { w: width, h: height }
+            }}
+          >
+            {/* Viseur centré (même fractions que ROI → guide visuel = zone réellement scannée) */}
+            <View style={s.viewfinder} pointerEvents="none">
+              <View style={[s.corner, s.cornerTL]} />
+              <View style={[s.corner, s.cornerTR]} />
+              <View style={[s.corner, s.cornerBL]} />
+              <View style={[s.corner, s.cornerBR]} />
+              {!scanned && <View style={s.scanLine} />}
+              {scanned && (
+                <View style={s.scanSuccess}>
+                  <Text style={s.scanSuccessText}>✓</Text>
+                </View>
+              )}
             </View>
-            <View style={s.overlayBottom}>
-              <Text style={s.hint}>
-                {scanned
-                  ? i('Produit trouvé !', 'Product found!', '¡Producto encontrado!', 'Prodotto trovato!')
-                  : i(
-                      'Pointez la caméra vers le code-barres',
-                      'Point the camera at the barcode',
-                      'Apunte la cámara al código de barras',
-                      'Punta la fotocamera sul codice a barre',
-                    )}
-              </Text>
-            </View>
+            <Text style={s.viewfinderLabel} pointerEvents="none">
+              {scanned
+                ? i('Produit trouvé !', 'Product found!', '¡Producto encontrado!', 'Prodotto trovato!')
+                : i('Alignez le code ici', 'Align the barcode here', 'Alinee el código aquí', 'Allinea il codice qui')}
+            </Text>
           </View>
         </CameraView>
       </View>
@@ -124,7 +147,12 @@ export default function BarcodeScanner({
   )
 }
 
-const SCAN_SIZE = 260
+const SCAN_COOLDOWN_MS = 1500
+// Viseur central, en fractions de la frame caméra. Sert À LA FOIS au rendu du
+// rectangle (left/top/width/height en %) ET au filtre ROI logiciel (withinROI).
+const ROI = { x: 0.1, y: 0.35, width: 0.8, height: 0.3 }
+// Fraction → pourcentage typé `${number}%` (DimensionValue de react-native).
+const pct = (n: number) => `${n * 100}%` as `${number}%`
 const CORNER_SIZE = 24
 const CORNER_WIDTH = 3
 
@@ -142,22 +170,26 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   closeBtnText: { color: C.white, fontSize: 16, fontFamily: 'Outfit_700Bold' },
   title: { color: C.white, fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold' },
   camera: { flex: 1 },
-  overlay: { flex: 1 },
-  overlayTop: { flex: 1, backgroundColor: withAlpha(C.black, 0.6) },
-  overlayMiddle: { flexDirection: 'row', height: SCAN_SIZE },
-  overlaySide: { flex: 1, backgroundColor: withAlpha(C.black, 0.6) },
-  scanZone: { width: SCAN_SIZE, height: SCAN_SIZE, position: 'relative', alignItems: 'center', justifyContent: 'center' },
-  overlayBottom: { flex: 1, backgroundColor: withAlpha(C.black, 0.6), alignItems: 'center', paddingTop: Spacing.xl },
-  hint: {
-    color: C.white, fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular',
+  overlay: { flex: 1, backgroundColor: withAlpha(C.black, 0.25) },
+  // Viseur : rectangle centré aux mêmes fractions que ROI (cf. const ROI).
+  viewfinder: {
+    position: 'absolute',
+    left: pct(ROI.x), top: pct(ROI.y),
+    width: pct(ROI.width), height: pct(ROI.height),
+    borderWidth: 2, borderColor: withAlpha(C.primary, 0.5), borderRadius: BorderRadius.md,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  viewfinderLabel: {
+    position: 'absolute', top: pct(ROI.y - 0.07), left: 0, right: 0,
+    color: C.white, fontSize: FontSize.md, fontFamily: 'Outfit_700Bold',
     textAlign: 'center', paddingHorizontal: Spacing.xl,
   },
   corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE, borderColor: C.primary, borderWidth: CORNER_WIDTH },
-  cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 4 },
-  cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 4 },
-  cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 4 },
-  cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 4 },
-  scanLine: { position: 'absolute', width: SCAN_SIZE - 20, height: 2, backgroundColor: C.primary, opacity: 0.8 },
+  cornerTL: { top: -1, left: -1, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 4 },
+  cornerTR: { top: -1, right: -1, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 4 },
+  cornerBL: { bottom: -1, left: -1, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 4 },
+  cornerBR: { bottom: -1, right: -1, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 4 },
+  scanLine: { position: 'absolute', width: '90%', height: 2, backgroundColor: C.primary, opacity: 0.8 },
   scanSuccess: {
     width: 60, height: 60, borderRadius: 30, backgroundColor: C.accent2,
     alignItems: 'center', justifyContent: 'center',
