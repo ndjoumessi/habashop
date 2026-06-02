@@ -19,6 +19,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { enqueueAction } from '@/services/offlineQueue'
 import { convertToXOF } from '@/services/exchangeRate'
+import { normalizeBarcode } from '@/lib/barcode'
 import { sendWhatsAppTicket } from '@/services/whatsappTicket'
 import BarcodeScanner from '@/components/pos/BarcodeScanner'
 import ErrorState from '@/components/ui/ErrorState'
@@ -215,11 +216,20 @@ export default function POSScreen() {
   }
 
   // ── Scan code-barres : ajoute le produit trouvé au panier ──
+  // Le scanner (expo-camera) et la base peuvent diverger sur les zéros de
+  // tête (UPC-A 12 chiffres ↔ EAN-13 13 chiffres) ou les espaces parasites.
+  // → on normalise les deux côtés avant comparaison (cf. tests `barcode`).
   const handleBarcodeScan = (barcode: string) => {
     setShowScanner(false)
-    const product = products.find(
-      (p) => p.barcode === barcode || p.ean === barcode || p.id === barcode,
-    )
+    const scanned = normalizeBarcode(barcode)
+    const product = scanned
+      ? products.find(
+          (p) =>
+            normalizeBarcode(p.barcode) === scanned ||
+            normalizeBarcode(p.ean) === scanned ||
+            p.id === barcode,
+        )
+      : undefined
     if (product) {
       addItem(product)
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
