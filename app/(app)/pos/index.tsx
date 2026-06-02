@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import {
-  View, Text, TextInput, ScrollView,
+  View, Text, ScrollView,
   StyleSheet, Alert, Pressable,
 } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -56,8 +56,6 @@ export default function POSScreen() {
   const subtotal       = usePosStore(st => st.subtotal)
   const total          = usePosStore(st => st.total)
 
-  const [search, setSearch]       = useState('')
-  const [barcodeInput, setBarcodeInput] = useState('')
   const [activeCat, setActiveCat] = useState('all')
   const [showCart, setShowCart]   = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -78,13 +76,10 @@ export default function POSScreen() {
     () => Array.from(new Set(active.map((p) => p.category).filter(Boolean))) as string[],
     [active],
   )
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return active.filter((p) =>
-      (activeCat === 'all' || p.category === activeCat) &&
-      (!q || p.name?.toLowerCase().includes(q) || p.barcode?.includes(q)),
-    )
-  }, [active, activeCat, search])
+  const filtered = useMemo(
+    () => active.filter((p) => activeCat === 'all' || p.category === activeCat),
+    [active, activeCat],
+  )
 
   const totalQty   = cart.reduce((n, c) => n + c.quantity, 0)
   const totalAmt   = total()
@@ -245,15 +240,6 @@ export default function POSScreen() {
     }
   }
 
-  // Saisie manuelle / douchette USB-Bluetooth : valide le code tapé (ou « tapé »
-  // par un scanner physique, qui se comporte comme un clavier) puis vide le champ.
-  const submitBarcode = () => {
-    const v = barcodeInput.trim()
-    if (!v) return
-    handleBarcodeScan(v)
-    setBarcodeInput('')
-  }
-
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
@@ -287,56 +273,6 @@ export default function POSScreen() {
             )}
           </Pressable>
         </View>
-      </View>
-
-      {/* ── Recherche ── */}
-      <View style={s.searchWrap}>
-        <Ionicons name="search" size={16} color={C.text3} />
-        <TextInput
-          style={s.searchInput}
-          placeholder={i('Rechercher un produit…', 'Search a product…', 'Buscar un producto…', 'Cerca un prodotto…')}
-          placeholderTextColor={C.text4}
-          value={search}
-          onChangeText={setSearch}
-          returnKeyType="search"
-          accessibilityLabel={i('Rechercher un produit', 'Search a product', 'Buscar un producto', 'Cerca un prodotto')}
-        />
-        {search.length > 0 && (
-          <Pressable onPress={() => setSearch('')} hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={i('Effacer la recherche', 'Clear search', 'Borrar búsqueda', 'Cancella ricerca')}>
-            <Ionicons name="close-circle" size={18} color={C.text3} />
-          </Pressable>
-        )}
-      </View>
-
-      {/* ── Saisie manuelle code-barres (fallback scanner + douchette USB/BT) ── */}
-      <View style={s.barcodeWrap}>
-        <Ionicons name="barcode-outline" size={18} color={C.text3} />
-        <TextInput
-          style={s.barcodeInput}
-          placeholder={i('Code-barres…', 'Barcode…', 'Código de barras…', 'Codice a barre…')}
-          placeholderTextColor={C.text4}
-          value={barcodeInput}
-          onChangeText={setBarcodeInput}
-          keyboardType="numeric"
-          returnKeyType="done"
-          onSubmitEditing={submitBarcode}
-          blurOnSubmit={false}
-          accessibilityLabel={i('Saisir un code-barres', 'Enter a barcode', 'Introducir código de barras', 'Inserisci codice a barre')}
-        />
-        {barcodeInput.length > 0 && (
-          <Pressable onPress={submitBarcode} hitSlop={8} style={s.barcodeGo}
-            accessibilityRole="button"
-            accessibilityLabel={i('Valider le code', 'Submit barcode', 'Validar código', 'Conferma codice')}>
-            <Ionicons name="arrow-forward-circle" size={22} color={C.primary} />
-          </Pressable>
-        )}
-        <Pressable onPress={() => setShowScanner(true)} hitSlop={8} style={s.barcodeScan}
-          accessibilityRole="button"
-          accessibilityLabel={i('Scanner un code-barres', 'Scan a barcode', 'Escanear código', 'Scansiona codice')}>
-          <Ionicons name="camera-outline" size={20} color={C.text} />
-        </Pressable>
       </View>
 
       {/* ── Filtres catégories ── */}
@@ -478,32 +414,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 2, borderColor: C.bg,
   },
   cartBadgeTxt: { fontSize: 10, fontFamily: 'Outfit_800ExtraBold', color: C.white },
-
-  searchWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
-    paddingHorizontal: Spacing.md, height: 44,
-    backgroundColor: C.bg3, borderRadius: BorderRadius.md,
-    borderWidth: 1, borderColor: C.border,
-  },
-  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
-
-  barcodeWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
-    paddingLeft: Spacing.md, paddingRight: Spacing.xs, height: 44,
-    backgroundColor: C.bg3, borderRadius: BorderRadius.md,
-    borderWidth: 1, borderColor: C.border,
-  },
-  barcodeInput: {
-    flex: 1, fontSize: FontSize.md, color: C.text,
-    fontFamily: 'JetBrainsMono_400Regular',
-  },
-  barcodeGo: { paddingHorizontal: Spacing.xs },
-  barcodeScan: {
-    width: 32, height: 32, borderRadius: BorderRadius.sm,
-    alignItems: 'center', justifyContent: 'center', backgroundColor: C.card,
-  },
 
   cats: { gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xs },
   chip: {
