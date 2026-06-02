@@ -6,6 +6,7 @@ import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'ex
 import * as Haptics from 'expo-haptics'
 import { useI18n, useTheme } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
+import { normalizeBarcode } from '@/lib/barcode'
 
 interface BarcodeScannerProps {
   visible: boolean
@@ -21,40 +22,33 @@ export default function BarcodeScanner({
   const { i } = useI18n()
   const [permission, requestPermission] = useCameraPermissions()
   const [scanned, setScanned] = useState(false)
-  const lastScan = useRef<string>('')
   const lastScanTime = useRef<number>(0)
-  // Taille réelle de la vue caméra (px) — pour situer `bounds` dans la frame.
-  const camSize = useRef<{ w: number; h: number }>({ w: 0, h: 0 })
+  // Dernière valeur lue, en attente de confirmation par une 2ᵉ lecture identique.
+  const lastCandidate = useRef<string | null>(null)
 
-  // ── Region Of Interest logicielle ──
-  // expo-camera n'expose PAS de `regionOfInterest` natif, mais chaque scan
-  // renvoie `bounds` (origine + taille du code dans la frame). On rejette donc
-  // toute lecture dont le centre tombe HORS du viseur central → évite de
-  // capturer un code voisin (emballage adjacent, produit à côté).
-  const withinROI = (bounds?: BarcodeScanningResult['bounds']): boolean => {
-    const { w, h } = camSize.current
-    if (!w || !h) return true                                  // pas encore mesuré → ne bloque pas
-    if (!bounds || (!bounds.size.width && !bounds.size.height)) return true // bounds absentes (certains Android) → ne bloque pas
-    const cx = bounds.origin.x + bounds.size.width / 2
-    const cy = bounds.origin.y + bounds.size.height / 2
-    return (
-      cx >= ROI.x * w && cx <= (ROI.x + ROI.width) * w &&
-      cy >= ROI.y * h && cy <= (ROI.y + ROI.height) * h
-    )
-  }
-
-  const handleBarcode = ({ data, bounds }: BarcodeScanningResult) => {
-    // Cooldown 1.5 s : ignore les frames partielles/transitoires que ML Kit
-    // décode mal juste après un scan accepté (lectures fantômes).
+  // ── Filtre de stabilité ──
+  // Ce device Android renvoie des lectures qui changent à chaque frame (bounds
+  // peu fiables, codes voisins captés au hasard). On n'accepte donc un code que
+  // s'il est lu DEUX fois d'affilée à l'identique : un parasite aléatoire ne se
+  // répète pas, seul le code réellement visé revient stable.
+  const handleBarcode = ({ data }: BarcodeScanningResult) => {
+    // Cooldown 1.5 s après une lecture acceptée (anti double-scan).
     const now = Date.now()
-    if (scanned || now - lastScanTime.current < SCAN_COOLDOWN_MS || data === lastScan.current) return
-    if (!withinROI(bounds)) return // code hors du viseur central → ignoré
-    lastScan.current = data
+    if (scanned || now - lastScanTime.current < SCAN_COOLDOWN_MS) return
+
+    const norm = normalizeBarcode(data)
+    if (norm === '') return
+    if (norm !== lastCandidate.current) {
+      lastCandidate.current = norm // 1ʳᵉ lecture (ou différente) → mémorise, attend confirmation
+      return
+    }
+    // 2ᵉ lecture identique consécutive → accepté
+    lastCandidate.current = null
     lastScanTime.current = now
     setScanned(true)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
-    onScan(data)
-    setTimeout(() => { setScanned(false); lastScan.current = '' }, 2000)
+    onScan(norm)
+    setTimeout(() => { setScanned(false) }, 2000)
   }
 
   if (!visible) return null
@@ -115,14 +109,8 @@ export default function BarcodeScanner({
           }}
           onBarcodeScanned={scanned ? undefined : handleBarcode}
         >
-          <View
-            style={s.overlay}
-            onLayout={(e) => {
-              const { width, height } = e.nativeEvent.layout
-              camSize.current = { w: width, h: height }
-            }}
-          >
-            {/* Viseur centré (même fractions que ROI → guide visuel = zone réellement scannée) */}
+          <View style={s.overlay}>
+            {/* Viseur visuel : guide l'utilisateur à centrer le code dans le cadre. */}
             <View style={s.viewfinder} pointerEvents="none">
               <View style={[s.corner, s.cornerTL]} />
               <View style={[s.corner, s.cornerTR]} />
@@ -148,9 +136,8 @@ export default function BarcodeScanner({
 }
 
 const SCAN_COOLDOWN_MS = 1500
-// Viseur central, en fractions de la frame caméra. Sert À LA FOIS au rendu du
-// rectangle (left/top/width/height en %) ET au filtre ROI logiciel (withinROI).
-const ROI = { x: 0.1, y: 0.35, width: 0.8, height: 0.3 }
+// Fractions de la frame caméra pour positionner le viseur visuel (guide UX).
+const VIEWFINDER = { x: 0.1, y: 0.35, width: 0.8, height: 0.3 }
 // Fraction → pourcentage typé `${number}%` (DimensionValue de react-native).
 const pct = (n: number) => `${n * 100}%` as `${number}%`
 const CORNER_SIZE = 24
@@ -171,16 +158,16 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   title: { color: C.white, fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold' },
   camera: { flex: 1 },
   overlay: { flex: 1, backgroundColor: withAlpha(C.black, 0.25) },
-  // Viseur : rectangle centré aux mêmes fractions que ROI (cf. const ROI).
+  // Viseur : rectangle centré (cf. const VIEWFINDER).
   viewfinder: {
     position: 'absolute',
-    left: pct(ROI.x), top: pct(ROI.y),
-    width: pct(ROI.width), height: pct(ROI.height),
+    left: pct(VIEWFINDER.x), top: pct(VIEWFINDER.y),
+    width: pct(VIEWFINDER.width), height: pct(VIEWFINDER.height),
     borderWidth: 2, borderColor: withAlpha(C.primary, 0.5), borderRadius: BorderRadius.md,
     alignItems: 'center', justifyContent: 'center',
   },
   viewfinderLabel: {
-    position: 'absolute', top: pct(ROI.y - 0.07), left: 0, right: 0,
+    position: 'absolute', top: pct(VIEWFINDER.y - 0.07), left: 0, right: 0,
     color: C.white, fontSize: FontSize.md, fontFamily: 'Outfit_700Bold',
     textAlign: 'center', paddingHorizontal: Spacing.xl,
   },
