@@ -53,19 +53,23 @@ function BarcodeDisplay({ value }: { value: string }) {
         JsBarcode(svgRef.current, value, {
           format: 'EAN13',
           width: 2,
-          height: 80,
+          height: 70,
           displayValue: true,
-          fontSize: 14,
+          fontSize: 13,
           fontOptions: 'bold',
           textMargin: 4,
-          margin: 10,
+          margin: 4,
+          marginTop: 8,
+          marginBottom: 8,
           background: '#FFFFFF',
           lineColor: '#000000',
         })
       } catch {}
     }
   }, [value])
-  return <svg ref={svgRef} style={{ display: 'block', maxWidth: '100%', borderRadius: 6 }} />
+  // width 100% → le barcode remplit la largeur du container (le viewBox de JsBarcode
+  // préserve le ratio) ; height auto évite tout espace vide en haut/bas.
+  return <svg ref={svgRef} style={{ display: 'block', width: '100%', height: 'auto', borderRadius: 4 }} />
 }
 
 export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection }: StockModalsProps) {
@@ -323,8 +327,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <div>
                     <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
-                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
-                        <div style={{ padding:'12px 13px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:10, display:'flex', justifyContent:'center', width:'100%' }}>
+                      <div style={{ display:'flex', flexDirection:'column', alignItems:'stretch', gap:8 }}>
+                        <div style={{ padding:12, background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:8, width:'100%' }}>
                           <BarcodeDisplay value={form.barcode} />
                         </div>
                         <button type="button" className="mini-btn"
@@ -334,7 +338,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                             }).catch(() => {})
                           }}
                           title={lang === 'en' ? 'Copy' : lang === 'es' ? 'Copiar' : lang === 'it' ? 'Copia' : 'Copier'}
-                          style={{ padding:'5px 12px', cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}><Copy size={13} />{i('Copier', 'Copy', 'Copiar', 'Copia')}</button>
+                          style={{ alignSelf:'flex-end', padding:'5px 12px', cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}><Copy size={13} />{i('Copier', 'Copy', 'Copiar', 'Copia')}</button>
                       </div>
                     ) : (
                       <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, minHeight:40, display:'flex', alignItems:'center' }}>
