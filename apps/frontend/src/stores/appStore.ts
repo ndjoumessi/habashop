@@ -5,7 +5,7 @@ import type { CartItem } from '@/components/pos/posShared'
 
 export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP'
 export type Lang     = 'fr' | 'en' | 'es' | 'it'
-export type Theme    = 'dark' | 'darker' | 'midnight' | 'forest' | 'ocean' | 'sunset' | 'light' | 'gold'
+export type Theme    = 'dark' | 'darker' | 'midnight' | 'forest' | 'ocean' | 'sunset' | 'light' | 'gold' | 'soleil'
 export type AppTheme = Theme
 
 // ─── Taux par rapport à XOF (devise de base) ──────────────────────────────────
@@ -201,6 +201,13 @@ function applyAccentColor(color: string) {
     root.style.setProperty('--p3', '#8B5CF6')
     return
   }
+  // Mode soleil : primaire violet profond verrouillé (AA sur blanc), indépendant de l'accent.
+  if (document.body.className === 'theme-soleil') {
+    root.style.setProperty('--p',  '#5B21B6')
+    root.style.setProperty('--p2', '#6D28D9')
+    root.style.setProperty('--p3', '#7C3AED')
+    return
+  }
   const pair = ACCENT_PAIRS[color]
   if (!pair) return
   root.style.setProperty('--p',  pair.p)
@@ -226,6 +233,12 @@ export const THEMES: Record<Theme, { label: Record<string, string>; emoji: strin
     vars: { '--bg': '#F8F9FF', '--bg2': '#F0F2FF', '--bg3': '#E8EBFF', '--bg4': '#FFFFFF', '--bg5': '#F4F5FF', '--p': '#6C47FF', '--p2': '#8B6FFF', '--p3': '#6C47FF', '--acc2': '#059669', '--text': '#1A1A2E', '--text2': '#374151', '--text3': '#626976', '--card': '#FFFFFF', '--border': 'rgba(0,0,0,.1)' } },
   gold:     { label: { fr: 'Violet & Or', en: 'Violet & Gold', es: 'Violeta & Oro', it: 'Viola & Oro' }, emoji: '✨',
     vars: { '--bg': '#0A0A0F', '--bg2': '#0F0F1A', '--bg3': '#141428', '--bg4': '#1A1A35', '--bg5': '#1F1F40', '--p': '#7C3AED', '--p2': '#6D28D9', '--p3': '#8B5CF6', '--acc2': '#EAB308', '--acc3': '#FCD34D', '--text': '#F8FAFC', '--text2': '#CBD5E1', '--text3': '#94A3B8', '--text4': '#748297', '--card': '#0F0F1A', '--card2': '#141428', '--border': 'rgba(139,92,246,0.2)', '--border2': 'rgba(234,179,8,0.2)', '--grad-card': 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(234,179,8,0.04) 100%)', '--header-bg': 'rgba(10,10,15,0.85)', '--shadow': 'rgba(0,0,0,0.6)', '--danger': '#EF4444', '--warn': '#F59E0B', '--acc': '#10B981' } },
+  // « Mode soleil » : thème clair HAUT-CONTRASTE pour usage en étal extérieur (plein soleil).
+  // Texte quasi-noir, surfaces blanches pures, bordures fortes, accents profonds AA sur blanc.
+  // Activable d'un tap via le bouton ☀️ du header (SunModeToggle) ; primaire violet verrouillé
+  // (applyAccentColor) pour garantir l'AA quelle que soit la couleur d'accent choisie.
+  soleil:   { label: { fr: 'Mode soleil', en: 'Sun mode', es: 'Modo sol', it: 'Modalità sole' }, emoji: '🔆',
+    vars: { '--bg': '#FFFFFF', '--bg2': '#FFFFFF', '--bg3': '#EFEFF2', '--bg4': '#FFFFFF', '--bg5': '#F6F6F8', '--bg6': '#FFFFFF', '--p': '#5B21B6', '--p2': '#6D28D9', '--p3': '#7C3AED', '--acc': '#047857', '--acc2': '#047857', '--text': '#000000', '--text2': '#1A1A22', '--text3': '#3A3A45', '--text4': '#55555F', '--card': '#FFFFFF', '--card2': '#F6F6F8', '--card3': '#EFEFF2', '--border': 'rgba(0,0,0,.30)', '--border2': 'rgba(0,0,0,.45)', '--grad-card': 'linear-gradient(160deg,#FFFFFF,#F6F6F8)', '--header-bg': 'rgba(255,255,255,.95)', '--danger': '#C81E1E', '--warn': '#B45309', '--success': '#047857', '--info': '#1D4ED8' } },
 }
 
 // Vars de surface NON couvertes par THEMES[*].vars (sinon issues du :root sombre d'index.css).
@@ -245,17 +258,18 @@ const LIGHT_EXTRA_VARS: Record<string, string> = {
 export function applyTheme(theme: Theme) {
   const t = THEMES[theme] ?? THEMES.dark
   const root = document.documentElement
+  // 'soleil' est un thème clair haut-contraste → même traitement light que 'light'.
+  const isLight = theme === 'light' || theme === 'soleil'
   Object.entries(t.vars).forEach(([k, val]) => root.style.setProperty(k, val))
-  // Surfaces manquantes : valeurs claires en mode clair ; sinon retrait → :root sombre,
-  // SAUF si le thème actuel définit déjà la clé dans ses vars (cas des thèmes sombres
-  // colorés qui surchargent --grad-card, --card2, --border2, --text4, --header-bg).
+  // Surfaces manquantes : valeurs claires en mode clair (sauf si le thème les définit déjà
+  // dans ses vars → soleil garde ses surfaces blanches pures) ; sinon retrait → :root sombre.
   Object.entries(LIGHT_EXTRA_VARS).forEach(([k, val]) => {
-    if (theme === 'light') root.style.setProperty(k, val)
+    if (isLight) { if (!(k in t.vars)) root.style.setProperty(k, val) }
     else if (!(k in t.vars)) root.style.removeProperty(k)
   })
   // Rendu natif des contrôles (popup <select>, autofill Chrome, scrollbars).
-  root.style.setProperty('color-scheme', theme === 'light' ? 'light' : 'dark')
-  root.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark')
+  root.style.setProperty('color-scheme', isLight ? 'light' : 'dark')
+  root.setAttribute('data-theme', isLight ? 'light' : 'dark')
   document.body.className = `theme-${theme}`
 }
 
