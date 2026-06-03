@@ -53,13 +53,14 @@ function BarcodeDisplay({ value }: { value: string }) {
         // displayValue:true + quiet zones blanches = EAN-13 conforme GS1, scannable.
         JsBarcode(svgRef.current, value, {
           format: 'EAN13',
-          width: 2.2,
-          height: 55,
-          displayValue: true,
-          fontSize: 11,
+          width: 2.5,            // module plus large → barres plus franches/solides
+          height: 66,            // un peu plus hautes (rendu proche de la référence)
+          displayValue: true,    // chiffres EAN-13 affichés sous les barres
+          fontSize: 15,          // chiffres plus gros et lisibles
+          font: 'monospace',     // chasse fixe (proche OCR-B) → chiffres nets et réguliers
           fontOptions: 'bold',
-          textMargin: 4,
-          margin: 3,
+          textMargin: 2,         // chiffres rapprochés des barres
+          margin: 5,             // quiet zones propres (≈279px total, ≤280, non étiré)
           background: '#FFFFFF',
           lineColor: '#000000',
         })
@@ -68,7 +69,7 @@ function BarcodeDisplay({ value }: { value: string }) {
   }, [value])
   // Dimensions naturelles du barcode (pas de width:100% qui l'étirerait) ;
   // le container fit-content s'adapte à cette taille.
-  return <svg ref={svgRef} style={{ display: 'block', borderRadius: 4 }} />
+  return <svg ref={svgRef} style={{ display: 'block', borderRadius: 4, maxWidth: '100%' }} />
 }
 
 export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection }: StockModalsProps) {
