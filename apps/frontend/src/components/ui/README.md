@@ -34,8 +34,13 @@ shadcn, conservés car importés par d'autres scaffolds, mais **non utilisés da
 basculable d'un tap via le bouton ☀️ du header (`SunModeToggle`). Tout couple texte/fond lu de
 chaque thème est garanti **AA** par `tests/contrast-aa.test.ts` (régression bloquée).
 
-## Suivi (migration de masse, non terminée)
+## Sweep inline → primitives (Daylight, juin 2026)
 
-Le balayage des ~65 grilles fixes + ~76 boutons icon-only + paddings/tailles inline restants
-(hors surfaces déjà migrées) vers ces primitives est **incrémental**. Cible : zéro implémentation
-inline pour ces 6 rôles.
+Balayage par lots (présentation only, zéro changement de logique) :
+- **Lot 1 — grilles** : 53 grilles inline → `<ResponsiveGrid>` (auto-fit/auto-fill identiques + formulaires 2-col en modale, `min=160`). Laissés : calendriers 7-col, tables à colonnes px, strips stat 3-col `gap:1`, sidebar `260px 1fr`, paires intra-carte étroites.
+- **Lot 2 — boutons icon-only** : 16 → `<IconButton>` (fermeture X, suppression, refresh). Laissés : clear-X dans champ recherche (44px déborderait), close sur header dégradé (icône blanche).
+- **Lot 3 — boutons texte ad hoc** : **aucune conversion sûre**. Les boutons texte sont soit déjà `.btn`/`.btn-primary`/`.btn-ghost` (conformes au design system — pas « ad hoc »), soit **bespoke/theme-aware** : remplissages inline `var(--p)` plats ou dégradés `var(--p),var(--p2)` (suivent l'accent du thème), couleurs employé custom, dimensions custom. `.btn-primary` utilise un **`--grad-p` hardcodé** (≠ accent du thème) → convertir changerait la couleur en thème gold/soleil. Donc laissés (cf. garde-fou « cas spécifique → laisser et noter »). `<Button>` reste la primitive pour le **nouveau** code + son `loading` (déjà appliqué : bouton « Tester » Integrations).
+- **Lot 4 — paddings/tailles/graisses inline → tokens** : voir commit dédié (plancher 11px déjà posé sur classes centrales en Vague 3).
+- **Lot 5 — tooltips souris-only → `<FocusTooltip>`** : voir commit dédié.
+
+Reste **incrémental** (long-tail grilles fixes structurelles, boutons texte bespoke) — cible : zéro inline pour ces 6 rôles là où la primitive préserve le comportement.
