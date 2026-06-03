@@ -8,8 +8,10 @@ import { router } from 'expo-router'
 import * as Haptics from 'expo-haptics'
 import { productsApi, salesApi, apiErrorMessage } from '@/services/api'
 import type { Product } from '@/types'
-import { usePosStore } from '@/stores/posStore'
+import { usePosStore, vatBreakdown } from '@/stores/posStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useFmt, useAppStore } from '@/stores/appStore'
+import CustomerPicker from '@/components/pos/CustomerPicker'
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
 
 // ── Mode kiosque : POS plein écran simplifié pour un poste caissier fixe ──
@@ -22,12 +24,14 @@ export default function KioskScreen() {
   const { i }    = useI18n()
   const { fmt }  = useFmt()
   const pos      = usePosStore()
+  const { tenant } = useAuthStore()
   const { setKioskMode } = useAppStore()
 
   const [search, setSearch]             = useState('')
   const [pin, setPin]                   = useState('')
   const [showPinModal, setShowPinModal] = useState(false)
   const [showConfirm, setShowConfirm]   = useState(false)
+  const [showCustomerPicker, setShowCustomerPicker] = useState(false)
   const [tapCount, setTapCount]         = useState(0)
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -227,6 +231,49 @@ export default function KioskScreen() {
           />
 
           <View style={s.cartFooter}>
+            {/* Client (optionnel) — réutilise CustomerPicker + posStore.customer */}
+            {pos.customer ? (
+              <View style={s.custChip}>
+                <Text style={{ fontSize: 14 }}>👤</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.custName} numberOfLines={1}>{pos.customer.name}</Text>
+                  <Text style={s.custSub} numberOfLines={1}>
+                    {pos.customer.loyaltyPoints ?? 0} {i('points', 'points', 'puntos', 'punti')}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => pos.setCustomer(null)} hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={i('Retirer le client', 'Remove customer', 'Quitar cliente', 'Rimuovi cliente')}>
+                  <Text style={s.custRemove}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity style={s.custBtn} onPress={() => setShowCustomerPicker(true)}
+                accessibilityRole="button"
+                accessibilityLabel={i('Ajouter un client', 'Add a customer', 'Añadir un cliente', 'Aggiungi un cliente')}>
+                <Text style={s.custBtnTxt}>
+                  + {i('Client', 'Customer', 'Cliente', 'Cliente')}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Remise (%) — réutilise posStore.discount/setDiscount (total() l'applique déjà) */}
+            <View style={s.discountRow}>
+              <Text style={s.discountLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')}</Text>
+              <View style={s.discountInputWrap}>
+                <TextInput
+                  style={s.discountInput}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={Colors.text4}
+                  value={pos.discount ? String(pos.discount) : ''}
+                  onChangeText={t => pos.setDiscount(Math.max(0, Math.min(100, Number(t.replace(/[^0-9.]/g, '')) || 0)))}
+                  accessibilityLabel={i('Remise en pourcentage', 'Discount percentage', 'Descuento en porcentaje', 'Sconto in percentuale')}
+                />
+                <Text style={s.discountPct}>%</Text>
+              </View>
+            </View>
+
             <View style={s.payRow}>
               {(['cash', 'wave', 'orange', 'card'] as const).map(mode => {
                 const icons = { cash: '💵', wave: '🌊', orange: '🟠', card: '💳' }
@@ -291,6 +338,49 @@ export default function KioskScreen() {
             <Text style={s.confirmTitle}>
               {i('Confirmer ?', 'Confirm?', '¿Confirmar?', 'Confermare?')}
             </Text>
+
+            {/* Récap : sous-total, remise, HT/TVA, client (mêmes calculs que la Caisse) */}
+            <View style={s.confirmRecap}>
+              {(() => {
+                const discAmt = pos.subtotal() - pos.total()
+                const vat = vatBreakdown(pos.total(), tenant?.vatRate)
+                return (
+                  <>
+                    {discAmt > 0 && (
+                      <>
+                        <View style={s.confirmLine}>
+                          <Text style={s.confirmLineLabel}>{i('Sous-total', 'Subtotal', 'Subtotal', 'Subtotale')}</Text>
+                          <Text style={s.confirmLineVal}>{fmt(pos.subtotal())}</Text>
+                        </View>
+                        <View style={s.confirmLine}>
+                          <Text style={s.confirmLineLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')} ({pos.discount}%)</Text>
+                          <Text style={[s.confirmLineVal, { color: Colors.danger }]}>−{fmt(discAmt)}</Text>
+                        </View>
+                      </>
+                    )}
+                    {vat.rate > 0 && (
+                      <>
+                        <View style={s.confirmLine}>
+                          <Text style={s.confirmLineLabel}>{i('Total HT', 'Net (excl. tax)', 'Total sin IVA', 'Totale netto')}</Text>
+                          <Text style={s.confirmLineVal}>{fmt(vat.ht)}</Text>
+                        </View>
+                        <View style={s.confirmLine}>
+                          <Text style={s.confirmLineLabel}>{i('TVA', 'VAT', 'IVA', 'IVA')} {vat.rate}%</Text>
+                          <Text style={s.confirmLineVal}>{fmt(vat.tva)}</Text>
+                        </View>
+                      </>
+                    )}
+                    {pos.customer && (
+                      <View style={s.confirmLine}>
+                        <Text style={s.confirmLineLabel}>{i('Client', 'Customer', 'Cliente', 'Cliente')}</Text>
+                        <Text style={s.confirmLineVal} numberOfLines={1}>{pos.customer.name}</Text>
+                      </View>
+                    )}
+                  </>
+                )
+              })()}
+            </View>
+
             <Text style={s.confirmAmount}>{fmt(pos.total())}</Text>
             <View style={s.confirmBtns}>
               <TouchableOpacity style={s.confirmCancel} onPress={() => setShowConfirm(false)}
@@ -302,11 +392,16 @@ export default function KioskScreen() {
               <TouchableOpacity
                 style={s.confirmOk}
                 disabled={isPending}
-                onPress={() => createSale({
-                  items: pos.cart.map(item => ({ productId: item.productId, qty: item.quantity, price: item.price })),
-                  total: pos.total(),
-                  paymentMode: pos.paymentMode,
-                })}
+                onPress={() => {
+                  const discAmt = pos.subtotal() - pos.total()
+                  createSale({
+                    items: pos.cart.map(item => ({ productId: item.productId, qty: item.quantity, price: item.price })),
+                    total: pos.total(),
+                    paymentMode: pos.paymentMode,
+                    ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
+                    ...(pos.customer ? { customerId: pos.customer.id } : {}),
+                  })
+                }}
                 accessibilityRole="button" accessibilityLabel={i('Valider', 'Confirm', 'Confirmar', 'Conferma')}
               >
                 <Text style={s.confirmOkText}>
@@ -347,6 +442,16 @@ export default function KioskScreen() {
             </View>
           </View>
         </View>
+      )}
+
+      {/* ── Sélecteur de client (réutilise le composant de la Caisse) ── */}
+      {showCustomerPicker && (
+        <CustomerPicker
+          visible={showCustomerPicker}
+          selectedId={pos.customer?.id ?? null}
+          onClose={() => setShowCustomerPicker(false)}
+          onSelect={(c) => { pos.setCustomer(c); setShowCustomerPicker(false) }}
+        />
       )}
     </View>
   )
@@ -414,6 +519,31 @@ const s = StyleSheet.create({
   qtyBtnText: { fontSize: 16, fontFamily: 'Outfit_700Bold', color: Colors.text },
   qtyText: { fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text, minWidth: 24, textAlign: 'center' },
   cartFooter: { padding: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.border, gap: Spacing.sm },
+
+  // Client + remise (réutilisent posStore.customer/discount)
+  custChip: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    backgroundColor: Colors.bg3, borderRadius: BorderRadius.md, padding: Spacing.sm,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  custName: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text },
+  custSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: Colors.text3, marginTop: 1 },
+  custRemove: { fontSize: 14, fontFamily: 'Outfit_700Bold', color: Colors.text3 },
+  custBtn: {
+    height: 40, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border,
+    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg3,
+  },
+  custBtnTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: Colors.primary3 },
+  discountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  discountLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text2 },
+  discountInputWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    backgroundColor: Colors.bg3, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: Spacing.sm, height: 36, minWidth: 72,
+  },
+  discountInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: Colors.text, textAlign: 'right' },
+  discountPct: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text3 },
+
   payRow: { flexDirection: 'row', gap: Spacing.xs },
   payBtn: {
     flex: 1, height: 44, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border,
@@ -438,6 +568,10 @@ const s = StyleSheet.create({
     width: 320, alignItems: 'center', gap: Spacing.lg, borderWidth: 1, borderColor: Colors.border,
   },
   confirmTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: Colors.text },
+  confirmRecap: { width: '100%', gap: Spacing.xs },
+  confirmLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.md },
+  confirmLineLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.text3 },
+  confirmLineVal: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_400Regular', color: Colors.text2, flexShrink: 1 },
   confirmAmount: { fontSize: 36, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent, letterSpacing: -1 },
   confirmBtns: { flexDirection: 'row', gap: Spacing.md, width: '100%' },
   confirmCancel: { flex: 1, height: 52, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
