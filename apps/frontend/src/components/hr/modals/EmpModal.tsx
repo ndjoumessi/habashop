@@ -53,7 +53,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
                 width: 40, height: 40, borderRadius: '50%',
                 background: `linear-gradient(135deg, ${color}, ${color}99)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0,
+                fontSize: 14, fontWeight: 'var(--fw-bold)', color: '#fff', flexShrink: 0,
               }}>
                 {emp.avatar}
               </div>
@@ -103,12 +103,12 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
             <label className="form-label">{T('Salaire brut', 'Gross salary', 'Salario bruto', 'Stipendio lordo')} ({symbol})</label>
             <div style={{ position: 'relative' }}>
               <input className="input" type="number" value={salary} onChange={e => setSalary(e.target.value)} placeholder={code === 'XOF' || code === 'XAF' ? '350000' : '500'} style={{ width: '100%', boxSizing: 'border-box', paddingRight: 50 }} />
-              <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--acc2)', fontSize: 12, fontWeight: 800, pointerEvents: 'none' }}>{symbol}</span>
+              <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--acc2)', fontSize: 12, fontWeight: 'var(--fw-bold)', pointerEvents: 'none' }}>{symbol}</span>
             </div>
             {salary && code !== 'XOF' && code !== 'XAF' && (
-              <div style={{ marginTop: 5, fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 4 }}>
+              <div style={{ marginTop: 5, fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 4 }}>
                 <span>≈</span>
-                <span style={{ color: 'var(--acc2)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{Math.round(toXOF(Number(salary) || 0)).toLocaleString('fr-FR')} XOF</span>
+                <span style={{ color: 'var(--acc2)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)' }}>{Math.round(toXOF(Number(salary) || 0)).toLocaleString('fr-FR')} XOF</span>
                 <span>{T('en base', 'stored', 'en base', 'in base')}</span>
               </div>
             )}
@@ -150,11 +150,11 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
           {emp && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--bg3)', borderRadius: 10, border: '1px solid var(--border)' }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{T('Statut employé', 'Employee status', 'Estado del empleado', 'Stato dipendente')}</div>
+                <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{T('Statut employé', 'Employee status', 'Estado del empleado', 'Stato dipendente')}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>{active ? T('Employé actif', 'Active employee', 'Empleado activo', 'Dipendente attivo') : T('Employé inactif', 'Inactive employee', 'Empleado inactivo', 'Dipendente inattivo')}</div>
               </div>
               <button onClick={() => setActive(a => !a)} style={{
-                padding: '6px 14px', borderRadius: 20, fontWeight: 700, fontSize: 12, cursor: 'pointer', border: '1px solid',
+                padding: '6px 14px', borderRadius: 20, fontWeight: 'var(--fw-semibold)', fontSize: 12, cursor: 'pointer', border: '1px solid',
                 background: active ? 'rgba(14,196,126,.12)' : 'rgba(232,64,74,.1)',
                 color: active ? 'var(--acc2)' : 'var(--danger)',
                 borderColor: active ? 'rgba(14,196,126,.3)' : 'rgba(232,64,74,.25)',

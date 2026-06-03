@@ -17,14 +17,14 @@ export default function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: 
   const diff = newSalaryXOF - oldSalaryXOF
   const pct  = oldSalaryXOF > 0 ? Math.round((diff / oldSalaryXOF) * 100) : 0
 
-  const lbl: React.CSSProperties = { display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }
+  const lbl: React.CSSProperties = { display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
       {/* Salaire actuel — affiché en devise courante via fmt() */}
       <div style={{ padding:'12px 16px', background:'rgba(108,71,255,.06)', border:'1px solid var(--c-purple-bg)', borderRadius:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <span style={{ fontSize:12, color:'var(--text2)' }}>{lang === 'en' ? 'Current salary' : lang === 'es' ? 'Salario actual' : lang === 'it' ? 'Stipendio attuale' : 'Salaire actuel'}</span>
-        <span style={{ fontFamily:'var(--mono)', fontWeight:800, fontSize:16, color:'var(--text)' }}>{fmt(oldSalaryXOF)}</span>
+        <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)' }}>{fmt(oldSalaryXOF)}</span>
       </div>
       <div>
         <label style={lbl}>{lang === 'en' ? `NEW SALARY (${symbol})` : lang === 'es' ? `NUEVO SALARIO (${symbol})` : lang === 'it' ? `NUOVO STIPENDIO (${symbol})` : `NOUVEAU SALAIRE (${symbol})`}</label>

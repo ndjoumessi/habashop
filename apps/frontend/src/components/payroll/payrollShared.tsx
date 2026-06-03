@@ -103,7 +103,7 @@ export function EmpAvatar({ r, size = 32 }: { r: PayRecord; size?: number }) {
     <div style={{
       width:size, height:size, borderRadius:'50%', flexShrink:0,
       background:r.color, display:'flex', alignItems:'center', justifyContent:'center',
-      color:'#fff', fontSize:size * 0.35, fontWeight:800,
+      color:'#fff', fontSize:size * 0.35, fontWeight:'var(--fw-bold)',
     }}>{r.avatar}</div>
   )
 }

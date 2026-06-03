@@ -189,8 +189,8 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                       )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 6 }}>{c.name}</div>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, letterSpacing: '.3px', background: `rgba(${tc.rgb},.1)`, color: tc.h, border: `1px solid rgba(${tc.rgb},.25)` }}>
+                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 6 }}>{c.name}</div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', letterSpacing: '.3px', background: `rgba(${tc.rgb},.1)`, color: tc.h, border: `1px solid rgba(${tc.rgb},.25)` }}>
                         <div style={{ width: 4, height: 4, borderRadius: '50%', background: tc.h }} />
                         {typeLabel(c.type, lang)}
                       </div>
@@ -198,7 +198,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     {(c.loyaltyPoints ?? 0) > 0 && (
                       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                         <Star size={13} fill="#FFB800" stroke="#FFB800" />
-                        <div style={{ fontSize: 9, fontWeight: 800, color: '#FFB800', fontFamily: 'var(--mono)' }}>{c.loyaltyPoints}</div>
+                        <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', color: '#FFB800', fontFamily: 'var(--mono)' }}>{c.loyaltyPoints}</div>
                       </div>
                     )}
                   </div>
@@ -212,7 +212,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     ].map((m, idx) => (
                       <div key={idx} style={{ background: 'var(--card)', padding: '8px 10px', textAlign: 'center' }}>
                         <div style={{ fontSize: 12, fontWeight: 900, color: m.color, fontFamily: 'var(--mono)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.value}</div>
-                        <div style={{ fontSize: 9, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.4px', marginTop: 2, fontWeight: 600 }}>{m.label}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.4px', marginTop: 2, fontWeight: 600 }}>{m.label}</div>
                       </div>
                     ))}
                   </div>
@@ -247,7 +247,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   <div className="customer-actions" style={{ maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'all .2s ease', borderTop: '1px solid var(--border)', background: 'var(--bg3)' }}>
                     <div style={{ padding: '9px 12px', display: 'flex', gap: 7 }}>
                       <button type="button" onClick={e => { e.stopPropagation(); openDetail() }} aria-label={`${i('Voir', 'View', 'Ver', 'Vedi')} ${c.name}`}
-                        style={{ flex: 1, height: 30, borderRadius: 7, background: `rgba(${tc.rgb},.1)`, border: `1px solid rgba(${tc.rgb},.2)`, color: tc.h, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                        style={{ flex: 1, height: 30, borderRadius: 7, background: `rgba(${tc.rgb},.1)`, border: `1px solid rgba(${tc.rgb},.2)`, color: tc.h, fontSize: 11, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                         <Eye size={11} /> {lang === 'fr' ? 'Voir' : lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : 'Vedi'}
                       </button>
                       <button type="button" onClick={e => { e.stopPropagation(); onDelete(c.id) }} aria-label={`${i('Supprimer', 'Delete', 'Eliminar', 'Elimina')} ${c.name}`}

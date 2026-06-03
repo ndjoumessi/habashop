@@ -68,7 +68,7 @@ export default function PaymentCallback() {
               animation: 'spin .8s linear infinite',
               margin: '0 auto 20px',
             }} />
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+            <div style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
               {i('Vérification du paiement…', 'Verifying payment…', 'Verificando pago…', 'Verifica pagamento…')}
             </div>
           </>
@@ -115,7 +115,7 @@ export default function PaymentCallback() {
           <>
             <div style={{ fontSize: 48, margin: '0 auto 20px' }}>❌</div>
             <div style={{
-              fontSize: 20, fontWeight: 800,
+              fontSize: 20, fontWeight: 'var(--fw-bold)',
               color: 'var(--danger)', marginBottom: 8,
             }}>
               {i('Paiement échoué', 'Payment failed', 'Pago fallido', 'Pagamento fallito')}
@@ -142,7 +142,7 @@ export default function PaymentCallback() {
           <>
             <div style={{ fontSize: 48, margin: '0 auto 20px' }}>⏳</div>
             <div style={{
-              fontSize: 18, fontWeight: 800,
+              fontSize: 18, fontWeight: 'var(--fw-bold)',
               color: 'var(--text)', marginBottom: 8,
             }}>
               {i('Paiement en attente', 'Payment pending', 'Pago pendiente', 'Pagamento in attesa')}

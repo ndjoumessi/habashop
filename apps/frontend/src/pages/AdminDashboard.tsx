@@ -144,7 +144,7 @@ export default function AdminDashboard() {
   }, [tenants, query, sortKey, sortDir])
 
   const PlanBadge = ({ plan }: { plan: string }) => (
-    <span style={{ background: mix(planColor(plan), 14), color: planColor(plan), borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700, textTransform: 'capitalize' }}>{plan}</span>
+    <span style={{ background: mix(planColor(plan), 14), color: planColor(plan), borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'capitalize' }}>{plan}</span>
   )
 
   const statusCfg = (t: Tenant): { h: string; label: string } => {
@@ -183,7 +183,7 @@ export default function AdminDashboard() {
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-.5px' }}>HabaShop Admin</h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.25)', color: 'var(--acc2)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.25)', color: 'var(--acc2)' }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)' }} />
                 {i('Système opérationnel', 'System operational', 'Sistema operativo', 'Sistema operativo')}
               </span>
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
               onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)' }}
               onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = '' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px' }}>{k.label}</span>
+                <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{k.label}</span>
                 <span style={{ width: 32, height: 32, borderRadius: 8, background: mix(k.color, 12), display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>{k.icon}</span>
               </div>
               <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px', lineHeight: 1 }}>
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
               <span style={{ color: isActive ? 'var(--p3)' : 'var(--text4)', display: 'flex', transition: 'color .15s' }}>{tab.icon}</span>
               {tab.label}
               {tab.count !== null && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 18, height: 18, borderRadius: 99, fontSize: 9, fontWeight: 800, padding: '0 5px',
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 18, height: 18, borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-bold)', padding: '0 5px',
                   background: tab.alert ? 'rgba(255,59,92,.15)' : isActive ? 'rgba(108,71,255,.15)' : 'var(--bg4)',
                   color: tab.alert ? 'var(--danger)' : isActive ? 'var(--p3)' : 'var(--text4)',
                   border: `1px solid ${tab.alert ? 'rgba(255,59,92,.3)' : isActive ? 'rgba(108,71,255,.2)' : 'var(--border)'}` }}>
@@ -261,7 +261,7 @@ export default function AdminDashboard() {
                   return (
                     <div key={plan}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
-                        <span style={{ color: 'var(--text)', fontWeight: 700, textTransform: 'capitalize' }}>{plan} <span style={{ color: 'var(--text3)', fontWeight: 500 }}>· {fmt(planPrice(plan))}/{i('mois', 'mo', 'mes', 'mese')}</span></span>
+                        <span style={{ color: 'var(--text)', fontWeight: 'var(--fw-semibold)', textTransform: 'capitalize' }}>{plan} <span style={{ color: 'var(--text3)', fontWeight: 'var(--fw-regular)' }}>· {fmt(planPrice(plan))}/{i('mois', 'mo', 'mes', 'mese')}</span></span>
                         <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{count} ({pct}%)</span>
                       </div>
                       <div style={{ height: 8, background: 'var(--bg)', borderRadius: 99, overflow: 'hidden' }}>
@@ -278,9 +278,9 @@ export default function AdminDashboard() {
               <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', gap: 10, height: 160 }}>
                 {months.map(m => (
                   <div key={m.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{m.count}</span>
+                    <span style={{ fontSize: 12, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{m.count}</span>
                     <div title={`${m.label}: ${m.count}`} style={{ width: '70%', height: `${(m.count / maxMonth) * 100}%`, minHeight: m.count ? 6 : 2, background: m.count ? 'linear-gradient(180deg,var(--p2),var(--p))' : 'var(--bg)', borderRadius: '6px 6px 0 0', transition: 'height .5s' }} />
-                    <span style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'capitalize' }}>{m.label}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'capitalize' }}>{m.label}</span>
                   </div>
                 ))}
               </div>
@@ -293,7 +293,7 @@ export default function AdminDashboard() {
       {activeTab === 'tenants' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={15} /> {i('Boutiques', 'Shops', 'Tiendas', 'Negozi')} <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)' }}>({view.length})</span></span>
+            <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={15} /> {i('Boutiques', 'Shops', 'Tiendas', 'Negozi')} <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)' }}>({view.length})</span></span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ position: 'relative' }}>
                 <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
@@ -336,10 +336,10 @@ export default function AdminDashboard() {
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 12 }}>
                         <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg,${pc},${darken(pc, 70)})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff', flexShrink: 0, boxShadow: `0 4px 10px ${mix(pc, 35)}` }}>{initials}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 5 }}>{t.name}</div>
+                          <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 5 }}>{t.name}</div>
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                            <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', background: mix(pc, 12), color: pc, border: `1px solid ${mix(pc, 22)}` }}>{planKey(t.plan)}</span>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: mix(sc.h, 14), color: sc.h, border: `1px solid ${mix(sc.h, 28)}` }}>
+                            <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', background: mix(pc, 12), color: pc, border: `1px solid ${mix(pc, 22)}` }}>{planKey(t.plan)}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: mix(sc.h, 14), color: sc.h, border: `1px solid ${mix(sc.h, 28)}` }}>
                               <span style={{ width: 4, height: 4, borderRadius: '50%', background: sc.h, boxShadow: sc.label === i('Actif', 'Active', 'Activo', 'Attivo') ? `0 0 5px ${sc.h}` : 'none' }} />
                               {sc.label}
                             </span>
@@ -358,7 +358,7 @@ export default function AdminDashboard() {
                         ].map((m, idx) => (
                           <div key={idx} style={{ background: 'var(--card)', padding: '7px 8px', textAlign: 'center' }}>
                             <div style={{ fontSize: 12, fontWeight: 900, color: m.color, fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.val}</div>
-                            <div style={{ fontSize: 8, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 1 }}>{m.lbl}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 1 }}>{m.lbl}</div>
                           </div>
                         ))}
                       </div>
@@ -368,7 +368,7 @@ export default function AdminDashboard() {
                           <Mail size={10} style={{ color: 'var(--text4)', flexShrink: 0 }} />
                           {t.email || `${t.country} · ${t.currency}`}
                         </div>
-                        <div style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
                           {new Date(t.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', year: '2-digit' })}
                         </div>
                       </div>
@@ -384,9 +384,9 @@ export default function AdminDashboard() {
       {/* ── Demandes de plan ── */}
       {activeTab === 'requests' && (
         <div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <div style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <CreditCard size={15} /> {i('Demandes de plans en attente', 'Pending plan requests', 'Solicitudes de planes pendientes', 'Richieste piani in attesa')}
-            {pendingCount > 0 && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,59,92,.15)', color: 'var(--danger)', fontWeight: 700 }}>{pendingCount}</span>}
+            {pendingCount > 0 && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,59,92,.15)', color: 'var(--danger)', fontWeight: 'var(--fw-semibold)' }}>{pendingCount}</span>}
           </div>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}><Skeleton height={92} count={3} /></div>
@@ -404,27 +404,27 @@ export default function AdminDashboard() {
                       <CreditCard size={18} />
                     </div>
                     <div style={{ flex: 1, minWidth: 200 }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>{req.tenant?.name ?? '—'}</div>
+                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 4 }}>{req.tenant?.name ?? '—'}</div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: 'rgba(108,71,255,.1)', color: 'var(--p3)', border: '1px solid rgba(108,71,255,.2)', textTransform: 'capitalize' }}>{req.plan} · {req.period}</span>
-                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: 'rgba(255,149,0,.1)', color: 'var(--acc)', border: '1px solid rgba(255,149,0,.2)', fontFamily: 'var(--mono)' }}>{fmt(req.amount ?? 0)}</span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: mix(pm.c, 12), color: pm.c, border: `1px solid ${mix(pm.c, 25)}` }}>
+                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(108,71,255,.1)', color: 'var(--p3)', border: '1px solid rgba(108,71,255,.2)', textTransform: 'capitalize' }}>{req.plan} · {req.period}</span>
+                        <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(255,149,0,.1)', color: 'var(--acc)', border: '1px solid rgba(255,149,0,.2)', fontFamily: 'var(--mono)' }}>{fmt(req.amount ?? 0)}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: mix(pm.c, 12), color: pm.c, border: `1px solid ${mix(pm.c, 25)}` }}>
                           <span style={{ width: 5, height: 5, borderRadius: '50%', background: pm.c }} /> {pm.label}
                         </span>
                       </div>
-                      {req.paymentRef && <div style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 4 }}>{i('Réf', 'Ref', 'Ref', 'Rif')}: {req.paymentRef}</div>}
-                      {req.notes && <div style={{ marginTop: 3, fontStyle: 'italic', color: 'var(--text4)', fontSize: 10 }}>"{req.notes}"</div>}
+                      {req.paymentRef && <div style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 4 }}>{i('Réf', 'Ref', 'Ref', 'Rif')}: {req.paymentRef}</div>}
+                      {req.notes && <div style={{ marginTop: 3, fontStyle: 'italic', color: 'var(--text4)', fontSize: 11 }}>"{req.notes}"</div>}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
                       {req.createdAt ? new Date(req.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
                     </div>
                     <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
                       <button onClick={() => handleApprove(req.id)} aria-label={`${i('Approuver', 'Approve', 'Aprobar', 'Approva')} ${req.tenant?.name ?? req.id}`}
-                        style={{ padding: '8px 16px', borderRadius: 9, background: 'linear-gradient(135deg,var(--acc2),#00875A)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
+                        style={{ padding: '8px 16px', borderRadius: 9, background: 'linear-gradient(135deg,var(--acc2),#00875A)', border: 'none', color: '#fff', fontSize: 12, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
                         <Check size={13} /> {i('Approuver', 'Approve', 'Aprobar', 'Approva')}
                       </button>
                       <button onClick={() => handleReject(req.id)} aria-label={`${i('Rejeter', 'Reject', 'Rechazar', 'Rifiuta')} ${req.tenant?.name ?? req.id}`}
-                        style={{ padding: '8px 14px', borderRadius: 9, background: 'rgba(255,59,92,.1)', border: '1px solid rgba(255,59,92,.2)', color: 'var(--danger)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
+                        style={{ padding: '8px 14px', borderRadius: 9, background: 'rgba(255,59,92,.1)', border: '1px solid rgba(255,59,92,.2)', color: 'var(--danger)', fontSize: 12, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, minHeight: 36 }}>
                         <X size={13} /> {i('Rejeter', 'Reject', 'Rechazar', 'Rifiuta')}
                       </button>
                     </div>
@@ -456,7 +456,7 @@ export default function AdminDashboard() {
               ].map(s => (
                 <div key={s.l} className="kpi-card" style={{ padding: 12 }}>
                   <div className="kpi-label">{s.l}</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{s.v}</div>
+                  <div style={{ fontSize: 18, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{s.v}</div>
                 </div>
               ))}
             </div>
@@ -483,7 +483,7 @@ export default function AdminDashboard() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowNewTenant(false)}>
           <div className="modal-box" style={{ maxWidth: 480 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, alignItems: 'center' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={16} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={16} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</h3>
               <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setShowNewTenant(false)}><X size={14} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -541,4 +541,4 @@ export default function AdminDashboard() {
   )
 }
 
-const lbl: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }
+const lbl: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }

@@ -43,7 +43,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               fontSize:22, fontWeight:900, color:'#fff',
             }}>H</div>
             <div>
-              <div style={{ fontSize:16, fontWeight:800, color:'#fff' }}>
+              <div style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'#fff' }}>
                 HabaShop
               </div>
               <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginTop:2 }}>
@@ -72,11 +72,11 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
                 width:48, height:48, borderRadius:'50%',
                 background:record.color,
                 display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:18, fontWeight:800, color:'#fff',
+                fontSize:18, fontWeight:'var(--fw-bold)', color:'#fff',
                 boxShadow:`0 4px 14px ${record.color}44`,
               }}>{record.avatar}</div>
               <div>
-                <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
+                <div style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
                   {record.employee}
                 </div>
                 <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>
@@ -89,7 +89,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               color: record.status === 'PAYÉ' ? 'var(--acc2)' : 'var(--acc)',
               border: `1px solid ${record.status === 'PAYÉ' ? 'rgba(14,196,126,.3)' : 'rgba(240,165,0,.3)'}`,
               borderRadius:20, padding:'5px 14px',
-              fontSize:12, fontWeight:700,
+              fontSize:12, fontWeight:'var(--fw-semibold)',
             }}>{statusLabel(record.status, lang)}</span>
           </div>
         </div>
@@ -100,13 +100,13 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
           {/* GAINS */}
           <div style={{ marginTop:20 }}>
             <div style={{
-              fontSize:10.5, fontWeight:700, textTransform:'uppercase',
+              fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase',
               letterSpacing:'1px', color:'var(--text3)',
               marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border)',
             }}>{lang === 'en' ? 'EARNINGS' : lang === 'es' ? 'GANANCIAS' : lang === 'it' ? 'GUADAGNI' : 'GAINS'}</div>
             <div style={{
               display:'grid', gridTemplateColumns:'1fr 80px 80px 100px',
-              gap:8, marginBottom:6, fontSize:10, fontWeight:700,
+              gap:8, marginBottom:6, fontSize:11, fontWeight:'var(--fw-semibold)',
               color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.5px',
             }}>
               <span>{lang === 'en' ? 'Label' : lang === 'es' ? 'Concepto' : lang === 'it' ? 'Voce' : 'Libellé'}</span>
@@ -129,7 +129,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
                   <span style={{ fontSize:13, color:'var(--text)' }}>{row.label}</span>
                   <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.base}</span>
                   <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.taux}</span>
-                  <span style={{ fontSize:13, fontWeight:700, color:'var(--text)', textAlign:'right', fontFamily:'var(--mono)' }}>
+                  <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)', textAlign:'right', fontFamily:'var(--mono)' }}>
                     {fmt(row.montant)}
                   </span>
                 </div>
@@ -141,7 +141,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)',
               borderRadius:10,
             }}>
-              <span style={{ fontSize:13, fontWeight:800, color:'var(--acc2)', letterSpacing:'.3px' }}>{lang === 'en' ? 'GROSS TOTAL' : lang === 'es' ? 'TOTAL BRUTO' : lang === 'it' ? 'TOTALE LORDO' : 'TOTAL BRUT'}</span>
+              <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--acc2)', letterSpacing:'.3px' }}>{lang === 'en' ? 'GROSS TOTAL' : lang === 'es' ? 'TOTAL BRUTO' : lang === 'it' ? 'TOTALE LORDO' : 'TOTAL BRUT'}</span>
               <span style={{ fontSize:14, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
                 {fmt(bd.brut)}
               </span>
@@ -151,7 +151,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
           {/* RETENUES */}
           <div style={{ marginTop:20 }}>
             <div style={{
-              fontSize:10.5, fontWeight:700, textTransform:'uppercase',
+              fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase',
               letterSpacing:'1px', color:'var(--text3)',
               marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border)',
             }}>{lang === 'en' ? 'DEDUCTIONS' : lang === 'es' ? 'DEDUCCIONES' : lang === 'it' ? 'DETRAZIONI' : 'RETENUES'}</div>
@@ -169,7 +169,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
                 }}>
                   <span style={{ fontSize:13, color:'var(--text)' }}>{row.label}</span>
                   <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.taux}</span>
-                  <span style={{ fontSize:13, fontWeight:700, color:'var(--danger)', textAlign:'right', fontFamily:'var(--mono)' }}>
+                  <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--danger)', textAlign:'right', fontFamily:'var(--mono)' }}>
                     − {fmt(row.montant)}
                   </span>
                 </div>
@@ -181,7 +181,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               background:'rgba(232,64,74,.08)', border:'1px solid rgba(232,64,74,.2)',
               borderRadius:10,
             }}>
-              <span style={{ fontSize:13, fontWeight:800, color:'var(--danger)', letterSpacing:'.3px' }}>{lang === 'en' ? 'TOTAL DEDUCTIONS' : lang === 'es' ? 'TOTAL DEDUCCIONES' : lang === 'it' ? 'TOTALE DETRAZIONI' : 'TOTAL RETENUES'}</span>
+              <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--danger)', letterSpacing:'.3px' }}>{lang === 'en' ? 'TOTAL DEDUCTIONS' : lang === 'es' ? 'TOTAL DEDUCCIONES' : lang === 'it' ? 'TOTALE DETRAZIONI' : 'TOTAL RETENUES'}</span>
               <span style={{ fontSize:14, fontWeight:900, color:'var(--danger)', fontFamily:'var(--mono)' }}>
                 − {fmt(totalRetenues)}
               </span>
@@ -216,7 +216,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
             style={{
               flex:1, background:'linear-gradient(135deg, var(--acc2), #059669)',
               border:'none', borderRadius:10, padding:'11px',
-              fontSize:13, fontWeight:700, color:'#fff',
+              fontSize:13, fontWeight:'var(--fw-semibold)', color:'#fff',
               cursor:'pointer', fontFamily:'inherit',
               boxShadow:'0 4px 14px rgba(14,196,126,.3)',
             }}

@@ -61,7 +61,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               flexShrink: 0,
               boxShadow: '0 2px 8px rgba(108,71,255,.4)',
             }}><ShoppingCart size={16} style={{ color:'#fff' }} /></div>
-            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', flex: 1 }}>
+            <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', flex: 1 }}>
               {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
             </span>
             {cart.length > 0 && (
@@ -69,7 +69,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 background: 'var(--p)',
                 color: '#fff', borderRadius: 20,
                 padding: '2px 8px', fontSize: 11,
-                fontWeight: 800, fontFamily: 'var(--mono)',
+                fontWeight: 'var(--fw-bold)', fontFamily: 'var(--mono)',
                 whiteSpace: 'nowrap', flexShrink: 0,
               }}>
                 {cart.reduce((s, i) => s + i.qty, 0)}{' '}
@@ -82,7 +82,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 border: '1px solid var(--c-green-border)',
                 color: 'var(--acc2)', borderRadius: 20,
                 padding: '3px 10px', fontSize: 11,
-                fontWeight: 700, fontFamily: 'var(--mono)',
+                fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)',
                 display: 'flex', alignItems: 'center', gap: 4,
                 flexShrink: 0,
               }}>
@@ -110,7 +110,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               fontSize: 11, color: 'var(--danger)',
               background: 'rgba(232,64,74,.1)', border: '1px solid rgba(232,64,74,.2)',
               borderRadius: 8, padding: '5px 10px', cursor: 'pointer',
-              fontFamily: 'var(--font)', fontWeight: 700, flexShrink: 0,
+              fontFamily: 'var(--font)', fontWeight: 'var(--fw-semibold)', flexShrink: 0,
               whiteSpace: 'nowrap',
               display: 'flex', alignItems: 'center', gap: 4,
             }}><Lock size={11} /> {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
@@ -160,10 +160,10 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
 
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{
-                        fontSize:12, fontWeight:700, color:'var(--text)', lineHeight:1.3,
+                        fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text)', lineHeight:1.3,
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                       }}>{item.name}</div>
-                      <div style={{ fontSize:10, color:'var(--text3)', marginTop:1, fontFamily:'var(--mono)' }}>
+                      <div style={{ fontSize:11, color:'var(--text3)', marginTop:1, fontFamily:'var(--mono)' }}>
                         {fmt(item.price)} / unité
                       </div>
                       {item.tierLabel && (
@@ -173,8 +173,8 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                           color: 'var(--acc3)',
                           padding: '1px 6px',
                           borderRadius: 4,
-                          fontSize: 9,
-                          fontWeight: 700,
+                          fontSize: 11,
+                          fontWeight: 'var(--fw-semibold)',
                           marginTop: 3,
                           letterSpacing: '.2px',
                         }}>📊 {item.tierLabel}</span>
@@ -239,14 +239,14 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
                     <Tag size={11} /> {lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}
                   </span>
-                  <span style={{ fontSize:11, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
+                  <span style={{ fontSize:11, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>
                     − {fmt(discountAmount)}
                   </span>
                 </div>
               )}
               <div style={{
                 display:'flex', justifyContent:'space-between',
-                fontSize:10, color:'var(--text3)', marginBottom:6, padding:'0 2px',
+                fontSize:11, color:'var(--text3)', marginBottom:6, padding:'0 2px',
               }}>
                 <span>HT : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(totalHT))}</span></span>
                 <span>TVA {posTaxRate}% : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(tva))}</span></span>
@@ -257,7 +257,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 background:'rgba(91,78,232,.08)', border:'1px solid rgba(91,78,232,.15)',
                 borderRadius:10,
               }}>
-                <span style={{ fontSize:11, fontWeight:800, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>TOTAL TTC</span>
+                <span style={{ fontSize:11, fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>TOTAL TTC</span>
                 <span style={{ fontSize:26, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>{fmt(total)}</span>
               </div>
             </div>
@@ -269,7 +269,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               {PAY_MODES.map(mode => (
                 <button key={mode.id} type="button" onClick={() => setPayMode(mode.id)}
                   style={{
-                    padding: '6px 2px', borderRadius: 8, fontSize: 9, fontWeight: 700,
+                    padding: '6px 2px', borderRadius: 8, fontSize: 11, fontWeight: 'var(--fw-semibold)',
                     cursor: 'pointer', fontFamily: 'var(--font)',
                     background: payMode === mode.id ? `${mode.color}20` : 'var(--bg3)',
                     border: `1.5px solid ${payMode === mode.id ? mode.color : 'var(--border)'}`,
@@ -279,8 +279,8 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   <span style={{ display:'flex', alignItems:'center', justifyContent:'center', height:16 }}>
                     {mode.id === 'cash'   ? <Banknote size={14} />   :
                      mode.id === 'card'   ? <CreditCard size={14} /> :
-                     mode.id === 'wave'   ? <span style={{ fontWeight:900, fontSize:10, lineHeight:1 }}>W</span>  :
-                     mode.id === 'orange' ? <span style={{ fontWeight:900, fontSize:9, lineHeight:1 }}>OM</span>  :
+                     mode.id === 'wave'   ? <span style={{ fontWeight:900, fontSize:11, lineHeight:1 }}>W</span>  :
+                     mode.id === 'orange' ? <span style={{ fontWeight:900, fontSize:11, lineHeight:1 }}>OM</span>  :
                                             <Smartphone size={14} />}
                   </span>
                   {mode.label}
@@ -299,7 +299,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   <span style={{
                     position:'absolute', right:12, top:'50%',
                     transform:'translateY(-50%)',
-                    fontSize:11, fontWeight:700, color:'var(--text3)',
+                    fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)',
                     pointerEvents:'none',
                   }}>{currencySymbol}</span>
                 </div>
@@ -331,7 +331,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 border:`1px solid ${payMode === 'wave' ? 'rgba(27,154,245,.25)' : 'rgba(255,102,0,.25)'}`,
                 borderRadius:8, textAlign:'center',
               }}>
-                <div style={{ fontSize:14, fontWeight:800, color: payMode === 'wave' ? '#1B9AF5' : '#FF6600', marginBottom:6 }}>
+                <div style={{ fontSize:14, fontWeight:'var(--fw-bold)', color: payMode === 'wave' ? '#1B9AF5' : '#FF6600', marginBottom:6 }}>
                   {fmt(total)}
                 </div>
                 <button type="button"
@@ -344,7 +344,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   style={{
                     background: payMode === 'wave' ? '#1B9AF5' : '#FF6600',
                     border:'none', borderRadius:7, padding:'7px 16px',
-                    fontSize:12, fontWeight:700, color:'#fff',
+                    fontSize:12, fontWeight:'var(--fw-semibold)', color:'#fff',
                     cursor:'pointer', fontFamily:'var(--font)',
                   }}>
                   {lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : lang === 'it' ? 'Conferma' : 'Confirmer'}
@@ -361,7 +361,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               style={{
                 width:'100%', padding:'13px',
                 background: cart.length === 0 ? 'var(--bg4)' : 'linear-gradient(135deg,var(--p),var(--p2))',
-                border:'none', borderRadius:11, fontSize:14, fontWeight:800,
+                border:'none', borderRadius:11, fontSize:14, fontWeight:'var(--fw-bold)',
                 color: cart.length === 0 ? 'var(--text3)' : '#fff',
                 cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
                 fontFamily:'var(--font)',
@@ -376,7 +376,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             {cashierSessionTx > 0 && (
               <div style={{
                 display:'flex', justifyContent:'space-between',
-                fontSize:10, color:'var(--text3)', marginTop:5, padding:'0 4px',
+                fontSize:11, color:'var(--text3)', marginTop:5, padding:'0 4px',
               }}>
                 <span style={{ display:'flex', alignItems:'center', gap:4 }}><BarChart3 size={10} /> {cashierSessionTx} tx</span>
                 <span style={{ color:'var(--acc)', fontFamily:'var(--mono)', fontWeight:600 }}>{fmt(cashierSessionCA)}</span>

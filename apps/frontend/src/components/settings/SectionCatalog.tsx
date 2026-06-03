@@ -127,7 +127,7 @@ export default function SectionCatalog() {
         <div style={{ padding:'14px 16px', borderTop:'1px solid var(--border)', display:'flex', flexDirection:'column', gap:12 }}>
           {/* Slug edit */}
           <div>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.4px', marginBottom:6 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.4px', marginBottom:6 }}>
               {i('Personnaliser le lien', 'Customize link', 'Personalizar enlace', 'Personalizza link')}
             </label>
             <div style={{ display:'flex', alignItems:'stretch', gap:0, background:'var(--bg3)', border:`1.5px solid ${slugErr ? 'var(--danger)' : 'var(--border)'}`, borderRadius:8, overflow:'hidden' }}>
@@ -138,7 +138,7 @@ export default function SectionCatalog() {
                 onChange={e => { const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''); setForm(f => ({ ...f, slug: v })); setSlugErr(validateSlugClient(v)) }}
                 placeholder="ma-boutique"
                 style={{ flex:1, padding:'8px 10px', fontSize:13, background:'transparent', border:'none', color:'var(--text)', fontFamily:'var(--mono)', outline:'none' }} />
-              <button onClick={saveSlug} disabled={saving || !!slugErr || form.slug === tenant.slug} style={{ padding:'8px 14px', background: (saving || !!slugErr || form.slug === tenant.slug) ? 'var(--bg4)' : 'var(--p)', color:'#fff', border:'none', cursor: (saving || !!slugErr || form.slug === tenant.slug) ? 'not-allowed' : 'pointer', fontSize:12, fontWeight:700, fontFamily:'inherit' }}>
+              <button onClick={saveSlug} disabled={saving || !!slugErr || form.slug === tenant.slug} style={{ padding:'8px 14px', background: (saving || !!slugErr || form.slug === tenant.slug) ? 'var(--bg4)' : 'var(--p)', color:'#fff', border:'none', cursor: (saving || !!slugErr || form.slug === tenant.slug) ? 'not-allowed' : 'pointer', fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'inherit' }}>
                 {i('Enregistrer', 'Save', 'Guardar', 'Salva')}
               </button>
             </div>
@@ -189,7 +189,7 @@ export default function SectionCatalog() {
             maxLength={200}
             rows={2}
             style={{ width:'100%', padding:'10px 12px', fontSize:13, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontFamily:'inherit', resize:'vertical', minHeight:60 }} />
-          <div style={{ marginTop:4, textAlign:'right', fontSize:10, color:'var(--text3)', fontFamily:'var(--mono)' }}>{form.description.length} / 200</div>
+          <div style={{ marginTop:4, textAlign:'right', fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>{form.description.length} / 200</div>
         </div>
       </div>
 

@@ -322,7 +322,7 @@ export default function Header() {
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{item.sub}</div>
                     </div>
-                    <span style={{ fontSize: 10, color: 'var(--text3)', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 6px', flexShrink: 0 }}>{item.type}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 6px', flexShrink: 0 }}>{item.type}</span>
                   </button>
                 )
               })}
@@ -352,7 +352,7 @@ export default function Header() {
               : <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--warn)', animation: 'pulse 1.4s ease-in-out infinite' }} />
           }
           <span style={{
-            fontSize: 10, fontWeight: 700,
+            fontSize: 11, fontWeight: 'var(--fw-semibold)',
             color: apiStatus === 'online' ? 'var(--acc2)' : apiStatus === 'offline' ? 'var(--danger)' : 'var(--warn)',
           }}>
             {apiStatus === 'online'
@@ -379,7 +379,7 @@ export default function Header() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20,
                 background: bg, border: `1px solid ${border}`, color, flexShrink: 0,
-                fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', cursor: 'default',
+                fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', cursor: 'default',
               }}>
               {trial.isTrial
                 ? <><Clock size={11} />{lang === 'en' ? `Trial · ${trial.daysLeft}d` : lang === 'es' ? `Prueba · ${trial.daysLeft}d` : lang === 'it' ? `Prova · ${trial.daysLeft}g` : `Essai · ${trial.daysLeft}j`}</>
@@ -413,7 +413,7 @@ export default function Header() {
               animation: 'slideDown .2s var(--spring)',
             }}>
               <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: 1, background: 'linear-gradient(90deg,transparent,var(--p),transparent)' }} />
-              <div style={{ padding: '6px 10px 8px', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.8px', color: 'var(--text4)' }}>
+              <div style={{ padding: '6px 10px 8px', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.8px', color: 'var(--text4)' }}>
                 {lang === 'en' ? 'QUICK CREATE' : lang === 'es' ? 'CREAR RÁPIDO' : lang === 'it' ? 'CREA RAPIDO' : 'CRÉER RAPIDEMENT'}
               </div>
               {NEW_ITEMS.map((item, i) => {
@@ -465,7 +465,7 @@ export default function Header() {
               <div style={{
                 position: 'absolute', top: 3, right: 3, width: 16, height: 16,
                 borderRadius: '50%', background: 'var(--danger)', color: '#fff',
-                fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center',
+                fontSize: 11, fontWeight: 'var(--fw-bold)', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', border: '2px solid var(--bg2)',
                 boxShadow: '0 0 8px rgba(255,59,92,.5)',
               }}>{unreadCount}</div>
@@ -493,12 +493,12 @@ export default function Header() {
                   }}>
                     <Bell size={14} />
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>Notifications</span>
+                  <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>Notifications</span>
                 </div>
                 {unreadCount > 0 && (
                   <span style={{
                     background: 'var(--danger)', color: '#fff',
-                    borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 800,
+                    borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 'var(--fw-bold)',
                   }}>{unreadCount} non lues</span>
                 )}
               </div>
@@ -523,10 +523,10 @@ export default function Header() {
                         {v.icon}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{v.title}</div>
+                        <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>{v.title}</div>
                         <div style={{ fontSize: 11, color: 'var(--text3)' }}>{v.message}</div>
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--text4)', flexShrink: 0, marginTop: 3 }}>
+                      <div style={{ fontSize: 11, color: 'var(--text4)', flexShrink: 0, marginTop: 3 }}>
                         {new Date(n.ts).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </button>
@@ -549,7 +549,7 @@ export default function Header() {
                       <Package size={13} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                      <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>
                         {lang === 'en' ? 'Low stock' : lang === 'es' ? 'Stock bajo' : lang === 'it' ? 'Stock basso' : 'Rupture stock'} — {product.name}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text3)' }}>

@@ -115,7 +115,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   padding: '8px 16px', borderRadius: 10,
                   background: 'linear-gradient(135deg,var(--p),var(--p2))',
                   border: 'none', cursor: 'pointer',
-                  color: '#fff', fontSize: 12, fontWeight: 700,
+                  color: '#fff', fontSize: 12, fontWeight: 'var(--fw-semibold)',
                   fontFamily: 'var(--font)',
                   boxShadow: 'var(--sh-p)',
                   display: 'flex', alignItems: 'center', gap: 6,
@@ -272,7 +272,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               padding:'20px 24px', display:'flex', flexDirection:'column', gap:14,
             }}>
               <div>
-                <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
                   {lang === 'en' ? 'NAME / COMPANY *' : lang === 'es' ? 'NOMBRE / EMPRESA *' : lang === 'it' ? 'NOME / INSEGNA *' : 'NOM / ENSEIGNE *'}
                 </label>
                 <input className="input" autoFocus
@@ -283,7 +283,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
 
               <ResponsiveGrid min={160} gap={12}>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>TYPE</label>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>TYPE</label>
                   <select aria-label={i('Type', 'Type', 'Tipo', 'Tipo')} className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
                     <option value="Détail">{lang === 'en' ? 'Retail' : lang === 'es' ? 'Minorista' : lang === 'it' ? 'Dettaglio' : 'Détail'}</option>
                     <option value="Grossiste">{lang === 'en' ? 'Wholesale' : lang === 'es' ? 'Mayorista' : lang === 'it' ? 'Grossista' : 'Grossiste'}</option>
@@ -302,7 +302,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               </ResponsiveGrid>
 
               <div>
-                <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>EMAIL</label>
+                <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>EMAIL</label>
                 <input aria-label="EMAIL" className="input" type="email" placeholder="email@exemple.com"
                   value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} />
               </div>
@@ -324,7 +324,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               <button onClick={handleCreateCustomer} style={{
                 flex:1, padding:'13px',
                 background:'linear-gradient(135deg,#F472B6,#EC4899)',
-                border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800,
+                border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:'var(--fw-bold)',
                 cursor:'pointer', fontFamily:'var(--font)',
                 boxShadow:'0 4px 16px rgba(244,114,182,.4)',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
@@ -400,7 +400,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                       {detailCustomer.name}
                     </h2>
                     <span style={{
-                      fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px',
+                      fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.4px',
                       padding: '3px 10px', borderRadius: 99,
                       background: ({ Grossiste: 'rgba(108,71,255,.15)', 'Semi-gros': 'rgba(255,149,0,.15)', Fidèle: 'rgba(0,208,132,.15)', Détail: 'rgba(0,184,255,.15)' } as Record<string,string>)[detailCustomer.type] ?? 'rgba(108,71,255,.15)',
                       color: ({ Grossiste: 'var(--p3)', 'Semi-gros': 'var(--acc)', Fidèle: 'var(--acc2)', Détail: 'var(--info)' } as Record<string,string>)[detailCustomer.type] ?? 'var(--p3)',
@@ -442,14 +442,14 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   <div key={k.label} style={{ background: `linear-gradient(135deg,${k.hex}15,${k.hex}05)`, border: `1px solid ${k.hex}25`, borderRadius: 12, padding: '14px', textAlign: 'center' }}>
                     <div style={{ display:'flex', justifyContent:'center', marginBottom: 6, color: k.color }}>{k.icon}</div>
                     <div style={{ fontSize: 16, fontWeight: 900, color: k.color, fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{k.value}</div>
-                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginTop: 4 }}>{k.label}</div>
+                    <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginTop: 4 }}>{k.label}</div>
                   </div>
                 ))}
               </div>
 
               {/* Coordonnées */}
               <div style={{ background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <FileText size={12} style={{color:'var(--text3)'}} />{i('COORDONNÉES', 'CONTACT INFO', 'CONTACTO', 'CONTATTI')}
                 </div>
                 <ResponsiveGrid min={160} gap={10}>
@@ -462,7 +462,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                       gridColumn: item.full ? '1 / -1' : 'auto',
                       background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px',
                     }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
                         {item.icon}{item.label}
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', wordBreak: 'break-all' }}>{item.value}</div>
@@ -479,7 +479,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               {/* Programme fidélité */}
               <div style={{ background: 'linear-gradient(135deg,rgba(255,184,0,.06),rgba(255,184,0,.02))', border: '1px solid rgba(255,184,0,.15)', borderRadius: 14, padding: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Star size={12} style={{color:'var(--warn)'}} /> {i('PROGRAMME FIDÉLITÉ', 'LOYALTY PROGRAM', 'PROGRAMA FIDELIDAD', 'PROGRAMMA FEDELTÀ')}
                   </div>
                   <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>
@@ -500,13 +500,13 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   return (
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 6 }}>
-                        <span style={{ fontWeight: 700, color: current.color, display:'inline-flex', alignItems:'center', gap:4 }}><Star size={11} style={{color:current.color}} /> {current.name}</span>
+                        <span style={{ fontWeight: 'var(--fw-semibold)', color: current.color, display:'inline-flex', alignItems:'center', gap:4 }}><Star size={11} style={{color:current.color}} /> {current.name}</span>
                         {next && <span style={{ color: 'var(--text3)' }}>{next.min - pts} pts → {next.name}</span>}
                       </div>
                       <div style={{ height: 8, background: 'var(--bg5,var(--bg4))', borderRadius: 99, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: `linear-gradient(90deg,${current.color},${next?.color ?? current.color})`, borderRadius: 99, transition: 'width .5s ease' }} />
                       </div>
-                      <div style={{ textAlign: 'right', fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>{pct}%</div>
+                      <div style={{ textAlign: 'right', fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{pct}%</div>
                     </div>
                   )
                 })()}
@@ -514,7 +514,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
 
               {/* Historique achats */}
               <div>
-                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <ShoppingBag size={12} style={{color:'var(--text3)'}} /> {i('HISTORIQUE DES ACHATS', 'PURCHASE HISTORY', 'HISTORIAL DE COMPRAS', 'STORICO ACQUISTI')}
                 </div>
                 {detailCustomer.purchases.length === 0 ? (
@@ -542,7 +542,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                               {new Date(p.date).toLocaleDateString(i('fr-FR', 'en-US', 'es-ES', 'it-IT'))}
                             </td>
                             <td style={{ fontSize: 11, color: 'var(--text2)' }}>{p.items} art.</td>
-                            <td className="td-mono" style={{ color: 'var(--acc2)', fontWeight: 700 }}>{fmt(p.total)}</td>
+                            <td className="td-mono" style={{ color: 'var(--acc2)', fontWeight: 'var(--fw-semibold)' }}>{fmt(p.total)}</td>
                             <td><span className="badge badge-ok">✓ {i('Payé', 'Paid', 'Pagado', 'Pagato')}</span></td>
                           </tr>
                         ))}
@@ -559,7 +559,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 flex: 1, padding: '12px',
                 background: 'linear-gradient(135deg,var(--p),var(--p2))',
                 border: 'none', borderRadius: 12, color: '#fff',
-                fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                fontSize: 13, fontWeight: 'var(--fw-bold)', cursor: 'pointer',
                 fontFamily: 'var(--font)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center', gap: 8,
                 boxShadow: 'var(--sh-p)',

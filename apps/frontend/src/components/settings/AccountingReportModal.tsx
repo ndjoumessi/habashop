@@ -110,7 +110,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
     exportCSV(`Comptabilite_${month}`, [i('Rubrique', 'Item', 'Concepto', 'Voce'), i('Valeur', 'Value', 'Valor', 'Valore')], rows)
   }
 
-  const lbl: React.CSSProperties = { fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }
+  const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -121,7 +121,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
             <FileText size={20} color="var(--acc2)" />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{i('Rapport comptable', 'Accounting report', 'Reporte contable', 'Report contabile')}</div>
+            <div style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{i('Rapport comptable', 'Accounting report', 'Reporte contable', 'Report contabile')}</div>
             <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Revenus, dépenses et résultat du mois', 'Monthly revenue, expenses and result', 'Ingresos, gastos y resultado del mes', 'Ricavi, spese e risultato del mese')}</div>
           </div>
           <select className="input" aria-label={i('Mois', 'Month', 'Mes', 'Mese')} value={month} onChange={e => setMonth(e.target.value)} style={{ width: 'auto', minWidth: 150, fontSize: 13 }}>
@@ -152,7 +152,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
               <div style={{ width: 56, height: 56, borderRadius: '50%', border: '2px dashed var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
                 <BarChart3 size={26} color="var(--text3)" />
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text2)', marginBottom: 4 }}>{i('Aucune donnée ce mois-ci', 'No data this month', 'Sin datos este mes', 'Nessun dato questo mese')}</div>
+              <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', marginBottom: 4 }}>{i('Aucune donnée ce mois-ci', 'No data this month', 'Sin datos este mes', 'Nessun dato questo mese')}</div>
               <div style={{ fontSize: 12, color: 'var(--text3)' }}>{i('Aucune vente ni dépense enregistrée pour', 'No sales or expenses recorded for', 'Sin ventas ni gastos registrados para', 'Nessuna vendita o spesa registrata per')} {monthLabel(month)}</div>
             </div>
           ) : data && (
@@ -171,7 +171,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                       <span style={lbl}>{k.label}</span>
                     </div>
                     <div style={{ fontSize: 18, fontWeight: 900, color: k.color, fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{k.value}</div>
-                    <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 2 }}>{k.sub}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text4)', marginTop: 2 }}>{k.sub}</div>
                   </div>
                 ))}
               </ResponsiveGrid>
@@ -185,10 +185,10 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                     <Scale size={18} color={c} style={{ flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)' }}>{i('Résultat estimé après paie', 'Estimated result after payroll', 'Resultado estimado tras nómina', 'Risultato stimato dopo personale')}</span>
-                        <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--warn)', background: 'color-mix(in srgb, var(--warn) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius: 99, padding: '2px 8px' }}>{i('estimé', 'estimated', 'estimado', 'stimato')}</span>
+                        <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)' }}>{i('Résultat estimé après paie', 'Estimated result after payroll', 'Resultado estimado tras nómina', 'Risultato stimato dopo personale')}</span>
+                        <span style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--warn)', background: 'color-mix(in srgb, var(--warn) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius: 99, padding: '2px 8px' }}>{i('estimé', 'estimated', 'estimado', 'stimato')}</span>
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 2 }}>{i("Projection basée sur l'effectif actuel, non historique", 'Projection based on current headcount, not historical', 'Proyección basada en la plantilla actual, no histórica', "Proiezione basata sull'organico attuale, non storica")}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text4)', marginTop: 2 }}>{i("Projection basée sur l'effectif actuel, non historique", 'Projection based on current headcount, not historical', 'Proyección basada en la plantilla actual, no histórica', "Proiezione basata sull'organico attuale, non storica")}</div>
                     </div>
                     <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'var(--mono)', letterSpacing: '-.5px', color: c, flexShrink: 0 }}>{money(after)}</div>
                   </div>
@@ -208,7 +208,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                     <div key={c.category}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
                         <span style={{ color: 'var(--text2)', fontWeight: 600 }}>{catLabel(c.category, lang)}</span>
-                        <span style={{ color: 'var(--text)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{money(c.amountTtc)}</span>
+                        <span style={{ color: 'var(--text)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)' }}>{money(c.amountTtc)}</span>
                       </div>
                       <div style={{ height: 7, borderRadius: 99, background: 'var(--bg4)', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${Math.max(2, (c.amountTtc / maxCat) * 100)}%`, borderRadius: 99, background: 'linear-gradient(90deg, var(--p), var(--p2))' }} />

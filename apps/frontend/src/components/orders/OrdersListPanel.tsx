@@ -139,8 +139,8 @@ export default function OrdersListPanel({
                   </td>
                   <td>
                     {o.type === 'supplier'
-                      ? <span className="badge badge-amber" style={{ fontSize: 10, display:'inline-flex', alignItems:'center', gap:3 }}><Truck size={9}/> {i('BC', 'PO', 'OC', 'OA')}</span>
-                      : <span className="badge badge-blue" style={{ fontSize: 10, display:'inline-flex', alignItems:'center', gap:3 }}><Users size={9}/> {i('Vente', 'Sale', 'Venta', 'Vendita')}</span>
+                      ? <span className="badge badge-amber" style={{ fontSize: 11, display:'inline-flex', alignItems:'center', gap:3 }}><Truck size={9}/> {i('BC', 'PO', 'OC', 'OA')}</span>
+                      : <span className="badge badge-blue" style={{ fontSize: 11, display:'inline-flex', alignItems:'center', gap:3 }}><Users size={9}/> {i('Vente', 'Sale', 'Venta', 'Vendita')}</span>
                     }
                   </td>
                   <td className="td-bold">{o.supplier}</td>

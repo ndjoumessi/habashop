@@ -185,7 +185,7 @@ export default function AddressAutocomplete({
                   {s.structured_formatting?.main_text ?? s.description.split(',')[0]}
                 </div>
                 <div style={{
-                  fontSize: 10, color: 'var(--text3)', marginTop: 2,
+                  fontSize: 11, color: 'var(--text3)', marginTop: 2,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {s.structured_formatting?.secondary_text ?? s.description.split(',').slice(1).join(',')}
@@ -194,7 +194,7 @@ export default function AddressAutocomplete({
             </button>
           ))}
           <div style={{
-            padding: '5px 14px', fontSize: 9, color: 'var(--text4)',
+            padding: '5px 14px', fontSize: 11, color: 'var(--text4)',
             textAlign: 'right', background: 'var(--bg3)',
           }}>
             Powered by Google

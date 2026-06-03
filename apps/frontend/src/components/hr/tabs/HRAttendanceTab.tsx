@@ -64,7 +64,7 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
       {/* Header toolbar */}
       <div className="panel" style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
-        <span style={{ fontSize:16, fontWeight:800, color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
+        <span style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
           <Clock size={16}/> {lang === 'en' ? 'Attendance sheet' : lang === 'es' ? 'Hoja de asistencia' : lang === 'it' ? 'Foglio presenze' : 'Feuille de présence'}
         </span>
         <input type="date" className="input" value={attendanceDate}
@@ -92,14 +92,14 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
             <div style={{ position:'absolute', top:-16, right:-16, width:64, height:64, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}20 0%,transparent 70%)`, pointerEvents:'none' }} />
             <div style={{ color:k.color, marginBottom:6, display:'flex' }}>{k.icon}</div>
             <div style={{ fontSize:22, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.count}</div>
-            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginTop:2 }}>{k.label}</div>
+            <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginTop:2 }}>{k.label}</div>
           </div>
         ))}
       </div>
 
       {/* Employee rows */}
       <div className="panel" style={{ overflow:'hidden', padding:0 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 80px 80px 96px 188px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 80px 80px 96px 188px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
           <span>{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Arrival' : lang === 'es' ? 'Llegada' : lang === 'it' ? 'Arrivo' : 'Arrivée'}</span>
@@ -120,17 +120,17 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
             }}>
               {/* Employé */}
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <div style={{ width:32, height:32, borderRadius:8, background:`${emp.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, color:emp.color, flexShrink:0 }}>
+                <div style={{ width:32, height:32, borderRadius:8, background:`${emp.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:'var(--fw-bold)', color:emp.color, flexShrink:0 }}>
                   {emp.avatar}
                 </div>
                 <div>
-                  <div style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>{emp.name.split(' ')[0]}</div>
-                  <div style={{ fontSize:10, color:'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
+                  <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{emp.name.split(' ')[0]}</div>
+                  <div style={{ fontSize:11, color:'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
                 </div>
               </div>
               {/* Statut badge */}
               <div style={{ display:'flex', justifyContent:'center' }}>
-                <span style={{ fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:20, background:sc.bg, color:sc.color, display:'inline-flex', alignItems:'center', gap:4 }}>
+                <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', padding:'3px 8px', borderRadius:20, background:sc.bg, color:sc.color, display:'inline-flex', alignItems:'center', gap:4 }}>
                   {sc.icon} {attendStatusLabel(a.status, lang)}
                 </span>
               </div>

@@ -37,7 +37,7 @@ export default function HRPayrollTab(props: Props) {
             onClick={() => setPayTab(t.id)}
             style={{
               flex:1, padding:'7px', borderRadius:8, fontSize:12,
-              fontWeight:700, cursor:'pointer', fontFamily:'var(--font)', border:'none',
+              fontWeight:'var(--fw-semibold)', cursor:'pointer', fontFamily:'var(--font)', border:'none',
               background: payTab===t.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
               color: payTab===t.id ? '#fff' : 'var(--text3)',
               transition:'all .15s',

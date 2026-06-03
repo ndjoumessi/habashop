@@ -51,7 +51,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
           {/* En-têtes jours */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:'2px solid var(--border)', background:'linear-gradient(135deg,var(--bg4),var(--bg3))' }}>
             {DAY_LABELS.map((d,i)=>(
-              <div key={i} style={{ padding:'8px 6px', textAlign:'center', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.4px', color: (i>=5)?'var(--text4)':'var(--text3)' }}>{d}</div>
+              <div key={i} style={{ padding:'8px 6px', textAlign:'center', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: (i>=5)?'var(--text4)':'var(--text3)' }}>{d}</div>
             ))}
           </div>
           {/* Grille 6×7 */}
@@ -93,13 +93,13 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
                         return (
                           <div key={t} title={shiftLabel(t, lang)} style={{ display:'flex', alignItems:'center', gap:4 }}>
                             <span style={{ width:7, height:7, borderRadius:'50%', background:s.color, flexShrink:0 }}/>
-                            <span style={{ fontSize:9, fontWeight:700, color:'var(--text3)', fontFamily:'var(--mono)' }}>{c}</span>
+                            <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)', fontFamily:'var(--mono)' }}>{c}</span>
                           </div>
                         )
                       })}
                     </div>
                   ) : leaveCount>0 ? null : (
-                    inMonth && <span style={{ fontSize:9, color:'var(--text4)', opacity:.4 }}>—</span>
+                    inMonth && <span style={{ fontSize:11, color:'var(--text4)', opacity:.4 }}>—</span>
                   )}
                 </div>
               )
@@ -108,7 +108,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
           {/* Légende */}
           <div style={{ padding:'10px 16px', borderTop:'1px solid var(--border)', background:'var(--bg3)', display:'flex', gap:14, flexWrap:'wrap', alignItems:'center' }}>
             {(Object.entries(SHIFT_TYPES) as [ShiftType,any][]).map(([key,s])=>(
-              <div key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:10 }}>
+              <div key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:11 }}>
                 <span style={{ width:8, height:8, borderRadius:'50%', background:s.color }}/>
                 <span style={{ color:s.color, fontWeight:600 }}>{shiftLabel(key, lang)}</span>
               </div>

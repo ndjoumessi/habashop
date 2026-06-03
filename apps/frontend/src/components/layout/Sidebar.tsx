@@ -82,7 +82,7 @@ export default function Sidebar() {
               backgroundClip: 'text',
             }}>HabaShop</div>
             <div style={{
-              fontSize: 9, color: 'var(--text4)', fontWeight: 600,
+              fontSize: 11, color: 'var(--text4)', fontWeight: 600,
               textTransform: 'uppercase', letterSpacing: '.5px',
             }}>
               {lang === 'fr' ? 'Gestion commerciale'
@@ -102,12 +102,12 @@ export default function Sidebar() {
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)', animation: 'pulse 2s infinite', flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--acc2)' }}>
+          <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)' }}>
             {lang === 'en' ? 'Till open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
           </span>
           <button
             onClick={() => navigate('/app/pos')}
-            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--acc2)', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font)', padding: 0 }}
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--acc2)', fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', padding: 0 }}
           >
             {lang === 'en' ? 'Close →' : lang === 'es' ? 'Cerrar →' : lang === 'it' ? 'Chiudi →' : 'Fermer →'}
           </button>
@@ -201,7 +201,7 @@ export default function Sidebar() {
             width: 34, height: 34, borderRadius: '50%',
             background: 'linear-gradient(135deg,#6C47FF,#A991FF)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, color: '#fff', fontSize: 13,
+            fontWeight: 'var(--fw-bold)', color: '#fff', fontSize: 13,
             boxShadow: '0 2px 8px rgba(108,71,255,.35)',
           }}>
             {user?.name?.charAt(0)?.toUpperCase() || 'N'}
@@ -220,14 +220,14 @@ export default function Sidebar() {
             <div className="user-name">{user?.name || 'Nelson'}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
               <Wifi size={9} style={{ color: 'var(--acc2)' }} />
-              <span style={{ fontSize: 10, color: 'var(--acc2)', fontWeight: 600 }}>
+              <span style={{ fontSize: 11, color: 'var(--acc2)', fontWeight: 600 }}>
                 {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
               </span>
             </div>
             {/* Identifiant de build : permet de vérifier d'un coup d'œil qu'on est
                 bien sur la dernière version (et non une copie en cache). */}
             <div title={lang === 'en' ? 'Build version' : 'Version du build'}
-              style={{ fontSize: 8, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {__BUILD_ID__}
             </div>
           </div>

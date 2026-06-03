@@ -122,7 +122,7 @@ export default function PhoneInputWithCountry({
     <div ref={wrapRef} style={{ position: 'relative' }}>
       {label && (
         <label style={{
-          display: 'block', fontSize: 10, fontWeight: 800,
+          display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)',
           textTransform: 'uppercase', letterSpacing: '.6px',
           color: 'var(--text3)', marginBottom: 6,
         }}>{label}</label>
@@ -161,8 +161,8 @@ export default function PhoneInputWithCountry({
             ((e.currentTarget as HTMLElement).style.background = 'var(--bg3)')}
         >
           <span style={{ fontSize: 18 }}>{flag}</span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--mono)' }}>{code}</span>
-          <span style={{ fontSize: 9, color: 'var(--text3)', transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none', display: 'inline-block' }}>▾</span>
+          <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{code}</span>
+          <span style={{ fontSize: 11, color: 'var(--text3)', transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none', display: 'inline-block' }}>▾</span>
         </button>
 
         {/* Input numéro */}
@@ -220,7 +220,7 @@ export default function PhoneInputWithCountry({
       {isValid && (
         <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 5 }}>
           <span style={{ fontSize: 13 }}>{flag}</span>
-          <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--acc2)' }}>
+          <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)' }}>
             {code} {number}
           </span>
         </div>
@@ -288,7 +288,7 @@ export default function PhoneInputWithCountry({
                 return (
                   <div key={region}>
                     <div style={{
-                      padding: '6px 12px 3px', fontSize: 9, fontWeight: 800,
+                      padding: '6px 12px 3px', fontSize: 11, fontWeight: 'var(--fw-bold)',
                       textTransform: 'uppercase', letterSpacing: '.7px',
                       color: 'var(--text4)', background: 'var(--bg3)',
                     }}>{region}</div>
@@ -329,7 +329,7 @@ function CountryRow({ c, selected, onSelect }: { c: CountryEntry; selected: bool
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{c.country}</span>
       <span style={{
-        fontSize: 11, fontWeight: 700, fontFamily: 'var(--mono)',
+        fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)',
         color: selected ? 'var(--p3)' : 'var(--text3)',
         background: selected ? 'rgba(108,71,255,.15)' : 'var(--bg3)',
         padding: '2px 7px', borderRadius: 6, flexShrink: 0,

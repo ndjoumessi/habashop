@@ -166,9 +166,9 @@ export default function Notifications() {
               <div style={{ flex:1 }}>
                 <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
                   <div>
-                    <span style={{ fontSize:14, fontWeight:800, color:'var(--text)' }}>{notif.title}</span>
+                    <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>{notif.title}</span>
                     <span style={{
-                      marginLeft:10, fontSize:10, fontWeight:700,
+                      marginLeft:10, fontSize:11, fontWeight:'var(--fw-semibold)',
                       background:'var(--bg3)', color:'var(--text3)',
                       borderRadius:20, padding:'2px 8px',
                     }}>{notif.module}</span>
@@ -185,7 +185,7 @@ export default function Notifications() {
                     <button style={{
                       background:cfg.bg, border:`1px solid ${cfg.border}`,
                       borderRadius:8, padding:'5px 14px',
-                      fontSize:12, fontWeight:700, color:cfg.color,
+                      fontSize:12, fontWeight:'var(--fw-semibold)', color:cfg.color,
                       cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
                     }} onClick={() => {
                       const route = NOTIF_ROUTES[notif.module] ?? '/app/dashboard'

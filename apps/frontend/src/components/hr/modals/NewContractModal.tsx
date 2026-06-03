@@ -63,7 +63,7 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
               <label style={labelStyle}>{lang === 'en' ? 'GROSS SALARY' : lang === 'es' ? 'SALARIO BRUTO' : lang === 'it' ? 'STIPENDIO LORDO' : 'SALAIRE BRUT'}</label>
               <div style={{ position:'relative' }}>
                 <input aria-label={lang === 'en' ? 'GROSS SALARY' : lang === 'es' ? 'SALARIO BRUTO' : lang === 'it' ? 'STIPENDIO LORDO' : 'SALAIRE BRUT'} className="input" type="number" placeholder="150000" value={contractForm.salary||''} onChange={e=>setContractForm(f=>({...f,salary:+e.target.value}))} style={{ paddingRight:60 }}/>
-                <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>{currencySuffix}</span>
+                <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)', pointerEvents:'none' }}>{currencySuffix}</span>
               </div>
               {contractForm.salary>0&&(
                 <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', gap:12 }}>

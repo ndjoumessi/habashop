@@ -61,7 +61,7 @@ export default function ConfirmModal({
           border: `1.5px solid ${danger ? 'rgba(255,59,92,.25)' : 'rgba(108,71,255,.25)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
         }} aria-hidden="true">{danger ? '⚠️' : '❓'}</div>
-        <h3 id="confirm-title" style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>{title}</h3>
+        <h3 id="confirm-title" style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 8 }}>{title}</h3>
         <p id="confirm-message" style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 24 }}>{message}</p>
         <div style={{ display: 'flex', gap: 10 }}>
           <button data-cancel onClick={onCancel} className="mini-btn" style={{ flex: 1, justifyContent: 'center' }}>
@@ -73,7 +73,7 @@ export default function ConfirmModal({
               ? 'linear-gradient(135deg,var(--danger),#dc2626)'
               : 'linear-gradient(135deg,var(--p),var(--p2))',
             border: 'none', borderRadius: 10, color: '#fff',
-            fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)',
+            fontSize: 13, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)',
           }}>{confirmLabel}</button>
         </div>
       </div>

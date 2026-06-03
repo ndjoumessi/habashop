@@ -46,13 +46,13 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowDiscountModal(false)}>
           <div className="modal-box" style={{ maxWidth:420 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-              <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>🏷️ Appliquer une remise</h3>
+              <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>🏷️ Appliquer une remise</h3>
               <button className="mini-btn" onClick={() => setShowDiscountModal(false)}>✕</button>
             </div>
 
             {/* Type */}
             <div style={{ marginBottom:16 }}>
-              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Type de remise</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Type de remise</label>
               <ResponsiveGrid min={160} gap={8}>
                 {([
                   { type:'percent', label:'Pourcentage (%)', icon:'%' },
@@ -76,11 +76,11 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             {/* Remises rapides % */}
             {discountForm.type === 'percent' && (
               <div style={{ marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Remise rapide</label>
+                <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Remise rapide</label>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                   {[5,10,15,20,25,30].map(pct => (
                     <button key={pct} onClick={() => setDiscountForm(f => ({...f, value:pct}))} style={{
-                      padding:'7px 14px', borderRadius:8, fontSize:13, fontWeight:700,
+                      padding:'7px 14px', borderRadius:8, fontSize:13, fontWeight:'var(--fw-semibold)',
                       cursor:'pointer', fontFamily:'var(--font)', border:'none', transition:'all .15s',
                       background: discountForm.value === pct ? 'var(--p)' : 'var(--bg3)',
                       color: discountForm.value === pct ? '#fff' : 'var(--text2)',
@@ -92,7 +92,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
 
             {/* Valeur personnalisée */}
             <div style={{ marginBottom:14 }}>
-              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
                 {discountForm.type === 'percent' ? 'Pourcentage personnalisé' : 'Montant de la remise'}
               </label>
               <div style={{ position:'relative' }}>
@@ -101,14 +101,14 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   value={discountForm.value || ''}
                   onChange={e => setDiscountForm(f => ({...f, value:+e.target.value}))}
                   style={{ paddingRight:50 }} />
-                <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:700, color:'var(--text3)' }}>
+                <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text3)' }}>
                   {discountForm.type === 'percent' ? '%' : 'F'}
                 </span>
               </div>
               {discountForm.value > 0 && (
                 <div style={{ marginTop:8, padding:'8px 12px', background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)', borderRadius:8, fontSize:12, display:'flex', justifyContent:'space-between' }}>
                   <span style={{ color:'var(--text2)' }}>Remise sur {fmt(subtotalBeforeDiscount)}</span>
-                  <span style={{ color:'var(--acc2)', fontWeight:700, fontFamily:'var(--mono)' }}>
+                  <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)' }}>
                     − {discountForm.type === 'percent'
                       ? fmt(subtotalBeforeDiscount * discountForm.value / 100)
                       : fmt(discountForm.value)}
@@ -119,7 +119,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
 
             {/* Motif */}
             <div style={{ marginBottom:20 }}>
-              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Reason (optional)' : lang === 'es' ? 'Motivo (opcional)' : lang === 'it' ? 'Motivo (opzionale)' : 'Motif (optionnel)'}</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Reason (optional)' : lang === 'es' ? 'Motivo (opcional)' : lang === 'it' ? 'Motivo (opzionale)' : 'Motif (optionnel)'}</label>
               <input aria-label={lang === 'en' ? 'Reason (optional)' : lang === 'es' ? 'Motivo (opcional)' : lang === 'it' ? 'Motivo (opzionale)' : 'Motif (optionnel)'} className="input" placeholder={lang === 'en' ? 'Ex: Loyal customer, daily promo...' : lang === 'es' ? 'Ej: Cliente fiel, promoción del día...' : lang === 'it' ? 'Es: Cliente fedele, promo del giorno...' : 'Ex: Client fidèle, promotion du jour...'}
                 value={discountForm.reason}
                 onChange={e => setDiscountForm(f => ({...f, reason:e.target.value}))} />
@@ -151,7 +151,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
       {showCloseModal && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && setShowCloseModal(false)}>
           <div className="modal-box" style={{ maxWidth:480 }}>
-            <h3 style={{ fontSize:16, fontWeight:800, color:'var(--text)', marginBottom:20 }}>
+            <h3 style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:20 }}>
               {ct.close_title}
             </h3>
             <ResponsiveGrid min={160} gap={10} style={{ marginBottom: 20 }}>
@@ -167,13 +167,13 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   background:'var(--bg3)', border:'1px solid var(--border)',
                   borderRadius:10, padding:'10px 14px',
                 }}>
-                  <div style={{ fontSize:10, color:'var(--text3)', marginBottom:4, textTransform:'uppercase', letterSpacing:'.5px' }}>{s.label}</div>
-                  <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', fontFamily:'var(--mono)' }}>{s.value}</div>
+                  <div style={{ fontSize:11, color:'var(--text3)', marginBottom:4, textTransform:'uppercase', letterSpacing:'.5px' }}>{s.label}</div>
+                  <div style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)' }}>{s.value}</div>
                 </div>
               ))}
             </ResponsiveGrid>
             <div style={{ marginBottom:20 }}>
-              <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
                 {ct.counted_label}
               </label>
               <input className="input" type="number"
@@ -253,7 +253,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}><CheckCircle size={20} style={{ color:'var(--acc2)' }} /></div>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
+                  <div style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
                     {t('pos_confirm_sale')}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>
@@ -280,7 +280,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   <span style={{ color: 'var(--text2)' }}>
                     {item.emoji} {item.name} ×{item.qty}
                   </span>
-                  <span style={{ fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--text)' }}>
+                  <span style={{ fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', color: 'var(--text)' }}>
                     {fmt(item.price * item.qty)}
                   </span>
                 </div>
@@ -298,7 +298,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               borderRadius: 10,
               marginBottom: 16,
             }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{t('pos_total')}</span>
+              <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{t('pos_total')}</span>
               <span style={{
                 fontSize: 20,
                 fontWeight: 900,
@@ -336,7 +336,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               </div>
               {sendWhatsApp && (
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
                     {lang==='fr' ? 'Numéro WhatsApp (ticket)' : lang==='en' ? 'WhatsApp number (receipt)' : lang==='es' ? 'Número WhatsApp (recibo)' : 'Numero WhatsApp (ricevuta)'}
                   </label>
                   <div style={{ display:'flex', gap:6, alignItems:'stretch' }}>
@@ -355,8 +355,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                         }}
                       >
                         <span style={{ fontSize:18 }}>{waCountryFlag}</span>
-                        <span style={{ fontFamily:'var(--mono)', fontWeight:700 }}>{waCountryCode}</span>
-                        <span style={{ fontSize:9, color:'var(--text3)', marginLeft:2 }}>▼</span>
+                        <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{waCountryCode}</span>
+                        <span style={{ fontSize:11, color:'var(--text3)', marginLeft:2 }}>▼</span>
                       </button>
                       {showCountryPicker && (
                         <div
@@ -396,7 +396,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                             const regions = Array.from(new Set(filtered.map(c => c.region)))
                             return regions.map(region => (
                               <div key={region} style={{ padding:'4px 0' }}>
-                                <div style={{ padding:'6px 12px 2px', fontSize:9, fontWeight:900, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)' }}>
+                                <div style={{ padding:'6px 12px 2px', fontSize:11, fontWeight:900, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)' }}>
                                   {region}
                                 </div>
                                 {filtered.filter(c => c.region === region).map(c => (
@@ -461,14 +461,14 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   {waNumber.trim().length > 0 && (
                     <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
                       <span>{lang==='fr' ? 'Numéro complet :' : lang==='en' ? 'Full number:' : lang==='es' ? 'Número completo:' : 'Numero completo:'}</span>
-                      <span style={{ fontFamily:'var(--mono)', fontWeight:700, color:'#25D366' }}>
+                      <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)', color:'#25D366' }}>
                         {waCountryCode}{waNumber.replace(/\s/g, '')}
                       </span>
                     </div>
                   )}
                   {/* Message erreur */}
                   {waNumber.length > 0 && !/^[\d\s\-]{6,}$/.test(waNumber) && (
-                    <div style={{ marginTop:5, fontSize:10, color:'var(--danger)', fontWeight:600, display:'flex', gap:4, alignItems:'center' }}>
+                    <div style={{ marginTop:5, fontSize:11, color:'var(--danger)', fontWeight:600, display:'flex', gap:4, alignItems:'center' }}>
                       <AlertTriangle size={10} /> {lang==='fr' ? 'Chiffres uniquement (ex: 77 000 00 00)' : lang==='en' ? 'Digits only (ex: 77 000 00 00)' : lang==='es' ? 'Solo dígitos (ej: 77 000 00 00)' : 'Solo cifre (es: 77 000 00 00)'}
                     </div>
                   )}
@@ -489,7 +489,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   borderRadius: 10,
                   padding: '12px',
                   fontSize: 14,
-                  fontWeight: 700,
+                  fontWeight: 'var(--fw-semibold)',
                   color: blocked ? 'var(--text3)' : '#fff',
                   cursor: blocked ? 'not-allowed' : 'pointer',
                   opacity: blocked ? 0.6 : 1,

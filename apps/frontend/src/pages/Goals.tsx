@@ -143,7 +143,7 @@ export default function Goals() {
       }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
           <div>
-            <div style={{ fontSize:14, fontWeight:700, color:'var(--text)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ fontSize:14, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:4, display:'flex', alignItems:'center', gap:6 }}>
               <Trophy size={14} style={{ color:'var(--acc)' }} />
               {lang === 'en' ? 'Monthly global score' : lang === 'es' ? 'Puntuación global del mes' : lang === 'it' ? 'Punteggio globale del mese' : 'Score global du mois'}
             </div>
@@ -245,7 +245,7 @@ export default function Goals() {
               {/* Icône + label */}
               <div style={{ textAlign:'center', marginBottom:12 }}>
                 <div style={{ fontSize:22, marginBottom:5 }}>{goal.icon}</div>
-                <div style={{ fontSize:13, fontWeight:800, color:'var(--text)', marginBottom:5 }}>
+                <div style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:5 }}>
                   {goal.label}
                 </div>
                 <div style={{ fontSize:11, color:'var(--text3)', marginBottom:8 }}>
@@ -256,7 +256,7 @@ export default function Goals() {
 
                 {/* Badge status */}
                 <span style={{
-                  fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:99,
+                  fontSize:11, fontWeight:'var(--fw-bold)', padding:'3px 10px', borderRadius:99,
                   background: status === 'success' ? 'rgba(0,208,132,.12)' : status === 'warning' ? 'rgba(240,165,0,.12)' : 'rgba(239,68,68,.1)',
                   color: statusColor,
                   border:`1px solid ${status === 'success' ? 'rgba(0,208,132,.25)' : status === 'warning' ? 'rgba(240,165,0,.2)' : 'rgba(239,68,68,.2)'}`,
@@ -286,13 +286,13 @@ export default function Goals() {
 
               {/* Période + Reste + actions */}
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:6 }}>
-                <div style={{ fontSize:10, color:'var(--text3)' }}>
+                <div style={{ fontSize:11, color:'var(--text3)' }}>
                   {lang === 'en' ? 'Target:' : lang === 'es' ? 'Objetivo:' : lang === 'it' ? 'Obiettivo:' : 'Objectif :'} {goal.period}
                 </div>
                 {pct < 100 && (
-                  <div style={{ fontSize:10, color:'var(--text3)' }}>
+                  <div style={{ fontSize:11, color:'var(--text3)' }}>
                     {lang === 'en' ? 'Left:' : lang === 'es' ? 'Queda:' : lang === 'it' ? 'Resta:' : 'Reste :'}
-                    {' '}<span style={{ color:statusColor, fontWeight:700 }}>
+                    {' '}<span style={{ color:statusColor, fontWeight:'var(--fw-semibold)' }}>
                       {isCurrency(goal.unit)
                         ? fmt(goal.target - goal.current)
                         : `${goal.target - goal.current}${goal.unit === '%' ? '%' : ' ' + unitLabel(goal.unit)}`}
@@ -318,7 +318,7 @@ export default function Goals() {
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowEditModal(false)}>
           <div className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-              <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
+              <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
                 {editGoal
                   ? <><Pencil size={14}/> {lang === 'en' ? 'Edit goal' : lang === 'es' ? 'Editar el objetivo' : lang === 'it' ? 'Modifica l\'obiettivo' : "Modifier l'objectif"}</>
                   : <><Target size={14}/> {lang === 'en' ? 'New goal' : lang === 'es' ? 'Nuevo objetivo' : lang === 'it' ? 'Nuovo obiettivo' : 'Nouvel objectif'}</>}
@@ -329,24 +329,24 @@ export default function Goals() {
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Icon' : lang === 'es' ? 'Icono' : lang === 'it' ? 'Icona' : 'Icône'}</label>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Icon' : lang === 'es' ? 'Icono' : lang === 'it' ? 'Icona' : 'Icône'}</label>
                   <input aria-label={lang === 'en' ? 'Icon' : lang === 'es' ? 'Icono' : lang === 'it' ? 'Icona' : 'Icône'} className="input" value={goalForm.icon} onChange={e => setGoalForm(f => ({...f, icon:e.target.value}))} style={{ textAlign:'center', fontSize:20 }} />
                 </div>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé'}</label>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé'}</label>
                   <input aria-label={lang === 'en' ? 'Label' : lang === 'es' ? 'Etiqueta' : lang === 'it' ? 'Etichetta' : 'Libellé'} className="input" placeholder={lang === 'en' ? 'Ex: Monthly revenue' : lang === 'es' ? 'Ej: Ingresos mensuales' : lang === 'it' ? 'Es: Ricavi mensili' : 'Ex: CA mensuel'} value={goalForm.label} onChange={e => setGoalForm(f => ({...f, label:e.target.value}))} />
                 </div>
               </div>
 
               <ResponsiveGrid min={160} gap={10}>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
                     {lang === 'en' ? 'Target' : lang === 'es' ? 'Objetivo' : lang === 'it' ? 'Obiettivo' : 'Objectif cible'}
                   </label>
                   <input className="input" type="number" value={goalForm.target || ''} onChange={e => setGoalForm(f => ({...f, target:+e.target.value}))} />
                 </div>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
                     {lang === 'en' ? 'Current value' : lang === 'es' ? 'Valor actual' : lang === 'it' ? 'Valore attuale' : 'Valeur actuelle'}
                   </label>
                   <input className="input" type="number" value={goalForm.current || ''} onChange={e => setGoalForm(f => ({...f, current:+e.target.value}))} />
@@ -355,7 +355,7 @@ export default function Goals() {
 
               <ResponsiveGrid min={160} gap={10}>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Unit' : lang === 'es' ? 'Unidad' : lang === 'it' ? 'Unità' : 'Unité'}</label>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Unit' : lang === 'es' ? 'Unidad' : lang === 'it' ? 'Unità' : 'Unité'}</label>
                   <select aria-label={lang === 'en' ? 'Unit' : lang === 'es' ? 'Unidad' : lang === 'it' ? 'Unità' : 'Unité'} className="input" value={goalForm.unit} onChange={e => setGoalForm(f => ({...f, unit:e.target.value as Goal['unit']}))}>
                     <option value="currency">{currencySymbol}</option>
                     <option value="%">%</option>
@@ -364,7 +364,7 @@ export default function Goals() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
                     {lang === 'en' ? 'Period' : lang === 'es' ? 'Período' : lang === 'it' ? 'Periodo' : 'Période'}
                   </label>
                   <input className="input" placeholder={targetMonth} value={goalForm.period} onChange={e => setGoalForm(f => ({...f, period:e.target.value}))} />

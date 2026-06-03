@@ -213,10 +213,10 @@ export default function CustomerMap({
 
         {/* Sidebar header */}
         <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid var(--border)', background: 'var(--grad-card)', flexShrink: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
             <MapPin size={14} style={{ color: 'var(--p2)' }} />
             <span>{lang === 'en' ? 'Located customers' : lang === 'es' ? 'Clientes localizados' : lang === 'it' ? 'Clienti localizzati' : 'Clients localisés'}</span>
-            <span style={{ marginLeft: 'auto', fontSize: 11, background: 'rgba(108,71,255,.15)', color: 'var(--p3)', borderRadius: 99, padding: '1px 8px', fontWeight: 800 }}>{visibleList.length}</span>
+            <span style={{ marginLeft: 'auto', fontSize: 11, background: 'rgba(108,71,255,.15)', color: 'var(--p3)', borderRadius: 99, padding: '1px 8px', fontWeight: 'var(--fw-bold)' }}>{visibleList.length}</span>
           </div>
           {/* Search */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, padding: '7px 11px', marginBottom: 8 }}>
@@ -232,7 +232,7 @@ export default function CustomerMap({
               const active = filter === f
               return (
                 <button key={f} type="button" onClick={() => setFilter(f)} style={{
-                  padding: '3px 8px', borderRadius: 99, fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+                  padding: '3px 8px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
                   border: `1px solid ${active ? (cfg?.color ?? 'var(--p2)') + '55' : 'var(--border)'}`,
                   background: active ? (cfg?.soft ?? 'var(--c-purple-bg)') : 'transparent',
                   color: active ? (cfg?.color ?? 'var(--p3)') : 'var(--text3)',
@@ -280,9 +280,9 @@ export default function CustomerMap({
                   boxShadow: isSel ? `0 4px 12px ${cfg.color}44` : 'none',
                 }}>{initials}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: isSel ? 'var(--text)' : 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{customer.name}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 5 }}>
-                    <span style={{ color: cfg.color, fontWeight: 700, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {typeLabel(customer.type, lang)}</span>
+                  <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: isSel ? 'var(--text)' : 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{customer.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 5 }}>
+                    <span style={{ color: cfg.color, fontWeight: 'var(--fw-semibold)', display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {typeLabel(customer.type, lang)}</span>
                     <span>·</span>
                     <span style={{ fontFamily: 'var(--mono)', color: isSel ? cfg.color : 'var(--text3)' }}>{totalCA >= 1000000 ? `${(totalCA / 1000000).toFixed(1)}M` : totalCA >= 1000 ? `${(totalCA / 1000).toFixed(0)}k` : fmt(totalCA)}</span>
                   </div>
@@ -308,8 +308,8 @@ export default function CustomerMap({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
                   <div style={{ width: 38, height: 38, borderRadius: 11, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff', flexShrink: 0, boxShadow: `0 6px 18px ${cfg.color}44` }}>{initials}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{selected.name}</div>
-                    <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99, background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.color}33`, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {typeLabel(selected.type, lang)}</span>
+                    <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{selected.name}</div>
+                    <span style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99, background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.color}33`, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {typeLabel(selected.type, lang)}</span>
                   </div>
                   <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} type="button" onClick={() => { setSelected(null); infoWin.current?.close() }} style={{ width: 24, height: 24, borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text3)', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={11} /></button>
                 </div>
@@ -322,13 +322,13 @@ export default function CustomerMap({
                   ].map(k => (
                     <div key={k.l} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 5px', textAlign: 'center' }}>
                       <div style={{ fontSize: 12, fontWeight: 900, color: k.c, fontFamily: 'var(--mono)' }}>{k.v}</div>
-                      <div style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginTop: 2 }}>{k.l}</div>
+                      <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginTop: 2 }}>{k.l}</div>
                     </div>
                   ))}
                 </div>
                 {/* Loyalty bar */}
                 <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
                     <span>{lang === 'en' ? 'Loyalty' : lang === 'es' ? 'Fidelidad' : lang === 'it' ? 'Fedeltà' : 'Fidélité'}</span><span style={{ color: 'var(--warn)' }}>{loyaltyPct}%</span>
                   </div>
                   <div style={{ height: 4, background: 'var(--bg3)', borderRadius: 99, overflow: 'hidden' }}>
@@ -336,7 +336,7 @@ export default function CustomerMap({
                   </div>
                 </div>
                 {selected.address && (
-                  <div style={{ fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 5, alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 5, alignItems: 'flex-start', marginBottom: 10 }}>
                     <MapPin size={10} style={{ flexShrink: 0, marginTop: 1, color: 'var(--text4)' }} />
                     <span style={{ lineHeight: 1.5 }}>{selected.address}</span>
                   </div>
@@ -344,13 +344,13 @@ export default function CustomerMap({
                 {/* Action buttons */}
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button type="button" onClick={() => onOpenDetail(selected)}
-                    style={{ flex: 1, padding: '8px 6px', background: cfg.soft, border: `1px solid ${cfg.color}44`, borderRadius: 9, cursor: 'pointer', color: cfg.color, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'opacity .15s' }}
+                    style={{ flex: 1, padding: '8px 6px', background: cfg.soft, border: `1px solid ${cfg.color}44`, borderRadius: 9, cursor: 'pointer', color: cfg.color, fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'opacity .15s' }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.8'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}>
                     <Eye size={11} /> {lang === 'en' ? 'Details' : lang === 'es' ? 'Detalle' : lang === 'it' ? 'Dettaglio' : 'Détail'}
                   </button>
                   <button type="button" onClick={() => navigate('/app/pos', { state: { customer: selected } })}
-                    style={{ flex: 1, padding: '8px 6px', background: 'rgba(0,208,132,.1)', border: '1px solid var(--c-green-border)', borderRadius: 9, cursor: 'pointer', color: 'var(--acc2)', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'opacity .15s' }}
+                    style={{ flex: 1, padding: '8px 6px', background: 'rgba(0,208,132,.1)', border: '1px solid var(--c-green-border)', borderRadius: 9, cursor: 'pointer', color: 'var(--acc2)', fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'opacity .15s' }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.8'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}>
                     <ShoppingCart size={11} /> {lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : lang === 'it' ? 'Vendita' : 'Vente'}
@@ -371,7 +371,7 @@ export default function CustomerMap({
             ].map((s, i) => (
               <div key={s.l} style={{ flex: 1, textAlign: 'center', paddingLeft: i > 0 ? 0 : 0, borderLeft: i > 0 ? '1px solid var(--border)' : 'none' }}>
                 <div style={{ fontSize: 15, fontWeight: 900, color: s.c, fontFamily: 'var(--mono)' }}>{s.v}</div>
-                <div style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text4)' }}>{s.l}</div>
+                <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text4)' }}>{s.l}</div>
               </div>
             ))}
           </div>
@@ -413,7 +413,7 @@ export default function CustomerMap({
         {!GMAPS_KEY && (
           <div style={{ position: 'absolute', inset: 0, background: 'var(--bg2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 20 }}>
             <MapPin size={44} style={{ color: 'var(--p2)' }} />
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>{lang === 'en' ? 'Google Maps not configured' : lang === 'es' ? 'Google Maps no configurado' : lang === 'it' ? 'Google Maps non configurato' : 'Google Maps non configuré'}</div>
+            <div style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{lang === 'en' ? 'Google Maps not configured' : lang === 'es' ? 'Google Maps no configurado' : lang === 'it' ? 'Google Maps non configurato' : 'Google Maps non configuré'}</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', maxWidth: 260 }}>{lang === 'en' ? 'Add VITE_GOOGLE_MAPS_KEY in Vercel → Settings → Env Variables' : lang === 'es' ? 'Agregue VITE_GOOGLE_MAPS_KEY en Vercel → Settings → Env Variables' : lang === 'it' ? 'Aggiungi VITE_GOOGLE_MAPS_KEY in Vercel → Settings → Env Variables' : 'Ajoutez VITE_GOOGLE_MAPS_KEY dans Vercel → Settings → Env Variables'}</div>
           </div>
         )}

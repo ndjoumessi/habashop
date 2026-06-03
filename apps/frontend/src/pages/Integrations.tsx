@@ -211,7 +211,7 @@ export default function Integrations() {
     }
     const c = configs[status]
     return (
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: c.bg, color: c.color }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: c.bg, color: c.color }}>
         <span style={{ width: 5, height: 5, borderRadius: '50%', background: c.dot, boxShadow: status === 'ok' ? `0 0 5px ${c.dot}` : 'none', animation: (status === 'checking' || status === 'ok') ? 'pulse 1.5s infinite' : 'none' }} />
         {status === 'checking' ? (lang === 'fr' ? 'Vérification...' : lang === 'es' ? 'Verificando...' : lang === 'it' ? 'Verifica...' : 'Checking...') : c.label}
       </span>
@@ -263,7 +263,7 @@ export default function Integrations() {
             background:'var(--acc2)',
             animation:'pulse 2s infinite',
           }} />
-          <span style={{ fontSize:12, fontWeight:700, color:'var(--acc2)' }}>
+          <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--acc2)' }}>
             {totalConnected}/{INTEGRATIONS_LIST.length} {lang === 'en' ? 'active' : lang === 'es' ? 'activas' : lang === 'it' ? 'attive' : 'actives'}
           </span>
         </div>
@@ -291,7 +291,7 @@ export default function Integrations() {
         border: `1px solid ${allOk ? 'rgba(0,208,132,.2)' : anyError ? 'rgba(255,59,92,.2)' : 'var(--border)'}`,
       }}>
         <div style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, background: allOk ? 'var(--acc2)' : anyError ? 'var(--danger)' : 'var(--acc)', boxShadow: allOk ? '0 0 8px var(--acc2)' : 'none' }} />
-        <span style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>
+        <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>
           {allOk
             ? (lang === 'fr' ? 'Tous les services opérationnels' : lang === 'es' ? 'Todos los servicios operativos' : lang === 'it' ? 'Tutti i servizi operativi' : 'All services operational')
             : anyError
@@ -335,7 +335,7 @@ export default function Integrations() {
                     <IconSvg />
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', marginBottom:5 }}>{itg.name}</div>
+                    <div style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:5 }}>{itg.name}</div>
                     <PingBadge id={itg.id} />
                   </div>
                   <button type="button" onClick={() => pingIntegration(itg.id, itg.pingUrl)}
@@ -357,8 +357,8 @@ export default function Integrations() {
                     { label: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—' },
                   ].map(stat => (
                     <div key={stat.label} style={{ background:'var(--bg3)', borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
-                      <div style={{ fontSize:12, fontWeight:800, color:'var(--text)', fontFamily:'var(--mono)' }}>{stat.value}</div>
-                      <div style={{ fontSize:9, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.4px', marginTop:2 }}>{stat.label}</div>
+                      <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)' }}>{stat.value}</div>
+                      <div style={{ fontSize:11, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.4px', marginTop:2 }}>{stat.label}</div>
                     </div>
                   ))}
                 </div>
@@ -390,7 +390,7 @@ export default function Integrations() {
                     leftIcon={<Zap size={11} />}
                     onClick={() => testConnection(itg)}
                     aria-label={`${lang === 'fr' ? 'Tester' : lang === 'es' ? 'Probar' : lang === 'it' ? 'Testa' : 'Test'} ${itg.name}`}
-                    style={{ fontSize: 11, fontWeight: 700, color: 'var(--p3)', border: '1px solid var(--p)' }}
+                    style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--p3)', border: '1px solid var(--p)' }}
                   >
                     {lang === 'fr' ? 'Tester' : lang === 'en' ? 'Test' : lang === 'es' ? 'Probar' : 'Testa'}
                   </Button>
@@ -398,7 +398,7 @@ export default function Integrations() {
                     aria-label={`${lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'} ${itg.name}`}
                     style={{
                       display:'inline-flex', alignItems:'center', gap:5, padding:'7px 12px', background:'transparent',
-                      border:'1px solid var(--border)', borderRadius:8, fontSize:11, fontWeight:700,
+                      border:'1px solid var(--border)', borderRadius:8, fontSize:11, fontWeight:'var(--fw-semibold)',
                       color:'var(--text3)', cursor:'pointer', fontFamily:'var(--font)', minHeight:32, transition:'all .15s',
                     }}
                     onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = 'var(--text)'; el.style.borderColor = 'var(--border2)' }}
@@ -427,7 +427,7 @@ export default function Integrations() {
               display:'flex', alignItems:'center', justifyContent:'center', fontSize:22,
             }}>📧</div>
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
+              <div style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
                 Resend — {lang === 'en' ? 'Transactional emails' : lang === 'es' ? 'Emails transaccionales' : lang === 'it' ? 'Email transazionali' : 'Emails transactionnels'}
               </div>
               <div style={{ fontSize:11, color:'var(--text3)', lineHeight:1.4 }}>
@@ -437,7 +437,7 @@ export default function Integrations() {
             <span style={{
               background:'rgba(0,208,132,.12)', border:'1px solid rgba(0,208,132,.25)',
               color:'var(--acc2)', borderRadius:20, padding:'3px 10px',
-              fontSize:11, fontWeight:700, flexShrink:0,
+              fontSize:11, fontWeight:'var(--fw-semibold)', flexShrink:0,
             }}>
               ✅ {lang === 'en' ? 'Active — 6 emails configured' : lang === 'es' ? 'Activo — 6 emails configurados' : lang === 'it' ? 'Attivo — 6 email configurate' : 'Actif — 6 emails configurés'}
             </span>
@@ -448,13 +448,13 @@ export default function Integrations() {
             <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
               <thead>
                 <tr style={{ background:'var(--bg4)' }}>
-                  <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:700, fontSize:10, textTransform:'uppercase' }}>
+                  <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:'var(--fw-semibold)', fontSize:11, textTransform:'uppercase' }}>
                     {lang === 'en' ? 'Trigger' : lang === 'es' ? 'Disparador' : lang === 'it' ? 'Attivazione' : 'Déclencheur'}
                   </th>
-                  <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:700, fontSize:10, textTransform:'uppercase' }}>
+                  <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:'var(--fw-semibold)', fontSize:11, textTransform:'uppercase' }}>
                     Email
                   </th>
-                  <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:700, fontSize:10, textTransform:'uppercase' }}>
+                  <th style={{ padding:'8px 12px', textAlign:'left', color:'var(--text3)', fontWeight:'var(--fw-semibold)', fontSize:11, textTransform:'uppercase' }}>
                     {lang === 'en' ? 'Timing' : lang === 'es' ? 'Plazo' : lang === 'it' ? 'Tempistica' : 'Délai'}
                   </th>
                 </tr>
@@ -489,7 +489,7 @@ export default function Integrations() {
                 padding:'10px 14px', textAlign:'center',
               }}>
                 <div style={{ fontSize:16, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>{stat.value}</div>
-                <div style={{ fontSize:10, color:'var(--text3)', marginTop:3 }}>{stat.label}</div>
+                <div style={{ fontSize:11, color:'var(--text3)', marginTop:3 }}>{stat.label}</div>
               </div>
             ))}
           </div>
@@ -507,7 +507,7 @@ export default function Integrations() {
                 background: showResendMonitor ? 'rgba(108,71,255,.08)' : 'var(--bg3)',
                 border:`1px solid ${showResendMonitor ? 'rgba(108,71,255,.2)' : 'var(--border)'}`,
                 borderRadius:10, cursor:'pointer', fontFamily:'var(--font)',
-                color:'var(--text2)', fontSize:12, fontWeight:700, transition:'all .15s ease',
+                color:'var(--text2)', fontSize:12, fontWeight:'var(--fw-semibold)', transition:'all .15s ease',
               }}
             >
               <div style={{ display:'flex', alignItems:'center', gap:7 }}>
@@ -516,7 +516,7 @@ export default function Integrations() {
                 </svg>
                 {lang === 'en' ? 'Real-time monitoring' : lang === 'es' ? 'Monitoreo en tiempo real' : lang === 'it' ? 'Monitoraggio in tempo reale' : 'Monitoring temps réel'}
                 <span style={{
-                  padding:'1px 7px', borderRadius:99, fontSize:9, fontWeight:800,
+                  padding:'1px 7px', borderRadius:99, fontSize:11, fontWeight:'var(--fw-bold)',
                   background:'rgba(0,208,132,.1)', color:'var(--acc2)',
                   border:'1px solid rgba(0,208,132,.2)', textTransform:'uppercase', letterSpacing:'.3px',
                 }}>live</span>
@@ -543,7 +543,7 @@ export default function Integrations() {
         display:'flex', alignItems:'center', gap:10, flexWrap:'wrap',
       }}>
         <div style={{ fontSize:11, color:'var(--text3)', lineHeight:1.5 }}>
-          <span style={{ color:'var(--p2)', fontWeight:700 }}>
+          <span style={{ color:'var(--p2)', fontWeight:'var(--fw-semibold)' }}>
             {lang === 'en' ? 'Note:' : lang === 'es' ? 'Nota:' : lang === 'it' ? 'Nota:' : 'Note :'}
           </span>
           {' '}{lang === 'en' ? 'Integrations marked ∞ are continuously running services (backend, database, CDN).' : lang === 'es' ? 'Las integraciones marcadas con ∞ son servicios en ejecución permanente (backend, base de datos, CDN).' : lang === 'it' ? 'Le integrazioni contrassegnate con ∞ sono servizi in esecuzione permanente (backend, database, CDN).' : 'Les intégrations marquées ∞ sont des services en cours d\'exécution permanente (backend, base de données, CDN).'}

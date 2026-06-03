@@ -226,7 +226,7 @@ export function EmpAvatar({ emp, size = 36 }: { emp: Employee; size?: number }) 
       width: size, height: size, borderRadius: '50%',
       background: `linear-gradient(135deg, ${emp.color}, ${emp.color}99)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.36, fontWeight: 800, color: '#fff', flexShrink: 0,
+      fontSize: size * 0.36, fontWeight: 'var(--fw-bold)', color: '#fff', flexShrink: 0,
       boxShadow: `0 2px 8px ${emp.color}44`,
     }}>
       {emp.avatar}
@@ -247,6 +247,6 @@ export function Stars({ v = 0 }: { v: number }) {
 }
 
 export const labelStyle: React.CSSProperties = {
-  fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+  fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase',
   letterSpacing: '.5px', color: 'var(--text3)', display: 'block', marginBottom: 6,
 }

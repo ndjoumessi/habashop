@@ -24,7 +24,7 @@ export default function DashSalesArea({ data, abbr, tooltip }: Props) {
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
         <XAxis dataKey="name" tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fontSize: 10, fill: tickColor }} axisLine={false} tickLine={false}
+        <YAxis tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false}
           tickFormatter={v => abbr(v)} />
         <Tooltip content={tooltip} cursor={{ fill: 'rgba(108,71,255,.06)', stroke: 'rgba(108,71,255,.18)', strokeWidth: 1 }} />
         <Area dataKey="ventes" stroke="#00D084" strokeWidth={2.5} fill="url(#areaGrad)" dot={false} />

@@ -40,7 +40,7 @@ const makeDonutLabel = (pcts: number[]) => ({ cx, cy, midAngle, innerRadius, out
   const y = cy + r * Math.sin(-midAngle * RADIAN)
   return (
     <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central"
-      style={{ fontSize: 11, fontWeight: 800, pointerEvents: 'none' }}>
+      style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', pointerEvents: 'none' }}>
       {`${pct}%`}
     </text>
   )
@@ -65,7 +65,7 @@ const CatTooltip = ({ active, payload }: any) => {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}/>
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{p.name}</span>
+        <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{p.name}</span>
       </div>
       <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', marginBottom: 6 }}>
         {fmt(p.value)}
@@ -93,7 +93,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       minWidth: 140,
     }}>
       {label && (
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
           {label}
         </div>
       )}
@@ -101,7 +101,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: i > 0 ? 4 : 0 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color ?? p.fill ?? 'var(--p)', flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{p.name ?? p.dataKey}</span>
-          <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--mono)' }}>
+          <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>
             {typeof p.value === 'number' ? fmt(p.value) : p.value}
           </span>
         </div>
@@ -268,7 +268,7 @@ export default function Dashboard() {
         }}>
           <div style={{ fontSize: 40 }}>🎉</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>
+            <div style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 4 }}>
               {lang === 'fr'
                 ? `Bienvenue sur HabaShop, ${user?.name?.split(' ')[0] ?? ''} !`
                 : `Welcome to HabaShop, ${user?.name?.split(' ')[0] ?? ''}!`}
@@ -309,7 +309,7 @@ export default function Dashboard() {
               {k.up !== null && (
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: 3,
-                  padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+                  padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 'var(--fw-semibold)',
                   background: k.up ? 'rgba(0,208,132,.1)' : 'rgba(255,59,92,.1)',
                   color: k.up ? 'var(--acc2)' : 'var(--danger)',
                   border: `1px solid ${k.up ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
@@ -345,7 +345,7 @@ export default function Dashboard() {
             <div style={{ width: 38, height: 38, borderRadius: 10, background: a.color, color: a.ic, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${a.ic}22` }}>
               <a.Icon size={17} />
             </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text3)', lineHeight: 1.2, textAlign: 'center' }}>{a.label}</span>
+            <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', lineHeight: 1.2, textAlign: 'center' }}>{a.label}</span>
           </button>
         ))}
       </ResponsiveGrid>
@@ -402,7 +402,7 @@ export default function Dashboard() {
               transform: 'translate(-50%,-50%)',
               textAlign: 'center', pointerEvents: 'none',
             }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 2 }}>Total CA</div>
+              <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 2 }}>Total CA</div>
               <div style={{ fontSize: 17, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>
                 {abbr(catTotal)}
               </div>
@@ -418,7 +418,7 @@ export default function Dashboard() {
                   <div style={{ width: 48, height: 4, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
                     <div style={{ width: `${pct}%`, height: '100%', background: DONUT_COLORS[i % DONUT_COLORS.length], borderRadius: 99 }} />
                   </div>
-                  <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: DONUT_COLORS[i % DONUT_COLORS.length], minWidth: 28, textAlign: 'right' }}>{pct}%</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', color: DONUT_COLORS[i % DONUT_COLORS.length], minWidth: 28, textAlign: 'right' }}>{pct}%</span>
                 </div>
               )
             })}
@@ -467,7 +467,7 @@ export default function Dashboard() {
               >
                 <Package size={13} style={{ color: red ? 'var(--danger)' : 'var(--warn)', flexShrink: 0 }} />
                 <div style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, color: red ? 'var(--danger)' : 'var(--warn)' }}>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 'var(--fw-semibold)', color: red ? 'var(--danger)' : 'var(--warn)' }}>
                   {a.stockQty}<span style={{ color: 'var(--text4)', fontWeight: 400 }}>/{a.stockMin}</span>
                 </span>
               </div>
@@ -505,7 +505,7 @@ export default function Dashboard() {
                   <ActivityIcon type="sale" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : lang === 'it' ? 'Vendita' : 'Vente'} #{String(a.id ?? '').slice(-6).toUpperCase()}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>
@@ -538,10 +538,10 @@ export default function Dashboard() {
                     width: 22, height: 22, borderRadius: 6, flexShrink: 0,
                     background: `${color}22`, border: `1px solid ${color}44`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 900, color,
+                    fontSize: 11, fontWeight: 900, color,
                   }}>{i + 1}</div>
                   <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, color }}>{fmt(p.ca ?? 0)}</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 'var(--fw-semibold)', color }}>{fmt(p.ca ?? 0)}</span>
                 </div>
                 <div style={{ height: 5, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width .4s var(--ease)' }} />

@@ -50,7 +50,7 @@ export default function POSCashierClosed({
         </p>
         <div style={{ marginBottom:20, textAlign:'left' }}>
           <label style={{
-            display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase',
+            display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase',
             letterSpacing:'.5px', color:'var(--text3)', marginBottom:6,
           }}>{ct.fund_label}</label>
           <div style={{ position:'relative' }}>
@@ -64,7 +64,7 @@ export default function POSCashierClosed({
             />
             <span style={{
               position:'absolute', right:12, top:'50%', transform:'translateY(-50%)',
-              fontSize:12, fontWeight:700, color:'var(--text3)',
+              fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text3)',
             }}>{currencySymbol}</span>
           </div>
           {openingFundInput && (
@@ -83,7 +83,7 @@ export default function POSCashierClosed({
             width:36, height:36, borderRadius:'50%',
             background:'linear-gradient(135deg,var(--p),var(--p2))',
             display:'flex', alignItems:'center', justifyContent:'center',
-            color:'#fff', fontSize:14, fontWeight:800, flexShrink:0,
+            color:'#fff', fontSize:14, fontWeight:'var(--fw-bold)', flexShrink:0,
           }}>{cashierInitial}</div>
           <div>
             <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{cashierName}</div>
@@ -98,7 +98,7 @@ export default function POSCashierClosed({
             width:'100%',
             background:'linear-gradient(135deg,var(--p),var(--p2))',
             border:'none', borderRadius:12, padding:'14px',
-            fontSize:15, fontWeight:800, color:'#fff',
+            fontSize:15, fontWeight:'var(--fw-bold)', color:'#fff',
             cursor:'pointer', fontFamily:'var(--font)',
             boxShadow:'0 6px 20px rgba(91,78,232,.4)',
             display:'flex', alignItems:'center', justifyContent:'center', gap:8,

@@ -153,7 +153,7 @@ export default function SectionSecurity() {
               border: '1px solid var(--border)',
               cursor: 'pointer', fontFamily: 'var(--font)',
               color: 'var(--text)',
-              fontSize: 12, fontWeight: 700, transition: 'all .15s', flexShrink: 0,
+              fontSize: 12, fontWeight: 'var(--fw-semibold)', transition: 'all .15s', flexShrink: 0,
             }}>
             {locked ? i('Déverrouiller', 'Unlock', 'Desbloquear', 'Sblocca') : i('Verrouiller', 'Lock', 'Bloquear', 'Blocca')}
           </button>
@@ -175,10 +175,10 @@ export default function SectionSecurity() {
               </div>
               <div style={{ fontSize: 13, color: 'var(--text3)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 <span>{i('Expire le', 'Expires on', 'Expira el', 'Scade il')} {tokenInfo.exp}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: jwtStatus.color, background: `color-mix(in srgb, ${jwtStatus.color} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${jwtStatus.color} 30%, transparent)`, borderRadius: 99, padding: '2px 10px', whiteSpace: 'nowrap' }}>{jwtStatus.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: jwtStatus.color, background: `color-mix(in srgb, ${jwtStatus.color} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${jwtStatus.color} 30%, transparent)`, borderRadius: 99, padding: '2px 10px', whiteSpace: 'nowrap' }}>{jwtStatus.label}</span>
               </div>
               {jwtStatus.suggest && (
-                <div style={{ fontSize: 10, color: 'var(--danger)', marginTop: 4, fontStyle: 'italic' }}>
+                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4, fontStyle: 'italic' }}>
                   {jwtStatus.suggest}
                 </div>
               )}
@@ -187,7 +187,7 @@ export default function SectionSecurity() {
               onClick={handleLogout}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.2)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.1)' }}
-              style={{ padding: '8px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer', borderRadius: 10, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.2)', color: '#EF4444', fontFamily: 'var(--font)', transition: 'background .15s', flexShrink: 0 }}>
+              style={{ padding: '8px 14px', fontSize: 11, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', borderRadius: 10, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.2)', color: '#EF4444', fontFamily: 'var(--font)', transition: 'background .15s', flexShrink: 0 }}>
               {i('Déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}
             </button>
           </div>

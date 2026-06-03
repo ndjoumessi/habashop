@@ -37,7 +37,7 @@ export default function PlanningFilters({ lang, filterDept, setFilterDept, filte
         ))}
       </select>
       <div style={{
-        marginLeft:'auto', fontSize:10,
+        marginLeft:'auto', fontSize:11,
         color:'var(--text3)', fontStyle:'italic',
       }}>
         <Info size={11}/> {T.assignTip} · {T.clearTip}

@@ -103,12 +103,12 @@ export default function ExpensesJournal(props: Props) {
                   <td className="td-mono text-xs">{e.date}</td>
                   <td>
                     <div className="td-bold text-xs">{e.label}</div>
-                    {e.recurrent && <div style={{ fontSize:10, color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> {tr('Récurrent','Recurring','Recurrente','Ricorrente')}</div>}
+                    {e.recurrent && <div style={{ fontSize:11, color:'var(--p2)', marginTop:2, display:'flex', alignItems:'center', gap:3 }}><RefreshCw size={9}/> {tr('Récurrent','Recurring','Recurrente','Ricorrente')}</div>}
                   </td>
                   <td><CatPill cat={e.category} lang={lang} /></td>
                   <td className="td-num text-sm">{fmt(e.amount)}</td>
                   <td style={{ fontSize:12, color:'var(--text3)' }}>{e.vat} %</td>
-                  <td className="td-num text-sm" style={{ color:'var(--acc2)', fontWeight:700 }}>{fmt(ttcAmount(e))}</td>
+                  <td className="td-num text-sm" style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)' }}>{fmt(ttcAmount(e))}</td>
                   <td>
                     <span className="badge badge-gray">{e.mode}</span>
                   </td>
@@ -120,7 +120,7 @@ export default function ExpensesJournal(props: Props) {
                   <td>
                     <span style={{
                       display:'inline-flex', alignItems:'center', gap:4,
-                      padding:'3px 9px', borderRadius:20, fontSize:11, fontWeight:700,
+                      padding:'3px 9px', borderRadius:20, fontSize:11, fontWeight:'var(--fw-semibold)',
                       background: e.status === 'PAYÉ' ? 'rgba(14,196,126,.15)' : 'rgba(240,165,0,.15)',
                       color:       e.status === 'PAYÉ' ? 'var(--acc2)'         : 'var(--acc)',
                       border:      e.status === 'PAYÉ' ? '1px solid rgba(14,196,126,.3)' : '1px solid rgba(240,165,0,.3)',

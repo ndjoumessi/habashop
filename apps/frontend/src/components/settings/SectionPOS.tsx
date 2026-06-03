@@ -117,14 +117,14 @@ export default function SectionPOS() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,149,0,.12)', border: '1px solid rgba(255,149,0,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📊</div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{i('Taux de TVA', 'VAT Rate', 'Tasa IVA', 'Aliquota IVA')}</div>
+                <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Taux de TVA', 'VAT Rate', 'Tasa IVA', 'Aliquota IVA')}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Appliqué sur les ventes POS', 'Applied on POS sales', 'Aplicado en ventas TPV', 'Applicato sulle vendite POS')}</div>
               </div>
             </div>
             {editMode ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="number" min={0} max={100} step={0.5} className="input" style={{ width: 80, textAlign: 'right' }} value={draft.posTaxRate} onChange={e => setDraft(p => ({ ...p, posTaxRate: Math.max(0, Math.min(100, +e.target.value)) }))} />
-                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--acc)', width: 20 }}>%</span>
+                <span style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--acc)', width: 20 }}>%</span>
               </div>
             ) : (
               <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{cfg.posTaxRate}%</div>
@@ -136,14 +136,14 @@ export default function SectionPOS() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💵</div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{i('Fond de caisse', 'Opening fund', 'Fondo de caja', 'Fondo cassa')}</div>
+                <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Fond de caisse', 'Opening fund', 'Fondo de caja', 'Fondo cassa')}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Montant initial en caisse', 'Initial cash amount', 'Monto inicial en caja', 'Importo iniziale in cassa')}</div>
               </div>
             </div>
             {editMode ? (
               <div style={{ position: 'relative' }}>
                 <input type="number" min={0} step={1} className="input" style={{ width: 150, textAlign: 'right', paddingRight: 44 }} value={fundInput} onChange={e => setFundInput(e.target.value)} />
-                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', fontSize: 11, pointerEvents: 'none', fontWeight: 700 }}>{symbol}</span>
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', fontSize: 11, pointerEvents: 'none', fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
               </div>
             ) : (
               <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(cfg.posDefaultFund)}</div>

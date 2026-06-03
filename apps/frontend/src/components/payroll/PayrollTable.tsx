@@ -78,7 +78,7 @@ export default function PayrollTable(props: Props) {
                     </td>
                     <td>
                       {r.absences > 0
-                        ? <span style={{ fontSize:12, fontWeight:700, color:'var(--danger)' }}>{r.absences}j</span>
+                        ? <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--danger)' }}>{r.absences}j</span>
                         : <span style={{ fontSize:12, color:'var(--text3)' }}>0</span>
                       }
                     </td>

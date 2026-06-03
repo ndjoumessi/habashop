@@ -72,7 +72,7 @@ export default function Tabs<T extends string = string>({
               color: on ? 'var(--p2)' : 'var(--text3)',
             } : {
               display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
-              padding: '7px 16px', borderRadius: 99, fontSize: 13, fontWeight: 700,
+              padding: '7px 16px', borderRadius: 99, fontSize: 13, fontWeight: 'var(--fw-semibold)',
               fontFamily: 'var(--font)', cursor: 'pointer', transition: 'all .15s',
               background: on ? 'var(--p)' : 'var(--card)',
               color: on ? '#fff' : 'var(--text2)',

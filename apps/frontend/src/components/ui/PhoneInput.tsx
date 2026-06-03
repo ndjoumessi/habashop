@@ -113,7 +113,7 @@ export default function PhoneInput({
       >
         <span style={{ fontSize:16 }}>{selectedCode.flag}</span>
         <span style={{ fontWeight:600 }}>{selectedCode.code}</span>
-        <span style={{ fontSize:10, color:'var(--text3)' }}>▼</span>
+        <span style={{ fontSize:11, color:'var(--text3)' }}>▼</span>
       </button>
 
       {/* Input numéro */}
@@ -199,7 +199,7 @@ export default function PhoneInput({
                 <span style={{ fontSize:18, flexShrink:0 }}>{c.flag}</span>
                 <span style={{ flex:1 }}>{c.country}</span>
                 <span style={{
-                  fontSize:12, fontWeight:700,
+                  fontSize:12, fontWeight:'var(--fw-semibold)',
                   color:'var(--p2)', fontFamily:'var(--mono)',
                 }}>{c.code}</span>
               </button>

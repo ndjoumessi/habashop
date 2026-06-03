@@ -64,7 +64,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8 }}>
                 <button type="button"
                   onClick={() => empEditMode && setEditEmpForm((f:any) => ({ ...f, isActive:!f.isActive }))}
-                  style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 12px', borderRadius:99, border:'none', cursor: empEditMode ? 'pointer' : 'default', fontSize:11, fontWeight:700, fontFamily:'var(--font)', background: editEmpForm.isActive?'rgba(0,208,132,.15)':'rgba(255,59,92,.15)', color: editEmpForm.isActive?'var(--acc2)':'var(--danger)', transition:'all .15s' }}>
+                  style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 12px', borderRadius:99, border:'none', cursor: empEditMode ? 'pointer' : 'default', fontSize:11, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', background: editEmpForm.isActive?'rgba(0,208,132,.15)':'rgba(255,59,92,.15)', color: editEmpForm.isActive?'var(--acc2)':'var(--danger)', transition:'all .15s' }}>
                   <div style={{ width:6, height:6, borderRadius:'50%', background: editEmpForm.isActive?'var(--acc2)':'var(--danger)', boxShadow: editEmpForm.isActive?'0 0 6px var(--acc2)':'0 0 6px var(--danger)' }} />
                   {editEmpForm.isActive ? (lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Employé actif') : (lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')}
                 </button>
@@ -96,7 +96,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
 
           {/* Identité */}
           <div style={{ marginBottom:20 }}>
-            <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
               <div style={{ width:16, height:16, borderRadius:4, background:`${editEmpForm.color??'var(--p)'}22`, display:'flex', alignItems:'center', justifyContent:'center', color:editEmpForm.color??'var(--p)' }}><User size={10}/></div>
               {lang === 'en' ? 'IDENTITY' : lang === 'es' ? 'IDENTIDAD' : lang === 'it' ? 'IDENTITÀ' : 'IDENTITÉ'}
             </div>
@@ -115,7 +115,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
 
           {/* Contrat */}
           <div style={{ marginBottom:20 }}>
-            <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
               <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,149,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc)' }}><FileText size={10}/></div>
               {lang === 'en' ? 'CONTRACT' : lang === 'es' ? 'CONTRATO' : lang === 'it' ? 'CONTRATTO' : 'CONTRAT'}
             </div>
@@ -149,7 +149,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
 
           {/* Rémunération */}
           <div style={{ marginBottom:20 }}>
-            <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
               <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,208,132,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc2)' }}><DollarSign size={10}/></div>
               {lang === 'en' ? 'COMPENSATION' : lang === 'es' ? 'REMUNERACIÓN' : lang === 'it' ? 'RETRIBUZIONE' : 'RÉMUNÉRATION'}
             </div>
@@ -163,7 +163,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                   value={salaryInput}
                   onChange={e => setSalaryInput(e.target.value)}
                   style={{ paddingRight:60 }} />
-                <span style={{ position:'absolute', right:12, bottom:10, fontSize:11, fontWeight:700, color:'var(--text3)', pointerEvents:'none' }}>
+                <span style={{ position:'absolute', right:12, bottom:10, fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)', pointerEvents:'none' }}>
                   {currencySymbol}
                 </span>
               </div>
@@ -185,7 +185,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
 
           {/* Contact */}
           <div style={{ marginBottom:20 }}>
-            <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
               <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,184,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc3)' }}><User size={10}/></div>
               {lang === 'en' ? 'CONTACT' : lang === 'es' ? 'CONTACTO' : lang === 'it' ? 'CONTATTO' : 'CONTACT'}
             </div>
@@ -214,7 +214,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 </div>
               ) : (
                 <div style={{ gridColumn:'1/-1' }}>
-                  <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>
                     {lang === 'en' ? 'ADDRESS' : lang === 'es' ? 'DIRECCIÓN' : lang === 'it' ? 'INDIRIZZO' : 'ADRESSE'}
                   </label>
                   <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, color:'var(--text2)', minHeight:40, display:'flex', alignItems:'center', gap:8 }}>
@@ -233,7 +233,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
 
           {/* Performance */}
           <div style={{ marginBottom:20 }}>
-            <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
               <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,184,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--warn)' }}><Star size={10}/></div>
               {lang === 'en' ? 'PERFORMANCE' : lang === 'es' ? 'RENDIMIENTO' : lang === 'it' ? 'PRESTAZIONE' : 'PERFORMANCE'}
             </div>
@@ -260,7 +260,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
           {/* Couleur avatar — visible uniquement en édition */}
           {empEditMode && (
             <div>
-              <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+              <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
                 <div style={{ width:16, height:16, borderRadius:4, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--p2)' }}><Pencil size={10}/></div>
                 {lang === 'en' ? 'AVATAR COLOR' : lang === 'es' ? 'COLOR AVATAR' : lang === 'it' ? 'COLORE AVATAR' : 'COULEUR AVATAR'}
               </div>
@@ -280,7 +280,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
           {!empEditMode ? (
             <>
               <button onClick={() => setEmpEditMode(true)}
-                style={{ flex:1, padding:'12px', background:'linear-gradient(135deg,var(--p),var(--p2))', border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'var(--sh-p)' }}>
+                style={{ flex:1, padding:'12px', background:'linear-gradient(135deg,var(--p),var(--p2))', border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:'var(--fw-bold)', cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'var(--sh-p)' }}>
                 ✏️ {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
               </button>
               <button onClick={() => setShowEditEmpModal(false)}
@@ -310,7 +310,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                   setEmpEditMode(false)
                   setShowEditEmpModal(false)
                 }}
-                style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                style={{ flex:1, padding:'12px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}BB)`, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:'var(--fw-bold)', cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
                 ✅ {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Sauvegarder'}
               </button>
               <button onClick={() => { openEditModal(selectedEmp!) }}

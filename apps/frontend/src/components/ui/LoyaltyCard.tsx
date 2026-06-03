@@ -65,7 +65,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
       <div className="modal-box" style={{ maxWidth: 420 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>🎁 {i('Carte Fidélité', 'Loyalty Card', 'Tarjeta Fidelidad', 'Carta Fedeltà')}</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>🎁 {i('Carte Fidélité', 'Loyalty Card', 'Tarjeta Fidelidad', 'Carta Fedeltà')}</h3>
           <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={14} />} onClick={onClose} variant="surface" />
         </div>
 
@@ -128,9 +128,9 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
                 <span style={{ fontSize: 36, fontWeight: 900, color: cfg.color, fontFamily: 'var(--mono)', letterSpacing: '-2px' }}>
                   {points.toLocaleString()}
                 </span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text2)' }}>pts</span>
+                <span style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)' }}>pts</span>
                 <span style={{
-                  marginLeft: 8, fontSize: 12, fontWeight: 800, padding: '3px 10px',
+                  marginLeft: 8, fontSize: 12, fontWeight: 'var(--fw-bold)', padding: '3px 10px',
                   background: cfg.bg, border: `1px solid ${cfg.border}`,
                   borderRadius: 20, color: cfg.color,
                 }}>
@@ -153,7 +153,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
                 </>
               )}
               {!nextThreshold && (
-                <div style={{ fontSize: 12, color: cfg.color, fontWeight: 700 }}>
+                <div style={{ fontSize: 12, color: cfg.color, fontWeight: 'var(--fw-semibold)' }}>
                   🎉 {i('Niveau maximum atteint !', 'Maximum level reached!', '¡Nivel máximo alcanzado!', 'Livello massimo raggiunto!')}
                 </div>
               )}
@@ -163,7 +163,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
 
         {/* Avantages tier */}
         <div style={{ background: 'var(--bg3)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
             {i('Avantages', 'Benefits', 'Ventajas', 'Vantaggi')} {tier}
           </div>
           {tier === 'Bronze' && (

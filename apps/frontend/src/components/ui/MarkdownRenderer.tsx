@@ -45,7 +45,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
     if (line.startsWith('## ')) {
       elements.push(
         <h2 key={i} style={{
-          fontSize: 17, fontWeight: 800,
+          fontSize: 17, fontWeight: 'var(--fw-bold)',
           color: 'var(--p3)', margin: '20px 0 8px',
           display: 'flex', alignItems: 'center', gap: 8,
           letterSpacing: '-.2px',
@@ -59,7 +59,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
     if (line.startsWith('### ')) {
       elements.push(
         <h3 key={i} style={{
-          fontSize: 14, fontWeight: 800,
+          fontSize: 14, fontWeight: 'var(--fw-bold)',
           color: 'var(--acc)', margin: '16px 0 6px',
         }}>
           {renderInline(line.slice(4))}
@@ -134,7 +134,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
             }}>
               <span style={{
                 color: 'var(--p2)', flexShrink: 0,
-                marginTop: 2, fontSize: 10,
+                marginTop: 2, fontSize: 11,
               }}>▶</span>
               <span style={{ color: 'var(--text2)', lineHeight: 1.6 }}>
                 {renderInline(item)}
@@ -166,7 +166,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
               <span style={{
                 width: 22, height: 22, borderRadius: '50%',
                 background: 'var(--p)',
-                color: '#fff', fontSize: 11, fontWeight: 800,
+                color: '#fff', fontSize: 11, fontWeight: 'var(--fw-bold)',
                 display: 'flex', alignItems: 'center',
                 justifyContent: 'center', flexShrink: 0,
                 marginTop: 1,
@@ -263,7 +263,7 @@ function MarkdownTable({ lines }: { lines: string[] }) {
             {headers.map((h, i) => (
               <th key={i} style={{
                 padding: '9px 12px', textAlign: 'left',
-                fontSize: 10, fontWeight: 800,
+                fontSize: 11, fontWeight: 'var(--fw-bold)',
                 textTransform: 'uppercase', letterSpacing: '.6px',
                 color: 'var(--text3)',
                 borderBottom: '1px solid var(--border)',
@@ -311,7 +311,7 @@ function renderInline(text: string): React.ReactNode {
 
     if (match[2]) {
       parts.push(
-        <strong key={match.index} style={{ color: 'var(--text)', fontWeight: 800 }}>
+        <strong key={match.index} style={{ color: 'var(--text)', fontWeight: 'var(--fw-bold)' }}>
           {match[2]}
         </strong>
       )

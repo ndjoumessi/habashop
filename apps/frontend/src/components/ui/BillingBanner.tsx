@@ -46,7 +46,7 @@ export default function BillingBanner() {
         <span>🔒</span>
         <span>{i('Votre essai gratuit est expiré. Choisissez un plan pour continuer.', 'Your free trial has expired. Choose a plan to continue.', 'Tu prueba gratuita ha expirado. Elige un plan para continuar.', 'La tua prova gratuita è scaduta. Scegli un piano per continuare.')}</span>
       </div>
-      <button onClick={() => navigate('/app/upgrade')} style={{ padding: '8px 18px', borderRadius: 10, background: 'linear-gradient(135deg,#FF3B5C,#FF6B6B)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 800, fontFamily: 'var(--font)', boxShadow: '0 4px 12px rgba(255,59,92,.35)', flexShrink: 0 }}>{i('Choisir un plan →', 'Choose a plan →', 'Elegir plan →', 'Scegli piano →')}</button>
+      <button onClick={() => navigate('/app/upgrade')} style={{ padding: '8px 18px', borderRadius: 10, background: 'linear-gradient(135deg,#FF3B5C,#FF6B6B)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)', boxShadow: '0 4px 12px rgba(255,59,92,.35)', flexShrink: 0 }}>{i('Choisir un plan →', 'Choose a plan →', 'Elegir plan →', 'Scegli piano →')}</button>
     </div>
   )
 
@@ -62,7 +62,7 @@ export default function BillingBanner() {
           : i(`${status.trialDaysLeft} jour(s) d'essai restant(s)`, `${status.trialDaysLeft} trial day(s) left`, `${status.trialDaysLeft} día(s) de prueba restante(s)`, `${status.trialDaysLeft} giorno/i di prova rimasti`)}</span>
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button onClick={() => navigate('/app/upgrade')} style={{ padding: '7px 16px', borderRadius: 10, background: isUrgent ? 'linear-gradient(135deg,#FF3B5C,#FF6B6B)' : 'linear-gradient(135deg,#FFB800,#FF9500)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 800, fontFamily: 'var(--font)', flexShrink: 0 }}>⚡ {i('Passer au Pro', 'Upgrade to Pro', 'Pasarse a Pro', 'Passa a Pro')}</button>
+        <button onClick={() => navigate('/app/upgrade')} style={{ padding: '7px 16px', borderRadius: 10, background: isUrgent ? 'linear-gradient(135deg,#FF3B5C,#FF6B6B)' : 'linear-gradient(135deg,#FFB800,#FF9500)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)', flexShrink: 0 }}>⚡ {i('Passer au Pro', 'Upgrade to Pro', 'Pasarse a Pro', 'Passa a Pro')}</button>
         <button type="button" onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 16 }}>✕</button>
       </div>
     </div>

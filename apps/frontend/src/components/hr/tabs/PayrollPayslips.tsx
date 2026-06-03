@@ -16,7 +16,7 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
       <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-        <label style={{ fontSize:12, fontWeight:700, color:'var(--text3)' }}>
+        <label style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text3)' }}>
           {lang === 'en' ? 'Period:' : lang === 'es' ? 'Período:' : lang === 'it' ? 'Periodo:' : 'Période :'}
         </label>
         <input className="input" type="month"
@@ -45,10 +45,10 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
                   {emp.avatar ?? '??'}
                 </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>{emp.name}</div>
+                  <div style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>{emp.name}</div>
                   <div style={{ fontSize:11, color:'var(--text3)' }}>{roleLabel(emp.role, lang)} · {deptLabel(emp.dept, lang)}</div>
                 </div>
-                <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', background:'rgba(0,208,132,.1)', color:'var(--acc2)', border:'1px solid rgba(0,208,132,.2)', borderRadius:20, padding:'2px 8px' }}>
+                <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', background:'rgba(0,208,132,.1)', color:'var(--acc2)', border:'1px solid rgba(0,208,132,.2)', borderRadius:20, padding:'2px 8px' }}>
                   {new Date(payrollMonth+'-01').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', {month:'short', year:'numeric'})}
                 </div>
               </div>
@@ -68,7 +68,7 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
               </div>
 
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'rgba(0,208,132,.06)', border:'1px solid var(--c-green-bg)', borderRadius:10, marginBottom:12 }}>
-                <span style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>
+                <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
                   {lang === 'en' ? 'NET TO PAY' : lang === 'es' ? 'NETO A PAGAR' : lang === 'it' ? 'NETTO DA PAGARE' : 'NET À PAYER'}
                 </span>
                 <span style={{ fontSize:20, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>

@@ -30,11 +30,11 @@ export default function CustomersStats({ customers, fmt, lang, i, setViewCustome
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{typeLabel(type, lang)}</span>
+                        <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{typeLabel(type, lang)}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
                         <span style={{ color: 'var(--text3)' }}>{count} client{count > 1 ? 's' : ''}</span>
-                        <span style={{ color, fontWeight: 700, fontFamily: 'var(--mono)' }}>{fmt(ca)}</span>
+                        <span style={{ color, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)' }}>{fmt(ca)}</span>
                         <span style={{ color: 'var(--text2)', fontWeight: 600, minWidth: 32, textAlign: 'right' }}>{pct}%</span>
                       </div>
                     </div>
@@ -89,10 +89,10 @@ export default function CustomersStats({ customers, fmt, lang, i, setViewCustome
                         {initials}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                        <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
                         <div style={{ fontSize: 11, color: 'var(--text3)' }}>{typeLabel(c.type, lang)} · {c.loyaltyPoints} pts</div>
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: cfg.color, fontFamily: 'var(--mono)', flexShrink: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: cfg.color, fontFamily: 'var(--mono)', flexShrink: 0 }}>
                         {fmt(c.totalCA ?? 0)}
                       </div>
                     </div>

@@ -542,7 +542,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               {lang === 'en' ? 'Leaves' : lang === 'es' ? 'Permisos' : lang === 'it' ? 'Ferie' : 'Congés'}
               {pendingLeaves > 0 && (
-                <span style={{ fontSize: 10, fontWeight: 800, background: 'var(--acc)', color: '#000', borderRadius: 20, padding: '1px 6px', lineHeight: 1.5 }}>{pendingLeaves}</span>
+                <span style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', background: 'var(--acc)', color: '#000', borderRadius: 20, padding: '1px 6px', lineHeight: 1.5 }}>{pendingLeaves}</span>
               )}
             </span>
           ) },

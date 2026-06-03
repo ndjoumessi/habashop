@@ -24,7 +24,7 @@ export default function PlanningStats({ lang, stats }: Props) {
             <span style={{ color:s.color, display:'flex', fontSize:20 }}>{s.icon}</span>
             <div>
               <div style={{
-                fontSize:9,fontWeight:700,
+                fontSize:11,fontWeight:'var(--fw-semibold)',
                 textTransform:'uppercase',
                 color:'var(--text3)',
               }}>{shiftLabel(key, lang)}</div>

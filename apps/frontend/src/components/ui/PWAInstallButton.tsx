@@ -78,7 +78,7 @@ export default function PWAInstallButton() {
       }}>H</div>
 
       <div style={{ flex:1 }}>
-        <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', marginBottom:2 }}>{tx.title}</div>
+        <div style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:2 }}>{tx.title}</div>
         <div style={{ fontSize:12, color:'var(--text3)' }}>{tx.desc}</div>
       </div>
 
@@ -86,7 +86,7 @@ export default function PWAInstallButton() {
         <button onClick={handleInstall} style={{
           background:'linear-gradient(135deg,var(--p),var(--p2))',
           border:'none', borderRadius:9, padding:'7px 16px',
-          fontSize:12, fontWeight:700, color:'#fff',
+          fontSize:12, fontWeight:'var(--fw-semibold)', color:'#fff',
           cursor:'pointer', fontFamily:'var(--font)', whiteSpace:'nowrap',
         }}>{tx.btn}</button>
         <button onClick={() => { localStorage.setItem(DISMISS_KEY, Date.now().toString()); setShowBanner(false) }} style={{

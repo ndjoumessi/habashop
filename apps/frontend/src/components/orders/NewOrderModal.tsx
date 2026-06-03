@@ -79,10 +79,10 @@ export default function NewOrderModal({
                 border: `2px solid ${orderType === 'client' ? 'rgba(108,71,255,.4)' : 'var(--border)'}`,
               }}>
               <Users size={22} style={{ color: orderType === 'client' ? 'var(--p3)' : 'var(--text3)' }}/>
-              <span style={{ fontSize: 13, fontWeight: 700, color: orderType === 'client' ? 'var(--p3)' : 'var(--text2)' }}>
+              <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: orderType === 'client' ? 'var(--p3)' : 'var(--text2)' }}>
                 {i('Commande client', 'Customer order', 'Pedido cliente', 'Ordine cliente')}
               </span>
-              <span style={{ fontSize: 10, color: 'var(--text3)' }}>
+              <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                 {i('Vente à un client', 'Sale to customer', 'Venta a un cliente', 'Vendita a un cliente')}
               </span>
             </button>
@@ -95,10 +95,10 @@ export default function NewOrderModal({
                 border: `2px solid ${orderType === 'supplier' ? 'rgba(240,165,0,.35)' : 'var(--border)'}`,
               }}>
               <Truck size={22} style={{ color: orderType === 'supplier' ? 'var(--acc)' : 'var(--text3)' }}/>
-              <span style={{ fontSize: 13, fontWeight: 700, color: orderType === 'supplier' ? 'var(--acc)' : 'var(--text2)' }}>
+              <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: orderType === 'supplier' ? 'var(--acc)' : 'var(--text2)' }}>
                 {i('Bon de commande', 'Purchase order', 'Orden de compra', 'Ordine acquisto')}
               </span>
-              <span style={{ fontSize: 10, color: 'var(--text3)' }}>
+              <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                 {i('Achat chez fournisseur', 'Order from supplier', 'Compra a proveedor', 'Acquisto da fornitore')}
               </span>
             </button>
@@ -107,7 +107,7 @@ export default function NewOrderModal({
           {/* Formulaire client OU sélecteur fournisseur */}
           {orderType === 'client' ? (
             <div style={{ position: 'relative' }}>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
                 {i('NOM CLIENT *', 'CLIENT NAME *', 'NOMBRE CLIENTE *', 'NOME CLIENTE *')}
               </label>
 
@@ -157,8 +157,8 @@ export default function NewOrderModal({
                       {selectedClient.name[0]}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--acc2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display:'flex', alignItems:'center', gap:4 }}><CheckCircle size={12}/> {selectedClient.name}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display:'flex', alignItems:'center', gap:4 }}><CheckCircle size={12}/> {selectedClient.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 8 }}>
                         {selectedClient.phone && <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Phone size={10}/> {selectedClient.phone}</span>}
                         {selectedClient.type && <span>· {selectedClient.type}</span>}
                       </div>
@@ -170,7 +170,7 @@ export default function NewOrderModal({
               {/* Dropdown suggestions */}
               {showClientDropdown && clientSuggestions.length > 0 && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
-                  <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', display: 'flex', justifyContent: 'space-between' }}>
                     <span>{i('CLIENTS EXISTANTS', 'EXISTING CLIENTS', 'CLIENTES EXISTENTES', 'CLIENTI ESISTENTI')}</span>
                     <span>{clientSuggestions.length} {i('résultat', 'result', 'resultado', 'risultato')}{clientSuggestions.length > 1 ? 's' : ''}</span>
                   </div>
@@ -191,13 +191,13 @@ export default function NewOrderModal({
                           {customer.name[0].toUpperCase()}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customer.name}</div>
-                          <div style={{ fontSize: 10, color: 'var(--text3)', display: 'flex', gap: 8, marginTop: 1, alignItems: 'center' }}>
+                          <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customer.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 8, marginTop: 1, alignItems: 'center' }}>
                             {customer.phone && <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Phone size={10}/> {customer.phone}</span>}
-                            {customer.type && <span style={{ padding: '1px 6px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: bgAlpha, color }}>{customer.type}</span>}
+                            {customer.type && <span style={{ padding: '1px 6px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: bgAlpha, color }}>{customer.type}</span>}
                           </div>
                         </div>
-                        {customer.totalCA > 0 && <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--acc)', fontWeight: 700, flexShrink: 0 }}>{fmt(customer.totalCA)}</div>}
+                        {customer.totalCA > 0 && <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--acc)', fontWeight: 'var(--fw-semibold)', flexShrink: 0 }}>{fmt(customer.totalCA)}</div>}
                       </button>
                     )
                   })}
@@ -209,10 +209,10 @@ export default function NewOrderModal({
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.06)'}>
                     <div style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(108,71,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Plus size={16} style={{ color:'var(--p3)' }}/></div>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p3)' }}>
+                      <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--p3)' }}>
                         {i(`Nouveau client "${newOrderForm.clientName || '…'}"`, `New client "${newOrderForm.clientName || '…'}"`, `Nuevo cliente "${newOrderForm.clientName || '…'}"`, `Nuovo cliente "${newOrderForm.clientName || '…'}"`)}
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>{i('Créer et continuer', 'Create and continue', 'Crear y continuar', 'Crea e continua')}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Créer et continuer', 'Create and continue', 'Crear y continuar', 'Crea e continua')}</div>
                     </div>
                   </button>
                 </div>
@@ -225,8 +225,8 @@ export default function NewOrderModal({
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>
                     <Plus size={20} style={{ color:'var(--p3)' }}/>
                     <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p3)' }}>{i(`Créer "${newOrderForm.clientName}"`, `Create "${newOrderForm.clientName}"`, `Crear "${newOrderForm.clientName}"`, `Creare "${newOrderForm.clientName}"`)}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>{i('Nouveau client — pas encore enregistré', 'New client — not yet registered', 'Nuevo cliente — aún no registrado', 'Nuovo cliente — non ancora registrato')}</div>
+                      <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--p3)' }}>{i(`Créer "${newOrderForm.clientName}"`, `Create "${newOrderForm.clientName}"`, `Crear "${newOrderForm.clientName}"`, `Creare "${newOrderForm.clientName}"`)}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Nouveau client — pas encore enregistré', 'New client — not yet registered', 'Nuevo cliente — aún no registrado', 'Nuovo cliente — non ancora registrato')}</div>
                     </div>
                   </button>
                 </div>
@@ -234,7 +234,7 @@ export default function NewOrderModal({
             </div>
           ) : (
             <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
                 {i('FOURNISSEUR *', 'SUPPLIER *', 'PROVEEDOR *', 'FORNITORE *')}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
@@ -255,7 +255,7 @@ export default function NewOrderModal({
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}><Truck size={18} style={{ color: isSel ? 'var(--acc)' : 'var(--text3)' }}/></div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: isSel ? 'var(--acc)' : 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: isSel ? 'var(--acc)' : 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {supplier.name}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 8 }}>
@@ -265,7 +265,7 @@ export default function NewOrderModal({
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
                         <div style={{ display:'flex', gap:2 }}>{Array.from({ length: supplier.rating ?? 0 }, (_, i) => <Star key={i} size={10} style={{ fill:'var(--acc)', color:'var(--acc)' }}/>)}</div>
-                        {supplier.phone && <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{supplier.phone}</div>}
+                        {supplier.phone && <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{supplier.phone}</div>}
                       </div>
                       {isSel && (
                         <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--acc)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#000', fontWeight: 900, flexShrink: 0 }}>✓</div>
@@ -286,7 +286,7 @@ export default function NewOrderModal({
                 return (
                   <div style={{ marginTop: 10, padding: '12px 14px', borderRadius: 10, display: 'flex', gap: 14, alignItems: 'center', background: 'rgba(240,165,0,.06)', border: '1px solid rgba(240,165,0,.15)' }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--acc)', marginBottom: 4, display:'flex', alignItems:'center', gap:4 }}><CheckCircle size={12}/> {s.name}</div>
+                      <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--acc)', marginBottom: 4, display:'flex', alignItems:'center', gap:4 }}><CheckCircle size={12}/> {s.name}</div>
                       <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                         <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Package size={10}/> {s.specialty}</span>
                         <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Clock size={10}/> {i('Délai', 'Lead time', 'Plazo', 'Tempo')} : {s.leadTime}</span>
@@ -303,7 +303,7 @@ export default function NewOrderModal({
 
           {/* Recherche + grille produits */}
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
               {i('ARTICLES', 'ITEMS', 'ARTÍCULOS', 'ARTICOLI')}
             </label>
             <input className="input" type="search"
@@ -339,12 +339,12 @@ export default function NewOrderModal({
                           width: 16, height: 16, borderRadius: '50%',
                           background: 'var(--p)', display: 'flex',
                           alignItems: 'center', justifyContent: 'center',
-                          fontSize: 9, color: '#fff', fontWeight: 900,
+                          fontSize: 11, color: '#fff', fontWeight: 900,
                         }}>✓</div>
                       )}
                       <div style={{ fontSize: 20, marginBottom: 4 }}>{product.emoji ?? '📦'}</div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{fmt(product.price)}</div>
+                      <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{fmt(product.price)}</div>
                     </button>
                   )
                 })
@@ -355,7 +355,7 @@ export default function NewOrderModal({
           {/* Récapitulatif avec contrôle quantités */}
           {newOrderForm.items.length > 0 && (
             <div>
-              <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 8 }}>
                 {i('RÉCAPITULATIF', 'SUMMARY', 'RESUMEN', 'RIEPILOGO')} ({newOrderForm.items.length})
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -371,12 +371,12 @@ export default function NewOrderModal({
                       <button type="button"
                         onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.map(i => i.id === item.id && i.qty > 1 ? { ...i, qty: i.qty - 1 } : i) }))}
                         style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--bg4)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text2)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                      <span style={{ minWidth: 24, textAlign: 'center', fontSize: 13, fontWeight: 700 }}>{item.qty}</span>
+                      <span style={{ minWidth: 24, textAlign: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)' }}>{item.qty}</span>
                       <button type="button"
                         onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i) }))}
                         style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--bg4)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text2)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                     </div>
-                    <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 12, color: 'var(--acc)', minWidth: 70, textAlign: 'right' }}>{fmt(item.price * item.qty)}</span>
+                    <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', fontSize: 12, color: 'var(--acc)', minWidth: 70, textAlign: 'right' }}>{fmt(item.price * item.qty)}</span>
                     <button aria-label={i('Retirer', 'Remove', 'Quitar', 'Rimuovi')} type="button"
                       onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.filter(i => i.id !== item.id) }))}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: 15, padding: '2px 4px', display:'flex', alignItems:'center' }}><X size={13}/></button>
@@ -386,7 +386,7 @@ export default function NewOrderModal({
                   display: 'flex', justifyContent: 'space-between', padding: '10px 12px',
                   background: 'rgba(108,71,255,.06)', border: '1px solid rgba(108,71,255,.12)', borderRadius: 10,
                 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
                     TOTAL ({newOrderForm.items.reduce((s, i) => s + i.qty, 0)} {i('art.', 'items', 'art.', 'art.')})
                   </span>
                   <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
@@ -399,7 +399,7 @@ export default function NewOrderModal({
 
           {/* Note */}
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
               {i('NOTE (optionnel)', 'NOTE (optional)', 'NOTA (opcional)', 'NOTA (opzionale)')}
             </label>
             <textarea className="input" rows={2} style={{ resize: 'vertical' }}
@@ -424,7 +424,7 @@ export default function NewOrderModal({
                   flex: 1, padding: '12px', border: 'none', borderRadius: 12,
                   background: canCreate ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'var(--bg4)',
                   color: canCreate ? '#fff' : 'var(--text3)',
-                  fontSize: 14, fontWeight: 800, fontFamily: 'var(--font)',
+                  fontSize: 14, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)',
                   cursor: canCreate ? 'pointer' : 'not-allowed',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   transition: 'all .15s',

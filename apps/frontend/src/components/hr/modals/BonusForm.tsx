@@ -19,7 +19,7 @@ export default function BonusForm({ emp, employees, lang, fmt, onConfirm, onClos
     it:['Prestazione','Anzianità','Festività','Trasporto','Alloggio','Altro'],
   }
   const bTypes = BONUS_TYPES[lang] ?? BONUS_TYPES.fr
-  const lbl: React.CSSProperties = { display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }
+  const lbl: React.CSSProperties = { display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>

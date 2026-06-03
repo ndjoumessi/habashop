@@ -35,7 +35,7 @@ export default function AddExpenseModal(props: Props) {
     <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:480 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-          <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>{tr('Ajouter une dépense','Add an expense','Agregar un gasto','Aggiungi una spesa')}</span>
+          <span style={{ fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)' }}>{tr('Ajouter une dépense','Add an expense','Agregar un gasto','Aggiungi una spesa')}</span>
           <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={15} />} onClick={onClose} variant="surface" />
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
@@ -82,7 +82,7 @@ export default function AddExpenseModal(props: Props) {
               display:'flex', justifyContent:'space-between', fontSize:13,
             }}>
               <span style={{ color:'var(--text3)' }}>{tr('Montant TTC calculé :','Calculated total incl. VAT:','Importe c/IVA calculado:','Importo lordo calcolato:')}</span>
-              <span style={{ fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
+              <span style={{ fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>
                 {fmt(nTTC)}
               </span>
             </div>

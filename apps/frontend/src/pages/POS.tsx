@@ -480,7 +480,7 @@ export default function POS() {
             borderRadius: 99,
             padding: '14px 22px',
             fontSize: 15,
-            fontWeight: 800,
+            fontWeight: 'var(--fw-bold)',
             cursor: 'pointer',
             boxShadow: '0 8px 24px rgba(91,78,232,.5)',
             display: 'flex',

@@ -19,7 +19,7 @@ export default function OrdersCalendar({ orders, currentMonth, prevMonth, nextMo
         <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><CalendarDays size={14}/> {i('Calendrier des livraisons', 'Delivery calendar', 'Calendario de entregas', 'Calendario consegne')}</span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button className="mini-btn" onClick={prevMonth}>← {i('Préc.', 'Prev', 'Ant.', 'Prec.')}</button>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+          <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
             {currentMonth.toLocaleDateString(
               lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'it-IT',
               { month: 'long', year: 'numeric' }
@@ -46,7 +46,7 @@ export default function OrdersCalendar({ orders, currentMonth, prevMonth, nextMo
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 4 }}>
               {dayHeaders.map(d => (
-                <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text3)', padding: '6px 0' }}>{d}</div>
+                <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', padding: '6px 0' }}>{d}</div>
               ))}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>
@@ -70,17 +70,17 @@ export default function OrdersCalendar({ orders, currentMonth, prevMonth, nextMo
                   }}>
                     <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 400, color: isToday ? 'var(--p2)' : 'var(--text2)', marginBottom: 4 }}>{day}</div>
                     {deliveries.slice(0, 2).map((o, j) => (
-                      <div key={j} style={{ fontSize: 9, fontWeight: 700, background: 'rgba(14,196,126,.15)', color: 'var(--acc2)', borderRadius: 4, padding: '2px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${lang === 'en' ? 'Delivery' : lang === 'es' ? 'Entrega' : lang === 'it' ? 'Consegna' : 'Livraison'}: ${o.supplier}`}>
+                      <div key={j} style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(14,196,126,.15)', color: 'var(--acc2)', borderRadius: 4, padding: '2px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${lang === 'en' ? 'Delivery' : lang === 'es' ? 'Entrega' : lang === 'it' ? 'Consegna' : 'Livraison'}: ${o.supplier}`}>
                         ▸ {o.supplier.slice(0, 8)}
                       </div>
                     ))}
                     {ordered.slice(0, 2).map((o, j) => (
-                      <div key={j} style={{ fontSize: 9, fontWeight: 700, background: 'rgba(91,78,232,.12)', color: 'var(--p2)', borderRadius: 4, padding: '2px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${lang === 'en' ? 'Order' : lang === 'es' ? 'Pedido' : lang === 'it' ? 'Ordine' : 'Commande'}: ${o.ref}`}>
+                      <div key={j} style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(91,78,232,.12)', color: 'var(--p2)', borderRadius: 4, padding: '2px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${lang === 'en' ? 'Order' : lang === 'es' ? 'Pedido' : lang === 'it' ? 'Ordine' : 'Commande'}: ${o.ref}`}>
                         · {o.ref.slice(-6)}
                       </div>
                     ))}
                     {(deliveries.length + ordered.length) > 2 && (
-                      <div style={{ fontSize: 9, color: 'var(--text3)' }}>+{deliveries.length + ordered.length - 2}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)' }}>+{deliveries.length + ordered.length - 2}</div>
                     )}
                   </div>
                 )

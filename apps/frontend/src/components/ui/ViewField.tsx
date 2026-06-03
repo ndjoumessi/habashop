@@ -20,7 +20,7 @@ export default function ViewField({
 }: ViewFieldProps) {
 
   const labelStyle: React.CSSProperties = {
-    display:'block', fontSize:10, fontWeight:800,
+    display:'block', fontSize:11, fontWeight:'var(--fw-bold)',
     textTransform:'uppercase', letterSpacing:'.6px',
     color:'var(--text3)', marginBottom:5,
   }
@@ -43,7 +43,7 @@ export default function ViewField({
           background:'transparent',
           border:'1px solid var(--border)',
           borderRadius:10,
-          fontSize:13, fontWeight:500,
+          fontSize:13, fontWeight:'var(--fw-regular)',
           color: color ?? 'var(--text2)',
           fontFamily: mono ? 'var(--mono)' : 'var(--font)',
           minHeight:40,

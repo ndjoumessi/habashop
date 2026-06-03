@@ -12,7 +12,7 @@ function ReadOnlyValue({ flag, value, note }: { flag: string; value: string; not
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: 'var(--bg3)', border: '1px solid var(--border)' }}>
         <span style={{ fontSize: 26 }}>{flag}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{value}</div>
+          <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{value}</div>
           <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
             <Lock size={11} /> {note}
           </div>
@@ -76,8 +76,8 @@ export default function SectionLang() {
                   }}>
                   <span style={{ fontSize: 28 }}>{l.flag}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: active ? 'var(--p)' : 'var(--text)' }}>{l.native}</div>
-                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{l.name}</div>
+                    <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: active ? 'var(--p)' : 'var(--text)' }}>{l.native}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{l.name}</div>
                   </div>
                   {active && (
                     <div style={{
@@ -145,20 +145,20 @@ export default function SectionLang() {
                 )}
                 <span style={{ fontSize: 26 }}>{c.flag}</span>
                 <div style={{ fontSize: 14, fontWeight: 900, color: active ? 'var(--warn)' : 'var(--text)', fontFamily: 'var(--mono)' }}>{c.code}</div>
-                <div style={{ fontSize: 10, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.3 }}>{pick(lang, c.name)}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.3 }}>{pick(lang, c.name)}</div>
               </button>
             )
           })}
         </div>
         )}
         <div style={{ margin: '0 22px 20px', padding: 16, background: 'rgba(255,184,0,.03)', border: '1px solid rgba(255,184,0,.08)', borderRadius: 14 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', marginBottom: 12 }}>
             {i('APERÇU — Conversion temps réel', 'PREVIEW — Real-time conversion', 'VISTA PREVIA — Conversión en tiempo real', 'ANTEPRIMA — Conversione in tempo reale')}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
             {[100000, 500000, 1000000].map(xof => (
               <div key={xof} style={{ textAlign: 'center', padding: 10, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10 }}>
-                <div style={{ fontSize: 9, color: 'var(--text3)', marginBottom: 4 }}>{xof.toLocaleString('fr-FR')} XOF</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{xof.toLocaleString('fr-FR')} XOF</div>
                 <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{fmt(xof)}</div>
               </div>
             ))}
@@ -173,7 +173,7 @@ export default function SectionLang() {
           sub={i('Thème et couleur d\'accent', 'Theme and accent color', 'Tema y color de acento', 'Tema e colore d\'accento')} />
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Thème', 'Theme', 'Tema', 'Tema')}</div>
+            <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Thème', 'Theme', 'Tema', 'Tema')}</div>
             <ResponsiveGrid min={118} gap={10}>
               {(Object.entries(THEMES) as [Theme, typeof THEMES[Theme]][]).map(([key, th]) => {
                 const active = cfg.theme === key
@@ -181,7 +181,7 @@ export default function SectionLang() {
                 return (
                   <button key={key} type="button" onClick={() => cfg.updateConfig({ theme: key })}
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', borderRadius: 14, background: active ? `${tp}18` : 'var(--bg3)', border: `2px solid ${active ? tp + '66' : 'var(--border)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
-                    {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: tp, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff', fontWeight: 900 }}>✓</div>}
+                    {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: tp, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff', fontWeight: 900 }}>✓</div>}
                     <div style={{ width: 72, height: 46, borderRadius: 9, background: tbg, border: '1px solid var(--border)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, background: tp + '33', borderRight: `1px solid ${tp}22` }} />
                       <div style={{ position: 'absolute', left: 20, top: 6, right: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -192,7 +192,7 @@ export default function SectionLang() {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 16, marginBottom: 1 }}>{th.emoji}</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: active ? 'var(--p3)' : 'var(--text2)' }}>{pick(lang, th.label)}</div>
+                      <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: active ? 'var(--p3)' : 'var(--text2)' }}>{pick(lang, th.label)}</div>
                     </div>
                   </button>
                 )
@@ -200,10 +200,10 @@ export default function SectionLang() {
             </ResponsiveGrid>
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {i('Couleur d\'accent', 'Accent color', 'Color de acento', 'Colore d\'accento')}
               {cfg.theme === 'gold' && (
-                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'none', letterSpacing: 0, color: 'var(--acc2)', background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.25)', borderRadius: 99, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'none', letterSpacing: 0, color: 'var(--acc2)', background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.25)', borderRadius: 99, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <Lock size={9} /> {i('Verrouillé sur le violet premium', 'Locked to premium violet', 'Bloqueado en violeta premium', 'Bloccato sul viola premium')}
                 </span>
               )}

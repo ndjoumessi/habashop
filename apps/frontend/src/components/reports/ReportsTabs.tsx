@@ -48,7 +48,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           {(percent * 100).toFixed(0)}%
         </text>
         <text x={cx} y={cy + 14} textAnchor="middle" dominantBaseline="middle"
-          style={{ fontSize: 12, fontWeight: 700, fill: 'var(--text2)', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '.5px' }}>
+          style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', fill: 'var(--text2)', fontFamily: 'Plus Jakarta Sans, sans-serif', letterSpacing: '.5px' }}>
           {payload.name}
         </text>
         {payload.amount > 0 && (
@@ -72,7 +72,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, boxShadow: `0 0 8px ${d.color}`, flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{d.name}</span>
+          <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{d.name}</span>
         </div>
         <div style={{ fontSize: 24, fontWeight: 900, color: d.color, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-1px', marginBottom: d.amount > 0 ? 4 : 0 }}>
           {d.value}%
@@ -121,11 +121,11 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
               <XAxis dataKey="day" tick={{ fill:tickColor, fontSize:11 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={v => abbr(v)} tick={{ fill:tickColor, fontSize:10 }} axisLine={false} tickLine={false} width={38} />
+              <YAxis tickFormatter={v => abbr(v)} tick={{ fill:tickColor, fontSize:11 }} axisLine={false} tickLine={false} width={38} />
               <Tooltip
                 formatter={(v: number) => [fmt(v), lang === 'en' ? 'Revenue' : lang === 'es' ? 'Ingresos' : lang === 'it' ? 'Ricavi' : 'CA']}
                 contentStyle={{ background:'var(--card)', border:'1px solid rgba(108,71,255,.3)', borderRadius:10, fontSize:12 }}
-                labelStyle={{ color:'var(--text2)', fontWeight:700 }}
+                labelStyle={{ color:'var(--text2)', fontWeight:'var(--fw-semibold)' }}
                 cursor={{ stroke:'rgba(108,71,255,.3)', strokeWidth:1 }}
               />
               <Area dataKey="val" stroke="#6C47FF" strokeWidth={2.5} fill="url(#areaGradCA)" dot={false} activeDot={{ r:5, fill:'#6C47FF', strokeWidth:0 }} />
@@ -190,7 +190,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                   <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px' }}>
                     {paymentData.length}
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>
                     {lang === 'en' ? 'modes' : lang === 'es' ? 'modos' : lang === 'it' ? 'modalità' : 'modes'}
                   </div>
                 </div>
@@ -226,7 +226,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                       {item.value}%
                     </div>
                     {item.amount > 0 && (
-                      <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(item.amount)}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{fmt(item.amount)}</div>
                     )}
                   </div>
                 </div>
@@ -256,7 +256,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                   width: 26, height: 26, borderRadius: 8, flexShrink: 0,
                   background: p.rank === 1 ? 'rgba(240,165,0,.2)' : p.rank === 2 ? 'rgba(136,134,168,.2)' : 'rgba(91,78,232,.1)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 800,
+                  fontSize: 11, fontWeight: 'var(--fw-bold)',
                   color: p.rank === 1 ? 'var(--acc)' : p.rank === 2 ? 'var(--text2)' : 'var(--p3)',
                 }}>#{p.rank}</div>
                 <div className="flex-1">
@@ -335,7 +335,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 <div style={{ flex:1, height:8, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
                   <div style={{ height:'100%', width:`${row.pct}%`, background:row.color, borderRadius:99, opacity:.85 }} />
                 </div>
-                <span style={{ fontSize:12, fontWeight:700, color:row.color, width:36, textAlign:'right' }}>{row.pct}%</span>
+                <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:row.color, width:36, textAlign:'right' }}>{row.pct}%</span>
                 <span style={{ fontSize:12, fontFamily:'var(--mono)', color:'var(--text2)', width:80, textAlign:'right' }}>{row.val}</span>
               </div>
             ))}
@@ -359,10 +359,10 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <div style={{ width:10, height:10, borderRadius:'50%', background:seg.color }} />
-                    <span style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>{seg.label}</span>
+                    <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{seg.label}</span>
                     <span style={{ fontSize:11, color:'var(--text3)', background:'var(--bg3)', padding:'1px 8px', borderRadius:20 }}>{seg.count} clients</span>
                   </div>
-                  <span style={{ fontSize:13, fontWeight:800, color:seg.color, fontFamily:'var(--mono)' }}>{seg.ca}</span>
+                  <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:seg.color, fontFamily:'var(--mono)' }}>{seg.ca}</span>
                 </div>
                 <div style={{ height:6, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
                   <div style={{ height:'100%', width:`${seg.pct}%`, background:seg.color, borderRadius:99 }} />
@@ -409,7 +409,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 borderTop: i === 4 ? '2px solid var(--border)' : 'none',
               }}>
                 <span style={{ fontSize:13, color:'var(--text2)' }}>{row.prefix && <span style={{ color:row.color, fontWeight:900, marginRight:6 }}>{row.prefix}</span>}{row.label}</span>
-                <span style={{ fontSize:14, fontWeight:800, color:row.color, fontFamily:'var(--mono)' }}>{row.value}</span>
+                <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:row.color, fontFamily:'var(--mono)' }}>{row.value}</span>
               </div>
             ))}
           </div>
@@ -459,15 +459,15 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
             ].map(emp => (
               <div key={emp.nom} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
                 <div style={{ width:36, height:36, borderRadius:10, background:'rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <span style={{ fontSize:14, fontWeight:800, color:'var(--p3)' }}>{emp.nom[0]}</span>
+                  <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--p3)' }}>{emp.nom[0]}</span>
                 </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:'var(--text)' }}>{emp.nom}</div>
+                  <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{emp.nom}</div>
                   <div style={{ fontSize:11, color:'var(--text3)' }}>{emp.poste} · {emp.dept}</div>
                 </div>
-                <span style={{ fontSize:13, fontWeight:700, fontFamily:'var(--mono)', color:'var(--text2)' }}>{emp.salaire}</span>
+                <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)', color:'var(--text2)' }}>{emp.salaire}</span>
                 <span style={{
-                  padding:'3px 9px', borderRadius:20, fontSize:11, fontWeight:700,
+                  padding:'3px 9px', borderRadius:20, fontSize:11, fontWeight:'var(--fw-semibold)',
                   background: emp.status === 'Présent' || emp.status === 'Present' ? 'rgba(14,196,126,.15)' : 'rgba(240,165,0,.15)',
                   color:       emp.status === 'Présent' || emp.status === 'Present' ? 'var(--acc2)' : 'var(--acc)',
                 }}>{emp.status}</span>

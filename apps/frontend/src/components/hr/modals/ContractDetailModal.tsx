@@ -28,8 +28,8 @@ export default function ContractDetailModal({ lang, fmt, selectedContract, setSh
         </div>
         <div style={{ padding:24, display:'flex', flexDirection:'column', gap:16 }}>
           <div style={{ display:'flex', gap:8 }}>
-            <span style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:20, background:selectedContract.type==='CDI'?'rgba(108,71,255,.15)':'rgba(14,196,126,.12)', color:selectedContract.type==='CDI'?'var(--p2)':'var(--acc2)' }}>{selectedContract.type}</span>
-            <span style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:20, background:selectedContract.active?'var(--c-green-bg)':'var(--bg3)', color:selectedContract.active?'var(--acc2)':'var(--text3)' }}>
+            <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', padding:'5px 14px', borderRadius:20, background:selectedContract.type==='CDI'?'rgba(108,71,255,.15)':'rgba(14,196,126,.12)', color:selectedContract.type==='CDI'?'var(--p2)':'var(--acc2)' }}>{selectedContract.type}</span>
+            <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', padding:'5px 14px', borderRadius:20, background:selectedContract.active?'var(--c-green-bg)':'var(--bg3)', color:selectedContract.active?'var(--acc2)':'var(--text3)' }}>
               {selectedContract.active?(lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif'):(lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')}
             </span>
           </div>
@@ -46,12 +46,12 @@ export default function ContractDetailModal({ lang, fmt, selectedContract, setSh
             ].map(row=>(
               <div key={row.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <span style={{ fontSize:12, color:'var(--text3)' }}>{row.label}</span>
-                <span style={{ fontSize:13, fontWeight:700, color:'var(--text)', fontFamily:'var(--mono)' }}>{row.value}</span>
+                <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)', fontFamily:'var(--mono)' }}>{row.value}</span>
               </div>
             ))}
           </div>
           <div style={{ background:'var(--bg3)', borderRadius:12, padding:16 }}>
-            <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:12 }}>💰 {lang === 'en' ? 'COMPENSATION' : lang === 'es' ? 'REMUNERACIÓN' : lang === 'it' ? 'RETRIBUZIONE' : 'RÉMUNÉRATION'}</div>
+            <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)', marginBottom:12 }}>💰 {lang === 'en' ? 'COMPENSATION' : lang === 'es' ? 'REMUNERACIÓN' : lang === 'it' ? 'RETRIBUZIONE' : 'RÉMUNÉRATION'}</div>
             {[
               {label:lang === 'en' ? 'Gross salary' : lang === 'es' ? 'Salario bruto' : lang === 'it' ? 'Stipendio lordo' : 'Salaire brut', value:fmt(selectedContract.salary), color:'var(--text)'},
               {label:'CNSS (8%)', value:`− ${fmt(Math.round(selectedContract.salary*0.08))}`, color:'var(--danger)'},
@@ -60,7 +60,7 @@ export default function ContractDetailModal({ lang, fmt, selectedContract, setSh
             ].map(row=>(
               <div key={row.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontSize:12, color:'var(--text3)' }}>{row.label}</span>
-                <span style={{ fontSize:13, fontWeight:700, color:row.color, fontFamily:'var(--mono)' }}>{row.value}</span>
+                <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:row.color, fontFamily:'var(--mono)' }}>{row.value}</span>
               </div>
             ))}
           </div>

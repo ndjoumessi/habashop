@@ -35,7 +35,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
           {/* Ligne 1 : Nom complet + Rôle */}
           <ResponsiveGrid min={160} gap={12}>
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
               </label>
               <input
@@ -45,7 +45,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
                 onChange={e => setEditForm(f => ({...f, name:e.target.value}))} />
             </div>
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Rôle', 'Role', 'Rol', 'Ruolo')}
               </label>
               <select
@@ -62,7 +62,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
 
           {/* Ligne 2 : Email (icône Mail intégrée) */}
           <div>
-            <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
               Email
             </label>
             <div style={{ position:'relative' }}>
@@ -152,11 +152,11 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
               background:`${ROLE_CONFIG[editForm.role].color}10`,
               border:`1px solid ${ROLE_CONFIG[editForm.role].color}25`,
             }}>
-              <p style={{ fontSize:11, fontWeight:700, marginBottom:6, color:ROLE_CONFIG[editForm.role].color }}>
+              <p style={{ fontSize:11, fontWeight:'var(--fw-semibold)', marginBottom:6, color:ROLE_CONFIG[editForm.role].color }}>
                 {t('users_permissions')} — {ROLE_LABELS[editForm.role]}
               </p>
               <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-                {PERMISSIONS[editForm.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:10 }}>{moduleLabel(p, lang)}</span>)}
+                {PERMISSIONS[editForm.role].map(p => <span key={p} className="badge badge-teal" style={{ fontSize:11 }}>{moduleLabel(p, lang)}</span>)}
               </div>
             </div>
           )}

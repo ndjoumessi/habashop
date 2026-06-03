@@ -52,7 +52,7 @@ export default function SectionDocs() {
             onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--bg3)'; el.style.borderColor = 'var(--border)'; el.style.transform = 'none' }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `${d.color}15`, border: `1px solid ${d.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{d.icon}</div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>{pick(lang, d.label)}</div>
+              <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 3 }}>{pick(lang, d.label)}</div>
               <div style={{ fontSize: 11, color: 'var(--text3)' }}>{pick(lang, d.desc)}</div>
             </div>
           </button>

@@ -38,7 +38,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
           display:'flex', alignItems:'center', justifyContent:'space-between',
         }}>
           <div>
-            <div style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
+            <div style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
               {lang === 'en' ? 'Assign shift' : lang === 'es' ? 'Asignar un turno' : lang === 'it' ? 'Assegna un turno' : 'Assigner un shift'}
             </div>
             <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>
@@ -50,7 +50,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
 
         {/* Shift type buttons */}
         <div style={{ padding:'16px 20px', display:'flex', flexDirection:'column', gap:8 }}>
-          <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:2 }}>
+          <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:2 }}>
             {lang === 'en' ? 'SHIFT TYPE' : lang === 'es' ? 'TIPO DE TURNO' : lang === 'it' ? 'TIPO DI TURNO' : 'TYPE DE SHIFT'}
           </div>
           <ResponsiveGrid min={160} gap={8}>
@@ -63,17 +63,17 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
                   border:`1.5px solid ${modalShift===key ? s.color : 'var(--border)'}`,
                   background: modalShift===key ? s.bg : 'var(--bg3)',
                   cursor:'pointer', fontFamily:'var(--font)',
-                  fontSize:12, fontWeight:700,
+                  fontSize:12, fontWeight:'var(--fw-semibold)',
                   color: modalShift===key ? s.color : 'var(--text3)',
                   transition:'all .1s',
                 }}>
                 <span style={{ color: modalShift===key ? s.color : 'var(--text3)', display:'flex' }}>{s.icon}</span>
                 <div style={{ textAlign:'left' }}>
-                  <div style={{ fontSize:12, fontWeight:700 }}>{shiftLabel(key, lang)}</div>
-                  {s.hours && <div style={{ fontSize:9, fontFamily:'var(--mono)', opacity:.7 }}>{s.hours}</div>}
+                  <div style={{ fontSize:12, fontWeight:'var(--fw-semibold)' }}>{shiftLabel(key, lang)}</div>
+                  {s.hours && <div style={{ fontSize:11, fontFamily:'var(--mono)', opacity:.7 }}>{s.hours}</div>}
                 </div>
                 {modalShift===key && (
-                  <span style={{ marginLeft:'auto', fontSize:9, background:`${s.color}30`, color:s.color, borderRadius:99, padding:'2px 6px', fontWeight:800 }}>✓</span>
+                  <span style={{ marginLeft:'auto', fontSize:11, background:`${s.color}30`, color:s.color, borderRadius:99, padding:'2px 6px', fontWeight:'var(--fw-bold)' }}>✓</span>
                 )}
               </button>
             ))}
@@ -87,7 +87,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
                 flex:1, padding:'11px', borderRadius:10,
                 background:`linear-gradient(135deg,${SHIFT_TYPES[modalShift].color},${SHIFT_TYPES[modalShift].color}CC)`,
                 border:'none', cursor:'pointer',
-                fontSize:13, fontWeight:700, color:'#fff',
+                fontSize:13, fontWeight:'var(--fw-semibold)', color:'#fff',
                 fontFamily:'var(--font)',
                 boxShadow:`0 4px 14px ${SHIFT_TYPES[modalShift].color}40`,
                 transition:'all .15s',

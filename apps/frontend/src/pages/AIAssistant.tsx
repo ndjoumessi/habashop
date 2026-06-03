@@ -217,7 +217,7 @@ export default function AIAssistant() {
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:3 }}>
                 <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--acc2)', boxShadow:'0 0 6px var(--acc2)' }} />
-                <span style={{ fontSize:10, color:'var(--acc2)', fontWeight:600 }}>
+                <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600 }}>
                   {lang === 'en' ? 'Online · Claude' : lang === 'es' ? 'En línea · Claude' : lang === 'it' ? 'Online · Claude' : 'En ligne · Claude'}
                 </span>
               </div>
@@ -228,7 +228,7 @@ export default function AIAssistant() {
             style={{
               width:'100%', padding:'9px 14px', borderRadius:10,
               background:'rgba(108,71,255,.15)', border:'1px solid rgba(108,71,255,.3)',
-              color:'var(--p3)', fontSize:12, fontWeight:700, cursor:'pointer',
+              color:'var(--p3)', fontSize:12, fontWeight:'var(--fw-semibold)', cursor:'pointer',
               fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
               transition:'all .15s',
             }}
@@ -239,7 +239,7 @@ export default function AIAssistant() {
 
         {/* Quick actions */}
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:14 }}>
-          <div style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.7px', color:'var(--text3)', marginBottom:10 }}>
+          <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.7px', color:'var(--text3)', marginBottom:10 }}>
             {lang === 'en' ? 'Quick actions' : lang === 'es' ? 'Acciones rápidas' : lang === 'it' ? 'Azioni rapide' : 'Actions rapides'}
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
@@ -279,14 +279,14 @@ export default function AIAssistant() {
 
         {/* Shop context */}
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:14 }}>
-          <div style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.7px', color:'var(--text3)', marginBottom:10 }}>
+          <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.7px', color:'var(--text3)', marginBottom:10 }}>
             {lang === 'en' ? 'Shop context' : lang === 'es' ? 'Contexto de tienda' : lang === 'it' ? 'Contesto negozio' : 'Contexte boutique'}
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {shopContext.map((item, i) => (
               <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom: i < shopContext.length - 1 ? '1px solid var(--border)' : 'none' }}>
                 <span style={{ fontSize:11, color:'var(--text3)' }}>{item.label}</span>
-                <span style={{ fontSize:11, fontWeight:700, color:'var(--text2)', fontFamily:'var(--mono)' }}>{item.value}</span>
+                <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text2)', fontFamily:'var(--mono)' }}>{item.value}</span>
               </div>
             ))}
           </div>
@@ -294,7 +294,7 @@ export default function AIAssistant() {
 
         {/* Analysis buttons */}
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:14 }}>
-          <div style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.7px', color:'var(--text3)', marginBottom:10 }}>
+          <div style={{ fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.7px', color:'var(--text3)', marginBottom:10 }}>
             {lang === 'en' ? 'AI analyses' : lang === 'es' ? 'Análisis IA' : lang === 'it' ? 'Analisi IA' : 'Analyses IA'}
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
@@ -343,10 +343,10 @@ export default function AIAssistant() {
           <div style={{ position:'absolute', right:-20, top:-20, width:100, height:100, borderRadius:'50%', background:'radial-gradient(circle,rgba(108,71,255,.1),transparent 70%)', pointerEvents:'none' }} />
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <MessageSquare size={15} style={{ color:'var(--p3)', flexShrink:0 }} />
-            <span style={{ fontSize:14, fontWeight:800, color:'var(--text)' }}>
+            <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
               {lang === 'en' ? 'Chat' : lang === 'es' ? 'Conversación' : lang === 'it' ? 'Conversazione' : 'Conversation'}
             </span>
-            <span style={{ marginLeft:'auto', fontSize:10, color:'var(--text4)', fontFamily:'var(--mono)' }}>
+            <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text4)', fontFamily:'var(--mono)' }}>
               {messages.length} {lang === 'en' ? 'messages' : lang === 'es' ? 'mensajes' : lang === 'it' ? 'messaggi' : 'messages'}
             </span>
           </div>
@@ -389,10 +389,10 @@ export default function AIAssistant() {
                   display:'flex', alignItems:'center', gap:6,
                   flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
                 }}>
-                  <span style={{ fontSize:11, fontWeight:700, color: msg.role === 'assistant' ? 'var(--p3)' : 'var(--text3)' }}>
+                  <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color: msg.role === 'assistant' ? 'var(--p3)' : 'var(--text3)' }}>
                     {msg.role === 'assistant' ? 'HabaShop AI' : (lang === 'en' ? 'You' : lang === 'es' ? 'Tú' : lang === 'it' ? 'Tu' : 'Vous')}
                   </span>
-                  <span style={{ fontSize:9, color:'var(--text4)' }}>
+                  <span style={{ fontSize:11, color:'var(--text4)' }}>
                     {msg.time.toLocaleTimeString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { hour:'2-digit', minute:'2-digit' })}
                   </span>
                 </div>
@@ -489,8 +489,8 @@ export default function AIAssistant() {
               }}
             />
             <div style={{ padding:'2px 10px 8px', display:'flex', justifyContent:'space-between' }}>
-              <span style={{ fontSize:9, color:'var(--text4)' }}>Shift+Enter = nouvelle ligne</span>
-              <span style={{ fontSize:10, fontFamily:'var(--mono)', color: input.length > 1800 ? 'var(--warn)' : 'var(--text4)' }}>
+              <span style={{ fontSize:11, color:'var(--text4)' }}>Shift+Enter = nouvelle ligne</span>
+              <span style={{ fontSize:11, fontFamily:'var(--mono)', color: input.length > 1800 ? 'var(--warn)' : 'var(--text4)' }}>
                 {input.length}/2000
               </span>
             </div>

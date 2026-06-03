@@ -48,7 +48,7 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <EmpAvatar emp={emp} size={32} />
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 13 }}>{emp.name}</div>
+                        <div style={{ fontWeight: 'var(--fw-semibold)', fontSize: 13 }}>{emp.name}</div>
                         <div style={{ fontSize: 11, color: 'var(--text3)' }}>{roleLabel(emp.role, lang)}</div>
                       </div>
                     </div>
@@ -61,7 +61,7 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{
-                      fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                      fontSize: 11, fontWeight: 'var(--fw-semibold)', padding: '3px 10px', borderRadius: 20,
                       background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
                       color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
                     }}>{contractLabel(emp.type, lang)}</span>
@@ -80,10 +80,10 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
                       <span style={{ color:'var(--acc)', fontWeight:600 }}>{lang === 'en' ? 'To define' : lang === 'es' ? 'Por definir' : lang === 'it' ? 'Da definire' : 'À définir'}</span>
                     )}
                   </td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 700 }}>{fmt(emp.salary)}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)' }}>{fmt(emp.salary)}</td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
+                      fontSize: 11, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 20,
                       background: emp.active ? 'rgba(14,196,126,.12)' : 'var(--bg3)',
                       color: emp.active ? 'var(--acc2)' : 'var(--text3)',
                     }}>

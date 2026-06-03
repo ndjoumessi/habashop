@@ -284,7 +284,7 @@ export default function Customers() {
         <div className="animate-in">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <MapPin size={16} style={{ color: 'var(--p2)' }} />
                 {i('Carte des clients', 'Customer map', 'Mapa de clientes', 'Mappa clienti')}
               </h2>
@@ -297,7 +297,7 @@ export default function Customers() {
               disabled={geocoding || !mapsLoaded}
               style={{
                 padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)',
-                background: 'var(--bg3)', color: 'var(--text2)', fontSize: 12, fontWeight: 700,
+                background: 'var(--bg3)', color: 'var(--text2)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
                 cursor: geocoding || !mapsLoaded ? 'not-allowed' : 'pointer',
                 fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 6,
                 opacity: geocoding || !mapsLoaded ? .6 : 1, transition: 'opacity .15s',
@@ -320,7 +320,7 @@ export default function Customers() {
 
           {customers.filter(c => !geoPositions[c.id]).length > 0 && (
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <AlertTriangle size={13} style={{flexShrink:0}} /> {i('Clients sans adresse', 'Customers without address', 'Clientes sin dirección', 'Clienti senza indirizzo')} ({customers.filter(c => !geoPositions[c.id]).length}) — {i('non affichés sur la carte', 'not shown on the map', 'no mostrados en el mapa', 'non mostrati sulla mappa')}
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

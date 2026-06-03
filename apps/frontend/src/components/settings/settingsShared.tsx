@@ -29,7 +29,7 @@ export function ToggleCard({ icon, color, label, desc, on, onChange, disabled }:
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--bg3)', border: `1px solid var(--border)`, borderRadius: 14, transition: 'border-color .2s' }}>
       <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 11, color: 'var(--text3)' }}>{desc}</div>
       </div>
       <Switch on={on} onClick={onChange} color={color} disabled={disabled} />
@@ -44,7 +44,7 @@ export function Head({ icon, title, sub, tint, right }: { icon: React.ReactNode;
       <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ display: 'flex', color: 'var(--p2)', flexShrink: 0 }}>{icon}</span>
         <div style={{ minWidth: 0 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', margin: 0, marginBottom: sub ? 3 : 0 }}>{title}</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', margin: 0, marginBottom: sub ? 3 : 0 }}>{title}</h2>
           {sub && <p style={{ fontSize: 11, color: 'var(--text3)', margin: 0 }}>{sub}</p>}
         </div>
       </div>

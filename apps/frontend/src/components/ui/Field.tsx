@@ -25,7 +25,7 @@ export default function Field({ label, error, hint, required, children }: FieldP
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       <label htmlFor={uid} style={{
-        display: 'block', fontSize: 11, fontWeight: 700,
+        display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)',
         textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)',
       }}>
         {label}

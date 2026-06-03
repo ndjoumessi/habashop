@@ -65,7 +65,7 @@ export default function SectionShop() {
           <div key={s.label} style={{ ...panel, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>
             <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
             <div style={{ fontSize: 20, fontWeight: 900, color: s.color, fontFamily: 'var(--mono)' }}>{s.value}</div>
-            <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>{s.label}</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -86,7 +86,7 @@ export default function SectionShop() {
         <ResponsiveGrid min={160} gap={16} style={{ padding: '20px 22px' }}>
           {FIELDS.map(f => (
             <div key={f.key} style={f.full ? { gridColumn: '1/-1' } : {}}>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{f.label}</label>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{f.label}</label>
               {editMode ? (
                 <div style={{ position: 'relative' }}>
                   <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: 'var(--text3)', pointerEvents: 'none' }}>{f.icon}</span>
@@ -94,7 +94,7 @@ export default function SectionShop() {
                     value={(shopData as any)[f.key] ?? ''} onChange={e => setShopData(d => ({ ...d, [f.key]: e.target.value }))} />
                 </div>
               ) : (
-                <div style={{ padding: '10px 14px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, color: 'var(--text2)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, minHeight: 42 }}>
+                <div style={{ padding: '10px 14px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, color: 'var(--text2)', fontWeight: 'var(--fw-regular)', display: 'flex', alignItems: 'center', gap: 8, minHeight: 42 }}>
                   <span style={{ opacity: .5 }}>{f.icon}</span>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {(shopData as any)[f.key] || <span style={{ color: 'var(--text4)', fontStyle: 'italic' }}>{i('Non renseigné', 'Not set', 'No especificado', 'Non impostato')}</span>}
@@ -104,7 +104,7 @@ export default function SectionShop() {
             </div>
           ))}
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{i('TAUX TVA', 'VAT RATE', 'TASA IVA', 'ALIQUOTA IVA')} (%)</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{i('TAUX TVA', 'VAT RATE', 'TASA IVA', 'ALIQUOTA IVA')} (%)</label>
             {editMode ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="number" min={0} max={100} step={0.5} className="input" style={{ flex: 1 }} value={shopData.taxRate} onChange={e => setShopData(d => ({ ...d, taxRate: Number(e.target.value) }))} />

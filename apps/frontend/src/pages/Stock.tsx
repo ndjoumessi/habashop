@@ -347,7 +347,7 @@ export default function Stock() {
             animation: 'habashop-slide-up .18s ease-out',
             maxWidth: 'calc(100% - 40px)',
           }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+          <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
             {selectedSkus.size} {lang === 'en' ? `product${selectedSkus.size > 1 ? 's' : ''} selected` : lang === 'es' ? `producto${selectedSkus.size > 1 ? 's' : ''} seleccionado${selectedSkus.size > 1 ? 's' : ''}` : lang === 'it' ? `prodott${selectedSkus.size > 1 ? 'i' : 'o'} selezionat${selectedSkus.size > 1 ? 'i' : 'o'}` : `produit${selectedSkus.size > 1 ? 's' : ''} sélectionné${selectedSkus.size > 1 ? 's' : ''}`}
           </span>
           <button
@@ -360,7 +360,7 @@ export default function Stock() {
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '8px 16px', borderRadius: 8,
               background: 'linear-gradient(135deg, var(--p), var(--p2))',
-              border: 'none', color: '#fff', fontSize: 13, fontWeight: 700,
+              border: 'none', color: '#fff', fontSize: 13, fontWeight: 'var(--fw-semibold)',
               cursor: 'pointer', fontFamily: 'inherit',
               boxShadow: '0 4px 12px rgba(91,78,232,.4)',
             }}>
@@ -403,7 +403,7 @@ export default function Stock() {
                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                   <div style={{ width:36, height:36, borderRadius:10, background:`${cat.color}22`, border:`1px solid ${cat.color}44`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{cat.icon}</div>
                   <div>
-                    <div style={{ fontSize:14, fontWeight:700, color:'var(--text)' }}>{stockCatLabel(cat.name, lang)}</div>
+                    <div style={{ fontSize:14, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{stockCatLabel(cat.name, lang)}</div>
                     <div style={{ fontSize:11, color:'var(--text3)' }}>{cat.productsCount} {lang === 'en' ? 'products' : lang === 'es' ? 'productos' : lang === 'it' ? 'prodotti' : 'produits'}</div>
                   </div>
                 </div>

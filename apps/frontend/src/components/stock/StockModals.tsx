@@ -324,7 +324,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   </ViewField>
                 ) : (
                   <div>
-                    <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
+                    <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
                       <div style={{ display:'flex', flexDirection:'column', alignItems:'stretch', gap:8 }}>
                         <div style={{ maxWidth:280, width:'auto', margin:'0 auto', alignSelf:'center', padding:'8px 12px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:6 }}>
@@ -389,7 +389,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 6 }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
                         {i('Tarification par palier', 'Tiered pricing', 'Precios por escala', 'Prezzi a scaglioni')}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
@@ -416,7 +416,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
                   {form.priceTiers && form.priceTiers.length > 0 ? (
                     <>
-                      <div style={{ display:'grid', gridTemplateColumns: productEditMode ? '110px 140px 1fr 32px' : '110px 140px 1fr', gap: 8, fontSize: 10, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 4, padding: '0 4px' }}>
+                      <div style={{ display:'grid', gridTemplateColumns: productEditMode ? '110px 140px 1fr 32px' : '110px 140px 1fr', gap: 8, fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 4, padding: '0 4px' }}>
                         <span>{i('Quantité min', 'Min quantity', 'Cantidad mín', 'Quantità min')}</span>
                         <span>{i('Prix unitaire', 'Unit price', 'Precio unitario', 'Prezzo unitario')}</span>
                         <span>{i('Étiquette', 'Label', 'Etiqueta', 'Etichetta')} ({i('optionnelle', 'optional', 'opcional', 'opzionale')})</span>
@@ -435,7 +435,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                                   const v = parseInt(e.target.value, 10) || 0
                                   setForm(f => ({ ...f, priceTiers: f.priceTiers!.map((t, i2) => i2 === idx ? { ...t, minQty: v } : t) }))
                                 }} />
-                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:13, fontWeight:700, color:'var(--text)' }}>{tier.minQty}+</span>}
+                            ) : <span style={{ fontFamily:'var(--mono)', fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{tier.minQty}+</span>}
                             {productEditMode ? (
                               <input className="input text-sm" type="number" min={0}
                                 value={tier.price || ''}
@@ -620,7 +620,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCatModal(false)}>
           <div className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-              <h3 style={{ fontSize:15, fontWeight:800, color:'var(--text)' }}>
+              <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
                 {editCat
                   ? i('Modifier la catégorie', 'Edit category', 'Editar categoría', 'Modifica categoria')
                   : i('Nouvelle catégorie', 'New category', 'Nueva categoría', 'Nuova categoria')}
@@ -666,7 +666,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', borderLeft:`4px solid ${catForm.color}` }}>
                 <div style={{ width:36, height:36, borderRadius:10, background:`${catForm.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>{catForm.icon}</div>
                 <div>
-                  <div style={{ fontWeight:700, color:'var(--text)' }}>{catForm.name || i('Nom catégorie', 'Category name', 'Nombre categoría', 'Nome categoria')}</div>
+                  <div style={{ fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{catForm.name || i('Nom catégorie', 'Category name', 'Nombre categoría', 'Nome categoria')}</div>
                   <div style={{ fontSize:11, color:'var(--text3)' }}>{catForm.description || i('Description...', 'Description...', 'Descripción...', 'Descrizione...')}</div>
                 </div>
               </div>
@@ -694,7 +694,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowLabelModal(false)}>
           <div className="modal-box" style={{ maxWidth: 500 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
                 <Tag size={14} /> {lang === 'en' ? 'Print labels' : lang === 'es' ? 'Imprimir etiquetas' : lang === 'it' ? 'Stampa etichette' : 'Imprimer des étiquettes'}
               </h3>
               <button className="mini-btn" onClick={() => setShowLabelModal(false)}><X size={14} /></button>
@@ -703,7 +703,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {/* Format de planche Avery */}
               <div>
-                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {i('Format de planche', 'Sheet format', 'Formato de hoja', 'Formato foglio')}
                 </label>
                 <select
@@ -730,7 +730,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
               {/* Taille (utilisé seulement en mode CUSTOM) */}
               <div>
-                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {lang === 'en' ? 'Label size' : lang === 'es' ? 'Tamaño de etiquetas' : lang === 'it' ? 'Dimensione etichette' : 'Taille des étiquettes'}
                   {(labelConfig.averyPreset ?? 'L7160') !== 'CUSTOM' && <span style={{ marginLeft: 6, color: 'var(--text4)', fontWeight: 400, textTransform: 'none' }}>({i('utilisée en mode personnalisé', 'used in custom mode', 'usado en modo personalizado', 'usato in modalità personalizzata')})</span>}
                 </label>
@@ -759,7 +759,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
               {/* Options */}
               <div>
-                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {lang === 'en' ? 'Information to display' : lang === 'es' ? 'Información a mostrar' : lang === 'it' ? 'Informazioni da mostrare' : 'Informations à afficher'}
                 </label>
                 {[
@@ -780,7 +780,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
               {/* Copies */}
               <div>
-                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
                   {lang === 'en' ? 'Copies per product' : lang === 'es' ? 'Copias por producto' : lang === 'it' ? 'Copie per prodotto' : 'Copies par produit'}
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -815,7 +815,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 </div>
               ) : (
               <div>
-                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
                   {lang === 'en' ? 'Products to label' : lang === 'es' ? 'Productos a etiquetar' : lang === 'it' ? 'Prodotti da etichettare' : 'Produits à étiqueter'}
                 </label>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>

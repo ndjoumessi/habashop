@@ -34,11 +34,11 @@ function ErrorFallback({ error, resetError }: { error: unknown; resetError: () =
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#07070F', color: '#F0F0FF', fontFamily: 'sans-serif', gap: 16, padding: 24 }}>
       <div style={{ fontSize: 48 }}>⚠️</div>
-      <h1 style={{ fontSize: 20, fontWeight: 700 }}>Une erreur est survenue</h1>
+      <h1 style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)' }}>Une erreur est survenue</h1>
       <p style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', textAlign: 'center', maxWidth: 400 }}>
         {(error as Error)?.message ?? 'Erreur inconnue'}
       </p>
-      <button onClick={resetError} style={{ padding: '10px 24px', borderRadius: 10, background: '#6C47FF', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+      <button onClick={resetError} style={{ padding: '10px 24px', borderRadius: 10, background: '#6C47FF', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 'var(--fw-semibold)' }}>
         Réessayer
       </button>
       <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 20px', borderRadius: 10, background: 'transparent', border: '1px solid rgba(255,255,255,.2)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontSize: 12 }}>

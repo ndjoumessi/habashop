@@ -343,11 +343,11 @@ export default function Activity() {
                     <div style={{ flex:1, minWidth:0 }}>
                       {/* Ligne 1 : action lisible + badge sévérité */}
                       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
-                        <span style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>
+                        <span style={{ fontWeight:'var(--fw-semibold)', fontSize:14, color:'var(--text)' }}>
                           {labelHuman}
                         </span>
                         <span style={{
-                          fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99,
+                          fontSize:11, fontWeight:'var(--fw-semibold)', padding:'2px 7px', borderRadius:99,
                           background: sev.bg, color: sev.color,
                           textTransform:'uppercase', letterSpacing:'.4px',
                         }}>
@@ -407,7 +407,7 @@ export default function Activity() {
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button key={page} onClick={() => setCurrentPage(page)} style={{
                 width:30, height:30, borderRadius:8, border:'none', cursor:'pointer',
-                fontFamily:'var(--font)', fontSize:12, fontWeight:700,
+                fontFamily:'var(--font)', fontSize:12, fontWeight:'var(--fw-semibold)',
                 background: currentPage === page ? 'var(--p)' : 'var(--bg4)',
                 color:      currentPage === page ? '#fff'     : 'var(--text2)',
               }}>{page}</button>

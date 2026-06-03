@@ -31,7 +31,7 @@ export default function LanguageSwitcher() {
         type="button"
         aria-label={tooltipText}
         style={{
-          gap: 4, padding: '6px 10px', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)',
+          gap: 4, padding: '6px 10px', fontSize: 13, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)',
           cursor: 'help',
         }}
       >

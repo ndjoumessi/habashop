@@ -79,7 +79,7 @@ export default function Forecasts() {
                 }}>AI</span>
               </h2>
               <span style={{
-                fontSize:9, fontWeight:800,
+                fontSize:11, fontWeight:'var(--fw-bold)',
                 background:'rgba(108,71,255,.2)', color:'var(--p3)',
                 border:'1px solid rgba(108,71,255,.3)',
                 borderRadius:99, padding:'2px 8px',
@@ -90,7 +90,7 @@ export default function Forecasts() {
                   width:6, height:6, borderRadius:'50%',
                   background:'var(--acc2)', boxShadow:'0 0 8px var(--acc2)',
                 }}/>
-                <span style={{ fontSize:10, color:'var(--acc2)', fontWeight:600 }}>
+                <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600 }}>
                   {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
                 </span>
               </div>
@@ -109,7 +109,7 @@ export default function Forecasts() {
                 { Icon: MessageSquare, label: lang === 'en' ? 'Free chat' : lang === 'es' ? 'Chat libre' : lang === 'it' ? 'Chat libero' : 'Chat libre' },
               ].map((cap, i) => (
                 <span key={i} style={{
-                  fontSize:10, fontWeight:600, color:'var(--text3)',
+                  fontSize:11, fontWeight:600, color:'var(--text3)',
                   background:'var(--bg3)', border:'1px solid var(--border)',
                   borderRadius:20, padding:'2px 8px',
                   display:'flex', alignItems:'center', gap:4,
@@ -160,8 +160,8 @@ export default function Forecasts() {
                 color: btn.color, flexShrink:0,
               }}><btn.Icon size={18} /></div>
               <div>
-                <div style={{ fontSize:13, fontWeight:800, color:'var(--text)', marginBottom:2 }}>{btn.label}</div>
-                <div style={{ fontSize:10, color:'var(--text3)', lineHeight:1.4 }}>{btn.desc}</div>
+                <div style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:2 }}>{btn.label}</div>
+                <div style={{ fontSize:11, color:'var(--text3)', lineHeight:1.4 }}>{btn.desc}</div>
               </div>
             </button>
           ))}
@@ -183,7 +183,7 @@ export default function Forecasts() {
               flexShrink:0,
             }} />
             <div>
-              <div style={{ fontSize:14, fontWeight:700, color:'var(--text)', marginBottom:4 }}>
+              <div style={{ fontSize:14, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:4 }}>
                 {lang === 'fr' ? '🤖 Claude analyse vos données...'
                   : lang === 'en' ? '🤖 Claude is analyzing your data...'
                   : lang === 'es' ? '🤖 Claude analiza sus datos...'
@@ -223,7 +223,7 @@ export default function Forecasts() {
                     background:'var(--bg4)', border:'1px solid var(--border)',
                     borderRadius:10, padding:'10px 12px', textAlign:'center',
                   }}>
-                    <div style={{ fontSize:9.5, fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>{kpi.label}</div>
+                    <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>{kpi.label}</div>
                     <div style={{ fontSize:16, fontWeight:900, color:kpi.color, fontFamily:'var(--mono)' }}>{kpi.value}</div>
                   </div>
                 ))}

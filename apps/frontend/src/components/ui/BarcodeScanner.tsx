@@ -67,7 +67,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
       }}>
         {/* Header */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-          <h3 style={{ fontSize:16, fontWeight:800, color:'var(--text)' }}>📷 Scanner un code-barres</h3>
+          <h3 style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>📷 Scanner un code-barres</h3>
           <button onClick={onClose} style={{
             background:'var(--bg3)', border:'none', borderRadius:8,
             width:32, height:32, cursor:'pointer', fontSize:16, color:'var(--text)',
@@ -78,12 +78,12 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
           /* ── Mode erreur / saisie manuelle ── */
           <div style={{ textAlign:'center' }}>
             <div style={{ fontSize:40, marginBottom:12 }}>📷</div>
-            <div style={{ fontWeight:700, fontSize:14, color:'var(--danger)', marginBottom:6 }}>
+            <div style={{ fontWeight:'var(--fw-semibold)', fontSize:14, color:'var(--danger)', marginBottom:6 }}>
               Impossible d'accéder à la caméra
             </div>
             <div style={{ fontSize:12, color:'var(--text3)', marginBottom:20 }}>{error}</div>
             <div style={{ textAlign:'left' }}>
-              <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:6 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:6 }}>
                 Saisir manuellement
               </label>
               <div style={{ display:'flex', gap:8 }}>
@@ -125,7 +125,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
 
             {/* Saisie manuelle alternative */}
             <div style={{ padding:'10px 14px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10 }}>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:6 }}>
+              <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:6 }}>
                 Ou saisir manuellement
               </div>
               <div style={{ display:'flex', gap:8 }}>

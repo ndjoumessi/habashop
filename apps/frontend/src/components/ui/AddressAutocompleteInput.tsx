@@ -99,7 +99,7 @@ export default function AddressAutocompleteInput({
     <div ref={wrapRef} style={{ position: 'relative' }}>
       {label && (
         <label style={{
-          display: 'block', fontSize: 10, fontWeight: 800,
+          display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)',
           textTransform: 'uppercase', letterSpacing: '.6px',
           color: 'var(--text3)', marginBottom: 6,
         }}>{label}</label>
@@ -167,7 +167,7 @@ export default function AddressAutocompleteInput({
           background: 'var(--card)', border: '1px solid var(--border)',
           borderRadius: 11, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.8)',
         }}>
-          <div style={{ padding: '5px 12px', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text4)', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ padding: '5px 12px', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text4)', borderBottom: '1px solid var(--border)' }}>
             {lang === 'en' ? 'Google Maps Suggestions' : lang === 'es' ? 'Sugerencias de Google Maps' : lang === 'it' ? 'Suggerimenti Google Maps' : 'Suggestions Google Maps'}
           </div>
           {suggestions.map((s, i) => (

@@ -37,7 +37,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
       {salaryHistory.length === 0 ? (
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 20px', textAlign:'center', background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:20 }}>
           <div style={{ width:72, height:72, borderRadius:20, background:'rgba(108,71,255,.1)', border:'1px solid rgba(108,71,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16 }}><TrendingUp size={32} style={{color:'var(--p2)'}}/></div>
-          <div style={{ fontSize:16, fontWeight:800, color:'var(--text)', marginBottom:8 }}>
+          <div style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:8 }}>
             {lang === 'en' ? 'No salary revisions yet' : lang === 'es' ? 'Sin revisiones salariales' : lang === 'it' ? 'Nessuna revisione salariale' : 'Aucune révision salariale'}
           </div>
           <div style={{ fontSize:13, color:'var(--text3)', maxWidth:300, lineHeight:1.6 }}>
@@ -142,14 +142,14 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                         width:36, height:36, borderRadius:'50%',
                         background: emp?.color ?? 'var(--p)',
                         display:'flex', alignItems:'center', justifyContent:'center',
-                        fontSize:13, fontWeight:700, color:'#fff',
+                        fontSize:13, fontWeight:'var(--fw-semibold)', color:'#fff',
                         flexShrink:0,
                       }}>
                         {initials}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{
-                          fontWeight:700, fontSize:14,
+                          fontWeight:'var(--fw-semibold)', fontSize:14,
                           color:'var(--text)',
                           whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
                         }}>
@@ -164,7 +164,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                         )}
                       </div>
                       <span style={{
-                        fontSize:10, fontWeight:700,
+                        fontSize:11, fontWeight:'var(--fw-semibold)',
                         padding:'3px 8px', borderRadius:99,
                         background: reasonClr.bg,
                         color: reasonClr.text,
@@ -218,7 +218,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                         ? <TrendingUp size={14} color="#00C853" />
                         : <TrendingDown size={14} color="var(--danger)" />}
                       <span style={{
-                        fontSize:13, fontWeight:700,
+                        fontSize:13, fontWeight:'var(--fw-semibold)',
                         color: isUp ? '#00C853' : 'var(--danger)',
                         fontFamily:'var(--mono)',
                       }}>
@@ -325,7 +325,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                 }}>{k.icon}</div>
                 <div>
                   <div style={{
-                    fontSize:9, fontWeight:700,
+                    fontSize:11, fontWeight:'var(--fw-semibold)',
                     textTransform:'uppercase', letterSpacing:'.5px',
                     color:'var(--text3)', marginBottom:2,
                   }}>{k.label}</div>

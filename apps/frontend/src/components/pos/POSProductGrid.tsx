@@ -236,7 +236,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                         position:'absolute', top:6, left:6,
                         background:'var(--danger)', color:'#fff',
                         borderRadius:6, padding:'2px 6px',
-                        fontSize:9, fontWeight:800,
+                        fontSize:11, fontWeight:'var(--fw-bold)',
                       }}>PROMO</div>
                     )}
                     {/* Badge quantité si dans panier */}
@@ -250,7 +250,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                         width: 22, height: 22,
                         display: 'flex', alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 11, fontWeight: 800,
+                        fontSize: 11, fontWeight: 'var(--fw-bold)',
                         border: '2px solid var(--bg)',
                       }}>×{inCart.qty}</div>
                     )}
@@ -276,18 +276,18 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
 
                     {/* Prix */}
                     {clientType !== 'retail' && (
-                      <div style={{ fontSize:9, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
+                      <div style={{ fontSize:11, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
                         {fmt(p.price)}
                       </div>
                     )}
                     {p.promotion && clientType === 'retail' && (
-                      <div style={{ fontSize:9, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
+                      <div style={{ fontSize:11, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
                         {fmt(p.price)}
                       </div>
                     )}
                     <div style={{
                       fontSize: 14,
-                      fontWeight: 800,
+                      fontWeight: 'var(--fw-bold)',
                       color: p.promotion && clientType === 'retail' ? 'var(--danger)' : 'var(--acc)',
                       fontFamily: 'var(--mono)',
                     }}>{fmt(getPrice(p))}</div>
@@ -295,7 +295,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                     {/* Stock */}
                     {posShowStockOnTile && (
                       <div style={{
-                        fontSize: 10.5,
+                        fontSize: 11,
                         color: isLowStock ? 'var(--danger)' : 'var(--text3)',
                         fontWeight: isLowStock ? 600 : 400,
                       }}>
@@ -310,7 +310,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                 totalProducts === 0 && !loadingProducts ? (
                   <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center' }}>
                     <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text2)', marginBottom: 6 }}>
+                    <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', marginBottom: 6 }}>
                       {lang === 'fr' ? 'Aucun produit en stock' : lang === 'es' ? 'Sin productos en stock' : lang === 'it' ? 'Nessun prodotto in stock' : 'No products in stock'}
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16, maxWidth: 280 }}>
@@ -353,7 +353,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                       }}>
                         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
                           <div>
-                            <div style={{ fontSize:13, fontWeight:700, color:'var(--text)', marginBottom:2, display:'flex', alignItems:'center', gap:5 }}>
+                            <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:2, display:'flex', alignItems:'center', gap:5 }}>
                               <CreditCard size={13} /> {lang === 'fr' ? 'Vente' : lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : 'Vendita'} #{String(sale.id).slice(-6).toUpperCase()}
                             </div>
                             <div style={{ fontSize:11, color:'var(--text3)' }}>
@@ -365,7 +365,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                           <div style={{ textAlign:'right' }}>
                             <div style={{ fontSize:15, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>{fmt(sale.total)}</div>
                             <span style={{
-                              fontSize:10, fontWeight:700, borderRadius:20, padding:'2px 8px',
+                              fontSize:11, fontWeight:'var(--fw-semibold)', borderRadius:20, padding:'2px 8px',
                               background: sale.paymentMode === 'cash' ? 'rgba(14,196,126,.12)' : sale.paymentMode === 'card' ? 'rgba(91,78,232,.12)' : 'rgba(240,165,0,.12)',
                               color: sale.paymentMode === 'cash' ? 'var(--acc2)' : sale.paymentMode === 'card' ? 'var(--p2)' : 'var(--acc)',
                             }}>

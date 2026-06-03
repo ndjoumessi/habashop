@@ -169,27 +169,27 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       {p.name.match(/^\S+/)?.[0]}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      <div style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                         {p.name.replace(/^\S+\s?/, '')}
                       </div>
-                      {stockShowSKU && <div style={{ fontSize:10, color:'var(--text4)', fontFamily:'var(--mono)' }}>{p.sku}</div>}
+                      {stockShowSKU && <div style={{ fontSize:11, color:'var(--text4)', fontFamily:'var(--mono)' }}>{p.sku}</div>}
                     </div>
                     <span className={`badge ${st.cls}`} style={{ flexShrink:0 }}>{st.label}</span>
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
                     <div style={{ padding:'7px 9px', borderRadius:8, background:'var(--c-purple-bg2)', border:'1px solid rgba(108,71,255,.15)' }}>
-                      <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Buy' : lang === 'es' ? 'Compra' : lang === 'it' ? 'Acquisto' : 'Achat'}</div>
-                      <div style={{ fontSize:12, fontWeight:800, color:'var(--p3)', fontFamily:'var(--mono)' }}>{fmt(p.buy)}</div>
+                      <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Buy' : lang === 'es' ? 'Compra' : lang === 'it' ? 'Acquisto' : 'Achat'}</div>
+                      <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--p3)', fontFamily:'var(--mono)' }}>{fmt(p.buy)}</div>
                     </div>
                     <div style={{ padding:'7px 9px', borderRadius:8, background:'var(--c-green-bg2)', border:'1px solid rgba(0,208,132,.15)' }}>
-                      <div style={{ fontSize:9, fontWeight:700, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Sell' : lang === 'es' ? 'Vender' : lang === 'it' ? 'Vendi' : 'Vente'}</div>
-                      <div style={{ fontSize:12, fontWeight:800, color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(p.sell)}</div>
+                      <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.3px', marginBottom:1 }}>{lang === 'en' ? 'Sell' : lang === 'es' ? 'Vender' : lang === 'it' ? 'Vendi' : 'Vente'}</div>
+                      <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>{fmt(p.sell)}</div>
                     </div>
                   </div>
                   <div>
-                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'var(--text3)', marginBottom:4 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--text3)', marginBottom:4 }}>
                       <span>Stock</span>
-                      <span style={{ fontFamily:'var(--mono)', fontWeight:700, color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)' }}>
+                      <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)', color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)' }}>
                         {p.stock}<span style={{ color:'var(--text4)', fontWeight:400 }}>/{p.threshold}</span>
                       </span>
                     </div>
@@ -263,7 +263,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       <td>
                         <span className="td-num" style={{
                           color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)',
-                          fontWeight: 700,
+                          fontWeight: 'var(--fw-semibold)',
                         }}>{p.stock}</span>
                       </td>
                       <td className="td-num" style={{ color: 'var(--text3)' }}>{p.threshold}</td>

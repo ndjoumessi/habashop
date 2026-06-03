@@ -42,7 +42,7 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <span style={{ fontSize:18 }}>{s.icon}</span>
-                  <span style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>{cl(cat)}</span>
+                  <span style={{ fontWeight:'var(--fw-semibold)', fontSize:14, color:'var(--text)' }}>{cl(cat)}</span>
                 </div>
                 {over && (
                   <span className="badge badge-red">{tr('Dépassé !','Over budget!','¡Excedido!','Superato!')}</span>
@@ -60,7 +60,7 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
                 }} />
               </div>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
-                <span style={{ fontWeight:700, color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
+                <span style={{ fontWeight:'var(--fw-semibold)', color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
                 <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:600 }}>
                   {over ? `${tr('Dépassé de','Over by','Excedido en','Superato di')} ${fmt(spent - budget)}` : `${tr('Restant','Remaining','Restante','Rimanente')} : ${fmt(budget - spent)}`}
                 </span>
@@ -86,7 +86,7 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
         ].map(r => (
           <div key={r.label} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
             <span style={{ fontSize:13, color:'var(--text3)' }}>{r.label}</span>
-            <span style={{ fontSize:13, fontWeight:700, color:r.color, fontFamily:'var(--mono)' }}>
+            <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:r.color, fontFamily:'var(--mono)' }}>
               {(r as { prefix?: string }).prefix ?? ''}{r.value}
             </span>
           </div>
