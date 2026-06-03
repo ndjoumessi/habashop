@@ -410,6 +410,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | be323eb | chore(eas): pin `environment` preview/production (charge `EXPO_PUBLIC_SENTRY_DSN`) |
 | 523474e | feat(sentry): **source maps** (plugin expo + metro `getSentryExpoConfig` + fix `@expo/config-plugins`) |
 | 288024d | chore: **version 1.4.1** (build avec source maps Sentry) |
+| dace38c | fix(settings): **version réelle** (`Constants.expoConfig?.version`) + bump **1.4.2** (label « 1.2.0 » était hardcodé) |
 
 ---
 
@@ -435,7 +436,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
-*Dernière mise à jour : 2026-06-03 — (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN). (4) parité kiosque TVA/client/remise ; (5) **APK 1.4.1 buildé** (build `b999af75`) avec **Sentry complet** : DSN (EAS env var) + **source maps** (plugin `@sentry/react-native/expo` + `getSentryExpoConfig` + `SENTRY_AUTH_TOKEN` secret EAS). Audit interne au repo = soldé. À valider device : crash→Sentry (stack symbolisée), widget background-task. Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
+*Dernière mise à jour : 2026-06-03 — **APK 1.4.2 buildé** (build `33940b3d`) : fix du **label version hardcodé** « 1.2.0 » en Réglages → lit désormais `Constants.expoConfig?.version` (`dace38c`). Le label trompeur faisait croire que le crash Fabric Caisse persistait alors qu'il est corrigé depuis 1.4.0 (`d949c78`). `newArchEnabled` reste absent (Fabric ON ; `false` casse le build — reanimated 4). À valider device : désinstaller l'ancienne app puis vérifier « 1.4.2 » affiché + bouton Caisse OK. Précédent : (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN) ; (4) parité kiosque TVA/client/remise ; (5) **APK 1.4.1** (`b999af75`) Sentry complet (DSN + source maps). Audit interne au repo = soldé.*
 
 ---
 
@@ -526,6 +527,16 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
   - Dashboard : https://expo.dev/accounts/ndjoumessi/projects/habashop-mobile/builds/b999af75-7dfa-43b5-a4a7-724d8780723f
   - APK : https://expo.dev/artifacts/eas/oVhzodf1s9QUnUdbiFYFHH.apk
 - Build réussi **avec le plugin actif** → upload des source maps OK ⇒ **stacks de crash symbolisées** dans Sentry (vs minifiées en 1.4.0). À confirmer device (Sentry → Settings → Source Maps après un crash test).
+
+### Build APK 1.4.2 — version affichée réelle (fin du label trompeur « 1.2.0 »)
+- **Diagnostic** : l'écran Réglages affichait **`1.2.0` en dur** (`settings.tsx`, texte littéral) — **aucun lien** avec la vraie version du build → tous les builds (1.3.0 → 1.4.1) montraient « 1.2.0 ». Ce label masquait **quel build était réellement installé**, d'où la fausse impression que le crash Fabric Caisse persistait (en réalité = vieux build testé).
+- **Fix** (`dace38c`) : `<Text>{Constants.expoConfig?.version ?? '—'}</Text>` (import `expo-constants`) → suit automatiquement chaque bump d'`app.json`.
+- ⚠️ **Crash Fabric Caisse = déjà corrigé** (`d949c78`, overlays montés à la demande), présent depuis 1.4.0. **NE PAS** mettre `newArchEnabled:false` (absent d'`app.json` = Fabric ON par défaut SDK 54) : `false` **casse le build** (reanimated 4.1.7 exige la New Arch — build `bb9fa2e5` ERRORED, cf. mémoire `fabric-newarch-pos-crash`). Si le crash réapparaît **malgré** « 1.4.2 » affiché → autre `<Modal>` empilé (signature `ReactClippingViewManager.addView "child already has a parent"`) à corriger au même pattern dans `sales/stock/customers/_layout`.
+- `app.json` : version **1.4.1 → 1.4.2**. versionCode resté **3** (`preview` sans `autoIncrement` ; `appVersionSource: remote`).
+- Build EAS Android `preview` → **FINISHED** : build `33940b3d-e311-4019-8171-aa03aa402ab0`.
+  - Dashboard : https://expo.dev/accounts/ndjoumessi/projects/habashop-mobile/builds/33940b3d-e311-4019-8171-aa03aa402ab0
+  - APK : https://expo.dev/artifacts/eas/7npFoAEmdK4DFDW3oS5NaN.apk
+- ⚠️ **Procédure de test device** : **désinstaller complètement** l'app (`adb uninstall com.habashop.app`) **avant** d'installer le 1.4.2 (sinon Android peut garder l'ancien APK) → Réglages doit afficher **`1.4.2`** (preuve du bon build) → tester bouton **Caisse**.
 
 ---
 
