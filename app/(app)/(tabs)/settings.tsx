@@ -554,9 +554,9 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   curName: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text2 },
   rateInfo: {
     margin: Spacing.md,
-    padding: 10,
+    padding: 10, // spécifique (entre sm=8 et md=12) — laissé volontairement
     backgroundColor: withAlpha(C.primary, 0.08),
-    borderRadius: 10,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: withAlpha(C.primary, 0.2),
   },

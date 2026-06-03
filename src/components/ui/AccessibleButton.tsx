@@ -68,7 +68,7 @@ export default function AccessibleButton({
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   btn: {
     borderRadius: BorderRadius.lg, flexDirection: 'row',
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xxl,
   },
   size_lg: { height: 52 },
   size_md: { height: 44 },

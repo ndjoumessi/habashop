@@ -58,5 +58,5 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderColor: C.border,
   },
-  editIcon: { fontSize: 10 },
+  editIcon: { fontSize: 11 },
 })

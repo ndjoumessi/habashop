@@ -187,7 +187,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
     alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border,
   },
-  backIcon: { fontSize: 18, color: C.text2, fontFamily: 'Outfit_700Bold' },
+  backIcon: { fontSize: FontSize.xl, color: C.text2, fontFamily: 'Outfit_700Bold' },
   searchWrap: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     backgroundColor: C.bg3, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border,
@@ -195,7 +195,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   searchIcon: { fontSize: 16 },
   searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
-  clearIcon: { fontSize: 14, color: C.text3, padding: 4 },
+  clearIcon: { fontSize: FontSize.md, color: C.text3, padding: 4 },
   list: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.md },
   resultRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md,

@@ -154,7 +154,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: withAlpha(C.white, 0.15), alignItems: 'center', justifyContent: 'center',
   },
-  closeBtnText: { color: C.white, fontSize: 16, fontFamily: 'Outfit_700Bold' },
+  closeBtnText: { color: C.white, fontSize: FontSize.lg, fontFamily: 'Outfit_700Bold' },
   title: { color: C.white, fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold' },
   camera: { flex: 1 },
   overlay: { flex: 1, backgroundColor: withAlpha(C.black, 0.25) },

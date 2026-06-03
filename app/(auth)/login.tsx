@@ -321,7 +321,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     justifyContent:'center',gap:Spacing.xl},
   logoWrap:{alignItems:'center',gap:Spacing.sm},
   logoIcon:{
-    width:80,height:80,borderRadius:24,
+    width:80,height:80,borderRadius:BorderRadius.xxl,
     backgroundColor:C.primary,
     alignItems:'center',justifyContent:'center',
     ...Shadow.colored(C.primary),
