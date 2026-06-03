@@ -158,12 +158,18 @@ export default function Dashboard() {
         setStockAlerts(data?.stockAlerts ?? [])
         setRecentActivity(data?.recentActivity ?? [])
         // Fusionne les variantes d'une même catégorie (« Épicerie » / « épicerie » /
-        // « Épicerie ») : clé normalisée trim()+toLowerCase(), valeurs additionnées, on
-        // garde le nom d'origine du PREMIER match (et son ordre d'apparition).
+        // « 🍚 Épicerie ») : clé normalisée = emoji retirés + trim()+toLowerCase(), valeurs
+        // additionnées, on garde le nom d'origine du PREMIER match (et son ordre d'apparition).
+        const normCat = (s: string) => s
+          .replace(/\p{Extended_Pictographic}/gu, '') // emoji / pictogrammes
+          .replace(/[\uFE0F\u200D]/g, "")             // sélecteur de variation / ZWJ
+          .replace(/\s+/g, ' ')
+          .trim()
+          .toLowerCase()
         const mergedCats: any[] = []
         const catIndex = new Map<string, number>()
         for (const c of (data?.categoryBreakdown ?? [])) {
-          const key = String(c?.name ?? '').trim().toLowerCase()
+          const key = normCat(String(c?.name ?? ''))
           const value = Number(c?.value ?? 0)
           const at = catIndex.get(key)
           if (at !== undefined) {
