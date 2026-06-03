@@ -13,6 +13,8 @@ import { useAppStore, useI18n, useFmt, useTheme, type Lang, type ThemeMode } fro
 import { sendLocalNotification } from '@/services/notifications'
 import { useProfilePhoto } from '@/hooks/useProfilePhoto'
 import Avatar from '@/components/ui/Avatar'
+import ScreenHeader from '@/components/ui/ScreenHeader'
+import AccessibleButton from '@/components/ui/AccessibleButton'
 import { isBiometricAvailable, isBiometricEnabled, disableBiometric, type BiometricType } from '@/services/biometric'
 import { isWidgetEnabled, setWidgetEnabled, refreshWidget, dismissWidget } from '@/services/widgetNotification'
 import { registerWidgetRefresh, unregisterWidgetRefresh } from '@/tasks/backgroundRefresh'
@@ -115,7 +117,7 @@ export default function SettingsScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xxxl }}>
-        <Text style={s.screenTitle}>⚙️ {i('Réglages', 'Settings', 'Ajustes', 'Impostazioni')}</Text>
+        <ScreenHeader icon="settings" title={i('Réglages', 'Settings', 'Ajustes', 'Impostazioni')} />
 
         {/* A) Profil */}
         <View style={s.section}>
@@ -438,10 +440,10 @@ export default function SettingsScreen() {
 
         {/* H) Déconnexion */}
         <View style={s.section}>
-          <TouchableOpacity
-            style={s.logoutBtn}
-            accessibilityRole="button"
-            accessibilityLabel={i('Se déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}
+          <AccessibleButton
+            label={i('Se déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}
+            variant="dangerSubtle"
+            icon="log-out-outline"
             onPress={() => Alert.alert(
               i('Déconnexion', 'Logout', 'Cerrar sesión', 'Disconnetti'),
               i('Voulez-vous vraiment vous déconnecter ?', 'Do you really want to log out?', '¿Seguro que desea cerrar sesión?', 'Vuoi davvero disconnetterti?'),
@@ -450,10 +452,7 @@ export default function SettingsScreen() {
                 { text: i('Déconnexion', 'Logout', 'Cerrar sesión', 'Disconnetti'), style: 'destructive', onPress: () => logout() },
               ],
             )}
-          >
-            <Ionicons name="log-out-outline" size={20} color={C.danger} />
-            <Text style={s.logoutTxt}>{i('Se déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}</Text>
-          </TouchableOpacity>
+          />
         </View>
 
         {/* I) Compte — suppression (RGPD / Google Play) */}

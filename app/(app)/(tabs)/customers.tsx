@@ -14,6 +14,7 @@ import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
+import ScreenHeader from '@/components/ui/ScreenHeader'
 
 function initials(name?: string) {
   return (name ?? '?').split(' ').map(n => n[0] ?? '').join('').slice(0, 2).toUpperCase()
@@ -108,19 +109,20 @@ export default function CustomersScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
-      <View style={s.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={s.title}>👥 {i('Clients', 'Customers', 'Clientes', 'Clienti')}</Text>
-          <Text style={s.subtitle}>{customers.length} {i('clients', 'customers', 'clientes', 'clienti')}</Text>
-        </View>
-        <Pressable style={s.headerBtn} onPress={() => { setShowSearch(v => !v); if (showSearch) setSearch('') }} hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={showSearch
-            ? i('Fermer la recherche', 'Close search', 'Cerrar búsqueda', 'Chiudi ricerca')
-            : i('Rechercher', 'Search', 'Buscar', 'Cerca')}>
-          <Ionicons name={showSearch ? 'close' : 'search'} size={20} color={C.text2} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        icon="people"
+        title={i('Clients', 'Customers', 'Clientes', 'Clienti')}
+        subtitle={`${customers.length} ${i('clients', 'customers', 'clientes', 'clienti')}`}
+        right={
+          <Pressable style={s.headerBtn} onPress={() => { setShowSearch(v => !v); if (showSearch) setSearch('') }} hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={showSearch
+              ? i('Fermer la recherche', 'Close search', 'Cerrar búsqueda', 'Chiudi ricerca')
+              : i('Rechercher', 'Search', 'Buscar', 'Cerca')}>
+            <Ionicons name={showSearch ? 'close' : 'search'} size={20} color={C.text2} />
+          </Pressable>
+        }
+      />
 
       {/* ── Recherche (toggle) ── */}
       {showSearch && (

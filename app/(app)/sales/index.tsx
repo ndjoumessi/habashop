@@ -14,6 +14,8 @@ import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { sendWhatsAppTicket, type TicketOptions } from '@/services/whatsappTicket'
 import { printReceipt } from '@/services/printReceipt'
 import ErrorState from '@/components/ui/ErrorState'
+import ScreenHeader from '@/components/ui/ScreenHeader'
+import Chip from '@/components/ui/Chip'
 import { Spacing, BorderRadius, FontSize, Shadow, withAlpha, ThemeColors } from '@/constants/theme'
 
 type Period = 'today' | '7d' | '30d'
@@ -86,28 +88,22 @@ export default function SalesScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={s.header}>
-        <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}
-          accessibilityRole="button" accessibilityLabel={i('Retour', 'Back', 'Volver', 'Indietro')}>
-          <Ionicons name="chevron-back" size={22} color={C.text} />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={s.title}>{i('Historique', 'History', 'Historial', 'Storico')}</Text>
-          <Text style={s.subtitle}>{tx} {i('ventes', 'sales', 'ventas', 'vendite')}</Text>
-        </View>
-      </View>
+      <ScreenHeader
+        title={i('Historique', 'History', 'Historial', 'Storico')}
+        subtitle={`${tx} ${i('ventes', 'sales', 'ventas', 'vendite')}`}
+        onBack={() => router.back()}
+      />
 
       {/* Sélecteur période */}
       <View style={s.periods}>
-        {PERIODS.map(p => {
-          const on = period === p.key
-          return (
-            <Pressable key={p.key} onPress={() => setPeriod(p.key)} style={[s.chip, on && s.chipOn]}
-              accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={i(p.fr, p.en, p.es, p.it)}>
-              <Text style={[s.chipTxt, on && s.chipTxtOn]}>{i(p.fr, p.en, p.es, p.it)}</Text>
-            </Pressable>
-          )
-        })}
+        {PERIODS.map(p => (
+          <Chip
+            key={p.key}
+            label={i(p.fr, p.en, p.es, p.it)}
+            selected={period === p.key}
+            onPress={() => setPeriod(p.key)}
+          />
+        ))}
       </View>
 
       {/* Stats */}

@@ -15,6 +15,9 @@ import type { SaleRecord, DashboardTopProduct } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { Spacing, BorderRadius, FontSize, Shadow, ThemeColors } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
+import ScreenHeader from '@/components/ui/ScreenHeader'
+import Chip from '@/components/ui/Chip'
+import AccessibleButton from '@/components/ui/AccessibleButton'
 
 type Period = 'today' | '7d' | '30d' | '90d'
 const PERIODS: { key: Period; days: number; fr: string; en: string; es: string; it: string }[] = [
@@ -146,37 +149,31 @@ export default function ReportsScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={s.header}>
-        <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={i('Retour', 'Back', 'Atrás', 'Indietro')}>
-          <Ionicons name="chevron-back" size={22} color={C.text} />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={s.title}>{i('Rapports', 'Reports', 'Informes', 'Rapporti')}</Text>
-          <Text style={s.subtitle}>{periodLabel}</Text>
-        </View>
-        <Pressable style={s.headerBtn} onPress={exportCsv} hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}>
-          <Ionicons name="download-outline" size={20} color={C.text} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title={i('Rapports', 'Reports', 'Informes', 'Rapporti')}
+        subtitle={periodLabel}
+        onBack={() => router.back()}
+        right={
+          <Pressable style={s.headerBtn} onPress={exportCsv} hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}>
+            <Ionicons name="download-outline" size={20} color={C.text} />
+          </Pressable>
+        }
+      />
 
       {/* Sélecteur période */}
       {/* View flex (pas ScrollView) : le ScrollView horizontal Android clippait la descendante
           du « j » (« jours » → « iours ») même avec lineHeight ; flexWrap gère le débordement. */}
       <View style={s.periods}>
-        {PERIODS.map(p => {
-          const on = period === p.key
-          return (
-            <Pressable key={p.key} onPress={() => setPeriod(p.key)} style={[s.chip, on && s.chipOn]}
-              accessibilityRole="button" accessibilityState={{ selected: on }}
-              accessibilityLabel={i(p.fr, p.en, p.es, p.it)}>
-              <Text style={[s.chipTxt, on && s.chipTxtOn]}>{i(p.fr, p.en, p.es, p.it)}</Text>
-            </Pressable>
-          )
-        })}
+        {PERIODS.map(p => (
+          <Chip
+            key={p.key}
+            label={i(p.fr, p.en, p.es, p.it)}
+            selected={period === p.key}
+            onPress={() => setPeriod(p.key)}
+          />
+        ))}
       </View>
 
       {isLoading ? (
@@ -275,12 +272,12 @@ export default function ReportsScreen() {
 
           {/* Export */}
           <View style={s.section}>
-            <Pressable style={s.exportBtn} onPress={exportCsv}
-              accessibilityRole="button"
-              accessibilityLabel={i('Exporter les ventes en CSV', 'Export sales to CSV', 'Exportar ventas a CSV', 'Esporta vendite in CSV')}>
-              <Ionicons name="download-outline" size={18} color={C.white} />
-              <Text style={s.exportTxt}>{i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}</Text>
-            </Pressable>
+            <AccessibleButton
+              label={i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}
+              icon="download-outline"
+              onPress={exportCsv}
+              hint={i('Exporter les ventes en CSV', 'Export sales to CSV', 'Exportar ventas a CSV', 'Esporta vendite in CSV')}
+            />
           </View>
         </ScrollView>
       )}
@@ -299,7 +296,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
   },
   headerBtn: {
-    width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
+    width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
     borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center',
   },
   title: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },

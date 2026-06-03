@@ -24,6 +24,9 @@ import { sendWhatsAppTicket } from '@/services/whatsappTicket'
 import { printReceipt } from '@/services/printReceipt'
 import BarcodeScanner from '@/components/pos/BarcodeScanner'
 import ErrorState from '@/components/ui/ErrorState'
+import ScreenHeader from '@/components/ui/ScreenHeader'
+import Chip from '@/components/ui/Chip'
+import AccessibleButton from '@/components/ui/AccessibleButton'
 import POSConfirmModal from '@/components/pos/POSConfirmModal'
 import POSCart from '@/components/pos/POSCart'
 import POSProductGrid from '@/components/pos/POSProductGrid'
@@ -256,37 +259,34 @@ export default function POSScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
-      <View style={s.header}>
-        <Pressable
-          style={s.headerBtn}
-          onPress={() => {
-            // Cas froid (deeplink, app killed) : router.back() ne fait rien.
-            // Fallback : navigation explicite vers le dashboard.
-            if (router.canGoBack()) router.back()
-            else router.replace('/(app)/(tabs)/dashboard')
-          }}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={i('Fermer la caisse', 'Close register', 'Cerrar caja', 'Chiudi cassa')}>
-          <Ionicons name="close" size={22} color={C.text} />
-        </Pressable>
-        <Text style={s.headerTitle}>{i('Caisse', 'Register', 'Caja', 'Cassa')}</Text>
-        <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
-          <Pressable style={s.headerBtn} onPress={() => setShowScanner(true)} hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={i('Scanner un code-barres', 'Scan a barcode', 'Escanear código', 'Scansiona codice')}>
-            <Ionicons name="scan-outline" size={22} color={C.text} />
-          </Pressable>
-          <Pressable style={s.headerBtn} onPress={() => setShowCart(true)} hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={`${i('Panier', 'Cart', 'Carrito', 'Carrello')}, ${totalQty}`}>
-            <Ionicons name="cart-outline" size={22} color={C.text} />
-            {totalQty > 0 && (
-              <View style={s.cartBadge}><Text style={s.cartBadgeTxt}>{totalQty}</Text></View>
-            )}
-          </Pressable>
-        </View>
-      </View>
+      <ScreenHeader
+        center
+        backIcon="close"
+        title={i('Caisse', 'Register', 'Caja', 'Cassa')}
+        onBack={() => {
+          // Cas froid (deeplink, app killed) : router.back() ne fait rien.
+          // Fallback : navigation explicite vers le dashboard.
+          if (router.canGoBack()) router.back()
+          else router.replace('/(app)/(tabs)/dashboard')
+        }}
+        right={
+          <>
+            <Pressable style={s.headerBtn} onPress={() => setShowScanner(true)} hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={i('Scanner un code-barres', 'Scan a barcode', 'Escanear código', 'Scansiona codice')}>
+              <Ionicons name="scan-outline" size={22} color={C.text} />
+            </Pressable>
+            <Pressable style={s.headerBtn} onPress={() => setShowCart(true)} hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`${i('Panier', 'Cart', 'Carrito', 'Carrello')}, ${totalQty}`}>
+              <Ionicons name="cart-outline" size={22} color={C.text} />
+              {totalQty > 0 && (
+                <View style={s.cartBadge}><Text style={s.cartBadgeTxt}>{totalQty}</Text></View>
+              )}
+            </Pressable>
+          </>
+        }
+      />
 
       {/* ── Filtres catégories ── */}
       <View>
@@ -296,21 +296,14 @@ export default function POSScreen() {
           contentContainerStyle={s.cats}
         >
           {[{ key: 'all', label: i('Tout', 'All', 'Todo', 'Tutto') },
-            ...categories.map(c => ({ key: c, label: c }))].map(c => {
-            const on = activeCat === c.key
-            return (
-              <Pressable
-                key={c.key}
-                onPress={() => setActiveCat(c.key)}
-                style={[s.chip, on && s.chipOn]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                accessibilityLabel={c.label}
-              >
-                <Text style={[s.chipTxt, on && s.chipTxtOn]} numberOfLines={1}>{c.label}</Text>
-              </Pressable>
-            )
-          })}
+            ...categories.map(c => ({ key: c, label: c }))].map(c => (
+            <Chip
+              key={c.key}
+              label={c.label}
+              selected={activeCat === c.key}
+              onPress={() => setActiveCat(c.key)}
+            />
+          ))}
         </ScrollView>
       </View>
 
@@ -333,11 +326,11 @@ export default function POSScreen() {
             <Text style={s.totalBarLabel}>{totalQty} {i('articles', 'items', 'artículos', 'articoli')}</Text>
             <Text style={s.totalBarAmt}>{fmt(totalAmt)}</Text>
           </View>
-          <Pressable style={s.checkoutBtn} onPress={() => setShowCart(true)}
-            accessibilityRole="button"
-            accessibilityLabel={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(totalAmt)}`}>
-            <Text style={s.checkoutTxt}>{i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} →</Text>
-          </Pressable>
+          <AccessibleButton
+            label={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} →`}
+            onPress={() => setShowCart(true)}
+            hint={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(totalAmt)}`}
+          />
         </View>
       )}
 

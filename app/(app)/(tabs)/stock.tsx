@@ -14,6 +14,9 @@ import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
+import ScreenHeader from '@/components/ui/ScreenHeader'
+import SegmentedControl from '@/components/ui/SegmentedControl'
+import AccessibleButton from '@/components/ui/AccessibleButton'
 
 type Filter = 'all' | 'low' | 'out'
 
@@ -129,19 +132,18 @@ export default function StockScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* ── Header ── */}
-      <View style={s.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={s.title}>📦 Stock</Text>
-          <Text style={s.subtitle}>
-            {active.length} {i('produits actifs', 'active products', 'productos activos', 'prodotti attivi')}
-          </Text>
-        </View>
-        <Pressable style={s.headerBtn} onPress={() => refetch()} hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={i('Actualiser', 'Refresh', 'Actualizar', 'Aggiorna')}>
-          <Ionicons name="refresh" size={20} color={C.text2} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        icon="cube"
+        title="Stock"
+        subtitle={`${active.length} ${i('produits actifs', 'active products', 'productos activos', 'prodotti attivi')}`}
+        right={
+          <Pressable style={s.headerBtn} onPress={() => refetch()} hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={i('Actualiser', 'Refresh', 'Actualizar', 'Aggiorna')}>
+            <Ionicons name="refresh" size={20} color={C.text2} />
+          </Pressable>
+        }
+      />
 
       {/* ── Stats ── */}
       <View style={s.statsRow}>
@@ -202,24 +204,16 @@ export default function StockScreen() {
       </View>
 
       {/* ── Filtres ── */}
-      <View style={s.tabs}>
-        {([
-          { key: 'all', label: i('Tous', 'All', 'Todos', 'Tutti'), count: active.length },
-          { key: 'low', label: i('Stock bas', 'Low', 'Bajo', 'Basse'), count: lowCnt },
-          { key: 'out', label: i('Rupture', 'Out', 'Agotado', 'Esaurito'), count: outCnt },
-        ] as { key: Filter; label: string; count: number }[]).map(t => {
-          const on = filter === t.key
-          return (
-            <Pressable key={t.key} style={[s.tab, on && s.tabOn]} onPress={() => setFilter(t.key)}
-              accessibilityRole="button" accessibilityState={{ selected: on }}
-              accessibilityLabel={`${t.label}, ${t.count}`}>
-              <Text style={[s.tabTxt, on && s.tabTxtOn]}>{t.label}</Text>
-              <View style={[s.tabBadge, on && s.tabBadgeOn]}>
-                <Text style={[s.tabBadgeTxt, on && s.tabBadgeTxtOn]}>{t.count}</Text>
-              </View>
-            </Pressable>
-          )
-        })}
+      <View style={s.tabsWrap}>
+        <SegmentedControl
+          value={filter}
+          onChange={(k) => setFilter(k as Filter)}
+          segments={[
+            { key: 'all', label: i('Tous', 'All', 'Todos', 'Tutti'), count: active.length },
+            { key: 'low', label: i('Stock bas', 'Low', 'Bajo', 'Basse'), count: lowCnt },
+            { key: 'out', label: i('Rupture', 'Out', 'Agotado', 'Esaurito'), count: outCnt },
+          ]}
+        />
       </View>
 
       {/* ── Liste ── */}
@@ -313,18 +307,13 @@ export default function StockScreen() {
               </View>
 
               {/* Enregistrer */}
-              <Pressable
-                style={[s.saveBtn, (updateMut.isPending || newQty === (editP.stockQty ?? 0)) && { opacity: 0.5 }]}
-                disabled={updateMut.isPending || newQty === (editP.stockQty ?? 0)}
+              <AccessibleButton
+                label={i('Enregistrer', 'Save', 'Guardar', 'Salva')}
+                hint={i('Enregistrer le stock', 'Save stock', 'Guardar stock', 'Salva stock')}
                 onPress={() => updateMut.mutate({ id: editP.id, stockQty: newQty })}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: updateMut.isPending || newQty === (editP.stockQty ?? 0), busy: updateMut.isPending }}
-                accessibilityLabel={i('Enregistrer le stock', 'Save stock', 'Guardar stock', 'Salva stock')}
-              >
-                {updateMut.isPending
-                  ? <ActivityIndicator color={C.white} size="small" />
-                  : <Text style={s.saveTxt}>{i('Enregistrer', 'Save', 'Guardar', 'Salva')}</Text>}
-              </Pressable>
+                loading={updateMut.isPending}
+                disabled={newQty === (editP.stockQty ?? 0)}
+              />
             </View>
           )}
         </View>
@@ -372,7 +361,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
 
-  tabs: { flexDirection: 'row', gap: Spacing.xs, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
+  tabsWrap: { paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
   tab: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,

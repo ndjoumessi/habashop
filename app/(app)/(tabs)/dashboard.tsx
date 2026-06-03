@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 import { router } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { analyticsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
@@ -25,7 +26,7 @@ function KpiCard({
 }: {
   label:  string
   value:  string
-  icon:   string
+  icon:   keyof typeof Ionicons.glyphMap
   color:  string
   sub?:   string
 }) {
@@ -34,7 +35,7 @@ function KpiCard({
   return (
     <View style={[s.kpiCard, { borderColor:`${color}30` }]}>
       <View style={[s.kpiIcon, { backgroundColor:`${color}18` }]}>
-        <Text style={{ fontSize:20 }}>{icon}</Text>
+        <Ionicons name={icon} size={20} color={color} />
       </View>
       <Text style={s.kpiLabel}>{label}</Text>
       <Text
@@ -52,7 +53,7 @@ function KpiCard({
 function QuickAction({
   icon, label, color, onPress
 }: {
-  icon:    string
+  icon:    keyof typeof Ionicons.glyphMap
   label:   string
   color:   string
   onPress: () => void
@@ -69,7 +70,7 @@ function QuickAction({
     >
       <View style={[s.actionIcon,
         { backgroundColor:`${color}18` }]}>
-        <Text style={{ fontSize:24 }}>{icon}</Text>
+        <Ionicons name={icon} size={24} color={color} />
       </View>
       <Text style={s.actionLabel}>{label}</Text>
     </TouchableOpacity>
@@ -201,20 +202,20 @@ export default function DashboardScreen() {
               <KpiCard
                 label={i('CA du jour','Today\'s revenue','CA hoy','Ricavi oggi')}
                 value={fmt(d.salesToday ?? 0)}
-                icon="💰"
+                icon="cash"
                 color={C.accent}
                 sub={`${d.transactionsToday ?? 0} ${i('ventes','sales','ventas','vendite')}`}
               />
               <KpiCard
                 label={i('Ce mois','This month','Este mes','Questo mese')}
                 value={fmt(d.salesMonth ?? 0)}
-                icon="📈"
+                icon="trending-up"
                 color={C.primary}
               />
               <KpiCard
                 label={i('Produits','Products','Productos','Prodotti')}
                 value={String(d.totalProducts ?? 0)}
-                icon="📦"
+                icon="cube"
                 color={C.accent3}
                 sub={alerts.length > 0
                   ? `⚠️ ${alerts.length} ${i('alertes','alerts','alertas','avvisi')}`
@@ -223,7 +224,7 @@ export default function DashboardScreen() {
               <KpiCard
                 label={i('Employés','Staff','Empleados','Dipendenti')}
                 value={String(d.activeEmployees ?? 0)}
-                icon="👥"
+                icon="people"
                 color={C.accent2}
               />
             </View>
@@ -238,31 +239,31 @@ export default function DashboardScreen() {
           </Text>
           <View style={s.actionsGrid}>
             <QuickAction
-              icon="🛒"
+              icon="cart"
               label={i('Caisse','Register','Caja','Cassa')}
               color={C.primary}
               onPress={() => router.push('/(app)/pos')}
             />
             <QuickAction
-              icon="📦"
+              icon="cube"
               label="Stock"
               color={C.accent3}
               onPress={() => router.push('/(app)/(tabs)/stock')}
             />
             <QuickAction
-              icon="👥"
+              icon="people"
               label={i('Clients','Customers','Clientes','Clienti')}
               color={C.accent2}
               onPress={() => router.push('/(app)/(tabs)/customers')}
             />
             <QuickAction
-              icon="📊"
+              icon="bar-chart"
               label={i('Rapports','Reports','Informes','Rapporti')}
               color={C.accent}
               onPress={() => router.push('/(app)/reports')}
             />
             <QuickAction
-              icon="📋"
+              icon="receipt"
               label={i('Historique','History','Historial','Storico')}
               color={C.primary3}
               onPress={() => router.push('/(app)/sales')}
@@ -286,7 +287,7 @@ export default function DashboardScreen() {
                     idx < alerts.slice(0,3).length - 1 && s.alertRowBorder
                   ]}
                 >
-                  <Text style={{ fontSize:18 }}>📦</Text>
+                  <Ionicons name="cube" size={18} color={C.warn} />
                   <Text style={s.alertName} numberOfLines={1}>
                     {a.name}
                   </Text>

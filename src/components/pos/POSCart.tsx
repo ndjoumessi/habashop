@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { View, Text, Modal, ScrollView, Pressable, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -8,6 +8,7 @@ import type { Customer } from '@/types'
 import { useTheme, useFmt } from '@/stores/appStore'
 import { convertToXOF } from '@/services/exchangeRate'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
+import AccessibleButton from '@/components/ui/AccessibleButton'
 import { PAY_MODES } from './payModes'
 
 // ── Ligne panier ─────────────────────────────────
@@ -92,6 +93,7 @@ export default function POSCart({
   const { currency, rates } = useFmt()
   const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
+  const [showDetail, setShowDetail] = useState(false) // HT/TVA repliés par défaut (réduit la charge)
   const totalQty = cart.reduce((n, c) => n + c.quantity, 0)
   const discAmt = subtotal - total
   const vat = vatBreakdown(total, vatRate)
@@ -195,14 +197,28 @@ export default function POSCart({
             )}
             {vat.rate > 0 && (
               <>
-                <View style={s.recapRow}>
-                  <Text style={s.recapLabel}>{i('Total HT', 'Net (excl. tax)', 'Total sin IVA', 'Totale netto')}</Text>
-                  <Text style={s.recapVal}>{fmt(vat.ht)}</Text>
-                </View>
-                <View style={s.recapRow}>
-                  <Text style={s.recapLabel}>{i('TVA', 'VAT', 'IVA', 'IVA')} {vat.rate}%</Text>
-                  <Text style={s.recapVal}>{fmt(vat.tva)}</Text>
-                </View>
+                <Pressable
+                  style={s.detailToggle}
+                  onPress={() => setShowDetail(v => !v)}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: showDetail }}
+                  accessibilityLabel={i('Détail TVA', 'VAT details', 'Detalle IVA', 'Dettaglio IVA')}
+                >
+                  <Text style={s.detailToggleTxt}>{i('Détail TVA', 'VAT details', 'Detalle IVA', 'Dettaglio IVA')}</Text>
+                  <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={C.text3} />
+                </Pressable>
+                {showDetail && (
+                  <>
+                    <View style={s.recapRow}>
+                      <Text style={s.recapLabel}>{i('Total HT', 'Net (excl. tax)', 'Total sin IVA', 'Totale netto')}</Text>
+                      <Text style={s.recapVal}>{fmt(vat.ht)}</Text>
+                    </View>
+                    <View style={s.recapRow}>
+                      <Text style={s.recapLabel}>{i('TVA', 'VAT', 'IVA', 'IVA')} {vat.rate}%</Text>
+                      <Text style={s.recapVal}>{fmt(vat.tva)}</Text>
+                    </View>
+                  </>
+                )}
               </>
             )}
             <View style={[s.recapRow, s.recapTotal]}>
@@ -264,16 +280,11 @@ export default function POSCart({
                 )}
               </Text>
             )}
-            <Pressable
-              style={[s.payBtn, cashShort && s.payBtnDisabled]}
+            <AccessibleButton
+              label={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(total)}`}
               onPress={onCheckout}
               disabled={cashShort}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: cashShort }}
-              accessibilityLabel={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(total)}`}
-            >
-              <Text style={s.payBtnTxt}>{i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} {fmt(total)}</Text>
-            </Pressable>
+            />
             <Pressable style={s.clearBtn} onPress={onClearCart}
               accessibilityRole="button"
               accessibilityLabel={i('Vider le panier', 'Clear cart', 'Vaciar carrito', 'Svuota carrello')}>
@@ -320,6 +331,8 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   recapLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3 },
   recapVal: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
   recapTotal: { borderTopWidth: 1, borderTopColor: C.border, paddingTop: Spacing.sm, marginTop: 2 },
+  detailToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 2 },
+  detailToggleTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   recapTotalLabel: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   recapTotalVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.primary3 },
 
