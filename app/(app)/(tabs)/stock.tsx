@@ -223,6 +223,7 @@ export default function StockScreen() {
         <ErrorState onRetry={() => refetch()} />
       ) : (
         <FlatList
+          removeClippedSubviews={false}
           data={filtered}
           keyExtractor={(p) => p.id}
           contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.sm, paddingBottom: insets.bottom + Spacing.xxxl }}

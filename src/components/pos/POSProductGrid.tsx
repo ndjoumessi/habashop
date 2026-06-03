@@ -71,6 +71,7 @@ export default function POSProductGrid({
   }
   return (
     <FlatList
+      removeClippedSubviews={false}
       data={filtered}
       keyExtractor={(p) => p.id}
       numColumns={3}

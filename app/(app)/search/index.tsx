@@ -143,6 +143,7 @@ export default function SearchScreen() {
         </View>
       ) : (
         <FlatList
+          removeClippedSubviews={false}
           data={results}
           keyExtractor={r => `${r.type}-${r.id}`}
           contentContainerStyle={s.list}

@@ -120,6 +120,7 @@ export default function SalesScreen() {
         <ErrorState onRetry={() => refetch()} />
       ) : (
         <FlatList
+          removeClippedSubviews={false}
           data={filtered}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.sm, paddingBottom: insets.bottom + Spacing.xxxl, flexGrow: 1 }}

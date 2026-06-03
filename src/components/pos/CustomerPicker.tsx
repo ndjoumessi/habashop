@@ -89,6 +89,7 @@ export default function CustomerPicker({ visible, onClose, onSelect, selectedId 
           <ErrorState onRetry={() => refetch()} />
         ) : (
           <FlatList
+            removeClippedSubviews={false}
             data={filtered}
             keyExtractor={(c) => c.id}
             contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.sm, paddingBottom: insets.bottom + Spacing.xl }}

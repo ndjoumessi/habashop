@@ -140,6 +140,7 @@ export default function KioskScreen() {
           </View>
 
           <FlatList
+            removeClippedSubviews={false}
             data={filtered}
             keyExtractor={p => p.id}
             numColumns={4}
@@ -190,6 +191,7 @@ export default function KioskScreen() {
           </Text>
 
           <FlatList
+            removeClippedSubviews={false}
             data={pos.cart}
             keyExtractor={item => item.productId}
             style={{ flex: 1 }}
