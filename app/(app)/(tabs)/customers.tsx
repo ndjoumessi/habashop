@@ -287,7 +287,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', maxWidth: 260 },
 
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.md },
-  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: C.text },
+  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   subtitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   headerBtn: { width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
 
@@ -301,15 +301,15 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   chipsRow: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
   chip: { flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm },
   chipVal: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold' },
-  chipLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  chipLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
 
   card: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, ...Shadow.sm },
   avatar: { width: 46, height: 46, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center' },
-  avatarTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_900Black', color: C.white },
+  avatarTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   name: { flexShrink: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   typeBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
-  typeTxt: { fontSize: 11, fontFamily: 'Outfit_700Bold' },
+  typeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold' },
   phone: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: 3 },
   metaCa: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
@@ -321,13 +321,13 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   detailHead: { alignItems: 'center', gap: Spacing.sm },
   detailAvatar: { width: 72, height: 72, borderRadius: BorderRadius.xl, alignItems: 'center', justifyContent: 'center', ...Shadow.md },
-  detailAvatarTxt: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: C.white },
+  detailAvatarTxt: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   detailName: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text, textAlign: 'center' },
 
   kpis: { flexDirection: 'row', gap: Spacing.sm },
   kpi: { flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, alignItems: 'center', gap: 4 },
   kpiVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold' },
-  kpiLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4, textAlign: 'center' },
+  kpiLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4, textAlign: 'center' },
 
   contactCard: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, overflow: 'hidden' },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },

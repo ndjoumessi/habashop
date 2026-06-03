@@ -477,7 +477,7 @@ const s = StyleSheet.create({
     position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8,
     backgroundColor: Colors.warn, alignItems: 'center', justifyContent: 'center',
   },
-  tapCountText: { fontSize: 11, fontFamily: 'Outfit_700Bold', color: Colors.black },
+  tapCountText: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: Colors.black },
   grid: { padding: Spacing.md, paddingBottom: 40 },
   productCard: {
     flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.lg,
@@ -491,9 +491,9 @@ const s = StyleSheet.create({
     position: 'absolute', top: -4, right: -4, backgroundColor: Colors.primary,
     width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
   },
-  cartBadgeText: { fontSize: 11, fontFamily: 'Outfit_700Bold', color: Colors.white },
-  productName: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: Colors.text, textAlign: 'center', marginBottom: 2 },
-  productPrice: { fontSize: 12, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent, letterSpacing: -0.3 },
+  cartBadgeText: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: Colors.white },
+  productName: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: Colors.text, textAlign: 'center', marginBottom: 2 },
+  productPrice: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent, letterSpacing: -0.3 },
 
   // Colonne panier (30%)
   cartCol: { flex: 3, backgroundColor: Colors.bg, flexDirection: 'column' },
@@ -557,7 +557,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.primary, borderRadius: BorderRadius.lg, height: 54,
     alignItems: 'center', justifyContent: 'center', ...Shadow.colored(Colors.primary),
   },
-  checkoutBtnText: { fontSize: FontSize.lg, fontFamily: 'Outfit_900Black', color: Colors.white },
+  checkoutBtnText: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
   clearBtn: { height: 40, alignItems: 'center', justifyContent: 'center' },
   clearBtnText: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: Colors.danger },
 
@@ -577,7 +577,7 @@ const s = StyleSheet.create({
   confirmCancel: { flex: 1, height: 52, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
   confirmCancelText: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: Colors.text3 },
   confirmOk: { flex: 2, height: 52, borderRadius: BorderRadius.lg, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', ...Shadow.colored(Colors.primary) },
-  confirmOkText: { fontSize: FontSize.md, fontFamily: 'Outfit_900Black', color: Colors.white },
+  confirmOkText: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
 
   // Modal PIN
   pinOverlay: { position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
@@ -595,5 +595,5 @@ const s = StyleSheet.create({
   pinCancel: { flex: 1, height: 48, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
   pinCancelText: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: Colors.text3 },
   pinOk: { flex: 1, height: 48, borderRadius: BorderRadius.md, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
-  pinOkText: { fontSize: FontSize.md, fontFamily: 'Outfit_900Black', color: Colors.white },
+  pinOkText: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: Colors.white },
 })

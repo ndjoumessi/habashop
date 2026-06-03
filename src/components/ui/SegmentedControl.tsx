@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { useTheme } from '@/stores/appStore'
-import { ThemeColors, Spacing, BorderRadius, withAlpha } from '@/constants/theme'
+import { ThemeColors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
 
 export interface Segment {
   key:    string
@@ -53,10 +53,10 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderRadius: BorderRadius.md, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
   },
   segOn: { backgroundColor: C.primary, borderColor: C.primary },
-  txt: { fontSize: 11, fontFamily: 'Outfit_700Bold', color: C.text2 },
+  txt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text2 },
   txtOn: { color: C.white },
   badge: { minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: C.bg4, alignItems: 'center', justifyContent: 'center' },
   badgeOn: { backgroundColor: withAlpha(C.white, 0.25) },
-  badgeTxt: { fontSize: 11, fontFamily: 'Outfit_800ExtraBold', color: C.text3 },
+  badgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold', color: C.text3 },
   badgeTxtOn: { color: C.white },
 })

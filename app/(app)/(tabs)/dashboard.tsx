@@ -210,13 +210,13 @@ export default function DashboardScreen() {
                 label={i('Ce mois','This month','Este mes','Questo mese')}
                 value={fmt(d.salesMonth ?? 0)}
                 icon="trending-up"
-                color={C.primary}
+                color={C.accent}
               />
               <KpiCard
                 label={i('Produits','Products','Productos','Prodotti')}
                 value={String(d.totalProducts ?? 0)}
                 icon="cube"
-                color={C.accent3}
+                color={C.primary}
                 sub={alerts.length > 0
                   ? `⚠️ ${alerts.length} ${i('alertes','alerts','alertas','avvisi')}`
                   : i('✅ Stock OK','✅ Stock OK','✅ Stock OK','✅ Stock OK')}
@@ -225,7 +225,7 @@ export default function DashboardScreen() {
                 label={i('Employés','Staff','Empleados','Dipendenti')}
                 value={String(d.activeEmployees ?? 0)}
                 icon="people"
-                color={C.accent2}
+                color={C.primary}
               />
             </View>
           )}
@@ -247,25 +247,25 @@ export default function DashboardScreen() {
             <QuickAction
               icon="cube"
               label="Stock"
-              color={C.accent3}
+              color={C.primary}
               onPress={() => router.push('/(app)/(tabs)/stock')}
             />
             <QuickAction
               icon="people"
               label={i('Clients','Customers','Clientes','Clienti')}
-              color={C.accent2}
+              color={C.primary}
               onPress={() => router.push('/(app)/(tabs)/customers')}
             />
             <QuickAction
               icon="bar-chart"
               label={i('Rapports','Reports','Informes','Rapporti')}
-              color={C.accent}
+              color={C.primary}
               onPress={() => router.push('/(app)/reports')}
             />
             <QuickAction
               icon="receipt"
               label={i('Historique','History','Historial','Storico')}
-              color={C.primary3}
+              color={C.primary}
               onPress={() => router.push('/(app)/sales')}
             />
           </View>
@@ -366,7 +366,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth:1, borderColor:withAlpha(C.danger, 0.25),
   },
   offlineBadgeText: {
-    fontSize:11, fontFamily:'Outfit_700Bold',
+    fontSize:FontSize.xs, fontFamily:'Outfit_700Bold',
     color:C.danger, textTransform:'uppercase', letterSpacing:0.4,
   },
   searchBtn: {
@@ -439,7 +439,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     letterSpacing:-0.5,
   },
   kpiSub: {
-    fontSize:11,
+    fontSize:FontSize.xs,
     fontFamily:'Outfit_400Regular',
     color:C.text3,
     marginTop:2,
@@ -460,7 +460,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     justifyContent:'center',
   },
   actionLabel: {
-    fontSize:11,
+    fontSize:FontSize.xs,
     fontFamily:'Outfit_600SemiBold',
     color:C.text3,
     textAlign:'center',

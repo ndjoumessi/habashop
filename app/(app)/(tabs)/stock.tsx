@@ -334,7 +334,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.md,
   },
-  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: C.text },
+  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   subtitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   headerBtn: {
     width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
@@ -347,7 +347,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderColor: C.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm,
   },
   statVal: { fontSize: FontSize.xxl, fontFamily: 'JetBrainsMono_700Bold' },
-  statLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  statLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
 
   alertChips: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
   alertChip: { paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full, borderWidth: 1 },
@@ -372,7 +372,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   tabTxtOn: { color: C.white },
   tabBadge: { minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: C.bg4, alignItems: 'center', justifyContent: 'center' },
   tabBadgeOn: { backgroundColor: withAlpha(C.white, 0.25) },
-  tabBadgeTxt: { fontSize: 11, fontFamily: 'Outfit_800ExtraBold', color: C.text3 },
+  tabBadgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold', color: C.text3 },
   tabBadgeTxtOn: { color: C.white },
 
   row: {
@@ -384,7 +384,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   rowCat: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   rowQty: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
-  statusTxt: { fontSize: 11, fontFamily: 'Outfit_700Bold' },
+  statusTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold' },
 
   // Sheet édition
   sheet: { flex: 1, backgroundColor: C.bg },
@@ -402,7 +402,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
     padding: Spacing.md, alignItems: 'center', gap: 4,
   },
-  editStatLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  editStatLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
   editStatVal: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
 
   qtyEditor: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.sm },

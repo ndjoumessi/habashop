@@ -209,7 +209,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   typeBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full },
   typeBadgeProduct: { backgroundColor: withAlpha(C.accent3, 0.1) },
   typeBadgeCustomer: { backgroundColor: withAlpha(C.accent2, 0.1) },
-  typeBadgeText: { fontSize: 11, fontFamily: 'Outfit_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
+  typeBadgeText: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
   typeBadgeTextProduct: { color: C.accent3 },
   typeBadgeTextCustomer: { color: C.accent2 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },

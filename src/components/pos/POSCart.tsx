@@ -342,7 +342,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
   payChipOn: { backgroundColor: withAlpha(C.primary, 0.15), borderColor: C.primary },
-  payTxt: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
+  payTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   payTxtOn: { color: C.primary3 },
 
   cashWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.md, marginTop: Spacing.xs },

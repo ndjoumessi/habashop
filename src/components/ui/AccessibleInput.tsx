@@ -45,6 +45,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text,
   },
   inputError: { borderColor: C.danger },
-  hint:  { fontSize: 11, color: C.text3, fontFamily: 'Outfit_400Regular' },
-  error: { fontSize: 11, color: C.danger, fontFamily: 'Outfit_700Bold' },
+  hint:  { fontSize: FontSize.xs, color: C.text3, fontFamily: 'Outfit_400Regular' },
+  error: { fontSize: FontSize.xs, color: C.danger, fontFamily: 'Outfit_700Bold' },
 })

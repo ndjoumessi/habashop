@@ -399,7 +399,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     padding: Spacing.xxxl, gap: Spacing.lg,
   },
   biometricModalIcon: { fontSize: 72 },
-  biometricModalTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: C.text, textAlign: 'center' },
+  biometricModalTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.text, textAlign: 'center' },
   biometricModalDesc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', lineHeight: 24 },
   biometricModalBtn: { width: '100%', backgroundColor: C.primary, paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg, alignItems: 'center' },
   biometricModalBtnText: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },

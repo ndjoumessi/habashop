@@ -108,13 +108,13 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   prodCardOut: { opacity: 0.45 },
   prodEmoji: { fontSize: 30 },
-  prodName: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text, textAlign: 'center' },
-  prodPrice: { fontSize: 12, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
+  prodName: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text, textAlign: 'center' },
+  prodPrice: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
   prodBadge: {
     position: 'absolute', top: 5, right: 5, minWidth: 20, height: 20, paddingHorizontal: 5,
     borderRadius: 10, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', zIndex: 2,
   },
-  prodBadgeTxt: { fontSize: 11, fontFamily: 'Outfit_800ExtraBold', color: C.white },
+  prodBadgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   prodOutBadge: {
     position: 'absolute', top: 5, left: 5, width: 18, height: 18, borderRadius: 9,
     backgroundColor: C.danger, alignItems: 'center', justifyContent: 'center', zIndex: 2,

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Tabs } from 'expo-router'
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { ThemeColors, withAlpha } from '@/constants/theme'
+import { ThemeColors, withAlpha, FontSize } from '@/constants/theme'
 import { useI18n, useTheme } from '@/stores/appStore'
 
 function TabIcon({ name, focused, label }:{
@@ -82,6 +82,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     alignItems:'center',
     backgroundColor: withAlpha(C.primary, 0.10),
   },
-  lbl:{ fontSize:11, color:C.text3, fontFamily:'Outfit_600SemiBold', textAlign:'center' },
+  lbl:{ fontSize:FontSize.xs, color:C.text3, fontFamily:'Outfit_600SemiBold', textAlign:'center' },
   lblActive:{ color:C.primary3 },
 })

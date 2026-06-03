@@ -181,7 +181,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     width: 60, height: 60, borderRadius: 30, backgroundColor: C.accent2,
     alignItems: 'center', justifyContent: 'center',
   },
-  scanSuccessText: { color: C.white, fontSize: 28, fontFamily: 'Outfit_900Black' },
+  scanSuccessText: { color: C.white, fontSize: 28, fontFamily: 'Outfit_800ExtraBold' },
   permContainer: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
   permIcon: { fontSize: 60, marginBottom: Spacing.xl },
   permTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text, marginBottom: Spacing.md, textAlign: 'center' },

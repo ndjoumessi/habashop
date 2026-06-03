@@ -475,7 +475,7 @@ export default function SettingsScreen() {
 
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  screenTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_900Black', color: C.text, paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
+  screenTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.text, paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
 
   section: { paddingHorizontal: Spacing.xl, marginTop: Spacing.lg },
   sectionTitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
@@ -492,12 +492,12 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
     ...Shadow.colored(C.primary),
   },
-  avatarTxt: { fontSize: FontSize.xl, fontFamily: 'Outfit_900Black', color: C.white },
+  avatarTxt: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   profileName: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   profileEmail: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
   badgeRow: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.xs },
   badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
-  badgeTxt: { fontSize: 11, fontFamily: 'Outfit_800ExtraBold', letterSpacing: 0.5 },
+  badgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold', letterSpacing: 0.5 },
 
   // Langue grid 2x2
   grid2: { flexDirection: 'row', flexWrap: 'wrap', padding: Spacing.sm, gap: Spacing.sm },
@@ -539,8 +539,8 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: withAlpha(C.primary, 0.2),
   },
-  rateText: { fontSize: 13, fontFamily: 'Outfit_700Bold', color: C.primary3, textAlign: 'center' },
-  rateSubText: { fontSize: 11, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', marginTop: 3 },
+  rateText: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.primary3, textAlign: 'center' },
+  rateSubText: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', marginTop: 3 },
 
   // Boutique info
   infoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md, gap: Spacing.md },

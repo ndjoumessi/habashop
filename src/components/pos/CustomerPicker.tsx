@@ -167,5 +167,5 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   sub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   ptsBox: { alignItems: 'center', minWidth: 38 },
   ptsVal: { fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: C.accent2 },
-  ptsLbl: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
+  ptsLbl: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
 })

@@ -63,6 +63,15 @@ export const BorderRadius = {
   sm:6, md:10, lg:14, xl:18, xxl:24, full:9999
 } as const
 
+// Échelle typographique = SOURCE UNIQUE des tailles de texte (aucun littéral dans le JSX/StyleSheet).
+// Rôles sémantiques (du plus petit au plus grand) :
+//   caption (xs=11)  → légendes, badges, sous-textes  ── plancher de lisibilité (cf. Vague 1)
+//   label   (sm=12)  → labels de champ, méta, puces
+//   body    (md=14)  → corps de texte, lignes de liste
+//   title   (xl=18 / xxl=22) → titres de section / d'écran (via ScreenHeader)
+//   display (xxxl=28 / hero=36) → métrique reine (CA), logo
+// ⚠️ Les tailles d'EMOJI/glyphes décoratifs (avatars, médailles, pictos produits) ne sont PAS du
+//    texte : elles restent en littéral inline (≥16) et ne transitent pas par cette échelle.
 export const FontSize = {
   xs:11, sm:12, md:14, lg:16, xl:18,
   xxl:22, xxxl:28, hero:36
