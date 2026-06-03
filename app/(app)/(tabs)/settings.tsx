@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import Constants from 'expo-constants'
+import * as Updates from 'expo-updates'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '@/stores/authStore'
 import { useAppStore, useI18n, useFmt, useTheme, type Lang, type ThemeMode } from '@/stores/appStore'
@@ -95,6 +96,17 @@ export default function SettingsScreen() {
 
   const status = tenant?.status ?? 'active'
   const statusColor = status === 'suspended' ? C.danger : status === 'trial' ? C.warn : C.accent2
+
+  // Marqueur de bundle EAS : permet de prouver quel OTA tourne réellement sur le device
+  // (matcher les 8 premiers caractères avec l'« Update group ID » de `eas update`).
+  // En dev/Expo Go, updateId est null → « embedded ».
+  const updateId = Updates.updateId
+  const bundleId = updateId
+    ? `${updateId.slice(0, 8)} · ${Updates.isEmbeddedLaunch
+        ? i('embarqué', 'embedded', 'incorporado', 'incorporato')
+        : 'OTA'}`
+    : 'embedded'
+  const bundleChannel = Updates.channel ?? '—'
 
   const THEMES: { key: ThemeMode; icon: string; label: string }[] = [
     { key: 'dark',   icon: '🌙', label: i('Sombre', 'Dark', 'Oscuro', 'Scuro') },
@@ -422,6 +434,14 @@ export default function SettingsScreen() {
           <View style={s.infoRow}>
             <Text style={s.infoKey}>Version</Text>
             <Text style={s.infoVal}>{Constants.expoConfig?.version ?? '—'}</Text>
+          </View>
+          <View style={[s.infoRow, s.listRowBorderTop]}>
+            <Text style={s.infoKey}>Bundle</Text>
+            <Text style={s.infoVal} numberOfLines={1}>{bundleId}</Text>
+          </View>
+          <View style={[s.infoRow, s.listRowBorderTop]}>
+            <Text style={s.infoKey}>{i('Canal', 'Channel', 'Canal', 'Canale')}</Text>
+            <Text style={s.infoVal} numberOfLines={1}>{bundleChannel}</Text>
           </View>
           <View style={[s.infoRow, s.listRowBorderTop]}>
             <Text style={s.infoKey}>Backend</Text>
