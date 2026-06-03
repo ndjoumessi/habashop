@@ -406,6 +406,8 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | 750671c | chore(deps): **expo-background-fetch → expo-background-task** (minimumInterval en minutes) |
 | ef487e7 | feat(observability): **crash reporter Sentry** (import dynamique guardé Expo Go + DSN) |
 | 84da272 | feat(kiosk): **TVA + client + remise** (parité Caisse, via posStore + CustomerPicker) |
+| 91d50ba | chore: **version 1.4.0** (build APK preview) |
+| be323eb | chore(eas): pin `environment` preview/production (charge `EXPO_PUBLIC_SENTRY_DSN`) |
 
 ---
 
@@ -431,7 +433,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
-*Dernière mise à jour : 2026-06-03 — (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN). À valider en build EAS : Sentry (DSN + source maps) + background-task. (4) parité kiosque TVA/client/remise. Audit interne au repo = soldé. Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
+*Dernière mise à jour : 2026-06-03 — (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN). (4) parité kiosque TVA/client/remise ; (5) **APK 1.4.0 buildé** (build `394fda70`) avec **DSN Sentry câblé** (EAS env var). Audit interne au repo = soldé. À valider device : crash→Sentry, widget background-task. Follow-up : source maps Sentry (auth token). Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
 
 ---
 
@@ -502,6 +504,16 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 - **8 `catch {}` vides** → `logger.warn(contexte, e)` (les `catch { return false/[] }` à fallback **restent** inchangés). `logger` ajouté en import dans `api.ts` + `useProfilePhoto.ts`.
 - **Reçu PDF** : `src/services/printReceipt.ts` (`expo-print`, **déjà installé**, **dispo en Expo Go**) → `Print.printAsync({ html })` ouvre la boîte d'impression OS (AirPrint / Android → Bluetooth thermique ou PDF). `TicketOptions` **exporté** de `whatsappTicket.ts` et réutilisé (DRY) ; HTML **échappé** (`esc`). Branché post-vente POS (3ᵉ bouton de l'alerte) + réimpression historique (`sales/index.tsx`, helper `saleTicket` partagé WhatsApp/print). Annulation d'impression = normale → log, **pas** d'alerte. **Validé device (impression OK).**
 - **Pack build** : **`expo-background-task ~1.0.10`** remplace `expo-background-fetch` (déprécié) — ⚠️ `minimumInterval` en **minutes** (était en secondes), résultat `BackgroundTaskResult.Success/Failed`, **supporté Expo Go** (import sûr). **Sentry `@sentry/react-native ~7.2.0`** via `src/lib/crashReporter.ts` : **import dynamique** (jamais évalué en Expo Go) + garde `executionEnvironment !== StoreClient` + DSN `EXPO_PUBLIC_SENTRY_DSN` → **inerte sans DSN / en Expo Go** ; `initCrashReporter()` au montage root, `ErrorBoundary` → `captureException`. ⚠️ source maps non configurées (follow-up build).
+
+### Build APK 1.4.0 — Sentry DSN câblé
+- **Sentry DSN** : projet `haba-76 / react-native` (région **EU/de**). DSN dans **`.env` local** (gitignored, **pas** dans le repo public) **+ EAS env var** `EXPO_PUBLIC_SENTRY_DSN` (visibilité *plaintext*) créée sur les environnements **preview** ET **production** (`eas env:create`, `eas secret:create` est **déprécié**). `eas.json` : `"environment"` épinglé sur les profils `preview`/`production` → le build **inline** bien la var (confirmé dans le log : *« loaded from the "preview" environment: EXPO_PUBLIC_SENTRY_DSN »*).
+- `app.json` : **version 1.3.1 → 1.4.0** (commits `91d50ba` version, `be323eb` eas.json env). versionCode resté **3** (profil `preview` sans `autoIncrement` ; `appVersionSource: remote`).
+- Build EAS Android `preview` (APK, keystore `sH_oz3rpgx`) → **FINISHED** : build `394fda70-fd7b-4e01-9de0-1b22e10da268`.
+  - Dashboard : https://expo.dev/accounts/ndjoumessi/projects/habashop-mobile/builds/394fda70-fd7b-4e01-9de0-1b22e10da268
+  - APK : https://expo.dev/artifacts/eas/85trffDN87RLYcWckDuQbm.apk
+- ⚠️ **EAS auth partagée via disque** : `eas whoami` → `ndjoumessi` fonctionne depuis les shells de Claude (state.json partagé) → `eas env:create` / `eas build` **lançables par Claude** (contrairement à ce que laissait penser l'ancienne note « terminal de Nelson uniquement »).
+- **Follow-up source maps** (stacks symbolisées dans Sentry) = NON fait : ajouter le plugin `@sentry/react-native/expo` (org `haba-76` / project `react-native` / url EU) + **`SENTRY_AUTH_TOKEN`** en secret EAS, au prochain build.
+- **À valider device (APK 1.4.0)** : crash test → event Sentry (stack **minifiée** attendue) ; scan ; reçu PDF ; kiosque client/remise ; widget après 15 min (background-task).
 
 ---
 
