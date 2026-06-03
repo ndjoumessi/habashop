@@ -6,6 +6,7 @@ import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Employee, DEPT_COLORS, displayDate, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
 
 interface Props {
@@ -99,7 +100,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               <div style={{ width:16, height:16, borderRadius:4, background:`${editEmpForm.color??'var(--p)'}22`, display:'flex', alignItems:'center', justifyContent:'center', color:editEmpForm.color??'var(--p)' }}><User size={10}/></div>
               {lang === 'en' ? 'IDENTITY' : lang === 'es' ? 'IDENTIDAD' : lang === 'it' ? 'IDENTITÀ' : 'IDENTITÉ'}
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            <ResponsiveGrid min={160} gap={10}>
               <ViewField label={lang === 'en' ? 'FULL NAME *' : lang === 'es' ? 'NOMBRE COMPLETO *' : lang === 'it' ? 'NOME COMPLETO *' : 'NOM COMPLET *'} value={editEmpForm.name??''} editing={empEditMode}>
                 <ValidatedInput type="name" required autoFocus
                   value={editEmpForm.name??''}
@@ -109,7 +110,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               <ViewField label={lang === 'en' ? 'POSITION *' : lang === 'es' ? 'PUESTO *' : lang === 'it' ? 'POSIZIONE *' : 'POSTE *'} value={editEmpForm.role??''} editing={empEditMode}>
                 <input className="input" placeholder={lang === 'en' ? 'Ex: Cashier' : lang === 'es' ? 'Ej: Cajera' : lang === 'it' ? 'Es: Cassiera' : 'Ex: Caissière'} value={editEmpForm.role??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, role:e.target.value }))} />
               </ViewField>
-            </div>
+            </ResponsiveGrid>
           </div>
 
           {/* Contrat */}
@@ -118,7 +119,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               <div style={{ width:16, height:16, borderRadius:4, background:'rgba(255,149,0,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc)' }}><FileText size={10}/></div>
               {lang === 'en' ? 'CONTRACT' : lang === 'es' ? 'CONTRATO' : lang === 'it' ? 'CONTRATTO' : 'CONTRAT'}
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            <ResponsiveGrid min={160} gap={10}>
               <ViewField label={lang === 'en' ? 'DEPARTMENT' : lang === 'es' ? 'DEPARTAMENTO' : lang === 'it' ? 'REPARTO' : 'DÉPARTEMENT'} value={editEmpForm.dept??''} editing={empEditMode}>
                 <select className="input" value={editEmpForm.dept??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, dept:e.target.value }))}>
                   {Object.keys(DEPT_COLORS).map(d => <option key={d} value={d}>{deptLabel(d, lang)}</option>)}
@@ -143,7 +144,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                   <input className="input" type="date" value={editEmpForm.contractEnd??''} onChange={e => setEditEmpForm((f:any) => ({ ...f, contractEnd:e.target.value }))} />
                 </ViewField>
               )}
-            </div>
+            </ResponsiveGrid>
           </div>
 
           {/* Rémunération */}
@@ -188,7 +189,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               <div style={{ width:16, height:16, borderRadius:4, background:'rgba(0,184,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--acc3)' }}><User size={10}/></div>
               {lang === 'en' ? 'CONTACT' : lang === 'es' ? 'CONTACTO' : lang === 'it' ? 'CONTATTO' : 'CONTACT'}
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            <ResponsiveGrid min={160} gap={10}>
               <ViewField label={lang === 'en' ? 'PHONE' : lang === 'es' ? 'TELÉFONO' : lang === 'it' ? 'TELEFONO' : 'TÉLÉPHONE'} value={editEmpForm.phone||''} icon="📞" editing={empEditMode}>
                 <PhoneInputWithCountry
                   value={editEmpForm.phone??''}
@@ -227,7 +228,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                   </div>
                 </div>
               )}
-            </div>
+            </ResponsiveGrid>
           </div>
 
           {/* Performance */}

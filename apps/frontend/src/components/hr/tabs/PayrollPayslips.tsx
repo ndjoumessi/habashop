@@ -1,4 +1,5 @@
 import { FileText } from 'lucide-react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Employee, roleLabel, deptLabel } from '@/components/hr/hrShared'
 
 interface Props {
@@ -29,7 +30,7 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
         </button>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:12 }}>
+      <ResponsiveGrid min={300} gap={12}>
         {employees.filter(e => e.active !== false).map(emp => {
           const brut  = Number(emp.salary)||0
           const bonus = bonuses[String(emp.id)] ?? 0
@@ -83,7 +84,7 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
             </div>
           )
         })}
-      </div>
+      </ResponsiveGrid>
     </div>
   )
 }

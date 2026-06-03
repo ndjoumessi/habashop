@@ -1,4 +1,5 @@
 import { Users, DollarSign, Umbrella, TrendingUp } from 'lucide-react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 
 interface HRStatsBarProps {
   employees:    any[]
@@ -12,7 +13,7 @@ interface HRStatsBarProps {
 /** Barre de KPIs RH (effectif, masse salariale, congés, performance). Extrait de HR.tsx. */
 export default function HRStatsBar({ employees, activeCount, totalPayroll, pendingLeaves, fmt, lang }: HRStatsBarProps) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
+    <ResponsiveGrid min={180} gap={12}>
       {[
         { icon: <Users size={18}/>,      label: lang === 'en' ? 'Total staff' : lang === 'es' ? 'Plantilla total' : lang === 'it' ? 'Organico totale' : 'Effectif total',      value: `${employees.length}`,    color: 'var(--p)', sub: `${activeCount} ${lang === 'en' ? 'active' : lang === 'es' ? 'activos' : lang === 'it' ? 'attivi' : 'actifs'}` },
         { icon: <DollarSign size={18}/>, label: lang === 'en' ? 'Payroll' : lang === 'es' ? 'Masa salarial' : lang === 'it' ? 'Costo del personale' : 'Masse salariale',          value: fmt(totalPayroll),         color: 'var(--acc2)', sub: lang === 'en' ? 'This month' : lang === 'es' ? 'Este mes' : lang === 'it' ? 'Questo mese' : 'Ce mois' },
@@ -28,6 +29,6 @@ export default function HRStatsBar({ employees, activeCount, totalPayroll, pendi
           <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{k.sub}</div>
         </div>
       ))}
-    </div>
+    </ResponsiveGrid>
   )
 }

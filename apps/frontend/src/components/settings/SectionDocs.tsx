@@ -1,4 +1,5 @@
 import type React from 'react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { ClipboardList } from 'lucide-react'
@@ -43,7 +44,7 @@ export default function SectionDocs() {
         title={i('Documents & Configuration', 'Documents & Configuration', 'Documentos & Configuración', 'Documenti & Configurazione')}
         sub={i('Exportez vos données et votre configuration', 'Export your data and configuration', 'Exporta tus datos y configuración', 'Esporta i tuoi dati e la configurazione')} />
       <input ref={importRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={importConfig} />
-      <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <ResponsiveGrid min={160} gap={12} style={{ padding: '16px 22px' }}>
         {DOCS.map(d => (
           <button key={pick(lang, d.label)} type="button" onClick={d.action}
             style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s' }}
@@ -56,7 +57,7 @@ export default function SectionDocs() {
             </div>
           </button>
         ))}
-      </div>
+      </ResponsiveGrid>
       {showReport && <AccountingReportModal onClose={() => setShowReport(false)} />}
     </div>
   )

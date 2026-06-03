@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { t, useAppStore, formatInCurrency } from '@/stores/appStore'
 import { printProductLabels } from '@/utils/export'
 import ViewField from '@/components/ui/ViewField'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
 import { lookupProductByEan } from '@/lib/productLookup'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
@@ -518,14 +519,14 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   </button>
                 </div>
                 {form.hasPromotion && (
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                  <ResponsiveGrid min={160} gap={12}>
                     <ViewField label={i('PRIX PROMOTION', 'PROMO PRICE', 'PRECIO PROMO', 'PREZZO PROMO')} value={form.promotionPrice ? fmt(form.promotionPrice) : ''} editing={productEditMode} emptyLabel={emptyLabel}>
                       <input className="input text-sm" type="number" value={form.promotionPrice || ''} onChange={e => setForm(f => ({...f, promotionPrice:+e.target.value}))} />
                     </ViewField>
                     <ViewField label={i('DATE FIN PROMO', 'PROMO END DATE', 'FECHA FIN PROMO', 'DATA FINE PROMO')} value={form.promotionEnd||''} editing={productEditMode} emptyLabel={emptyLabel}>
                       <input className="input text-sm" type="date" value={form.promotionEnd} onChange={e => setForm(f => ({...f, promotionEnd:e.target.value}))} />
                     </ViewField>
-                  </div>
+                  </ResponsiveGrid>
                 )}
               </div>
             )}
@@ -554,14 +555,14 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 <ViewField label={lang === 'en' ? 'INTERNAL REFERENCE' : lang === 'es' ? 'REFERENCIA INTERNA' : lang === 'it' ? 'RIFERIMENTO INTERNO' : 'RÉFÉRENCE INTERNE'} value="" editing={productEditMode} emptyLabel={emptyLabel}>
                   <input className="input text-sm" placeholder={lang === 'en' ? 'Optional reference...' : lang === 'es' ? 'Referencia opcional...' : lang === 'it' ? 'Riferimento opzionale...' : 'Référence optionnelle...'} />
                 </ViewField>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <ResponsiveGrid min={160} gap={12}>
                   <ViewField label={i('POIDS (g)', 'WEIGHT (g)', 'PESO (g)', 'PESO (g)')} value="" editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" type="number" placeholder={i('Ex: 500', 'Ex: 500', 'Ej: 500', 'Es: 500')} />
                   </ViewField>
                   <ViewField label={i('DIMENSIONS', 'DIMENSIONS', 'DIMENSIONES', 'DIMENSIONI')} value="" editing={productEditMode} emptyLabel={emptyLabel}>
                     <input className="input text-sm" placeholder={i('L × l × h cm', 'L × W × H cm', 'L × A × H cm', 'L × P × A cm')} />
                   </ViewField>
-                </div>
+                </ResponsiveGrid>
               </div>
             )}
 

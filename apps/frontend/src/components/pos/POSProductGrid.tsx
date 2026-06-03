@@ -1,4 +1,5 @@
 import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History } from 'lucide-react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
 import { CATS, catLabel, type PosProduct, type CartItem } from '@/components/pos/posShared'
 
@@ -186,12 +187,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
             overflowY: 'auto',
             paddingTop: 8,
           }}>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-              gap: 10,
-              paddingBottom: 8,
-            }}>
+            <ResponsiveGrid min={160} gap={10} style={{ paddingBottom: 8 }}>
               {filtered.map(p => {
                 const inCart     = cart.find(i => i.id === p.id)
                 const isLowStock = p.stock < 20
@@ -330,7 +326,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                   </div>
                 )
               )}
-            </div>
+            </ResponsiveGrid>
           </div>}
 
           {/* ── Onglet Historique ── */}

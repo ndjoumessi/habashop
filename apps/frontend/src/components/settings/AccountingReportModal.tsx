@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { X, FileDown, FileText, TrendingUp, TrendingDown, Scale, Users, RefreshCw, Loader2, BarChart3, AlertTriangle } from 'lucide-react'
 import { useConfig, formatInCurrency } from '@/stores/appStore'
 import { reportsApi, type AccountingReport } from '@/lib/api'
@@ -134,9 +135,9 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
         <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px' }}>
           {loading ? (
             <div style={{ display: 'grid', gap: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+              <ResponsiveGrid min={160} gap={10}>
                 {[0, 1, 2, 3].map(k => <div key={k} style={{ height: 70, borderRadius: 12, background: 'var(--bg3)', animation: 'pulse 1.4s infinite' }} />)}
-              </div>
+              </ResponsiveGrid>
               <div style={{ height: 160, borderRadius: 12, background: 'var(--bg3)', animation: 'pulse 1.4s infinite' }} />
             </div>
           ) : error ? (
@@ -158,7 +159,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
           ) : data && (
             <>
               {/* KPIs */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 16 }}>
+              <ResponsiveGrid min={160} gap={10} style={{ marginBottom: 16 }}>
                 {[
                   { label: i('Revenus', 'Revenue', 'Ingresos', 'Ricavi'), value: money(data.revenue.total), color: 'var(--acc2)', Icon: TrendingUp, sub: `${data.revenue.count} ${i('ventes', 'sales', 'ventas', 'vendite')}` },
                   { label: i('Dépenses', 'Expenses', 'Gastos', 'Spese'), value: money(data.expenses.total), color: 'var(--danger)', Icon: TrendingDown, sub: `${data.expenses.byCategory.length} ${i('catégories', 'categories', 'categorías', 'categorie')}` },
@@ -174,7 +175,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                     <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 2 }}>{k.sub}</div>
                   </div>
                 ))}
-              </div>
+              </ResponsiveGrid>
 
               {/* Résultat estimé après paie — masqué si aucune masse salariale (évite le doublon) */}
               {data.payroll.total > 0 && (() => {

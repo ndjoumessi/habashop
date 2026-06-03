@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
 import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Employee, COLORS, DEPT_COLORS, deptLabel } from '@/components/hr/hrShared'
 
 export default function EmpModal({ emp, onClose, onSave, onDelete }: {
@@ -78,14 +79,14 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
         {/* Scrollable body */}
         <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <ResponsiveGrid min={160} gap={12}>
             <ValidatedInput type="name" required autoFocus label={T('Nom complet *', 'Full name *', 'Nombre completo *', 'Nome completo *')}
               value={name} onChange={setName} placeholder={T('Prénom Nom', 'First Last', 'Nombre Apellido', 'Nome Cognome')} />
             <ValidatedInput type="text" required label={T('Poste *', 'Position *', 'Puesto *', 'Posizione *')}
               value={role} onChange={setRole} placeholder={T('Ex: Caissière', 'Ex: Cashier', 'Ej: Cajera', 'Es: Cassiera')} />
-          </div>
+          </ResponsiveGrid>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <ResponsiveGrid min={160} gap={12}>
             <div>
               <label className="form-label">{T('Département', 'Department', 'Departamento', 'Dipartimento')}</label>
               <input aria-label={T('Département', 'Department', 'Departamento', 'Dipartimento')} className="input" value={dept} onChange={e => setDept(e.target.value)} placeholder={T('Ex: Ventes', 'Ex: Sales', 'Ej: Ventas', 'Es: Vendite')} style={{ width: '100%', boxSizing: 'border-box' }} />
@@ -97,7 +98,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
                 <option value="CDD">{T('CDD', 'Fixed-term', 'Temporal', 'Determinato')}</option>
               </select>
             </div>
-          </div>
+          </ResponsiveGrid>
 
           <div>
             <label className="form-label">{T('Salaire brut', 'Gross salary', 'Salario bruto', 'Stipendio lordo')} ({symbol})</label>
@@ -114,7 +115,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <ResponsiveGrid min={160} gap={12}>
             <div>
               <label className="form-label">{T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')}</label>
               <input aria-label={T("Date d'embauche", 'Hire date', 'Fecha de contratación', 'Data di assunzione')} className="input" value={hiredAt} onChange={e => setHiredAt(e.target.value)} placeholder={T('JJ/MM/AAAA', 'DD/MM/YYYY', 'DD/MM/AAAA', 'GG/MM/AAAA')} style={{ width: '100%', boxSizing: 'border-box' }} />
@@ -125,7 +126,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
                 <input aria-label={T('Fin de contrat', 'Contract end', 'Fin de contrato', 'Fine contratto')} className="input" value={endAt} onChange={e => setEndAt(e.target.value)} placeholder={T('JJ/MM/AAAA', 'DD/MM/YYYY', 'DD/MM/AAAA', 'GG/MM/AAAA')} style={{ width: '100%', boxSizing: 'border-box' }} />
               </div>
             )}
-          </div>
+          </ResponsiveGrid>
 
           <PhoneInputWithCountry
             label={T('TÉLÉPHONE', 'PHONE', 'TELÉFONO', 'TELEFONO')}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { ExternalLink, RotateCw, Globe, Zap, Settings2 } from 'lucide-react'
 import Button from '@/components/ui/AppButton'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import ResendMonitor from '@/components/integrations/ResendMonitor'
 
@@ -303,11 +304,7 @@ export default function Integrations() {
       </div>
 
       {/* ── Grid intégrations ── */}
-      <div style={{
-        display:'grid',
-        gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))',
-        gap:14,
-      }}>
+      <ResponsiveGrid min={300} gap={14}>
         {INTEGRATIONS_LIST.map(itg => {
           const isActive = itg.status === 'connected'
           const { IconSvg } = itg
@@ -414,7 +411,7 @@ export default function Integrations() {
             </div>
           )
         })}
-      </div>
+      </ResponsiveGrid>
 
       {/* ── Détail Resend — Emails transactionnels ── */}
       <div style={{

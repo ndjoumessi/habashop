@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { useConfig } from '@/stores/appStore'
 import { Store } from 'lucide-react'
@@ -82,7 +83,7 @@ export default function SectionShop() {
             <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(true)}>✏️ {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>
           )} />
 
-        <div style={{ padding: '20px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <ResponsiveGrid min={160} gap={16} style={{ padding: '20px 22px' }}>
           {FIELDS.map(f => (
             <div key={f.key} style={f.full ? { gridColumn: '1/-1' } : {}}>
               <label style={{ display: 'block', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{f.label}</label>
@@ -116,7 +117,7 @@ export default function SectionShop() {
               </div>
             )}
           </div>
-        </div>
+        </ResponsiveGrid>
       </div>
     </div>
   )

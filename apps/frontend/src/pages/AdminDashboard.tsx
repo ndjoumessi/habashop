@@ -7,6 +7,7 @@ import { confirm } from '@/lib/confirm'
 import toast from 'react-hot-toast'
 import EmptyState from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/skeleton'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import {
   Shield, Store, Users, CreditCard, Wallet, Package, TrendingUp,
   Search, X, Plus, ArrowLeft, ChevronRight, Layers, BarChart3,
@@ -204,7 +205,7 @@ export default function AdminDashboard() {
 
       {/* ── KPIs globaux (toujours visibles) ── */}
       {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10, marginBottom: 24 }}>
+        <ResponsiveGrid min={200} gap={10} style={{ marginBottom: 24 }}>
           {kpis.map((k, idx) => (
             <div key={idx} style={{ background: 'var(--card)', border: `1px solid ${mix(k.color, 22)}`, borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, transition: 'transform .15s ease, box-shadow .15s ease' }}
               onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)' }}
@@ -219,7 +220,7 @@ export default function AdminDashboard() {
               <div style={{ fontSize: 11, color: 'var(--text4)', fontWeight: 600 }}>{k.sub}</div>
             </div>
           ))}
-        </div>
+        </ResponsiveGrid>
       )}
 
       {/* ── Onglets premium ── */}
@@ -247,13 +248,13 @@ export default function AdminDashboard() {
       {/* ── Overview : graphiques ── */}
       {activeTab === 'overview' && (
         loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16 }}>
+          <ResponsiveGrid min={300} gap={16}>
             <Skeleton height={220} /><Skeleton height={220} />
-          </div>
+          </ResponsiveGrid>
         ) : tenants.length === 0 ? (
           <EmptyState icon="🏪" title={i('Aucune boutique', 'No shops', 'Sin tiendas', 'Nessun negozio')} message={i('Aucun tenant inscrit pour le moment.', 'No tenants registered yet.', 'Ningún inquilino registrado todavía.', 'Nessun tenant registrato.')} action={{ label: i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio'), onClick: () => setShowNewTenant(true) }} />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16 }}>
+          <ResponsiveGrid min={300} gap={16}>
             <div className="panel">
               <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={15} /> {i('Répartition des plans', 'Plan distribution', 'Distribución de planes', 'Distribuzione piani')}</span></div>
               <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -286,7 +287,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
             </div>
-          </div>
+          </ResponsiveGrid>
         )
       )}
 
@@ -313,13 +314,13 @@ export default function AdminDashboard() {
           </div>
 
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 12 }}>
+            <ResponsiveGrid min={320} gap={12}>
               <Skeleton height={150} /><Skeleton height={150} /><Skeleton height={150} /><Skeleton height={150} />
-            </div>
+            </ResponsiveGrid>
           ) : view.length === 0 ? (
             <EmptyState icon="🏪" title={query ? i('Aucun résultat', 'No results', 'Sin resultados', 'Nessun risultato') : i('Aucune boutique', 'No shops', 'Sin tiendas', 'Nessun negozio')} message={query ? i('Aucune boutique ne correspond à votre recherche.', 'No shop matches your search.', 'Ninguna tienda coincide con tu búsqueda.', 'Nessun negozio corrisponde alla ricerca.') : i('Aucun tenant inscrit pour le moment.', 'No tenants registered yet.', 'Ningún inquilino registrado todavía.', 'Nessun tenant registrato.')} />
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 12 }}>
+            <ResponsiveGrid min={320} gap={12}>
               {view.map(t => {
                 const pc = planColor(t.plan)
                 const sc = statusCfg(t)
@@ -377,7 +378,7 @@ export default function AdminDashboard() {
                   </div>
                 )
               })}
-            </div>
+            </ResponsiveGrid>
           )}
         </div>
       )}

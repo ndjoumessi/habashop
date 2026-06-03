@@ -1,4 +1,5 @@
 import { useConfig, t } from '@/stores/appStore'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { X, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { ROLE_CONFIG, PERMISSIONS, moduleLabel, buildRoleLabels } from './usersShared'
 import type { Role } from './usersShared'
@@ -32,7 +33,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
           {/* Ligne 1 : Nom complet + Rôle */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          <ResponsiveGrid min={160} gap={12}>
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
@@ -58,7 +59,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
                 ))}
               </select>
             </div>
-          </div>
+          </ResponsiveGrid>
 
           {/* Ligne 2 : Email (pleine largeur, icône Mail intégrée) */}
           <div>
@@ -79,7 +80,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
           </div>
 
           {/* Ligne 3 : Mot de passe + Confirmer (icônes Lock/Eye intégrées) */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          <ResponsiveGrid min={160} gap={12}>
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Mot de passe', 'Password', 'Contraseña', 'Password')}
@@ -122,7 +123,7 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
                   onChange={e => setForm(f => ({...f, confirm:e.target.value}))} />
               </div>
             </div>
-          </div>
+          </ResponsiveGrid>
 
           {/* Preview modules accessibles */}
           {form.role && (

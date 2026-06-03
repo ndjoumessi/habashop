@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { ClipboardList, X, Users, Truck, User, CheckCircle, Phone, Plus, Package, Clock, Star } from 'lucide-react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
@@ -72,7 +73,7 @@ export default function NewOrderModal({
         }}>
 
           {/* Toggle type commande */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <ResponsiveGrid min={160} gap={8}>
             <button type="button" onClick={() => { setOrderType('client'); setSelectedSupplierId('') }}
               style={{
                 padding: '12px 16px', borderRadius: 12, cursor: 'pointer',
@@ -105,7 +106,7 @@ export default function NewOrderModal({
                 {i('Achat chez fournisseur', 'Order from supplier', 'Compra a proveedor', 'Acquisto da fornitore')}
               </span>
             </button>
-          </div>
+          </ResponsiveGrid>
 
           {/* Formulaire client OU sélecteur fournisseur */}
           {orderType === 'client' ? (
@@ -315,10 +316,7 @@ export default function NewOrderModal({
               onChange={e => setProductSearch(e.target.value)}
               style={{ marginBottom: 10 }}
             />
-            <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))',
-              gap: 8, maxHeight: 200, overflowY: 'auto', padding: '2px',
-            }}>
+            <ResponsiveGrid min={130} gap={8} style={{ maxHeight: 200, overflowY: 'auto', padding: '2px' }}>
               {availableProducts
                 .filter(p => !productSearch || p.name.toLowerCase().includes(productSearch.toLowerCase()))
                 .map(product => {
@@ -355,7 +353,7 @@ export default function NewOrderModal({
                   )
                 })
               }
-            </div>
+            </ResponsiveGrid>
           </div>
 
           {/* Récapitulatif avec contrôle quantités */}

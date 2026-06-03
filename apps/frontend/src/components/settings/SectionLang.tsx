@@ -1,4 +1,5 @@
 import { useConfig, useFormatAmount, ACCENT_PAIRS, THEMES, type Currency, type Lang, type Theme } from '@/stores/appStore'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useAuthStore } from '@/stores/authStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
 import { tenantApi } from '@/lib/api'
@@ -56,7 +57,7 @@ export default function SectionLang() {
           title={i("Langue de l'interface", 'Interface language', 'Idioma de la interfaz', "Lingua dell'interfaccia")}
           sub={i('4 langues — réglage de la boutique', '4 languages — shop-wide setting', '4 idiomas — ajuste de la tienda', '4 lingue — impostazione del negozio')} />
         {isAdmin ? (
-          <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <ResponsiveGrid min={160} gap={10} style={{ padding: '16px 22px' }}>
             {LANGS.map(l => {
               const active = lang === l.code
               return (
@@ -90,7 +91,7 @@ export default function SectionLang() {
                 </button>
               )
             })}
-          </div>
+          </ResponsiveGrid>
         ) : (
           <ReadOnlyValue
             flag={LANGS.find(l => l.code === lang)?.flag ?? '🌐'}
@@ -173,7 +174,7 @@ export default function SectionLang() {
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Thème', 'Theme', 'Tema', 'Tema')}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(118px,1fr))', gap: 10 }}>
+            <ResponsiveGrid min={118} gap={10}>
               {(Object.entries(THEMES) as [Theme, typeof THEMES[Theme]][]).map(([key, th]) => {
                 const active = cfg.theme === key
                 const tbg = th.vars['--bg']; const tp = th.vars['--p']; const tacc = th.vars['--acc2']; const ttext = th.vars['--text']
@@ -196,7 +197,7 @@ export default function SectionLang() {
                   </button>
                 )
               })}
-            </div>
+            </ResponsiveGrid>
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

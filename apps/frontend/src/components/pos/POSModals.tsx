@@ -1,4 +1,5 @@
 import { X, Smartphone, Printer, FileText, CheckCircle, AlertTriangle } from 'lucide-react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, formatInCurrency } from '@/stores/appStore'
 import { generateInvoice } from '@/utils/export'
@@ -52,7 +53,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             {/* Type */}
             <div style={{ marginBottom:16 }}>
               <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Type de remise</label>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+              <ResponsiveGrid min={160} gap={8}>
                 {([
                   { type:'percent', label:'Pourcentage (%)', icon:'%' },
                   { type:'amount',  label:'Montant fixe',    icon:'F' },
@@ -69,7 +70,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     {rt.label}
                   </button>
                 ))}
-              </div>
+              </ResponsiveGrid>
             </div>
 
             {/* Remises rapides % */}
@@ -153,7 +154,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             <h3 style={{ fontSize:16, fontWeight:800, color:'var(--text)', marginBottom:20 }}>
               {ct.close_title}
             </h3>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:20 }}>
+            <ResponsiveGrid min={160} gap={10} style={{ marginBottom: 20 }}>
               {[
                 { label: ct.open_time,    value: cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--' },
                 { label: ct.close_time,   value: new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) },
@@ -170,7 +171,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', fontFamily:'var(--mono)' }}>{s.value}</div>
                 </div>
               ))}
-            </div>
+            </ResponsiveGrid>
             <div style={{ marginBottom:20 }}>
               <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
                 {ct.counted_label}

@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { type Employee, labelStyle } from '@/components/hr/hrShared'
 
@@ -49,7 +50,7 @@ export default function LeaveRequestModal({ lang, employees, leaveForm, setLeave
               ].map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <ResponsiveGrid min={160} gap={12}>
             <div>
               <label style={labelStyle}>{lang === 'en' ? 'FROM' : lang === 'es' ? 'DEL' : lang === 'it' ? 'DAL' : 'DU'}</label>
               <input aria-label={lang === 'en' ? 'FROM' : lang === 'es' ? 'DEL' : lang === 'it' ? 'DAL' : 'DU'} className="input" type="date" style={{ width: '100%', boxSizing: 'border-box' }}
@@ -62,7 +63,7 @@ export default function LeaveRequestModal({ lang, employees, leaveForm, setLeave
                 value={leaveForm.endDate}
                 onChange={e => setLeaveForm(f => ({ ...f, endDate: e.target.value }))} />
             </div>
-          </div>
+          </ResponsiveGrid>
           <div>
             <label style={labelStyle}>{lang === 'en' ? 'NOTES / REASON' : lang === 'es' ? 'NOTAS / MOTIVO' : lang === 'it' ? 'NOTE / MOTIVO' : 'NOTES / MOTIF'}</label>
             <textarea aria-label={lang === 'en' ? 'NOTES / REASON' : lang === 'es' ? 'NOTAS / MOTIVO' : lang === 'it' ? 'NOTE / MOTIVO' : 'NOTES / MOTIF'} className="input" rows={2} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}

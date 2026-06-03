@@ -1,4 +1,5 @@
 import { useConfig, t } from '@/stores/appStore'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { X, Mail } from 'lucide-react'
 import { ROLE_CONFIG, PERMISSIONS, moduleLabel, buildRoleLabels } from './usersShared'
 import type { Role, User } from './usersShared'
@@ -31,7 +32,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
           {/* Ligne 1 : Nom complet + Rôle */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          <ResponsiveGrid min={160} gap={12}>
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text2)', marginBottom:6 }}>
                 {i('Nom complet', 'Full name', 'Nombre completo', 'Nome completo')}
@@ -56,7 +57,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
                 ))}
               </select>
             </div>
-          </div>
+          </ResponsiveGrid>
 
           {/* Ligne 2 : Email (icône Mail intégrée) */}
           <div>

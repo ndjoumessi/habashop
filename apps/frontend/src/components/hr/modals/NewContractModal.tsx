@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { type Employee, COLORS, DEPT_COLORS, labelStyle, deptLabel, contractLabel } from '@/components/hr/hrShared'
 
@@ -31,7 +32,7 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
             <label style={labelStyle}>{lang === 'en' ? 'EMPLOYEE NAME' : lang === 'es' ? 'NOMBRE DEL EMPLEADO' : lang === 'it' ? 'NOME DEL DIPENDENTE' : 'NOM DE L\'EMPLOYÉ'}</label>
             <input aria-label={lang === 'en' ? 'EMPLOYEE NAME' : lang === 'es' ? 'NOMBRE DEL EMPLEADO' : lang === 'it' ? 'NOME DEL DIPENDENTE' : 'NOM DE L\'EMPLOYÉ'} className="input" placeholder={lang === 'en' ? 'Employee name' : lang === 'es' ? 'Nombre del empleado' : lang === 'it' ? 'Nome del dipendente' : 'Aminata Diallo'} value={contractForm.empId} onChange={e=>setContractForm(f=>({...f,empId:e.target.value}))}/>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          <ResponsiveGrid min={160} gap={12}>
             <div>
               <label style={labelStyle}>{lang === 'en' ? 'POSITION' : lang === 'es' ? 'PUESTO' : lang === 'it' ? 'POSIZIONE' : 'POSTE'}</label>
               <input aria-label={lang === 'en' ? 'POSITION' : lang === 'es' ? 'PUESTO' : lang === 'it' ? 'POSIZIONE' : 'POSTE'} className="input" placeholder={lang === 'en' ? 'Ex: Cashier' : lang === 'es' ? 'Ej: Cajera' : lang === 'it' ? 'Es: Cassiera' : 'Ex: Caissière'} value={contractForm.role} onChange={e=>setContractForm(f=>({...f,role:e.target.value}))}/>
@@ -71,7 +72,7 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
                 </div>
               )}
             </div>
-          </div>
+          </ResponsiveGrid>
         </div>
         <div style={{ display:'flex', gap:10, marginTop:24 }}>
           <button className="btn" style={{ flex:1 }} onClick={()=>setShowNewContractModal(false)}>{lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}</button>

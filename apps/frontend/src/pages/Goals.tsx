@@ -5,6 +5,7 @@ import { dashboardApi, goalsApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { Plus, Trophy, Pencil, X, Check, Trash2, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 
 interface Goal {
   id: string
@@ -185,11 +186,7 @@ export default function Goals() {
       </div>
 
       {/* ── Grille objectifs avec gauge SVG ── */}
-      <div style={{
-        display:'grid',
-        gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))',
-        gap:14,
-      }}>
+      <ResponsiveGrid min={280} gap={14}>
         {goals.map(goal => {
           const pct         = goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0
           const status      = getStatus(goal)
@@ -313,7 +310,7 @@ export default function Goals() {
             </div>
           )
         })}
-      </div>
+      </ResponsiveGrid>
       </>)}
 
       {/* ── Modal édition ── */}
@@ -341,7 +338,7 @@ export default function Goals() {
                 </div>
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <ResponsiveGrid min={160} gap={10}>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>
                     {lang === 'en' ? 'Target' : lang === 'es' ? 'Objetivo' : lang === 'it' ? 'Obiettivo' : 'Objectif cible'}
@@ -354,9 +351,9 @@ export default function Goals() {
                   </label>
                   <input className="input" type="number" value={goalForm.current || ''} onChange={e => setGoalForm(f => ({...f, current:+e.target.value}))} />
                 </div>
-              </div>
+              </ResponsiveGrid>
 
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <ResponsiveGrid min={160} gap={10}>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', color:'var(--text3)', marginBottom:6 }}>{lang === 'en' ? 'Unit' : lang === 'es' ? 'Unidad' : lang === 'it' ? 'Unità' : 'Unité'}</label>
                   <select aria-label={lang === 'en' ? 'Unit' : lang === 'es' ? 'Unidad' : lang === 'it' ? 'Unità' : 'Unité'} className="input" value={goalForm.unit} onChange={e => setGoalForm(f => ({...f, unit:e.target.value as Goal['unit']}))}>
@@ -372,7 +369,7 @@ export default function Goals() {
                   </label>
                   <input className="input" placeholder={targetMonth} value={goalForm.period} onChange={e => setGoalForm(f => ({...f, period:e.target.value}))} />
                 </div>
-              </div>
+              </ResponsiveGrid>
 
               <div style={{ display:'flex', gap:8, marginTop:6 }}>
                 <button className="topbar-btn" style={{ flex:1, justifyContent:'center' }}

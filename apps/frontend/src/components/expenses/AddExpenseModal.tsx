@@ -1,6 +1,7 @@
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { X, Check } from 'lucide-react'
 import ValidatedInput from '@/components/ui/ValidatedInput'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { CATEGORIES, MODES, VAT_RATES, catLabel } from './expensesShared'
 import type { Category } from './expensesShared'
 
@@ -37,7 +38,7 @@ export default function AddExpenseModal(props: Props) {
           <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" onClick={onClose}><X size={15} /></button>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <ResponsiveGrid min={160} gap={10}>
             <div>
               <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Date','Date','Fecha','Data')}</label>
               <input aria-label={tr('Date','Date','Fecha','Data')} className="input" type="date" value={nDate} onChange={e => setNDate(e.target.value)}
@@ -50,14 +51,14 @@ export default function AddExpenseModal(props: Props) {
                 {CATEGORIES.map(c => <option key={c} value={c}>{cl(c)}</option>)}
               </select>
             </div>
-          </div>
+          </ResponsiveGrid>
           <div>
             <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Libellé','Label','Etiqueta','Etichetta')}</label>
             <input aria-label={tr('Libellé','Label','Etiqueta','Etichetta')} className="input" type="text" placeholder={tr('Ex: Facture EDF','Ex: Electricity bill','Ej: Factura de luz','Es: Bolletta luce')}
               value={nLabel} onChange={e => setNLabel(e.target.value)}
               style={{ width:'100%', boxSizing:'border-box' }} />
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <ResponsiveGrid min={160} gap={10}>
             <div>
               <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Montant HT (F CFA)','Amount excl. VAT (F CFA)','Importe s/IVA (F CFA)','Importo netto (F CFA)')}</label>
               <ValidatedInput type="amount"
@@ -72,7 +73,7 @@ export default function AddExpenseModal(props: Props) {
                 {VAT_RATES.map(v => <option key={v} value={v}>{v} %</option>)}
               </select>
             </div>
-          </div>
+          </ResponsiveGrid>
           {nHT && (
             <div style={{
               padding:'10px 13px', background:'rgba(14,196,126,.1)',

@@ -1,4 +1,5 @@
 import { SHIFT_TYPES, shiftLabel } from './planningShared'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import type { ShiftType } from './planningShared'
 
 interface Props {
@@ -9,11 +10,7 @@ interface Props {
 export default function PlanningStats({ lang, stats }: Props) {
   if (Object.keys(stats).length === 0) return null
   return (
-    <div style={{
-      display:'grid',
-      gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',
-      gap:8,
-    }}>
+    <ResponsiveGrid min={130} gap={8}>
       {(Object.entries(SHIFT_TYPES) as [ShiftType,any][]).map(([key,s])=>{
         const count=stats[key]??0
         if (!count) return null
@@ -39,6 +36,6 @@ export default function PlanningStats({ lang, stats }: Props) {
           </div>
         )
       }).filter(Boolean)}
-    </div>
+    </ResponsiveGrid>
   )
 }

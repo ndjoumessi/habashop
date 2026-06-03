@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 
 type ResendEventType = 'delivered' | 'bounced' | 'complained' | 'opened' | 'clicked'
 
@@ -189,7 +190,7 @@ export default function ResendMonitor({
       </div>
 
       {/* ── QUOTA JOUR + MOIS ─────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <ResponsiveGrid min={160} gap={10}>
         {[
           { label: lang === 'en' ? 'Daily Quota' : lang === 'es' ? 'Cuota diaria' : lang === 'it' ? 'Quota giornaliera' : 'Quota Journalier', used: dailyQuota, total: dailyLimit, pct: dailyPct, sublabel: `${dailyLimit - dailyQuota} ${lang === 'en' ? 'left' : lang === 'es' ? 'restantes' : lang === 'it' ? 'rimanenti' : 'restants'}` },
           { label: lang === 'en' ? 'Monthly Quota' : lang === 'es' ? 'Cuota mensual' : lang === 'it' ? 'Quota mensile' : 'Quota Mensuel', used: monthlyQuota, total: monthlyLimit, pct: monthlyPct, sublabel: `${monthlyLimit - monthlyQuota} ${lang === 'en' ? 'left' : lang === 'es' ? 'restantes' : lang === 'it' ? 'rimanenti' : 'restants'}` },
@@ -212,10 +213,10 @@ export default function ResendMonitor({
             </div>
           )
         })}
-      </div>
+      </ResponsiveGrid>
 
       {/* ── STATS D'ENVOI ─────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: 8 }}>
+      <ResponsiveGrid min={100} gap={8}>
         {[
           { lbl: lang === 'en' ? 'Sent' : lang === 'es' ? 'Enviados' : lang === 'it' ? 'Inviati' : 'Envoyés', val: liveStats.sent, color: 'var(--acc2)' },
           { lbl: lang === 'en' ? 'Failed' : lang === 'es' ? 'Fallidos' : lang === 'it' ? 'Falliti' : 'Échoués', val: liveStats.failed, color: 'var(--danger)' },
@@ -230,7 +231,7 @@ export default function ResendMonitor({
             <div style={{ fontSize: 9, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', fontWeight: 600 }}>{s.lbl}</div>
           </div>
         ))}
-      </div>
+      </ResponsiveGrid>
 
       {/* ── FLUX ÉVÉNEMENTS WEBHOOK ──────────── */}
       <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>

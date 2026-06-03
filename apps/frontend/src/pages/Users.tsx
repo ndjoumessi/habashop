@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useConfig } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { usersApi } from '@/lib/api'
@@ -162,11 +163,7 @@ export default function Users() {
       />
 
       {/* ── Grid de cartes ── */}
-      <div style={{
-        display:'grid',
-        gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))',
-        gap:14,
-      }}>
+      <ResponsiveGrid min={280} gap={14}>
         {filtered.map(user => (
           <UserCard
             key={user.id}
@@ -192,7 +189,7 @@ export default function Users() {
             {lang === 'en' ? 'No users found' : lang === 'es' ? 'Sin usuarios encontrados' : lang === 'it' ? 'Nessun utente trovato' : 'Aucun utilisateur trouvé'}
           </div>
         )}
-      </div>
+      </ResponsiveGrid>
 
       {showEditModal && editUser && (
         <EditUserModal

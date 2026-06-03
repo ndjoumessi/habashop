@@ -7,6 +7,7 @@ import ViewField from '@/components/ui/ViewField'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar } from '@/components/customers/customersShared'
 
 interface CustomersModalsProps {
@@ -151,7 +152,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 </div>
             }
 
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            <ResponsiveGrid min={160} gap={10}>
               <ViewField label={i('NOM / ENSEIGNE', 'NAME / BUSINESS', 'NOMBRE / EMPRESA', 'NOME / INSEGNA')} value={editCustForm.name} fullWidth editing={custEditMode}>
                 <input className="input text-sm" value={editCustForm.name}
                   onChange={e => setEditCustForm(f => ({...f, name:e.target.value}))} />
@@ -181,7 +182,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 <textarea className="input text-sm" rows={2} value={editCustForm.notes}
                   onChange={e => setEditCustForm(f => ({...f, notes:e.target.value}))} />
               </ViewField>
-            </div>
+            </ResponsiveGrid>
 
             <div className="flex gap-2 mt-5">
               {!custEditMode ? (
@@ -280,7 +281,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   onChange={e=>setForm(f=>({...f,name:e.target.value}))} />
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              <ResponsiveGrid min={160} gap={12}>
                 <div>
                   <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>TYPE</label>
                   <select aria-label={i('Type', 'Type', 'Tipo', 'Tipo')} className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
@@ -298,7 +299,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                     lang={lang}
                   />
                 </div>
-              </div>
+              </ResponsiveGrid>
 
               <div>
                 <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>EMAIL</label>
@@ -451,7 +452,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <FileText size={12} style={{color:'var(--text3)'}} />{i('COORDONNÉES', 'CONTACT INFO', 'CONTACTO', 'CONTATTI')}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <ResponsiveGrid min={160} gap={10}>
                   {[
                     { label: i('Téléphone', 'Phone', 'Teléfono', 'Telefono'), value: detailCustomer.phone || '—', icon: <Phone size={10} />, full: false },
                     { label: 'Email', value: detailCustomer.email || '—', icon: <Mail size={10} />, full: false },
@@ -467,7 +468,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', wordBreak: 'break-all' }}>{item.value}</div>
                     </div>
                   ))}
-                </div>
+                </ResponsiveGrid>
                 {detailCustomer.notes && (
                   <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 10, background: 'rgba(91,78,232,.08)', border: '1px solid rgba(91,78,232,.2)', fontSize: 12, color: 'var(--p3)', display:'flex', alignItems:'flex-start', gap:6 }}>
                     <StickyNote size={12} style={{flexShrink:0,marginTop:1}} /> {detailCustomer.notes}

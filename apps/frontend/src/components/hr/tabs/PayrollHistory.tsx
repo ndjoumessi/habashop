@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { TrendingUp, TrendingDown, FileText, Users, DollarSign, Calendar, Trash2 } from 'lucide-react'
 import { type Employee, roleLabel, deptLabel } from '@/components/hr/hrShared'
 
@@ -268,11 +269,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
           </div>
 
           {/* Stats résumé en bas */}
-          <div style={{
-            display:'grid',
-            gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',
-            gap:10, marginTop:4,
-          }}>
+          <ResponsiveGrid min={150} gap={10} style={{ marginTop: 4 }}>
             {[
               {
                 label: lang === 'en' ? 'Revisions' : lang === 'es' ? 'Revisiones' : lang === 'it' ? 'Revisioni' : 'Révisions',
@@ -340,7 +337,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                 </div>
               </div>
             ))}
-          </div>
+          </ResponsiveGrid>
         </>
       )}
     </div>

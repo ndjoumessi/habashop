@@ -1,4 +1,5 @@
 import { useConfig, useFormatAmount } from '@/stores/appStore'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { Settings } from 'lucide-react'
 import { CATEGORIES, CATEGORY_STYLE, catLabel } from './expensesShared'
 import type { Category } from './expensesShared'
@@ -25,7 +26,7 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
         </button>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:12 }}>
+      <ResponsiveGrid min={160} gap={12}>
         {CATEGORIES.filter(cat => budgets[cat] > 0).map(cat => {
           const spent = catSpent[cat] ?? 0
           const budget = budgets[cat]
@@ -67,7 +68,7 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
             </div>
           )
         })}
-      </div>
+      </ResponsiveGrid>
 
       {/* Résumé total */}
       <div style={{

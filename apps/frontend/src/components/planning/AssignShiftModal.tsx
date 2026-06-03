@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { SHIFT_TYPES, shiftLabel, localeFor } from './planningShared'
 import type { ShiftType } from './planningShared'
 
@@ -56,7 +57,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
           <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:2 }}>
             {lang === 'en' ? 'SHIFT TYPE' : lang === 'es' ? 'TIPO DE TURNO' : lang === 'it' ? 'TIPO DI TURNO' : 'TYPE DE SHIFT'}
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          <ResponsiveGrid min={160} gap={8}>
             {(Object.entries(SHIFT_TYPES) as [ShiftType, typeof SHIFT_TYPES[ShiftType]][]).map(([key,s]) => (
               <button key={key} type="button"
                 onClick={() => setModalShift(key)}
@@ -80,7 +81,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
                 )}
               </button>
             ))}
-          </div>
+          </ResponsiveGrid>
 
           {/* Actions */}
           <div style={{ display:'flex', gap:8, marginTop:8 }}>

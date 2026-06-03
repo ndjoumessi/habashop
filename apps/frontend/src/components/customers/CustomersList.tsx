@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { exportCSV, generateInvoice } from '@/utils/export'
 import Pagination from '@/components/ui/Pagination'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar } from '@/components/customers/customersShared'
 
 interface CustomersListProps {
@@ -152,7 +153,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
 
         {/* Vue grille — cartes clients (Bento premium) */}
         {viewMode === 'grid' && (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(250px,1fr))', gap:12 }}>
+          <ResponsiveGrid min={250} gap={12}>
             {pg.paginated.map(c => {
               const isSel = selectedId === c.id
               const initials = c.name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
@@ -261,7 +262,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
             {filtered.length === 0 && (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 0', color: 'var(--text3)', fontSize: 14 }}>{i('Aucun client trouvé', 'No customer found', 'Ningún cliente encontrado', 'Nessun cliente trovato')}</div>
             )}
-          </div>
+          </ResponsiveGrid>
         )}
                 <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} onPage={pg.onPage} onPageSize={pg.onSize} lang={lang} />
     </div>

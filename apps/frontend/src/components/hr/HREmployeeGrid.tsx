@@ -1,5 +1,6 @@
 import { Search, LayoutGrid, AlignJustify, Star, Pencil } from 'lucide-react'
 import Pagination from '@/components/ui/Pagination'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Employee, DEPT_COLORS, EmpAvatar, Stars, calcAnciennete, roleLabel, deptLabel, contractLabel } from '@/components/hr/hrShared'
 
 interface HREmployeeGridProps {
@@ -73,7 +74,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
 
           {/* Grid view */}
           {viewMode === 'grid' && (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:12 }}>
+            <ResponsiveGrid min={240} gap={12}>
               {loadingEmployees ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:16, padding:18, display:'flex', flexDirection:'column', gap:12 }}>
@@ -180,7 +181,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                   {lang === 'en' ? 'No employee found' : lang === 'es' ? 'Sin empleados encontrados' : lang === 'it' ? 'Nessun dipendente trovato' : 'Aucun employé trouvé'}
                 </div>
               )}
-            </div>
+            </ResponsiveGrid>
           )}
 
           {/* Table view */}

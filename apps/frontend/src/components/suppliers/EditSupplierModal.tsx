@@ -4,6 +4,7 @@ import { Factory, X, Eye, Pencil, Trash2 } from 'lucide-react'
 import ViewField from '@/components/ui/ViewField'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { STATUS_LIST, statusLabel } from './suppliersShared'
 import type { Supplier, SupplierStatus } from './suppliersShared'
 
@@ -52,7 +53,7 @@ export default function EditSupplierModal(props: Props) {
             </div>
         }
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+        <ResponsiveGrid min={160} gap={10}>
           <ViewField label={i('NOM / RAISON SOCIALE', 'NAME / COMPANY', 'NOMBRE / EMPRESA', 'NOME / AZIENDA')} value={editSuppForm.name} fullWidth editing={suppEditMode}>
             <input className="input text-sm" value={editSuppForm.name}
               onChange={e => setEditSuppForm(p => ({...p, name:e.target.value}))} />
@@ -94,7 +95,7 @@ export default function EditSupplierModal(props: Props) {
             <textarea className="input text-sm" rows={2} value={editSuppForm.notes}
               onChange={e => setEditSuppForm(p => ({...p, notes:e.target.value}))} />
           </ViewField>
-        </div>
+        </ResponsiveGrid>
 
         <div className="flex gap-2 mt-5">
           {!suppEditMode ? (

@@ -4,6 +4,7 @@ import { Package, Users, Zap, DollarSign, BarChart2, Lightbulb, MessageSquare, B
 import toast from 'react-hot-toast'
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer'
 import EmptyState from '@/components/ui/EmptyState'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { aiApi } from '@/lib/api'
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -121,7 +122,7 @@ export default function Forecasts() {
         </div>
 
         {/* Boutons types d'analyse redesignés */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:10, padding:'16px 24px' }}>
+        <ResponsiveGrid min={200} gap={10} style={{ padding: '16px 24px' }}>
           {([
             { id:'full',    Icon: BarChart2,   color:'#6C47FF', label: lang === 'en' ? 'Monthly analysis' : lang === 'es' ? 'Análisis mensual' : lang === 'it' ? 'Analisi mensile' : 'Analyse mensuelle', desc: lang === 'en' ? 'Sales, trends, top products' : lang === 'es' ? 'Ventas, tendencias, top productos' : lang === 'it' ? 'Vendite, tendenze, top prodotti' : 'Ventes, tendances, top produits' },
             { id:'stock',   Icon: Package,     color:'#FF9500', label: lang === 'en' ? 'Stock analysis' : lang === 'es' ? 'Análisis de stock' : lang === 'it' ? 'Analisi stock' : 'Analyse stock', desc: lang === 'en' ? 'Stockouts, orders to place' : lang === 'es' ? 'Agotados, pedidos por hacer' : lang === 'it' ? 'Esauriti, ordini da effettuare' : 'Ruptures, commandes à passer' },
@@ -164,7 +165,7 @@ export default function Forecasts() {
               </div>
             </button>
           ))}
-        </div>
+        </ResponsiveGrid>
 
         {/* Loading */}
         {aiLoading && (
@@ -211,10 +212,7 @@ export default function Forecasts() {
           <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 24px', margin:'0 24px 24px' }}>
             {/* KPIs rapides */}
             {aiData && (
-              <div style={{
-                display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',
-                gap:10, marginBottom:20,
-              }}>
+              <ResponsiveGrid min={140} gap={10} style={{ marginBottom: 20 }}>
                 {[
                   { label: lang === 'en' ? 'Monthly revenue' : lang === 'es' ? 'Ingresos del mes' : lang === 'it' ? 'Ricavi del mese' : 'CA du mois', value:fmt(aiData.totalRevenue), color:'var(--acc2)' },
                   { label: lang === 'en' ? 'Transactions' : lang === 'es' ? 'Transacciones' : lang === 'it' ? 'Transazioni' : 'Transactions',   value:aiData.totalSales,        color:'var(--p2)'  },
@@ -229,7 +227,7 @@ export default function Forecasts() {
                     <div style={{ fontSize:16, fontWeight:900, color:kpi.color, fontFamily:'var(--mono)' }}>{kpi.value}</div>
                   </div>
                 ))}
-              </div>
+              </ResponsiveGrid>
             )}
 
             {/* Texte analyse */}
