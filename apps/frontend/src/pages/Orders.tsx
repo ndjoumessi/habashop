@@ -12,6 +12,7 @@ import OrdersCalendar from '@/components/orders/OrdersCalendar'
 import OrdersListPanel from '@/components/orders/OrdersListPanel'
 import OrderDetailModal from '@/components/orders/OrderDetailModal'
 import NewOrderModal, { type NewOrderForm } from '@/components/orders/NewOrderModal'
+import Tabs from '@/components/ui/TabBar'
 
 export default function Orders() {
   const { lang } = useConfig()
@@ -237,25 +238,16 @@ export default function Orders() {
       <OrdersKpis totalEngaged={totalEngaged} pending={pending} receivedMonth={receivedMonth} drafts={drafts} />
 
       {/* Tab switcher */}
-      <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', borderRadius: 10, padding: 4, marginBottom: 4 }}>
-        {[
+      <Tabs
+        variant="segmented"
+        ariaLabel={i('Vue commandes', 'Orders view', 'Vista de pedidos', 'Vista ordini')}
+        value={ordersTab}
+        onChange={id => setOrdersTab(id as 'list' | 'calendar')}
+        tabs={[
           { id: 'list',     icon: <List size={14} />,         label: i('Liste', 'List', 'Lista', 'Elenco') },
           { id: 'calendar', icon: <CalendarDays size={14} />, label: i('Calendrier', 'Calendar', 'Calendario', 'Calendario') },
-        ].map(tab => (
-          <button key={tab.id} type="button"
-            onClick={() => setOrdersTab(tab.id as any)}
-            style={{
-              flex: 1, padding: '8px', borderRadius: 8,
-              fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)',
-              background: ordersTab === tab.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
-              color: ordersTab === tab.id ? '#fff' : 'var(--text2)',
-              border: 'none', transition: 'all .15s',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            }}>
-            {tab.icon} {tab.label}
-          </button>
-        ))}
-      </div>
+        ]}
+      />
 
       {ordersTab === 'calendar' && (
         <OrdersCalendar orders={orders} currentMonth={currentMonth} prevMonth={prevMonth} nextMonth={nextMonth} />

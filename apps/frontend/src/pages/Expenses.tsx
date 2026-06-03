@@ -14,6 +14,7 @@ import ExpensesBudget from '@/components/expenses/ExpensesBudget'
 import AddExpenseModal from '@/components/expenses/AddExpenseModal'
 import ExpenseDetailModal from '@/components/expenses/ExpenseDetailModal'
 import EditBudgetsModal from '@/components/expenses/EditBudgetsModal'
+import Tabs from '@/components/ui/TabBar'
 
 export default function Expenses() {
   const { lang, currency } = useConfig()
@@ -220,21 +221,15 @@ export default function Expenses() {
       />
 
       {/* Tabs */}
-      <div style={{ display:'flex', gap:6 }}>
-        {[
+      <Tabs
+        variant="pill"
+        value={tab}
+        onChange={id => setTab(id as typeof tab)}
+        tabs={[
           { id:'journal', label: t('expenses_journal') },
           { id:'budget',  label: t('expenses_budget') },
-        ].map(tb => (
-          <button key={tb.id} onClick={() => setTab(tb.id as typeof tab)} style={{
-            padding:'8px 18px', borderRadius:10, fontSize:13, fontWeight:700,
-            fontFamily:'inherit', cursor:'pointer', transition:'all .15s',
-            background: tab === tb.id ? 'var(--p)' : 'var(--card)',
-            color: tab === tb.id ? '#fff' : 'var(--text2)',
-            border: tab === tb.id ? 'none' : '1px solid var(--border)',
-            boxShadow: tab === tb.id ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
-          }}>{tb.label}</button>
-        ))}
-      </div>
+        ]}
+      />
 
       {tab === 'journal' && (
         <ExpensesJournal

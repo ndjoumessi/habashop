@@ -10,6 +10,7 @@ import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import Pagination from '@/components/ui/Pagination'
+import Tabs from '@/components/ui/TabBar'
 import { logger } from '@/lib/logger'
 import { confirm } from '@/lib/confirm'
 import HRStatsBar from '@/components/hr/HRStatsBar'
@@ -528,36 +529,26 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       <HRStatsBar employees={employees} activeCount={activeCount} totalPayroll={totalPayroll} pendingLeaves={pendingLeaves} fmt={fmt} lang={lang} />
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, background: 'var(--bg3)', borderRadius: 12, padding: 4, border: '1px solid var(--border)' }}>
-        {([
-          { id: 'team'      as const, icon: <Users size={13}/>,      label: lang === 'en' ? 'Team' : lang === 'es' ? 'Equipo' : lang === 'it' ? 'Squadra' : 'Équipe'       },
-          { id: 'contracts' as const, icon: <FileText size={13}/>,   label: lang === 'en' ? 'Contracts' : lang === 'es' ? 'Contratos' : lang === 'it' ? 'Contratti' : 'Contrats'  },
-          { id: 'pointage'  as const, icon: <Clock size={13}/>,      label: lang === 'en' ? 'Attendance' : lang === 'es' ? 'Asistencia' : lang === 'it' ? 'Presenze' : 'Présences' },
-          { id: 'leaves'    as const, icon: <Umbrella size={13}/>,   label: lang === 'en' ? 'Leaves' : lang === 'es' ? 'Permisos' : lang === 'it' ? 'Ferie' : 'Congés'     },
-          { id: 'payroll'   as const, icon: <DollarSign size={13}/>, label: lang === 'en' ? 'Payroll' : lang === 'es' ? 'Remuneración' : lang === 'it' ? 'Retribuzione' : 'Rémunération'    },
-        ]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            flex: 1, padding: '9px 8px', borderRadius: 9,
-            background: tab === t.id
-              ? 'linear-gradient(135deg,rgba(108,71,255,.18),rgba(0,184,255,.08))'
-              : 'transparent',
-            border: tab === t.id ? '1px solid rgba(108,71,255,.28)' : '1px solid transparent',
-            color: tab === t.id ? 'var(--p2)' : 'var(--text3)',
-            fontWeight: tab === t.id ? 700 : 500,
-            fontSize: 12, cursor: 'pointer', transition: 'all .15s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-            boxShadow: tab === t.id ? '0 2px 10px rgba(108,71,255,.15)' : 'none',
-          }}>
-            <span style={{ display:'flex', opacity: tab === t.id ? 1 : 0.6 }}>{t.icon}</span>
-            <span>{t.label}</span>
-            {t.id === 'leaves' && pendingLeaves > 0 && (
-              <span style={{ fontSize: 10, fontWeight: 800, background: 'var(--acc)', color: '#000', borderRadius: 20, padding: '1px 6px', lineHeight: 1.5 }}>
-                {pendingLeaves}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        variant="segmented"
+        ariaLabel={lang === 'en' ? 'HR sections' : lang === 'es' ? 'Secciones RRHH' : lang === 'it' ? 'Sezioni HR' : 'Sections RH'}
+        value={tab}
+        onChange={id => setTab(id as typeof tab)}
+        tabs={[
+          { id: 'team',      icon: <Users size={13}/>,      label: lang === 'en' ? 'Team' : lang === 'es' ? 'Equipo' : lang === 'it' ? 'Squadra' : 'Équipe' },
+          { id: 'contracts', icon: <FileText size={13}/>,   label: lang === 'en' ? 'Contracts' : lang === 'es' ? 'Contratos' : lang === 'it' ? 'Contratti' : 'Contrats' },
+          { id: 'pointage',  icon: <Clock size={13}/>,      label: lang === 'en' ? 'Attendance' : lang === 'es' ? 'Asistencia' : lang === 'it' ? 'Presenze' : 'Présences' },
+          { id: 'leaves',    icon: <Umbrella size={13}/>,   label: (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              {lang === 'en' ? 'Leaves' : lang === 'es' ? 'Permisos' : lang === 'it' ? 'Ferie' : 'Congés'}
+              {pendingLeaves > 0 && (
+                <span style={{ fontSize: 10, fontWeight: 800, background: 'var(--acc)', color: '#000', borderRadius: 20, padding: '1px 6px', lineHeight: 1.5 }}>{pendingLeaves}</span>
+              )}
+            </span>
+          ) },
+          { id: 'payroll',   icon: <DollarSign size={13}/>, label: lang === 'en' ? 'Payroll' : lang === 'es' ? 'Remuneración' : lang === 'it' ? 'Retribuzione' : 'Rémunération' },
+        ]}
+      />
 
       {tab === 'team' && employees.length === 0 && !loadingEmployees ? (
         <div className="panel">

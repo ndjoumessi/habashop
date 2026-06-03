@@ -4,6 +4,7 @@ import { t, useAppStore } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 import { hydratePricesFromApi } from '@/lib/productCurrency'
 import Pagination from '@/components/ui/Pagination'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type ProductItem, statusOf, stockCatLabel } from '@/components/stock/stockShared'
 
 interface StockInventoryProps {
@@ -136,7 +137,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
 
         {/* Grid / List view */}
         {stockView === 'grid' ? (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:12 }}>
+          <ResponsiveGrid min={200}>
             {pg.paginated.map(p => {
               const st = statusOf(p.stock, p.threshold)
               const pct = Math.min(100, (p.stock / Math.max(p.threshold, 1)) * 100)
@@ -216,7 +217,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                 </div>
               )
             })}
-          </div>
+          </ResponsiveGrid>
         ) : (
           <div className="table-wrap">
             <table>

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Skeleton from '@/components/ui/skeleton'
 import EmptyState from '@/components/ui/EmptyState'
+import Tabs from '@/components/ui/TabBar'
 import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
 import { Download, TrendingUp, TrendingDown, DollarSign, Receipt, ShoppingCart, CreditCard, Trophy, Package, Users, Wallet, UserCog, ChevronDown, FileText, FileSpreadsheet } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -342,28 +343,19 @@ export default function Reports() {
       </div>
 
       {/* 5 content tabs */}
-      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-        {([
-          { id:'ventes',  label: lang === 'en' ? 'Sales' : lang === 'es' ? 'Ventas' : lang === 'it' ? 'Vendite' : 'Ventes',    Icon: ShoppingCart },
-          { id:'stock',   label: lang === 'en' ? 'Stock' : lang === 'es' ? 'Stock' : lang === 'it' ? 'Stock' : 'Stock',    Icon: Package      },
-          { id:'clients', label: lang === 'en' ? 'Customers' : lang === 'es' ? 'Clientes' : lang === 'it' ? 'Clienti' : 'Clients',Icon: Users        },
-          { id:'finance', label: lang === 'en' ? 'Finance' : lang === 'es' ? 'Finanzas' : lang === 'it' ? 'Finanza' : 'Finance',  Icon: Wallet       },
-          { id:'rh',      label: lang === 'en' ? 'HR' : lang === 'es' ? 'RRHH' : lang === 'it' ? 'HR' : 'RH',       Icon: UserCog      },
-        ] as { id: typeof reportTab; label: string; Icon: typeof ShoppingCart }[]).map(tab => (
-          <button key={tab.id} onClick={() => setReportTab(tab.id)}
-            style={{
-              display:'flex', alignItems:'center', gap:6,
-              padding:'7px 16px', borderRadius:99, fontSize:13, fontWeight:700,
-              fontFamily:'inherit', cursor:'pointer', transition:'all .15s',
-              background: reportTab === tab.id ? 'var(--p)' : 'var(--card)',
-              color:      reportTab === tab.id ? '#fff'     : 'var(--text2)',
-              border:     reportTab === tab.id ? 'none'     : '1px solid var(--border)',
-              boxShadow:  reportTab === tab.id ? '0 4px 14px rgba(91,78,232,.35)' : 'none',
-            }}>
-            <tab.Icon size={13}/> {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        variant="pill"
+        ariaLabel={lang === 'en' ? 'Report sections' : lang === 'es' ? 'Secciones de informe' : lang === 'it' ? 'Sezioni report' : 'Sections du rapport'}
+        value={reportTab}
+        onChange={id => setReportTab(id as typeof reportTab)}
+        tabs={[
+          { id:'ventes',  label: lang === 'en' ? 'Sales' : lang === 'es' ? 'Ventas' : lang === 'it' ? 'Vendite' : 'Ventes',       icon: <ShoppingCart size={13}/> },
+          { id:'stock',   label: 'Stock',                                                                                          icon: <Package size={13}/>      },
+          { id:'clients', label: lang === 'en' ? 'Customers' : lang === 'es' ? 'Clientes' : lang === 'it' ? 'Clienti' : 'Clients', icon: <Users size={13}/>        },
+          { id:'finance', label: lang === 'en' ? 'Finance' : lang === 'es' ? 'Finanzas' : lang === 'it' ? 'Finanza' : 'Finance',   icon: <Wallet size={13}/>       },
+          { id:'rh',      label: lang === 'en' ? 'HR' : lang === 'es' ? 'RRHH' : lang === 'it' ? 'HR' : 'RH',                       icon: <UserCog size={13}/>      },
+        ]}
+      />
 
       {/* Onglets détaillés */}
       <Suspense fallback={<div style={{ minHeight: 200 }} />}>

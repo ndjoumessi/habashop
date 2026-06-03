@@ -14,6 +14,8 @@ import { usePagination } from '@/hooks/usePagination'
 import StockInventory from '@/components/stock/StockInventory'
 import StockModals from '@/components/stock/StockModals'
 import EmptyState from '@/components/ui/EmptyState'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import { type ProductItem, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc } from '@/components/stock/stockShared'
 
 export default function Stock() {
@@ -387,7 +389,7 @@ export default function Stock() {
             + {lang === 'en' ? 'New category' : lang === 'es' ? 'Nueva categoría' : lang === 'it' ? 'Nuova categoria' : 'Nouvelle catégorie'}
           </button>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px,1fr))', gap:12 }}>
+        <ResponsiveGrid min={220}>
           {[...categories].sort((a, b) => b.productsCount - a.productsCount).map(cat => (
             <div key={cat.id} style={{
               background:'var(--bg3)', border:'1px solid var(--border)',
@@ -406,12 +408,21 @@ export default function Stock() {
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:4 }}>
-                  <button aria-label={lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'} className="mini-btn" style={{ cursor:'pointer' }} onClick={() => { setEditCat(cat); setCatForm({ name:cat.name, color:cat.color, icon:cat.icon, description:cat.description }); setShowCatModal(true) }}><Pencil size={12} /></button>
-                  <button aria-label={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'} className="mini-btn" style={{ color:'var(--danger)', cursor:'pointer' }} onClick={() => {
-                    if (cat.productsCount > 0) { toast.error(lang === 'en' ? 'Category not empty!' : lang === 'es' ? '¡Categoría no vacía!' : lang === 'it' ? 'Categoria non vuota!' : 'Catégorie non vide !'); return }
-                    setCategories(prev => prev.filter(c => c.id !== cat.id))
-                    toast.success(lang === 'en' ? 'Category deleted' : lang === 'es' ? 'Categoría eliminada' : lang === 'it' ? 'Categoria eliminata' : 'Catégorie supprimée')
-                  }}><Trash2 size={12} /></button>
+                  <IconButton
+                    label={lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
+                    icon={<Pencil size={14} />}
+                    onClick={() => { setEditCat(cat); setCatForm({ name:cat.name, color:cat.color, icon:cat.icon, description:cat.description }); setShowCatModal(true) }}
+                  />
+                  <IconButton
+                    label={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
+                    icon={<Trash2 size={14} />}
+                    danger
+                    onClick={() => {
+                      if (cat.productsCount > 0) { toast.error(lang === 'en' ? 'Category not empty!' : lang === 'es' ? '¡Categoría no vacía!' : lang === 'it' ? 'Categoria non vuota!' : 'Catégorie non vide !'); return }
+                      setCategories(prev => prev.filter(c => c.id !== cat.id))
+                      toast.success(lang === 'en' ? 'Category deleted' : lang === 'es' ? 'Categoría eliminada' : lang === 'it' ? 'Categoria eliminata' : 'Catégorie supprimée')
+                    }}
+                  />
                 </div>
               </div>
               <div style={{ fontSize:12, color:'var(--text2)' }}>{stockCatDesc(cat.description, lang)}</div>
@@ -420,7 +431,7 @@ export default function Stock() {
               </div>
             </div>
           ))}
-        </div>
+        </ResponsiveGrid>
       </div>
       <StockModals
         showModal={showModal} setShowModal={setShowModal}

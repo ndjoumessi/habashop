@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import { useConfig } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { Lock } from 'lucide-react'
+import FocusTooltip from './FocusTooltip'
 
 const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
   { code: 'XOF', flag: '🇸🇳', symbol: 'XOF' },
@@ -16,10 +16,9 @@ const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
 export default function CurrencyBadge() {
   const { currency } = useConfig()
   const { i } = useI18n()
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const current = CURRENCIES.find(c => c.code === currency) ?? CURRENCIES[0]
-  // Badge en lecture seule : la devise se change dans Paramètres. Cadenas + tooltip au
-  // survol l'indiquent en permanence (indicateur, pas lié au toggle settingsLocked).
+  // Badge en lecture seule : la devise se change dans Paramètres. Cadenas + tooltip
+  // (survol ET focus clavier) l'indiquent en permanence.
   const tooltipText = i(
     'Devise configurée dans Paramètres',
     'Currency set in Settings',
@@ -28,14 +27,11 @@ export default function CurrencyBadge() {
   )
 
   return (
-    <div
-      style={{ position: 'relative' }}
-      onMouseMove={e => setPos({ x: e.clientX, y: e.clientY - 36 })}
-      onMouseLeave={() => setPos(null)}
-    >
+    <FocusTooltip label={tooltipText} placement="bottom">
       <button
         className="icon-btn"
         type="button"
+        aria-label={tooltipText}
         style={{
           gap: 4, padding: '6px 9px', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)',
           cursor: 'help',
@@ -45,26 +41,6 @@ export default function CurrencyBadge() {
         <span style={{ color: 'var(--acc)', letterSpacing: '-.3px' }}>{current.symbol}</span>
         <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />
       </button>
-      {pos && (
-        <div style={{
-          position: 'fixed',
-          left: pos.x,
-          top: pos.y,
-          transform: 'translateX(-50%)',
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
-          color: 'var(--text2)',
-          fontSize: 11,
-          padding: '4px 8px',
-          borderRadius: 6,
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          zIndex: 99999,
-          boxShadow: 'var(--sh-xs)',
-        }}>
-          {tooltipText}
-        </div>
-      )}
-    </div>
+    </FocusTooltip>
   )
 }

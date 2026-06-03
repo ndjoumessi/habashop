@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/stores/appStore'
-import { ExternalLink, RotateCw, Globe, Zap, Settings2, Loader2 } from 'lucide-react'
+import { ExternalLink, RotateCw, Globe, Zap, Settings2 } from 'lucide-react'
+import Button from '@/components/ui/AppButton'
 import toast from 'react-hot-toast'
 import ResendMonitor from '@/components/integrations/ResendMonitor'
 
@@ -385,24 +386,17 @@ export default function Integrations() {
                   <ExternalLink size={11} /> Docs
                 </a>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <button type="button" onClick={() => testConnection(itg)}
-                    disabled={pingStatus[itg.id] === 'checking'}
+                  <Button
+                    variant="ghost"
+                    className="btn-sm"
+                    loading={pingStatus[itg.id] === 'checking'}
+                    leftIcon={<Zap size={11} />}
+                    onClick={() => testConnection(itg)}
                     aria-label={`${lang === 'fr' ? 'Tester' : lang === 'es' ? 'Probar' : lang === 'it' ? 'Testa' : 'Test'} ${itg.name}`}
-                    style={{
-                      display:'inline-flex', alignItems:'center', gap:5, padding:'7px 12px',
-                      background:'color-mix(in srgb, var(--p) 12%, transparent)', border:'1px solid var(--p)',
-                      borderRadius:8, fontSize:11, fontWeight:700, color:'var(--p3)',
-                      cursor: pingStatus[itg.id] === 'checking' ? 'wait' : 'pointer',
-                      fontFamily:'var(--font)', minHeight:32, transition:'background .15s',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'color-mix(in srgb, var(--p) 22%, transparent)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'color-mix(in srgb, var(--p) 12%, transparent)' }}
+                    style={{ fontSize: 11, fontWeight: 700, color: 'var(--p3)', border: '1px solid var(--p)' }}
                   >
-                    {pingStatus[itg.id] === 'checking'
-                      ? <Loader2 size={11} style={{ animation:'spin .8s linear infinite' }} />
-                      : <Zap size={11} />}
                     {lang === 'fr' ? 'Tester' : lang === 'en' ? 'Test' : lang === 'es' ? 'Probar' : 'Testa'}
-                  </button>
+                  </Button>
                   <button type="button" onClick={() => configure(itg)}
                     aria-label={`${lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'} ${itg.name}`}
                     style={{

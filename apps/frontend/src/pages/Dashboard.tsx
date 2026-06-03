@@ -8,6 +8,7 @@ import {
   BarChart2, Activity, Target, Zap,
 } from 'lucide-react'
 import { dashboardApi } from '@/lib/api'
+import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 // Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
 const DashSalesArea = lazy(() => import('@/components/charts/DashSalesArea'))
 const DashCategoryDonut = lazy(() => import('@/components/charts/DashCategoryDonut'))
@@ -283,7 +284,7 @@ export default function Dashboard() {
       )}
 
       {/* KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
+      <ResponsiveGrid min={180} gap={12}>
         {[
           { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`,  evol: '+12%', up: true,  Icon: DollarSign, color: 'var(--p2)',   hex: '#6C47FF', bg: 'rgba(108,71,255,.14)', hero: true },
           { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} ${lang === 'en' ? 'stock alerts' : lang === 'es' ? 'alertas stock' : lang === 'it' ? 'avvisi stock' : 'alertes stock'}`,   evol: '−3',   up: false, Icon: Package,    color: 'var(--acc)',  hex: '#FF9500', bg: 'rgba(255,149,0,.14)'  },
@@ -324,10 +325,10 @@ export default function Dashboard() {
             <div className="kpi-sub" style={{ marginTop: 4 }}>{k.sub}</div>
           </div>
         ))}
-      </div>
+      </ResponsiveGrid>
 
       {/* Quick actions 2×4 grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: 8 }}>
+      <ResponsiveGrid min={100} gap={8}>
         {QUICK_ACTIONS.map(a => (
           <button key={a.label} type="button"
             onClick={() => navigate(a.path)}
@@ -347,7 +348,7 @@ export default function Dashboard() {
             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text3)', lineHeight: 1.2, textAlign: 'center' }}>{a.label}</span>
           </button>
         ))}
-      </div>
+      </ResponsiveGrid>
 
       {/* Charts row */}
       <div className="dashboard-charts-grid" style={{ display: 'grid', gap: 12 }}>
