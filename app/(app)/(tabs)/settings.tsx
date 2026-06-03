@@ -99,6 +99,7 @@ export default function SettingsScreen() {
   const THEMES: { key: ThemeMode; icon: string; label: string }[] = [
     { key: 'dark',   icon: '🌙', label: i('Sombre', 'Dark', 'Oscuro', 'Scuro') },
     { key: 'light',  icon: '☀️', label: i('Clair', 'Light', 'Claro', 'Chiaro') },
+    { key: 'soleil', icon: '🔆', label: i('Mode soleil', 'Sun mode', 'Modo sol', 'Modalità sole') },
     { key: 'system', icon: '📱', label: i('Système', 'System', 'Sistema', 'Sistema') },
   ]
 
@@ -511,10 +512,10 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   gridLabelOn: { color: C.primary3 },
   gridCheck: { position: 'absolute', top: 4, right: 4 },
 
-  // Apparence (thème)
-  themeGrid: { flexDirection: 'row', gap: Spacing.sm },
+  // Apparence (thème) — 2×2 (4 options : sombre / clair / soleil / système)
+  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   themeBtn: {
-    flex: 1, alignItems: 'center', gap: Spacing.xs,
+    width: '47%', alignItems: 'center', gap: Spacing.xs,
     paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1,
     backgroundColor: C.card,
   },

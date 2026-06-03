@@ -50,6 +50,21 @@ export const LightColors = {
   white:    '#FFFFFF', black:    '#000000',
 } as const
 
+// ── Mode soleil ☀️ — thème clair HAUT-CONTRASTE (étal extérieur plein soleil) ──
+// Parité avec le web (commit 7dc5fddb) : texte quasi-noir, surfaces blanc pur,
+// primaire violet profond + accents profonds (tous AA ≥ 4.5:1 sur blanc),
+// bordures fortes. Garanti par src/__tests__/contrast.test.ts.
+export const SoleilColors = {
+  primary:  '#5B21B6', primary2: '#6D28D9', primary3: '#7C3AED',
+  accent:   '#B45309', accent2:  '#047857', accent3:  '#1D4ED8',  // argent / vert / info
+  danger:   '#C81E1E', warn:     '#B45309',
+  bg:       '#FFFFFF', bg2:      '#F6F6F8', bg3:      '#EFEFF2', bg4:      '#E6E6EA',
+  card:     '#FFFFFF',
+  border:   'rgba(0,0,0,0.30)', border2: 'rgba(0,0,0,0.45)', border3: 'rgba(0,0,0,0.55)',
+  text:     '#000000', text2:    '#1A1A22', text3:    '#3A3A45', text4:    '#55555F',
+  white:    '#FFFFFF', black:    '#000000',
+} as const
+
 // Forme commune (clés identiques entre Dark/Light) — signature de makeStyles(C).
 // Valeurs `string` (pas les littéraux `as const`) pour que Dark ET Light soient
 // tous deux assignables à ThemeColors (sinon "#5535CC" ≠ "#A991FF").
