@@ -405,6 +405,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | cd23f32 | feat(receipt): **reçu imprimable / PDF** (expo-print) — POS + historique |
 | 750671c | chore(deps): **expo-background-fetch → expo-background-task** (minimumInterval en minutes) |
 | ef487e7 | feat(observability): **crash reporter Sentry** (import dynamique guardé Expo Go + DSN) |
+| 84da272 | feat(kiosk): **TVA + client + remise** (parité Caisse, via posStore + CustomerPicker) |
 
 ---
 
@@ -430,7 +431,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
-*Dernière mise à jour : 2026-06-03 — (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN). À valider en build EAS : Sentry (DSN + source maps) + background-task. Reste audit : refactor kiosque. Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
+*Dernière mise à jour : 2026-06-03 — (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN). À valider en build EAS : Sentry (DSN + source maps) + background-task. (4) parité kiosque TVA/client/remise. Audit interne au repo = soldé. Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
 
 ---
 
@@ -493,8 +494,8 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 - ✅ **FAIT (2026-06-03, pack build)** : Sentry (`ef487e7`) + `expo-background-task` (`750671c`). **Restent à valider en build EAS réel** (invérifiables en Expo Go) :
   - **Sentry** : actif seulement hors Expo Go + si `EXPO_PUBLIC_SENTRY_DSN` défini → **Nelson doit coller son DSN** (`.env` local + **EAS secret** pour les builds). Symbolication **source maps** (plugin `@sentry/react-native/expo` + `SENTRY_AUTH_TOKEN` + org/project Sentry) = **follow-up non fait**.
   - **`expo-background-task`** : valider que le refresh widget tourne en dev/preview build (ne tourne pas en Expo Go).
-- Mode kiosque sans TVA/client/remise (UI séparée, ne réutilise pas `POSCart`) — refactor différé (seul point restant de l'audit).
-- Fidélité non créditée côté backend ; layouts tablette différés ; Wave/Orange réel ; publication Play Store.
+- ✅ **FAIT (2026-06-03)** : mode kiosque **TVA + client + remise** (`84da272`) — réutilise la **logique** `posStore` (discount/customer/`vatBreakdown`) + `CustomerPicker`, **pas** le Modal `POSCart` (kiosque sombre figé en paysage, colonne panier permanente). `customerId` + `discount` envoyés à l'API ; récap HT/TVA/remise/client dans la modale de confirmation.
+- **Hors de ce repo / différé** : fidélité non créditée côté **backend** ; layouts tablette différés ; Wave/Orange réel ; publication Play Store.
 
 ### Session 2026-06-03 (suite) — pack robustesse
 - **Error Boundary** (`src/components/ui/ErrorBoundary.tsx`) : classe React au-dessus du router (`app/_layout.tsx`, sous `GestureHandlerRootView`, autour du `QueryClientProvider`). Fallback **thémé + i18n** ; boutons **Réessayer** (`setState` reset) / **Redémarrer** (`Updates.reloadAsync`) ; `error.message` affiché en `__DEV__` ; log `logger.error` + `componentStack`. ⚠️ le fallback `ErrorFallback` est une **fonction** (hooks `useI18n`/`useTheme`) rendue par la classe (les hooks sont interdits dans une classe).
