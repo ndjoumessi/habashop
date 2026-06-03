@@ -49,6 +49,21 @@ function ErrorFallback({ error, resetError }: { error: unknown; resetError: () =
 }
 
 if ('serviceWorker' in navigator) {
+  // Mise à jour AUTOMATIQUE (commerçants non-techniques) : le SW est configuré en
+  // skipWaiting + clientsClaim (vite.config) → le nouveau SW s'active et prend le contrôle
+  // dès qu'il est prêt, ce qui déclenche `controllerchange`. On recharge alors UNE fois la
+  // page → le marchand bascule sur le nouveau code sans aucune action ni vidage de cache.
+  // Garde-fous : `refreshing` empêche toute boucle ; on n'attache l'écouteur QUE s'il existe
+  // déjà un contrôleur (= visite de retour → tout changement = mise à jour), pour ne pas
+  // recharger inutilement à la toute première visite (première activation du SW).
+  if (navigator.serviceWorker.controller) {
+    let refreshing = false
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return
+      refreshing = true
+      window.location.reload()
+    })
+  }
   navigator.serviceWorker.register('/sw.js')
     .then(reg => {
       setInterval(() => reg.update(), 30000)
@@ -57,6 +72,9 @@ if ('serviceWorker' in navigator) {
         if (!worker) return
         worker.addEventListener('statechange', () => {
           if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            // Filet de sécurité : si pour une raison quelconque `controllerchange` ne
+            // déclenche pas le reload auto, la bannière « Mise à jour disponible » (Header)
+            // reste proposée. En pratique le reload auto arrive avant que le marchand clique.
             window.dispatchEvent(new CustomEvent('sw-update'))
           }
         })
