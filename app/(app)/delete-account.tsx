@@ -2,7 +2,7 @@ import { logger } from '@/lib/logger'
 import { useState, useEffect, useMemo } from 'react'
 import {
   View, Text, ScrollView, StyleSheet, TextInput,
-  Pressable, Alert, ActivityIndicator,
+  Alert, ActivityIndicator,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
@@ -15,6 +15,7 @@ import { accountApi, apiErrorStatus } from '@/services/api'
 import type { TenantUser } from '@/types'
 import { purgeLocalAccountData } from '@/services/accountCleanup'
 import AccessibleButton from '@/components/ui/AccessibleButton'
+import ScreenHeader from '@/components/ui/ScreenHeader'
 
 type Scope = 'tenant' | 'user'
 
@@ -144,14 +145,7 @@ export default function DeleteAccountScreen() {
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable style={s.headerBtn} onPress={() => router.back()} hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={i('Retour', 'Back', 'Atrás', 'Indietro')}>
-          <Ionicons name="chevron-back" size={22} color={C.text} />
-        </Pressable>
-        <Text style={s.title} numberOfLines={1}>{title}</Text>
-      </View>
+      <ScreenHeader title={title} onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
         <View style={s.warnBox}>
