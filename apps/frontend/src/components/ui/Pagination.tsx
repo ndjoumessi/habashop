@@ -30,7 +30,7 @@ export default function Pagination({
   const end = Math.min(page * pageSize, total)
 
   const navBtn = (disabled: boolean): React.CSSProperties => ({
-    width: 34, height: 34, borderRadius: 9,
+    width: 44, height: 44, borderRadius: 9,
     background: 'var(--bg3)', border: '1px solid var(--border)',
     cursor: disabled ? 'not-allowed' : 'pointer',
     color: disabled ? 'var(--text4)' : 'var(--text2)',
@@ -48,11 +48,11 @@ export default function Pagination({
         <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} style={navBtn(page <= 1)} aria-label="Previous">←</button>
         {getPages().map((p, idx) =>
           p === '...' ? (
-            <div key={`dots-${idx}`} style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text4)', fontSize: 13 }}>…</div>
+            <div key={`dots-${idx}`} style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text4)', fontSize: 13 }}>…</div>
           ) : (
             <button key={p} type="button" onClick={() => onPage(p as number)}
               style={{
-                width: 34, height: 34, borderRadius: 9,
+                width: 44, height: 44, borderRadius: 9,
                 background: page === p ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : 'var(--bg3)',
                 border: `1px solid ${page === p ? 'transparent' : 'var(--border)'}`,
                 cursor: 'pointer', color: page === p ? '#fff' : 'var(--text2)',

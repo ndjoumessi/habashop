@@ -54,7 +54,7 @@
   --text:  #F0F0FF;
   --text2: #C4C4D4;
   --text3: #8888A8;
-  --text4: #555570;
+  --text4: #7C7C91; /* éclairci → AA small-text sur --bg/bg2/bg3 (était #555570, ratio 2.7) */
   --grad-p:    linear-gradient(135deg,#6C47FF,#8B6FFF);
   --grad-card: linear-gradient(160deg,#0D0D1C,#111128);
   --grad-dark: linear-gradient(180deg,#07070F,#0D0D1C);
@@ -154,7 +154,7 @@ html,body,#root {
 .btn-danger:hover { background:rgba(255,59,92,.18); border-color:rgba(255,59,92,.4) }
 .btn-sm { padding:5px 12px; font-size:12px; min-height:30px }
 .btn-icon {
-  width:34px; height:34px; border-radius:var(--r-md);
+  width:44px; height:44px; border-radius:var(--r-md); /* touch target ≥44px (WCAG 2.5.5) */
   background:rgba(255,255,255,.04); border:1px solid var(--border);
   color:var(--text3); flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
 }
@@ -182,7 +182,7 @@ html,body,#root {
 }
 .input:hover:not(:focus) { border-color:var(--border2) }
 .input:focus { border-color:var(--p2); box-shadow:0 0 0 3px rgba(108,71,255,.15) }
-.input::placeholder { color:var(--text4) }
+.input::placeholder { color:var(--text3) } /* placeholder lisible (text3 = AA), text4 réservé décor */
 .input:disabled { opacity:.5; cursor:not-allowed }
 select.input {
   cursor:pointer; appearance:none;
@@ -233,11 +233,13 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
 .kpi-card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:var(--sh-sm) }
 .kpi-icon-w { width:44px; height:44px; border-radius:var(--r-md); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.06); border:1px solid var(--border); margin-bottom:12px }
 .kpi-icon { position:absolute; top:15px; right:15px; font-size:20px; opacity:.35 }
-.kpi-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.7px; color:var(--text3); margin-bottom:6px }
+.kpi-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.7px; color:var(--text3); margin-bottom:6px }
 .kpi-value { font-size:26px; font-weight:900; font-family:var(--mono); letter-spacing:-1px; line-height:1.1 }
 .kpi-sub,.kpi-grid { font-size:11px; color:var(--text3); margin-top:5px; display:flex; align-items:center; gap:4px }
 .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; font-size:inherit }
 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px }
+.dash-bottom-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px }
+@media (max-width:768px) { .dash-bottom-grid { grid-template-columns:1fr } }
 .up,.trend-up { color:var(--acc2) }
 .dn,.trend-down { color:var(--danger) }
 
@@ -245,7 +247,7 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
 .table-wrap { overflow-x:auto; border-radius:var(--r-md) }
 table { width:100%; border-collapse:collapse; font-size:13px }
 thead tr { background:var(--bg4); border-bottom:1px solid var(--border) }
-th { padding:10px 14px; text-align:left; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:var(--text3); white-space:nowrap }
+th { padding:10px 14px; text-align:left; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:var(--text3); white-space:nowrap }
 tbody tr { border-bottom:1px solid rgba(255,255,255,.04); transition:background .1s }
 tbody tr:hover { background:rgba(255,255,255,.025) }
 tbody tr:last-child { border-bottom:none }
@@ -306,7 +308,7 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .page-title-header { font-size:17px; font-weight:700; flex:1 }
 .search-wrap { position:relative; display:flex; align-items:center }
 .search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text3); pointer-events:none; display:flex; align-items:center }
-.icon-btn { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:7px 9px; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; transition:all .15s }
+.icon-btn { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:7px 9px; min-width:44px; min-height:44px; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; transition:all .15s } /* touch target ≥44px */
 .icon-btn:hover { background:var(--bg4) }
 .notif-dot { position:absolute; top:4px; right:4px; width:7px; height:7px; border-radius:50%; background:var(--danger); border:1.5px solid var(--bg2) }
 

@@ -388,7 +388,7 @@ export default function Stock() {
           </button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px,1fr))', gap:12 }}>
-          {categories.map(cat => (
+          {[...categories].sort((a, b) => b.productsCount - a.productsCount).map(cat => (
             <div key={cat.id} style={{
               background:'var(--bg3)', border:'1px solid var(--border)',
               borderRadius:12, padding:16, borderLeft:`4px solid ${cat.color}`,

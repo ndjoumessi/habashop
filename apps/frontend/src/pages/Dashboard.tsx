@@ -285,7 +285,7 @@ export default function Dashboard() {
       {/* KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
         {[
-          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`,  evol: '+12%', up: true,  Icon: DollarSign, color: 'var(--p2)',   hex: '#6C47FF', bg: 'rgba(108,71,255,.14)' },
+          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`,  evol: '+12%', up: true,  Icon: DollarSign, color: 'var(--p2)',   hex: '#6C47FF', bg: 'rgba(108,71,255,.14)', hero: true },
           { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} ${lang === 'en' ? 'stock alerts' : lang === 'es' ? 'alertas stock' : lang === 'it' ? 'avvisi stock' : 'alertes stock'}`,   evol: '−3',   up: false, Icon: Package,    color: 'var(--acc)',  hex: '#FF9500', bg: 'rgba(255,149,0,.14)'  },
           { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} ${lang === 'en' ? 'pending orders' : lang === 'es' ? 'ped. pendientes' : lang === 'it' ? 'ord. in attesa' : 'cmd. en attente'}`,   evol: '',     up: null,  Icon: Users,      color: 'var(--acc2)', hex: '#00D084', bg: 'rgba(0,208,132,.14)'  },
           { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),         sub: lang === 'en' ? 'vs last month' : lang === 'es' ? 'vs mes pasado' : lang === 'it' ? 'vs mese scorso' : 'vs mois dernier',                           evol: '+7%',  up: true,  Icon: TrendingUp, color: 'var(--acc3)', hex: '#00B8FF', bg: 'rgba(0,184,255,.14)'  },
@@ -319,7 +319,8 @@ export default function Dashboard() {
               )}
             </div>
             <div className="kpi-label">{k.label}</div>
-            <div className="kpi-value" style={{ color: k.color, fontSize: 24 }}>{k.value}</div>
+            {/* Métrique reine : le CA du jour domine (30px mono 900) */}
+            <div className="kpi-value" style={{ color: k.color, fontSize: (k as { hero?: boolean }).hero ? 30 : 24 }}>{k.value}</div>
             <div className="kpi-sub" style={{ marginTop: 4 }}>{k.sub}</div>
           </div>
         ))}
@@ -426,10 +427,16 @@ export default function Dashboard() {
       </div>
 
       {/* Stock alerts + Activity + Top products */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+      <div className="dash-bottom-grid">
 
-        {/* Stock alerts */}
-        <div className="panel" style={{ marginBottom: 0 }}>
+        {/* Stock alerts — poids visuel dominant quand il y a des ruptures */}
+        <div className="panel" style={{
+          marginBottom: 0,
+          ...(stockAlerts.length > 0 ? {
+            borderColor: 'var(--danger)',
+            boxShadow: '0 0 0 1px var(--danger), 0 8px 28px rgba(255,59,92,.18)',
+          } : {}),
+        }}>
           <div className="panel-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(255,59,92,.12)', border: '1px solid rgba(255,59,92,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)' }}>

@@ -209,7 +209,7 @@ export default function ValidatedInput({
     <div style={{ width: '100%' }}>
       {label && (
         <label style={{
-          display: 'block', fontSize: 10, fontWeight: 800,
+          display: 'block', fontSize: 11, fontWeight: 800,
           textTransform: 'uppercase', letterSpacing: '.6px',
           color: hasError ? 'var(--danger)' : 'var(--text3)',
           marginBottom: 6, transition: 'color .15s',
