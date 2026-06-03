@@ -288,28 +288,14 @@ export default function ReportsScreen() {
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
-  errTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger, textAlign: 'center' },
   emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', padding: Spacing.lg },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
-    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
-  },
   headerBtn: {
     width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
     borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
-  subtitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
 
   periods: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xs },
-  chip: {
-    paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full,
-    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
-  },
-  chipOn: { backgroundColor: C.primary, borderColor: C.primary },
-  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
-  chipTxtOn: { color: C.white },
 
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
   kpiCard: {
@@ -347,9 +333,4 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   payBarFill: { height: '100%', backgroundColor: C.primary, borderRadius: 4 },
   payPct: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_700Bold', color: C.text2, width: 38, textAlign: 'right' },
 
-  exportBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
-    backgroundColor: C.primary, borderRadius: BorderRadius.md, height: 50, ...Shadow.colored(C.primary),
-  },
-  exportTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })

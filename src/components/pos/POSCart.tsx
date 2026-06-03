@@ -353,12 +353,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   changeVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', marginTop: 4 },
 
-  payBtn: {
-    backgroundColor: C.primary, borderRadius: BorderRadius.md, height: 52,
-    alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm, ...Shadow.colored(C.primary),
-  },
-  payBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
-  payBtnDisabled: { opacity: 0.45 },
   cashWarn: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.danger, textAlign: 'center' },
   custBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,

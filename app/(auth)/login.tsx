@@ -358,15 +358,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     position:'absolute',right:Spacing.md,
     top:0,bottom:0,justifyContent:'center',
   },
-  btn:{
-    backgroundColor:C.primary,borderRadius:BorderRadius.md,
-    height:52,alignItems:'center',justifyContent:'center',
-    marginTop:Spacing.xs,...Shadow.colored(C.primary),
-  },
-  btnText:{
-    fontSize:FontSize.md,fontFamily:'Outfit_800ExtraBold',
-    color:C.white,letterSpacing:0.3,
-  },
   demoWrap:{alignItems:'center',gap:Spacing.sm},
   demoLabel:{
     fontSize:FontSize.xs,fontFamily:'Outfit_400Regular',
@@ -401,8 +392,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   biometricModalIcon: { fontSize: 72 },
   biometricModalTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.text, textAlign: 'center' },
   biometricModalDesc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', lineHeight: 24 },
-  biometricModalBtn: { width: '100%', backgroundColor: C.primary, paddingVertical: Spacing.lg, borderRadius: BorderRadius.lg, alignItems: 'center' },
-  biometricModalBtnText: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   biometricModalSkip: { paddingVertical: Spacing.md },
   biometricModalSkipText: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3 },
   flags:{textAlign:'center',fontSize:20,letterSpacing:6},

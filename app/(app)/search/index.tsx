@@ -212,9 +212,4 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   hintWrap: { padding: Spacing.xl, alignItems: 'center', gap: Spacing.lg },
   hintText: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center' },
   suggestionsRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
-  suggestionChip: {
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.full,
-    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
-  },
-  suggestionText: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
 })

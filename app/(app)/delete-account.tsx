@@ -216,9 +216,6 @@ export default function DeleteAccountScreen() {
 
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
-  headerBtn: { width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: C.bg3, alignItems: 'center', justifyContent: 'center' },
-  title: { flex: 1, fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   body: { padding: Spacing.lg, gap: Spacing.sm, paddingBottom: Spacing.xxxl },
   warnBox: { flexDirection: 'row', gap: Spacing.sm, alignItems: 'flex-start', backgroundColor: withAlpha(C.danger, 0.1), borderColor: withAlpha(C.danger, 0.3), borderWidth: 1, borderRadius: BorderRadius.md, padding: Spacing.md, marginBottom: Spacing.md },
   scopeLoading: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
@@ -229,7 +226,4 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   fieldLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, marginTop: Spacing.lg, marginBottom: Spacing.xs },
   input: { backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
   inputErr: { borderColor: C.danger },
-  deleteBtn: { backgroundColor: C.danger, borderRadius: BorderRadius.md, height: 52, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.xxl },
-  deleteBtnDisabled: { opacity: 0.4 },
-  deleteTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })

@@ -329,16 +329,9 @@ export default function StockScreen() {
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl, gap: Spacing.sm },
-  errTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger, textAlign: 'center' },
   emptyTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text2, marginTop: Spacing.sm },
   emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', maxWidth: 260 },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.md,
-  },
-  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
-  subtitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   headerBtn: {
     width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
     borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center',
@@ -365,18 +358,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
 
   tabsWrap: { paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
-  tab: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,
-    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
-  },
-  tabOn: { backgroundColor: C.primary, borderColor: C.primary },
-  tabTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text2 },
-  tabTxtOn: { color: C.white },
-  tabBadge: { minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: C.bg4, alignItems: 'center', justifyContent: 'center' },
-  tabBadgeOn: { backgroundColor: withAlpha(C.white, 0.25) },
-  tabBadgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold', color: C.text3 },
-  tabBadgeTxtOn: { color: C.white },
 
   row: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
@@ -418,9 +399,4 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: C.border, textAlign: 'center',
     fontSize: FontSize.xxl, fontFamily: 'JetBrainsMono_700Bold', color: C.text,
   },
-  saveBtn: {
-    backgroundColor: C.primary, borderRadius: BorderRadius.md, height: 52,
-    alignItems: 'center', justifyContent: 'center', ...Shadow.colored(C.primary),
-  },
-  saveTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })

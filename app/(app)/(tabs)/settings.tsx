@@ -496,7 +496,6 @@ export default function SettingsScreen() {
 
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  screenTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.text, paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.sm },
 
   section: { paddingHorizontal: Spacing.xl, marginTop: Spacing.lg },
   sectionTitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
@@ -508,12 +507,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border,
     padding: Spacing.lg, ...Shadow.sm,
   },
-  avatar: {
-    width: 60, height: 60, borderRadius: BorderRadius.lg,
-    backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
-    ...Shadow.colored(C.primary),
-  },
-  avatarTxt: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   profileName: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   profileEmail: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
   badgeRow: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.xs },
@@ -587,10 +580,4 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   skelBar: { height: 14, borderRadius: BorderRadius.sm, backgroundColor: C.bg3 },
 
   // Logout
-  logoutBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
-    paddingVertical: Spacing.md, borderRadius: BorderRadius.md,
-    backgroundColor: withAlpha(C.danger, 0.1), borderWidth: 1, borderColor: withAlpha(C.danger, 0.25),
-  },
-  logoutTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.danger },
 })

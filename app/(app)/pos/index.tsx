@@ -404,16 +404,11 @@ export default function POSScreen() {
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
-  },
   headerBtn: {
     width: 44, height: 44, borderRadius: BorderRadius.md,
     backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   cartBadge: {
     position: 'absolute', top: 2, right: 2, minWidth: 18, height: 18, paddingHorizontal: 4,
     borderRadius: 9, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
@@ -422,13 +417,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   cartBadgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 
   cats: { gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xs },
-  chip: {
-    paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full,
-    backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, maxWidth: 160,
-  },
-  chipOn: { backgroundColor: C.primary, borderColor: C.primary },
-  chipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
-  chipTxtOn: { color: C.white },
 
   totalBar: {
     position: 'absolute', left: 0, right: 0, bottom: 0,
@@ -438,10 +426,4 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   totalBarLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   totalBarAmt: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
-  checkoutBtn: {
-    backgroundColor: C.primary, borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.xl, height: 50, alignItems: 'center', justifyContent: 'center',
-    ...Shadow.colored(C.primary),
-  },
-  checkoutTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })
