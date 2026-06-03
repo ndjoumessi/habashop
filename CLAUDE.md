@@ -395,6 +395,14 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | e1a9704 | feat: **Sprint 4** — thème clair/sombre + kiosque POS + push durci + Play Store prep |
 | 777a5e1 | fix: navbar — labels sur une ligne (fontSize 8 + numberOfLines + adjustsFontSizeToFit) |
 | edef04b | feat: **Sprint 5 (infra)** — useResponsive + config iOS (app.json/eas.json) + IOS_BUILD.md |
+| 0ce1193 | fix(pos): normalise la comparaison barcode (scan → produit) + `src/lib/barcode.ts` (+5 tests) |
+| e60d205 | fix(scanner): types restreints `ean13/ean8/code128` + debounce 1.5 s + viewfinder ROI |
+| a1e835e | fix(scanner): filtre stabilité 2 lectures identiques (ROI logicielle abandonnée) |
+| df6eb24 | feat(pos): saisie manuelle code-barres (fallback scanner) — **retirée par 11254c5** |
+| 11254c5 | refactor(pos): supprime recherche texte + saisie manuelle, **scan seul** |
+| 9180ea2 | feat(ui): **Error Boundary** plein écran (anti white-screen) + reset/redémarrage |
+| b0950b5 | chore(logging): comble les **8 `catch {}` vides** (logger.warn) |
+| cd23f32 | feat(receipt): **reçu imprimable / PDF** (expo-print) — POS + historique |
 
 ---
 
@@ -412,6 +420,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 - [x] Prep iOS + responsive — `useResponsive`, config iOS `app.json`/`eas.json`, `IOS_BUILD.md` ✅ (Sprint 5, infra seule)
 - [x] Validé device : scanner, thème clair, kiosque (vente + PIN), encaissement→API ✅ (cf. `runtime-verification-debt`)
 - [ ] **Tester sur device le reste** : biométrie, offline+resync, widget, ticket WhatsApp, balayage clair écran par écran, TalkBack
+- [ ] **Confirmer device le scanner durci** (filtre stabilité 2 lectures) sur l'Android lent — sinon vote majoritaire glissant ; voir mémoire `barcode-scanner-android-unreliable`
 - [ ] Publier sur Google Play Store (AAB `1f6bf56f` prêt ; captures à faire)
 - [ ] **Layouts tablette** (Dashboard/POS/tab bar) — DIFFÉRÉS jusqu'à un iPad (`useResponsive` prêt ; cf. `tablet-ios-prep-deferred`)
 - [ ] EAS Build iOS réel (compte Apple Developer requis — cf. `IOS_BUILD.md`)
@@ -419,7 +428,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
-*Dernière mise à jour : 2026-06-01 — durcissement POS + qualité (garde/devise espèces, promo/paliers, typage API 0 any, client/fidélité, TVA, anti sur-vente, remise, jest-expo 31 tests) + build APK **1.3.0**. Détail en bas de fichier.*
+*Dernière mise à jour : 2026-06-03 — (1) fiabilisation scanner code-barres (normalisation, types restreints, filtre stabilité 2 lectures) + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu imprimable/PDF (expo-print). Détail en bas de fichier. Reste planifié : pack build (Sentry + expo-background-task). Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
 
 ---
 
@@ -478,7 +487,39 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
   - APK : https://expo.dev/artifacts/eas/24bKjgB5o1U5TufwW1tMdB.apk
 
 ### Pistes restantes (audit)
-- Mode kiosque sans TVA/client/remise (UI séparée, ne réutilise pas `POSCart`).
-- Reçu **imprimable/PDF** (`expo-print` installé mais inutilisé).
-- 8 `catch {}` vides ; pas de **Sentry**/Error Boundary ; `expo-background-fetch` déprécié → `expo-background-task`.
+- ✅ **FAIT (2026-06-03)** : Error Boundary (`9180ea2`) · 8 `catch {}` vides comblés (`b0950b5`) · reçu imprimable/PDF (`cd23f32`).
+- ⏸️ **Pack build (à faire couplé à un dev/preview EAS — invérifiable en Expo Go)** :
+  - **Sentry** — dépendance native + config plugin + DSN ; NE PAS ajouter à l'aveugle (risque build release). `logger.warn/error` + Error Boundary déjà prêts à l'alimenter.
+  - **`expo-background-fetch` → `expo-background-task`** — swap natif ; les tâches de fond ne tournent pas dans Expo Go.
+- Mode kiosque sans TVA/client/remise (UI séparée, ne réutilise pas `POSCart`) — refactor différé.
 - Fidélité non créditée côté backend ; layouts tablette différés ; Wave/Orange réel ; publication Play Store.
+
+### Session 2026-06-03 (suite) — pack robustesse
+- **Error Boundary** (`src/components/ui/ErrorBoundary.tsx`) : classe React au-dessus du router (`app/_layout.tsx`, sous `GestureHandlerRootView`, autour du `QueryClientProvider`). Fallback **thémé + i18n** ; boutons **Réessayer** (`setState` reset) / **Redémarrer** (`Updates.reloadAsync`) ; `error.message` affiché en `__DEV__` ; log `logger.error` + `componentStack`. ⚠️ le fallback `ErrorFallback` est une **fonction** (hooks `useI18n`/`useTheme`) rendue par la classe (les hooks sont interdits dans une classe).
+- **8 `catch {}` vides** → `logger.warn(contexte, e)` (les `catch { return false/[] }` à fallback **restent** inchangés). `logger` ajouté en import dans `api.ts` + `useProfilePhoto.ts`.
+- **Reçu PDF** : `src/services/printReceipt.ts` (`expo-print`, **déjà installé**, **dispo en Expo Go**) → `Print.printAsync({ html })` ouvre la boîte d'impression OS (AirPrint / Android → Bluetooth thermique ou PDF). `TicketOptions` **exporté** de `whatsappTicket.ts` et réutilisé (DRY) ; HTML **échappé** (`esc`). Branché post-vente POS (3ᵉ bouton de l'alerte) + réimpression historique (`sales/index.tsx`, helper `saleTicket` partagé WhatsApp/print). Annulation d'impression = normale → log, **pas** d'alerte.
+
+---
+
+## Session 2026-06-03 — fiabilisation scanner code-barres + simplification Caisse
+
+> Tout sur `main` (poussé), `tsc` 0, **36 tests verts** (+5 vs 31). Itérations successives face à un **scanner expo-camera erratique** sur l'Android de test, puis simplification de la Caisse.
+
+### Diagnostic (vérifié sur l'API live)
+- Le match scan→produit était un **`===` strict** ; les barcodes en DB sont des **EAN-13 propres 13 chiffres**, et le champ **`ean` n'existe PAS** dans la réponse `/api/products` (clause `p.ean === …` morte).
+- Sur ce device, ML Kit renvoyait surtout des **lectures erratiques** (codes différents par frame, ex. `397555556565` au lieu de `6111245050034`) — pas un simple problème de format.
+
+### Livré (commits sur `main`)
+- **`fix(pos)` normalisation** (`0ce1193`) — `src/lib/barcode.ts` → `normalizeBarcode()` (strip espaces + zéros de tête `^0+`). Comparaison des **deux côtés normalisés** ; ignore un scan vide (sinon match du produit au barcode `''`). 5 tests (`src/__tests__/barcode.test.ts`).
+- **`fix(scanner)` types + debounce + viewfinder** (`e60d205`) — `barcodeTypes` réduits à **`['ean13','ean8','code128']`** (retiré qr/code39/upc) ; cooldown **1.5 s** (`lastScanTime`) ; viseur visuel centré. ⚠️ expo-camera SDK 54 **n'expose PAS** `barcodeScannerSettings.regionOfInterest` (type `BarcodeSettings = { barcodeTypes }` seulement) ; une ROI logicielle via `bounds` a été tentée…
+- **`fix(scanner)` filtre stabilité** (`a1e835e`) — …puis **abandonnée** (`bounds` peu fiable sur cet Android). Remplacée par un **filtre de stabilité** : on n'accepte un code que **lu 2 fois d'affilée à l'identique** (`lastCandidate`, sur valeur normalisée) ; une lecture différente réinitialise. Un parasite aléatoire ne se répète pas → seul le code visé passe. Cooldown 1.5 s conservé après acceptation.
+- **`feat(pos)` saisie manuelle** (`df6eb24`) puis **`refactor(pos)` scan seul** (`11254c5`) — un champ code-barres manuel (clavier num + douchette USB/BT) a été ajouté **puis retiré** sur ta demande, en même temps que la **recherche produit par nom**. La Caisse ne garde que : **grille complète + filtres catégories + bouton scan (header)**. States `search`/`barcodeInput`, handler `submitBarcode`, styles et import `TextInput` nettoyés ; `filtered` ne filtre plus que par catégorie.
+
+### État scanner (final)
+`BarcodeScanner.tsx` : `CameraView` + `onBarcodeScanned` → `handleBarcode` ⇒ **cooldown 1.5 s** → **normalize** → **2 lectures identiques consécutives** → `onScan(norm)`. Viseur = **guide UX visuel uniquement** (const `VIEWFINDER` en fractions ; **aucune** ROI logicielle / `bounds`). Types `ean13/ean8/code128`.
+
+### Non vérifié sur device par Claude
+Tests machine OK (tsc, 36 tests, **bundle Metro complet HTTP 200**, match logique contre l'API live : `6111245050034`→Bifaka, espaces/zéro de tête OK). Mais **le geste physique scan/tap n'a pas pu être exécuté** (pas de device USB, pas d'automatisation UI) → confirmation device = à faire par Nelson. Si même le bon code ne se répète jamais 2× → passer à un **vote majoritaire glissant** (2 sur 3 dernières lectures).
+
+### Nouveaux fichiers
+`src/lib/barcode.ts` · `src/__tests__/barcode.test.ts`.
