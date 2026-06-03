@@ -408,6 +408,8 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | 84da272 | feat(kiosk): **TVA + client + remise** (parité Caisse, via posStore + CustomerPicker) |
 | 91d50ba | chore: **version 1.4.0** (build APK preview) |
 | be323eb | chore(eas): pin `environment` preview/production (charge `EXPO_PUBLIC_SENTRY_DSN`) |
+| 523474e | feat(sentry): **source maps** (plugin expo + metro `getSentryExpoConfig` + fix `@expo/config-plugins`) |
+| 288024d | chore: **version 1.4.1** (build avec source maps Sentry) |
 
 ---
 
@@ -433,7 +435,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
-*Dernière mise à jour : 2026-06-03 — (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN). (4) parité kiosque TVA/client/remise ; (5) **APK 1.4.0 buildé** (build `394fda70`) avec **DSN Sentry câblé** (EAS env var). Audit interne au repo = soldé. À valider device : crash→Sentry, widget background-task. Follow-up : source maps Sentry (auth token). Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
+*Dernière mise à jour : 2026-06-03 — (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN). (4) parité kiosque TVA/client/remise ; (5) **APK 1.4.1 buildé** (build `b999af75`) avec **Sentry complet** : DSN (EAS env var) + **source maps** (plugin `@sentry/react-native/expo` + `getSentryExpoConfig` + `SENTRY_AUTH_TOKEN` secret EAS). Audit interne au repo = soldé. À valider device : crash→Sentry (stack symbolisée), widget background-task. Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
 
 ---
 
@@ -512,8 +514,18 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
   - Dashboard : https://expo.dev/accounts/ndjoumessi/projects/habashop-mobile/builds/394fda70-fd7b-4e01-9de0-1b22e10da268
   - APK : https://expo.dev/artifacts/eas/85trffDN87RLYcWckDuQbm.apk
 - ⚠️ **EAS auth partagée via disque** : `eas whoami` → `ndjoumessi` fonctionne depuis les shells de Claude (state.json partagé) → `eas env:create` / `eas build` **lançables par Claude** (contrairement à ce que laissait penser l'ancienne note « terminal de Nelson uniquement »).
-- **Follow-up source maps** (stacks symbolisées dans Sentry) = NON fait : ajouter le plugin `@sentry/react-native/expo` (org `haba-76` / project `react-native` / url EU) + **`SENTRY_AUTH_TOKEN`** en secret EAS, au prochain build.
-- **À valider device (APK 1.4.0)** : crash test → event Sentry (stack **minifiée** attendue) ; scan ; reçu PDF ; kiosque client/remise ; widget après 15 min (background-task).
+- **Follow-up source maps** : ✅ **FAIT en 1.4.1** (cf. ci-dessous).
+- **À valider device (APK 1.4.0/1.4.1)** : crash test → event Sentry ; scan ; reçu PDF ; kiosque client/remise ; widget après 15 min (background-task).
+
+### Build APK 1.4.1 — source maps Sentry
+- **Plugin** `@sentry/react-native/expo` ajouté à `app.json` (org `haba-76`, project `react-native`, url **EU** `https://de.sentry.io/`). **`metro.config.js`** : `getDefaultConfig` → **`getSentryExpoConfig`** (génère les source maps + debug IDs).
+- ⚠️ **Piège résolu** : le plugin Sentry échouait au prebuild (`PluginError: Cannot find module '@expo/config-plugins'`) car `@expo/config-plugins@54.0.4` était **niché sous `expo/`** (non hoisté) → ajouté en **dépendance directe** `~54.0.4` (`npx expo install @expo/config-plugins`). Vérif avant build : `npx expo config --type public` doit résoudre le plugin sans erreur.
+- **`SENTRY_AUTH_TOKEN`** = **secret EAS** (visibilité `secret`, environnements preview + production) + `.env` local (gitignored). **Jamais committé** (vérifié : `git diff --cached | grep sntryu_` = 0).
+- `app.json` : version **1.4.0 → 1.4.1** (commits `523474e` plugin+metro, `288024d` version). versionCode resté **3** (`preview` sans `autoIncrement`).
+- Build EAS Android `preview` → **FINISHED** : build `b999af75-7dfa-43b5-a4a7-724d8780723f`.
+  - Dashboard : https://expo.dev/accounts/ndjoumessi/projects/habashop-mobile/builds/b999af75-7dfa-43b5-a4a7-724d8780723f
+  - APK : https://expo.dev/artifacts/eas/oVhzodf1s9QUnUdbiFYFHH.apk
+- Build réussi **avec le plugin actif** → upload des source maps OK ⇒ **stacks de crash symbolisées** dans Sentry (vs minifiées en 1.4.0). À confirmer device (Sentry → Settings → Source Maps après un crash test).
 
 ---
 
