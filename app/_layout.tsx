@@ -18,6 +18,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useTheme } from '@/stores/appStore'
 import { registerForPushNotifications } from '@/services/notifications'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import { setupWidgetChannel, isWidgetEnabled } from '@/services/widgetNotification'
 import { registerWidgetRefresh } from '@/tasks/backgroundRefresh'
 
@@ -83,14 +84,16 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{flex:1}}>
-      <QueryClientProvider client={qc}>
-        <StatusBar style={isDark ? 'light' : 'dark'}/>
-        <OfflineSyncBridge/>
-        <Stack screenOptions={{headerShown:false}}>
-          <Stack.Screen name="(auth)"/>
-          <Stack.Screen name="(app)"/>
-        </Stack>
-      </QueryClientProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={qc}>
+          <StatusBar style={isDark ? 'light' : 'dark'}/>
+          <OfflineSyncBridge/>
+          <Stack screenOptions={{headerShown:false}}>
+            <Stack.Screen name="(auth)"/>
+            <Stack.Screen name="(app)"/>
+          </Stack>
+        </QueryClientProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   )
 }
