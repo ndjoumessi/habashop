@@ -403,6 +403,8 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | 9180ea2 | feat(ui): **Error Boundary** plein écran (anti white-screen) + reset/redémarrage |
 | b0950b5 | chore(logging): comble les **8 `catch {}` vides** (logger.warn) |
 | cd23f32 | feat(receipt): **reçu imprimable / PDF** (expo-print) — POS + historique |
+| 750671c | chore(deps): **expo-background-fetch → expo-background-task** (minimumInterval en minutes) |
+| ef487e7 | feat(observability): **crash reporter Sentry** (import dynamique guardé Expo Go + DSN) |
 
 ---
 
@@ -428,7 +430,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
-*Dernière mise à jour : 2026-06-03 — (1) fiabilisation scanner code-barres (normalisation, types restreints, filtre stabilité 2 lectures) + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu imprimable/PDF (expo-print). Détail en bas de fichier. Reste planifié : pack build (Sentry + expo-background-task). Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
+*Dernière mise à jour : 2026-06-03 — (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN). À valider en build EAS : Sentry (DSN + source maps) + background-task. Reste audit : refactor kiosque. Précédent : 2026-06-01 durcissement POS + APK 1.3.0.*
 
 ---
 
@@ -488,16 +490,17 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ### Pistes restantes (audit)
 - ✅ **FAIT (2026-06-03)** : Error Boundary (`9180ea2`) · 8 `catch {}` vides comblés (`b0950b5`) · reçu imprimable/PDF (`cd23f32`).
-- ⏸️ **Pack build (à faire couplé à un dev/preview EAS — invérifiable en Expo Go)** :
-  - **Sentry** — dépendance native + config plugin + DSN ; NE PAS ajouter à l'aveugle (risque build release). `logger.warn/error` + Error Boundary déjà prêts à l'alimenter.
-  - **`expo-background-fetch` → `expo-background-task`** — swap natif ; les tâches de fond ne tournent pas dans Expo Go.
-- Mode kiosque sans TVA/client/remise (UI séparée, ne réutilise pas `POSCart`) — refactor différé.
+- ✅ **FAIT (2026-06-03, pack build)** : Sentry (`ef487e7`) + `expo-background-task` (`750671c`). **Restent à valider en build EAS réel** (invérifiables en Expo Go) :
+  - **Sentry** : actif seulement hors Expo Go + si `EXPO_PUBLIC_SENTRY_DSN` défini → **Nelson doit coller son DSN** (`.env` local + **EAS secret** pour les builds). Symbolication **source maps** (plugin `@sentry/react-native/expo` + `SENTRY_AUTH_TOKEN` + org/project Sentry) = **follow-up non fait**.
+  - **`expo-background-task`** : valider que le refresh widget tourne en dev/preview build (ne tourne pas en Expo Go).
+- Mode kiosque sans TVA/client/remise (UI séparée, ne réutilise pas `POSCart`) — refactor différé (seul point restant de l'audit).
 - Fidélité non créditée côté backend ; layouts tablette différés ; Wave/Orange réel ; publication Play Store.
 
 ### Session 2026-06-03 (suite) — pack robustesse
 - **Error Boundary** (`src/components/ui/ErrorBoundary.tsx`) : classe React au-dessus du router (`app/_layout.tsx`, sous `GestureHandlerRootView`, autour du `QueryClientProvider`). Fallback **thémé + i18n** ; boutons **Réessayer** (`setState` reset) / **Redémarrer** (`Updates.reloadAsync`) ; `error.message` affiché en `__DEV__` ; log `logger.error` + `componentStack`. ⚠️ le fallback `ErrorFallback` est une **fonction** (hooks `useI18n`/`useTheme`) rendue par la classe (les hooks sont interdits dans une classe).
 - **8 `catch {}` vides** → `logger.warn(contexte, e)` (les `catch { return false/[] }` à fallback **restent** inchangés). `logger` ajouté en import dans `api.ts` + `useProfilePhoto.ts`.
-- **Reçu PDF** : `src/services/printReceipt.ts` (`expo-print`, **déjà installé**, **dispo en Expo Go**) → `Print.printAsync({ html })` ouvre la boîte d'impression OS (AirPrint / Android → Bluetooth thermique ou PDF). `TicketOptions` **exporté** de `whatsappTicket.ts` et réutilisé (DRY) ; HTML **échappé** (`esc`). Branché post-vente POS (3ᵉ bouton de l'alerte) + réimpression historique (`sales/index.tsx`, helper `saleTicket` partagé WhatsApp/print). Annulation d'impression = normale → log, **pas** d'alerte.
+- **Reçu PDF** : `src/services/printReceipt.ts` (`expo-print`, **déjà installé**, **dispo en Expo Go**) → `Print.printAsync({ html })` ouvre la boîte d'impression OS (AirPrint / Android → Bluetooth thermique ou PDF). `TicketOptions` **exporté** de `whatsappTicket.ts` et réutilisé (DRY) ; HTML **échappé** (`esc`). Branché post-vente POS (3ᵉ bouton de l'alerte) + réimpression historique (`sales/index.tsx`, helper `saleTicket` partagé WhatsApp/print). Annulation d'impression = normale → log, **pas** d'alerte. **Validé device (impression OK).**
+- **Pack build** : **`expo-background-task ~1.0.10`** remplace `expo-background-fetch` (déprécié) — ⚠️ `minimumInterval` en **minutes** (était en secondes), résultat `BackgroundTaskResult.Success/Failed`, **supporté Expo Go** (import sûr). **Sentry `@sentry/react-native ~7.2.0`** via `src/lib/crashReporter.ts` : **import dynamique** (jamais évalué en Expo Go) + garde `executionEnvironment !== StoreClient` + DSN `EXPO_PUBLIC_SENTRY_DSN` → **inerte sans DSN / en Expo Go** ; `initCrashReporter()` au montage root, `ErrorBoundary` → `captureException`. ⚠️ source maps non configurées (follow-up build).
 
 ---
 
