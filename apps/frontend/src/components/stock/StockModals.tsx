@@ -52,7 +52,7 @@ function BarcodeDisplay({ value }: { value: string }) {
         // displayValue:true + quiet zones blanches = EAN-13 conforme GS1, scannable.
         JsBarcode(svgRef.current, value, {
           format: 'EAN13',
-          width: 1.5,
+          width: 2.7,
           height: 55,
           displayValue: true,
           fontSize: 11,
