@@ -19,6 +19,7 @@ import { useTheme } from '@/stores/appStore'
 import { registerForPushNotifications } from '@/services/notifications'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
+import { initCrashReporter } from '@/lib/crashReporter'
 import { setupWidgetChannel, isWidgetEnabled } from '@/services/widgetNotification'
 import { registerWidgetRefresh } from '@/tasks/backgroundRefresh'
 
@@ -43,6 +44,8 @@ export default function RootLayout() {
   })
 
   useEffect(() => { restoreSession() }, [])
+  // Crash reporter (Sentry) — no-op en Expo Go / sans DSN (cf. crashReporter.ts).
+  useEffect(() => { initCrashReporter() }, [])
   // Widget CA (opt-in) : crée le canal Android + (ré)enregistre le refresh de fond si activé.
   useEffect(() => {
     const init = async () => {

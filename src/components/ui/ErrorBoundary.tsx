@@ -4,6 +4,7 @@ import * as Updates from 'expo-updates'
 import { useI18n, useTheme } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize } from '@/constants/theme'
 import { logger } from '@/lib/logger'
+import { captureException } from '@/lib/crashReporter'
 
 // Écran de secours plein écran : remplace le « white screen » qui survenait
 // quand un composant levait une erreur en plein encaissement. Traduit + thémé.
@@ -68,8 +69,9 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: { componentStack: string }) {
-    // warn/error restent actifs en prod → seront captés par un crash reporter (Sentry) si branché.
     logger.error('ErrorBoundary a capté une erreur:', error, info.componentStack)
+    // Remonte à Sentry si actif (no-op en Expo Go / sans DSN).
+    captureException(error, { componentStack: info.componentStack })
   }
 
   reset = () => this.setState({ error: null })
