@@ -12,36 +12,38 @@ const LANGS: { code: Lang; flag: string; label: string }[] = [
 ]
 
 export default function LanguageSwitcher() {
-  const { lang, settingsLocked } = useConfig()
+  const { lang } = useConfig()
   const { i } = useI18n()
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const current = LANGS.find(l => l.code === lang) ?? LANGS[0]
+  // Badge en lecture seule : la langue se change dans Paramètres. Cadenas + tooltip au
+  // survol l'indiquent en permanence (indicateur, pas lié au toggle settingsLocked).
   const tooltipText = i(
-    'Langue verrouillée dans Paramètres → Sécurité',
-    'Language locked in Settings → Security',
-    'Idioma bloqueado en Configuración → Seguridad',
-    'Lingua bloccata in Impostazioni → Sicurezza'
+    'Langue configurée dans Paramètres',
+    'Language set in Settings',
+    'Idioma configurado en Configuración',
+    'Lingua configurata in Impostazioni'
   )
 
   return (
     <div
       style={{ position: 'relative' }}
-      onMouseMove={settingsLocked ? e => setPos({ x: e.clientX, y: e.clientY - 36 }) : undefined}
-      onMouseLeave={settingsLocked ? () => setPos(null) : undefined}
+      onMouseMove={e => setPos({ x: e.clientX, y: e.clientY - 36 })}
+      onMouseLeave={() => setPos(null)}
     >
       <button
         className="icon-btn"
         type="button"
         style={{
           gap: 4, padding: '6px 10px', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)',
-          cursor: 'default',
+          cursor: 'pointer',
         }}
       >
         <span>{current.flag}</span>
         <span style={{ color: 'var(--text2)', fontSize: 11 }}>{current.label}</span>
-        {settingsLocked && <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />}
+        <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />
       </button>
-      {settingsLocked && pos && (
+      {pos && (
         <div style={{
           position: 'fixed',
           left: pos.x,

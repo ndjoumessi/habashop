@@ -14,36 +14,38 @@ const CURRENCIES: { code: Currency; flag: string; symbol: string }[] = [
 ]
 
 export default function CurrencyBadge() {
-  const { currency, settingsLocked } = useConfig()
+  const { currency } = useConfig()
   const { i } = useI18n()
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const current = CURRENCIES.find(c => c.code === currency) ?? CURRENCIES[0]
+  // Badge en lecture seule : la devise se change dans Paramètres. Cadenas + tooltip au
+  // survol l'indiquent en permanence (indicateur, pas lié au toggle settingsLocked).
   const tooltipText = i(
-    'Devise verrouillée dans Paramètres → Sécurité',
-    'Currency locked in Settings → Security',
-    'Divisa bloqueada en Configuración → Seguridad',
-    'Valuta bloccata in Impostazioni → Sicurezza'
+    'Devise configurée dans Paramètres',
+    'Currency set in Settings',
+    'Divisa configurada en Configuración',
+    'Valuta configurata in Impostazioni'
   )
 
   return (
     <div
       style={{ position: 'relative' }}
-      onMouseMove={settingsLocked ? e => setPos({ x: e.clientX, y: e.clientY - 36 }) : undefined}
-      onMouseLeave={settingsLocked ? () => setPos(null) : undefined}
+      onMouseMove={e => setPos({ x: e.clientX, y: e.clientY - 36 })}
+      onMouseLeave={() => setPos(null)}
     >
       <button
         className="icon-btn"
         type="button"
         style={{
           gap: 4, padding: '6px 9px', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)',
-          cursor: 'default',
+          cursor: 'pointer',
         }}
       >
         <span>{current.flag}</span>
         <span style={{ color: 'var(--acc)', letterSpacing: '-.3px' }}>{current.symbol}</span>
-        {settingsLocked && <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />}
+        <Lock size={10} style={{ color: 'var(--text3)', verticalAlign: 'middle' }} />
       </button>
-      {settingsLocked && pos && (
+      {pos && (
         <div style={{
           position: 'fixed',
           left: pos.x,
