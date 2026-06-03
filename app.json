@@ -78,7 +78,15 @@
           "cameraPermission": "Prendre une photo de profil HabaShop"
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://de.sentry.io/",
+          "organization": "haba-76",
+          "project": "react-native"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
