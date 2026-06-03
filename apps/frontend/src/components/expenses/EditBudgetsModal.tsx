@@ -1,4 +1,5 @@
 import { useConfig } from '@/stores/appStore'
+import IconButton from '@/components/ui/IconButton'
 import { X, Settings } from 'lucide-react'
 import { CATEGORIES, CATEGORY_STYLE, catLabel } from './expensesShared'
 import type { Category } from './expensesShared'
@@ -20,7 +21,7 @@ export default function EditBudgetsModal({ editBudgets, setEditBudgets, onClose,
       <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <span style={{ fontWeight:800, fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}><Settings size={16}/> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}</span>
-          <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" onClick={onClose}><X size={15} /></button>
+          <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={15} />} onClick={onClose} variant="surface" />
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {CATEGORIES.map(cat => {

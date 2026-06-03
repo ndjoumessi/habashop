@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import { X, FileDown, FileText, TrendingUp, TrendingDown, Scale, Users, RefreshCw, Loader2, BarChart3, AlertTriangle } from 'lucide-react'
 import { useConfig, formatInCurrency } from '@/stores/appStore'
 import { reportsApi, type AccountingReport } from '@/lib/api'
@@ -126,9 +127,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
           <select className="input" aria-label={i('Mois', 'Month', 'Mes', 'Mese')} value={month} onChange={e => setMonth(e.target.value)} style={{ width: 'auto', minWidth: 150, fontSize: 13 }}>
             {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
           </select>
-          <button type="button" onClick={onClose} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <X size={15} />
-          </button>
+          <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={15} />} onClick={onClose} variant="surface" />
         </div>
 
         {/* Body */}

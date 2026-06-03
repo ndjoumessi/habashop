@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import { ClipboardList, X, Users, Truck, User, CheckCircle, Phone, Plus, Package, Clock, Star } from 'lucide-react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
@@ -58,12 +59,7 @@ export default function NewOrderModal({
           <h2 style={{ fontSize: 17, fontWeight: 900, color: 'var(--text)', margin: 0, display:'flex', alignItems:'center', gap:8 }}>
             <ClipboardList size={18}/> {lang === 'fr' ? 'Nouvelle commande' : lang === 'en' ? 'New order' : lang === 'es' ? 'Nueva orden' : 'Nuovo ordine'}
           </h2>
-          <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={onClose} style={{
-            width: 32, height: 32, borderRadius: 9,
-            background: 'var(--bg3)', border: '1px solid var(--border)',
-            cursor: 'pointer', color: 'var(--text3)', fontSize: 15,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}><X size={15}/></button>
+          <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={15}/>} onClick={onClose} variant="surface" />
         </div>
 
         {/* Corps scrollable */}

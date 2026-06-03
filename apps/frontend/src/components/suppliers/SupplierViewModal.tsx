@@ -1,4 +1,5 @@
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import IconButton from '@/components/ui/IconButton'
 import { useI18n } from '@/hooks/useI18n'
 import { Factory, X, Package, FileText } from 'lucide-react'
 import { STATUS_CFG, statusLabel, StarRating } from './suppliersShared'
@@ -25,7 +26,7 @@ export default function SupplierViewModal({ supplier, onClose, onNewOrder }: Pro
           </div>
           <div className="flex items-center gap-2">
             <span className={`badge ${STATUS_CFG[supplier.status].cls}`}>{statusLabel(supplier.status, lang)}</span>
-            <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+            <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={14} />} onClick={onClose} variant="surface" />
           </div>
         </div>
 

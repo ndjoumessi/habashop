@@ -3,6 +3,7 @@ import { useI18n } from '@/hooks/useI18n'
 import { Plus, X, Star, CheckCircle } from 'lucide-react'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
+import IconButton from '@/components/ui/IconButton'
 import { STATUS_LIST, STATUS_COLOR, statusLabel } from './suppliersShared'
 import type { SupplierStatus } from './suppliersShared'
 
@@ -27,7 +28,7 @@ export default function NewSupplierModal({ form, setForm, onClose, onCreate }: P
       <div className="modal-box" style={{ maxWidth: 540 }}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Plus size={15}/> {i('Nouveau fournisseur', 'New supplier', 'Nuevo proveedor', 'Nuovo fornitore')}</h3>
-          <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+          <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={14} />} onClick={onClose} variant="surface" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[

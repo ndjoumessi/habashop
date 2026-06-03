@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import EmptyState from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import {
   Shield, Store, Users, CreditCard, Wallet, Package, TrendingUp,
   Search, X, Plus, ArrowLeft, ChevronRight, Layers, BarChart3,
@@ -191,10 +192,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={loadStats} disabled={refreshing} aria-label={i('Actualiser les statistiques', 'Refresh stats', 'Actualizar estadísticas', 'Aggiorna statistiche')} title={i('Actualiser', 'Refresh', 'Actualizar', 'Aggiorna')}
-            style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)', cursor: refreshing ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s ease' }}>
-            <RefreshCw size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : undefined }} />
-          </button>
+          <IconButton label={i('Actualiser les statistiques', 'Refresh stats', 'Actualizar estadísticas', 'Aggiorna statistiche')} icon={<RefreshCw size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : undefined }} />} onClick={loadStats} disabled={refreshing} variant="surface" />
           <div style={{ padding: '8px 14px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Calendar size={13} /> {new Date().toLocaleDateString(lang, { day: '2-digit', month: 'short', year: 'numeric' })}
           </div>

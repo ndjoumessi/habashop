@@ -1,4 +1,5 @@
 import { Package, X, FileText, Send, Inbox, XCircle, Printer } from 'lucide-react'
+import IconButton from '@/components/ui/IconButton'
 import toast from 'react-hot-toast'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
@@ -31,7 +32,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
             <span className={`badge ${STATUS_CONFIG[order.status].cls} flex items-center gap-1`}>
               {STATUS_CONFIG[order.status].icon} {orderStatusLabel(order.status, lang)}
             </span>
-            <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+            <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={14} />} onClick={onClose} variant="surface" />
           </div>
         </div>
 

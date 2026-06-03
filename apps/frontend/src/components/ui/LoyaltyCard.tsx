@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import IconButton from '@/components/ui/IconButton'
 import { X } from 'lucide-react'
 import { loyaltyApi } from '@/lib/api'
 import { useI18n } from '@/hooks/useI18n'
@@ -65,7 +66,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>🎁 {i('Carte Fidélité', 'Loyalty Card', 'Tarjeta Fidelidad', 'Carta Fedeltà')}</h3>
-          <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="mini-btn" onClick={onClose}><X size={14} /></button>
+          <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={14} />} onClick={onClose} variant="surface" />
         </div>
 
         {/* Card */}

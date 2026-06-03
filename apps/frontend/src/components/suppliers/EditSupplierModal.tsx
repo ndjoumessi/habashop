@@ -5,6 +5,7 @@ import ViewField from '@/components/ui/ViewField'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import { STATUS_LIST, statusLabel } from './suppliersShared'
 import type { Supplier, SupplierStatus } from './suppliersShared'
 
@@ -34,7 +35,7 @@ export default function EditSupplierModal(props: Props) {
       <div className="modal-box" style={{ maxWidth: 540 }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Factory size={15}/> {editSupplier.name}</h3>
-          <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+          <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={14} />} onClick={onClose} variant="surface" />
         </div>
 
         {/* Mode banner */}

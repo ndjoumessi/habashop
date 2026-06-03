@@ -1,5 +1,6 @@
 import { useConfig, t } from '@/stores/appStore'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import { X, Mail } from 'lucide-react'
 import { ROLE_CONFIG, PERMISSIONS, moduleLabel, buildRoleLabels } from './usersShared'
 import type { Role, User } from './usersShared'
@@ -28,7 +29,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
             <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>{lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'} — {editUser.name}</h3>
             <p className="text-xs mt-0.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Update user information' : lang === 'es' ? 'Actualizar la información del usuario' : lang === 'it' ? 'Aggiorna le informazioni dell\'utente' : "Modifier les informations de l'utilisateur"}</p>
           </div>
-          <button aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
+          <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={14} />} onClick={onClose} variant="surface" />
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
           {/* Ligne 1 : Nom complet + Rôle */}

@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import { SHIFT_TYPES, shiftLabel, localeFor } from './planningShared'
 import type { ShiftType } from './planningShared'
 
@@ -44,12 +45,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
               {shiftModal.name} · {weekDays[shiftModal.di]?.toLocaleDateString(locale,{weekday:'short',day:'numeric',month:'short'})}
             </div>
           </div>
-          <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={onClose} style={{
-            width:30, height:30, borderRadius:8,
-            background:'var(--bg3)', border:'1px solid var(--border)',
-            cursor:'pointer', color:'var(--text3)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-          }}><X size={14}/></button>
+          <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={14}/>} onClick={onClose} variant="surface" />
         </div>
 
         {/* Shift type buttons */}

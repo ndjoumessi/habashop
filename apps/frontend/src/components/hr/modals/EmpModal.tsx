@@ -5,6 +5,7 @@ import { useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from
 import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import { type Employee, COLORS, DEPT_COLORS, deptLabel } from '@/components/hr/hrShared'
 
 export default function EmpModal({ emp, onClose, onSave, onDelete }: {
@@ -70,9 +71,7 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
                 🗑
               </button>
             )}
-            <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>
-              <X size={18} />
-            </button>
+            <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={18} />} onClick={onClose} variant="ghost" />
           </div>
         </div>
 

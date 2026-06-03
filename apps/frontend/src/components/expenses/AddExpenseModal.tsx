@@ -2,6 +2,7 @@ import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { X, Check } from 'lucide-react'
 import ValidatedInput from '@/components/ui/ValidatedInput'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import { CATEGORIES, MODES, VAT_RATES, catLabel } from './expensesShared'
 import type { Category } from './expensesShared'
 
@@ -35,7 +36,7 @@ export default function AddExpenseModal(props: Props) {
       <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:480 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <span style={{ fontWeight:800, fontSize:16, color:'var(--text)' }}>{tr('Ajouter une dépense','Add an expense','Agregar un gasto','Aggiungi una spesa')}</span>
-          <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" onClick={onClose}><X size={15} /></button>
+          <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={15} />} onClick={onClose} variant="surface" />
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           <ResponsiveGrid min={160} gap={10}>

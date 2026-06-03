@@ -1,5 +1,6 @@
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import IconButton from '@/components/ui/IconButton'
 import { X, Pencil, FileText, Check, Trash2 } from 'lucide-react'
 import { CATEGORIES, MODES, VAT_RATES, catLabel } from './expensesShared'
 import type { Category, Expense } from './expensesShared'
@@ -45,7 +46,7 @@ export default function ExpenseDetailModal(props: Props) {
           <span style={{ fontWeight:800, fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}>
             {expEditMode ? <><Pencil size={15}/> {lang === 'en' ? 'Edit expense' : lang === 'es' ? 'Editar el gasto' : lang === 'it' ? 'Modifica la spesa' : 'Modifier la dépense'}</> : <><FileText size={15}/> {lang === 'en' ? 'Expense detail' : lang === 'es' ? 'Detalle del gasto' : lang === 'it' ? 'Dettaglio spesa' : 'Détail dépense'}</>}
           </span>
-          <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" onClick={onClose}><X size={15} /></button>
+          <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={15} />} onClick={onClose} variant="surface" />
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           <ResponsiveGrid min={160} gap={10}>
@@ -110,10 +111,7 @@ export default function ExpenseDetailModal(props: Props) {
               <button className="mini-btn" onClick={onClose}>
                 {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}
               </button>
-              <button aria-label={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'} className="mini-btn" style={{ color:'var(--danger)', borderColor:'rgba(255,59,92,.2)' }}
-                onClick={onDelete}>
-                <Trash2 size={13}/>
-              </button>
+              <IconButton label={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'} icon={<Trash2 size={13}/>} onClick={onDelete} danger variant="surface" />
             </>
           ) : (
             <>
