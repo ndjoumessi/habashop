@@ -38,7 +38,7 @@ export default function CurrencyBadge() {
         type="button"
         style={{
           gap: 4, padding: '6px 9px', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)',
-          cursor: 'pointer',
+          cursor: 'help',
         }}
       >
         <span>{current.flag}</span>

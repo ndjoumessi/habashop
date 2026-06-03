@@ -36,7 +36,7 @@ export default function LanguageSwitcher() {
         type="button"
         style={{
           gap: 4, padding: '6px 10px', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)',
-          cursor: 'pointer',
+          cursor: 'help',
         }}
       >
         <span>{current.flag}</span>

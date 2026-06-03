@@ -20,7 +20,7 @@ export default function DashCategoryDonut({ data, colors, label, tooltip }: Prop
           dataKey="value"
           label={label} labelLine={false}
         >
-          {data.map((_, i) => <Cell key={i} fill={colors[i]} />)}
+          {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
         </Pie>
         <Tooltip content={tooltip} wrapperStyle={{ zIndex: 9999, pointerEvents: 'none' }} />
       </PieChart>

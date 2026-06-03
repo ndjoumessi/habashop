@@ -45,13 +45,14 @@ const makeDonutLabel = (pcts: number[]) => ({ cx, cy, midAngle, innerRadius, out
   )
 }
 
-const CatTooltip = ({ active, payload, catTotal }: any) => {
+const CatTooltip = ({ active, payload }: any) => {
   const fmt = useFormatAmount()
   if (!active || !payload?.length) return null
   const p = payload[0]
-  // % calculé sur value/total (fiable) et NON sur `p.percent` de recharts, qui arrive
-  // indéfini au survol de certains slices → affichait un « 0% » parasite (cf. bug hover).
-  const pct = catTotal > 0 ? Math.round((Number(p.value ?? 0) / catTotal) * 100) : 0
+  // % = catPcts embarqué dans la ligne de données (`pct`) → SOURCE UNIQUE partagée avec la
+  // légende et le label du donut. NE PAS recalculer (value/total ou p.percent recharts)
+  // sinon le dernier slice (corrigé à 100−Σ) divergerait entre tooltip et légende.
+  const pct = Number(p.payload?.pct ?? 0)
   const color = p.payload?.color ?? DONUT_COLORS[0]
   return (
     <div style={{
@@ -392,7 +393,7 @@ export default function Dashboard() {
           ) : (<>
           <div style={{ position: 'relative', margin: '0 -8px', overflow: 'visible' }}>
             <Suspense fallback={<div style={{ height: 220 }} />}>
-              <DashCategoryDonut data={catData} colors={DONUT_COLORS} label={makeDonutLabel(catPcts)} tooltip={<CatTooltip catTotal={catTotal} />} />
+              <DashCategoryDonut data={catData.map((d, i) => ({ ...d, pct: catPcts[i] }))} colors={DONUT_COLORS} label={makeDonutLabel(catPcts)} tooltip={<CatTooltip />} />
             </Suspense>
             <div style={{
               position: 'absolute', top: 110, left: '50%',
@@ -410,12 +411,12 @@ export default function Dashboard() {
               const pct = catPcts[i]
               return (
                 <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i], flexShrink: 0 }} />
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
                   <span style={{ flex: 1, color: 'var(--text2)' }}>{d.name}</span>
                   <div style={{ width: 48, height: 4, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', background: DONUT_COLORS[i], borderRadius: 99 }} />
+                    <div style={{ width: `${pct}%`, height: '100%', background: DONUT_COLORS[i % DONUT_COLORS.length], borderRadius: 99 }} />
                   </div>
-                  <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: DONUT_COLORS[i], minWidth: 28, textAlign: 'right' }}>{pct}%</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: DONUT_COLORS[i % DONUT_COLORS.length], minWidth: 28, textAlign: 'right' }}>{pct}%</span>
                 </div>
               )
             })}
