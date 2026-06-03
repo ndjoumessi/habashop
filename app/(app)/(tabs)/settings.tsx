@@ -6,6 +6,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
+import Constants from 'expo-constants'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '@/stores/authStore'
 import { useAppStore, useI18n, useFmt, useTheme, type Lang, type ThemeMode } from '@/stores/appStore'
@@ -417,7 +418,7 @@ export default function SettingsScreen() {
         <Section title={i('Application', 'Application', 'Aplicación', 'Applicazione')}>
           <View style={s.infoRow}>
             <Text style={s.infoKey}>Version</Text>
-            <Text style={s.infoVal}>1.2.0</Text>
+            <Text style={s.infoVal}>{Constants.expoConfig?.version ?? '—'}</Text>
           </View>
           <View style={[s.infoRow, s.listRowBorderTop]}>
             <Text style={s.infoKey}>Backend</Text>
