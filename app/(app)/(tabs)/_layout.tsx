@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Tabs } from 'expo-router'
+import { Tabs, router } from 'expo-router'
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { ThemeColors, withAlpha, FontSize } from '@/constants/theme'
@@ -50,10 +50,23 @@ export default function TabLayout() {
         <TabIcon name="cube" focused={focused}
           label={i('Stock','Stock','Stock','Stock')}/>
       }}/>
-      <Tabs.Screen name="pos-tab" options={{ tabBarIcon:({focused})=>
-        <TabIcon name="cart" focused={focused}
-          label={i('Caisse','Register','Caja','Cassa')}/>
-      }}/>
+      {/* Onglet « leurre » : on N'AFFICHE PAS l'écran pos-tab dans le navigateur
+          d'onglets (son router.replace interne reparente des vues → crash
+          ReactClippingViewManager sous Fabric). On intercepte le tap et on POUSSE
+          le vrai POS (fullScreenModal), EXACTEMENT comme l'action rapide du
+          dashboard (chemin prouvé sans crash sur device). */}
+      <Tabs.Screen name="pos-tab"
+        options={{ tabBarIcon:({focused})=>
+          <TabIcon name="cart" focused={focused}
+            label={i('Caisse','Register','Caja','Cassa')}/>
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault()
+            router.push('/(app)/pos')
+          },
+        }}
+      />
       <Tabs.Screen name="customers" options={{ tabBarIcon:({focused})=>
         <TabIcon name="people" focused={focused}
           label={i('Clients','Clients','Clientes','Clienti')}/>
