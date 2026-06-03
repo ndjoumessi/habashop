@@ -45,11 +45,13 @@ const makeDonutLabel = (pcts: number[]) => ({ cx, cy, midAngle, innerRadius, out
   )
 }
 
-const CatTooltip = ({ active, payload }: any) => {
+const CatTooltip = ({ active, payload, catTotal }: any) => {
   const fmt = useFormatAmount()
   if (!active || !payload?.length) return null
   const p = payload[0]
-  const pct = Math.round((p.percent ?? 0) * 100)
+  // % calculé sur value/total (fiable) et NON sur `p.percent` de recharts, qui arrive
+  // indéfini au survol de certains slices → affichait un « 0% » parasite (cf. bug hover).
+  const pct = catTotal > 0 ? Math.round((Number(p.value ?? 0) / catTotal) * 100) : 0
   const color = p.payload?.color ?? DONUT_COLORS[0]
   return (
     <div style={{
@@ -390,7 +392,7 @@ export default function Dashboard() {
           ) : (<>
           <div style={{ position: 'relative', margin: '0 -8px', overflow: 'visible' }}>
             <Suspense fallback={<div style={{ height: 220 }} />}>
-              <DashCategoryDonut data={catData} colors={DONUT_COLORS} label={makeDonutLabel(catPcts)} tooltip={<CatTooltip />} />
+              <DashCategoryDonut data={catData} colors={DONUT_COLORS} label={makeDonutLabel(catPcts)} tooltip={<CatTooltip catTotal={catTotal} />} />
             </Suspense>
             <div style={{
               position: 'absolute', top: 110, left: '50%',
