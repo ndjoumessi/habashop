@@ -9,6 +9,7 @@ import { productsApi, customersApi } from '@/services/api'
 import type { Product, Customer } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { Spacing, BorderRadius, FontSize, withAlpha, ThemeColors } from '@/constants/theme'
+import Chip from '@/components/ui/Chip'
 
 type ResultType = 'product' | 'customer'
 interface SearchResult {
@@ -129,15 +130,7 @@ export default function SearchScreen() {
           </Text>
           <View style={s.suggestionsRow}>
             {['Riz', 'Sucre', 'Savon'].map(term => (
-              <TouchableOpacity
-                key={term}
-                style={s.suggestionChip}
-                onPress={() => setQuery(term)}
-                accessibilityRole="button"
-                accessibilityLabel={term}
-              >
-                <Text style={s.suggestionText}>{term}</Text>
-              </TouchableOpacity>
+              <Chip key={term} label={term} selected={false} onPress={() => setQuery(term)} />
             ))}
           </View>
         </View>
