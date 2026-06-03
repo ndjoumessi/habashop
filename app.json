@@ -2,7 +2,7 @@
   "expo": {
     "name": "HabaShop",
     "slug": "habashop-mobile",
-    "version": "1.3.1",
+    "version": "1.4.0",
     "description": "HabaShop — Logiciel de caisse et gestion commerciale pour les boutiques et superettes en Afrique francophone. POS, stock, clients, rapports et analytics.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
