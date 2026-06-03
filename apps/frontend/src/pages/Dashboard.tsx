@@ -26,8 +26,13 @@ function ActivityIcon({ type }: { type: 'sale' | 'stock' | 'hr' | 'alert' }) {
 
 const RANK_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#8888A8', '#8888A8']
 
-const RenderDonutLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-  if (percent < 0.05) return null
+// Label du donut : utilise les MÊMES pourcentages que la légende (catPcts, somme garantie
+// = 100 %), repérés par `index`, plutôt que le `percent` brut de recharts → aucun décalage
+// possible donut/légende (ex. dernier slice corrigé, cas sub-5 %). Les slices < 5 % restent
+// masqués sur le donut (lisibilité) ; la légende, elle, les liste toujours.
+const makeDonutLabel = (pcts: number[]) => ({ cx, cy, midAngle, innerRadius, outerRadius, index }: any) => {
+  const pct = pcts[index] ?? 0
+  if (pct < 5) return null
   const RADIAN = Math.PI / 180
   const r = innerRadius + (outerRadius - innerRadius) * 0.55
   const x = cx + r * Math.cos(-midAngle * RADIAN)
@@ -35,7 +40,7 @@ const RenderDonutLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent 
   return (
     <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central"
       style={{ fontSize: 11, fontWeight: 800, pointerEvents: 'none' }}>
-      {`${(percent * 100).toFixed(0)}%`}
+      {`${pct}%`}
     </text>
   )
 }
@@ -363,7 +368,7 @@ export default function Dashboard() {
           ) : (<>
           <div style={{ position: 'relative', margin: '0 -8px', overflow: 'visible' }}>
             <Suspense fallback={<div style={{ height: 220 }} />}>
-              <DashCategoryDonut data={catData} colors={DONUT_COLORS} label={RenderDonutLabel} tooltip={<CatTooltip />} />
+              <DashCategoryDonut data={catData} colors={DONUT_COLORS} label={makeDonutLabel(catPcts)} tooltip={<CatTooltip />} />
             </Suspense>
             <div style={{
               position: 'absolute', top: 110, left: '50%',
