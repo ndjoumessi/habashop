@@ -48,7 +48,9 @@ export async function markSynced(id: string): Promise<void> {
     const queue = await getQueue()
     const updated = queue.map(a => (a.id === id ? { ...a, synced: true } : a))
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(updated))
-  } catch {}
+  } catch (e) {
+    logger.warn('offlineQueue markSynced échoué:', e)
+  }
 }
 
 // Supprime les actions déjà synchronisées
@@ -57,7 +59,9 @@ export async function clearSynced(): Promise<void> {
     const queue = await getQueue()
     const pending = queue.filter(a => !a.synced)
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(pending))
-  } catch {}
+  } catch (e) {
+    logger.warn('offlineQueue clearSynced échoué:', e)
+  }
 }
 
 // Nombre d'actions en attente

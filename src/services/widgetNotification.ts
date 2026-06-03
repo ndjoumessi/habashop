@@ -16,7 +16,7 @@ export async function isWidgetEnabled(): Promise<boolean> {
   try { return (await AsyncStorage.getItem(WIDGET_ENABLED_KEY)) === 'true' } catch { return false }
 }
 export async function setWidgetEnabled(value: boolean): Promise<void> {
-  try { await AsyncStorage.setItem(WIDGET_ENABLED_KEY, value ? 'true' : 'false') } catch {}
+  try { await AsyncStorage.setItem(WIDGET_ENABLED_KEY, value ? 'true' : 'false') } catch (e) { logger.warn('Écriture flag widget échouée:', e) }
 }
 
 // Canal Android dédié (importance basse : pas de son/vibration).
@@ -77,5 +77,7 @@ export async function refreshWidget(fmt: (n: number) => string, lang: string): P
     if (!(await isWidgetEnabled())) return
     const data = await analyticsApi.dashboard()
     await updateWidgetNotification(data.salesToday ?? 0, data.transactionsToday ?? 0, fmt, lang)
-  } catch {}
+  } catch (e) {
+    logger.warn('Rafraîchissement du widget échoué:', e)
+  }
 }

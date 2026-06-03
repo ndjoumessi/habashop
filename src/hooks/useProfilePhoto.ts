@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { logger } from '@/lib/logger'
 
 const PHOTO_KEY = 'habashop_profile_photo'
 
@@ -29,7 +30,7 @@ export function useProfilePhoto() {
       const small = await resize(uri)
       await AsyncStorage.setItem(PHOTO_KEY, small)
       setPhotoUri(small)
-    } catch {} finally { setLoading(false) }
+    } catch (e) { logger.warn('Sauvegarde photo de profil échouée:', e) } finally { setLoading(false) }
   }
 
   const pickPhoto = async (): Promise<void> => {

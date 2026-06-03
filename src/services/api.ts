@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import * as SecureStore from 'expo-secure-store'
+import { logger } from '@/lib/logger'
 import type {
   LoginResponse, MeResponse,
   Product, ProductUpdate,
@@ -19,7 +20,9 @@ apiClient.interceptors.request.use(async (config) => {
   try {
     const token = await SecureStore.getItemAsync('auth_token')
     if (token) config.headers.Authorization = `Bearer ${token}`
-  } catch {}
+  } catch (e) {
+    logger.warn('Lecture du token échouée (requête envoyée non authentifiée):', e)
+  }
   return config
 })
 

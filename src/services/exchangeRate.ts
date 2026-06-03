@@ -60,7 +60,9 @@ export async function fetchRates(): Promise<Record<string, number>> {
         const parsed: RatesCache = JSON.parse(cached)
         return parsed.rates
       }
-    } catch {}
+    } catch (e) {
+      logger.warn('Lecture du cache FX périmé échouée:', e)
+    }
 
     return FALLBACK_RATES
   }

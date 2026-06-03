@@ -34,5 +34,7 @@ export async function registerWidgetRefresh(): Promise<void> {
 export async function unregisterWidgetRefresh(): Promise<void> {
   try {
     await BackgroundFetch.unregisterTaskAsync(TASK_NAME)
-  } catch {}
+  } catch (e) {
+    logger.warn('Désinscription du refresh widget échouée:', e)
+  }
 }
