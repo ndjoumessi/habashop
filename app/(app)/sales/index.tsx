@@ -11,7 +11,8 @@ import { salesApi } from '@/services/api'
 import type { SaleRecord } from '@/types'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
-import { sendWhatsAppTicket } from '@/services/whatsappTicket'
+import { sendWhatsAppTicket, type TicketOptions } from '@/services/whatsappTicket'
+import { printReceipt } from '@/services/printReceipt'
 import ErrorState from '@/components/ui/ErrorState'
 import { Spacing, BorderRadius, FontSize, Shadow, withAlpha, ThemeColors } from '@/constants/theme'
 
@@ -59,23 +60,28 @@ export default function SalesScreen() {
   const tx = filtered.length
   const avg = tx > 0 ? ca / tx : 0
 
-  const resendWhatsApp = async (sale: SaleRecord) => {
-    const items = (sale.items ?? []).map(it => ({
+  // Construit les données de reçu (partagées par WhatsApp et l'impression PDF).
+  const saleTicket = (sale: SaleRecord): TicketOptions => ({
+    items: (sale.items ?? []).map(it => ({
       productId: it.productId,
       name: it.product?.name ?? '—',
       price: it.unitPrice ?? 0,
       quantity: it.qty ?? 0,
       emoji: it.product?.emoji ?? '📦',
       stockQty: 0,
-    }))
-    const ok = await sendWhatsAppTicket({
-      items, total: sale.total ?? 0, paymentMode: sale.paymentMode,
-      saleId: sale.id, shopName: tenant?.name ?? 'HabaShop', currency, lang, fmt, vatRate: tenant?.vatRate,
-    })
+    })),
+    total: sale.total ?? 0, paymentMode: sale.paymentMode,
+    saleId: sale.id, shopName: tenant?.name ?? 'HabaShop', currency, lang, fmt, vatRate: tenant?.vatRate,
+  })
+
+  const resendWhatsApp = async (sale: SaleRecord) => {
+    const ok = await sendWhatsAppTicket(saleTicket(sale))
     if (!ok) {
       Alert.alert(i('WhatsApp indisponible', 'WhatsApp unavailable', 'WhatsApp no disponible', 'WhatsApp non disponibile'), '')
     }
   }
+
+  const printSale = (sale: SaleRecord) => { printReceipt(saleTicket(sale)) }
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
@@ -197,6 +203,10 @@ export default function SalesScreen() {
                 accessibilityRole="button" accessibilityLabel={i('Renvoyer le ticket WhatsApp', 'Resend WhatsApp receipt', 'Reenviar recibo WhatsApp', 'Rinvia ricevuta WhatsApp')}>
                 <Text style={s.waBtnTxt}>💬 {i('Ticket WhatsApp', 'WhatsApp receipt', 'Recibo WhatsApp', 'Ricevuta WhatsApp')}</Text>
               </Pressable>
+              <Pressable style={s.printBtn} onPress={() => printSale(sel)}
+                accessibilityRole="button" accessibilityLabel={i('Imprimer le reçu', 'Print receipt', 'Imprimir recibo', 'Stampa ricevuta')}>
+                <Text style={s.printBtnTxt}>🖨️ {i('Imprimer le reçu', 'Print receipt', 'Imprimir recibo', 'Stampa ricevuta')}</Text>
+              </Pressable>
             </ScrollView>
           )}
         </View>
@@ -250,4 +260,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   recapTotalVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.primary3 },
   waBtn: { backgroundColor: withAlpha(C.accent2, 0.12), borderWidth: 1, borderColor: withAlpha(C.accent2, 0.3), borderRadius: BorderRadius.md, height: 50, alignItems: 'center', justifyContent: 'center' },
   waBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.accent2 },
+  printBtn: { backgroundColor: withAlpha(C.primary, 0.12), borderWidth: 1, borderColor: withAlpha(C.primary, 0.3), borderRadius: BorderRadius.md, height: 50, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm },
+  printBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.primary },
 })

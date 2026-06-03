@@ -2,7 +2,7 @@ import { Linking } from 'react-native'
 import { vatBreakdown } from '@/stores/posStore'
 import type { CartItem } from '@/stores/posStore'
 
-interface TicketOptions {
+export interface TicketOptions {
   items:       CartItem[]
   total:       number
   paymentMode: string

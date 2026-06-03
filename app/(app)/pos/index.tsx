@@ -21,6 +21,7 @@ import { enqueueAction } from '@/services/offlineQueue'
 import { convertToXOF } from '@/services/exchangeRate'
 import { normalizeBarcode } from '@/lib/barcode'
 import { sendWhatsAppTicket } from '@/services/whatsappTicket'
+import { printReceipt } from '@/services/printReceipt'
 import BarcodeScanner from '@/components/pos/BarcodeScanner'
 import ErrorState from '@/components/ui/ErrorState'
 import POSConfirmModal from '@/components/pos/POSConfirmModal'
@@ -140,6 +141,18 @@ export default function POSScreen() {
         linked + i('Envoyer le reçu par WhatsApp ?', 'Send receipt via WhatsApp?', '¿Enviar recibo por WhatsApp?', 'Inviare ricevuta via WhatsApp?'),
         [
           { text: i('Non merci', 'No thanks', 'No gracias', 'No grazie'), style: 'cancel' },
+          {
+            text: '🖨️ ' + i('Imprimer', 'Print', 'Imprimir', 'Stampa'),
+            onPress: () => {
+              // Annulation de l'impression = normal → pas d'alerte (le service log en interne).
+              printReceipt({
+                items: saleItems, total: saleTotal, paymentMode: saleMode,
+                saleId: data?.id ?? Date.now().toString(),
+                shopName: tenant?.name ?? 'HabaShop',
+                currency, lang, fmt, vatRate: tenant?.vatRate,
+              })
+            },
+          },
           {
             text: '💬 WhatsApp',
             onPress: async () => {
