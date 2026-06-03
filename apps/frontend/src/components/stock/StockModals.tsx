@@ -52,7 +52,7 @@ function BarcodeDisplay({ value }: { value: string }) {
         // displayValue:true + quiet zones blanches = EAN-13 conforme GS1, scannable.
         JsBarcode(svgRef.current, value, {
           format: 'EAN13',
-          width: 2.7,
+          width: 2.2,
           height: 55,
           displayValue: true,
           fontSize: 11,
@@ -326,7 +326,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     <label style={{ display:'block', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
                       <div style={{ display:'flex', flexDirection:'column', alignItems:'stretch', gap:8 }}>
-                        <div style={{ width:'fit-content', margin:'0 auto', padding:'8px 12px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:6 }}>
+                        <div style={{ maxWidth:280, width:'auto', margin:'0 auto', alignSelf:'center', padding:'8px 12px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:6 }}>
                           <BarcodeDisplay value={form.barcode} />
                         </div>
                         <button type="button" className="mini-btn"
