@@ -31,8 +31,8 @@ const RANK_COLORS = ['#6C47FF', '#00D084', '#FF9500', '#8888A8', '#8888A8']
 // possible donut/légende (ex. dernier slice corrigé, cas sub-5 %). Les slices < 5 % restent
 // masqués sur le donut (lisibilité) ; la légende, elle, les liste toujours.
 const makeDonutLabel = (pcts: number[]) => ({ cx, cy, midAngle, innerRadius, outerRadius, index }: any) => {
-  const pct = pcts[index] ?? 0
-  if (pct < 5) return null
+  const pct = pcts[index]
+  if (!pct || pct < 5) return null   // undefined / 0 / < 5 % → pas de label (jamais « 0% »)
   const RADIAN = Math.PI / 180
   const r = innerRadius + (outerRadius - innerRadius) * 0.55
   const x = cx + r * Math.cos(-midAngle * RADIAN)
@@ -157,7 +157,23 @@ export default function Dashboard() {
         setTopProducts(data?.topProducts ?? [])
         setStockAlerts(data?.stockAlerts ?? [])
         setRecentActivity(data?.recentActivity ?? [])
-        setCatData((data?.categoryBreakdown ?? []).map((c: any, i: number) => ({ ...c, color: DONUT_COLORS[i % DONUT_COLORS.length] })))
+        // Fusionne les variantes d'une même catégorie (« Épicerie » / « épicerie » /
+        // « Épicerie ») : clé normalisée trim()+toLowerCase(), valeurs additionnées, on
+        // garde le nom d'origine du PREMIER match (et son ordre d'apparition).
+        const mergedCats: any[] = []
+        const catIndex = new Map<string, number>()
+        for (const c of (data?.categoryBreakdown ?? [])) {
+          const key = String(c?.name ?? '').trim().toLowerCase()
+          const value = Number(c?.value ?? 0)
+          const at = catIndex.get(key)
+          if (at !== undefined) {
+            mergedCats[at].value += value
+          } else {
+            catIndex.set(key, mergedCats.length)
+            mergedCats.push({ ...c, value })
+          }
+        }
+        setCatData(mergedCats.map((c, i) => ({ ...c, color: DONUT_COLORS[i % DONUT_COLORS.length] })))
       })
       .catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
