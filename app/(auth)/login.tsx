@@ -282,10 +282,10 @@ export default function LoginScreen() {
                 'Acceda istantaneamente ogni volta che apre l\'app.',
               )}
             </Text>
-            <TouchableOpacity
-              style={s.biometricModalBtn}
-              accessibilityRole="button"
-              accessibilityLabel={i('Activer', 'Enable', 'Activar', 'Attiva')}
+            <AccessibleButton
+              label={i('Activer', 'Enable', 'Activar', 'Attiva')}
+              variant="primary"
+              style={{ width: '100%' }}
               onPress={async () => {
                 if (!pendingAuth) { setShowEnableBiometric(false); return }
                 await enableBiometric(pendingAuth.email, pendingAuth.password)
@@ -293,9 +293,7 @@ export default function LoginScreen() {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
                 await setAuth(pendingAuth.token, pendingAuth.user, pendingAuth.tenant)
               }}
-            >
-              <Text style={s.biometricModalBtnText}>{i('Activer', 'Enable', 'Activar', 'Attiva')}</Text>
-            </TouchableOpacity>
+            />
             <TouchableOpacity
               style={s.biometricModalSkip}
               accessibilityRole="button"

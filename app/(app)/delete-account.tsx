@@ -14,6 +14,7 @@ import { Spacing, BorderRadius, FontSize, withAlpha, ThemeColors } from '@/const
 import { accountApi, apiErrorStatus } from '@/services/api'
 import type { TenantUser } from '@/types'
 import { purgeLocalAccountData } from '@/services/accountCleanup'
+import AccessibleButton from '@/components/ui/AccessibleButton'
 
 type Scope = 'tenant' | 'user'
 
@@ -206,18 +207,14 @@ export default function DeleteAccountScreen() {
           accessibilityLabel={i('Texte de confirmation', 'Confirmation text', 'Texto de confirmación', 'Testo di conferma')}
         />
 
-        <Pressable
-          style={[s.deleteBtn, !canSubmit && s.deleteBtnDisabled]}
-          disabled={!canSubmit}
+        <AccessibleButton
+          label={i('Supprimer définitivement', 'Delete permanently', 'Eliminar definitivamente', 'Elimina definitivamente')}
+          variant="danger"
           onPress={confirmThenDelete}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !canSubmit }}
-          accessibilityLabel={i('Supprimer définitivement', 'Delete permanently', 'Eliminar definitivamente', 'Elimina definitivamente')}
-        >
-          {submitting
-            ? <ActivityIndicator color={C.white} />
-            : <Text style={s.deleteTxt}>{i('Supprimer définitivement', 'Delete permanently', 'Eliminar definitivamente', 'Elimina definitivamente')}</Text>}
-        </Pressable>
+          loading={submitting}
+          disabled={!canSubmit}
+          style={{ marginTop: Spacing.xxl }}
+        />
       </ScrollView>
     </View>
   )
