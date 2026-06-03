@@ -19,7 +19,9 @@
         "NSCameraUsageDescription": "Scanner les codes-barres des produits",
         "NSPhotoLibraryUsageDescription": "Choisir une photo de profil HabaShop",
         "NSFaceIDUsageDescription": "Connexion rapide et sécurisée à HabaShop",
-        "LSApplicationQueriesSchemes": ["whatsapp"]
+        "LSApplicationQueriesSchemes": [
+          "whatsapp"
+        ]
       },
       "icon": "./assets/icon-ios.png"
     },
@@ -75,7 +77,8 @@
           "photosPermission": "Choisir une photo de profil HabaShop",
           "cameraPermission": "Prendre une photo de profil HabaShop"
         }
-      ]
+      ],
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true

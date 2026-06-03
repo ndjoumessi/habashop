@@ -1,11 +1,12 @@
 import { logger } from '@/lib/logger'
 import * as TaskManager from 'expo-task-manager'
-import * as BackgroundFetch from 'expo-background-fetch'
+import * as BackgroundTask from 'expo-background-task'
 import { refreshWidget } from '@/services/widgetNotification'
 
-// ⚠️ expo-background-fetch est déprécié en SDK 54 (recommandé : expo-background-task).
-// registerTaskAsync() fonctionne encore. Le background fetch nécessite un dev build
-// (pas Expo Go) et reste « best effort » sur Android (≥ 15 min, non garanti).
+// expo-background-task (remplace expo-background-fetch déprécié). Best effort sur
+// Android (≥ 15 min, non garanti) ; ne tourne pas pendant que l'app est tuée en
+// Expo Go mais le module est dispo en Expo Go (l'import ne casse rien).
+// ⚠️ minimumInterval est en MINUTES ici (était en secondes avec background-fetch).
 const TASK_NAME = 'HABASHOP_WIDGET_REFRESH'
 
 TaskManager.defineTask(TASK_NAME, async () => {
@@ -13,27 +14,25 @@ TaskManager.defineTask(TASK_NAME, async () => {
     // fmt simplifié (FCFA) côté background — pas d'accès au store i18n ici.
     const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`
     await refreshWidget(fmt, 'fr')
-    return BackgroundFetch.BackgroundFetchResult.NewData
+    return BackgroundTask.BackgroundTaskResult.Success
   } catch {
-    return BackgroundFetch.BackgroundFetchResult.Failed
+    return BackgroundTask.BackgroundTaskResult.Failed
   }
 })
 
 export async function registerWidgetRefresh(): Promise<void> {
   try {
-    await BackgroundFetch.registerTaskAsync(TASK_NAME, {
-      minimumInterval: 15 * 60, // 15 min
-      stopOnTerminate: false,
-      startOnBoot: true,
+    await BackgroundTask.registerTaskAsync(TASK_NAME, {
+      minimumInterval: 15, // minutes (minimum imposé par le système)
     })
   } catch (err) {
-    logger.error('Background fetch register error:', err)
+    logger.error('Background task register error:', err)
   }
 }
 
 export async function unregisterWidgetRefresh(): Promise<void> {
   try {
-    await BackgroundFetch.unregisterTaskAsync(TASK_NAME)
+    await BackgroundTask.unregisterTaskAsync(TASK_NAME)
   } catch (e) {
     logger.warn('Désinscription du refresh widget échouée:', e)
   }
