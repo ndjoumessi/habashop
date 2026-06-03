@@ -181,7 +181,8 @@ export default function CustomersScreen() {
       )}
 
       {/* ── Modal détail ── */}
-      <Modal visible={!!sel} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSel(null)}>
+      {!!sel && (
+      <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSel(null)}>
         <View style={s.sheet}>
           <View style={s.sheetHead}>
             <Text style={s.sheetTitle}>{i('Fiche client', 'Customer', 'Cliente', 'Scheda cliente')}</Text>
@@ -275,6 +276,7 @@ export default function CustomersScreen() {
           )}
         </View>
       </Modal>
+      )}
     </View>
   )
 }

@@ -262,7 +262,8 @@ export default function LoginScreen() {
 
         <Text style={s.flags}>🇸🇳 🇨🇮 🇲🇱 🇧🇫 🇬🇳 🇨🇲</Text>
 
-        <Modal visible={showEnableBiometric} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowEnableBiometric(false)}>
+        {showEnableBiometric && (
+        <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowEnableBiometric(false)}>
           <View style={s.biometricModal}>
             <Text style={s.biometricModalIcon}>{biometricType === 'face' ? '🔐' : '👆'}</Text>
             <Text style={s.biometricModalTitle}>
@@ -308,6 +309,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
         </Modal>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   )

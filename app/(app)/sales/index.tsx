@@ -149,7 +149,8 @@ export default function SalesScreen() {
       )}
 
       {/* Modal détail */}
-      <Modal visible={!!sel} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSel(null)}>
+      {!!sel && (
+      <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSel(null)}>
         <View style={s.sheet}>
           <View style={s.sheetHead}>
             <Text style={s.sheetTitle}>{i('Détail de la vente', 'Sale detail', 'Detalle de venta', 'Dettaglio vendita')}</Text>
@@ -207,6 +208,7 @@ export default function SalesScreen() {
           )}
         </View>
       </Modal>
+      )}
     </View>
   )
 }

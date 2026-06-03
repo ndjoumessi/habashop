@@ -244,7 +244,8 @@ export default function StockScreen() {
       )}
 
       {/* ── Modal édition ── */}
-      <Modal visible={!!editP} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setEditP(null)}>
+      {!!editP && (
+      <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setEditP(null)}>
         <View style={s.sheet}>
           <View style={s.sheetHead}>
             <Text style={s.sheetTitle}>{i('Modifier le stock', 'Edit stock', 'Editar stock', 'Modifica stock')}</Text>
@@ -318,6 +319,7 @@ export default function StockScreen() {
           )}
         </View>
       </Modal>
+      )}
     </View>
   )
 }
