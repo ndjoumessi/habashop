@@ -116,7 +116,7 @@ export default function KioskScreen() {
             <TextInput
               style={s.searchInput}
               placeholder={i('Rechercher…', 'Search…', 'Buscar…', 'Cerca…')}
-              placeholderTextColor={Colors.text4}
+              placeholderTextColor={Colors.text3}
               value={search}
               onChangeText={setSearch}
             />
@@ -265,7 +265,7 @@ export default function KioskScreen() {
                   style={s.discountInput}
                   keyboardType="numeric"
                   placeholder="0"
-                  placeholderTextColor={Colors.text4}
+                  placeholderTextColor={Colors.text3}
                   value={pos.discount ? String(pos.discount) : ''}
                   onChangeText={t => pos.setDiscount(Math.max(0, Math.min(100, Number(t.replace(/[^0-9.]/g, '')) || 0)))}
                   accessibilityLabel={i('Remise en pourcentage', 'Discount percentage', 'Descuento en porcentaje', 'Sconto in percentuale')}
@@ -426,7 +426,7 @@ export default function KioskScreen() {
               secureTextEntry
               maxLength={4}
               autoFocus
-              placeholderTextColor={Colors.text4}
+              placeholderTextColor={Colors.text3}
               placeholder="••••"
               accessibilityLabel={i('Code PIN', 'PIN Code', 'Código PIN', 'Codice PIN')}
             />
@@ -477,7 +477,7 @@ const s = StyleSheet.create({
     position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8,
     backgroundColor: Colors.warn, alignItems: 'center', justifyContent: 'center',
   },
-  tapCountText: { fontSize: 9, fontFamily: 'Outfit_700Bold', color: Colors.black },
+  tapCountText: { fontSize: 11, fontFamily: 'Outfit_700Bold', color: Colors.black },
   grid: { padding: Spacing.md, paddingBottom: 40 },
   productCard: {
     flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.lg,
@@ -491,7 +491,7 @@ const s = StyleSheet.create({
     position: 'absolute', top: -4, right: -4, backgroundColor: Colors.primary,
     width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
   },
-  cartBadgeText: { fontSize: 10, fontFamily: 'Outfit_700Bold', color: Colors.white },
+  cartBadgeText: { fontSize: 11, fontFamily: 'Outfit_700Bold', color: Colors.white },
   productName: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: Colors.text, textAlign: 'center', marginBottom: 2 },
   productPrice: { fontSize: 12, fontFamily: 'JetBrainsMono_700Bold', color: Colors.accent, letterSpacing: -0.3 },
 

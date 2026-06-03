@@ -193,19 +193,19 @@ export default function ReportsScreen() {
           <View style={s.kpiGrid}>
             <View style={[s.kpiCard, { borderColor: `${C.accent}30` }]}>
               <Text style={s.kpiLabel}>{i('CA période', 'Period revenue', 'Ingresos período', 'Ricavi periodo')}</Text>
-              <Text style={[s.kpiValue, { color: C.accent }]}>{fmt(ca)}</Text>
+              <Text style={[s.kpiValue, { color: C.accent }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{fmt(ca)}</Text>
             </View>
             <View style={[s.kpiCard, { borderColor: `${C.primary}30` }]}>
               <Text style={s.kpiLabel}>{i('Transactions', 'Transactions', 'Transacciones', 'Transazioni')}</Text>
-              <Text style={[s.kpiValue, { color: C.primary3 }]}>{String(tx)}</Text>
+              <Text style={[s.kpiValue, { color: C.primary3 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{String(tx)}</Text>
             </View>
             <View style={[s.kpiCard, { borderColor: `${C.accent3}30` }]}>
               <Text style={s.kpiLabel}>{i('Panier moyen', 'Avg. basket', 'Cesta media', 'Carrello medio')}</Text>
-              <Text style={[s.kpiValue, { color: C.accent3 }]}>{fmt(avg)}</Text>
+              <Text style={[s.kpiValue, { color: C.accent3 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{fmt(avg)}</Text>
             </View>
             <View style={[s.kpiCard, { borderColor: `${C.accent2}30` }]}>
               <Text style={s.kpiLabel}>{i('Meilleure journée', 'Best day', 'Mejor día', 'Giorno migliore')}</Text>
-              <Text style={[s.kpiValue, { color: C.accent2 }]}>{fmt(bestDay.value)}</Text>
+              <Text style={[s.kpiValue, { color: C.accent2 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{fmt(bestDay.value)}</Text>
               <Text style={s.kpiSub}>{bestDay.label}</Text>
             </View>
           </View>
@@ -320,8 +320,8 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1, padding: Spacing.md, gap: 2, ...Shadow.sm,
   },
   kpiLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
-  kpiValue: { fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', letterSpacing: -0.5 },
-  kpiSub: { fontSize: 9, fontFamily: 'Outfit_400Regular', color: C.text4, marginTop: 2 },
+  kpiValue: { fontSize: FontSize.xxxl, fontFamily: 'JetBrainsMono_700Bold', letterSpacing: -0.5 },
+  kpiSub: { fontSize: 11, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
 
   section: { paddingHorizontal: Spacing.lg, marginTop: Spacing.xl },
   sectionTitle: {
@@ -335,7 +335,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   barCol: { flex: 1, alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' },
   barTrack: { width: '70%', flex: 1, backgroundColor: C.bg4, borderRadius: BorderRadius.sm, justifyContent: 'flex-end', overflow: 'hidden' },
   barFill: { width: '100%', backgroundColor: C.primary, borderRadius: BorderRadius.sm },
-  barLabel: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
+  barLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
 
   topRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   topRank: { fontSize: 18, width: 26 },

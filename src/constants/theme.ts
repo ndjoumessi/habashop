@@ -17,7 +17,7 @@ export const Colors = {
   border3:  'rgba(255,255,255,0.18)',
   text:     '#F0F0FF',
   text2:    '#A0A0C0',
-  text3:    '#606080',
+  text3:    '#8A8AB0',
   text4:    '#404060',
   white:    '#FFFFFF',
   black:    '#000000',
@@ -35,7 +35,7 @@ export const DarkColors = {
   bg:       '#07070F', bg2:      '#0D0D1E', bg3:      '#12121E', bg4:      '#18182A',
   card:     '#0F0F1E',
   border:   'rgba(255,255,255,0.08)', border2: 'rgba(255,255,255,0.12)', border3: 'rgba(255,255,255,0.18)',
-  text:     '#F0F0FF', text2:    '#A0A0C0', text3:    '#606080', text4:    '#404060',
+  text:     '#F0F0FF', text2:    '#A0A0C0', text3:    '#8A8AB0', text4:    '#404060',
   white:    '#FFFFFF', black:    '#000000',
 } as const
 
@@ -46,7 +46,7 @@ export const LightColors = {
   bg:       '#F8F8FF', bg2:      '#F0F0FA', bg3:      '#E8E8F5', bg4:      '#E0E0EE',
   card:     '#FFFFFF',
   border:   'rgba(0,0,0,0.08)', border2: 'rgba(0,0,0,0.15)', border3: 'rgba(0,0,0,0.20)',
-  text:     '#0A0A1F', text2:    '#303050', text3:    '#606080', text4:    '#909098',
+  text:     '#0A0A1F', text2:    '#303050', text3:    '#606080', text4:    '#6A6A78',
   white:    '#FFFFFF', black:    '#000000',
 } as const
 
@@ -64,7 +64,7 @@ export const BorderRadius = {
 } as const
 
 export const FontSize = {
-  xs:10, sm:12, md:14, lg:16, xl:18,
+  xs:11, sm:12, md:14, lg:16, xl:18,
   xxl:22, xxxl:28, hero:36
 } as const
 

@@ -191,7 +191,7 @@ export default function LoginScreen() {
                 <Text style={s.label}>Email</Text>
                 <TextInput style={s.input}
                   placeholder="admin@habashop.com"
-                  placeholderTextColor={C.text4}
+                  placeholderTextColor={C.text3}
                   value={email} onChangeText={setEmail}
                   autoCapitalize="none" keyboardType="email-address"
                   autoComplete="email" returnKeyType="next"
@@ -206,7 +206,7 @@ export default function LoginScreen() {
                 <View style={{position:'relative'}}>
                   <TextInput style={[s.input,{paddingRight:48}]}
                     placeholder="••••••••"
-                    placeholderTextColor={C.text4}
+                    placeholderTextColor={C.text3}
                     value={password} onChangeText={setPassword}
                     secureTextEntry={!showPwd}
                     returnKeyType="done"

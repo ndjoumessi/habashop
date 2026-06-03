@@ -498,7 +498,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   profileEmail: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
   badgeRow: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.xs },
   badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
-  badgeTxt: { fontSize: 9, fontFamily: 'Outfit_800ExtraBold', letterSpacing: 0.5 },
+  badgeTxt: { fontSize: 11, fontFamily: 'Outfit_800ExtraBold', letterSpacing: 0.5 },
 
   // Langue grid 2x2
   grid2: { flexDirection: 'row', flexWrap: 'wrap', padding: Spacing.sm, gap: Spacing.sm },
@@ -541,7 +541,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderColor: withAlpha(C.primary, 0.2),
   },
   rateText: { fontSize: 13, fontFamily: 'Outfit_700Bold', color: C.primary3, textAlign: 'center' },
-  rateSubText: { fontSize: 10, fontFamily: 'Outfit_400Regular', color: C.text4, textAlign: 'center', marginTop: 3 },
+  rateSubText: { fontSize: 11, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', marginTop: 3 },
 
   // Boutique info
   infoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md, gap: Spacing.md },

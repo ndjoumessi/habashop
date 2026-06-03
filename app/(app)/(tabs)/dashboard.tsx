@@ -5,7 +5,6 @@ import {
 } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 import { router } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { analyticsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
@@ -13,6 +12,7 @@ import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { updateWidgetNotification, isWidgetEnabled } from '@/services/widgetNotification'
 import Avatar from '@/components/ui/Avatar'
+import ErrorState from '@/components/ui/ErrorState'
 import { useProfilePhoto } from '@/hooks/useProfilePhoto'
 import {
   ThemeColors, Spacing, BorderRadius,
@@ -37,7 +37,12 @@ function KpiCard({
         <Text style={{ fontSize:20 }}>{icon}</Text>
       </View>
       <Text style={s.kpiLabel}>{label}</Text>
-      <Text style={[s.kpiValue, { color }]}>{value}</Text>
+      <Text
+        style={[s.kpiValue, { color }]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.6}
+      >{value}</Text>
       {sub && <Text style={s.kpiSub}>{sub}</Text>}
     </View>
   )
@@ -148,55 +153,32 @@ export default function DashboardScreen() {
               </View>
             )}
           </View>
-          <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
-            <TouchableOpacity
-              style={s.searchBtn}
-              onPress={() => router.push('/(app)/search')}
-              accessibilityRole="button"
-              accessibilityLabel={i('Rechercher', 'Search', 'Buscar', 'Cerca')}
-            >
-              <Text style={{ fontSize: 18 }}>🔍</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={s.notifBtn}
-              onPress={() => {}}
-              accessibilityRole="button"
-              accessibilityLabel={i('Notifications', 'Notifications', 'Notificaciones', 'Notifiche')}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={22}
-                color={C.text2}
-              />
-              {(d.pendingOrders ?? 0) > 0 && (
-                <View style={s.notifDot}/>
-              )}
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={s.searchBtn}
+            onPress={() => router.push('/(app)/search')}
+            accessibilityRole="button"
+            accessibilityLabel={i('Rechercher', 'Search', 'Buscar', 'Cerca')}
+          >
+            <Text style={{ fontSize: 18 }}>🔍</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── Banner essai ── */}
         {tenant?.status === 'trial' && (
-          <TouchableOpacity
+          <View
             style={s.trialBanner}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel={i('Essai gratuit — passer au Pro', 'Free trial — upgrade to Pro', 'Prueba gratuita — pasar a Pro', 'Prova gratuita — passa a Pro')}
+            accessibilityRole="text"
+            accessibilityLabel={i('Essai gratuit en cours', 'Free trial active', 'Prueba gratuita activa', 'Prova gratuita attiva')}
           >
             <Text style={s.trialText}>
               ⚡ {i(
-                'Essai gratuit · Passez au Pro',
-                'Free trial · Upgrade to Pro',
-                'Prueba gratuita · Pase a Pro',
-                'Prova gratuita · Passa a Pro'
+                'Essai gratuit en cours',
+                'Free trial active',
+                'Prueba gratuita activa',
+                'Prova gratuita attiva'
               )}
             </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={14}
-              color={C.warn}
-            />
-          </TouchableOpacity>
+          </View>
         )}
 
         {/* ── KPIs ── */}
@@ -213,21 +195,7 @@ export default function DashboardScreen() {
               />
             </View>
           ) : isError ? (
-            <TouchableOpacity
-              style={s.errorWrap}
-              onPress={() => refetch()}
-              accessibilityRole="button"
-              accessibilityLabel={i('Erreur — Appuyez pour réessayer', 'Error — Tap to retry', 'Error — Toca para reintentar', 'Errore — Tocca per riprovare')}
-            >
-              <Text style={s.errorText}>
-                ⚠️ {i(
-                  'Erreur — Appuyez pour réessayer',
-                  'Error — Tap to retry',
-                  'Error — Toca para reintentar',
-                  'Errore — Tocca per riprovare'
-                )}
-              </Text>
-            </TouchableOpacity>
+            <ErrorState onRetry={() => refetch()} />
           ) : (
             <View style={s.kpiGrid}>
               <KpiCard
@@ -397,27 +365,13 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth:1, borderColor:withAlpha(C.danger, 0.25),
   },
   offlineBadgeText: {
-    fontSize:10, fontFamily:'Outfit_700Bold',
+    fontSize:11, fontFamily:'Outfit_700Bold',
     color:C.danger, textTransform:'uppercase', letterSpacing:0.4,
-  },
-  notifBtn: {
-    width:44, height:44,
-    borderRadius:BorderRadius.md,
-    backgroundColor:C.bg3,
-    alignItems:'center', justifyContent:'center',
-    borderWidth:1, borderColor:C.border,
-    position:'relative',
   },
   searchBtn: {
     width:44, height:44, borderRadius:BorderRadius.md,
     backgroundColor:C.bg3, alignItems:'center', justifyContent:'center',
     borderWidth:1, borderColor:C.border,
-  },
-  notifDot: {
-    position:'absolute', top:6, right:6,
-    width:8, height:8, borderRadius:4,
-    backgroundColor:C.danger,
-    borderWidth:2, borderColor:C.bg2,
   },
   trialBanner: {
     flexDirection:'row', alignItems:'center',
@@ -452,20 +406,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     alignItems:'center',
     justifyContent:'center',
   },
-  errorWrap: {
-    height:80,
-    alignItems:'center',
-    justifyContent:'center',
-    backgroundColor:withAlpha(C.danger, 0.08),
-    borderRadius:BorderRadius.lg,
-    borderWidth:1,
-    borderColor:withAlpha(C.danger, 0.2),
-  },
-  errorText: {
-    fontSize:FontSize.sm,
-    fontFamily:'Outfit_600SemiBold',
-    color:C.danger,
-  },
   kpiGrid: {
     flexDirection:'row',
     flexWrap:'wrap',
@@ -493,14 +433,14 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     color:C.text3,
   },
   kpiValue: {
-    fontSize:FontSize.md,
+    fontSize:FontSize.xxxl,
     fontFamily:'JetBrainsMono_700Bold',
     letterSpacing:-0.5,
   },
   kpiSub: {
-    fontSize:9,
+    fontSize:11,
     fontFamily:'Outfit_400Regular',
-    color:C.text4,
+    color:C.text3,
     marginTop:2,
   },
   actionsGrid: {
@@ -519,7 +459,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     justifyContent:'center',
   },
   actionLabel: {
-    fontSize:10,
+    fontSize:11,
     fontFamily:'Outfit_600SemiBold',
     color:C.text3,
     textAlign:'center',

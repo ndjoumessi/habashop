@@ -186,7 +186,7 @@ export default function StockScreen() {
         <TextInput
           style={s.searchInput}
           placeholder={i('Rechercher…', 'Search…', 'Buscar…', 'Cerca…')}
-          placeholderTextColor={C.text4}
+          placeholderTextColor={C.text3}
           value={search}
           onChangeText={setSearch}
           returnKeyType="search"
@@ -236,7 +236,13 @@ export default function StockScreen() {
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={C.primary} colors={[C.primary]} />
           }
           keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={<View style={s.center}><Text style={s.emptyTxt}>{i('Aucun produit', 'No products', 'Sin productos', 'Nessun prodotto')}</Text></View>}
+          ListEmptyComponent={
+            <View style={s.center}>
+              <Text style={{ fontSize: 48 }}>📦</Text>
+              <Text style={s.emptyTitle}>{i('Aucun produit', 'No products', 'Sin productos', 'Nessun prodotto')}</Text>
+              <Text style={s.emptyTxt}>{i('Ajoutez vos produits depuis le web ou ajustez vos filtres.', 'Add products from the web or adjust your filters.', 'Agregue productos desde la web o ajuste sus filtros.', 'Aggiungi prodotti dal web o modifica i filtri.')}</Text>
+            </View>
+          }
           renderItem={({ item }: { item: Product }) => (
             <ProductRow product={item} fmt={fmt} statusLabel={statusLabel} onPress={() => openEdit(item)} C={C} />
           )}
@@ -330,9 +336,10 @@ export default function StockScreen() {
 // ── Styles ───────────────────────────────────────
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl, gap: Spacing.sm },
   errTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger, textAlign: 'center' },
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
+  emptyTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text2, marginTop: Spacing.sm },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', maxWidth: 260 },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
@@ -351,7 +358,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderColor: C.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm,
   },
   statVal: { fontSize: FontSize.xxl, fontFamily: 'JetBrainsMono_700Bold' },
-  statLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  statLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
 
   alertChips: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
   alertChip: { paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full, borderWidth: 1 },
@@ -376,7 +383,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   tabTxtOn: { color: C.white },
   tabBadge: { minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: C.bg4, alignItems: 'center', justifyContent: 'center' },
   tabBadgeOn: { backgroundColor: withAlpha(C.white, 0.25) },
-  tabBadgeTxt: { fontSize: 10, fontFamily: 'Outfit_800ExtraBold', color: C.text3 },
+  tabBadgeTxt: { fontSize: 11, fontFamily: 'Outfit_800ExtraBold', color: C.text3 },
   tabBadgeTxtOn: { color: C.white },
 
   row: {
@@ -388,7 +395,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   rowCat: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   rowQty: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
-  statusTxt: { fontSize: 9, fontFamily: 'Outfit_700Bold' },
+  statusTxt: { fontSize: 11, fontFamily: 'Outfit_700Bold' },
 
   // Sheet édition
   sheet: { flex: 1, backgroundColor: C.bg },
@@ -406,7 +413,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
     padding: Spacing.md, alignItems: 'center', gap: 4,
   },
-  editStatLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  editStatLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
   editStatVal: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
 
   qtyEditor: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.sm },

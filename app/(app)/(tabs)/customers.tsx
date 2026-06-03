@@ -129,7 +129,7 @@ export default function CustomersScreen() {
           <TextInput
             style={s.searchInput}
             placeholder={i('Nom, téléphone, email…', 'Name, phone, email…', 'Nombre, teléfono, email…', 'Nome, telefono, email…')}
-            placeholderTextColor={C.text4}
+            placeholderTextColor={C.text3}
             value={search}
             onChangeText={setSearch}
             autoFocus
@@ -299,7 +299,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   chipsRow: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
   chip: { flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm },
   chipVal: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold' },
-  chipLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  chipLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
 
   card: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, ...Shadow.sm },
   avatar: { width: 46, height: 46, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center' },
@@ -307,7 +307,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   name: { flexShrink: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   typeBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
-  typeTxt: { fontSize: 9, fontFamily: 'Outfit_700Bold' },
+  typeTxt: { fontSize: 11, fontFamily: 'Outfit_700Bold' },
   phone: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: 3 },
   metaCa: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
@@ -325,7 +325,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   kpis: { flexDirection: 'row', gap: Spacing.sm },
   kpi: { flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, alignItems: 'center', gap: 4 },
   kpiVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold' },
-  kpiLabel: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4, textAlign: 'center' },
+  kpiLabel: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4, textAlign: 'center' },
 
   contactCard: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, overflow: 'hidden' },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },

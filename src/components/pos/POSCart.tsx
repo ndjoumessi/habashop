@@ -170,7 +170,7 @@ export default function POSCart({
                   style={s.discountInput}
                   keyboardType="numeric"
                   placeholder="0"
-                  placeholderTextColor={C.text4}
+                  placeholderTextColor={C.text3}
                   value={discount ? String(discount) : ''}
                   onChangeText={t => {
                     const n = Math.max(0, Math.min(100, Number(t.replace(/[^0-9.]/g, '')) || 0))
@@ -239,7 +239,7 @@ export default function POSCart({
                     style={s.cashInput}
                     keyboardType="numeric"
                     placeholder="0"
-                    placeholderTextColor={C.text4}
+                    placeholderTextColor={C.text3}
                     value={cashGiven ? String(cashGiven) : ''}
                     onChangeText={t => onSetCashGiven(Number(t.replace(/[^0-9.]/g, '')) || 0)}
                     accessibilityLabel={i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}
@@ -329,7 +329,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
   payChipOn: { backgroundColor: withAlpha(C.primary, 0.15), borderColor: C.primary },
-  payTxt: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
+  payTxt: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   payTxtOn: { color: C.primary3 },
 
   cashWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.md, marginTop: Spacing.xs },

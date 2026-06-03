@@ -79,7 +79,9 @@ export default function POSProductGrid({
       keyboardShouldPersistTaps="handled"
       ListEmptyComponent={
         <View style={s.center}>
-          <Text style={s.emptyTxt}>{i('Aucun produit', 'No products', 'Sin productos', 'Nessun prodotto')}</Text>
+          <Text style={{ fontSize: 48 }}>📦</Text>
+          <Text style={s.emptyTitle}>{i('Aucun produit', 'No products', 'Sin productos', 'Nessun prodotto')}</Text>
+          <Text style={s.emptyTxt}>{i('Aucun produit dans cette catégorie.', 'No product in this category.', 'Ningún producto en esta categoría.', 'Nessun prodotto in questa categoria.')}</Text>
         </View>
       }
       renderItem={({ item }: { item: Product }) => (
@@ -95,8 +97,9 @@ export default function POSProductGrid({
 }
 
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl, gap: Spacing.sm },
+  emptyTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text2, marginTop: Spacing.sm },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', maxWidth: 260 },
   prodCard: {
     flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.lg,
     borderWidth: 1, borderColor: C.border, padding: Spacing.sm,

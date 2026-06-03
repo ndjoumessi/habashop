@@ -95,7 +95,7 @@ export default function SearchScreen() {
           <TextInput
             style={s.searchInput}
             placeholder={i('Produits, clients…', 'Products, customers…', 'Productos, clientes…', 'Prodotti, clienti…')}
-            placeholderTextColor={C.text4}
+            placeholderTextColor={C.text3}
             value={query}
             onChangeText={setQuery}
             autoFocus
@@ -194,7 +194,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   searchIcon: { fontSize: 16 },
   searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
-  clearIcon: { fontSize: 14, color: C.text4, padding: 4 },
+  clearIcon: { fontSize: 14, color: C.text3, padding: 4 },
   list: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.md },
   resultRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md,
@@ -209,7 +209,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   typeBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.full },
   typeBadgeProduct: { backgroundColor: withAlpha(C.accent3, 0.1) },
   typeBadgeCustomer: { backgroundColor: withAlpha(C.accent2, 0.1) },
-  typeBadgeText: { fontSize: 9, fontFamily: 'Outfit_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
+  typeBadgeText: { fontSize: 11, fontFamily: 'Outfit_700Bold', textTransform: 'uppercase', letterSpacing: 0.4 },
   typeBadgeTextProduct: { color: C.accent3 },
   typeBadgeTextCustomer: { color: C.accent2 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },

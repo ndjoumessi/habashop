@@ -426,7 +426,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderRadius: 9, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: C.bg,
   },
-  cartBadgeTxt: { fontSize: 10, fontFamily: 'Outfit_800ExtraBold', color: C.white },
+  cartBadgeTxt: { fontSize: 11, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 
   cats: { gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xs },
   chip: {

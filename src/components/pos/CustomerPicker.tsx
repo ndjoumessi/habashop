@@ -59,7 +59,7 @@ export default function CustomerPicker({ visible, onClose, onSelect, selectedId 
           <TextInput
             style={s.searchInput}
             placeholder={i('Nom ou téléphone…', 'Name or phone…', 'Nombre o teléfono…', 'Nome o telefono…')}
-            placeholderTextColor={C.text4}
+            placeholderTextColor={C.text3}
             value={q}
             onChangeText={setQ}
             autoCapitalize="none"
@@ -167,5 +167,5 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   sub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   ptsBox: { alignItems: 'center', minWidth: 38 },
   ptsVal: { fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: C.accent2 },
-  ptsLbl: { fontSize: 9, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
+  ptsLbl: { fontSize: 11, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
 })
