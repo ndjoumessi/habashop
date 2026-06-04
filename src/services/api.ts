@@ -5,7 +5,7 @@ import type {
   LoginResponse, MeResponse,
   Product, ProductUpdate,
   SalePayload, SaleResponse, SaleRecord, RefundResponse,
-  DashboardStats, Customer, TenantUser,
+  DashboardStats, Customer, TenantUser, LoyaltyResponse,
 } from '@/types'
 
 const BASE = process.env.EXPO_PUBLIC_API_URL
@@ -74,6 +74,10 @@ export const analyticsApi = {
 export const customersApi = {
   list: (): Promise<Customer[]> =>
     apiClient.get<Customer[]>('/api/customers').then(r => r.data),
+  // Fidélité (lecture seule) — solde + palier canonique + historique. Sert au feedback
+  // « +N points » après vente (delta) et à la carte fidélité honnête. AUCUN calcul mobile.
+  loyalty: (id: string): Promise<LoyaltyResponse> =>
+    apiClient.get<LoyaltyResponse>(`/api/customers/${id}/loyalty`).then(r => r.data),
 }
 
 export const accountApi = {

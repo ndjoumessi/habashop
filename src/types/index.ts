@@ -173,6 +173,22 @@ export interface RefundResponse {
   restocked: boolean
 }
 
+// ── Fidélité ──────────────────────────────────────────────────────────────
+// GET /api/customers/:id/loyalty → { points, tier, history } (tier canonique côté backend).
+export interface LoyaltyHistoryEntry {
+  id: string
+  points: number          // >0 = gain (vente) · <0 = retrait (remboursement)
+  type?: string
+  reason?: string | null
+  saleId?: string | null
+  createdAt?: string
+}
+export interface LoyaltyResponse {
+  points: number
+  tier: string            // 'Bronze' | 'Silver' | 'Gold'
+  history: LoyaltyHistoryEntry[]
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────
 // GET /api/dashboard/stats → réponse à plat.
 export interface DashboardTopProduct { name: string; ca: number }

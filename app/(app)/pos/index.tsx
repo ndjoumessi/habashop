@@ -8,7 +8,7 @@ import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { productsApi, salesApi, apiErrorMessage } from '@/services/api'
+import { productsApi, salesApi, customersApi, apiErrorMessage } from '@/services/api'
 import type { Product, SaleResponse } from '@/types'
 import { usePosStore } from '@/stores/posStore'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
@@ -119,7 +119,7 @@ export default function POSScreen() {
       ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
       ...(customer ? { customerId: customer.id } : {}),
     }),
-    onSuccess: (data: SaleResponse) => {
+    onSuccess: async (data: SaleResponse) => {
       // Capture la vente avant de vider le panier (pour le ticket WhatsApp)
       const saleItems = [...cart]
       const saleTotal = totalAmt
@@ -128,17 +128,26 @@ export default function POSScreen() {
       recordSale(totalAmt)
       qc.invalidateQueries({ queryKey: ['dashboard'] })
       qc.invalidateQueries({ queryKey: ['products'] })
-      // Le backend a incrémenté le CA cumulé du client → on rafraîchit la liste clients.
-      if (saleCustomer) qc.invalidateQueries({ queryKey: ['customers'] })
       clearCart()
       setShowConfirm(false)
       setShowCart(false)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
-      // Le backend ne renvoie pas de points crédités → toast neutre « Client : X — vente liée »
-      // + solde de points actuel. Prépend au message si un client est lié.
-      const linked = saleCustomer
-        ? `${i('Client', 'Customer', 'Cliente', 'Cliente')} : ${saleCustomer.name} — ${i('vente liée', 'sale linked', 'venta vinculada', 'vendita collegata')} (${saleCustomer.loyaltyPoints ?? 0} ${i('pts', 'pts', 'pts', 'pti')})\n\n`
-        : ''
+      // Fidélité : le créditage est SERVEUR. On relit le solde canonique du client
+      // (GET /api/customers/:id/loyalty) et on affiche le DELTA (après − avant) — on ne
+      // recalcule JAMAIS la règle côté mobile. Réseau KO → on n'affiche pas de ligne fidélité.
+      let linked = ''
+      if (saleCustomer) {
+        qc.invalidateQueries({ queryKey: ['customers'] })
+        qc.invalidateQueries({ queryKey: ['loyalty', saleCustomer.id] })
+        try {
+          const before = saleCustomer.loyaltyPoints ?? 0
+          const after = await customersApi.loyalty(saleCustomer.id)
+          const delta = (after.points ?? before) - before
+          linked = delta > 0
+            ? `⭐ +${delta} ${i('points fidélité', 'loyalty points', 'puntos de fidelidad', 'punti fedeltà')} — ${saleCustomer.name} (${after.points} ${i('pts', 'pts', 'pts', 'pti')})\n\n`
+            : `${i('Client', 'Customer', 'Cliente', 'Cliente')} : ${saleCustomer.name} (${after.points} ${i('pts', 'pts', 'pts', 'pti')})\n\n`
+        } catch { /* solde indisponible (réseau) → pas de ligne fidélité */ }
+      }
       Alert.alert(
         i('✅ Vente enregistrée', '✅ Sale recorded', '✅ Venta registrada', '✅ Vendita registrata'),
         linked + i('Envoyer le reçu par WhatsApp ?', 'Send receipt via WhatsApp?', '¿Enviar recibo por WhatsApp?', 'Inviare ricevuta via WhatsApp?'),
