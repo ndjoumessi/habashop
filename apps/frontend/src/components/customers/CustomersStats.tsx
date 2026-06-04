@@ -33,7 +33,7 @@ export default function CustomersStats({ customers, fmt, lang, i, setViewCustome
                         <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{typeLabel(type, lang)}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
-                        <span style={{ color: 'var(--text3)' }}>{count} client{count > 1 ? 's' : ''}</span>
+                        <span style={{ color: 'var(--text3)' }}>{count} {count > 1 ? i('clients', 'customers', 'clientes', 'clienti') : i('client', 'customer', 'cliente', 'cliente')}</span>
                         <span style={{ color, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)' }}>{fmt(ca)}</span>
                         <span style={{ color: 'var(--text2)', fontWeight: 600, minWidth: 32, textAlign: 'right' }}>{pct}%</span>
                       </div>

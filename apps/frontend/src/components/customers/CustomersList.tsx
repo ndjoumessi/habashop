@@ -102,7 +102,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     <td>
                       <div className="td-bold">{c.name}</div>
                       <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
-                        Depuis {new Date(c.since).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                        {i('Depuis', 'Since', 'Desde', 'Dal')} {new Date(c.since).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { month: 'short', year: 'numeric' })}
                       </div>
                     </td>
                     <td><span className={`badge ${TYPE_CFG[c.type].cls}`}>{typeLabel(c.type, lang)}</span></td>

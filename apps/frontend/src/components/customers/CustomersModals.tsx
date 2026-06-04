@@ -170,7 +170,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 <PhoneInputWithCountry value={editCustForm.phone} onChange={v => setEditCustForm(f => ({...f, phone:v}))} lang={lang} />
               </ViewField>
               <ViewField label="EMAIL" value={editCustForm.email||''} fullWidth editing={custEditMode}>
-                <input className="input text-sm" type="email" placeholder="email@exemple.com"
+                <input className="input text-sm" type="email" placeholder={i('email@exemple.com', 'email@example.com', 'email@ejemplo.com', 'email@esempio.com')}
                   value={editCustForm.email}
                   onChange={e => setEditCustForm(f => ({...f, email:e.target.value}))} />
               </ViewField>
@@ -283,7 +283,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
 
               <ResponsiveGrid min={160} gap={12}>
                 <div>
-                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>TYPE</label>
+                  <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>{i('TYPE', 'TYPE', 'TIPO', 'TIPO')}</label>
                   <select aria-label={i('Type', 'Type', 'Tipo', 'Tipo')} className="input" value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as ClientType}))}>
                     <option value="Détail">{lang === 'en' ? 'Retail' : lang === 'es' ? 'Minorista' : lang === 'it' ? 'Dettaglio' : 'Détail'}</option>
                     <option value="Grossiste">{lang === 'en' ? 'Wholesale' : lang === 'es' ? 'Mayorista' : lang === 'it' ? 'Grossista' : 'Grossiste'}</option>
@@ -303,7 +303,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
 
               <div>
                 <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>EMAIL</label>
-                <input aria-label="EMAIL" className="input" type="email" placeholder="email@exemple.com"
+                <input aria-label="EMAIL" className="input" type="email" placeholder={i('email@exemple.com', 'email@example.com', 'email@ejemplo.com', 'email@esempio.com')}
                   value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} />
               </div>
 
