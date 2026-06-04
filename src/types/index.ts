@@ -157,6 +157,20 @@ export interface SaleRecord {
   discountAmount?: number
   createdAt: string
   items?: SaleLine[]
+  customerId?: string | null
+  // ── Remboursement (champs additifs renvoyés par le backend, cf. modèle Prisma Sale) ──
+  status?: string            // 'completed' | 'refunded'
+  refundedAt?: string | null
+  refundReason?: string | null
+  restocked?: boolean | null
+}
+
+// POST /api/sales/:id/refund → { ok, id, status:'refunded', restocked }
+export interface RefundResponse {
+  ok: boolean
+  id: string
+  status: string
+  restocked: boolean
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────

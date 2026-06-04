@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger'
 import type {
   LoginResponse, MeResponse,
   Product, ProductUpdate,
-  SalePayload, SaleResponse, SaleRecord,
+  SalePayload, SaleResponse, SaleRecord, RefundResponse,
   DashboardStats, Customer, TenantUser,
 } from '@/types'
 
@@ -58,6 +58,10 @@ export const salesApi = {
     apiClient.post<SaleResponse>('/api/sales', data).then(r => r.data),
   list: (params?: Record<string, string | number>): Promise<SaleRecord[]> =>
     apiClient.get<SaleRecord[]>('/api/sales', { params }).then(r => r.data),
+  // Remboursement TOTAL d'une vente (manager/admin uniquement côté backend).
+  // 400 motif manquant · 403 rôle insuffisant · 404 introuvable · 409 déjà remboursée.
+  refund: (id: string, body: { reason: string; restock: boolean }): Promise<RefundResponse> =>
+    apiClient.post<RefundResponse>(`/api/sales/${id}/refund`, body).then(r => r.data),
 }
 
 export const analyticsApi = {
