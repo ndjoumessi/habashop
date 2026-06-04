@@ -1,5 +1,6 @@
 import Skeleton from '@/components/ui/skeleton'
 import Pagination from '@/components/ui/Pagination'
+import FilterSelect from '@/components/ui/FilterSelect'
 import { Search, Download, Plus, Eye, CheckCircle, Truck, Package, Users, Send, Inbox } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
@@ -60,19 +61,32 @@ export default function OrdersListPanel({
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <div className="search-box flex-1 min-w-40">
-          <Search size={13} className="search-icon" />
-          <input className="input pl-8 py-2 text-sm w-full" placeholder={i('🔍 Référence, fournisseur…', '🔍 Reference, supplier…', '🔍 Referencia, proveedor…', '🔍 Riferimento, fornitore…')}
+        <div className="search-wrap flex-1 min-w-40">
+          <span className="search-icon"><Search size={13} /></span>
+          <input className="input pl-8 py-2 text-sm w-full"
+            aria-label={i('Rechercher', 'Search', 'Buscar', 'Cerca')}
+            placeholder={i('Référence, fournisseur', 'Reference, supplier', 'Referencia, proveedor', 'Riferimento, fornitore') + '…'}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input py-2 text-sm w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
-          <option value="">{t('pos_all')} {t('col_status').toLowerCase()}</option>
-          {STATUSES.map(s => <option key={s} value={s}>{orderStatusLabel(s, lang)}</option>)}
-        </select>
-        <select className="input py-2 text-sm w-auto" value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)}>
-          <option value="">{t('pos_all')} {t('col_supplier').toLowerCase()}</option>
-          {supplierNames.map(s => <option key={s}>{s}</option>)}
-        </select>
+        <FilterSelect
+          value={statusFilter} onChange={v => setStatusFilter(v as any)}
+          ariaLabel={t('col_status')}
+          minWidth={150}
+          options={[
+            { value: '', label: i('Tous les statuts', 'All statuses', 'Todos los estados', 'Tutti gli stati') },
+            ...STATUSES.map(s => ({ value: s, label: orderStatusLabel(s, lang) })),
+          ]}
+        />
+        <FilterSelect
+          value={supplierFilter} onChange={setSupplierFilter}
+          ariaLabel={t('col_supplier')}
+          minWidth={160}
+          icon={<Truck size={13} style={{ color: 'var(--text3)', flexShrink: 0 }} />}
+          options={[
+            { value: '', label: i('Tous les fournisseurs', 'All suppliers', 'Todos los proveedores', 'Tutti i fornitori') },
+            ...supplierNames.map(s => ({ value: s, label: s })),
+          ]}
+        />
       </div>
 
       {/* Filtres rapides statut */}

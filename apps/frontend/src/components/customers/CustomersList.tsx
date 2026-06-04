@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink } from 'lucide-react'
+import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink, Tag } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { exportCSV, generateInvoice } from '@/utils/export'
 import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import FilterSelect from '@/components/ui/FilterSelect'
 import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar } from '@/components/customers/customersShared'
 
 interface CustomersListProps {
@@ -63,19 +64,26 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
 
         {/* Filtres */}
         <div className="flex flex-wrap gap-2 mb-4">
-          <div className="search-box flex-1 min-w-40">
-            <Search size={13} className="search-icon" />
-            <input className="input pl-8 py-2 text-sm w-full" placeholder={lang === 'fr' ? '🔍 Nom, téléphone…' : lang === 'en' ? '🔍 Name, phone…' : lang === 'es' ? '🔍 Nombre, teléfono…' : '🔍 Nome, telefono…'}
+          <div className="search-wrap flex-1 min-w-40">
+            <span className="search-icon"><Search size={13} /></span>
+            <input className="input pl-8 py-2 text-sm w-full"
+              aria-label={i('Rechercher', 'Search', 'Buscar', 'Cerca')}
+              placeholder={i('Nom, téléphone', 'Name, phone', 'Nombre, teléfono', 'Nome, telefono') + '…'}
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select className="input py-2 text-sm w-auto" value={typeFilter}
-            onChange={e => setTypeFilter(e.target.value as any)}>
-            <option value="">{t('pos_all')} {t('col_type').toLowerCase()}</option>
-            <option value="Grossiste">{typeLabel('Grossiste', lang)}</option>
-            <option value="Semi-gros">{typeLabel('Semi-gros', lang)}</option>
-            <option value="Fidèle">{typeLabel('Fidèle', lang)}</option>
-            <option value="Détail">{typeLabel('Détail', lang)}</option>
-          </select>
+          <FilterSelect
+            value={typeFilter} onChange={v => setTypeFilter(v as any)}
+            ariaLabel={t('col_type')}
+            minWidth={150}
+            icon={<Tag size={13} style={{ color: 'var(--text3)', flexShrink: 0 }} />}
+            options={[
+              { value: '', label: i('Tous les types', 'All types', 'Todos los tipos', 'Tutti i tipi') },
+              { value: 'Grossiste', label: typeLabel('Grossiste', lang) },
+              { value: 'Semi-gros', label: typeLabel('Semi-gros', lang) },
+              { value: 'Fidèle', label: typeLabel('Fidèle', lang) },
+              { value: 'Détail', label: typeLabel('Détail', lang) },
+            ]}
+          />
         </div>
 
         {/* Vue tableau */}

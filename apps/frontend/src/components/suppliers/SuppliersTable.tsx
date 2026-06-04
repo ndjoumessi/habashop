@@ -1,5 +1,6 @@
 import Skeleton from '@/components/ui/skeleton'
 import Pagination from '@/components/ui/Pagination'
+import FilterSelect from '@/components/ui/FilterSelect'
 import { useConfig, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { Search, Download, Plus, Eye, Phone, Pencil, Package, Trash2 } from 'lucide-react'
@@ -58,21 +59,32 @@ export default function SuppliersTable(props: Props) {
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <div className="search-box flex-1 min-w-40">
-          <Search size={13} className="search-icon" />
-          <input className="input pl-8 py-2 text-sm w-full" placeholder={i('🔍 Nom, contact…', '🔍 Name, contact…', '🔍 Nombre, contacto…', '🔍 Nome, contatto…')}
+        <div className="search-wrap flex-1 min-w-40">
+          <span className="search-icon"><Search size={13} /></span>
+          <input className="input pl-8 py-2 text-sm w-full"
+            aria-label={i('Rechercher', 'Search', 'Buscar', 'Cerca')}
+            placeholder={i('Nom, contact', 'Name, contact', 'Nombre, contacto', 'Nome, contatto') + '…'}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input py-2 text-sm w-auto" value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as any)}>
-          <option value="">{t('pos_all')} {t('col_status').toLowerCase()}</option>
-          {STATUS_LIST.map(s => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}
-        </select>
-        <select className="input py-2 text-sm w-auto" value={catFilter}
-          onChange={e => setCatFilter(e.target.value)}>
-          <option value="">{t('pos_all')} {t('col_category').toLowerCase()}</option>
-          {allCats.map(c => <option key={c}>{c}</option>)}
-        </select>
+        <FilterSelect
+          value={statusFilter} onChange={v => setStatusFilter(v as any)}
+          ariaLabel={t('col_status')}
+          minWidth={150}
+          options={[
+            { value: '', label: i('Tous les statuts', 'All statuses', 'Todos los estados', 'Tutti gli stati') },
+            ...STATUS_LIST.map(s => ({ value: s, label: statusLabel(s, lang) })),
+          ]}
+        />
+        <FilterSelect
+          value={catFilter} onChange={setCatFilter}
+          ariaLabel={t('col_category')}
+          minWidth={150}
+          icon={<Package size={13} style={{ color: 'var(--text3)', flexShrink: 0 }} />}
+          options={[
+            { value: '', label: i('Toutes les catégories', 'All categories', 'Todas las categorías', 'Tutte le categorie') },
+            ...allCats.map(c => ({ value: c, label: c })),
+          ]}
+        />
       </div>
 
       {/* Tableau */}
