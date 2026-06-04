@@ -25,20 +25,23 @@ const TIER_CFG = {
 }
 
 export default function LoyaltyCard({ customer, onClose }: Props) {
-  const { i } = useI18n()
+  const { i, lang } = useI18n()
+  const dloc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   // Seuils de fidélité formatés dans la devise du tenant (1 000 / 10 000 XOF en base).
   const fmt = useFormatAmount()
   const [points, setPoints] = useState(customer.loyaltyPoints ?? 0)
   const [tier,   setTier]   = useState<'Bronze'|'Silver'|'Gold'>('Bronze')
+  const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loyaltyApi.get(customer.id)
-      .then(d => { setPoints(d.points); setTier(d.tier as any) })
+      .then(d => { setPoints(d.points); setTier(d.tier as any); setHistory(Array.isArray(d.history) ? d.history : []) })
       .catch(() => {
         const p = customer.loyaltyPoints ?? 0
         setPoints(p)
         setTier(p >= 5000 ? 'Gold' : p >= 2000 ? 'Silver' : 'Bronze')
+        setHistory([])
       })
       .finally(() => setLoading(false))
   }, [customer.id, customer.loyaltyPoints])
@@ -161,35 +164,42 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
           )}
         </div>
 
-        {/* Avantages tier */}
+        {/* Fonctionnement — v1 : STATUT seulement (gain identique tous paliers, pas de remise) */}
         <div style={{ background: 'var(--bg3)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
-            {i('Avantages', 'Benefits', 'Ventajas', 'Vantaggi')} {tier}
+            {i('Comment ça marche', 'How it works', 'Cómo funciona', 'Come funziona')}
           </div>
-          {tier === 'Bronze' && (
-            <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-              ✅ {i(`1 point par tranche de ${fmt(1000)}`, `1 point per ${fmt(1000)} spent`, `1 punto por cada ${fmt(1000)}`, `1 punto ogni ${fmt(1000)}`)}<br/>
-              ✅ {i('Offres exclusives réservées aux membres', 'Exclusive member-only offers', 'Ofertas exclusivas para miembros', 'Offerte esclusive per i membri')}<br/>
-              🔒 {i('Silver à partir de 2 000 pts · Gold à 5 000 pts', 'Silver from 2,000 pts · Gold at 5,000 pts', 'Silver desde 2 000 pts · Gold a 5 000 pts', 'Silver da 2.000 pts · Gold a 5.000 pts')}
-            </div>
-          )}
-          {tier === 'Silver' && (
-            <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-              ✅ {i(`1,5 points par tranche de ${fmt(1000)}`, `1.5 points per ${fmt(1000)} spent`, `1,5 puntos por cada ${fmt(1000)}`, `1,5 punti ogni ${fmt(1000)}`)}<br/>
-              ✅ {i('Remise de 5 % sur les achats', '5% discount on purchases', '5 % de descuento en compras', 'Sconto del 5% sugli acquisti')} &gt; {fmt(10000)}<br/>
-              ✅ {i('Accès aux promotions avant tout le monde', 'Early access to promotions', 'Acceso anticipado a promociones', 'Accesso anticipato alle promozioni')}<br/>
-              🔒 {i('Gold à partir de 5 000 pts', 'Gold from 5,000 pts', 'Gold desde 5 000 pts', 'Gold da 5.000 pts')}
-            </div>
-          )}
-          {tier === 'Gold' && (
-            <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
-              ✅ {i(`2 points par tranche de ${fmt(1000)}`, `2 points per ${fmt(1000)} spent`, `2 puntos por cada ${fmt(1000)}`, `2 punti ogni ${fmt(1000)}`)}<br/>
-              ✅ {i('Remise de 10 % sur tous les achats', '10% discount on all purchases', '10 % de descuento en todas las compras', 'Sconto del 10% su tutti gli acquisti')}<br/>
-              ✅ {i('Livraison prioritaire offerte', 'Free priority delivery', 'Entrega prioritaria gratuita', 'Consegna prioritaria gratuita')}<br/>
-              ✅ {i('Accès aux ventes privées', 'Access to private sales', 'Acceso a ventas privadas', 'Accesso alle vendite private')}
-            </div>
-          )}
+          <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.8 }}>
+            ⭐ {i(`1 point par tranche de ${fmt(1000)} dépensé`, `1 point per ${fmt(1000)} spent`, `1 punto por cada ${fmt(1000)} gastado`, `1 punto ogni ${fmt(1000)} speso`)}<br/>
+            🏅 {i('Paliers : Bronze · Silver (2 000 pts) · Gold (5 000 pts)', 'Tiers: Bronze · Silver (2,000 pts) · Gold (5,000 pts)', 'Niveles: Bronze · Silver (2 000 pts) · Gold (5 000 pts)', 'Livelli: Bronze · Silver (2.000 pts) · Gold (5.000 pts)')}<br/>
+            <span style={{ color: 'var(--text3)', fontStyle: 'italic' }}>🎁 {i('Récompenses & remises : à venir', 'Rewards & discounts: coming soon', 'Recompensas y descuentos: próximamente', 'Premi e sconti: in arrivo')}</span>
+          </div>
         </div>
+
+        {/* Historique des points (gains / retraits) */}
+        {history.length > 0 && (
+          <div style={{ background: 'var(--bg3)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
+              {i('Historique', 'History', 'Historial', 'Cronologia')}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {history.slice(0, 6).map((h, idx) => {
+                const earn = (h.points ?? 0) >= 0
+                return (
+                  <div key={h.id ?? idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                    <span style={{ color: 'var(--text3)' }}>
+                      {earn ? i('Vente', 'Sale', 'Venta', 'Vendita') : i('Remboursement', 'Refund', 'Reembolso', 'Rimborso')}
+                      {h.createdAt ? ` · ${new Date(h.createdAt).toLocaleDateString(dloc, { day: '2-digit', month: 'short' })}` : ''}
+                    </span>
+                    <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: earn ? 'var(--acc2)' : 'var(--danger)' }}>
+                      {earn ? '+' : ''}{h.points} pts
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <button className="topbar-btn" style={{ width: '100%', justifyContent: 'center' }} onClick={onClose}>
           {i('Fermer', 'Close', 'Cerrar', 'Chiudi')}

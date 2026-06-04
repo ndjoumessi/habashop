@@ -109,7 +109,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     <td className="td-mono">{c.phone}</td>
                     <td className="td-num" style={{ color: 'var(--text2)' }}>{c.purchasesPerMonth}×</td>
                     <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(c.totalCA)}</td>
-                    <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} max={c.maxLoyalty} /></td>
+                    <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} /></td>
                     <td>
                       <div className="flex gap-1.5">
                         <button className="btn btn-sm btn-ghost" title={i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>

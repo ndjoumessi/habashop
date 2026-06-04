@@ -78,6 +78,7 @@ model Tenant {
   attendance     Attendance[]
   shifts         Shift[]
   leaveRequests  LeaveRequest[]
+  loyaltyTxns    LoyaltyTransaction[]
 
   @@index([deletedAt])
 }
@@ -230,12 +231,34 @@ model Customer {
   updatedAt     DateTime @updatedAt
   deletedAt     DateTime? // null = actif (soft delete)
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenant      Tenant               @relation(fields: [tenantId], references: [id])
+  loyaltyTxns LoyaltyTransaction[]
 
   @@index([tenantId])
   @@index([tenantId, totalRevenue])
   @@index([tenantId, type])
   @@index([tenantId, deletedAt])
+}
+
+// Historique des mouvements de points fidélité (gain à la vente / retrait au remboursement).
+// points = delta SIGNÉ appliqué au solde (earn: +N, reverse: −N) ; type explicite la direction.
+model LoyaltyTransaction {
+  id         String   @id @default(cuid())
+  tenantId   String
+  customerId String
+  saleId     String?  // vente d'origine (null pour ajustement manuel)
+  points     Int      // signé : +gain / −retrait
+  type       String   // 'earn' | 'reverse'
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([tenantId, customerId])
+  @@index([saleId])
 }
 
 model Supplier {

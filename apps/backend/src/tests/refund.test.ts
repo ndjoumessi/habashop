@@ -8,6 +8,7 @@ const { db, tx } = vi.hoisted(() => {
     product:  { updateMany: vi.fn() },
     customer: { updateMany: vi.fn() },
     auditLog: { create: vi.fn() },
+    loyaltyTransaction: { aggregate: vi.fn(), create: vi.fn() },
   }
   return {
     tx,
@@ -46,6 +47,8 @@ beforeEach(() => {
   tx.product.updateMany.mockResolvedValue({ count: 1 })
   tx.customer.updateMany.mockResolvedValue({ count: 1 })
   tx.auditLog.create.mockResolvedValue({ id: 'a1' })
+  tx.loyaltyTransaction.aggregate.mockResolvedValue({ _sum: { points: 0 } })
+  tx.loyaltyTransaction.create.mockResolvedValue({})
 })
 
 describe('canRefund (pur)', () => {
@@ -127,11 +130,33 @@ describe('POST /api/sales/:id/refund', () => {
     expect(tx.auditLog.create).not.toHaveBeenCalled()
   })
 
-  it('vente liée à un client → décrémente son revenu', async () => {
+  it('vente liée à un client → décrémente son revenu (0 point gagné → pas de retrait)', async () => {
     db.sale.findFirst.mockResolvedValue({ ...SALE, customerId: 'c1' })
     const app = await buildApp()
     const res = await app.inject({ method: 'POST', url: '/api/sales/s1/refund', headers: H('MANAGER'), payload: { reason: 'retour' } })
     expect(res.statusCode).toBe(200)
     expect(tx.customer.updateMany).toHaveBeenCalledWith({ where: { id: 'c1', tenantId: 'T1' }, data: { totalRevenue: { decrement: 1000 } } })
+    expect(tx.loyaltyTransaction.create).not.toHaveBeenCalled()
+  })
+
+  it('remboursement RETIRE les points gagnés sur la vente (LoyaltyTransaction reverse)', async () => {
+    db.sale.findFirst.mockResolvedValue({ ...SALE, customerId: 'c1' })
+    tx.loyaltyTransaction.aggregate.mockResolvedValue({ _sum: { points: 5 } }) // 5 pts gagnés à l'origine
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/sales/s1/refund', headers: H('MANAGER'), payload: { reason: 'retour' } })
+    expect(res.statusCode).toBe(200)
+    // somme des 'earn' du saleId, scopée tenant
+    expect(tx.loyaltyTransaction.aggregate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { saleId: 's1', tenantId: 'T1', type: 'earn' }, _sum: { points: true },
+    }))
+    // décrément revenu ET points dans le même update
+    expect(tx.customer.updateMany).toHaveBeenCalledWith({
+      where: { id: 'c1', tenantId: 'T1' },
+      data: { totalRevenue: { decrement: 1000 }, loyaltyPoints: { decrement: 5 } },
+    })
+    // ligne d'historique 'reverse' négative
+    expect(tx.loyaltyTransaction.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ customerId: 'c1', saleId: 's1', points: -5, type: 'reverse' }),
+    }))
   })
 })

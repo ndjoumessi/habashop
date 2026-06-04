@@ -5,6 +5,7 @@ import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 import { invalidateTenantCache } from '../lib/cache'
 import { resolveTierPrice, type PriceTier } from '../utils/pricing'
+import { pointsForAmount } from '../lib/loyalty'
 
 // Remboursement réservé MANAGER + ADMIN (+ SUPER_ADMIN superset) — anti-fraude :
 // le caissier ne peut PAS rembourser. Helper pur exporté pour les tests.
@@ -45,6 +46,10 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       select: { id: true, sellPrice: true, hasPromotion: true, promotionPrice: true, priceTiers: true },
     })
     const productMap = new Map(productsList.map(p => [p.id, p]))
+
+    // Fidélité : créditage serveur si activé pour le tenant (lu hors transaction, flag stable).
+    const tenantCfg = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { enableLoyalty: true } })
+    const loyaltyOn = !!tenantCfg?.enableLoyalty
 
     const newSale = await prisma.$transaction(async (tx) => {
       const newSale = await tx.sale.create({
@@ -101,10 +106,20 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       }
 
       if (customerId) {
+        // Points fidélité = floor(total payé TTC après remise / 1000), forfaitaire.
+        const pts = loyaltyOn ? pointsForAmount(total) : 0
         await tx.customer.update({
           where: { id: customerId },
-          data: { totalRevenue: { increment: total } },
+          data: {
+            totalRevenue: { increment: total },
+            ...(pts > 0 ? { loyaltyPoints: { increment: pts } } : {}),
+          },
         })
+        if (pts > 0) {
+          await tx.loyaltyTransaction.create({
+            data: { tenantId, customerId, saleId: newSale.id, points: pts, type: 'earn', reason: 'sale' },
+          })
+        }
       }
 
       return newSale
@@ -179,12 +194,26 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
           }
         }
 
-        // Symétrie avec la création de vente : on retire le revenu du client lié.
+        // Symétrie avec la création de vente : retire le revenu + les points fidélité
+        // gagnés sur cette vente (somme des 'earn' liés au saleId) dans la même transaction.
         if (sale.customerId) {
+          const earned = await tx.loyaltyTransaction.aggregate({
+            where: { saleId: sale.id, tenantId, type: 'earn' },
+            _sum: { points: true },
+          })
+          const pts = earned._sum.points ?? 0
           await tx.customer.updateMany({
             where: { id: sale.customerId, tenantId },
-            data: { totalRevenue: { decrement: sale.total } },
+            data: {
+              totalRevenue: { decrement: sale.total },
+              ...(pts > 0 ? { loyaltyPoints: { decrement: pts } } : {}),
+            },
           })
+          if (pts > 0) {
+            await tx.loyaltyTransaction.create({
+              data: { tenantId, customerId: sale.customerId, saleId: sale.id, points: -pts, type: 'reverse', reason: 'refund' },
+            })
+          }
         }
 
         await tx.auditLog.create({

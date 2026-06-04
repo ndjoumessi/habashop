@@ -8,7 +8,7 @@ import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
-import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar } from '@/components/customers/customersShared'
+import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold } from '@/components/customers/customersShared'
 
 interface CustomersModalsProps {
   viewCustomer: Customer | null; setViewCustomer: (c: any) => void
@@ -68,9 +68,14 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 <span className="text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--text3)' }}>{i('Solde fidélité', 'Loyalty balance', 'Saldo fidelidad', 'Saldo fedeltà')}</span>
                 <span className="text-sm font-black" style={{ color: 'var(--acc)' }}>{viewCustomer.loyaltyPoints} pts</span>
               </div>
-              <LoyaltyBar points={viewCustomer.loyaltyPoints} max={viewCustomer.maxLoyalty} />
+              <LoyaltyBar points={viewCustomer.loyaltyPoints} />
               <p className="text-xs mt-2" style={{ color: 'var(--text3)' }}>
-                {i('Objectif', 'Target', 'Objetivo', 'Obiettivo')} : {viewCustomer.maxLoyalty} pts · {i('Reste', 'Remaining', 'Quedan', 'Restano')} {Math.max(0, viewCustomer.maxLoyalty - viewCustomer.loyaltyPoints)} pts
+                {(() => {
+                  const next = loyaltyNextThreshold(viewCustomer.loyaltyPoints)
+                  return next
+                    ? `${i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')} : ${next} pts · ${i('Reste', 'Remaining', 'Quedan', 'Restano')} ${Math.max(0, next - viewCustomer.loyaltyPoints)} pts`
+                    : `🥇 ${i('Palier Gold atteint', 'Gold tier reached', 'Nivel Gold alcanzado', 'Livello Gold raggiunto')}`
+                })()}
               </p>
             </div>
 

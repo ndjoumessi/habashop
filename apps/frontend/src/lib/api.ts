@@ -264,9 +264,9 @@ export const marketingApi = {
 }
 
 export const loyaltyApi = {
-  get:       (id: string) => api.get<any>(`/api/customers/${id}/loyalty`),
-  addPoints: (id: string, saleTotal: number) =>
-    api.post(`/api/customers/${id}/loyalty/add`, { saleTotal }),
+  // Lecture seule : solde + palier + historique. Le créditage est 100% SERVEUR
+  // (transaction de vente) — pas d'ajout déclenché par le front (route /add retirée).
+  get: (id: string) => api.get<{ points: number; tier: string; history: any[] }>(`/api/customers/${id}/loyalty`),
 }
 
 export const adminApi = {

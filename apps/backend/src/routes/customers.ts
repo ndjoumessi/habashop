@@ -3,6 +3,7 @@ import type { CustomerBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
+import { tierForPoints } from '../lib/loyalty'
 
 export async function customerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/customers', { preHandler: authenticate }, async (request) => {
@@ -101,32 +102,38 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
 
   // ─── LOYALTY ──────────────────────────
   app.get('/api/customers/:id/loyalty', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
     const { id } = request.params as { id: string }
-    try {
-      const customer = await prisma.customer.findUnique({ where: { id } })
-      if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
-      const points = (customer as any).loyaltyPoints ?? 0
-      const tier = points >= 5000 ? 'Gold' : points >= 2000 ? 'Silver' : 'Bronze'
-      return { points, tier, history: [] }
-    } catch {
-      return { points: 0, tier: 'Bronze', history: [] }
-    }
+    // Scope tenant STRICT (fini le findUnique global = faille d'isolation).
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+    const points = customer.loyaltyPoints ?? 0
+    const history = await prisma.loyaltyTransaction.findMany({
+      where: { customerId: id, tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: { id: true, points: true, type: true, reason: true, saleId: true, createdAt: true },
+    }).catch(() => [])
+    return { points, tier: tierForPoints(points), history }
   })
 
   app.post('/api/customers/:id/loyalty', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
     const { id } = request.params as { id: string }
-    const { points } = request.body as { points: number; reason: string }
-    try {
-      const customer = await prisma.customer.findUnique({ where: { id } })
-      if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
-      const current = (customer as any).loyaltyPoints ?? 0
-      const updated = await prisma.customer.update({
-        where: { id },
-        data: { loyaltyPoints: current + points } as any,
-      })
-      return { points: (updated as any).loyaltyPoints ?? current + points }
-    } catch {
-      return { points: points }
+    const { points, reason } = request.body as { points: number; reason?: string }
+    if (typeof points !== 'number' || !Number.isFinite(points) || points === 0) {
+      return reply.code(400).send({ error: 'points doit être un entier non nul' })
     }
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+    // Ajustement manuel : mute le solde + trace dans l'historique (même source de vérité).
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.customer.update({ where: { id }, data: { loyaltyPoints: { increment: points } } })
+      await tx.loyaltyTransaction.create({
+        data: { tenantId, customerId: id, points, type: points >= 0 ? 'earn' : 'reverse', reason: reason ?? 'manual' },
+      })
+      return u
+    })
+    return { points: updated.loyaltyPoints, tier: tierForPoints(updated.loyaltyPoints) }
   })
 }

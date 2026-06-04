@@ -8,8 +8,20 @@ export interface Purchase { ref: string; date: string; total: number; items: num
 export interface Customer {
   id: string; name: string; type: ClientType; phone: string; email: string
   address: string; purchasesPerMonth: number; totalCA: number
-  loyaltyPoints: number; maxLoyalty: number; since: string; lastPurchase: string
+  loyaltyPoints: number; since: string; lastPurchase: string
   purchases: Purchase[]; notes: string
+}
+
+// Fidélité v1 — paliers RÉELS (miroir backend lib/loyalty). STATUT seulement (pas de remise en v1).
+export const LOYALTY_SILVER = 2000
+export const LOYALTY_GOLD = 5000
+export type LoyaltyTier = 'Bronze' | 'Silver' | 'Gold'
+export function loyaltyTier(points: number): LoyaltyTier {
+  return points >= LOYALTY_GOLD ? 'Gold' : points >= LOYALTY_SILVER ? 'Silver' : 'Bronze'
+}
+/** Prochain seuil de palier (null = Gold atteint, plus de palier au-dessus). */
+export function loyaltyNextThreshold(points: number): number | null {
+  return points < LOYALTY_SILVER ? LOYALTY_SILVER : points < LOYALTY_GOLD ? LOYALTY_GOLD : null
 }
 
 export const TYPE_CFG: Record<ClientType, { cls: string; color: string; bg: string }> = {
@@ -61,8 +73,10 @@ export function getCustomerCityId(address: string): string {
 }
 
 
-export function LoyaltyBar({ points, max }: { points: number; max: number }) {
-  const pct = Math.min(100, Math.round((points / max) * 100))
+// Barre de progression vers le PROCHAIN palier (Gold = 100 %). Fini le max=1000 en dur.
+export function LoyaltyBar({ points }: { points: number }) {
+  const next = loyaltyNextThreshold(points)
+  const pct = next ? Math.min(100, Math.round((points / next) * 100)) : 100
   const color = pct >= 80 ? 'var(--acc2)' : pct >= 50 ? 'var(--acc)' : 'var(--p2)'
   return (
     <div className="flex items-center gap-2">
@@ -85,7 +99,6 @@ export function mapApiCustomer(c: any): Customer {
     purchasesPerMonth: 0,
     totalCA: c.totalRevenue ?? 0,
     loyaltyPoints: c.loyaltyPoints ?? 0,
-    maxLoyalty: 1000,
     since: c.createdAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     lastPurchase: c.updatedAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],
     purchases: [],
