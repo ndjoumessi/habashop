@@ -45,7 +45,8 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = `pointage_${todayKey}.csv`; a.click()
+    const fname = lang === 'en' ? 'attendance' : lang === 'es' ? 'asistencia' : lang === 'it' ? 'presenze' : 'pointage'
+    a.href = url; a.download = `${fname}_${todayKey}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
