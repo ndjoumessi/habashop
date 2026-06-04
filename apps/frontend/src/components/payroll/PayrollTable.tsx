@@ -89,11 +89,11 @@ export default function PayrollTable(props: Props) {
                     <td>
                       <div style={{ display:'flex', gap:5 }}>
                         <button className="mini-btn gap-1" onClick={() => onView(r)}>
-                          <Eye size={11} /> Voir
+                          <Eye size={11} /> {lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Visualizza' : 'Voir'}
                         </button>
                         {(r.status === 'EN ATTENTE' || r.status === 'GÉNÉRÉ') && (
                           <button className="mini-btn gap-1" onClick={() => onMarkPaid(r.id)}>
-                            <Check size={11} /> Payer
+                            <Check size={11} /> {lang === 'en' ? 'Pay' : lang === 'es' ? 'Pagar' : lang === 'it' ? 'Paga' : 'Payer'}
                           </button>
                         )}
                         <button aria-label={lang === 'en' ? 'Download PDF' : lang === 'es' ? 'Descargar PDF' : lang === 'it' ? 'Scarica PDF' : 'Télécharger le PDF'} className="mini-btn gap-1" onClick={() => onPrintPDF(r)}>
