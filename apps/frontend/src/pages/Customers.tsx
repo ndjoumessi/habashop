@@ -27,9 +27,6 @@ export default function Customers() {
   const fmt = useFormatAmount()
   const abbr = useAbbrevAmount()
   const navigate = useNavigate()
-  // Mélange d'un token de couleur avec de la transparence (remplace l'ancien
-  // suffixe alpha hex `${hex}18` — INVALIDE sur var(), ex. `var(--p)18`).
-  const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
   const [customers, setCustomers] = useState<Customer[]>([])
 
   useEffect(() => {
@@ -225,11 +222,11 @@ export default function Customers() {
           { label: t('customers_avg_cart'),  value: fmt(avgCart),                hex: 'var(--acc)', icon: <ShoppingCart size={18} /> },
           { label: t('customers_retention'), value: `${retentionRate}%`,         hex: 'var(--acc3)', icon: <TrendingUp size={18} /> },
         ].map(k => (
-          <div key={k.label} className="kpi-card" style={{ position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${mix(k.hex, 9)},${mix(k.hex, 3)})`, border:`1px solid ${mix(k.hex, 16)}`, transition:'transform .2s,box-shadow .2s', cursor:'default' }}
-            onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='translateY(-2px)';el.style.boxShadow=`0 8px 24px ${mix(k.hex, 12)}`}}
+          <div key={k.label} className="kpi-card" style={{ position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${k.hex}18,${k.hex}06)`, border:`1px solid ${k.hex}28`, transition:'transform .2s,box-shadow .2s', cursor:'default' }}
+            onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='translateY(-2px)';el.style.boxShadow=`0 8px 24px ${k.hex}20`}}
             onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='';el.style.boxShadow=''}}>
-            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${mix(k.hex, 14)} 0%,transparent 70%)`, pointerEvents:'none' }} />
-            <div className="kpi-icon-w" style={{ color: k.hex, background: mix(k.hex, 12) }}>{k.icon}</div>
+            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
+            <div className="kpi-icon-w" style={{ color: k.hex, background:`${k.hex}20` }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
             <div className="kpi-value" style={{ color: k.hex }}>{k.value}</div>
           </div>

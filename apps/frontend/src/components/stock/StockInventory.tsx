@@ -58,9 +58,9 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
         <div className="panel-head">
           <span className="panel-title">{t('stock_title')}</span>
           <div className="flex items-center gap-2">
-            <div role="group" aria-label={i('Affichage', 'View', 'Vista', 'Visualizzazione')} style={{ display:'flex', background:'var(--bg3)', borderRadius:8, padding:2, border:'1px solid var(--border)' }}>
-              <button onClick={() => setStockView('grid')} aria-pressed={stockView === 'grid'} aria-label={i('Vue grille', 'Grid view', 'Vista de cuadrícula', 'Vista a griglia')} title={i('Vue grille', 'Grid view', 'Vista de cuadrícula', 'Vista a griglia')} style={{ padding:'4px 8px', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'grid' ? 'var(--p)' : 'transparent', color: stockView === 'grid' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }}><LayoutGrid size={13} /></button>
-              <button onClick={() => setStockView('list')} aria-pressed={stockView === 'list'} aria-label={i('Vue liste', 'List view', 'Vista de lista', 'Vista a elenco')} title={i('Vue liste', 'List view', 'Vista de lista', 'Vista a elenco')} style={{ padding:'4px 8px', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'list' ? 'var(--p)' : 'transparent', color: stockView === 'list' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }}><AlignJustify size={13} /></button>
+            <div style={{ display:'flex', background:'var(--bg3)', borderRadius:8, padding:2, border:'1px solid var(--border)' }}>
+              <button onClick={() => setStockView('grid')} style={{ padding:'4px 8px', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'grid' ? 'var(--p)' : 'transparent', color: stockView === 'grid' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }} title="Vue grille"><LayoutGrid size={13} /></button>
+              <button onClick={() => setStockView('list')} style={{ padding:'4px 8px', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'list' ? 'var(--p)' : 'transparent', color: stockView === 'list' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }} title="Vue liste"><AlignJustify size={13} /></button>
             </div>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
               exportCSV('habashop_stock',
@@ -120,7 +120,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
         <div className="flex flex-wrap gap-2 mb-4">
           <div className="search-wrap flex-1 min-w-40">
             <span className="search-icon"><Search size={13} /></span>
-            <input className="input pl-8 py-2 text-sm w-full" aria-label={i('Rechercher', 'Search', 'Buscar', 'Cerca')} placeholder={t('common_search') + '…'}
+            <input className="input pl-8 py-2 text-sm w-full" aria-label="Rechercher" placeholder={t('common_search') + '…'}
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="input py-2 text-sm w-auto" value={cat} onChange={e => setCat(e.target.value)}>
@@ -203,7 +203,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                         <Package size={11} /> {lang === 'en' ? 'Order' : lang === 'es' ? 'Pedir' : lang === 'it' ? 'Ordina' : 'Commander'}
                       </button>
                     )}
-                    <button className="mini-btn" style={{ cursor:'pointer' }} title={i('Voir', 'View', 'Ver', 'Vedi')} aria-label={`${i('Voir', 'View', 'Ver', 'Vedi')} ${p.name}`} onClick={() => {
+                    <button className="mini-btn" style={{ cursor:'pointer' }} title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'} onClick={() => {
                       const h = hydrate(p)
                       setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: h.buy, sell: h.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, supplierId: p.supplierId ?? '', image: p.name.match(/^\S+/)?.[0] ?? '📦', barcode: p.barcode ?? '', description: p.description ?? '', notes: p.notes ?? '', priceWholesale: h.priceWholesale, priceSemiWholesale: h.priceSemiWholesale, priceTiers: h.priceTiers }))
                       setEditingSku(p.sku); setEditingId(p._id ?? null); setModalTab('general'); setProductEditMode(false); setShowModal(true)
@@ -272,10 +272,10 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       <td>
                         <div className="flex gap-1.5">
                           {st.cls !== 'badge-green' && (
-                            <button className="btn btn-sm btn-ghost gap-1" title={i('Commander', 'Order', 'Pedir', 'Ordina')} aria-label={`${i('Commander', 'Order', 'Pedir', 'Ordina')} ${p.name}`} style={{ cursor:'pointer' }}
+                            <button className="btn btn-sm btn-ghost gap-1" title="Commander" style={{ cursor:'pointer' }}
                               onClick={() => navigate('/app/orders')}><Package size={12} /></button>
                           )}
-                          <button className="btn btn-sm btn-ghost" title={i('Voir', 'View', 'Ver', 'Vedi')} aria-label={`${i('Voir', 'View', 'Ver', 'Vedi')} ${p.name}`}
+                          <button className="btn btn-sm btn-ghost" title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'}
                             onClick={() => {
                               const h = hydrate(p)
                               setForm(f => ({ ...f,
