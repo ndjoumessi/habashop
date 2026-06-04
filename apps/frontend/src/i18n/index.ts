@@ -25,6 +25,10 @@ const fr: TranslationMap = {
   nav_goals: 'Objectifs & KPIs',
   nav_api_docs: 'API & Intégrations',
   nav_integrations: 'Intégrations API',
+  // Sections sidebar
+  nav_sec_main: 'Principal', nav_sec_mgmt: 'Gestion', nav_sec_hr: 'RH & Planning',
+  nav_sec_finance: 'Finance', nav_sec_growth: 'Croissance', nav_sec_system: 'Système',
+  nav_sec_admin: 'Administration',
 
   // KPIs (compat)
   kpi_sales_today: 'Ventes du jour',
@@ -678,6 +682,9 @@ const en: TranslationMap = {
   nav_goals: 'Goals & KPIs',
   nav_api_docs: 'API & Integrations',
   nav_integrations: 'API Integrations',
+  nav_sec_main: 'Main', nav_sec_mgmt: 'Management', nav_sec_hr: 'HR & Scheduling',
+  nav_sec_finance: 'Finance', nav_sec_growth: 'Growth', nav_sec_system: 'System',
+  nav_sec_admin: 'Administration',
 
   kpi_sales_today: "Today's Sales", kpi_monthly_revenue: 'Monthly Revenue',
   kpi_employees: 'Active Employees', kpi_stock: 'Items in Stock',
@@ -1029,6 +1036,9 @@ const es: TranslationMap = {
   nav_goals: 'Objetivos & KPIs',
   nav_api_docs: 'API & Integraciones',
   nav_integrations: 'Integraciones API',
+  nav_sec_main: 'Principal', nav_sec_mgmt: 'Gestión', nav_sec_hr: 'RR. HH. y Planificación',
+  nav_sec_finance: 'Finanzas', nav_sec_growth: 'Crecimiento', nav_sec_system: 'Sistema',
+  nav_sec_admin: 'Administración',
 
   kpi_sales_today: 'Ventas del día', kpi_monthly_revenue: 'Ingresos mensuales',
   kpi_employees: 'Empleados activos', kpi_stock: 'Artículos en stock',
@@ -1381,6 +1391,9 @@ const it: TranslationMap = {
   nav_goals: 'Obiettivi & KPI',
   nav_api_docs: 'API & Integrazioni',
   nav_integrations: 'Integrazioni API',
+  nav_sec_main: 'Principale', nav_sec_mgmt: 'Gestione', nav_sec_hr: 'HR e Pianificazione',
+  nav_sec_finance: 'Finanza', nav_sec_growth: 'Crescita', nav_sec_system: 'Sistema',
+  nav_sec_admin: 'Amministrazione',
 
   kpi_sales_today: 'Vendite oggi', kpi_monthly_revenue: 'Fatturato mensile',
   kpi_employees: 'Dipendenti attivi', kpi_stock: 'Articoli in stock',

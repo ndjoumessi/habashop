@@ -2,46 +2,46 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import { useConfig, t } from '@/stores/appStore'
 import {
-  LayoutDashboard, ShoppingCart, Package, Archive, Truck, Users,
+  LayoutDashboard, ShoppingCart, Archive, Truck, Users,
   UserCog, Calendar, Wallet, Receipt, TrendingUp, BarChart2,
   Megaphone, Bot, Target, Code2, Settings, ShieldCheck, Activity,
   Store, ChevronLeft, ChevronRight, Sun, Moon, LogOut,
-  ClipboardList, Wifi, Plug,
+  ClipboardList, Wifi, Plug, Lock,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-type NavSection = { section: string }
-type NavItem    = { path: string; key: string; Icon: LucideIcon; badge?: string; badgeTeal?: boolean }
+type NavSection = { sectionKey: string }
+type NavItem    = { path: string; key: string; Icon: LucideIcon; badge?: string; badgeTag?: boolean }
 type NavEntry   = NavSection | NavItem
 
 const NAV: NavEntry[] = [
-  { section: 'Principal' },
+  { sectionKey: 'nav_sec_main' },
   { path: '/app/dashboard', key: 'nav_dashboard', Icon: LayoutDashboard },
   { path: '/app/pos',       key: 'nav_pos',       Icon: ShoppingCart },
   { path: '/app/stock',     key: 'nav_stock',     Icon: Archive },
-  { section: 'Gestion' },
+  { sectionKey: 'nav_sec_mgmt' },
   { path: '/app/customers', key: 'nav_customers', Icon: Users },
   { path: '/app/suppliers', key: 'nav_suppliers', Icon: Truck },
   { path: '/app/orders',    key: 'nav_orders',    Icon: ClipboardList, badge: '4' },
-  { section: 'RH & Planning' },
+  { sectionKey: 'nav_sec_hr' },
   { path: '/app/hr',        key: 'nav_hr',        Icon: UserCog },
   { path: '/app/planning',  key: 'nav_planning',  Icon: Calendar },
   { path: '/app/payroll',   key: 'nav_payroll',   Icon: Wallet },
-  { section: 'Finance' },
+  { sectionKey: 'nav_sec_finance' },
   { path: '/app/expenses',  key: 'nav_expenses',  Icon: Receipt },
   { path: '/app/reports',   key: 'nav_reports',   Icon: BarChart2 },
   { path: '/app/forecasts', key: 'nav_forecasts', Icon: TrendingUp },
   { path: '/app/goals',     key: 'nav_goals',     Icon: Target },
-  { section: 'Croissance' },
+  { sectionKey: 'nav_sec_growth' },
   { path: '/app/marketing', key: 'nav_marketing', Icon: Megaphone },
-  { path: '/app/ai',        key: 'nav_ai',        Icon: Bot, badge: 'AI' },
-  { section: 'Système' },
+  { path: '/app/ai',        key: 'nav_ai',        Icon: Bot, badge: 'AI', badgeTag: true },
+  { sectionKey: 'nav_sec_system' },
   { path: '/app/settings',  key: 'nav_settings',  Icon: Settings },
   { path: '/app/integrations',  key: 'nav_integrations',  Icon: Plug  },
   { path: '/app/api-docs',      key: 'nav_api_docs',      Icon: Code2 },
-  { section: 'Administration' },
+  { sectionKey: 'nav_sec_admin' },
   { path: '/app/users',     key: 'nav_users',     Icon: ShieldCheck },
-  { path: '/app/activity',  key: 'nav_activity',  Icon: Activity, badge: '12', badgeTeal: true },
+  { path: '/app/activity',  key: 'nav_activity',  Icon: Activity, badge: '12' },
 ]
 
 export default function Sidebar() {
@@ -50,40 +50,40 @@ export default function Sidebar() {
   void lang
   const navigate = useNavigate()
   const collapsed = sidebarCollapsed
+  const canPos = canAccess(user?.role, 'pos')
 
   return (
     <div
       id="sidebar"
       style={{
-        width: collapsed ? 60 : 'var(--sidebar)',
+        width: collapsed ? 64 : 'var(--sidebar)',
         transition: 'width .2s var(--ease)',
         overflow: 'hidden',
         flexShrink: 0,
       }}
     >
-      {/* Logo */}
+      {/* Brand header */}
       <div
         className="sidebar-logo"
         style={{ justifyContent: collapsed ? 'center' : undefined, paddingLeft: collapsed ? 0 : undefined }}
       >
         <div style={{
-          width: 36, height: 36, borderRadius: 11, flexShrink: 0,
-          background: 'linear-gradient(135deg,#6C47FF,#A991FF)',
+          width: 36, height: 36, borderRadius: 'var(--r-md)', flexShrink: 0,
+          background: 'var(--grad-p)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 900, color: '#fff', fontSize: 17,
-          boxShadow: '0 4px 14px rgba(108,71,255,.45)',
-          animation: 'none',
+          fontWeight: 'var(--fw-bold)', color: '#fff', fontSize: 17,
+          boxShadow: 'var(--sh-p)',
         }}>H</div>
         {!collapsed && (
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{
-              fontSize: 16, fontWeight: 900, letterSpacing: '-.3px',
-              background: 'linear-gradient(135deg,#A991FF,#7C6FF0)',
+              fontSize: 16, fontWeight: 'var(--fw-bold)', letterSpacing: '-.3px',
+              background: 'linear-gradient(135deg,var(--p2),var(--p))',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}>HabaShop</div>
             <div style={{
-              fontSize: 11, color: 'var(--text4)', fontWeight: 600,
+              fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontWeight: 'var(--fw-semibold)',
               textTransform: 'uppercase', letterSpacing: '.5px',
             }}>
               {lang === 'fr' ? 'Gestion commerciale'
@@ -95,35 +95,60 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Caisse ouverte indicator */}
-      {cashierOpen && !collapsed && (
-        <div style={{
-          margin: '8px 12px', padding: '7px 12px', borderRadius: 10,
-          background: 'rgba(0,208,132,.08)', border: '1px solid rgba(0,208,132,.2)',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)', animation: 'pulse 2s infinite', flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)' }}>
-            {lang === 'en' ? 'Till open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
+      {/* Caisse — état proéminent (action centrale du commerçant) */}
+      {canPos && cashierOpen && (
+        collapsed ? (
+          <div title={lang === 'en' ? 'Till open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
+            style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
+            <div style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 8px var(--acc2)', animation: 'pulse 2s infinite' }} />
+          </div>
+        ) : (
+          <div style={{
+            margin: '10px 12px 4px', padding: '8px 12px', borderRadius: 'var(--r-md)',
+            background: 'var(--c-green-bg2)', border: '1px solid var(--c-green-border)',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)', animation: 'pulse 2s infinite', flexShrink: 0 }} />
+            <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)' }}>
+              {lang === 'en' ? 'Till open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
+            </span>
+            <button
+              onClick={() => navigate('/app/pos')}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--acc2)', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', fontFamily: 'var(--font)', padding: 0 }}
+            >
+              {lang === 'en' ? 'Close →' : lang === 'es' ? 'Cerrar →' : lang === 'it' ? 'Chiudi →' : 'Fermer →'}
+            </button>
+          </div>
+        )
+      )}
+      {canPos && !cashierOpen && !collapsed && (
+        <button
+          onClick={() => navigate('/app/pos')}
+          style={{
+            margin: '10px 12px 4px', padding: '8px 12px', borderRadius: 'var(--r-md)', width: 'calc(100% - 24px)',
+            background: 'var(--bg3)', border: '1px solid var(--border)', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font)',
+          }}
+        >
+          <Lock size={12} style={{ color: 'var(--text4)', flexShrink: 0 }} />
+          <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-semibold)', color: 'var(--text3)' }}>
+            {lang === 'en' ? 'Till closed' : lang === 'es' ? 'Caja cerrada' : lang === 'it' ? 'Cassa chiusa' : 'Caisse fermée'}
           </span>
-          <button
-            onClick={() => navigate('/app/pos')}
-            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--acc2)', fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--font)', padding: 0 }}
-          >
-            {lang === 'en' ? 'Close →' : lang === 'es' ? 'Cerrar →' : lang === 'it' ? 'Chiudi →' : 'Fermer →'}
-          </button>
-        </div>
+          <span style={{ marginLeft: 'auto', fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-bold)', color: 'var(--p3)' }}>
+            {lang === 'en' ? 'Open →' : lang === 'es' ? 'Abrir →' : lang === 'it' ? 'Apri →' : 'Ouvrir →'}
+          </span>
+        </button>
       )}
 
       {/* Navigation (filtered by role) */}
-      <nav role="navigation" aria-label={lang === 'en' ? 'Main navigation' : lang === 'es' ? 'Navegación principal' : lang === 'it' ? 'Navigazione principale' : 'Navigation principale'} style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
+      <nav role="navigation" aria-label={lang === 'en' ? 'Main navigation' : lang === 'es' ? 'Navegación principal' : lang === 'it' ? 'Navigazione principale' : 'Navigation principale'} style={{ flex: 1, overflowY: 'auto', padding: '6px 0 8px' }}>
         {(() => {
           // Walk NAV: only emit a section header if at least one following item
           // (before the next section) is allowed by the current role.
           const out: NavEntry[] = []
           let pendingSection: NavSection | null = null
           for (const entry of NAV) {
-            if ('section' in entry) { pendingSection = entry; continue }
+            if ('sectionKey' in entry) { pendingSection = entry; continue }
             const slug = entry.path.split('/').pop() || ''
             if (!canAccess(user?.role, slug)) continue
             if (pendingSection) { out.push(pendingSection); pendingSection = null }
@@ -131,40 +156,34 @@ export default function Sidebar() {
           }
           return out
         })().map((item, i) => {
-          if ('section' in item) {
-            return collapsed ? null : (
-              <div key={`s-${i}`} className="nav-section" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>{item.section}</span>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              </div>
-            )
+          if ('sectionKey' in item) {
+            // Mode réduit : pas de libellé → simple filet séparateur (sauf tout en haut)
+            return collapsed
+              ? (i === 0 ? null : <div key={`s-${i}`} className="nav-section-rule" />)
+              : (
+                <div key={`s-${i}`} className="nav-section">
+                  <span>{t(item.sectionKey)}</span>
+                  <div className="nav-section-line" />
+                </div>
+              )
           }
           const { Icon } = item
           return (
             <NavLink
               key={item.path}
               to={item.path}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}${collapsed ? ' collapsed' : ''}`}
               aria-label={t(item.key)}
               title={collapsed ? t(item.key) : undefined}
-              style={collapsed ? { justifyContent: 'center', padding: '8px 0', width: '100%', margin: '1px 0' } : undefined}
             >
               <div className="nav-icon-wrap">
-                <Icon size={15} />
+                <Icon size={16} />
               </div>
-              {!collapsed && <span style={{ flex: 1 }}>{t(item.key)}</span>}
+              {!collapsed && <span className="nav-label">{t(item.key)}</span>}
               {!collapsed && item.badge && (
-                <span
-                  className="nav-badge"
-                  style={item.badgeTeal
-                    ? { background: 'rgba(108,71,255,.2)', color: 'var(--p3)', boxShadow: 'none' }
-                    : item.badge === 'AI'
-                      ? { background: 'linear-gradient(135deg,#6C47FF,#8B6FFF)', color: '#fff' }
-                      : undefined}
-                >
-                  {item.badge}
-                </span>
+                <span className={`nav-badge${item.badgeTag ? ' tag' : ''}`}>{item.badge}</span>
               )}
+              {collapsed && item.badge && <span className="nav-dot" />}
             </NavLink>
           )
         })}
@@ -173,20 +192,15 @@ export default function Sidebar() {
         {user?.role === 'SUPER_ADMIN' && (
           <button
             type="button"
-            className="nav-item"
+            className={`nav-item${collapsed ? ' collapsed' : ''}`}
             onClick={() => navigate('/admin')}
-            style={{
-              background: 'none', border: '1px solid transparent', width: collapsed ? '100%' : 'calc(100% - 16px)',
-              cursor: 'pointer',
-              ...(collapsed ? { justifyContent: 'center', padding: '8px 0', margin: '1px 0' } : {}),
-            }}
             title={collapsed ? 'Admin Panel' : undefined}
             aria-label="Admin Panel"
           >
             <div className="nav-icon-wrap">
-              <Store size={15} />
+              <Store size={16} />
             </div>
-            {!collapsed && <span style={{ flex: 1 }}>Admin Panel</span>}
+            {!collapsed && <span className="nav-label">Admin Panel</span>}
           </button>
         )}
       </nav>
@@ -200,10 +214,10 @@ export default function Sidebar() {
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <div style={{
             width: 34, height: 34, borderRadius: '50%',
-            background: 'linear-gradient(135deg,#6C47FF,#A991FF)',
+            background: 'var(--grad-p)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 'var(--fw-bold)', color: '#fff', fontSize: 13,
-            boxShadow: '0 2px 8px rgba(108,71,255,.35)',
+            boxShadow: 'var(--sh-p)',
           }}>
             {user?.name?.charAt(0)?.toUpperCase() || 'N'}
           </div>
@@ -221,14 +235,14 @@ export default function Sidebar() {
             <div className="user-name">{user?.name || 'Nelson'}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
               <Wifi size={9} style={{ color: 'var(--acc2)' }} />
-              <span style={{ fontSize: 11, color: 'var(--acc2)', fontWeight: 600 }}>
+              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--acc2)', fontWeight: 'var(--fw-semibold)' }}>
                 {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
               </span>
             </div>
             {/* Identifiant de build : permet de vérifier d'un coup d'œil qu'on est
                 bien sur la dernière version (et non une copie en cache). */}
             <div title={lang === 'en' ? 'Build version' : 'Version du build'}
-              style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {__BUILD_ID__}
             </div>
           </div>
