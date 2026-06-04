@@ -44,6 +44,7 @@ export interface SaleBody {
   items?: any[]; paymentMode?: string; total?: number
   discount?: { amount?: number; type?: string }
   customerId?: string | null
+  idempotencyKey?: string | null
 }
 export interface OrderBody {
   supplierId?: string; items?: any[]; expectedAt?: string; notes?: string; status?: string

@@ -191,6 +191,10 @@ model Sale {
   refundReason   String?
   restocked      Boolean?  // null tant que non remboursé ; true = articles remis en stock, false = non
 
+  // ── Idempotence (résilience réseau) : clé envoyée par le client par tentative ──
+  // Nullable = rétro-compat (ventes existantes / clients sans clé). Unicité scopée tenant.
+  idempotencyKey String?
+
   tenant  Tenant     @relation(fields: [tenantId], references: [id])
   cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
   items   SaleItem[]
@@ -199,6 +203,7 @@ model Sale {
   @@index([tenantId, createdAt])
   @@index([tenantId, paymentMode])
   @@index([tenantId, status])
+  @@unique([tenantId, idempotencyKey])
 }
 
 model SaleItem {

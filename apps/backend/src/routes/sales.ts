@@ -39,6 +39,18 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'Le total ne peut pas être négatif' })
     }
 
+    // ── Idempotence : clé envoyée par le client (body ou header Idempotency-Key) ──
+    // Pas de clé → comportement historique inchangé (rétro-compat).
+    const idempotencyKey =
+      String((request.body as SaleBody)?.idempotencyKey ?? request.headers['idempotency-key'] ?? '').trim() || null
+
+    // Renvoi en double (retry/resync) : la vente existe déjà → on la renvoie SANS
+    // re-créer (pas de re-décrément stock ni re-créditage fidélité).
+    if (idempotencyKey) {
+      const existing = await prisma.sale.findFirst({ where: { tenantId, idempotencyKey } })
+      if (existing) return existing
+    }
+
     // Pré-fetch des produits pour recalculer prix unitaire côté backend (sécurité tier/promo)
     const productIds = items.map((i: any) => i.productId)
     const productsList = await prisma.product.findMany({
@@ -51,7 +63,9 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     const tenantCfg = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { enableLoyalty: true } })
     const loyaltyOn = !!tenantCfg?.enableLoyalty
 
-    const newSale = await prisma.$transaction(async (tx) => {
+    let newSale
+    try {
+      newSale = await prisma.$transaction(async (tx) => {
       const newSale = await tx.sale.create({
         data: {
           tenantId,
@@ -61,6 +75,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
           discountAmount: discount?.amount ?? 0,
           discountType: discount?.type ?? null,
           customerId: customerId ?? null,
+          idempotencyKey,
         },
       })
 
@@ -123,7 +138,16 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       }
 
       return newSale
-    })
+      })
+    } catch (e: any) {
+      // Course concurrente : même clé insérée en parallèle → violation d'unicité (P2002).
+      // L'appel perdant récupère et renvoie la vente gagnante → 1 SEULE vente créée.
+      if (idempotencyKey && e?.code === 'P2002') {
+        const existing = await prisma.sale.findFirst({ where: { tenantId, idempotencyKey } })
+        if (existing) return existing
+      }
+      throw e
+    }
 
     // Les agrégats analytics dépendent des ventes → on purge le cache du tenant.
     invalidateTenantCache(tenantId).catch(() => {})
