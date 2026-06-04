@@ -55,7 +55,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
         <div className="table-wrap mb-4">
           <table>
             <thead>
-              <tr><th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th><th scope="col">{i('Qté', 'Qty', 'Cant.', 'Qtà')}</th><th scope="col">{i('Unité', 'Unit', 'Unidad', 'Unità')}</th><th scope="col">{i('PU', 'UP', 'PU', 'PU')}</th><th scope="col">Total</th></tr>
+              <tr><th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th><th scope="col">{i('Qté', 'Qty', 'Cant.', 'Qtà')}</th><th scope="col">{i('Unité', 'Unit', 'Unidad', 'Unità')}</th><th scope="col">{i('PU', 'UP', 'PU', 'PU')}</th><th scope="col">{i('Total', 'Total', 'Total', 'Totale')}</th></tr>
             </thead>
             <tbody>
               {order.items.map((item, i) => (
@@ -68,7 +68,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
                 </tr>
               ))}
               <tr style={{ background: 'var(--bg3)' }}>
-                <td colSpan={4} className="text-xs font-bold text-right px-4 py-2">TOTAL</td>
+                <td colSpan={4} className="text-xs font-bold text-right px-4 py-2">{i('TOTAL', 'TOTAL', 'TOTAL', 'TOTALE')}</td>
                 <td className="td-num font-black" style={{ color: 'var(--p2)' }}>{fmt(order.total)}</td>
               </tr>
             </tbody>
