@@ -192,6 +192,17 @@ export default function SalesScreen() {
                   {fmtDateTime(item.createdAt)} · {item.items?.length ?? 0} {i('articles', 'items', 'artículos', 'articoli')}
                 </Text>
               </View>
+              {/* Action inline (parité web : bouton « Rembourser » directement dans la
+                  ligne, visible manager/admin sur vente non remboursée). */}
+              {mayRefund && !refunded && (
+                <Pressable style={s.rowRefundBtn} onPress={() => setRefundTarget(item)}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel={i('Rembourser la vente', 'Refund sale', 'Reembolsar venta', 'Rimborsa vendita')}>
+                  <Ionicons name="refresh" size={14} color={C.danger} />
+                  <Text style={s.rowRefundTxt}>{i('Rembourser', 'Refund', 'Reembolsar', 'Rimborsa')}</Text>
+                </Pressable>
+              )}
               <Ionicons name="chevron-forward" size={16} color={C.text3} />
             </Pressable>
             )
@@ -314,6 +325,8 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   rowTotal: { fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
   rowSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   totalRefunded: { textDecorationLine: 'line-through', color: C.text3 },
+  rowRefundBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: Spacing.sm, borderRadius: BorderRadius.md, backgroundColor: withAlpha(C.danger, 0.1), borderWidth: 1, borderColor: withAlpha(C.danger, 0.25) },
+  rowRefundTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold', color: C.danger },
   badge: { backgroundColor: withAlpha(C.danger, 0.12), borderWidth: 1, borderColor: withAlpha(C.danger, 0.3), borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   badgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.danger },
 
