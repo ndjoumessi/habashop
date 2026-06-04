@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom'
 import {
   TrendingUp, TrendingDown, Package, Users, DollarSign, ShoppingCart,
   ShoppingBag, Download, Plus, AlertTriangle, CreditCard, Clock,
-  BarChart2, Activity, Target, Zap,
+  BarChart2, Activity, Target, Zap, PackageX,
 } from 'lucide-react'
-import { dashboardApi } from '@/lib/api'
+import { dashboardApi, reportsApi } from '@/lib/api'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { normCat } from '@/utils/normCat'
 // Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
@@ -134,6 +134,13 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [catData, setCatData] = useState<any[]>([])
   const [reportPeriod, setReportPeriod] = useState('7days')
+  // Résumé actionnable (réappro / dormants) — non bloquant, renvoie vers Rapports.
+  const [inv, setInv] = useState<{ reorder: number; dormant: number } | null>(null)
+  useEffect(() => {
+    reportsApi.inventory()
+      .then(d => setInv({ reorder: d.reorder.length, dormant: d.dormant.length }))
+      .catch(() => {})
+  }, [])
   const catTotal = catData.reduce((s, d) => s + (d.value ?? 0), 0)
   // % par catégorie : diviseur = CA total toutes catégories (y compris « Autre ») ;
   // arrondi Math.round puis correction du dernier slice → somme garantie = 100 %.
@@ -276,6 +283,37 @@ export default function Dashboard() {
             {lang === 'en' ? '+ Add products' : lang === 'es' ? '+ Agregar productos' : lang === 'it' ? '+ Aggiungi prodotti' : '+ Ajouter des produits'}
           </button>
         </div>
+      )}
+
+      {/* Résumé actionnable → Rapports (onglet stock) */}
+      {inv && (inv.reorder > 0 || inv.dormant > 0) && (
+        <button
+          onClick={() => navigate('/app/reports')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 14, width: '100%', marginBottom: 14,
+            background: 'var(--grad-card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+            padding: '12px 16px', cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left',
+          }}
+        >
+          {inv.reorder > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--text2)' }}>
+              <AlertTriangle size={15} style={{ color: 'var(--danger)' }} />
+              <strong style={{ color: 'var(--text)' }}>{inv.reorder}</strong>
+              {lang === 'en' ? 'to reorder' : lang === 'es' ? 'para reabastecer' : lang === 'it' ? 'da riordinare' : 'à réapprovisionner'}
+            </span>
+          )}
+          {inv.reorder > 0 && inv.dormant > 0 && <span style={{ color: 'var(--border2)' }}>·</span>}
+          {inv.dormant > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--text2)' }}>
+              <PackageX size={15} style={{ color: 'var(--warn)' }} />
+              <strong style={{ color: 'var(--text)' }}>{inv.dormant}</strong>
+              {lang === 'en' ? 'dormant' : lang === 'es' ? 'inactivos' : lang === 'it' ? 'dormienti' : 'dormants'}
+            </span>
+          )}
+          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--p3)' }}>
+            {lang === 'en' ? 'View report →' : lang === 'es' ? 'Ver informe →' : lang === 'it' ? 'Vedi report →' : 'Voir le rapport →'}
+          </span>
+        </button>
       )}
 
       {/* KPI cards */}

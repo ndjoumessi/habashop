@@ -133,6 +133,117 @@ export async function buildAccountingReport(
   })
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Rapports actionnables v1 — Réappro & Dormants (helpers PURS, testables sans DB)
+// ─────────────────────────────────────────────────────────────────────────────
+export const DORMANT_DAYS = 60   // fenêtre « aucune vente » (constante ajustable)
+export const REORDER_VELOCITY_DAYS = 30
+
+export interface ProductLite {
+  id: string; name: string; category: string
+  stockQty: number; stockMin: number; buyPrice: number
+}
+export interface ReorderItem {
+  id: string; name: string; category: string
+  stock: number; threshold: number; velocity30d: number; suggestedQty: number
+}
+export interface DormantItem {
+  id: string; name: string; category: string
+  stock: number; buyPrice: number; immobilizedValue: number
+  lastSale: string | null; daysSinceSale: number | null
+}
+
+/**
+ * À réapprovisionner : MÊME critère que le bandeau Stock (stockQty ≤ stockMin),
+ * étendu serveur — classé par vélocité 30j décroissante (top vendeurs en rupture
+ * d'abord). suggestedQty = couvrir 30j à la vélocité actuelle − stock (SUGGESTION).
+ */
+export function computeReorder(products: ProductLite[], velocity30d: Map<string, number>): ReorderItem[] {
+  return products
+    .filter(p => p.stockQty <= p.stockMin)
+    .map(p => {
+      const velocity = velocity30d.get(p.id) ?? 0
+      return {
+        id: p.id, name: p.name, category: p.category,
+        stock: p.stockQty, threshold: p.stockMin, velocity30d: velocity,
+        suggestedQty: Math.max(0, velocity - p.stockQty),
+      }
+    })
+    .sort((a, b) => b.velocity30d - a.velocity30d || a.stock - b.stock)
+}
+
+/**
+ * Dormants : AUCUNE vente sur DORMANT_DAYS jours ET stock > 0. Triés par valeur
+ * immobilisée (stock × coût d'achat) décroissante.
+ */
+export function computeDormant(
+  products: ProductLite[],
+  soldRecent: Set<string>,
+  lastSale: Map<string, string | null>,
+  now: Date,
+): DormantItem[] {
+  return products
+    .filter(p => p.stockQty > 0 && !soldRecent.has(p.id))
+    .map(p => {
+      const last = lastSale.get(p.id) ?? null
+      const daysSinceSale = last ? Math.floor((now.getTime() - new Date(last).getTime()) / 86_400_000) : null
+      return {
+        id: p.id, name: p.name, category: p.category,
+        stock: p.stockQty, buyPrice: p.buyPrice ?? 0,
+        immobilizedValue: p.stockQty * (p.buyPrice ?? 0),
+        lastSale: last, daysSinceSale,
+      }
+    })
+    .sort((a, b) => b.immobilizedValue - a.immobilizedValue)
+}
+
+/** Construit le rapport inventaire (réappro + dormants) pour un tenant — lecture seule. */
+export async function buildInventoryInsights(db: any, tenantId: string, now: Date) {
+  const d30 = new Date(now.getTime() - REORDER_VELOCITY_DAYS * 86_400_000)
+  const d60 = new Date(now.getTime() - DORMANT_DAYS * 86_400_000)
+
+  const products: ProductLite[] = await db.product.findMany({
+    where: { tenantId, isActive: true, deletedAt: null },
+    select: { id: true, name: true, category: true, stockQty: true, stockMin: true, buyPrice: true },
+  })
+
+  // Vélocité 30j (unités vendues), ventes remboursées exclues.
+  const vel = await db.saleItem.groupBy({
+    by: ['productId'],
+    where: { sale: { tenantId, status: { not: 'refunded' }, createdAt: { gte: d30 } } },
+    _sum: { qty: true },
+  }).catch(() => [] as { productId: string; _sum: { qty: number | null } }[])
+  const velocity30d = new Map<string, number>(vel.map((v: any) => [v.productId, v._sum.qty ?? 0]))
+
+  // Produits ayant une vente dans les 60 derniers jours (→ NON dormants).
+  const recent = await db.saleItem.findMany({
+    where: { sale: { tenantId, status: { not: 'refunded' }, createdAt: { gte: d60 } } },
+    select: { productId: true }, distinct: ['productId'],
+  }).catch(() => [] as { productId: string }[])
+  const soldRecent = new Set<string>(recent.map((r: any) => r.productId))
+
+  // Dernière vente des candidats dormants (parmi toutes leurs ventes).
+  const dormantIds = products.filter(p => p.stockQty > 0 && !soldRecent.has(p.id)).map(p => p.id)
+  const lastSale = new Map<string, string | null>()
+  if (dormantIds.length) {
+    const items = await db.saleItem.findMany({
+      where: { productId: { in: dormantIds }, sale: { tenantId, status: { not: 'refunded' } } },
+      select: { productId: true, sale: { select: { createdAt: true } } },
+      orderBy: { sale: { createdAt: 'desc' } },
+    }).catch(() => [] as { productId: string; sale: { createdAt: Date } }[])
+    for (const it of items) {
+      if (!lastSale.has(it.productId)) lastSale.set(it.productId, new Date(it.sale.createdAt).toISOString())
+    }
+  }
+
+  return {
+    reorder: computeReorder(products, velocity30d),
+    dormant: computeDormant(products, soldRecent, lastSale, now),
+    dormantDays: DORMANT_DAYS,
+    generatedAt: now.toISOString(),
+  }
+}
+
 export async function reportsRoutes(app: any) {
   // GET /api/reports/accounting?month=YYYY-MM — rapport comptable mensuel du tenant courant.
   app.get('/api/reports/accounting', { preHandler: authenticate }, async (request: any, reply: any) => {
@@ -152,5 +263,13 @@ export async function reportsRoutes(app: any) {
       ttl,
       () => buildAccountingReport(prisma, tenantId, meta, now),
     )
+  })
+
+  // GET /api/reports/inventory — réappro + dormants du tenant courant (à la demande, lecture seule).
+  app.get('/api/reports/inventory', { preHandler: authenticate }, async (request: any) => {
+    const tenantId = request.tenantId as string  // scope STRICT depuis le JWT
+    const now = new Date()
+    // Cache court (5 min) : stock/ventes bougent, mais évite le recalcul à chaque ouverture d'onglet.
+    return getCached(`reports:inventory:${tenantId}`, 300, () => buildInventoryInsights(prisma, tenantId, now))
   })
 }

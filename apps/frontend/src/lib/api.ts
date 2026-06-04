@@ -184,10 +184,19 @@ export const dashboardApi = {
     api.get<any>(`/api/reports/sales?period=${period}`),
 }
 
+export interface InventoryInsights {
+  reorder: { id: string; name: string; category: string; stock: number; threshold: number; velocity30d: number; suggestedQty: number }[]
+  dormant: { id: string; name: string; category: string; stock: number; buyPrice: number; immobilizedValue: number; lastSale: string | null; daysSinceSale: number | null }[]
+  dormantDays: number
+  generatedAt: string
+}
+
 export const reportsApi = {
   // Rapport comptable mensuel. month = 'YYYY-MM' (défaut backend = mois courant).
   accounting: (month?: string) =>
     api.get<AccountingReport>(`/api/reports/accounting${month ? `?month=${month}` : ''}`),
+  // Rapports actionnables : à réapprovisionner + produits dormants (tenant courant).
+  inventory: () => api.get<InventoryInsights>('/api/reports/inventory'),
 }
 
 export interface AccountingReport {

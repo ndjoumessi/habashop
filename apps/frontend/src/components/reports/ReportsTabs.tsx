@@ -3,6 +3,7 @@ import { Trophy, Receipt, CreditCard, Package, Users, TrendingUp, Wallet, Dollar
 import { t } from '@/stores/appStore'
 import { useThemeColor } from '@/hooks/useThemeColor'
 import { RADIAN } from '@/components/reports/reportsShared'
+import InventoryInsights from '@/components/reports/InventoryInsights'
 
 interface ReportsTabsProps {
   reportTab: 'ventes' | 'stock' | 'clients' | 'finance' | 'rh'
@@ -307,6 +308,9 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
 
       {/* ── Tab: Stock ── */}
       {reportTab === 'stock' && (
+        <>
+        {/* Rapports actionnables v1 — réappro + dormants (vraies données serveur) */}
+        <InventoryInsights fmt={fmt} lang={lang} />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {[
             { label: lang === 'en' ? 'Items in stock' : lang === 'es' ? 'Artículos en stock' : lang === 'it' ? 'Articoli in stock' : 'Articles en stock',   value:'142',        color:'var(--acc2)', sub: lang === 'en' ? 'active SKUs' : lang === 'es' ? 'SKU activos' : lang === 'it' ? 'SKU attivi' : 'références actives'   },
@@ -341,6 +345,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
             ))}
           </div>
         </div>
+        </>
       )}
 
       {/* ── Tab: Clients ── */}
