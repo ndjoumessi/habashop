@@ -107,7 +107,7 @@ export async function buildAccountingReport(
 ): Promise<AccountingReport> {
   const [salesAgg, expenses, payrollAgg, tenant] = await Promise.all([
     db.sale.aggregate({
-      where: { tenantId, createdAt: { gte: meta.start, lt: meta.end } },
+      where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: meta.start, lt: meta.end } },
       _sum: { total: true },
       _count: { id: true },
     }),

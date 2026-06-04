@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History } from 'lucide-react'
+import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History, RotateCcw } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
 import { CATS, catLabel, type PosProduct, type CartItem } from '@/components/pos/posShared'
@@ -20,12 +20,14 @@ interface POSProductGridProps {
   posShowStockOnTile: boolean
   loadingHistory: boolean
   salesHistory: any[]
+  canRefund: boolean
+  onRefundClick: (sale: any) => void
   isMobile: boolean; mobileView: string
   totalProducts: number; loadingProducts: boolean
   navigate: (path: string, opts?: any) => void
 }
 
-export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
   return (
         <div style={{
           flex: 1,
@@ -347,14 +349,21 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                     const date = new Date(sale.createdAt)
                     const timeAgo = Math.round((Date.now() - date.getTime()) / 60000)
                     const timeLabel = timeAgo < 60 ? `${timeAgo} min` : `${Math.round(timeAgo / 60)}h`
+                    const refunded = sale.status === 'refunded'
                     return (
                       <div key={sale.id ?? i} style={{
-                        background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, padding:'12px 14px',
+                        background:'var(--bg3)', border:`1px solid ${refunded ? 'var(--c-red-border)' : 'var(--border)'}`, borderRadius:12, padding:'12px 14px',
+                        opacity: refunded ? .82 : 1,
                       }}>
                         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
                           <div>
-                            <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:2, display:'flex', alignItems:'center', gap:5 }}>
+                            <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:2, display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
                               <CreditCard size={13} /> {lang === 'fr' ? 'Vente' : lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : 'Vendita'} #{String(sale.id).slice(-6).toUpperCase()}
+                              {refunded && (
+                                <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-red-bg)', color:'var(--danger)', border:'1px solid var(--c-red-border)' }}>
+                                  <RotateCcw size={10} /> {lang === 'en' ? 'Refunded' : lang === 'es' ? 'Reembolsada' : lang === 'it' ? 'Rimborsata' : 'Remboursé'}
+                                </span>
+                              )}
                             </div>
                             <div style={{ fontSize:11, color:'var(--text3)' }}>
                               {date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'it-IT')}
@@ -363,7 +372,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                             </div>
                           </div>
                           <div style={{ textAlign:'right' }}>
-                            <div style={{ fontSize:15, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>{fmt(sale.total)}</div>
+                            <div style={{ fontSize:15, fontWeight:900, color: refunded ? 'var(--text4)' : 'var(--p2)', fontFamily:'var(--mono)', textDecoration: refunded ? 'line-through' : 'none' }}>{fmt(sale.total)}</div>
                             <span style={{
                               fontSize:11, fontWeight:'var(--fw-semibold)', borderRadius:20, padding:'2px 8px',
                               background: sale.paymentMode === 'cash' ? 'rgba(14,196,126,.12)' : sale.paymentMode === 'card' ? 'rgba(91,78,232,.12)' : 'rgba(240,165,0,.12)',
@@ -390,6 +399,16 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                           <div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>
                             +{sale.items.length - 3} {lang === 'en' ? 'more items' : lang === 'es' ? 'otros artículos' : lang === 'it' ? 'altri articoli' : 'autres articles'}
                           </div>
+                        )}
+                        {/* Action remboursement — manager/admin uniquement, ventes non remboursées */}
+                        {canRefund && !refunded && (
+                          <button type="button" onClick={() => onRefundClick(sale)}
+                            style={{ marginTop:10, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                              background:'transparent', border:'1px solid var(--c-red-border)', color:'var(--danger)',
+                              borderRadius:'var(--r-md)', padding:'7px 12px', fontSize:12, fontWeight:'var(--fw-semibold)',
+                              fontFamily:'var(--font)', cursor:'pointer' }}>
+                            <RotateCcw size={13} /> {lang === 'en' ? 'Refund' : lang === 'es' ? 'Reembolsar' : lang === 'it' ? 'Rimborsa' : 'Rembourser'}
+                          </button>
                         )}
                       </div>
                     )

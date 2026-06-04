@@ -14,12 +14,12 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       const [salesToday, salesMonth, totalProducts, activeEmployees, pendingOrders, allProducts] =
         await Promise.all([
           prisma.sale.aggregate({
-            where: { tenantId, createdAt: { gte: today } },
+            where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: today } },
             _sum: { total: true },
             _count: true,
           }),
           prisma.sale.aggregate({
-            where: { tenantId, createdAt: { gte: monthStart } },
+            where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: monthStart } },
             _sum: { total: true },
             _count: true,
           }),
@@ -38,7 +38,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       const [topProductsRaw, stockAlertsRaw, recentActivity, categoryItems] = await Promise.all([
         prisma.saleItem.groupBy({
           by: ['productId'],
-          where: { sale: { tenantId, createdAt: { gte: monthStart } } },
+          where: { sale: { tenantId, status: { not: 'refunded' }, createdAt: { gte: monthStart } } },
           _sum: { total: true },
           orderBy: { _sum: { total: 'desc' } },
           take: 5,
@@ -56,7 +56,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
           select: { id: true, total: true, paymentMode: true, createdAt: true },
         }).catch(() => []),
         prisma.saleItem.findMany({
-          where: { sale: { tenantId, createdAt: { gte: monthStart } } },
+          where: { sale: { tenantId, status: { not: 'refunded' }, createdAt: { gte: monthStart } } },
           select: { total: true, product: { select: { category: true } } },
         }).catch(() => []),
       ])
@@ -107,7 +107,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       else from.setFullYear(now.getFullYear(), 0, 1)
 
       const sales = await prisma.sale.findMany({
-        where: { tenantId, createdAt: { gte: from } },
+        where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: from } },
         include: { items: { include: { product: true } } },
         orderBy: { createdAt: 'desc' },
       })
@@ -129,8 +129,8 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       today.setHours(0, 0, 0, 0)
       const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
       const [salesDay, salesMonth, customers, products] = await Promise.all([
-        prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
-        prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
+        prisma.sale.aggregate({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
+        prisma.sale.aggregate({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
         prisma.customer.count({ where: { tenantId, deletedAt: null } }),
         prisma.product.count({ where: { tenantId, isActive: true, deletedAt: null } }),
       ])
@@ -152,12 +152,12 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
       const last30d = new Date(now.getTime() - 30*24*60*60*1000)
       const [salesDay, salesMonth, customers, products, salesByDay, salesByPayment] = await Promise.all([
-        prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
-        prisma.sale.aggregate({ where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
+        prisma.sale.aggregate({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: today } }, _sum: { total: true }, _count: { id: true } }),
+        prisma.sale.aggregate({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
         prisma.customer.count({ where: { tenantId, deletedAt: null } }),
         prisma.product.count({ where: { tenantId, isActive: true, deletedAt: null } }),
-        prisma.sale.findMany({ where: { tenantId, createdAt: { gte: last30d } }, select: { createdAt: true, total: true }, orderBy: { createdAt: 'asc' } }),
-        prisma.sale.groupBy({ by: ['paymentMode'], where: { tenantId, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
+        prisma.sale.findMany({ where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: last30d } }, select: { createdAt: true, total: true }, orderBy: { createdAt: 'asc' } }),
+        prisma.sale.groupBy({ by: ['paymentMode'], where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: thisMonth } }, _sum: { total: true }, _count: { id: true } }),
       ])
       const dayMap = new Map<string, { ca: number; count: number }>()
       salesByDay.forEach((s) => {

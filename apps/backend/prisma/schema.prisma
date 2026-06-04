@@ -183,6 +183,13 @@ model Sale {
   customerId     String?
   createdAt      DateTime @default(now())
 
+  // ── Remboursement (TOTAL uniquement ; champs additifs/nullables) ──
+  status         String    @default("completed") // completed | refunded
+  refundedAt     DateTime?
+  refundedBy     String?   // userId du manager/admin ayant remboursé (audit = source détaillée)
+  refundReason   String?
+  restocked      Boolean?  // null tant que non remboursé ; true = articles remis en stock, false = non
+
   tenant  Tenant     @relation(fields: [tenantId], references: [id])
   cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
   items   SaleItem[]
@@ -190,6 +197,7 @@ model Sale {
   @@index([tenantId])
   @@index([tenantId, createdAt])
   @@index([tenantId, paymentMode])
+  @@index([tenantId, status])
 }
 
 model SaleItem {

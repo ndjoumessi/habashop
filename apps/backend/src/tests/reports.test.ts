@@ -173,7 +173,8 @@ describe('buildAccountingReport — tenant isolation', () => {
     const r = await buildAccountingReport(db, 'TENANT_1', meta, now)
 
     expect(db.sale.aggregate).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({ tenantId: 'TENANT_1' }),
+      // CA exclut les ventes remboursées (status != refunded) + scope tenant strict
+      where: expect.objectContaining({ tenantId: 'TENANT_1', status: { not: 'refunded' } }),
     }))
     expect(db.expense.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ tenantId: 'TENANT_1' }),

@@ -6,6 +6,14 @@ import { notifyTenant } from './notifications'
 import { invalidateTenantCache } from '../lib/cache'
 import { resolveTierPrice, type PriceTier } from '../utils/pricing'
 
+// Remboursement réservé MANAGER + ADMIN (+ SUPER_ADMIN superset) — anti-fraude :
+// le caissier ne peut PAS rembourser. Helper pur exporté pour les tests.
+export const REFUND_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'] as const
+export const canRefund = (role?: string): boolean => REFUND_ROLES.includes(role as never)
+
+// Erreur interne pour aborter la transaction quand la course d'idempotence est perdue.
+class RefundConflict extends Error {}
+
 export async function saleRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/sales', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
@@ -116,5 +124,97 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       if (low.length) notifyTenant(tenantId, { type: 'low_stock', data: { products: low.map((p) => ({ id: p.id, name: p.name, stockQty: p.stockQty })) } })
     } catch { /* non bloquant */ }
     return newSale
+  })
+
+  // ── Remboursement TOTAL d'une vente ──
+  // RBAC manager/admin · motif requis · idempotent (409 si déjà remboursé) ·
+  // restock optionnel (pré-coché côté UI) · entrée d'audit · vente CONSERVÉE
+  // (status='refunded' → exclue du CA). Wave/Orange = suivi only (mouvement réel externe).
+  app.post('/api/sales/:id/refund', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId, userId, role } = request.user
+    if (!canRefund(role)) {
+      return reply.code(403).send({ error: 'Seuls un manager ou un administrateur peuvent rembourser une vente' })
+    }
+    const { id } = request.params as { id: string }
+    const { reason, restock } = (request.body ?? {}) as { reason?: string; restock?: boolean }
+
+    const cleanReason = (reason ?? '').trim()
+    if (!cleanReason) {
+      return reply.code(400).send({ error: 'Le motif du remboursement est obligatoire' })
+    }
+    const doRestock = restock !== false // défaut ON (case pré-cochée)
+
+    const sale = await prisma.sale.findFirst({
+      where: { id, tenantId },
+      include: { items: true },
+    })
+    if (!sale) return reply.code(404).send({ error: 'Vente introuvable' })
+    if (sale.status === 'refunded') {
+      return reply.code(409).send({ error: 'Cette vente a déjà été remboursée' })
+    }
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Garde d'idempotence ATOMIQUE : seul l'appel qui passe status completed→refunded
+        // gagne (count=1) ; un appel concurrent voit count=0 → 409.
+        const upd = await tx.sale.updateMany({
+          where: { id, tenantId, status: { not: 'refunded' } },
+          data: {
+            status: 'refunded',
+            refundedAt: new Date(),
+            refundedBy: userId,
+            refundReason: cleanReason,
+            restocked: doRestock,
+          },
+        })
+        if (upd.count === 0) throw new RefundConflict()
+
+        if (doRestock) {
+          for (const it of sale.items) {
+            // updateMany = pas d'exception si le produit a été supprimé entre-temps
+            await tx.product.updateMany({
+              where: { id: it.productId, tenantId },
+              data: { stockQty: { increment: it.qty } },
+            })
+          }
+        }
+
+        // Symétrie avec la création de vente : on retire le revenu du client lié.
+        if (sale.customerId) {
+          await tx.customer.updateMany({
+            where: { id: sale.customerId, tenantId },
+            data: { totalRevenue: { decrement: sale.total } },
+          })
+        }
+
+        await tx.auditLog.create({
+          data: {
+            tenantId,
+            userId,
+            module: 'sales',
+            action: 'REFUND_SALE',
+            severity: 'warning',
+            description: JSON.stringify({
+              saleId: sale.id,
+              total: sale.total,
+              paymentMode: sale.paymentMode,
+              reason: cleanReason,
+              restock: doRestock,
+            }),
+          },
+        })
+      })
+    } catch (e) {
+      if (e instanceof RefundConflict) {
+        return reply.code(409).send({ error: 'Cette vente a déjà été remboursée' })
+      }
+      throw e
+    }
+
+    // CA / agrégats dépendent des ventes (status) → purge cache tenant.
+    invalidateTenantCache(tenantId).catch(() => {})
+    notifyTenant(tenantId, { type: 'sale_refunded', data: { id: sale.id, total: sale.total, restock: doRestock } })
+
+    return { ok: true, id: sale.id, status: 'refunded', restocked: doRestock }
   })
 }

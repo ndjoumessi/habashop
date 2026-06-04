@@ -13,6 +13,7 @@ import POSProductGrid from '@/components/pos/POSProductGrid'
 import POSCart from '@/components/pos/POSCart'
 import POSModals from '@/components/pos/POSModals'
 import POSCashierClosed from '@/components/pos/POSCashierClosed'
+import RefundModal from '@/components/pos/RefundModal'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
 import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
 
@@ -84,6 +85,39 @@ export default function POS() {
   const [posTab, setPosTab] = useState<'pos'|'history'>('pos')
   const [salesHistory, setSalesHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  // Remboursement : réservé MANAGER + ADMIN (anti-fraude). Le caissier ne voit pas l'action.
+  const canRefund = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(user?.role ?? '')
+  const [refundSale, setRefundSale] = useState<any | null>(null)
+  const [refunding, setRefunding] = useState(false)
+
+  const doRefund = async (reason: string, restock: boolean) => {
+    if (!refundSale) return
+    setRefunding(true)
+    try {
+      await salesApi.refund(refundSale.id, { reason, restock })
+      // MAJ optimiste de la ligne : status refunded + restocked (badge + total barré)
+      setSalesHistory(prev => prev.map(s => s.id === refundSale.id
+        ? { ...s, status: 'refunded', refundedAt: new Date().toISOString(), restocked: restock }
+        : s))
+      toast.success(lang === 'en' ? 'Sale refunded' : lang === 'es' ? 'Venta reembolsada' : lang === 'it' ? 'Vendita rimborsata' : 'Vente remboursée')
+      setRefundSale(null)
+    } catch (e: any) {
+      const status = e?.status ?? e?.response?.status
+      const msg = status === 409
+        ? (lang === 'en' ? 'Sale already refunded' : lang === 'es' ? 'Venta ya reembolsada' : lang === 'it' ? 'Vendita già rimborsata' : 'Vente déjà remboursée')
+        : status === 403
+          ? (lang === 'en' ? 'Not allowed' : lang === 'es' ? 'No permitido' : lang === 'it' ? 'Non consentito' : 'Action non autorisée')
+          : (lang === 'en' ? 'Refund failed' : lang === 'es' ? 'Error al reembolsar' : lang === 'it' ? 'Rimborso fallito' : 'Échec du remboursement')
+      toast.error(msg)
+      if (status === 409) {
+        // déjà remboursée côté serveur → refléter l'état + fermer
+        setSalesHistory(prev => prev.map(s => s.id === refundSale.id ? { ...s, status: 'refunded' } : s))
+        setRefundSale(null)
+      }
+    } finally {
+      setRefunding(false)
+    }
+  }
   const [showScanner, setShowScanner] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products')
@@ -400,6 +434,7 @@ export default function POS() {
           posShowStockOnTile={posShowStockOnTile}
           loadingHistory={loadingHistory}
           salesHistory={salesHistory}
+          canRefund={canRefund} onRefundClick={setRefundSale}
           isMobile={isMobile} mobileView={mobileView}
           totalProducts={posProducts.length} loadingProducts={loadingProducts}
           navigate={navigate}
@@ -463,6 +498,16 @@ export default function POS() {
         printTicket={printTicket}
         discount={discount} payMode={payMode}
         cashGiven={cashGiven} toXOF={toXOF}
+      />
+
+      {/* MODAL REMBOURSEMENT (manager/admin) */}
+      <RefundModal
+        sale={refundSale}
+        onClose={() => setRefundSale(null)}
+        onConfirm={doRefund}
+        saving={refunding}
+        lang={lang}
+        fmt={fmt}
       />
 
       {/* FAB mobile — voir panier */}

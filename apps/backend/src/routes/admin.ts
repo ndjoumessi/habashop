@@ -24,7 +24,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     const [tenants, users, sales, products] = await Promise.all([
       prisma.tenant.count(),
       prisma.user.count(),
-      prisma.sale.aggregate({ _sum: { total: true }, _count: true }),
+      prisma.sale.aggregate({ where: { status: { not: 'refunded' } }, _sum: { total: true }, _count: true }),
       prisma.product.count(),
     ])
     return {

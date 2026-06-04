@@ -73,7 +73,10 @@ async function request<T>(
         const errJson = JSON.parse(errText)
         errMsg = errJson.error ?? errJson.message ?? errMsg
       } catch {}
-      throw new Error(errMsg)
+      // Expose le status HTTP sur l'Error (ex. 409 déjà remboursé, 403 RBAC) → handlers ciblés.
+      const err = new Error(errMsg) as Error & { status?: number }
+      err.status = res.status
+      throw err
     }
 
     const text = await res.text()
@@ -115,6 +118,8 @@ export const productsApi = {
 export const salesApi = {
   list:   () => api.get<any[]>('/api/sales'),
   create: (data: any) => api.post<any>('/api/sales', data),
+  refund: (id: string, data: { reason: string; restock: boolean }) =>
+    api.post<{ ok: boolean; id: string; status: string; restocked: boolean }>(`/api/sales/${id}/refund`, data),
 }
 
 export const customersApi = {
