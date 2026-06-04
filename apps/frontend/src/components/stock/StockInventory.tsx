@@ -5,6 +5,8 @@ import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 import { hydratePricesFromApi } from '@/lib/productCurrency'
 import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import FilterSelect, { type FilterOption } from '@/components/ui/FilterSelect'
+import { normCat } from '@/utils/normCat'
 import { type ProductItem, statusOf, stockCatLabel } from '@/components/stock/stockShared'
 
 interface StockInventoryProps {
@@ -53,6 +55,27 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
   const visibleSelectedCount = visibleSkus.filter(s => selectedSkus.has(s)).length
   const allVisibleSelected   = visibleSkus.length > 0 && visibleSelectedCount === visibleSkus.length
   const someVisibleSelected  = visibleSelectedCount > 0 && !allVisibleSelected
+  // Options catégorie : dédupliquées par nom normalisé (normCat, partagé avec le
+  // donut CA Dashboard) → une seule entrée par catégorie quelles que soient les
+  // variantes emoji/casse (« 🥥 Épicerie » == « Épicerie »). La VALEUR émise reste
+  // la chaîne d'origine → le filtrage en amont (p.category === cat) est inchangé.
+  const catOptions: FilterOption[] = [{ value: '', label: i('Toutes les catégories', 'All categories', 'Todas las categorías', 'Tutte le categorie') }]
+  const seenCat = new Set<string>()
+  for (const c of cats) {
+    if (!c) continue
+    const k = normCat(c)
+    if (seenCat.has(k)) continue
+    seenCat.add(k)
+    catOptions.push({ value: c, label: stockCatLabel(c, lang) })
+  }
+  // Statut : valeurs identiques aux libellés statusOf (status_out/status_low/OK)
+  // → la comparaison de filtre (s.label === statusFilter) reste inchangée.
+  const statusOptions: FilterOption[] = [
+    { value: '', label: i('Tous statuts', 'All statuses', 'Todos los estados', 'Tutti gli stati') },
+    { value: t('status_out'), label: t('status_out') },
+    { value: t('status_low'), label: t('status_low') },
+    { value: 'OK', label: 'OK' },
+  ]
   return (
       <div className="panel">
         <div className="panel-head">
@@ -120,19 +143,24 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
         <div className="flex flex-wrap gap-2 mb-4">
           <div className="search-wrap flex-1 min-w-40">
             <span className="search-icon"><Search size={13} /></span>
-            <input className="input pl-8 py-2 text-sm w-full" aria-label="Rechercher" placeholder={t('common_search') + '…'}
+            <input className="input pl-8 py-2 text-sm w-full"
+              aria-label={i('Rechercher', 'Search', 'Buscar', 'Cerca')}
+              placeholder={i('Rechercher un produit', 'Search a product', 'Buscar un producto', 'Cerca un prodotto') + '…'}
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select className="input py-2 text-sm w-auto" value={cat} onChange={e => setCat(e.target.value)}>
-            <option value="">{t('pos_all')} {t('col_category').toLowerCase()}</option>
-            {cats.filter(Boolean).map(c => <option key={c} value={c}>{stockCatLabel(c, lang)}</option>)}
-          </select>
-          <select className="input py-2 text-sm w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            <option value="">{t('pos_all')} {t('col_status').toLowerCase()}</option>
-            <option>{t('status_out')}</option>
-            <option>{t('status_low')}</option>
-            <option>OK</option>
-          </select>
+          <FilterSelect
+            value={cat} onChange={setCat}
+            ariaLabel={t('col_category')}
+            options={catOptions}
+            minWidth={170}
+            icon={<Tag size={13} style={{ color: 'var(--text3)', flexShrink: 0 }} />}
+          />
+          <FilterSelect
+            value={statusFilter} onChange={setStatusFilter}
+            ariaLabel={t('col_status')}
+            options={statusOptions}
+            minWidth={150}
+          />
         </div>
 
         {/* Grid / List view */}

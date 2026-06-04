@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { dashboardApi } from '@/lib/api'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import { normCat } from '@/utils/normCat'
 // Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
 const DashSalesArea = lazy(() => import('@/components/charts/DashSalesArea'))
 const DashCategoryDonut = lazy(() => import('@/components/charts/DashCategoryDonut'))
@@ -164,12 +165,6 @@ export default function Dashboard() {
         // Fusionne les variantes d'une même catégorie (« Épicerie » / « épicerie » /
         // « 🍚 Épicerie ») : clé normalisée = emoji retirés + trim()+toLowerCase(), valeurs
         // additionnées, on garde le nom d'origine du PREMIER match (et son ordre d'apparition).
-        const normCat = (s: string) => s
-          .replace(/\p{Extended_Pictographic}/gu, '') // emoji / pictogrammes
-          .replace(/[\uFE0F\u200D]/g, "")             // sélecteur de variation / ZWJ
-          .replace(/\s+/g, ' ')
-          .trim()
-          .toLowerCase()
         const mergedCats: any[] = []
         const catIndex = new Map<string, number>()
         for (const c of (data?.categoryBreakdown ?? [])) {
