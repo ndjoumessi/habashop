@@ -492,8 +492,11 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 @media (max-width:900px) {
   .app-sidebar,#sidebar,.sidebar { display:none }
   .app-content,.page-content { padding:14px 16px }
-  .modal-backdrop { align-items:flex-end; padding:0 }
-  .modal-box { max-width:100%; border-radius:var(--r-2xl) var(--r-2xl) 0 0; max-height:95vh }
+  /* Modale CENTRÉE même en étroit (≤900px) : on garde align-items:center hérité,
+     juste full-width avec marge de respiration + scroll interne si débordement.
+     (Avant : bottom-sheet flex-end collé en bas → masquait le titre de page.) */
+  .modal-backdrop { padding:16px }
+  .modal-box { max-width:100%; max-height:90vh }
 }
 @media (max-width:768px) {
   #sidebar.mobile-open { display:flex!important; position:fixed; left:0; top:0; bottom:0; z-index:300; width:var(--sidebar)!important }

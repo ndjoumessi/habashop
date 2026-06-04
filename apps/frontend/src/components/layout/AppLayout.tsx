@@ -23,6 +23,19 @@ export default function AppLayout() {
     return () => useNotificationStore.getState().disconnect()
   }, [token])
 
+  // Échap ferme la modale la plus haute : déclenche le clic-backdrop déjà câblé
+  // dans chaque modale (onClick={e => e.target === e.currentTarget && close}) →
+  // fermeture clavier centralisée, sans toucher chaque composant de modale.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      const backdrops = document.querySelectorAll<HTMLElement>('.modal-backdrop')
+      backdrops[backdrops.length - 1]?.click()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
   return (
     <div className="app-shell">
       <a href="#main-content" className="skip-to-content">
