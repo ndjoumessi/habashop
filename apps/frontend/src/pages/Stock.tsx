@@ -71,6 +71,10 @@ export default function Stock() {
   const [editCat, setEditCat] = useState<typeof CATEGORIES_INIT[0] | null>(null)
   const [catForm, setCatForm] = useState({ name:'', color:'#818CF8', icon:'📦', description:'' })
 
+  // Mélange d'un token de couleur avec de la transparence (remplace l'ancien
+  // suffixe alpha hex `${hex}18` — INVALIDE sur var(), ex. `var(--p)18`).
+  const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
+
   const cats     = ['', ...Array.from(new Set(products.map(p => p.category)))]
   const ruptures = products.filter(p => p.stock <= p.threshold)
   const totalValue = products.reduce((s, p) => s + p.stock * p.sell, 0)
@@ -262,7 +266,7 @@ export default function Stock() {
       {/* Alert rupture */}
       {ruptures.length > 0 && (
         <div className="flex items-center gap-3 p-4 rounded-2xl"
-          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.20)' }}>
+          style={{ background: mix('var(--danger)', 8), border: `1px solid ${mix('var(--danger)', 20)}` }}>
           <AlertTriangle size={18} style={{ color: 'var(--danger)', flexShrink: 0 }} />
           <div className="flex-1">
             <p className="text-sm font-bold" style={{ color: 'var(--danger)' }}>
@@ -273,7 +277,7 @@ export default function Stock() {
             </p>
           </div>
           <button className="btn btn-sm"
-            style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)' }}
+            style={{ background: mix('var(--danger)', 15), color: 'var(--danger)', border: `1px solid ${mix('var(--danger)', 30)}` }}
             onClick={() => toast(lang === 'en' ? '📦 Bulk purchase order created' : lang === 'es' ? '📦 Pedido agrupado creado' : lang === 'it' ? '📦 Ordine raggruppato creato' : '📦 Bon de commande groupé créé')}>
             {lang === 'en' ? 'Order' : lang === 'es' ? 'Pedir' : lang === 'it' ? 'Ordina' : 'Commander'}
           </button>
@@ -289,12 +293,12 @@ export default function Stock() {
           { label: t('stock_categories'), value: String(new Set(products.map(p => p.category)).size), color: 'var(--acc)', hex: 'var(--acc)', icon: <FolderOpen size={18} /> },
         ].map(k => (
           <div key={k.label} className="kpi-card" style={{
-            background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,
-            border: `1px solid ${k.hex}28`,
+            background: `linear-gradient(135deg,${mix(k.hex, 9)},${mix(k.hex, 3)})`,
+            border: `1px solid ${mix(k.hex, 16)}`,
             position: 'relative', overflow: 'hidden',
           }}>
-            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
-            <div className="kpi-icon-w" style={{ color: k.color, background: `${k.hex}20` }}>{k.icon}</div>
+            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${mix(k.hex, 14)} 0%,transparent 70%)`, pointerEvents:'none' }} />
+            <div className="kpi-icon-w" style={{ color: k.color, background: mix(k.hex, 12) }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
             <div className="kpi-value" style={{ color: k.color }}>{k.value}</div>
           </div>
