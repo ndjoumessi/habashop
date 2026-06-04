@@ -37,5 +37,13 @@ export function useOfflineSync() {
     if (isOnline) sync()
   }, [isOnline, sync])
 
+  // Filet périodique : une vente peut être mise en file ALORS qu'on est « en ligne »
+  // mais lent/5xx (cf. submitSaleResilient) — aucun changement d'état réseau ne
+  // déclencherait sinon la resync. On reflush toutes les 30 s (no-op si offline/file vide).
+  useEffect(() => {
+    const id = setInterval(() => { sync() }, 30_000)
+    return () => clearInterval(id)
+  }, [sync])
+
   return { isOnline, sync }
 }

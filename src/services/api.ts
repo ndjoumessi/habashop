@@ -38,6 +38,15 @@ export function apiErrorStatus(err: unknown): number | undefined {
   return (err as AxiosError)?.response?.status
 }
 
+// Une erreur mérite-t-elle un retry / une bascule offline ? OUI pour les pannes
+// réseau (timeout axios = pas de `response`) et les 5xx serveur. NON pour les 4xx
+// (validation/auth) — retenter une vente invalide bouclerait sans fin.
+export function isRetryableApiError(err: unknown): boolean {
+  if (!axios.isAxiosError(err)) return false
+  const status = err.response?.status
+  return status === undefined || status >= 500
+}
+
 export const authApi = {
   login: (email: string, password: string): Promise<LoginResponse> =>
     apiClient.post<LoginResponse>('/api/auth/login', { email, password }).then(r => r.data),

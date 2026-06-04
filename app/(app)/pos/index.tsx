@@ -8,8 +8,10 @@ import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { productsApi, salesApi, customersApi, apiErrorMessage } from '@/services/api'
-import type { Product, SaleResponse } from '@/types'
+import { productsApi, customersApi, apiErrorMessage } from '@/services/api'
+import type { Product, SalePayload } from '@/types'
+import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmit'
+import { newIdempotencyKey } from '@/lib/idempotency'
 import { usePosStore } from '@/stores/posStore'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import {
@@ -31,6 +33,9 @@ import POSConfirmModal from '@/components/pos/POSConfirmModal'
 import POSCart from '@/components/pos/POSCart'
 import POSProductGrid from '@/components/pos/POSProductGrid'
 import CustomerPicker from '@/components/pos/CustomerPicker'
+
+// Boundary localisé de la Caisse : un crash POS affiche un fallback sans tuer la nav.
+export { default as ErrorBoundary } from '@/components/ui/RouteErrorFallback'
 
 // ── Écran POS ────────────────────────────────────
 export default function POSScreen() {
@@ -110,16 +115,24 @@ export default function POSScreen() {
     addItem(p)
   }
 
-  // ── Création de la vente ──
+  // Alerte « vente en file » — réseau hors-ligne OU lent/5xx persistant. La vente n'est
+  // PAS perdue : la resync l'enverra avec la même clé d'idempotence (dédup backend).
+  const showQueuedAlert = () => {
+    Alert.alert(
+      i('✅ Vente enregistrée', '✅ Sale recorded', '✅ Venta registrada', '✅ Vendita registrata'),
+      i(
+        'Synchro en attente — elle partira automatiquement au retour du réseau.',
+        'Sync pending — it will upload automatically when the network is back.',
+        'Sincronización pendiente — se enviará automáticamente al volver la red.',
+        'Sincronizzazione in attesa — partirà automaticamente al ritorno della rete.',
+      ),
+    )
+  }
+
+  // ── Création de la vente (résiliente : retry → file offline ; cf. submitSaleResilient) ──
   const saleMutation = useMutation({
-    mutationFn: () => salesApi.create({
-      items: cart.map(c => ({ productId: c.productId, qty: c.quantity, price: c.price })),
-      total: totalAmt,
-      paymentMode,
-      ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
-      ...(customer ? { customerId: customer.id } : {}),
-    }),
-    onSuccess: async (data: SaleResponse) => {
+    mutationFn: (payload: SalePayload) => submitSaleResilient(payload),
+    onSuccess: async (result: SaleSubmitResult) => {
       // Capture la vente avant de vider le panier (pour le ticket WhatsApp)
       const saleItems = [...cart]
       const saleTotal = totalAmt
@@ -132,6 +145,14 @@ export default function POSScreen() {
       setShowConfirm(false)
       setShowCart(false)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+
+      // Réseau lent/5xx persistant → vente mise en file (pas perdue) : UX honnête, pas de reçu.
+      if (result.status === 'queued') {
+        if (saleCustomer) qc.invalidateQueries({ queryKey: ['customers'] })
+        showQueuedAlert()
+        return
+      }
+      const data = result.sale
       // Fidélité : le créditage est SERVEUR. On relit le solde canonique du client
       // (GET /api/customers/:id/loyalty) et on affiche le DELTA (après − avant) — on ne
       // recalcule JAMAIS la règle côté mobile. Réseau KO → on n'affiche pas de ligne fidélité.
@@ -209,31 +230,29 @@ export default function POSScreen() {
       )
       return
     }
+    // Clé d'idempotence : UNE par tentative de vente, réutilisée par le retry online ET
+    // la resync offline (NE PAS la régénérer → sinon doublon). Le backend dédup dessus.
+    const payload: SalePayload = {
+      items: cart.map(c => ({ productId: c.productId, qty: c.quantity, price: c.price })),
+      total: totalAmt,
+      paymentMode,
+      ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
+      ...(customer ? { customerId: customer.id } : {}),
+      idempotencyKey: newIdempotencyKey(),
+    }
+    // Hors-ligne dur (NetInfo) → file directe, pas d'aller-retour réseau inutile.
     if (!isOnline) {
-      await enqueueAction('SALE', {
-        items: cart.map(c => ({ productId: c.productId, qty: c.quantity, price: c.price })),
-        total: totalAmt,
-        paymentMode,
-        ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
-        ...(customer ? { customerId: customer.id } : {}),
-      })
+      await enqueueAction('SALE', payload)
       recordSale(totalAmt)
       clearCart()
       setShowConfirm(false)
       setShowCart(false)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
-      Alert.alert(
-        i('✅ Vente sauvegardée', '✅ Sale saved', '✅ Venta guardada', '✅ Vendita salvata'),
-        i(
-          'Synchronisée automatiquement au retour du réseau.',
-          'Will sync automatically when back online.',
-          'Se sincronizará automáticamente al volver en línea.',
-          'Si sincronizzerà automaticamente al ritorno della rete.',
-        ),
-      )
+      showQueuedAlert()
       return
     }
-    saleMutation.mutate()
+    // En ligne → soumission résiliente (retry même clé → bascule file si réseau lent/5xx).
+    saleMutation.mutate(payload)
   }
 
   // ── Scan code-barres : ajoute le produit trouvé au panier ──

@@ -5,6 +5,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { ThemeColors, withAlpha, FontSize } from '@/constants/theme'
 import { useI18n, useTheme } from '@/stores/appStore'
 
+// Boundary localisé du groupe (tabs) : un onglet qui plante n'emporte plus toute l'app.
+export { default as ErrorBoundary } from '@/components/ui/RouteErrorFallback'
+
 function TabIcon({ name, focused, label }:{
   name: keyof typeof Ionicons.glyphMap
   focused:boolean; label:string

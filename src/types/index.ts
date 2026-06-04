@@ -122,6 +122,12 @@ export interface SalePayload {
   paymentMode: string
   discount?: SaleDiscount
   customerId?: string
+  /**
+   * Clé d'idempotence (UUID) générée par tentative de vente. Le backend dédup :
+   * renvoyer la même clé NE crée PAS de doublon (retry réseau / resync offline sûrs).
+   * ⚠️ Ne JAMAIS la régénérer pour une même vente (sinon doublon).
+   */
+  idempotencyKey?: string
 }
 
 // POST /api/sales → la vente créée (objet Prisma Sale).

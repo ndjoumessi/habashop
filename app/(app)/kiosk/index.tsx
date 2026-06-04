@@ -6,13 +6,20 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import * as Haptics from 'expo-haptics'
-import { productsApi, salesApi, apiErrorMessage } from '@/services/api'
+import { productsApi, apiErrorMessage } from '@/services/api'
+import type { SalePayload } from '@/types'
+import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmit'
+import { newIdempotencyKey } from '@/lib/idempotency'
 import type { Product } from '@/types'
 import { usePosStore, vatBreakdown } from '@/stores/posStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useFmt, useAppStore } from '@/stores/appStore'
 import CustomerPicker from '@/components/pos/CustomerPicker'
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
+
+// Boundary localisé du mode kiosque : un crash affiche un fallback (sortie possible)
+// plutôt qu'un écran figé sur un poste caissier non supervisé.
+export { default as ErrorBoundary } from '@/components/ui/RouteErrorFallback'
 
 // ── Mode kiosque : POS plein écran simplifié pour un poste caissier fixe ──
 // Affichage volontairement sombre/figé (pas de thème dynamique) — un kiosque
@@ -47,8 +54,10 @@ export default function KioskScreen() {
   )
 
   const { mutate: createSale, isPending } = useMutation({
-    mutationFn: salesApi.create,
-    onSuccess: () => {
+    // Soumission résiliente (retry même clé → file offline si réseau lent/5xx) — la vente
+    // d'un caissier en mode kiosque (non supervisé) ne doit JAMAIS être perdue.
+    mutationFn: (payload: SalePayload) => submitSaleResilient(payload),
+    onSuccess: (result: SaleSubmitResult) => {
       const saleTotal = pos.total() // capturer AVANT de vider le panier
       pos.recordSale(saleTotal)
       pos.clearCart()
@@ -58,7 +67,14 @@ export default function KioskScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
       Alert.alert(
         i('✅ Vente enregistrée !', '✅ Sale recorded!', '✅ ¡Venta registrada!', '✅ Vendita registrata!'),
-        fmt(saleTotal),
+        result.status === 'queued'
+          ? i(
+              'Synchro en attente — elle partira automatiquement au retour du réseau.',
+              'Sync pending — it will upload automatically when the network is back.',
+              'Sincronización pendiente — se enviará automáticamente al volver la red.',
+              'Sincronizzazione in attesa — partirà automaticamente al ritorno della rete.',
+            )
+          : fmt(saleTotal),
       )
     },
     onError: (err: unknown) => {
@@ -402,6 +418,7 @@ export default function KioskScreen() {
                     paymentMode: pos.paymentMode,
                     ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
                     ...(pos.customer ? { customerId: pos.customer.id } : {}),
+                    idempotencyKey: newIdempotencyKey(),
                   })
                 }}
                 accessibilityRole="button" accessibilityLabel={i('Valider', 'Confirm', 'Confirmar', 'Conferma')}
