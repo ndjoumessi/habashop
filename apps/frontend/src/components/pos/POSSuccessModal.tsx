@@ -1,4 +1,4 @@
-import { CheckCircle2, Printer, Plus } from 'lucide-react'
+import { CheckCircle2, Printer, Plus, X } from 'lucide-react'
 
 interface Props {
   show: boolean
@@ -20,7 +20,12 @@ export default function POSSuccessModal({ show, lang, total, monnaie, showChange
   if (!show) return null
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onNewSale()}>
-      <div className="modal-box" style={{ maxWidth: 380, textAlign: 'center' }}>
+      <div className="modal-box" style={{ maxWidth: 380, textAlign: 'center', position: 'relative' }}>
+        {/* Fermeture explicite (fallback si l'utilisateur ne veut ni imprimer ni enchaîner) */}
+        <button type="button" aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={onNewSale}
+          style={{ position: 'absolute', top: 10, right: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text3)', cursor: 'pointer' }}>
+          <X size={15} />
+        </button>
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px auto 14px' }}>
           <CheckCircle2 size={34} style={{ color: 'var(--acc2)' }} />
         </div>

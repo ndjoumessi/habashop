@@ -375,7 +375,10 @@ export default function POS() {
   }
 
   // Clôt la modale de succès et réinitialise pour la prochaine vente.
+  // setShowSuccess(false) EN PREMIER → la modale se ferme TOUJOURS, même si un reset
+  // ultérieur venait à échouer (robustesse : pas de modale bloquée).
   const newSale = () => {
+    setShowSuccess(false)
     clearCart()
     setCashGiven('')
     setDiscount(null)
@@ -383,7 +386,6 @@ export default function POS() {
     setWaNumber('')
     setMixedOn(false)
     setMixedAmt1('')
-    setShowSuccess(false)
   }
 
   // ─── RENDER ──────────────────────────────
