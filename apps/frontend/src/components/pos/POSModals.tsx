@@ -1,8 +1,7 @@
-import { X, Smartphone, Printer, FileText, CheckCircle, AlertTriangle } from 'lucide-react'
+import { X, Smartphone, Printer, CheckCircle, AlertTriangle } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, formatInCurrency } from '@/stores/appStore'
-import { generateInvoice } from '@/utils/export'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
 
 interface POSModalsProps {
@@ -571,19 +570,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 style={{ padding: '12px 16px', minHeight: 44, fontSize: 13, opacity: blocked ? 0.6 : 1, cursor: blocked ? 'not-allowed' : 'pointer' }}
                 className="mini-btn"
               ><Printer size={13} /> Ticket</button>
-              <button aria-label={lang === 'en' ? 'Invoice' : lang === 'es' ? 'Factura' : lang === 'it' ? 'Fattura' : 'Facture'}
-                onClick={() => {
-                  generateInvoice({
-                    type: 'facture',
-                    lang,
-                    items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price, emoji: i.emoji })),
-                    discount: discount ?? undefined,
-                    paymentMode: payMode,
-                  })
-                }}
-                className="mini-btn"
-                style={{ padding: '12px 14px', minWidth: 44, minHeight: 44, fontSize: 13 }}
-              ><FileText size={13} /></button>
+              {/* Bouton « Facture » retiré : une facture n'a de sens qu'APRÈS création de la
+                  vente → la facture PDF (serveur, /api/sales/:id/invoice) est dans l'historique. */}
             </div>
           </div>
         </div>

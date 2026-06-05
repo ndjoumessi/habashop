@@ -1,4 +1,4 @@
-import { useAppStore } from '@/stores/appStore'
+import { useAppStore, convertAmount, formatInCurrency } from '@/stores/appStore'
 
 const LOCALES: Record<string, string> = {
   fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT',
@@ -290,7 +290,9 @@ export function generateInvoice(opts: InvoiceOptions) {
   const tva = Math.round(afterDiscount * _taxRate)
   const netTotal = afterDiscount + tva
 
-  const fmt = (v: number) => new Intl.NumberFormat(locale, { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v) + ' ' + (currency ?? 'XOF')
+  // Les montants reçus sont en base XOF → convertir vers la devise tenant AVANT formatage.
+  // (Bug : l'ancien fmt collait le label devise sur le montant XOF brut → « 2 800 EUR ».)
+  const fmt = (v: number) => formatInCurrency(convertAmount(v, 'XOF', currency ?? 'XOF'), currency ?? 'XOF')
 
   const itemRows = items.map(i => `
     <tr>
