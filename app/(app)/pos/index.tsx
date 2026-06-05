@@ -38,6 +38,11 @@ import CustomerPicker from '@/components/pos/CustomerPicker'
 // Boundary localisé de la Caisse : un crash POS affiche un fallback sans tuer la nav.
 export { default as ErrorBoundary } from '@/components/ui/RouteErrorFallback'
 
+// Délai laissant les modales (panier pageSheet + confirmation fade) se fermer AVANT de
+// présenter l'alerte « reçu » : une Alert/print dialog native déclenchée pendant le
+// teardown des Modal est avalée (rien ne s'affiche). Cf. bug impression post-refactor.
+const ALERT_AFTER_MODAL_MS = 350
+
 // ── Écran POS ────────────────────────────────────
 export default function POSScreen() {
   const insets = useSafeAreaInsets()
@@ -152,12 +157,14 @@ export default function POSScreen() {
       clearCart()
       setShowConfirm(false)
       setShowCart(false)
+      setPendingOverride(null)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
 
       // Réseau lent/5xx persistant → vente mise en file (pas perdue) : UX honnête, pas de reçu.
       if (result.status === 'queued') {
         if (saleCustomer) qc.invalidateQueries({ queryKey: ['customers'] })
-        showQueuedAlert()
+        // Différé : laisser les modales se fermer avant l'alerte (sinon avalée).
+        setTimeout(showQueuedAlert, ALERT_AFTER_MODAL_MS)
         return
       }
       const data = result.sale
@@ -177,39 +184,38 @@ export default function POSScreen() {
             : `${i('Client', 'Customer', 'Cliente', 'Cliente')} : ${saleCustomer.name} (${after.points} ${i('pts', 'pts', 'pts', 'pti')})\n\n`
         } catch { /* solde indisponible (réseau) → pas de ligne fidélité */ }
       }
-      Alert.alert(
-        i('✅ Vente enregistrée', '✅ Sale recorded', '✅ Venta registrada', '✅ Vendita registrata'),
-        linked + i('Envoyer le reçu par WhatsApp ?', 'Send receipt via WhatsApp?', '¿Enviar recibo por WhatsApp?', 'Inviare ricevuta via WhatsApp?'),
-        [
-          { text: i('Non merci', 'No thanks', 'No gracias', 'No grazie'), style: 'cancel' },
-          {
-            text: '🖨️ ' + i('Imprimer', 'Print', 'Imprimir', 'Stampa'),
-            onPress: () => {
+      // Données de reçu figées (panier déjà vidé) — partagées impression + WhatsApp.
+      const ticket = {
+        items: saleItems, total: saleTotal, paymentMode: saleMode, split: saleSplit,
+        saleId: data?.id ?? Date.now().toString(),
+        shopName: tenant?.name ?? 'HabaShop',
+        currency, lang, fmt, vatRate: tenant?.vatRate,
+      }
+      // Différé : laisser le panier + la confirmation se fermer avant l'alerte native
+      // (sinon l'Alert — et le dialog d'impression — sont avalés pendant le teardown).
+      setTimeout(() => {
+        Alert.alert(
+          i('✅ Vente enregistrée', '✅ Sale recorded', '✅ Venta registrada', '✅ Vendita registrata'),
+          linked + i('Envoyer le reçu par WhatsApp ?', 'Send receipt via WhatsApp?', '¿Enviar recibo por WhatsApp?', 'Inviare ricevuta via WhatsApp?'),
+          [
+            { text: i('Non merci', 'No thanks', 'No gracias', 'No grazie'), style: 'cancel' },
+            {
+              text: '🖨️ ' + i('Imprimer', 'Print', 'Imprimir', 'Stampa'),
               // Annulation de l'impression = normal → pas d'alerte (le service log en interne).
-              printReceipt({
-                items: saleItems, total: saleTotal, paymentMode: saleMode, split: saleSplit,
-                saleId: data?.id ?? Date.now().toString(),
-                shopName: tenant?.name ?? 'HabaShop',
-                currency, lang, fmt, vatRate: tenant?.vatRate,
-              })
+              onPress: () => { printReceipt(ticket) },
             },
-          },
-          {
-            text: '💬 WhatsApp',
-            onPress: async () => {
-              const ok = await sendWhatsAppTicket({
-                items: saleItems, total: saleTotal, paymentMode: saleMode, split: saleSplit,
-                saleId: data?.id ?? Date.now().toString(),
-                shopName: tenant?.name ?? 'HabaShop',
-                currency, lang, fmt, vatRate: tenant?.vatRate,
-              })
-              if (!ok) {
-                Alert.alert(i('WhatsApp indisponible', 'WhatsApp unavailable', 'WhatsApp no disponible', 'WhatsApp non disponibile'), '')
-              }
+            {
+              text: '💬 WhatsApp',
+              onPress: async () => {
+                const ok = await sendWhatsAppTicket(ticket)
+                if (!ok) {
+                  Alert.alert(i('WhatsApp indisponible', 'WhatsApp unavailable', 'WhatsApp no disponible', 'WhatsApp non disponibile'), '')
+                }
+              },
             },
-          },
-        ],
-      )
+          ],
+        )
+      }, ALERT_AFTER_MODAL_MS)
     },
     onError: (e: unknown) => {
       Alert.alert(
