@@ -79,11 +79,13 @@ export interface AppConfig {
 
   // Interface
   lang: Lang
+  langManuallySet: boolean      // l'utilisateur a choisi la langue → ne pas écraser via tenant
   theme: Theme
   sidebarCollapsed: boolean
 
   // Devises
   currency: Currency
+  currencyManuallySet: boolean   // l'utilisateur a choisi la devise d'affichage → ne pas écraser
   showCurrencyConverter: boolean
 
   // POS
@@ -139,10 +141,12 @@ export const DEFAULT_CONFIG: AppConfig = {
   shopSiret: 'SN-2026-001234',
 
   lang: 'fr',
+  langManuallySet: false,
   theme: 'gold',
   sidebarCollapsed: false,
 
   currency: 'XOF',
+  currencyManuallySet: false,
   showCurrencyConverter: true,
 
   posDefaultPayment: 'cash',
@@ -353,12 +357,10 @@ export const useAppStore = create<AppStore>()(
 
       // Tenant courant
       tenant: null,
-      // Option C — lang ET devise sont des settings TENANT stricts (contrôlés par
-      // l'ADMIN uniquement, cf. PATCH /api/tenant gardé côté backend). setTenant
-      // RESTAURE donc lang ET currency depuis le serveur à CHAQUE appel (/me, montage
-      // Header, changement de boutique) → tous les membres voient la même langue/devise,
-      // plus d'override per-device. La valeur persistée localStorage n'est qu'un cache
-      // d'amorçage (pré-/me), toujours écrasé par celle du tenant.
+      // Langue & devise = préférences d'AFFICHAGE per-device. tenant.currency/lang ne sert
+      // que de DÉFAUT à la première visite (aucun choix manuel) ; dès que l'utilisateur a
+      // choisi (`*ManuallySet`), setTenant NE l'écrase JAMAIS — la valeur persistée
+      // localStorage est conservée au refresh / re-login / redéploiement.
       setTenant:   (tenant) => set((state) => {
         const tc = tenant?.currency
         const valid = tc && (['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP'] as const).includes(tc as Currency)
@@ -366,8 +368,8 @@ export const useAppStore = create<AppStore>()(
         const validLang = tl && (['fr', 'en', 'es', 'it'] as const).includes(tl as Lang)
         return {
           tenant,
-          currency: valid ? (tc as Currency) : state.currency,
-          lang:     validLang ? (tl as Lang) : state.lang,
+          currency: (!state.currencyManuallySet && valid) ? (tc as Currency) : state.currency,
+          lang:     (!state.langManuallySet && validLang) ? (tl as Lang) : state.lang,
         }
       }),
       clearTenant: () => set({ tenant: null }),
@@ -404,8 +406,9 @@ export const useAppStore = create<AppStore>()(
       },
 
       setTheme:    (theme)    => { set({ theme }); applyTheme(theme); applyAccentColor(get().accentColor) },
-      setLang:     (lang)     => set({ lang }),
-      setCurrency: (currency) => set({ currency }),
+      // Choix EXPLICITE → on marque la préférence pour que setTenant ne l'écrase plus.
+      setLang:     (lang)     => set({ lang, langManuallySet: true }),
+      setCurrency: (currency) => set({ currency, currencyManuallySet: true }),
 
       // Settings lock
       settingsLocked: false,
@@ -500,6 +503,19 @@ export const useAppStore = create<AppStore>()(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { currencyRates, fetchExchangeRates, ...rest } = state
         return rest
+      },
+      // Fusion à la réhydratation (utilisateur de retour). Backfill des flags manuels
+      // pour les états persistés AVANT leur introduction : une préférence devise/langue
+      // déjà sauvegardée = un choix à CONSERVER (le spec : « défaut tenant uniquement en
+      // 1ʳᵉ visite »). Sinon setTenant l'écraserait une fois au 1er chargement post-déploiement.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppConfig>
+        return {
+          ...current,
+          ...p,
+          currencyManuallySet: p.currencyManuallySet ?? (p.currency != null),
+          langManuallySet:     p.langManuallySet     ?? (p.lang != null),
+        }
       },
       onRehydrateStorage: () => (state) => {
         if (state?.theme)       applyTheme(state.theme)
