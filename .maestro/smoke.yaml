@@ -1,0 +1,70 @@
+appId: com.habashop.app
+# ─────────────────────────────────────────────────────────────────────────────
+# SMOKE TEST — parcours critique : login → Caisse → vente → remboursement.
+# Ce parcours exerce le rendu réel de la Caisse (modales POS) : il aurait attrapé
+# le crash Fabric release-only « addViewAt: failed to insert view » dès le départ,
+# crash invisible aux tests unitaires (logique pure).
+#
+# Labels EXACTS extraits du code FR (i18n inline `i('fr',…)`), pas d'un JSON.
+# Devise du tenant démo admin = EUR → les prix produits affichent « € ».
+# Réseau requis (login + vente + remboursement tapent l'API prod Railway).
+# ─────────────────────────────────────────────────────────────────────────────
+---
+# ── Démarrage propre (état vidé : ni session, ni file offline, ni biométrie) ──
+- launchApp:
+    clearState: true
+- assertVisible: "Se connecter"
+
+# ── Phase 1 — Login (admin@habashop.com / demo1234) ──
+# Le chip démo « Admin » préremplit exactement email=admin@habashop.com + mot de
+# passe=demo1234 (cf. DEMO_ACCOUNTS / DEMO_PASSWORD dans login.tsx).
+- tapOn: "Admin"
+- tapOn:
+    text: "Se connecter"
+    index: 1                       # 0 = titre de la carte, 1 = bouton de connexion
+# Modale « Activer l'empreinte/Face ID ? » : n'apparaît que sur un device avec
+# biométrie enrôlée. optional → ignorée sur émulateur sans biométrie.
+- tapOn:
+    text: "Pas maintenant"
+    optional: true
+- extendedWaitUntil:
+    visible: "Accueil"             # onglet du dashboard → login réussi
+    timeout: 25000
+
+# ── Phase 2 — Caisse → ajouter un article → encaisser ──
+- tapOn: "Caisse"                  # onglet Caisse → ouvre l'écran POS (fullScreenModal)
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "€"                   # attend le chargement des produits (réseau)
+    timeout: 20000
+- tapOn:
+    text: "€"                      # 1re tuile produit (son prix en EUR) → ajout au panier
+    index: 0
+- waitForAnimationToEnd
+- assertVisible: "Encaisser"       # barre total (apparaît dès que le panier > 0)
+- tapOn: "Encaisser"               # barre total → ouvre le panier
+- waitForAnimationToEnd
+- tapOn: "Encaisser.*€"            # bouton du panier (« Encaisser <montant> € ») → confirmation
+- waitForAnimationToEnd
+- assertVisible: "Confirmer la vente"
+- tapOn: "Valider"
+- extendedWaitUntil:
+    visible: "Vente enregistrée"   # alerte succès « ✅ Vente enregistrée » (réseau)
+    timeout: 25000
+- tapOn: "Non merci"               # ferme l'alerte sans envoyer de reçu WhatsApp
+
+# ── Phase 3 — Historique → remboursement ──
+- tapOn: "Retour"                  # quitte la Caisse → retour au dashboard
+- waitForAnimationToEnd
+- tapOn: "Historique"              # action rapide du dashboard → écran Historique des ventes
+- waitForAnimationToEnd
+- assertVisible: "Historique"      # en-tête de l'écran
+- tapOn: "Rembourser"              # pill inline de la vente la plus récente (visible : admin/manager)
+- waitForAnimationToEnd
+- assertVisible: "Rembourser la vente"   # titre de la feuille de remboursement
+- tapOn: "Motif du remboursement"  # champ motif (obligatoire)
+- inputText: "Smoke test Maestro"
+- tapOn: "Confirmer"               # actif car le motif est rempli
+- extendedWaitUntil:
+    visible: "Vente remboursée"    # alerte succès du remboursement (réseau)
+    timeout: 25000
