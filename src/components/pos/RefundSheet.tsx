@@ -4,6 +4,7 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import AccessibleButton from '@/components/ui/AccessibleButton'
+import InvoiceButton from '@/components/sales/InvoiceButton'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { isTrackingPayment } from '@/lib/refund'
 import type { SaleRecord } from '@/types'
@@ -66,6 +67,9 @@ export default function RefundSheet({ sale, saving, onClose, onConfirm }: Refund
                    'Rimborso totale — la vendita è conservata ma esclusa dal fatturato.')}
               </Text>
             </View>
+
+            {/* Facture PDF (tous rôles) — utile avant/après remboursement */}
+            <InvoiceButton saleId={sale.id} />
 
             {/* Motif (obligatoire) */}
             <View style={{ gap: Spacing.xs }}>

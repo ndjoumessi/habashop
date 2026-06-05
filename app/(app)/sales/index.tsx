@@ -18,6 +18,7 @@ import ErrorState from '@/components/ui/ErrorState'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import Chip from '@/components/ui/Chip'
 import RefundSheet from '@/components/pos/RefundSheet'
+import InvoiceButton from '@/components/sales/InvoiceButton'
 import { Spacing, BorderRadius, FontSize, Shadow, withAlpha, ThemeColors } from '@/constants/theme'
 
 type Period = 'today' | '7d' | '30d'
@@ -278,6 +279,9 @@ export default function SalesScreen() {
                   <Text style={s.refundBtnTxt}>↩️ {i('Rembourser la vente', 'Refund sale', 'Reembolsar venta', 'Rimborsa vendita')}</Text>
                 </Pressable>
               ) : null}
+
+              {/* Facture PDF — tous rôles ; télécharge + partage système */}
+              <InvoiceButton saleId={sel.id} />
 
               <Pressable style={s.waBtn} onPress={() => resendWhatsApp(sel)}
                 accessibilityRole="button" accessibilityLabel={i('Renvoyer le ticket WhatsApp', 'Resend WhatsApp receipt', 'Reenviar recibo WhatsApp', 'Rinvia ricevuta WhatsApp')}>
