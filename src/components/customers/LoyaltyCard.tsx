@@ -5,7 +5,7 @@ import { customersApi } from '@/services/api'
 import type { Customer, LoyaltyResponse } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import { loyaltyConfig, tierForPoints, nextTierFor, progressToNext, type LoyaltyTier } from '@/lib/loyalty'
+import { loyaltyConfig, tierForPoints, nextTierFor, progressToNext, discountForTierDisplay, type LoyaltyTier } from '@/lib/loyalty'
 import { ThemeColors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
 
 // Couleurs/emoji par palier (miroir du web LoyaltyCard).
@@ -47,6 +47,13 @@ export default function LoyaltyCard({ customer }: { customer: Customer }) {
   const points = data?.points ?? customer.loyaltyPoints ?? 0
   // Palier : canonique backend si présent, sinon dérivé du solde avec les seuils du tenant.
   const tier = (data?.tier as LoyaltyTier) ?? tierForPoints(points, cfg.bronzeThreshold, cfg.silverThreshold)
+  // Remise v2 du palier actuel (0 = non configurée → « à venir »).
+  const discountPct = discountForTierDisplay(
+    tier,
+    data?.bronzeDiscount ?? tenant?.bronzeDiscount ?? 0,
+    data?.silverDiscount ?? tenant?.silverDiscount ?? 0,
+    data?.goldDiscount   ?? tenant?.goldDiscount   ?? 0,
+  )
   const meta = TIER_META[tier] ?? TIER_META.Bronze
   const next = nextTierFor(tier, cfg.bronzeThreshold, cfg.silverThreshold)
   const progress = next ? progressToNext(points, next.threshold) : 100
@@ -99,7 +106,15 @@ export default function LoyaltyCard({ customer }: { customer: Customer }) {
           `Niveles: Bronze · Silver (${silverPts} pts) · Gold (${goldPts} pts)`,
           `Livelli: Bronze · Silver (${silverPts} pts) · Gold (${goldPts} pts)`,
         )}</Text>
-        <Text style={s.infoSoon}>🎁 {i('Récompenses & remises : à venir', 'Rewards & discounts: coming soon', 'Recompensas y descuentos: próximamente', 'Premi e sconti: in arrivo')}</Text>
+        {discountPct > 0
+          ? <Text style={[s.infoLine, { color: C.accent2 }]}>🎁 {i(
+              `Remise ${discountPct} % sur vos achats`,
+              `${discountPct}% discount on your purchases`,
+              `Descuento del ${discountPct}% en sus compras`,
+              `Sconto del ${discountPct}% sugli acquisti`,
+            )}</Text>
+          : <Text style={s.infoSoon}>🎁 {i('Récompenses & remises : à venir', 'Rewards & discounts: coming soon', 'Recompensas y descuentos: próximamente', 'Premi e sconti: in arrivo')}</Text>
+        }
       </View>
 
       {/* Historique des points (gains / retraits) */}

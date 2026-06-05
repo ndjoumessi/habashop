@@ -257,6 +257,12 @@ export default function SalesScreen() {
                     <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(sel.discountAmount ?? 0)}</Text>
                   </View>
                 )}
+                {(sel.loyaltyDiscount ?? 0) > 0 && (
+                  <View style={s.recapRow}>
+                    <Text style={s.recapLabel}>⭐ {i('Remise fidélité', 'Loyalty discount', 'Desc. fidelidad', 'Sconto fedeltà')}</Text>
+                    <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(sel.loyaltyDiscount ?? 0)}</Text>
+                  </View>
+                )}
                 <View style={s.recapRow}>
                   <Text style={s.recapLabel}>{i('Paiement', 'Payment', 'Pago', 'Pagamento')}</Text>
                   <Text style={s.recapVal}>{PAY_ICON[sel.paymentMode] ?? '💳'} {sel.paymentMode}</Text>

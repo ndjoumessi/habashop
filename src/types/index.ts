@@ -31,6 +31,10 @@ export interface Tenant {
   pointsPerAmount?: number // unités de devise pour 1 point
   bronzeThreshold?: number // pts : Bronze → Silver
   silverThreshold?: number // pts : Silver → Gold
+  // Loyalty v2 : remises % par palier (0 = désactivé)
+  bronzeDiscount?: number
+  silverDiscount?: number
+  goldDiscount?: number
   [key: string]: unknown
 }
 
@@ -178,6 +182,8 @@ export interface SaleRecord {
   cashAmount?: number | null
   mobileMoneyAmount?: number | null
   cardAmount?: number | null
+  // Loyalty v2 : remise fidélité appliquée sur cette vente (0 ou null = aucune).
+  loyaltyDiscount?: number | null
   // ── Remboursement (champs additifs renvoyés par le backend, cf. modèle Prisma Sale) ──
   status?: string            // 'completed' | 'refunded'
   refundedAt?: string | null
@@ -211,6 +217,25 @@ export interface LoyaltyResponse {
   pointsPerAmount?: number // unités de devise pour 1 point
   bronzeThreshold?: number // pts : Bronze → Silver
   silverThreshold?: number // pts : Silver → Gold
+  // Loyalty v2 : remises par palier
+  bronzeDiscount?: number
+  silverDiscount?: number
+  goldDiscount?: number
+}
+
+// GET /api/customers/:id/loyalty-card → données pour la carte numérique.
+export interface LoyaltyCardData {
+  customerId: string
+  customerName: string
+  tier: string
+  points: number
+  bronzeThreshold: number
+  silverThreshold: number
+  nextTier: string | null
+  pointsToNext: number
+  shopName: string
+  currency: string
+  enableLoyalty: boolean
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────

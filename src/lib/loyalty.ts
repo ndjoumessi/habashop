@@ -11,6 +11,10 @@
 export const DEFAULT_POINTS_PER_AMOUNT = 1000
 export const DEFAULT_BRONZE_THRESHOLD = 2000 // pts : Bronze → Silver
 export const DEFAULT_SILVER_THRESHOLD = 5000 // pts : Silver → Gold
+// Loyalty v2 : remises par palier (0 = désactivé / non configuré par le tenant)
+export const DEFAULT_BRONZE_DISCOUNT = 0
+export const DEFAULT_SILVER_DISCOUNT = 0
+export const DEFAULT_GOLD_DISCOUNT   = 0
 
 export type LoyaltyTier = 'Bronze' | 'Silver' | 'Gold'
 
@@ -62,6 +66,21 @@ export function nextTierFor(
   if (tier === 'Bronze') return { threshold: bronzeThreshold, nextTier: 'Silver' }
   if (tier === 'Silver') return { threshold: silverThreshold, nextTier: 'Gold' }
   return null
+}
+
+/**
+ * % de remise du palier actuel (affichage uniquement — le CALCUL réel est serveur).
+ * Retourne 0 si la remise est ≤ 0 (non configurée par le tenant).
+ */
+export function discountForTierDisplay(
+  tier: LoyaltyTier,
+  bronzeDiscount: number = DEFAULT_BRONZE_DISCOUNT,
+  silverDiscount: number = DEFAULT_SILVER_DISCOUNT,
+  goldDiscount:   number = DEFAULT_GOLD_DISCOUNT,
+): number {
+  const pct = tier === 'Gold' ? goldDiscount : tier === 'Silver' ? silverDiscount : bronzeDiscount
+  const n = Number(pct)
+  return Number.isFinite(n) && n > 0 ? n : 0
 }
 
 /** Pourcentage de progression (0–100) d'un solde vers son prochain seuil. */

@@ -13,6 +13,8 @@ import { PAY_MODES } from './payModes'
 import {
   SPLIT_METHODS, buildMixedSplit, isMixedValid, type SplitMethod, type MixedSplit,
 } from '@/lib/paymentSplit'
+import { useAuthStore } from '@/stores/authStore'
+import { tierForPoints, discountForTierDisplay, loyaltyConfig } from '@/lib/loyalty'
 
 // ── Ligne panier ─────────────────────────────────
 function CartRow({
@@ -95,6 +97,7 @@ export default function POSCart({
 }: POSCartProps) {
   const { C } = useTheme()
   const { currency, rates } = useFmt()
+  const { tenant } = useAuthStore()
   const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
   const [showDetail, setShowDetail] = useState(false) // HT/TVA repliés par défaut (réduit la charge)
@@ -257,6 +260,20 @@ export default function POSCart({
               <Text style={s.recapTotalLabel}>Total{vat.rate > 0 ? ' ' + i('TTC', 'incl. tax', 'con IVA', 'IVA incl.') : ''}</Text>
               <Text style={s.recapTotalVal}>{fmt(total)}</Text>
             </View>
+
+            {/* Badge remise fidélité v2 (si client lié + enableLoyalty + remise > 0) */}
+            {(() => {
+              if (!customer || !tenant?.enableLoyalty) return null
+              const cfg = loyaltyConfig({ bronzeThreshold: tenant.bronzeThreshold, silverThreshold: tenant.silverThreshold })
+              const tier = tierForPoints(customer.loyaltyPoints ?? 0, cfg.bronzeThreshold, cfg.silverThreshold)
+              const pct = discountForTierDisplay(tier, tenant.bronzeDiscount ?? 0, tenant.silverDiscount ?? 0, tenant.goldDiscount ?? 0)
+              if (pct <= 0) return null
+              return (
+                <View style={s.loyaltyBadge}>
+                  <Text style={s.loyaltyBadgeTxt}>⭐ {i(`Remise fidélité ${pct} % appliquée`, `${pct}% loyalty discount applied`, `Descuento fidelidad ${pct}% aplicado`, `Sconto fedeltà ${pct}% applicato`)}</Text>
+                </View>
+              )
+            })()}
 
             {/* Toggle paiement mixte (à côté des modes de paiement) */}
             <Pressable
@@ -492,4 +509,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   discountPct: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text3 },
   clearBtn: { alignItems: 'center', paddingVertical: Spacing.sm },
   clearTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger },
+  loyaltyBadge: { backgroundColor: withAlpha(C.accent2, 0.12), borderWidth: 1, borderColor: withAlpha(C.accent2, 0.3), borderRadius: BorderRadius.md, paddingVertical: Spacing.xs, paddingHorizontal: Spacing.sm, alignItems: 'center' },
+  loyaltyBadgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.accent2 },
 })

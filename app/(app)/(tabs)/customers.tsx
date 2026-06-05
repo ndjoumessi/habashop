@@ -10,12 +10,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { customersApi } from '@/services/api'
 import type { Customer } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
+import { useAuthStore } from '@/stores/authStore'
 import {
-  ThemeColors, Spacing, BorderRadius, FontSize, Shadow,
+  ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import LoyaltyCard from '@/components/customers/LoyaltyCard'
+import LoyaltyCardDigital from '@/components/customers/LoyaltyCardDigital'
 
 function initials(name?: string) {
   return (name ?? '?').split(' ').map(n => n[0] ?? '').join('').slice(0, 2).toUpperCase()
@@ -78,6 +80,8 @@ export default function CustomersScreen() {
   const [showSearch, setShowSearch] = useState(false)
   const [search, setSearch] = useState('')
   const [sel, setSel] = useState<any | null>(null)
+  const [digitalCardId, setDigitalCardId] = useState<string | null>(null)
+  const { tenant } = useAuthStore()
 
   const { data: customers = [], isLoading, isError, refetch, isRefetching } = useQuery<Customer[]>({
     queryKey: ['customers'],
@@ -229,6 +233,17 @@ export default function CustomersScreen() {
               {/* Fidélité (affichage honnête : palier canonique + progression + règle réelle) */}
               <LoyaltyCard customer={sel} />
 
+              {/* Carte fidélité numérique partageable (si enableLoyalty) */}
+              {tenant?.enableLoyalty && (
+                <Pressable
+                  style={s.digitalCardBtn}
+                  onPress={() => setDigitalCardId(sel.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={i('Partager la carte fidélité', 'Share loyalty card', 'Compartir tarjeta', 'Condividi carta')}>
+                  <Text style={s.digitalCardBtnTxt}>🎴 {i('Partager la carte', 'Share card', 'Compartir tarjeta', 'Condividi carta')}</Text>
+                </Pressable>
+              )}
+
               {/* Contact */}
               <View style={s.contactCard}>
                 {!!sel.phone && (
@@ -281,6 +296,11 @@ export default function CustomersScreen() {
           )}
         </View>
       </Modal>
+      )}
+
+      {/* Carte fidélité numérique — montée ON-DEMAND (anti-crash Fabric) */}
+      {!!digitalCardId && (
+        <LoyaltyCardDigital customerId={digitalCardId} onClose={() => setDigitalCardId(null)} />
       )}
     </View>
   )
@@ -339,6 +359,8 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   noContact: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', padding: Spacing.md },
 
   actions: { flexDirection: 'row', gap: Spacing.sm },
+  digitalCardBtn: { backgroundColor: withAlpha(C.primary, 0.12), borderWidth: 1, borderColor: withAlpha(C.primary, 0.3), borderRadius: BorderRadius.md, height: 50, alignItems: 'center', justifyContent: 'center' },
+  digitalCardBtnTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.primary3 },
   actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, height: 50, borderRadius: BorderRadius.md },
   actionTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })
