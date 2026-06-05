@@ -411,6 +411,12 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 | 523474e | feat(sentry): **source maps** (plugin expo + metro `getSentryExpoConfig` + fix `@expo/config-plugins`) |
 | 288024d | chore: **version 1.4.1** (build avec source maps Sentry) |
 | dace38c | fix(settings): **version réelle** (`Constants.expoConfig?.version`) + bump **1.4.2** (label « 1.2.0 » était hardcodé) |
+| a50f820 | feat(sales): **annulation/remboursement** de vente (parité web) — `RefundSheet` + `canRefundRole` + badge « Remboursé » |
+| d7eecc9 | fix(sales): bouton « Rembourser » **inline dans la liste** (le web l'affiche par ligne ; mobile ne l'avait qu'en détail) + normalisation casse rôle |
+| 920bb88 | feat(loyalty): **feedback +N pts** après vente (delta server-side) + **carte fidélité honnête** (miroir web) |
+| 468934d | feat(robustesse): **P1-A** Error Boundaries par route (Expo Router) + **P1-B/C** ventes résilientes (clé d'idempotence + retry→file offline) |
+| 07e1b31 | test(e2e): **P1-E** smoke **Maestro** (`.maestro/smoke.yaml`) — login → Caisse → vente → remboursement |
+| d4a260a | feat(loyalty): **seuils & taux configurables par tenant** (`pointsPerAmount`/`bronzeThreshold`/`silverThreshold`) |
 
 ---
 
@@ -427,6 +433,11 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 - [x] Google Play Store — préparation (`PLAY_STORE.md` + feature graphic + page `/privacy` live) ✅ (Sprint 4)
 - [x] Prep iOS + responsive — `useResponsive`, config iOS `app.json`/`eas.json`, `IOS_BUILD.md` ✅ (Sprint 5, infra seule)
 - [x] Validé device : scanner, thème clair, kiosque (vente + PIN), encaissement→API ✅ (cf. `runtime-verification-debt`)
+- [x] **Annulation/remboursement de vente** (parité web) — manager/admin, motif obligatoire, restock, 409 idempotent ✅
+- [x] **Fidélité v1** — feedback « +N pts » après vente + carte fidélité honnête, **seuils/taux configurables par tenant** ✅
+- [x] **Robustesse P1-A/B/C** — boundaries par route + ventes résilientes (idempotence + retry→file offline) ✅
+- [x] **Smoke E2E Maestro** (`.maestro/smoke.yaml`) — login→Caisse→vente→remboursement (P1-E) ✅ (non lancé : nécessite un device)
+- [ ] **Lancer le smoke Maestro sur un device** (`maestro test .maestro/smoke.yaml`) — confirmer le parcours bout en bout
 - [ ] **Tester sur device le reste** : biométrie, offline+resync, widget, ticket WhatsApp, balayage clair écran par écran, TalkBack
 - [ ] **Confirmer device le scanner durci** (filtre stabilité 2 lectures) sur l'Android lent — sinon vote majoritaire glissant ; voir mémoire `barcode-scanner-android-unreliable`
 - [ ] Publier sur Google Play Store (AAB `1f6bf56f` prêt ; captures à faire)
@@ -436,7 +447,7 @@ Pas de Victory/Recharts. Barres en `View` natives (hauteur en %). Libellés de j
 
 ---
 
-*Dernière mise à jour : 2026-06-03 — **APK 1.4.2 buildé** (build `33940b3d`) : fix du **label version hardcodé** « 1.2.0 » en Réglages → lit désormais `Constants.expoConfig?.version` (`dace38c`). Le label trompeur faisait croire que le crash Fabric Caisse persistait alors qu'il est corrigé depuis 1.4.0 (`d949c78`). `newArchEnabled` reste absent (Fabric ON ; `false` casse le build — reanimated 4). À valider device : désinstaller l'ancienne app puis vérifier « 1.4.2 » affiché + bouton Caisse OK. Précédent : (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN) ; (4) parité kiosque TVA/client/remise ; (5) **APK 1.4.1** (`b999af75`) Sentry complet (DSN + source maps). Audit interne au repo = soldé.*
+*Dernière mise à jour : 2026-06-05 — **session remboursement + fidélité + robustesse + e2e** (diffusée en **OTA `preview`**, runtime **1.4.2**, dernier Update `019e95b7` ; pas de nouveau build natif). Livré : (1) **annulation/remboursement** de vente (`a50f820`) + fix « Rembourser » rendu inline dans la liste (`d7eecc9`) ; (2) **fidélité** — feedback « +N pts » + carte honnête (`920bb88`), **seuils/taux configurables par tenant** (`d4a260a`) ; (3) **robustesse P1-A/B/C** — Error Boundaries par route + ventes résilientes idempotentes retry→file (`468934d`) ; (4) **smoke Maestro** e2e (`07e1b31`, non lancé). **101 tests verts**, `tsc` 0. Sentry : unique crash = Fabric natif `addViewAt` (stale, 3 juin) ; **web sans Sentry** (angle mort) ; `SENTRY_AUTH_TOKEN` tourné (`.env` + EAS). Voir **Session 2026-06-04/05** ci-dessus. — Précédent : **APK 1.4.2 buildé** (build `33940b3d`) : fix du **label version hardcodé** « 1.2.0 » en Réglages → lit désormais `Constants.expoConfig?.version` (`dace38c`). Le label trompeur faisait croire que le crash Fabric Caisse persistait alors qu'il est corrigé depuis 1.4.0 (`d949c78`). `newArchEnabled` reste absent (Fabric ON ; `false` casse le build — reanimated 4). À valider device : désinstaller l'ancienne app puis vérifier « 1.4.2 » affiché + bouton Caisse OK. Précédent : (1) scanner code-barres durci + Caisse scan seul ; (2) pack robustesse : Error Boundary, 8 catch vides comblés, reçu PDF (expo-print, validé device) ; (3) pack build : expo-background-task (remplace background-fetch déprécié) + crash reporter Sentry (guardé Expo Go/DSN) ; (4) parité kiosque TVA/client/remise ; (5) **APK 1.4.1** (`b999af75`) Sentry complet (DSN + source maps). Audit interne au repo = soldé.*
 
 ---
 
@@ -562,3 +573,38 @@ Tests machine OK (tsc, 36 tests, **bundle Metro complet HTTP 200**, match logiqu
 
 ### Nouveaux fichiers
 `src/lib/barcode.ts` · `src/__tests__/barcode.test.ts`.
+
+---
+
+## Session 2026-06-04/05 — remboursement, fidélité, robustesse, e2e
+
+> Tout sur `main` (poussé), `tsc` 0, **101 tests verts** (10 suites). Diffusé en **OTA `preview`** (runtime **1.4.2**) — aucun nouveau build natif. Le backend a livré en parallèle : `POST /api/sales` **idempotent**, créditage **fidélité serveur**, et **config fidélité par tenant**.
+
+### 1. Annulation / remboursement de vente (`a50f820`, fix `d7eecc9`)
+- Backend `POST /api/sales/:id/refund { reason, restock }` (déjà en prod). Mobile = **présentation + appel** uniquement.
+- `src/components/pos/RefundSheet.tsx` (modale **on-demand** `{state && <Modal>}` — anti-crash Fabric) ; `src/lib/refund.ts` (`canRefundRole`/`isRefunded`/`isTrackingPayment`).
+- Droits **MANAGER/ADMIN/SUPER_ADMIN** ; caissier masqué. Motif **obligatoire**, restock **pré-coché**, note Wave/Orange « suivi only », **409** (déjà remboursée) géré, MAJ optimiste (`invalidateQueries(['sales'])`).
+- ⚠️ **Bug corrigé (`d7eecc9`)** : « Rembourser » était **invisible** car placé **seulement dans la feuille de détail** ; le **web l'affiche inline par ligne**. → ajout d'une **pill « Rembourser » dans chaque ligne** de l'historique (rôle OK + vente non remboursée). Le rôle n'était PAS en cause (`SUPER_ADMIN` correct partout). Défense en profondeur : `canRefundRole` **normalise** la casse (`trim().toUpperCase()`, comme le web).
+
+### 2. Fidélité (`920bb88`, config tenant `d4a260a`)
+- **Feedback après vente liée à un client** : relit le solde canonique via `GET /api/customers/:id/loyalty` et affiche le **DELTA réel** « +N points fidélité » (après − avant). **Jamais** de recalcul de la règle côté mobile. Workaround « toast neutre » retiré.
+- **Carte fidélité honnête** (`src/components/customers/LoyaltyCard.tsx`, fiche client) : solde + palier **canonique** (backend), barre de progression, règle réelle — **AUCUNE** promesse de remise (« Récompenses & remises : à venir »).
+- **Configurable par tenant (`d4a260a`)** : `src/lib/loyalty.ts` paramétré par **`pointsPerAmount`/`bronzeThreshold`/`silverThreshold`** (renvoyés par `GET /api/tenant` **et** `GET /loyalty`). Défauts v1 = `1000/2000/5000`. ⚠️ **sémantique backend** : `bronzeThreshold` = **entrée Silver**, `silverThreshold` = **entrée Gold**. Source : réponse `/loyalty` (la plus fraîche) → `tenant` store → défauts. Libellés (taux + seuils) **dynamiques**, dans la devise du tenant.
+
+### 3. Robustesse — P1-A + P1-B/C (`468934d`)
+- **P1-A — Error Boundaries par route** : `src/components/ui/RouteErrorFallback.tsx` branché via la **convention Expo Router** `export { default as ErrorBoundary }` sur `(tabs)/_layout`, `pos/index`, `kiosk/index`. Fallback **localisé** (Réessayer/Retour, log Sentry) → un écran qui plante n'emporte plus toute l'app. Boundary racine conservé en dernier recours. ⚠️ un crash **natif** (ex. Fabric `addViewAt`) **n'est PAS** rattrapable par un boundary JS → la vraie parade reste les **modales on-demand**.
+- **P1-B/C — Ventes résilientes** : `src/lib/idempotency.ts` (UUID v4, **1 clé par tentative**, jamais régénérée) ; `src/services/saleSubmit.ts` `submitSaleResilient()` → sur **timeout/5xx** : retry court (backoff, **même clé**) ; échec persistant → **bascule file offline** (au lieu d'une alerte sèche). 4xx → propagé. `isRetryableApiError` (api.ts). POS **et** kiosque câblés. `useOfflineSync` : **reflush périodique 30 s** (capte les ventes mises en file « en ligne mais lent »). Le backend dédup sur la clé → **zéro doublon** au retry/resync.
+
+### 4. E2E — P1-E smoke Maestro (`07e1b31`)
+- `.maestro/smoke.yaml` (appId `com.habashop.app`, `clearState:true`) : **login → Caisse → vente → remboursement**, labels FR exacts, `assertVisible`/`extendedWaitUntil`. `.maestro/README.md` (install/run/debug/prérequis). **Non lancé** (pas de device) ; `jest.config.js` accepte désormais `*.test.tsx`.
+- Premier test E2E : aurait attrapé le crash Fabric release-only (invisible aux unit tests).
+
+### Sentry — audit + rotation token
+- **Audit** : un **seul** projet Sentry (`react-native`, org `haba-76`, EU) → **le web n'a PAS de Sentry** sous ce token (angle mort à traiter côté web). Issue unique = `IllegalStateException: addViewAt: failed to insert view` (**fatal, native Fabric**, 31 events / 6 users, **24 sur la 1.4.2**, devices **entrée de gamme** Redmi `2203129G` / Realme `RMX3363`, Android 13/14), **dernière le 3 juin** (rafale de test, pas du trafic prod). Marquée *resolved* mais le sample est **stale + minuscule** → re-tester un build courant pour confirmer.
+- **Token tourné 2×** : `SENTRY_AUTH_TOKEN` mis à jour dans **`.env`** (gitignored) **et** **EAS env vars** (secret, preview + production) via `eas env:update`. ⚠️ Le token vit à ces 2 endroits ; révoquer les anciens dans Sentry pour finir la rotation.
+
+### Nouveaux fichiers (session)
+`src/lib/refund.ts` · `src/lib/idempotency.ts` · `src/services/saleSubmit.ts` · `src/components/pos/RefundSheet.tsx` · `src/components/customers/LoyaltyCard.tsx` · `src/components/ui/RouteErrorFallback.tsx` · `.maestro/smoke.yaml` · `.maestro/README.md` · `src/types/react-test-renderer.d.ts` · tests `refund`/`loyalty`/`idempotency`/`saleSubmit`/`errorBoundary`.
+
+### À valider sur device (cette session)
+- Remboursement (rôle masqué caissier, 409, restock), feedback « +N pts » avec **taux custom** (ex. 500), seuils/devise de la carte fidélité, **boundaries** (un écran planté n'emporte pas la nav), **timeout→file** (réseau lent ⇒ « vente enregistrée, synchro en attente », zéro doublon au retour réseau), **smoke Maestro** bout en bout.
