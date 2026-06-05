@@ -6,7 +6,7 @@ appId: com.habashop.app
 # crash invisible aux tests unitaires (logique pure).
 #
 # Labels EXACTS extraits du code FR (i18n inline `i('fr',…)`), pas d'un JSON.
-# Devise du tenant démo admin = EUR → les prix produits affichent « € ».
+# Devise du tenant démo admin = EUR → les prix produits affichent « FCFA ».
 # Réseau requis (login + vente + remboursement tapent l'API prod Railway).
 # ─────────────────────────────────────────────────────────────────────────────
 ---
@@ -35,16 +35,16 @@ appId: com.habashop.app
 - tapOn: "Caisse"                  # onglet Caisse → ouvre l'écran POS (fullScreenModal)
 - waitForAnimationToEnd
 - extendedWaitUntil:
-    visible: "€"                   # attend le chargement des produits (réseau)
+    visible: "FCFA"                   # attend le chargement des produits (réseau)
     timeout: 20000
 - tapOn:
-    text: "€"                      # 1re tuile produit (son prix en EUR) → ajout au panier
+    text: "FCFA"                      # 1re tuile produit (son prix en EUR) → ajout au panier
     index: 0
 - waitForAnimationToEnd
 - assertVisible: "Encaisser"       # barre total (apparaît dès que le panier > 0)
 - tapOn: "Encaisser"               # barre total → ouvre le panier
 - waitForAnimationToEnd
-- tapOn: "Encaisser.*€"            # bouton du panier (« Encaisser <montant> € ») → confirmation
+- tapOn: "Encaisser.*FCFA"            # bouton du panier (« Encaisser <montant> FCFA ») → confirmation
 - waitForAnimationToEnd
 - assertVisible: "Confirmer la vente"
 - tapOn: "Valider"
