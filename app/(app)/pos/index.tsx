@@ -71,6 +71,8 @@ export default function POSScreen() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [showCustomerPicker, setShowCustomerPicker] = useState(false)
+  // Ventilation mixte transmise par le panier → utilisée à la confirmation (sinon null = simple).
+  const [pendingOverride, setPendingOverride] = useState<({ paymentMode: string } & MixedSplit) | null>(null)
 
   const { data: products = [], isLoading, isError, refetch } = useQuery<Product[]>({
     queryKey: ['products'],
@@ -383,7 +385,7 @@ export default function POSScreen() {
         <POSCart
           visible
           onClose={() => setShowCart(false)}
-          onCheckout={() => setShowConfirm(true)}
+          onCheckout={(override) => { setPendingOverride(override ?? null); setShowConfirm(true) }}
           cart={cart}
           paymentMode={paymentMode}
           cashGiven={cashGiven}
@@ -418,14 +420,13 @@ export default function POSScreen() {
         <POSConfirmModal
           visible
           onClose={() => setShowConfirm(false)}
-          onConfirm={confirmSale}
+          onConfirm={() => confirmSale(pendingOverride ?? undefined)}
           isSelling={saleMutation.isPending}
           cart={cart}
           total={totalAmt}
-          paymentMode={paymentMode}
+          paymentMode={pendingOverride?.paymentMode ?? paymentMode}
           vatRate={tenant?.vatRate}
           fmt={fmt}
-          toXOF={(n) => convertToXOF(n, currency, rates)}
           i={i}
         />
       )}

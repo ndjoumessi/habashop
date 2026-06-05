@@ -10,6 +10,9 @@ import { convertToXOF } from '@/services/exchangeRate'
 import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
 import AccessibleButton from '@/components/ui/AccessibleButton'
 import { PAY_MODES } from './payModes'
+import {
+  SPLIT_METHODS, buildMixedSplit, isMixedValid, type SplitMethod, type MixedSplit,
+} from '@/lib/paymentSplit'
 
 // ── Ligne panier ─────────────────────────────────
 function CartRow({
@@ -63,7 +66,8 @@ function CartRow({
 interface POSCartProps {
   visible:          boolean
   onClose:          () => void
-  onCheckout:       () => void
+  // override fourni uniquement en paiement MIXTE (paymentMode='mixed' + ventilation XOF).
+  onCheckout:       (override?: { paymentMode: string } & MixedSplit) => void
   cart:             CartItem[]
   paymentMode:      string
   cashGiven:        number
@@ -103,6 +107,34 @@ export default function POSCart({
   const change = cashGivenXOF - total
   // Garde espèces : en mode cash, montant reçu < total → encaissement bloqué.
   const cashShort = paymentMode === 'cash' && cashGivenXOF < total
+
+  // ── Paiement mixte (état local, déplacé ici depuis la modale de confirmation) ──
+  const [mixed, setMixed] = useState(false)
+  const [method1, setMethod1] = useState<SplitMethod>('cash')
+  const [method2, setMethod2] = useState<SplitMethod>('mobile')
+  const [amt, setAmt] = useState('') // montant ligne 1, saisi en devise d'affichage
+
+  const methodLabel = (m: SplitMethod): string =>
+    m === 'cash' ? `💵 ${i('Espèces', 'Cash', 'Efectivo', 'Contanti')}`
+    : m === 'card' ? `💳 ${i('Carte', 'Card', 'Tarjeta', 'Carta')}`
+    : `📱 ${i('Mobile Money', 'Mobile Money', 'Dinero móvil', 'Mobile Money')}`
+
+  // Montant ligne 1 en XOF (borné [0,total]) ; reste auto en XOF.
+  const amount1XOF = Math.min(total, Math.max(0, convertToXOF(Number(amt.replace(',', '.').replace(/[^0-9.]/g, '')) || 0, currency, rates)))
+  const remainingXOF = Math.max(0, total - amount1XOF)
+  const mixedValid = isMixedValid(method1, method2, amount1XOF, total)
+
+  const pickMethod1 = (m: SplitMethod) => {
+    setMethod1(m)
+    if (method2 === m) setMethod2(SPLIT_METHODS.find(x => x !== m) ?? 'mobile')
+  }
+
+  // Encaisser désactivé : espèces insuffisantes (mode simple) OU split mixte invalide.
+  const checkoutDisabled = mixed ? !mixedValid : cashShort
+  const handleCheckout = () => {
+    if (mixed) onCheckout({ paymentMode: 'mixed', ...buildMixedSplit(method1, amount1XOF, method2, total) })
+    else onCheckout()
+  }
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -226,64 +258,130 @@ export default function POSCart({
               <Text style={s.recapTotalVal}>{fmt(total)}</Text>
             </View>
 
-            {/* Modes de paiement */}
-            <View style={s.payGrid}>
-              {PAY_MODES.map(m => {
-                const on = paymentMode === m.id
-                return (
-                  <Pressable
-                    key={m.id}
-                    style={[s.payChip, on && s.payChipOn]}
-                    onPress={() => onSetPaymentMode(m.id)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: on }}
-                    accessibilityLabel={i(m.fr, m.en, m.es, m.it)}
-                  >
-                    <Text style={{ fontSize: 18 }}>{m.icon}</Text>
-                    <Text style={[s.payTxt, on && s.payTxtOn]}>{i(m.fr, m.en, m.es, m.it)}</Text>
-                  </Pressable>
-                )
-              })}
-            </View>
+            {/* Toggle paiement mixte (à côté des modes de paiement) */}
+            <Pressable
+              style={[s.mixedToggle, mixed && s.mixedToggleOn]}
+              onPress={() => setMixed(v => !v)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: mixed }}
+              accessibilityLabel={i('Paiement mixte', 'Split payment', 'Pago mixto', 'Pagamento misto')}
+            >
+              <View style={[s.checkbox, mixed && s.checkboxOn]}>
+                {mixed && <Ionicons name="checkmark" size={13} color={C.white} />}
+              </View>
+              <Text style={s.mixedToggleTxt}>{i('Paiement mixte', 'Split payment', 'Pago mixto', 'Pagamento misto')}</Text>
+            </Pressable>
 
-            {/* Montant donné (espèces) */}
-            {paymentMode === 'cash' && (
-              <View style={s.cashWrap}>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.recapLabel}>{i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}</Text>
-                  <TextInput
-                    style={s.cashInput}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor={C.text3}
-                    value={cashGiven ? String(cashGiven) : ''}
-                    onChangeText={t => onSetCashGiven(Number(t.replace(/[^0-9.]/g, '')) || 0)}
-                    accessibilityLabel={i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}
-                  />
+            {!mixed ? (
+              <>
+                {/* Modes de paiement */}
+                <View style={s.payGrid}>
+                  {PAY_MODES.map(m => {
+                    const on = paymentMode === m.id
+                    return (
+                      <Pressable
+                        key={m.id}
+                        style={[s.payChip, on && s.payChipOn]}
+                        onPress={() => onSetPaymentMode(m.id)}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: on }}
+                        accessibilityLabel={i(m.fr, m.en, m.es, m.it)}
+                      >
+                        <Text style={{ fontSize: 18 }}>{m.icon}</Text>
+                        <Text style={[s.payTxt, on && s.payTxtOn]}>{i(m.fr, m.en, m.es, m.it)}</Text>
+                      </Pressable>
+                    )
+                  })}
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={s.recapLabel}>{i('Monnaie', 'Change', 'Cambio', 'Resto')}</Text>
-                  <Text style={[s.changeVal, { color: change >= 0 ? C.accent2 : C.danger }]}>
-                    {fmt(Math.max(0, change))}
+
+                {/* Montant donné (espèces) */}
+                {paymentMode === 'cash' && (
+                  <View style={s.cashWrap}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.recapLabel}>{i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}</Text>
+                      <TextInput
+                        style={s.cashInput}
+                        keyboardType="numeric"
+                        placeholder="0"
+                        placeholderTextColor={C.text3}
+                        value={cashGiven ? String(cashGiven) : ''}
+                        onChangeText={t => onSetCashGiven(Number(t.replace(/[^0-9.]/g, '')) || 0)}
+                        accessibilityLabel={i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}
+                      />
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={s.recapLabel}>{i('Monnaie', 'Change', 'Cambio', 'Resto')}</Text>
+                      <Text style={[s.changeVal, { color: change >= 0 ? C.accent2 : C.danger }]}>
+                        {fmt(Math.max(0, change))}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {cashShort && (
+                  <Text style={s.cashWarn}>
+                    {i(
+                      'Montant reçu insuffisant',
+                      'Insufficient amount received',
+                      'Monto recibido insuficiente',
+                      'Importo ricevuto insufficiente',
+                    )}
                   </Text>
+                )}
+              </>
+            ) : (
+              /* ── Lignes de paiement mixte ── */
+              <View style={s.mixedBox}>
+                {/* Ligne 1 : méthode + montant */}
+                <Text style={s.lineLabel}>{i('Paiement 1', 'Payment 1', 'Pago 1', 'Pagamento 1')}</Text>
+                <View style={s.methodRow}>
+                  {SPLIT_METHODS.map(m => (
+                    <Pressable key={m} style={[s.methodChip, method1 === m && s.methodChipOn]} onPress={() => pickMethod1(m)}
+                      accessibilityRole="button" accessibilityState={{ selected: method1 === m }} accessibilityLabel={methodLabel(m)}>
+                      <Text style={[s.methodChipTxt, method1 === m && s.methodChipTxtOn]} numberOfLines={1}>{methodLabel(m)}</Text>
+                    </Pressable>
+                  ))}
                 </View>
+                <TextInput
+                  style={s.cashInput}
+                  keyboardType="numeric"
+                  value={amt}
+                  onChangeText={t => setAmt(t.replace(/[^0-9.,]/g, ''))}
+                  placeholder={i('Montant reçu', 'Amount received', 'Importe recibido', 'Importo ricevuto')}
+                  placeholderTextColor={C.text3}
+                  accessibilityLabel={i('Montant du paiement 1', 'Payment 1 amount', 'Importe del pago 1', 'Importo del pagamento 1')}
+                />
+
+                {/* Ligne 2 : méthode (≠ ligne 1) + reste auto (read-only) */}
+                <Text style={s.lineLabel}>{i('Paiement 2', 'Payment 2', 'Pago 2', 'Pagamento 2')}</Text>
+                <View style={s.methodRow}>
+                  {SPLIT_METHODS.filter(m => m !== method1).map(m => (
+                    <Pressable key={m} style={[s.methodChip, method2 === m && s.methodChipOn]} onPress={() => setMethod2(m)}
+                      accessibilityRole="button" accessibilityState={{ selected: method2 === m }} accessibilityLabel={methodLabel(m)}>
+                      <Text style={[s.methodChipTxt, method2 === m && s.methodChipTxtOn]} numberOfLines={1}>{methodLabel(m)}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={s.recapRow}>
+                  <Text style={s.recapLabel}>{i('Reste (auto)', 'Remaining (auto)', 'Restante (auto)', 'Resto (auto)')}</Text>
+                  <Text style={s.recapVal}>{fmt(remainingXOF)}</Text>
+                </View>
+
+                {!mixedValid && (
+                  <Text style={s.cashWarn}>
+                    {i('Saisis un montant entre 0 et le total, 2 méthodes différentes.',
+                       'Enter an amount between 0 and the total, two different methods.',
+                       'Ingresa un importe entre 0 y el total, dos métodos distintos.',
+                       'Inserisci un importo tra 0 e il totale, due metodi diversi.')}
+                  </Text>
+                )}
               </View>
             )}
 
-            {cashShort && (
-              <Text style={s.cashWarn}>
-                {i(
-                  'Montant reçu insuffisant',
-                  'Insufficient amount received',
-                  'Monto recibido insuficiente',
-                  'Importo ricevuto insufficiente',
-                )}
-              </Text>
-            )}
             <AccessibleButton
               label={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(total)}`}
-              onPress={onCheckout}
-              disabled={cashShort}
+              onPress={handleCheckout}
+              disabled={checkoutDisabled}
             />
             <Pressable style={s.clearBtn} onPress={onClearCart}
               accessibilityRole="button"
@@ -354,6 +452,20 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   changeVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', marginTop: 4 },
 
   cashWarn: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.danger, textAlign: 'center' },
+
+  // Paiement mixte
+  mixedToggle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm, minHeight: 44, paddingHorizontal: Spacing.sm, borderRadius: BorderRadius.md, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border },
+  mixedToggleOn: { backgroundColor: withAlpha(C.primary, 0.1), borderColor: withAlpha(C.primary, 0.4) },
+  checkbox: { width: 20, height: 20, borderRadius: BorderRadius.sm, borderWidth: 1.5, borderColor: C.text3, alignItems: 'center', justifyContent: 'center' },
+  checkboxOn: { backgroundColor: C.primary, borderColor: C.primary },
+  mixedToggleTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
+  mixedBox: { gap: Spacing.xs, padding: Spacing.sm, borderRadius: BorderRadius.md, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border },
+  lineLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: Spacing.xs },
+  methodRow: { flexDirection: 'row', gap: Spacing.xs },
+  methodChip: { flex: 1, minHeight: 40, paddingHorizontal: Spacing.xs, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: C.border, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' },
+  methodChipOn: { backgroundColor: withAlpha(C.primary, 0.14), borderColor: C.primary },
+  methodChipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
+  methodChipTxtOn: { color: C.primary3 },
   custBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
     paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,
