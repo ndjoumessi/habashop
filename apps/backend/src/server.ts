@@ -16,6 +16,7 @@ import { tenantRoutes }       from './routes/tenant'
 import { productRoutes }      from './routes/products'
 import { customerRoutes }     from './routes/customers'
 import { saleRoutes }         from './routes/sales'
+import { ticketZRoutes }      from './routes/ticketZ'
 import { supplierRoutes }     from './routes/suppliers'
 import { orderRoutes }        from './routes/orders'
 import { employeeRoutes }     from './routes/employees'
@@ -210,6 +211,7 @@ async function start() {
   await app.register(productRoutes)
   await app.register(customerRoutes)
   await app.register(saleRoutes)
+  await app.register(ticketZRoutes)
   await app.register(supplierRoutes)
   await app.register(orderRoutes)
   await app.register(employeeRoutes)

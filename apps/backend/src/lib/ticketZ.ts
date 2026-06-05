@@ -1,0 +1,113 @@
+import PDFDocument from 'pdfkit'
+import { fmtMoney } from './invoicePdf'
+
+// ── Agrégat (pur, testable) ──
+export interface TZSale { total: number; status: string; paymentMode: string; customerId: string | null }
+export interface TicketZAgg {
+  caVentes: number; nbVentes: number; totalRemboursements: number; caNets: number
+  cashAmount: number; mobileMoneyAmount: number; cardAmount: number
+  panierMoyen: number; nbClients: number
+}
+
+/**
+ * Agrège les ventes d'une journée en récap Ticket Z.
+ * CA = ventes status != refunded ; remboursements = ventes refunded.
+ * Breakdown paiement : cash → Espèces, card → Carte, autre → Mobile Money.
+ */
+export function computeTicketZ(sales: TZSale[]): TicketZAgg {
+  let caVentes = 0, nbVentes = 0, totalRemboursements = 0, cash = 0, mobile = 0, card = 0
+  const clients = new Set<string>()
+  for (const s of sales) {
+    const amount = Number(s.total) || 0
+    if (s.status === 'refunded') { totalRemboursements += amount; continue }
+    caVentes += amount; nbVentes++
+    if (s.customerId) clients.add(s.customerId)
+    if (s.paymentMode === 'cash') cash += amount
+    else if (s.paymentMode === 'card') card += amount
+    else mobile += amount
+  }
+  return {
+    caVentes, nbVentes, totalRemboursements,
+    caNets: caVentes - totalRemboursements,
+    cashAmount: cash, mobileMoneyAmount: mobile, cardAmount: card,
+    panierMoyen: nbVentes > 0 ? caVentes / nbVentes : 0,
+    nbClients: clients.size,
+  }
+}
+
+// ── PDF ──
+type Lang = 'fr' | 'en' | 'es' | 'it'
+const L = (lang: string) => (fr: string, en: string, es: string, it: string) =>
+  lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+
+export interface TicketZRecord extends TicketZAgg {
+  date: Date | string; generatedAt: Date | string; generatedBy: string
+}
+export interface TZTenant { name: string; currency: string; lang?: string | null }
+
+/** Rend le Ticket Z en Buffer PDF (format ticket étroit, localisé). */
+export function buildTicketZPdf(tz: TicketZRecord, tenant: TZTenant, generatedByName?: string): Promise<Buffer> {
+  const lang = (tenant.lang as Lang) || 'fr'
+  const i = L(lang)
+  const cur = tenant.currency || 'XOF'
+  const M = (xof: number) => fmtMoney(xof, cur)
+  const dloc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+  const dateStr = new Date(tz.date).toLocaleDateString(dloc, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+  const genStr = new Date(tz.generatedAt).toLocaleString(dloc)
+
+  // Ticket étroit 300pt de large.
+  const W = 300
+  const doc = new PDFDocument({ size: [W, 540], margin: 24 })
+  const chunks: Buffer[] = []
+  doc.on('data', (c: Buffer) => chunks.push(c))
+  const done = new Promise<Buffer>((resolve) => doc.on('end', () => resolve(Buffer.concat(chunks))))
+
+  const left = 24, right = W - 24, inner = right - left
+  const VIOLET = '#6C47FF', GREY = '#666666'
+  let y = 28
+
+  const center = (txt: string, size: number, color: string, font = 'Helvetica') => {
+    doc.font(font).fontSize(size).fillColor(color).text(txt, left, y, { width: inner, align: 'center' })
+    y += size + 6
+  }
+  const rule = () => { doc.moveTo(left, y).lineTo(right, y).strokeColor('#DDDDDD').dash(2, { space: 2 }).stroke().undash(); y += 8 }
+  const row = (label: string, val: string, opts: { bold?: boolean; color?: string; size?: number } = {}) => {
+    const size = opts.size ?? 10
+    doc.font(opts.bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(size).fillColor(opts.color ?? '#222222')
+    doc.text(label, left, y, { width: inner * 0.58 })
+    doc.text(val, left + inner * 0.4, y, { width: inner * 0.6, align: 'right' })
+    y += size + 7
+  }
+
+  center(i('TICKET Z — CLÔTURE', 'Z TICKET — CLOSING', 'TICKET Z — CIERRE', 'TICKET Z — CHIUSURA'), 13, VIOLET, 'Helvetica-Bold')
+  center(tenant.name || 'HabaShop', 11, '#111111', 'Helvetica-Bold')
+  center(dateStr, 9, GREY)
+  y += 4; rule()
+
+  row(i('CA brut', 'Gross revenue', 'Ingreso bruto', 'Incasso lordo'), M(tz.caVentes))
+  row(i('Transactions', 'Transactions', 'Transacciones', 'Transazioni'), String(tz.nbVentes))
+  row(i('Panier moyen', 'Avg. basket', 'Cesta media', 'Scontrino medio'), M(tz.panierMoyen))
+  y += 2; rule()
+
+  row(i('Remboursements', 'Refunds', 'Reembolsos', 'Rimborsi'), `- ${M(tz.totalRemboursements)}`, { color: '#C81E1E' })
+  y += 2; rule()
+  row(i('CA NET', 'NET revenue', 'Ingreso NETO', 'Incasso NETTO'), M(tz.caNets), { bold: true, color: VIOLET, size: 12 })
+  y += 4; rule()
+
+  center(i('PAIEMENTS', 'PAYMENTS', 'PAGOS', 'PAGAMENTI'), 9, GREY, 'Helvetica-Bold')
+  row(i('Espèces', 'Cash', 'Efectivo', 'Contanti'), M(tz.cashAmount))
+  row('Mobile Money', M(tz.mobileMoneyAmount))
+  row(i('Carte', 'Card', 'Tarjeta', 'Carta'), M(tz.cardAmount))
+  y += 2; rule()
+
+  row(i('Clients', 'Customers', 'Clientes', 'Clienti'), String(tz.nbClients))
+  y += 8
+  doc.font('Helvetica').fontSize(8).fillColor(GREY)
+  doc.text(`${i('Généré par', 'Generated by', 'Generado por', 'Generato da')} : ${generatedByName ?? tz.generatedBy}`, left, y, { width: inner }); y += 12
+  doc.text(`${i('Le', 'On', 'El', 'Il')} ${genStr}`, left, y, { width: inner }); y += 18
+
+  doc.font('Helvetica-Oblique').fontSize(9).fillColor(GREY).text(i('Fin du ticket Z', 'End of Z ticket', 'Fin del ticket Z', 'Fine del ticket Z'), left, y, { width: inner, align: 'center' })
+
+  doc.end()
+  return done
+}

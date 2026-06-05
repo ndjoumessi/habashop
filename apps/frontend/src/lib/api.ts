@@ -137,6 +137,13 @@ export const salesApi = {
   openInvoice: (id: string) => openAuthedPdf(`/api/sales/${id}/invoice`),
 }
 
+export const ticketZApi = {
+  today:    () => api.get<any>('/api/ticket-z/today'),
+  history:  () => api.get<any[]>('/api/ticket-z/history'),
+  generate: () => api.post<any>('/api/ticket-z/generate', {}),
+  openPdf:  (id: string) => openAuthedPdf(`/api/ticket-z/${id}/pdf`),
+}
+
 export const customersApi = {
   list:   () => api.get<any[]>('/api/customers'),
   create: (data: any) => api.post<any>('/api/customers', data),

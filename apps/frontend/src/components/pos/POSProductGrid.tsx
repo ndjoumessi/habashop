@@ -24,12 +24,13 @@ interface POSProductGridProps {
   salesHistory: any[]
   canRefund: boolean
   onRefundClick: (sale: any) => void
+  canCloseDay?: boolean; onCloseDay?: () => void
   isMobile: boolean; mobileView: string
   totalProducts: number; loadingProducts: boolean
   navigate: (path: string, opts?: any) => void
 }
 
-export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
   return (
         <div style={{
           flex: 1,
@@ -336,6 +337,16 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
           {/* ── Onglet Historique ── */}
           {posTab === 'history' && (
             <div style={{ flex:1, overflowY:'auto', minHeight:0 }}>
+              {/* Clôture journalière (Ticket Z) — MANAGER/ADMIN */}
+              {canCloseDay && (
+                <button type="button" onClick={onCloseDay}
+                  style={{ width:'100%', marginBottom:12, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                    background:'linear-gradient(135deg, var(--p), var(--p2))', border:'none', color:'#fff',
+                    borderRadius:'var(--r-md)', padding:'12px', minHeight:44, fontSize:13, fontWeight:'var(--fw-semibold)',
+                    fontFamily:'var(--font)', cursor:'pointer' }}>
+                  <ClipboardList size={15} /> {lang === 'en' ? 'Close the day (Z ticket)' : lang === 'es' ? 'Cerrar el día (ticket Z)' : lang === 'it' ? 'Chiudi la giornata (ticket Z)' : 'Clôturer la journée (Ticket Z)'}
+                </button>
+              )}
               {loadingHistory ? (
                 <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
                   ⏳ {lang === 'en' ? 'Loading...' : lang === 'es' ? 'Cargando...' : lang === 'it' ? 'Caricamento...' : 'Chargement...'}

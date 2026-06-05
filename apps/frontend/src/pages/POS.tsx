@@ -14,6 +14,7 @@ import POSCart from '@/components/pos/POSCart'
 import POSModals from '@/components/pos/POSModals'
 import POSCashierClosed from '@/components/pos/POSCashierClosed'
 import RefundModal from '@/components/pos/RefundModal'
+import TicketZModal from '@/components/pos/TicketZModal'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
 import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
 
@@ -83,6 +84,7 @@ export default function POS() {
   const [discountForm, setDiscountForm] = useState({ type:'percent' as 'percent'|'amount', value:0, reason:'' })
   const [isSaving, setIsSaving] = useState(false)
   const [posTab, setPosTab] = useState<'pos'|'history'>('pos')
+  const [showTicketZ, setShowTicketZ] = useState(false)
   const [salesHistory, setSalesHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   // Remboursement : réservé MANAGER + ADMIN (anti-fraude). Le caissier ne voit pas l'action.
@@ -435,6 +437,7 @@ export default function POS() {
           loadingHistory={loadingHistory}
           salesHistory={salesHistory}
           canRefund={canRefund} onRefundClick={setRefundSale}
+          canCloseDay={canRefund} onCloseDay={() => setShowTicketZ(true)}
           isMobile={isMobile} mobileView={mobileView}
           totalProducts={posProducts.length} loadingProducts={loadingProducts}
           navigate={navigate}
@@ -509,6 +512,9 @@ export default function POS() {
         lang={lang}
         fmt={fmt}
       />
+
+      {/* MODAL CLÔTURE JOURNALIÈRE — Ticket Z (manager/admin) */}
+      {showTicketZ && <TicketZModal onClose={() => setShowTicketZ(false)} />}
 
       {/* FAB mobile — voir panier */}
       {isMobile && mobileView === 'products' && cart.length > 0 && (

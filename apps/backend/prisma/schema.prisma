@@ -83,6 +83,7 @@ model Tenant {
   shifts         Shift[]
   leaveRequests  LeaveRequest[]
   loyaltyTxns    LoyaltyTransaction[]
+  ticketZ        TicketZ[]
 
   @@index([deletedAt])
 }
@@ -212,6 +213,29 @@ model Sale {
   @@index([tenantId, status])
   @@unique([tenantId, idempotencyKey])
   @@unique([tenantId, invoiceNumber])
+}
+
+// Ticket Z — clôture journalière de caisse (1 par jour/tenant, regénérable = upsert).
+model TicketZ {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  date                DateTime // date seule (minuit UTC)
+  caVentes            Float    // CA brut des ventes non remboursées
+  nbVentes            Int
+  totalRemboursements Float    // somme des ventes remboursées (refunded)
+  caNets              Float    // caVentes - totalRemboursements
+  cashAmount          Float
+  mobileMoneyAmount   Float    // wave + orange + mtn + mobile
+  cardAmount          Float
+  panierMoyen         Float
+  nbClients           Int      // clients distincts (customerId non null)
+  generatedBy         String   // userId
+  generatedAt         DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, date])
+  @@index([tenantId, date])
 }
 
 model SaleItem {
