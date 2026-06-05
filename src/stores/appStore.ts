@@ -58,6 +58,20 @@ export const useAppStore = create<AppState>()(
   ),
 )
 
+/**
+ * Résout quand le persist a fini de réhydrater les préférences depuis AsyncStorage.
+ * ⚠️ À ATTENDRE avant d'appliquer une valeur par défaut (devise tenant) au démarrage :
+ * sinon on lit l'état INITIAL (`currencyManuallySet=false`, `lang='fr'`) pendant la
+ * fenêtre de hydration et on écrase le choix persisté de l'utilisateur (bug OTA/restart).
+ * Résout immédiatement si déjà hydraté (et même si AsyncStorage est vide = 1re install).
+ */
+export function whenAppStoreHydrated(): Promise<void> {
+  if (useAppStore.persist.hasHydrated()) return Promise.resolve()
+  return new Promise<void>((resolve) => {
+    const unsub = useAppStore.persist.onFinishHydration(() => { unsub(); resolve() })
+  })
+}
+
 // Hook thème — sélectionne la primitive `theme` (re-render garanti) + suit le
 // schéma système si 'system'. Retourne la palette `C` à passer à makeStyles(C).
 export function useTheme() {

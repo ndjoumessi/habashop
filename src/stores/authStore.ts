@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import * as SecureStore from 'expo-secure-store'
-import { useAppStore } from './appStore'
+import { useAppStore, whenAppStoreHydrated } from './appStore'
+import { shouldApplyTenantCurrency } from '@/lib/prefs'
 import type { User, Tenant } from '@/types'
 
 interface AuthState {
@@ -15,10 +16,17 @@ interface AuthState {
  * Devise par défaut depuis le tenant : si l'utilisateur n'a jamais choisi de devise
  * manuellement (appStore.currencyManuallySet=false), aligne appStore.currency sur
  * tenant.currency. Sinon, respecte son choix (ne rien écraser).
+ *
+ * ⚠️ On ATTEND la réhydratation du persist avant de lire `currencyManuallySet` : sinon,
+ * au démarrage/OTA, restoreSession (réseau) peut résoudre avant la lecture AsyncStorage et
+ * lire l'état initial (false) → écraser le choix devise de l'utilisateur. (fix persistance)
  */
-function syncCurrencyFromTenant(tenant: Tenant | null | undefined): void {
+async function syncCurrencyFromTenant(tenant: Tenant | null | undefined): Promise<void> {
+  await whenAppStoreHydrated()
   const app = useAppStore.getState()
-  if (!app.currencyManuallySet && tenant?.currency) app.setCurrency(tenant.currency)
+  if (shouldApplyTenantCurrency(app.currencyManuallySet, tenant?.currency)) {
+    app.setCurrency(tenant!.currency)
+  }
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
