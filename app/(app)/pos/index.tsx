@@ -12,6 +12,7 @@ import { productsApi, customersApi, apiErrorMessage } from '@/services/api'
 import type { Product, SalePayload } from '@/types'
 import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmit'
 import { newIdempotencyKey } from '@/lib/idempotency'
+import type { MixedSplit } from '@/lib/paymentSplit'
 import { usePosStore } from '@/stores/posStore'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import {
@@ -212,12 +213,14 @@ export default function POSScreen() {
   })
 
   // ── Validation de la vente : online → API, offline → file d'attente ──
-  const confirmSale = async () => {
+  // `override` fourni uniquement en paiement MIXTE (paymentMode='mixed' + ventilation XOF).
+  const confirmSale = async (override?: { paymentMode: string } & MixedSplit) => {
+    const mode = override?.paymentMode ?? paymentMode
     // Garde espèces : interdit l'encaissement si le montant reçu est < total (mode cash
-    // uniquement ; Wave/Orange/Carte non concernés). Filet défensif — le bouton « Encaisser »
-    // est déjà désactivé côté panier dans ce cas. `cashGiven` est saisi en devise d'affichage
-    // → ramené en XOF de base (comme totalAmt) avant comparaison.
-    if (paymentMode === 'cash' && convertToXOF(cashGiven, currency, rates) < totalAmt) {
+    // SIMPLE uniquement ; mixte / Wave / Orange / Carte non concernés). Filet défensif — le
+    // bouton « Encaisser » est déjà désactivé côté panier dans ce cas. `cashGiven` est saisi
+    // en devise d'affichage → ramené en XOF de base (comme totalAmt) avant comparaison.
+    if (mode === 'cash' && convertToXOF(cashGiven, currency, rates) < totalAmt) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
       Alert.alert(
         i('Montant insuffisant', 'Insufficient amount', 'Monto insuficiente', 'Importo insufficiente'),
@@ -235,9 +238,14 @@ export default function POSScreen() {
     const payload: SalePayload = {
       items: cart.map(c => ({ productId: c.productId, qty: c.quantity, price: c.price })),
       total: totalAmt,
-      paymentMode,
+      paymentMode: mode,
       ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
       ...(customer ? { customerId: customer.id } : {}),
+      ...(override ? {
+        cashAmount: override.cashAmount,
+        mobileMoneyAmount: override.mobileMoneyAmount,
+        cardAmount: override.cardAmount,
+      } : {}),
       idempotencyKey: newIdempotencyKey(),
     }
     // Hors-ligne dur (NetInfo) → file directe, pas d'aller-retour réseau inutile.
@@ -412,6 +420,7 @@ export default function POSScreen() {
           paymentMode={paymentMode}
           vatRate={tenant?.vatRate}
           fmt={fmt}
+          toXOF={(n) => convertToXOF(n, currency, rates)}
           i={i}
         />
       )}

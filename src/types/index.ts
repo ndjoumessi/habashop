@@ -127,6 +127,11 @@ export interface SalePayload {
   paymentMode: string
   discount?: SaleDiscount
   customerId?: string
+  // Paiement mixte (paymentMode='mixed') : ventilation en XOF base, somme = total.
+  // Le backend dédup/valide (≥2 seaux non nuls, somme ±1).
+  cashAmount?: number
+  mobileMoneyAmount?: number
+  cardAmount?: number
   /**
    * Clé d'idempotence (UUID) générée par tentative de vente. Le backend dédup :
    * renvoyer la même clé NE crée PAS de doublon (retry réseau / resync offline sûrs).
