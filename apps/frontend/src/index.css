@@ -469,7 +469,12 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
 @keyframes slideDown { from { opacity:0; transform:translateY(-10px) } to { opacity:1; transform:translateY(0) } }
 @keyframes slideIn { from { opacity:0; transform:translateX(-10px) } to { opacity:1; transform:translateX(0) } }
-.animate-in { animation:slideUp .3s var(--spring) both }
+/* Entrée de page = OPACITÉ SEULE (aucun transform). ⚠️ Une animation `both` qui anime
+   un transform laisse, au repos, transform:matrix(1,0,0,1,0,0) (identité) — qui CRÉE un
+   bloc conteneur cassant les `position:fixed` des modales descendantes (backdrop scopé
+   au contenu au lieu du viewport). L'opacité seule garantit transform:none au repos. */
+@keyframes pageIn { from { opacity:0 } to { opacity:1 } }
+.animate-in { animation:pageIn .3s var(--ease) both }
 .animate-fade { animation:fadeIn .2s var(--ease) both }
 .page.active { animation:fadeIn .2s ease }
 
