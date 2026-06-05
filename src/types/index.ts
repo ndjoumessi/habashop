@@ -174,6 +174,10 @@ export interface SaleRecord {
   createdAt: string
   items?: SaleLine[]
   customerId?: string | null
+  // Ventilation paiement mixte (paymentMode==='mixed') — renvoyée par GET /api/sales.
+  cashAmount?: number | null
+  mobileMoneyAmount?: number | null
+  cardAmount?: number | null
   // ── Remboursement (champs additifs renvoyés par le backend, cf. modèle Prisma Sale) ──
   status?: string            // 'completed' | 'refunded'
   refundedAt?: string | null

@@ -133,11 +133,16 @@ export default function POSScreen() {
   // ── Création de la vente (résiliente : retry → file offline ; cf. submitSaleResilient) ──
   const saleMutation = useMutation({
     mutationFn: (payload: SalePayload) => submitSaleResilient(payload),
-    onSuccess: async (result: SaleSubmitResult) => {
-      // Capture la vente avant de vider le panier (pour le ticket WhatsApp)
+    onSuccess: async (result: SaleSubmitResult, variables: SalePayload) => {
+      // Capture la vente avant de vider le panier (pour le ticket WhatsApp).
+      // ⚠️ Le mode réel (et le split mixte) viennent du PAYLOAD envoyé, pas du store
+      // (le mode 'mixed' est choisi dans la modale, jamais écrit dans posStore).
       const saleItems = [...cart]
       const saleTotal = totalAmt
-      const saleMode  = paymentMode
+      const saleMode  = variables.paymentMode
+      const saleSplit = variables.paymentMode === 'mixed'
+        ? { cashAmount: variables.cashAmount ?? 0, mobileMoneyAmount: variables.mobileMoneyAmount ?? 0, cardAmount: variables.cardAmount ?? 0 }
+        : undefined
       const saleCustomer = customer
       recordSale(totalAmt)
       qc.invalidateQueries({ queryKey: ['dashboard'] })
@@ -180,7 +185,7 @@ export default function POSScreen() {
             onPress: () => {
               // Annulation de l'impression = normal → pas d'alerte (le service log en interne).
               printReceipt({
-                items: saleItems, total: saleTotal, paymentMode: saleMode,
+                items: saleItems, total: saleTotal, paymentMode: saleMode, split: saleSplit,
                 saleId: data?.id ?? Date.now().toString(),
                 shopName: tenant?.name ?? 'HabaShop',
                 currency, lang, fmt, vatRate: tenant?.vatRate,
@@ -191,7 +196,7 @@ export default function POSScreen() {
             text: '💬 WhatsApp',
             onPress: async () => {
               const ok = await sendWhatsAppTicket({
-                items: saleItems, total: saleTotal, paymentMode: saleMode,
+                items: saleItems, total: saleTotal, paymentMode: saleMode, split: saleSplit,
                 saleId: data?.id ?? Date.now().toString(),
                 shopName: tenant?.name ?? 'HabaShop',
                 currency, lang, fmt, vatRate: tenant?.vatRate,

@@ -115,6 +115,14 @@ export default function SalesScreen() {
     })),
     total: sale.total ?? 0, paymentMode: sale.paymentMode,
     saleId: sale.id, shopName: tenant?.name ?? 'HabaShop', currency, lang, fmt, vatRate: tenant?.vatRate,
+    // Reçu mixte : ventilation lue depuis la vente (champs backend).
+    ...(sale.paymentMode === 'mixed' ? {
+      split: {
+        cashAmount: sale.cashAmount ?? 0,
+        mobileMoneyAmount: sale.mobileMoneyAmount ?? 0,
+        cardAmount: sale.cardAmount ?? 0,
+      },
+    } : {}),
   })
 
   const resendWhatsApp = async (sale: SaleRecord) => {

@@ -1,6 +1,7 @@
 import { Linking } from 'react-native'
 import { vatBreakdown } from '@/stores/posStore'
 import type { CartItem } from '@/stores/posStore'
+import type { MixedSplit } from '@/lib/paymentSplit'
 
 export interface TicketOptions {
   items:       CartItem[]
@@ -12,6 +13,8 @@ export interface TicketOptions {
   lang:        string
   vatRate?:    number
   fmt:         (n: number) => string
+  // Ventilation d'un paiement mixte (paymentMode==='mixed') → détaillée sur le reçu.
+  split?:      MixedSplit
 }
 
 // Labels par langue
@@ -24,6 +27,9 @@ const LABELS: Record<string, Record<string, string>> = {
   ttc:     { fr: 'TTC', en: 'incl. tax', es: 'con IVA', it: 'IVA incl.' },
   payment: { fr: 'Paiement', en: 'Payment', es: 'Pago', it: 'Pagamento' },
   cash:    { fr: 'Espèces', en: 'Cash', es: 'Efectivo', it: 'Contanti' },
+  mobile:  { fr: 'Mobile Money', en: 'Mobile Money', es: 'Dinero móvil', it: 'Mobile Money' },
+  card:    { fr: 'Carte', en: 'Card', es: 'Tarjeta', it: 'Carta' },
+  mixed:   { fr: 'Mixte', en: 'Split', es: 'Mixto', it: 'Misto' },
   ref:     { fr: 'Réf', en: 'Ref', es: 'Ref', it: 'Rif' },
 }
 
@@ -31,8 +37,17 @@ function t(key: string, lang: string): string {
   return LABELS[key]?.[lang] ?? LABELS[key]?.['fr'] ?? key
 }
 
+// Détail d'un paiement mixte : libellé + montant des seaux NON nuls (partagé WhatsApp/PDF).
+export function mixedSplitParts(split: MixedSplit, lang: string): { label: string; amount: number }[] {
+  const parts: { label: string; amount: number }[] = []
+  if (split.cashAmount > 0)        parts.push({ label: t('cash', lang),   amount: split.cashAmount })
+  if (split.mobileMoneyAmount > 0) parts.push({ label: t('mobile', lang), amount: split.mobileMoneyAmount })
+  if (split.cardAmount > 0)        parts.push({ label: t('card', lang),   amount: split.cardAmount })
+  return parts
+}
+
 export function buildWhatsAppTicket(opts: TicketOptions, phone?: string): string {
-  const { items, total, paymentMode, saleId, shopName, lang, vatRate, fmt } = opts
+  const { items, total, paymentMode, saleId, shopName, lang, vatRate, fmt, split } = opts
   const vat = vatBreakdown(total, vatRate)
 
   const date = new Date().toLocaleDateString(
@@ -58,13 +73,20 @@ export function buildWhatsAppTicket(opts: TicketOptions, phone?: string): string
   }
   lines.push(`💰 *${t('total', lang)}${vat.rate > 0 ? ' ' + t('ttc', lang) : ''}: ${fmt(total)}*`)
 
-  const payLabel =
-    paymentMode === 'cash'   ? t('cash', lang) :
-    paymentMode === 'wave'   ? '🌊 Wave' :
-    paymentMode === 'orange' ? '🟠 Orange Money' :
-    '💳 ' + (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte')
-
-  lines.push(`💳 ${t('payment', lang)}: ${payLabel}`)
+  if (paymentMode === 'mixed' && split) {
+    // Paiement mixte : ligne « Mixte » + détail par méthode.
+    lines.push(`💳 ${t('payment', lang)}: ${t('mixed', lang)}`)
+    for (const p of mixedSplitParts(split, lang)) {
+      lines.push(`   • ${p.label}: ${fmt(p.amount)}`)
+    }
+  } else {
+    const payLabel =
+      paymentMode === 'cash'   ? t('cash', lang) :
+      paymentMode === 'wave'   ? '🌊 Wave' :
+      paymentMode === 'orange' ? '🟠 Orange Money' :
+      '💳 ' + t('card', lang)
+    lines.push(`💳 ${t('payment', lang)}: ${payLabel}`)
+  }
   lines.push(`🔖 ${t('ref', lang)}: #${saleId.slice(-6).toUpperCase()}`)
   lines.push('')
   lines.push(`✨ ${t('thanks', lang)}`)

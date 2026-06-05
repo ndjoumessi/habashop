@@ -1,7 +1,7 @@
 import * as Print from 'expo-print'
 import { vatBreakdown } from '@/stores/posStore'
 import { logger } from '@/lib/logger'
-import type { TicketOptions } from '@/services/whatsappTicket'
+import { mixedSplitParts, type TicketOptions } from '@/services/whatsappTicket'
 
 // Reçu imprimable / PDF via la boîte de dialogue d'impression de l'OS (AirPrint iOS,
 // service d'impression Android → imprimante Bluetooth thermique ou « Enregistrer en PDF »).
@@ -17,6 +17,7 @@ const L: Record<string, Record<string, string>> = {
   payment: { fr: 'Paiement', en: 'Payment', es: 'Pago', it: 'Pagamento' },
   cash:    { fr: 'Espèces', en: 'Cash', es: 'Efectivo', it: 'Contanti' },
   card:    { fr: 'Carte', en: 'Card', es: 'Tarjeta', it: 'Carta' },
+  mixed:   { fr: 'Mixte', en: 'Split', es: 'Mixto', it: 'Misto' },
   ref:     { fr: 'Réf', en: 'Ref', es: 'Ref', it: 'Rif' },
   qty:     { fr: 'Qté', en: 'Qty', es: 'Cant', it: 'Qtà' },
 }
@@ -27,7 +28,7 @@ const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c))
 
 function buildReceiptHtml(opts: TicketOptions): string {
-  const { items, total, paymentMode, saleId, shopName, lang, vatRate, fmt } = opts
+  const { items, total, paymentMode, saleId, shopName, lang, vatRate, fmt, split } = opts
   const vat = vatBreakdown(total, vatRate)
   const locale = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   const date = new Date().toLocaleDateString(locale, {
@@ -38,6 +39,14 @@ function buildReceiptHtml(opts: TicketOptions): string {
     paymentMode === 'wave'   ? 'Wave' :
     paymentMode === 'orange' ? 'Orange Money' :
     t('card', lang)
+
+  // Paiement : mixte → ligne « Mixte » + détail indenté par méthode ; sinon libellé simple.
+  const paymentHtml = paymentMode === 'mixed' && split
+    ? `<div class="row"><span>${t('payment', lang)}</span><span>${t('mixed', lang)}</span></div>` +
+      mixedSplitParts(split, lang)
+        .map((p) => `<div class="row" style="padding-left:10px;color:#444"><span>${esc(p.label)}</span><span>${fmt(p.amount)}</span></div>`)
+        .join('')
+    : `<div class="row"><span>${t('payment', lang)}</span><span>${esc(payLabel)}</span></div>`
 
   const rows = items.map((it) => `
     <tr>
@@ -75,7 +84,7 @@ function buildReceiptHtml(opts: TicketOptions): string {
     <hr/>
     ${vatRows}
     <div class="total"><span>${t('total', lang)}${vat.rate > 0 ? ' ' + t('ttc', lang) : ''}</span><span>${fmt(total)}</span></div>
-    <div class="row"><span>${t('payment', lang)}</span><span>${esc(payLabel)}</span></div>
+    ${paymentHtml}
     <div class="ref">${t('ref', lang)}: #${saleId.slice(-6).toUpperCase()}</div>
     <p class="foot">${t('thanks', lang)}<br/>habashop.vercel.app</p>
   </body></html>`
