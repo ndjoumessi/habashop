@@ -77,6 +77,11 @@ export default function POS() {
   const [sendWhatsApp, setSendWhatsApp]           = useState(() => posAutoWhatsApp)
   const [waSending, setWaSending]                 = useState(false)
   const [cashGiven, setCashGiven] = useState('')
+  // Paiement mixte (split, max 2 méthodes). Montants saisis en devise d'AFFICHAGE.
+  const [mixedOn, setMixedOn]   = useState(false)
+  const [mixedM1, setMixedM1]   = useState<'cash'|'mobile'|'card'>('cash')
+  const [mixedM2, setMixedM2]   = useState<'cash'|'mobile'|'card'>('mobile')
+  const [mixedAmt1, setMixedAmt1] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [clientType, setClientType] = useState<'retail'|'wholesale'|'semi'>('retail')
   const [discount, setDiscount] = useState<{ type:'percent'|'amount'; value:number; reason:string } | null>(null)
@@ -258,6 +263,19 @@ export default function POS() {
   // cashGiven est dans la devise courante → convertir en XOF pour comparer avec total (XOF)
   const monnaie = toXOF(cashGivenAmount) - total
 
+  // ── Paiement mixte : montant ligne 1 en devise affichage → XOF ; ligne 2 = reste ──
+  const mixedAmt1XOF = Math.min(total, Math.max(0, toXOF(parseFloat(mixedAmt1) || 0)))
+  const mixedAmt2XOF = Math.max(0, total - mixedAmt1XOF)
+  const mixedValid = mixedAmt1XOF > 0 && mixedAmt1XOF < total && mixedM1 !== mixedM2
+  // Ventilation XOF des 2 méthodes vers les 3 seaux backend.
+  const mixedSplit = (() => {
+    const b: { cashAmount: number; mobileMoneyAmount: number; cardAmount: number } = { cashAmount: 0, mobileMoneyAmount: 0, cardAmount: 0 }
+    const key = (m: 'cash'|'mobile'|'card') => m === 'cash' ? 'cashAmount' : m === 'card' ? 'cardAmount' : 'mobileMoneyAmount'
+    b[key(mixedM1) as keyof typeof b] += mixedAmt1XOF
+    b[key(mixedM2) as keyof typeof b] += mixedAmt2XOF
+    return b
+  })()
+
   const PAY_MODES = [
     { id: 'cash',   label: t('pos_cash'),                                    icon: '💵', color: '#10B981' },
     { id: 'card',   label: t('pos_card'),                                    icon: '💳', color: '#5B4EE8' },
@@ -274,7 +292,8 @@ export default function POS() {
   const confirmSale = async () => {
     // Garde-fou cash : refuser si le montant reçu (converti en XOF) < total.
     // Les modes Wave/Orange/Carte/Mobile n'ont pas de saisie de montant → pas concernés.
-    if (payMode === 'cash') {
+    // En paiement mixte, le garde-fou cash ne s'applique pas (la somme = total par construction).
+    if (!mixedOn && payMode === 'cash') {
       const given = toXOF(parseFloat(cashGiven) || 0)
       if (given < total) {
         toast.error(
@@ -285,6 +304,10 @@ export default function POS() {
         )
         return
       }
+    }
+    if (mixedOn && !mixedValid) {
+      toast.error(lang === 'en' ? 'Split amounts must sum to the total' : lang === 'es' ? 'La suma de los pagos debe igualar el total' : lang === 'it' ? 'La somma dei pagamenti deve uguagliare il totale' : 'La somme des paiements doit égaler le total')
+      return
     }
     setIsSaving(true)
     try {
@@ -297,9 +320,10 @@ export default function POS() {
           price: i.price,
           tierLabel: i.tierLabel ?? null,
         })),
-        paymentMode: payMode,
+        paymentMode: mixedOn ? 'mixed' : payMode,
         total,
         discount: discount ? { type: discount.type, amount: discountAmount } : null,
+        ...(mixedOn ? mixedSplit : {}),
       })
     } catch {
       // Hors-ligne : la vente est quand même enregistrée localement
@@ -345,6 +369,8 @@ export default function POS() {
     setDiscount(null)
     setSendWhatsApp(false)
     setWaNumber('')
+    setMixedOn(false)
+    setMixedAmt1('')
     setIsSaving(false)
   }
 
@@ -501,6 +527,10 @@ export default function POS() {
         printTicket={printTicket}
         discount={discount} payMode={payMode}
         cashGiven={cashGiven} toXOF={toXOF}
+        mixedOn={mixedOn} setMixedOn={setMixedOn}
+        mixedM1={mixedM1} setMixedM1={setMixedM1} mixedM2={mixedM2} setMixedM2={setMixedM2}
+        mixedAmt1={mixedAmt1} setMixedAmt1={setMixedAmt1}
+        mixedAmt2XOF={mixedAmt2XOF} mixedValid={mixedValid}
       />
 
       {/* MODAL REMBOURSEMENT (manager/admin) */}

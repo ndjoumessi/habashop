@@ -42,6 +42,7 @@ function dloc(lang: string): string {
 export interface InvoiceSale {
   id: string; total: number; paymentMode: string; discountAmount: number; createdAt: Date | string
   invoiceNumber: string
+  cashAmount?: number | null; mobileMoneyAmount?: number | null; cardAmount?: number | null
   items: { qty: number; unitPrice: number; total: number; product?: { name?: string | null } | null }[]
 }
 export interface InvoiceTenant { name: string; address?: string | null; phone?: string | null; email?: string | null; currency: string; vatRate: number; lang?: string | null }
@@ -141,8 +142,19 @@ export function buildInvoicePdf(sale: InvoiceSale, tenant: InvoiceTenant, custom
   // Paiement
   y += 12
   doc.font('Helvetica').fontSize(10).fillColor('#333333')
-  doc.text(`${i('Mode de paiement', 'Payment method', 'Método de pago', 'Metodo di pagamento')} : ${payLabel(sale.paymentMode, lang)}`, left, y)
-  doc.fillColor('#0A8F4E').text(`${i('Payée le', 'Paid on', 'Pagada el', 'Pagata il')} ${dateStr}`, left, y + 16)
+  if (sale.paymentMode === 'mixed') {
+    // Paiement mixte → une ligne par mode non nul.
+    doc.text(`${i('Paiement mixte', 'Split payment', 'Pago mixto', 'Pagamento misto')} :`, left, y); y += 14
+    const lines: string[] = []
+    if ((sale.cashAmount ?? 0) > 0) lines.push(`${i('Espèces', 'Cash', 'Efectivo', 'Contanti')} : ${M(sale.cashAmount as number)}`)
+    if ((sale.mobileMoneyAmount ?? 0) > 0) lines.push(`Mobile Money : ${M(sale.mobileMoneyAmount as number)}`)
+    if ((sale.cardAmount ?? 0) > 0) lines.push(`${i('Carte', 'Card', 'Tarjeta', 'Carta')} : ${M(sale.cardAmount as number)}`)
+    for (const ln of lines) { doc.text(`• ${ln}`, left + 12, y); y += 14 }
+    doc.fillColor('#0A8F4E').text(`${i('Payée le', 'Paid on', 'Pagada el', 'Pagata il')} ${dateStr}`, left, y + 2)
+  } else {
+    doc.text(`${i('Mode de paiement', 'Payment method', 'Método de pago', 'Metodo di pagamento')} : ${payLabel(sale.paymentMode, lang)}`, left, y)
+    doc.fillColor('#0A8F4E').text(`${i('Payée le', 'Paid on', 'Pagada el', 'Pagata il')} ${dateStr}`, left, y + 16)
+  }
 
   // Pied
   doc.fillColor(GREY).font('Helvetica-Oblique').fontSize(10).text(

@@ -33,13 +33,21 @@ interface POSModalsProps {
   printTicket: () => void
   discount: any; payMode: string
   cashGiven: string; toXOF: (v: number) => number
+  // Paiement mixte (split)
+  mixedOn: boolean; setMixedOn: (b: boolean) => void
+  mixedM1: 'cash'|'mobile'|'card'; setMixedM1: (m: 'cash'|'mobile'|'card') => void
+  mixedM2: 'cash'|'mobile'|'card'; setMixedM2: (m: 'cash'|'mobile'|'card') => void
+  mixedAmt1: string; setMixedAmt1: (v: string) => void
+  mixedAmt2XOF: number; mixedValid: boolean
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
-  const blocked = isSaving || waSending || !cashOK
+  // En paiement mixte, c'est la validité du split (somme=total, 2 modes) qui conditionne.
+  const payOK = mixedOn ? mixedValid : cashOK
+  const blocked = isSaving || waSending || !payOK
   return (
     <>
       {showDiscountModal && (
@@ -307,6 +315,48 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               }}>{fmt(total)}</span>
             </div>
 
+            {/* ── Paiement mixte (split, max 2 méthodes) ── */}
+            <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{lang==='en'?'Split payment':lang==='es'?'Pago mixto':lang==='it'?'Pagamento misto':'Paiement mixte'}</div>
+                  <div style={{ fontSize:11, color:'var(--text3)' }}>{lang==='en'?'Pay with 2 methods':lang==='es'?'Pagar con 2 métodos':lang==='it'?'Paga con 2 metodi':'Régler avec 2 méthodes'}</div>
+                </div>
+                <button type="button" role="switch" aria-checked={mixedOn}
+                  aria-label={lang==='en'?'Split payment':lang==='es'?'Pago mixto':lang==='it'?'Pagamento misto':'Paiement mixte'}
+                  onClick={() => setMixedOn(!mixedOn)}
+                  style={{ flexShrink:0, width:48, minHeight:44, padding:0, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:'pointer' }}>
+                  <span style={{ position:'relative', display:'block', width:44, height:26, borderRadius:99, boxSizing:'border-box', background: mixedOn ? 'var(--p)' : 'var(--bg5)', border:'1px solid var(--border)', transition:'background .2s' }}>
+                    <span style={{ position:'absolute', top:2, width:20, height:20, left: mixedOn ? 20 : 2, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
+                  </span>
+                </button>
+              </div>
+              {mixedOn && (
+                <div style={{ marginTop:12, display:'flex', flexDirection:'column', gap:10 }}>
+                  {/* Ligne 1 : méthode + montant saisi (devise affichage) */}
+                  <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                    <MethodPicker value={mixedM1} lang={lang} onChange={m => { setMixedM1(m); if (m === mixedM2) setMixedM2((['cash','mobile','card'] as const).find(x => x !== m)!) }} />
+                    <input type="number" inputMode="decimal" min={0} value={mixedAmt1} onChange={e => setMixedAmt1(e.target.value)}
+                      placeholder="0" aria-label={lang==='en'?'Amount 1':'Montant 1'}
+                      style={{ flex:1, minWidth:0, minHeight:44, padding:'0 10px', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:10, color:'var(--text)', fontSize:14, fontFamily:'var(--mono)', textAlign:'right', boxSizing:'border-box' }} />
+                  </div>
+                  {/* Ligne 2 : autre méthode + reste calculé (lecture seule) */}
+                  <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                    <MethodPicker value={mixedM2} exclude={mixedM1} lang={lang} onChange={setMixedM2} />
+                    <div aria-label={lang==='en'?'Remaining':'Reste'}
+                      style={{ flex:1, minWidth:0, minHeight:44, padding:'0 10px', display:'flex', alignItems:'center', justifyContent:'flex-end', background:'var(--bg3)', border:'1px dashed var(--border)', borderRadius:10, color:'var(--text2)', fontSize:14, fontFamily:'var(--mono)' }}>
+                      {fmt(mixedAmt2XOF)}
+                    </div>
+                  </div>
+                  {!mixedValid && (
+                    <div style={{ fontSize:11, color:'var(--danger)', fontWeight:600, display:'flex', alignItems:'center', gap:5 }}>
+                      <AlertTriangle size={11} /> {lang==='en'?'Amount 1 must be between 0 and the total':lang==='es'?'El monto 1 debe estar entre 0 y el total':lang==='it'?"L'importo 1 deve essere tra 0 e il totale":'Le montant 1 doit être entre 0 et le total'}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* WhatsApp toggle */}
             <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: sendWhatsApp ? 12 : 0 }}>
@@ -539,5 +589,30 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
         </div>
       )}
     </>
+  )
+}
+
+// Sélecteur de méthode de paiement (3 boutons) pour le paiement mixte.
+function methodLabel(m: 'cash'|'mobile'|'card', lang: string): string {
+  if (m === 'cash') return lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces'
+  if (m === 'card') return lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte'
+  return 'Mobile'
+}
+function MethodPicker({ value, onChange, exclude, lang }: {
+  value: 'cash'|'mobile'|'card'; onChange: (m: 'cash'|'mobile'|'card') => void
+  exclude?: 'cash'|'mobile'|'card'; lang: string
+}) {
+  const methods = (['cash', 'mobile', 'card'] as const).filter(m => m !== exclude)
+  return (
+    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+      {methods.map(m => (
+        <button key={m} type="button" onClick={() => onChange(m)}
+          style={{ padding: '0 8px', minHeight: 44, borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)',
+            background: value === m ? 'var(--p)' : 'var(--bg4)', color: value === m ? '#fff' : 'var(--text2)',
+            border: `1px solid ${value === m ? 'var(--p)' : 'var(--border)'}` }}>
+          {methodLabel(m, lang)}
+        </button>
+      ))}
+    </div>
   )
 }

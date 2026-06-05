@@ -45,6 +45,8 @@ export interface SaleBody {
   discount?: { amount?: number; type?: string }
   customerId?: string | null
   idempotencyKey?: string | null
+  // Paiement mixte (split) — renseignés quand paymentMode='mixed'.
+  cashAmount?: number; mobileMoneyAmount?: number; cardAmount?: number
 }
 export interface OrderBody {
   supplierId?: string; items?: any[]; expectedAt?: string; notes?: string; status?: string

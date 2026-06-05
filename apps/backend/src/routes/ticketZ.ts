@@ -23,7 +23,7 @@ export async function ticketZRoutes(app: FastifyInstance): Promise<void> {
     const { dayStart, dayEnd } = todayRangeUTC()
     const sales = await prisma.sale.findMany({
       where: { tenantId, createdAt: { gte: dayStart, lt: dayEnd } },
-      select: { total: true, status: true, paymentMode: true, customerId: true },
+      select: { total: true, status: true, paymentMode: true, customerId: true, cashAmount: true, mobileMoneyAmount: true, cardAmount: true },
     })
     const agg = computeTicketZ(sales)
 

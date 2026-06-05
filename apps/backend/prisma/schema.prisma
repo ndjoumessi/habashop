@@ -203,6 +203,13 @@ model Sale {
   // ── Facture PDF : numéro attribué à la 1ʳᵉ demande puis figé (FAC-{YYYY}-{NNNNN}). ──
   invoiceNumber  String?
 
+  // ── Paiement mixte (split, max 2 méthodes/vente) : ventilation du total par mode. ──
+  // Toujours renseignés sur les NOUVELLES ventes (0 si mode non utilisé) ; NULL sur les
+  // ventes antérieures → fallback paymentMode via COALESCE dans les agrégats (Ticket Z).
+  cashAmount        Float?
+  mobileMoneyAmount Float?
+  cardAmount        Float?
+
   tenant  Tenant     @relation(fields: [tenantId], references: [id])
   cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
   items   SaleItem[]

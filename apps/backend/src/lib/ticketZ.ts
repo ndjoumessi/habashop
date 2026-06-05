@@ -2,7 +2,11 @@ import PDFDocument from 'pdfkit'
 import { fmtMoney } from './invoicePdf'
 
 // ── Agrégat (pur, testable) ──
-export interface TZSale { total: number; status: string; paymentMode: string; customerId: string | null }
+export interface TZSale {
+  total: number; status: string; paymentMode: string; customerId: string | null
+  // Ventilation split (NULL sur les ventes antérieures → fallback paymentMode).
+  cashAmount?: number | null; mobileMoneyAmount?: number | null; cardAmount?: number | null
+}
 export interface TicketZAgg {
   caVentes: number; nbVentes: number; totalRemboursements: number; caNets: number
   cashAmount: number; mobileMoneyAmount: number; cardAmount: number
@@ -12,7 +16,8 @@ export interface TicketZAgg {
 /**
  * Agrège les ventes d'une journée en récap Ticket Z.
  * CA = ventes status != refunded ; remboursements = ventes refunded.
- * Breakdown paiement : cash → Espèces, card → Carte, autre → Mobile Money.
+ * Breakdown paiement = COALESCE : champs split (cash/mobile/card) si renseignés
+ * (ventes récentes, paiement mixte inclus), sinon fallback paymentMode (anciennes).
  */
 export function computeTicketZ(sales: TZSale[]): TicketZAgg {
   let caVentes = 0, nbVentes = 0, totalRemboursements = 0, cash = 0, mobile = 0, card = 0
@@ -22,7 +27,12 @@ export function computeTicketZ(sales: TZSale[]): TicketZAgg {
     if (s.status === 'refunded') { totalRemboursements += amount; continue }
     caVentes += amount; nbVentes++
     if (s.customerId) clients.add(s.customerId)
-    if (s.paymentMode === 'cash') cash += amount
+    const hasSplit = s.cashAmount != null || s.mobileMoneyAmount != null || s.cardAmount != null
+    if (hasSplit) {
+      cash += Number(s.cashAmount) || 0
+      mobile += Number(s.mobileMoneyAmount) || 0
+      card += Number(s.cardAmount) || 0
+    } else if (s.paymentMode === 'cash') cash += amount
     else if (s.paymentMode === 'card') card += amount
     else mobile += amount
   }

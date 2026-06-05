@@ -7,6 +7,7 @@ import { invalidateTenantCache } from '../lib/cache'
 import { resolveTierPrice, type PriceTier } from '../utils/pricing'
 import { pointsForAmount } from '../lib/loyalty'
 import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
+import { resolvePaymentSplit } from '../lib/paymentSplit'
 
 // Remboursement réservé MANAGER + ADMIN (+ SUPER_ADMIN superset) — anti-fraude :
 // le caissier ne peut PAS rembourser. Helper pur exporté pour les tests.
@@ -38,6 +39,16 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     }
     if (total == null || total < 0) {
       return reply.code(400).send({ error: 'Le total ne peut pas être négatif' })
+    }
+
+    // ── Ventilation paiement (simple → seau unique ; mixed → validée somme=total) ──
+    const body = request.body as SaleBody
+    const split = resolvePaymentSplit(paymentMode ?? 'cash', total, body)
+    if ('error' in split) {
+      const msg = split.error === 'MIXED_NEEDS_TWO'
+        ? 'Un paiement mixte requiert au moins 2 modes'
+        : 'La somme des paiements doit égaler le total'
+      return reply.code(400).send({ error: msg, code: split.error })
     }
 
     // ── Idempotence : clé envoyée par le client (body ou header Idempotency-Key) ──
@@ -81,6 +92,9 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
           discountType: discount?.type ?? null,
           customerId: customerId ?? null,
           idempotencyKey,
+          cashAmount: split.cashAmount,
+          mobileMoneyAmount: split.mobileMoneyAmount,
+          cardAmount: split.cardAmount,
         },
       })
 
