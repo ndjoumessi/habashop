@@ -447,7 +447,11 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 
 /* ── Animations ── */
 @keyframes modalIn { from { opacity:0; transform:scale(.95) translateY(8px) } to { opacity:1; transform:scale(1) translateY(0) } }
-@keyframes slideUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
+/* `to` se termine sur transform:none (et NON translateY(0)) : avec fill-mode `both`,
+   un translateY(0) persistant créerait un bloc conteneur cassant les position:fixed
+   descendants (modales scopées au contenu au lieu du viewport). none = identique
+   visuellement mais sans containing block. */
+@keyframes slideUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
 @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
 @keyframes popIn { from { opacity:0; transform:scale(.85) } to { opacity:1; transform:scale(1) } }
 @keyframes spin { to { transform:rotate(360deg) } }

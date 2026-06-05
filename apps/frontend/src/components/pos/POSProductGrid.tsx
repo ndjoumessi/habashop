@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
-import { CATS, catLabel, type PosProduct, type CartItem } from '@/components/pos/posShared'
+import { CATS, catLabel, payModeLabel, type PosProduct, type CartItem } from '@/components/pos/posShared'
 
 interface POSProductGridProps {
   posTab: 'pos' | 'history'; setPosTab: (v: any) => void; fetchHistory: () => void
@@ -391,8 +391,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                               background: sale.paymentMode === 'cash' ? 'rgba(14,196,126,.12)' : sale.paymentMode === 'card' ? 'rgba(91,78,232,.12)' : 'rgba(240,165,0,.12)',
                               color: sale.paymentMode === 'cash' ? 'var(--acc2)' : sale.paymentMode === 'card' ? 'var(--p2)' : 'var(--acc)',
                             }}>
-                              {sale.paymentMode === 'cash' ? (lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces')
-                                : sale.paymentMode === 'card' ? (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte') : 'Mobile'}
+                              {payModeLabel(sale.paymentMode, lang)}
                             </span>
                           </div>
                         </div>

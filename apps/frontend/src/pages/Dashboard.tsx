@@ -10,6 +10,7 @@ import {
 import { dashboardApi, reportsApi } from '@/lib/api'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { normCat } from '@/utils/normCat'
+import { payModeLabel } from '@/components/pos/posShared'
 // Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
 const DashSalesArea = lazy(() => import('@/components/charts/DashSalesArea'))
 const DashCategoryDonut = lazy(() => import('@/components/charts/DashCategoryDonut'))
@@ -564,7 +565,7 @@ export default function Dashboard() {
                     {lang === 'en' ? 'Sale' : lang === 'es' ? 'Venta' : lang === 'it' ? 'Vendita' : 'Vente'} #{String(a.id ?? '').slice(-6).toUpperCase()}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>
-                    {fmt(a.total ?? 0)} · {a.paymentMode} · {ago}
+                    {fmt(a.total ?? 0)} · {payModeLabel(a.paymentMode, lang)} · {ago}
                   </div>
                 </div>
               </div>

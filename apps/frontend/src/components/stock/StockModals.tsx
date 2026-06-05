@@ -53,14 +53,14 @@ function BarcodeDisplay({ value }: { value: string }) {
         // displayValue:true + quiet zones blanches = EAN-13 conforme GS1, scannable.
         JsBarcode(svgRef.current, value, {
           format: 'EAN13',
-          width: 1.8,            // module compact → barcode ~183px (≈ −34% vs avant), non étiré
-          height: 50,            // hauteur proportionnée à la largeur réduite
+          width: 2,              // module ample → barres franches, proportions larges
+          height: 64,            // barres ≈ 60-70px (respirent), hauteur optimale
           displayValue: true,    // chiffres EAN-13 affichés sous les barres
-          fontSize: 13,          // chiffres nets et lisibles
+          fontSize: 15,          // chiffres bien lisibles
           font: 'monospace',     // chasse fixe (proche OCR-B) → chiffres réguliers
           fontOptions: 'bold',
-          textMargin: 2,         // chiffres rapprochés des barres
-          margin: 6,             // quiet zones GS1 propres (blanc autour)
+          textMargin: 5,         // chiffres aérés sous les barres (bien espacés)
+          margin: 10,            // quiet zones GS1 généreuses (le code respire)
           background: '#FFFFFF',
           lineColor: '#000000',
         })
@@ -328,7 +328,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
                       <div style={{ display:'flex', flexDirection:'column', alignItems:'stretch', gap:8 }}>
-                        <div style={{ maxWidth:210, width:'fit-content', margin:'0 auto', alignSelf:'center', padding:'8px 10px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:8 }}>
+                        {/* Carte « étiquette » : fond blanc cassé, padding généreux, coins arrondis + ombre douce */}
+                        <div style={{ maxWidth:'100%', width:'fit-content', margin:'0 auto', alignSelf:'center', padding:'16px 20px', background:'#FBFAF7', border:'1px solid var(--border)', borderRadius:14, boxShadow:'var(--sh-sm)' }}>
                           <BarcodeDisplay value={form.barcode} />
                         </div>
                         <button type="button" className="mini-btn"

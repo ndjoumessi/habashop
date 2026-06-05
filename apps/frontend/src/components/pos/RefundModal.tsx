@@ -39,7 +39,7 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontWeight: 'var(--fw-bold)', fontSize: 16, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <RotateCcw size={16} style={{ color: 'var(--danger)' }} />
-            {i('Rembourser la vente', 'Refund sale', 'Reembolsar venta', 'Rimborsa vendita')}
+            {i('Rembourser la vente', 'Refund Sale', 'Reembolsar venta', 'Rimborsa vendita')}
           </span>
           <button onClick={onClose} disabled={saving} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')}
             style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', width: 32, height: 32, cursor: saving ? 'default' : 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -224,3 +224,18 @@ export function CountryItem({ c, selected, onSelect }: {
     </button>
   )
 }
+
+/** Libellé localisé d'un mode de paiement (incl. 'mixed' → Mixte/Mixed/Mixto/Misto). */
+export function payModeLabel(mode: string, lang: string): string {
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  switch (mode) {
+    case 'cash':   return i('Espèces', 'Cash', 'Efectivo', 'Contanti')
+    case 'card':   return i('Carte', 'Card', 'Tarjeta', 'Carta')
+    case 'wave':   return 'Wave'
+    case 'orange': return 'Orange Money'
+    case 'mtn':    return 'MTN MoMo'
+    case 'mixed':  return i('Mixte', 'Mixed', 'Mixto', 'Misto')
+    default:       return i('Mobile', 'Mobile', 'Móvil', 'Mobile')
+  }
+}

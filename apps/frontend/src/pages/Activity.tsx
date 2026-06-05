@@ -15,10 +15,10 @@ import type { LucideIcon } from 'lucide-react'
 
 const MODULE_NORMALIZE: Record<string, string> = {
   orders: 'COMMANDES', customers: 'CLIENTS', products: 'STOCK', suppliers: 'COMMANDES',
-  billing: 'PARAMÈTRES', employees: 'RH', auth: 'AUTH', tenant: 'PARAMÈTRES',
+  billing: 'PARAMÈTRES', employees: 'RH', auth: 'AUTH', tenant: 'PARAMÈTRES', sales: 'VENTES',
   // Codes backend en majuscules (audit logs créés directement avec ces noms)
   USERS: 'UTILISATEURS', PRODUCTS: 'STOCK', CUSTOMERS: 'CLIENTS', SUPPLIERS: 'COMMANDES',
-  SALES: 'POS', EMPLOYEES: 'RH', TENANT: 'PARAMÈTRES', AUTH: 'AUTH',
+  SALES: 'VENTES', EMPLOYEES: 'RH', TENANT: 'PARAMÈTRES', AUTH: 'AUTH',
 }
 
 // Labels lisibles d'actions techniques en 4 langues
@@ -108,6 +108,7 @@ interface ActivityEntry {
 
 const MODULE_CONFIG: Record<string, { color: string; bg: string; label: string; Icon: LucideIcon }> = {
   POS:          { color:'#818CF8', bg:'rgba(99,102,241,.15)',   label:'POS',          Icon: ShoppingCart },
+  VENTES:       { color:'#818CF8', bg:'rgba(99,102,241,.15)',   label:'Ventes',       Icon: ShoppingCart },
   STOCK:        { color:'#F59E0B', bg:'rgba(245,158,11,.15)',   label:'Stock',        Icon: Package      },
   AUTH:         { color:'#EF4444', bg:'rgba(239,68,68,.15)',    label:'Auth',         Icon: Lock         },
   RH:           { color:'#A78BFA', bg:'rgba(139,92,246,.15)',   label:'RH',           Icon: UserCog      },
@@ -359,7 +360,9 @@ export default function Activity() {
                       <div style={{ fontSize:12, color:'var(--text2)', marginBottom: detail ? 4 : 0 }}>
                         <span style={{ fontWeight:600 }}>{log.user}</span>
                         <span style={{ opacity: 0.5 }}> · </span>
-                        <span>{mod?.label ?? log.module}</span>
+                        <span>{log.module === 'VENTES'
+                          ? (lang === 'en' ? 'Sales' : lang === 'es' ? 'Ventas' : lang === 'it' ? 'Vendite' : 'Ventes')
+                          : (mod?.label ?? log.module)}</span>
                       </div>
 
                       {/* Ligne 3 : détail parsé (nom, email…) si dispo */}
