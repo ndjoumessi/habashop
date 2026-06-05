@@ -111,7 +111,11 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     // Seuils de palier CONFIGURABLES par tenant (pour le calcul + l'affichage front).
     const cfg = await prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { pointsPerAmount: true, bronzeThreshold: true, silverThreshold: true },
+      select: {
+        pointsPerAmount: true, bronzeThreshold: true, silverThreshold: true,
+        bronzeDiscount: true, silverDiscount: true, goldDiscount: true,
+        enableLoyalty: true, name: true, currency: true,
+      },
     })
     const bronzeThreshold = cfg?.bronzeThreshold ?? 2000
     const silverThreshold = cfg?.silverThreshold ?? 5000
@@ -121,14 +125,50 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
       take: 50,
       select: { id: true, points: true, type: true, reason: true, saleId: true, createdAt: true },
     }).catch(() => [])
+    const tier = tierForPoints(points, bronzeThreshold, silverThreshold)
     return {
       points,
-      tier: tierForPoints(points, bronzeThreshold, silverThreshold),
+      tier,
       history,
-      // Renvoyés pour que le front affiche progression/seuils avec les valeurs du tenant.
+      // Renvoyés pour que le front/mobile affiche progression/seuils/remises avec les valeurs du tenant.
       pointsPerAmount: cfg?.pointsPerAmount ?? 1000,
       bronzeThreshold,
       silverThreshold,
+      // Loyalty v2 : remises par palier (0 = désactivé / non configuré).
+      bronzeDiscount: cfg?.bronzeDiscount ?? 0,
+      silverDiscount: cfg?.silverDiscount ?? 0,
+      goldDiscount:   cfg?.goldDiscount   ?? 0,
+    }
+  })
+
+  // ── Carte fidélité numérique (scope tenant strict, tout rôle authentifié) ──
+  app.get('/api/customers/:id/loyalty-card', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
+    const { id } = request.params as { id: string }
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId }, select: { id: true, name: true, loyaltyPoints: true } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+    const cfg = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { name: true, currency: true, enableLoyalty: true, bronzeThreshold: true, silverThreshold: true },
+    })
+    const points = customer.loyaltyPoints ?? 0
+    const bronzeThreshold = cfg?.bronzeThreshold ?? 2000
+    const silverThreshold = cfg?.silverThreshold ?? 5000
+    const tier = tierForPoints(points, bronzeThreshold, silverThreshold)
+    const nextTier = tier === 'Gold' ? null : tier === 'Silver' ? 'Gold' : 'Silver'
+    const nextThreshold = tier === 'Bronze' ? bronzeThreshold : tier === 'Silver' ? silverThreshold : null
+    return {
+      customerId: customer.id,
+      customerName: customer.name,
+      tier,
+      points,
+      bronzeThreshold,
+      silverThreshold,
+      nextTier,
+      pointsToNext: nextThreshold ? Math.max(0, nextThreshold - points) : 0,
+      shopName: cfg?.name ?? 'HabaShop',
+      currency: cfg?.currency ?? 'XOF',
+      enableLoyalty: !!cfg?.enableLoyalty,
     }
   })
 

@@ -43,7 +43,8 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
 
     // ── Config fidélité : ADMIN/SUPER_ADMIN uniquement + validation ──
     const touchesLoyalty =
-      data.pointsPerAmount !== undefined || data.bronzeThreshold !== undefined || data.silverThreshold !== undefined
+      data.pointsPerAmount !== undefined || data.bronzeThreshold !== undefined || data.silverThreshold !== undefined ||
+      data.bronzeDiscount !== undefined || data.silverDiscount !== undefined || data.goldDiscount !== undefined
     if (touchesLoyalty) {
       if (!isAdminRole(request.user?.role)) {
         return reply.code(403).send({ error: "Configuration fidélité : réservée à l'administrateur", code: 'LOYALTY_ADMIN_ONLY' })
@@ -56,6 +57,19 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       ] as const) {
         if (v !== undefined && !isPosInt(v)) {
           return reply.code(400).send({ error: `${k} doit être un entier positif (≥ 1)`, code: 'LOYALTY_INVALID' })
+        }
+      }
+      // Validation remises v2 : [0, 100]
+      for (const [k, v] of [
+        ['bronzeDiscount', data.bronzeDiscount],
+        ['silverDiscount', data.silverDiscount],
+        ['goldDiscount',   data.goldDiscount],
+      ] as const) {
+        if (v !== undefined) {
+          const n = Number(v)
+          if (!Number.isFinite(n) || n < 0 || n > 100) {
+            return reply.code(400).send({ error: `${k} doit être un nombre entre 0 et 100`, code: 'LOYALTY_INVALID' })
+          }
         }
       }
       // bronze < silver sur les valeurs EFFECTIVES (merge avec l'existant si update partiel).
@@ -84,15 +98,19 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         posVatIncluded: data.posVatIncluded,
         posAutoprint:   data.posAutoprint,
         autoWhatsApp:   data.autoWhatsApp,
+        enableAutoWhatsApp: data.enableAutoWhatsApp,
         enableLoyalty:  data.enableLoyalty,
         requireCashier: data.requireCashier,
         enableScanner:  data.enableScanner,
         priceMode:      data.priceMode,
         posDefaultFund: data.posDefaultFund,
-        // Fidélité (config tenant)
+        // Fidélité v1 (seuils) + v2 (remises)
         pointsPerAmount: data.pointsPerAmount,
         bronzeThreshold: data.bronzeThreshold,
         silverThreshold: data.silverThreshold,
+        bronzeDiscount:  data.bronzeDiscount,
+        silverDiscount:  data.silverDiscount,
+        goldDiscount:    data.goldDiscount,
         // Notifications
         notifEmailSales:   data.notifEmailSales,
         notifEmailStock:   data.notifEmailStock,

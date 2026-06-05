@@ -386,6 +386,9 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                           </div>
                           <div style={{ textAlign:'right' }}>
                             <div style={{ fontSize:15, fontWeight:900, color: refunded ? 'var(--text4)' : 'var(--p2)', fontFamily:'var(--mono)', textDecoration: refunded ? 'line-through' : 'none' }}>{fmt(sale.total)}</div>
+                            {(sale.loyaltyDiscount ?? 0) > 0 && (
+                              <div style={{ fontSize:10, color:'var(--acc2)', fontFamily:'var(--mono)' }}>⭐ −{fmt(sale.loyaltyDiscount)}</div>
+                            )}
                             <span style={{
                               fontSize:11, fontWeight:'var(--fw-semibold)', borderRadius:20, padding:'2px 8px',
                               background: sale.paymentMode === 'cash' ? 'rgba(14,196,126,.12)' : sale.paymentMode === 'card' ? 'rgba(91,78,232,.12)' : 'rgba(240,165,0,.12)',

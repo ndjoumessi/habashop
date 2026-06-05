@@ -41,6 +41,10 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
   const [bronze, setBronze] = useState(2000)
   const [silver, setSilver] = useState(5000)
   const [perAmount, setPerAmount] = useState(1000)
+  // Loyalty v2 : remises par palier (0 = non configuré → afficher "à venir").
+  const [bronzeDisc, setBronzeDisc] = useState(0)
+  const [silverDisc, setSilverDisc] = useState(0)
+  const [goldDisc,   setGoldDisc]   = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -50,6 +54,9 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
         if ((d as any).bronzeThreshold) setBronze((d as any).bronzeThreshold)
         if ((d as any).silverThreshold) setSilver((d as any).silverThreshold)
         if ((d as any).pointsPerAmount) setPerAmount((d as any).pointsPerAmount)
+        setBronzeDisc((d as any).bronzeDiscount ?? 0)
+        setSilverDisc((d as any).silverDiscount ?? 0)
+        setGoldDisc((d as any).goldDiscount ?? 0)
       })
       .catch(() => {
         const p = customer.loyaltyPoints ?? 0
@@ -192,7 +199,16 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
           <div style={{ fontSize: 12, color: 'var(--text2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Star size={13} style={{ color: 'var(--warn)', flexShrink: 0 }} /> {i(`1 point par tranche de ${tfmt(perAmount)} dépensé`, `1 point per ${tfmt(perAmount)} spent`, `1 punto por cada ${tfmt(perAmount)} gastado`, `1 punto ogni ${tfmt(perAmount)} speso`)}</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Award size={13} style={{ color: 'var(--p3)', flexShrink: 0 }} /> {i(`Paliers : Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Tiers: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Niveles: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Livelli: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`)}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text3)', fontStyle: 'italic' }}><Gift size={13} style={{ flexShrink: 0 }} /> {i('Récompenses & remises : à venir', 'Rewards & discounts: coming soon', 'Recompensas y descuentos: próximamente', 'Premi e sconti: in arrivo')}</span>
+            {/* Loyalty v2 : remise du palier actuel si configurée, sinon « à venir » */}
+            {(() => {
+              const disc = tier === 'Gold' ? goldDisc : tier === 'Silver' ? silverDisc : bronzeDisc
+              return disc > 0
+                ? <span style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--acc2)', fontWeight: 'var(--fw-semibold)' }}>
+                    <Gift size={13} style={{ flexShrink: 0 }} />
+                    {i(`Remise ${disc} % sur vos achats`, `${disc}% discount on your purchases`, `Descuento del ${disc} % en sus compras`, `Sconto del ${disc}% sugli acquisti`)}
+                  </span>
+                : <span style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text3)', fontStyle: 'italic' }}><Gift size={13} style={{ flexShrink: 0 }} /> {i('Récompenses & remises : à venir', 'Rewards & discounts: coming soon', 'Recompensas y descuentos: próximamente', 'Premi e sconti: in arrivo')}</span>
+            })()}
           </div>
         </div>
 

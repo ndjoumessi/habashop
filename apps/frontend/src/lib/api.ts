@@ -298,6 +298,12 @@ export const loyaltyApi = {
   // Lecture seule : solde + palier + historique. Le créditage est 100% SERVEUR
   // (transaction de vente) — pas d'ajout déclenché par le front (route /add retirée).
   get: (id: string) => api.get<{ points: number; tier: string; history: any[] }>(`/api/customers/${id}/loyalty`),
+  // Carte fidélité numérique (scope tenant strict, tout rôle).
+  getCard: (id: string) => api.get<{
+    customerId: string; customerName: string; tier: string; points: number;
+    bronzeThreshold: number; silverThreshold: number; nextTier: string | null;
+    pointsToNext: number; shopName: string; currency: string; enableLoyalty: boolean;
+  }>(`/api/customers/${id}/loyalty-card`),
 }
 
 export const adminApi = {

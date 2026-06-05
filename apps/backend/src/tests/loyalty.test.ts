@@ -53,9 +53,10 @@ const { db, tx } = vi.hoisted(() => {
   return {
     tx,
     db: {
-      sale: { findMany: vi.fn() },
+      sale: { findMany: vi.fn(), findFirst: vi.fn() },
       product: { findMany: vi.fn() },
       tenant: { findUnique: vi.fn() },
+      customer: { findFirst: vi.fn() },
       $transaction: (fn: any) => fn(tx),
     },
   }
@@ -84,7 +85,16 @@ const saleBody = (over: any = {}) => ({ items: [{ productId: 'p1', qty: 1, price
 beforeEach(() => {
   vi.clearAllMocks()
   db.product.findMany.mockResolvedValue([PRODUCT])
-  db.tenant.findUnique.mockResolvedValue({ enableLoyalty: true })
+  // Tenant : inclut les champs loyalty v1 + v2 attendus par la route.
+  db.tenant.findUnique.mockResolvedValue({
+    enableLoyalty: true, pointsPerAmount: 1000,
+    bronzeThreshold: 2000, silverThreshold: 5000,
+    bronzeDiscount: 0, silverDiscount: 0, goldDiscount: 0, // v2 désactivé par défaut dans les tests
+    name: 'TestShop', currency: 'XOF', lang: 'fr', enableAutoWhatsApp: false,
+  })
+  // Customer : pas de points → tier Bronze, remise v2 = 0 (activée séparément si besoin).
+  db.customer.findFirst.mockResolvedValue({ loyaltyPoints: 0 })
+  db.sale.findFirst.mockResolvedValue(null) // idempotency : pas de doublon
   tx.sale.create.mockResolvedValue({ id: 's1' })
   tx.saleItem.create.mockResolvedValue({})
   tx.product.update.mockResolvedValue({})
@@ -143,5 +153,47 @@ describe('POST /api/sales — créditage fidélité', () => {
     await app.inject({ method: 'POST', url: '/api/sales', payload: saleBody({ customerId: 'c1', total: 800, items: [{ productId: 'p1', qty: 1, price: 800 }] }) })
     expect(tx.loyaltyTransaction.create).not.toHaveBeenCalled()
     expect(tx.customer.update).toHaveBeenCalledWith(expect.objectContaining({ data: { totalRevenue: { increment: 800 } } }))
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Loyalty v2 — remises par palier (helpers purs)
+// ─────────────────────────────────────────────────────────────────────────────
+import {
+  discountForTier, computeLoyaltyDiscount,
+  DEFAULT_BRONZE_DISCOUNT, DEFAULT_SILVER_DISCOUNT, DEFAULT_GOLD_DISCOUNT,
+  MAX_TOTAL_DISCOUNT_PCT,
+} from '../lib/loyalty'
+
+describe('discountForTier', () => {
+  it('défauts 5/10/15 %', () => {
+    expect(discountForTier('Bronze')).toBe(DEFAULT_BRONZE_DISCOUNT)
+    expect(discountForTier('Silver')).toBe(DEFAULT_SILVER_DISCOUNT)
+    expect(discountForTier('Gold')).toBe(DEFAULT_GOLD_DISCOUNT)
+  })
+  it('valeurs custom par tenant', () => {
+    expect(discountForTier('Bronze', 3, 7, 12)).toBe(3)
+    expect(discountForTier('Silver', 3, 7, 12)).toBe(7)
+    expect(discountForTier('Gold',   3, 7, 12)).toBe(12)
+  })
+  it('0 si remise désactivée (valeur ≤ 0)', () => {
+    expect(discountForTier('Bronze', 0, 10, 15)).toBe(0)
+  })
+})
+
+describe('computeLoyaltyDiscount', () => {
+  it('calcul standard', () => {
+    expect(computeLoyaltyDiscount(10000, 10, 0)).toBe(1000)
+    expect(computeLoyaltyDiscount(10000,  5, 0)).toBe(500)
+  })
+  it('retourne 0 si pas de remise fidélité', () => {
+    expect(computeLoyaltyDiscount(10000, 0, 0)).toBe(0)
+  })
+  it(`plafond ${MAX_TOTAL_DISCOUNT_PCT}% : remise manuelle + fidélité ≤ 50%`, () => {
+    // 40% manuel + 15% fidélité → fidélité plafonnée à 10% (total 50%)
+    expect(computeLoyaltyDiscount(10000, 15, 4000)).toBe(1000)
+  })
+  it('sans client (discountPct=0) → 0', () => {
+    expect(computeLoyaltyDiscount(10000, 0, 0)).toBe(0)
   })
 })

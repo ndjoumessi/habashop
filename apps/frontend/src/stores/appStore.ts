@@ -295,6 +295,11 @@ export interface Tenant {
   pointsPerAmount?: number
   bronzeThreshold?: number
   silverThreshold?: number
+  // Loyalty v2 : remises par palier (0 = désactivées)
+  bronzeDiscount?: number
+  silverDiscount?: number
+  goldDiscount?: number
+  enableLoyalty?: boolean
 }
 
 const TRIAL_DAYS = 14

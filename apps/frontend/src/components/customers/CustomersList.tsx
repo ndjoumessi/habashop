@@ -27,12 +27,13 @@ interface CustomersListProps {
   setCustEditMode: (b: boolean) => void
   setShowEditCustModal: (b: boolean) => void
   setLoyaltyCustomer: (c: any) => void
+  setDigitalCardCustomerId: (id: string | null) => void
   setDetailCustomer: (c: any) => void
   setShowDetailModal: (b: boolean) => void
   onDelete: (id: string) => void
 }
 
-export default function CustomersList({ customers, search, setSearch, typeFilter, setTypeFilter, viewMode, setViewMode, pg, filtered, fmt, abbr, lang, i, navigate, printCustomersPDF, setViewCustomer, setEditCustomer, setEditCustForm, setCustEditMode, setShowEditCustModal, setLoyaltyCustomer, setDetailCustomer, setShowDetailModal, onDelete }: CustomersListProps) {
+export default function CustomersList({ customers, search, setSearch, typeFilter, setTypeFilter, viewMode, setViewMode, pg, filtered, fmt, abbr, lang, i, navigate, printCustomersPDF, setViewCustomer, setEditCustomer, setEditCustForm, setCustEditMode, setShowEditCustModal, setLoyaltyCustomer, setDigitalCardCustomerId, setDetailCustomer, setShowDetailModal, onDelete }: CustomersListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   return (
     <div className="panel">
@@ -130,6 +131,11 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                           style={{ background: 'rgba(255,215,0,.12)', color: '#B8860B', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
                           onClick={() => setLoyaltyCustomer(c)}>
                           <Gift size={11} />
+                        </button>
+                        <button className="btn btn-sm" title={i('Carte numérique', 'Digital card', 'Tarjeta digital', 'Carta digitale')}
+                          style={{ background: 'rgba(108,71,255,.12)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
+                          onClick={() => setDigitalCardCustomerId(c.id)}>
+                          🎴
                         </button>
                         <button className="btn btn-sm" title={i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')}
                           style={{ background: TYPE_CFG['Grossiste'].bg, color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}

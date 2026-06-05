@@ -59,15 +59,19 @@ export interface TenantUpdateBody {
   posVatIncluded?: boolean
   posAutoprint?: boolean
   autoWhatsApp?: boolean
+  enableAutoWhatsApp?: boolean
   enableLoyalty?: boolean
   requireCashier?: boolean
   enableScanner?: boolean
   priceMode?: string
   posDefaultFund?: number
-  // Fidélité (config tenant)
+  // Fidélité v1 (seuils) + v2 (remises par palier)
   pointsPerAmount?: number
   bronzeThreshold?: number
   silverThreshold?: number
+  bronzeDiscount?: number
+  silverDiscount?: number
+  goldDiscount?: number
   // Notifications
   notifEmailSales?: boolean
   notifEmailStock?: boolean

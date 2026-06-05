@@ -5,9 +5,10 @@ import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 import { invalidateTenantCache } from '../lib/cache'
 import { resolveTierPrice, type PriceTier } from '../utils/pricing'
-import { pointsForAmount } from '../lib/loyalty'
+import { pointsForAmount, tierForPoints, discountForTier, computeLoyaltyDiscount } from '../lib/loyalty'
 import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
 import { resolvePaymentSplit } from '../lib/paymentSplit'
+import { sendSaleWhatsApp } from '../services/whatsappSend'
 
 // Remboursement réservé MANAGER + ADMIN (+ SUPER_ADMIN superset) — anti-fraude :
 // le caissier ne peut PAS rembourser. Helper pur exporté pour les tests.
@@ -41,9 +42,32 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'Le total ne peut pas être négatif' })
     }
 
-    // ── Ventilation paiement (simple → seau unique ; mixed → validée somme=total) ──
     const body = request.body as SaleBody
-    const split = resolvePaymentSplit(paymentMode ?? 'cash', total, body)
+    const manualDiscount = Number(discount?.amount) || 0
+
+    // ── Config tenant (fidélité + remises paliers, + WhatsApp/devise pour l'après-vente) ──
+    const tCfg = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: {
+        enableLoyalty: true, pointsPerAmount: true, bronzeThreshold: true, silverThreshold: true,
+        bronzeDiscount: true, silverDiscount: true, goldDiscount: true,
+        name: true, currency: true, lang: true, enableAutoWhatsApp: true,
+      },
+    })
+    const loyaltyOn = !!tCfg?.enableLoyalty
+
+    // ── Loyalty v2 : remise auto selon le palier du client lié (plafonnée 50%) ──
+    let loyaltyDiscount = 0
+    if (customerId && loyaltyOn) {
+      const cust = await prisma.customer.findFirst({ where: { id: customerId, tenantId }, select: { loyaltyPoints: true } })
+      const tier = tierForPoints(cust?.loyaltyPoints ?? 0, tCfg?.bronzeThreshold ?? undefined, tCfg?.silverThreshold ?? undefined)
+      const pct = discountForTier(tier, tCfg?.bronzeDiscount ?? undefined, tCfg?.silverDiscount ?? undefined, tCfg?.goldDiscount ?? undefined)
+      loyaltyDiscount = computeLoyaltyDiscount(total, pct, manualDiscount)
+    }
+    const finalTotal = Math.max(0, total - loyaltyDiscount)
+
+    // ── Ventilation paiement (sur le total NET après remise fidélité) ──
+    const split = resolvePaymentSplit(paymentMode ?? 'cash', finalTotal, body)
     if ('error' in split) {
       const msg = split.error === 'MIXED_NEEDS_TWO'
         ? 'Un paiement mixte requiert au moins 2 modes'
@@ -71,14 +95,6 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     })
     const productMap = new Map(productsList.map(p => [p.id, p]))
 
-    // Fidélité : créditage serveur si activé (lu hors transaction). Le taux pointsPerAmount
-    // est CONFIGURABLE par tenant (défaut 1000) → calcul scopé à la boutique.
-    const tenantCfg = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-      select: { enableLoyalty: true, pointsPerAmount: true },
-    })
-    const loyaltyOn = !!tenantCfg?.enableLoyalty
-
     let newSale
     try {
       newSale = await prisma.$transaction(async (tx) => {
@@ -86,12 +102,13 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
         data: {
           tenantId,
           cashierId: userId,
-          total,
+          total: finalTotal,             // NET = total − remise fidélité (Modèle A)
           paymentMode,
           discountAmount: discount?.amount ?? 0,
           discountType: discount?.type ?? null,
           customerId: customerId ?? null,
           idempotencyKey,
+          loyaltyDiscount: loyaltyDiscount,
           cashAmount: split.cashAmount,
           mobileMoneyAmount: split.mobileMoneyAmount,
           cardAmount: split.cardAmount,
@@ -140,12 +157,12 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       }
 
       if (customerId) {
-        // Points fidélité = floor(total payé TTC après remise / pointsPerAmount tenant).
-        const pts = loyaltyOn ? pointsForAmount(total, tenantCfg?.pointsPerAmount ?? undefined) : 0
+        // Points fidélité = floor(NET payé TTC après remises / pointsPerAmount tenant).
+        const pts = loyaltyOn ? pointsForAmount(finalTotal, tCfg?.pointsPerAmount ?? undefined) : 0
         await tx.customer.update({
           where: { id: customerId },
           data: {
-            totalRevenue: { increment: total },
+            totalRevenue: { increment: finalTotal },
             ...(pts > 0 ? { loyaltyPoints: { increment: pts } } : {}),
           },
         })
@@ -181,6 +198,26 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       const low = sold.filter((p) => p.stockQty <= p.stockMin)
       if (low.length) notifyTenant(tenantId, { type: 'low_stock', data: { products: low.map((p) => ({ id: p.id, name: p.name, stockQty: p.stockQty })) } })
     } catch { /* non bloquant */ }
+
+    // ── WhatsApp auto (reçu après vente) — async NON BLOQUANT : n'échoue jamais la vente ──
+    if (tCfg?.enableAutoWhatsApp && customerId) {
+      void (async () => {
+        try {
+          const [cust, saleItems] = await Promise.all([
+            prisma.customer.findFirst({ where: { id: customerId, tenantId }, select: { name: true, phone: true } }),
+            prisma.saleItem.findMany({ where: { saleId: newSale.id }, select: { qty: true, total: true, product: { select: { name: true } } } }),
+          ])
+          if (cust?.phone) {
+            await sendSaleWhatsApp(
+              { id: newSale.id, total: finalTotal, paymentMode: paymentMode ?? 'cash', createdAt: newSale.createdAt },
+              saleItems, cust,
+              { name: tCfg.name, currency: tCfg.currency, lang: tCfg.lang, enableLoyalty: tCfg.enableLoyalty, pointsPerAmount: tCfg.pointsPerAmount, enableAutoWhatsApp: tCfg.enableAutoWhatsApp },
+            )
+          }
+        } catch { /* fail silent — déjà géré dans le service */ }
+      })()
+    }
+
     return newSale
   })
 

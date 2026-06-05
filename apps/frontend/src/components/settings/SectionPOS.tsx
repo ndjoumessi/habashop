@@ -21,8 +21,8 @@ export default function SectionPOS() {
   })
   const [draft, setDraft] = useState(snapshot())
   const [fundInput, setFundInput] = useState(fromXOF(cfg.posDefaultFund).toFixed(decimals))
-  // Config fidélité (3 champs configurables par tenant ; défauts v1).
-  const LOYALTY_DEFAULTS = { pointsPerAmount: 1000, bronzeThreshold: 2000, silverThreshold: 5000 }
+  // Config fidélité v1 (seuils) + v2 (remises par palier ; défauts 0 = désactivées).
+  const LOYALTY_DEFAULTS = { pointsPerAmount: 1000, bronzeThreshold: 2000, silverThreshold: 5000, bronzeDiscount: 0, silverDiscount: 0, goldDiscount: 0 }
   const [loyalty, setLoyalty] = useState(LOYALTY_DEFAULTS)
   const [loyaltyDraft, setLoyaltyDraft] = useState(LOYALTY_DEFAULTS)
 
@@ -46,6 +46,9 @@ export default function SectionPOS() {
         pointsPerAmount: t.pointsPerAmount ?? 1000,
         bronzeThreshold: t.bronzeThreshold ?? 2000,
         silverThreshold: t.silverThreshold ?? 5000,
+        bronzeDiscount:  t.bronzeDiscount  ?? 0,
+        silverDiscount:  t.silverDiscount  ?? 0,
+        goldDiscount:    t.goldDiscount    ?? 0,
       }
       setLoyalty(lc); setLoyaltyDraft(lc)
     }).catch(() => {})
@@ -96,6 +99,9 @@ export default function SectionPOS() {
           pointsPerAmount: loyaltyDraft.pointsPerAmount,
           bronzeThreshold: loyaltyDraft.bronzeThreshold,
           silverThreshold: loyaltyDraft.silverThreshold,
+          bronzeDiscount:  loyaltyDraft.bronzeDiscount,
+          silverDiscount:  loyaltyDraft.silverDiscount,
+          goldDiscount:    loyaltyDraft.goldDiscount,
         } : {}),
       })
       cfg.updateConfig({ ...draft, posVatIncluded: draft.priceMode !== 'HT', posDefaultFund: fundXOF, shopVatRate: draft.posTaxRate } as any)
@@ -174,6 +180,27 @@ export default function SectionPOS() {
                   </div>
                 ) : <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{loyaltyV.silverThreshold} pts</span>}
               </div>
+
+              {/* Remises par palier (v2 — 0 = désactivé) */}
+              <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', marginTop: 4 }}>
+                💳 {i('Remises automatiques par palier (0 = désactivé)', 'Automatic tier discounts (0 = off)', 'Descuentos automáticos por nivel (0 = desact.)', 'Sconti automatici per livello (0 = disatt.)')}
+              </div>
+              {[
+                { key: 'bronzeDiscount' as const, label: '🥉 Bronze' },
+                { key: 'silverDiscount' as const, label: '🥈 Silver' },
+                { key: 'goldDiscount'   as const, label: '🥇 Gold'   },
+              ].map(({ key, label }) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <span style={{ fontSize: 12, color: 'var(--text2)' }}>{label}</span>
+                  {editMode ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input type="number" min={0} max={100} step={0.5} className="input" style={{ width: 80, textAlign: 'right' }} value={loyaltyDraft[key]}
+                        onChange={e => setLoyaltyDraft(p => ({ ...p, [key]: Math.max(0, Math.min(100, +e.target.value || 0)) }))} />
+                      <span style={{ fontSize: 12, color: 'var(--text3)', minWidth: 20 }}>%</span>
+                    </div>
+                  ) : <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: loyaltyV[key] > 0 ? 'var(--acc2)' : 'var(--text3)' }}>{loyaltyV[key] > 0 ? `${loyaltyV[key]} %` : i('désactivé', 'off', 'desact.', 'disatt.')}</span>}
+                </div>
+              ))}
 
               {/* Validation inline : bronze < silver */}
               {editMode && loyaltyErr && (
