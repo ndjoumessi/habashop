@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useMemo, useEffect, useRef } from 'react'
-import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy, Trash2 } from 'lucide-react'
+import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy, Trash2, AlertTriangle } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
 import { t, useAppStore, formatInCurrency } from '@/stores/appStore'
@@ -89,6 +89,15 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   const emptyLabel = lang === 'en' ? 'Not specified' : lang === 'es' ? 'No especificado' : lang === 'it' ? 'Non specificato' : 'Non renseigné'
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  // EAN-13 manquant (vide) OU non valide → bandeau warning « scanner l'emballage ».
+  // Disparaît dès qu'un EAN-13 valide (13 chiffres) est renseigné.
+  const eanMissing = !/^\d{13}$/.test(form.barcode ?? '')
+  const eanWarning = eanMissing ? (
+    <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:8, background:'#FFFBEB', border:'1px solid #FCD34D', borderRadius:6, padding:'8px 10px', fontSize:12, color:'#92400E' }}>
+      <AlertTriangle size={15} style={{ color:'#D97706', flexShrink:0 }} />
+      <span>{i("Aucun EAN-13 renseigné — scannez l'emballage pour l'ajouter", 'No EAN-13 set — scan the packaging to add it', 'Sin EAN-13 — escanea el envase para añadirlo', 'Nessun EAN-13 — scansiona la confezione per aggiungerlo')}</span>
+    </div>
+  ) : null
 
   // ── Auto-remplissage Open Food Facts (frontend, sans clé) ──────────────────
   const UNIT_OPTIONS = ['unité', 'kg', 'g', 'litre', 'ml', 'carton', 'sac', 'boîte', 'palette', 'douzaine']
@@ -306,11 +315,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       <button type="button" className="mini-btn" onClick={() => setShowScanner(true)}
                         title={i('Scanner un code-barres', 'Scan a barcode', 'Escanear un código de barras', 'Scansiona un codice a barre')} style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Camera size={18} /></button>
                     </div>
-                    {barcodeInvalid && (
-                      <div style={{ marginTop:6, fontSize:11, color:'var(--danger)' }}>
-                        {lang === 'en' ? 'Invalid barcode (13 digits required)' : lang === 'es' ? 'Código de barras inválido (13 dígitos requeridos)' : lang === 'it' ? 'Codice a barre non valido (13 cifre richieste)' : 'Code-barres invalide (13 chiffres requis)'}
-                      </div>
-                    )}
+                    {/* Warning EAN manquant/invalide (remplace l'ancien message rouge ; bordure rouge + blocage au save conservés) */}
+                    {eanWarning}
                     {/* État du lookup Open Food Facts (ajout seulement) */}
                     {!editingSku && offLooking && (
                       <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
@@ -348,6 +354,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{emptyLabel}</span>
                       </div>
                     )}
+                    {/* Warning EAN manquant — visible aussi en mode visualisation */}
+                    {eanWarning}
                   </div>
                 )}
                 <ViewField label={i('DESCRIPTION', 'DESCRIPTION', 'DESCRIPCIÓN', 'DESCRIZIONE')} value={form.description||''} editing={productEditMode} emptyLabel={emptyLabel} multiline>

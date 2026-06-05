@@ -482,6 +482,13 @@ export function printProductLabels(
       ${options.showBarcode ? `
         <div style="text-align:center;border-top:1px solid #eee;padding-top:4px;">
           <svg class="barcode" data-barcode="${esc(product.barcode ?? '')}" data-sku="${esc(product.sku ?? '')}"></svg>
+          ${!/^\d{13}$/.test(product.barcode ?? '') ? `
+            <div style="margin-top:3px;text-align:center;">
+              <span style="display:inline-block;background:#F3F4F6;color:#6B7280;font-size:10px;border-radius:4px;padding:2px 6px;">${esc(
+                options.lang === 'en' ? 'Internal code' : options.lang === 'es' ? 'Código interno' : options.lang === 'it' ? 'Codice interno' : 'Code interne'
+              )}</span>
+            </div>
+          ` : ''}
         </div>
       ` : ''}
       <div style="font-size:7px;color:#bbb;text-align:right;">
