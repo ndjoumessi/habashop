@@ -25,6 +25,20 @@ function getToken(): string | null {
   return null
 }
 
+/**
+ * Récupère un PDF (endpoint authentifié JWT) et l'ouvre dans un nouvel onglet.
+ * window.open direct n'enverrait pas l'Authorization → on fetch en blob d'abord.
+ */
+export async function openAuthedPdf(path: string): Promise<void> {
+  const token = getToken()
+  const res = await fetch(`${BASE_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  if (!res.ok) throw new Error(`Erreur ${res.status}`)
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  window.open(url, '_blank')
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -120,6 +134,7 @@ export const salesApi = {
   create: (data: any) => api.post<any>('/api/sales', data),
   refund: (id: string, data: { reason: string; restock: boolean }) =>
     api.post<{ ok: boolean; id: string; status: string; restocked: boolean }>(`/api/sales/${id}/refund`, data),
+  openInvoice: (id: string) => openAuthedPdf(`/api/sales/${id}/invoice`),
 }
 
 export const customersApi = {

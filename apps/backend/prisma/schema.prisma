@@ -199,6 +199,9 @@ model Sale {
   // Nullable = rétro-compat (ventes existantes / clients sans clé). Unicité scopée tenant.
   idempotencyKey String?
 
+  // ── Facture PDF : numéro attribué à la 1ʳᵉ demande puis figé (FAC-{YYYY}-{NNNNN}). ──
+  invoiceNumber  String?
+
   tenant  Tenant     @relation(fields: [tenantId], references: [id])
   cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
   items   SaleItem[]
@@ -208,6 +211,7 @@ model Sale {
   @@index([tenantId, paymentMode])
   @@index([tenantId, status])
   @@unique([tenantId, idempotencyKey])
+  @@unique([tenantId, invoiceNumber])
 }
 
 model SaleItem {

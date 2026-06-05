@@ -1,6 +1,8 @@
-import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History, RotateCcw } from 'lucide-react'
+import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History, RotateCcw, FileText } from 'lucide-react'
+import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
+import { salesApi } from '@/lib/api'
 import { CATS, catLabel, type PosProduct, type CartItem } from '@/components/pos/posShared'
 
 interface POSProductGridProps {
@@ -400,10 +402,19 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                             +{sale.items.length - 3} {lang === 'en' ? 'more items' : lang === 'es' ? 'otros artículos' : lang === 'it' ? 'altri articoli' : 'autres articles'}
                           </div>
                         )}
+                        {/* Facture PDF — tous rôles, ouvre le PDF serveur dans un nouvel onglet */}
+                        <button type="button"
+                          onClick={() => salesApi.openInvoice(sale.id).catch(() => toast.error(lang === 'en' ? 'Invoice error' : lang === 'es' ? 'Error de factura' : lang === 'it' ? 'Errore fattura' : 'Erreur facture'))}
+                          style={{ marginTop:10, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                            background:'transparent', border:'1px solid var(--border)', color:'var(--text2)',
+                            borderRadius:'var(--r-md)', padding:'7px 12px', fontSize:12, fontWeight:'var(--fw-semibold)',
+                            fontFamily:'var(--font)', cursor:'pointer' }}>
+                          <FileText size={13} /> {lang === 'en' ? 'PDF Invoice' : lang === 'es' ? 'Factura PDF' : lang === 'it' ? 'Fattura PDF' : 'Facture PDF'}
+                        </button>
                         {/* Action remboursement — manager/admin uniquement, ventes non remboursées */}
                         {canRefund && !refunded && (
                           <button type="button" onClick={() => onRefundClick(sale)}
-                            style={{ marginTop:10, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                            style={{ marginTop:8, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
                               background:'transparent', border:'1px solid var(--c-red-border)', color:'var(--danger)',
                               borderRadius:'var(--r-md)', padding:'7px 12px', fontSize:12, fontWeight:'var(--fw-semibold)',
                               fontFamily:'var(--font)', cursor:'pointer' }}>

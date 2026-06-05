@@ -6,6 +6,7 @@ import { notifyTenant } from './notifications'
 import { invalidateTenantCache } from '../lib/cache'
 import { resolveTierPrice, type PriceTier } from '../utils/pricing'
 import { pointsForAmount } from '../lib/loyalty'
+import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
 
 // Remboursement réservé MANAGER + ADMIN (+ SUPER_ADMIN superset) — anti-fraude :
 // le caissier ne peut PAS rembourser. Helper pur exporté pour les tests.
@@ -273,5 +274,52 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     notifyTenant(tenantId, { type: 'sale_refunded', data: { id: sale.id, total: sale.total, restock: doRestock } })
 
     return { ok: true, id: sale.id, status: 'refunded', restocked: doRestock }
+  })
+
+  // ── Facture PDF d'une vente (à la demande, non stockée ; numéro figé en DB) ──
+  // RBAC : tout rôle authentifié. Scope tenant strict.
+  app.get('/api/sales/:id/invoice', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
+    const { id } = request.params as { id: string }
+
+    const sale = await prisma.sale.findFirst({
+      where: { id, tenantId },
+      include: { items: { include: { product: { select: { name: true } } } } },
+    })
+    if (!sale) return reply.code(404).send({ error: 'Vente introuvable' })
+
+    const [tenant, customer] = await Promise.all([
+      prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true, address: true, phone: true, email: true, currency: true, vatRate: true, lang: true } }),
+      sale.customerId ? prisma.customer.findFirst({ where: { id: sale.customerId, tenantId }, select: { name: true, phone: true } }) : Promise.resolve(null),
+    ])
+    if (!tenant) return reply.code(404).send({ error: 'Boutique introuvable' })
+
+    // Numéro : attribué à la 1ʳᵉ demande puis figé (idempotent). Séquence = COUNT non-null + 1.
+    let invoiceNumber = sale.invoiceNumber
+    if (!invoiceNumber) {
+      const year = new Date(sale.createdAt).getFullYear()
+      const assign = async (): Promise<string> => {
+        const count = await prisma.sale.count({ where: { tenantId, invoiceNumber: { not: null } } })
+        const num = nextInvoiceNumber(count, year)
+        await prisma.sale.update({ where: { id: sale.id }, data: { invoiceNumber: num } })
+        return num
+      }
+      try {
+        invoiceNumber = await assign()
+      } catch (e: any) {
+        if (e?.code === 'P2002') {
+          // Course concurrente : soit cette vente a déjà reçu un numéro, soit le numéro
+          // calculé a été pris par une autre vente → on relit / réessaie une fois.
+          const fresh = await prisma.sale.findFirst({ where: { id: sale.id, tenantId }, select: { invoiceNumber: true } })
+          invoiceNumber = fresh?.invoiceNumber ?? (await assign())
+        } else throw e
+      }
+    }
+
+    const pdf = await buildInvoicePdf({ ...sale, invoiceNumber }, tenant, customer)
+    return reply
+      .header('Content-Type', 'application/pdf')
+      .header('Content-Disposition', `attachment; filename="facture-${invoiceNumber}.pdf"`)
+      .send(pdf)
   })
 }
