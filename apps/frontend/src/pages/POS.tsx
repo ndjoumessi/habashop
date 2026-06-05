@@ -493,6 +493,10 @@ export default function POS() {
           setShowModal={setShowModal}
           updateQty={updateQty}
           isMobile={isMobile} mobileView={mobileView}
+          mixedOn={mixedOn} setMixedOn={setMixedOn}
+          mixedM1={mixedM1} setMixedM1={setMixedM1} mixedM2={mixedM2} setMixedM2={setMixedM2}
+          mixedAmt1={mixedAmt1} setMixedAmt1={setMixedAmt1}
+          mixedAmt2XOF={mixedAmt2XOF} mixedValid={mixedValid}
         />
       </div>
 
@@ -527,10 +531,7 @@ export default function POS() {
         printTicket={printTicket}
         discount={discount} payMode={payMode}
         cashGiven={cashGiven} toXOF={toXOF}
-        mixedOn={mixedOn} setMixedOn={setMixedOn}
-        mixedM1={mixedM1} setMixedM1={setMixedM1} mixedM2={mixedM2} setMixedM2={setMixedM2}
-        mixedAmt1={mixedAmt1} setMixedAmt1={setMixedAmt1}
-        mixedAmt2XOF={mixedAmt2XOF} mixedValid={mixedValid}
+        mixedOn={mixedOn} mixedValid={mixedValid}
       />
 
       {/* MODAL REMBOURSEMENT (manager/admin) */}

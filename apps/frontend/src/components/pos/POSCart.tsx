@@ -19,9 +19,15 @@ interface POSCartProps {
   setShowModal: (b: boolean) => void
   updateQty: (id: any, delta: number) => void
   isMobile: boolean; mobileView: string
+  // Paiement mixte (split)
+  mixedOn: boolean; setMixedOn: (b: boolean) => void
+  mixedM1: 'cash'|'mobile'|'card'; setMixedM1: (m: 'cash'|'mobile'|'card') => void
+  mixedM2: 'cash'|'mobile'|'card'; setMixedM2: (m: 'cash'|'mobile'|'card') => void
+  mixedAmt1: string; setMixedAmt1: (v: string) => void
+  mixedAmt2XOF: number; mixedValid: boolean
 }
 
-export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView }: POSCartProps) {
+export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid }: POSCartProps) {
   return (
         <div style={{
           width: isMobile ? '100%' : 320,
@@ -288,7 +294,43 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               ))}
             </div>
 
-            {payMode === 'cash' && (
+            {/* ── Toggle Paiement mixte (split, 2 méthodes) ── */}
+            <button type="button" role="switch" aria-checked={mixedOn} onClick={() => setMixedOn(!mixedOn)}
+              style={{ width:'100%', marginTop:6, display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
+                padding:'8px 10px', background: mixedOn ? 'rgba(91,78,232,.08)' : 'var(--bg3)',
+                border:`1.5px solid ${mixedOn ? 'var(--p2)' : 'var(--border)'}`, borderRadius:8, cursor:'pointer', fontFamily:'var(--font)' }}>
+              <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color: mixedOn ? 'var(--p2)' : 'var(--text2)' }}>
+                {lang==='en'?'Split payment':lang==='es'?'Pago mixto':lang==='it'?'Pagamento misto':'Paiement mixte'}
+              </span>
+              <span style={{ position:'relative', display:'block', width:38, height:22, borderRadius:99, flexShrink:0, boxSizing:'border-box', background: mixedOn ? 'var(--p)' : 'var(--bg5)', border:'1px solid var(--border)', transition:'background .2s' }}>
+                <span style={{ position:'absolute', top:2, width:16, height:16, left: mixedOn ? 18 : 2, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 1px 3px rgba(0,0,0,.3)' }} />
+              </span>
+            </button>
+
+            {/* Paiement mixte ON → 2 lignes (montant reçu/monnaie masqués) */}
+            {mixedOn && (
+              <div style={{ marginTop:6, display:'flex', flexDirection:'column', gap:6 }}>
+                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                  <MethodPicker value={mixedM1} lang={lang} onChange={m => { setMixedM1(m); if (m === mixedM2) setMixedM2((['cash','mobile','card'] as const).find(x => x !== m)!) }} />
+                  <input type="number" inputMode="decimal" min={0} value={mixedAmt1} onChange={e => setMixedAmt1(e.target.value)}
+                    placeholder="0" aria-label={lang==='en'?'Amount 1':'Montant 1'}
+                    style={{ flex:1, minWidth:0, height:36, padding:'0 8px', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontSize:13, fontFamily:'var(--mono)', textAlign:'right', boxSizing:'border-box' }} />
+                </div>
+                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                  <MethodPicker value={mixedM2} exclude={mixedM1} lang={lang} onChange={setMixedM2} />
+                  <div style={{ flex:1, minWidth:0, height:36, padding:'0 8px', display:'flex', alignItems:'center', justifyContent:'flex-end', background:'var(--bg3)', border:'1px dashed var(--border)', borderRadius:8, color:'var(--text2)', fontSize:13, fontFamily:'var(--mono)' }}>
+                    {fmt(mixedAmt2XOF)}
+                  </div>
+                </div>
+                {!mixedValid && (
+                  <div style={{ fontSize:11, color:'var(--danger)', fontWeight:600 }}>
+                    {lang==='en'?'Amount 1 must be between 0 and the total':lang==='es'?'El monto 1 debe estar entre 0 y el total':lang==='it'?"L'importo 1 deve essere tra 0 e il totale":'Le montant 1 doit être entre 0 et le total'}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!mixedOn && payMode === 'cash' && (
               <div style={{ marginTop:6 }}>
                 <div style={{ position:'relative' }}>
                   <input className="input" type="number"
@@ -324,7 +366,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               </div>
             )}
 
-            {(payMode === 'wave' || payMode === 'orange') && cart.length > 0 && (
+            {!mixedOn && (payMode === 'wave' || payMode === 'orange') && cart.length > 0 && (
               <div style={{
                 marginTop:6, padding:'8px 10px',
                 background: payMode === 'wave' ? 'rgba(27,154,245,.08)' : 'rgba(255,102,0,.08)',
@@ -356,16 +398,20 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
           {/* ── BOUTON ENCAISSER ── */}
           <div style={{ flexShrink:0, padding:'8px 10px', borderTop:'1px solid var(--border)' }}>
             <button type="button"
-              disabled={cart.length === 0}
-              onClick={() => cart.length ? setShowModal(true) : toast.error(lang === 'en' ? 'Empty cart!' : lang === 'es' ? '¡Carrito vacío!' : lang === 'it' ? 'Carrello vuoto!' : 'Panier vide !')}
+              disabled={cart.length === 0 || (mixedOn && !mixedValid)}
+              onClick={() => {
+                if (!cart.length) return toast.error(lang === 'en' ? 'Empty cart!' : lang === 'es' ? '¡Carrito vacío!' : lang === 'it' ? 'Carrello vuoto!' : 'Panier vide !')
+                if (mixedOn && !mixedValid) return toast.error(lang==='en'?'Split amounts must sum to the total':lang==='es'?'La suma de los pagos debe igualar el total':lang==='it'?'La somma dei pagamenti deve uguagliare il totale':'La somme des paiements doit égaler le total')
+                setShowModal(true)
+              }}
               style={{
                 width:'100%', padding:'13px',
-                background: cart.length === 0 ? 'var(--bg4)' : 'linear-gradient(135deg,var(--p),var(--p2))',
+                background: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'var(--bg4)' : 'linear-gradient(135deg,var(--p),var(--p2))',
                 border:'none', borderRadius:11, fontSize:14, fontWeight:'var(--fw-bold)',
-                color: cart.length === 0 ? 'var(--text3)' : '#fff',
-                cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
+                color: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'var(--text3)' : '#fff',
+                cursor: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'not-allowed' : 'pointer',
                 fontFamily:'var(--font)',
-                boxShadow: cart.length === 0 ? 'none' : '0 4px 16px rgba(91,78,232,.4)',
+                boxShadow: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'none' : '0 4px 16px rgba(91,78,232,.4)',
                 transition:'all .2s',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               }}>
@@ -385,5 +431,30 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
           </div>
           </div>
         </div>
+  )
+}
+
+// Sélecteur de méthode de paiement (paiement mixte).
+function methodLabel(m: 'cash'|'mobile'|'card', lang: string): string {
+  if (m === 'cash') return lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces'
+  if (m === 'card') return lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte'
+  return 'Mobile'
+}
+function MethodPicker({ value, onChange, exclude, lang }: {
+  value: 'cash'|'mobile'|'card'; onChange: (m: 'cash'|'mobile'|'card') => void
+  exclude?: 'cash'|'mobile'|'card'; lang: string
+}) {
+  const methods = (['cash', 'mobile', 'card'] as const).filter(m => m !== exclude)
+  return (
+    <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+      {methods.map(m => (
+        <button key={m} type="button" onClick={() => onChange(m)}
+          style={{ padding: '0 7px', height: 36, borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)',
+            background: value === m ? 'var(--p)' : 'var(--bg4)', color: value === m ? '#fff' : 'var(--text2)',
+            border: `1px solid ${value === m ? 'var(--p)' : 'var(--border)'}` }}>
+          {methodLabel(m, lang)}
+        </button>
+      ))}
+    </div>
   )
 }
