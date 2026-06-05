@@ -183,7 +183,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     borderRadius: 14, cursor: 'pointer', transition: 'all .15s ease', overflow: 'hidden',
                     display: 'flex', flexDirection: 'column',
                   }}
-                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = '0 12px 32px rgba(0,0,0,.3)'; el.style.borderColor = tc.h; const a = el.querySelector('.customer-actions') as HTMLElement; if (a) { a.style.opacity = '1'; a.style.maxHeight = '48px' } }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = 'var(--sh-md)'; el.style.borderColor = tc.h; const a = el.querySelector('.customer-actions') as HTMLElement; if (a) { a.style.opacity = '1'; a.style.maxHeight = '64px' } }}
                   onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = ''; el.style.borderColor = isSel ? tc.h : 'var(--border)'; const a = el.querySelector('.customer-actions') as HTMLElement; if (a) { a.style.opacity = '0'; a.style.maxHeight = '0' } }}
                 >
                   {/* Bande dégradée par type */}
@@ -251,16 +251,17 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     )}
                   </div>
 
-                  {/* ACTIONS — révélées au hover */}
+                  {/* ACTIONS — révélées au hover sur desktop, TOUJOURS visibles en tactile
+                      (cf. @media (hover:none) dans index.css → pas d'actions hover-only) */}
                   <div className="customer-actions" style={{ maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'all .2s ease', borderTop: '1px solid var(--border)', background: 'var(--bg3)' }}>
-                    <div style={{ padding: '9px 12px', display: 'flex', gap: 7 }}>
+                    <div style={{ padding: '8px 12px', display: 'flex', gap: 7 }}>
                       <button type="button" onClick={e => { e.stopPropagation(); openDetail() }} aria-label={`${i('Voir', 'View', 'Ver', 'Vedi')} ${c.name}`}
-                        style={{ flex: 1, height: 30, borderRadius: 7, background: `rgba(${tc.rgb},.1)`, border: `1px solid rgba(${tc.rgb},.2)`, color: tc.h, fontSize: 11, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                        <Eye size={11} /> {lang === 'fr' ? 'Voir' : lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : 'Vedi'}
+                        style={{ flex: 1, minHeight: 44, borderRadius: 8, background: `rgba(${tc.rgb},.1)`, border: `1px solid rgba(${tc.rgb},.2)`, color: tc.h, fontSize: 12, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <Eye size={13} /> {lang === 'fr' ? 'Voir' : lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : 'Vedi'}
                       </button>
                       <button type="button" onClick={e => { e.stopPropagation(); onDelete(c.id) }} aria-label={`${i('Supprimer', 'Delete', 'Eliminar', 'Elimina')} ${c.name}`}
-                        style={{ width: 30, height: 30, borderRadius: 7, flexShrink: 0, background: 'rgba(255,59,92,.08)', border: '1px solid rgba(255,59,92,.15)', color: 'var(--danger)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Trash2 size={12} />
+                        style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: 'var(--c-red-bg)', border: '1px solid var(--c-red-border)', color: 'var(--danger)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>

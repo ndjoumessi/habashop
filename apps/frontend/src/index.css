@@ -456,6 +456,12 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
    le bloc prefers-reduced-motion ci-dessus réduit la durée → rendu instantané. */
 @keyframes kpiIn { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
 .kpi-animate { animation:kpiIn .4s var(--ease) both }
+/* Cards clients : sur appareils TACTILES (pas de hover), les actions sont TOUJOURS
+   visibles (fini le hover-only inaccessible au doigt). `!important` bat le style
+   inline maxHeight:0/opacity:0 (état desktop, révélé au hover via JS). */
+@media (hover: none) {
+  .customer-actions { max-height:64px!important; opacity:1!important }
+}
 @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
 @keyframes slideDown { from { opacity:0; transform:translateY(-10px) } to { opacity:1; transform:translateY(0) } }
 @keyframes slideIn { from { opacity:0; transform:translateX(-10px) } to { opacity:1; transform:translateX(0) } }
