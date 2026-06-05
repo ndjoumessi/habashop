@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query'
 import { customersApi } from '@/services/api'
 import type { Customer, LoyaltyResponse } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
-import { tierForPoints, nextTierFor, progressToNext, type LoyaltyTier } from '@/lib/loyalty'
+import { useAuthStore } from '@/stores/authStore'
+import { loyaltyConfig, tierForPoints, nextTierFor, progressToNext, type LoyaltyTier } from '@/lib/loyalty'
 import { ThemeColors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
 
 // Couleurs/emoji par palier (miroir du web LoyaltyCard).
@@ -18,7 +19,7 @@ const TIER_EMOJI: Record<LoyaltyTier, string> = { Bronze: '🥉', Silver: '🥈'
 /**
  * Carte fidélité honnête (miroir web). Affiche le solde + palier CANONIQUE (lu via
  * GET /api/customers/:id/loyalty), la progression vers le prochain seuil, et la règle
- * RÉELLE (1 pt / 1000 dépensé ; paliers 2000/5000 ; remises « à venir », AUCUNE promesse).
+ * RÉELLE — taux et seuils CONFIGURABLES par tenant (remises « à venir », AUCUNE promesse).
  * Lecture seule : aucune logique fidélité côté mobile (dérivation de palier = affichage).
  */
 export default function LoyaltyCard({ customer }: { customer: Customer }) {
@@ -26,6 +27,7 @@ export default function LoyaltyCard({ customer }: { customer: Customer }) {
   const s = useMemo(() => makeStyles(C), [C])
   const { i } = useI18n()
   const { fmt } = useFmt()
+  const { tenant } = useAuthStore()
 
   const { data, isLoading } = useQuery<LoyaltyResponse>({
     queryKey: ['loyalty', customer.id],
@@ -33,14 +35,25 @@ export default function LoyaltyCard({ customer }: { customer: Customer }) {
     staleTime: 60 * 1000,
   })
 
+  // Config fidélité du tenant : la réponse /loyalty (la plus fraîche, a servi à calculer
+  // `tier`) prime ; sinon le tenant en store ; sinon les défauts v1 (1000/2000/5000).
+  const cfg = loyaltyConfig({
+    pointsPerAmount: data?.pointsPerAmount ?? tenant?.pointsPerAmount,
+    bronzeThreshold: data?.bronzeThreshold ?? tenant?.bronzeThreshold,
+    silverThreshold: data?.silverThreshold ?? tenant?.silverThreshold,
+  })
+
   // Solde : réponse backend si dispo, sinon le loyaltyPoints déjà chargé (fallback offline).
   const points = data?.points ?? customer.loyaltyPoints ?? 0
-  // Palier : canonique backend si présent, sinon dérivé du solde (mapping d'affichage).
-  const tier = (data?.tier as LoyaltyTier) ?? tierForPoints(points)
+  // Palier : canonique backend si présent, sinon dérivé du solde avec les seuils du tenant.
+  const tier = (data?.tier as LoyaltyTier) ?? tierForPoints(points, cfg.bronzeThreshold, cfg.silverThreshold)
   const meta = TIER_META[tier] ?? TIER_META.Bronze
-  const next = nextTierFor(tier)
+  const next = nextTierFor(tier, cfg.bronzeThreshold, cfg.silverThreshold)
   const progress = next ? progressToNext(points, next.threshold) : 100
   const history = data?.history ?? []
+  // Libellés des seuils pour « Comment ça marche » (Silver = bronzeThreshold, Gold = silverThreshold).
+  const silverPts = cfg.bronzeThreshold.toLocaleString()
+  const goldPts = cfg.silverThreshold.toLocaleString()
 
   return (
     <View style={s.wrap}>
@@ -79,8 +92,13 @@ export default function LoyaltyCard({ customer }: { customer: Customer }) {
       {/* Comment ça marche — règle RÉELLE, sans promesse de remise */}
       <View style={s.infoCard}>
         <Text style={s.infoHead}>{i('Comment ça marche', 'How it works', 'Cómo funciona', 'Come funziona')}</Text>
-        <Text style={s.infoLine}>⭐ {i(`1 point par tranche de ${fmt(1000)} dépensé`, `1 point per ${fmt(1000)} spent`, `1 punto por cada ${fmt(1000)} gastado`, `1 punto ogni ${fmt(1000)} speso`)}</Text>
-        <Text style={s.infoLine}>🏅 {i('Paliers : Bronze · Silver (2 000 pts) · Gold (5 000 pts)', 'Tiers: Bronze · Silver (2,000 pts) · Gold (5,000 pts)', 'Niveles: Bronze · Silver (2 000 pts) · Gold (5 000 pts)', 'Livelli: Bronze · Silver (2.000 pts) · Gold (5.000 pts)')}</Text>
+        <Text style={s.infoLine}>⭐ {i(`1 point par tranche de ${fmt(cfg.pointsPerAmount)} dépensé`, `1 point per ${fmt(cfg.pointsPerAmount)} spent`, `1 punto por cada ${fmt(cfg.pointsPerAmount)} gastado`, `1 punto ogni ${fmt(cfg.pointsPerAmount)} speso`)}</Text>
+        <Text style={s.infoLine}>🏅 {i(
+          `Paliers : Bronze · Silver (${silverPts} pts) · Gold (${goldPts} pts)`,
+          `Tiers: Bronze · Silver (${silverPts} pts) · Gold (${goldPts} pts)`,
+          `Niveles: Bronze · Silver (${silverPts} pts) · Gold (${goldPts} pts)`,
+          `Livelli: Bronze · Silver (${silverPts} pts) · Gold (${goldPts} pts)`,
+        )}</Text>
         <Text style={s.infoSoon}>🎁 {i('Récompenses & remises : à venir', 'Rewards & discounts: coming soon', 'Recompensas y descuentos: próximamente', 'Premi e sconti: in arrivo')}</Text>
       </View>
 

@@ -26,6 +26,11 @@ export interface Tenant {
   vatRate?: number
   posVatIncluded?: boolean
   priceMode?: string
+  // Fidélité configurable par tenant (cf. GET /api/tenant).
+  enableLoyalty?: boolean
+  pointsPerAmount?: number // unités de devise pour 1 point
+  bronzeThreshold?: number // pts : Bronze → Silver
+  silverThreshold?: number // pts : Silver → Gold
   [key: string]: unknown
 }
 
@@ -193,6 +198,10 @@ export interface LoyaltyResponse {
   points: number
   tier: string            // 'Bronze' | 'Silver' | 'Gold'
   history: LoyaltyHistoryEntry[]
+  // Config fidélité du tenant (renvoyée par le backend, source la plus fraîche).
+  pointsPerAmount?: number // unités de devise pour 1 point
+  bronzeThreshold?: number // pts : Bronze → Silver
+  silverThreshold?: number // pts : Silver → Gold
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
