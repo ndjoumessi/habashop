@@ -51,16 +51,17 @@ function BarcodeDisplay({ value }: { value: string }) {
         // ⚠️ Barres NOIRES sur fond BLANC (jamais var(--text)/transparent : en thème
         // sombre ça donne un code inversé que les lecteurs physiques refusent).
         // displayValue:true + quiet zones blanches = EAN-13 conforme GS1, scannable.
+        // Option B — EAN-13 « slim label » : compact mais net et scannable.
         JsBarcode(svgRef.current, value, {
           format: 'EAN13',
-          width: 2,              // module ample → barres franches, proportions larges
-          height: 64,            // barres ≈ 60-70px (respirent), hauteur optimale
+          width: 1.8,
+          height: 52,
           displayValue: true,    // chiffres EAN-13 affichés sous les barres
-          fontSize: 15,          // chiffres bien lisibles
+          fontSize: 13,
           font: 'monospace',     // chasse fixe (proche OCR-B) → chiffres réguliers
           fontOptions: 'bold',
-          textMargin: 5,         // chiffres aérés sous les barres (bien espacés)
-          margin: 10,            // quiet zones GS1 généreuses (le code respire)
+          textMargin: 4,
+          margin: 4,             // quiet zones resserrées (slim)
           background: '#FFFFFF',
           lineColor: '#000000',
         })
@@ -329,7 +330,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
                       <div style={{ display:'flex', flexDirection:'column', alignItems:'stretch', gap:8 }}>
                         {/* Carte « étiquette » : fond blanc cassé, padding généreux, coins arrondis + ombre douce */}
-                        <div style={{ maxWidth:'100%', width:'fit-content', margin:'0 auto', alignSelf:'center', padding:'8px 6px', background:'#FBFAF7', border:'1px solid var(--border)', borderRadius:14, boxShadow:'var(--sh-sm)' }}>
+                        {/* Option B — étiquette slim : fond blanc, padding minimal, coins arrondis 6 + ombre */}
+                        <div style={{ maxWidth:'100%', width:'fit-content', margin:'0 auto', alignSelf:'center', padding:'4px 6px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:6, boxShadow:'var(--sh-sm)' }}>
                           <BarcodeDisplay value={form.barcode} />
                         </div>
                         <button type="button" className="mini-btn"
