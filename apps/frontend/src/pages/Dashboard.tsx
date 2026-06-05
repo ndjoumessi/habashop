@@ -127,7 +127,11 @@ export default function Dashboard() {
     lowStockProducts: 0,
     activeEmployees: 0,
     pendingOrders: 0,
+    salesTodayTrend: null as number | null,
+    salesMonthTrend: null as number | null,
   })
+  // Chargement des KPIs → skeletons (évite le flash 0 → valeur + réserve l'espace).
+  const [kpiLoading, setKpiLoading] = useState(true)
   const [salesChart, setSalesChart] = useState<any[]>([])
   const [topProducts, setTopProducts] = useState<any[]>([])
   const [stockAlerts, setStockAlerts] = useState<any[]>([])
@@ -165,6 +169,8 @@ export default function Dashboard() {
           lowStockProducts:  data.lowStockProducts  ?? stats.lowStockProducts,
           activeEmployees:   data.activeEmployees   ?? stats.activeEmployees,
           pendingOrders:     data.pendingOrders     ?? stats.pendingOrders,
+          salesTodayTrend:   data.salesTodayTrend ?? null,
+          salesMonthTrend:   data.salesMonthTrend ?? null,
         })
         setTopProducts(data?.topProducts ?? [])
         setStockAlerts(data?.stockAlerts ?? [])
@@ -188,6 +194,7 @@ export default function Dashboard() {
         setCatData(mergedCats.map((c, i) => ({ ...c, color: DONUT_COLORS[i % DONUT_COLORS.length] })))
       })
       .catch(() => {})
+      .finally(() => setKpiLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -318,46 +325,61 @@ export default function Dashboard() {
 
       {/* KPI cards */}
       <ResponsiveGrid min={180} gap={12}>
-        {[
-          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`,  evol: '+12%', up: true,  Icon: DollarSign, color: 'var(--p2)',   hex: '#6C47FF', bg: 'rgba(108,71,255,.14)', hero: true },
-          { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} ${lang === 'en' ? 'stock alerts' : lang === 'es' ? 'alertas stock' : lang === 'it' ? 'avvisi stock' : 'alertes stock'}`,   evol: '−3',   up: false, Icon: Package,    color: 'var(--acc)',  hex: '#FF9500', bg: 'rgba(255,149,0,.14)'  },
-          { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} ${lang === 'en' ? 'pending orders' : lang === 'es' ? 'ped. pendientes' : lang === 'it' ? 'ord. in attesa' : 'cmd. en attente'}`,   evol: '',     up: null,  Icon: Users,      color: 'var(--acc2)', hex: '#00D084', bg: 'rgba(0,208,132,.14)'  },
-          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),         sub: lang === 'en' ? 'vs last month' : lang === 'es' ? 'vs mes pasado' : lang === 'it' ? 'vs mese scorso' : 'vs mois dernier',                           evol: '+7%',  up: true,  Icon: TrendingUp, color: 'var(--acc3)', hex: '#00B8FF', bg: 'rgba(0,184,255,.14)'  },
-        ].map(k => (
-          <div key={k.label} className="kpi-card" style={{
-            background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,
-            border: `1px solid ${k.hex}28`,
-            position: 'relative', overflow: 'hidden',
-          }}>
-            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                background: k.bg, color: k.color,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: `1px solid ${k.color}30`,
-              }}>
-                <k.Icon size={19} />
-              </div>
-              {k.up !== null && (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 3,
-                  padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 'var(--fw-semibold)',
-                  background: k.up ? 'rgba(0,208,132,.1)' : 'rgba(255,59,92,.1)',
-                  color: k.up ? 'var(--acc2)' : 'var(--danger)',
-                  border: `1px solid ${k.up ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
-                }}>
-                  {k.up ? <TrendingUp size={9} /> : <TrendingDown size={9} />}
-                  {k.evol}
-                </span>
-              )}
+        {kpiLoading ? (
+          [0, 1, 2, 3].map(i => (
+            <div key={i} className="kpi-card" style={{ position: 'relative', overflow: 'hidden' }}>
+              <div className="skeleton" style={{ width: 44, height: 44, borderRadius: 12, marginBottom: 14 }} />
+              <div className="skeleton" style={{ width: '55%', height: 11, marginBottom: 12 }} />
+              <div className="skeleton" style={{ width: '72%', height: i === 0 ? 28 : 22, marginBottom: 8 }} />
+              <div className="skeleton" style={{ width: '40%', height: 11 }} />
             </div>
-            <div className="kpi-label">{k.label}</div>
-            {/* Métrique reine : le CA du jour domine (30px mono 900) */}
-            <div className="kpi-value" style={{ color: k.color, fontSize: (k as { hero?: boolean }).hero ? 30 : 24 }}>{k.value}</div>
-            <div className="kpi-sub" style={{ marginTop: 4 }}>{k.sub}</div>
-          </div>
-        ))}
+          ))
+        ) : ([
+          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`,  trend: stats.salesTodayTrend, Icon: DollarSign, color: 'var(--p2)',   hex: '#6C47FF', bg: 'rgba(108,71,255,.14)', hero: true  },
+          { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} ${lang === 'en' ? 'stock alerts' : lang === 'es' ? 'alertas stock' : lang === 'it' ? 'avvisi stock' : 'alertes stock'}`,   trend: null,                  Icon: Package,    color: 'var(--acc)',  hex: '#FF9500', bg: 'rgba(255,149,0,.14)',  hero: false },
+          { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} ${lang === 'en' ? 'pending orders' : lang === 'es' ? 'ped. pendientes' : lang === 'it' ? 'ord. in attesa' : 'cmd. en attente'}`,   trend: null,                  Icon: Users,      color: 'var(--acc2)', hex: '#00D084', bg: 'rgba(0,208,132,.14)',  hero: false },
+          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),         sub: lang === 'en' ? 'vs last month' : lang === 'es' ? 'vs mes pasado' : lang === 'it' ? 'vs mese scorso' : 'vs mois dernier',                           trend: stats.salesMonthTrend, Icon: TrendingUp, color: 'var(--acc3)', hex: '#00B8FF', bg: 'rgba(0,184,255,.14)',  hero: false },
+        ].map((k, idx) => {
+          const up = k.trend != null && k.trend > 0
+          const down = k.trend != null && k.trend < 0
+          return (
+            <div key={k.label} className="kpi-card kpi-animate" style={{
+              background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,
+              border: `1px solid ${k.hex}28`,
+              position: 'relative', overflow: 'hidden',
+              animationDelay: `${idx * 60}ms`,
+            }}>
+              <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  background: k.bg, color: k.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: `1px solid ${k.color}30`,
+                }}>
+                  <k.Icon size={19} />
+                </div>
+                {/* Badge tendance RÉELLE (null → pas de badge ; couleurs theme-aware AA) */}
+                {k.trend != null && (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 3,
+                    padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)',
+                    background: up ? 'var(--c-green-bg)' : down ? 'var(--c-red-bg)' : 'var(--bg4)',
+                    color: up ? 'var(--acc2)' : down ? 'var(--danger)' : 'var(--text3)',
+                    border: `1px solid ${up ? 'var(--c-green-border)' : down ? 'var(--c-red-border)' : 'var(--border)'}`,
+                  }}>
+                    {up ? <TrendingUp size={9} /> : down ? <TrendingDown size={9} /> : null}
+                    {k.trend > 0 ? '+' : ''}{k.trend}%
+                  </span>
+                )}
+              </div>
+              <div className="kpi-label">{k.label}</div>
+              {/* Métrique reine : le CA du jour domine (30px mono 900) */}
+              <div className="kpi-value" style={{ color: k.color, fontSize: k.hero ? 30 : 24 }}>{k.value}</div>
+              <div className="kpi-sub" style={{ marginTop: 4 }}>{k.sub}</div>
+            </div>
+          )
+        }))}
       </ResponsiveGrid>
 
       {/* Quick actions 2×4 grid */}

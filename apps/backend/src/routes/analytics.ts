@@ -3,15 +3,33 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { getCached } from '../lib/cache'
 
+/**
+ * Évolution en % (1 décimale) entre la valeur actuelle et celle de la période
+ * précédente. Renvoie null si prev ≤ 0 (pas d'historique comparable → pas de badge).
+ */
+export function computeTrend(value: number, prev: number): number | null {
+  if (!Number.isFinite(prev) || prev <= 0) return null
+  return Math.round(((value - prev) / prev) * 1000) / 10
+}
+
 export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/dashboard/stats', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     return getCached(`analytics:${tenantId}:dashboard`, 300, async () => {
-      const today = new Date()
+      const now = new Date()
+      const today = new Date(now)
       today.setHours(0, 0, 0, 0)
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+      // Période PRÉCÉDENTE comparable = même durée écoulée (jour/mois glissant), pour des
+      // tendances honnêtes (on ne compare pas un mois partiel à un mois complet).
+      const elapsedToday = now.getTime() - today.getTime()
+      const yesterday = new Date(today.getTime() - 86_400_000)
+      const prevDayEnd = new Date(yesterday.getTime() + elapsedToday)
+      const elapsedMonth = now.getTime() - monthStart.getTime()
+      const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+      const prevMonthEnd = new Date(prevMonthStart.getTime() + elapsedMonth)
 
-      const [salesToday, salesMonth, totalProducts, activeEmployees, pendingOrders, allProducts] =
+      const [salesToday, salesMonth, prevDaySales, prevMonthSales, totalProducts, activeEmployees, pendingOrders, allProducts] =
         await Promise.all([
           prisma.sale.aggregate({
             where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: today } },
@@ -22,6 +40,16 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
             where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: monthStart } },
             _sum: { total: true },
             _count: true,
+          }),
+          // CA hier sur la même plage horaire écoulée (remboursées exclues — cohérent).
+          prisma.sale.aggregate({
+            where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: yesterday, lt: prevDayEnd } },
+            _sum: { total: true },
+          }),
+          // CA du mois précédent sur la même durée écoulée (remboursées exclues — cohérent).
+          prisma.sale.aggregate({
+            where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: prevMonthStart, lt: prevMonthEnd } },
+            _sum: { total: true },
           }),
           prisma.product.count({ where: { tenantId, isActive: true, deletedAt: null } }),
           prisma.employee.count({ where: { tenantId, isActive: true } }),
@@ -81,6 +109,9 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
         transactionsToday: salesToday._count,
         salesMonth: salesMonth._sum.total ?? 0,
         transactionsMonth: salesMonth._count,
+        // Tendances réelles vs période précédente (null = pas d'historique → pas de badge).
+        salesTodayTrend: computeTrend(salesToday._sum.total ?? 0, prevDaySales._sum.total ?? 0),
+        salesMonthTrend: computeTrend(salesMonth._sum.total ?? 0, prevMonthSales._sum.total ?? 0),
         totalProducts,
         lowStockProducts,
         activeEmployees,
