@@ -13,9 +13,17 @@ const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined
 if (SENTRY_DSN && import.meta.env.PROD) {
   Sentry.init({
     dsn: SENTRY_DSN,
-    environment: 'production',
-    release: 'habashop@2.3.0',
-    tracesSampleRate: 0.1,
+    // environment : VITE_ENV si fourni (ex. 'preview'), sinon 'production'.
+    environment: (import.meta.env.VITE_ENV as string | undefined) ?? 'production',
+    // release : NON forcé ici → le plugin Vite injecte le release auto (SHA), ce qui
+    // garantit que les source maps uploadées correspondent au code servi en prod.
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+    tracesSampleRate: 0.1,          // 10 % des transactions de perf (prod ; en dev l'init n'est pas exécuté)
+    replaysSessionSampleRate: 0.1,  // 10 % des sessions enregistrées (Replay)
+    replaysOnErrorSampleRate: 1.0,  // 100 % des sessions comportant une erreur
     ignoreErrors: ['ResizeObserver loop', 'Non-Error promise rejection', 'NetworkError', 'Failed to fetch', 'Load failed'],
     beforeSend(event) {
       const msg = event.exception?.values?.[0]?.value

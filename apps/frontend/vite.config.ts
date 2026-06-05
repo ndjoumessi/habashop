@@ -1,7 +1,8 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'path'
 import { execFileSync } from 'node:child_process'
 
@@ -14,7 +15,14 @@ const BUILD_SHA =
   (() => { try { return execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim() } catch { return '' } })()
 const BUILD_ID = new Date().toISOString().slice(0, 16).replace('T', ' ') + (BUILD_SHA ? ` · ${BUILD_SHA}` : '')
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Charge TOUTES les variables (préfixe '') → récupère SENTRY_AUTH_TOKEN (.env.local en
+  // local / variable de build Vercel) pour l'upload de source maps. Non exposé au bundle
+  // (le token n'est pas préfixé VITE_, donc absent de import.meta.env côté client).
+  const env = loadEnv(mode, process.cwd(), '')
+  const sentryAuthToken = env.SENTRY_AUTH_TOKEN || process.env.SENTRY_AUTH_TOKEN
+
+  return {
   define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   plugins: [
     react(),
@@ -59,11 +67,27 @@ export default defineConfig({
       },
       devOptions: { enabled: false },
     }),
+    // Upload des source maps vers Sentry (org haba-76 / projet habashop-web) — uniquement
+    // si un token est présent (= builds prod : .env.local en local, env de build sur Vercel).
+    // En dev / sans token : no-op (le build ne casse pas). Les .map sont supprimés de dist
+    // après upload (jamais servis publiquement ; couplé à build.sourcemap:'hidden').
+    ...(sentryAuthToken
+      ? [sentryVitePlugin({
+          org: 'haba-76',
+          project: 'habashop-web',
+          authToken: sentryAuthToken,
+          sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+          telemetry: false,
+        })]
+      : []),
   ],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
   build: {
+    // 'hidden' : génère les source maps pour Sentry SANS ajouter le commentaire
+    // sourceMappingURL aux bundles → maps non référencées publiquement.
+    sourcemap: 'hidden',
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -105,4 +129,5 @@ export default defineConfig({
       exclude: ['src/tests/**'],
     },
   },
+  }
 })
