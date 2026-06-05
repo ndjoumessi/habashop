@@ -8,7 +8,7 @@ SaaS de gestion commerciale multi-tenant pour boutiques/superettes (Afrique de l
 
 ## Stack technique
 
-- **`apps/frontend`** — React 18 + TypeScript + Vite, Zustand (state, persisté localStorage), React Router, Lucide icons, recharts, jsbarcode (EAN-13 SVG), @zxing (scan caméra), Playwright (E2E). PWA installable via vite-plugin-pwa.
+- **`apps/frontend`** — React 18 + TypeScript + Vite, Zustand (state, persisté localStorage), React Router, Lucide icons, recharts, jsbarcode (EAN-13 SVG), @zxing (scan caméra), Playwright (E2E), **Sentry** (`@sentry/react` + `@sentry/vite-plugin`, source maps uploadées au build, org haba-76/projet habashop-web). PWA installable via vite-plugin-pwa.
 - **`apps/backend`** — Fastify + Prisma + PostgreSQL (Railway), bcryptjs auth + JWT, Resend (emails), Sentry, cron `setInterval` natifs.
 - Multi-devises (XOF/XAF/EUR/USD/CAD/GBP, base XOF + conversion live) et multi-langues (fr/en/es/it).
 
@@ -115,23 +115,26 @@ Nelson fournit souvent des specs détaillées (ex : « lot N i18n »). Si une in
 ## Derniers commits livrés
 
 ```
-7336bd60  feat(goals+notifs)  Goals persistés en base (Prisma+CRUD+frontend) + cron alerte stock email quotidien
-f6efe49d  fix(security)       settingsLocked conditionnel dans header + edge cases JWT + migration Lucide/var(--*)
-5503c161  feat(settings)      Refonte design — sidebar épurée, header section, cards uniformes, forms structurés
-ca85f932  feat(settings)      Persiste POS + Notif + Langue en base (migration Prisma + backend + frontend branché)
-2c379360  feat(activity)      Refonte journal — descriptions lisibles + icônes par action + design enrichi
-f8cfa5b1  fix(activity)       Ajoute activityLog aux deps useMemo — liste vide au premier load
-08545a01  fix(users)          Refonte design modales invitation/modification (icônes inline, toggles switch, layout cohérent)
-c577cac2  fix(users)          Libère l'email au soft-delete (contrainte unique globale)
-4b76a395  fix(users)          requireAdmin accepte SUPER_ADMIN
-e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohérente avec les checks backend)
+0836f920  fix(loyalty)        pointsPerAmount affiché sans conversion de change (LoyaltyCard)
+1d709676  feat(loyalty)       Programme fidélité CONFIGURABLE par tenant (taux + seuils paliers)
+63643ebc  feat(observability) Instrumentation Sentry web (React+Vite, source maps uploadées)
+0a3e8b61  feat(sales)         Idempotence création de vente (Idempotency-Key, anti-doublon) — P1-B 1/2
+bd17b157  feat(reports)       Rapports actionnables v1 — réappro (vélocité 30j) + dormants (valeur immobilisée)
+ef5768b6  feat(loyalty)       Moteur de points v1 — créditage serveur + paliers + historique
+63f33934  feat(sales)         Annulation/remboursement TOTAL de vente (backend + web)
+582160f2  fix(modals)         Modales view centrées (fin du bottom-sheet ≤900px) + fermeture Échap globale
+5d466cf3  feat(filters)       Clients/Fournisseurs/Commandes en FilterSelect thémé (comme Stock)
+1c06c5f8  feat(sidebar)       Refonte design Daylight (accent actif, badges, i18n sections) + 17d2e3f1 réorg sections
 ```
+> Session juin 2026 détaillée dans **« Sprint 10 »** plus bas. Commits antérieurs : `git log`.
 
 ## État fonctionnel — ce qui marche
 
 ### Core métier (CRUD complet + persistance backend)
 - **Produits / Stock** : create/update/delete, SKU auto-séquentiel par tenant `PRD-NNNN` + `@@unique([tenantId, sku])`, code-barres EAN-13 (génération + validation 13 chiffres + rendu SVG scannable via JsBarcode), supplierId FK, description/notes, scan caméra via @zxing
-- **POS / Ventes** : caisse, paniers, modes paiement (cash/wave/orange/mtn/card), remises, customer linking, fidélité (toggle)
+- **POS / Ventes** : caisse, paniers, modes paiement (cash/wave/orange/mtn/card), remises, customer linking, fidélité (toggle). **Remboursement TOTAL** (manager/admin, motif requis, restock optionnel pré-coché, audit, idempotent 409, vente conservée status `refunded` → exclue du CA, retire les points fidélité). **Idempotence création** (clé `idempotencyKey` body OU header `Idempotency-Key`, `@@unique([tenantId, idempotencyKey])` → retry/resync = 1 seule vente, course P2002 gérée).
+- **Fidélité (points)** : `Customer.loyaltyPoints` + `LoyaltyTransaction` (earn/reverse, historique). Créditage 100% **serveur** dans la transaction de vente (`floor(total TTC / pointsPerAmount)`) si `enableLoyalty`. Remboursement = retrait des points. Paliers Bronze/Silver/Gold. **CONFIGURABLE par tenant** : `Tenant.pointsPerAmount`/`bronzeThreshold`/`silverThreshold` (défauts 1000/2000/5000, non-rétroactif) ; édités dans Réglages POS (ADMIN, validation bronze<silver) ; `GET /api/customers/:id/loyalty` renvoie tier + seuils + pointsPerAmount (scope tenant strict). Pas de remise/échange en v1 (= v2). ⚠️ `pointsPerAmount` est dans la devise du **tenant** → afficher via `formatInCurrency` SANS conversion de change (jamais `useFormatAmount` qui convertit depuis XOF).
+- **Rapports actionnables (Reports → onglet Stock)** : `GET /api/reports/inventory` (scope tenant, lecture seule, cache 5 min). **À réapprovisionner** (stock ≤ stockMin, classé par vélocité 30j, qté suggérée ≈ couvrir 30j) + **Produits dormants** (aucune vente sur 60j ET stock>0, triés par valeur immobilisée = stock × buyPrice). Résumé compact sur le Dashboard renvoyant vers le rapport.
 - **Clients** : CRUD complet, carte Google Maps (sous `VITE_GOOGLE_MAPS_KEY`), loyalty points, revenus cumulés
 - **Fournisseurs** : CRUD, catégories, lead time, rating, soft-delete restorable
 - **Commandes (PurchaseOrder)** : CRUD, statuts, items
@@ -171,7 +174,7 @@ e7e517ab  feat(users)         Masque boutons d'action aux non-admins (UI cohére
 - 4 thèmes (dark/light/forêt/+accent custom) — préférence per-device (localStorage)
 
 ### Tests
-- **249 tests vitest front** / 204 back (front : currency, pagination, components UI, anchors de découpe, logique métier pure : paie/CNSS/IRPP, dates HR incl. `eachDateInclusive`, libellés HR, conversion EUR/USD rapport comptable, catégories Stock, matrice permissions/escalade Users, lookup Open Food Facts, hook couleur thème ; back : route lang/devise ADMIN-only, CRUD présences incl. HALF, **CRUD shifts + leave-requests + approbation transactionnelle**). *(Notes : `calcHeures`/`calcPonctualite` + 7 tests retirés en Phase 3 ; `planning-leave.test`/`weekdayIndicesForRange` retirés en Phase 6-planning — code mort migré sur API.)*
+- **367 tests vitest front** / 253 back (front : currency, pagination, components UI, anchors de découpe, logique métier pure : paie/CNSS/IRPP, dates HR incl. `eachDateInclusive`, libellés HR, conversion EUR/USD rapport comptable, catégories Stock, matrice permissions/escalade Users, lookup Open Food Facts, hook couleur thème, **contraste AA 9 thèmes**, **remboursement/RBAC**, **fidélité configurable (helpers + LoyaltyBar seuils + SectionPOS) + non-conversion pointsPerAmount**, **InventoryInsights réappro/dormants** ; back : route lang/devise ADMIN-only, CRUD présences/shifts/leave-requests, **refund (floor/restock/RBAC/409/reverse points)**, **idempotence vente (P2002/scope)**, **fidélité (taux+seuils configurables, isolation tenant, validation settings)**, **inventory insights (seuil/vélocité/dormants/scope)**). *(Notes : `calcHeures`/`calcPonctualite` + 7 tests retirés en Phase 3 ; `planning-leave.test`/`weekdayIndicesForRange` retirés en Phase 6-planning — code mort migré sur API.)*
 - Playwright E2E configuré (`baseURL = https://habashop.vercel.app` → tourne en **live** contre prod). Specs connectées via login démo `admin@habashop.com`/`demo1234`. **3 specs servent de vérif live des fixes** : `bulletin-pdf.spec.ts` (PDF paie = écran en EUR), `leave-planning.spec.ts` (congé approuvé → shifts Congé), `dashboard-donut.spec.ts` (tooltip % == légende % source unique + cursor:help badges) ; + `planning-month.spec.ts` (vue mois + multi-shift).
 - **E2E — réutilisation de session via `storageState`** : projet **`setup`** (`e2e/auth.setup.ts`) se loge **UNE fois** → sauvegarde l'état d'auth dans `e2e/.auth/user.json` (gitignored, contient un vrai JWT) ; le projet `chromium` le réutilise (`dependencies: ['setup']` + `use.storageState`). Les specs ne se loguent plus (`login()` = no-op + **un SEUL `page.goto('/app/...')`** par test — un 2ᵉ goto annulerait le `/me` de montage dont le `.catch(logout)` effacerait le token → bounce `/login`). `smoke.spec` surcharge `storageState` vide (parcours publics + flux de login réels). **`workers: 1`** (backend mono-réplique Railway → la parallélisation provoquait des `/me` lents au cold start → logout). ⇒ **~1 login par run** au lieu de ~11. ⚠️ **Piège tenant partagé** : `i18n-es-it.spec` bascule la **langue du tenant démo** (PATCH `/api/tenant`, persistée) → si son `afterEach` de reset échoue, les specs suivantes rendent en es/it et ratent les assertions FR. Remède : `PATCH /api/tenant {lang:'fr'}` avant un run propre.
 - **Rate-limit login relevé `10 → 30` / 15 min / IP** (`routes/auth.ts`) : le **CGNAT mobile** (Afrique de l'Ouest) regroupe de nombreux utilisateurs légitimes derrière une même IP opérateur → `max:10` les épuisait (→ ancien fallback démo cassé → déconnexion ; cf. fix P0). 30 reste efficace anti brute-force. **register inchangé** (`max:5 / 1h`, action rare). Message 429 corrigé (`context.ttl` au lieu de `context.after` → plus de « NaN minute(s) »).
@@ -238,6 +241,34 @@ i18n complété en 8 lots (sept. 2024–mai 2026) : tout le texte d'interface (i
 Refonte design complète : Settings (commit `5503c161`), Activity (commit `2c379360`), modales Users (commit `08545a01`), timeline HR salaires (commit `93de0d09` + `e797310b`).
 
 Sécurité & multi-tenant : routes user management durcies admin-only + validation role whitelist + HTML escape email (commits `c66d9adb` + `4b76a395`), libération email au soft-delete (commit `c577cac2`).
+
+## Sprint 10 — session juin 2026 (résilience, fidélité, rapports, observabilité)
+
+### Design / UI
+- **Sidebar refonte Daylight** (`1c06c5f8` + réorg `17d2e3f1`) : sections éclatées (Principal/Gestion/RH & Planning/**Finance**/**Croissance**/Système/Administration), en-têtes i18n via clés `nav_sec_*`, **barre d'accent verticale** sur l'item actif (repère non-couleur, AA), hover/active/focus tokenisés (fin du `rgba(255,255,255,.06)` invisible en Mode soleil), badges unifiés (count tint violet / tag « AI » dégradé) + pastille en mode réduit, bloc Caisse ouverte/fermée, wordmark gradient `var(--p2)→var(--p)` (lisible soleil).
+- **Filtres unifiés** (`def33448` Stock, `5d466cf3` Clients/Fournisseurs/Commandes) : primitive **`components/ui/FilterSelect.tsx`** (dropdown custom tokenisé multi-thème, ARIA listbox, fermeture clic-extérieur/Échap) remplace les `<select>` natifs ; **`utils/normCat.ts`** partagé (dédup catégories donut + filtres). Grammaire « Tous X » corrigée i18n. ⚠️ Émoji 🔍 retiré des placeholders (icône Lucide suffit).
+- **Code-barres compact** (`d392231d`) : `BarcodeDisplay` module 2.5→1.8, ~183px (−34%), centré, EAN-13 noir/blanc opaque conservé.
+- **Modales view centrées** (`582160f2`) : bug `@media (max-width:900px)` → `.modal-backdrop` passait en `align-items:flex-end` (bottom-sheet masquant le titre). Fix CSS à la SOURCE → centré à toutes largeurs + **handler Échap global dans AppLayout** (clique le backdrop le plus haut → ferme via le `e.target===e.currentTarget` déjà câblé).
+
+### Remboursement de vente (`63f33934`)
+Backend : `Sale.status/refundedAt/refundedBy/refundReason/restocked` ; `POST /api/sales/:id/refund` (RBAC manager/admin, motif requis, idempotent 409 via `updateMany status!=refunded`, transaction : refunded + restock optionnel + décrément revenu client + AuditLog `REFUND_SALE` + **retrait points fidélité**). CA exclut `status='refunded'` partout (analytics/reports/admin). Web : bouton « Rembourser » (manager/admin, ventes non remboursées) dans l'historique POS + `RefundModal` centré (motif, restock pré-coché, note Wave/Orange suivi-only). **Vérifié live** (vente 2500→+2pts→remboursée→−2pts, démo nettoyée).
+
+### Fidélité — moteur v1 (`ef5768b6`) puis CONFIGURABLE (`1d709676`, fix `0836f920`)
+- `LoyaltyTransaction` (signed points, type earn|reverse) ; créditage **serveur** dans la transaction de vente (`floor(total / pointsPerAmount)` si `enableLoyalty`) ; `lib/loyalty.ts` purs (`pointsForAmount`/`tierForPoints`) **paramétrés**.
+- Config par tenant : `Tenant.pointsPerAmount`/`bronzeThreshold`/`silverThreshold` (défauts 1000/2000/5000, **non-rétroactif**). `PUT/PATCH /api/tenant` : 3 champs, **ADMIN only** (403), validation entiers ≥1 + bronze<silver (valeurs effectives). Réglages POS : 3 champs (visibles si loyalty on, validation inline, note « prochaines ventes uniquement »). `GET /loyalty` renvoie tier+seuils+pointsPerAmount, scope tenant strict. LoyaltyCard/LoyaltyBar lisent les seuils du tenant.
+- ⚠️ **Bug devise corrigé** : `pointsPerAmount` est déjà dans la devise du tenant → `formatInCurrency(x, tenantCurrency)` SANS conversion (l'ancien `useFormatAmount` convertissait depuis XOF → « 1,52 € » au lieu de « 1 000 € »).
+
+### Rapports actionnables (`bd17b157`)
+`GET /api/reports/inventory` (scope tenant, cache 5 min, helpers purs `computeReorder`/`computeDormant`/`buildInventoryInsights`) : réappro (stock ≤ stockMin, vélocité 30j, qté suggérée) + dormants (aucune vente 60j ET stock>0, valeur immobilisée stock×buyPrice). `components/reports/InventoryInsights` (2 sections, onglet Stock de Reports — remplace le mockup) + résumé Dashboard. Réutilise le critère stock≤seuil du bandeau Stock (pas de duplication).
+
+### Idempotence vente (`0a3e8b61`, P1-B 1/2)
+`Sale.idempotencyKey` + `@@unique([tenantId, idempotencyKey])` (Postgres : NULL distincts → rétro-compat). Clé body OU header `Idempotency-Key` : lookup précoce → renvoie l'existante sans re-créer (pas de re-décrément stock/fidélité) ; course concurrente P2002 → re-fetch la gagnante. **Partie 2/2** (client génère/renvoie l'UUID + retry réseau) à faire. **Vérifié live** (3 POST même clé → 1 vente).
+
+### Observabilité — Sentry web (`63643ebc`)
+`@sentry/react` (déjà) + `@sentry/vite-plugin`. `main.tsx` : init PROD+DSN, `environment` depuis `VITE_ENV`, intégrations browserTracing + replay (10% sessions / 100% erreurs), tracesSampleRate 0.1, `release` géré par le plugin (injecté). `vite.config.ts` : forme fonction + `loadEnv`, `sentryVitePlugin` (org **haba-76** / projet **habashop-web**) upload source maps au build si token présent, `build.sourcemap:'hidden'` + suppression des `.map` après upload. **SENTRY_AUTH_TOKEN** = secret BUILD-side (non préfixé VITE_) → dans `apps/frontend/.env.local` (gitignored) en local + variable de build Vercel. ⚠️ `apps/frontend/.env` est **tracké par git** (contient `VITE_GOOGLE_MAPS_KEY`) → ne JAMAIS y mettre de secret ; utiliser `.env.local`.
+
+### i18n résiduel (`c627bd5c`/`e5ba9337`/`80dca33e`/`9f6db29f`)
+Soldé : Clients (Depuis/pluriel/placeholder/TYPE), Commandes (Total/TOTAL → IT « Totale »), RH (nom fichier export présences), Paie (Voir/Payer). Planning & Objectifs déjà propres (mois cible via `toLocaleDateString` localisé).
 
 ## Sprint 9 — session 30 mai 2026
 
