@@ -15,6 +15,7 @@ import POSModals from '@/components/pos/POSModals'
 import POSCashierClosed from '@/components/pos/POSCashierClosed'
 import RefundModal from '@/components/pos/RefundModal'
 import TicketZModal from '@/components/pos/TicketZModal'
+import POSSuccessModal from '@/components/pos/POSSuccessModal'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
 import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
 
@@ -83,6 +84,7 @@ export default function POS() {
   const [mixedM2, setMixedM2]   = useState<'cash'|'mobile'|'card'>('mobile')
   const [mixedAmt1, setMixedAmt1] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const [clientType, setClientType] = useState<'retail'|'wholesale'|'semi'>('retail')
   const [discount, setDiscount] = useState<{ type:'percent'|'amount'; value:number; reason:string } | null>(null)
   const [showDiscountModal, setShowDiscountModal] = useState(false)
@@ -287,6 +289,7 @@ export default function POS() {
   const printTicket = () => buildAndPrintTicket({
     lang, locale, cart, discount, discountAmount,
     totalHT, tva, posTaxRate, total, payMode, cashGiven, currency, monnaie, fmt,
+    mixed: mixedOn ? mixedSplit : null,
   })
 
   const confirmSale = async () => {
@@ -362,16 +365,25 @@ export default function POS() {
 
     addCashierSale(total)
     toast.success('✅ Vente encaissée !')
-    if (posAutoprint) printTicket() // impression auto du ticket (config POS) — avant le vidage du panier
-    clearCart()
+    if (posAutoprint) printTicket() // impression auto si config POS — avant le vidage du panier
+    // On NE vide PAS le panier ici : on ouvre la modale de SUCCÈS (récap + « Imprimer le reçu »
+    // + « Nouvelle vente ») → le panier/total restent dispos pour réimprimer. Le reset se fait
+    // dans newSale(). (Avant : tout disparaissait sans proposer d'imprimer.)
     setShowModal(false)
+    setShowSuccess(true)
+    setIsSaving(false)
+  }
+
+  // Clôt la modale de succès et réinitialise pour la prochaine vente.
+  const newSale = () => {
+    clearCart()
     setCashGiven('')
     setDiscount(null)
     setSendWhatsApp(false)
     setWaNumber('')
     setMixedOn(false)
     setMixedAmt1('')
-    setIsSaving(false)
+    setShowSuccess(false)
   }
 
   // ─── RENDER ──────────────────────────────
@@ -532,6 +544,18 @@ export default function POS() {
         discount={discount} payMode={payMode}
         cashGiven={cashGiven} toXOF={toXOF}
         mixedOn={mixedOn} mixedValid={mixedValid}
+      />
+
+      {/* MODALE SUCCÈS — après vente : récap + Imprimer le reçu + Nouvelle vente */}
+      <POSSuccessModal
+        show={showSuccess}
+        lang={lang}
+        total={total}
+        monnaie={monnaie}
+        showChange={!mixedOn && payMode === 'cash'}
+        fmt={fmt}
+        onPrint={printTicket}
+        onNewSale={newSale}
       />
 
       {/* MODAL REMBOURSEMENT (manager/admin) */}

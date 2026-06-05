@@ -17,11 +17,26 @@ interface PrintTicketParams {
   currency: Currency
   monnaie: number
   fmt: (n: number) => string
+  // Paiement mixte (split) — montants base XOF ; si fourni, remplace la ligne paiement unique.
+  mixed?: { cashAmount: number; mobileMoneyAmount: number; cardAmount: number } | null
 }
 
 // Ouvre une fenêtre d'impression avec le ticket de caisse formaté (80mm).
 export function printTicket(p: PrintTicketParams) {
-  const { lang, locale, cart, discount, discountAmount, totalHT, tva, posTaxRate, total, payMode, cashGiven, currency, monnaie, fmt } = p
+  const { lang, locale, cart, discount, discountAmount, totalHT, tva, posTaxRate, total, payMode, cashGiven, currency, monnaie, fmt, mixed } = p
+  const mLabel = (m: 'cash'|'mobile'|'card') => m === 'cash' ? t('pos_cash') : m === 'card' ? t('pos_card') : t('pos_mobile')
+  // Bloc paiement : mixte (2 lignes) si fourni, sinon ligne unique + reçu/monnaie.
+  const paymentRows = mixed
+    ? [
+        (mixed.cashAmount > 0 ? `<div class="row"><span>${mLabel('cash')}</span><span>${fmt(mixed.cashAmount)}</span></div>` : ''),
+        (mixed.mobileMoneyAmount > 0 ? `<div class="row"><span>${mLabel('mobile')}</span><span>${fmt(mixed.mobileMoneyAmount)}</span></div>` : ''),
+        (mixed.cardAmount > 0 ? `<div class="row"><span>${mLabel('card')}</span><span>${fmt(mixed.cardAmount)}</span></div>` : ''),
+      ].join('')
+    : `<div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span>${payMode === 'cash' ? t('pos_cash') : payMode === 'card' ? t('pos_card') : t('pos_mobile')}</span></div>` +
+      (cashGiven ? `
+    <div class="row"><span>${t('pos_ticket_received')}</span><span>${formatInCurrency(parseFloat(cashGiven), currency)}</span></div>
+    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${fmt(Math.max(monnaie, 0))}</span></div>
+  ` : '')
   const win = window.open('', '_blank', 'width=400,height=600')
   if (!win) return
   const now = new Date()
@@ -68,11 +83,8 @@ export function printTicket(p: PrintTicketParams) {
   <div class="row"><span>${t('pos_vat')} (${posTaxRate} %) :</span><span>${fmt(Math.round(tva))}</span></div>
   <div class="divider"></div>
   <div class="row total"><span>${t('pos_total')} :</span><span>${fmt(total)}</span></div>
-  <div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span>${payMode === 'cash' ? t('pos_cash') : payMode === 'card' ? t('pos_card') : t('pos_mobile')}</span></div>
-  ${cashGiven ? `
-    <div class="row"><span>${t('pos_ticket_received')}</span><span>${formatInCurrency(parseFloat(cashGiven), currency)}</span></div>
-    <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${fmt(Math.max(monnaie, 0))}</span></div>
-  ` : ''}
+  ${mixed ? `<div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span></span></div>` : ''}
+  ${paymentRows}
   <div class="divider"></div>
   <div class="center footer">
     <div>${t('pos_ticket_thanks')}</div>
