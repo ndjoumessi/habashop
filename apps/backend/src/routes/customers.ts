@@ -108,13 +108,28 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     const customer = await prisma.customer.findFirst({ where: { id, tenantId } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
     const points = customer.loyaltyPoints ?? 0
+    // Seuils de palier CONFIGURABLES par tenant (pour le calcul + l'affichage front).
+    const cfg = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { pointsPerAmount: true, bronzeThreshold: true, silverThreshold: true },
+    })
+    const bronzeThreshold = cfg?.bronzeThreshold ?? 2000
+    const silverThreshold = cfg?.silverThreshold ?? 5000
     const history = await prisma.loyaltyTransaction.findMany({
       where: { customerId: id, tenantId },
       orderBy: { createdAt: 'desc' },
       take: 50,
       select: { id: true, points: true, type: true, reason: true, saleId: true, createdAt: true },
     }).catch(() => [])
-    return { points, tier: tierForPoints(points), history }
+    return {
+      points,
+      tier: tierForPoints(points, bronzeThreshold, silverThreshold),
+      history,
+      // Renvoyés pour que le front affiche progression/seuils avec les valeurs du tenant.
+      pointsPerAmount: cfg?.pointsPerAmount ?? 1000,
+      bronzeThreshold,
+      silverThreshold,
+    }
   })
 
   app.post('/api/customers/:id/loyalty', { preHandler: authenticate }, async (request, reply) => {

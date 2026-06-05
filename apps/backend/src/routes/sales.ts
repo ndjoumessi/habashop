@@ -59,8 +59,12 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     })
     const productMap = new Map(productsList.map(p => [p.id, p]))
 
-    // Fidélité : créditage serveur si activé pour le tenant (lu hors transaction, flag stable).
-    const tenantCfg = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { enableLoyalty: true } })
+    // Fidélité : créditage serveur si activé (lu hors transaction). Le taux pointsPerAmount
+    // est CONFIGURABLE par tenant (défaut 1000) → calcul scopé à la boutique.
+    const tenantCfg = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { enableLoyalty: true, pointsPerAmount: true },
+    })
     const loyaltyOn = !!tenantCfg?.enableLoyalty
 
     let newSale
@@ -121,8 +125,8 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       }
 
       if (customerId) {
-        // Points fidélité = floor(total payé TTC après remise / 1000), forfaitaire.
-        const pts = loyaltyOn ? pointsForAmount(total) : 0
+        // Points fidélité = floor(total payé TTC après remise / pointsPerAmount tenant).
+        const pts = loyaltyOn ? pointsForAmount(total, tenantCfg?.pointsPerAmount ?? undefined) : 0
         await tx.customer.update({
           where: { id: customerId },
           data: {

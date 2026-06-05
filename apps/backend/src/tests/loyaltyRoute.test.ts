@@ -7,6 +7,7 @@ const { db, tx } = vi.hoisted(() => {
     tx,
     db: {
       customer: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
+      tenant: { findUnique: vi.fn() },
       loyaltyTransaction: { findMany: vi.fn() },
       auditLog: { create: vi.fn() },
       $transaction: (fn: any) => fn(tx),
@@ -34,6 +35,7 @@ const H = (tenant = 'T1') => ({ 'x-test-tenant': tenant })
 
 beforeEach(() => {
   vi.clearAllMocks()
+  db.tenant.findUnique.mockResolvedValue({ pointsPerAmount: 1000, bronzeThreshold: 2000, silverThreshold: 5000 })
   db.loyaltyTransaction.findMany.mockResolvedValue([
     { id: 'lt1', points: 2, type: 'earn', reason: 'sale', saleId: 's1', createdAt: new Date(0) },
   ])
@@ -55,6 +57,18 @@ describe('GET /api/customers/:id/loyalty', () => {
     expect(db.loyaltyTransaction.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: { customerId: 'c1', tenantId: 'T1' },
     }))
+    // seuils du tenant renvoyés pour l'affichage front
+    expect(body).toMatchObject({ pointsPerAmount: 1000, bronzeThreshold: 2000, silverThreshold: 5000 })
+  })
+
+  it('seuils CUSTOM du tenant → tier recalculé (isolation config)', async () => {
+    db.customer.findFirst.mockResolvedValue({ id: 'c1', tenantId: 'T1', loyaltyPoints: 150 })
+    db.tenant.findUnique.mockResolvedValue({ pointsPerAmount: 500, bronzeThreshold: 100, silverThreshold: 300 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/customers/c1/loyalty', headers: H('T1') })
+    const body = res.json()
+    expect(body.tier).toBe('Silver')   // 150 ≥ bronze 100 et < silver 300 → Silver (défauts auraient donné Bronze)
+    expect(body).toMatchObject({ pointsPerAmount: 500, bronzeThreshold: 100, silverThreshold: 300 })
   })
 
   it('client d’un AUTRE tenant → 404 (isolation)', async () => {

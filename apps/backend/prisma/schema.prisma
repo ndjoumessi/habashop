@@ -30,6 +30,10 @@ model Tenant {
   enableScanner     Boolean  @default(false)
   priceMode         String   @default("TTC") // TTC | HT
   posDefaultFund    Float    @default(0)
+  // ── Fidélité configurable par tenant (défauts = valeurs v1 ; non-rétroactif) ──
+  pointsPerAmount   Int      @default(1000) // unités de devise pour 1 point (floor(montant/X))
+  bronzeThreshold   Int      @default(2000) // pts : seuil Bronze → Silver
+  silverThreshold   Int      @default(5000) // pts : seuil Silver → Gold
 
   // ── Paramètres Notifications ──
   notifEmailSales   Boolean  @default(true)

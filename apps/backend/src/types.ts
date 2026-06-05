@@ -62,6 +62,10 @@ export interface TenantUpdateBody {
   enableScanner?: boolean
   priceMode?: string
   posDefaultFund?: number
+  // Fidélité (config tenant)
+  pointsPerAmount?: number
+  bronzeThreshold?: number
+  silverThreshold?: number
   // Notifications
   notifEmailSales?: boolean
   notifEmailStock?: boolean

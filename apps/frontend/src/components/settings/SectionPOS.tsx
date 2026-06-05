@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { useConfig, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo } from '@/stores/appStore'
+import { useConfig, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
 import { ShoppingCart } from 'lucide-react'
 import { tenantApi } from '@/lib/api'
 import { type L4, makeI, pick, panel, Head, ToggleCard } from '@/components/settings/settingsShared'
@@ -21,6 +21,10 @@ export default function SectionPOS() {
   })
   const [draft, setDraft] = useState(snapshot())
   const [fundInput, setFundInput] = useState(fromXOF(cfg.posDefaultFund).toFixed(decimals))
+  // Config fidélité (3 champs configurables par tenant ; défauts v1).
+  const LOYALTY_DEFAULTS = { pointsPerAmount: 1000, bronzeThreshold: 2000, silverThreshold: 5000 }
+  const [loyalty, setLoyalty] = useState(LOYALTY_DEFAULTS)
+  const [loyaltyDraft, setLoyaltyDraft] = useState(LOYALTY_DEFAULTS)
 
   // Charge les paramètres POS depuis le tenant (source de vérité backend).
   // posTaxRate côté front = vatRate côté backend (single source of truth — pas de doublon de TVA).
@@ -38,11 +42,20 @@ export default function SectionPOS() {
         posTaxRate:     t.vatRate        ?? 18,
         posDefaultFund: t.posDefaultFund ?? 0,
       } as any)
+      const lc = {
+        pointsPerAmount: t.pointsPerAmount ?? 1000,
+        bronzeThreshold: t.bronzeThreshold ?? 2000,
+        silverThreshold: t.silverThreshold ?? 5000,
+      }
+      setLoyalty(lc); setLoyaltyDraft(lc)
     }).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const v = editMode ? draft : snapshot()
-  const startEdit = () => { setDraft(snapshot()); setFundInput(fromXOF(cfg.posDefaultFund).toFixed(decimals)); setEditMode(true) }
+  const loyaltyV = editMode ? loyaltyDraft : loyalty
+  // Validation inline : pointsPerAmount ≥ 1 ET seuil Bronze < seuil Silver.
+  const loyaltyErr = loyaltyDraft.pointsPerAmount < 1 || loyaltyDraft.bronzeThreshold >= loyaltyDraft.silverThreshold
+  const startEdit = () => { setDraft(snapshot()); setFundInput(fromXOF(cfg.posDefaultFund).toFixed(decimals)); setLoyaltyDraft(loyalty); setEditMode(true) }
   const toggle = (key: keyof ReturnType<typeof snapshot>) => { if (!editMode) return; setDraft(p => ({ ...p, [key]: !(p as any)[key] })) }
 
   // Le mode TTC/HT est l'unique contrôle TVA (cf. sélecteur PRICE_MODES) ;
@@ -61,6 +74,11 @@ export default function SectionPOS() {
   ]
 
   const save = async () => {
+    // Garde validation fidélité (uniquement si le programme est activé).
+    if (draft.enableLoyalty && loyaltyErr) {
+      toast.error(i('Seuil Bronze doit être inférieur au Silver (et taux ≥ 1)', 'Bronze threshold must be below Silver (and rate ≥ 1)', 'El umbral Bronze debe ser menor que Silver (y tasa ≥ 1)', 'La soglia Bronze deve essere inferiore a Silver (e tasso ≥ 1)'))
+      return
+    }
     const fundXOF = toXOF(Number(fundInput) || 0)
     try {
       await tenantApi.update({
@@ -73,8 +91,20 @@ export default function SectionPOS() {
         priceMode:      draft.priceMode,
         vatRate:        draft.posTaxRate,    // mapping → tenant.vatRate (single source of truth)
         posDefaultFund: fundXOF,
+        // Config fidélité (n'envoyée que si le programme est actif).
+        ...(draft.enableLoyalty ? {
+          pointsPerAmount: loyaltyDraft.pointsPerAmount,
+          bronzeThreshold: loyaltyDraft.bronzeThreshold,
+          silverThreshold: loyaltyDraft.silverThreshold,
+        } : {}),
       })
       cfg.updateConfig({ ...draft, posVatIncluded: draft.priceMode !== 'HT', posDefaultFund: fundXOF, shopVatRate: draft.posTaxRate } as any)
+      if (draft.enableLoyalty) {
+        setLoyalty(loyaltyDraft)
+        // Reflète immédiatement dans le store (LoyaltyBar lit tenant.bronze/silver).
+        const cur = useAppStore.getState().tenant
+        if (cur) useAppStore.getState().setTenant({ ...cur, ...loyaltyDraft })
+      }
       toast.success(i('✅ Config POS sauvegardée', '✅ POS config saved', '✅ Config TPV guardada', '✅ Config POS salvata'))
       setEditMode(false)
     } catch (e: any) {
@@ -100,6 +130,64 @@ export default function SectionPOS() {
             <ToggleCard key={t.key} icon={t.icon} color={t.color} label={pick(lang, t.label)} desc={pick(lang, t.desc)}
               on={!!(v as any)[t.key]} disabled={!editMode} onChange={() => toggle(t.key as any)} />
           ))}
+
+          {/* Règles de fidélité — visibles uniquement si le programme est activé */}
+          {v.enableLoyalty && (
+            <div style={{ padding: '14px 16px', background: 'var(--bg3)', border: `1px solid ${editMode && loyaltyErr ? 'var(--danger)' : 'var(--border)'}`, borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>⭐</span>
+                <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Règles de fidélité', 'Loyalty rules', 'Reglas de fidelidad', 'Regole fedeltà')}</span>
+              </div>
+
+              {/* 1 point pour chaque X CURRENCY */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 12, color: 'var(--text2)' }}>{i('1 point pour chaque', '1 point per', '1 punto por cada', '1 punto ogni')}</span>
+                {editMode ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input type="number" min={1} step={1} className="input" style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.pointsPerAmount}
+                      onChange={e => setLoyaltyDraft(p => ({ ...p, pointsPerAmount: Math.max(1, Math.floor(+e.target.value || 0)) }))} />
+                    <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 'var(--fw-semibold)', minWidth: 40 }}>{symbol}</span>
+                  </div>
+                ) : <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{loyaltyV.pointsPerAmount} {symbol}</span>}
+              </div>
+
+              {/* Seuil Bronze */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 12, color: 'var(--text2)' }}>🥉 {i('Seuil Bronze', 'Bronze threshold', 'Umbral Bronze', 'Soglia Bronze')}</span>
+                {editMode ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input type="number" min={1} step={1} className="input" style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.bronzeThreshold}
+                      onChange={e => setLoyaltyDraft(p => ({ ...p, bronzeThreshold: Math.max(1, Math.floor(+e.target.value || 0)) }))} />
+                    <span style={{ fontSize: 12, color: 'var(--text3)', minWidth: 40 }}>pts</span>
+                  </div>
+                ) : <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{loyaltyV.bronzeThreshold} pts</span>}
+              </div>
+
+              {/* Seuil Silver */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 12, color: 'var(--text2)' }}>🥈 {i('Seuil Silver', 'Silver threshold', 'Umbral Silver', 'Soglia Silver')}</span>
+                {editMode ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input type="number" min={1} step={1} className="input" style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.silverThreshold}
+                      onChange={e => setLoyaltyDraft(p => ({ ...p, silverThreshold: Math.max(1, Math.floor(+e.target.value || 0)) }))} />
+                    <span style={{ fontSize: 12, color: 'var(--text3)', minWidth: 40 }}>pts</span>
+                  </div>
+                ) : <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{loyaltyV.silverThreshold} pts</span>}
+              </div>
+
+              {/* Validation inline : bronze < silver */}
+              {editMode && loyaltyErr && (
+                <div style={{ fontSize: 11, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  ⚠️ {i('Le seuil Bronze doit être inférieur au seuil Silver.', 'Bronze threshold must be below Silver.', 'El umbral Bronze debe ser menor que Silver.', 'La soglia Bronze deve essere inferiore a Silver.')}
+                </div>
+              )}
+
+              {/* Note non-rétroactif */}
+              <div style={{ fontSize: 11, color: 'var(--text4)', fontStyle: 'italic' }}>
+                {i("S'applique aux prochaines ventes uniquement.", 'Applies to future sales only.', 'Se aplica solo a ventas futuras.', 'Si applica solo alle vendite future.')}
+              </div>
+            </div>
+          )}
 
           {/* Price mode (TTC / HT) */}
           <div style={{ display: 'flex', gap: 10 }}>

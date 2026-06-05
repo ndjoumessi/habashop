@@ -17,15 +17,25 @@ describe('loyalty — règle de gain (floor 1pt/1000)', () => {
     expect(pointsForAmount(-100)).toBe(0)
     expect(pointsForAmount(NaN)).toBe(0)
   })
+  it('taux CONFIGURABLE par tenant (pointsPerUnit)', () => {
+    expect(pointsForAmount(2500, 500)).toBe(5)    // 1 pt / 500 → 5 pts
+    expect(pointsForAmount(2500, 2000)).toBe(1)   // 1 pt / 2000 → 1 pt
+    expect(pointsForAmount(2500, 1)).toBe(2500)   // 1 pt / 1
+    expect(pointsForAmount(1000, 0)).toBe(0)      // unité invalide (<1) → 0
+  })
 })
-describe('loyalty — paliers (2000/5000)', () => {
-  it('Bronze <2000, Silver 2000–4999, Gold ≥5000', () => {
-    expect(tierForPoints(0)).toBe('Bronze')
+describe('loyalty — paliers configurables', () => {
+  it('défauts 2000/5000 (rétro-compat)', () => {
     expect(tierForPoints(1999)).toBe('Bronze')
     expect(tierForPoints(2000)).toBe('Silver')
-    expect(tierForPoints(4999)).toBe('Silver')
     expect(tierForPoints(5000)).toBe('Gold')
-    expect(tierForPoints(99999)).toBe('Gold')
+  })
+  it('seuils CUSTOM par tenant', () => {
+    // bronze=100, silver=300
+    expect(tierForPoints(99, 100, 300)).toBe('Bronze')
+    expect(tierForPoints(100, 100, 300)).toBe('Silver')
+    expect(tierForPoints(299, 100, 300)).toBe('Silver')
+    expect(tierForPoints(300, 100, 300)).toBe('Gold')
   })
 })
 
@@ -101,6 +111,16 @@ describe('POST /api/sales — créditage fidélité', () => {
     // total payé = 3990 → floor(3990/1000) = 3 points
     await app.inject({ method: 'POST', url: '/api/sales', payload: saleBody({ customerId: 'c1', total: 3990, items: [{ productId: 'p1', qty: 2, price: 2500 }] }) })
     expect(tx.loyaltyTransaction.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ points: 3 }) }))
+  })
+
+  it('taux CONFIGURABLE du tenant : pointsPerAmount=500 → floor(2500/500)=5 pts', async () => {
+    db.tenant.findUnique.mockResolvedValue({ enableLoyalty: true, pointsPerAmount: 500 })
+    const app = await buildApp()
+    await app.inject({ method: 'POST', url: '/api/sales', payload: saleBody({ customerId: 'c1' }) })
+    expect(tx.customer.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ loyaltyPoints: { increment: 5 } }),
+    }))
+    expect(tx.loyaltyTransaction.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ points: 5 }) }))
   })
 
   it('loyalty OFF → aucun point, aucune LoyaltyTransaction', async () => {

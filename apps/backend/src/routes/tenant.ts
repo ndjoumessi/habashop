@@ -40,6 +40,35 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         code: 'LOCALE_ADMIN_ONLY',
       })
     }
+
+    // ── Config fidélité : ADMIN/SUPER_ADMIN uniquement + validation ──
+    const touchesLoyalty =
+      data.pointsPerAmount !== undefined || data.bronzeThreshold !== undefined || data.silverThreshold !== undefined
+    if (touchesLoyalty) {
+      if (!isAdminRole(request.user?.role)) {
+        return reply.code(403).send({ error: "Configuration fidélité : réservée à l'administrateur", code: 'LOYALTY_ADMIN_ONLY' })
+      }
+      const isPosInt = (v: unknown) => Number.isInteger(v) && (v as number) >= 1
+      for (const [k, v] of [
+        ['pointsPerAmount', data.pointsPerAmount],
+        ['bronzeThreshold', data.bronzeThreshold],
+        ['silverThreshold', data.silverThreshold],
+      ] as const) {
+        if (v !== undefined && !isPosInt(v)) {
+          return reply.code(400).send({ error: `${k} doit être un entier positif (≥ 1)`, code: 'LOYALTY_INVALID' })
+        }
+      }
+      // bronze < silver sur les valeurs EFFECTIVES (merge avec l'existant si update partiel).
+      const current = await prisma.tenant.findUnique({
+        where: { id: tenantId }, select: { bronzeThreshold: true, silverThreshold: true },
+      })
+      const bronze = data.bronzeThreshold ?? current?.bronzeThreshold ?? 2000
+      const silver = data.silverThreshold ?? current?.silverThreshold ?? 5000
+      if (bronze >= silver) {
+        return reply.code(400).send({ error: 'Le seuil Bronze doit être strictement inférieur au seuil Silver', code: 'LOYALTY_THRESHOLDS' })
+      }
+    }
+
     return prisma.tenant.update({
       where: { id: tenantId },
       data: {
@@ -60,6 +89,10 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         enableScanner:  data.enableScanner,
         priceMode:      data.priceMode,
         posDefaultFund: data.posDefaultFund,
+        // Fidélité (config tenant)
+        pointsPerAmount: data.pointsPerAmount,
+        bronzeThreshold: data.bronzeThreshold,
+        silverThreshold: data.silverThreshold,
         // Notifications
         notifEmailSales:   data.notifEmailSales,
         notifEmailStock:   data.notifEmailStock,

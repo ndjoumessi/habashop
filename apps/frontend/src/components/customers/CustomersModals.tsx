@@ -1,6 +1,6 @@
 import { Users, X, StickyNote, ShoppingCart, FileText, Eye, Pencil, Trash2, UserPlus, CheckCircle, DollarSign, Star, Phone, Mail, MapPin, ShoppingBag } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { t } from '@/stores/appStore'
+import { t, useAppStore } from '@/stores/appStore'
 import { confirm } from '@/lib/confirm'
 import { customersApi } from '@/lib/api'
 import ViewField from '@/components/ui/ViewField'
@@ -31,6 +31,7 @@ interface CustomersModalsProps {
 
 export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, lang, i, navigate, setDetailCustomer, setShowDetailModal, showEditCustModal, editCustomer, setShowEditCustModal, custEditMode, setCustEditMode, editCustForm, setEditCustForm, setCustomers, showCreate, setShowCreate, form, setForm, handleCreateCustomer, resetCustForm, showDetailModal, detailCustomer, setEditCustomer, loyaltyCustomer, setLoyaltyCustomer }: CustomersModalsProps) {
   const loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+  const tenant = useAppStore(s => s.tenant)
   return (
     <>
       {viewCustomer && (
@@ -71,7 +72,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               <LoyaltyBar points={viewCustomer.loyaltyPoints} />
               <p className="text-xs mt-2" style={{ color: 'var(--text3)' }}>
                 {(() => {
-                  const next = loyaltyNextThreshold(viewCustomer.loyaltyPoints)
+                  const next = loyaltyNextThreshold(viewCustomer.loyaltyPoints, tenant?.bronzeThreshold, tenant?.silverThreshold)
                   return next
                     ? `${i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')} : ${next} pts · ${i('Reste', 'Remaining', 'Quedan', 'Restano')} ${Math.max(0, next - viewCustomer.loyaltyPoints)} pts`
                     : `🥇 ${i('Palier Gold atteint', 'Gold tier reached', 'Nivel Gold alcanzado', 'Livello Gold raggiunto')}`

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Building2, ShoppingBag, Star, ShoppingCart } from 'lucide-react'
+import { useAppStore } from '@/stores/appStore'
 
 export type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
@@ -12,16 +13,17 @@ export interface Customer {
   purchases: Purchase[]; notes: string
 }
 
-// Fidélité v1 — paliers RÉELS (miroir backend lib/loyalty). STATUT seulement (pas de remise en v1).
-export const LOYALTY_SILVER = 2000
-export const LOYALTY_GOLD = 5000
+// Fidélité — paliers CONFIGURABLES par tenant (miroir backend lib/loyalty). STATUT seulement.
+// Défauts = valeurs v1 (rétro-compat si les seuils du tenant ne sont pas encore chargés).
+export const LOYALTY_BRONZE = 2000 // seuil Bronze → Silver
+export const LOYALTY_SILVER = 5000 // seuil Silver → Gold
 export type LoyaltyTier = 'Bronze' | 'Silver' | 'Gold'
-export function loyaltyTier(points: number): LoyaltyTier {
-  return points >= LOYALTY_GOLD ? 'Gold' : points >= LOYALTY_SILVER ? 'Silver' : 'Bronze'
+export function loyaltyTier(points: number, bronze: number = LOYALTY_BRONZE, silver: number = LOYALTY_SILVER): LoyaltyTier {
+  return points >= silver ? 'Gold' : points >= bronze ? 'Silver' : 'Bronze'
 }
 /** Prochain seuil de palier (null = Gold atteint, plus de palier au-dessus). */
-export function loyaltyNextThreshold(points: number): number | null {
-  return points < LOYALTY_SILVER ? LOYALTY_SILVER : points < LOYALTY_GOLD ? LOYALTY_GOLD : null
+export function loyaltyNextThreshold(points: number, bronze: number = LOYALTY_BRONZE, silver: number = LOYALTY_SILVER): number | null {
+  return points < bronze ? bronze : points < silver ? silver : null
 }
 
 export const TYPE_CFG: Record<ClientType, { cls: string; color: string; bg: string }> = {
@@ -73,9 +75,12 @@ export function getCustomerCityId(address: string): string {
 }
 
 
-// Barre de progression vers le PROCHAIN palier (Gold = 100 %). Fini le max=1000 en dur.
+// Barre de progression vers le PROCHAIN palier (Gold = 100 %). Seuils = config du tenant.
 export function LoyaltyBar({ points }: { points: number }) {
-  const next = loyaltyNextThreshold(points)
+  const tenant = useAppStore(s => s.tenant)
+  const bronze = tenant?.bronzeThreshold ?? LOYALTY_BRONZE
+  const silver = tenant?.silverThreshold ?? LOYALTY_SILVER
+  const next = loyaltyNextThreshold(points, bronze, silver)
   const pct = next ? Math.min(100, Math.round((points / next) * 100)) : 100
   const color = pct >= 80 ? 'var(--acc2)' : pct >= 50 ? 'var(--acc)' : 'var(--p2)'
   return (

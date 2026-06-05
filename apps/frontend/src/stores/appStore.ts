@@ -287,6 +287,10 @@ export interface Tenant {
   email?: string | null
   logo?: string | null
   createdAt?: string
+  // Fidélité configurable (défauts v1 si absents)
+  pointsPerAmount?: number
+  bronzeThreshold?: number
+  silverThreshold?: number
 }
 
 const TRIAL_DAYS = 14

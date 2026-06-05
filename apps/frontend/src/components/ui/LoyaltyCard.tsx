@@ -32,11 +32,20 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
   const [points, setPoints] = useState(customer.loyaltyPoints ?? 0)
   const [tier,   setTier]   = useState<'Bronze'|'Silver'|'Gold'>('Bronze')
   const [history, setHistory] = useState<any[]>([])
+  // Config fidélité du tenant (renvoyée par l'API ; défauts v1 en secours).
+  const [bronze, setBronze] = useState(2000)
+  const [silver, setSilver] = useState(5000)
+  const [perAmount, setPerAmount] = useState(1000)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loyaltyApi.get(customer.id)
-      .then(d => { setPoints(d.points); setTier(d.tier as any); setHistory(Array.isArray(d.history) ? d.history : []) })
+      .then(d => {
+        setPoints(d.points); setTier(d.tier as any); setHistory(Array.isArray(d.history) ? d.history : [])
+        if ((d as any).bronzeThreshold) setBronze((d as any).bronzeThreshold)
+        if ((d as any).silverThreshold) setSilver((d as any).silverThreshold)
+        if ((d as any).pointsPerAmount) setPerAmount((d as any).pointsPerAmount)
+      })
       .catch(() => {
         const p = customer.loyaltyPoints ?? 0
         setPoints(p)
@@ -47,7 +56,8 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
   }, [customer.id, customer.loyaltyPoints])
 
   const cfg = TIER_CFG[tier]
-  const nextThreshold = cfg.next
+  // Prochain seuil basé sur la config TENANT (plus les 2000/5000 de TIER_CFG).
+  const nextThreshold = tier === 'Bronze' ? bronze : tier === 'Silver' ? silver : null
   const progress = nextThreshold
     ? Math.min(100, Math.round((points / nextThreshold) * 100))
     : 100
@@ -170,8 +180,8 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
             {i('Comment ça marche', 'How it works', 'Cómo funciona', 'Come funziona')}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.8 }}>
-            ⭐ {i(`1 point par tranche de ${fmt(1000)} dépensé`, `1 point per ${fmt(1000)} spent`, `1 punto por cada ${fmt(1000)} gastado`, `1 punto ogni ${fmt(1000)} speso`)}<br/>
-            🏅 {i('Paliers : Bronze · Silver (2 000 pts) · Gold (5 000 pts)', 'Tiers: Bronze · Silver (2,000 pts) · Gold (5,000 pts)', 'Niveles: Bronze · Silver (2 000 pts) · Gold (5 000 pts)', 'Livelli: Bronze · Silver (2.000 pts) · Gold (5.000 pts)')}<br/>
+            ⭐ {i(`1 point par tranche de ${fmt(perAmount)} dépensé`, `1 point per ${fmt(perAmount)} spent`, `1 punto por cada ${fmt(perAmount)} gastado`, `1 punto ogni ${fmt(perAmount)} speso`)}<br/>
+            🏅 {i(`Paliers : Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Tiers: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Niveles: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Livelli: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`)}<br/>
             <span style={{ color: 'var(--text3)', fontStyle: 'italic' }}>🎁 {i('Récompenses & remises : à venir', 'Rewards & discounts: coming soon', 'Recompensas y descuentos: próximamente', 'Premi e sconti: in arrivo')}</span>
           </div>
         </div>
