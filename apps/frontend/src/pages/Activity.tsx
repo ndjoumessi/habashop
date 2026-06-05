@@ -107,7 +107,6 @@ interface ActivityEntry {
 }
 
 const MODULE_CONFIG: Record<string, { color: string; bg: string; label: string; Icon: LucideIcon }> = {
-  POS:          { color:'#818CF8', bg:'rgba(99,102,241,.15)',   label:'POS',          Icon: ShoppingCart },
   VENTES:       { color:'#818CF8', bg:'rgba(99,102,241,.15)',   label:'Ventes',       Icon: ShoppingCart },
   STOCK:        { color:'#F59E0B', bg:'rgba(245,158,11,.15)',   label:'Stock',        Icon: Package      },
   AUTH:         { color:'#EF4444', bg:'rgba(239,68,68,.15)',    label:'Auth',         Icon: Lock         },
@@ -117,6 +116,14 @@ const MODULE_CONFIG: Record<string, { color: string; bg: string; label: string; 
   PARAMÈTRES:   { color:'#94A3B8', bg:'rgba(148,163,184,.15)', label:'Paramètres',   Icon: Settings     },
   PAIE:         { color:'#34D399', bg:'rgba(16,185,129,.15)',   label:'Paie',         Icon: Wallet       },
   CLIENTS:      { color:'#F472B6', bg:'rgba(244,114,182,.15)', label:'Clients',      Icon: Heart        },
+}
+
+/** Libellé de catégorie localisé. VENTES traduit (fr/en/es/it) ; les autres gardent
+   leur label (codes/abréviations type RH/Auth/Stock, ou déjà clairs). Utilisé par le
+   badge ET le filtre → cohérence, et plus aucun « SALES »/clé brute affichée. */
+function moduleLabel(key: string, lang: string): string {
+  if (key === 'VENTES') return lang === 'en' ? 'Sales' : lang === 'es' ? 'Ventas' : lang === 'it' ? 'Vendite' : 'Ventes'
+  return MODULE_CONFIG[key]?.label ?? key
 }
 
 const SEVERITY_CONFIG: Record<Severity, { color: string; bg: string; Icon: LucideIcon; label: string }> = {
@@ -254,7 +261,7 @@ export default function Activity() {
           <select className="input" style={{ width:'auto', fontSize:13 }}
             value={moduleFilter} onChange={e => { setModuleFilter(e.target.value); resetPage() }}>
             <option value="">{t('activity_filter_module')}</option>
-            {Object.keys(MODULE_CONFIG).map(m => <option key={m}>{m}</option>)}
+            {Object.keys(MODULE_CONFIG).map(m => <option key={m} value={m}>{moduleLabel(m, lang)}</option>)}
           </select>
           <select className="input" style={{ width:'auto', fontSize:13 }}
             value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); resetPage() }}>
@@ -360,9 +367,7 @@ export default function Activity() {
                       <div style={{ fontSize:12, color:'var(--text2)', marginBottom: detail ? 4 : 0 }}>
                         <span style={{ fontWeight:600 }}>{log.user}</span>
                         <span style={{ opacity: 0.5 }}> · </span>
-                        <span>{log.module === 'VENTES'
-                          ? (lang === 'en' ? 'Sales' : lang === 'es' ? 'Ventas' : lang === 'it' ? 'Vendite' : 'Ventes')
-                          : (mod?.label ?? log.module)}</span>
+                        <span>{moduleLabel(log.module, lang)}</span>
                       </div>
 
                       {/* Ligne 3 : détail parsé (nom, email…) si dispo */}

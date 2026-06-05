@@ -329,7 +329,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
                       <div style={{ display:'flex', flexDirection:'column', alignItems:'stretch', gap:8 }}>
                         {/* Carte « étiquette » : fond blanc cassé, padding généreux, coins arrondis + ombre douce */}
-                        <div style={{ maxWidth:'100%', width:'fit-content', margin:'0 auto', alignSelf:'center', padding:'16px 20px', background:'#FBFAF7', border:'1px solid var(--border)', borderRadius:14, boxShadow:'var(--sh-sm)' }}>
+                        <div style={{ maxWidth:'100%', width:'fit-content', margin:'0 auto', alignSelf:'center', padding:'8px 6px', background:'#FBFAF7', border:'1px solid var(--border)', borderRadius:14, boxShadow:'var(--sh-sm)' }}>
                           <BarcodeDisplay value={form.barcode} />
                         </div>
                         <button type="button" className="mini-btn"
