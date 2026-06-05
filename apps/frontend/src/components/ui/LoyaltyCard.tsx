@@ -3,7 +3,7 @@ import IconButton from '@/components/ui/IconButton'
 import { X } from 'lucide-react'
 import { loyaltyApi } from '@/lib/api'
 import { useI18n } from '@/hooks/useI18n'
-import { useFormatAmount } from '@/stores/appStore'
+import { formatInCurrency, useAppStore } from '@/stores/appStore'
 import toast from 'react-hot-toast'
 
 interface Customer {
@@ -27,8 +27,10 @@ const TIER_CFG = {
 export default function LoyaltyCard({ customer, onClose }: Props) {
   const { i, lang } = useI18n()
   const dloc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
-  // Seuils de fidélité formatés dans la devise du tenant (1 000 / 10 000 XOF en base).
-  const fmt = useFormatAmount()
+  // pointsPerAmount est DÉJÀ exprimé dans la devise du tenant → on le formate tel quel,
+  // SANS conversion de change (useFormatAmount convertirait depuis XOF → 1000 = 1,52 €, faux).
+  const currency = useAppStore(s => s.tenant?.currency ?? s.currency)
+  const tfmt = (amount: number) => formatInCurrency(amount, currency)
   const [points, setPoints] = useState(customer.loyaltyPoints ?? 0)
   const [tier,   setTier]   = useState<'Bronze'|'Silver'|'Gold'>('Bronze')
   const [history, setHistory] = useState<any[]>([])
@@ -180,7 +182,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
             {i('Comment ça marche', 'How it works', 'Cómo funciona', 'Come funziona')}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.8 }}>
-            ⭐ {i(`1 point par tranche de ${fmt(perAmount)} dépensé`, `1 point per ${fmt(perAmount)} spent`, `1 punto por cada ${fmt(perAmount)} gastado`, `1 punto ogni ${fmt(perAmount)} speso`)}<br/>
+            ⭐ {i(`1 point par tranche de ${tfmt(perAmount)} dépensé`, `1 point per ${tfmt(perAmount)} spent`, `1 punto por cada ${tfmt(perAmount)} gastado`, `1 punto ogni ${tfmt(perAmount)} speso`)}<br/>
             🏅 {i(`Paliers : Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Tiers: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Niveles: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`, `Livelli: Bronze · Silver (${bronze.toLocaleString()} pts) · Gold (${silver.toLocaleString()} pts)`)}<br/>
             <span style={{ color: 'var(--text3)', fontStyle: 'italic' }}>🎁 {i('Récompenses & remises : à venir', 'Rewards & discounts: coming soon', 'Recompensas y descuentos: próximamente', 'Premi e sconti: in arrivo')}</span>
           </div>

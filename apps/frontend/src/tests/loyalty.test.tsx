@@ -1,11 +1,13 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { LoyaltyBar, loyaltyTier, loyaltyNextThreshold } from '@/components/customers/customersShared'
+import { useAppStore } from '@/stores/appStore'
 
 // LoyaltyCard fait un fetch loyaltyApi.get au montage → on le mocke.
 vi.mock('@/lib/api', () => ({
   loyaltyApi: { get: vi.fn().mockResolvedValue({ points: 100, tier: 'Bronze', history: [] }) },
 }))
+import { loyaltyApi } from '@/lib/api'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
 
 describe('paliers fidélité (helpers)', () => {
@@ -45,5 +47,19 @@ describe('LoyaltyCard — texte HONNÊTE v1', () => {
     expect(screen.getByText(/à venir|coming soon|próximamente|in arrivo/i)).toBeTruthy()
     // règle de gain affichée (1 point par tranche)
     expect(screen.getByText(/1 point par tranche|1 point per|1 punto por cada|1 punto ogni/i)).toBeTruthy()
+  })
+})
+
+describe('LoyaltyCard — pointsPerAmount affiché SANS conversion de change (fix)', () => {
+  afterEach(() => useAppStore.setState({ currency: 'XOF', tenant: null } as any))
+
+  it('tenant EUR, pointsPerAmount=1000 → « 1 000 € » (pas « 1,52 € »)', async () => {
+    ;(loyaltyApi.get as any).mockResolvedValueOnce({ points: 100, tier: 'Bronze', history: [], pointsPerAmount: 1000, bronzeThreshold: 2000, silverThreshold: 5000 })
+    useAppStore.setState({ currency: 'EUR', tenant: { id: 't', name: 'X', plan: 'pro', currency: 'EUR', country: 'SN', vatRate: 18 } } as any)
+    const { container } = render(<LoyaltyCard customer={{ id: 'c1', name: 'Test', loyaltyPoints: 100 }} onClose={() => {}} />)
+    await screen.findByText(/Comment ça marche/)
+    const txt = container.textContent!.replace(/[  ]/g, ' ') // normalise les espaces insécables
+    expect(txt).toContain('1 000')          // montant stocké tel quel, devise tenant
+    expect(txt).not.toMatch(/1[.,]5\d/)     // PAS la valeur convertie ~1,52 (bug)
   })
 })
