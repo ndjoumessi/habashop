@@ -261,7 +261,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   </div>
                 </div>
               </div>
-              <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" onClick={() => setShowModal(false)}>
+              <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" style={{ minWidth: 44, minHeight: 44 }} onClick={() => setShowModal(false)}>
                 <X size={14} />
               </button>
             </div>
@@ -321,17 +321,28 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     </div>
                   </div>
                 </div>
-                <button type="button" onClick={() => setSendWhatsApp(!sendWhatsApp)} style={{
-                  width:44, height:24, borderRadius:99, flexShrink:0,
-                  background: sendWhatsApp ? '#25D366' : 'var(--bg4)',
-                  border:'none', cursor:'pointer', position:'relative', transition:'background .2s',
-                }}>
-                  <div style={{
-                    position:'absolute', top:2, width:20, height:20,
-                    left: sendWhatsApp ? 22 : 2,
-                    borderRadius:'50%', background:'#fff', transition:'left .2s',
-                    boxShadow:'0 2px 4px rgba(0,0,0,.2)',
-                  }} />
+                <button type="button" role="switch" aria-checked={sendWhatsApp}
+                  aria-label={lang === 'fr' ? 'Envoyer le ticket WhatsApp' : lang === 'en' ? 'Send WhatsApp receipt' : lang === 'es' ? 'Enviar ticket WhatsApp' : 'Invia scontrino WhatsApp'}
+                  onClick={() => setSendWhatsApp(!sendWhatsApp)}
+                  style={{
+                    flexShrink:0, width:48, minHeight:44, padding:0,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    background:'none', border:'none', cursor:'pointer',
+                  }}>
+                  {/* Piste : OFF = var(--bg5) + bordure var(--border) → VISIBLE en Mode Soleil
+                      (avant : var(--bg4)=blanc → piste invisible sur carte blanche). */}
+                  <span style={{
+                    position:'relative', display:'block', width:44, height:26, borderRadius:99, boxSizing:'border-box',
+                    background: sendWhatsApp ? '#25D366' : 'var(--bg5)',
+                    border:'1px solid var(--border)', transition:'background .2s',
+                  }}>
+                    <span style={{
+                      position:'absolute', top:2, width:20, height:20,
+                      left: sendWhatsApp ? 20 : 2,
+                      borderRadius:'50%', background:'#fff', transition:'left .2s',
+                      boxShadow:'0 2px 4px rgba(0,0,0,.2)',
+                    }} />
+                  </span>
                 </button>
               </div>
               {sendWhatsApp && (
@@ -348,7 +359,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                         onClick={() => { setShowCountryPicker(p => !p); setCountrySearch('') }}
                         style={{
                           display:'flex', alignItems:'center', gap:6,
-                          minHeight:42, minWidth:90, padding:'0 10px',
+                          minHeight:44, minWidth:90, padding:'0 10px',
                           background:'var(--bg4)', border:'1.5px solid var(--border)',
                           borderRadius:10, cursor:'pointer', color:'var(--text)',
                           fontSize:13, fontFamily:'var(--font)', transition:'border-color .15s',
@@ -427,7 +438,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                         maxLength={15}
                         aria-label={lang==='fr' ? 'Numéro WhatsApp' : lang==='en' ? 'WhatsApp number' : lang==='es' ? 'Número WhatsApp' : 'Numero WhatsApp'}
                         style={{
-                          width:'100%', minHeight:42,
+                          width:'100%', minHeight:44,
                           background:'var(--bg4)',
                           border:`1.5px solid ${waNumber && !/^[\d\s\-]+$/.test(waNumber) ? 'var(--danger)' : 'var(--border)'}`,
                           borderRadius:10, padding:'10px 36px 10px 13px',
@@ -488,6 +499,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   border: 'none',
                   borderRadius: 10,
                   padding: '12px',
+                  minHeight: 44,
                   fontSize: 14,
                   fontWeight: 'var(--fw-semibold)',
                   color: blocked ? 'var(--text3)' : '#fff',
@@ -506,7 +518,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               <button
                 onClick={() => { if (blocked) { confirmSale(); return } printTicket(); confirmSale() }}
                 disabled={blocked}
-                style={{ padding: '12px 16px', fontSize: 13, opacity: blocked ? 0.6 : 1, cursor: blocked ? 'not-allowed' : 'pointer' }}
+                style={{ padding: '12px 16px', minHeight: 44, fontSize: 13, opacity: blocked ? 0.6 : 1, cursor: blocked ? 'not-allowed' : 'pointer' }}
                 className="mini-btn"
               ><Printer size={13} /> Ticket</button>
               <button aria-label={lang === 'en' ? 'Invoice' : lang === 'es' ? 'Factura' : lang === 'it' ? 'Fattura' : 'Facture'}
@@ -520,7 +532,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   })
                 }}
                 className="mini-btn"
-                style={{ padding: '12px 14px', fontSize: 13 }}
+                style={{ padding: '12px 14px', minWidth: 44, minHeight: 44, fontSize: 13 }}
               ><FileText size={13} /></button>
             </div>
           </div>
