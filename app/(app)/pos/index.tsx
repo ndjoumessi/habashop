@@ -34,6 +34,7 @@ import POSConfirmModal from '@/components/pos/POSConfirmModal'
 import POSCart from '@/components/pos/POSCart'
 import POSProductGrid from '@/components/pos/POSProductGrid'
 import CustomerPicker from '@/components/pos/CustomerPicker'
+import LoyaltyCardDigital from '@/components/customers/LoyaltyCardDigital'
 
 // Boundary localisé de la Caisse : un crash POS affiche un fallback sans tuer la nav.
 export { default as ErrorBoundary } from '@/components/ui/RouteErrorFallback'
@@ -78,6 +79,8 @@ export default function POSScreen() {
   const [showCustomerPicker, setShowCustomerPicker] = useState(false)
   // Ventilation mixte transmise par le panier → utilisée à la confirmation (sinon null = simple).
   const [pendingOverride, setPendingOverride] = useState<({ paymentMode: string } & MixedSplit) | null>(null)
+  // Carte fidélité numérique proposée après une vente liée à un client (montée à la demande).
+  const [loyaltyCardId, setLoyaltyCardId] = useState<string | null>(null)
 
   const { data: products = [], isLoading, isError, refetch } = useQuery<Product[]>({
     queryKey: ['products'],
@@ -193,27 +196,38 @@ export default function POSScreen() {
       }
       // Différé : laisser le panier + la confirmation se fermer avant l'alerte native
       // (sinon l'Alert — et le dialog d'impression — sont avalés pendant le teardown).
+      // Boutons de l'alerte succès. La carte fidélité n'est proposée que si la vente est
+      // liée à un client ET le programme fidélité est activé pour le tenant.
+      const alertButtons: Parameters<typeof Alert.alert>[2] = [
+        { text: i('Non merci', 'No thanks', 'No gracias', 'No grazie'), style: 'cancel' },
+        {
+          text: '🖨️ ' + i('Imprimer', 'Print', 'Imprimir', 'Stampa'),
+          // Annulation de l'impression = normal → pas d'alerte (le service log en interne).
+          onPress: () => { printReceipt(ticket) },
+        },
+        {
+          text: '💬 WhatsApp',
+          onPress: async () => {
+            const ok = await sendWhatsAppTicket(ticket)
+            if (!ok) {
+              Alert.alert(i('WhatsApp indisponible', 'WhatsApp unavailable', 'WhatsApp no disponible', 'WhatsApp non disponibile'), '')
+            }
+          },
+        },
+      ]
+      if (saleCustomer && tenant?.enableLoyalty) {
+        alertButtons.push({
+          text: '🎴 ' + i('Voir la carte fidélité', 'View loyalty card', 'Ver tarjeta fidelidad', 'Vedi carta fedeltà'),
+          onPress: () => setLoyaltyCardId(saleCustomer.id),
+        })
+      }
+      // Différé : laisser le panier + la confirmation se fermer avant l'alerte native
+      // (sinon l'Alert — et le dialog d'impression — sont avalés pendant le teardown).
       setTimeout(() => {
         Alert.alert(
           i('✅ Vente enregistrée', '✅ Sale recorded', '✅ Venta registrada', '✅ Vendita registrata'),
           linked + i('Envoyer le reçu par WhatsApp ?', 'Send receipt via WhatsApp?', '¿Enviar recibo por WhatsApp?', 'Inviare ricevuta via WhatsApp?'),
-          [
-            { text: i('Non merci', 'No thanks', 'No gracias', 'No grazie'), style: 'cancel' },
-            {
-              text: '🖨️ ' + i('Imprimer', 'Print', 'Imprimir', 'Stampa'),
-              // Annulation de l'impression = normal → pas d'alerte (le service log en interne).
-              onPress: () => { printReceipt(ticket) },
-            },
-            {
-              text: '💬 WhatsApp',
-              onPress: async () => {
-                const ok = await sendWhatsAppTicket(ticket)
-                if (!ok) {
-                  Alert.alert(i('WhatsApp indisponible', 'WhatsApp unavailable', 'WhatsApp no disponible', 'WhatsApp non disponibile'), '')
-                }
-              },
-            },
-          ],
+          alertButtons,
         )
       }, ALERT_AFTER_MODAL_MS)
     },
@@ -444,6 +458,11 @@ export default function POSScreen() {
           onScan={handleBarcodeScan}
           onClose={() => setShowScanner(false)}
         />
+      )}
+
+      {/* Carte fidélité numérique — proposée après une vente liée à un client (à la demande). */}
+      {!!loyaltyCardId && (
+        <LoyaltyCardDigital customerId={loyaltyCardId} onClose={() => setLoyaltyCardId(null)} />
       )}
     </View>
   )
