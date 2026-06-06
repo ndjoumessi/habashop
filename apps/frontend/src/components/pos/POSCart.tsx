@@ -25,9 +25,11 @@ interface POSCartProps {
   mixedM2: 'cash'|'mobile'|'card'; setMixedM2: (m: 'cash'|'mobile'|'card') => void
   mixedAmt1: string; setMixedAmt1: (v: string) => void
   mixedAmt2XOF: number; mixedValid: boolean
+  // Fidélité v2 : remise auto du client lié
+  loyaltyDiscount?: number; loyaltyPct?: number; loyaltyCustomerName?: string | null
 }
 
-export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid }: POSCartProps) {
+export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null }: POSCartProps) {
   return (
         <div style={{
           width: isMobile ? '100%' : 320,
@@ -257,6 +259,15 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 <span>HT : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(totalHT))}</span></span>
                 <span>TVA {posTaxRate}% : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(tva))}</span></span>
               </div>
+              {/* Fidélité v2 : badge remise auto du client lié (−X%) */}
+              {loyaltyDiscount > 0 && (
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6, padding:'6px 10px', background:'var(--c-green-bg)', border:'1px solid var(--c-green-border)', borderRadius:8, fontSize:12 }}>
+                  <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)', display:'flex', alignItems:'center', gap:5 }}>
+                    ⭐ {lang === 'en' ? 'Loyalty discount' : lang === 'es' ? 'Descuento fidelidad' : lang === 'it' ? 'Sconto fedeltà' : 'Remise fidélité'}{loyaltyCustomerName ? ` · ${loyaltyCustomerName}` : ''} −{loyaltyPct}%
+                  </span>
+                  <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', color:'var(--acc2)' }}>− {fmt(loyaltyDiscount)}</span>
+                </div>
+              )}
               <div style={{
                 display:'flex', justifyContent:'space-between', alignItems:'center',
                 padding:'8px 10px',

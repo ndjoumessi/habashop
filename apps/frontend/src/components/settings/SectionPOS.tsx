@@ -16,6 +16,7 @@ export default function SectionPOS() {
   const [editMode, setEditMode] = useState(false)
   const snapshot = () => ({
     posVatIncluded: cfg.posVatIncluded, posAutoprint: cfg.posAutoprint, autoWhatsApp: cfg.autoWhatsApp,
+    enableAutoWhatsApp: cfg.enableAutoWhatsApp,
     enableLoyalty: cfg.enableLoyalty, requireCashier: cfg.requireCashier, enableScanner: cfg.enableScanner,
     priceMode: cfg.priceMode, posTaxRate: cfg.posTaxRate,
   })
@@ -35,6 +36,7 @@ export default function SectionPOS() {
         posVatIncluded: t.posVatIncluded ?? true,
         posAutoprint:   t.posAutoprint   ?? false,
         autoWhatsApp:   t.autoWhatsApp   ?? false,
+        enableAutoWhatsApp: t.enableAutoWhatsApp ?? false,
         enableLoyalty:  t.enableLoyalty  ?? false,
         requireCashier: t.requireCashier ?? false,
         enableScanner:  t.enableScanner  ?? false,
@@ -66,6 +68,7 @@ export default function SectionPOS() {
   const TOGGLES: { key: any; icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string> }[] = [
     { key: 'posAutoprint', icon: '🖨️', color: 'var(--p2)', label: { fr: 'Impression auto', en: 'Auto print', es: 'Impresión auto', it: 'Stampa auto' }, desc: { fr: 'Imprime le ticket après vente', en: 'Print receipt after sale', es: 'Imprimir ticket tras venta', it: 'Stampa ricevuta dopo vendita' } },
     { key: 'autoWhatsApp', icon: '💬', color: '#25D366', label: { fr: 'Ticket WhatsApp', en: 'WhatsApp receipt', es: 'Ticket WhatsApp', it: 'Ricevuta WhatsApp' }, desc: { fr: 'Envoie le ticket par WhatsApp', en: 'Send receipt via WhatsApp', es: 'Enviar ticket por WhatsApp', it: 'Invia ricevuta via WhatsApp' } },
+    { key: 'enableAutoWhatsApp', icon: '🤖', color: '#25D366', label: { fr: 'Envoi auto WhatsApp', en: 'Auto WhatsApp send', es: 'Envío auto WhatsApp', it: 'Invio auto WhatsApp' }, desc: { fr: "Envoie auto le reçu après chaque vente. Nécessite un numéro client et une config Twilio par l'administrateur.", en: 'Auto-send the receipt after each sale. Requires a customer phone and Twilio config by the admin.', es: 'Envía auto el recibo tras cada venta. Requiere un teléfono del cliente y config Twilio del administrador.', it: 'Invia auto la ricevuta dopo ogni vendita. Richiede un telefono cliente e config Twilio dell\'amministratore.' } },
     { key: 'enableLoyalty', icon: '⭐', color: 'var(--warn)', label: { fr: 'Programme fidélité', en: 'Loyalty program', es: 'Programa fidelidad', it: 'Programma fedeltà' }, desc: { fr: 'Active les points de fidélité', en: 'Enable loyalty points', es: 'Activar puntos de fidelidad', it: 'Abilita punti fedeltà' } },
     { key: 'requireCashier', icon: '🔐', color: 'var(--acc3,#00B8FF)', label: { fr: 'Ouverture de caisse', en: 'Cashier open required', es: 'Apertura de caja', it: 'Apertura cassa' }, desc: { fr: 'Exiger l\'ouverture avant les ventes', en: 'Require opening before sales', es: 'Exigir apertura antes de ventas', it: 'Richiedi apertura prima delle vendite' } },
     { key: 'enableScanner', icon: '📷', color: 'var(--p3)', label: { fr: 'Scanner codes-barres', en: 'Barcode scanner', es: 'Escáner de códigos', it: 'Scanner codici' }, desc: { fr: 'Active le scanner intégré', en: 'Enable built-in scanner', es: 'Activar escáner integrado', it: 'Abilita scanner integrato' } },
@@ -88,6 +91,7 @@ export default function SectionPOS() {
         posVatIncluded: draft.priceMode !== 'HT',   // dérivé du mode TTC/HT (contrôle unique)
         posAutoprint:   draft.posAutoprint,
         autoWhatsApp:   draft.autoWhatsApp,
+        enableAutoWhatsApp: draft.enableAutoWhatsApp,
         enableLoyalty:  draft.enableLoyalty,
         requireCashier: draft.requireCashier,
         enableScanner:  draft.enableScanner,

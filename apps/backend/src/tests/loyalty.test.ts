@@ -124,7 +124,8 @@ describe('POST /api/sales — créditage fidélité', () => {
   })
 
   it('taux CONFIGURABLE du tenant : pointsPerAmount=500 → floor(2500/500)=5 pts', async () => {
-    db.tenant.findUnique.mockResolvedValue({ enableLoyalty: true, pointsPerAmount: 500 })
+    // Remises v2 à 0 → points calculés sur le total plein (isole le créditage du discount).
+    db.tenant.findUnique.mockResolvedValue({ enableLoyalty: true, pointsPerAmount: 500, bronzeDiscount: 0, silverDiscount: 0, goldDiscount: 0 })
     const app = await buildApp()
     await app.inject({ method: 'POST', url: '/api/sales', payload: saleBody({ customerId: 'c1' }) })
     expect(tx.customer.update).toHaveBeenCalledWith(expect.objectContaining({

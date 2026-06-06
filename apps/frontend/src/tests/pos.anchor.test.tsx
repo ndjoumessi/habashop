@@ -36,7 +36,7 @@ vi.mock('@/lib/api', () => ({
   salesApi: { list: vi.fn().mockResolvedValue([]), create: vi.fn().mockResolvedValue({}) },
   whatsappApi: { sendTicket: vi.fn().mockResolvedValue({}) },
 }))
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
+vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn(), useLocation: () => ({ state: null, pathname: '/app/pos' }) }))
 vi.mock('@/utils/export', () => ({ generateInvoice: vi.fn() }))
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
 

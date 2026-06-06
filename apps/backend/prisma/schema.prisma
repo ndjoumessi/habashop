@@ -25,6 +25,7 @@ model Tenant {
   posVatIncluded    Boolean  @default(true)
   posAutoprint      Boolean  @default(false)
   autoWhatsApp      Boolean  @default(false)
+  enableAutoWhatsApp Boolean @default(false) // envoi AUTO serveur du reçu WhatsApp après vente (Twilio)
   enableLoyalty     Boolean  @default(false)
   requireCashier    Boolean  @default(false)
   enableScanner     Boolean  @default(false)
@@ -34,6 +35,10 @@ model Tenant {
   pointsPerAmount   Int      @default(1000) // unités de devise pour 1 point (floor(montant/X))
   bronzeThreshold   Int      @default(2000) // pts : seuil Bronze → Silver
   silverThreshold   Int      @default(5000) // pts : seuil Silver → Gold
+  // ── Loyalty v2 : remises % par palier (appliquées au total si client lié qualifié) ──
+  bronzeDiscount    Float    @default(5.0)
+  silverDiscount    Float    @default(10.0)
+  goldDiscount      Float    @default(15.0)
 
   // ── Paramètres Notifications ──
   notifEmailSales   Boolean  @default(true)
@@ -202,6 +207,9 @@ model Sale {
 
   // ── Facture PDF : numéro attribué à la 1ʳᵉ demande puis figé (FAC-{YYYY}-{NNNNN}). ──
   invoiceNumber  String?
+
+  // ── Loyalty v2 : remise fidélité appliquée au total (0 si pas de client/palier). ──
+  loyaltyDiscount   Float?   @default(0)
 
   // ── Paiement mixte (split, max 2 méthodes/vente) : ventilation du total par mode. ──
   // Toujours renseignés sur les NOUVELLES ventes (0 si mode non utilisé) ; NULL sur les

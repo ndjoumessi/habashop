@@ -101,6 +101,7 @@ export interface AppConfig {
   posDefaultFund: number
   enableScanner: boolean
   autoWhatsApp: boolean
+  enableAutoWhatsApp: boolean
 
   // Stock
   stockLowThreshold: number
@@ -161,6 +162,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   posDefaultFund: 0,
   enableScanner: false,
   autoWhatsApp: false,
+  enableAutoWhatsApp: false,
 
   stockLowThreshold: 10,
   stockAutoOrder: false,

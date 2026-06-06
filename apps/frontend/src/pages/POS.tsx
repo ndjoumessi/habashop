@@ -1,8 +1,8 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import { salesApi, productsApi, whatsappApi } from '@/lib/api'
+import { salesApi, productsApi, whatsappApi, loyaltyApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
@@ -27,7 +27,7 @@ export default function POS() {
     openCashier, closeCashier, addCashierSale,
     posTaxRate, posShowStockOnTile, posDefaultFund,
     posDefaultPayment, priceMode, posAutoprint, requireCashier,
-    enableScanner: posEnableScanner, autoWhatsApp: posAutoWhatsApp,
+    enableScanner: posEnableScanner, autoWhatsApp: posAutoWhatsApp, enableLoyalty,
     // Panier persisté dans le store (survit nav + refresh)
     cart, addCartItem, updateCartQty, setCart, clearCart,
   } = useAppStore()
@@ -83,6 +83,17 @@ export default function POS() {
   const [mixedM1, setMixedM1]   = useState<'cash'|'mobile'|'card'>('cash')
   const [mixedM2, setMixedM2]   = useState<'cash'|'mobile'|'card'>('mobile')
   const [mixedAmt1, setMixedAmt1] = useState('')
+  // Client lié (via « Nouvelle vente » depuis la fiche client) → fidélité v2 (remise + points).
+  const location = useLocation()
+  const [linkedCustomer] = useState<{ id: string; name: string } | null>(() => ((location.state as any)?.customer ?? null))
+  const [loyaltyPct, setLoyaltyPct] = useState(0)  // % remise du palier du client lié (0 si N/A)
+  useEffect(() => {
+    if (!linkedCustomer?.id || !enableLoyalty) { setLoyaltyPct(0); return }
+    loyaltyApi.get(linkedCustomer.id).then(d => {
+      const pct = d.tier === 'Gold' ? (d.goldDiscount ?? 0) : d.tier === 'Silver' ? (d.silverDiscount ?? 0) : (d.bronzeDiscount ?? 0)
+      setLoyaltyPct(Number(pct) || 0)
+    }).catch(() => setLoyaltyPct(0))
+  }, [linkedCustomer?.id, enableLoyalty])
   const [showModal, setShowModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [clientType, setClientType] = useState<'retail'|'wholesale'|'semi'>('retail')
@@ -261,14 +272,21 @@ export default function POS() {
   // TTC → prix catalogue incluent la TVA (extraite) ; HT → TVA ajoutée au-dessus.
   const pricesIncludeVat = priceMode !== 'HT'
   const { totalHT, tva, total } = computePosVat(sub, posTaxRate, pricesIncludeVat)
+  // ── Loyalty v2 : remise fidélité du client lié (mirroir du backend, plafond combiné 50%) ──
+  // `total` = BRUT (envoyé au backend qui applique le Modèle A) ; `netTotal` = ce que le
+  // caissier voit/encaisse. Les deux convergent (même % + même plafond que computeLoyaltyDiscount).
+  const loyaltyDiscount = (linkedCustomer && loyaltyPct > 0)
+    ? Math.max(0, Math.min(Math.round(total * loyaltyPct / 100), Math.round(total * 0.5) - discountAmount))
+    : 0
+  const netTotal = Math.max(0, total - loyaltyDiscount)
   const cashGivenAmount = parseFloat(cashGiven) || 0
-  // cashGiven est dans la devise courante → convertir en XOF pour comparer avec total (XOF)
-  const monnaie = toXOF(cashGivenAmount) - total
+  // cashGiven est dans la devise courante → convertir en XOF pour comparer avec le NET (XOF)
+  const monnaie = toXOF(cashGivenAmount) - netTotal
 
-  // ── Paiement mixte : montant ligne 1 en devise affichage → XOF ; ligne 2 = reste ──
-  const mixedAmt1XOF = Math.min(total, Math.max(0, toXOF(parseFloat(mixedAmt1) || 0)))
-  const mixedAmt2XOF = Math.max(0, total - mixedAmt1XOF)
-  const mixedValid = mixedAmt1XOF > 0 && mixedAmt1XOF < total && mixedM1 !== mixedM2
+  // ── Paiement mixte : montant ligne 1 en devise affichage → XOF ; ligne 2 = reste (sur NET) ──
+  const mixedAmt1XOF = Math.min(netTotal, Math.max(0, toXOF(parseFloat(mixedAmt1) || 0)))
+  const mixedAmt2XOF = Math.max(0, netTotal - mixedAmt1XOF)
+  const mixedValid = mixedAmt1XOF > 0 && mixedAmt1XOF < netTotal && mixedM1 !== mixedM2
   // Ventilation XOF des 2 méthodes vers les 3 seaux backend.
   const mixedSplit = (() => {
     const b: { cashAmount: number; mobileMoneyAmount: number; cardAmount: number } = { cashAmount: 0, mobileMoneyAmount: 0, cardAmount: 0 }
@@ -288,7 +306,7 @@ export default function POS() {
 
   const printTicket = () => buildAndPrintTicket({
     lang, locale, cart, discount, discountAmount,
-    totalHT, tva, posTaxRate, total, payMode, cashGiven, currency, monnaie, fmt,
+    totalHT, tva, posTaxRate, total: netTotal, payMode, cashGiven, currency, monnaie, fmt,
     mixed: mixedOn ? mixedSplit : null,
   })
 
@@ -298,7 +316,7 @@ export default function POS() {
     // En paiement mixte, le garde-fou cash ne s'applique pas (la somme = total par construction).
     if (!mixedOn && payMode === 'cash') {
       const given = toXOF(parseFloat(cashGiven) || 0)
-      if (given < total) {
+      if (given < netTotal) {
         toast.error(
           lang === 'en' ? 'Insufficient amount — please enter amount received' :
           lang === 'es' ? 'Monto insuficiente — ingrese el monto recibido' :
@@ -324,7 +342,8 @@ export default function POS() {
           tierLabel: i.tierLabel ?? null,
         })),
         paymentMode: mixedOn ? 'mixed' : payMode,
-        total,
+        total,  // BRUT — le backend applique la remise fidélité (Modèle A) → sale.total = net
+        customerId: linkedCustomer?.id ?? null,
         discount: discount ? { type: discount.type, amount: discountAmount } : null,
         ...(mixedOn ? mixedSplit : {}),
       })
@@ -498,7 +517,8 @@ export default function POS() {
           setShowCloseModal={setShowCloseModal}
           fmt={fmt}
           discount={discount} discountAmount={discountAmount}
-          totalHT={totalHT} tva={tva} posTaxRate={posTaxRate} total={total}
+          totalHT={totalHT} tva={tva} posTaxRate={posTaxRate} total={netTotal}
+          loyaltyDiscount={loyaltyDiscount} loyaltyPct={loyaltyPct} loyaltyCustomerName={linkedCustomer?.name ?? null}
           PAY_MODES={PAY_MODES} payMode={payMode} setPayMode={setPayMode}
           currencySymbol={currencySymbol}
           cashGiven={cashGiven} setCashGiven={setCashGiven}
@@ -532,7 +552,7 @@ export default function POS() {
         currency={currency}
         showModal={showModal} setShowModal={setShowModal}
         cart={cart}
-        total={total}
+        total={netTotal}
         sendWhatsApp={sendWhatsApp} setSendWhatsApp={setSendWhatsApp}
         waCountryFlag={waCountryFlag} waCountryCode={waCountryCode}
         setWaCountryCode={setWaCountryCode} setWaCountryFlag={setWaCountryFlag}
@@ -552,7 +572,7 @@ export default function POS() {
       <POSSuccessModal
         show={showSuccess}
         lang={lang}
-        total={total}
+        total={netTotal}
         monnaie={monnaie}
         showChange={!mixedOn && payMode === 'cash'}
         fmt={fmt}
