@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink, Tag } from 'lucide-react'
+import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink, Tag, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/stores/appStore'
 import { exportCSV, generateInvoice } from '@/utils/export'
@@ -135,7 +135,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                         <button className="btn btn-sm" title={i('Carte numérique', 'Digital card', 'Tarjeta digital', 'Carta digitale')}
                           style={{ background: 'rgba(108,71,255,.12)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
                           onClick={() => setDigitalCardCustomerId(c.id)}>
-                          🎴
+                          <CreditCard size={11} />
                         </button>
                         <button className="btn btn-sm" title={i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')}
                           style={{ background: TYPE_CFG['Grossiste'].bg, color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
