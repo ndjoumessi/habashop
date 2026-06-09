@@ -145,11 +145,14 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/customers/:id/loyalty-card', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
-    const customer = await prisma.customer.findFirst({ where: { id, tenantId }, select: { id: true, name: true, loyaltyPoints: true } })
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId }, select: { id: true, name: true, loyaltyPoints: true, totalRevenue: true } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
     const cfg = await prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { name: true, currency: true, enableLoyalty: true, bronzeThreshold: true, silverThreshold: true },
+      select: {
+        name: true, currency: true, enableLoyalty: true, bronzeThreshold: true, silverThreshold: true,
+        pointsPerAmount: true, bronzeDiscount: true, silverDiscount: true, goldDiscount: true,
+      },
     })
     const points = customer.loyaltyPoints ?? 0
     const bronzeThreshold = cfg?.bronzeThreshold ?? 2000
@@ -169,6 +172,12 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
       shopName: cfg?.name ?? 'HabaShop',
       currency: cfg?.currency ?? 'XOF',
       enableLoyalty: !!cfg?.enableLoyalty,
+      // totalRevenue = base XOF (convertir côté client) ; pointsPerAmount = devise tenant (PAS de conversion).
+      totalRevenue: customer.totalRevenue ?? 0,
+      pointsPerAmount: cfg?.pointsPerAmount ?? 1000,
+      bronzeDiscount: cfg?.bronzeDiscount ?? 5,
+      silverDiscount: cfg?.silverDiscount ?? 10,
+      goldDiscount: cfg?.goldDiscount ?? 15,
     }
   })
 

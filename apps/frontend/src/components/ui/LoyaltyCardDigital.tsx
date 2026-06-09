@@ -1,16 +1,25 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Download, Share2 } from 'lucide-react'
+import { X, Download, Share2, CreditCard } from 'lucide-react'
 import QRCode from 'qrcode'
 import html2canvas from 'html2canvas'
 import { loyaltyApi } from '@/lib/api'
 import { useI18n } from '@/hooks/useI18n'
+import { convertAmount, formatInCurrency } from '@/stores/appStore'
 
 interface Props { customerId: string; onClose: () => void }
 
-const TIER_CFG: Record<string, { color: string; bg: string; border: string; icon: string }> = {
-  Bronze: { color: '#CD7F32', bg: 'linear-gradient(135deg,#3D2B0A,#1a1207)', border: '#CD7F32', icon: '🥉' },
-  Silver: { color: '#A8A9AD', bg: 'linear-gradient(135deg,#2B2B2B,#111111)', border: '#A8A9AD', icon: '🥈' },
-  Gold:   { color: '#FFD700', bg: 'linear-gradient(135deg,#3D3200,#1a1500)', border: '#FFD700', icon: '🥇' },
+// Couleurs FIXES par palier (artefact « carte physique » exporté en PNG — pas du chrome thémé).
+const TIER_CFG: Record<string, { bg: string; badgeBg: string; badgeTxt: string; bar: string }> = {
+  Bronze: { bg: '#1C1007', badgeBg: '#3D2010', badgeTxt: '#F5A623', bar: '#CD7F32' },
+  Silver: { bg: '#0D1117', badgeBg: '#1A2332', badgeTxt: '#A8C0D6', bar: '#8A9BB0' },
+  Gold:   { bg: '#1A1205', badgeBg: '#2D2010', badgeTxt: '#FFD060', bar: '#D4A017' },
+}
+
+// Valeur API (Bronze/Silver/Gold) = clé ; seul l'affichage est traduit.
+const TIER_NAMES: Record<string, [string, string, string, string]> = {
+  Bronze: ['Bronze', 'Bronze', 'Bronce', 'Bronzo'],
+  Silver: ['Argent', 'Silver', 'Plata', 'Argento'],
+  Gold:   ['Or', 'Gold', 'Oro', 'Oro'],
 }
 
 export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
@@ -25,8 +34,9 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
     loyaltyApi.getCard(customerId)
       .then(async (d) => {
         setData(d)
-        const url = await QRCode.toDataURL(`HABA-${d.customerId.slice(0, 8).toUpperCase()}`, {
-          width: 100, margin: 1, color: { dark: TIER_CFG[d.tier]?.color ?? '#fff', light: '#00000000' },
+        // Noir sur blanc opaque (scannable quel que soit le thème).
+        const url = await QRCode.toDataURL(`HS-${d.customerId.slice(0, 8).toUpperCase()}`, {
+          width: 128, margin: 0, color: { dark: '#000000', light: '#FFFFFF' },
         })
         setQrUrl(url)
       })
@@ -63,65 +73,101 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
     } catch { /* non-bloquant */ }
   }
 
-  const cfg = TIER_CFG[data?.tier ?? 'Bronze'] ?? TIER_CFG.Bronze
-  const progress = data?.nextTier && data.bronzeThreshold
-    ? Math.min(100, Math.round((data.points / (data.nextTier === 'Gold' ? data.silverThreshold : data.bronzeThreshold)) * 100))
-    : 100
+  const tier = data?.tier ?? 'Bronze'
+  const cfg = TIER_CFG[tier] ?? TIER_CFG.Bronze
+  const tierName = (t: string) => { const n = TIER_NAMES[t]; return n ? i(n[0], n[1], n[2], n[3]) : t }
+
+  const nextThreshold = data?.nextTier ? (data.nextTier === 'Gold' ? data.silverThreshold : data.bronzeThreshold) : null
+  const progress = data && nextThreshold ? Math.min(100, Math.round((data.points / nextThreshold) * 100)) : 100
+
+  // Valeur dispo. = points × (bronzeDiscount/100) × pointsPerAmount — déjà en devise tenant (PAS de conversion).
+  const availableValue = data ? Math.round(data.points * ((data.bronzeDiscount ?? 5) / 100) * (data.pointsPerAmount ?? 1000)) : 0
+  // Total achats = base XOF → devise tenant.
+  const totalPurchases = data ? convertAmount(data.totalRevenue ?? 0, 'XOF', data.currency) : 0
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" style={{ maxWidth: 400, padding: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <span style={{ fontWeight: 'var(--fw-bold)', fontSize: 16 }}>🎴 {i('Carte fidélité', 'Loyalty card', 'Tarjeta de fidelidad', 'Carta fedeltà')}</span>
-          <button onClick={onClose} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={14} /></button>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 'var(--fw-bold)', fontSize: 16 }}>
+            <CreditCard size={16} style={{ color: 'var(--p2)' }} />
+            {i('Carte fidélité', 'Loyalty card', 'Tarjeta de fidelidad', 'Carta fedeltà')}
+          </span>
+          <button onClick={onClose} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={14} /></button>
         </div>
 
         {loading ? (
-          <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)' }}>⏳ {i('Chargement…', 'Loading…', 'Cargando…', 'Caricamento…')}</div>
+          <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)' }}>{i('Chargement…', 'Loading…', 'Cargando…', 'Caricamento…')}</div>
         ) : !data ? (
-          <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)' }}>⚠ {i('Erreur de chargement', 'Load error', 'Error de carga', 'Errore di caricamento')}</div>
+          <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)' }}>{i('Erreur de chargement', 'Load error', 'Error de carga', 'Errore di caricamento')}</div>
         ) : (
           <>
-            {/* ── Carte (340×200 px) ── */}
-            <div ref={cardRef} style={{
-              width: 340, height: 200,
-              background: cfg.bg, border: `2px solid ${cfg.border}44`,
-              borderRadius: 18, padding: '18px 20px',
-              position: 'relative', overflow: 'hidden', userSelect: 'none',
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-            }}>
-              {/* Watermark */}
-              <div style={{ position: 'absolute', top: -10, right: -10, fontSize: 120, opacity: 0.06, lineHeight: 1 }}>{cfg.icon}</div>
+            {/* ── Carte 2 zones ── */}
+            <div ref={cardRef} style={{ width: 340, borderRadius: 18, overflow: 'hidden', userSelect: 'none', border: '1px solid var(--border)' }}>
 
-              {/* Row 1 : nom + QR */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', marginBottom: 2, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.customerName}</div>
-                  <div style={{ fontSize: 10, fontFamily: 'var(--mono)', color: cfg.color }}>HABA-{data.customerId.slice(0, 8).toUpperCase()}</div>
-                </div>
-                {qrUrl && <img src={qrUrl} alt="QR" style={{ width: 64, height: 64, borderRadius: 8, border: `1px solid ${cfg.color}44` }} />}
-              </div>
-
-              {/* Row 2 : points + badge */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 34, fontWeight: 900, color: cfg.color, fontFamily: 'var(--mono)', letterSpacing: -1 }}>{data.points.toLocaleString()}</span>
-                  <span style={{ fontSize: 13, color: '#fff9' }}>pts</span>
-                  <span style={{ fontSize: 12, fontWeight: 'var(--fw-bold)', padding: '2px 10px', background: `${cfg.color}22`, border: `1px solid ${cfg.color}44`, borderRadius: 20, color: cfg.color }}>{cfg.icon} {data.tier}</span>
-                </div>
-                {/* Progression */}
-                {data.nextTier && (
-                  <div>
-                    <div style={{ height: 6, background: '#ffffff18', borderRadius: 99, overflow: 'hidden', marginBottom: 4 }}>
-                      <div style={{ height: '100%', background: cfg.color, borderRadius: 99, width: `${progress}%`, transition: 'width .6s' }} />
+              {/* Zone haute — fond sombre par palier */}
+              <div style={{ background: cfg.bg, padding: '18px 20px 16px', position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: '#fff', opacity: 0.7, marginBottom: 4 }}>
+                      {i('Carte fidélité', 'Loyalty card', 'Tarjeta de fidelidad', 'Carta fedeltà')}
                     </div>
-                    <div style={{ fontSize: 10, color: '#fff7' }}>{data.pointsToNext.toLocaleString()} pts → {data.nextTier}</div>
+                    <div style={{ fontSize: 18, fontWeight: 'var(--fw-bold)', color: '#fff', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.shopName}</div>
                   </div>
-                )}
+                  <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 'var(--fw-bold)', padding: '4px 12px', borderRadius: 99, background: cfg.badgeBg, color: cfg.badgeTxt }}>{tierName(tier)}</span>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: '#fff', maxWidth: 230, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.customerName}</div>
+                  <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'rgba(255,255,255,.65)' }}>HS-{data.customerId.slice(0, 8).toUpperCase()}</div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div>
+                    <div style={{ fontSize: 28, fontWeight: 'var(--fw-bold)', color: '#fff', fontFamily: 'var(--mono)', letterSpacing: -1, lineHeight: 1.1 }}>{data.points.toLocaleString()}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,.65)' }}>{i('points', 'points', 'puntos', 'punti')}</div>
+                  </div>
+                  {qrUrl && (
+                    <div style={{ background: '#FFFFFF', borderRadius: 8, padding: 6, lineHeight: 0 }}>
+                      <img src={qrUrl} alt="QR" style={{ width: 64, height: 64, display: 'block' }} />
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Row 3 : boutique */}
-              <div style={{ fontSize: 10, color: '#fff6', textTransform: 'uppercase', letterSpacing: 1 }}>{data.shopName} · habashop</div>
+              {/* Zone basse — fond thémé */}
+              <div style={{ background: 'var(--card)', borderTop: '1px solid var(--border)', padding: '14px 16px 16px' }}>
+                {/* Progression */}
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)' }}>
+                      {data.nextTier
+                        ? `${tierName(tier)} → ${tierName(data.nextTier)}`
+                        : i('Palier maximum atteint', 'Top tier reached', 'Nivel máximo alcanzado', 'Livello massimo raggiunto')}
+                    </span>
+                    {nextThreshold && (
+                      <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--text2)' }}>
+                        {data.points.toLocaleString()} / {nextThreshold.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ height: 6, background: 'var(--bg3)', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${progress}%`, background: cfg.bar, borderRadius: 99, transition: 'width .6s' }} />
+                  </div>
+                </div>
+
+                {/* Stats 2 colonnes */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div style={{ background: 'var(--bg3)', borderRadius: 10, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text3)', marginBottom: 3 }}>{i('Total achats', 'Total purchases', 'Compras totales', 'Acquisti totali')}</div>
+                    <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{formatInCurrency(totalPurchases, data.currency)}</div>
+                  </div>
+                  <div style={{ background: 'var(--bg3)', borderRadius: 10, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text3)', marginBottom: 3 }}>{i('Valeur dispo.', 'Available value', 'Valor disp.', 'Valore disp.')}</div>
+                    <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{formatInCurrency(availableValue, data.currency)}</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Actions */}

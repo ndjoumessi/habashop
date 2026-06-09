@@ -303,6 +303,9 @@ export const loyaltyApi = {
     customerId: string; customerName: string; tier: string; points: number;
     bronzeThreshold: number; silverThreshold: number; nextTier: string | null;
     pointsToNext: number; shopName: string; currency: string; enableLoyalty: boolean;
+    // totalRevenue = base XOF (convertir à l'affichage) ; pointsPerAmount = devise tenant (PAS de conversion).
+    totalRevenue?: number; pointsPerAmount?: number;
+    bronzeDiscount?: number; silverDiscount?: number; goldDiscount?: number;
   }>(`/api/customers/${id}/loyalty-card`),
 }
 
