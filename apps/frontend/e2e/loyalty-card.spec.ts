@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test'
 
+// ⚠️ Le service worker PWA peut prendre la main en cours de test et court-circuiter
+// page.route() (mock /loyalty-card ignoré → data réelle rendue). On le bloque.
+test.use({ serviceWorkers: 'block' })
+
 const BASE = process.env.CUST_BASE ?? 'https://habashop.vercel.app'
 
 // Vérif live du redesign LoyaltyCardDigital (2 zones par palier) : on intercepte
@@ -57,7 +61,8 @@ test('Carte fidélité numérique — rendu des 3 paliers + captures', async ({ 
     await expect(modal.locator('img[alt="QR"]')).toBeVisible()
 
     await page.waitForTimeout(600) // settle animation avant capture
-    await modal.screenshot({ path: `playwright-report/loyalty-card-${t.tier.toLowerCase()}.png` })
+    // ⚠️ PAS dans playwright-report/ (le reporter HTML purge le dossier en fin de run).
+    await modal.screenshot({ path: `e2e/screenshots/loyalty-card-${t.tier.toLowerCase()}.png` })
 
     await modal.getByRole('button', { name: /Fermer|Close/ }).click()
     await expect(modal).not.toBeVisible()

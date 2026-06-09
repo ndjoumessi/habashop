@@ -38,6 +38,7 @@ coverage/
 playwright-report/
 test-results/
 .playwright/
+apps/frontend/e2e/screenshots/
 
 # Local deploy helper (auto-deploy Vercel actif, script obsolète)
 deploy.sh
