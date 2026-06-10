@@ -1,4 +1,4 @@
-import { Trash2, ShoppingCart, Lock, Tag, Banknote, CreditCard, Smartphone, BarChart3 } from 'lucide-react'
+import { Trash2, ShoppingCart, Lock, Tag, Banknote, CreditCard, Smartphone, BarChart3, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { confirm } from '@/lib/confirm'
 import { type CartItem } from '@/components/pos/posShared'
@@ -34,6 +34,16 @@ interface POSCartProps {
 }
 
 export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '' }: POSCartProps) {
+  // Montant reçu : jamais négatif. Vide → '' (traité comme 0 en aval). Négatif (collé/contournement) → 0.
+  const onCashChange = (raw: string) => {
+    if (raw === '') { setCashGiven(''); return }
+    const n = parseFloat(raw)
+    setCashGiven(!Number.isFinite(n) || n < 0 ? '0' : raw)
+  }
+  // États du champ cash : a-t-on une saisie ? est-elle suffisante (monnaie = reçu − total ≥ 0) ?
+  const cashEntered      = payMode === 'cash' && !mixedOn && cashGiven.trim() !== '' && (parseFloat(cashGiven) || 0) > 0
+  const cashSufficient   = cashEntered && monnaie >= 0
+  const cashInsufficient = cashEntered && monnaie < 0
   return (
         <div style={{
           width: isMobile ? '100%' : 320,
@@ -358,12 +368,26 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             )}
 
             {!mixedOn && payMode === 'cash' && (
-              <div style={{ marginTop:6 }}>
+              <div style={{ marginTop:8 }}>
+                {/* Label explicite */}
+                <label htmlFor="pos-cash-given" style={{
+                  display:'block', marginBottom:5, fontSize:11, fontWeight:'var(--fw-semibold)',
+                  color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.4px',
+                }}>
+                  {lang === 'en' ? 'Amount received from customer' : lang === 'es' ? 'Importe recibido del cliente' : lang === 'it' ? 'Importo ricevuto dal cliente' : 'Montant reçu du client'}
+                </label>
                 <div style={{ position:'relative' }}>
-                  <input className="input" type="number"
+                  <input id="pos-cash-given" className="input" type="number" min={0} step="any" inputMode="decimal"
                     placeholder={lang === 'en' ? 'Amount received...' : lang === 'es' ? 'Importe recibido...' : lang === 'it' ? 'Importo ricevuto...' : 'Montant reçu...'}
-                    value={cashGiven} onChange={e => setCashGiven(e.target.value)}
-                    style={{ textAlign:'right', paddingRight:50, fontSize:13 }}
+                    value={cashGiven}
+                    onKeyDown={e => { if (e.key === '-') e.preventDefault() }}
+                    onChange={e => onCashChange(e.target.value)}
+                    style={{
+                      textAlign:'right', paddingRight:50, fontSize:13,
+                      borderColor: cashInsufficient ? 'var(--danger)' : cashSufficient ? 'var(--acc2)' : undefined,
+                      boxShadow: cashInsufficient ? '0 0 0 1px var(--danger)' : cashSufficient ? '0 0 0 1px var(--acc2)' : undefined,
+                      transition:'border-color .2s ease, box-shadow .2s ease',
+                    }}
                   />
                   <span style={{
                     position:'absolute', right:12, top:'50%',
@@ -372,21 +396,30 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                     pointerEvents:'none',
                   }}>{currencySymbol}</span>
                 </div>
-                {cashGiven && parseFloat(cashGiven) > 0 && (
+
+                {/* Montant insuffisant → message rouge */}
+                {cashInsufficient && (
                   <div style={{
-                    marginTop:6, display:'flex', justifyContent:'space-between',
-                    alignItems:'center', fontSize:13, padding:'8px 12px',
-                    background: monnaie >= 0 ? 'rgba(0,208,132,.08)' : 'rgba(255,59,92,.08)',
-                    border:`1px solid ${monnaie >= 0 ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
-                    borderRadius:10,
+                    marginTop:6, display:'flex', alignItems:'center', gap:5,
+                    fontSize:12, fontWeight:600, color:'var(--danger)', transition:'opacity .2s ease',
                   }}>
-                    <span style={{ color:'var(--text2)', fontWeight:600 }}>
-                      {lang === 'en' ? 'Change' : lang === 'es' ? 'Cambio a devolver' : lang === 'it' ? 'Resto da dare' : 'Monnaie à rendre'}
+                    <AlertCircle size={13} style={{ flexShrink:0 }} />
+                    {lang === 'en' ? 'Insufficient amount' : lang === 'es' ? 'Importe insuficiente' : lang === 'it' ? 'Importo insufficiente' : 'Montant insuffisant'}
+                  </div>
+                )}
+
+                {/* Montant suffisant → monnaie à rendre, fond vert visible */}
+                {cashSufficient && (
+                  <div style={{
+                    marginTop:6, display:'flex', justifyContent:'space-between', alignItems:'center',
+                    padding:'10px 12px', background:'var(--c-green-bg)', border:'1px solid var(--c-green-border)',
+                    borderRadius:10, transition:'all .2s ease',
+                  }}>
+                    <span style={{ color:'var(--text2)', fontWeight:600, fontSize:13 }}>
+                      {lang === 'en' ? 'Change to return' : lang === 'es' ? 'Cambio a devolver' : lang === 'it' ? 'Resto da dare' : 'Monnaie à rendre'}
                     </span>
-                    <span style={{ fontWeight:900, fontFamily:'var(--mono)', fontSize:16, color: monnaie >= 0 ? 'var(--acc2)' : 'var(--danger)' }}>
-                      {monnaie >= 0
-                        ? fmt(monnaie)
-                        : `− ${fmt(Math.abs(monnaie))}`}
+                    <span style={{ fontWeight:900, fontFamily:'var(--mono)', fontSize:18, color:'var(--acc2)' }}>
+                      {fmt(monnaie)}
                     </span>
                   </div>
                 )}
