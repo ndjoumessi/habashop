@@ -34,8 +34,10 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
     loyaltyApi.getCard(customerId)
       .then(async (d) => {
         setData(d)
+        // QR = ID client COMPLET (résolu par le scan POS → GET /api/customers/:id).
+        // ⚠️ Pas la forme tronquée `HS-XXXXXXXX` (irréversible) ; celle-ci ne sert qu'à l'affichage.
         // Noir sur blanc opaque (scannable quel que soit le thème).
-        const url = await QRCode.toDataURL(`HS-${d.customerId.slice(0, 8).toUpperCase()}`, {
+        const url = await QRCode.toDataURL(`HABA-CUST:${d.customerId}`, {
           width: 128, margin: 0, color: { dark: '#000000', light: '#FFFFFF' },
         })
         setQrUrl(url)

@@ -2,6 +2,7 @@ import { Trash2, ShoppingCart, Lock, Tag, Banknote, CreditCard, Smartphone, BarC
 import toast from 'react-hot-toast'
 import { confirm } from '@/lib/confirm'
 import { type CartItem } from '@/components/pos/posShared'
+import POSCustomerSelector, { type LinkedCustomer } from '@/components/pos/POSCustomerSelector'
 
 interface POSCartProps {
   lang: string
@@ -27,9 +28,12 @@ interface POSCartProps {
   mixedAmt2XOF: number; mixedValid: boolean
   // Fidélité v2 : remise auto du client lié
   loyaltyDiscount?: number; loyaltyPct?: number; loyaltyCustomerName?: string | null
+  // Sélecteur client inline (recherche + scan QR carte fidélité)
+  linkedCustomer?: LinkedCustomer | null; setLinkedCustomer?: (c: LinkedCustomer | null) => void
+  enableLoyalty?: boolean; loyaltyTier?: string
 }
 
-export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null }: POSCartProps) {
+export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '' }: POSCartProps) {
   return (
         <div style={{
           width: isMobile ? '100%' : 320,
@@ -229,6 +233,18 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               </div>
             )}
           </div>
+
+          {/* ── SÉLECTEUR CLIENT (recherche + scan QR carte fidélité) ── */}
+          {setLinkedCustomer && (
+            <POSCustomerSelector
+              lang={lang}
+              linkedCustomer={linkedCustomer}
+              setLinkedCustomer={setLinkedCustomer}
+              enableLoyalty={enableLoyalty}
+              loyaltyPct={loyaltyPct}
+              loyaltyTier={loyaltyTier}
+            />
+          )}
 
           {/* ── TOTAUX ── */}
           {cart.length > 0 && (

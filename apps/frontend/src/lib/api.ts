@@ -146,6 +146,9 @@ export const ticketZApi = {
 
 export const customersApi = {
   list:   () => api.get<any[]>('/api/customers'),
+  // Recherche (sélecteur POS) : ≥2 chars, max 8 résultats, chaque résultat enrichi de `tier`.
+  search: (q: string) => api.get<any[]>(`/api/customers?search=${encodeURIComponent(q)}`),
+  get:    (id: string) => api.get<any>(`/api/customers/${id}`),
   create: (data: any) => api.post<any>('/api/customers', data),
   update: (id: string, data: any) => api.put<any>(`/api/customers/${id}`, data),
   delete: (id: string) => api.delete<void>(`/api/customers/${id}`),

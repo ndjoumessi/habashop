@@ -8,7 +8,31 @@ import { tierForPoints } from '../lib/loyalty'
 export async function customerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/customers', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
+    const { search } = request.query as { search?: string }
     try {
+      // Mode recherche (sélecteur client POS) : filtre nom/téléphone, limité à 8, enrichi du palier.
+      if (search && search.trim().length >= 2) {
+        const q = search.trim()
+        const matches = await prisma.customer.findMany({
+          where: {
+            tenantId, deletedAt: null,
+            OR: [
+              { name:  { contains: q, mode: 'insensitive' } },
+              { phone: { contains: q, mode: 'insensitive' } },
+            ],
+          },
+          orderBy: { totalRevenue: 'desc' },
+          take: 8,
+        })
+        const cfg = await prisma.tenant.findUnique({
+          where: { id: tenantId },
+          select: { bronzeThreshold: true, silverThreshold: true },
+        })
+        return matches.map(c => ({
+          ...c,
+          tier: tierForPoints(c.loyaltyPoints ?? 0, cfg?.bronzeThreshold ?? 2000, cfg?.silverThreshold ?? 5000),
+        }))
+      }
       return await prisma.customer.findMany({
         where: { tenantId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
@@ -17,6 +41,15 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
       console.error('Get customers error:', err)
       return []
     }
+  })
+
+  // Détail d'un client (sélecteur POS : résolution après scan QR de la carte fidélité).
+  app.get('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
+    const { tenantId } = request.user
+    const { id } = request.params as { id: string }
+    const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
+    if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
+    return customer
   })
 
   app.post('/api/customers', { preHandler: authenticate }, async (request, reply) => {

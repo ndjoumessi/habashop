@@ -85,14 +85,18 @@ export default function POS() {
   const [mixedAmt1, setMixedAmt1] = useState('')
   // Client lié (via « Nouvelle vente » depuis la fiche client) → fidélité v2 (remise + points).
   const location = useLocation()
-  const [linkedCustomer] = useState<{ id: string; name: string } | null>(() => ((location.state as any)?.customer ?? null))
+  // Client lié : initialisé depuis nav-state (« Nouvelle vente » fiche client) PUIS settable via le
+  // sélecteur inline du panier (recherche texte ou scan QR carte fidélité).
+  const [linkedCustomer, setLinkedCustomer] = useState<{ id: string; name: string } | null>(() => ((location.state as any)?.customer ?? null))
   const [loyaltyPct, setLoyaltyPct] = useState(0)  // % remise du palier du client lié (0 si N/A)
+  const [loyaltyTier, setLoyaltyTier] = useState('')  // palier du client lié (chip sélecteur)
   useEffect(() => {
-    if (!linkedCustomer?.id || !enableLoyalty) { setLoyaltyPct(0); return }
+    if (!linkedCustomer?.id || !enableLoyalty) { setLoyaltyPct(0); setLoyaltyTier(''); return }
     loyaltyApi.get(linkedCustomer.id).then(d => {
       const pct = d.tier === 'Gold' ? (d.goldDiscount ?? 0) : d.tier === 'Silver' ? (d.silverDiscount ?? 0) : (d.bronzeDiscount ?? 0)
       setLoyaltyPct(Number(pct) || 0)
-    }).catch(() => setLoyaltyPct(0))
+      setLoyaltyTier(d.tier ?? '')
+    }).catch(() => { setLoyaltyPct(0); setLoyaltyTier('') })
   }, [linkedCustomer?.id, enableLoyalty])
   const [showModal, setShowModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -519,6 +523,7 @@ export default function POS() {
           discount={discount} discountAmount={discountAmount}
           totalHT={totalHT} tva={tva} posTaxRate={posTaxRate} total={netTotal}
           loyaltyDiscount={loyaltyDiscount} loyaltyPct={loyaltyPct} loyaltyCustomerName={linkedCustomer?.name ?? null}
+          linkedCustomer={linkedCustomer} setLinkedCustomer={setLinkedCustomer} enableLoyalty={enableLoyalty} loyaltyTier={loyaltyTier}
           PAY_MODES={PAY_MODES} payMode={payMode} setPayMode={setPayMode}
           currencySymbol={currencySymbol}
           cashGiven={cashGiven} setCashGiven={setCashGiven}
