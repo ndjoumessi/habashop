@@ -103,6 +103,16 @@ export default function POSCart({
   const [showDetail, setShowDetail] = useState(false) // HT/TVA repliés par défaut (réduit la charge)
   const totalQty = cart.reduce((n, c) => n + c.quantity, 0)
   const discAmt = subtotal - total
+
+  // Fidélité (affichage seul) : palier + % remise du client lié — partagé par la
+  // puce client et le badge. Null si pas de client ou programme désactivé.
+  const loyalty = useMemo(() => {
+    if (!customer || !tenant?.enableLoyalty) return null
+    const cfg = loyaltyConfig({ bronzeThreshold: tenant.bronzeThreshold, silverThreshold: tenant.silverThreshold })
+    const tier = tierForPoints(customer.loyaltyPoints ?? 0, cfg.bronzeThreshold, cfg.silverThreshold)
+    const pct = discountForTierDisplay(tier, tenant.bronzeDiscount ?? 0, tenant.silverDiscount ?? 0, tenant.goldDiscount ?? 0)
+    return { tier, pct }
+  }, [customer, tenant])
   const vat = vatBreakdown(total, vatRate)
   // `cashGiven` est saisi dans la devise d'AFFICHAGE → on le ramène en XOF de base pour
   // comparer/monnaie (total est en XOF). En XOF/XAF la conversion est l'identité.
@@ -177,7 +187,8 @@ export default function POSCart({
                   <Text style={s.custName} numberOfLines={1}>{customer.name}</Text>
                   <Text style={s.custSub} numberOfLines={1}>
                     {customer.loyaltyPoints ?? 0} {i('points', 'points', 'puntos', 'punti')}
-                    {customer.type ? ` · ${customer.type}` : ''}
+                    {loyalty ? ` · ${loyalty.tier}` : (customer.type ? ` · ${customer.type}` : '')}
+                    {loyalty && loyalty.pct > 0 ? ` · −${loyalty.pct}%` : ''}
                   </Text>
                 </View>
                 <Pressable onPress={onOpenCustomer} hitSlop={8} accessibilityRole="button"
@@ -262,18 +273,11 @@ export default function POSCart({
             </View>
 
             {/* Badge remise fidélité v2 (si client lié + enableLoyalty + remise > 0) */}
-            {(() => {
-              if (!customer || !tenant?.enableLoyalty) return null
-              const cfg = loyaltyConfig({ bronzeThreshold: tenant.bronzeThreshold, silverThreshold: tenant.silverThreshold })
-              const tier = tierForPoints(customer.loyaltyPoints ?? 0, cfg.bronzeThreshold, cfg.silverThreshold)
-              const pct = discountForTierDisplay(tier, tenant.bronzeDiscount ?? 0, tenant.silverDiscount ?? 0, tenant.goldDiscount ?? 0)
-              if (pct <= 0) return null
-              return (
-                <View style={s.loyaltyBadge}>
-                  <Text style={s.loyaltyBadgeTxt}>⭐ {i(`Remise fidélité ${pct} % appliquée`, `${pct}% loyalty discount applied`, `Descuento fidelidad ${pct}% aplicado`, `Sconto fedeltà ${pct}% applicato`)}</Text>
-                </View>
-              )
-            })()}
+            {loyalty && loyalty.pct > 0 && (
+              <View style={s.loyaltyBadge}>
+                <Text style={s.loyaltyBadgeTxt}>⭐ {i(`Remise fidélité ${loyalty.pct} % appliquée`, `${loyalty.pct}% loyalty discount applied`, `Descuento fidelidad ${loyalty.pct}% aplicado`, `Sconto fedeltà ${loyalty.pct}% applicato`)}</Text>
+              </View>
+            )}
 
             {/* Toggle paiement mixte (à côté des modes de paiement) */}
             <Pressable

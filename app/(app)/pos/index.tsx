@@ -9,7 +9,8 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi, customersApi, apiErrorMessage } from '@/services/api'
-import type { Product, SalePayload } from '@/types'
+import type { Product, SalePayload, Customer } from '@/types'
+import { matchCustomerByCode } from '@/lib/customerQr'
 import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmit'
 import { newIdempotencyKey } from '@/lib/idempotency'
 import type { MixedSplit } from '@/lib/paymentSplit'
@@ -76,6 +77,8 @@ export default function POSScreen() {
   const [showCart, setShowCart]   = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
+  // Mode du scanner : 'product' (code-barres → panier) ou 'customer' (QR carte → client lié).
+  const [scanMode, setScanMode] = useState<'product' | 'customer'>('product')
   const [showCustomerPicker, setShowCustomerPicker] = useState(false)
   // Ventilation mixte transmise par le panier → utilisée à la confirmation (sinon null = simple).
   const [pendingOverride, setPendingOverride] = useState<({ paymentMode: string } & MixedSplit) | null>(null)
@@ -290,12 +293,51 @@ export default function POSScreen() {
     saleMutation.mutate(payload)
   }
 
+  // ── Routeur de scan : aiguille selon le mode actif (produit vs carte client) ──
+  const handleScan = (value: string) => {
+    setShowScanner(false)
+    if (scanMode === 'customer') handleCustomerScan(value)
+    else handleProductScan(value)
+  }
+
+  // ── Scan QR carte fidélité → lie le client ──
+  // Le QR encode `HABA-<id8 MAJ>` (préfixe, pas l'id complet) → on résout par
+  // correspondance avec la liste clients déjà chargée (cache react-query du sélecteur,
+  // = même donnée que GET /api/customers). Cf. `matchCustomerByCode` + tests `customerQr`.
+  const handleCustomerScan = async (raw: string) => {
+    let customers = qc.getQueryData<Customer[]>(['customers'])
+    if (!customers) {
+      try { customers = await customersApi.list() } catch { customers = [] }
+    }
+    const match = matchCustomerByCode(raw, customers ?? [])
+    if (match) {
+      setCustomer(match)
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+      Alert.alert(
+        '✅ ' + (match.name?.trim() ?? ''),
+        i('Client lié à la vente', 'Customer linked to the sale', 'Cliente vinculado a la venta', 'Cliente collegato alla vendita'),
+        [{ text: 'OK' }],
+      )
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
+      Alert.alert(
+        i('Carte non reconnue', 'Card not recognized', 'Tarjeta no reconocida', 'Carta non riconosciuta'),
+        i(
+          'Cette carte fidélité ne correspond à aucun client.',
+          'This loyalty card matches no customer.',
+          'Esta tarjeta de fidelidad no corresponde a ningún cliente.',
+          'Questa carta fedeltà non corrisponde a nessun cliente.',
+        ),
+        [{ text: 'OK' }],
+      )
+    }
+  }
+
   // ── Scan code-barres : ajoute le produit trouvé au panier ──
   // Le scanner (expo-camera) et la base peuvent diverger sur les zéros de
   // tête (UPC-A 12 chiffres ↔ EAN-13 13 chiffres) ou les espaces parasites.
   // → on normalise les deux côtés avant comparaison (cf. tests `barcode`).
-  const handleBarcodeScan = (barcode: string) => {
-    setShowScanner(false)
+  const handleProductScan = (barcode: string) => {
     const scanned = normalizeBarcode(barcode)
     const product = scanned
       ? products.find(
@@ -334,7 +376,7 @@ export default function POSScreen() {
         }}
         right={
           <>
-            <Pressable style={s.headerBtn} onPress={() => setShowScanner(true)} hitSlop={8}
+            <Pressable style={s.headerBtn} onPress={() => { setScanMode('product'); setShowScanner(true) }} hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={i('Scanner un code-barres', 'Scan a barcode', 'Escanear código', 'Scansiona codice')}>
               <Ionicons name="scan-outline" size={22} color={C.text} />
@@ -433,6 +475,9 @@ export default function POSScreen() {
           selectedId={customer?.id ?? null}
           onSelect={(c) => { setCustomer(c); setShowCustomerPicker(false) }}
           onClose={() => setShowCustomerPicker(false)}
+          // Scanner la carte fidélité : ferme le sélecteur, ouvre le scanner en mode client
+          // (panier reste monté dessous → 2 modales max, cf. pattern Cart+Confirm existant).
+          onScanCard={() => { setShowCustomerPicker(false); setScanMode('customer'); setShowScanner(true) }}
         />
       )}
 
@@ -455,7 +500,8 @@ export default function POSScreen() {
       {showScanner && (
         <BarcodeScanner
           visible
-          onScan={handleBarcodeScan}
+          mode={scanMode}
+          onScan={handleScan}
           onClose={() => setShowScanner(false)}
         />
       )}

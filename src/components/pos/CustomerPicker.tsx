@@ -16,11 +16,13 @@ interface CustomerPickerProps {
   onClose: () => void
   onSelect: (customer: Customer | null) => void
   selectedId?: string | null
+  // Optionnel : si fourni, affiche un bouton « Scanner la carte fidélité » (POS).
+  onScanCard?: () => void
 }
 
 // Sélecteur de client pour le checkout POS — recherche locale par nom/téléphone,
 // sélection optionnelle (option « Aucun client » pour délier). Charge GET /api/customers.
-export default function CustomerPicker({ visible, onClose, onSelect, selectedId }: CustomerPickerProps) {
+export default function CustomerPicker({ visible, onClose, onSelect, selectedId, onScanCard }: CustomerPickerProps) {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
   const { i } = useI18n()
@@ -73,6 +75,17 @@ export default function CustomerPicker({ visible, onClose, onSelect, selectedId 
             </Pressable>
           )}
         </View>
+
+        {/* Scanner la carte fidélité (QR client) — POS uniquement */}
+        {onScanCard && (
+          <Pressable style={s.scanRow} onPress={onScanCard}
+            accessibilityRole="button"
+            accessibilityLabel={i('Scanner la carte fidélité', 'Scan loyalty card', 'Escanear tarjeta de fidelidad', 'Scansiona carta fedeltà')}>
+            <Ionicons name="qr-code-outline" size={18} color={C.primary3} />
+            <Text style={s.scanTxt}>{i('Scanner la carte fidélité', 'Scan loyalty card', 'Escanear tarjeta de fidelidad', 'Scansiona carta fedeltà')}</Text>
+            <Ionicons name="chevron-forward" size={16} color={C.text3} />
+          </Pressable>
+        )}
 
         {/* Option : aucun client (délier) */}
         <Pressable style={s.noneRow} onPress={() => onSelect(null)}
@@ -145,6 +158,13 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
   searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
+  scanRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    marginHorizontal: Spacing.lg, marginTop: Spacing.sm, paddingVertical: Spacing.md, paddingHorizontal: Spacing.md,
+    backgroundColor: withAlpha(C.primary, 0.08), borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: withAlpha(C.primary, 0.35),
+  },
+  scanTxt: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.primary3 },
   noneRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginTop: Spacing.sm, paddingVertical: Spacing.md, paddingHorizontal: Spacing.md,

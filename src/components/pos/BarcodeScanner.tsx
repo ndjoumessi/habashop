@@ -12,11 +12,14 @@ interface BarcodeScannerProps {
   visible: boolean
   onScan:  (barcode: string) => void
   onClose: () => void
+  // 'product' (défaut) = code-barres EAN/Code128 ; 'customer' = QR de carte fidélité.
+  mode?: 'product' | 'customer'
 }
 
 export default function BarcodeScanner({
-  visible, onScan, onClose,
+  visible, onScan, onClose, mode = 'product',
 }: BarcodeScannerProps) {
+  const isCustomer = mode === 'customer'
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
   const { i } = useI18n()
@@ -36,7 +39,9 @@ export default function BarcodeScanner({
     const now = Date.now()
     if (scanned || now - lastScanTime.current < SCAN_COOLDOWN_MS) return
 
-    const norm = normalizeBarcode(data)
+    // Produit = code numérique → normalizeBarcode (espaces / zéros de tête).
+    // Client = QR alphanumérique (HABA-…) → simple trim (ne PAS retirer les zéros de tête).
+    const norm = isCustomer ? data.trim() : normalizeBarcode(data)
     if (norm === '') return
     if (norm !== lastCandidate.current) {
       lastCandidate.current = norm // 1ʳᵉ lecture (ou différente) → mémorise, attend confirmation
@@ -94,7 +99,9 @@ export default function BarcodeScanner({
             accessibilityLabel={i('Fermer le scanner', 'Close scanner', 'Cerrar escáner', 'Chiudi scanner')}>
             <Text style={s.closeBtnText}>✕</Text>
           </TouchableOpacity>
-          <Text style={s.title}>{i('Scanner', 'Scan', 'Escanear', 'Scansiona')}</Text>
+          <Text style={s.title}>{isCustomer
+            ? i('Carte fidélité', 'Loyalty card', 'Tarjeta de fidelidad', 'Carta fedeltà')
+            : i('Scanner', 'Scan', 'Escanear', 'Scansiona')}</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -102,10 +109,10 @@ export default function BarcodeScanner({
           style={s.camera}
           facing="back"
           barcodeScannerSettings={{
-            // Restreint aux codes produits réels (EAN/Code128). Retiré : qr,
-            // code39, upc_a/upc_e — leurs lectures parasites (codes prix, QR
-            // d'emballage) polluaient la détection de l'EAN-13 principal.
-            barcodeTypes: ['ean13', 'ean8', 'code128'],
+            // Mode client = QR de carte fidélité uniquement. Mode produit = codes
+            // réels (EAN/Code128) ; retiré qr/code39/upc — leurs lectures parasites
+            // (codes prix, QR d'emballage) polluaient la détection de l'EAN-13.
+            barcodeTypes: isCustomer ? ['qr'] : ['ean13', 'ean8', 'code128'],
           }}
           onBarcodeScanned={scanned ? undefined : handleBarcode}
         >
@@ -125,8 +132,12 @@ export default function BarcodeScanner({
             </View>
             <Text style={s.viewfinderLabel} pointerEvents="none">
               {scanned
-                ? i('Produit trouvé !', 'Product found!', '¡Producto encontrado!', 'Prodotto trovato!')
-                : i('Alignez le code ici', 'Align the barcode here', 'Alinee el código aquí', 'Allinea il codice qui')}
+                ? (isCustomer
+                    ? i('Carte trouvée !', 'Card found!', '¡Tarjeta encontrada!', 'Carta trovata!')
+                    : i('Produit trouvé !', 'Product found!', '¡Producto encontrado!', 'Prodotto trovato!'))
+                : (isCustomer
+                    ? i('Scannez la carte fidélité', 'Scan the loyalty card', 'Escanee la tarjeta de fidelidad', 'Scansiona la carta fedeltà')
+                    : i('Alignez le code ici', 'Align the barcode here', 'Alinee el código aquí', 'Allinea il codice qui'))}
             </Text>
           </View>
         </CameraView>
