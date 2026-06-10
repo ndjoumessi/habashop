@@ -56,7 +56,6 @@ export default function Customers() {
   const [editCustForm,     setEditCustForm]     = useState({
     name: '', type: 'Détail' as ClientType, phone: '', email: '', address: '', notes: '',
   })
-  const [loyaltyCustomer, setLoyaltyCustomer] = useState<Customer | null>(null)
   const [digitalCardCustomerId, setDigitalCardCustomerId] = useState<string | null>(null)
   const [customersTab, setCustomersTab] = useState<'list' | 'map' | 'stats'>('list')
   const [showDetailModal, setShowDetailModal] = useState(false)
@@ -274,7 +273,6 @@ export default function Customers() {
           setViewCustomer={setViewCustomer}
           setEditCustomer={setEditCustomer} setEditCustForm={setEditCustForm}
           setCustEditMode={setCustEditMode} setShowEditCustModal={setShowEditCustModal}
-          setLoyaltyCustomer={setLoyaltyCustomer}
           setDigitalCardCustomerId={setDigitalCardCustomerId}
           setDetailCustomer={setDetailCustomer} setShowDetailModal={setShowDetailModal}
           onDelete={handleDeleteCustomer}
@@ -353,7 +351,6 @@ export default function Customers() {
         handleCreateCustomer={handleCreateCustomer} resetCustForm={resetCustForm}
         showDetailModal={showDetailModal} detailCustomer={detailCustomer}
         setEditCustomer={setEditCustomer}
-        loyaltyCustomer={loyaltyCustomer} setLoyaltyCustomer={setLoyaltyCustomer}
         digitalCardCustomerId={digitalCardCustomerId} setDigitalCardCustomerId={setDigitalCardCustomerId}
       />
     </div>

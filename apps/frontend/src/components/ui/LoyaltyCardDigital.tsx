@@ -121,7 +121,7 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
 
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: '#fff', maxWidth: 230, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.customerName}</div>
-                  <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'rgba(255,255,255,.65)' }}>HS-{data.customerId.slice(0, 8).toUpperCase()}</div>
+                  <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'rgba(255,255,255,.65)' }}>HABA-{data.customerId.slice(0, 8).toUpperCase()}</div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>

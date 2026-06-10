@@ -6,7 +6,6 @@ import { customersApi } from '@/lib/api'
 import ViewField from '@/components/ui/ViewField'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
-import LoyaltyCard from '@/components/ui/LoyaltyCard'
 import LoyaltyCardDigital from '@/components/ui/LoyaltyCardDigital'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold } from '@/components/customers/customersShared'
@@ -27,11 +26,10 @@ interface CustomersModalsProps {
   handleCreateCustomer: () => void; resetCustForm: () => void
   showDetailModal: boolean; detailCustomer: Customer | null
   setEditCustomer: (c: any) => void
-  loyaltyCustomer: Customer | null; setLoyaltyCustomer: (c: any) => void
   digitalCardCustomerId?: string | null; setDigitalCardCustomerId?: (id: string | null) => void
 }
 
-export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, lang, i, navigate, setDetailCustomer, setShowDetailModal, showEditCustModal, editCustomer, setShowEditCustModal, custEditMode, setCustEditMode, editCustForm, setEditCustForm, setCustomers, showCreate, setShowCreate, form, setForm, handleCreateCustomer, resetCustForm, showDetailModal, detailCustomer, setEditCustomer, loyaltyCustomer, setLoyaltyCustomer, digitalCardCustomerId, setDigitalCardCustomerId }: CustomersModalsProps) {
+export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, lang, i, navigate, setDetailCustomer, setShowDetailModal, showEditCustModal, editCustomer, setShowEditCustModal, custEditMode, setCustEditMode, editCustForm, setEditCustForm, setCustomers, showCreate, setShowCreate, form, setForm, handleCreateCustomer, resetCustForm, showDetailModal, detailCustomer, setEditCustomer, digitalCardCustomerId, setDigitalCardCustomerId }: CustomersModalsProps) {
   const loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   const tenant = useAppStore(s => s.tenant)
   return (
@@ -600,10 +598,6 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             </div>
           </div>
         </div>
-      )}
-
-      {loyaltyCustomer && (
-        <LoyaltyCard customer={loyaltyCustomer} onClose={() => setLoyaltyCustomer(null)} />
       )}
 
       {/* Carte fidélité numérique (si enableLoyalty) */}

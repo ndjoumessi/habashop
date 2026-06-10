@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink, Tag, CreditCard } from 'lucide-react'
+import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink, Tag, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t, useAppStore, convertFromXOF } from '@/stores/appStore'
 import { exportCSV, generateInvoice } from '@/utils/export'
@@ -26,14 +26,13 @@ interface CustomersListProps {
   setEditCustForm: (v: any) => void
   setCustEditMode: (b: boolean) => void
   setShowEditCustModal: (b: boolean) => void
-  setLoyaltyCustomer: (c: any) => void
   setDigitalCardCustomerId: (id: string | null) => void
   setDetailCustomer: (c: any) => void
   setShowDetailModal: (b: boolean) => void
   onDelete: (id: string) => void
 }
 
-export default function CustomersList({ customers, search, setSearch, typeFilter, setTypeFilter, viewMode, setViewMode, pg, filtered, fmt, abbr, lang, i, navigate, printCustomersPDF, setViewCustomer, setEditCustomer, setEditCustForm, setCustEditMode, setShowEditCustModal, setLoyaltyCustomer, setDigitalCardCustomerId, setDetailCustomer, setShowDetailModal, onDelete }: CustomersListProps) {
+export default function CustomersList({ customers, search, setSearch, typeFilter, setTypeFilter, viewMode, setViewMode, pg, filtered, fmt, abbr, lang, i, navigate, printCustomersPDF, setViewCustomer, setEditCustomer, setEditCustForm, setCustEditMode, setShowEditCustModal, setDigitalCardCustomerId, setDetailCustomer, setShowDetailModal, onDelete }: CustomersListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   return (
     <div className="panel">
@@ -131,11 +130,6 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                           <ShoppingCart size={11} />
                         </button>
                         <button className="btn btn-sm" title={i('Carte fidélité', 'Loyalty card', 'Tarjeta fidelidad', 'Carta fedeltà')}
-                          style={{ background: 'rgba(255,215,0,.12)', color: '#B8860B', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
-                          onClick={() => setLoyaltyCustomer(c)}>
-                          <Gift size={11} />
-                        </button>
-                        <button className="btn btn-sm" title={i('Carte numérique', 'Digital card', 'Tarjeta digital', 'Carta digitale')}
                           style={{ background: 'rgba(108,71,255,.12)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
                           onClick={() => setDigitalCardCustomerId(c.id)}>
                           <CreditCard size={11} />
