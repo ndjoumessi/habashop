@@ -9,7 +9,9 @@ async function main() {
 
   const tenant = await prisma.tenant.upsert({
     where: { id: 'demo-tenant-001' },
-    update: {},
+    // lang re-posé à 'fr' à CHAQUE seed : le tenant démo est PARTAGÉ par les e2e (i18n-es-it
+    // le bascule en es/it) → la valeur par défaut persistante doit être le français.
+    update: { lang: 'fr' },
     create: {
       id: 'demo-tenant-001',
       name: 'HabaShop — Dakar Central',
@@ -17,6 +19,7 @@ async function main() {
       country: 'SN',
       plan: 'business',
       vatRate: 18,
+      lang: 'fr',
       address: 'Rue 10 × 23, Dakar, Sénégal',
       phone: '+221 77 000 00 00',
       email: 'contact@habashop.sn',
@@ -104,7 +107,7 @@ async function main() {
   // ─── 2e tenant de démo (isolation multi-tenant) ──────────────────────────────
   const tenant2 = await prisma.tenant.upsert({
     where: { id: 'demo-tenant-002' },
-    update: {},
+    update: { lang: 'fr' },
     create: {
       id: 'demo-tenant-002',
       name: 'Alimentation Koné — Abidjan',
@@ -112,6 +115,7 @@ async function main() {
       country: 'CI',
       plan: 'starter',
       vatRate: 18,
+      lang: 'fr',
       address: "Boulevard de Marseille, Abidjan, Côte d'Ivoire",
       phone: '+225 07 00 00 00',
       email: 'contact@kone-alim.ci',

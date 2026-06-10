@@ -17,6 +17,21 @@ import { test, expect, type Page } from '@playwright/test'
  */
 
 const BASE = process.env.E2E_BASE ?? 'https://habashop.vercel.app'
+const API  = process.env.E2E_API  ?? 'https://habashop-production.up.railway.app'
+
+// Reset DÉTERMINISTE de la langue du tenant démo PARTAGÉ via API (PATCH awaité). L'ancien
+// reset passait par l'UI (`setLangUI`) dans un `catch` silencieux → s'il ratait (cold start,
+// bounce /login, course avec le teardown), le tenant démo restait en es/IT entre les sessions
+// (drift observé). Lire le JWT du localStorage (session storageState) → PATCH /api/tenant.
+async function resetTenantLangFr(page: Page) {
+  const token = await page.evaluate(() => localStorage.getItem('habashop_token')).catch(() => null)
+  if (!token || token === 'demo-token-local') return
+  const res = await page.request.patch(`${API}/api/tenant`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { lang: 'fr' },
+  })
+  if (!res.ok()) throw new Error(`reset lang fr → HTTP ${res.status()}`)
+}
 
 // Le LanguageSwitcher de l'en-tête est devenu un INDICATEUR en lecture seule (plus de
 // menu) ; la bascule de langue vit désormais dans Paramètres → Langue & Devise (setLang).
@@ -51,12 +66,26 @@ async function switchLang(page: Page, c: LangCase) {
     .toBeVisible({ timeout: 5000 })
 }
 
-// Le tenant démo est partagé → on le remet en français après chaque test (best-effort).
-// La session persiste dans le contexte de la page (token localStorage) → pas de re-login.
+// Le tenant démo est PARTAGÉ → on le remet en français après chaque test, de façon DÉTERMINISTE
+// (API, awaité). Si le reset rate, on le surface (throw) au lieu de l'avaler silencieusement :
+// un échec de nettoyage doit être visible (c'est lui qui laissait la démo en es/it auparavant).
 test.afterEach(async ({ page }) => {
+  await resetTenantLangFr(page)
+})
+
+// Garantie finale (belt-and-suspenders) : même si un afterEach a raté, on repose fr en fin de
+// fichier via une session API fraîche (token lu depuis le storageState du projet `setup`).
+test.afterAll(async ({ playwright }) => {
   try {
-    await setLangUI(page, 'Français')
-  } catch { /* best-effort : ne pas faire échouer la suite sur le nettoyage */ }
+    const fs = await import('node:fs')
+    const state = JSON.parse(fs.readFileSync('e2e/.auth/user.json', 'utf-8'))
+    const token = state.origins?.flatMap((o: any) => o.localStorage ?? [])
+      .find((i: any) => i.name === 'habashop_token')?.value
+    if (!token) return
+    const ctx = await playwright.request.newContext()
+    await ctx.patch(`${API}/api/tenant`, { headers: { Authorization: `Bearer ${token}` }, data: { lang: 'fr' } })
+    await ctx.dispose()
+  } catch { /* best-effort : le fichier storageState peut ne pas exister hors CI */ }
 })
 
 type LangCase = {
