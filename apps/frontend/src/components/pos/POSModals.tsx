@@ -520,9 +520,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   : t('pos_validate')}
               </button>
               <button
-                onClick={() => { if (blocked) { confirmSale(); return } printTicket(); confirmSale() }}
-                disabled={blocked}
-                style={{ padding: '12px 16px', minHeight: 44, fontSize: 13, opacity: blocked ? 0.6 : 1, cursor: blocked ? 'not-allowed' : 'pointer' }}
+                onClick={printTicket}
+                style={{ padding: '12px 16px', minHeight: 44, fontSize: 13, cursor: 'pointer' }}
                 className="mini-btn"
               ><Printer size={13} /> Ticket</button>
               {/* Bouton « Facture » retiré : une facture n'a de sens qu'APRÈS création de la
