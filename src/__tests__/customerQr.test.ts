@@ -1,4 +1,18 @@
-import { customerCodeFromQr, looksLikeCustomerCode, matchCustomerByCode } from '@/lib/customerQr'
+import { customerCodeFromQr, looksLikeCustomerCode, matchCustomerByCode, extractDirectCustomerId } from '@/lib/customerQr'
+
+describe('extractDirectCustomerId', () => {
+  it('extrait l\'id complet du format HABA-CUST:<id>', () => {
+    expect(extractDirectCustomerId('HABA-CUST:demo-dkr-cust-3')).toBe('demo-dkr-cust-3')
+    expect(extractDirectCustomerId('haba-cust:clx1a2b3c4d5e6f7g8h9')).toBe('clx1a2b3c4d5e6f7g8h9')
+  })
+  it('null pour les autres formats', () => {
+    expect(extractDirectCustomerId('HABA-A1B2C3D4')).toBeNull()
+    expect(extractDirectCustomerId('HS-clx123')).toBeNull()
+    expect(extractDirectCustomerId('clx1a2b3c4d5e6f7g8h9')).toBeNull()
+    expect(extractDirectCustomerId('')).toBeNull()
+    expect(extractDirectCustomerId(null)).toBeNull()
+  })
+})
 
 describe('customerCodeFromQr', () => {
   it('retire le préfixe HABA- et trim', () => {
@@ -24,6 +38,9 @@ describe('customerCodeFromQr', () => {
 })
 
 describe('looksLikeCustomerCode', () => {
+  it('vrai pour HABA-CUST: (nouveau format)', () => {
+    expect(looksLikeCustomerCode('HABA-CUST:demo-dkr-cust-3')).toBe(true)
+  })
   it('vrai pour un préfixe HABA-/HS-', () => {
     expect(looksLikeCustomerCode('HABA-A1B2C3D4')).toBe(true)
     expect(looksLikeCustomerCode('HS-clx123')).toBe(true)
@@ -45,10 +62,15 @@ describe('matchCustomerByCode', () => {
   const customers = [
     { id: 'clx1a2b3c4d5e6f7g8h9' },        // préfixe 8 = "CLX1A2B3"
     { id: 'cmk9z8y7x6w5v4u3t2s1' },        // préfixe 8 = "CMK9Z8Y7"
+    { id: 'demo-dkr-cust-3' },              // id lisible (nouveau format)
   ]
 
-  it('matche par préfixe 8 caractères en MAJUSCULES (format QR carte)', () => {
-    // QR réel = `HABA-${id.slice(0,8).toUpperCase()}`
+  it('matche par id complet depuis HABA-CUST: (nouveau format)', () => {
+    expect(matchCustomerByCode('HABA-CUST:demo-dkr-cust-3', customers)?.id).toBe('demo-dkr-cust-3')
+    expect(matchCustomerByCode('HABA-CUST:clx1a2b3c4d5e6f7g8h9', customers)?.id).toBe('clx1a2b3c4d5e6f7g8h9')
+  })
+
+  it('matche par préfixe 8 caractères en MAJUSCULES (ancien format)', () => {
     expect(matchCustomerByCode('HABA-CLX1A2B3', customers)?.id).toBe('clx1a2b3c4d5e6f7g8h9')
     expect(matchCustomerByCode('HABA-CMK9Z8Y7', customers)?.id).toBe('cmk9z8y7x6w5v4u3t2s1')
   })
@@ -60,6 +82,7 @@ describe('matchCustomerByCode', () => {
 
   it('null si aucun client ne correspond', () => {
     expect(matchCustomerByCode('HABA-ZZZZZZZZ', customers)).toBeNull()
+    expect(matchCustomerByCode('HABA-CUST:unknown-id', customers)).toBeNull()
     expect(matchCustomerByCode('6111245050034', customers)).toBeNull()
     expect(matchCustomerByCode('', customers)).toBeNull()
   })

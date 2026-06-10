@@ -90,7 +90,7 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
 
   const tier = (data?.tier ?? 'Bronze') as LoyaltyTier
   const cfg = TIER_CFG[tier] ?? TIER_CFG.Bronze
-  const qrValue = `HABA-${customerId.slice(0, 8).toUpperCase()}`
+  const qrValue = `HABA-CUST:${customerId}`
 
   // Matrice QR (pur JS, synchrone, OTA-safe) → grille <View> + SVG du PDF.
   const qrCells = useMemo(() => qrMatrix(qrValue), [qrValue])

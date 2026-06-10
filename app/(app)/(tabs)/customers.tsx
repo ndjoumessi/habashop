@@ -16,7 +16,6 @@ import {
 } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
 import ScreenHeader from '@/components/ui/ScreenHeader'
-import LoyaltyCard from '@/components/customers/LoyaltyCard'
 import LoyaltyCardDigital from '@/components/customers/LoyaltyCardDigital'
 
 function initials(name?: string) {
@@ -229,9 +228,6 @@ export default function CustomersScreen() {
                   <Text style={s.kpiLabel}>{i('Client depuis', 'Since', 'Desde', 'Dal')}</Text>
                 </View>
               </View>
-
-              {/* Fidélité (affichage honnête : palier canonique + progression + règle réelle) */}
-              <LoyaltyCard customer={sel} />
 
               {/* Carte fidélité numérique partageable (si enableLoyalty) */}
               {tenant?.enableLoyalty && (

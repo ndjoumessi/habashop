@@ -83,6 +83,8 @@ export const analyticsApi = {
 export const customersApi = {
   list: (): Promise<Customer[]> =>
     apiClient.get<Customer[]>('/api/customers').then(r => r.data),
+  get: (id: string): Promise<Customer> =>
+    apiClient.get<Customer>(`/api/customers/${id}`).then(r => r.data),
   // Fidélité (lecture seule) — solde + palier canonique + historique + remises v2.
   loyalty: (id: string): Promise<LoyaltyResponse> =>
     apiClient.get<LoyaltyResponse>(`/api/customers/${id}/loyalty`).then(r => r.data),

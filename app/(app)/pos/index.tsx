@@ -10,7 +10,7 @@ import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi, customersApi, apiErrorMessage } from '@/services/api'
 import type { Product, SalePayload, Customer } from '@/types'
-import { matchCustomerByCode } from '@/lib/customerQr'
+import { matchCustomerByCode, extractDirectCustomerId } from '@/lib/customerQr'
 import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmit'
 import { newIdempotencyKey } from '@/lib/idempotency'
 import type { MixedSplit } from '@/lib/paymentSplit'
@@ -301,15 +301,21 @@ export default function POSScreen() {
   }
 
   // ── Scan QR carte fidélité → lie le client ──
-  // Le QR encode `HABA-<id8 MAJ>` (préfixe, pas l'id complet) → on résout par
-  // correspondance avec la liste clients déjà chargée (cache react-query du sélecteur,
-  // = même donnée que GET /api/customers). Cf. `matchCustomerByCode` + tests `customerQr`.
+  // Nouveau format HABA-CUST:<id> : GET /api/customers/:id direct.
+  // Ancien format HABA-<id8 MAJ> : matching contre la liste chargée (cache react-query).
   const handleCustomerScan = async (raw: string) => {
-    let customers = qc.getQueryData<Customer[]>(['customers'])
-    if (!customers) {
-      try { customers = await customersApi.list() } catch { customers = [] }
+    let match: Customer | null = null
+    const directId = extractDirectCustomerId(raw)
+    if (directId) {
+      try { match = await customersApi.get(directId) } catch { match = null }
     }
-    const match = matchCustomerByCode(raw, customers ?? [])
+    if (!match) {
+      let customers = qc.getQueryData<Customer[]>(['customers'])
+      if (!customers) {
+        try { customers = await customersApi.list() } catch { customers = [] }
+      }
+      match = matchCustomerByCode(raw, customers ?? [])
+    }
     if (match) {
       setCustomer(match)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
