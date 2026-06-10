@@ -21,6 +21,18 @@ const TIER_CFG: Record<string, { dark: string; mid: string; accent: string; icon
   Gold:   { dark: '#1A1402', mid: '#3D3200', accent: '#FFD700', icon: '🥇' },
 }
 
+// Noms de palier traduits (miroir web TIER_NAMES) — fr/en/es/it. Le backend renvoie
+// toujours l'enum brut 'Bronze'/'Silver'/'Gold' → on traduit à l'affichage seulement.
+const TIER_NAMES: Record<string, [string, string, string, string]> = {
+  Bronze: ['Bronze', 'Bronze', 'Bronce', 'Bronzo'],
+  Silver: ['Argent', 'Silver', 'Plata', 'Argento'],
+  Gold:   ['Or', 'Gold', 'Oro', 'Oro'],
+}
+const tierName = (t: string, i: (fr: string, en: string, es: string, it: string) => string): string => {
+  const n = TIER_NAMES[t]
+  return n ? i(n[0], n[1], n[2], n[3]) : t
+}
+
 // Largeur visée du QR dans le cadre blanc 64×64 ; le reste sert de zone de silence.
 const QR_AREA = 54
 
@@ -134,7 +146,7 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
                   <View style={s.cardRow}>
                     <View style={{ flex: 1 }}>
                       <View style={[s.tierBadge, { backgroundColor: cfg.mid, borderColor: withAlpha(cfg.accent, 0.4) }]}>
-                        <Text style={[s.tierTxt, { color: cfg.accent }]}>{cfg.icon} {tier}</Text>
+                        <Text style={[s.tierTxt, { color: cfg.accent }]}>{cfg.icon} {tierName(tier, i)}</Text>
                       </View>
                       <Text style={s.cardName} numberOfLines={1}>{data.customerName}</Text>
                       <Text style={[s.cardId, { color: cfg.accent }]}>{qrValue}</Text>
@@ -176,7 +188,7 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
                       <View style={s.barTrack}>
                         <View style={[s.barFill, { width: `${progress}%` as any, backgroundColor: cfg.accent }]} />
                       </View>
-                      <Text style={s.progressTxt}>{data.pointsToNext.toLocaleString()} pts → {data.nextTier}</Text>
+                      <Text style={s.progressTxt}>{data.pointsToNext.toLocaleString()} pts → {tierName(data.nextTier, i)}</Text>
                     </View>
                   ) : (
                     <Text style={[s.maxTxt, { color: cfg.accent }]}>🎉 {i('Niveau maximum !', 'Max level!', '¡Nivel máximo!', 'Livello massimo!')}</Text>
@@ -186,7 +198,7 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
                   <View style={s.statsRow}>
                     <View style={s.statCell}>
                       <Text style={s.statLabel}>{i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')}</Text>
-                      <Text style={s.statValue}>{data.nextTier ?? i('Maximum', 'Maximum', 'Máximo', 'Massimo')}</Text>
+                      <Text style={s.statValue}>{data.nextTier ? tierName(data.nextTier, i) : i('Maximum', 'Maximum', 'Máximo', 'Massimo')}</Text>
                     </View>
                     <View style={s.statSep} />
                     <View style={s.statCell}>
@@ -255,7 +267,7 @@ function buildCardHtml(
       <div class="wm">${cfg.icon}</div>
       <div class="row">
         <div>
-          <div class="badge">${cfg.icon} ${esc(data.tier)}</div>
+          <div class="badge">${cfg.icon} ${esc(tierName(data.tier, i))}</div>
           <div class="name">${esc(data.customerName)}</div>
           <div class="id">HABA-${data.customerId.slice(0, 8).toUpperCase()}</div>
         </div>
@@ -269,12 +281,12 @@ function buildCardHtml(
     </div>
     <div class="bottom">
       ${data.nextTier
-        ? `<div class="bar-track"><div class="bar-fill"></div></div><div class="progress">${data.pointsToNext.toLocaleString()} pts → ${data.nextTier}</div>`
+        ? `<div class="bar-track"><div class="bar-fill"></div></div><div class="progress">${data.pointsToNext.toLocaleString()} pts → ${esc(tierName(data.nextTier, i))}</div>`
         : `<div class="progress" style="color:${cfg.accent};font-weight:700">🎉 ${i('Niveau maximum !', 'Max level!', '¡Nivel máximo!', 'Livello massimo!')}</div>`}
       <div class="stats">
         <div class="stat">
           <div class="stat-label">${i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')}</div>
-          <div class="stat-value">${data.nextTier ? esc(data.nextTier) : i('Maximum', 'Maximum', 'Máximo', 'Massimo')}</div>
+          <div class="stat-value">${data.nextTier ? esc(tierName(data.nextTier, i)) : i('Maximum', 'Maximum', 'Máximo', 'Massimo')}</div>
         </div>
         <div class="stat">
           <div class="stat-label">${i('Points restants', 'Points to go', 'Puntos restantes', 'Punti mancanti')}</div>
