@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { useAppStore, useConfig, useFormatAmount, convertFromXOF, t } from '@/stores/appStore'
 import { expensesApi, salesApi } from '@/lib/api'
 import { Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -23,13 +23,14 @@ export default function Expenses() {
 
   const handleAccountingExport = async () => {
     const period = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { month: 'long', year: 'numeric' })
+    const shopName = useAppStore.getState().tenant?.name || useAppStore.getState().shopName || 'HabaShop'
     try {
       const sales = await salesApi.list()
-      exportAccountingExcel({ sales: sales ?? [], expenses, period, shopName: 'HabaShop', currency }, fmt)
-      toast.success('📊 Export comptable téléchargé !')
+      exportAccountingExcel({ sales: sales ?? [], expenses, period, shopName, currency, lang })
+      toast.success(tr('📊 Export comptable téléchargé !', '📊 Accounting export downloaded!', '📊 ¡Exportación contable descargada!', '📊 Esportazione contabile scaricata!'))
     } catch {
-      exportAccountingExcel({ sales: [], expenses, period, shopName: 'HabaShop', currency }, fmt)
-      toast.success('📊 Export téléchargé (dépenses uniquement)')
+      exportAccountingExcel({ sales: [], expenses, period, shopName, currency, lang })
+      toast.success(tr('📊 Export téléchargé (dépenses uniquement)', '📊 Export downloaded (expenses only)', '📊 Exportación descargada (solo gastos)', '📊 Esportazione scaricata (solo spese)'))
     }
   }
 
@@ -134,11 +135,16 @@ export default function Expenses() {
   }
 
   const csvExport = () => {
+    // Montants stockés en base XOF → convertis vers la devise d'affichage (pattern reportsExport)
+    const cv = (xof: number) => Math.round(convertFromXOF(xof ?? 0, currency) * 100) / 100
     exportCSV('habashop_depenses',
-      ['Date','Libellé','Catégorie','Montant HT','TVA','TTC','Mode','Récurrent','Statut'],
-      expenses.map(e => [e.date, e.label, e.category, e.amount, e.vat + ' %', Math.round(e.amount * (1 + e.vat / 100)), e.mode, e.recurrent ? 'Oui' : 'Non', e.status])
+      [tr('Date','Date','Fecha','Data'), tr('Libellé','Label','Concepto','Descrizione'), tr('Catégorie','Category','Categoría','Categoria'),
+       `${tr('Montant HT','Amount excl. tax','Importe sin IVA','Importo netto')} (${currency})`, tr('TVA','VAT','IVA','IVA'),
+       `${tr('TTC','Incl. tax','Con IVA','Lordo')} (${currency})`, tr('Mode','Method','Modo','Modo'),
+       tr('Récurrent','Recurring','Recurrente','Ricorrente'), tr('Statut','Status','Estado','Stato')],
+      expenses.map(e => [e.date, e.label, e.category, cv(e.amount), e.vat + ' %', cv(Math.round(e.amount * (1 + e.vat / 100))), e.mode, e.recurrent ? tr('Oui','Yes','Sí','Sì') : tr('Non','No','No','No'), e.status])
     )
-    toast.success('📊 Export dépenses téléchargé !')
+    toast.success(tr('📊 Export dépenses téléchargé !','📊 Expenses export downloaded!','📊 ¡Exportación de gastos descargada!','📊 Esportazione spese scaricata!'))
   }
 
   async function markPaid(id: number) {

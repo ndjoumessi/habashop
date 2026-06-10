@@ -3,7 +3,7 @@ import Pagination from '@/components/ui/Pagination'
 import FilterSelect from '@/components/ui/FilterSelect'
 import { Search, Download, Plus, Eye, CheckCircle, Truck, Package, Users, Send, Inbox } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useConfig, useFormatAmount, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, convertFromXOF, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { exportCSV } from '@/utils/export'
 import { type Order, type OrderStatus, STATUS_CONFIG, STATUSES, orderStatusLabel } from './ordersShared'
@@ -33,9 +33,11 @@ export default function OrdersListPanel({
   supplierFilter, setSupplierFilter, supplierNames, changeStatus, setViewOrder,
   openNewOrderModal, printOrdersListPDF,
 }: Props) {
-  const { lang } = useConfig()
+  const { lang, currency } = useConfig()
   const { i } = useI18n()
   const fmt = useFormatAmount()
+  // Montants stockés en base XOF → convertis vers la devise d'affichage (pattern reportsExport)
+  const cv = (xof: number) => Math.round(convertFromXOF(xof ?? 0, currency) * 100) / 100
   return (
     <div className="panel">
       <div className="panel-head">
@@ -43,8 +45,8 @@ export default function OrdersListPanel({
         <div className="flex items-center gap-2">
           <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
             exportCSV('habashop_commandes',
-              [i('Référence', 'Reference', 'Referencia', 'Riferimento'), i('Fournisseur', 'Supplier', 'Proveedor', 'Fornitore'), i('Date', 'Date', 'Fecha', 'Data'), i('Livraison prévue', 'Expected delivery', 'Entrega prevista', 'Consegna prevista'), i('Articles', 'Items', 'Artículos', 'Articoli'), i('Montant', 'Amount', 'Importe', 'Importo'), i('Statut', 'Status', 'Estado', 'Stato')],
-              orders.map(o => [o.ref, o.supplier, o.date, o.expectedAt, o.items.length, o.total, orderStatusLabel(o.status, lang)])
+              [i('Référence', 'Reference', 'Referencia', 'Riferimento'), i('Fournisseur', 'Supplier', 'Proveedor', 'Fornitore'), i('Date', 'Date', 'Fecha', 'Data'), i('Livraison prévue', 'Expected delivery', 'Entrega prevista', 'Consegna prevista'), i('Articles', 'Items', 'Artículos', 'Articoli'), `${i('Montant', 'Amount', 'Importe', 'Importo')} (${currency})`, i('Statut', 'Status', 'Estado', 'Stato')],
+              orders.map(o => [o.ref, o.supplier, o.date, o.expectedAt, o.items.length, cv(o.total), orderStatusLabel(o.status, lang)])
             )
             toast.success(i('📊 Export CSV téléchargé !', '📊 CSV export downloaded!', '📊 ¡Exportación CSV descargada!', '📊 Esportazione CSV scaricata!'))
           }}>

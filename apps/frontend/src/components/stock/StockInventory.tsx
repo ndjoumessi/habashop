@@ -1,6 +1,6 @@
 import { Search, Download, Plus, Tag, Package, Eye, Trash2, LayoutGrid, AlignJustify } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { t, useAppStore } from '@/stores/appStore'
+import { t, useAppStore, convertFromXOF } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 import { hydratePricesFromApi } from '@/lib/productCurrency'
 import Pagination from '@/components/ui/Pagination'
@@ -86,11 +86,17 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
               <button onClick={() => setStockView('list')} style={{ padding:'4px 8px', borderRadius:6, border:'none', cursor:'pointer', background: stockView === 'list' ? 'var(--p)' : 'transparent', color: stockView === 'list' ? '#fff' : 'var(--text3)', display:'flex', alignItems:'center', transition:'all .15s' }} title="Vue liste"><AlignJustify size={13} /></button>
             </div>
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => {
+              // Prix stockés en base XOF → convertis vers la devise d'affichage (pattern reportsExport)
+              const currency = useAppStore.getState().currency
+              const cv = (xof: number) => Math.round(convertFromXOF(xof ?? 0, currency) * 100) / 100
               exportCSV('habashop_stock',
-                ['SKU','Produit','Catégorie','Prix achat','Prix vente','Stock','Seuil','Fournisseur','Statut'],
-                products.map(p => [p.sku, p.name, p.category, p.buy, p.sell, p.stock, p.threshold, p.supplier, statusOf(p.stock,p.threshold).label])
+                ['SKU', i('Produit','Product','Producto','Prodotto'), i('Catégorie','Category','Categoría','Categoria'),
+                 `${i('Prix achat','Buy price','Precio compra','Prezzo acquisto')} (${currency})`,
+                 `${i('Prix vente','Sell price','Precio venta','Prezzo vendita')} (${currency})`,
+                 'Stock', i('Seuil','Threshold','Umbral','Soglia'), i('Fournisseur','Supplier','Proveedor','Fornitore'), i('Statut','Status','Estado','Stato')],
+                products.map(p => [p.sku, p.name, p.category, cv(p.buy), cv(p.sell), p.stock, p.threshold, p.supplier, statusOf(p.stock,p.threshold).label])
               )
-              toast.success('📊 Export CSV téléchargé !')
+              toast.success(i('📊 Export CSV téléchargé !','📊 CSV export downloaded!','📊 ¡Exportación CSV descargada!','📊 Esportazione CSV scaricata!'))
             }}>
               <Download size={13} /> {t('btn_export')}
             </button>

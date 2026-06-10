@@ -83,6 +83,8 @@ export interface TenantUpdateBody {
   description?: string
   whatsappPhone?: string
   catalogVisible?: boolean
+  // Rapports WhatsApp auto (soir/matin) — numéro du gérant ; null/vide = désactivé
+  ownerPhone?: string | null
 }
 export interface InviteUserBody {
   name?: string; email?: string; password?: string; role?: string

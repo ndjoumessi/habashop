@@ -54,6 +54,7 @@ model Tenant {
   slug             String?  @unique // habashop.vercel.app/c/{slug}
   description      String?         // tagline boutique (max 200)
   whatsappPhone    String?         // numéro WhatsApp commercial (E.164) ; fallback sur phone
+  ownerPhone       String?         // numéro WhatsApp du gérant (E.164) — destinataire des rapports auto soir/matin ; null = pas d'envoi
   catalogVisible   Boolean  @default(true)
 
   // Billing / plan lifecycle

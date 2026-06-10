@@ -239,7 +239,7 @@ const INV_STR: Record<string, Record<string, string>> = {
   unit_price:   { fr: 'Prix unitaire', en: 'Unit price',   es: 'Precio unit.', it: 'Prezzo unit.'  },
   total:        { fr: 'Total',         en: 'Total',        es: 'Total',        it: 'Totale'      },
   subtotal:     { fr: 'Sous-total',    en: 'Subtotal',     es: 'Subtotal',     it: 'Subtotale'   },
-  vat:          { fr: 'TVA (18 %)',    en: 'VAT (18 %)',   es: 'IVA (18 %)',   it: 'IVA (18 %)'  },
+  vat:          { fr: 'TVA',           en: 'VAT',          es: 'IVA',          it: 'IVA'         }, // taux dynamique ajouté à l'usage : `${is('vat')} (X %)`
   discount:     { fr: 'Remise',        en: 'Discount',     es: 'Descuento',    it: 'Sconto'      },
   net_total:    { fr: 'NET À PAYER',   en: 'TOTAL DUE',    es: 'TOTAL A PAGAR', it: 'TOTALE DA PAGARE' },
   payment:      { fr: 'Mode de règlement', en: 'Payment method', es: 'Método de pago', it: 'Metodo pagamento' },
@@ -362,7 +362,7 @@ export function generateInvoice(opts: InvoiceOptions) {
           <span style="font-family:monospace">− ${fmt(discountAmt)}</span>
         </div>` : ''}
         <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#666;border-bottom:1px solid #f0f0f0">
-          <span>${is('vat', lang)}</span>
+          <span>${is('vat', lang)} (${useAppStore.getState().posTaxRate ?? 18} %)</span>
           <span style="font-family:monospace">${fmt(tva)}</span>
         </div>
         <div class="net-payer" style="margin-top:8px">
@@ -536,24 +536,27 @@ export function printProductLabels(
   const win = window.open('', '_blank', 'width=900,height=700')
   if (!win) { alert('Autorisez les popups pour imprimer les étiquettes'); return }
 
+  const li = (fr: string, en: string, es: string, it: string) =>
+    options.lang === 'en' ? en : options.lang === 'es' ? es : options.lang === 'it' ? it : fr
+
   win.document.write(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Étiquettes produits</title>
+  <title>${li('Étiquettes produits', 'Product labels', 'Etiquetas de productos', 'Etichette prodotti')}</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" integrity="sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a" crossorigin="anonymous"></script>
   <style>${gridCSS}</style>
 </head>
 <body>
   <div class="toolbar" style="margin-bottom:10px;display:flex;gap:8px;align-items:center;">
     <button onclick="window.print()" style="padding:8px 16px;background:#5B4EE8;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;">
-      🖨️ Imprimer
+      🖨️ ${li('Imprimer', 'Print', 'Imprimir', 'Stampa')}
     </button>
     <button onclick="window.close()" style="padding:8px 16px;background:#eee;color:#333;border:none;border-radius:8px;cursor:pointer;font-size:13px;">
-      ✕ Fermer
+      ✕ ${li('Fermer', 'Close', 'Cerrar', 'Chiudi')}
     </button>
     <span style="font-size:12px;color:#888;">
-      ${products.length} produit(s) × ${options.copies} copie(s) = ${products.length * options.copies} étiquette(s)${useGrid && preset ? ` — ${esc(preset.label)}` : ''}
+      ${products.length} ${li('produit(s)', 'product(s)', 'producto(s)', 'prodotto/i')} × ${options.copies} ${li('copie(s)', 'copy(ies)', 'copia(s)', 'copia/e')} = ${products.length * options.copies} ${li('étiquette(s)', 'label(s)', 'etiqueta(s)', 'etichetta/e')}${useGrid && preset ? ` — ${esc(preset.label)}` : ''}
     </span>
   </div>
   <div class="labels">${allLabels}</div>
@@ -579,69 +582,85 @@ export function printProductLabels(
 }
 
 // ─── EXPORT COMPTABLE EXCEL (CSV) ────────────
+// Montants stockés en base XOF → convertis vers la devise d'affichage (nombres bruts 2 déc.,
+// triables/sommables dans Excel — même pattern que reportsExport.ts). En-têtes/dates localisées.
 export function exportAccountingExcel(
-  data: { sales: any[]; expenses: any[]; period: string; shopName: string; currency: string },
-  fmt: (amount: number) => string
+  data: { sales: any[]; expenses: any[]; period: string; shopName: string; currency: string; lang: string },
 ) {
   const BOM = '﻿'
+  const lang = data.lang ?? 'fr'
+  const i = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const loc = LOCALES[lang] ?? 'fr-FR'
+  const cv = (xof: number) => Math.round(convertAmount(xof ?? 0, 'XOF', data.currency) * 100) / 100
   const totalCA = data.sales.reduce((s, sale) => s + (sale.total ?? 0), 0)
   const totalExpenses = data.expenses.reduce((s, e) => s + (e.amountTTC ?? e.amount ?? 0), 0)
   const result = totalCA - totalExpenses
 
   const summary = [
-    ['RAPPORT COMPTABLE — ' + data.shopName],
-    ['Période : ' + data.period],
-    ['Exporté le : ' + new Date().toLocaleDateString('fr-FR')],
+    [i('RAPPORT COMPTABLE', 'ACCOUNTING REPORT', 'INFORME CONTABLE', 'RAPPORTO CONTABILE') + ' — ' + data.shopName],
+    [i('Période', 'Period', 'Período', 'Periodo') + ' : ' + data.period],
+    [i('Exporté le', 'Exported on', 'Exportado el', 'Esportato il') + ' : ' + new Date().toLocaleDateString(loc)],
+    [i('Devise', 'Currency', 'Moneda', 'Valuta') + ' : ' + data.currency],
     [],
-    ['RÉSUMÉ'],
-    ["Chiffre d'affaires total", totalCA.toFixed(2)],
-    ['Total dépenses', totalExpenses.toFixed(2)],
-    ['Résultat net', result.toFixed(2)],
-    ['Marge brute (%)', totalCA > 0 ? ((result / totalCA) * 100).toFixed(1) + '%' : '0%'],
+    [i('RÉSUMÉ', 'SUMMARY', 'RESUMEN', 'RIEPILOGO')],
+    [i("Chiffre d'affaires total", 'Total revenue', 'Ingresos totales', 'Ricavi totali'), cv(totalCA).toFixed(2)],
+    [i('Total dépenses', 'Total expenses', 'Gastos totales', 'Spese totali'), cv(totalExpenses).toFixed(2)],
+    [i('Résultat net', 'Net result', 'Resultado neto', 'Risultato netto'), cv(result).toFixed(2)],
+    [i('Marge brute (%)', 'Gross margin (%)', 'Margen bruto (%)', 'Margine lordo (%)'), totalCA > 0 ? ((result / totalCA) * 100).toFixed(1) + '%' : '0%'],
     [],
   ]
 
-  const salesHeader = ['Date', 'Heure', 'Référence', 'Montant HT', 'TVA', 'Total TTC', 'Mode paiement', 'Nb articles']
+  const salesHeader = [
+    i('Date', 'Date', 'Fecha', 'Data'), i('Heure', 'Time', 'Hora', 'Ora'), i('Référence', 'Reference', 'Referencia', 'Riferimento'),
+    i('Montant HT', 'Amount excl. tax', 'Importe sin IVA', 'Importo netto'), i('TVA', 'VAT', 'IVA', 'IVA'),
+    i('Total TTC', 'Total incl. tax', 'Total con IVA', 'Totale lordo'),
+    i('Mode paiement', 'Payment method', 'Método de pago', 'Metodo di pagamento'), i('Nb articles', 'Items', 'Artículos', 'Articoli'),
+  ]
   const salesRows = data.sales.map(s => {
     const date = new Date(s.createdAt)
     const _vatDivisor = 1 + (useAppStore.getState().posTaxRate ?? 18) / 100
     const ht = (s.total ?? 0) / _vatDivisor
     const tva = (s.total ?? 0) - ht
     return [
-      date.toLocaleDateString('fr-FR'),
-      date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      date.toLocaleDateString(loc),
+      date.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' }),
       `V-${(s.id ?? '000000').slice(-6).toUpperCase()}`,
-      ht.toFixed(2),
-      tva.toFixed(2),
-      (s.total ?? 0).toFixed(2),
+      cv(ht).toFixed(2),
+      cv(tva).toFixed(2),
+      cv(s.total ?? 0).toFixed(2),
       s.paymentMode ?? 'cash',
       s.items?.length ?? 1,
     ]
   })
   const _salesVatDiv = 1 + (useAppStore.getState().posTaxRate ?? 18) / 100
-  const salesTotal = ['', '', 'TOTAL', (totalCA / _salesVatDiv).toFixed(2), (totalCA - totalCA / _salesVatDiv).toFixed(2), totalCA.toFixed(2), '', '']
+  const salesTotal = ['', '', 'TOTAL', cv(totalCA / _salesVatDiv).toFixed(2), cv(totalCA - totalCA / _salesVatDiv).toFixed(2), cv(totalCA).toFixed(2), '', '']
 
-  const expHeader = ['Date', 'Libellé', 'Catégorie', 'Montant HT', 'TVA %', 'Montant TTC', 'Mode', 'Statut']
+  const expHeader = [
+    i('Date', 'Date', 'Fecha', 'Data'), i('Libellé', 'Label', 'Concepto', 'Descrizione'), i('Catégorie', 'Category', 'Categoría', 'Categoria'),
+    i('Montant HT', 'Amount excl. tax', 'Importe sin IVA', 'Importo netto'), i('TVA %', 'VAT %', 'IVA %', 'IVA %'),
+    i('Montant TTC', 'Amount incl. tax', 'Importe con IVA', 'Importo lordo'),
+    i('Mode', 'Method', 'Modo', 'Modo'), i('Statut', 'Status', 'Estado', 'Stato'),
+  ]
   const expRows = data.expenses.map(e => [
-    new Date(e.date).toLocaleDateString('fr-FR'),
+    new Date(e.date).toLocaleDateString(loc),
     e.label ?? '',
     e.category ?? '',
-    (e.amount ?? e.amountHT ?? 0).toFixed(2),
+    cv(e.amount ?? e.amountHT ?? 0).toFixed(2),
     (e.vat ?? 0) + '%',
-    (e.amountTTC ?? Math.round((e.amount ?? 0) * (1 + (e.vat ?? 0) / 100))).toFixed(2),
+    cv(e.amountTTC ?? Math.round((e.amount ?? 0) * (1 + (e.vat ?? 0) / 100))).toFixed(2),
     e.mode ?? '',
     e.status ?? '',
   ])
-  const expTotal = ['', 'TOTAL', '', '', '', totalExpenses.toFixed(2), '', '']
+  const expTotal = ['', 'TOTAL', '', '', '', cv(totalExpenses).toFixed(2), '', '']
 
   const csvLines = [
     ...summary.map(row => row.join(';')),
-    ['=== VENTES ==='],
+    [`=== ${i('VENTES', 'SALES', 'VENTAS', 'VENDITE')} ===`],
     salesHeader.join(';'),
     ...salesRows.map(row => row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';')),
     salesTotal.map(c => `"${c}"`).join(';'),
     [],
-    ['=== DÉPENSES ==='],
+    [`=== ${i('DÉPENSES', 'EXPENSES', 'GASTOS', 'SPESE')} ===`],
     expHeader.join(';'),
     ...expRows.map(row => row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';')),
     expTotal.map(c => `"${c}"`).join(';'),
@@ -651,8 +670,9 @@ export function exportAccountingExcel(
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
+  const shopSlug = (data.shopName || 'HabaShop').replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '')
   a.href     = url
-  a.download = `HabaShop_Comptabilite_${data.period.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`
+  a.download = `${shopSlug}_${i('Comptabilite', 'Accounting', 'Contabilidad', 'Contabilita')}_${data.period.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)

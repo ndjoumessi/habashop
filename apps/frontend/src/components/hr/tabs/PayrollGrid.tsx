@@ -1,6 +1,11 @@
 import { Download, FileText, DollarSign, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useConfig, convertFromXOF } from '@/stores/appStore'
 import { type Employee, EmpAvatar, roleLabel } from '@/components/hr/hrShared'
+
+// Taux légaux appliqués partout dans la paie (cf. payroll-calc) — source unique pour calculs ET libellés
+const CNSS_RATE = 0.08
+const IR_RATE = 0.05
 
 interface Props {
   employees: Employee[]
@@ -13,6 +18,7 @@ interface Props {
 }
 
 export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPayrollMonth, bonuses, generateAllPayslips, setSalaryTarget, setShowSalaryModal }: Props) {
+  const { currency } = useConfig()
   return (
     <>
       {/* Contrôles */}
@@ -24,23 +30,25 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
         <button className="btn btn-sm" onClick={() => {
           const BOM = '﻿'
           const activeEmps = (employees ?? []).filter(e => e.active)
+          // Montants stockés en base XOF → convertis vers la devise d'affichage (pattern reportsExport)
+          const cv = (xof: number) => Math.round(convertFromXOF(xof ?? 0, currency) * 100) / 100
           const rows = [
             [
               lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé',
               lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle',
-              lang === 'en' ? 'Gross' : lang === 'es' ? 'Bruto' : lang === 'it' ? 'Lordo' : 'Brut',
-              lang === 'en' ? 'Bonus' : lang === 'es' ? 'Prima' : lang === 'it' ? 'Premio' : 'Prime',
-              'CNSS 8%', 'IR 5%',
-              lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net',
+              `${lang === 'en' ? 'Gross' : lang === 'es' ? 'Bruto' : lang === 'it' ? 'Lordo' : 'Brut'} (${currency})`,
+              `${lang === 'en' ? 'Bonus' : lang === 'es' ? 'Prima' : lang === 'it' ? 'Premio' : 'Prime'} (${currency})`,
+              `CNSS ${CNSS_RATE * 100}% (${currency})`, `IR ${IR_RATE * 100}% (${currency})`,
+              `${lang === 'en' ? 'Net' : lang === 'es' ? 'Neto' : lang === 'it' ? 'Netto' : 'Net'} (${currency})`,
             ],
             ...activeEmps.map(emp => {
               const brut  = emp.salary
               const bonus = bonuses[String(emp.id)] ?? 0
               const total = brut + bonus
-              const cnss  = Math.round(total * 0.08)
-              const ir    = Math.round(total * 0.05)
+              const cnss  = Math.round(total * CNSS_RATE)
+              const ir    = Math.round(total * IR_RATE)
               const net   = total - cnss - ir
-              return [emp.name, roleLabel(emp.role, lang), brut, bonus, cnss, ir, net]
+              return [emp.name, roleLabel(emp.role, lang), cv(brut), cv(bonus), cv(cnss), cv(ir), cv(net)]
             }),
           ]
           const csv = BOM + rows.map(r => r.join(';')).join('\r\n')

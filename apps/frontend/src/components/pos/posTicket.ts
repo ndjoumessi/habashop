@@ -78,7 +78,7 @@ export function printTicket(p: PrintTicketParams) {
     </div>
   `).join('')}
   <div class="divider"></div>
-  ${discount && discountAmount > 0 ? `<div class="row" style="color:green;font-weight:bold;"><span>${discount.type === 'percent' ? `Remise (${discount.value} %)` : 'Remise'} :</span><span>− ${fmt(discountAmount)}</span></div>` : ''}
+  ${discount && discountAmount > 0 ? (() => { const remise = lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'; return `<div class="row" style="color:green;font-weight:bold;"><span>${discount.type === 'percent' ? `${remise} (${discount.value} %)` : remise} :</span><span>− ${fmt(discountAmount)}</span></div>` })() : ''}
   <div class="row"><span>${t('pos_subtotal')} :</span><span>${fmt(Math.round(totalHT))}</span></div>
   <div class="row"><span>${t('pos_vat')} (${posTaxRate} %) :</span><span>${fmt(Math.round(tva))}</span></div>
   <div class="divider"></div>

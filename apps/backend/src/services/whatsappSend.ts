@@ -4,7 +4,9 @@ import { pointsForAmount } from '../lib/loyalty'
 
 const SYMBOL: Record<string, string> = { XOF: 'FCFA', XAF: 'FCFA', EUR: '€', USD: '$', CAD: 'CA$', GBP: '£' }
 
-function fmtMoney(amountXOF: number, currency: string): string {
+export const localeOf = (lang: string) => lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+
+export function fmtMoney(amountXOF: number, currency: string): string {
   const v = xofToCurrency(Number(amountXOF) || 0, currency)
   const sym = SYMBOL[currency] ?? currency
   const num = v.toLocaleString('fr-FR')

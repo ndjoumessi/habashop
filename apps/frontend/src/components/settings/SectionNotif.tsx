@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
-import { Bell } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Bell, MessageCircle } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useConfig } from '@/stores/appStore'
 import { tenantApi } from '@/lib/api'
 import { type L4, makeI, pick, panel, Head, ToggleCard } from '@/components/settings/settingsShared'
@@ -8,11 +9,16 @@ export default function SectionNotif() {
   const cfg = useConfig()
   const lang = cfg.lang
   const i = makeI(lang)
+  // Numéro WhatsApp du gérant (rapports auto soir 20h / matin 8h) — setting TENANT ; vide = désactivé
+  const [ownerPhone, setOwnerPhone] = useState('')
+  const [ownerPhoneSaved, setOwnerPhoneSaved] = useState('')
 
   // Charge depuis le tenant au mount
   useEffect(() => {
     tenantApi.get().then((t: any) => {
       if (!t) return
+      setOwnerPhone(t.ownerPhone ?? '')
+      setOwnerPhoneSaved(t.ownerPhone ?? '')
       cfg.updateConfig({
         notifEmailSales:   t.notifEmailSales   ?? true,
         notifEmailStock:   t.notifEmailStock   ?? true,
@@ -49,6 +55,32 @@ export default function SectionNotif() {
               tenantApi.update({ [n.key]: newVal } as any).catch(() => {})
             }} />
         ))}
+
+        {/* Rapports WhatsApp auto (résumé du soir + alerte stock du matin) */}
+        <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <MessageCircle size={14} color="var(--acc2)" />
+            <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)' as any, color: 'var(--text)' }}>
+              {i('Rapports WhatsApp du gérant', "Owner's WhatsApp reports", 'Informes WhatsApp del gerente', 'Report WhatsApp del gestore')}
+            </span>
+          </div>
+          <div style={{ fontSize: 11.5, color: 'var(--text3)', marginBottom: 8 }}>
+            {i('Résumé des ventes (20h) et alerte stock (8h) envoyés à ce numéro. Laissez vide pour désactiver.',
+               'Sales summary (8pm) and stock alert (8am) sent to this number. Leave empty to disable.',
+               'Resumen de ventas (20h) y alerta de stock (8h) enviados a este número. Deje vacío para desactivar.',
+               'Riepilogo vendite (20) e avviso scorte (8) inviati a questo numero. Lasciare vuoto per disattivare.')}
+          </div>
+          <input className="input" type="tel" value={ownerPhone} placeholder="+221 77 123 45 67"
+            style={{ maxWidth: 260 }}
+            onChange={e => setOwnerPhone(e.target.value)}
+            onBlur={() => {
+              const v = ownerPhone.trim()
+              if (v === ownerPhoneSaved.trim()) return
+              tenantApi.update({ ownerPhone: v })
+                .then(() => { setOwnerPhoneSaved(v); toast.success(i('Numéro enregistré', 'Number saved', 'Número guardado', 'Numero salvato')) })
+                .catch(() => toast.error(i("Échec de l'enregistrement", 'Save failed', 'Error al guardar', 'Salvataggio non riuscito')))
+            }} />
+        </div>
       </div>
     </div>
   )

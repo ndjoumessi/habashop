@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, Gift, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink, Tag, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { t } from '@/stores/appStore'
+import { t, useAppStore, convertFromXOF } from '@/stores/appStore'
 import { exportCSV, generateInvoice } from '@/utils/export'
 import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
@@ -49,9 +49,12 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
               </button>
             </div>
             <button className="btn btn-ghost btn-sm" onClick={() => {
+              // Montants stockés en base XOF → convertis vers la devise d'affichage (pattern reportsExport)
+              const currency = useAppStore.getState().currency
+              const cv = (xof: number) => Math.round(convertFromXOF(xof ?? 0, currency) * 100) / 100
               exportCSV('habashop_clients',
-                [i('Nom','Name','Nombre','Nome'), i('Type','Type','Tipo','Tipo'), i('Téléphone','Phone','Teléfono','Telefono'), 'Email', i('Achats/mois','Purchases/month','Compras/mes','Acquisti/mese'), i('CA total','Total revenue','Ingresos totales','Ricavi totali'), i('Points fidélité','Loyalty points','Puntos fidelidad','Punti fedeltà')],
-                customers.map(c => [c.name, c.type, c.phone, c.email ?? '', c.purchasesPerMonth, c.totalCA, c.loyaltyPoints])
+                [i('Nom','Name','Nombre','Nome'), i('Type','Type','Tipo','Tipo'), i('Téléphone','Phone','Teléfono','Telefono'), 'Email', i('Achats/mois','Purchases/month','Compras/mes','Acquisti/mese'), `${i('CA total','Total revenue','Ingresos totales','Ricavi totali')} (${currency})`, i('Points fidélité','Loyalty points','Puntos fidelidad','Punti fedeltà')],
+                customers.map(c => [c.name, c.type, c.phone, c.email ?? '', c.purchasesPerMonth, cv(c.totalCA), c.loyaltyPoints])
               )
               toast.success(i('Export CSV téléchargé', 'CSV exported', 'CSV exportado', 'CSV esportato'))
             }}>

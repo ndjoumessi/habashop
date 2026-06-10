@@ -510,11 +510,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
               lang === 'en' ? 'Role' : lang === 'es' ? 'Rol' : lang === 'it' ? 'Ruolo' : 'Rôle',
               lang === 'en' ? 'Department' : lang === 'es' ? 'Departamento' : lang === 'it' ? 'Dipartimento' : 'Département',
               lang === 'en' ? 'Contract' : lang === 'es' ? 'Contrato' : lang === 'it' ? 'Contratto' : 'Contrat',
-              lang === 'en' ? 'Salary' : lang === 'es' ? 'Salario' : lang === 'it' ? 'Stipendio' : 'Salaire',
+              `${lang === 'en' ? 'Salary' : lang === 'es' ? 'Salario' : lang === 'it' ? 'Stipendio' : 'Salaire'} (${currency})`,
               lang === 'en' ? 'Hire date' : lang === 'es' ? 'Contratación' : lang === 'it' ? 'Assunzione' : 'Embauche',
               lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut',
             ],
-              employees.map(e => [e.name, roleLabel(e.role, lang), deptLabel(e.dept, lang), contractLabel(e.type, lang), e.salary, e.hiredAt, e.active ? (lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif') : (lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')]))
+              // Salaires stockés en base XOF → convertis vers la devise d'affichage
+              employees.map(e => [e.name, roleLabel(e.role, lang), deptLabel(e.dept, lang), contractLabel(e.type, lang), Math.round(fromXOF(e.salary ?? 0) * 100) / 100, e.hiredAt, e.active ? (lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif') : (lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')]))
             toast.success(lang === 'en' ? 'CSV exported' : lang === 'es' ? 'CSV exportado' : lang === 'it' ? 'CSV esportato' : 'CSV exporté')
           }}>
             <Download size={14} /> Export

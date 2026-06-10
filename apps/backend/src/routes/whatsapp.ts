@@ -3,6 +3,10 @@ import twilio from 'twilio'
 import { CronJob } from 'cron'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { fmtMoney, localeOf } from '../services/whatsappSend'
+
+type I4 = (fr: string, en: string, es: string, it: string) => string
+const makeI = (lang: string): I4 => (fr, en, es, it) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
 
 const TWILIO_FROM = process.env.TWILIO_WHATSAPP_FROM
   ?? 'whatsapp:+14155238886'
@@ -29,27 +33,33 @@ async function sendEveningReport() {
   try {
     const tenants = await prisma.tenant.findMany()
     for (const tenant of tenants) {
+      // Opt-in strict : pas de numéro configuré → pas d'envoi pour ce tenant.
+      const ownerPhone = (tenant.ownerPhone ?? '').trim()
+      if (!ownerPhone) continue
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const [sales, allProducts] = await Promise.all([
         prisma.sale.findMany({
-          where: { tenantId: tenant.id, createdAt: { gte: today } },
+          where: { tenantId: tenant.id, createdAt: { gte: today }, NOT: { status: 'refunded' } },
           include: { items: true },
         }),
         prisma.product.findMany({ where: { tenantId: tenant.id, isActive: true } }),
       ])
       const lowStock = allProducts.filter(p => p.stockQty <= p.stockMin)
       const totalCA = sales.reduce((s, sale) => s + sale.total, 0)
-      const ownerPhone = process.env.OWNER_PHONE ?? '+393275469250'
+      const lang = tenant.lang ?? 'fr'
+      const i = makeI(lang)
+      const loc = localeOf(lang)
+      const M = (xof: number) => fmtMoney(xof, tenant.currency || 'XOF')
       const message =
-        `📊 *HabaShop — Résumé du ${today.toLocaleDateString('fr-FR')}*\n\n` +
-        `💰 CA du jour : *${totalCA.toLocaleString('fr-FR')} FCFA*\n` +
-        `🛒 Transactions : *${sales.length}*\n` +
-        `💵 Panier moyen : *${sales.length > 0 ? Math.round(totalCA / sales.length).toLocaleString('fr-FR') : 0} FCFA*\n\n` +
+        `📊 *${tenant.name} — ${i('Résumé du', 'Summary for', 'Resumen del', 'Riepilogo del')} ${today.toLocaleDateString(loc)}*\n\n` +
+        `💰 ${i('CA du jour', "Today's revenue", 'Ventas del día', 'Incasso del giorno')} : *${M(totalCA)}*\n` +
+        `🛒 ${i('Transactions', 'Transactions', 'Transacciones', 'Transazioni')} : *${sales.length}*\n` +
+        `💵 ${i('Panier moyen', 'Average basket', 'Cesta media', 'Scontrino medio')} : *${M(sales.length > 0 ? Math.round(totalCA / sales.length) : 0)}*\n\n` +
         (lowStock.length > 0
-          ? `⚠️ *${lowStock.length} produit(s) en rupture :*\n${lowStock.slice(0, 5).map(p => `• ${p.name} (${p.stockQty}/${p.stockMin})`).join('\n')}\n\n`
-          : `✅ Aucune rupture de stock\n\n`) +
-        `_Bonne soirée !_ 🌙`
+          ? `⚠️ *${lowStock.length} ${i('produit(s) en rupture :', 'product(s) low on stock:', 'producto(s) con stock bajo:', 'prodotto/i in esaurimento:')}*\n${lowStock.slice(0, 5).map(p => `• ${p.name} (${p.stockQty}/${p.stockMin})`).join('\n')}\n\n`
+          : `✅ ${i('Aucune rupture de stock', 'No stock shortage', 'Sin roturas de stock', 'Nessuna rottura di stock')}\n\n`) +
+        `_${i('Bonne soirée !', 'Good evening!', '¡Buenas noches!', 'Buona serata!')}_ 🌙`
       try {
         const client = getTwilioClient()
         if (!client) throw new Error('Twilio non configuré')
@@ -73,18 +83,22 @@ async function sendMorningStockAlert() {
   try {
     const tenants = await prisma.tenant.findMany()
     for (const tenant of tenants) {
+      // Opt-in strict : pas de numéro configuré → pas d'envoi pour ce tenant.
+      const ownerPhone = (tenant.ownerPhone ?? '').trim()
+      if (!ownerPhone) continue
       const allProducts = await prisma.product.findMany({ where: { tenantId: tenant.id, isActive: true } })
       const lowStock = allProducts.filter(p => p.stockQty <= p.stockMin)
       if (lowStock.length === 0) continue
-      const ownerPhone = process.env.OWNER_PHONE ?? '+393275469250'
+      const lang = tenant.lang ?? 'fr'
+      const i = makeI(lang)
       const message =
-        `🌅 *HabaShop — Alerte stock du matin*\n\n` +
-        `⚠️ *${lowStock.length} produit(s) nécessitent une commande :*\n\n` +
+        `🌅 *${tenant.name} — ${i('Alerte stock du matin', 'Morning stock alert', 'Alerta de stock matinal', 'Avviso scorte del mattino')}*\n\n` +
+        `⚠️ *${lowStock.length} ${i('produit(s) nécessitent une commande :', 'product(s) need reordering:', 'producto(s) necesitan pedido:', 'prodotto/i da riordinare:')}*\n\n` +
         lowStock.map(p => {
-          const status = p.stockQty === 0 ? '🔴 RUPTURE' : '🟡 BAS'
-          return `${status} ${p.name}\n   Stock: ${p.stockQty} / Seuil: ${p.stockMin}`
+          const status = p.stockQty === 0 ? `🔴 ${i('RUPTURE', 'OUT OF STOCK', 'AGOTADO', 'ESAURITO')}` : `🟡 ${i('BAS', 'LOW', 'BAJO', 'BASSO')}`
+          return `${status} ${p.name}\n   ${i('Stock', 'Stock', 'Stock', 'Scorte')}: ${p.stockQty} / ${i('Seuil', 'Threshold', 'Umbral', 'Soglia')}: ${p.stockMin}`
         }).join('\n') +
-        `\n\n💡 Pensez à commander dès aujourd'hui !\n📦 Gérez votre stock sur HabaShop`
+        `\n\n💡 ${i("Pensez à commander dès aujourd'hui !", 'Remember to order today!', '¡Recuerde pedir hoy!', 'Ricordati di ordinare oggi!')}\n📦 ${i('Gérez votre stock sur HabaShop', 'Manage your stock on HabaShop', 'Gestione su stock en HabaShop', 'Gestisci le scorte su HabaShop')}`
       try {
         const client = getTwilioClient()
         if (!client) throw new Error('Twilio non configuré')
@@ -128,39 +142,47 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     const cleaned = phone.replace(/[\s\-\(\)]/g, '').replace(/^00/, '+')
     const waPhone = cleaned.startsWith('+') ? `whatsapp:${cleaned}` : `whatsapp:+${cleaned}`
 
+    // Devise + langue + nom = ceux du TENANT (les montants reçus sont en base XOF).
+    const tenant = await prisma.tenant.findUnique({ where: { id: request.user.tenantId } })
+    const lang = tenant?.lang ?? 'fr'
+    const cur  = tenant?.currency || 'XOF'
+    const shop = tenant?.name ?? 'HabaShop'
+    const i = makeI(lang)
+    const loc = localeOf(lang)
+    const M = (xof: number) => fmtMoney(Number(xof) || 0, cur)
+
     const now     = new Date()
-    const dateStr = now.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' })
-    const timeStr = now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })
+    const dateStr = now.toLocaleDateString(loc, { day:'2-digit', month:'2-digit', year:'numeric' })
+    const timeStr = now.toLocaleTimeString(loc, { hour:'2-digit', minute:'2-digit' })
     const ref     = reference || `#${Date.now().toString().slice(-6)}`
 
     const itemLines = Array.isArray(items)
-      ? items.map((i) => {
-          const lineTotal = Number(i.price ?? 0) * Number(i.qty ?? 1)
-          return `• ${i.name} ×${i.qty} — ${lineTotal.toLocaleString('fr-FR')} F`
+      ? items.map((it) => {
+          const lineTotal = Number(it.price ?? 0) * Number(it.qty ?? 1)
+          return `• ${it.name} ×${it.qty} — ${M(lineTotal)}`
         }).join('\n')
-      : '• Articles non détaillés'
+      : `• ${i('Articles non détaillés', 'Items not detailed', 'Artículos sin detallar', 'Articoli non dettagliati')}`
 
-    const totalFmt    = Number(total ?? 0).toLocaleString('fr-FR')
     const discountLine = discount && Number(discount) > 0
-      ? `\n🏷️ Remise : -${Number(discount).toLocaleString('fr-FR')} F`
+      ? `\n🏷️ ${i('Remise', 'Discount', 'Descuento', 'Sconto')} : -${M(discount)}`
       : ''
 
     const body = [
-      '🧾 *TICKET DE CAISSE*',
-      `📍 HabaShop — ${dateStr} à ${timeStr}`,
-      `🔖 Réf : ${ref}`,
+      `🧾 *${i('TICKET DE CAISSE', 'RECEIPT', 'TICKET DE CAJA', 'SCONTRINO')}*`,
+      `📍 ${shop} — ${dateStr} ${i('à', 'at', 'a las', 'alle')} ${timeStr}`,
+      `🔖 ${i('Réf', 'Ref', 'Ref', 'Rif')} : ${ref}`,
       '',
       '━━━━━━━━━━━━━━━━━',
-      '📦 *Articles commandés*',
+      `📦 *${i('Articles commandés', 'Items ordered', 'Artículos pedidos', 'Articoli ordinati')}*`,
       itemLines,
       '━━━━━━━━━━━━━━━━━',
       discountLine,
-      `💰 *TOTAL TTC : ${totalFmt} F CFA*`,
-      `💳 Paiement : ${paymentMode ?? 'Espèces'}`,
+      `💰 *${i('TOTAL TTC', 'TOTAL (incl. tax)', 'TOTAL (IVA incl.)', 'TOTALE (IVA incl.)')} : ${M(total ?? 0)}*`,
+      `💳 ${i('Paiement', 'Payment', 'Pago', 'Pagamento')} : ${paymentMode ?? i('Espèces', 'Cash', 'Efectivo', 'Contanti')}`,
       '',
-      '✅ *Merci pour votre achat !*',
-      '_Ce ticket fait office de reçu._',
-      '_Conservez-le comme justificatif._',
+      `✅ *${i('Merci pour votre achat !', 'Thank you for your purchase!', '¡Gracias por su compra!', 'Grazie per il tuo acquisto!')}*`,
+      `_${i('Ce ticket fait office de reçu.', 'This ticket serves as a receipt.', 'Este ticket sirve como recibo.', 'Questo scontrino vale come ricevuta.')}_`,
+      `_${i('Conservez-le comme justificatif.', 'Keep it as proof of purchase.', 'Consérvelo como justificante.', 'Conservalo come giustificativo.')}_`,
     ].filter(l => l !== null && l !== undefined).join('\n')
 
     console.log('📱 Envoi WhatsApp vers:', waPhone)

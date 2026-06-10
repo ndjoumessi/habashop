@@ -122,6 +122,8 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         description:    data.description,
         whatsappPhone:  data.whatsappPhone,
         catalogVisible: data.catalogVisible,
+        // Rapports WhatsApp auto — '' normalisé en null (désactive l'envoi)
+        ownerPhone:     data.ownerPhone === undefined ? undefined : (data.ownerPhone?.trim() || null),
       },
     })
   }
