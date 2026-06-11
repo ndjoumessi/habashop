@@ -132,7 +132,8 @@ describe('POST /api/payments/campay/request', () => {
     expect(JSON.parse(res.body).error).toContain('Campay network timeout')
   })
 
-  it('arrondit le montant (ex. 4999.9 → 5000 XAF)', async () => {
+  it('sandbox : force amount = 10 XAF (limite sandbox Campay 25 XAF max)', async () => {
+    // CAMPAY_ENVIRONMENT absent = 'demo' = sandbox → amount forcé à 10 quel que soit l'input.
     campayCollect.mockResolvedValue({ reference: 'camp-ref-round' })
     const app = await makeApp()
     await app.inject({
@@ -141,7 +142,7 @@ describe('POST /api/payments/campay/request', () => {
       payload: { amount: 4999.9, phoneNumber: '699000001' },
     })
     expect(campayCollect).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 5000 }),
+      expect.objectContaining({ amount: 10 }),
     )
   })
 })

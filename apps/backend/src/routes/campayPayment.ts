@@ -49,8 +49,9 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
     if (!phoneNumber)
       return reply.code(400).send({ error: 'Numéro de téléphone requis' })
 
-    // XOF → XAF : parité 1:1 (arrondi entier)
-    const xafAmount = Math.round(amount)
+    // XOF → XAF : parité 1:1 (arrondi entier).
+    // Sandbox Campay : montant limité à 25 XAF max — on force 10 pour les tests.
+    const xafAmount = IS_SANDBOX ? 10 : Math.round(amount)
 
     const normalizedPhone = normalizeCameroonPhone(phoneNumber)
     if (!normalizedPhone)
