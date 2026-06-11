@@ -6,7 +6,9 @@ import { customersApi } from '@/lib/api'
 import ViewField from '@/components/ui/ViewField'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
-import LoyaltyCardDigital from '@/components/ui/LoyaltyCardDigital'
+import { lazy, Suspense } from 'react'
+// Lazy : LoyaltyCardDigital embarque html2canvas + qrcode (~45 Ko gz) — hors du chunk Customers
+const LoyaltyCardDigital = lazy(() => import('@/components/ui/LoyaltyCardDigital'))
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold } from '@/components/customers/customersShared'
 
@@ -602,7 +604,9 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
 
       {/* Carte fidélité numérique (si enableLoyalty) */}
       {digitalCardCustomerId && setDigitalCardCustomerId && tenant?.enableLoyalty && (
-        <LoyaltyCardDigital customerId={digitalCardCustomerId} onClose={() => setDigitalCardCustomerId(null)} />
+        <Suspense fallback={null}>
+          <LoyaltyCardDigital customerId={digitalCardCustomerId} onClose={() => setDigitalCardCustomerId(null)} />
+        </Suspense>
       )}
     </>
   )

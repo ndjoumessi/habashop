@@ -19,7 +19,6 @@ if (SENTRY_DSN && import.meta.env.PROD) {
     // garantit que les source maps uploadées correspondent au code servi en prod.
     integrations: [
       Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
     ],
     tracesSampleRate: 0.1,          // 10 % des transactions de perf (prod ; en dev l'init n'est pas exécuté)
     replaysSessionSampleRate: 0.1,  // 10 % des sessions enregistrées (Replay)
@@ -31,6 +30,11 @@ if (SENTRY_DSN && import.meta.env.PROD) {
       return event
     },
   })
+  // Replay (rrweb, ~90 Ko gz) chargé HORS du critical path : les sample rates restent
+  // dans init() ci-dessus, seule l'intégration arrive en différé (pattern officiel Sentry).
+  Sentry.lazyLoadIntegration('replayIntegration')
+    .then((replayIntegration) => { Sentry.addIntegration(replayIntegration()) })
+    .catch(() => {})
 }
 
 // ErrorBoundary Sentry si DSN présent, sinon passe-plat (aucune dépendance au runtime Sentry).
