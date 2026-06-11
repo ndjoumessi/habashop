@@ -64,7 +64,7 @@ export default function InventoryInsights({ fmt, lang }: Props) {
         {data.reorder.length === 0
           ? emptyRow(i('Aucun produit sous le seuil. 👍', 'No product below threshold. 👍', 'Ningún producto bajo el umbral. 👍', 'Nessun prodotto sotto la soglia. 👍'))
           : (
-            <div className="table-wrap">
+            <div className="table-wrap data-table">
               <table>
                 <thead>
                   <tr>
@@ -83,7 +83,14 @@ export default function InventoryInsights({ fmt, lang }: Props) {
                         <div style={{ fontSize: 11, color: 'var(--text3)' }}>{stockCatLabel(r.category, lang)}</div>
                       </td>
                       <td className="td-num">
-                        <span className={`badge ${r.stock === 0 ? 'badge-red' : 'badge-amber'}`}>{r.stock}</span>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', padding: '3px 9px',
+                          borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+                          fontFamily: 'var(--mono)',
+                          background: r.stock === 0 ? 'var(--c-red-bg)' : 'var(--c-orange-bg)',
+                          border: r.stock === 0 ? '1px solid var(--c-red-border)' : '1px solid var(--c-orange-border)',
+                          color: r.stock === 0 ? 'var(--danger)' : 'var(--warn)',
+                        }}>{r.stock}</span>
                       </td>
                       <td className="td-num" style={{ color: 'var(--text3)' }}>{r.threshold}</td>
                       <td className="td-num" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
@@ -112,7 +119,7 @@ export default function InventoryInsights({ fmt, lang }: Props) {
         {data.dormant.length === 0
           ? emptyRow(i('Aucun stock dormant. 👍', 'No dormant stock. 👍', 'Sin stock inactivo. 👍', 'Nessuna scorta dormiente. 👍'))
           : (
-            <div className="table-wrap">
+            <div className="table-wrap data-table">
               <table>
                 <thead>
                   <tr>
@@ -134,7 +141,14 @@ export default function InventoryInsights({ fmt, lang }: Props) {
                           ? <>{new Date(d.lastSale).toLocaleDateString(dloc, { day: '2-digit', month: 'short', year: 'numeric' })}{d.daysSinceSale != null && <span style={{ color: 'var(--text4)' }}> · {i('il y a', '', 'hace', 'da')} {d.daysSinceSale} {i('j', 'd ago', 'd', 'g')}</span>}</>
                           : <span style={{ fontStyle: 'italic', color: 'var(--text4)' }}>{i('Jamais vendu', 'Never sold', 'Nunca vendido', 'Mai venduto')}</span>}
                       </td>
-                      <td className="td-num">{d.stock}</td>
+                      <td className="td-num">
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', padding: '3px 9px',
+                          borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+                          fontFamily: 'var(--mono)',
+                          background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
+                        }}>{d.stock}</span>
+                      </td>
                       <td className="td-num" style={{ color: 'var(--warn)', fontWeight: 'var(--fw-bold)' }}>{fmt(d.immobilizedValue)}</td>
                     </tr>
                   ))}

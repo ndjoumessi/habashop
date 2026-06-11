@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { Star } from 'lucide-react'
 
 export type SupplierStatus = 'Actif' | 'Pause' | 'Inactif'
@@ -16,6 +17,26 @@ export const STATUS_CFG: Record<SupplierStatus, { cls: string }> = {
   Actif:   { cls: 'badge-green' },
   Pause:   { cls: 'badge-amber' },
   Inactif: { cls: 'badge-gray'  },
+}
+
+/* ── Pills sémantiques (langage visuel POS/Stock) — la valeur FR reste la clé ── */
+export const PILL_BASE: CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 5, width: 'fit-content',
+  padding: '3px 9px', borderRadius: 'var(--r-full)', fontSize: 12,
+  fontWeight: 'var(--fw-semibold)' as any, lineHeight: 1.5, whiteSpace: 'nowrap',
+}
+export const STATUS_PILL: Record<SupplierStatus, { bg: string; border: string; text: string }> = {
+  Actif:   { bg: 'var(--c-green-bg)',  border: 'var(--c-green-border)',  text: 'var(--acc2)'  },
+  Pause:   { bg: 'var(--c-orange-bg)', border: 'var(--c-orange-border)', text: 'var(--warn)'  },
+  Inactif: { bg: 'var(--bg3)',         border: 'var(--border)',          text: 'var(--text3)' },
+}
+export function SupplierStatusPill({ status, lang }: { status: SupplierStatus; lang: string }) {
+  const p = STATUS_PILL[status] ?? STATUS_PILL.Inactif
+  return (
+    <span style={{ ...PILL_BASE, background: p.bg, border: `1px solid ${p.border}`, color: p.text }}>
+      {statusLabel(status, lang)}
+    </span>
+  )
 }
 export const STATUS_LABELS: Record<SupplierStatus, Record<L4, string>> = {
   Actif:   { fr: 'Actif',    en: 'Active',   es: 'Activo',   it: 'Attivo'   },

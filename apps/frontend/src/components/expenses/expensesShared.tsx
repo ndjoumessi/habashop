@@ -49,8 +49,8 @@ export function CatPill({ cat, lang }: { cat: Category; lang: string }) {
   const s = CATEGORY_STYLE[cat]
   return (
     <span style={{
-      display:'inline-flex', alignItems:'center', gap:4, padding:'2px 9px',
-      borderRadius:20, fontSize:11, fontWeight:600,
+      display:'inline-flex', alignItems:'center', gap:4, padding:'3px 9px',
+      borderRadius:'var(--r-full)', fontSize:12, fontWeight:'var(--fw-semibold)',
       background:s.bg, color:s.color,
     }}>{s.icon} {catLabel(cat, lang)}</span>
   )

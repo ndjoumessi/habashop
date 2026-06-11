@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
-import { Download } from 'lucide-react'
+import { Download, Wallet } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { employeesApi } from '@/lib/api'
 import EmptyState from '@/components/ui/EmptyState'
@@ -132,7 +132,7 @@ export default function Payroll() {
       ) : records.length === 0 ? (
         <div className="panel">
           <EmptyState
-            icon="💰"
+            icon={<Wallet size={40} strokeWidth={1.5} style={{ color: 'var(--text3)' }} />}
             title={lang === 'en' ? 'No payroll data' : lang === 'es' ? 'Sin datos de nómina' : lang === 'it' ? 'Nessun dato busta paga' : 'Aucune donnée de paie'}
             message={lang === 'en' ? 'Add employees with their salaries to manage payroll.' : lang === 'es' ? 'Agregue empleados con sus salarios para gestionar la nómina.' : lang === 'it' ? 'Aggiungi dipendenti con i loro stipendi per gestire le buste paga.' : 'Ajoutez des employés avec leurs salaires pour gérer la paie.'}
             action={{ label: lang === 'en' ? 'Manage employees' : lang === 'es' ? 'Gestionar empleados' : lang === 'it' ? 'Gestisci dipendenti' : 'Gérer les employés', onClick: () => navigate('/app/hr') }}

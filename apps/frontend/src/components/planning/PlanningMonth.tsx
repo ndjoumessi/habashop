@@ -39,7 +39,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
   const SHIFT_ORDER = Object.keys(SHIFT_TYPES) as ShiftType[]
 
   return (
-    <div style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
+    <div style={{ background:'var(--bg2)', border:'0.5px solid var(--border)', borderRadius:12, overflow:'hidden' }}>
       {loading ? (
         <div style={{ padding:14 }}><Skeleton height={60} count={6} radius={8} /></div>
       ) : filtered.length === 0 ? (
@@ -49,7 +49,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
       ) : (
         <>
           {/* En-têtes jours */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:'2px solid var(--border)', background:'linear-gradient(135deg,var(--bg4),var(--bg3))' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:'1px solid var(--border)', background:'var(--bg2)' }}>
             {DAY_LABELS.map((d,i)=>(
               <div key={i} style={{ padding:'8px 6px', textAlign:'center', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: (i>=5)?'var(--text4)':'var(--text3)' }}>{d}</div>
             ))}
@@ -81,7 +81,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
                   onMouseLeave={e=>{ (e.currentTarget as HTMLElement).style.background = isToday?'rgba(108,71,255,.08)':(isWeekend&&inMonth)?'var(--bg3)':'transparent' }}
                 >
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-                    <span style={{ fontSize:13, fontWeight: isToday?900:700, color: isToday?'var(--p2)':inMonth?'var(--text)':'var(--text3)', fontFamily:'var(--mono)' }}>{day.getDate()}</span>
+                    <span style={{ fontSize:13, fontWeight: isToday?'var(--fw-bold)':'var(--fw-semibold)', color: isToday?'var(--p2)':inMonth?'var(--text)':'var(--text3)', fontFamily:'var(--mono)' }}>{day.getDate()}</span>
                     {isToday && <span style={{ width:5, height:5, borderRadius:'50%', background:'var(--p)', boxShadow:'0 0 6px var(--p2)' }}/>}
                   </div>
                   {/* « dots » multi-shift : un pastille colorée par type présent + compteur */}
@@ -110,7 +110,7 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
             {(Object.entries(SHIFT_TYPES) as [ShiftType,any][]).map(([key,s])=>(
               <div key={key} style={{ display:'flex', alignItems:'center', gap:4, fontSize:11 }}>
                 <span style={{ width:8, height:8, borderRadius:'50%', background:s.color }}/>
-                <span style={{ color:s.color, fontWeight:600 }}>{shiftLabel(key, lang)}</span>
+                <span style={{ color:s.color, fontWeight:'var(--fw-semibold)' }}>{shiftLabel(key, lang)}</span>
               </div>
             ))}
           </div>

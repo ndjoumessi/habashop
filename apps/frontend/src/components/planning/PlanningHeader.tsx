@@ -37,6 +37,7 @@ export default function PlanningHeader({ lang, view, setView, weekDays, monthAnc
     borderRadius:8, transition:'all .12s',
     background: view===v ? 'var(--p)' : 'transparent',
     color: view===v ? '#fff' : 'var(--text3)',
+    boxShadow: view===v ? 'var(--sh-xs)' : 'none',
   })
 
   return (
@@ -48,8 +49,8 @@ export default function PlanningHeader({ lang, view, setView, weekDays, monthAnc
       <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
         {/* Bascule Semaine / Mois */}
         <div style={{ display:'flex', gap:2, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:3 }}>
-          <button style={segBtn('week', T.week)} onClick={()=>setView('week')}>{T.week}</button>
-          <button style={segBtn('month', T.month)} onClick={()=>setView('month')}>{T.month}</button>
+          <button aria-pressed={view==='week'} style={segBtn('week', T.week)} onClick={()=>setView('week')}>{T.week}</button>
+          <button aria-pressed={view==='month'} style={segBtn('month', T.month)} onClick={()=>setView('month')}>{T.month}</button>
         </div>
         <button className="mini-btn" onClick={()=>shift(-1)}>← {T.prev}</button>
         <button className="mini-btn" onClick={()=>setPlanningWeek(new Date())}>{T.today}</button>

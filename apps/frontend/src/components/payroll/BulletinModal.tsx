@@ -42,7 +42,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               width:44, height:44, borderRadius:12,
               background:'rgba(255,255,255,.2)',
               display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:22, fontWeight:900, color:'#fff',
+              fontSize:22, fontWeight:'var(--fw-bold)', color:'#fff',
             }}>H</div>
             <div>
               <div style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'#fff' }}>
@@ -87,10 +87,11 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               </div>
             </div>
             <span style={{
-              background: record.status === 'PAYÉ' ? 'rgba(14,196,126,.15)' : 'rgba(240,165,0,.15)',
-              color: record.status === 'PAYÉ' ? 'var(--acc2)' : 'var(--acc)',
-              border: `1px solid ${record.status === 'PAYÉ' ? 'rgba(14,196,126,.3)' : 'rgba(240,165,0,.3)'}`,
-              borderRadius:20, padding:'5px 14px',
+              display:'inline-flex', alignItems:'center',
+              background: record.status === 'PAYÉ' ? 'var(--c-green-bg)' : 'var(--c-orange-bg)',
+              color: record.status === 'PAYÉ' ? 'var(--acc2)' : 'var(--warn)',
+              border: `1px solid ${record.status === 'PAYÉ' ? 'var(--c-green-border)' : 'var(--c-orange-border)'}`,
+              borderRadius:'var(--r-full)', padding:'3px 9px',
               fontSize:12, fontWeight:'var(--fw-semibold)',
             }}>{statusLabel(record.status, lang)}</span>
           </div>
@@ -140,11 +141,11 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
             <div style={{
               display:'flex', justifyContent:'space-between',
               padding:'11px 12px', marginTop:8,
-              background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.2)',
+              background:'var(--c-green-bg2)', border:'1px solid var(--c-green-border)',
               borderRadius:10,
             }}>
               <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--acc2)', letterSpacing:'.3px' }}>{lang === 'en' ? 'GROSS TOTAL' : lang === 'es' ? 'TOTAL BRUTO' : lang === 'it' ? 'TOTALE LORDO' : 'TOTAL BRUT'}</span>
-              <span style={{ fontSize:14, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
+              <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>
                 {fmt(bd.brut)}
               </span>
             </div>
@@ -180,28 +181,28 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
             <div style={{
               display:'flex', justifyContent:'space-between',
               padding:'11px 12px', marginTop:8,
-              background:'rgba(232,64,74,.08)', border:'1px solid rgba(232,64,74,.2)',
+              background:'var(--c-red-bg2)', border:'1px solid var(--c-red-border)',
               borderRadius:10,
             }}>
               <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--danger)', letterSpacing:'.3px' }}>{lang === 'en' ? 'TOTAL DEDUCTIONS' : lang === 'es' ? 'TOTAL DEDUCCIONES' : lang === 'it' ? 'TOTALE DETRAZIONI' : 'TOTAL RETENUES'}</span>
-              <span style={{ fontSize:14, fontWeight:900, color:'var(--danger)', fontFamily:'var(--mono)' }}>
+              <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--danger)', fontFamily:'var(--mono)' }}>
                 − {fmt(totalRetenues)}
               </span>
             </div>
           </div>
 
-          {/* NET À PAYER */}
+          {/* NET À PAYER — en évidence (encart vert, montant 24px mono) */}
           <div style={{
             display:'flex', justifyContent:'space-between', alignItems:'center',
             padding:'18px 20px', marginTop:16,
-            background:'linear-gradient(135deg, rgba(91,78,232,.15), rgba(124,111,240,.08))',
-            border:'2px solid rgba(91,78,232,.35)', borderRadius:14,
+            background:'var(--c-green-bg)',
+            border:'1px solid var(--c-green-border)', borderRadius:12,
           }}>
             <div>
-              <div style={{ fontSize:11, color:'var(--text3)', marginBottom:4, letterSpacing:'.5px' }}>{lang === 'en' ? 'NET PAYABLE' : lang === 'es' ? 'NETO A PAGAR' : lang === 'it' ? 'NETTO DA PAGARE' : 'NET À PAYER'}</div>
+              <div style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--acc2)', marginBottom:4, letterSpacing:'.5px' }}>{lang === 'en' ? 'NET PAYABLE' : lang === 'es' ? 'NETO A PAGAR' : lang === 'it' ? 'NETTO DA PAGARE' : 'NET À PAYER'}</div>
               <div style={{ fontSize:12, color:'var(--text2)' }}>{lang === 'en' ? 'Bank transfer' : lang === 'es' ? 'Transferencia bancaria' : lang === 'it' ? 'Bonifico bancario' : 'Virement bancaire'}</div>
             </div>
-            <div style={{ fontSize:28, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1.5px' }}>
+            <div style={{ fontSize:24, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>
               {fmt(bd.net)}
             </div>
           </div>

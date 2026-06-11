@@ -554,7 +554,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       {tab === 'team' && employees.length === 0 && !loadingEmployees ? (
         <div className="panel">
           <EmptyState
-            icon="👔"
+            icon={<Users size={40} strokeWidth={1.5} style={{ color: 'var(--text3)' }} />}
             title={lang === 'en' ? 'No employees' : lang === 'es' ? 'Sin empleados' : lang === 'it' ? 'Nessun dipendente' : 'Aucun employé'}
             message={lang === 'en' ? 'Add your first employee to start managing your team.' : lang === 'es' ? 'Agregue su primer empleado para empezar a gestionar su equipo.' : lang === 'it' ? 'Aggiungi il tuo primo dipendente per iniziare a gestire la squadra.' : 'Ajoutez votre premier employé pour commencer à gérer votre équipe.'}
             action={{ label: lang === 'en' ? '+ Add an employee' : lang === 'es' ? '+ Agregar un empleado' : lang === 'it' ? '+ Aggiungi un dipendente' : '+ Ajouter un employé', onClick: () => { setSelectedEmp(null); setShowModal(true) } }}

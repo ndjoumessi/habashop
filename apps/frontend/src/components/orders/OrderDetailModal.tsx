@@ -3,7 +3,7 @@ import IconButton from '@/components/ui/IconButton'
 import toast from 'react-hot-toast'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
-import { type Order, type OrderStatus, STATUS_CONFIG, orderStatusLabel } from './ordersShared'
+import { type Order, type OrderStatus, OrderStatusPill } from './ordersShared'
 
 interface Props {
   order: Order
@@ -29,9 +29,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`badge ${STATUS_CONFIG[order.status].cls} flex items-center gap-1`}>
-              {STATUS_CONFIG[order.status].icon} {orderStatusLabel(order.status, lang)}
-            </span>
+            <OrderStatusPill status={order.status} lang={lang} />
             <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={14} />} onClick={onClose} variant="surface" />
           </div>
         </div>
@@ -52,7 +50,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
         </div>
 
         {/* Lignes */}
-        <div className="table-wrap mb-4">
+        <div className="table-wrap data-table mb-4">
           <table>
             <thead>
               <tr><th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th><th scope="col">{i('Qté', 'Qty', 'Cant.', 'Qtà')}</th><th scope="col">{i('Unité', 'Unit', 'Unidad', 'Unità')}</th><th scope="col">{i('PU', 'UP', 'PU', 'PU')}</th><th scope="col">{i('Total', 'Total', 'Total', 'Totale')}</th></tr>

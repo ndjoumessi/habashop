@@ -25,7 +25,7 @@ export default function HRStatsBar({ employees, activeCount, totalPayroll, pendi
             <div style={{ width: 36, height: 36, borderRadius: 10, background: `${k.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>{k.icon}</div>
             <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }}>{k.label}</span>
           </div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: k.color, lineHeight: 1 }}>{k.value}</div>
+          <div style={{ fontSize: 22, fontWeight: 'var(--fw-bold)', color: k.color, lineHeight: 1, fontFamily: 'var(--mono)', letterSpacing: '-0.5px' }}>{k.value}</div>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{k.sub}</div>
         </div>
       ))}

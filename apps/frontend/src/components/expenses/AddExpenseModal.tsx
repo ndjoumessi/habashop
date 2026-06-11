@@ -77,8 +77,8 @@ export default function AddExpenseModal(props: Props) {
           </ResponsiveGrid>
           {nHT && (
             <div style={{
-              padding:'10px 13px', background:'rgba(14,196,126,.1)',
-              border:'1px solid rgba(14,196,126,.25)', borderRadius:8,
+              padding:'10px 13px', background:'var(--c-green-bg2)',
+              border:'1px solid var(--c-green-border)', borderRadius:8,
               display:'flex', justifyContent:'space-between', fontSize:13,
             }}>
               <span style={{ color:'var(--text3)' }}>{tr('Montant TTC calculé :','Calculated total incl. VAT:','Importe c/IVA calculado:','Importo lordo calcolato:')}</span>

@@ -3,8 +3,8 @@ import Pagination from '@/components/ui/Pagination'
 import FilterSelect from '@/components/ui/FilterSelect'
 import { useConfig, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
-import { Search, Download, Plus, Eye, Phone, Pencil, Package, Trash2 } from 'lucide-react'
-import { STATUS_CFG, STATUS_LIST, statusLabel, supplierColor, StarRating } from './suppliersShared'
+import { Search, Download, Plus, Eye, Phone, Pencil, Package, Trash2, Factory } from 'lucide-react'
+import { STATUS_LIST, statusLabel, SupplierStatusPill, StarRating } from './suppliersShared'
 import type { Supplier, SupplierStatus } from './suppliersShared'
 
 interface Pg {
@@ -88,7 +88,7 @@ export default function SuppliersTable(props: Props) {
       </div>
 
       {/* Tableau */}
-      <div className="table-wrap">
+      <div className="table-wrap data-table">
         <table>
           <thead>
             <tr>
@@ -106,10 +106,10 @@ export default function SuppliersTable(props: Props) {
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                     <div style={{
                       width:34, height:34, borderRadius:10, flexShrink:0,
-                      background:`linear-gradient(135deg,${supplierColor(s.name)}22,${supplierColor(s.name)}11)`,
-                      border:`1px solid ${supplierColor(s.name)}44`,
+                      background:'color-mix(in srgb, var(--p) 10%, transparent)',
+                      border:'1px solid color-mix(in srgb, var(--p) 16%, transparent)',
                       display:'flex', alignItems:'center', justifyContent:'center',
-                      fontSize:13, fontWeight:900, color:supplierColor(s.name),
+                      fontSize:13, fontWeight:'var(--fw-semibold)' as any, color:'var(--p2)',
                     }}>{s.name[0]}</div>
                     <div>
                       <div className="td-bold">{s.name}</div>
@@ -125,26 +125,26 @@ export default function SuppliersTable(props: Props) {
                 <td className="td-mono">{s.phone}</td>
                 <td><span className="badge badge-gray">{s.leadTime}{i('j', 'd', 'd', 'g')}</span></td>
                 <td><StarRating rating={s.rating} /></td>
-                <td><span className={`badge ${STATUS_CFG[s.status].cls}`}>{statusLabel(s.status, lang)}</span></td>
+                <td><SupplierStatusPill status={s.status} lang={lang} /></td>
                 <td>
                   <div className="flex gap-1.5">
-                    <button className="btn btn-sm btn-ghost" title={i('Voir fiche', 'View', 'Ver', 'Vedi')} onClick={() => onView(s)}>
-                      <Eye size={12} />
+                    <button className="btn btn-sm btn-ghost stock-action" title={i('Voir fiche', 'View', 'Ver', 'Vedi')} onClick={() => onView(s)}>
+                      <Eye size={14} />
                     </button>
-                    <button className="btn btn-sm btn-ghost" title={`${i('Appeler', 'Call', 'Llamar', 'Chiamare')} ${s.phone}`}
+                    <button className="btn btn-sm btn-ghost stock-action" title={`${i('Appeler', 'Call', 'Llamar', 'Chiamare')} ${s.phone}`}
                       onClick={() => onCall(s)}>
-                      <Phone size={12} />
+                      <Phone size={14} />
                     </button>
-                    <button className="btn btn-sm btn-ghost" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} style={{ cursor: 'pointer' }} onClick={() => onEdit(s)}><Pencil size={12} /></button>
-                    <button className="btn btn-sm btn-ghost"
+                    <button className="btn btn-sm btn-ghost stock-action" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} style={{ cursor: 'pointer' }} onClick={() => onEdit(s)}><Pencil size={14} /></button>
+                    <button className="btn btn-sm btn-ghost stock-action"
                       title={i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
                       aria-label={i(`Supprimer ${s.name}`, `Delete ${s.name}`, `Eliminar ${s.name}`, `Elimina ${s.name}`)}
                       style={{ color: 'var(--danger)', cursor: 'pointer' }}
                       onClick={e => { e.stopPropagation(); onDelete(s) }}>
-                      <Trash2 size={12} />
+                      <Trash2 size={14} />
                     </button>
                     <button className="btn btn-sm"
-                      style={{ background: 'rgba(91,78,232,0.15)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
+                      style={{ background: 'color-mix(in srgb, var(--p) 12%, transparent)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
                       onClick={onOrder}>
                       <Package size={11} /> {i('Commander', 'Order', 'Pedir', 'Ordinare')}
                     </button>
@@ -153,7 +153,12 @@ export default function SuppliersTable(props: Props) {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>{i('Aucun fournisseur trouvé', 'No supplier found', 'Ningún proveedor encontrado', 'Nessun fornitore trovato')}</td></tr>
+              <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+                  <Factory size={28} style={{ opacity:.45 }} aria-hidden="true" />
+                  <span>{i('Aucun fournisseur trouvé', 'No supplier found', 'Ningún proveedor encontrado', 'Nessun fornitore trovato')}</span>
+                </div>
+              </td></tr>
             )}
             </>)}
           </tbody>

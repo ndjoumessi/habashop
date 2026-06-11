@@ -63,7 +63,7 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
         {Object.keys(bonuses).length === 0 ? (
           <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text3)' }}>
             <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Gift size={36} style={{color:'var(--text4)'}}/></div>
-            <div style={{ fontSize:14, fontWeight:600 }}>
+            <div style={{ fontSize:14, fontWeight:'var(--fw-semibold)' }}>
               {lang === 'en' ? 'No bonuses this month' : lang === 'es' ? 'Sin primas este mes' : lang === 'it' ? 'Nessun premio questo mese' : 'Aucune prime ce mois'}
             </div>
             <div style={{ fontSize:12, marginTop:6 }}>
@@ -228,7 +228,7 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
             </div>
           </div>
           <div style={{ textAlign:'right' }}>
-            <div style={{ fontSize:22, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)' }}>
+            <div style={{ fontSize:22, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>
               +{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}
             </div>
             <div style={{ fontSize:11, color:'var(--text3)' }}>{lang === 'en' ? 'Total bonuses' : lang === 'es' ? 'Total primas' : lang === 'it' ? 'Totale premi' : 'Total primes'}</div>

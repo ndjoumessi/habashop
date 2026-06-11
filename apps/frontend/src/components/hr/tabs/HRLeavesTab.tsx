@@ -14,9 +14,9 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, le
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {pendingLeaves > 0 && (
-        <div style={{ padding: '14px 16px', background: 'rgba(240,165,0,.1)', border: '1px solid rgba(240,165,0,.25)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ padding: '14px 16px', background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
           <Clock size={18} style={{ color: 'var(--acc)', flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--acc)' }}>
+          <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--acc)' }}>
             {lang === 'en'
               ? `${pendingLeaves} leave request${pendingLeaves > 1 ? 's' : ''} pending approval`
               : lang === 'es'
@@ -44,7 +44,7 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, le
             const displayName = emp?.name ?? leave.empName ?? '—'
             const statusCfg = LEAVE_STATUS_CFG[leave.status]
             return (
-              <div key={leave.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, flexWrap: 'wrap' }}>
+              <div key={leave.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 12, flexWrap: 'wrap', transition: 'box-shadow .15s ease' }}>
                 {emp && <EmpAvatar emp={emp} size={38} />}
                 {!emp && (
                   <div style={{ width:38, height:38, borderRadius:'50%', background:'#6C47FF22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--p)', flexShrink:0 }}>
@@ -58,16 +58,16 @@ export default function HRLeavesTab({ employees, lang, pendingLeaves, leaves, le
                   </div>
                   {leave.motif && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>"{leave.motif}"</div>}
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', padding: '4px 12px', borderRadius: 20, background: statusCfg.bg, color: statusCfg.color, whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 12, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)', background: statusCfg.bg, color: statusCfg.color, whiteSpace: 'nowrap' }}>
                   {leaveStatusLabel(leave.status, lang)}
                 </span>
                 {leave.status === 'pending' && (
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', background: 'rgba(14,196,126,.15)', border: '1px solid rgba(14,196,126,.3)', color: 'var(--acc2)' }}
+                    <button style={{ fontSize: 12, minHeight: 36, padding: '8px 14px', borderRadius: 8, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', color: 'var(--acc2)', transition: 'all .15s ease' }}
                       onClick={() => handleLeaveAction(leave.id, 'approved')}>
                       ✓ {lang === 'en' ? 'Approve' : lang === 'es' ? 'Aprobar' : lang === 'it' ? 'Approva' : 'Approuver'}
                     </button>
-                    <button style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', background: 'rgba(232,64,74,.12)', border: '1px solid rgba(232,64,74,.25)', color: 'var(--danger)' }}
+                    <button style={{ fontSize: 12, minHeight: 36, padding: '8px 14px', borderRadius: 8, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', background: 'var(--c-red-bg)', border: '1px solid var(--c-red-border)', color: 'var(--danger)', transition: 'all .15s ease' }}
                       onClick={() => handleLeaveAction(leave.id, 'refused')}>
                       ✕ {lang === 'en' ? 'Reject' : lang === 'es' ? 'Rechazar' : lang === 'it' ? 'Rifiuta' : 'Refuser'}
                     </button>

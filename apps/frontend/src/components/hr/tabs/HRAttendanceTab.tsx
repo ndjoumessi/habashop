@@ -92,7 +92,7 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
           <div key={k.label} className="panel" style={{ padding:'12px 14px', position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${k.hex}18,${k.hex}06)`, border:`1px solid ${k.hex}28` }}>
             <div style={{ position:'absolute', top:-16, right:-16, width:64, height:64, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}20 0%,transparent 70%)`, pointerEvents:'none' }} />
             <div style={{ color:k.color, marginBottom:6, display:'flex' }}>{k.icon}</div>
-            <div style={{ fontSize:22, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.count}</div>
+            <div style={{ fontSize:22, fontWeight:'var(--fw-bold)', color:k.color, fontFamily:'var(--mono)' }}>{k.count}</div>
             <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', color:'var(--text3)', marginTop:2 }}>{k.label}</div>
           </div>
         ))}
@@ -100,7 +100,7 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
 
       {/* Employee rows */}
       <div className="panel" style={{ overflow:'hidden', padding:0 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 80px 80px 96px 188px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 88px 80px 96px 248px', gap:0, padding:'10px 16px', background:'var(--bg3)', borderBottom:'1px solid var(--border)', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)' }}>
           <span>{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</span>
           <span style={{ textAlign:'center' }}>{lang === 'en' ? 'Arrival' : lang === 'es' ? 'Llegada' : lang === 'it' ? 'Arrivo' : 'Arrivée'}</span>
@@ -113,7 +113,7 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
           const sc = STATUS_CONFIG[a.status]
           return (
             <div key={emp.id} style={{
-              display:'grid', gridTemplateColumns:'1fr 80px 80px 96px 188px',
+              display:'grid', gridTemplateColumns:'1fr 88px 80px 96px 248px',
               alignItems:'center', gap:0,
               padding:'10px 16px',
               borderBottom: i < dayEmp.length-1 ? '1px solid var(--border)' : 'none',
@@ -131,7 +131,7 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
               </div>
               {/* Statut badge */}
               <div style={{ display:'flex', justifyContent:'center' }}>
-                <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', padding:'3px 8px', borderRadius:20, background:sc.bg, color:sc.color, display:'inline-flex', alignItems:'center', gap:4 }}>
+                <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', padding:'3px 9px', borderRadius:'var(--r-full)', background:sc.bg, color:sc.color, display:'inline-flex', alignItems:'center', gap:4 }}>
                   {sc.icon} {attendStatusLabel(a.status, lang)}
                 </span>
               </div>
@@ -154,11 +154,12 @@ export default function HRAttendanceTab({ employees, lang, attendance, onSaveAtt
                     onClick={() => setEmpField(String(emp.id), 'status', s)}
                     title={STATUS_CONFIG[s].label}
                     style={{
-                      width:26, height:26, borderRadius:6, border:'none', cursor:'pointer',
+                      width:36, height:36, borderRadius:8, border:'none', cursor:'pointer',
                       background: a.status === s ? STATUS_CONFIG[s].bg : 'var(--bg3)',
                       color: STATUS_CONFIG[s].color,
                       outline: a.status === s ? `1.5px solid ${STATUS_CONFIG[s].color}` : 'none',
                       display:'flex', alignItems:'center', justifyContent:'center',
+                      transition:'all .15s ease',
                     }}>
                     {STATUS_CONFIG[s].icon}
                   </button>

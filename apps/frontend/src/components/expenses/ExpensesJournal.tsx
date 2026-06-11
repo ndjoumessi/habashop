@@ -82,7 +82,7 @@ export default function ExpensesJournal(props: Props) {
         </button>
       </div>
 
-      <div className="table-wrap">
+      <div className="table-wrap data-table">
         <table>
           <thead>
             <tr>
@@ -120,10 +120,10 @@ export default function ExpensesJournal(props: Props) {
                   <td>
                     <span style={{
                       display:'inline-flex', alignItems:'center', gap:4,
-                      padding:'3px 9px', borderRadius:20, fontSize:11, fontWeight:'var(--fw-semibold)',
-                      background: e.status === 'PAYÉ' ? 'rgba(14,196,126,.15)' : 'rgba(240,165,0,.15)',
-                      color:       e.status === 'PAYÉ' ? 'var(--acc2)'         : 'var(--acc)',
-                      border:      e.status === 'PAYÉ' ? '1px solid rgba(14,196,126,.3)' : '1px solid rgba(240,165,0,.3)',
+                      padding:'3px 9px', borderRadius:'var(--r-full)', fontSize:12, fontWeight:'var(--fw-semibold)',
+                      background: e.status === 'PAYÉ' ? 'var(--c-green-bg)' : 'var(--c-orange-bg)',
+                      color:       e.status === 'PAYÉ' ? 'var(--acc2)'      : 'var(--warn)',
+                      border:      e.status === 'PAYÉ' ? '1px solid var(--c-green-border)' : '1px solid var(--c-orange-border)',
                     }}>
                       {e.status === 'PAYÉ' ? <Check size={10}/> : <Clock size={10}/>}
                       {e.status === 'PAYÉ' ? tr('Payé','Paid','Pagado','Pagato') : tr('En attente','Pending','Pendiente','In attesa')}
@@ -132,10 +132,10 @@ export default function ExpensesJournal(props: Props) {
                   <td>
                     <div style={{ display:'flex', gap:5 }}>
                       {e.status === 'EN ATTENTE' && (
-                        <button className="mini-btn" title={tr('Marquer payé','Mark as paid','Marcar como pagado','Segna come pagato')} onClick={() => onMarkPaid(e.id)}><Check size={13}/></button>
+                        <button className="btn btn-sm btn-ghost stock-action" title={tr('Marquer payé','Mark as paid','Marcar como pagado','Segna come pagato')} onClick={() => onMarkPaid(e.id)}><Check size={14}/></button>
                       )}
-                      <button className="mini-btn" title={tr('Modifier','Edit','Editar','Modifica')} onClick={() => onEdit(e)}><Pencil size={13}/></button>
-                      <button className="mini-btn" title={tr('Supprimer','Delete','Eliminar','Elimina')} onClick={() => onDelete(e.id)}><Trash2 size={13}/></button>
+                      <button className="btn btn-sm btn-ghost stock-action" title={tr('Modifier','Edit','Editar','Modifica')} onClick={() => onEdit(e)}><Pencil size={14}/></button>
+                      <button className="btn btn-sm btn-ghost stock-action" title={tr('Supprimer','Delete','Eliminar','Elimina')} onClick={() => onDelete(e.id)}><Trash2 size={14}/></button>
                     </div>
                   </td>
                 </tr>

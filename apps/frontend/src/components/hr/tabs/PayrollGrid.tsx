@@ -75,7 +75,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
         ].map(k => (
           <div key={k.label} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px' }}>
             <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>{k.label}</div>
-            <div style={{ fontSize:20, fontWeight:900, color:k.color, fontFamily:'var(--mono)' }}>{k.value}</div>
+            <div style={{ fontSize:20, fontWeight:'var(--fw-bold)', color:k.color, fontFamily:'var(--mono)' }}>{k.value}</div>
           </div>
         ))}
       </div>
@@ -92,7 +92,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
             + {lang === 'en' ? 'Collective bonus' : lang === 'es' ? 'Prima colectiva' : lang === 'it' ? 'Premio collettivo' : 'Prime collective'}
           </button>
         </div>
-        <div className="table-wrap">
+        <div className="table-wrap data-table">
           <table>
             <thead>
               <tr>
@@ -138,7 +138,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
                     </td>
                     <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', fontSize:12 }}>− {fmt(cnss)}</td>
                     <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', fontSize:12 }}>− {fmt(ir)}</td>
-                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:900, color:'var(--acc2)' }}>{fmt(net)}</td>
+                    <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', color:'var(--acc2)' }}>{fmt(net)}</td>
                     <td style={{ textAlign:'center' }}>
                       <button className="btn btn-sm" style={{ fontSize:11, padding:'3px 8px', display:'flex', alignItems:'center', gap:4 }}
                         onClick={() => { setSalaryTarget({...emp, mode:'raise'}); setShowSalaryModal(true) }}>
@@ -156,7 +156,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Object.values(bonuses).reduce((s,v)=>s+v,0))}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--danger)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.08))}</td>
                 <td style={{ textAlign:'right', fontFamily:'var(--mono)', color:'var(--acc)', padding:'12px 14px' }}>− {fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.05))}</td>
-                <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:900, fontSize:15, color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.87))}</td>
+                <td style={{ textAlign:'right', fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', fontSize:15, color:'var(--acc2)', padding:'12px 14px' }}>{fmt(Math.round(employees.filter(e=>e.active).reduce((s,e)=>s+(Number(e.salary)||0),0)*0.87))}</td>
                 <td />
               </tr>
             </tfoot>

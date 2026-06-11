@@ -34,12 +34,14 @@ export default function HRPayrollTab(props: Props) {
           { id:'history', icon:<TrendingUp size={13}/>, label: lang === 'en' ? 'History' : lang === 'es' ? 'Historial' : lang === 'it' ? 'Cronologia' : 'Historique'  },
         ] as const).map(t => (
           <button key={t.id} type="button"
+            aria-pressed={payTab===t.id}
             onClick={() => setPayTab(t.id)}
             style={{
               flex:1, padding:'7px', borderRadius:8, fontSize:12,
               fontWeight:'var(--fw-semibold)', cursor:'pointer', fontFamily:'var(--font)', border:'none',
-              background: payTab===t.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
+              background: payTab===t.id ? 'var(--p)' : 'transparent',
               color: payTab===t.id ? '#fff' : 'var(--text3)',
+              boxShadow: payTab===t.id ? 'var(--sh-xs)' : 'none',
               transition:'all .15s',
               display:'flex', alignItems:'center', justifyContent:'center', gap:5,
             }}>

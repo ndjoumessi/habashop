@@ -29,9 +29,9 @@ export default function PlanningGrid(props: Props) {
 
   return (
     <div style={{
-      background:'var(--grad-card)',
-      border:'1px solid var(--border)',
-      borderRadius:16, overflow:'hidden',
+      background:'var(--bg2)',
+      border:'0.5px solid var(--border)',
+      borderRadius:12, overflow:'hidden',
     }}>
       <div style={{overflowX:'auto'}}>
         <table style={{
@@ -39,8 +39,8 @@ export default function PlanningGrid(props: Props) {
         }}>
           <thead>
             <tr style={{
-              background:'linear-gradient(135deg,var(--bg4),var(--bg3))',
-              borderBottom:'2px solid var(--border)',
+              background:'var(--bg2)',
+              borderBottom:'1px solid var(--border)',
             }}>
               <th style={{
                 padding:'12px 16px', textAlign:'left',
@@ -48,7 +48,7 @@ export default function PlanningGrid(props: Props) {
                 textTransform:'uppercase', letterSpacing:'.6px',
                 color:'var(--text3)',
                 position:'sticky', left:0, zIndex:2,
-                background:'linear-gradient(135deg,var(--bg4),var(--bg3))',
+                background:'var(--bg2)',
               }}>
                 {T.employee}
               </th>
@@ -77,7 +77,7 @@ export default function PlanningGrid(props: Props) {
                       {DAY_LABELS[di]}
                     </div>
                     <div style={{
-                      fontSize:18, fontWeight:900, marginTop:2,
+                      fontSize:18, fontWeight:'var(--fw-bold)', marginTop:2,
                       color: isToday ? 'var(--p2)'
                         : isWeekend ? 'var(--text3)'
                         : 'var(--text)',
@@ -130,7 +130,7 @@ export default function PlanningGrid(props: Props) {
                         ${emp.color},${emp.color}66)`,
                       display:'flex', alignItems:'center',
                       justifyContent:'center',
-                      fontSize:11, fontWeight:900, color:'#fff',
+                      fontSize:11, fontWeight:'var(--fw-bold)', color:'#fff',
                       flexShrink:0,
                       boxShadow:`0 2px 8px ${emp.color}35`,
                     }}>
@@ -295,7 +295,7 @@ export default function PlanningGrid(props: Props) {
             fontSize:11,
           }}>
             <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
-            <span style={{color:s.color,fontWeight:600}}>{shiftLabel(key, lang)}</span>
+            <span style={{color:s.color,fontWeight:'var(--fw-semibold)'}}>{shiftLabel(key, lang)}</span>
             {s.hours&&<span style={{
               color:'var(--text3)',fontFamily:'var(--mono)',fontSize:11,
             }}>{s.hours}</span>}

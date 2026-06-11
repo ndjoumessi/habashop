@@ -29,7 +29,7 @@ export default function PlanningStats({ lang, stats }: Props) {
                 color:'var(--text3)',
               }}>{shiftLabel(key, lang)}</div>
               <div style={{
-                fontSize:20,fontWeight:900,
+                fontSize:20,fontWeight:'var(--fw-bold)',
                 color:s.color,fontFamily:'var(--mono)',
               }}>{count}</div>
             </div>

@@ -136,7 +136,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
 
         {/* Modes paiement — donut premium */}
         <div className="panel" style={{ marginBottom: 0, background: 'var(--grad-card)' }}>
-          <div className="panel-h">
+          <div className="panel-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10,
@@ -144,7 +144,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}><CreditCard size={18} style={{ color:'var(--p3)' }}/></div>
               <div>
-                <div className="panel-t">{lang === 'en' ? 'Payment breakdown' : lang === 'es' ? 'Desglose de pagos' : lang === 'it' ? 'Ripartizione pagamenti' : 'Répartition paiements'}</div>
+                <div className="panel-title">{lang === 'en' ? 'Payment breakdown' : lang === 'es' ? 'Desglose de pagos' : lang === 'it' ? 'Ripartizione pagamenti' : 'Répartition paiements'}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>
                   {salesData.length > 0
                     ? `${salesData.length} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`
@@ -283,7 +283,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           <div className="panel-head">
             <span className="panel-title" style={{ display:'flex', alignItems:'center', gap:6 }}><Receipt size={14}/> {lang === 'en' ? 'Recent sales' : lang === 'es' ? 'Ventas recientes' : lang === 'it' ? 'Vendite recenti' : 'Ventes récentes'}</span>
           </div>
-          <div className="table-wrap">
+          <div className="table-wrap data-table">
             <table>
               <thead>
                 <tr><th scope="col">{t('col_ref')}</th><th scope="col">{t('col_client')}</th><th scope="col">Mode</th><th scope="col">{t('col_amount')}</th></tr>
@@ -373,7 +373,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <div style={{ width:10, height:10, borderRadius:'50%', background:seg.color }} />
                     <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{seg.label}</span>
-                    <span style={{ fontSize:11, color:'var(--text3)', background:'var(--bg3)', padding:'1px 8px', borderRadius:20 }}>{seg.count} clients</span>
+                    <span style={{ fontSize:11, color:'var(--text3)', background:'var(--bg3)', border:'1px solid var(--border)', padding:'1px 8px', borderRadius:'var(--r-full)' }}>{seg.count} clients</span>
                   </div>
                   <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:seg.color, fontFamily:'var(--mono)' }}>{seg.ca}</span>
                 </div>
@@ -480,9 +480,11 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 </div>
                 <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)', color:'var(--text2)' }}>{emp.salaire}</span>
                 <span style={{
-                  padding:'3px 9px', borderRadius:20, fontSize:11, fontWeight:'var(--fw-semibold)',
-                  background: emp.status === 'Présent' || emp.status === 'Present' ? 'rgba(14,196,126,.15)' : 'rgba(240,165,0,.15)',
-                  color:       emp.status === 'Présent' || emp.status === 'Present' ? 'var(--acc2)' : 'var(--acc)',
+                  display:'inline-flex', alignItems:'center',
+                  padding:'3px 9px', borderRadius:'var(--r-full)', fontSize:12, fontWeight:'var(--fw-semibold)',
+                  background: emp.status === 'Présent' || emp.status === 'Present' ? 'var(--c-green-bg)' : 'var(--c-orange-bg)',
+                  border:     emp.status === 'Présent' || emp.status === 'Present' ? '1px solid var(--c-green-border)' : '1px solid var(--c-orange-border)',
+                  color:       emp.status === 'Présent' || emp.status === 'Present' ? 'var(--acc2)' : 'var(--warn)',
                 }}>{emp.status}</span>
               </div>
             ))}

@@ -41,7 +41,7 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
           return (
             <div key={emp.id} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:14, padding:18, transition:'all .2s' }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, paddingBottom:12, borderBottom:'1px solid var(--border)' }}>
-                <div style={{ width:40, height:40, borderRadius:11, background:`linear-gradient(135deg,${emp.color??'var(--p)'},${emp.color??'var(--p)'}66)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:900, color:'#fff', flexShrink:0 }}>
+                <div style={{ width:40, height:40, borderRadius:11, background:`linear-gradient(135deg,${emp.color??'var(--p)'},${emp.color??'var(--p)'}66)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:'var(--fw-bold)', color:'#fff', flexShrink:0 }}>
                   {emp.avatar ?? '??'}
                 </div>
                 <div style={{ flex:1 }}>
@@ -62,7 +62,7 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
                 ].map((row, i) => (
                   <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'4px 0', borderBottom:'1px solid var(--border)' }}>
                     <span style={{ color:'var(--text3)' }}>{row.label}</span>
-                    <span style={{ color:row.color, fontFamily:'var(--mono)', fontWeight:600 }}>{row.sign} {row.value}</span>
+                    <span style={{ color:row.color, fontFamily:'var(--mono)', fontWeight:'var(--fw-semibold)' }}>{row.sign} {row.value}</span>
                   </div>
                 ))}
               </div>
@@ -71,7 +71,7 @@ export default function PayrollPayslips({ employees, fmt, lang, payrollMonth, se
                 <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
                   {lang === 'en' ? 'NET TO PAY' : lang === 'es' ? 'NETO A PAGAR' : lang === 'it' ? 'NETTO DA PAGARE' : 'NET À PAYER'}
                 </span>
-                <span style={{ fontSize:20, fontWeight:900, color:'var(--acc2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>
+                <span style={{ fontSize:20, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>
                   {fmt(net)}
                 </span>
               </div>

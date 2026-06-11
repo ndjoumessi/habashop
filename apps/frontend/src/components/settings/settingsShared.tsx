@@ -13,11 +13,12 @@ export const panel: React.CSSProperties = {
 export function Switch({ on, onClick, color, disabled }: { on: boolean; onClick: () => void; color: string; disabled?: boolean }) {
   return (
     <button type="button" disabled={disabled} onClick={onClick} aria-pressed={on} style={{
-      width: 48, height: 26, borderRadius: 99, flexShrink: 0,
-      background: on ? color : 'var(--bg4)', border: 'none',
+      /* Pattern POSModals : piste OFF = var(--bg5) + bordure var(--border) (visible en Soleil), ON = couleur sémantique, knob #fff */
+      width: 48, height: 26, borderRadius: 'var(--r-full)', flexShrink: 0, boxSizing: 'border-box',
+      background: on ? color : 'var(--bg5)', border: '1px solid var(--border)',
       cursor: disabled ? 'default' : 'pointer', transition: 'all .25s', position: 'relative',
     }}>
-      <div style={{ position: 'absolute', top: 3, left: on ? 24 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .25s', boxShadow: '0 2px 6px rgba(0,0,0,.3)' }} />
+      <div style={{ position: 'absolute', top: 2, left: on ? 24 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .25s', boxShadow: '0 2px 6px rgba(0,0,0,.3)' }} />
     </button>
   )
 }

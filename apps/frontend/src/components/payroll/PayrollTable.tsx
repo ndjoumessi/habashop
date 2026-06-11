@@ -47,7 +47,7 @@ export default function PayrollTable(props: Props) {
             {lang === 'en' ? `No payslips for ${monthLabel(month, lang)}` : lang === 'es' ? `Sin nóminas para ${monthLabel(month, lang)}` : lang === 'it' ? `Nessuna busta paga per ${monthLabel(month, lang)}` : `Aucun bulletin pour ${monthLabel(month, lang)}`}
           </div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap data-table">
             <table>
               <thead>
                 <tr>
@@ -82,22 +82,22 @@ export default function PayrollTable(props: Props) {
                         : <span style={{ fontSize:12, color:'var(--text3)' }}>0</span>
                       }
                     </td>
-                    <td className="td-num" style={{ color:'var(--acc2)', fontSize:13 }}>{fmt(calcNet(r))}</td>
+                    <td className="td-num" style={{ color:'var(--acc2)' }}>{fmt(calcNet(r))}</td>
                     <td>
                       <span className={`badge ${STATUS_CFG[r.status].cls}`}>{statusLabel(r.status, lang)}</span>
                     </td>
                     <td>
                       <div style={{ display:'flex', gap:5 }}>
-                        <button className="mini-btn gap-1" onClick={() => onView(r)}>
-                          <Eye size={11} /> {lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Visualizza' : 'Voir'}
+                        <button className="btn btn-sm btn-ghost stock-action gap-1" onClick={() => onView(r)}>
+                          <Eye size={14} /> {lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Visualizza' : 'Voir'}
                         </button>
                         {(r.status === 'EN ATTENTE' || r.status === 'GÉNÉRÉ') && (
-                          <button className="mini-btn gap-1" onClick={() => onMarkPaid(r.id)}>
-                            <Check size={11} /> {lang === 'en' ? 'Pay' : lang === 'es' ? 'Pagar' : lang === 'it' ? 'Paga' : 'Payer'}
+                          <button className="btn btn-sm btn-ghost stock-action gap-1" onClick={() => onMarkPaid(r.id)}>
+                            <Check size={14} /> {lang === 'en' ? 'Pay' : lang === 'es' ? 'Pagar' : lang === 'it' ? 'Paga' : 'Payer'}
                           </button>
                         )}
-                        <button aria-label={lang === 'en' ? 'Download PDF' : lang === 'es' ? 'Descargar PDF' : lang === 'it' ? 'Scarica PDF' : 'Télécharger le PDF'} className="mini-btn gap-1" onClick={() => onPrintPDF(r)}>
-                          <Download size={11} />
+                        <button aria-label={lang === 'en' ? 'Download PDF' : lang === 'es' ? 'Descargar PDF' : lang === 'it' ? 'Scarica PDF' : 'Télécharger le PDF'} className="btn btn-sm btn-ghost stock-action gap-1" onClick={() => onPrintPDF(r)}>
+                          <Download size={14} />
                         </button>
                       </div>
                     </td>

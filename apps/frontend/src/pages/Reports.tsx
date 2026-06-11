@@ -226,12 +226,13 @@ export default function Reports() {
           return (
             <button key={p}
               className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              aria-pressed={active}
               style={{
                 background: active ? 'var(--p)' : 'var(--card)',
                 color: active ? '#fff' : 'var(--text2)',
                 border: active ? 'none' : '1px solid var(--border)',
                 cursor: 'pointer', fontFamily: 'inherit',
-                boxShadow: active ? '0 4px 18px rgba(91,78,232,.35)' : 'none',
+                boxShadow: active ? 'var(--sh-xs)' : 'none',
               }}
               onClick={() => { setCustomFrom(''); setCustomTo(''); setPeriod(p) }}
             >{PERIOD_LABELS[p]}</button>

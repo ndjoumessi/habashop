@@ -99,9 +99,9 @@ export default function ExpenseDetailModal(props: Props) {
                   <button type="button" role="switch" aria-checked={editExpForm.recurrent}
                     aria-label={lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}
                     onClick={() => setEditExpForm(f => ({...f, recurrent:!f.recurrent}))}
-                    style={{ width:44, height:24, borderRadius:99, background: editExpForm.recurrent ? 'var(--p2)' : 'var(--bg4)', border:'1px solid var(--border)', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0, boxSizing:'border-box' }}>
-                    {/* Knob var(--card)+border : un knob #fff était invisible sur piste claire en thème Soleil */}
-                    <div style={{ position:'absolute', top:1, left: editExpForm.recurrent ? 21 : 1, width:20, height:20, borderRadius:'50%', background:'var(--card)', border:'1px solid var(--border)', boxSizing:'border-box', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
+                    style={{ width:44, height:24, borderRadius:'var(--r-full)', background: editExpForm.recurrent ? 'var(--p2)' : 'var(--bg5)', border:'1px solid var(--border)', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0, boxSizing:'border-box' }}>
+                    {/* Pattern POSModals : piste var(--bg5) OFF / couleur ON ; knob #fff + bordure (visible sur piste claire en thème Soleil) */}
+                    <div style={{ position:'absolute', top:1, left: editExpForm.recurrent ? 21 : 1, width:20, height:20, borderRadius:'50%', background:'#fff', border:'1px solid var(--border)', boxSizing:'border-box', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
                   </button>
                   <span style={{ fontSize:13, color:'var(--text2)' }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</span>
                 </label>
@@ -115,7 +115,7 @@ export default function ExpenseDetailModal(props: Props) {
               <button className="topbar-btn" style={{ flex:1, justifyContent:'center', display:'flex', alignItems:'center', gap:6 }} onClick={() => setExpEditMode(true)}>
                 <Pencil size={14}/> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
               </button>
-              <button className="mini-btn" onClick={onClose}>
+              <button className="btn btn-ghost btn-sm" onClick={onClose}>
                 {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}
               </button>
               <IconButton label={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'} icon={<Trash2 size={13}/>} onClick={onDelete} danger variant="surface" />
@@ -125,7 +125,7 @@ export default function ExpenseDetailModal(props: Props) {
               <button className="topbar-btn" style={{ flex:1, justifyContent:'center', display:'flex', alignItems:'center', gap:6 }} onClick={onSave}>
                 <Check size={14}/> {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Sauvegarder'}
               </button>
-              <button className="mini-btn" onClick={() => setExpEditMode(false)}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setExpEditMode(false)}>
                 {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
               </button>
             </>

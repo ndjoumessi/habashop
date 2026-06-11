@@ -201,7 +201,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                       </span>
                       <span style={{ color:'var(--text2)' }}>→</span>
                       <span style={{
-                        fontWeight:900, color:'var(--text)',
+                        fontWeight:'var(--fw-bold)', color:'var(--text)',
                         fontFamily:'var(--mono)',
                         fontSize:16,
                       }}>
@@ -330,7 +330,7 @@ export default function PayrollHistory({ employees, fmt, lang, salaryHistory, on
                     color:'var(--text3)', marginBottom:2,
                   }}>{k.label}</div>
                   <div style={{
-                    fontSize:16, fontWeight:900,
+                    fontSize:16, fontWeight:'var(--fw-bold)',
                     color:k.color, fontFamily:'var(--mono)',
                     letterSpacing:'-.5px',
                   }}>{k.value}</div>

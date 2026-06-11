@@ -12,9 +12,9 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
     <div style={{
       display:'flex', gap:6, flexWrap:'wrap',
       padding:'12px 16px',
-      background:'var(--grad-card)',
-      border:'1px solid var(--border)',
-      borderRadius:16,
+      background:'var(--bg2)',
+      border:'0.5px solid var(--border)',
+      borderRadius:12,
     }}>
       <div style={{
         fontSize:11, fontWeight:'var(--fw-bold)',

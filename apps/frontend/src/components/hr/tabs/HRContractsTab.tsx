@@ -18,7 +18,7 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
           <Plus size={14} /> {lang === 'en' ? 'New contract' : lang === 'es' ? 'Nuevo contrato' : lang === 'it' ? 'Nuovo contratto' : 'Nouveau contrat'}
         </button>
       </div>
-      <div className="table-wrap">
+      <div className="table-wrap data-table">
         <table>
           <thead>
             <tr>
@@ -56,12 +56,13 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: deptColor, flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, color: deptColor, fontWeight: 600 }}>{deptLabel(emp.dept, lang)}</span>
+                      <span style={{ fontSize: 12, color: deptColor, fontWeight: 'var(--fw-semibold)' }}>{deptLabel(emp.dept, lang)}</span>
                     </div>
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{
-                      fontSize: 11, fontWeight: 'var(--fw-semibold)', padding: '3px 10px', borderRadius: 20,
+                      display: 'inline-flex', alignItems: 'center',
+                      fontSize: 12, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
                       background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
                       color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
                     }}>{contractLabel(emp.type, lang)}</span>
@@ -71,21 +72,23 @@ export default function HRContractsTab({ employees, fmt, lang, setSelectedContra
                   </td>
                   <td style={{ fontSize: 12 }}>
                     {emp.type === 'CDI' ? (
-                      <span style={{ color:'var(--acc2)', fontWeight:600 }}>{lang === 'en' ? 'Permanent' : lang === 'es' ? 'Indefinido' : lang === 'it' ? 'Indeterminato' : 'Indéterminé'}</span>
+                      <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)' }}>{lang === 'en' ? 'Permanent' : lang === 'es' ? 'Indefinido' : lang === 'it' ? 'Indeterminato' : 'Indéterminé'}</span>
                     ) : emp.endAt ? (
-                      <span style={{ color: isExpiringSoon ? 'var(--danger)' : 'var(--text2)', fontWeight: isExpiringSoon ? 700 : 400 }}>
+                      <span style={{ color: isExpiringSoon ? 'var(--danger)' : 'var(--text2)', fontWeight: isExpiringSoon ? 'var(--fw-semibold)' : 'var(--fw-regular)' }}>
                         {isExpiringSoon && <AlertTriangle size={11} style={{display:'inline',verticalAlign:'middle',marginRight:3,flexShrink:0}} />}{displayDate(emp.endAt, lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')}
                       </span>
                     ) : (
-                      <span style={{ color:'var(--acc)', fontWeight:600 }}>{lang === 'en' ? 'To define' : lang === 'es' ? 'Por definir' : lang === 'it' ? 'Da definire' : 'À définir'}</span>
+                      <span style={{ color:'var(--acc)', fontWeight:'var(--fw-semibold)' }}>{lang === 'en' ? 'To define' : lang === 'es' ? 'Por definir' : lang === 'it' ? 'Da definire' : 'À définir'}</span>
                     )}
                   </td>
                   <td style={{ textAlign: 'right', fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)' }}>{fmt(emp.salary)}</td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{
-                      fontSize: 11, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 20,
-                      background: emp.active ? 'rgba(14,196,126,.12)' : 'var(--bg3)',
-                      color: emp.active ? 'var(--acc2)' : 'var(--text3)',
+                      display: 'inline-flex', alignItems: 'center',
+                      fontSize: 12, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
+                      background: emp.active ? 'var(--c-green-bg)' : 'var(--bg3)',
+                      border: `1px solid ${emp.active ? 'var(--c-green-border)' : 'var(--border)'}`,
+                      color: emp.active ? 'var(--acc2)' : 'var(--text2)',
                     }}>
                       {emp.active
                         ? (lang === 'en' ? '✓ Active' : lang === 'es' ? '✓ Activo' : lang === 'it' ? '✓ Attivo' : '✓ Actif')

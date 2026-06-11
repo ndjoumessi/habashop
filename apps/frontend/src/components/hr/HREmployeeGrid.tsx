@@ -82,7 +82,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
             <ResponsiveGrid min={240} gap={12}>
               {loadingEmployees ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} style={{ background:'var(--grad-card)', border:'1px solid var(--border)', borderRadius:16, padding:18, display:'flex', flexDirection:'column', gap:12 }}>
+                  <div key={i} style={{ background:'var(--bg2)', border:'0.5px solid var(--border)', borderRadius:12, padding:16, display:'flex', flexDirection:'column', gap:12 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                       <div className="skeleton" style={{ width:40, height:40, borderRadius:'50%', flexShrink:0 }} />
                       <div style={{ flex:1 }}>
@@ -98,18 +98,18 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                 const isActive  = emp.active
                 return (
                   <div key={emp.id} style={{
-                    background:'var(--grad-card)',
-                    border:'1px solid var(--border)',
-                    borderRadius:14, padding:0,
+                    background:'var(--bg2)',
+                    border:'0.5px solid var(--border)',
+                    borderRadius:12, padding:0,
                     overflow:'hidden', cursor:'pointer',
-                    transition:'all .18s',
+                    transition:'all .15s ease',
                     opacity: isActive ? 1 : .65,
                   }}
                     onMouseEnter={e => {
                       const el = e.currentTarget as HTMLElement
                       el.style.borderColor = deptColor + '50'
                       el.style.transform = 'translateY(-2px)'
-                      el.style.boxShadow = `0 8px 24px ${deptColor}18`
+                      el.style.boxShadow = 'var(--sh-sm)'
                     }}
                     onMouseLeave={e => {
                       const el = e.currentTarget as HTMLElement
@@ -128,7 +128,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                           width:44, height:44, borderRadius:12,
                           background:`linear-gradient(135deg,${emp.color??'var(--p)'},${emp.color??'var(--p)'}66)`,
                           display:'flex', alignItems:'center', justifyContent:'center',
-                          fontSize:14, fontWeight:900, color:'#fff', flexShrink:0,
+                          fontSize:14, fontWeight:'var(--fw-bold)', color:'#fff', flexShrink:0,
                           boxShadow:`0 3px 10px ${emp.color??'var(--p)'}35`,
                         }}>
                           {emp.avatar}
@@ -138,11 +138,12 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                           <div style={{ fontSize:11, color:'var(--text3)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{roleLabel(emp.role, lang)}</div>
                         </div>
                         <span style={{
-                          fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase',
-                          background: isActive ? 'rgba(0,208,132,.1)' : 'rgba(255,59,92,.1)',
-                          color: isActive ? 'var(--acc2)' : 'var(--danger)',
-                          border:`1px solid ${isActive ? 'rgba(0,208,132,.2)' : 'rgba(255,59,92,.2)'}`,
-                          borderRadius:20, padding:'2px 7px', flexShrink:0,
+                          display:'inline-flex', alignItems:'center',
+                          fontSize:12, fontWeight:'var(--fw-semibold)', textTransform:'uppercase',
+                          background: isActive ? 'var(--c-green-bg)' : 'var(--bg3)',
+                          color: isActive ? 'var(--acc2)' : 'var(--text2)',
+                          border:`1px solid ${isActive ? 'var(--c-green-border)' : 'var(--border)'}`,
+                          borderRadius:'var(--r-full)', padding:'3px 9px', flexShrink:0,
                         }}>
                           {isActive ? (lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif') : (lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif')}
                         </span>
@@ -153,7 +154,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                           <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>
                             {lang === 'en' ? 'Salary' : lang === 'es' ? 'Salario' : lang === 'it' ? 'Stipendio' : 'Salaire'}
                           </div>
-                          <div style={{ fontSize:12, fontWeight:900, color:'var(--acc)', fontFamily:'var(--mono)' }}>{fmt(Number(emp.salary)||0)}</div>
+                          <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--acc)', fontFamily:'var(--mono)' }}>{fmt(Number(emp.salary)||0)}</div>
                         </div>
                         <div style={{ background:`${deptColor}0D`, border:`1px solid ${deptColor}1A`, borderRadius:8, padding:'7px 9px' }}>
                           <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:3 }}>Dept</div>
@@ -162,7 +163,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                       </div>
                       {/* Footer card */}
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                        <span style={{ fontSize:11, fontWeight:600, color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:5, padding:'2px 7px' }}>{contractLabel(emp.type, lang)}</span>
+                        <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:5, padding:'2px 7px' }}>{contractLabel(emp.type, lang)}</span>
                         <div style={{ display:'flex', gap:1, alignItems:'center' }}>
                           {[1,2,3,4,5].map(s => (
                             <Star key={s} size={9} style={{ color:'#F59E0B', opacity: s<=(emp.perf??3) ? 1 : .2, fill: s<=(emp.perf??3) ? '#F59E0B' : 'none' }} />
@@ -171,11 +172,11 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                         <button aria-label={lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'} type="button"
                           onClick={e => { e.stopPropagation(); openEditModal(emp) }}
                           style={{
-                            width:26, height:26, borderRadius:7,
-                            background:'rgba(255,149,0,.1)', border:'1px solid rgba(255,149,0,.2)',
-                            cursor:'pointer', color:'var(--acc)',
+                            width:36, height:36, borderRadius:8,
+                            background:'var(--c-orange-bg)', border:'1px solid var(--c-orange-border)',
+                            cursor:'pointer', color:'var(--acc)', transition:'all .15s ease',
                             display:'flex', alignItems:'center', justifyContent:'center',
-                          }}><Pencil size={11}/></button>
+                          }}><Pencil size={14}/></button>
                       </div>
                     </div>
                   </div>
@@ -192,7 +193,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
           {/* Table view */}
           {viewMode === 'table' && (
             <div className="panel" style={{ padding: 0 }}>
-              <div className="table-wrap">
+              <div className="table-wrap data-table">
                 <table>
                   <thead>
                     <tr>
@@ -230,13 +231,14 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                           </div>
                         </td>
                         <td>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: DEPT_COLORS[emp.dept] ?? 'var(--text2)' }}>
+                          <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: DEPT_COLORS[emp.dept] ?? 'var(--text2)' }}>
                             {deptLabel(emp.dept, lang)}
                           </span>
                         </td>
                         <td>
                           <span style={{
-                            fontSize: 11, fontWeight: 'var(--fw-semibold)', padding: '2px 8px', borderRadius: 20,
+                            display: 'inline-flex', alignItems: 'center',
+                            fontSize: 12, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
                             background: emp.type === 'CDI' ? 'rgba(108,71,255,.15)' : 'rgba(14,196,126,.12)',
                             color: emp.type === 'CDI' ? 'var(--p2)' : 'var(--acc2)',
                           }}>{contractLabel(emp.type, lang)}</span>
@@ -246,9 +248,11 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                         <td style={{ textAlign: 'center' }}>{emp.perf != null && <Stars v={emp.perf} />}</td>
                         <td style={{ textAlign: 'center' }}>
                           <span style={{
-                            fontSize: 11, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 20,
-                            background: emp.active ? 'rgba(14,196,126,.12)' : 'var(--bg3)',
-                            color: emp.active ? 'var(--acc2)' : 'var(--text3)',
+                            display: 'inline-flex', alignItems: 'center',
+                            fontSize: 12, fontWeight: 'var(--fw-semibold)', padding: '3px 9px', borderRadius: 'var(--r-full)',
+                            background: emp.active ? 'var(--c-green-bg)' : 'var(--bg3)',
+                            border: `1px solid ${emp.active ? 'var(--c-green-border)' : 'var(--border)'}`,
+                            color: emp.active ? 'var(--acc2)' : 'var(--text2)',
                           }}>
                             {emp.active ? `● ${lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif'}` : `○ ${lang === 'en' ? 'Inactive' : lang === 'es' ? 'Inactivo' : lang === 'it' ? 'Inattivo' : 'Inactif'}`}
                           </span>

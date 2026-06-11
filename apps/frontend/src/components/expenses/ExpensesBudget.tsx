@@ -1,7 +1,7 @@
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { Settings } from 'lucide-react'
-import { CATEGORIES, CATEGORY_STYLE, catLabel } from './expensesShared'
+import { CATEGORIES, CatPill } from './expensesShared'
 import type { Category } from './expensesShared'
 
 interface Props {
@@ -16,7 +16,6 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
   const { lang } = useConfig()
   const fmt = useFormatAmount()
   const tr = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
-  const cl = (c: string) => catLabel(c, lang)
 
   return (
     <div className="space-y-4">
@@ -33,17 +32,16 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
           const pct = Math.min(100, Math.round(spent / budget * 100))
           const over = spent > budget
           const barColor = pct < 70 ? 'var(--acc2)' : pct < 90 ? 'var(--acc)' : 'var(--danger)'
-          const s = CATEGORY_STYLE[cat]
           return (
             <div key={cat} style={{
-              background:'var(--card)', border:'1px solid var(--border)',
-              borderRadius:14, padding:'16px 18px',
-            }}>
+              background:'var(--bg2)', border:'0.5px solid var(--border)',
+              borderRadius:12, padding:16, transition:'all .15s ease',
+            }}
+              onMouseEnter={ev => { const el = ev.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = 'var(--sh-sm)' }}
+              onMouseLeave={ev => { const el = ev.currentTarget as HTMLElement; el.style.transform = 'none'; el.style.boxShadow = 'none' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ fontSize:18 }}>{s.icon}</span>
-                  <span style={{ fontWeight:'var(--fw-semibold)', fontSize:14, color:'var(--text)' }}>{cl(cat)}</span>
-                </div>
+                {/* Pill catégorie (teintes de la palette conservées — seule la forme est pill) */}
+                <CatPill cat={cat} lang={lang} />
                 {over && (
                   <span className="badge badge-red">{tr('Dépassé !','Over budget!','¡Excedido!','Superato!')}</span>
                 )}
@@ -73,14 +71,26 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
       {/* Résumé total */}
       <div style={{
         background:'var(--card)', border:'1px solid var(--border)',
-        borderRadius:14, padding:'18px 20px',
+        borderRadius:12, padding:16,
       }}>
         <div className="panel-head" style={{ marginBottom:16 }}>
           <span className="panel-title">{lang === 'en' ? 'Monthly summary' : lang === 'es' ? 'Resumen mensual' : lang === 'it' ? 'Riepilogo mensile' : 'Résumé mensuel'}</span>
         </div>
+        {/* Total dépensé — mis en valeur (pattern total POS : encart bg2, 24px mono) */}
+        <div style={{
+          display:'flex', justifyContent:'space-between', alignItems:'center',
+          padding:'12px 14px', marginBottom:12,
+          background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8,
+        }}>
+          <span style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>
+            {tr('Total dépensé','Total spent','Total gastado','Totale speso')}
+          </span>
+          <span style={{ fontSize:24, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)', letterSpacing:'-.5px' }}>
+            {fmt(Object.values(catSpent).reduce((s,v) => s+v, 0))}
+          </span>
+        </div>
         {[
           { label:tr('Budget total mensuel','Total monthly budget','Presupuesto total mensual','Budget mensile totale'),  value:fmt(totalBudget),            color:'var(--text2)' },
-          { label:tr('Total dépensé','Total spent','Total gastado','Totale speso'),          value:fmt(Object.values(catSpent).reduce((s,v) => s+v, 0)), color:'var(--acc)' },
           { label:tr('Écart','Variance','Variación','Variazione'),                  value:fmt(Math.abs(budgetLeft)),   color: budgetLeft >= 0 ? 'var(--acc2)' : 'var(--danger)', prefix: budgetLeft >= 0 ? '▲ +' : '▼ -' },
           { label:tr("Taux d'utilisation",'Usage rate','Tasa de uso','Tasso di utilizzo'),    value:`${Math.round(Object.values(catSpent).reduce((s,v)=>s+v,0)/totalBudget*100)} %`, color: 'var(--p2)' },
         ].map(r => (

@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { useConfig, useFormatAmount, convertFromXOF, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { exportCSV } from '@/utils/export'
-import { type Order, type OrderStatus, STATUS_CONFIG, STATUSES, orderStatusLabel } from './ordersShared'
+import { type Order, type OrderStatus, STATUS_CONFIG, STATUSES, orderStatusLabel, OrderStatusPill } from './ordersShared'
 
 interface PaginationApi {
   page: number; totalPages: number; total: number; pageSize: number
@@ -125,7 +125,7 @@ export default function OrdersListPanel({
       </div>
 
       {/* Table */}
-      <div className="table-wrap">
+      <div className="table-wrap data-table">
         <table>
           <thead>
             <tr>
@@ -145,7 +145,6 @@ export default function OrdersListPanel({
               <tr><td colSpan={9} style={{ padding: '8px 14px' }}><Skeleton height={34} count={6} radius={8} /></td></tr>
             ) : (<>
             {pg.paginated.map(o => {
-              const cfg = STATUS_CONFIG[o.status]
               const isLate = o.status === 'EN TRANSIT' && new Date(o.expectedAt) < new Date()
               return (
                 <tr key={o.id}>
@@ -171,9 +170,7 @@ export default function OrdersListPanel({
                   </td>
                   <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(o.total)}</td>
                   <td>
-                    <span className={`badge ${cfg.cls} flex items-center gap-1 w-fit`}>
-                      {cfg.icon} {orderStatusLabel(o.status, lang)}
-                    </span>
+                    <OrderStatusPill status={o.status} lang={lang} />
                   </td>
                   <td>
                     <div className="flex gap-1.5">
