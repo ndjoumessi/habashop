@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink, Tag, CreditCard } from 'lucide-react'
+import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink, Tag, CreditCard, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t, useAppStore, convertFromXOF } from '@/stores/appStore'
 import { exportCSV, generateInvoice } from '@/utils/export'
 import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import FilterSelect from '@/components/ui/FilterSelect'
-import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar } from '@/components/customers/customersShared'
+import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyTier } from '@/components/customers/customersShared'
 
 interface CustomersListProps {
   customers: Customer[]
@@ -40,10 +40,10 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
           <span className="panel-title">{t('customers_title')}</span>
           <div className="flex items-center gap-2">
             <div style={{ display: 'flex', background: 'var(--bg3)', borderRadius: 8, padding: 3, gap: 2 }}>
-              <button title={i('Vue tableau', 'Table view', 'Vista tabla', 'Vista tabella')} onClick={() => setViewMode('table')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'table' ? 'var(--bg)' : 'transparent', color: viewMode === 'table' ? 'var(--p2)' : 'var(--text3)' }}>
+              <button title={i('Vue tableau', 'Table view', 'Vista tabla', 'Vista tabella')} aria-pressed={viewMode === 'table'} onClick={() => setViewMode('table')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'table' ? 'var(--p)' : 'transparent', color: viewMode === 'table' ? '#fff' : 'var(--text3)', boxShadow: viewMode === 'table' ? 'var(--sh-xs)' : 'none' }}>
                 <LayoutList size={14} />
               </button>
-              <button title={i('Vue grille', 'Grid view', 'Vista cuadrícula', 'Vista griglia')} onClick={() => setViewMode('grid')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'grid' ? 'var(--bg)' : 'transparent', color: viewMode === 'grid' ? 'var(--p2)' : 'var(--text3)' }}>
+              <button title={i('Vue grille', 'Grid view', 'Vista cuadrícula', 'Vista griglia')} aria-pressed={viewMode === 'grid'} onClick={() => setViewMode('grid')} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s', background: viewMode === 'grid' ? 'var(--p)' : 'transparent', color: viewMode === 'grid' ? '#fff' : 'var(--text3)', boxShadow: viewMode === 'grid' ? 'var(--sh-xs)' : 'none' }}>
                 <Grid3X3 size={14} />
               </button>
             </div>
@@ -91,7 +91,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
 
         {/* Vue tableau */}
         {viewMode === 'table' && (
-          <div className="table-wrap">
+          <div className="table-wrap data-table">
             <table>
               <thead>
                 <tr>
@@ -103,9 +103,21 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                 {pg.paginated.map(c => (
                   <tr key={c.id}>
                     <td>
-                      <div className="td-bold">{c.name}</div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
-                        {i('Depuis', 'Since', 'Desde', 'Dal')} {new Date(c.since).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { month: 'short', year: 'numeric' })}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        <span aria-hidden="true" style={{
+                          width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                          background: 'linear-gradient(135deg, var(--p), var(--p2))',
+                          color: '#fff', fontSize: 11, fontWeight: 'var(--fw-bold)',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {c.name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
+                        </span>
+                        <span style={{ minWidth: 0 }}>
+                          <span className="td-bold" style={{ display: 'block' }}>{c.name}</span>
+                          <span className="text-xs" style={{ display: 'block', marginTop: 2, color: 'var(--text3)' }}>
+                            {i('Depuis', 'Since', 'Desde', 'Dal')} {new Date(c.since).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { month: 'short', year: 'numeric' })}
+                          </span>
+                        </span>
                       </div>
                     </td>
                     <td><span className={`badge ${TYPE_CFG[c.type].cls}`}>{typeLabel(c.type, lang)}</span></td>
@@ -115,47 +127,48 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} /></td>
                     <td>
                       <div className="flex gap-1.5">
-                        <button className="btn btn-sm btn-ghost" title={i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>
-                          <Eye size={12} />
+                        <button className="btn btn-sm btn-ghost stock-action" title={i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>
+                          <Eye size={14} />
                         </button>
-                        <button className="btn btn-sm btn-ghost" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} style={{ cursor: 'pointer' }} onClick={() => {
+                        <button className="btn btn-sm btn-ghost stock-action" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} style={{ cursor: 'pointer' }} onClick={() => {
                           setEditCustomer(c)
                           setEditCustForm({ name:c.name, type:c.type, phone:c.phone, email:c.email??'', address:c.address??'', notes:c.notes??'' })
                           setCustEditMode(false)
                           setShowEditCustModal(true)
-                        }}><Pencil size={12} /></button>
-                        <button className="btn btn-sm" title={i('Nouvelle vente', 'New sale', 'Nueva venta', 'Nuova vendita')}
-                          style={{ background: TYPE_CFG['Fidèle'].bg, color: 'var(--acc2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
+                        }}><Pencil size={14} /></button>
+                        <button className="btn btn-sm btn-ghost stock-action" title={i('Nouvelle vente', 'New sale', 'Nueva venta', 'Nuova vendita')}
+                          style={{ color: 'var(--acc2)', cursor: 'pointer' }}
                           onClick={() => navigate('/app/pos', { state: { customer: c } })}>
-                          <ShoppingCart size={11} />
+                          <ShoppingCart size={14} />
                         </button>
-                        <button className="btn btn-sm" title={i('Carte fidélité', 'Loyalty card', 'Tarjeta fidelidad', 'Carta fedeltà')}
-                          style={{ background: 'rgba(108,71,255,.12)', color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
+                        {/* Carte fidélité — bouton proéminent (gradient primaire) */}
+                        <button className="btn btn-sm stock-action" title={i('Carte fidélité', 'Loyalty card', 'Tarjeta fidelidad', 'Carta fedeltà')}
+                          style={{ background: 'var(--grad-p)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: 8, boxShadow: 'var(--sh-xs)', transition: 'all .15s ease' }}
                           onClick={() => setDigitalCardCustomerId(c.id)}>
-                          <CreditCard size={11} />
+                          <CreditCard size={14} />
                         </button>
-                        <button className="btn btn-sm" title={i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')}
-                          style={{ background: TYPE_CFG['Grossiste'].bg, color: 'var(--p2)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: 'inherit', transition: 'background .15s' }}
+                        <button className="btn btn-sm btn-ghost stock-action" title={i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')}
+                          style={{ color: 'var(--p2)', cursor: 'pointer' }}
                           onClick={() => generateInvoice({
                             type: 'devis', lang,
                             customer: { name: c.name, phone: c.phone },
                             items: [{ name: i('Article', 'Item', 'Artículo', 'Articolo'), qty: 1, price: 0 }],
                           })}>
-                          <FileText size={11} />
+                          <FileText size={14} />
                         </button>
-                        <button className="btn btn-sm btn-ghost"
+                        <button className="btn btn-sm btn-ghost stock-action"
                           title={i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
                           aria-label={i(`Supprimer ${c.name}`, `Delete ${c.name}`, `Eliminar ${c.name}`, `Elimina ${c.name}`)}
                           style={{ color: 'var(--danger)', cursor: 'pointer' }}
                           onClick={e => { e.stopPropagation(); onDelete(c.id) }}>
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}>{i('Aucun client trouvé', 'No customer found', 'Sin clientes', 'Nessun cliente trovato')}</td></tr>
+                  <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}><div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Users size={28} style={{ color: 'var(--text4)' }} /></div>{i('Aucun client trouvé', 'No customer found', 'Sin clientes', 'Nessun cliente trovato')}</td></tr>
                 )}
               </tbody>
             </table>
@@ -272,7 +285,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
               )
             })}
             {filtered.length === 0 && (
-              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 0', color: 'var(--text3)', fontSize: 14 }}>{i('Aucun client trouvé', 'No customer found', 'Ningún cliente encontrado', 'Nessun cliente trovato')}</div>
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 0', color: 'var(--text3)', fontSize: 14 }}><div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Users size={28} style={{ color: 'var(--text4)' }} /></div>{i('Aucun client trouvé', 'No customer found', 'Ningún cliente encontrado', 'Nessun cliente trovato')}</div>
             )}
           </ResponsiveGrid>
         )}

@@ -226,13 +226,12 @@ export default function Customers() {
           { label: t('customers_avg_cart'),  value: fmt(avgCart),                hex: 'var(--acc)', icon: <ShoppingCart size={18} /> },
           { label: t('customers_retention'), value: `${retentionRate}%`,         hex: 'var(--acc3)', icon: <TrendingUp size={18} /> },
         ].map(k => (
-          <div key={k.label} className="kpi-card" style={{ position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${k.hex}18,${k.hex}06)`, border:`1px solid ${k.hex}28`, transition:'transform .2s,box-shadow .2s', cursor:'default' }}
-            onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='translateY(-2px)';el.style.boxShadow=`0 8px 24px ${k.hex}20`}}
+          <div key={k.label} className="kpi-card" style={{ position:'relative', overflow:'hidden', background:'var(--bg2)', border:'0.5px solid var(--border)', borderRadius:12, padding:16, transition:'all .15s ease', cursor:'default' }}
+            onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='translateY(-2px)';el.style.boxShadow='var(--sh-sm)'}}
             onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='';el.style.boxShadow=''}}>
-            <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
-            <div className="kpi-icon-w" style={{ color: k.hex, background:`${k.hex}20` }}>{k.icon}</div>
+            <div className="kpi-icon-w" style={{ color: k.hex, background:'var(--bg3)', border:'1px solid var(--border)' }}>{k.icon}</div>
             <div className="kpi-label">{k.label}</div>
-            <div className="kpi-value" style={{ color: k.hex }}>{k.value}</div>
+            <div className="kpi-value" style={{ color: k.hex, fontSize: 24, fontWeight: 'var(--fw-bold)' }}>{k.value}</div>
           </div>
         ))}
       </div>
@@ -249,13 +248,14 @@ export default function Customers() {
         ].map(tab => (
           <button key={tab.id} type="button"
             onClick={() => setCustomersTab(tab.id as any)}
+            aria-pressed={customersTab === tab.id}
             style={{
               flex: 1, padding: '8px', borderRadius: 8,
-              fontSize: 13, fontWeight: 600,
+              fontSize: 13, fontWeight: 'var(--fw-semibold)',
               cursor: 'pointer', fontFamily: 'var(--font)',
-              background: customersTab === tab.id
-                ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
+              background: customersTab === tab.id ? 'var(--p)' : 'transparent',
               color: customersTab === tab.id ? '#fff' : 'var(--text2)',
+              boxShadow: customersTab === tab.id ? 'var(--sh-xs)' : 'none',
               border: 'none', transition: 'all .15s',
             }}>
             {tab.label}

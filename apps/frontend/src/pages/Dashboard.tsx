@@ -338,27 +338,28 @@ export default function Dashboard() {
             </div>
           ))
         ) : ([
-          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`,  trend: stats.salesTodayTrend, Icon: DollarSign, color: 'var(--p2)',   hex: '#6C47FF', bg: 'rgba(108,71,255,.14)', hero: true  },
-          { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} ${lang === 'en' ? 'stock alerts' : lang === 'es' ? 'alertas stock' : lang === 'it' ? 'avvisi stock' : 'alertes stock'}`,   trend: null,                  Icon: Package,    color: 'var(--acc)',  hex: '#FF9500', bg: 'rgba(255,149,0,.14)',  hero: false },
-          { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} ${lang === 'en' ? 'pending orders' : lang === 'es' ? 'ped. pendientes' : lang === 'it' ? 'ord. in attesa' : 'cmd. en attente'}`,   trend: null,                  Icon: Users,      color: 'var(--acc2)', hex: '#00D084', bg: 'rgba(0,208,132,.14)',  hero: false },
-          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),         sub: lang === 'en' ? 'vs last month' : lang === 'es' ? 'vs mes pasado' : lang === 'it' ? 'vs mese scorso' : 'vs mois dernier',                           trend: stats.salesMonthTrend, Icon: TrendingUp, color: 'var(--acc3)', hex: '#00B8FF', bg: 'rgba(0,184,255,.14)',  hero: false },
+          { label: t('kpi_sales_today'),     value: fmt(stats.salesToday),         sub: `${stats.transactionsToday} ${lang === 'en' ? 'transactions' : lang === 'es' ? 'transacciones' : lang === 'it' ? 'transazioni' : 'transactions'}`,  trend: stats.salesTodayTrend, Icon: DollarSign, color: 'var(--p2)',   hero: true  },
+          { label: t('kpi_stock'),           value: String(stats.totalProducts),   sub: `${stats.lowStockProducts} ${lang === 'en' ? 'stock alerts' : lang === 'es' ? 'alertas stock' : lang === 'it' ? 'avvisi stock' : 'alertes stock'}`,   trend: null,                  Icon: Package,    color: 'var(--acc)',  hero: false },
+          { label: t('kpi_employees'),       value: String(stats.activeEmployees), sub: `${stats.pendingOrders} ${lang === 'en' ? 'pending orders' : lang === 'es' ? 'ped. pendientes' : lang === 'it' ? 'ord. in attesa' : 'cmd. en attente'}`,   trend: null,                  Icon: Users,      color: 'var(--acc2)', hero: false },
+          { label: t('kpi_monthly_revenue'), value: fmt(stats.salesMonth),         sub: lang === 'en' ? 'vs last month' : lang === 'es' ? 'vs mes pasado' : lang === 'it' ? 'vs mese scorso' : 'vs mois dernier',                           trend: stats.salesMonthTrend, Icon: TrendingUp, color: 'var(--acc3)', hero: false },
         ].map((k, idx) => {
           const up = k.trend != null && k.trend > 0
           const down = k.trend != null && k.trend < 0
           return (
             <div key={k.label} className="kpi-card kpi-animate" style={{
-              background: `linear-gradient(135deg,${k.hex}18,${k.hex}06)`,
-              border: `1px solid ${k.hex}28`,
+              background: 'var(--bg2)',
+              border: '0.5px solid var(--border)',
+              borderRadius: 12, padding: 16,
               position: 'relative', overflow: 'hidden',
+              transition: 'all .15s ease',
               animationDelay: `${idx * 60}ms`,
             }}>
-              <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${k.hex}25 0%,transparent 70%)`, pointerEvents:'none' }} />
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                  background: k.bg, color: k.color,
+                  background: 'var(--bg3)', color: k.color,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: `1px solid ${k.color}30`,
+                  border: '1px solid var(--border)',
                 }}>
                   <k.Icon size={19} />
                 </div>
@@ -366,7 +367,7 @@ export default function Dashboard() {
                 {k.trend != null && (
                   <span style={{
                     display: 'inline-flex', alignItems: 'center', gap: 3,
-                    padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)',
+                    padding: '3px 9px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)',
                     background: up ? 'var(--c-green-bg)' : down ? 'var(--c-red-bg)' : 'var(--bg4)',
                     color: up ? 'var(--acc2)' : down ? 'var(--danger)' : 'var(--text3)',
                     border: `1px solid ${up ? 'var(--c-green-border)' : down ? 'var(--c-red-border)' : 'var(--border)'}`,
@@ -377,8 +378,8 @@ export default function Dashboard() {
                 )}
               </div>
               <div className="kpi-label">{k.label}</div>
-              {/* Métrique reine : le CA du jour domine (30px mono 900) */}
-              <div className="kpi-value" style={{ color: k.color, fontSize: k.hero ? 30 : 24 }}>{k.value}</div>
+              {/* Valeur 24px mono (langage visuel commun POS/Stock) */}
+              <div className="kpi-value" style={{ color: k.color, fontSize: 24, fontWeight: 'var(--fw-bold)' }}>{k.value}</div>
               <div className="kpi-sub" style={{ marginTop: 4 }}>{k.sub}</div>
             </div>
           )
@@ -392,8 +393,8 @@ export default function Dashboard() {
             onClick={() => navigate(a.path)}
             aria-label={a.label}
             style={{
-              background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12,
-              padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all .18s var(--ease)',
+              background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 12,
+              padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all .15s ease',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
               fontFamily: 'var(--font)',
             }}
@@ -556,10 +557,11 @@ export default function Dashboard() {
                 borderBottom: i < recentActivity.length - 1 ? '1px solid var(--border)' : 'none',
                 transition: 'background .12s', cursor: 'default', borderRadius: 8,
               }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.025)'}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg2)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
               >
-                <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: 'rgba(0,208,132,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00D084' }}>
+                {/* Avatar rond 28px (langage avatars) — pas de nom client dans recentActivity → icône vente */}
+                <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg, var(--p), var(--p2))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                   <ActivityIcon type="sale" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
