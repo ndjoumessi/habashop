@@ -88,8 +88,8 @@ export default function FilterSelect({ value, onChange, options, ariaLabel, minW
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
                   width: '100%', padding: '8px 10px', borderRadius: 'var(--r-sm)', border: 'none',
-                  background: isSel ? 'var(--c-purple-bg2)' : 'transparent',
-                  color: isSel ? 'var(--p3)' : 'var(--text2)',
+                  background: isSel ? 'var(--p)' : 'transparent',
+                  color: isSel ? '#fff' : 'var(--text2)',
                   fontFamily: 'var(--font)', fontSize: 'var(--fs-label)',
                   fontWeight: isSel ? 'var(--fw-semibold)' : 'var(--fw-regular)',
                   cursor: 'pointer', textAlign: 'left', transition: 'background .12s',

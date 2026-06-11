@@ -253,7 +253,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
             })}
           </ResponsiveGrid>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap stock-table">
             <table>
               <thead>
                 <tr>
@@ -267,7 +267,6 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       style={{ width: 16, height: 16, accentColor: 'var(--p)', cursor: 'pointer' }}
                     />
                   </th>
-                  {stockShowSKU && <th scope="col">{t('col_ref')}</th>}
                   <th scope="col">{t('col_product')}</th><th scope="col">{t('col_category')}</th>
                   <th scope="col">{t('col_buy_price')}</th><th scope="col">{t('col_sell_price')}</th>
                   <th scope="col">{t('col_stock')}</th><th scope="col">{t('col_threshold')}</th><th scope="col">{t('col_supplier')}</th>
@@ -289,27 +288,50 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                           style={{ width: 16, height: 16, accentColor: 'var(--p)', cursor: 'pointer' }}
                         />
                       </td>
-                      {stockShowSKU && <td className="td-mono">{p.sku}</td>}
-                      <td className="td-bold">{p.name}</td>
+                      <td>
+                        <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }}>
+                          <span aria-hidden="true" style={{ fontSize:18, flexShrink:0, lineHeight:1 }}>{p.name.match(/^\S+/)?.[0]}</span>
+                          <span style={{ minWidth:0 }}>
+                            <span style={{ display:'block', fontSize:14, fontWeight:'var(--fw-regular)', color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                              {p.name.replace(/^\S+\s?/, '')}
+                            </span>
+                            {stockShowSKU && (
+                              <span style={{ display:'block', fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)' }}>{p.sku}</span>
+                            )}
+                          </span>
+                        </div>
+                      </td>
                       <td><span className="badge badge-teal">{stockCatLabel(p.category, lang)}</span></td>
                       <td className="td-num">{fmt(p.buy)}</td>
                       <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(p.sell)}</td>
                       <td>
-                        <span className="td-num" style={{
-                          color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--acc)' : 'var(--acc2)',
-                          fontWeight: 'var(--fw-semibold)',
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          minWidth: 34, padding: '3px 9px', borderRadius: 'var(--r-full)',
+                          fontSize: 13, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', lineHeight: 1.4,
+                          background: st.cls === 'badge-red' ? 'var(--c-red-bg)' : st.cls === 'badge-amber' ? 'var(--c-orange-bg)' : 'var(--c-green-bg)',
+                          border: `1px solid ${st.cls === 'badge-red' ? 'var(--c-red-border)' : st.cls === 'badge-amber' ? 'var(--c-orange-border)' : 'var(--c-green-border)'}`,
+                          color: st.cls === 'badge-red' ? 'var(--danger)' : st.cls === 'badge-amber' ? 'var(--warn)' : 'var(--acc2)',
                         }}>{p.stock}</span>
                       </td>
                       <td className="td-num" style={{ color: 'var(--text3)' }}>{p.threshold}</td>
-                      <td className="text-xs" style={{ color: 'var(--text2)' }}>{p.supplier}</td>
+                      <td>
+                        {p.supplier ? (
+                          <span style={{
+                            display: 'inline-block', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 12,
+                            background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
+                          }}>{p.supplier}</span>
+                        ) : <span style={{ color: 'var(--text4)' }}>—</span>}
+                      </td>
                       <td><span className={`badge ${st.cls}`}>{st.label}</span></td>
                       <td>
                         <div className="flex gap-1.5">
                           {st.cls !== 'badge-green' && (
-                            <button className="btn btn-sm btn-ghost gap-1" title="Commander" style={{ cursor:'pointer' }}
-                              onClick={() => navigate('/app/orders')}><Package size={12} /></button>
+                            <button className="btn btn-sm btn-ghost stock-action gap-1" title="Commander" style={{ cursor:'pointer' }}
+                              onClick={() => navigate('/app/orders')}><Package size={14} /></button>
                           )}
-                          <button className="btn btn-sm btn-ghost" title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'}
+                          <button className="btn btn-sm btn-ghost stock-action" title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'}
                             onClick={() => {
                               const h = hydrate(p)
                               setForm(f => ({ ...f,
@@ -330,12 +352,12 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                               setModalTab('general')
                               setProductEditMode(false)
                               setShowModal(true)
-                            }}><Eye size={12} /></button>
-                          <button className="btn btn-sm btn-ghost" style={{ color:'var(--danger)' }}
+                            }}><Eye size={14} /></button>
+                          <button className="btn btn-sm btn-ghost stock-action" style={{ color:'var(--danger)' }}
                             title={lang === 'en' ? 'Delete' : lang === 'es' ? 'Eliminar' : lang === 'it' ? 'Elimina' : 'Supprimer'}
                             aria-label={(lang === 'en' ? 'Delete ' : lang === 'es' ? 'Eliminar ' : lang === 'it' ? 'Elimina ' : 'Supprimer ') + p.name}
                             onClick={e => { e.stopPropagation(); onDeleteProduct(p) }}
-                          ><Trash2 size={12} /></button>
+                          ><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>

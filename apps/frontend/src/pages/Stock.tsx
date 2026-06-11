@@ -14,6 +14,7 @@ import { usePagination } from '@/hooks/usePagination'
 import StockInventory from '@/components/stock/StockInventory'
 import StockModals from '@/components/stock/StockModals'
 import EmptyState from '@/components/ui/EmptyState'
+import Skeleton from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { type ProductItem, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc } from '@/components/stock/stockShared'
@@ -302,10 +303,15 @@ export default function Stock() {
       </div>
 
       {/* Panel inventaire */}
-      {!loading && products.length === 0 ? (
+      {loading ? (
+        /* Chargement initial : skeletons (la table était vide-muette pendant le fetch) */
+        <div className="panel" style={{ padding: 16 }}>
+          <Skeleton height={42} count={8} radius={10} />
+        </div>
+      ) : products.length === 0 ? (
         <div className="panel">
           <EmptyState
-            icon="📦"
+            icon={<Package size={40} strokeWidth={1.5} style={{ color: 'var(--text3)' }} />}
             title={lang === 'en' ? 'No products in stock' : lang === 'es' ? 'Sin productos en stock' : lang === 'it' ? 'Nessun prodotto in stock' : 'Aucun produit en stock'}
             message={lang === 'en' ? 'Add your first products to start managing your inventory.' : lang === 'es' ? 'Agregue sus primeros productos para empezar a gestionar su inventario.' : lang === 'it' ? 'Aggiungi i tuoi primi prodotti per iniziare a gestire l\'inventario.' : 'Ajoutez vos premiers produits pour commencer à gérer votre inventaire.'}
             action={{ label: lang === 'en' ? '+ Add a product' : lang === 'es' ? '+ Agregar un producto' : lang === 'it' ? '+ Aggiungi un prodotto' : '+ Ajouter un produit', onClick: () => { resetForm(); setShowModal(true) } }}

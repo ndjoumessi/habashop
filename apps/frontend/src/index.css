@@ -272,6 +272,14 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
 
 /* ── Tables ── */
 .table-wrap { overflow-x:auto; border-radius:var(--r-md) }
+/* Stock — table redesignée (scopée .stock-table : n'affecte aucune autre table) */
+.stock-table thead tr { background:var(--bg2) }
+.stock-table th { font-size:12px; font-weight:var(--fw-regular); letter-spacing:.5px; color:var(--text2); padding:11px 14px }
+.stock-table tbody tr { transition:background .15s }
+.stock-table tbody tr:hover { background:var(--bg2) }
+.stock-table td { padding:12px 14px }
+.stock-table .td-num { font-size:14px }
+.stock-action { min-width:36px; min-height:36px; justify-content:center }
 table { width:100%; border-collapse:collapse; font-size:13px }
 thead tr { background:var(--bg4); border-bottom:1px solid var(--border) }
 th { padding:10px 14px; text-align:left; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:var(--text3); white-space:nowrap }

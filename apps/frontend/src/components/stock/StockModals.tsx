@@ -181,11 +181,12 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   { id:'prix',    label: i('Prix & Stock', 'Price & Stock', 'Precio & Stock', 'Prezzo & Stock') },
                   { id:'avance',  label: i('Avancé', 'Advanced', 'Avanzado', 'Avanzato') },
                 ] as { id:'general'|'prix'|'avance'; label:string }[]).map(tb => (
-                  <button key={tb.id} onClick={() => setModalTab(tb.id)} style={{
-                    flex:1, padding:'7px 12px', borderRadius:8, fontSize:12, fontWeight:600,
+                  <button key={tb.id} onClick={() => setModalTab(tb.id)} aria-pressed={modalTab === tb.id} style={{
+                    flex:1, padding:'8px 12px', borderRadius:8, fontSize:12, fontWeight:'var(--fw-semibold)',
                     cursor:'pointer', fontFamily:'var(--font)', border:'none', transition:'all .15s',
-                    background: modalTab === tb.id ? 'linear-gradient(135deg, var(--p), var(--p2))' : 'transparent',
+                    background: modalTab === tb.id ? 'var(--p)' : 'transparent',
                     color: modalTab === tb.id ? '#fff' : 'var(--text2)',
+                    boxShadow: modalTab === tb.id ? 'var(--sh-xs)' : 'none',
                   }}>{tb.label}</button>
                 ))}
               </div>
@@ -334,20 +335,23 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <div>
                     <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
                     {form.barcode && /^\d{13}$/.test(form.barcode) ? (
-                      <div style={{ display:'flex', flexDirection:'column', alignItems:'stretch', gap:8 }}>
-                        {/* Carte « étiquette » : fond blanc cassé, padding généreux, coins arrondis + ombre douce */}
-                        {/* Option B — étiquette slim : fond blanc, padding minimal, coins arrondis 6 + ombre */}
-                        <div style={{ maxWidth:'100%', width:'fit-content', margin:'0 auto', alignSelf:'center', padding:'4px 6px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:6, boxShadow:'var(--sh-sm)' }}>
+                      // Conteneur intégré : surface bg3 englobant l'étiquette (blanc OBLIGATOIRE
+                      // pour la lisibilité scanner) + numéro EAN + bouton Copier bien visible.
+                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, padding:'14px 12px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10 }}>
+                        <div style={{ maxWidth:'100%', width:'fit-content', padding:'4px 6px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:6, boxShadow:'var(--sh-sm)' }}>
                           <BarcodeDisplay value={form.barcode} />
                         </div>
-                        <button type="button" className="mini-btn"
+                        <button type="button"
                           onClick={() => {
                             navigator.clipboard.writeText(form.barcode).then(() => {
                               toast.success(lang === 'en' ? 'Copied!' : lang === 'es' ? '¡Copiado!' : lang === 'it' ? 'Copiato!' : 'Copié !')
                             }).catch(() => {})
                           }}
                           title={lang === 'en' ? 'Copy' : lang === 'es' ? 'Copiar' : lang === 'it' ? 'Copia' : 'Copier'}
-                          style={{ alignSelf:'flex-end', padding:'5px 12px', cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}><Copy size={13} />{i('Copier', 'Copy', 'Copiar', 'Copia')}</button>
+                          style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 16px', minHeight:36,
+                            background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8,
+                            color:'var(--text)', fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)',
+                            cursor:'pointer', transition:'all .15s' }}><Copy size={13} />{i('Copier', 'Copy', 'Copiar', 'Copia')} <span style={{ fontFamily:'var(--mono)', color:'var(--text3)' }}>{form.barcode}</span></button>
                       </div>
                     ) : (
                       <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, minHeight:40, display:'flex', alignItems:'center' }}>
@@ -581,27 +585,27 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
             </div>{/* end scrollable body */}
 
             {/* Fixed footer */}
-            <div className="flex gap-2" style={{ padding:'16px 24px 20px', flexShrink:0, borderTop:'1px solid var(--border)' }}>
+            <div className="flex gap-2.5" style={{ padding:'16px 24px 20px', flexShrink:0, borderTop:'1px solid var(--border)' }}>
               {editingSku && !productEditMode ? (
                 <>
-                  <button className="btn btn-primary flex-1 justify-center gap-1.5" style={{ display:'flex', alignItems:'center' }} onClick={() => setProductEditMode(true)}><Pencil size={13} /> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}</button>
-                  <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>{lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
+                  <button className="btn btn-primary flex-1 justify-center gap-1.5" style={{ display:'flex', alignItems:'center', minHeight:44 }} onClick={() => setProductEditMode(true)}><Pencil size={13} /> {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}</button>
+                  <button className="btn btn-ghost" style={{ minHeight:44 }} onClick={() => { setShowModal(false); resetForm() }}>{lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
                 </>
               ) : (
                 <>
-                  <button className="btn btn-primary flex-1 justify-center" onClick={saveProduct} disabled={barcodeInvalid}>
+                  <button className="btn btn-primary flex-1 justify-center" style={{ minHeight:44 }} onClick={saveProduct} disabled={barcodeInvalid}>
                     {editingSku
                       ? i('Enregistrer les modifications', 'Save changes', 'Guardar cambios', 'Salva modifiche')
                       : i('Ajouter le produit', 'Add product', 'Agregar producto', 'Aggiungi prodotto')}
                   </button>
                   {editingSku ? (
-                    <button className="btn btn-ghost" onClick={() => {
+                    <button className="btn btn-ghost" style={{ minHeight:44 }} onClick={() => {
                       const p = products.find(p => p.sku === editingSku)
                       if (p) setForm(f => ({ ...f, sku:p.sku, name:p.name.replace(/^\S+\s/,''), category:p.category, buy:p.buy, sell:p.sell, stock:p.stock, threshold:p.threshold, supplier:p.supplier, supplierId:p.supplierId??'', image:p.name.match(/^\S+/)?.[0]??'📦', barcode:p.barcode??'', description:p.description??'', notes:p.notes??'' }))
                       setProductEditMode(false)
                     }}>{t('btn_cancel')}</button>
                   ) : (
-                    <button className="btn btn-ghost" onClick={() => { setShowModal(false); resetForm() }}>{t('btn_cancel')}</button>
+                    <button className="btn btn-ghost" style={{ minHeight:44 }} onClick={() => { setShowModal(false); resetForm() }}>{t('btn_cancel')}</button>
                   )}
                 </>
               )}

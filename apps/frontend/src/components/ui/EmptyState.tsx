@@ -1,5 +1,8 @@
+import type { ReactNode } from 'react'
+
 interface EmptyStateProps {
-  icon:    string
+  /** Emoji (string, historique) ou icône Lucide (ReactNode). */
+  icon:    ReactNode
   title:   string
   message: string
   action?: { label: string; onClick: () => void }
