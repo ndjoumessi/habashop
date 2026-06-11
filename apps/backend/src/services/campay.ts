@@ -147,15 +147,23 @@ export async function getPaymentLink(opts: {
     }),
   })
 
+  const bodyText = await res.text().catch(() => '')
+
   if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    console.error('[Campay] getPaymentLink error', { status: res.status, body })
-    throw new Error(`Campay getPaymentLink error: ${res.status}${body ? ' — ' + body : ''}`)
+    console.error('[Campay] getPaymentLink error', { status: res.status, body: bodyText })
+    throw new Error(`Campay getPaymentLink error: ${res.status}${bodyText ? ' — ' + bodyText : ''}`)
   }
 
-  const data = await res.json() as { link?: string; reference?: string; status?: string }
-  if (!data.link || !data.reference) {
-    throw new Error(`Campay getPaymentLink: réponse inattendue — ${JSON.stringify(data)}`)
+  // Log brut pour diagnostiquer la structure exacte retournée (champs, JWT éventuel, etc.)
+  console.log('[Campay] getPaymentLink response', { status: res.status, body: bodyText })
+
+  let data: Record<string, unknown>
+  try { data = JSON.parse(bodyText) } catch {
+    throw new Error(`Campay getPaymentLink: réponse non-JSON — ${bodyText.slice(0, 200)}`)
   }
-  return { link: data.link, reference: data.reference }
+
+  if (!data.link || !data.reference) {
+    throw new Error(`Campay getPaymentLink: champs link/reference manquants — ${JSON.stringify(data)}`)
+  }
+  return { link: data.link as string, reference: data.reference as string }
 }

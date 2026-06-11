@@ -214,6 +214,34 @@ describe('POST /api/payments/campay/status', () => {
     expect(res.statusCode).toBe(400)
   })
 
+  it('SANDBOX-CARD-* + auto-success=1 : SUCCESSFUL sans appel Campay', async () => {
+    process.env.CAMPAY_SANDBOX_AUTO_SUCCESS = '1'
+    process.env.CAMPAY_ENVIRONMENT = 'demo'
+    const app = await makeApp()
+    const res = await app.inject({
+      method:  'POST',
+      url:     '/api/payments/campay/status',
+      payload: { reference: 'SANDBOX-CARD-1749680000000' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).status).toBe('SUCCESSFUL')
+    expect(campayStatus).not.toHaveBeenCalled()
+    delete process.env.CAMPAY_SANDBOX_AUTO_SUCCESS
+  })
+
+  it('SANDBOX-CARD-* sans auto-success : PENDING (pas d\'appel Campay)', async () => {
+    delete process.env.CAMPAY_SANDBOX_AUTO_SUCCESS
+    const app = await makeApp()
+    const res = await app.inject({
+      method:  'POST',
+      url:     '/api/payments/campay/status',
+      payload: { reference: 'SANDBOX-CARD-1749680000000' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).status).toBe('PENDING')
+    expect(campayStatus).not.toHaveBeenCalled()
+  })
+
   it('502 sur erreur service', async () => {
     campayStatus.mockRejectedValue(new Error('Campay down'))
     const app = await makeApp()
@@ -254,11 +282,25 @@ describe('POST /api/payments/campay/card-link', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('sandbox : force amount = 10 XAF (limite sandbox Campay 25 XAF max)', async () => {
+  it('sandbox sans CAMPAY_SANDBOX_AUTO_SUCCESS : force amount = 10 et appelle Campay', async () => {
+    delete process.env.CAMPAY_SANDBOX_AUTO_SUCCESS
     campayPaymentLink.mockResolvedValue({ link: 'https://demo.campay.net/pay/x', reference: 'r' })
     const app = await makeApp()
     await app.inject({ method: 'POST', url: '/api/payments/campay/card-link', payload: { amount: 99999 } })
     expect(campayPaymentLink).toHaveBeenCalledWith(expect.objectContaining({ amount: 10 }))
+  })
+
+  it('CAMPAY_SANDBOX_AUTO_SUCCESS=1 : retourne référence SANDBOX-CARD-* sans appel Campay', async () => {
+    process.env.CAMPAY_SANDBOX_AUTO_SUCCESS = '1'
+    process.env.CAMPAY_ENVIRONMENT = 'demo'
+    const app = await makeApp()
+    const res = await app.inject({ method: 'POST', url: '/api/payments/campay/card-link', payload: { amount: 5000 } })
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.reference).toMatch(/^SANDBOX-CARD-/)
+    expect(body.paymentUrl).toContain('sandbox-card')
+    expect(campayPaymentLink).not.toHaveBeenCalled()
+    delete process.env.CAMPAY_SANDBOX_AUTO_SUCCESS
   })
 
   it('502 si Campay lève une erreur réseau', async () => {

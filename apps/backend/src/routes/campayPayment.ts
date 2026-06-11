@@ -83,12 +83,20 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
     if (!reference)
       return reply.code(400).send({ error: 'reference requis' })
 
+    const sandboxAutoSuccess = process.env.CAMPAY_SANDBOX_AUTO_SUCCESS === '1' && IS_SANDBOX
+
+    // Référence générée localement pour le sandbox carte (SANDBOX-CARD-…) :
+    // la page Campay n'existe pas réellement → pas de polling possible via l'API.
+    // En sandbox auto-success : on approuve immédiatement sans appel réseau.
+    if (reference.startsWith('SANDBOX-CARD-')) {
+      if (sandboxAutoSuccess) return { reference, status: 'SUCCESSFUL' }
+      return { reference, status: 'PENDING' }
+    }
+
     try {
       const status = await getStatus(reference)
-      // Sandbox : Campay ne résout pas toujours PENDING automatiquement — simulation SUCCESSFUL pour les tests.
-      // Opt-in EXPLICITE : CAMPAY_SANDBOX_AUTO_SUCCESS=1 requis. Une var absente en prod ne peut PAS
-      // auto-approuver un paiement (IS_SANDBOX seul ne suffit pas).
-      const sandboxAutoSuccess = process.env.CAMPAY_SANDBOX_AUTO_SUCCESS === '1' && IS_SANDBOX
+      // Sandbox USSD : Campay ne résout pas toujours PENDING automatiquement.
+      // Opt-in EXPLICITE : CAMPAY_SANDBOX_AUTO_SUCCESS=1 requis.
       if (sandboxAutoSuccess && status === 'PENDING') return { reference, status: 'SUCCESSFUL' }
       return { reference, status }
     } catch (err: any) {
@@ -110,10 +118,20 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
     if (!amount || amount <= 0)
       return reply.code(400).send({ error: 'Montant invalide' })
 
-    // XOF → XAF : parité 1:1 (arrondi entier).
-    // Sandbox Campay : montant limité à 25 XAF max — on force 10 pour les tests.
-    const xafAmount  = IS_SANDBOX ? 10 : Math.round(amount)
+    const xafAmount   = IS_SANDBOX ? 10 : Math.round(amount)
     const externalRef = `HABA-CARD-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+    const sandboxAutoSuccess = process.env.CAMPAY_SANDBOX_AUTO_SUCCESS === '1' && IS_SANDBOX
+
+    // Sandbox auto-success : le lien Campay sandbox n'est pas pollable via l'API de statut
+    // (référence JWT incompatible). On génère une référence locale SANDBOX-CARD-* que le
+    // endpoint /status reconnaît et approuve immédiatement. Aucun appel réseau vers Campay.
+    if (sandboxAutoSuccess) {
+      const sandboxRef = `SANDBOX-CARD-${Date.now()}`
+      return {
+        paymentUrl: `https://demo.campay.net/sandbox-card/${sandboxRef}`,
+        reference:  sandboxRef,
+      }
+    }
 
     try {
       const result = await getPaymentLink({
