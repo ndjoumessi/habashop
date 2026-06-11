@@ -1,4 +1,4 @@
-import { X, Smartphone, Printer, CheckCircle, AlertTriangle } from 'lucide-react'
+import { X, Smartphone, Printer, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, formatInCurrency } from '@/stores/appStore'
@@ -35,14 +35,20 @@ interface POSModalsProps {
   cashGiven: string; toXOF: (v: number) => number
   // Paiement mixte (split) — défini dans le PANIER ; le modal n'en lit que l'état pour bloquer.
   mixedOn: boolean; mixedValid: boolean
+  // MTN MoMo — flux USSD polling dans la modale de confirmation
+  mtnPhone: string; setMtnPhone: (v: string) => void
+  mtnStatus: 'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'
+  startMtnPayment: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, startMtnPayment }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
   // En paiement mixte, c'est la validité du split (somme=total, 2 modes) qui conditionne.
   const payOK = mixedOn ? mixedValid : cashOK
+  // MTN MoMo : le bouton Confirmer est masqué (le flux polling gère la confirmation).
+  const isMtnMode = !mixedOn && payMode === 'mtn'
   const blocked = isSaving || waSending || !payOK
   // Pièges à focus (focus initial + Tab bouclé + restauration au déclencheur)
   const discountBoxRef = useModalFocus<HTMLDivElement>(showDiscountModal)
@@ -510,34 +516,127 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               )}
             </div>
 
+            {/* ── Section MTN MoMo ── */}
+            {isMtnMode && (
+              <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
+                <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'#FFCC00', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
+                  <span style={{ fontWeight:'var(--fw-bold)', fontSize:15 }}>M</span> MTN MoMo
+                </div>
+
+                {/* Idle / requesting : saisie numéro */}
+                {(mtnStatus === 'idle' || mtnStatus === 'requesting') && (
+                  <div>
+                    <label htmlFor="mtn-phone" style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+                      {lang === 'en' ? 'MTN number (e.g. 677000000)' : lang === 'es' ? 'Número MTN (ej: 677000000)' : lang === 'it' ? 'Numero MTN (es: 677000000)' : 'Numéro MTN (ex: 677000000)'}
+                    </label>
+                    <div style={{ display:'flex', gap:8 }}>
+                      <input
+                        id="mtn-phone"
+                        type="tel" inputMode="numeric"
+                        placeholder="677 000 000"
+                        value={mtnPhone}
+                        onChange={e => setMtnPhone(e.target.value.replace(/[^0-9\s\+\-]/g, ''))}
+                        aria-label={lang === 'en' ? 'MTN MoMo phone number' : lang === 'es' ? 'Número MTN MoMo' : lang === 'it' ? 'Numero MTN MoMo' : 'Numéro MTN MoMo'}
+                        style={{
+                          flex:1, minHeight:44, padding:'0 12px',
+                          background:'var(--bg4)', border:'1.5px solid var(--border)',
+                          borderRadius:10, color:'var(--text)', fontSize:13,
+                          fontFamily:'var(--mono)', outline:'none',
+                          boxSizing:'border-box' as const,
+                        }}
+                      />
+                      <button
+                        type="button"
+                        disabled={!mtnPhone.trim() || mtnStatus === 'requesting'}
+                        onClick={startMtnPayment}
+                        style={{
+                          minHeight:44, padding:'0 14px', borderRadius:10, border:'none',
+                          background: (!mtnPhone.trim() || mtnStatus === 'requesting') ? 'var(--bg5)' : '#FFCC00',
+                          color: (!mtnPhone.trim() || mtnStatus === 'requesting') ? 'var(--text3)' : '#1a1a1a',
+                          fontWeight:'var(--fw-semibold)', fontSize:12, cursor: (!mtnPhone.trim() || mtnStatus === 'requesting') ? 'not-allowed' : 'pointer',
+                          fontFamily:'inherit', whiteSpace:'nowrap' as const,
+                          display:'flex', alignItems:'center', gap:5,
+                        }}
+                      >
+                        {mtnStatus === 'requesting'
+                          ? <><Loader2 size={12} style={{ animation:'spin 1s linear infinite' }}/> {lang === 'en' ? 'Sending…' : lang === 'es' ? 'Enviando…' : lang === 'it' ? 'Invio…' : 'Envoi…'}</>
+                          : (lang === 'en' ? 'Send request' : lang === 'es' ? 'Enviar solicitud' : lang === 'it' ? 'Invia richiesta' : 'Envoyer la demande')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Polling : spinner d'attente */}
+                {mtnStatus === 'polling' && (
+                  <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 0' }}>
+                    <Loader2 size={20} style={{ animation:'spin 1s linear infinite', color:'#FFCC00', flexShrink:0 }} />
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>
+                        {lang === 'en' ? 'Waiting for customer confirmation…' : lang === 'es' ? 'Esperando confirmación del cliente…' : lang === 'it' ? 'In attesa della conferma del cliente…' : 'En attente de confirmation client…'}
+                      </div>
+                      <div style={{ fontSize:11, color:'var(--text3)', marginTop:3 }}>
+                        {lang === 'en' ? 'Customer received USSD prompt on their phone' : lang === 'es' ? 'El cliente recibió la solicitud USSD en su teléfono' : lang === 'it' ? 'Il cliente ha ricevuto il prompt USSD sul telefono' : 'Le client a reçu la demande USSD sur son téléphone'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Failed / timeout : erreur + retry */}
+                {(mtnStatus === 'failed' || mtnStatus === 'timeout') && (
+                  <div>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 0', color:'var(--danger)', fontSize:13 }}>
+                      <AlertTriangle size={14} style={{ flexShrink:0 }} />
+                      {mtnStatus === 'timeout'
+                        ? (lang === 'en' ? 'Payment timeout (2 min). Retry?' : lang === 'es' ? 'Tiempo de espera agotado (2 min). ¿Reintentar?' : lang === 'it' ? 'Timeout pagamento (2 min). Riprovare?' : 'Délai dépassé (2 min). Réessayer ?')
+                        : (lang === 'en' ? 'Payment refused or failed.' : lang === 'es' ? 'Pago rechazado o fallido.' : lang === 'it' ? 'Pagamento rifiutato o fallito.' : 'Paiement refusé ou échoué.')}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setMtnPhone(''); startMtnPayment() }}
+                      style={{
+                        padding:'8px 14px', borderRadius:8, border:'none',
+                        background:'rgba(255,204,0,.15)', color:'#FFCC00',
+                        fontSize:12, fontWeight:'var(--fw-semibold)',
+                        cursor:'pointer', fontFamily:'inherit',
+                      }}
+                    >
+                      {lang === 'en' ? 'Retry' : lang === 'es' ? 'Reintentar' : lang === 'it' ? 'Riprova' : 'Réessayer'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Boutons */}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={confirmSale}
-                disabled={blocked}
-                title={!cashOK ? (lang==='en' ? 'Enter the amount received' : lang==='es' ? 'Ingrese el monto recibido' : lang==='it' ? "Inserire l'importo ricevuto" : 'Saisissez le montant reçu') : undefined}
-                style={{
-                  flex: 1,
-                  background: blocked ? 'var(--bg4)' : 'linear-gradient(135deg, var(--acc2), #059669)',
-                  border: 'none',
-                  borderRadius: 10,
-                  padding: '12px',
-                  minHeight: 44,
-                  fontSize: 14,
-                  fontWeight: 'var(--fw-semibold)',
-                  color: blocked ? 'var(--text3)' : '#fff',
-                  cursor: blocked ? 'not-allowed' : 'pointer',
-                  opacity: blocked ? 0.6 : 1,
-                  fontFamily: 'inherit',
-                  boxShadow: blocked ? 'none' : '0 4px 16px rgba(14,196,126,.35)',
-                }}
-              >
-                {waSending
-                  ? <><Smartphone size={14} /> {lang==='fr' ? 'Envoi WhatsApp…' : lang==='en' ? 'Sending WhatsApp…' : lang==='es' ? 'Enviando WhatsApp…' : 'Invio WhatsApp…'}</>
-                  : isSaving
-                  ? (lang==='fr' ? 'Enregistrement…' : lang==='en' ? 'Saving…' : lang==='es' ? 'Guardando…' : 'Salvataggio…')
-                  : t('pos_validate')}
-              </button>
+              {!isMtnMode && (
+                <button
+                  onClick={confirmSale}
+                  disabled={blocked}
+                  title={!cashOK ? (lang==='en' ? 'Enter the amount received' : lang==='es' ? 'Ingrese el monto recibido' : lang==='it' ? "Inserire l'importo ricevuto" : 'Saisissez le montant reçu') : undefined}
+                  style={{
+                    flex: 1,
+                    background: blocked ? 'var(--bg4)' : 'linear-gradient(135deg, var(--acc2), #059669)',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '12px',
+                    minHeight: 44,
+                    fontSize: 14,
+                    fontWeight: 'var(--fw-semibold)',
+                    color: blocked ? 'var(--text3)' : '#fff',
+                    cursor: blocked ? 'not-allowed' : 'pointer',
+                    opacity: blocked ? 0.6 : 1,
+                    fontFamily: 'inherit',
+                    boxShadow: blocked ? 'none' : '0 4px 16px rgba(14,196,126,.35)',
+                  }}
+                >
+                  {waSending
+                    ? <><Smartphone size={14} /> {lang==='fr' ? 'Envoi WhatsApp…' : lang==='en' ? 'Sending WhatsApp…' : lang==='es' ? 'Enviando WhatsApp…' : 'Invio WhatsApp…'}</>
+                    : isSaving
+                    ? (lang==='fr' ? 'Enregistrement…' : lang==='en' ? 'Saving…' : lang==='es' ? 'Guardando…' : 'Salvataggio…')
+                    : t('pos_validate')}
+                </button>
+              )}
               <button
                 onClick={printTicket}
                 style={{ padding: '12px 16px', minHeight: 44, fontSize: 13, cursor: 'pointer' }}

@@ -137,6 +137,13 @@ export const salesApi = {
   openInvoice: (id: string) => openAuthedPdf(`/api/sales/${id}/invoice`),
 }
 
+export const mtnMomoApi = {
+  request: (data: { amount: number; phoneNumber: string; saleId?: string }) =>
+    api.post<{ referenceId: string; status: 'PENDING' }>('/api/payments/mtn/request', data),
+  status: (referenceId: string) =>
+    api.post<{ referenceId: string; status: 'PENDING' | 'SUCCESSFUL' | 'FAILED' }>('/api/payments/mtn/status', { referenceId }),
+}
+
 export const ticketZApi = {
   today:    () => api.get<any>('/api/ticket-z/today'),
   history:  () => api.get<any[]>('/api/ticket-z/history'),

@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import { salesApi, productsApi, whatsappApi, loyaltyApi } from '@/lib/api'
+import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
@@ -69,8 +69,8 @@ export default function POS() {
   // cart est désormais dans useAppStore (persisté zustand). Voir destructuring ci-dessus.
   const [activeCat, setActiveCat] = useState('all')
   const [search, setSearch]       = useState('')
-  const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mobile'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile')
-  useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mobile') }, [posDefaultPayment])
+  const [payMode, setPayMode]     = useState<'cash'|'card'|'wave'|'orange'|'mtn'>(() => (posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn')
+  useEffect(() => { setPayMode((posDefaultPayment ?? 'cash') as 'cash'|'card'|'wave'|'orange'|'mtn') }, [posDefaultPayment])
   const [waCountryCode, setWaCountryCode]         = useState('+221')
   const [waCountryFlag, setWaCountryFlag]         = useState('🇸🇳')
   const [showCountryPicker, setShowCountryPicker] = useState(false)
@@ -106,6 +106,11 @@ export default function POS() {
   const [showDiscountModal, setShowDiscountModal] = useState(false)
   const [discountForm, setDiscountForm] = useState({ type:'percent' as 'percent'|'amount', value:0, reason:'' })
   const [isSaving, setIsSaving] = useState(false)
+  // ── MTN MoMo POS ──────────────────────────────────────────────────────────
+  const [mtnPhone, setMtnPhone]   = useState('')
+  const [mtnStatus, setMtnStatus] = useState<'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'>('idle')
+  const [mtnReferenceId, setMtnReferenceId] = useState<string|null>(null)
+  const mtnReferenceIdRef = useRef<string|null>(null)
   const [posTab, setPosTab] = useState<'pos'|'history'>('pos')
   const [showTicketZ, setShowTicketZ] = useState(false)
   const [salesHistory, setSalesHistory] = useState<any[]>([])
@@ -306,12 +311,12 @@ export default function POS() {
   })()
 
   const PAY_MODES = [
-    { id: 'cash',   label: t('pos_cash'),                                    icon: '💵', color: '#10B981' },
-    { id: 'card',   label: t('pos_card'),                                    icon: '💳', color: '#5B4EE8' },
-    { id: 'wave',   label: 'Wave',                                           icon: '🌊', color: '#1B9AF5' },
-    { id: 'orange', label: 'Orange Money',                                   icon: '🟠', color: '#FF6600' },
-    { id: 'mobile', label: lang === 'en' ? 'Other mobile' : lang === 'es' ? 'Otro móvil' : lang === 'it' ? 'Altro mobile' : 'Autre mobile', icon: '📲', color: '#F59E0B' },
-  ] as { id: 'cash'|'card'|'wave'|'orange'|'mobile'; label: string; icon: string; color: string }[]
+    { id: 'cash',   label: t('pos_cash'),   icon: '💵', color: '#10B981' },
+    { id: 'card',   label: t('pos_card'),   icon: '💳', color: '#5B4EE8' },
+    { id: 'wave',   label: 'Wave',          icon: '🌊', color: '#1B9AF5' },
+    { id: 'orange', label: 'Orange Money',  icon: '🟠', color: '#FF6600' },
+    { id: 'mtn',    label: 'MTN MoMo',      icon: '📶', color: '#FFCC00' },
+  ] as { id: 'cash'|'card'|'wave'|'orange'|'mtn'; label: string; icon: string; color: string }[]
 
   const printTicket = () => buildAndPrintTicket({
     lang, locale, cart, discount, discountAmount,
@@ -319,7 +324,84 @@ export default function POS() {
     mixed: mixedOn ? mixedSplit : null,
   })
 
-  const confirmSale = async () => {
+  // ── MTN MoMo — normalisation MSISDN Cameroun ──────────────────────────────
+  // Accepte : 6XXXXXXXX / +2376XXXXXXXX / 2376XXXXXXXX / 002376XXXXXXXX
+  const normalizeCameroonPhone = (raw: string): string | null => {
+    const s = raw.replace(/[\s\-\+\(\)]/g, '')
+    if (/^6\d{8}$/.test(s))    return `237${s}`      // 6XXXXXXXX → 2376XXXXXXXX
+    if (/^2376\d{8}$/.test(s)) return s               // déjà normalisé
+    if (/^002376/.test(s))     return s.slice(2)      // 002376... → 2376...
+    return null
+  }
+
+  const startMtnPayment = async () => {
+    const phone = normalizeCameroonPhone(mtnPhone)
+    if (!phone) {
+      toast.error(
+        lang === 'en' ? 'Invalid MTN number (e.g. 677000000 or 237677000000)' :
+        lang === 'es' ? 'Número MTN inválido (ej: 677000000 o 237677000000)' :
+        lang === 'it' ? 'Numero MTN non valido (es: 677000000 o 237677000000)' :
+        'Numéro MTN invalide (ex: 677000000 ou 237677000000)',
+      )
+      return
+    }
+    setMtnStatus('requesting')
+    try {
+      const { referenceId } = await mtnMomoApi.request({ amount: netTotal, phoneNumber: phone })
+      mtnReferenceIdRef.current = referenceId
+      setMtnReferenceId(referenceId)
+      setMtnStatus('polling')
+    } catch {
+      setMtnStatus('failed')
+      toast.error(
+        lang === 'en' ? 'MTN MoMo request failed — retry' :
+        lang === 'es' ? 'Error MTN MoMo — reintente' :
+        lang === 'it' ? 'Errore MTN MoMo — riprova' :
+        'Échec de la demande MTN MoMo — réessayez',
+      )
+    }
+  }
+
+  // Polling 3s, max 40 tours (2 min)
+  useEffect(() => {
+    if (mtnStatus !== 'polling') return
+    let done = false
+    let count = 0
+    const MAX = 40
+    const poll = async () => {
+      if (done) return
+      count++
+      if (count > MAX) { done = true; setMtnStatus('timeout'); return }
+      try {
+        const ref = mtnReferenceIdRef.current
+        if (!ref) return
+        const res = await mtnMomoApi.status(ref)
+        if (res.status === 'SUCCESSFUL') { done = true; setMtnStatus('success') }
+        else if (res.status === 'FAILED') { done = true; setMtnStatus('failed') }
+      } catch { /* fail-silent */ }
+    }
+    const timer = setInterval(poll, 3000)
+    return () => { done = true; clearInterval(timer) }
+  }, [mtnStatus])
+
+  // Déclenche confirmSale dès que MTN passe à 'success' — la closure est fraîche
+  // (cet effet s'exécute APRÈS le render qui a posé mtnStatus='success').
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (mtnStatus === 'success') confirmSale(mtnReferenceIdRef.current ?? undefined)
+  }, [mtnStatus]) // intentionally omits confirmSale (fresh via post-render execution)
+
+  // Réinitialise le flux MTN quand on change de mode de paiement
+  useEffect(() => {
+    if (payMode !== 'mtn') {
+      setMtnPhone('')
+      setMtnStatus('idle')
+      setMtnReferenceId(null)
+      mtnReferenceIdRef.current = null
+    }
+  }, [payMode])
+
+  const confirmSale = async (mtnRef?: string) => {
     // Garde-fou cash : refuser si le montant reçu (converti en XOF) < total.
     // Les modes Wave/Orange/Carte/Mobile n'ont pas de saisie de montant → pas concernés.
     // En paiement mixte, le garde-fou cash ne s'applique pas (la somme = total par construction).
@@ -355,6 +437,7 @@ export default function POS() {
         customerId: linkedCustomer?.id ?? null,
         discount: discount ? { type: discount.type, amount: discountAmount } : null,
         ...(mixedOn ? mixedSplit : {}),
+        mtnMomoReference: mtnRef ?? null,
       })
     } catch {
       // Hors-ligne : la vente est quand même enregistrée localement
@@ -372,7 +455,8 @@ export default function POS() {
           paymentMode: payMode === 'cash'   ? (lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces')
                      : payMode === 'card'   ? (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte')
                      : payMode === 'wave'   ? 'Wave'
-                     : payMode === 'orange' ? 'Orange Money' : 'Mobile',
+                     : payMode === 'orange' ? 'Orange Money'
+                     : payMode === 'mtn'    ? 'MTN MoMo' : 'Mobile',
           discount:    discountAmount > 0 ? Math.round(discountAmount) : undefined,
           reference:   `V${Date.now().toString().slice(-6)}`,
         })
@@ -415,6 +499,10 @@ export default function POS() {
     setWaNumber('')
     setMixedOn(false)
     setMixedAmt1('')
+    setMtnPhone('')
+    setMtnStatus('idle')
+    setMtnReferenceId(null)
+    mtnReferenceIdRef.current = null
   }
 
   // ─── RENDER ──────────────────────────────
@@ -577,6 +665,8 @@ export default function POS() {
         discount={discount} payMode={payMode}
         cashGiven={cashGiven} toXOF={toXOF}
         mixedOn={mixedOn} mixedValid={mixedValid}
+        mtnPhone={mtnPhone} setMtnPhone={setMtnPhone}
+        mtnStatus={mtnStatus} startMtnPayment={startMtnPayment}
       />
 
       {/* MODALE SUCCÈS — après vente : récap + Imprimer le reçu + Nouvelle vente */}

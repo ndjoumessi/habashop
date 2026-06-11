@@ -47,6 +47,8 @@ export interface SaleBody {
   idempotencyKey?: string | null
   // Paiement mixte (split) — renseignés quand paymentMode='mixed'.
   cashAmount?: number; mobileMoneyAmount?: number; cardAmount?: number
+  // MTN MoMo — UUID retourné par /api/payments/mtn/request (traçabilité).
+  mtnMomoReference?: string | null
 }
 export interface OrderBody {
   supplierId?: string; items?: any[]; expectedAt?: string; notes?: string; status?: string

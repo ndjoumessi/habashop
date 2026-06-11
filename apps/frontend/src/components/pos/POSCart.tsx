@@ -320,8 +320,9 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   <span style={{ display:'flex', alignItems:'center', justifyContent:'center', height:16 }}>
                     {mode.id === 'cash'   ? <Banknote size={14} />   :
                      mode.id === 'card'   ? <CreditCard size={14} /> :
-                     mode.id === 'wave'   ? <span style={{ fontWeight:'var(--fw-semibold)', fontSize:11, lineHeight:1 }}>W</span>  :
+                     mode.id === 'wave'   ? <span style={{ fontWeight:'var(--fw-semibold)', fontSize:11, lineHeight:1 }}>W</span>   :
                      mode.id === 'orange' ? <span style={{ fontWeight:'var(--fw-semibold)', fontSize:11, lineHeight:1 }}>OM</span>  :
+                     mode.id === 'mtn'    ? <span style={{ fontWeight:'var(--fw-semibold)', fontSize:11, lineHeight:1 }}>M</span>   :
                                             <Smartphone size={14} />}
                   </span>
                   {mode.label}

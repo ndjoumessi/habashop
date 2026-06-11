@@ -33,7 +33,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/sales', { preHandler: authenticate }, async (request, reply) => {
     const { tenantId, userId } = request.user
-    const { items, paymentMode, total, discount, customerId } = request.body as SaleBody
+    const { items, paymentMode, total, discount, customerId, mtnMomoReference } = request.body as SaleBody
 
     if (!items?.length) {
       return reply.code(400).send({ error: 'Une vente doit contenir au moins un article' })
@@ -112,6 +112,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
           cashAmount: split.cashAmount,
           mobileMoneyAmount: split.mobileMoneyAmount,
           cardAmount: split.cardAmount,
+          mtnMomoReference: mtnMomoReference ?? null,
         },
       })
 

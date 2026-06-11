@@ -219,6 +219,9 @@ model Sale {
   mobileMoneyAmount Float?
   cardAmount        Float?
 
+  // Référence MTN MoMo (UUID retourné par requesttopay) — traçabilité / réconciliation.
+  mtnMomoReference  String?
+
   tenant  Tenant     @relation(fields: [tenantId], references: [id])
   cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
   items   SaleItem[]

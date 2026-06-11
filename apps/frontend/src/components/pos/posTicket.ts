@@ -12,7 +12,7 @@ interface PrintTicketParams {
   tva: number
   posTaxRate: number
   total: number
-  payMode: 'cash'|'card'|'wave'|'orange'|'mobile'
+  payMode: 'cash'|'card'|'wave'|'orange'|'mobile'|'mtn'
   cashGiven: string
   currency: Currency
   monnaie: number
