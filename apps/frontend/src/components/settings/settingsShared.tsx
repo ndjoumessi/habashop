@@ -11,8 +11,9 @@ export const panel: React.CSSProperties = {
 }
 
 export function Switch({ on, onClick, color, disabled }: { on: boolean; onClick: () => void; color: string; disabled?: boolean }) {
+  // stopPropagation : la card parente (ToggleCard) est cliquable — sans ça, un clic sur le switch togglerait deux fois.
   return (
-    <button type="button" disabled={disabled} onClick={onClick} aria-pressed={on} style={{
+    <button type="button" disabled={disabled} onClick={e => { e.stopPropagation(); onClick() }} aria-pressed={on} style={{
       /* Pattern POSModals : piste OFF = var(--bg5) + bordure var(--border) (visible en Soleil), ON = couleur sémantique, knob #fff */
       width: 48, height: 26, borderRadius: 'var(--r-full)', flexShrink: 0, boxSizing: 'border-box',
       background: on ? color : 'var(--bg5)', border: '1px solid var(--border)',
@@ -23,17 +24,33 @@ export function Switch({ on, onClick, color, disabled }: { on: boolean; onClick:
   )
 }
 
+// `icon` = élément Lucide (ex. <Bell size={18}/>) — plus d'emoji UI.
+// Card ENTIÈRE cliquable (le label aussi) ; le Switch isole son clic (stopPropagation) pour éviter le double toggle.
 export function ToggleCard({ icon, color, label, desc, on, onChange, disabled }: {
-  icon: string; color: string; label: string; desc: string; on: boolean; onChange: () => void; disabled?: boolean
+  icon: React.ReactNode; color: string; label: string; desc: string; on: boolean; onChange: () => void; disabled?: boolean
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--bg3)', border: `1px solid var(--border)`, borderRadius: 14, transition: 'border-color .2s' }}>
-      <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{icon}</div>
+    <div
+      onClick={() => { if (!disabled) onChange() }}
+      onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLElement).style.borderColor = `color-mix(in srgb, ${color} 45%, var(--border))` }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
+      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--bg3)', border: `1px solid var(--border)`, borderRadius: 14, transition: 'border-color .2s', cursor: disabled ? 'default' : 'pointer', userSelect: 'none' }}>
+      <div style={{ width: 40, height: 40, borderRadius: 12, background: `color-mix(in srgb, ${color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 18%, transparent)`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 11, color: 'var(--text3)' }}>{desc}</div>
       </div>
       <Switch on={on} onClick={onChange} color={color} disabled={disabled} />
+    </div>
+  )
+}
+
+// Intertitre de groupe (icône Lucide + libellé uppercase) — sépare les blocs de toggles (Email / SMS / Push, Tickets / Caisse…).
+export function GroupLabel({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, marginBottom: 2 }}>
+      <span style={{ display: 'flex', color: 'var(--text3)' }}>{icon}</span>
+      <span style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.7px', color: 'var(--text3)' }}>{label}</span>
     </div>
   )
 }

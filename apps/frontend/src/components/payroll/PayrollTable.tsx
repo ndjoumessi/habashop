@@ -1,3 +1,4 @@
+import type React from 'react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { Download, Eye, Check, Zap } from 'lucide-react'
 import { MONTHS, monthLabel, roleLabel, statusLabel, STATUS_CFG, EmpAvatar, calcNet } from './payrollShared'
@@ -18,6 +19,21 @@ export default function PayrollTable(props: Props) {
   const { month, setMonth, filtered, onExportCSV, onGenerate, onView, onMarkPaid, onPrintPDF } = props
   const { lang } = useConfig()
   const fmt = useFormatAmount()
+
+  // Totaux (ligne tfoot) — même source de calcul que les lignes (calcNet).
+  const totals = filtered.reduce((a, r) => ({
+    base: a.base + r.baseSalary, bonus: a.bonus + r.bonus, overtime: a.overtime + r.overtime,
+    deductions: a.deductions + r.deductions, absences: a.absences + r.absences, net: a.net + calcNet(r),
+  }), { base: 0, bonus: 0, overtime: 0, deductions: 0, absences: 0, net: 0 })
+
+  // Séparateurs visuels de groupes de colonnes : avant le groupe Retenues et avant NET.
+  const groupSep: React.CSSProperties = { borderLeft: '1px solid var(--border)' }
+  // NET = métrique reine : pill verte mono semibold.
+  const netPill: React.CSSProperties = {
+    display: 'inline-block', padding: '3px 10px', borderRadius: 'var(--r-full)',
+    background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', color: 'var(--acc2)',
+    fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', fontSize: 12, whiteSpace: 'nowrap',
+  }
 
   return (
     <>
@@ -52,8 +68,8 @@ export default function PayrollTable(props: Props) {
               <thead>
                 <tr>
                   <th scope="col">{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</th><th scope="col">{lang === 'en' ? 'Role' : lang === 'es' ? 'Puesto' : lang === 'it' ? 'Ruolo' : 'Poste'}</th><th scope="col">{lang === 'en' ? 'Base' : lang === 'es' ? 'Base' : lang === 'it' ? 'Base' : 'Base'}</th>
-                  <th scope="col">{lang === 'en' ? 'Bonuses' : lang === 'es' ? 'Primas' : lang === 'it' ? 'Premi' : 'Primes'}</th><th scope="col">{lang === 'en' ? 'Overtime' : lang === 'es' ? 'Horas extra' : lang === 'it' ? 'Straordinari' : 'Heures sup.'}</th><th scope="col">{lang === 'en' ? 'Deductions' : lang === 'es' ? 'Deducciones' : lang === 'it' ? 'Detrazioni' : 'Retenues'}</th>
-                  <th scope="col">{lang === 'en' ? 'Absences' : lang === 'es' ? 'Ausencias' : lang === 'it' ? 'Assenze' : 'Absences'}</th><th scope="col">NET</th><th scope="col">{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</th><th scope="col">Actions</th>
+                  <th scope="col">{lang === 'en' ? 'Bonuses' : lang === 'es' ? 'Primas' : lang === 'it' ? 'Premi' : 'Primes'}</th><th scope="col">{lang === 'en' ? 'Overtime' : lang === 'es' ? 'Horas extra' : lang === 'it' ? 'Straordinari' : 'Heures sup.'}</th><th scope="col" style={groupSep}>{lang === 'en' ? 'Deductions' : lang === 'es' ? 'Deducciones' : lang === 'it' ? 'Detrazioni' : 'Retenues'}</th>
+                  <th scope="col">{lang === 'en' ? 'Absences' : lang === 'es' ? 'Ausencias' : lang === 'it' ? 'Assenze' : 'Absences'}</th><th scope="col" style={groupSep}>NET</th><th scope="col">{lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'}</th><th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -66,15 +82,16 @@ export default function PayrollTable(props: Props) {
                       </div>
                     </td>
                     <td style={{ fontSize:12, color:'var(--text3)' }}>{roleLabel(r.role, lang)}</td>
-                    <td className="td-num text-sm">{fmt(r.baseSalary)}</td>
-                    <td className="td-num text-sm" style={{ color:r.bonus > 0 ? 'var(--acc2)' : 'var(--text3)' }}>
+                    {/* Colonnes intermédiaires rétrogradées (12px, text2/text3) — le NET reste la métrique reine */}
+                    <td className="td-num text-sm" style={{ color:'var(--text2)' }}>{fmt(r.baseSalary)}</td>
+                    <td className="td-num text-sm" style={{ color:r.bonus > 0 ? 'var(--text2)' : 'var(--text3)' }}>
                       {r.bonus > 0 ? fmt(r.bonus) : '—'}
                     </td>
-                    <td className="td-num text-sm" style={{ color:r.overtime > 0 ? 'var(--p2)' : 'var(--text3)' }}>
+                    <td className="td-num text-sm" style={{ color:r.overtime > 0 ? 'var(--text2)' : 'var(--text3)' }}>
                       {r.overtime > 0 ? fmt(r.overtime) : '—'}
                     </td>
-                    <td className="td-num text-sm" style={{ color:'var(--danger)' }}>
-                      {fmt(r.deductions)}
+                    <td className="td-num text-sm" style={{ ...groupSep, color:r.deductions > 0 ? 'var(--danger)' : 'var(--text3)' }}>
+                      {r.deductions > 0 ? `− ${fmt(r.deductions)}` : fmt(r.deductions)}
                     </td>
                     <td>
                       {r.absences > 0
@@ -82,7 +99,9 @@ export default function PayrollTable(props: Props) {
                         : <span style={{ fontSize:12, color:'var(--text3)' }}>0</span>
                       }
                     </td>
-                    <td className="td-num" style={{ color:'var(--acc2)' }}>{fmt(calcNet(r))}</td>
+                    <td className="td-num" style={groupSep}>
+                      <span style={netPill}>{fmt(calcNet(r))}</span>
+                    </td>
                     <td>
                       <span className={`badge ${STATUS_CFG[r.status].cls}`}>{statusLabel(r.status, lang)}</span>
                     </td>
@@ -104,6 +123,21 @@ export default function PayrollTable(props: Props) {
                   </tr>
                 ))}
               </tbody>
+              {/* Ligne de total (fond bg2, valeurs mono) */}
+              <tfoot>
+                <tr style={{ background:'var(--bg2)', borderTop:'2px solid var(--border)' }}>
+                  <td colSpan={2} style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>
+                    Total — {filtered.length} {filtered.length > 1 ? (lang === 'en' ? 'employees' : lang === 'es' ? 'empleados' : lang === 'it' ? 'dipendenti' : 'employés') : (lang === 'en' ? 'employee' : lang === 'es' ? 'empleado' : lang === 'it' ? 'dipendente' : 'employé')}
+                  </td>
+                  <td className="td-num text-sm" style={{ fontWeight:'var(--fw-semibold)', color:'var(--text2)' }}>{fmt(totals.base)}</td>
+                  <td className="td-num text-sm" style={{ fontWeight:'var(--fw-semibold)', color:totals.bonus > 0 ? 'var(--text2)' : 'var(--text3)' }}>{totals.bonus > 0 ? fmt(totals.bonus) : '—'}</td>
+                  <td className="td-num text-sm" style={{ fontWeight:'var(--fw-semibold)', color:totals.overtime > 0 ? 'var(--text2)' : 'var(--text3)' }}>{totals.overtime > 0 ? fmt(totals.overtime) : '—'}</td>
+                  <td className="td-num text-sm" style={{ ...groupSep, fontWeight:'var(--fw-semibold)', color:totals.deductions > 0 ? 'var(--danger)' : 'var(--text3)' }}>{totals.deductions > 0 ? `− ${fmt(totals.deductions)}` : fmt(totals.deductions)}</td>
+                  <td style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:totals.absences > 0 ? 'var(--danger)' : 'var(--text3)' }}>{totals.absences > 0 ? `${totals.absences}j` : '0'}</td>
+                  <td className="td-num" style={groupSep}><span style={netPill}>{fmt(totals.net)}</span></td>
+                  <td colSpan={2} />
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}

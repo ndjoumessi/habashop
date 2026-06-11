@@ -1,10 +1,11 @@
+import type React from 'react'
 import { useState, useEffect } from 'react'
 import Skeleton from '@/components/ui/skeleton'
 import toast from 'react-hot-toast'
 import { useConfig, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Receipt, Wallet, Star, Percent, Banknote, Printer, MessageCircle, Bot, Lock, Camera, Check, Pencil, AlertTriangle, CreditCard, Medal } from 'lucide-react'
 import { tenantApi } from '@/lib/api'
-import { type L4, makeI, pick, panel, Head, ToggleCard } from '@/components/settings/settingsShared'
+import { type L4, makeI, pick, panel, Head, ToggleCard, GroupLabel } from '@/components/settings/settingsShared'
 
 export default function SectionPOS() {
   const cfg = useConfig()
@@ -68,14 +69,22 @@ export default function SectionPOS() {
 
   // Le mode TTC/HT est l'unique contrôle TVA (cf. sélecteur PRICE_MODES) ;
   // posVatIncluded est dérivé de priceMode à la sauvegarde (TTC → true, HT → false).
-  const TOGGLES: { key: any; icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string> }[] = [
-    { key: 'posAutoprint', icon: '🖨️', color: 'var(--p2)', label: { fr: 'Impression auto', en: 'Auto print', es: 'Impresión auto', it: 'Stampa auto' }, desc: { fr: 'Imprime le ticket après vente', en: 'Print receipt after sale', es: 'Imprimir ticket tras venta', it: 'Stampa ricevuta dopo vendita' } },
-    { key: 'autoWhatsApp', icon: '💬', color: '#25D366', label: { fr: 'Ticket WhatsApp', en: 'WhatsApp receipt', es: 'Ticket WhatsApp', it: 'Ricevuta WhatsApp' }, desc: { fr: 'Envoie le ticket par WhatsApp', en: 'Send receipt via WhatsApp', es: 'Enviar ticket por WhatsApp', it: 'Invia ricevuta via WhatsApp' } },
-    { key: 'enableAutoWhatsApp', icon: '🤖', color: '#25D366', label: { fr: 'Envoi auto WhatsApp', en: 'Auto WhatsApp send', es: 'Envío auto WhatsApp', it: 'Invio auto WhatsApp' }, desc: { fr: "Envoie auto le reçu après chaque vente. Nécessite un numéro client et une config Twilio par l'administrateur.", en: 'Auto-send the receipt after each sale. Requires a customer phone and Twilio config by the admin.', es: 'Envía auto el recibo tras cada venta. Requiere un teléfono del cliente y config Twilio del administrador.', it: 'Invia auto la ricevuta dopo ogni vendita. Richiede un telefono cliente e config Twilio dell\'amministratore.' } },
-    { key: 'enableLoyalty', icon: '⭐', color: 'var(--warn)', label: { fr: 'Programme fidélité', en: 'Loyalty program', es: 'Programa fidelidad', it: 'Programma fedeltà' }, desc: { fr: 'Active les points de fidélité', en: 'Enable loyalty points', es: 'Activar puntos de fidelidad', it: 'Abilita punti fedeltà' } },
-    { key: 'requireCashier', icon: '🔐', color: 'var(--acc3,#00B8FF)', label: { fr: 'Ouverture de caisse', en: 'Cashier open required', es: 'Apertura de caja', it: 'Apertura cassa' }, desc: { fr: 'Exiger l\'ouverture avant les ventes', en: 'Require opening before sales', es: 'Exigir apertura antes de ventas', it: 'Richiedi apertura prima delle vendite' } },
-    { key: 'enableScanner', icon: '📷', color: 'var(--p3)', label: { fr: 'Scanner codes-barres', en: 'Barcode scanner', es: 'Escáner de códigos', it: 'Scanner codici' }, desc: { fr: 'Active le scanner intégré', en: 'Enable built-in scanner', es: 'Activar escáner integrado', it: 'Abilita scanner integrato' } },
+  const TOGGLES: { key: any; icon: React.ReactNode; color: string; label: Record<L4, string>; desc: Record<L4, string> }[] = [
+    { key: 'posAutoprint', icon: <Printer size={18} />, color: 'var(--p2)', label: { fr: 'Impression auto', en: 'Auto print', es: 'Impresión auto', it: 'Stampa auto' }, desc: { fr: 'Imprime le ticket après vente', en: 'Print receipt after sale', es: 'Imprimir ticket tras venta', it: 'Stampa ricevuta dopo vendita' } },
+    { key: 'autoWhatsApp', icon: <MessageCircle size={18} />, color: '#25D366', label: { fr: 'Ticket WhatsApp', en: 'WhatsApp receipt', es: 'Ticket WhatsApp', it: 'Ricevuta WhatsApp' }, desc: { fr: 'Envoie le ticket par WhatsApp', en: 'Send receipt via WhatsApp', es: 'Enviar ticket por WhatsApp', it: 'Invia ricevuta via WhatsApp' } },
+    { key: 'enableAutoWhatsApp', icon: <Bot size={18} />, color: '#25D366', label: { fr: 'Envoi auto WhatsApp', en: 'Auto WhatsApp send', es: 'Envío auto WhatsApp', it: 'Invio auto WhatsApp' }, desc: { fr: "Envoie auto le reçu après chaque vente. Nécessite un numéro client et une config Twilio par l'administrateur.", en: 'Auto-send the receipt after each sale. Requires a customer phone and Twilio config by the admin.', es: 'Envía auto el recibo tras cada venta. Requiere un teléfono del cliente y config Twilio del administrador.', it: 'Invia auto la ricevuta dopo ogni vendita. Richiede un telefono cliente e config Twilio dell\'amministratore.' } },
+    { key: 'enableLoyalty', icon: <Star size={18} />, color: 'var(--warn)', label: { fr: 'Programme fidélité', en: 'Loyalty program', es: 'Programa fidelidad', it: 'Programma fedeltà' }, desc: { fr: 'Active les points de fidélité', en: 'Enable loyalty points', es: 'Activar puntos de fidelidad', it: 'Abilita punti fedeltà' } },
+    { key: 'requireCashier', icon: <Lock size={18} />, color: 'var(--acc3,#00B8FF)', label: { fr: 'Ouverture de caisse', en: 'Cashier open required', es: 'Apertura de caja', it: 'Apertura cassa' }, desc: { fr: 'Exiger l\'ouverture avant les ventes', en: 'Require opening before sales', es: 'Exigir apertura antes de ventas', it: 'Richiedi apertura prima delle vendite' } },
+    { key: 'enableScanner', icon: <Camera size={18} />, color: 'var(--p3)', label: { fr: 'Scanner codes-barres', en: 'Barcode scanner', es: 'Escáner de códigos', it: 'Scanner codici' }, desc: { fr: 'Active le scanner intégré', en: 'Enable built-in scanner', es: 'Activar escáner integrado', it: 'Abilita scanner integrato' } },
   ]
+  // Groupes visuels (GroupLabel) : Tickets / Caisse / Fidélité / Prix & TVA — mêmes toggles, juste regroupés.
+  const toggleCard = (key: string) => {
+    const t = TOGGLES.find(x => x.key === key)!
+    return (
+      <ToggleCard key={t.key} icon={t.icon} color={t.color} label={pick(lang, t.label)} desc={pick(lang, t.desc)}
+        on={!!(v as any)[t.key]} disabled={!editMode} onChange={() => toggle(t.key as any)} />
+    )
+  }
 
   const PRICE_MODES: { id: 'TTC' | 'HT'; title: string; sub: string }[] = [
     { id: 'TTC', title: 'TTC', sub: i('Taxes incluses', 'Tax included', 'Impuestos incluidos', 'Tasse incluse') },
@@ -141,22 +150,51 @@ export default function SectionPOS() {
           sub={i('Caisse, TVA et paiements', 'Cashier, VAT and payments', 'Caja, IVA y pagos', 'Cassa, IVA e pagamenti')}
           right={editMode
             ? <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: 12, cursor: 'pointer' }} onClick={save}>✅ {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
+                <button className="btn btn-primary gap-1.5" style={{ padding: '8px 16px', fontSize: 12, cursor: 'pointer' }} onClick={save}><Check size={13} /> {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
                 <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(false)}>{i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</button>
               </div>
-            : <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={startEdit}>✏️ {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>} />
+            : <button className="btn btn-ghost gap-1.5" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={startEdit}><Pencil size={13} /> {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>} />
 
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {TOGGLES.map(t => (
-            <ToggleCard key={t.key} icon={t.icon} color={t.color} label={pick(lang, t.label)} desc={pick(lang, t.desc)}
-              on={!!(v as any)[t.key]} disabled={!editMode} onChange={() => toggle(t.key as any)} />
-          ))}
+          {/* ── Tickets ── */}
+          <GroupLabel icon={<Receipt size={12} />} label={i('Tickets', 'Receipts', 'Tickets', 'Scontrini')} />
+          {toggleCard('posAutoprint')}
+          {toggleCard('autoWhatsApp')}
+          {toggleCard('enableAutoWhatsApp')}
+
+          {/* ── Caisse ── */}
+          <GroupLabel icon={<Wallet size={12} />} label={i('Caisse', 'Cash register', 'Caja', 'Cassa')} />
+          {toggleCard('requireCashier')}
+          {toggleCard('enableScanner')}
+
+          {/* Fond de caisse — saisie en devise d'affichage, stocké en XOF */}
+          <div style={{ padding: '14px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--c-green-bg2)', border: '1px solid var(--c-green-border)', color: 'var(--acc2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Banknote size={18} /></div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Fond de caisse', 'Opening fund', 'Fondo de caja', 'Fondo cassa')}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Montant initial en caisse', 'Initial cash amount', 'Monto inicial en caja', 'Importo iniziale in cassa')}</div>
+              </div>
+            </div>
+            {editMode ? (
+              <div style={{ position: 'relative' }}>
+                <input type="number" min={0} step={1} className="input" style={{ width: 150, textAlign: 'right', paddingRight: 44 }} value={fundInput} onChange={e => setFundInput(e.target.value)} />
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', fontSize: 11, pointerEvents: 'none', fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
+              </div>
+            ) : (
+              <div style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(cfg.posDefaultFund)}</div>
+            )}
+          </div>
+
+          {/* ── Fidélité ── */}
+          <GroupLabel icon={<Star size={12} />} label={i('Fidélité', 'Loyalty', 'Fidelidad', 'Fedeltà')} />
+          {toggleCard('enableLoyalty')}
 
           {/* Règles de fidélité — visibles uniquement si le programme est activé */}
           {v.enableLoyalty && (
             <div style={{ padding: '14px 16px', background: 'var(--bg3)', border: `1px solid ${editMode && loyaltyErr ? 'var(--danger)' : 'var(--border)'}`, borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>⭐</span>
+                <Star size={15} color="var(--warn)" />
                 <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Règles de fidélité', 'Loyalty rules', 'Reglas de fidelidad', 'Regole fedeltà')}</span>
               </div>
 
@@ -174,7 +212,7 @@ export default function SectionPOS() {
 
               {/* Seuil Bronze */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 12, color: 'var(--text2)' }}>🥉 {i('Seuil Bronze', 'Bronze threshold', 'Umbral Bronze', 'Soglia Bronze')}</span>
+                <span style={{ fontSize: 12, color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {i('Seuil Bronze', 'Bronze threshold', 'Umbral Bronze', 'Soglia Bronze')}</span>
                 {editMode ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <input type="number" min={1} step={1} className="input" style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.bronzeThreshold}
@@ -186,7 +224,7 @@ export default function SectionPOS() {
 
               {/* Seuil Silver */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 12, color: 'var(--text2)' }}>🥈 {i('Seuil Silver', 'Silver threshold', 'Umbral Silver', 'Soglia Silver')}</span>
+                <span style={{ fontSize: 12, color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {i('Seuil Silver', 'Silver threshold', 'Umbral Silver', 'Soglia Silver')}</span>
                 {editMode ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <input type="number" min={1} step={1} className="input" style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.silverThreshold}
@@ -197,16 +235,16 @@ export default function SectionPOS() {
               </div>
 
               {/* Remises par palier (v2 — 0 = désactivé) */}
-              <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', marginTop: 4 }}>
-                💳 {i('Remises automatiques par palier (0 = désactivé)', 'Automatic tier discounts (0 = off)', 'Descuentos automáticos por nivel (0 = desact.)', 'Sconti automatici per livello (0 = disatt.)')}
+              <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <CreditCard size={12} /> {i('Remises automatiques par palier (0 = désactivé)', 'Automatic tier discounts (0 = off)', 'Descuentos automáticos por nivel (0 = desact.)', 'Sconti automatici per livello (0 = disatt.)')}
               </div>
               {[
-                { key: 'bronzeDiscount' as const, label: '🥉 Bronze' },
-                { key: 'silverDiscount' as const, label: '🥈 Silver' },
-                { key: 'goldDiscount'   as const, label: '🥇 Gold'   },
+                { key: 'bronzeDiscount' as const, label: 'Bronze' },
+                { key: 'silverDiscount' as const, label: 'Silver' },
+                { key: 'goldDiscount'   as const, label: 'Gold'   },
               ].map(({ key, label }) => (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                  <span style={{ fontSize: 12, color: 'var(--text2)' }}>{label}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {label}</span>
                   {editMode ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <input type="number" min={0} max={100} step={0.5} className="input" style={{ width: 80, textAlign: 'right' }} value={loyaltyDraft[key]}
@@ -220,7 +258,7 @@ export default function SectionPOS() {
               {/* Validation inline : bronze < silver */}
               {editMode && loyaltyErr && (
                 <div style={{ fontSize: 11, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  ⚠️ {i('Le seuil Bronze doit être inférieur au seuil Silver.', 'Bronze threshold must be below Silver.', 'El umbral Bronze debe ser menor que Silver.', 'La soglia Bronze deve essere inferiore a Silver.')}
+                  <AlertTriangle size={12} /> {i('Le seuil Bronze doit être inférieur au seuil Silver.', 'Bronze threshold must be below Silver.', 'El umbral Bronze debe ser menor que Silver.', 'La soglia Bronze deve essere inferiore a Silver.')}
                 </div>
               )}
 
@@ -231,12 +269,15 @@ export default function SectionPOS() {
             </div>
           )}
 
+          {/* ── Prix & TVA ── */}
+          <GroupLabel icon={<Percent size={12} />} label={i('Prix & TVA', 'Pricing & VAT', 'Precios & IVA', 'Prezzi & IVA')} />
+
           {/* Price mode (TTC / HT) */}
           <div style={{ display: 'flex', gap: 10 }}>
             {PRICE_MODES.map(m => (
               <button key={m.id} type="button" disabled={!editMode} onClick={() => editMode && setDraft(p => ({ ...p, priceMode: m.id }))}
-                style={{ flex: 1, padding: 14, borderRadius: 12, cursor: editMode ? 'pointer' : 'default', opacity: editMode ? 1 : .7, textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', background: v.priceMode === m.id ? 'rgba(108,71,255,.1)' : 'var(--bg3)', border: `2px solid ${v.priceMode === m.id ? 'var(--p)' : 'var(--border)'}` }}>
-                <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: v.priceMode === m.id ? 'var(--p3)' : 'var(--text)' }}>{m.title}{v.priceMode === m.id ? ' ✓' : ''}</div>
+                style={{ flex: 1, padding: 14, borderRadius: 12, cursor: editMode ? 'pointer' : 'default', opacity: editMode ? 1 : .7, textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', background: v.priceMode === m.id ? 'color-mix(in srgb, var(--p) 10%, transparent)' : 'var(--bg3)', border: `2px solid ${v.priceMode === m.id ? 'var(--p)' : 'var(--border)'}` }}>
+                <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: v.priceMode === m.id ? 'var(--p3)' : 'var(--text)', display: 'flex', alignItems: 'center', gap: 5 }}>{m.title}{v.priceMode === m.id && <Check size={14} aria-hidden="true" />}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{m.sub}</div>
               </button>
             ))}
@@ -245,7 +286,7 @@ export default function SectionPOS() {
           {/* VAT rate */}
           <div style={{ padding: '14px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,149,0,.12)', border: '1px solid rgba(255,149,0,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📊</div>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--c-orange-bg)', border: '1px solid var(--c-orange-border)', color: 'var(--acc)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Percent size={18} /></div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Taux de TVA', 'VAT Rate', 'Tasa IVA', 'Aliquota IVA')}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Appliqué sur les ventes POS', 'Applied on POS sales', 'Aplicado en ventas TPV', 'Applicato sulle vendite POS')}</div>
@@ -261,28 +302,9 @@ export default function SectionPOS() {
             )}
           </div>
 
-          {/* Opening fund — currency dynamic */}
-          <div style={{ padding: '14px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💵</div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{i('Fond de caisse', 'Opening fund', 'Fondo de caja', 'Fondo cassa')}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Montant initial en caisse', 'Initial cash amount', 'Monto inicial en caja', 'Importo iniziale in cassa')}</div>
-              </div>
-            </div>
-            {editMode ? (
-              <div style={{ position: 'relative' }}>
-                <input type="number" min={0} step={1} className="input" style={{ width: 150, textAlign: 'right', paddingRight: 44 }} value={fundInput} onChange={e => setFundInput(e.target.value)} />
-                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', fontSize: 11, pointerEvents: 'none', fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
-              </div>
-            ) : (
-              <div style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(cfg.posDefaultFund)}</div>
-            )}
-          </div>
-
           {editMode && (
-            <div style={{ padding: '10px 14px', background: 'rgba(255,184,0,.06)', border: '1px solid rgba(255,184,0,.15)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--warn)' }}>
-              <span>⚠️</span>
+            <div style={{ padding: '10px 14px', background: 'var(--c-amber-bg)', border: '1px solid var(--c-amber-border)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--warn)' }}>
+              <AlertTriangle size={13} style={{ flexShrink: 0 }} />
               <span>{i('Modifications non sauvegardées — cliquez sur Sauvegarder', 'Unsaved changes — click Save to apply', 'Cambios sin guardar — haga clic en Guardar', 'Modifiche non salvate — clicca Salva')}</span>
             </div>
           )}

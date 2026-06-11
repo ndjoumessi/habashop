@@ -15,9 +15,10 @@ export default function PlanningStats({ lang, stats }: Props) {
         const count=stats[key]??0
         if (!count) return null
         return(
+          // cards stats sur surface neutre (bg2 + border fine) — la couleur reste portée par l'icône et le compteur
           <div key={key} style={{
-            background:s.bg,
-            border:`1px solid ${s.color}25`,
+            background:'var(--bg2)',
+            border:'0.5px solid var(--border)',
             borderRadius:12, padding:'12px 14px',
             display:'flex', alignItems:'center', gap:8,
           }}>

@@ -30,9 +30,10 @@ describe('SectionPOS — config fidélité', () => {
     await screen.findByText(/Règles de fidélité/)
     // passe en mode édition
     fireEvent.click(screen.getByText(/Modifier/))
-    // spinbuttons dans l'ordre DOM : [0]=pointsPerAmount, [1]=bronze, [2]=silver, ...
+    // sélection robuste à l'ordre DOM (groupes Tickets/Caisse/Fidélité/Prix & TVA) : le champ bronze porte la valeur seedée 2000
     const spins = await screen.findAllByRole('spinbutton')
-    fireEvent.change(spins[1], { target: { value: '6000' } }) // bronze 6000 ≥ silver 5000
+    const bronze = spins.find(s => (s as HTMLInputElement).value === '2000')!
+    fireEvent.change(bronze, { target: { value: '6000' } }) // bronze 6000 ≥ silver 5000
     await waitFor(() => {
       expect(screen.getByText(/doit être inférieur au seuil Silver/)).toBeTruthy()
     })

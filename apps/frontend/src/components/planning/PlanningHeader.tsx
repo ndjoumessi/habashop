@@ -1,4 +1,4 @@
-import { Download, CopyPlus } from 'lucide-react'
+import { Download, CopyPlus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { buildT, localeFor } from './planningShared'
 
 type View = 'week' | 'month'
@@ -52,9 +52,9 @@ export default function PlanningHeader({ lang, view, setView, weekDays, monthAnc
           <button aria-pressed={view==='week'} style={segBtn('week', T.week)} onClick={()=>setView('week')}>{T.week}</button>
           <button aria-pressed={view==='month'} style={segBtn('month', T.month)} onClick={()=>setView('month')}>{T.month}</button>
         </div>
-        <button className="mini-btn" aria-label={view==='month' ? T.prevMonth : T.prevWeek} onClick={()=>shift(-1)}><span aria-hidden="true">← </span>{T.prev}</button>
+        <button className="mini-btn" aria-label={view==='month' ? T.prevMonth : T.prevWeek} onClick={()=>shift(-1)} style={{ display:'flex', alignItems:'center', gap:3 }}><ChevronLeft size={13} aria-hidden="true"/>{T.prev}</button>
         <button className="mini-btn" onClick={()=>setPlanningWeek(new Date())}>{T.today}</button>
-        <button className="mini-btn" aria-label={view==='month' ? T.nextMonth : T.nextWeek} onClick={()=>shift(1)}>{T.next}<span aria-hidden="true"> →</span></button>
+        <button className="mini-btn" aria-label={view==='month' ? T.nextMonth : T.nextWeek} onClick={()=>shift(1)} style={{ display:'flex', alignItems:'center', gap:3 }}>{T.next}<ChevronRight size={13} aria-hidden="true"/></button>
         {view === 'week' && (
           <button className="mini-btn" onClick={onCopyWeek} title={T.copyWeekAria} aria-label={T.copyWeekAria} style={{ display:'flex', alignItems:'center', gap:4 }}>
             <CopyPlus size={12} aria-hidden="true"/> {copyLabel}

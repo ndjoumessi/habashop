@@ -73,8 +73,9 @@ export default function PlanningGrid(props: Props) {
                 return (
                   <th key={di} style={{
                     padding:'10px 6px', textAlign:'center',
+                    /* colonne « aujourd'hui » : teinte primaire thémée (lisible dans les 9 thèmes, Soleil inclus) */
                     background: isToday
-                      ? 'rgba(108,71,255,.12)' : 'transparent',
+                      ? 'color-mix(in srgb, var(--p) 12%, transparent)' : 'transparent',
                     position:'relative',
                   }}>
                     {isToday && (
@@ -125,15 +126,14 @@ export default function PlanningGrid(props: Props) {
                 </td>
               </tr>
             ) : filtered.map((emp,ri)=>(
+              /* zebra rgba(255,255,255,.01) supprimée : quasi invisible et illisible en thème clair */
               <tr key={emp.id} style={{
                 borderBottom:'1px solid var(--border)',
-                background: ri%2===0
-                  ? 'transparent' : 'rgba(255,255,255,.01)',
               }}>
                 <td style={{
                   padding:'8px 16px',
                   position:'sticky', left:0, zIndex:1,
-                  background: ri%2===0 ? 'var(--card)' : 'var(--bg2)',
+                  background:'var(--bg2)',
                   boxShadow:'2px 0 6px rgba(0,0,0,.15)',
                 }}>
                   <div style={{
@@ -201,7 +201,7 @@ export default function PlanningGrid(props: Props) {
                     <td key={di} style={{
                       padding:'4px 3px',
                       background: isToday
-                        ? 'rgba(108,71,255,.03)' : 'transparent',
+                        ? 'color-mix(in srgb, var(--p) 4%, transparent)' : 'transparent',
                     }}>
                       <div
                         title={isLocked ? lockedTitle : undefined}
@@ -244,11 +244,12 @@ export default function PlanningGrid(props: Props) {
                           display:'flex', flexDirection:'column',
                           alignItems:'center', justifyContent:'center',
                           gap:3, padding:'4px 2px',
-                          border:`1px solid ${single ? `${single.color}35` : 'var(--border)'}`,
+                          /* bordure des chips renforcée (35 → 55) ; week-end vide sur bg3 (rgba noir illisible en Soleil) */
+                          border:`1px solid ${single ? `${single.color}55` : 'var(--border)'}`,
                           background: single
                             ? single.bg
                             : isWeekend && !hasShifts
-                              ? 'rgba(0,0,0,.1)'
+                              ? 'var(--bg3)'
                               : 'var(--bg4)',
                           opacity: isLocked ? .6 : (isWeekend&&!hasShifts ? .5 : 1),
                           transition:'all .1s',
@@ -270,7 +271,7 @@ export default function PlanningGrid(props: Props) {
                           if (!hasShifts && !isLocked) {
                             const el=e.currentTarget as HTMLElement
                             el.style.background=isWeekend
-                              ?'rgba(0,0,0,.1)':'var(--bg4)'
+                              ?'var(--bg3)':'var(--bg4)'
                             el.style.borderColor='var(--border)'
                             el.style.transform='scale(1)'
                           }
@@ -299,7 +300,7 @@ export default function PlanningGrid(props: Props) {
                                     display:'flex', alignItems:'center', justifyContent:'center', gap:3,
                                     cursor: draggableChip ? 'grab' : 'default',
                                     ...(arr.length>1 ? {
-                                      background:`${s.color}1a`, border:`1px solid ${s.color}40`,
+                                      background:`${s.color}1a`, border:`1px solid ${s.color}66`,
                                       borderRadius:6, padding:'1px 5px', width:'100%',
                                     } : null),
                                     // créneau saisi (clavier/tactile) : état visuel de sélection
@@ -310,7 +311,8 @@ export default function PlanningGrid(props: Props) {
                                   {s.hours && (
                                     <span style={{
                                       fontSize:11, fontWeight:'var(--fw-bold)',
-                                      color:s.color,
+                                      /* heures assombries/éclaircies vers le texte : contraste AA en Mode Soleil sans toucher la palette shifts */
+                                      color:`color-mix(in srgb, ${s.color} 72%, var(--text))`,
                                       fontFamily:'var(--mono)',
                                       letterSpacing:'-.3px',
                                       lineHeight:1,
@@ -347,7 +349,7 @@ export default function PlanningGrid(props: Props) {
                         ) : (
                           <span style={{
                             fontSize:20, color:'var(--text4)',
-                            opacity:.3, fontWeight:200,
+                            opacity:.3, fontWeight:'var(--fw-regular)',
                           }}>+</span>
                         )}
                       </div>

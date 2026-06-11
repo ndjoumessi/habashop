@@ -110,7 +110,7 @@ export default function SectionSecurity() {
   }
   const onPwFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     e.currentTarget.style.borderColor = 'var(--p)'
-    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.1)'
+    e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--p) 10%, transparent)'
   }
   const onPwBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     e.currentTarget.style.borderColor = 'var(--border)'
@@ -185,9 +185,9 @@ export default function SectionSecurity() {
             </div>
             <button type="button"
               onClick={handleLogout}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.2)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.1)' }}
-              style={{ padding: '8px 14px', fontSize: 11, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', borderRadius: 10, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.2)', color: '#EF4444', fontFamily: 'var(--font)', transition: 'background .15s', flexShrink: 0 }}>
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--danger) 18%, transparent)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--danger) 10%, transparent)' }}
+              style={{ padding: '8px 14px', fontSize: 11, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 22%, transparent)', color: 'var(--danger)', fontFamily: 'var(--font)', transition: 'background .15s', flexShrink: 0 }}>
               {i('Déconnecter', 'Log out', 'Cerrar sesión', 'Disconnetti')}
             </button>
           </div>
@@ -240,7 +240,7 @@ export default function SectionSecurity() {
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none' }}
             style={{
               alignSelf: 'flex-start', padding: '11px 22px', fontSize: 13, fontWeight: 'var(--fw-regular)',
-              borderRadius: 12, boxShadow: pwLoading ? 'none' : '0 4px 16px rgba(124,58,237,.25)',
+              borderRadius: 12, boxShadow: pwLoading ? 'none' : '0 4px 16px color-mix(in srgb, var(--p) 25%, transparent)',
               cursor: pwLoading ? 'not-allowed' : 'pointer', opacity: pwLoading ? .6 : 1,
               transition: 'transform .15s, box-shadow .15s',
             }}>

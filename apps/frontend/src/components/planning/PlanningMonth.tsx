@@ -82,27 +82,33 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
                     minHeight:84, padding:'6px 6px 7px', cursor:'pointer',
                     borderRight: (idx%7!==6)?'1px solid var(--border)':'none',
                     borderBottom: (idx<35)?'1px solid var(--border)':'none',
-                    background: isToday ? 'rgba(108,71,255,.08)' : (isWeekend && inMonth) ? 'var(--bg3)' : 'transparent',
+                    /* fond « aujourd'hui » : teinte primaire thémée (remplace le rgba violet en dur) */
+                    background: isToday ? 'color-mix(in srgb, var(--p) 8%, transparent)' : (isWeekend && inMonth) ? 'var(--bg3)' : 'transparent',
                     opacity: inMonth ? 1 : .38,
                     transition:'background .1s',
                   }}
-                  onMouseEnter={e=>{ (e.currentTarget as HTMLElement).style.background = isToday?'rgba(108,71,255,.14)':'var(--bg4)' }}
-                  onMouseLeave={e=>{ (e.currentTarget as HTMLElement).style.background = isToday?'rgba(108,71,255,.08)':(isWeekend&&inMonth)?'var(--bg3)':'transparent' }}
+                  onMouseEnter={e=>{ (e.currentTarget as HTMLElement).style.background = isToday?'color-mix(in srgb, var(--p) 14%, transparent)':'var(--bg4)' }}
+                  onMouseLeave={e=>{ (e.currentTarget as HTMLElement).style.background = isToday?'color-mix(in srgb, var(--p) 8%, transparent)':(isWeekend&&inMonth)?'var(--bg3)':'transparent' }}
                 >
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
                     <span style={{ fontSize:13, fontWeight: isToday?'var(--fw-bold)':'var(--fw-semibold)', color: isToday?'var(--p2)':inMonth?'var(--text)':'var(--text3)', fontFamily:'var(--mono)' }}>{day.getDate()}</span>
                     {isToday && <span style={{ width:5, height:5, borderRadius:'50%', background:'var(--p)', boxShadow:'0 0 6px var(--p2)' }}/>}
                   </div>
-                  {/* « dots » multi-shift : un pastille colorée par type présent + compteur */}
+                  {/* mini-pills teintées par type présent (dot + compteur) — plus lisibles que les dots nus */}
                   {hasAny ? (
-                    <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+                    <div style={{ display:'flex', flexDirection:'column', gap:3, alignItems:'flex-start' }}>
                       {SHIFT_ORDER.map(t=>{
                         const c = counts[t]; if (!c) return null
                         const s = SHIFT_TYPES[t]
                         return (
-                          <div key={t} title={shiftLabel(t, lang)} style={{ display:'flex', alignItems:'center', gap:4 }}>
-                            <span style={{ width:7, height:7, borderRadius:'50%', background:s.color, flexShrink:0 }}/>
-                            <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text3)', fontFamily:'var(--mono)' }}>{c}</span>
+                          <div key={t} title={shiftLabel(t, lang)} style={{
+                            display:'inline-flex', alignItems:'center', gap:4,
+                            padding:'1px 6px', borderRadius:'var(--r-full)',
+                            background:`color-mix(in srgb, ${s.color} 12%, transparent)`,
+                            border:`1px solid color-mix(in srgb, ${s.color} 35%, transparent)`,
+                          }}>
+                            <span style={{ width:6, height:6, borderRadius:'50%', background:s.color, flexShrink:0 }}/>
+                            <span style={{ fontSize:11, fontWeight:'var(--fw-semibold)', color:`color-mix(in srgb, ${s.color} 72%, var(--text))`, fontFamily:'var(--mono)', lineHeight:1.3 }}>{c}</span>
                           </div>
                         )
                       })}

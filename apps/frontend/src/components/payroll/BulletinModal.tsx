@@ -129,7 +129,8 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
                   gap:8, padding:'9px 0',
                   borderBottom:'1px solid var(--border)', alignItems:'center',
                 }}>
-                  <span style={{ fontSize:13, color:'var(--text)' }}>{row.label}</span>
+                  {/* Libellés de lignes en text2 — hiérarchie : seuls les montants restent en text */}
+                  <span style={{ fontSize:13, color:'var(--text2)' }}>{row.label}</span>
                   <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.base}</span>
                   <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.taux}</span>
                   <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)', textAlign:'right', fontFamily:'var(--mono)' }}>
@@ -170,7 +171,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
                   gap:8, padding:'9px 0',
                   borderBottom:'1px solid var(--border)', alignItems:'center',
                 }}>
-                  <span style={{ fontSize:13, color:'var(--text)' }}>{row.label}</span>
+                  <span style={{ fontSize:13, color:'var(--text2)' }}>{row.label}</span>
                   <span style={{ fontSize:12, color:'var(--text3)', textAlign:'center', fontFamily:'var(--mono)' }}>{row.taux}</span>
                   <span style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--danger)', textAlign:'right', fontFamily:'var(--mono)' }}>
                     − {fmt(row.montant)}

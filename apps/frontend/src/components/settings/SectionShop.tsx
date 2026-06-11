@@ -1,9 +1,10 @@
+import type React from 'react'
 import { useState, useEffect } from 'react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import Skeleton from '@/components/ui/skeleton'
 import toast from 'react-hot-toast'
 import { useConfig } from '@/stores/appStore'
-import { Store } from 'lucide-react'
+import { Store, Mail, Phone, Globe, MapPin, User, Users, Package, ShoppingCart, Check, Pencil } from 'lucide-react'
 import { tenantApi, dashboardApi, customersApi } from '@/lib/api'
 import { makeI, panel, Head } from '@/components/settings/settingsShared'
 
@@ -48,12 +49,12 @@ export default function SectionShop() {
     } catch (e: any) { toast.error(e.message) }
   }
 
-  const FIELDS = [
-    { key: 'name',    full: true,  icon: '🏪', type: 'text',  label: i('NOM DE LA BOUTIQUE', 'SHOP NAME', 'NOMBRE TIENDA', 'NOME NEGOZIO'),  ph: i('Nom de votre boutique', 'Shop name', 'Nombre tienda', 'Nome negozio') },
-    { key: 'email',   full: false, icon: '📧', type: 'email', label: 'EMAIL', ph: 'email@boutique.com' },
-    { key: 'phone',   full: false, icon: '📞', type: 'tel',   label: i('TÉLÉPHONE', 'PHONE', 'TELÉFONO', 'TELEFONO'), ph: '+221 77 000 0000' },
-    { key: 'country', full: false, icon: '🌍', type: 'text',  label: i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE'), ph: i('Sénégal', 'Senegal', 'Senegal', 'Senegal') },
-    { key: 'address', full: true,  icon: '📍', type: 'text',  label: i('ADRESSE', 'ADDRESS', 'DIRECCIÓN', 'INDIRIZZO'), ph: i('Adresse complète', 'Full address', 'Dirección completa', 'Indirizzo completo') },
+  const FIELDS: { key: string; full: boolean; icon: React.ReactNode; type: string; label: string; ph: string }[] = [
+    { key: 'name',    full: true,  icon: <Store size={14} />,  type: 'text',  label: i('NOM DE LA BOUTIQUE', 'SHOP NAME', 'NOMBRE TIENDA', 'NOME NEGOZIO'),  ph: i('Nom de votre boutique', 'Shop name', 'Nombre tienda', 'Nome negozio') },
+    { key: 'email',   full: false, icon: <Mail size={14} />,   type: 'email', label: 'EMAIL', ph: 'email@boutique.com' },
+    { key: 'phone',   full: false, icon: <Phone size={14} />,  type: 'tel',   label: i('TÉLÉPHONE', 'PHONE', 'TELÉFONO', 'TELEFONO'), ph: '+221 77 000 0000' },
+    { key: 'country', full: false, icon: <Globe size={14} />,  type: 'text',  label: i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE'), ph: i('Sénégal', 'Senegal', 'Senegal', 'Senegal') },
+    { key: 'address', full: true,  icon: <MapPin size={14} />, type: 'text',  label: i('ADRESSE', 'ADDRESS', 'DIRECCIÓN', 'INDIRIZZO'), ph: i('Adresse complète', 'Full address', 'Dirección completa', 'Indirizzo completo') },
   ]
 
   if (!tenantLoaded) {
@@ -73,14 +74,14 @@ export default function SectionShop() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'slideUp .3s ease both' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
-        {[
-          { label: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), value: stats.users, icon: '👤', color: 'var(--p2)' },
-          { label: i('Produits', 'Products', 'Productos', 'Prodotti'), value: stats.products, icon: '📦', color: 'var(--acc3,#00B8FF)' },
-          { label: i('Clients', 'Customers', 'Clientes', 'Clienti'), value: stats.customers, icon: '👥', color: 'var(--acc)' },
-          { label: i('Ventes (mois)', 'Sales (month)', 'Ventas (mes)', 'Vendite (mese)'), value: stats.sales, icon: '🛒', color: 'var(--acc2)' },
-        ].map(s => (
-          <div key={s.label} style={{ ...panel, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
+        {([
+          { label: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), value: stats.users, icon: <User size={20} />, color: 'var(--p2)' },
+          { label: i('Produits', 'Products', 'Productos', 'Prodotti'), value: stats.products, icon: <Package size={20} />, color: 'var(--acc3,#00B8FF)' },
+          { label: i('Clients', 'Customers', 'Clientes', 'Clienti'), value: stats.customers, icon: <Users size={20} />, color: 'var(--acc)' },
+          { label: i('Ventes (mois)', 'Sales (month)', 'Ventas (mes)', 'Vendite (mese)'), value: stats.sales, icon: <ShoppingCart size={20} />, color: 'var(--acc2)' },
+        ] as { label: string; value: number; icon: React.ReactNode; color: string }[]).map(s => (
+          <div key={s.label} style={{ ...panel, border: `1px solid color-mix(in srgb, ${s.color} 14%, transparent)`, borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>
+            <div style={{ marginBottom: 6, display: 'flex', justifyContent: 'center', color: s.color }}>{s.icon}</div>
             <div style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)', color: s.color, fontFamily: 'var(--mono)' }}>{s.value}</div>
             <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>{s.label}</div>
           </div>
@@ -93,11 +94,11 @@ export default function SectionShop() {
           sub={i('Nom, adresse et coordonnées', 'Name, address and contact', 'Nombre, dirección y contacto', 'Nome, indirizzo e contatti')}
           right={editMode ? (
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: 12, cursor: 'pointer' }} onClick={save}>✅ {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
+              <button className="btn btn-primary gap-1.5" style={{ padding: '8px 16px', fontSize: 12, cursor: 'pointer' }} onClick={save}><Check size={13} /> {i('Sauvegarder', 'Save', 'Guardar', 'Salva')}</button>
               <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(false)}>{i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</button>
             </div>
           ) : (
-            <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(true)}>✏️ {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>
+            <button className="btn btn-ghost gap-1.5" style={{ padding: '8px 14px', fontSize: 12, cursor: 'pointer' }} onClick={() => setEditMode(true)}><Pencil size={13} /> {i('Modifier', 'Edit', 'Editar', 'Modifica')}</button>
           )} />
 
         <ResponsiveGrid min={160} gap={16} style={{ padding: '20px 22px' }}>
@@ -106,13 +107,13 @@ export default function SectionShop() {
               <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{f.label}</label>
               {editMode ? (
                 <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: 'var(--text3)', pointerEvents: 'none' }}>{f.icon}</span>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--text3)', pointerEvents: 'none' }}>{f.icon}</span>
                   <input aria-label={f.label} type={f.type} className="input" style={{ paddingLeft: 36, width: '100%', boxSizing: 'border-box' }} placeholder={f.ph}
                     value={(shopData as any)[f.key] ?? ''} onChange={e => setShopData(d => ({ ...d, [f.key]: e.target.value }))} />
                 </div>
               ) : (
                 <div style={{ padding: '10px 14px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, color: 'var(--text2)', fontWeight: 'var(--fw-regular)', display: 'flex', alignItems: 'center', gap: 8, minHeight: 42 }}>
-                  <span style={{ opacity: .5 }}>{f.icon}</span>
+                  <span style={{ opacity: .5, display: 'flex', flexShrink: 0 }}>{f.icon}</span>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {(shopData as any)[f.key] || <span style={{ color: 'var(--text4)', fontStyle: 'italic' }}>{i('Non renseigné', 'Not set', 'No especificado', 'Non impostato')}</span>}
                   </span>

@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { SHIFT_TYPES, shiftLabel, buildT } from './planningShared'
 import type { ShiftType } from './planningShared'
 
@@ -35,8 +36,9 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
             padding:'8px 14px', borderRadius:10,
             border:`1.5px solid ${activeShift===key
               ? s.color : 'var(--border)'}`,
+            /* sélection : fond teinté ; « Repos » (teinte grise quasi invisible) → bg3 */
             background: activeShift===key
-              ? s.bg : 'transparent',
+              ? (key==='rest' ? 'var(--bg3)' : s.bg) : 'transparent',
             cursor:'pointer', fontFamily:'var(--font)',
             fontSize:11, fontWeight:'var(--fw-semibold)',
             color: activeShift===key ? s.color : 'var(--text3)',
@@ -54,10 +56,10 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
           )}
           {activeShift===key && (
             <span aria-hidden="true" style={{
-              fontSize:11, background:'var(--p)',
-              color:'#fff', borderRadius:99,
-              padding:'1px 5px', fontWeight:'var(--fw-bold)',
-            }}>✓</span>
+              display:'inline-flex', alignItems:'center', justifyContent:'center',
+              background:'var(--p)', color:'#fff', borderRadius:'var(--r-full)',
+              width:16, height:16, flexShrink:0,
+            }}><Check size={11} strokeWidth={3}/></span>
           )}
         </button>
       ))}

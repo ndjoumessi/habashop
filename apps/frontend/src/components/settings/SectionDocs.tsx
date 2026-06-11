@@ -2,7 +2,7 @@ import type React from 'react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { ClipboardList } from 'lucide-react'
+import { ClipboardList, Download, Upload, Calculator, BookOpen, Printer, RotateCcw } from 'lucide-react'
 import { useConfig } from '@/stores/appStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
 import AccountingReportModal from '@/components/settings/AccountingReportModal'
@@ -29,13 +29,13 @@ export default function SectionDocs() {
     reader.readAsText(file)
   }
 
-  const DOCS: { icon: string; color: string; label: Record<L4, string>; desc: Record<L4, string>; action: () => void }[] = [
-    { icon: '📥', color: 'var(--p2)', label: { fr: 'Exporter la configuration', en: 'Export configuration', es: 'Exportar configuración', it: 'Esporta configurazione' }, desc: { fr: 'Sauvegarde tous vos paramètres (JSON)', en: 'Back up all your settings (JSON)', es: 'Respalda todos tus ajustes (JSON)', it: 'Backup di tutte le impostazioni (JSON)' }, action: exportConfig },
-    { icon: '📤', color: 'var(--acc3,#00B8FF)', label: { fr: 'Importer la configuration', en: 'Import configuration', es: 'Importar configuración', it: 'Importa configurazione' }, desc: { fr: 'Restaure depuis un fichier JSON', en: 'Restore from a JSON file', es: 'Restaurar desde un archivo JSON', it: 'Ripristina da un file JSON' }, action: () => importRef.current?.click() },
-    { icon: '💰', color: 'var(--warn)', label: { fr: 'Rapport comptable', en: 'Accounting report', es: 'Reporte contable', it: 'Report contabile' }, desc: { fr: 'Dépenses et revenus du mois', en: 'Monthly expenses and revenue', es: 'Gastos e ingresos del mes', it: 'Spese e ricavi del mese' }, action: () => setShowReport(true) },
-    { icon: '📋', color: 'var(--p3)', label: { fr: 'Documentation', en: 'Documentation', es: 'Documentación', it: 'Documentazione' }, desc: { fr: 'Dépôt GitHub HabaShop', en: 'HabaShop GitHub repo', es: 'Repo GitHub HabaShop', it: 'Repo GitHub HabaShop' }, action: () => window.open('https://github.com/ndjoumessi/habashop', '_blank') },
-    { icon: '🖨️', color: 'var(--text2)', label: { fr: 'Imprimer la configuration', en: 'Print configuration', es: 'Imprimir configuración', it: 'Stampa configurazione' }, desc: { fr: 'Imprime les paramètres actuels', en: 'Print current settings', es: 'Imprimir ajustes actuales', it: 'Stampa impostazioni correnti' }, action: () => window.print() },
-    { icon: '♻️', color: 'var(--danger)', label: { fr: 'Réinitialiser', en: 'Reset', es: 'Restablecer', it: 'Ripristina' }, desc: { fr: 'Restaure les paramètres par défaut', en: 'Restore default settings', es: 'Restaurar ajustes por defecto', it: 'Ripristina impostazioni predefinite' }, action: () => { cfg.resetConfig(); toast.success(i('♻️ Paramètres réinitialisés', '♻️ Settings reset', '♻️ Ajustes restablecidos', '♻️ Impostazioni ripristinate')) } },
+  const DOCS: { icon: React.ReactNode; color: string; label: Record<L4, string>; desc: Record<L4, string>; action: () => void }[] = [
+    { icon: <Download size={18} />, color: 'var(--p2)', label: { fr: 'Exporter la configuration', en: 'Export configuration', es: 'Exportar configuración', it: 'Esporta configurazione' }, desc: { fr: 'Sauvegarde tous vos paramètres (JSON)', en: 'Back up all your settings (JSON)', es: 'Respalda todos tus ajustes (JSON)', it: 'Backup di tutte le impostazioni (JSON)' }, action: exportConfig },
+    { icon: <Upload size={18} />, color: 'var(--acc3,#00B8FF)', label: { fr: 'Importer la configuration', en: 'Import configuration', es: 'Importar configuración', it: 'Importa configurazione' }, desc: { fr: 'Restaure depuis un fichier JSON', en: 'Restore from a JSON file', es: 'Restaurar desde un archivo JSON', it: 'Ripristina da un file JSON' }, action: () => importRef.current?.click() },
+    { icon: <Calculator size={18} />, color: 'var(--warn)', label: { fr: 'Rapport comptable', en: 'Accounting report', es: 'Reporte contable', it: 'Report contabile' }, desc: { fr: 'Dépenses et revenus du mois', en: 'Monthly expenses and revenue', es: 'Gastos e ingresos del mes', it: 'Spese e ricavi del mese' }, action: () => setShowReport(true) },
+    { icon: <BookOpen size={18} />, color: 'var(--p3)', label: { fr: 'Documentation', en: 'Documentation', es: 'Documentación', it: 'Documentazione' }, desc: { fr: 'Dépôt GitHub HabaShop', en: 'HabaShop GitHub repo', es: 'Repo GitHub HabaShop', it: 'Repo GitHub HabaShop' }, action: () => window.open('https://github.com/ndjoumessi/habashop', '_blank') },
+    { icon: <Printer size={18} />, color: 'var(--text2)', label: { fr: 'Imprimer la configuration', en: 'Print configuration', es: 'Imprimir configuración', it: 'Stampa configurazione' }, desc: { fr: 'Imprime les paramètres actuels', en: 'Print current settings', es: 'Imprimir ajustes actuales', it: 'Stampa impostazioni correnti' }, action: () => window.print() },
+    { icon: <RotateCcw size={18} />, color: 'var(--danger)', label: { fr: 'Réinitialiser', en: 'Reset', es: 'Restablecer', it: 'Ripristina' }, desc: { fr: 'Restaure les paramètres par défaut', en: 'Restore default settings', es: 'Restaurar ajustes por defecto', it: 'Ripristina impostazioni predefinite' }, action: () => { cfg.resetConfig(); toast.success(i('♻️ Paramètres réinitialisés', '♻️ Settings reset', '♻️ Ajustes restablecidos', '♻️ Impostazioni ripristinate')) } },
   ]
 
   return (
@@ -50,7 +50,7 @@ export default function SectionDocs() {
             style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s' }}
             onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--bg3)'; el.style.borderColor = 'var(--border)'; el.style.transform = 'translateY(-1px)' }}
             onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--bg3)'; el.style.borderColor = 'var(--border)'; el.style.transform = 'none' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: `${d.color}15`, border: `1px solid ${d.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{d.icon}</div>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: `color-mix(in srgb, ${d.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${d.color} 18%, transparent)`, color: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{d.icon}</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 3 }}>{pick(lang, d.label)}</div>
               <div style={{ fontSize: 11, color: 'var(--text3)' }}>{pick(lang, d.desc)}</div>
