@@ -63,17 +63,8 @@ export async function paymentStatsRoutes(app: FastifyInstance): Promise<void> {
 
     const sales = await prisma.sale.findMany({
       where: { tenantId, createdAt: { gte: dayStart, lt: dayEnd } },
-      select: { id: true, total: true, status: true, createdAt: true, mtnMomoReference: true, campayReference: true },
+      select: { total: true, status: true, createdAt: true, mtnMomoReference: true, campayReference: true },
     })
-
-    // ── DIAGNOSTIC TEMPORAIRE : lister les ventes comptées par provider ──
-    const mtnSales    = sales.filter((s: any) => s.mtnMomoReference && s.status !== 'refunded')
-    const campaySales = sales.filter((s: any) => s.campayReference && s.status !== 'refunded')
-    // JSON.stringify sur UNE ligne par provider → pas d'interleaving dans les logs Railway.
-    console.log('[today-stats range]', dayStart.toISOString(), '→', dayEnd.toISOString(), '| tenant', tenantId, '| total sales today', sales.length)
-    console.log('[today-stats MTN]', JSON.stringify(mtnSales.map((s: any) => ({ id: s.id, total: s.total, createdAt: s.createdAt }))))
-    console.log('[today-stats Campay]', JSON.stringify(campaySales.map((s: any) => ({ id: s.id, total: s.total, createdAt: s.createdAt }))))
-    // ── FIN DIAGNOSTIC ──
 
     return computePaymentStats(sales as PaymentStatSale[])
   })
