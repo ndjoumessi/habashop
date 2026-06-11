@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
-import { ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound, Activity } from 'lucide-react'
+import { ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound } from 'lucide-react'
 import Button from '@/components/ui/AppButton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useModalFocus } from '@/hooks/useModalFocus'
@@ -294,16 +294,6 @@ const INTEGRATION_DESC_T: Record<string, Record<string, string>> = {
 const integrationDesc = (itg: Integration, lang: string) =>
   INTEGRATION_DESC_T[itg.id]?.[lang] ?? itg.desc
 
-// Traduit le libellé « dernière activité » (stocké en FR dans les entrées).
-function relActivity(lastCall: string, lang: string): string {
-  if (lang === 'fr') return lastCall
-  if (lastCall === 'Continu') return lang === 'en' ? 'Continuous' : lang === 'es' ? 'Continuo' : 'Continuo'
-  if (lastCall === '—') return '—'
-  const m = lastCall.match(/^Il y a (.+)$/)
-  if (m) return lang === 'en' ? `${m[1]} ago` : lang === 'es' ? `hace ${m[1]}` : `${m[1]} fa`
-  return lastCall
-}
-
 // Bordure + glow d'une card selon le statut de ping :
 //   ok (<500ms) vert · slow (≥500ms) orange · error (injoignable) rouge · sinon neutre
 function statusVisual(status: PingState | undefined): { border: string; glow: string } {
@@ -410,7 +400,6 @@ export default function Integrations() {
   const allOk        = allChecked && !anyError
 
   const totalConnected = INTEGRATIONS_LIST.filter(itg => itg.status === 'connected').length
-  const totalCalls     = INTEGRATIONS_LIST.reduce((acc, i) => acc + Math.min(i.calls, 100000), 0)
 
   const EMAIL_FLOWS = [
     { trigger: lang === 'en' ? '🎉 Signup' : lang === 'es' ? '🎉 Registro' : lang === 'it' ? '🎉 Iscrizione' : '🎉 Inscription',                   email: lang === 'en' ? 'Welcome email' : lang === 'es' ? 'Email de bienvenida' : lang === 'it' ? 'Email di benvenuto' : 'Email de bienvenue',   delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
@@ -420,9 +409,6 @@ export default function Integrations() {
     { trigger: lang === 'en' ? '✅ Upgrade approved' : lang === 'es' ? '✅ Upgrade aprobado' : lang === 'it' ? '✅ Upgrade approvato' : '✅ Upgrade validé',        email: lang === 'en' ? 'Plan confirmation' : lang === 'es' ? 'Confirmación de plan' : lang === 'it' ? 'Conferma piano' : 'Confirmation plan', delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
     { trigger: lang === 'en' ? '📊 Monday 8am' : lang === 'es' ? '📊 Lunes 8h' : lang === 'it' ? '📊 Lunedì 8' : '📊 Lundi 8h',                   email: lang === 'en' ? 'Weekly report' : lang === 'es' ? 'Informe semanal' : lang === 'it' ? 'Report settimanale' : 'Rapport hebdomadaire',  delay: lang === 'en' ? 'Weekly cron' : lang === 'es' ? 'Cron semanal' : lang === 'it' ? 'Cron settimanale' : 'Cron hebdo' },
   ]
-
-  const formatCalls = (n: number) =>
-    n <= 0 ? '—' : n > 100000 ? '∞' : n.toLocaleString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')
 
   const renderCard = (itg: Integration) => {
     const isActive = itg.status === 'connected'
@@ -525,37 +511,30 @@ export default function Integrations() {
             </div>
           )}
 
-          {/* Stats API */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:10 }}>
-            {[
-              { label: lang === 'en' ? 'Calls/mo' : lang === 'es' ? 'Llamadas/mes' : lang === 'it' ? 'Chiamate/mese' : 'Appels/mois', value: formatCalls(itg.calls) },
-              { label: 'Uptime', value: itg.uptime },
-              { label: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—' },
-            ].map(stat => (
-              <div key={stat.label} style={{ background:'var(--bg3)', borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
-                <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)' }}>{stat.value}</div>
-                <div style={{ fontSize:11, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.4px', marginTop:2 }}>{stat.label}</div>
-              </div>
-            ))}
-          </div>
+          {/* Métriques mesurées en direct — latence + erreurs du ping réel.
+              Masqué pour les services sans endpoint public testable (paiements, cache) :
+              on n'affiche aucune valeur qui ne soit pas mesurée. */}
+          {!itg.noPing && (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:6, marginBottom:10 }}>
+              {[
+                { label: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—', color: 'var(--text)' },
+                { label: lang === 'en' ? 'Errors' : lang === 'es' ? 'Errores' : lang === 'it' ? 'Errori' : 'Erreurs',   value: errorRate, color: errorRate === '0%' ? 'var(--acc2)' : errorRate === '100%' ? 'var(--danger)' : 'var(--text4)' },
+              ].map(stat => (
+                <div key={stat.label} style={{ background:'var(--bg3)', borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
+                  <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:stat.color, fontFamily:'var(--mono)' }}>{stat.value}</div>
+                  <div style={{ fontSize:11, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.4px', marginTop:2 }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
 
-          {/* Endpoint + version API */}
+          {/* Endpoint + version API (libellés factuels) */}
           <div style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 10px', background:'var(--bg4)', borderRadius:7, border:'1px solid var(--border)', fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)' }}>
             <Globe size={10} style={{ flexShrink:0 }} />
             <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{itg.endpoint}</span>
             {apiVer && (
               <span style={{ marginLeft:'auto', flexShrink:0, color:'var(--text4)', fontSize:11 }}>{apiVer}</span>
             )}
-          </div>
-
-          {/* Dernière activité + taux d'erreur */}
-          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:8, fontSize:11, color:'var(--text4)' }}>
-            <Activity size={11} style={{ flexShrink:0 }} />
-            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{relActivity(itg.lastCall, lang)}</span>
-            <span style={{ marginLeft:'auto', flexShrink:0 }}>
-              {lang === 'en' ? 'Errors' : lang === 'es' ? 'Errores' : lang === 'it' ? 'Errori' : 'Erreurs'}{' '}
-              <span style={{ color: errorRate === '0%' ? 'var(--acc2)' : errorRate === '100%' ? 'var(--danger)' : 'var(--text4)', fontWeight:'var(--fw-semibold)' }}>{errorRate}</span>
-            </span>
           </div>
         </div>
 
@@ -744,13 +723,13 @@ export default function Integrations() {
         </div>
       </div>
 
-      {/* ── KPIs ── */}
+      {/* ── KPIs (réels uniquement) ── */}
       <div className="kpi-grid">
         {[
           { label:lang === 'en' ? 'Integrations' : lang === 'es' ? 'Integraciones' : lang === 'it' ? 'Integrazioni' : 'Intégrations', value:INTEGRATIONS_LIST.length, color:'var(--text)'  },
           { label:lang === 'en' ? 'Connected' : lang === 'es' ? 'Conectadas' : lang === 'it' ? 'Connesse' : 'Connectées',    value:totalConnected,            color:'var(--acc)'   },
-          { label:lang === 'en' ? 'API Calls' : lang === 'es' ? 'Llamadas API' : lang === 'it' ? 'Chiamate API' : 'Appels API',    value:`${(totalCalls/1000).toFixed(0)}K+`, color:'var(--acc2)' },
-          { label:lang === 'en' ? 'Uptime' : lang === 'es' ? 'Disponibilidad' : lang === 'it' ? 'Disponibilità' : 'Disponibilité',       value:'99.9%',                   color:'var(--p)'     },
+          { label:lang === 'en' ? 'Reachable' : lang === 'es' ? 'Accesibles' : lang === 'it' ? 'Raggiungibili' : 'Joignables',   value:allChecked ? `${okCount}/${pingableList.length}` : '…', color:'var(--acc2)' },
+          { label:lang === 'en' ? 'Transactions today' : lang === 'es' ? 'Transacciones hoy' : lang === 'it' ? 'Transazioni oggi' : 'Transactions du jour', value: txStats ? (txStats.mtn.count + txStats.campay.count) : '—', color:'var(--p)' },
         ].map(k => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-label">{k.label}</div>
@@ -927,7 +906,7 @@ export default function Integrations() {
           <span style={{ color:'var(--p2)', fontWeight:'var(--fw-semibold)' }}>
             {lang === 'en' ? 'Note:' : lang === 'es' ? 'Nota:' : lang === 'it' ? 'Nota:' : 'Note :'}
           </span>
-          {' '}{lang === 'en' ? 'Integrations marked ∞ are continuously running services (backend, database, CDN).' : lang === 'es' ? 'Las integraciones marcadas con ∞ son servicios en ejecución permanente (backend, base de datos, CDN).' : lang === 'it' ? 'Le integrazioni contrassegnate con ∞ sono servizi in esecuzione permanente (backend, database, CDN).' : 'Les intégrations marquées ∞ sont des services en cours d\'exécution permanente (backend, base de données, CDN).'}
+          {' '}{lang === 'en' ? 'Latency and errors are measured live from real pings; today\'s transactions come from the database. Services without a public testable endpoint (payments, cache) show no latency.' : lang === 'es' ? 'La latencia y los errores se miden en directo con pings reales; las transacciones de hoy provienen de la base de datos. Los servicios sin endpoint público comprobable (pagos, caché) no muestran latencia.' : lang === 'it' ? 'Latenza ed errori sono misurati in tempo reale tramite ping reali; le transazioni di oggi provengono dal database. I servizi senza endpoint pubblico testabile (pagamenti, cache) non mostrano latenza.' : 'La latence et les erreurs sont mesurées en direct via des pings réels ; les transactions du jour proviennent de la base. Les services sans endpoint public testable (paiements, cache) n\'affichent pas de latence.'}
         </div>
       </div>
 
