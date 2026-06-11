@@ -62,7 +62,7 @@ export default function Forecasts() {
           }}/>
           <div style={{
             width:56, height:56, borderRadius:16,
-            background:'linear-gradient(135deg,#6C47FF,#A991FF)',
+            background:'var(--grad-p)',
             display:'flex', alignItems:'center', justifyContent:'center',
             flexShrink:0,
             boxShadow:'0 8px 24px rgba(108,71,255,.4)',
@@ -73,7 +73,7 @@ export default function Forecasts() {
               <h2 style={{ fontSize:20, fontWeight:900, color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
                 HabaShop
                 <span style={{
-                  background:'linear-gradient(135deg,#6C47FF,#A991FF)',
+                  background:'var(--grad-p)',
                   WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
                   backgroundClip:'text', marginLeft:6,
                 }}>AI</span>

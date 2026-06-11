@@ -99,6 +99,22 @@
   --t-spring: all .22s cubic-bezier(.34,1.56,.64,1);
 }
 
+/* Ombres adoucies en thèmes CLAIRS (light + soleil) : alphas ÷~3 vs :root sombre.
+   applyTheme() pose data-theme="light" sur <html> pour ces 2 thèmes uniquement ;
+   --sh-* n'étant pas dans THEMES[*].vars, aucune valeur inline ne prime sur ce bloc.
+   --sh-glow conservé tel quel (anneau de focus, pas une ombre portée). */
+:root[data-theme="light"] {
+  --sh-xs: 0 2px 8px rgba(0,0,0,.12);
+  --sh-sm: 0 4px 16px rgba(0,0,0,.15);
+  --sh-md: 0 8px 28px rgba(0,0,0,.18);
+  --sh-lg: 0 16px 48px rgba(0,0,0,.22);
+  --sh-xl: 0 24px 80px rgba(0,0,0,.27);
+  --sh-p:  0 4px 16px rgba(108,71,255,.12);
+  --sh-p2: 0 8px 28px rgba(108,71,255,.08);
+  --sh-acc2: 0 4px 16px rgba(0,208,132,.08);
+  --sh-acc: 0 6px 24px rgba(0,208,132,.12);
+}
+
 *,*::before,*::after {
   box-sizing:border-box; margin:0; padding:0;
   -webkit-font-smoothing:antialiased;

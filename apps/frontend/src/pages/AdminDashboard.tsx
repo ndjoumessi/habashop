@@ -177,7 +177,7 @@ export default function AdminDashboard() {
       {/* ── Header enrichi ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,var(--p),var(--p2))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, boxShadow: '0 4px 14px rgba(108,71,255,.3)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,var(--p),var(--p2))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, boxShadow: 'var(--sh-p)' }}>
             <Shield size={22} />
           </div>
           <div>

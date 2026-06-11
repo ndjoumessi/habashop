@@ -208,8 +208,8 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     </div>
                     {(c.loyaltyPoints ?? 0) > 0 && (
                       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                        <Star size={13} fill="#FFB800" stroke="#FFB800" />
-                        <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', color: '#FFB800', fontFamily: 'var(--mono)' }}>{c.loyaltyPoints}</div>
+                        <Star size={13} fill="currentColor" stroke="currentColor" style={{ color: 'var(--warn)' }} />
+                        <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{c.loyaltyPoints}</div>
                       </div>
                     )}
                   </div>

@@ -29,7 +29,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
             width: 36, height: 36, borderRadius: 11,
             background: `linear-gradient(135deg,${D.p},${D.p2})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', boxShadow: '0 4px 14px rgba(108,71,255,.4)', flexShrink: 0,
+            color: '#fff', boxShadow: 'var(--sh-p)', flexShrink: 0,
           }}>
             <ShoppingCart size={18} strokeWidth={2.4}/>
           </div>

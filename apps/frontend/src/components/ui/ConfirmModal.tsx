@@ -57,8 +57,8 @@ export default function ConfirmModal({
       <div ref={ref} className="modal-box" style={{ maxWidth: 400, textAlign: 'center' }}>
         <div style={{
           width: 52, height: 52, borderRadius: '50%', margin: '0 auto 16px',
-          background: danger ? 'rgba(255,59,92,.12)' : 'rgba(108,71,255,.12)',
-          border: `1.5px solid ${danger ? 'rgba(255,59,92,.25)' : 'rgba(108,71,255,.25)'}`,
+          background: danger ? 'var(--c-red-bg)' : 'var(--c-purple-bg)',
+          border: `1.5px solid ${danger ? 'var(--c-red-border)' : 'var(--c-purple-border)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
         }} aria-hidden="true">{danger ? '⚠️' : '❓'}</div>
         <h3 id="confirm-title" style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 8 }}>{title}</h3>
@@ -70,7 +70,7 @@ export default function ConfirmModal({
           <button onClick={onConfirm} style={{
             flex: 1, padding: '10px',
             background: danger
-              ? 'linear-gradient(135deg,var(--danger),#dc2626)'
+              ? 'var(--grad-danger)'
               : 'linear-gradient(135deg,var(--p),var(--p2))',
             border: 'none', borderRadius: 10, color: '#fff',
             fontSize: 13, fontWeight: 'var(--fw-semibold)', cursor: 'pointer', fontFamily: 'var(--font)',

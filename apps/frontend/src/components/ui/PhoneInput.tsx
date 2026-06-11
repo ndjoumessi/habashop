@@ -148,7 +148,7 @@ export default function PhoneInput({
           background:'var(--card)',
           border:'1px solid var(--border2)',
           borderRadius:12,
-          boxShadow:'0 20px 60px rgba(0,0,0,.4)',
+          boxShadow:'var(--sh-lg)',
           width:280, zIndex:999,
           overflow:'hidden',
         }}>

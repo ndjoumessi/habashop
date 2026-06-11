@@ -65,7 +65,7 @@ export default function PWAInstallButton() {
       zIndex:1000,
       background:'var(--card)', border:'1px solid var(--border2)',
       borderRadius:16, padding:'16px 20px',
-      boxShadow:'0 20px 60px rgba(0,0,0,.4)',
+      boxShadow:'var(--sh-lg)',
       display:'flex', alignItems:'center', gap:16,
       maxWidth:400, width:'calc(100% - 32px)',
       animation:'slideUp .3s ease',

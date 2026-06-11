@@ -332,7 +332,7 @@ export default function CustomerMap({
                     <span>{lang === 'en' ? 'Loyalty' : lang === 'es' ? 'Fidelidad' : lang === 'it' ? 'Fedeltà' : 'Fidélité'}</span><span style={{ color: 'var(--warn)' }}>{loyaltyPct}%</span>
                   </div>
                   <div style={{ height: 4, background: 'var(--bg3)', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ width: `${loyaltyPct}%`, height: '100%', background: 'linear-gradient(90deg,#FFB800,#FF9500)', borderRadius: 99, boxShadow: loyaltyPct > 0 ? '0 0 8px rgba(255,184,0,.5)' : 'none' }} />
+                    <div style={{ width: `${loyaltyPct}%`, height: '100%', background: 'linear-gradient(90deg,var(--warn),var(--acc))', borderRadius: 99, boxShadow: loyaltyPct > 0 ? '0 0 8px color-mix(in srgb, var(--warn) 50%, transparent)' : 'none' }} />
                   </div>
                 </div>
                 {selected.address && (
@@ -389,14 +389,14 @@ export default function CustomerMap({
             { icon: <Globe size={16} />, title: lang === 'en' ? 'Global view' : lang === 'es' ? 'Vista global' : lang === 'it' ? 'Vista globale' : 'Vue globale',  fn: () => { if (mapObj.current) { mapObj.current.setCenter({ lat: 14.6928, lng: -17.4467 }); mapObj.current.setZoom(6) } } },
           ].map(btn => (
             <button key={btn.title} type="button" onClick={btn.fn} title={btn.title}
-              style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--card)', border: '1px solid var(--border2)', cursor: 'pointer', color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 4px 16px rgba(0,0,0,.5)', transition: 'background .15s' }}
+              style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--card)', border: '1px solid var(--border2)', cursor: 'pointer', color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: 'var(--sh-sm)', transition: 'background .15s' }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.2)'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'var(--card)'}>
               {btn.icon}
             </button>
           ))}
           <button type="button" onClick={() => setShowHeat(h => !h)} title={lang === 'en' ? 'Heatmap' : lang === 'es' ? 'Mapa de calor' : lang === 'it' ? 'Mappa di calore' : 'Carte de chaleur'}
-            style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${showHeat ? 'rgba(108,71,255,.6)' : 'var(--border2)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 4px 16px rgba(0,0,0,.5)', transition: 'all .15s', background: showHeat ? 'rgba(108,71,255,.35)' : 'var(--card)', color: showHeat ? 'var(--p3)' : 'var(--text2)' }}>
+            style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${showHeat ? 'rgba(108,71,255,.6)' : 'var(--border2)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: 'var(--sh-sm)', transition: 'all .15s', background: showHeat ? 'rgba(108,71,255,.35)' : 'var(--card)', color: showHeat ? 'var(--p3)' : 'var(--text2)' }}>
             <Flame size={16} />
           </button>
         </div>

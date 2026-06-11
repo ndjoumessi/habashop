@@ -53,12 +53,12 @@ export default function Pagination({
             <button key={p} type="button" onClick={() => onPage(p as number)}
               style={{
                 width: 44, height: 44, borderRadius: 9,
-                background: page === p ? 'linear-gradient(135deg,#6C47FF,#8B6FFF)' : 'var(--bg3)',
+                background: page === p ? 'var(--grad-p)' : 'var(--bg3)',
                 border: `1px solid ${page === p ? 'transparent' : 'var(--border)'}`,
                 cursor: 'pointer', color: page === p ? '#fff' : 'var(--text2)',
                 fontSize: 13, fontWeight: page === p ? 800 : 500,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all .15s', boxShadow: page === p ? '0 4px 12px rgba(108,71,255,.3)' : 'none',
+                transition: 'all .15s', boxShadow: page === p ? 'var(--sh-p)' : 'none',
               }}>{p}</button>
           )
         )}

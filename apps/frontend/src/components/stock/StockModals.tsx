@@ -93,8 +93,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   // Disparaît dès qu'un EAN-13 valide (13 chiffres) est renseigné.
   const eanMissing = !/^\d{13}$/.test(form.barcode ?? '')
   const eanWarning = eanMissing ? (
-    <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:8, background:'#FFFBEB', border:'1px solid #FCD34D', borderRadius:6, padding:'8px 10px', fontSize:12, color:'#92400E' }}>
-      <AlertTriangle size={15} style={{ color:'#D97706', flexShrink:0 }} />
+    <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:8, background:'color-mix(in srgb, var(--warn) 10%, transparent)', border:'1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius:6, padding:'8px 10px', fontSize:12, color:'var(--warn)' }}>
+      <AlertTriangle size={15} style={{ color:'var(--warn)', flexShrink:0 }} />
       <span>{i("Aucun EAN-13 renseigné — scannez l'emballage pour l'ajouter", 'No EAN-13 set — scan the packaging to add it', 'Sin EAN-13 — escanea el envase para añadirlo', 'Nessun EAN-13 — scansiona la confezione per aggiungerlo')}</span>
     </div>
   ) : null

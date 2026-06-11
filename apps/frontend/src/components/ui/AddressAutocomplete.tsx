@@ -159,7 +159,7 @@ export default function AddressAutocomplete({
           background: 'var(--card)',
           border: '1px solid var(--border)',
           borderRadius: 12, overflow: 'hidden',
-          boxShadow: '0 12px 40px rgba(0,0,0,.8)',
+          boxShadow: 'var(--sh-lg)',
         }}>
           {suggestions.slice(0, 5).map((s, i) => (
             <button key={s.place_id ?? i} type="button"

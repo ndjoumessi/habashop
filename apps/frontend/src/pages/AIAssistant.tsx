@@ -202,15 +202,15 @@ export default function AIAssistant() {
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
             <div style={{
               width:44, height:44, borderRadius:12, flexShrink:0,
-              background:'linear-gradient(135deg,#6C47FF,#A991FF)',
+              background:'var(--grad-p)',
               display:'flex', alignItems:'center', justifyContent:'center',
-              boxShadow:'0 4px 14px rgba(108,71,255,.4)',
+              boxShadow:'var(--sh-p)',
             }}><Bot size={22} style={{ color:'#fff' }}/></div>
             <div>
               <div style={{ fontSize:14, fontWeight:900, color:'var(--text)', letterSpacing:'-.2px' }}>
                 HabaShop
                 <span style={{
-                  background:'linear-gradient(135deg,#6C47FF,#A991FF)',
+                  background:'var(--grad-p)',
                   WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
                   backgroundClip:'text', marginLeft:4,
                 }}>AI</span>
@@ -369,7 +369,7 @@ export default function AIAssistant() {
               <div style={{
                 width:34, height:34, borderRadius:10, flexShrink:0,
                 background: msg.role === 'assistant'
-                  ? 'linear-gradient(135deg,#6C47FF,#A991FF)'
+                  ? 'var(--grad-p)'
                   : 'linear-gradient(135deg,var(--acc2),var(--p2))',
                 display:'flex', alignItems:'center', justifyContent:'center',
                 marginTop:2,
@@ -501,11 +501,11 @@ export default function AIAssistant() {
             disabled={!input.trim() || analyzing}
             style={{
               width:50, height:50, borderRadius:14, flexShrink:0,
-              background: input.trim() && !analyzing ? 'linear-gradient(135deg,#6C47FF,#A991FF)' : 'var(--bg4)',
+              background: input.trim() && !analyzing ? 'var(--grad-p)' : 'var(--bg4)',
               border:`1px solid ${input.trim() && !analyzing ? 'transparent' : 'var(--border)'}`,
               cursor: input.trim() && !analyzing ? 'pointer' : 'default',
               display:'flex', alignItems:'center', justifyContent:'center',
-              boxShadow: input.trim() && !analyzing ? '0 4px 14px rgba(108,71,255,.4)' : 'none',
+              boxShadow: input.trim() && !analyzing ? 'var(--sh-p)' : 'none',
               transition:'all .15s',
             }}>
             {analyzing

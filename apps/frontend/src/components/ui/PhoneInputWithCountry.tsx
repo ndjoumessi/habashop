@@ -134,7 +134,7 @@ export default function PhoneInputWithCountry({
         background: 'var(--bg4)',
         border: `1.5px solid ${focused ? 'var(--p2)' : 'var(--border)'}`,
         borderRadius: 10, overflow: 'hidden',
-        boxShadow: focused ? '0 0 0 3px rgba(124,111,240,.15)' : 'none',
+        boxShadow: focused ? 'var(--sh-glow)' : 'none',
         transition: 'all .15s',
         opacity: disabled ? 0.5 : 1,
       }}>
@@ -234,7 +234,7 @@ export default function PhoneInputWithCountry({
           background: 'var(--card)',
           border: '1px solid var(--border)',
           borderRadius: 12, overflow: 'hidden',
-          boxShadow: '0 16px 48px rgba(0,0,0,.85)',
+          boxShadow: 'var(--sh-lg)',
         }}>
           {/* Recherche */}
           <div style={{

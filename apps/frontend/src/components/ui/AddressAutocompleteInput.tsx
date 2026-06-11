@@ -165,7 +165,7 @@ export default function AddressAutocompleteInput({
         <div style={{
           position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 9999,
           background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 11, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.8)',
+          borderRadius: 11, overflow: 'hidden', boxShadow: 'var(--sh-lg)',
         }}>
           <div style={{ padding: '5px 12px', fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text4)', borderBottom: '1px solid var(--border)' }}>
             {lang === 'en' ? 'Google Maps Suggestions' : lang === 'es' ? 'Sugerencias de Google Maps' : lang === 'it' ? 'Suggerimenti Google Maps' : 'Suggestions Google Maps'}

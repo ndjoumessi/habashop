@@ -155,9 +155,9 @@ const integrationDesc = (itg: Integration, lang: string) =>
 //   ok (<500ms) vert · slow (≥500ms) orange · error (injoignable) rouge · sinon neutre
 function statusVisual(status: PingState | undefined): { border: string; glow: string } {
   switch (status) {
-    case 'ok':    return { border: '#10B981', glow: 'rgba(16,185,129,.15)' }
-    case 'slow':  return { border: '#F59E0B', glow: 'rgba(245,158,11,.15)' }
-    case 'error': return { border: '#EF4444', glow: 'rgba(239,68,68,.15)' }
+    case 'ok':    return { border: 'var(--acc2)',   glow: 'color-mix(in srgb, var(--acc2) 15%, transparent)' }
+    case 'slow':  return { border: 'var(--warn)',   glow: 'color-mix(in srgb, var(--warn) 15%, transparent)' }
+    case 'error': return { border: 'var(--danger)', glow: 'color-mix(in srgb, var(--danger) 15%, transparent)' }
     default:      return { border: 'var(--border)', glow: 'transparent' }
   }
 }
@@ -309,7 +309,7 @@ export default function Integrations() {
           const isActive = itg.status === 'connected'
           const { IconSvg } = itg
           const sv = statusVisual(pingStatus[itg.id])
-          const glowHover = sv.glow.replace('.15)', '.30)')
+          const glowHover = sv.glow.replace('15%,', '30%,')
 
           return (
             <div key={itg.id} style={{

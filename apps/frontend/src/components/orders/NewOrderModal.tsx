@@ -42,13 +42,14 @@ export default function NewOrderModal({
   const fmt = useFormatAmount()
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true"
+      aria-label={i('Nouvelle commande', 'New order', 'Nueva orden', 'Nuovo ordine')}
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{
         background: 'var(--bg2)', border: '1px solid var(--border2)',
         borderRadius: 20, width: '100%', maxWidth: 640,
         maxHeight: '92vh', overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
-        boxShadow: '0 24px 80px rgba(0,0,0,.5)',
+        boxShadow: 'var(--sh-xl)',
       }}>
 
         {/* Header */}
@@ -169,7 +170,7 @@ export default function NewOrderModal({
 
               {/* Dropdown suggestions */}
               {showClientDropdown && clientSuggestions.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', boxShadow: 'var(--sh-lg)' }}>
                   <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', display: 'flex', justifyContent: 'space-between' }}>
                     <span>{i('CLIENTS EXISTANTS', 'EXISTING CLIENTS', 'CLIENTES EXISTENTES', 'CLIENTI ESISTENTI')}</span>
                     <span>{clientSuggestions.length} {i('résultat', 'result', 'resultado', 'risultato')}{clientSuggestions.length > 1 ? 's' : ''}</span>
@@ -220,7 +221,7 @@ export default function NewOrderModal({
 
               {/* Aucun résultat */}
               {showClientDropdown && clientSuggestions.length === 0 && newOrderForm.clientName.trim().length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.6)' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 999, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', boxShadow: 'var(--sh-lg)' }}>
                   <button type="button" onMouseDown={() => setShowClientDropdown(false)}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)' }}>
                     <Plus size={20} style={{ color:'var(--p3)' }}/>
