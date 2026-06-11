@@ -46,8 +46,8 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
       })
       return { referenceId, status: 'PENDING' }
     } catch (err: any) {
-      console.error('[MTN]', { step: 'route/request', amount: mtnAmount, currency, phoneNumber, error: err?.message, stack: err?.stack })
-      request.log.error({ err }, 'MTN MoMo requestToPay failed')
+      // phoneNumber exclu des logs (PII) — le message d'erreur MTN suffit au diagnostic.
+      request.log.error({ err, step: 'requestToPay', amount: mtnAmount, currency }, 'MTN MoMo requestToPay failed')
       return reply.code(502).send({ error: err.message ?? 'Erreur MTN MoMo' })
     }
   })
@@ -64,7 +64,10 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
     try {
       const status = await getPaymentStatus(referenceId)
       // Sandbox : MTN ne résout jamais PENDING automatiquement — simulation SUCCESSFUL pour les tests.
-      if (IS_SANDBOX && status === 'PENDING') return { referenceId, status: 'SUCCESSFUL' }
+      // Opt-in EXPLICITE : MTN_SANDBOX_AUTO_SUCCESS=1 requis. Une var absente en prod ne peut PAS
+      // auto-approuver un paiement (IS_SANDBOX seul ne suffit pas).
+      const sandboxAutoSuccess = process.env.MTN_SANDBOX_AUTO_SUCCESS === '1' && IS_SANDBOX
+      if (sandboxAutoSuccess && status === 'PENDING') return { referenceId, status: 'SUCCESSFUL' }
       return { referenceId, status }
     } catch (err: any) {
       request.log.error({ err }, 'MTN MoMo status failed')

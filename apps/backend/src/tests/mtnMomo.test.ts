@@ -148,9 +148,22 @@ describe('POST /api/payments/mtn/status', () => {
     expect(JSON.parse(res.body).status).toBe('FAILED')
   })
 
-  it('sandbox : PENDING → SUCCESSFUL (MTN sandbox ne résout jamais PENDING)', async () => {
-    // En sandbox (MTN_MOMO_ENVIRONMENT absent = sandbox), la route simule SUCCESSFUL
-    // dès que MTN retourne PENDING, car le sandbox MTN ne progresse jamais seul.
+  it('sans MTN_SANDBOX_AUTO_SUCCESS=1 : PENDING reste PENDING (pas de fail-open)', async () => {
+    // La simulation PENDING→SUCCESSFUL requiert MTN_SANDBOX_AUTO_SUCCESS=1 explicitement.
+    // Sans ce flag, une var absente en prod ne peut pas auto-approuver un paiement.
+    delete process.env.MTN_SANDBOX_AUTO_SUCCESS
+    mtnStatusMock.mockResolvedValue('PENDING')
+    const app = await makeApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/payments/mtn/status',
+      payload: { referenceId: 'ref-wait' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).status).toBe('PENDING')
+  })
+
+  it('avec MTN_SANDBOX_AUTO_SUCCESS=1 : PENDING → SUCCESSFUL (simulation sandbox)', async () => {
+    process.env.MTN_SANDBOX_AUTO_SUCCESS = '1'
     mtnStatusMock.mockResolvedValue('PENDING')
     const app = await makeApp()
     const res = await app.inject({
@@ -159,6 +172,7 @@ describe('POST /api/payments/mtn/status', () => {
     })
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body).status).toBe('SUCCESSFUL')
+    delete process.env.MTN_SANDBOX_AUTO_SUCCESS
   })
 
   it('400 si referenceId manquant', async () => {

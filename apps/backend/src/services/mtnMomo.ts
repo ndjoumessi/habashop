@@ -95,20 +95,14 @@ export async function getPaymentStatus(
   })
 
   const bodyText = await res.text().catch(() => '')
-  let body: unknown = bodyText
-  try { body = JSON.parse(bodyText) } catch { /* garde le texte brut */ }
-
-  console.error('[MTN status]', {
-    referenceId,
-    url,
-    env:    ENV,
-    subKey: SUB_KEY ? SUB_KEY.slice(0, 8) + '…' : '(vide)',
-    status: res.status,
-    body,
-  })
-
-  if (!res.ok) throw new Error(`MTN status error: ${res.status} — ${bodyText}`)
-  const data = body as { status?: string }
+  if (!res.ok) {
+    let body: unknown = bodyText
+    try { body = JSON.parse(bodyText) } catch { /* garde le texte brut */ }
+    // subKey exclu des logs (credential) — env + status + body suffisent au diagnostic.
+    console.error('[MTN status]', { referenceId, url, env: ENV, status: res.status, body })
+    throw new Error(`MTN status error: ${res.status} — ${bodyText}`)
+  }
+  const data = JSON.parse(bodyText || '{}') as { status?: string }
   if (data.status === 'SUCCESSFUL') return 'SUCCESSFUL'
   if (data.status === 'FAILED')     return 'FAILED'
   return 'PENDING'
