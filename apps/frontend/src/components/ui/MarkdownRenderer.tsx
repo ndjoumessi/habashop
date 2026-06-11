@@ -29,7 +29,7 @@ export default function MarkdownRenderer({ content, style }: Props) {
     if (line.startsWith('# ')) {
       elements.push(
         <h1 key={i} style={{
-          fontSize: 22, fontWeight: 900,
+          fontSize: 22, fontWeight: 'var(--fw-semibold)',
           color: 'var(--text)', margin: '24px 0 12px',
           letterSpacing: '-.3px',
           paddingBottom: 10,

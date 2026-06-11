@@ -112,7 +112,7 @@ export default function PhoneInput({
         }}
       >
         <span style={{ fontSize:16 }}>{selectedCode.flag}</span>
-        <span style={{ fontWeight:600 }}>{selectedCode.code}</span>
+        <span style={{ fontWeight:'var(--fw-regular)' }}>{selectedCode.code}</span>
         <span style={{ fontSize:11, color:'var(--text3)' }}>▼</span>
       </button>
 

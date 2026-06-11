@@ -185,7 +185,7 @@ function WhatsAppInlineRenderer({ text }: { text: string }) {
     while ((match = regex.exec(line)) !== null) {
       if (match.index > last) parts.push(line.slice(last, match.index))
       if (match[2] || match[3]) {
-        parts.push(<strong key={match.index} style={{ fontWeight: 700, color: 'var(--text)' }}>{match[2] ?? match[3]}</strong>)
+        parts.push(<strong key={match.index} style={{ fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{match[2] ?? match[3]}</strong>)
       } else if (match[4]) {
         parts.push(<em key={match.index} style={{ fontStyle: 'italic', color: 'var(--text2)' }}>{match[4]}</em>)
       } else if (match[5]) {
@@ -295,7 +295,7 @@ export default function Marketing() {
             boxShadow: '0 4px 14px rgba(37,211,102,.3)',
           }}><Smartphone size={24} style={{ color:'#fff' }}/></div>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-.3px' }}>
+            <h1 style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, letterSpacing: '-.3px' }}>
               {mk.title}
             </h1>
             <p style={{ fontSize: 12, color: 'var(--text3)', margin: '3px 0 0' }}>{mk.subtitle}</p>
@@ -319,10 +319,10 @@ export default function Marketing() {
             borderRadius: 14, padding: '14px 16px',
             borderTop: `3px solid ${k.color}`,
           }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
+            <div style={{ fontSize: 10, fontWeight: 'var(--fw-regular)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
               {k.label}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: k.color, fontFamily: 'var(--mono)' }}>
+            <div style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: k.color, fontFamily: 'var(--mono)' }}>
               {k.value}
             </div>
           </div>
@@ -333,7 +333,7 @@ export default function Marketing() {
 
         {/* ── Templates ── */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 'var(--fw-regular)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 10 }}>
             {mk.templates_title}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
@@ -342,7 +342,7 @@ export default function Marketing() {
                 display: 'flex', alignItems: 'center', gap: 8,
                 background: 'var(--bg3)', border: '1px solid var(--border)',
                 borderRadius: 8, padding: '8px 12px', cursor: 'pointer',
-                fontSize: 12, fontWeight: 600, color: 'var(--text2)', fontFamily: 'var(--font)',
+                fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text2)', fontFamily: 'var(--font)',
                 textAlign: 'left', transition: 'all .12s',
               }}>
                 <span style={{ display:'flex', color:'var(--text3)' }}>{tpl.icon}</span>
@@ -354,7 +354,7 @@ export default function Marketing() {
 
         {/* ── Message composer ── */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 'var(--fw-regular)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
             {mk.msg_title}
           </div>
           <textarea
@@ -381,7 +381,7 @@ export default function Marketing() {
           {message && (
             <div style={{ marginTop: 12 }}>
               <div style={{
-                fontSize: 9, fontWeight: 800, textTransform: 'uppercase',
+                fontSize: 9, fontWeight: 'var(--fw-regular)', textTransform: 'uppercase',
                 letterSpacing: '.6px', color: 'rgba(37,211,102,.6)',
                 marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
               }}>
@@ -403,7 +403,7 @@ export default function Marketing() {
                     fontSize: 18,
                   }}>🛒</div>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#E9EAE0' }}>HabaShop</div>
+                    <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: '#E9EAE0' }}>HabaShop</div>
                     <div style={{ fontSize: 10, color: '#8696A0' }}>
                       {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
                     </div>
@@ -435,7 +435,7 @@ export default function Marketing() {
               display: 'flex', alignItems: 'center', gap: 6,
               background: 'var(--bg3)', border: '1px solid var(--border)',
               borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600, color: 'var(--text2)', fontFamily: 'var(--font)',
+              fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text2)', fontFamily: 'var(--font)',
             }}>
               {selected.size === filtered.length && filtered.length > 0
                 ? <CheckSquare size={14} style={{ color: 'var(--p2)' }} />
@@ -478,10 +478,10 @@ export default function Marketing() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       transition: 'all .12s',
                     }}>
-                      {isSelected && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
+                      {isSelected && <span style={{ color: '#fff', fontSize: 11, fontWeight: 'var(--fw-regular)' }}>✓</span>}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text)', marginBottom: 1 }}>
                         {c.name}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
@@ -490,15 +490,15 @@ export default function Marketing() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{
-                        fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20,
+                        fontSize: 10, fontWeight: 'var(--fw-regular)', padding: '2px 7px', borderRadius: 20,
                         background: c.type === 'wholesale' ? 'rgba(91,78,232,.12)' : c.type === 'semi' ? 'rgba(240,165,0,.12)' : 'rgba(14,196,126,.12)',
                         color: c.type === 'wholesale' ? 'var(--p2)' : c.type === 'semi' ? 'var(--acc)' : 'var(--acc2)',
                       }}>{c.type}</span>
                       {(c.loyaltyPoints ?? 0) >= 5000
-                        ? <span title="Gold"   style={{ fontSize:9, fontWeight:800, color:'#F0A500', background:'rgba(240,165,0,.15)',   borderRadius:4, padding:'1px 5px' }}>G</span>
+                        ? <span title="Gold"   style={{ fontSize:9, fontWeight:'var(--fw-regular)', color:'#F0A500', background:'rgba(240,165,0,.15)',   borderRadius:4, padding:'1px 5px' }}>G</span>
                         : (c.loyaltyPoints ?? 0) >= 2000
-                          ? <span title="Silver" style={{ fontSize:9, fontWeight:800, color:'#94A3B8', background:'rgba(148,163,184,.15)', borderRadius:4, padding:'1px 5px' }}>S</span>
-                          : <span title="Bronze" style={{ fontSize:9, fontWeight:800, color:'#CD7F32', background:'rgba(205,127,50,.15)',  borderRadius:4, padding:'1px 5px' }}>B</span>}
+                          ? <span title="Silver" style={{ fontSize:9, fontWeight:'var(--fw-regular)', color:'#94A3B8', background:'rgba(148,163,184,.15)', borderRadius:4, padding:'1px 5px' }}>S</span>
+                          : <span title="Bronze" style={{ fontSize:9, fontWeight:'var(--fw-regular)', color:'#CD7F32', background:'rgba(205,127,50,.15)',  borderRadius:4, padding:'1px 5px' }}>B</span>}
                     </div>
                   </div>
                 )
@@ -514,7 +514,7 @@ export default function Marketing() {
             border: `1px solid ${result.failed === 0 ? 'rgba(14,196,126,.3)' : 'rgba(240,165,0,.3)'}`,
             borderRadius: 12, padding: '12px 16px',
           }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: result.failed === 0 ? 'var(--acc2)' : 'var(--acc)', marginBottom: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: result.failed === 0 ? 'var(--acc2)' : 'var(--acc)', marginBottom: 4 }}>
               {result.failed === 0 ? mk.result_ok : mk.result_partial}
             </div>
             <div style={{ fontSize: 12, color: 'var(--text2)' }}>
@@ -535,7 +535,7 @@ export default function Marketing() {
               ? 'var(--bg4)'
               : 'linear-gradient(135deg, #25D366, #128C7E)',
             border: 'none', borderRadius: 12,
-            fontSize: 14, fontWeight: 700,
+            fontSize: 14, fontWeight: 'var(--fw-semibold)',
             color: sending || !selected.size || !message.trim() ? 'var(--text3)' : '#fff',
             cursor: sending || !selected.size || !message.trim() ? 'not-allowed' : 'pointer',
             fontFamily: 'inherit',

@@ -324,7 +324,7 @@ function CountryRow({ c, selected, onSelect }: { c: CountryEntry; selected: bool
     >
       <span style={{ fontSize: 18, width: 26, textAlign: 'center' }}>{c.flag}</span>
       <span style={{
-        flex: 1, fontSize: 12, fontWeight: 600,
+        flex: 1, fontSize: 12, fontWeight: 'var(--fw-regular)',
         color: selected ? 'var(--p3)' : 'var(--text)',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{c.country}</span>

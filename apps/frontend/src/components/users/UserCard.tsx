@@ -63,7 +63,7 @@ export default function UserCard({ user, isAdmin, canToggle2FA, onToggle2FA, onT
               width:48, height:48, borderRadius:14,
               background:avatarColor,
               display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:14, fontWeight:900, color:'#fff',
+              fontSize:14, fontWeight:'var(--fw-semibold)', color:'#fff',
               boxShadow:`0 6px 18px ${avatarColor}44`,
             }}>
               {initials(user.name)}

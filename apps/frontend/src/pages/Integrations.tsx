@@ -376,7 +376,7 @@ export default function Integrations() {
                 display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
               }}>
                 <a href={itg.docs} target="_blank" rel="noopener noreferrer"
-                  style={{ fontSize:11, color:'var(--text3)', textDecoration:'none', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}
+                  style={{ fontSize:11, color:'var(--text3)', textDecoration:'none', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:4 }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text2)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text3)' }}
                 >
@@ -463,11 +463,11 @@ export default function Integrations() {
                 {EMAIL_FLOWS.map((flow, i) => (
                   <tr key={i} style={{ borderTop:'1px solid var(--border)' }}>
                     <td style={{ padding:'8px 12px', color:'var(--text2)' }}>{flow.trigger}</td>
-                    <td style={{ padding:'8px 12px', color:'var(--text)', fontWeight:600 }}>{flow.email}</td>
+                    <td style={{ padding:'8px 12px', color:'var(--text)', fontWeight:'var(--fw-regular)' }}>{flow.email}</td>
                     <td style={{ padding:'8px 12px' }}>
                       <span style={{
                         background:'rgba(108,71,255,.1)', color:'var(--p3)',
-                        borderRadius:6, padding:'2px 8px', fontSize:11, fontWeight:600,
+                        borderRadius:6, padding:'2px 8px', fontSize:11, fontWeight:'var(--fw-regular)',
                       }}>{flow.delay}</span>
                     </td>
                   </tr>
@@ -488,7 +488,7 @@ export default function Integrations() {
                 border:'1px solid var(--border)', borderRadius:10,
                 padding:'10px 14px', textAlign:'center',
               }}>
-                <div style={{ fontSize:16, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)' }}>{stat.value}</div>
+                <div style={{ fontSize:16, fontWeight:'var(--fw-semibold)', color:'var(--p2)', fontFamily:'var(--mono)' }}>{stat.value}</div>
                 <div style={{ fontSize:11, color:'var(--text3)', marginTop:3 }}>{stat.label}</div>
               </div>
             ))}

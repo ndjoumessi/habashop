@@ -35,7 +35,7 @@ export default function BonusForm({ emp, employees, lang, fmt, onConfirm, onClos
         <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
           {bTypes.map((t: string) => (
             <button key={t} type="button" onClick={() => setType(t)} style={{
-              padding:'5px 12px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)',
+              padding:'5px 12px', borderRadius:20, fontSize:12, fontWeight:'var(--fw-regular)', cursor:'pointer', fontFamily:'var(--font)',
               background: type===t ? 'rgba(0,208,132,.15)' : 'var(--bg4)',
               border:`1px solid ${type===t ? 'rgba(0,208,132,.3)' : 'var(--border)'}`,
               color: type===t ? 'var(--acc2)' : 'var(--text3)',
@@ -54,7 +54,7 @@ export default function BonusForm({ emp, employees, lang, fmt, onConfirm, onClos
             min={0}
             lang={lang}
           />
-          <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none', fontWeight:600 }}>{symbol}</span>
+          <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none', fontWeight:'var(--fw-regular)' }}>{symbol}</span>
         </div>
       </div>
       <div style={{ display:'flex', gap:8 }}>

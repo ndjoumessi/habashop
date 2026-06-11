@@ -170,7 +170,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                       <k.Icon size={13} color={k.color} />
                       <span style={lbl}>{k.label}</span>
                     </div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: k.color, fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{k.value}</div>
+                    <div style={{ fontSize: 18, fontWeight: 'var(--fw-semibold)', color: k.color, fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{k.value}</div>
                     <div style={{ fontSize: 11, color: 'var(--text4)', marginTop: 2 }}>{k.sub}</div>
                   </div>
                 ))}
@@ -190,7 +190,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text4)', marginTop: 2 }}>{i("Projection basée sur l'effectif actuel, non historique", 'Projection based on current headcount, not historical', 'Proyección basada en la plantilla actual, no histórica', "Proiezione basata sull'organico attuale, non storica")}</div>
                     </div>
-                    <div style={{ fontSize: 18, fontWeight: 900, fontFamily: 'var(--mono)', letterSpacing: '-.5px', color: c, flexShrink: 0 }}>{money(after)}</div>
+                    <div style={{ fontSize: 18, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', letterSpacing: '-.5px', color: c, flexShrink: 0 }}>{money(after)}</div>
                   </div>
                 )
               })()}
@@ -207,7 +207,7 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                   {data.expenses.byCategory.map(c => (
                     <div key={c.category}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
-                        <span style={{ color: 'var(--text2)', fontWeight: 600 }}>{catLabel(c.category, lang)}</span>
+                        <span style={{ color: 'var(--text2)', fontWeight: 'var(--fw-regular)' }}>{catLabel(c.category, lang)}</span>
                         <span style={{ color: 'var(--text)', fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)' }}>{money(c.amountTtc)}</span>
                       </div>
                       <div style={{ height: 7, borderRadius: 99, background: 'var(--bg4)', overflow: 'hidden' }}>

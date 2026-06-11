@@ -236,7 +236,7 @@ export default function Header() {
         <div style={{
           background: 'rgba(255,184,0,.10)', border: '1px solid rgba(255,184,0,.25)',
           borderLeft: 'none', borderRight: 'none', padding: '7px 20px',
-          display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: 'var(--warn)',
+          display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--warn)',
         }}>
           <WifiOff size={13} />
           <span>{lang === 'en' ? 'Offline — Data will sync on reconnect' : lang === 'es' ? 'Sin conexión — Los datos se sincronizarán al reconectar' : lang === 'it' ? 'Offline — I dati si sincronizzeranno alla riconnessione' : 'Mode hors-ligne — Synchronisation au retour de connexion'}</span>
@@ -246,7 +246,7 @@ export default function Header() {
       <div className="app-header">
         {/* Page title with gradient */}
         <div style={{
-          fontSize: 17, fontWeight: 900, flex: 1, letterSpacing: '-.3px',
+          fontSize: 17, fontWeight: 'var(--fw-semibold)', flex: 1, letterSpacing: '-.3px',
           background: 'linear-gradient(135deg,var(--text) 40%,var(--p3))',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -317,7 +317,7 @@ export default function Header() {
                       <ItemIcon size={14} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {highlight(item.label)}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{item.sub}</div>
@@ -436,7 +436,7 @@ export default function Header() {
                     }}>
                       <ItemIcon size={15} />
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>{item.label}</span>
                   </button>
                 )
               })}
@@ -595,7 +595,7 @@ export default function Header() {
           animation: 'slideUp .3s ease',
         }}>
           <Zap size={15} style={{ color: 'var(--p3)', flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+          <span style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>
             {lang === 'en' ? 'Update available' : lang === 'es' ? 'Actualización disponible' : lang === 'it' ? 'Aggiornamento disponibile' : 'Mise à jour disponible'}
           </span>
           <button

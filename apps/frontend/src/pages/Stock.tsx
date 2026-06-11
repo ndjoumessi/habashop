@@ -377,7 +377,7 @@ export default function Stock() {
             style={{
               padding: '6px 12px', borderRadius: 8,
               background: 'transparent', border: 'none',
-              color: 'var(--text3)', fontSize: 12, fontWeight: 600,
+              color: 'var(--text3)', fontSize: 12, fontWeight: 'var(--fw-regular)',
               cursor: 'pointer', fontFamily: 'inherit',
               textDecoration: 'underline', textUnderlineOffset: 3,
             }}>

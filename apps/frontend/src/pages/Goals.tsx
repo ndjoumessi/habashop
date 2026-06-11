@@ -165,7 +165,7 @@ export default function Goals() {
             </svg>
             <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
               <span style={{
-                fontSize:18, fontWeight:900, fontFamily:'var(--mono)',
+                fontSize:18, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)',
                 color: globalPct >= 80 ? 'var(--acc2)' : globalPct >= 50 ? 'var(--acc)' : 'var(--danger)',
               }}>{globalPct}%</span>
             </div>
@@ -232,7 +232,7 @@ export default function Goals() {
                   </svg>
                   <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
                     <div style={{
-                      fontSize:20, fontWeight:900, lineHeight:1,
+                      fontSize:20, fontWeight:'var(--fw-semibold)', lineHeight:1,
                       color: isOnTrack ? goal.color : 'var(--danger)',
                       fontFamily:'var(--mono)',
                     }}>

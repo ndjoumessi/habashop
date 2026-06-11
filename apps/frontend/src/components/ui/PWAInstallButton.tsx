@@ -74,7 +74,7 @@ export default function PWAInstallButton() {
         width:48, height:48, borderRadius:12, flexShrink:0,
         background:'linear-gradient(135deg,var(--p),var(--p2))',
         display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:24, fontWeight:900, color:'#fff',
+        fontSize:24, fontWeight:'var(--fw-semibold)', color:'#fff',
       }}>H</div>
 
       <div style={{ flex:1 }}>

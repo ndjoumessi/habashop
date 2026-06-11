@@ -35,7 +35,7 @@ export default function CustomersStats({ customers, fmt, lang, i, setViewCustome
                       <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
                         <span style={{ color: 'var(--text3)' }}>{count} {count > 1 ? i('clients', 'customers', 'clientes', 'clienti') : i('client', 'customer', 'cliente', 'cliente')}</span>
                         <span style={{ color, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)' }}>{fmt(ca)}</span>
-                        <span style={{ color: 'var(--text2)', fontWeight: 600, minWidth: 32, textAlign: 'right' }}>{pct}%</span>
+                        <span style={{ color: 'var(--text2)', fontWeight: 'var(--fw-regular)', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
                       </div>
                     </div>
                     <div style={{ height: 10, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>
@@ -81,11 +81,11 @@ export default function CustomersStats({ customers, fmt, lang, i, setViewCustome
                         width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                         background: i < 3 ? medalColors[i] : 'var(--bg4)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 12, fontWeight: 900, color: i < 3 ? '#fff' : 'var(--text3)',
+                        fontSize: 12, fontWeight: 'var(--fw-semibold)', color: i < 3 ? '#fff' : 'var(--text3)',
                       }}>
                         {i < 3 ? (i + 1) : i + 1}
                       </div>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: '#fff' }}>
                         {initials}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>

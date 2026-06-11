@@ -163,11 +163,11 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {!productEditMode
                   ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
                       <Eye size={13} />
-                      <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>{lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}</span>
+                      <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:'var(--fw-regular)' }}>{lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}</span>
                     </div>
                   : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
                       <Pencil size={13} />
-                      <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>{lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios sin guardar' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}</span>
+                      <span style={{ fontSize:12, color:'var(--warn)', fontWeight:'var(--fw-regular)' }}>{lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios sin guardar' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}</span>
                     </div>
                 }
               </div>
@@ -222,7 +222,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 <ViewField label={lang === 'en' ? 'Product name *' : lang === 'es' ? 'Nombre del producto *' : lang === 'it' ? 'Nome prodotto *' : 'Nom du produit *'} value={`${form.image} ${form.name}`} editing={productEditMode} emptyLabel={emptyLabel}>
                   <input className="input" placeholder={lang === 'en' ? 'Ex: Fragrant rice 5kg' : lang === 'es' ? 'Ej: Arroz aromático 5kg' : lang === 'it' ? 'Es: Riso profumato 5kg' : 'Ex: Riz parfumé 5kg'}
                     value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))}
-                    style={{ width:'100%', fontSize:15, fontWeight:600 }}
+                    style={{ width:'100%', fontSize:15, fontWeight:'var(--fw-regular)' }}
                     autoFocus />
                 </ViewField>
 
@@ -326,7 +326,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       </div>
                     )}
                     {!editingSku && !offLooking && offFilled.length > 0 && (
-                      <div style={{ marginTop:6, fontSize:11, color:'var(--acc2)', fontWeight:600, display:'flex', alignItems:'center', gap:5 }}>
+                      <div style={{ marginTop:6, fontSize:11, color:'var(--acc2)', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:5 }}>
                         <Wand2 size={12} /> {i('Pré-rempli via Open Food Facts — modifiable', 'Pre-filled via Open Food Facts — editable', 'Rellenado vía Open Food Facts — editable', 'Precompilato via Open Food Facts — modificabile')}
                       </div>
                     )}
@@ -524,7 +524,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {/* Toggle promotion */}
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}</div>
+                    <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}</div>
                     <div style={{ fontSize:11, color:'var(--text3)' }}>{i('Affiche un badge PROMO au POS', 'Shows a PROMO badge at POS', 'Muestra una insignia PROMO en POS', 'Mostra un badge PROMO al POS')}</div>
                   </div>
                   <button onClick={() => setForm(f => ({...f, hasPromotion:!f.hasPromotion}))} style={{
@@ -557,7 +557,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 ].map(tog => (
                   <div key={tog.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
                     <div>
-                      <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{tog.label}</div>
+                      <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{tog.label}</div>
                       <div style={{ fontSize:11, color:'var(--text3)' }}>{tog.sub}</div>
                     </div>
                     <button onClick={() => productEditMode && setForm(f => ({...f, [tog.key]:!f[tog.key]}))} style={{
@@ -763,7 +763,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         background: labelConfig.size === size.id ? 'rgba(91,78,232,.15)' : 'var(--bg3)',
                         border: `1.5px solid ${labelConfig.size === size.id ? 'var(--p2)' : 'var(--border)'}`,
                         cursor: 'pointer', fontFamily: 'var(--font)',
-                        fontSize: 12, fontWeight: 600,
+                        fontSize: 12, fontWeight: 'var(--fw-regular)',
                         color: labelConfig.size === size.id ? 'var(--p2)' : 'var(--text2)',
                         whiteSpace: 'pre-line', transition: 'all .15s',
                       }}>
@@ -803,7 +803,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <button type="button" className="mini-btn"
                     onClick={() => setLabelConfig(f => ({ ...f, copies: Math.max(1, f.copies - 1) }))}
                     style={{ width: 36, height: 36, justifyContent: 'center' }}>−</button>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', minWidth: 40, textAlign: 'center' }}>
+                  <span style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', minWidth: 40, textAlign: 'center' }}>
                     {labelConfig.copies}
                   </span>
                   <button type="button" className="mini-btn"

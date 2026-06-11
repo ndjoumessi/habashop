@@ -14,13 +14,13 @@ export default function ContractDetailModal({ lang, fmt, selectedContract, setSh
       <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, width:'100%', maxWidth:480, boxShadow:'var(--sh-xl)', overflow:'hidden' }}>
         <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${selectedContract.color}18,${selectedContract.color}05)`, borderBottom:'1px solid var(--border)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-            <div style={{ width:56, height:56, borderRadius:16, overflow:'hidden', background:`linear-gradient(135deg,${selectedContract.color},${selectedContract.color}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 6px 20px ${selectedContract.color}50` }}>
+            <div style={{ width:56, height:56, borderRadius:16, overflow:'hidden', background:`linear-gradient(135deg,${selectedContract.color},${selectedContract.color}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:'var(--fw-semibold)', color:'#fff', flexShrink:0, boxShadow:`0 6px 20px ${selectedContract.color}50` }}>
               {selectedContract.photoUrl
                 ? <img src={selectedContract.photoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                 : selectedContract.avatar}
             </div>
             <div style={{ flex:1 }}>
-              <h3 style={{ margin:0, fontSize:17, fontWeight:900, color:'var(--text)' }}>{selectedContract.name}</h3>
+              <h3 style={{ margin:0, fontSize:17, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>{selectedContract.name}</h3>
               <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>{roleLabel(selectedContract.role, lang)} · {deptLabel(selectedContract.dept, lang)}</div>
             </div>
             <button onClick={()=>setShowContractDetailModal(false)} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, width:32, height:32, cursor:'pointer', color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>✕</button>

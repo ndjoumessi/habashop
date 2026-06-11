@@ -29,7 +29,7 @@ export default function EditBudgetsModal({ editBudgets, setEditBudgets, onClose,
             return (
               <div key={cat} style={{ display:'flex', alignItems:'center', gap:12 }}>
                 <span style={{ fontSize:16 }}>{s.icon}</span>
-                <span style={{ fontSize:13, fontWeight:600, color:'var(--text)', width:110, flexShrink:0 }}>{cl(cat)}</span>
+                <span style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)', width:110, flexShrink:0 }}>{cl(cat)}</span>
                 <input className="input" type="number" value={editBudgets[cat]}
                   onChange={e => setEditBudgets(b => ({ ...b, [cat]: +e.target.value }))}
                   style={{ flex:1, boxSizing:'border-box' }} />

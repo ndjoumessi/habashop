@@ -207,7 +207,7 @@ export default function AIAssistant() {
               boxShadow:'var(--sh-p)',
             }}><Bot size={22} style={{ color:'#fff' }}/></div>
             <div>
-              <div style={{ fontSize:14, fontWeight:900, color:'var(--text)', letterSpacing:'-.2px' }}>
+              <div style={{ fontSize:14, fontWeight:'var(--fw-semibold)', color:'var(--text)', letterSpacing:'-.2px' }}>
                 HabaShop
                 <span style={{
                   background:'var(--grad-p)',
@@ -217,7 +217,7 @@ export default function AIAssistant() {
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:3 }}>
                 <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--acc2)', boxShadow:'0 0 6px var(--acc2)' }} />
-                <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600 }}>
+                <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:'var(--fw-regular)' }}>
                   {lang === 'en' ? 'Online · Claude' : lang === 'es' ? 'En línea · Claude' : lang === 'it' ? 'Online · Claude' : 'En ligne · Claude'}
                 </span>
               </div>
@@ -271,7 +271,7 @@ export default function AIAssistant() {
                   display:'flex', alignItems:'center', justifyContent:'center',
                   color: action.color, flexShrink:0,
                 }}><action.Icon size={14}/></div>
-                <span style={{ fontSize:12, fontWeight:600, color:'var(--text2)', lineHeight:1.3 }}>{action.label}</span>
+                <span style={{ fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--text2)', lineHeight:1.3 }}>{action.label}</span>
               </button>
             ))}
           </div>
@@ -308,7 +308,7 @@ export default function AIAssistant() {
                   border:`1px solid ${btn.color}25`,
                   background: activeAnalysis === btn.type ? `${btn.color}18` : `${btn.color}0A`,
                   cursor: analyzing ? 'not-allowed' : 'pointer',
-                  fontFamily:'var(--font)', fontSize:12, fontWeight:600, color:btn.color,
+                  fontFamily:'var(--font)', fontSize:12, fontWeight:'var(--fw-regular)', color:btn.color,
                   transition:'all .12s', textAlign:'left',
                   opacity: analyzing && activeAnalysis !== btn.type ? .5 : 1,
                 }}>

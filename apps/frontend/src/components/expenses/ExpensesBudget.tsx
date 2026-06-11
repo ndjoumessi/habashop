@@ -59,7 +59,7 @@ export default function ExpensesBudget({ budgets, catSpent, totalBudget, budgetL
               </div>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
                 <span style={{ fontWeight:'var(--fw-semibold)', color: barColor, fontFamily:'var(--mono)' }}>{pct} %</span>
-                <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:600 }}>
+                <span style={{ color: over ? 'var(--danger)' : 'var(--acc2)', fontWeight:'var(--fw-regular)' }}>
                   {over ? `${tr('Dépassé de','Over by','Excedido en','Superato di')} ${fmt(spent - budget)}` : `${tr('Restant','Remaining','Restante','Rimanente')} : ${fmt(budget - spent)}`}
                 </span>
               </div>

@@ -104,7 +104,7 @@ export default function Notifications() {
             { id:'danger', label:`${t('notif_critical')} (${dangerCount})`   },
           ] as { id:TabType; label:string }[]).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-              padding:'7px 16px', borderRadius:8, fontSize:13, fontWeight:600,
+              padding:'7px 16px', borderRadius:8, fontSize:13, fontWeight:'var(--fw-regular)',
               cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
               background: activeTab === tab.id
                 ? 'linear-gradient(135deg, var(--p), var(--p2))' : 'transparent',
@@ -216,7 +216,7 @@ export default function Notifications() {
         {filtered.length === 0 && (
           <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text3)' }}>
             <Bell size={40} style={{ margin:'0 auto 12px', display:'block', opacity:.3 }} />
-            <div style={{ fontSize:14, fontWeight:600 }}>{lang === 'en' ? 'No notifications' : lang === 'es' ? 'Sin notificaciones' : lang === 'it' ? 'Nessuna notifica' : 'Aucune notification'}</div>
+            <div style={{ fontSize:14, fontWeight:'var(--fw-regular)' }}>{lang === 'en' ? 'No notifications' : lang === 'es' ? 'Sin notificaciones' : lang === 'it' ? 'Nessuna notifica' : 'Aucune notification'}</div>
           </div>
         )}
       </div>
@@ -254,7 +254,7 @@ export default function Notifications() {
               {prefRows.map(row => (
                 <tr key={row.key} style={{ borderBottom:'1px solid var(--border)' }}>
                   <td style={{ padding:'14px 9px' }}>
-                    <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{row.label}</div>
+                    <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{row.label}</div>
                     <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>{row.desc}</div>
                   </td>
                   {(['email','sms','push'] as const).map(canal => {

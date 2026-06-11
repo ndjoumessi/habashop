@@ -89,7 +89,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
               cursor:'pointer', transition:'background .15s',
             }}>
             <div>
-              <div style={{ fontWeight:600, fontSize:13, color:'var(--text)' }}>
+              <div style={{ fontWeight:'var(--fw-regular)', fontSize:13, color:'var(--text)' }}>
                 {i('Compte actif', 'Active account', 'Cuenta activa', 'Account attivo')}
               </div>
               <div style={{ fontSize:11, color:'var(--text2)' }}>
@@ -121,7 +121,7 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
               cursor:'pointer', transition:'background .15s',
             }}>
             <div>
-              <div style={{ fontWeight:600, fontSize:13, color:'var(--text)' }}>
+              <div style={{ fontWeight:'var(--fw-regular)', fontSize:13, color:'var(--text)' }}>
                 {i('Authentification 2FA', 'Two-factor authentication', 'Autenticación 2FA', 'Autenticazione 2FA')}
               </div>
               <div style={{ fontSize:11, color:'var(--text2)' }}>

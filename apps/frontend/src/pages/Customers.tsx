@@ -335,7 +335,7 @@ export default function Customers() {
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {customers.filter(c => !geoPositions[c.id]).map(c => (
-                  <span key={c.id} style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: 'rgba(255,184,0,.08)', border: '1px solid rgba(255,184,0,.2)', color: 'var(--warn)' }}>
+                  <span key={c.id} style={{ fontSize: 11, fontWeight: 'var(--fw-regular)', padding: '4px 10px', borderRadius: 99, background: 'rgba(255,184,0,.08)', border: '1px solid rgba(255,184,0,.2)', color: 'var(--warn)' }}>
                     {c.name}
                   </span>
                 ))}

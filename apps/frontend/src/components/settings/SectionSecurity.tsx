@@ -136,7 +136,7 @@ export default function SectionSecurity() {
               : <Unlock size={20} color="var(--acc2)" />}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
+            <div style={{ fontSize: 14, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>
               {locked ? i('Paramètres verrouillés', 'Settings locked', 'Ajustes bloqueados', 'Impostazioni bloccate') : i('Paramètres déverrouillés', 'Settings unlocked', 'Ajustes desbloqueados', 'Impostazioni sbloccate')}
             </div>
             <div style={{ fontSize: 13, color: 'var(--text3)' }}>
@@ -170,7 +170,7 @@ export default function SectionSecurity() {
               <Key size={20} color="var(--p)" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+              <div style={{ fontSize: 14, fontWeight: 'var(--fw-regular)', color: 'var(--text)', marginBottom: 4 }}>
                 JWT · {i('Rôle', 'Role', 'Rol', 'Ruolo')}: {tokenInfo.role}
               </div>
               <div style={{ fontSize: 13, color: 'var(--text3)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -204,7 +204,7 @@ export default function SectionSecurity() {
               <ShieldCheck size={20} color="var(--acc2)" />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
+              <div style={{ fontSize: 14, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>
                 {i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}
               </div>
               <div style={{ fontSize: 13, color: 'var(--text3)' }}>
@@ -239,7 +239,7 @@ export default function SectionSecurity() {
             onMouseEnter={e => { if (!pwLoading) (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none' }}
             style={{
-              alignSelf: 'flex-start', padding: '11px 22px', fontSize: 13, fontWeight: 600,
+              alignSelf: 'flex-start', padding: '11px 22px', fontSize: 13, fontWeight: 'var(--fw-regular)',
               borderRadius: 12, boxShadow: pwLoading ? 'none' : '0 4px 16px rgba(124,58,237,.25)',
               cursor: pwLoading ? 'not-allowed' : 'pointer', opacity: pwLoading ? .6 : 1,
               transition: 'transform .15s, box-shadow .15s',

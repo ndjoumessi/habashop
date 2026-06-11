@@ -152,7 +152,7 @@ export default function ResendMonitor({
           background: alert.level === 'danger' ? 'rgba(255,59,92,.08)' : 'rgba(255,149,0,.08)',
           border: `1px solid ${alert.level === 'danger' ? 'rgba(255,59,92,.25)' : 'rgba(255,149,0,.25)'}`,
           borderRadius: 10, fontSize: 12,
-          color: alert.level === 'danger' ? 'var(--danger)' : 'var(--acc)', fontWeight: 600,
+          color: alert.level === 'danger' ? 'var(--danger)' : 'var(--acc)', fontWeight: 'var(--fw-regular)',
         }}>
           <span>{alert.level === 'danger' ? '🔴' : '⚠️'}</span>
           {alert.msg}
@@ -204,7 +204,7 @@ export default function ResendMonitor({
                   <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" strokeWidth="3" />
                   <circle cx="18" cy="18" r="15.9" fill="none" stroke={color} strokeWidth="3" strokeDasharray={`${q.pct} ${100 - q.pct}`} strokeLinecap="round" style={{ transition: 'stroke-dasharray .5s ease' }} />
                 </svg>
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color, fontFamily: 'var(--mono)' }}>{q.pct}%</div>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)', color, fontFamily: 'var(--mono)' }}>{q.pct}%</div>
               </div>
               <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text2)', fontFamily: 'var(--mono)' }}>
                 <span style={{ fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{q.used.toLocaleString('fr-FR')}</span>/{q.total.toLocaleString('fr-FR')}
@@ -225,10 +225,10 @@ export default function ResendMonitor({
           { lbl: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', val: `${liveStats.avgDuration}ms`, color: liveStats.avgDuration > 2000 ? 'var(--danger)' : liveStats.avgDuration > 1000 ? 'var(--acc)' : 'var(--text2)' },
         ].map((s, i) => (
           <div key={i} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
-            <div style={{ fontSize: 14, fontWeight: 900, color: s.color, fontFamily: 'var(--mono)', letterSpacing: '-.3px', marginBottom: 3 }}>
+            <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: s.color, fontFamily: 'var(--mono)', letterSpacing: '-.3px', marginBottom: 3 }}>
               {typeof s.val === 'number' ? s.val.toLocaleString('fr-FR') : s.val}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', fontWeight: 600 }}>{s.lbl}</div>
+            <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', fontWeight: 'var(--fw-regular)' }}>{s.lbl}</div>
           </div>
         ))}
       </ResponsiveGrid>
@@ -255,7 +255,7 @@ export default function ResendMonitor({
               }}>
                 <div style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0, background: `${cfg.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>{cfg.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{evt.email}</div>
+                  <div style={{ fontSize: 11, fontWeight: 'var(--fw-regular)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{evt.email}</div>
                   <div style={{ fontSize: 11, color: cfg.color, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.4px', marginTop: 1 }}>{cfg.label}</div>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>{evt.timestamp}</div>

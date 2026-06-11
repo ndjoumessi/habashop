@@ -110,7 +110,7 @@ export default function SectionCatalog() {
         <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderTop:'1px solid var(--border)', cursor:'pointer' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {form.catalogVisible ? <Eye size={16} style={{ color:'var(--acc2)' }} /> : <EyeOff size={16} style={{ color:'var(--text3)' }} />}
-            <span style={{ fontSize:14, fontWeight:600, color:'var(--text)' }}>
+            <span style={{ fontSize:14, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>
               {form.catalogVisible ? i('Catalogue public actif', 'Public catalog active', 'Catálogo público activo', 'Catalogo pubblico attivo') : i('Catalogue désactivé', 'Catalog disabled', 'Catálogo desactivado', 'Catalogo disattivato')}
             </span>
           </div>

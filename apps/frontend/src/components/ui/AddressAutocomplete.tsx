@@ -179,7 +179,7 @@ export default function AddressAutocomplete({
               <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>📍</span>
               <div style={{ minWidth: 0 }}>
                 <div style={{
-                  fontSize: 12, fontWeight: 600, color: 'var(--text)',
+                  fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text)',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {s.structured_formatting?.main_text ?? s.description.split(',')[0]}

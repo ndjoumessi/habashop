@@ -144,7 +144,7 @@ export default function SectionLang() {
                   </div>
                 )}
                 <span style={{ fontSize: 26 }}>{c.flag}</span>
-                <div style={{ fontSize: 14, fontWeight: 900, color: active ? 'var(--warn)' : 'var(--text)', fontFamily: 'var(--mono)' }}>{c.code}</div>
+                <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: active ? 'var(--warn)' : 'var(--text)', fontFamily: 'var(--mono)' }}>{c.code}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.3 }}>{pick(lang, c.name)}</div>
               </button>
             )
@@ -159,7 +159,7 @@ export default function SectionLang() {
             {[100000, 500000, 1000000].map(xof => (
               <div key={xof} style={{ textAlign: 'center', padding: 10, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10 }}>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{xof.toLocaleString('fr-FR')} XOF</div>
-                <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{fmt(xof)}</div>
+                <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', fontFamily: 'var(--mono)' }}>{fmt(xof)}</div>
               </div>
             ))}
           </div>
@@ -181,7 +181,7 @@ export default function SectionLang() {
                 return (
                   <button key={key} type="button" onClick={() => cfg.updateConfig({ theme: key })}
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', borderRadius: 14, background: active ? `${tp}18` : 'var(--bg3)', border: `2px solid ${active ? tp + '66' : 'var(--border)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
-                    {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: tp, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff', fontWeight: 900 }}>✓</div>}
+                    {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: tp, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff', fontWeight: 'var(--fw-regular)' }}>✓</div>}
                     <div style={{ width: 72, height: 46, borderRadius: 9, background: tbg, border: '1px solid var(--border)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, background: tp + '33', borderRight: `1px solid ${tp}22` }} />
                       <div style={{ position: 'absolute', left: 20, top: 6, right: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>

@@ -41,12 +41,12 @@ export default function AddExpenseModal(props: Props) {
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           <ResponsiveGrid min={160} gap={10}>
             <div>
-              <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Date','Date','Fecha','Data')}</label>
+              <label style={{ fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Date','Date','Fecha','Data')}</label>
               <input aria-label={tr('Date','Date','Fecha','Data')} className="input" type="date" value={nDate} onChange={e => setNDate(e.target.value)}
                 style={{ width:'100%', boxSizing:'border-box' }} />
             </div>
             <div>
-              <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Catégorie','Category','Categoría','Categoria')}</label>
+              <label style={{ fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Catégorie','Category','Categoría','Categoria')}</label>
               <select aria-label={tr('Catégorie','Category','Categoría','Categoria')} className="input" value={nCat} onChange={e => setNCat(e.target.value as Category)}
                 style={{ width:'100%', boxSizing:'border-box' }}>
                 {CATEGORIES.map(c => <option key={c} value={c}>{cl(c)}</option>)}
@@ -54,21 +54,21 @@ export default function AddExpenseModal(props: Props) {
             </div>
           </ResponsiveGrid>
           <div>
-            <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Libellé','Label','Etiqueta','Etichetta')}</label>
+            <label style={{ fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Libellé','Label','Etiqueta','Etichetta')}</label>
             <input aria-label={tr('Libellé','Label','Etiqueta','Etichetta')} className="input" type="text" placeholder={tr('Ex: Facture EDF','Ex: Electricity bill','Ej: Factura de luz','Es: Bolletta luce')}
               value={nLabel} onChange={e => setNLabel(e.target.value)}
               style={{ width:'100%', boxSizing:'border-box' }} />
           </div>
           <ResponsiveGrid min={160} gap={10}>
             <div>
-              <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Montant HT (F CFA)','Amount excl. VAT (F CFA)','Importe s/IVA (F CFA)','Importo netto (F CFA)')}</label>
+              <label style={{ fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Montant HT (F CFA)','Amount excl. VAT (F CFA)','Importe s/IVA (F CFA)','Importo netto (F CFA)')}</label>
               <ValidatedInput type="amount"
                 value={nHT} onChange={setNHT}
                 placeholder="Ex: 85000"
                 min={0} required lang={lang} />
             </div>
             <div>
-              <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Taux TVA','VAT rate','Tasa IVA','Aliquota IVA')}</label>
+              <label style={{ fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Taux TVA','VAT rate','Tasa IVA','Aliquota IVA')}</label>
               <select aria-label={tr('Taux TVA','VAT rate','Tasa IVA','Aliquota IVA')} className="input" value={nVat} onChange={e => setNVat(+e.target.value)}
                 style={{ width:'100%', boxSizing:'border-box' }}>
                 {VAT_RATES.map(v => <option key={v} value={v}>{v} %</option>)}
@@ -88,7 +88,7 @@ export default function AddExpenseModal(props: Props) {
             </div>
           )}
           <div>
-            <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Mode de paiement','Payment method','Método de pago','Metodo di pagamento')}</label>
+            <label style={{ fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Mode de paiement','Payment method','Método de pago','Metodo di pagamento')}</label>
             <select aria-label={tr('Mode de paiement','Payment method','Método de pago','Metodo di pagamento')} className="input" value={nMode} onChange={e => setNMode(e.target.value)}
               style={{ width:'100%', boxSizing:'border-box' }}>
               {MODES.map(m => <option key={m}>{m}</option>)}
@@ -98,12 +98,12 @@ export default function AddExpenseModal(props: Props) {
             <input type="checkbox" id="recurrent" checked={nRecurrent}
               onChange={e => setNRecurrent(e.target.checked)}
               style={{ width:16, height:16, cursor:'pointer', accentColor:'var(--p2)' }} />
-            <label htmlFor="recurrent" style={{ fontSize:13, color:'var(--text2)', cursor:'pointer', fontWeight:600 }}>
+            <label htmlFor="recurrent" style={{ fontSize:13, color:'var(--text2)', cursor:'pointer', fontWeight:'var(--fw-regular)' }}>
               {tr('Dépense récurrente (mensuelle)','Recurring expense (monthly)','Gasto recurrente (mensual)','Spesa ricorrente (mensile)')}
             </label>
           </div>
           <div>
-            <label style={{ fontSize:12, fontWeight:600, color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Notes (optionnel)','Notes (optional)','Notas (opcional)','Note (opzionale)')}</label>
+            <label style={{ fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--text2)', display:'block', marginBottom:5 }}>{tr('Notes (optionnel)','Notes (optional)','Notas (opcional)','Note (opzionale)')}</label>
             <input aria-label={tr('Notes (optionnel)','Notes (optional)','Notas (opcional)','Note (opzionale)')} className="input" type="text" placeholder={tr('Informations supplémentaires…','Additional information…','Información adicional…','Informazioni aggiuntive…')}
               value={nNotes} onChange={e => setNNotes(e.target.value)}
               style={{ width:'100%', boxSizing:'border-box' }} />

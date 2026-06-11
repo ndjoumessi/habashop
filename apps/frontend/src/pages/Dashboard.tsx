@@ -71,14 +71,14 @@ const CatTooltip = ({ active, payload }: any) => {
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }}/>
         <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{p.name}</span>
       </div>
-      <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', marginBottom: 6 }}>
+      <div style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', marginBottom: 6 }}>
         {fmt(p.value)}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <div style={{ flex: 1, height: 4, background: 'var(--bg3)', borderRadius: 99, overflow: 'hidden' }}>
           <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 99 }}/>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 900, color, fontFamily: 'var(--mono)', minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+        <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color, fontFamily: 'var(--mono)', minWidth: 36, textAlign: 'right' }}>{pct}%</span>
       </div>
     </div>
   )
@@ -104,7 +104,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       {payload.map((p: any, i: number) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: i > 0 ? 4 : 0 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color ?? p.fill ?? 'var(--p)', flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{p.name ?? p.dataKey}</span>
+          <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 'var(--fw-regular)' }}>{p.name ?? p.dataKey}</span>
           <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>
             {typeof p.value === 'number' ? fmt(p.value) : p.value}
           </span>
@@ -255,7 +255,7 @@ export default function Dashboard() {
       <div className="page-header">
         <div>
           <h1 style={{
-            fontSize: 22, fontWeight: 900, letterSpacing: '-.4px',
+            fontSize: 22, fontWeight: 'var(--fw-semibold)', letterSpacing: '-.4px',
             background: 'linear-gradient(135deg,var(--text) 30%,var(--p3))',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           }}>
@@ -462,7 +462,7 @@ export default function Dashboard() {
               textAlign: 'center', pointerEvents: 'none',
             }}>
               <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 2 }}>Total CA</div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>
+              <div style={{ fontSize: 17, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>
                 {abbr(catTotal)}
               </div>
             </div>
@@ -508,7 +508,7 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {stockAlerts.length === 0 ? (
-              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--acc2)', fontSize: 13, fontWeight: 600 }}>
+              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--acc2)', fontSize: 13, fontWeight: 'var(--fw-regular)' }}>
                 {lang === 'en' ? '✅ No stock alerts' : lang === 'es' ? '✅ Sin alertas de stock' : lang === 'it' ? '✅ Nessun avviso di stock' : '✅ Aucune alerte de stock'}
               </div>
             ) : stockAlerts.map((a, i) => {
@@ -525,7 +525,7 @@ export default function Dashboard() {
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = ''}
               >
                 <Package size={13} style={{ color: red ? 'var(--danger)' : 'var(--warn)', flexShrink: 0 }} />
-                <div style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
+                <div style={{ flex: 1, fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 'var(--fw-semibold)', color: red ? 'var(--danger)' : 'var(--warn)' }}>
                   {a.stockQty}<span style={{ color: 'var(--text4)', fontWeight: 400 }}>/{a.stockMin}</span>
                 </span>
@@ -543,7 +543,7 @@ export default function Dashboard() {
             {recentActivity.length === 0 ? (
               <div style={{ padding: '30px 20px', textAlign: 'center', color: 'var(--text3)' }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🛍️</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)', marginBottom: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text2)', marginBottom: 6 }}>
                   {lang === 'en' ? 'No activity yet' : lang === 'es' ? 'Sin actividad por ahora' : lang === 'it' ? 'Nessuna attività per ora' : 'Aucune activité pour le moment'}
                 </div>
                 <div style={{ fontSize: 12 }}>{emptyHint}</div>
@@ -598,9 +598,9 @@ export default function Dashboard() {
                     width: 22, height: 22, borderRadius: 6, flexShrink: 0,
                     background: `${color}22`, border: `1px solid ${color}44`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 900, color,
+                    fontSize: 11, fontWeight: 'var(--fw-semibold)', color,
                   }}>{i + 1}</div>
-                  <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                  <span style={{ flex: 1, fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 'var(--fw-semibold)', color }}>{fmt(p.ca ?? 0)}</span>
                 </div>
                 <div style={{ height: 5, background: 'var(--bg4)', borderRadius: 99, overflow: 'hidden' }}>

@@ -42,13 +42,13 @@ export default function EditSupplierModal(props: Props) {
         {!suppEditMode
           ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
               <Eye size={13} style={{ color:'var(--acc3)', flexShrink:0 }} />
-              <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>
+              <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:'var(--fw-regular)' }}>
                 {i('Mode visualisation — cliquez sur Modifier pour éditer', 'View mode — click Edit to make changes', 'Modo visualización — clic en Editar para cambiar', 'Modalità visualizzazione — clicca Modifica per cambiare')}
               </span>
             </div>
           : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
               <Pencil size={13} style={{ color:'var(--warn)', flexShrink:0 }} />
-              <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>
+              <span style={{ fontSize:12, color:'var(--warn)', fontWeight:'var(--fw-regular)' }}>
                 {i('Mode édition — modifications non sauvegardées', 'Edit mode — unsaved changes', 'Modo edición — cambios sin guardar', 'Modalità modifica — modifiche non salvate')}
               </span>
             </div>

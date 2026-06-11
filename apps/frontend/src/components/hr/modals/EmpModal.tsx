@@ -59,10 +59,10 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
               </div>
             )}
             <div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
                 {emp ? emp.name : `➕ ${T('Nouvel employé', 'New employee', 'Nuevo empleado', 'Nuovo dipendente')}`}
               </h3>
-              {emp && <div style={{ fontSize: 11, color: deptColor, fontWeight: 600, marginTop: 1 }}>{deptLabel(dept || emp.dept, lang)}</div>}
+              {emp && <div style={{ fontSize: 11, color: deptColor, fontWeight: 'var(--fw-regular)', marginTop: 1 }}>{deptLabel(dept || emp.dept, lang)}</div>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

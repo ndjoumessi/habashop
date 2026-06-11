@@ -148,7 +148,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   border:'2px dashed var(--border)',
                   display:'flex', alignItems:'center', justifyContent:'center',
                 }}><ShoppingCart size={26} style={{ color:'var(--text3)' }} /></div>
-                <div style={{ fontSize:13, fontWeight:600, textAlign:'center', color:'var(--text2)' }}>
+                <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', textAlign:'center', color:'var(--text2)' }}>
                   {lang === 'fr' ? 'Panier vide' : lang === 'en' ? 'Empty cart' : lang === 'es' ? 'Carrito vacío' : 'Carrello vuoto'}
                 </div>
                 <div style={{ fontSize:11, color:'var(--text3)', textAlign:'center' }}>
@@ -265,7 +265,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.15)',
                   borderRadius:8,
                 }}>
-                  <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+                  <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:4 }}>
                     <Tag size={11} /> {lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}
                   </span>
                   <span style={{ fontSize:11, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>
@@ -319,8 +319,8 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   <span style={{ display:'flex', alignItems:'center', justifyContent:'center', height:16 }}>
                     {mode.id === 'cash'   ? <Banknote size={14} />   :
                      mode.id === 'card'   ? <CreditCard size={14} /> :
-                     mode.id === 'wave'   ? <span style={{ fontWeight:900, fontSize:11, lineHeight:1 }}>W</span>  :
-                     mode.id === 'orange' ? <span style={{ fontWeight:900, fontSize:11, lineHeight:1 }}>OM</span>  :
+                     mode.id === 'wave'   ? <span style={{ fontWeight:'var(--fw-semibold)', fontSize:11, lineHeight:1 }}>W</span>  :
+                     mode.id === 'orange' ? <span style={{ fontWeight:'var(--fw-semibold)', fontSize:11, lineHeight:1 }}>OM</span>  :
                                             <Smartphone size={14} />}
                   </span>
                   {mode.label}
@@ -357,7 +357,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   </div>
                 </div>
                 {!mixedValid && (
-                  <div style={{ fontSize:11, color:'var(--danger)', fontWeight:600 }}>
+                  <div style={{ fontSize:11, color:'var(--danger)', fontWeight:'var(--fw-regular)' }}>
                     {lang==='en'?'Amount 1 must be between 0 and the total':lang==='es'?'El monto 1 debe estar entre 0 y el total':lang==='it'?"L'importo 1 deve essere tra 0 e il totale":'Le montant 1 doit être entre 0 et le total'}
                   </div>
                 )}
@@ -398,7 +398,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 {cashInsufficient && (
                   <div style={{
                     marginTop:6, display:'flex', alignItems:'center', gap:5,
-                    fontSize:12, fontWeight:600, color:'var(--danger)', transition:'opacity .2s ease',
+                    fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--danger)', transition:'opacity .2s ease',
                   }}>
                     <AlertCircle size={13} style={{ flexShrink:0 }} />
                     {lang === 'en' ? 'Insufficient amount' : lang === 'es' ? 'Importe insuficiente' : lang === 'it' ? 'Importo insufficiente' : 'Montant insuffisant'}
@@ -412,10 +412,10 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                     padding:'10px 12px', background:'var(--c-green-bg)', border:'1px solid var(--c-green-border)',
                     borderRadius:10, transition:'all .2s ease',
                   }}>
-                    <span style={{ color:'var(--text2)', fontWeight:600, fontSize:13 }}>
+                    <span style={{ color:'var(--text2)', fontWeight:'var(--fw-regular)', fontSize:13 }}>
                       {lang === 'en' ? 'Change to return' : lang === 'es' ? 'Cambio a devolver' : lang === 'it' ? 'Resto da dare' : 'Monnaie à rendre'}
                     </span>
-                    <span style={{ fontWeight:900, fontFamily:'var(--mono)', fontSize:18, color:'var(--acc2)' }}>
+                    <span style={{ fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)', fontSize:18, color:'var(--acc2)' }}>
                       {fmt(monnaie)}
                     </span>
                   </div>
@@ -482,7 +482,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 fontSize:11, color:'var(--text3)', marginTop:5, padding:'0 4px',
               }}>
                 <span style={{ display:'flex', alignItems:'center', gap:4 }}><BarChart3 size={10} /> {cashierSessionTx} tx</span>
-                <span style={{ color:'var(--acc)', fontFamily:'var(--mono)', fontWeight:600 }}>{fmt(cashierSessionCA)}</span>
+                <span style={{ color:'var(--acc)', fontFamily:'var(--mono)', fontWeight:'var(--fw-regular)' }}>{fmt(cashierSessionCA)}</span>
               </div>
             )}
           </div>
@@ -506,7 +506,7 @@ function MethodPicker({ value, onChange, exclude, lang }: {
     <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
       {methods.map(m => (
         <button key={m} type="button" onClick={() => onChange(m)}
-          style={{ padding: '0 7px', height: 36, borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)',
+          style={{ padding: '0 7px', height: 36, borderRadius: 7, fontSize: 11, fontWeight: 'var(--fw-regular)', cursor: 'pointer', fontFamily: 'var(--font)',
             background: value === m ? 'var(--p)' : 'var(--bg4)', color: value === m ? '#fff' : 'var(--text2)',
             border: `1px solid ${value === m ? 'var(--p)' : 'var(--border)'}` }}>
           {methodLabel(m, lang)}

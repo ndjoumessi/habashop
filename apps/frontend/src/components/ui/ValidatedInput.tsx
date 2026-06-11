@@ -276,7 +276,7 @@ export default function ValidatedInput({
       {error && (
         <div style={{
           fontSize: 11, color: 'var(--danger)',
-          marginTop: 5, fontWeight: 600,
+          marginTop: 5, fontWeight: 'var(--fw-regular)',
           display: 'flex', alignItems: 'center', gap: 4,
         }}>
           ⚠️ {error}

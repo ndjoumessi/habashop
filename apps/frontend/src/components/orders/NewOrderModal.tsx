@@ -57,7 +57,7 @@ export default function NewOrderModal({
           padding: '20px 24px', borderBottom: '1px solid var(--border)',
           flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <h2 style={{ fontSize: 17, fontWeight: 900, color: 'var(--text)', margin: 0, display:'flex', alignItems:'center', gap:8 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, display:'flex', alignItems:'center', gap:8 }}>
             <ClipboardList size={18}/> {lang === 'fr' ? 'Nouvelle commande' : lang === 'en' ? 'New order' : lang === 'es' ? 'Nueva orden' : 'Nuovo ordine'}
           </h2>
           <IconButton label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} icon={<X size={15}/>} onClick={onClose} variant="surface" />
@@ -154,7 +154,7 @@ export default function NewOrderModal({
                 const color = selectedClient.type === 'Grossiste' ? '#6C47FF' : selectedClient.type === 'Semi-gros' ? '#FF9500' : selectedClient.type === 'Fidèle' ? '#00D084' : '#00B8FF'
                 return (
                   <div style={{ marginTop: 6, padding: '8px 12px', borderRadius: 9, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(0,208,132,.08)', border: '1px solid rgba(0,208,132,.2)' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, background: `${color}22`, border: `1px solid ${color}44`, color }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 'var(--fw-semibold)', background: `${color}22`, border: `1px solid ${color}44`, color }}>
                       {selectedClient.name[0]}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -188,7 +188,7 @@ export default function NewOrderModal({
                         style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: i < clientSuggestions.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'background .1s' }}
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.08)'}
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
-                        <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, background: bgAlpha, color }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 'var(--fw-semibold)', background: bgAlpha, color }}>
                           {customer.name[0].toUpperCase()}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -269,7 +269,7 @@ export default function NewOrderModal({
                         {supplier.phone && <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{supplier.phone}</div>}
                       </div>
                       {isSel && (
-                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--acc)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#000', fontWeight: 900, flexShrink: 0 }}>✓</div>
+                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--acc)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#000', fontWeight: 'var(--fw-regular)', flexShrink: 0 }}>✓</div>
                       )}
                     </button>
                   )
@@ -340,11 +340,11 @@ export default function NewOrderModal({
                           width: 16, height: 16, borderRadius: '50%',
                           background: 'var(--p)', display: 'flex',
                           alignItems: 'center', justifyContent: 'center',
-                          fontSize: 11, color: '#fff', fontWeight: 900,
+                          fontSize: 11, color: '#fff', fontWeight: 'var(--fw-semibold)',
                         }}>✓</div>
                       )}
                       <div style={{ fontSize: 20, marginBottom: 4 }}>{product.emoji ?? '📦'}</div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</div>
+                      <div style={{ fontSize: 11, fontWeight: 'var(--fw-regular)', color: 'var(--text)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</div>
                       <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{fmt(product.price)}</div>
                     </button>
                   )
@@ -367,7 +367,7 @@ export default function NewOrderModal({
                     border: '1px solid var(--border)', borderRadius: 10,
                   }}>
                     <span style={{ fontSize: 16 }}>{item.emoji}</span>
-                    <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{item.name}</span>
+                    <span style={{ flex: 1, fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>{item.name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <button type="button"
                         onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.map(i => i.id === item.id && i.qty > 1 ? { ...i, qty: i.qty - 1 } : i) }))}
@@ -390,7 +390,7 @@ export default function NewOrderModal({
                   <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
                     TOTAL ({newOrderForm.items.reduce((s, i) => s + i.qty, 0)} {i('art.', 'items', 'art.', 'art.')})
                   </span>
-                  <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
+                  <span style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
                     {fmt(newOrderForm.items.reduce((s, i) => s + i.price * i.qty, 0))}
                   </span>
                 </div>
@@ -444,7 +444,7 @@ export default function NewOrderModal({
             padding: '12px 18px', background: 'var(--bg3)',
             border: '1px solid var(--border)', borderRadius: 12,
             cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
-            fontFamily: 'var(--font)', fontWeight: 600,
+            fontFamily: 'var(--font)', fontWeight: 'var(--fw-regular)',
           }}>
             {i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}
           </button>

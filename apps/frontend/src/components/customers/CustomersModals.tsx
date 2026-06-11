@@ -148,13 +148,13 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             {!custEditMode
               ? <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
                   <Eye size={13} style={{ color:'var(--acc3)', flexShrink:0 }} />
-                  <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>
+                  <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:'var(--fw-regular)' }}>
                     {lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}
                   </span>
                 </div>
               : <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 13px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
                   <Pencil size={13} style={{ color:'var(--warn)', flexShrink:0 }} />
-                  <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>
+                  <span style={{ fontSize:12, color:'var(--warn)', fontWeight:'var(--fw-regular)' }}>
                     {lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios no guardados' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}
                   </span>
                 </div>
@@ -246,7 +246,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               position:'absolute', top:0, left:'50%',
               transform:'translateX(-50%)',
               width:'40%', height:1,
-              background:'linear-gradient(90deg,transparent,#F472B6,transparent)',
+              background:'linear-gradient(90deg,transparent,var(--p2),transparent)',
             }} />
             <div style={{
               padding:'20px 24px 16px',
@@ -255,12 +255,12 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             }}>
               <div style={{
                 width:44, height:44, borderRadius:13,
-                background:'linear-gradient(135deg,#F472B6,#EC4899)',
+                background:'linear-gradient(135deg,var(--p),var(--p2))',
                 display:'flex', alignItems:'center', justifyContent:'center',
-                boxShadow:'0 4px 14px rgba(244,114,182,.4)',
+                boxShadow:'var(--sh-p)',
               }}><UserPlus size={22} color="#fff" /></div>
               <div style={{flex:1}}>
-                <h3 style={{ fontSize:17, fontWeight:900, color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
+                <h3 style={{ fontSize:17, fontWeight:'var(--fw-semibold)', color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
                   {lang === 'en' ? '+ New customer' : lang === 'es' ? '+ Nuevo cliente' : lang === 'it' ? '+ Nuovo cliente' : '+ Nouveau client'}
                 </h3>
                 <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>
@@ -331,10 +331,10 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
             }}>
               <button onClick={handleCreateCustomer} style={{
                 flex:1, padding:'13px',
-                background:'linear-gradient(135deg,#F472B6,#EC4899)',
+                background:'linear-gradient(135deg,var(--p),var(--p2))',
                 border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:'var(--fw-bold)',
                 cursor:'pointer', fontFamily:'var(--font)',
-                boxShadow:'0 4px 16px rgba(244,114,182,.4)',
+                boxShadow:'var(--sh-p)',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               }}>
                 <CheckCircle size={15} style={{flexShrink:0}} /> {lang === 'en' ? 'Add customer' : lang === 'es' ? 'Agregar el cliente' : lang === 'it' ? 'Aggiungi il cliente' : 'Ajouter le client'}
@@ -343,7 +343,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 padding:'13px 18px', background:'var(--bg3)',
                 border:'1px solid var(--border)', borderRadius:12,
                 cursor:'pointer', color:'var(--text2)', fontSize:13,
-                fontFamily:'var(--font)', fontWeight:600,
+                fontFamily:'var(--font)', fontWeight:'var(--fw-regular)',
               }}>
                 {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
               </button>
@@ -382,7 +382,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               padding: '24px 24px 20px',
               borderBottom: '1px solid var(--border)',
               flexShrink: 0,
-              background: 'linear-gradient(135deg,rgba(108,71,255,.06),transparent)',
+              background: 'linear-gradient(135deg,color-mix(in srgb, var(--p) 6%, transparent),transparent)',
             }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                 <div style={{
@@ -394,17 +394,17 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                       Fidèle: 'linear-gradient(135deg,#00D084,#00B8A9)',
                       Détail: 'linear-gradient(135deg,#00B8FF,#6C47FF)',
                     }
-                    return colors[detailCustomer.type] ?? 'linear-gradient(135deg,#6C47FF,#A991FF)'
+                    return colors[detailCustomer.type] ?? 'linear-gradient(135deg,var(--p),var(--p2))'
                   })(),
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 22, fontWeight: 900, color: '#fff',
+                  fontSize: 22, fontWeight: 'var(--fw-semibold)', color: '#fff',
                   boxShadow: '0 6px 20px rgba(108,71,255,.35)',
                 }}>
                   {(detailCustomer.name ?? '?')[0].toUpperCase()}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-.3px' }}>
+                    <h2 style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, letterSpacing: '-.3px' }}>
                       {detailCustomer.name}
                     </h2>
                     <span style={{
@@ -449,7 +449,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 ].map(k => (
                   <div key={k.label} style={{ background: `linear-gradient(135deg,${k.hex}15,${k.hex}05)`, border: `1px solid ${k.hex}25`, borderRadius: 12, padding: '14px', textAlign: 'center' }}>
                     <div style={{ display:'flex', justifyContent:'center', marginBottom: 6, color: k.color }}>{k.icon}</div>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: k.color, fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{k.value}</div>
+                    <div style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: k.color, fontFamily: 'var(--mono)', letterSpacing: '-.5px' }}>{k.value}</div>
                     <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginTop: 4 }}>{k.label}</div>
                   </div>
                 ))}
@@ -473,7 +473,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                       <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text3)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
                         {item.icon}{item.label}
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', wordBreak: 'break-all' }}>{item.value}</div>
+                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text)', wordBreak: 'break-all' }}>{item.value}</div>
                     </div>
                   ))}
                 </ResponsiveGrid>
@@ -485,12 +485,12 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               </div>
 
               {/* Programme fidélité */}
-              <div style={{ background: 'linear-gradient(135deg,rgba(255,184,0,.06),rgba(255,184,0,.02))', border: '1px solid rgba(255,184,0,.15)', borderRadius: 14, padding: '16px' }}>
+              <div style={{ background: 'linear-gradient(135deg,color-mix(in srgb, var(--warn) 6%, transparent),color-mix(in srgb, var(--warn) 2%, transparent))', border: '1px solid color-mix(in srgb, var(--warn) 15%, transparent)', borderRadius: 14, padding: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Star size={12} style={{color:'var(--warn)'}} /> {i('PROGRAMME FIDÉLITÉ', 'LOYALTY PROGRAM', 'PROGRAMA FIDELIDAD', 'PROGRAMMA FEDELTÀ')}
                   </div>
-                  <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--warn)', fontFamily: 'var(--mono)' }}>
+                  <span style={{ fontSize: 18, fontWeight: 'var(--fw-semibold)', color: 'var(--warn)', fontFamily: 'var(--mono)' }}>
                     {detailCustomer.loyaltyPoints} pts
                   </span>
                 </div>
@@ -584,7 +584,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 padding: '12px 16px', background: 'var(--bg3)',
                 border: '1px solid var(--border)', borderRadius: 12,
                 cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
-                fontFamily: 'var(--font)', fontWeight: 600,
+                fontFamily: 'var(--font)', fontWeight: 'var(--fw-regular)',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
                 <Pencil size={13} /> {i('Modifier', 'Edit', 'Editar', 'Modifica')}
@@ -593,7 +593,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                 padding: '12px 16px', background: 'var(--bg3)',
                 border: '1px solid var(--border)', borderRadius: 12,
                 cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
-                fontFamily: 'var(--font)', fontWeight: 600,
+                fontFamily: 'var(--font)', fontWeight: 'var(--fw-regular)',
               }}>
                 {i('Fermer', 'Close', 'Cerrar', 'Chiudi')}
               </button>

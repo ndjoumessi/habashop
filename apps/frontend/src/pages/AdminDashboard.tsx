@@ -181,7 +181,7 @@ export default function AdminDashboard() {
             <Shield size={22} />
           </div>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-.5px' }}>HabaShop Admin</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, letterSpacing: '-.5px' }}>HabaShop Admin</h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.25)', color: 'var(--acc2)' }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)' }} />
@@ -212,10 +212,10 @@ export default function AdminDashboard() {
                 <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{k.label}</span>
                 <span style={{ width: 32, height: 32, borderRadius: 8, background: mix(k.color, 12), display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>{k.icon}</span>
               </div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px', lineHeight: 1 }}>
+              <div style={{ fontSize: 24, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px', lineHeight: 1 }}>
                 {k.isStr ? k.value : (k.value as number).toLocaleString('fr-FR')}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text4)', fontWeight: 600 }}>{k.sub}</div>
+              <div style={{ fontSize: 11, color: 'var(--text4)', fontWeight: 'var(--fw-regular)' }}>{k.sub}</div>
             </div>
           ))}
         </ResponsiveGrid>
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
                     <div style={{ height: 3, background: `linear-gradient(90deg,${pc},${mix(pc, 40)})` }} />
                     <div style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 12 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg,${pc},${darken(pc, 70)})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff', flexShrink: 0, boxShadow: `0 4px 10px ${mix(pc, 35)}` }}>{initials}</div>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg,${pc},${darken(pc, 70)})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: '#fff', flexShrink: 0, boxShadow: `0 4px 10px ${mix(pc, 35)}` }}>{initials}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 5 }}>{t.name}</div>
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -357,7 +357,7 @@ export default function AdminDashboard() {
                           { lbl: i('Users', 'Users', 'Usuarios', 'Utenti'), val: String(t._count?.users ?? 0), color: 'var(--acc2)' },
                         ].map((m, idx) => (
                           <div key={idx} style={{ background: 'var(--card)', padding: '7px 8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: 12, fontWeight: 900, color: m.color, fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.val}</div>
+                            <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: m.color, fontFamily: 'var(--mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.val}</div>
                             <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 1 }}>{m.lbl}</div>
                           </div>
                         ))}
@@ -442,7 +442,7 @@ export default function AdminDashboard() {
           <div style={{ position: 'fixed', top: 0, right: 0, height: '100vh', width: 'min(420px,100vw)', background: 'var(--card,#fff)', borderLeft: '1px solid var(--border,rgba(0,0,0,.08))', boxShadow: '-20px 0 60px rgba(0,0,0,.3)', padding: 24, overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', margin: 0 }}>{selected.name}</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0 }}>{selected.name}</h3>
                 <div style={{ marginTop: 6 }}><PlanBadge plan={planKey(selected.plan)} /></div>
               </div>
               <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setSelected(null)}><X size={14} /></button>
@@ -470,7 +470,7 @@ export default function AdminDashboard() {
               ].map(([l, v]) => (
                 <div key={l} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border,rgba(0,0,0,.06))', paddingBottom: 8 }}>
                   <span style={{ color: 'var(--text3)' }}>{l}</span>
-                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: l === 'ID' ? 'monospace' : undefined, fontSize: l === 'ID' ? 11 : 13 }}>{v}</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 'var(--fw-regular)', fontFamily: l === 'ID' ? 'monospace' : undefined, fontSize: l === 'ID' ? 11 : 13 }}>{v}</span>
                 </div>
               ))}
             </div>

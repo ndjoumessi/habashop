@@ -206,7 +206,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   <div style={{ height: 3, background: `linear-gradient(135deg,${tc.h},${tc.h}CC)`, flexShrink: 0 }} />
                   {/* TOP : avatar + nom + badge + points */}
                   <div style={{ padding: '16px 16px 12px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <div style={{ width: 46, height: 46, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg,${tc.h},${tc.h}CC)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: '#fff', letterSpacing: '-0.5px', boxShadow: `0 4px 14px rgba(${tc.rgb},.35)`, position: 'relative' }}>
+                    <div style={{ width: 46, height: 46, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg,${tc.h},${tc.h}CC)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 'var(--fw-semibold)', color: '#fff', letterSpacing: '-0.5px', boxShadow: `0 4px 14px rgba(${tc.rgb},.35)`, position: 'relative' }}>
                       {initials}
                       {(c.loyaltyPoints ?? 0) > 100 && (
                         <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: '#00D084', border: '2px solid var(--card)', boxShadow: '0 0 6px #00D084' }} />
@@ -235,8 +235,8 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                       { label: 'Pts', value: String(c.loyaltyPoints ?? 0), color: '#00D084' },
                     ].map((m, idx) => (
                       <div key={idx} style={{ background: 'var(--card)', padding: '8px 10px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 12, fontWeight: 900, color: m.color, fontFamily: 'var(--mono)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.value}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.4px', marginTop: 2, fontWeight: 600 }}>{m.label}</div>
+                        <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: m.color, fontFamily: 'var(--mono)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.value}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text4)', textTransform: 'uppercase', letterSpacing: '.4px', marginTop: 2, fontWeight: 'var(--fw-regular)' }}>{m.label}</div>
                       </div>
                     ))}
                   </div>
@@ -252,7 +252,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     {c.address && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 8px', background: `rgba(${tc.rgb},.05)`, border: `1px solid rgba(${tc.rgb},.12)`, borderRadius: 8 }}>
                         <MapPin size={10} style={{ color: tc.h, flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0, fontSize: 11, fontWeight: 600, color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.address}</div>
+                        <div style={{ flex: 1, minWidth: 0, fontSize: 11, fontWeight: 'var(--fw-regular)', color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.address}</div>
                         <a
                           href={`https://maps.google.com/maps?q=${encodeURIComponent(c.address)}`}
                           target="_blank" rel="noopener noreferrer"

@@ -83,7 +83,7 @@ export default function PaymentCallback() {
               fontSize: 36, margin: '0 auto 20px',
             }}>✅</div>
             <div style={{
-              fontSize: 22, fontWeight: 900,
+              fontSize: 22, fontWeight: 'var(--fw-semibold)',
               color: 'var(--text)', marginBottom: 8,
             }}>
               {i('Paiement confirmé !', 'Payment confirmed!', '¡Pago confirmado!', 'Pagamento confermato!')}

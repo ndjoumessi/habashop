@@ -39,7 +39,7 @@ export default function SalaryRaiseForm({ emp, lang, fmt, onConfirm, onClose }: 
             style={{ paddingRight: 40 }}
             autoFocus
           />
-          <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none', fontWeight:600 }}>{symbol}</span>
+          <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none', fontWeight:'var(--fw-regular)' }}>{symbol}</span>
         </div>
         {newSalaryInput && +newSalaryInput > 0 && (
           <div style={{ marginTop:6, fontSize:11, display:'flex', gap:10, flexWrap:'wrap' }}>

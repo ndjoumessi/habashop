@@ -86,7 +86,7 @@ export default function Reports() {
   const menuItemStyle: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
     padding: '8px 12px', border: 'none', background: 'transparent', borderRadius: 8,
-    cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'inherit',
+    cursor: 'pointer', fontSize: 13, fontWeight: 'var(--fw-regular)', color: 'var(--text)', fontFamily: 'inherit',
   }
   const itemHover = (on: boolean) => (e: React.MouseEvent<HTMLButtonElement>) => {
     (e.currentTarget as HTMLElement).style.background = on ? 'var(--bg3)' : 'transparent'

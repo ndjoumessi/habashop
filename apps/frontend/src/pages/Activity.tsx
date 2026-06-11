@@ -365,7 +365,7 @@ export default function Activity() {
 
                       {/* Ligne 2 : auteur · module */}
                       <div style={{ fontSize:12, color:'var(--text2)', marginBottom: detail ? 4 : 0 }}>
-                        <span style={{ fontWeight:600 }}>{log.user}</span>
+                        <span style={{ fontWeight:'var(--fw-regular)' }}>{log.user}</span>
                         <span style={{ opacity: 0.5 }}> · </span>
                         <span>{moduleLabel(log.module, lang)}</span>
                       </div>

@@ -81,7 +81,7 @@ export default function SectionShop() {
         ].map(s => (
           <div key={s.label} style={{ ...panel, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>
             <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: s.color, fontFamily: 'var(--mono)' }}>{s.value}</div>
+            <div style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)', color: s.color, fontFamily: 'var(--mono)' }}>{s.value}</div>
             <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 3 }}>{s.label}</div>
           </div>
         ))}
@@ -125,12 +125,12 @@ export default function SectionShop() {
             {editMode ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="number" min={0} max={100} step={0.5} className="input" style={{ flex: 1 }} value={shopData.taxRate} onChange={e => setShopData(d => ({ ...d, taxRate: Number(e.target.value) }))} />
-                <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--acc)', width: 24 }}>%</span>
+                <span style={{ fontSize: 18, fontWeight: 'var(--fw-regular)', color: 'var(--acc)', width: 24 }}>%</span>
               </div>
             ) : (
               <div style={{ padding: '10px 14px', background: 'var(--c-amber-bg)', border: '1px solid var(--c-amber-border)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 }}>
                 <span style={{ fontSize: 11, color: 'var(--text3)' }}>{i('Appliqué sur ventes', 'Applied on sales', 'Aplicado en ventas', 'Applicato sulle vendite')}</span>
-                <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{shopData.taxRate}%</span>
+                <span style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{shopData.taxRate}%</span>
               </div>
             )}
           </div>

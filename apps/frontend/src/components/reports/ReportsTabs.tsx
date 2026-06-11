@@ -45,7 +45,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
             startAngle={startAngle} endAngle={endAngle} fill={fill} />
         </g>
         <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
-          style={{ fontSize: 28, fontWeight: 900, fill, fontFamily: 'JetBrains Mono, monospace' }}>
+          style={{ fontSize: 28, fontWeight: 'var(--fw-semibold)', fill, fontFamily: 'JetBrains Mono, monospace' }}>
           {(percent * 100).toFixed(0)}%
         </text>
         <text x={cx} y={cy + 14} textAnchor="middle" dominantBaseline="middle"
@@ -75,7 +75,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, boxShadow: `0 0 8px ${d.color}`, flexShrink: 0 }} />
           <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{d.name}</span>
         </div>
-        <div style={{ fontSize: 24, fontWeight: 900, color: d.color, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-1px', marginBottom: d.amount > 0 ? 4 : 0 }}>
+        <div style={{ fontSize: 24, fontWeight: 'var(--fw-semibold)', color: d.color, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-1px', marginBottom: d.amount > 0 ? 4 : 0 }}>
           {d.value}%
         </div>
         {d.amount > 0 && (
@@ -92,7 +92,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
     const y = cy + r * Math.sin(-midAngle * RADIAN)
     return (
       <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
-        style={{ fontSize: 12, fontWeight: 900, fill: '#fff', fontFamily: 'JetBrains Mono, monospace' }}>
+        style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', fill: '#fff', fontFamily: 'JetBrains Mono, monospace' }}>
         {(percent * 100).toFixed(0)}%
       </text>
     )
@@ -188,7 +188,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                   transform: 'translate(-50%,-50%)',
                   textAlign: 'center', pointerEvents: 'none',
                 }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px' }}>
+                  <div style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px' }}>
                     {paymentData.length}
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>
@@ -225,13 +225,13 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                       flexShrink: 0, transition: 'box-shadow .15s',
                     }} />
                     <span style={{
-                      fontSize: 13, fontWeight: 600,
+                      fontSize: 13, fontWeight: 'var(--fw-regular)',
                       color: activePayIndex === i ? 'var(--text)' : 'var(--text2)',
                       transition: 'color .15s',
                     }}>{item.name}</span>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: item.color, fontFamily: 'var(--mono)', letterSpacing: '-0.5px' }}>
+                    <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: item.color, fontFamily: 'var(--mono)', letterSpacing: '-0.5px' }}>
                       {item.value}%
                     </div>
                     {item.amount > 0 && (
@@ -343,7 +343,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
               { cat:'Laitiers',   pct:61, val:fmt(870000),  color:'#60A5FA' },
             ].map(row => (
               <div key={row.cat} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
-                <span style={{ fontSize:13, fontWeight:600, color:'var(--text)', width:100, flexShrink:0 }}>{row.cat}</span>
+                <span style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)', width:100, flexShrink:0 }}>{row.cat}</span>
                 <div style={{ flex:1, height:8, background:'var(--bg4)', borderRadius:99, overflow:'hidden' }}>
                   <div style={{ height:'100%', width:`${row.pct}%`, background:row.color, borderRadius:99, opacity:.85 }} />
                 </div>
@@ -395,7 +395,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
             ].map(m => (
               <div key={m.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontSize:13, color:'var(--text2)' }}>{m.label}</span>
-                <span style={{ fontSize:16, fontWeight:900, color:m.color, fontFamily:'var(--mono)' }}>{m.value}</span>
+                <span style={{ fontSize:16, fontWeight:'var(--fw-semibold)', color:m.color, fontFamily:'var(--mono)' }}>{m.value}</span>
               </div>
             ))}
           </div>
@@ -421,7 +421,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
                 borderBottom: i < 4 ? '1px solid var(--border)' : 'none',
                 borderTop: i === 4 ? '2px solid var(--border)' : 'none',
               }}>
-                <span style={{ fontSize:13, color:'var(--text2)' }}>{row.prefix && <span style={{ color:row.color, fontWeight:900, marginRight:6 }}>{row.prefix}</span>}{row.label}</span>
+                <span style={{ fontSize:13, color:'var(--text2)' }}>{row.prefix && <span style={{ color:row.color, fontWeight:'var(--fw-regular)', marginRight:6 }}>{row.prefix}</span>}{row.label}</span>
                 <span style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:row.color, fontFamily:'var(--mono)' }}>{row.value}</span>
               </div>
             ))}
@@ -438,7 +438,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
             ].map(r => (
               <div key={r.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontSize:13, color:'var(--text2)' }}>{r.label}</span>
-                <span style={{ fontSize:18, fontWeight:900, color:r.color, fontFamily:'var(--mono)' }}>{r.value}</span>
+                <span style={{ fontSize:18, fontWeight:'var(--fw-semibold)', color:r.color, fontFamily:'var(--mono)' }}>{r.value}</span>
               </div>
             ))}
           </div>

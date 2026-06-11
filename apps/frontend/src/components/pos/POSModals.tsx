@@ -63,13 +63,13 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 ] as { type:'percent'|'amount'; label:string; icon:string }[]).map(rt => (
                   <button key={rt.type} onClick={() => setDiscountForm(f => ({...f, type:rt.type}))} style={{
                     padding:'12px', borderRadius:10, cursor:'pointer', fontFamily:'var(--font)',
-                    fontSize:13, fontWeight:600, transition:'all .15s',
+                    fontSize:13, fontWeight:'var(--fw-regular)', transition:'all .15s',
                     background: discountForm.type === rt.type ? 'rgba(91,78,232,.15)' : 'var(--bg3)',
                     border:`1.5px solid ${discountForm.type === rt.type ? 'var(--p2)' : 'var(--border)'}`,
                     color: discountForm.type === rt.type ? 'var(--p2)' : 'var(--text2)',
                     display:'flex', flexDirection:'column', alignItems:'center', gap:6,
                   }}>
-                    <span style={{ fontSize:22, fontWeight:900 }}>{rt.icon}</span>
+                    <span style={{ fontSize:22, fontWeight:'var(--fw-semibold)' }}>{rt.icon}</span>
                     {rt.label}
                   </button>
                 ))}
@@ -325,7 +325,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <Smartphone size={20} />
                   <div>
-                    <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>
+                    <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>
                       {lang === 'fr' ? 'Envoyer le ticket WhatsApp' : lang === 'en' ? 'Send WhatsApp receipt' : lang === 'es' ? 'Enviar ticket WhatsApp' : 'Invia scontrino WhatsApp'}
                     </div>
                     <div style={{ fontSize:11, color:'var(--text3)' }}>
@@ -419,7 +419,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                             const regions = Array.from(new Set(filtered.map(c => c.region)))
                             return regions.map(region => (
                               <div key={region} style={{ padding:'4px 0' }}>
-                                <div style={{ padding:'6px 12px 2px', fontSize:11, fontWeight:900, textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)' }}>
+                                <div style={{ padding:'6px 12px 2px', fontSize:11, fontWeight:'var(--fw-regular)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)' }}>
                                   {region}
                                 </div>
                                 {filtered.filter(c => c.region === region).map(c => (
@@ -491,7 +491,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   )}
                   {/* Message erreur */}
                   {waNumber.length > 0 && !/^[\d\s\-]{6,}$/.test(waNumber) && (
-                    <div style={{ marginTop:5, fontSize:11, color:'var(--danger)', fontWeight:600, display:'flex', gap:4, alignItems:'center' }}>
+                    <div style={{ marginTop:5, fontSize:11, color:'var(--danger)', fontWeight:'var(--fw-regular)', display:'flex', gap:4, alignItems:'center' }}>
                       <AlertTriangle size={10} /> {lang==='fr' ? 'Chiffres uniquement (ex: 77 000 00 00)' : lang==='en' ? 'Digits only (ex: 77 000 00 00)' : lang==='es' ? 'Solo dígitos (ej: 77 000 00 00)' : 'Solo cifre (es: 77 000 00 00)'}
                     </div>
                   )}

@@ -39,7 +39,7 @@ export default function Field({ label, error, hint, required, children }: FieldP
       )}
       {error && (
         <span id={`${uid}-error`} role="alert" style={{
-          fontSize: 11, color: 'var(--danger)', fontWeight: 600,
+          fontSize: 11, color: 'var(--danger)', fontWeight: 'var(--fw-regular)',
           display: 'flex', alignItems: 'center', gap: 4,
         }}>⚠ {error}</span>
       )}

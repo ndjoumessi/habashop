@@ -82,7 +82,7 @@ export default function APIDocs() {
   return (
     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
-        <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 10 }}>
           <Link2 size={20} strokeWidth={2.2} color="var(--acc2)" />
           {lang === 'fr' ? 'API & Intégrations'
             : lang === 'en' ? 'API & Integrations'
@@ -188,7 +188,7 @@ export default function APIDocs() {
             }}>
               <link.Icon size={22} strokeWidth={2.2} />
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{link.title}</div>
+            <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{link.title}</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', flex: 1 }}>{link.desc}</div>
             <a href={link.url} target="_blank" rel="noopener noreferrer"
               style={{
@@ -196,7 +196,7 @@ export default function APIDocs() {
                 padding: '8px', borderRadius: 9,
                 background: `${link.color}22`,
                 border: `1px solid ${link.color}44`,
-                color: link.color, fontSize: 12, fontWeight: 700,
+                color: link.color, fontSize: 12, fontWeight: 'var(--fw-regular)',
                 textDecoration: 'none', transition: 'all .15s',
               }}>
               {link.btn} <ArrowRight size={12} />
@@ -237,7 +237,7 @@ export default function APIDocs() {
                 <tr key={i}>
                   <td>
                     <span style={{
-                      padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800,
+                      padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 'var(--fw-regular)',
                       background: e.method === 'GET' ? 'rgba(14,196,126,.15)' : 'rgba(91,78,232,.15)',
                       color: e.method === 'GET' ? 'var(--acc2)' : 'var(--p2)',
                     }}>{e.method}</span>
@@ -253,7 +253,7 @@ export default function APIDocs() {
                   <td>
                     {e.auth ? (
                       <span style={{
-                        fontSize: 10, fontWeight: 700,
+                        fontSize: 10, fontWeight: 'var(--fw-regular)',
                         color: 'var(--p)',
                         background: 'color-mix(in srgb, var(--p) 12%, transparent)',
                         border: '1px solid color-mix(in srgb, var(--p) 35%, transparent)',
@@ -262,7 +262,7 @@ export default function APIDocs() {
                       }}><Lock size={10} strokeWidth={2.6}/> JWT</span>
                     ) : (
                       <span style={{
-                        fontSize: 10, fontWeight: 700,
+                        fontSize: 10, fontWeight: 'var(--fw-regular)',
                         color: 'var(--acc)',
                         background: 'color-mix(in srgb, var(--acc) 12%, transparent)',
                         border: '1px solid color-mix(in srgb, var(--acc) 35%, transparent)',
@@ -384,7 +384,7 @@ main().catch(console.error)`)}
 
         {testerEndpoint.startsWith('POST') && (
           <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+            <div style={{ fontSize:11, fontWeight:'var(--fw-regular)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
               {lang === 'en' ? 'JSON body' : lang === 'es' ? 'Cuerpo JSON' : lang === 'it' ? 'Corpo JSON' : 'Corps JSON'}
             </div>
             <textarea

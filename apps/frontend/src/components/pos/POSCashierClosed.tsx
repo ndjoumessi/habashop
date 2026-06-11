@@ -42,7 +42,7 @@ export default function POSCashierClosed({
           display:'flex', alignItems:'center', justifyContent:'center',
           margin:'0 auto 20px',
         }}><Lock size={36} style={{ color:'var(--p2)' }} /></div>
-        <h2 style={{ fontSize:22, fontWeight:900, color:'var(--text)', marginBottom:8, letterSpacing:'-0.5px' }}>
+        <h2 style={{ fontSize:22, fontWeight:'var(--fw-semibold)', color:'var(--text)', marginBottom:8, letterSpacing:'-0.5px' }}>
           {ct.closed_title}
         </h2>
         <p style={{ fontSize:13, color:'var(--text2)', marginBottom:28, lineHeight:1.6 }}>
@@ -68,7 +68,7 @@ export default function POSCashierClosed({
             }}>{currencySymbol}</span>
           </div>
           {openingFundInput && (
-            <div style={{ marginTop:6, fontSize:12, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:600 }}>
+            <div style={{ marginTop:6, fontSize:12, color:'var(--acc2)', fontFamily:'var(--mono)', fontWeight:'var(--fw-regular)' }}>
               {fundPreview ?? displayFund}
             </div>
           )}
@@ -86,7 +86,7 @@ export default function POSCashierClosed({
             color:'#fff', fontSize:14, fontWeight:'var(--fw-bold)', flexShrink:0,
           }}>{cashierInitial}</div>
           <div>
-            <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{cashierName}</div>
+            <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{cashierName}</div>
             <div style={{ fontSize:11, color:'var(--text3)' }}>
               {ct.cashier_label} · {new Date().toLocaleDateString(locale, { weekday:'long', day:'numeric', month:'long' })}
             </div>

@@ -108,7 +108,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
 
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', marginBottom: 2 }}>
+              <div style={{ fontSize: 18, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>
                 {customer.name}
               </div>
               <button
@@ -154,7 +154,7 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
           ) : (
             <>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
-                <span style={{ fontSize: 36, fontWeight: 900, color: cfg.color, fontFamily: 'var(--mono)', letterSpacing: '-2px' }}>
+                <span style={{ fontSize: 36, fontWeight: 'var(--fw-semibold)', color: cfg.color, fontFamily: 'var(--mono)', letterSpacing: '-2px' }}>
                   {points.toLocaleString()}
                 </span>
                 <span style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)' }}>pts</span>

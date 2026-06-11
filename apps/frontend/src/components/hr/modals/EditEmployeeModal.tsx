@@ -37,7 +37,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
         <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'}18,${editEmpForm.color??'var(--p)'}05)`, borderBottom:'1px solid var(--border)', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:14 }}>
             <div
-              style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'var(--p)'}50`, border:`2px solid ${editEmpForm.color??'var(--p)'}40`, letterSpacing:'-1px', cursor: empEditMode ? 'pointer' : 'default', position:'relative' }}
+              style={{ width:60, height:60, borderRadius:18, overflow:'hidden', background:`linear-gradient(135deg,${editEmpForm.color??'var(--p)'},${editEmpForm.color??'var(--p)'}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:'var(--fw-semibold)', color:'#fff', flexShrink:0, boxShadow:`0 8px 24px ${editEmpForm.color??'var(--p)'}50`, border:`2px solid ${editEmpForm.color??'var(--p)'}40`, letterSpacing:'-1px', cursor: empEditMode ? 'pointer' : 'default', position:'relative' }}
               title={empEditMode ? (lang === 'en' ? 'Click to change photo' : lang === 'es' ? 'Clic para cambiar la foto' : lang === 'it' ? 'Clicca per cambiare la foto' : 'Cliquer pour changer la photo') : undefined}
               onClick={() => empEditMode && (document.getElementById('emp-photo-input') as HTMLInputElement)?.click()}>
               {editEmpForm.photoUrl
@@ -55,7 +55,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               e.target.value = ''
             }} />
             <div style={{ flex:1, minWidth:0 }}>
-              <h3 style={{ fontSize:18, fontWeight:900, color:'var(--text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              <h3 style={{ fontSize:18, fontWeight:'var(--fw-semibold)', color:'var(--text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                 {editEmpForm.name || selectedEmp.name}
               </h3>
               <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>
@@ -82,13 +82,13 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
           {!empEditMode
             ? <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:16, background:'rgba(0,184,255,.07)', border:'1px solid rgba(0,184,255,.18)', borderRadius:10 }}>
                 <Eye size={14} style={{ color:'var(--acc3)', flexShrink:0 }} />
-                <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:600 }}>
+                <span style={{ fontSize:12, color:'var(--acc3)', fontWeight:'var(--fw-regular)' }}>
                   {lang === 'en' ? 'View mode — click Edit to make changes' : lang === 'es' ? 'Modo visualización — haz clic en Editar para modificar' : lang === 'it' ? 'Modalità visualizzazione — clicca su Modifica per modificare' : 'Mode visualisation — cliquez sur Modifier pour éditer'}
                 </span>
               </div>
             : <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:16, background:'rgba(240,165,0,.08)', border:'1px solid rgba(240,165,0,.22)', borderRadius:10 }}>
                 <Pencil size={14} style={{ color:'var(--warn)', flexShrink:0 }} />
-                <span style={{ fontSize:12, color:'var(--warn)', fontWeight:600 }}>
+                <span style={{ fontSize:12, color:'var(--warn)', fontWeight:'var(--fw-regular)' }}>
                   {lang === 'en' ? 'Edit mode — unsaved changes' : lang === 'es' ? 'Modo edición — cambios no guardados' : lang === 'it' ? 'Modalità modifica — modifiche non salvate' : 'Mode édition — modifications non sauvegardées'}
                 </span>
               </div>
@@ -135,7 +135,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
               </ViewField>
               {editEmpForm.type === 'CDI' ? (
                 <ViewField label={lang === 'en' ? 'CONTRACT END' : lang === 'es' ? 'FIN DE CONTRATO' : lang === 'it' ? 'FINE CONTRATTO' : 'FIN DE CONTRAT'} value={lang === 'en' ? '∞ Permanent' : lang === 'es' ? '∞ Indefinido' : lang === 'it' ? '∞ Indeterminato' : '∞ Indéterminé'} color="var(--acc2)" editing={empEditMode}>
-                  <div style={{ padding:'10px 14px', background:'rgba(0,208,132,.06)', border:'1px solid var(--c-green-bg)', borderRadius:12, fontSize:13, color:'var(--acc2)', fontWeight:600 }}>
+                  <div style={{ padding:'10px 14px', background:'rgba(0,208,132,.06)', border:'1px solid var(--c-green-bg)', borderRadius:12, fontSize:13, color:'var(--acc2)', fontWeight:'var(--fw-regular)' }}>
                     ∞ {lang === 'en' ? 'Permanent contract' : lang === 'es' ? 'Contrato indefinido' : lang === 'it' ? 'Contratto a tempo indeterminato' : 'Contrat à durée indéterminée'}
                   </div>
                 </ViewField>
@@ -284,7 +284,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 ✏️ {lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'}
               </button>
               <button onClick={() => setShowEditEmpModal(false)}
-                style={{ padding:'12px 18px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
+                style={{ padding:'12px 18px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:'var(--fw-regular)' }}>
                 {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}
               </button>
             </>
@@ -314,7 +314,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                 ✅ {lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : lang === 'it' ? 'Salva' : 'Sauvegarder'}
               </button>
               <button onClick={() => { openEditModal(selectedEmp!) }}
-                style={{ padding:'12px 16px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:600 }}>
+                style={{ padding:'12px 16px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12, cursor:'pointer', color:'var(--text2)', fontSize:13, fontFamily:'var(--font)', fontWeight:'var(--fw-regular)' }}>
                 {lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : lang === 'it' ? 'Annulla' : 'Annuler'}
               </button>
               <button

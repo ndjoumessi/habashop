@@ -307,7 +307,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
               { id:'semi',      label: lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayorista' : lang === 'it' ? 'Semi-ingrosso' : 'Demi-gros' },
             ] as { id:'retail'|'wholesale'|'semi'; label:string }[]).map(ct => (
               <button key={ct.id} onClick={() => setClientType(ct.id)} style={{
-                padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:600,
+                padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:'var(--fw-regular)',
                 cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
                 background: clientType === ct.id ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
                 border:`1px solid ${clientType === ct.id ? 'var(--p2)' : 'var(--border)'}`,
@@ -320,7 +320,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
             ))}
             <div style={{ width:1, height:20, background:'var(--border)', margin:'0 4px' }} />
             <button onClick={() => setShowDiscountModal(true)} style={{
-              padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:600,
+              padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:'var(--fw-regular)',
               cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
               background: discount ? 'rgba(14,196,126,.15)' : 'var(--bg3)',
               border:`1px solid ${discount ? 'rgba(14,196,126,.3)' : 'var(--border)'}`,
@@ -339,7 +339,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                 display:'flex', alignItems:'center', gap:4,
               }}><X size={11} /> {lang === 'en' ? 'Clear discount' : lang === 'es' ? 'Quitar descuento' : lang === 'it' ? 'Rimuovi sconto' : 'Annuler remise'}</button>
             )}
-            <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+            <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:4 }}>
               <Tag size={11} /> {filtered.filter(p => p.promotion).length} {lang === 'en' ? 'active promotions' : lang === 'es' ? 'promociones activas' : lang === 'it' ? 'promozioni attive' : 'promotions actives'}
             </div>
           </div>}
@@ -443,7 +443,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                             </div>
                           </div>
                           <div style={{ textAlign:'right' }}>
-                            <div style={{ fontSize:15, fontWeight:900, color: refunded ? 'var(--text4)' : 'var(--p2)', fontFamily:'var(--mono)', textDecoration: refunded ? 'line-through' : 'none' }}>{fmt(sale.total)}</div>
+                            <div style={{ fontSize:15, fontWeight:'var(--fw-semibold)', color: refunded ? 'var(--text4)' : 'var(--p2)', fontFamily:'var(--mono)', textDecoration: refunded ? 'line-through' : 'none' }}>{fmt(sale.total)}</div>
                             {(sale.loyaltyDiscount ?? 0) > 0 && (
                               <div style={{ fontSize:10, color:'var(--acc2)', fontFamily:'var(--mono)' }}>⭐ −{fmt(sale.loyaltyDiscount)}</div>
                             )}

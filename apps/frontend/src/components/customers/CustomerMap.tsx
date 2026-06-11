@@ -59,26 +59,26 @@ export default function CustomerMap({
     return `
   <div style="font-family:var(--font),-apple-system,BlinkMacSystemFont,sans-serif;background:var(--card);border:1px solid ${color}40;border-radius:14px;min-width:240px;max-width:280px;overflow:hidden;">
     <div style="background:linear-gradient(135deg,${color},${color}CC);padding:14px 16px;display:flex;align-items:center;gap:10px;">
-      <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;flex-shrink:0;">${esc(initials)}</div>
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:var(--fw-semibold);color:#fff;flex-shrink:0;">${esc(initials)}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name)}</div>
-        <div style="display:inline-flex;align-items:center;margin-top:3px;padding:1px 8px;background:rgba(255,255,255,.2);border-radius:99px;font-size:9px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.4px;">${esc(typeLabel(c.type, lang))}</div>
+        <div style="font-size:13px;font-weight:var(--fw-semibold);color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name)}</div>
+        <div style="display:inline-flex;align-items:center;margin-top:3px;padding:1px 8px;background:rgba(255,255,255,.2);border-radius:99px;font-size:9px;font-weight:var(--fw-regular);color:#fff;text-transform:uppercase;letter-spacing:.4px;">${esc(typeLabel(c.type, lang))}</div>
       </div>
     </div>
     <div style="padding:12px 14px;">
       ${c.address ? `
       <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 11px;background:var(--bg3);border:1px solid ${color}30;border-radius:10px;margin-bottom:10px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="${color}" style="flex-shrink:0;margin-top:1px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
-        <div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--text);line-height:1.4;">${esc(c.address)}</div>
+        <div style="flex:1;min-width:0;font-size:12px;font-weight:var(--fw-regular);color:var(--text);line-height:1.4;">${esc(c.address)}</div>
       </div>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;">
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">${L('CA Total', 'Total rev.', 'Ing. total', 'Fatt. tot.')}</div>
-          <div style="font-size:13px;font-weight:900;color:#FF9500;font-family:var(--mono),monospace;">${esc(fmt(totalCA))}</div>
+          <div style="font-size:13px;font-weight:var(--fw-semibold);color:#FF9500;font-family:var(--mono),monospace;">${esc(fmt(totalCA))}</div>
         </div>
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;">
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">${L('Fidélité', 'Loyalty', 'Fidelidad', 'Fedeltà')}</div>
-          <div style="font-size:13px;font-weight:900;color:#00D084;font-family:var(--mono),monospace;">${loyalty} pts</div>
+          <div style="font-size:13px;font-weight:var(--fw-semibold);color:#00D084;font-family:var(--mono),monospace;">${loyalty} pts</div>
         </div>
       </div>
       ${c.phone ? `<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);margin-bottom:10px;">
@@ -86,11 +86,11 @@ export default function CustomerMap({
         ${esc(c.phone)}
       </div>` : ''}
       <div style="display:flex;gap:6px;">
-        <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:${color}20;border:1px solid ${color}40;border-radius:8px;font-size:11px;font-weight:700;color:${color};text-decoration:none;">
+        <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:${color}20;border:1px solid ${color}40;border-radius:8px;font-size:11px;font-weight:var(--fw-regular);color:${color};text-decoration:none;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Google Maps
         </a>
-        <button id="iw-detail-${esc(c.id)}" type="button" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:${color};border:none;border-radius:8px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;">
+        <button id="iw-detail-${esc(c.id)}" type="button" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:${color};border:none;border-radius:8px;font-size:11px;font-weight:var(--fw-semibold);color:#fff;cursor:pointer;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
           ${L('Voir fiche', 'View', 'Ver', 'Vedi')}
         </button>
@@ -274,7 +274,7 @@ export default function CustomerMap({
                   background: isSel ? cfg.soft : 'transparent',
                   border: `1px solid ${isSel ? cfg.color + '44' : 'transparent'}`,
                 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, transition: 'all .2s',
+                <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 'var(--fw-semibold)', transition: 'all .2s',
                   background: isSel ? `linear-gradient(135deg,${cfg.color},${cfg.color}99)` : 'var(--bg3)',
                   color: isSel ? '#fff' : cfg.color,
                   boxShadow: isSel ? `0 4px 12px ${cfg.color}44` : 'none',
@@ -306,7 +306,7 @@ export default function CustomerMap({
               <div style={{ height: 3, background: `linear-gradient(90deg,${cfg.color},${cfg.color}44)` }} />
               <div style={{ padding: '13px 14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 11, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff', flexShrink: 0, boxShadow: `0 6px 18px ${cfg.color}44` }}>{initials}</div>
+                  <div style={{ width: 38, height: 38, borderRadius: 11, background: `linear-gradient(135deg,${cfg.color},${cfg.color}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: '#fff', flexShrink: 0, boxShadow: `0 6px 18px ${cfg.color}44` }}>{initials}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 'var(--fw-bold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{selected.name}</div>
                     <span style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99, background: cfg.soft, color: cfg.color, border: `1px solid ${cfg.color}33`, display:'inline-flex', alignItems:'center', gap:3 }}>{cfg.icon} {typeLabel(selected.type, lang)}</span>
@@ -321,7 +321,7 @@ export default function CustomerMap({
                     { l: 'Pts',  v: String(loyalty), c: 'var(--warn)' },
                   ].map(k => (
                     <div key={k.l} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 5px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 12, fontWeight: 900, color: k.c, fontFamily: 'var(--mono)' }}>{k.v}</div>
+                      <div style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: k.c, fontFamily: 'var(--mono)' }}>{k.v}</div>
                       <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginTop: 2 }}>{k.l}</div>
                     </div>
                   ))}
@@ -370,7 +370,7 @@ export default function CustomerMap({
               { l: 'VIP',          v: String(vipCount),                              c: 'var(--warn)'      },
             ].map((s, i) => (
               <div key={s.l} style={{ flex: 1, textAlign: 'center', paddingLeft: i > 0 ? 0 : 0, borderLeft: i > 0 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ fontSize: 15, fontWeight: 900, color: s.c, fontFamily: 'var(--mono)' }}>{s.v}</div>
+                <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: s.c, fontFamily: 'var(--mono)' }}>{s.v}</div>
                 <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text4)' }}>{s.l}</div>
               </div>
             ))}
@@ -405,7 +405,7 @@ export default function CustomerMap({
         {(!mapsLoaded || geocoding) && (
           <div style={{ position: 'absolute', inset: 0, background: 'var(--bg2)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, zIndex: 20 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(108,71,255,.2)', borderTopColor: 'var(--p)', animation: 'spin 1s linear infinite' }} />
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)' }}>{!mapsLoaded ? (lang === 'en' ? 'Loading Google Maps…' : lang === 'es' ? 'Cargando Google Maps…' : lang === 'it' ? 'Caricamento Google Maps…' : 'Chargement Google Maps…') : (lang === 'en' ? 'Locating customers…' : lang === 'es' ? 'Localizando clientes…' : lang === 'it' ? 'Localizzazione clienti…' : 'Localisation des clients…')}</div>
+            <div style={{ fontSize: 14, fontWeight: 'var(--fw-regular)', color: 'var(--text2)' }}>{!mapsLoaded ? (lang === 'en' ? 'Loading Google Maps…' : lang === 'es' ? 'Cargando Google Maps…' : lang === 'it' ? 'Caricamento Google Maps…' : 'Chargement Google Maps…') : (lang === 'en' ? 'Locating customers…' : lang === 'es' ? 'Localizando clientes…' : lang === 'it' ? 'Localizzazione clienti…' : 'Localisation des clients…')}</div>
           </div>
         )}
 

@@ -236,7 +236,7 @@ export default function SectionPOS() {
             {PRICE_MODES.map(m => (
               <button key={m.id} type="button" disabled={!editMode} onClick={() => editMode && setDraft(p => ({ ...p, priceMode: m.id }))}
                 style={{ flex: 1, padding: 14, borderRadius: 12, cursor: editMode ? 'pointer' : 'default', opacity: editMode ? 1 : .7, textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .15s', background: v.priceMode === m.id ? 'rgba(108,71,255,.1)' : 'var(--bg3)', border: `2px solid ${v.priceMode === m.id ? 'var(--p)' : 'var(--border)'}` }}>
-                <div style={{ fontSize: 15, fontWeight: 900, color: v.priceMode === m.id ? 'var(--p3)' : 'var(--text)' }}>{m.title}{v.priceMode === m.id ? ' ✓' : ''}</div>
+                <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: v.priceMode === m.id ? 'var(--p3)' : 'var(--text)' }}>{m.title}{v.priceMode === m.id ? ' ✓' : ''}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{m.sub}</div>
               </button>
             ))}
@@ -257,7 +257,7 @@ export default function SectionPOS() {
                 <span style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--acc)', width: 20 }}>%</span>
               </div>
             ) : (
-              <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{cfg.posTaxRate}%</div>
+              <div style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: 'var(--acc)', fontFamily: 'var(--mono)' }}>{cfg.posTaxRate}%</div>
             )}
           </div>
 
@@ -276,7 +276,7 @@ export default function SectionPOS() {
                 <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', fontSize: 11, pointerEvents: 'none', fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
               </div>
             ) : (
-              <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(cfg.posDefaultFund)}</div>
+              <div style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>{fmt(cfg.posDefaultFund)}</div>
             )}
           </div>
 

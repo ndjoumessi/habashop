@@ -34,7 +34,7 @@ export default function BillingBanner() {
     <div style={{ padding: '10px 20px', background: 'rgba(0,184,255,.08)', borderBottom: '1px solid rgba(0,184,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontSize: 13 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--acc3)' }}>
         <span>⏳</span>
-        <span style={{ fontWeight: 600 }}>{i('Votre demande de plan est en cours de traitement (24-48h)', 'Your plan request is being processed (24-48h)', 'Tu solicitud de plan está siendo procesada (24-48h)', 'La tua richiesta di piano è in elaborazione (24-48h)')}</span>
+        <span style={{ fontWeight: 'var(--fw-regular)' }}>{i('Votre demande de plan est en cours de traitement (24-48h)', 'Your plan request is being processed (24-48h)', 'Tu solicitud de plan está siendo procesada (24-48h)', 'La tua richiesta di piano è in elaborazione (24-48h)')}</span>
       </div>
       <button type="button" onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 16, padding: '0 4px' }}>✕</button>
     </div>
@@ -43,7 +43,7 @@ export default function BillingBanner() {
   // Essai expiré
   if (status.isTrialExpired) return (
     <div style={{ padding: '12px 20px', background: 'rgba(255,59,92,.1)', borderBottom: '1px solid rgba(255,59,92,.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)', fontWeight: 600, fontSize: 13 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)', fontWeight: 'var(--fw-regular)', fontSize: 13 }}>
         <span>🔒</span>
         <span>{i('Votre essai gratuit est expiré. Choisissez un plan pour continuer.', 'Your free trial has expired. Choose a plan to continue.', 'Tu prueba gratuita ha expirado. Elige un plan para continuar.', 'La tua prova gratuita è scaduta. Scegli un piano per continuare.')}</span>
       </div>
@@ -56,7 +56,7 @@ export default function BillingBanner() {
   const isUrgent = status.trialDaysLeft <= 3
   return (
     <div style={{ padding: '10px 20px', background: isUrgent ? 'rgba(255,59,92,.08)' : 'rgba(255,184,0,.07)', borderBottom: `1px solid ${isUrgent ? 'rgba(255,59,92,.2)' : 'rgba(255,184,0,.2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isUrgent ? 'var(--danger)' : 'var(--warn)', fontSize: 13, fontWeight: 600 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isUrgent ? 'var(--danger)' : 'var(--warn)', fontSize: 13, fontWeight: 'var(--fw-regular)' }}>
         <span>{isUrgent ? '⚠️' : '⏳'}</span>
         <span>{status.trialDaysLeft === 0
           ? i("Dernier jour d'essai !", 'Last day of trial!', '¡Último día de prueba!', 'Ultimo giorno di prova!')

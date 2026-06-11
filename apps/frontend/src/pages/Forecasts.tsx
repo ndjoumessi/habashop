@@ -70,7 +70,7 @@ export default function Forecasts() {
           }}><Bot size={28} style={{ color:'#fff' }}/></div>
           <div style={{ flex:1 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-              <h2 style={{ fontSize:20, fontWeight:900, color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
+              <h2 style={{ fontSize:20, fontWeight:'var(--fw-semibold)', color:'var(--text)', margin:0, letterSpacing:'-.3px' }}>
                 HabaShop
                 <span style={{
                   background:'var(--grad-p)',
@@ -90,7 +90,7 @@ export default function Forecasts() {
                   width:6, height:6, borderRadius:'50%',
                   background:'var(--acc2)', boxShadow:'0 0 8px var(--acc2)',
                 }}/>
-                <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:600 }}>
+                <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:'var(--fw-regular)' }}>
                   {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
                 </span>
               </div>
@@ -109,7 +109,7 @@ export default function Forecasts() {
                 { Icon: MessageSquare, label: lang === 'en' ? 'Free chat' : lang === 'es' ? 'Chat libre' : lang === 'it' ? 'Chat libero' : 'Chat libre' },
               ].map((cap, i) => (
                 <span key={i} style={{
-                  fontSize:11, fontWeight:600, color:'var(--text3)',
+                  fontSize:11, fontWeight:'var(--fw-regular)', color:'var(--text3)',
                   background:'var(--bg3)', border:'1px solid var(--border)',
                   borderRadius:20, padding:'2px 8px',
                   display:'flex', alignItems:'center', gap:4,
@@ -224,7 +224,7 @@ export default function Forecasts() {
                     borderRadius:10, padding:'10px 12px', textAlign:'center',
                   }}>
                     <div style={{ fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:6 }}>{kpi.label}</div>
-                    <div style={{ fontSize:16, fontWeight:900, color:kpi.color, fontFamily:'var(--mono)' }}>{kpi.value}</div>
+                    <div style={{ fontSize:16, fontWeight:'var(--fw-semibold)', color:kpi.color, fontFamily:'var(--mono)' }}>{kpi.value}</div>
                   </div>
                 ))}
               </ResponsiveGrid>
@@ -259,7 +259,7 @@ export default function Forecasts() {
         {!aiAnalysis && !aiLoading && !aiError && (
           <div style={{ textAlign:'center', padding:'24px 24px 32px', color:'var(--text3)' }}>
             <Bot size={32} style={{ color:'var(--text3)', marginBottom:12 }}/>
-            <div style={{ fontSize:14, fontWeight:600, color:'var(--text2)', marginBottom:6 }}>
+            <div style={{ fontSize:14, fontWeight:'var(--fw-regular)', color:'var(--text2)', marginBottom:6 }}>
               {lang === 'fr' ? "Choisissez un type d'analyse"
                 : lang === 'en' ? 'Choose an analysis type'
                 : lang === 'es' ? 'Elija un tipo de análisis'
