@@ -100,6 +100,7 @@ export default function OrdersListPanel({
             color: !statusFilter ? '#fff' : 'var(--text2)',
             border: 'none', cursor: 'pointer', fontFamily: 'inherit'
           }}
+          aria-pressed={!statusFilter}
           onClick={() => setStatusFilter('')}
         >{t('pos_all')} ({orders.length})</button>
         {STATUSES.map(s => {
@@ -114,6 +115,7 @@ export default function OrdersListPanel({
                 border: statusFilter === s ? `1px solid ${cfg.color}44` : '1px solid transparent',
                 cursor: 'pointer', fontFamily: 'inherit'
               }}
+              aria-pressed={statusFilter === s}
               onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
             >
               {orderStatusLabel(s, lang)} ({count})

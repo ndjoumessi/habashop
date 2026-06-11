@@ -24,8 +24,9 @@ export default function Orders() {
   useEffect(() => {
     ordersApi.list()
       .then(data => setOrders(data.map(mapApiOrder)))
-      .catch(() => {})
+      .catch(() => toast.error(i('Impossible de charger les commandes — réessayer', 'Could not load orders — please retry', 'No se pudieron cargar los pedidos — reintenta', 'Impossibile caricare gli ordini — riprova')))
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
@@ -107,7 +108,11 @@ export default function Orders() {
   const drafts        = orders.filter(o => o.status === 'BROUILLON').length
 
   const changeStatus = async (id: string, status: OrderStatus) => {
-    try { await ordersApi.updateStatus(id, LOCAL_TO_API_STATUS[status] ?? status) } catch {}
+    try { await ordersApi.updateStatus(id, LOCAL_TO_API_STATUS[status] ?? status) } catch {
+      // Échec serveur : on n'applique PAS le changement localement (sinon désynchro silencieuse)
+      toast.error(i('Échec de la mise à jour du statut — réessayer', 'Status update failed — please retry', 'Error al actualizar el estado — reintenta', 'Aggiornamento stato non riuscito — riprova'))
+      return
+    }
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
     setViewOrder(prev => prev?.id === id ? { ...prev, status } : prev)
     toast.success(`${i('Statut mis à jour', 'Status updated', 'Estado actualizado', 'Stato aggiornato')} → ${orderStatusLabel(status, lang)}`)
@@ -153,7 +158,10 @@ export default function Orders() {
       } else {
         await ordersApi.create({ supplierId: selectedSupplierId, supplierName: supplierObj?.name, items: newOrderForm.items, total, note: newOrderForm.note, type: 'supplier' })
       }
-    } catch {}
+    } catch {
+      toast.error(i('Échec de la création de la commande — réessayer', 'Order creation failed — please retry', 'Error al crear el pedido — reintenta', 'Creazione ordine non riuscita — riprova'))
+      return
+    }
     setOrders(prev => [newOrder, ...prev])
     setShowNewOrderModal(false)
     toast.success(orderType === 'client'

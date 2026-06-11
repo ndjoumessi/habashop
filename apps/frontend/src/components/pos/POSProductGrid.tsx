@@ -1,3 +1,4 @@
+import { memo, useMemo, useRef, useCallback } from 'react'
 import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History, RotateCcw, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
@@ -30,7 +31,148 @@ interface POSProductGridProps {
   navigate: (path: string, opts?: any) => void
 }
 
+// Tuile produit mémoïsée : props primitives (labels pré-formatés) → seule la tuile dont
+// la quantité panier / le prix change re-rend, pas toute la grille à chaque frappe/ajout.
+interface ProductTileProps {
+  p: PosProduct
+  qty: number | undefined
+  priceLabel: string
+  basePriceLabel: string
+  showStrike: boolean
+  isPromoRetail: boolean
+  posShowStockOnTile: boolean
+  onAdd: (p: PosProduct) => void
+}
+
+const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLabel, showStrike, isPromoRetail, posShowStockOnTile, onAdd }: ProductTileProps) {
+  const inCart     = qty !== undefined
+  const isLowStock = p.stock < 20
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`${p.name} — ${priceLabel}`}
+      onClick={() => onAdd(p)}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAdd(p) }
+      }}
+      style={{
+        background: inCart
+          ? 'linear-gradient(135deg, rgba(91,78,232,.15), rgba(124,111,240,.08))'
+          : 'var(--card)',
+        border: inCart
+          ? '1.5px solid var(--p2)'
+          : '1px solid var(--border)',
+        borderRadius: 12,
+        padding: '16px 12px 14px',
+        cursor: 'pointer',
+        textAlign: 'center',
+        transition: 'all .18s',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 6,
+      }}
+      onMouseEnter={e => {
+        if (!inCart) {
+          const el = e.currentTarget as HTMLElement
+          el.style.borderColor = 'var(--p2)'
+          el.style.transform = 'translateY(-2px)'
+          el.style.boxShadow = '0 8px 24px rgba(91,78,232,.18)'
+        }
+      }}
+      onMouseLeave={e => {
+        if (!inCart) {
+          const el = e.currentTarget as HTMLElement
+          el.style.borderColor = 'var(--border)'
+          el.style.transform = 'none'
+          el.style.boxShadow = 'none'
+        }
+      }}
+    >
+      {/* Badge promo */}
+      {isPromoRetail && (
+        <div style={{
+          position:'absolute', top:6, left:6,
+          background:'var(--danger)', color:'#fff',
+          borderRadius:6, padding:'2px 6px',
+          fontSize:11, fontWeight:'var(--fw-bold)',
+        }}>PROMO</div>
+      )}
+      {/* Badge quantité si dans panier */}
+      {inCart && (
+        <div style={{
+          position: 'absolute',
+          top: -8, right: -8,
+          background: 'var(--p)',
+          color: '#fff',
+          borderRadius: '50%',
+          width: 22, height: 22,
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 11, fontWeight: 'var(--fw-bold)',
+          border: '2px solid var(--bg)',
+        }}>×{qty}</div>
+      )}
+
+      {/* Emoji dans cercle */}
+      <div style={{
+        width: 56, height: 56,
+        borderRadius: '50%',
+        background: 'var(--bg3)',
+        border: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 28,
+      }}>{p.emoji}</div>
+
+      {/* Nom */}
+      <div style={{
+        fontSize: 12.5,
+        fontWeight: 600,
+        color: 'var(--text)',
+        lineHeight: 1.3,
+      }}>{p.name}</div>
+
+      {/* Prix */}
+      {showStrike && (
+        <div style={{ fontSize:11, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
+          {basePriceLabel}
+        </div>
+      )}
+      <div style={{
+        fontSize: 14,
+        fontWeight: 'var(--fw-bold)',
+        color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
+        fontFamily: 'var(--mono)',
+      }}>{priceLabel}</div>
+
+      {/* Stock */}
+      {posShowStockOnTile && (
+        <div style={{
+          fontSize: 11,
+          color: isLowStock ? 'var(--danger)' : 'var(--text3)',
+          fontWeight: isLowStock ? 600 : 400,
+        }}>
+          {isLowStock && <AlertTriangle size={10} style={{ display:'inline', verticalAlign:'middle', marginRight:3 }} />}Stock : {p.stock}
+        </div>
+      )}
+    </div>
+  )
+})
+
 export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+  // Quantités panier indexées par produit (first-wins = même sémantique que cart.find)
+  const qtyById = useMemo(() => {
+    const m = new Map<string | number, number>()
+    for (const i of cart) if (!m.has(i.id)) m.set(i.id, i.qty)
+    return m
+  }, [cart])
+  // Identité stable pour la tuile mémoïsée — la closure appelée reste la dernière à jour
+  const addItemRef = useRef(addItem)
+  addItemRef.current = addItem
+  const onAdd = useCallback((p: PosProduct) => addItemRef.current(p), [])
   return (
         <div style={{
           flex: 1,
@@ -194,120 +336,19 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
           }}>
             <ResponsiveGrid min={160} gap={10} style={{ paddingBottom: 8 }}>
               {filtered.map(p => {
-                const inCart     = cart.find(i => i.id === p.id)
-                const isLowStock = p.stock < 20
+                const isPromoRetail = !!p.promotion && clientType === 'retail'
                 return (
-                  <div
+                  <ProductTile
                     key={p.id}
-                    onClick={() => addItem(p)}
-                    style={{
-                      background: inCart
-                        ? 'linear-gradient(135deg, rgba(91,78,232,.15), rgba(124,111,240,.08))'
-                        : 'var(--card)',
-                      border: inCart
-                        ? '1.5px solid var(--p2)'
-                        : '1px solid var(--border)',
-                      borderRadius: 12,
-                      padding: '16px 12px 14px',
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      transition: 'all .18s',
-                      position: 'relative',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                    onMouseEnter={e => {
-                      if (!inCart) {
-                        const el = e.currentTarget as HTMLElement
-                        el.style.borderColor = 'var(--p2)'
-                        el.style.transform = 'translateY(-2px)'
-                        el.style.boxShadow = '0 8px 24px rgba(91,78,232,.18)'
-                      }
-                    }}
-                    onMouseLeave={e => {
-                      if (!inCart) {
-                        const el = e.currentTarget as HTMLElement
-                        el.style.borderColor = 'var(--border)'
-                        el.style.transform = 'none'
-                        el.style.boxShadow = 'none'
-                      }
-                    }}
-                  >
-                    {/* Badge promo */}
-                    {p.promotion && clientType === 'retail' && (
-                      <div style={{
-                        position:'absolute', top:6, left:6,
-                        background:'var(--danger)', color:'#fff',
-                        borderRadius:6, padding:'2px 6px',
-                        fontSize:11, fontWeight:'var(--fw-bold)',
-                      }}>PROMO</div>
-                    )}
-                    {/* Badge quantité si dans panier */}
-                    {inCart && (
-                      <div style={{
-                        position: 'absolute',
-                        top: -8, right: -8,
-                        background: 'var(--p)',
-                        color: '#fff',
-                        borderRadius: '50%',
-                        width: 22, height: 22,
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 11, fontWeight: 'var(--fw-bold)',
-                        border: '2px solid var(--bg)',
-                      }}>×{inCart.qty}</div>
-                    )}
-
-                    {/* Emoji dans cercle */}
-                    <div style={{
-                      width: 56, height: 56,
-                      borderRadius: '50%',
-                      background: 'var(--bg3)',
-                      border: '1px solid var(--border)',
-                      display: 'flex', alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 28,
-                    }}>{p.emoji}</div>
-
-                    {/* Nom */}
-                    <div style={{
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: 'var(--text)',
-                      lineHeight: 1.3,
-                    }}>{p.name}</div>
-
-                    {/* Prix */}
-                    {clientType !== 'retail' && (
-                      <div style={{ fontSize:11, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
-                        {fmt(p.price)}
-                      </div>
-                    )}
-                    {p.promotion && clientType === 'retail' && (
-                      <div style={{ fontSize:11, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
-                        {fmt(p.price)}
-                      </div>
-                    )}
-                    <div style={{
-                      fontSize: 14,
-                      fontWeight: 'var(--fw-bold)',
-                      color: p.promotion && clientType === 'retail' ? 'var(--danger)' : 'var(--acc)',
-                      fontFamily: 'var(--mono)',
-                    }}>{fmt(getPrice(p))}</div>
-
-                    {/* Stock */}
-                    {posShowStockOnTile && (
-                      <div style={{
-                        fontSize: 11,
-                        color: isLowStock ? 'var(--danger)' : 'var(--text3)',
-                        fontWeight: isLowStock ? 600 : 400,
-                      }}>
-                        {isLowStock && <AlertTriangle size={10} style={{ display:'inline', verticalAlign:'middle', marginRight:3 }} />}Stock : {p.stock}
-                      </div>
-                    )}
-                  </div>
+                    p={p}
+                    qty={qtyById.get(p.id)}
+                    priceLabel={fmt(getPrice(p))}
+                    basePriceLabel={fmt(p.price)}
+                    showStrike={clientType !== 'retail' || isPromoRetail}
+                    isPromoRetail={isPromoRetail}
+                    posShowStockOnTile={posShowStockOnTile}
+                    onAdd={onAdd}
+                  />
                 )
               })}
 

@@ -17,7 +17,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
   const { i } = useI18n()
   const fmt = useFormatAmount()
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={order.ref} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" style={{ maxWidth: 580 }}>
         <div className="flex items-start justify-between mb-5">
           <div>

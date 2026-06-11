@@ -74,6 +74,7 @@ export default function Settings() {
               <button
                 key={s.id}
                 type="button"
+                aria-current={isActive || undefined}
                 onClick={() => setActiveSection(s.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, width: '100%',

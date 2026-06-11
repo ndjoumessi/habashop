@@ -40,7 +40,11 @@ export default function ExpenseDetailModal(props: Props) {
   )
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && onClose()}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true"
+      aria-label={expEditMode
+        ? (lang === 'en' ? 'Edit expense' : lang === 'es' ? 'Editar el gasto' : lang === 'it' ? 'Modifica la spesa' : 'Modifier la dépense')
+        : (lang === 'en' ? 'Expense detail' : lang === 'es' ? 'Detalle del gasto' : lang === 'it' ? 'Dettaglio spesa' : 'Détail dépense')}
+      onClick={e => e.target===e.currentTarget && onClose()}>
       <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <span style={{ fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}>
@@ -92,9 +96,12 @@ export default function ExpenseDetailModal(props: Props) {
                 </div>
               ) : (
                 <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', paddingBottom:2 }}>
-                  <button type="button" onClick={() => setEditExpForm(f => ({...f, recurrent:!f.recurrent}))}
-                    style={{ width:44, height:24, borderRadius:99, background: editExpForm.recurrent ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0 }}>
-                    <div style={{ position:'absolute', top:2, left: editExpForm.recurrent ? 22 : 2, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
+                  <button type="button" role="switch" aria-checked={editExpForm.recurrent}
+                    aria-label={lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}
+                    onClick={() => setEditExpForm(f => ({...f, recurrent:!f.recurrent}))}
+                    style={{ width:44, height:24, borderRadius:99, background: editExpForm.recurrent ? 'var(--p2)' : 'var(--bg4)', border:'1px solid var(--border)', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0, boxSizing:'border-box' }}>
+                    {/* Knob var(--card)+border : un knob #fff était invisible sur piste claire en thème Soleil */}
+                    <div style={{ position:'absolute', top:1, left: editExpForm.recurrent ? 21 : 1, width:20, height:20, borderRadius:'50%', background:'var(--card)', border:'1px solid var(--border)', boxSizing:'border-box', transition:'left .2s', boxShadow:'0 2px 4px rgba(0,0,0,.2)' }} />
                   </button>
                   <span style={{ fontSize:13, color:'var(--text2)' }}>{lang === 'en' ? 'Recurring' : lang === 'es' ? 'Recurrente' : lang === 'it' ? 'Ricorrente' : 'Récurrente'}</span>
                 </label>

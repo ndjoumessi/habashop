@@ -29,7 +29,7 @@ export default function Suppliers() {
   useEffect(() => {
     suppliersApi.list()
       .then(data => setSuppliers(data.map(mapApiSupplier)))
-      .catch(() => {})
+      .catch(() => toast.error(i('Impossible de charger les fournisseurs — réessayer', 'Could not load suppliers — please retry', 'No se pudieron cargar los proveedores — reintenta', 'Impossibile caricare i fornitori — riprova')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -113,7 +113,10 @@ export default function Suppliers() {
     try {
       const created = await suppliersApi.create({ name: form.name, categories: form.categories, phone: form.phone, email: form.email, address: form.address, leadTime: form.leadTime, rating: form.rating, status: form.status, notes: form.notes })
       newS.id = created.id
-    } catch {}
+    } catch {
+      toast.error(i('Échec de la création — réessayer', 'Creation failed — please retry', 'Error al crear — reintenta', 'Creazione non riuscita — riprova'))
+      return
+    }
     setSuppliers(prev => [newS, ...prev])
     setShowCreate(false)
     setForm({ name: '', categories: '', phone: '', email: '', address: '', contact: '', leadTime: 5, rating: 4, status: 'Actif', notes: '' })
@@ -152,7 +155,10 @@ export default function Suppliers() {
   const saveEditSupplier = async () => {
     if (!editSupplier) return
     if (!editSuppForm.name) { toast.error(i('Nom requis', 'Name required', 'Nombre requerido', 'Nome richiesto')); return }
-    try { await suppliersApi.update(editSupplier.id, { name: editSuppForm.name, categories: editSuppForm.categories, phone: editSuppForm.phone, email: editSuppForm.email, address: editSuppForm.address, leadTime: editSuppForm.leadTime, rating: editSuppForm.rating, status: editSuppForm.status, notes: editSuppForm.notes }) } catch {}
+    try { await suppliersApi.update(editSupplier.id, { name: editSuppForm.name, categories: editSuppForm.categories, phone: editSuppForm.phone, email: editSuppForm.email, address: editSuppForm.address, leadTime: editSuppForm.leadTime, rating: editSuppForm.rating, status: editSuppForm.status, notes: editSuppForm.notes }) } catch {
+      toast.error(i('Échec de la sauvegarde — réessayer', 'Save failed — please retry', 'Error al guardar — reintenta', 'Salvataggio non riuscito — riprova'))
+      return
+    }
     setSuppliers(prev => prev.map(s =>
       s.id === editSupplier.id
         ? { ...s, ...editSuppForm, categories: editSuppForm.categories.split(',').map(c => c.trim()).filter(Boolean) }

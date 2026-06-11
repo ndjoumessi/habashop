@@ -200,8 +200,16 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
             <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {paymentData.map((item, i) => (
                 <div key={i}
+                  role="button" tabIndex={0}
+                  aria-pressed={activePayIndex === i}
+                  aria-label={`${item.name} — ${item.value}%`}
                   onMouseEnter={() => setActivePayIndex(i)}
                   onMouseLeave={() => setActivePayIndex(null)}
+                  /* Équivalent clic/clavier/tactile du highlight hover (le cursor:pointer était inerte) */
+                  onClick={() => setActivePayIndex(activePayIndex === i ? null : i)}
+                  onFocus={() => setActivePayIndex(i)}
+                  onBlur={() => setActivePayIndex(null)}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActivePayIndex(activePayIndex === i ? null : i) } }}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '9px 12px',

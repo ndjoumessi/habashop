@@ -5,6 +5,7 @@ import { Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { employeesApi } from '@/lib/api'
 import EmptyState from '@/components/ui/EmptyState'
+import Skeleton from '@/components/ui/skeleton'
 import { exportCSV } from '@/utils/export'
 import {
   buildMonths, monthLabel, currentMonthLabel, PAY_COLORS,
@@ -26,6 +27,7 @@ export default function Payroll() {
   const [records, setRecords]       = useState<PayRecord[]>([])
   const [month, setMonth]           = useState(currentMonthLabel)
   const [bulletin, setBulletin]     = useState<PayRecord | null>(null)
+  const [loading, setLoading]       = useState(true)
 
   useEffect(() => {
     employeesApi.list()
@@ -47,7 +49,8 @@ export default function Payroll() {
             }
           }))
       })
-      .catch(() => {})
+      .catch(() => toast.error(lang === 'en' ? 'Could not load payroll data — please retry' : lang === 'es' ? 'No se pudieron cargar los datos de nómina — reintenta' : lang === 'it' ? 'Impossibile caricare i dati paghe — riprova' : 'Impossible de charger les données de paie — réessayer'))
+      .finally(() => setLoading(false))
   }, [])
 
   const filtered = records.filter(r => r.month === month)
@@ -121,7 +124,12 @@ export default function Payroll() {
         totalCount={records.length}
       />
 
-      {records.length === 0 ? (
+      {loading ? (
+        /* État de chargement : skeletons (la page était muette pendant le fetch initial) */
+        <div className="panel" style={{ padding: 16 }}>
+          <Skeleton height={38} count={6} radius={8} />
+        </div>
+      ) : records.length === 0 ? (
         <div className="panel">
           <EmptyState
             icon="💰"

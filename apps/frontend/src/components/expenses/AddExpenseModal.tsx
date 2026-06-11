@@ -32,7 +32,7 @@ export default function AddExpenseModal(props: Props) {
   const cl = (c: string) => catLabel(c, lang)
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={tr('Ajouter une dépense','Add an expense','Agregar un gasto','Aggiungi una spesa')} onClick={onClose}>
       <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:480 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <span style={{ fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)' }}>{tr('Ajouter une dépense','Add an expense','Agregar un gasto','Aggiungi una spesa')}</span>

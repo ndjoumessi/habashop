@@ -12,6 +12,7 @@ import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
 import AddressAutocompleteInput from '@/components/ui/AddressAutocompleteInput'
 import ViewField from '@/components/ui/ViewField'
 import Pagination from '@/components/ui/Pagination'
+import Skeleton from '@/components/ui/skeleton'
 import { usePagination } from '@/hooks/usePagination'
 
 import CustomerMap from '@/components/customers/CustomerMap'
@@ -28,11 +29,14 @@ export default function Customers() {
   const abbr = useAbbrevAmount()
   const navigate = useNavigate()
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [loadingCustomers, setLoadingCustomers] = useState(true)
 
   useEffect(() => {
     customersApi.list()
       .then(data => setCustomers(data.map(mapApiCustomer)))
-      .catch(() => {})
+      .catch(() => toast.error(i('Impossible de charger les clients — réessayer', 'Could not load customers — please retry', 'No se pudieron cargar los clientes — reintenta', 'Impossibile caricare i clienti — riprova')))
+      .finally(() => setLoadingCustomers(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -260,7 +264,13 @@ export default function Customers() {
       </div>
 
       {/* Panel */}
-      {customersTab === 'list' && (
+      {customersTab === 'list' && loadingCustomers && (
+        /* État de chargement : la liste vide était indiscernable d'un vrai « aucun client » */
+        <div className="panel" style={{ padding: 16 }}>
+          <Skeleton height={44} count={6} radius={10} />
+        </div>
+      )}
+      {customersTab === 'list' && !loadingCustomers && (
         <CustomersList
           customers={customers}
           search={search} setSearch={setSearch}

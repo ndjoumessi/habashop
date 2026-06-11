@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import Skeleton from '@/components/ui/skeleton'
 import toast from 'react-hot-toast'
 import { useConfig } from '@/stores/appStore'
 import { Store } from 'lucide-react'
@@ -16,6 +17,8 @@ export default function SectionShop() {
     address: cfg.shopAddress, country: cfg.shopCountry, taxRate: cfg.shopVatRate,
   })
   const [stats, setStats] = useState({ users: 0, products: 0, customers: 0, sales: 0 })
+  // Évite le flicker valeurs locales → valeurs serveur : skeleton tant que le tenant n'est pas chargé
+  const [tenantLoaded, setTenantLoaded] = useState(false)
 
   useEffect(() => {
     tenantApi.get().then((d: any) => {
@@ -23,7 +26,7 @@ export default function SectionShop() {
         name: d.name ?? s.name, email: d.email ?? s.email, phone: d.phone ?? s.phone,
         address: d.address ?? s.address, country: d.country ?? s.country, taxRate: d.vatRate ?? s.taxRate,
       }))
-    }).catch(() => {})
+    }).catch(() => {}).finally(() => setTenantLoaded(true))
     Promise.all([
       dashboardApi.stats().catch(() => ({} as any)),
       customersApi.list().catch(() => [] as any[]),
@@ -52,6 +55,20 @@ export default function SectionShop() {
     { key: 'country', full: false, icon: '🌍', type: 'text',  label: i('PAYS', 'COUNTRY', 'PAÍS', 'PAESE'), ph: i('Sénégal', 'Senegal', 'Senegal', 'Senegal') },
     { key: 'address', full: true,  icon: '📍', type: 'text',  label: i('ADRESSE', 'ADDRESS', 'DIRECCIÓN', 'INDIRIZZO'), ph: i('Adresse complète', 'Full address', 'Dirección completa', 'Indirizzo completo') },
   ]
+
+  if (!tenantLoaded) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+          <Skeleton height={104} count={1} radius={14} />
+          <Skeleton height={104} count={1} radius={14} />
+          <Skeleton height={104} count={1} radius={14} />
+          <Skeleton height={104} count={1} radius={14} />
+        </div>
+        <Skeleton height={320} count={1} radius={16} />
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'slideUp .3s ease both' }}>

@@ -17,7 +17,7 @@ export default function SupplierViewModal({ supplier, onClose, onNewOrder }: Pro
   const { i } = useI18n()
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={supplier.name} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" style={{ maxWidth: 580 }}>
         <div className="flex items-start justify-between mb-5">
           <div>

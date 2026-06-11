@@ -52,11 +52,16 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
             </select>
             {/* Toggle vue */}
             <div style={{ display:'flex', gap:2, background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8, padding:3, flexShrink:0 }}>
-              {[{id:'grid',icon:<LayoutGrid size={13}/>},{id:'table',icon:<AlignJustify size={13}/>}].map(v => (
+              {[
+                { id:'grid',  icon:<LayoutGrid size={13}/>,   label: lang === 'en' ? 'Grid view'  : lang === 'es' ? 'Vista cuadrícula' : lang === 'it' ? 'Vista griglia'  : 'Vue grille'  },
+                { id:'table', icon:<AlignJustify size={13}/>, label: lang === 'en' ? 'Table view' : lang === 'es' ? 'Vista tabla'      : lang === 'it' ? 'Vista tabella' : 'Vue tableau' },
+              ].map(v => (
                 <button key={v.id} type="button"
+                  aria-label={v.label} title={v.label}
+                  aria-pressed={viewMode === v.id}
                   onClick={() => setViewMode(v.id as any)}
                   style={{
-                    width:28, height:28, borderRadius:6, border:'none', cursor:'pointer',
+                    width:36, height:36, borderRadius:6, border:'none', cursor:'pointer',
                     background: viewMode === v.id ? 'var(--p)' : 'transparent',
                     color: viewMode === v.id ? '#fff' : 'var(--text3)',
                     transition:'all .15s',
@@ -201,8 +206,20 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                     </tr>
                   </thead>
                   <tbody>
-                    {pg.paginated.map(emp => (
-                      <tr key={emp.id} onClick={() => { openEditModal(emp) }} style={{ cursor: 'pointer' }}>
+                    {loadingEmployees && (
+                      /* Skeleton vue table (n'existait qu'en vue grille) — pattern OrdersListPanel */
+                      <tr><td colSpan={7} style={{ padding: 12 }}>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i} className="skeleton" style={{ height: 34, borderRadius: 8, marginBottom: i < 5 ? 8 : 0 }} />
+                        ))}
+                      </td></tr>
+                    )}
+                    {!loadingEmployees && pg.paginated.map(emp => (
+                      <tr key={emp.id} tabIndex={0}
+                        aria-label={emp.name}
+                        onClick={() => { openEditModal(emp) }}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditModal(emp) } }}
+                        style={{ cursor: 'pointer' }}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <EmpAvatar emp={emp} size={32} />
@@ -238,7 +255,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
                         </td>
                       </tr>
                     ))}
-                    {filtered.length === 0 && (
+                    {!loadingEmployees && filtered.length === 0 && (
                       <tr><td colSpan={7} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text3)' }}>{lang === 'en' ? 'No employee found' : lang === 'es' ? 'Sin empleados encontrados' : lang === 'it' ? 'Nessun dipendente trovato' : 'Aucun employé trouvé'}</td></tr>
                     )}
                   </tbody>

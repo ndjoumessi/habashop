@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Bell, MessageCircle } from 'lucide-react'
+import Skeleton from '@/components/ui/skeleton'
 import toast from 'react-hot-toast'
 import { useConfig } from '@/stores/appStore'
 import { tenantApi } from '@/lib/api'
@@ -12,6 +13,8 @@ export default function SectionNotif() {
   // Numéro WhatsApp du gérant (rapports auto soir 20h / matin 8h) — setting TENANT ; vide = désactivé
   const [ownerPhone, setOwnerPhone] = useState('')
   const [ownerPhoneSaved, setOwnerPhoneSaved] = useState('')
+  // Évite le flicker états par défaut → états serveur : skeleton tant que le tenant n'est pas chargé
+  const [tenantLoaded, setTenantLoaded] = useState(false)
 
   // Charge depuis le tenant au mount
   useEffect(() => {
@@ -27,7 +30,7 @@ export default function SectionNotif() {
         notifSmsStock:     t.notifSmsStock     ?? true,
         notifPushAll:      t.notifPushAll      ?? true,
       } as any)
-    }).catch(() => {})
+    }).catch(() => {}).finally(() => setTenantLoaded(true))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -46,15 +49,25 @@ export default function SectionNotif() {
         title={i('Notifications', 'Notifications', 'Notificaciones', 'Notifiche')}
         sub={i('Gérez vos alertes et rapports automatiques', 'Manage your alerts and automatic reports', 'Gestiona tus alertas y reportes automáticos', 'Gestisci i tuoi avvisi e report automatici')} />
       <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {!tenantLoaded ? (
+          <Skeleton height={58} count={6} radius={12} />
+        ) : (
+        <>
         {NOTIFS.map(n => (
           <ToggleCard key={n.key} icon={n.icon} color={n.color} label={pick(lang, n.label)} desc={pick(lang, n.desc)}
             on={!!(cfg as any)[n.key]}
             onChange={() => {
               const newVal = !(cfg as any)[n.key]
               cfg.updateConfig({ [n.key]: newVal } as any)
-              tenantApi.update({ [n.key]: newVal } as any).catch(() => {})
+              tenantApi.update({ [n.key]: newVal } as any).catch(() => {
+                // Échec serveur : revert du toggle + feedback (le toggle restait « activé » à tort)
+                cfg.updateConfig({ [n.key]: !newVal } as any)
+                toast.error(i("Échec de l'enregistrement", 'Save failed', 'Error al guardar', 'Salvataggio non riuscito'))
+              })
             }} />
         ))}
+        </>
+        )}
 
         {/* Rapports WhatsApp auto (résumé du soir + alerte stock du matin) */}
         <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>

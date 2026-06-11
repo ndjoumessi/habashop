@@ -16,7 +16,9 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
   const totalRetenues = bd.totalDeductions
 
   return (
-    <div style={{
+    <div role="dialog" aria-modal="true"
+      aria-label={`${lang === 'en' ? 'Payslip' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Busta paga' : 'Bulletin de paie'} — ${record.employee}`}
+      style={{
       position:'fixed', inset:0, zIndex:50,
       background:'rgba(0,0,0,.7)', backdropFilter:'blur(6px)',
       display:'flex', alignItems:'center', justifyContent:'center',

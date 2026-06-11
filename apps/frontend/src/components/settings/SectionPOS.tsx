@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Skeleton from '@/components/ui/skeleton'
 import toast from 'react-hot-toast'
 import { useConfig, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
 import { ShoppingCart } from 'lucide-react'
@@ -26,6 +27,8 @@ export default function SectionPOS() {
   const LOYALTY_DEFAULTS = { pointsPerAmount: 1000, bronzeThreshold: 2000, silverThreshold: 5000, bronzeDiscount: 0, silverDiscount: 0, goldDiscount: 0 }
   const [loyalty, setLoyalty] = useState(LOYALTY_DEFAULTS)
   const [loyaltyDraft, setLoyaltyDraft] = useState(LOYALTY_DEFAULTS)
+  // Évite le flicker valeurs par défaut → valeurs serveur : skeleton tant que le tenant n'est pas chargé
+  const [tenantLoaded, setTenantLoaded] = useState(false)
 
   // Charge les paramètres POS depuis le tenant (source de vérité backend).
   // posTaxRate côté front = vatRate côté backend (single source of truth — pas de doublon de TVA).
@@ -53,7 +56,7 @@ export default function SectionPOS() {
         goldDiscount:    t.goldDiscount    ?? 0,
       }
       setLoyalty(lc); setLoyaltyDraft(lc)
-    }).catch(() => {})
+    }).catch(() => {}).finally(() => setTenantLoaded(true))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const v = editMode ? draft : snapshot()
@@ -120,6 +123,14 @@ export default function SectionPOS() {
     } catch (e: any) {
       toast.error(i('Échec de la sauvegarde', 'Save failed', 'Error al guardar', 'Salvataggio fallito') + (e?.message ? ` : ${e.message}` : ''))
     }
+  }
+
+  if (!tenantLoaded) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Skeleton height={420} count={1} radius={16} />
+      </div>
+    )
   }
 
   return (

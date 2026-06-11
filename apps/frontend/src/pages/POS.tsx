@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -215,14 +215,17 @@ export default function POS() {
   // Compat : getPrice(p) = qty=1 (utilisé pour affichage prix sur la tuile produit)
   const getPrice = (p: PosProduct) => computePriceForItem(p, 1).price
 
-  // Filtrage produits
-  const filtered = posProducts.filter(p =>
+  // Filtrage produits — mémoïsé : recalculé seulement quand produits/catégorie/recherche changent
+  const filtered = useMemo(() => posProducts.filter(p =>
     (activeCat === 'all' || p.cat === activeCat) &&
     p.name.toLowerCase().includes(search.toLowerCase())
-  )
+  ), [posProducts, activeCat, search])
 
   // Index produits par id pour recalcul rapide
-  const productById = new Map<number | string, PosProduct>(posProducts.map(p => [p.id, p] as [number | string, PosProduct]))
+  const productById = useMemo(
+    () => new Map<number | string, PosProduct>(posProducts.map(p => [p.id, p] as [number | string, PosProduct])),
+    [posProducts],
+  )
 
   // Actions panier — calcul price+tierLabel via computePriceForItem (logique métier
   // qui dépend de clientType + promo + tiers), puis délégation au store pour mutation.

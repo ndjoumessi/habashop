@@ -33,7 +33,7 @@ export function supplierColor(name: string) { return SUPP_COLORS[name.charCodeAt
 export function StarRating({ rating }: { rating: number }) {
   const r = Number(rating) || 0
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:2 }}>
+    <div role="img" aria-label={`${r}/5`} style={{ display:'flex', alignItems:'center', gap:2 }}>
       {[1, 2, 3, 4, 5].map(i => (
         <Star key={i} size={12} style={{ color: i <= r ? '#F0A500' : 'var(--border)', fill: i <= r ? '#F0A500' : 'none' }} />
       ))}

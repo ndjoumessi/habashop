@@ -8,7 +8,9 @@ import {
   BarChart2, Activity, Target, Zap, PackageX,
 } from 'lucide-react'
 import { dashboardApi, reportsApi } from '@/lib/api'
+import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import Skeleton from '@/components/ui/skeleton'
 import { normCat } from '@/utils/normCat'
 import { payModeLabel } from '@/components/pos/posShared'
 // Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
@@ -194,7 +196,7 @@ export default function Dashboard() {
         }
         setCatData(mergedCats.map((c, i) => ({ ...c, color: DONUT_COLORS[i % DONUT_COLORS.length] })))
       })
-      .catch(() => {})
+      .catch(() => toast.error(lang === 'en' ? 'Data unavailable — please retry' : lang === 'es' ? 'Datos no disponibles — reintenta' : lang === 'it' ? 'Dati non disponibili — riprova' : 'Données indisponibles — réessayer'))
       .finally(() => setKpiLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -432,7 +434,7 @@ export default function Dashboard() {
               {lang === 'en' ? 'No sales yet' : lang === 'es' ? 'Sin ventas por ahora' : lang === 'it' ? 'Nessuna vendita per ora' : 'Aucune vente pour le moment'}
             </div>
           ) : (
-          <Suspense fallback={<div style={{ height: 190 }} />}>
+          <Suspense fallback={<Skeleton height={190} count={1} radius={12} />}>
             <DashSalesArea data={salesChart} abbr={abbr} tooltip={<CustomTooltip />} />
           </Suspense>
           )}
@@ -450,7 +452,7 @@ export default function Dashboard() {
             </div>
           ) : (<>
           <div style={{ position: 'relative', margin: '0 -8px', overflow: 'visible' }}>
-            <Suspense fallback={<div style={{ height: 220 }} />}>
+            <Suspense fallback={<Skeleton height={220} count={1} radius={12} />}>
               <DashCategoryDonut data={catData.map((d, i) => ({ ...d, pct: catPcts[i] }))} colors={DONUT_COLORS} label={makeDonutLabel(catPcts)} tooltip={<CatTooltip />} />
             </Suspense>
             <div style={{

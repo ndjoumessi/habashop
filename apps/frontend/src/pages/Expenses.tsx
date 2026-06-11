@@ -40,8 +40,9 @@ export default function Expenses() {
   useEffect(() => {
     expensesApi.list()
       .then(data => setExpenses(data.map(mapApiExpense)))
-      .catch(() => {})
+      .catch(() => toast.error(tr('Impossible de charger les dépenses — réessayer', 'Could not load expenses — please retry', 'No se pudieron cargar los gastos — reintenta', 'Impossibile caricare le spese — riprova')))
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -149,14 +150,25 @@ export default function Expenses() {
 
   async function markPaid(id: number) {
     const exp = expenses.find(e => e.id === id)
-    if (exp?._apiId) { try { await expensesApi.update(exp._apiId, { status: 'PAYÉ' }) } catch {} }
+    if (exp?._apiId) {
+      try { await expensesApi.update(exp._apiId, { status: 'PAYÉ' }) } catch {
+        // Échec serveur : pas de MAJ locale (sinon désynchro silencieuse au prochain reload)
+        toast.error(tr('Échec de la mise à jour — réessayer', 'Update failed — please retry', 'Error al actualizar — reintenta', 'Aggiornamento non riuscito — riprova'))
+        return
+      }
+    }
     setExpenses(prev => prev.map(e => e.id === id ? { ...e, status: 'PAYÉ' } : e))
     toast.success(tr('Dépense marquée comme payée','Expense marked as paid','Gasto marcado como pagado','Spesa contrassegnata come pagata'))
   }
 
   async function deleteExpense(id: number) {
     const exp = expenses.find(e => e.id === id)
-    if (exp?._apiId) { try { await expensesApi.delete(exp._apiId) } catch {} }
+    if (exp?._apiId) {
+      try { await expensesApi.delete(exp._apiId) } catch {
+        toast.error(tr('Échec de la suppression — réessayer', 'Delete failed — please retry', 'Error al eliminar — reintenta', 'Eliminazione non riuscita — riprova'))
+        return
+      }
+    }
     setExpenses(prev => prev.filter(e => e.id !== id))
     toast.success(tr('Dépense supprimée','Expense deleted','Gasto eliminado','Spesa eliminata'))
   }
@@ -188,7 +200,10 @@ export default function Expenses() {
     if (!editExpense) return
     if (!editExpForm.label || !editExpForm.amountHT) { toast.error(lang === 'en' ? 'Label and amount required' : lang === 'es' ? 'Etiqueta e importe requeridos' : lang === 'it' ? 'Etichetta e importo richiesti' : 'Libellé et montant requis'); return }
     if (editExpense._apiId) {
-      try { await expensesApi.update(editExpense._apiId, { date: new Date(editExpForm.date).toISOString(), label: editExpForm.label, category: editExpForm.category, amountHT: editExpForm.amountHT, vat: editExpForm.vat, amountTTC: Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100)), mode: editExpForm.mode, recurrent: editExpForm.recurrent }) } catch {}
+      try { await expensesApi.update(editExpense._apiId, { date: new Date(editExpForm.date).toISOString(), label: editExpForm.label, category: editExpForm.category, amountHT: editExpForm.amountHT, vat: editExpForm.vat, amountTTC: Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100)), mode: editExpForm.mode, recurrent: editExpForm.recurrent }) } catch {
+        toast.error(tr('Échec de la sauvegarde — réessayer', 'Save failed — please retry', 'Error al guardar — reintenta', 'Salvataggio non riuscito — riprova'))
+        return
+      }
     }
     setExpenses(prev => prev.map(e =>
       e.id === editExpense.id
