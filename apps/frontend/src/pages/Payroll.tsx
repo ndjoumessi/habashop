@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
-import { Download, Wallet } from 'lucide-react'
+import { Wallet } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { employeesApi } from '@/lib/api'
 import EmptyState from '@/components/ui/EmptyState'
@@ -96,7 +96,7 @@ export default function Payroll() {
         return [r.employee, roleLabel(r.role, lang), r.baseSalary, r.bonus, r.overtime, r.deductions, r.absences, net, statusLabel(r.status, lang)]
       })
     )
-    toast.success(lang === 'en' ? '📊 CSV export downloaded!' : lang === 'es' ? '📊 ¡Exportación CSV descargada!' : lang === 'it' ? '📊 Esportazione CSV scaricata!' : '📊 Export CSV téléchargé !')
+    toast.success(lang === 'en' ? 'CSV export downloaded!' : lang === 'es' ? '¡Exportación CSV descargada!' : lang === 'it' ? 'Esportazione CSV scaricata!' : 'Export CSV téléchargé !')
   }
 
   return (
@@ -108,12 +108,7 @@ export default function Payroll() {
           <h1 className="page-title">{lang === 'en' ? 'Payroll' : lang === 'es' ? 'Nómina y salarios' : lang === 'it' ? 'Buste paga e stipendi' : 'Paie & Salaires'}</h1>
           <p className="page-subtitle">{lang === 'en' ? `Period: ${monthLabel(month, lang)}` : lang === 'es' ? `Período: ${monthLabel(month, lang)}` : lang === 'it' ? `Periodo: ${monthLabel(month, lang)}` : `Période : ${monthLabel(month, lang)}`}</p>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => {
-          exportCSV('paie_' + month, [lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé', lang === 'en' ? 'Gross' : lang === 'es' ? 'Bruto' : lang === 'it' ? 'Lordo' : 'Brut', 'Net', lang === 'en' ? 'Status' : lang === 'es' ? 'Estado' : lang === 'it' ? 'Stato' : 'Statut'], records.map(r => [r.employee, calcBrut(r), calcNet(r), statusLabel(r.status, lang)]))
-          toast.success(lang === 'en' ? 'CSV exported' : lang === 'es' ? 'CSV exportado' : lang === 'it' ? 'CSV esportato' : 'CSV exporté')
-        }}>
-          <Download size={14} /> Export
-        </button>
+        {/* Export CSV doublon supprimé — celui de la toolbar PayrollTable (plus complet) reste la seule entrée. */}
       </div>
 
       <PayrollKpis
@@ -147,7 +142,7 @@ export default function Payroll() {
           onGenerate={generatePayroll}
           onView={setBulletin}
           onMarkPaid={markPaid}
-          onPrintPDF={(r) => { printBulletin(r); toast.success(lang === 'en' ? '📄 PDF opened!' : lang === 'es' ? '📄 ¡PDF abierto!' : lang === 'it' ? '📄 PDF aperto!' : '📄 PDF ouvert !') }}
+          onPrintPDF={(r) => { printBulletin(r); toast.success(lang === 'en' ? 'PDF opened!' : lang === 'es' ? '¡PDF abierto!' : lang === 'it' ? 'PDF aperto!' : 'PDF ouvert !') }}
         />
       )}
 

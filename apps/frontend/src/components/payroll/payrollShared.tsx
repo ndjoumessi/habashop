@@ -115,7 +115,7 @@ export function printBulletin(bulletin: PayRecord) {
   // sinon double conversion → PDF ≠ écran, ex. 686,02 € affiché en ~1,05 €.)
   const fmtP = (n: number) => formatAmount(n, currency)
 
-  const { brut, absencePenalty, cnss, irpp, net } = payrollBreakdown(bulletin)
+  const { brut, absencePenalty, cnss, irpp, net, totalDeductions } = payrollBreakdown(bulletin)
 
   const gainsRows: string[][] = [
     [t('payslip_base_salary'), '26 j', '100 %', fmtP(bulletin.baseSalary)],
@@ -123,7 +123,9 @@ export function printBulletin(bulletin: PayRecord) {
     ...(bulletin.overtime > 0 ? [[t('payslip_overtime'), '', '25 %', fmtP(bulletin.overtime)]] : []),
   ]
   const retenuesRows: string[][] = [
-    [t('payslip_cnss'), '5,6 %', fmtP(cnss)],
+    // CNSS affichée UNIQUEMENT si des retenues sont réellement comprises dans le total
+    // (deductions === 0 → lignes ≠ total sinon). Même règle que la modale bulletin.
+    ...(bulletin.deductions > 0 ? [[t('payslip_cnss'), '5,6 %', fmtP(cnss)]] : []),
     ...(irpp > 0 ? [[t('payslip_tax'), '', fmtP(irpp)]] : []),
     ...(bulletin.absences > 0 ? [[`${t('payslip_absence_deduction')} (${bulletin.absences}j)`, '', fmtP(absencePenalty)]] : []),
   ]
@@ -145,7 +147,9 @@ export function printBulletin(bulletin: PayRecord) {
     ${htmlTable(
       [t('expenses_label'), '%', t('col_amount')],
       retenuesRows,
-      ['', `<strong>${t('payslip_total_deductions')}</strong>`, `<strong style="color:#dc2626;">- ${fmtP(bulletin.deductions)}</strong>`]
+      // Total = retenues saisies + pénalité absence (payrollBreakdown.totalDeductions) —
+      // réconcilie lignes = total (la pénalité absence est listée dans les lignes).
+      ['', `<strong>${t('payslip_total_deductions')}</strong>`, `<strong style="color:#dc2626;">- ${fmtP(totalDeductions)}</strong>`]
     )}
 
     <div class="net-payer">

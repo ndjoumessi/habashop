@@ -96,7 +96,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                  'Stock', i('Seuil','Threshold','Umbral','Soglia'), i('Fournisseur','Supplier','Proveedor','Fornitore'), i('Statut','Status','Estado','Stato')],
                 products.map(p => [p.sku, p.name, p.category, cv(p.buy), cv(p.sell), p.stock, p.threshold, p.supplier, statusOf(p.stock,p.threshold).label])
               )
-              toast.success(i('📊 Export CSV téléchargé !','📊 CSV export downloaded!','📊 ¡Exportación CSV descargada!','📊 Esportazione CSV scaricata!'))
+              toast.success(i('Export CSV téléchargé !','CSV export downloaded!','¡Exportación CSV descargada!','Esportazione CSV scaricata!'))
             }}>
               <Download size={13} /> {t('btn_export')}
             </button>
@@ -132,7 +132,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                 )}
               `
               openPDF(t('stock_pdf_title'), body)
-              toast.success('📄 PDF ouvert !')
+              toast.success('PDF ouvert !')
             }}>
               <Download size={13} /> PDF
             </button>

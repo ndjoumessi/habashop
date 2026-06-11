@@ -437,8 +437,8 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 <button type="button"
                   onClick={() => {
                     toast.success(lang === 'fr'
-                      ? `✅ ${payMode === 'wave' ? 'Wave' : 'Orange Money'} confirmé !`
-                      : `✅ ${payMode === 'wave' ? 'Wave' : 'Orange Money'} confirmed!`)
+                      ? `${payMode === 'wave' ? 'Wave' : 'Orange Money'} confirmé !`
+                      : `${payMode === 'wave' ? 'Wave' : 'Orange Money'} confirmed!`)
                     confirmSale()
                   }}
                   style={{

@@ -57,7 +57,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
           const a = document.createElement('a')
           a.href = url; a.download = `Paie_${payrollMonth}.csv`; a.click()
           URL.revokeObjectURL(url)
-          toast.success(lang === 'en' ? '📊 Payroll export downloaded!' : lang === 'es' ? '📊 ¡Exportación de nómina descargada!' : lang === 'it' ? '📊 Esportazione buste paga scaricata!' : '📊 Export paie téléchargé !')
+          toast.success(lang === 'en' ? 'Payroll export downloaded!' : lang === 'es' ? '¡Exportación de nómina descargada!' : lang === 'it' ? 'Esportazione buste paga scaricata!' : 'Export paie téléchargé !')
         }}><Download size={14} /> CSV</button>
         <button className="btn btn-primary btn-sm"
           onClick={() => generateAllPayslips()}
@@ -93,7 +93,7 @@ export default function PayrollGrid({ employees, fmt, lang, payrollMonth, setPay
           </button>
         </div>
         <div className="table-wrap data-table">
-          <table>
+          <table aria-label={lang === 'en' ? 'Payroll detail' : lang === 'es' ? 'Detalle de nómina' : lang === 'it' ? 'Dettaglio busta paga' : 'Détail de la paie'}>
             <thead>
               <tr>
                 <th scope="col">{lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'}</th>

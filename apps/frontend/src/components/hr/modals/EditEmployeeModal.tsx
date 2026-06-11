@@ -306,10 +306,10 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                       hiredAt: data.hiredAt ? new Date(data.hiredAt).toISOString() : undefined,
                     })
                     setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {...e, ...data, avatar} : e))
-                    toast.success('✅ '+(lang === 'en' ? 'Saved!' : lang === 'es' ? '¡Guardado!' : lang === 'it' ? 'Salvato!' : 'Sauvegardé !'))
+                    toast.success(lang === 'en' ? 'Saved!' : lang === 'es' ? '¡Guardado!' : lang === 'it' ? 'Salvato!' : 'Sauvegardé !')
                   } catch {
                     setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {...e, ...data, avatar} : e))
-                    toast.success('✅ Local')
+                    toast.success('Local')
                   }
                   announce(lang === 'en' ? 'Employee updated' : lang === 'es' ? 'Empleado actualizado' : lang === 'it' ? 'Dipendente aggiornato' : 'Employé mis à jour')
                   setEmpEditMode(false)

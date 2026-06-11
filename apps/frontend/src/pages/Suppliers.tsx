@@ -99,7 +99,7 @@ export default function Suppliers() {
       [t('col_name'), t('col_category'), t('col_phone'), t('col_delivery'), t('col_rating'), t('col_status')],
       suppliers.map(s => [s.name, s.categories.join(', '), s.phone, s.leadTime + 'j', s.rating + '/5', statusLabel(s.status, lang)])
     )
-    toast.success(i('📊 Export CSV téléchargé !', '📊 CSV export downloaded!', '📊 Exportación CSV descargada!', '📊 Esportazione CSV scaricata!'))
+    toast.success(i('Export CSV téléchargé !', 'CSV export downloaded!', 'Exportación CSV descargada!', 'Esportazione CSV scaricata!'))
   }
 
   const addSupplier = async () => {
@@ -121,7 +121,7 @@ export default function Suppliers() {
     setSuppliers(prev => [newS, ...prev])
     setShowCreate(false)
     setForm({ name: '', categories: '', phone: '', email: '', address: '', contact: '', leadTime: 5, rating: 4, status: 'Actif', notes: '' })
-    toast.success(i(`✅ Fournisseur ${newS.name} ajouté !`, `✅ Supplier ${newS.name} added!`, `✅ Proveedor ${newS.name} añadido!`, `✅ Fornitore ${newS.name} aggiunto!`))
+    toast.success(i(`Fournisseur ${newS.name} ajouté !`, `Supplier ${newS.name} added!`, `Proveedor ${newS.name} añadido!`, `Fornitore ${newS.name} aggiunto!`))
     announce(i('Fournisseur ajouté', 'Supplier added', 'Proveedor añadido', 'Fornitore aggiunto'))
   }
 
@@ -197,12 +197,12 @@ export default function Suppliers() {
         catFilter={catFilter} setCatFilter={setCatFilter}
         allCats={allCats}
         onExportCSV={exportSuppliersCSV}
-        onPrintPDF={() => { printSuppliersPDF(); toast.success(i('📄 PDF ouvert !', '📄 PDF opened!', '📄 PDF abierto!', '📄 PDF aperto!')) }}
+        onPrintPDF={() => { printSuppliersPDF(); toast.success(i('PDF ouvert !', 'PDF opened!', 'PDF abierto!', 'PDF aperto!')) }}
         onAdd={() => setShowCreate(true)}
         onView={setViewSupplier}
         onEdit={openEdit}
         onDelete={handleDeleteSupplier}
-        onCall={(s) => toast.success(`📞 ${s.phone}`)}
+        onCall={(s) => toast.success(`${s.phone}`)}
         onOrder={() => navigate('/app/orders')}
       />
 

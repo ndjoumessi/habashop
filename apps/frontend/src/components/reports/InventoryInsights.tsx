@@ -65,7 +65,7 @@ export default function InventoryInsights({ fmt, lang }: Props) {
           ? emptyRow(i('Aucun produit sous le seuil. 👍', 'No product below threshold. 👍', 'Ningún producto bajo el umbral. 👍', 'Nessun prodotto sotto la soglia. 👍'))
           : (
             <div className="table-wrap data-table">
-              <table>
+              <table aria-label={i('À réapprovisionner', 'To reorder', 'Para reabastecer', 'Da riordinare')}>
                 <thead>
                   <tr>
                     <th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th>
@@ -120,7 +120,7 @@ export default function InventoryInsights({ fmt, lang }: Props) {
           ? emptyRow(i('Aucun stock dormant. 👍', 'No dormant stock. 👍', 'Sin stock inactivo. 👍', 'Nessuna scorta dormiente. 👍'))
           : (
             <div className="table-wrap data-table">
-              <table>
+              <table aria-label={i('Produits dormants', 'Dormant products', 'Productos inactivos', 'Prodotti dormienti')}>
                 <thead>
                   <tr>
                     <th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th>

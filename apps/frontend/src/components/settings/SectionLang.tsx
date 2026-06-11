@@ -5,6 +5,16 @@ import { type L4, makeI, pick, panel, Head } from '@/components/settings/setting
 import { tenantApi } from '@/lib/api'
 import { Check, Lock, Globe, Coins, Palette } from 'lucide-react'
 
+// Noms humains des couleurs d'accent (a11y : aria-label lisible, pas le hex) — keyed sur ACCENT_PAIRS.
+const ACCENT_NAMES: Record<string, Record<L4, string>> = {
+  '#5B4EE8': { fr: 'Violet', en: 'Violet', es: 'Violeta', it: 'Viola' },
+  '#3B82F6': { fr: 'Bleu', en: 'Blue', es: 'Azul', it: 'Blu' },
+  '#10B981': { fr: 'Vert', en: 'Green', es: 'Verde', it: 'Verde' },
+  '#F59E0B': { fr: 'Orange', en: 'Orange', es: 'Naranja', it: 'Arancione' },
+  '#EF4444': { fr: 'Rouge', en: 'Red', es: 'Rojo', it: 'Rosso' },
+  '#EC4899': { fr: 'Rose', en: 'Pink', es: 'Rosa', it: 'Rosa' },
+}
+
 // Affichage LECTURE SEULE d'un réglage géré par l'admin (langue ou devise active) + note.
 function ReadOnlyValue({ flag, value, note }: { flag: string; value: string; note: string }) {
   return (
@@ -61,16 +71,16 @@ export default function SectionLang() {
             {LANGS.map(l => {
               const active = lang === l.code
               return (
-                <button key={l.code} type="button" onClick={() => {
+                <button key={l.code} type="button" aria-pressed={active} onClick={() => {
                   cfg.setLang(l.code as Lang)
                   tenantApi.update({ lang: l.code }).catch(() => {})
                 }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '14px 16px', borderRadius: 12,
-                    background: active ? 'rgba(108,71,255,.10)' : 'var(--bg3)',
+                    background: active ? 'color-mix(in srgb, var(--p) 10%, transparent)' : 'var(--bg3)',
                     border: `1.5px solid ${active ? 'var(--p)' : 'var(--border)'}`,
-                    boxShadow: active ? '0 0 0 3px rgba(108,71,255,.20)' : 'none',
+                    boxShadow: active ? '0 0 0 3px color-mix(in srgb, var(--p) 20%, transparent)' : 'none',
                     cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)',
                     transition: 'all .15s',
                   }}>
@@ -117,7 +127,7 @@ export default function SectionLang() {
           {CURRENCIES.map(c => {
             const active = currency === c.code
             return (
-              <button key={c.code} type="button" onClick={() => {
+              <button key={c.code} type="button" aria-pressed={active} onClick={() => {
                 // Option C : devise = setting TENANT (admin only ici). On met à jour le
                 // store local pour un retour immédiat ET on pousse au tenant ; setTenant
                 // restaurera cette devise pour tous les membres à chaque /me.
@@ -179,9 +189,9 @@ export default function SectionLang() {
                 const active = cfg.theme === key
                 const tbg = th.vars['--bg']; const tp = th.vars['--p']; const tacc = th.vars['--acc2']; const ttext = th.vars['--text']
                 return (
-                  <button key={key} type="button" onClick={() => cfg.updateConfig({ theme: key })}
+                  <button key={key} type="button" aria-pressed={active} onClick={() => cfg.updateConfig({ theme: key })}
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', borderRadius: 14, background: active ? `${tp}18` : 'var(--bg3)', border: `2px solid ${active ? tp + '66' : 'var(--border)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
-                    {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: tp, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff', fontWeight: 'var(--fw-regular)' }}>✓</div>}
+                    {active && <div style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: '50%', background: tp, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Check size={11} /></div>}
                     <div style={{ width: 72, height: 46, borderRadius: 9, background: tbg, border: '1px solid var(--border)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16, background: tp + '33', borderRight: `1px solid ${tp}22` }} />
                       <div style={{ position: 'absolute', left: 20, top: 6, right: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -210,7 +220,9 @@ export default function SectionLang() {
             </div>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', opacity: cfg.theme === 'gold' ? 0.4 : 1, pointerEvents: cfg.theme === 'gold' ? 'none' : 'auto', transition: 'opacity .2s' }}>
               {Object.keys(ACCENT_PAIRS).map(hex => (
-                <button key={hex} type="button" disabled={cfg.theme === 'gold'} onClick={() => cfg.updateConfig({ accentColor: hex })} aria-label={hex}
+                <button key={hex} type="button" disabled={cfg.theme === 'gold'} onClick={() => cfg.updateConfig({ accentColor: hex })}
+                  aria-pressed={cfg.accentColor === hex}
+                  aria-label={pick(lang, ACCENT_NAMES[hex] ?? { fr: hex, en: hex, es: hex, it: hex })}
                   style={{ width: 36, height: 36, borderRadius: 10, background: hex, border: 'none', cursor: cfg.theme === 'gold' ? 'not-allowed' : 'pointer', outline: cfg.accentColor === hex ? `3px solid ${hex}` : '3px solid transparent', outlineOffset: 2, boxShadow: cfg.accentColor === hex ? `0 0 0 2px rgba(255,255,255,.25)` : 'none', transition: 'all .15s', transform: cfg.accentColor === hex ? 'scale(1.12)' : 'none' }} />
               ))}
             </div>

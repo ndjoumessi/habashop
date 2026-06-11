@@ -184,7 +184,7 @@ export default function Stock() {
           barcode: form.barcode, description: form.description, notes: form.notes,
         } : p
       ))
-      toast.success(`✅ ${form.name} mis à jour !`)
+      toast.success(`${form.name} mis à jour !`)
       announce(`${form.name} ${lang === 'en' ? 'updated' : lang === 'es' ? 'actualizado' : lang === 'it' ? 'aggiornato' : 'mis à jour'}`)
     } else {
       let apiId: string | undefined
@@ -208,7 +208,7 @@ export default function Stock() {
         barcode: form.barcode,
         description: form.description, notes: form.notes,
       }])
-      toast.success('✅ Produit ajouté !')
+      toast.success('Produit ajouté !')
       announce(lang === 'en' ? 'Product added' : lang === 'es' ? 'Producto agregado' : lang === 'it' ? 'Prodotto aggiunto' : 'Produit ajouté')
     }
     setShowModal(false)
@@ -244,10 +244,10 @@ export default function Stock() {
       }
     }
     setProducts(prev => prev.filter(x => x.sku !== p.sku))
-    toast.success(lang === 'en' ? `🗑️ "${p.name}" deleted`
-                : lang === 'es' ? `🗑️ "${p.name}" eliminado`
-                : lang === 'it' ? `🗑️ "${p.name}" eliminato`
-                : `🗑️ « ${p.name} » supprimé`)
+    toast.success(lang === 'en' ? `"${p.name}" deleted`
+                : lang === 'es' ? `"${p.name}" eliminado`
+                : lang === 'it' ? `"${p.name}" eliminato`
+                : `« ${p.name} » supprimé`)
     announce(lang === 'en' ? 'Product deleted' : lang === 'es' ? 'Producto eliminado' : lang === 'it' ? 'Prodotto eliminato' : 'Produit supprimé')
   }
 
@@ -279,7 +279,7 @@ export default function Stock() {
           </div>
           <button className="btn btn-sm"
             style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)' }}
-            onClick={() => toast(lang === 'en' ? '📦 Bulk purchase order created' : lang === 'es' ? '📦 Pedido agrupado creado' : lang === 'it' ? '📦 Ordine raggruppato creato' : '📦 Bon de commande groupé créé')}>
+            onClick={() => toast(lang === 'en' ? 'Bulk purchase order created' : lang === 'es' ? 'Pedido agrupado creado' : lang === 'it' ? 'Ordine raggruppato creato' : 'Bon de commande groupé créé')}>
             {lang === 'en' ? 'Order' : lang === 'es' ? 'Pedir' : lang === 'it' ? 'Ordina' : 'Commander'}
           </button>
         </div>

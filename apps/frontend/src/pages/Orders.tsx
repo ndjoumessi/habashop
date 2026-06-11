@@ -167,8 +167,8 @@ export default function Orders() {
     setOrders(prev => [newOrder, ...prev])
     setShowNewOrderModal(false)
     toast.success(orderType === 'client'
-      ? i(`✅ Commande créée — ${fmt(total)}`, `✅ Order created — ${fmt(total)}`, `✅ Pedido creado — ${fmt(total)}`, `✅ Ordine creato — ${fmt(total)}`)
-      : i(`📦 Bon de commande envoyé à ${supplierObj?.name}`, `📦 PO sent to ${supplierObj?.name}`, `📦 Orden enviada a ${supplierObj?.name}`, `📦 Ordine inviato a ${supplierObj?.name}`)
+      ? i(`Commande créée — ${fmt(total)}`, `Order created — ${fmt(total)}`, `Pedido creado — ${fmt(total)}`, `Ordine creato — ${fmt(total)}`)
+      : i(`Bon de commande envoyé à ${supplierObj?.name}`, `PO sent to ${supplierObj?.name}`, `Orden enviada a ${supplierObj?.name}`, `Ordine inviato a ${supplierObj?.name}`)
     )
     announce(orderType === 'client'
       ? i('Commande créée', 'Order created', 'Pedido creado', 'Ordine creato')

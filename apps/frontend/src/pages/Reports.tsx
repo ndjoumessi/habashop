@@ -125,7 +125,7 @@ export default function Reports() {
       const fromStr = new Date(range.from).toISOString().slice(0, 10)
       const toStr = new Date(range.to).toISOString().slice(0, 10)
       writeXlsx(`HabaShop_Rapports_${fromStr}_${toStr}`, sheets)
-      toast.success(i('📊 Excel téléchargé !', '📊 Excel downloaded!', '📊 ¡Excel descargado!', '📊 Excel scaricato!'))
+      toast.success(i('Excel téléchargé !', 'Excel downloaded!', '¡Excel descargado!', 'Excel scaricato!'))
     } catch {
       toast.error(i('Échec de l\'export Excel', 'Excel export failed', 'Error al exportar Excel', 'Esportazione Excel fallita'))
     }
@@ -276,7 +276,7 @@ export default function Reports() {
                     ['Période','CA','Marge','Transactions','Panier moyen'],
                     [[periodLabel, data.ca, data.margin, data.transactions, data.avgCart]]
                   )
-                  toast.success('📊 Export CSV téléchargé !')
+                  toast.success('Export CSV téléchargé !')
                 }}>
                 <FileText size={15} style={{ color: 'var(--acc)' }} /> {i('Exporter CSV', 'Export CSV', 'Exportar CSV', 'Esporta CSV')}
               </button>
@@ -303,7 +303,7 @@ export default function Reports() {
                     )}
                   `
                   openPDF(`${t('report_pdf_title')} — ${periodLabel}`, body)
-                  toast.success('📄 PDF ouvert !')
+                  toast.success('PDF ouvert !')
                 }}>
                 <FileText size={15} style={{ color: 'var(--danger)' }} /> {i('Exporter PDF', 'Export PDF', 'Exportar PDF', 'Esporta PDF')}
               </button>

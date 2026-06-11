@@ -250,10 +250,10 @@ export default function HR() {
       }, ...prev])
 
       toast.success(i(
-        `✅ Salaire mis à jour : ${fmt(newSalaryXOF)}`,
-        `✅ Salary updated: ${fmt(newSalaryXOF)}`,
-        `✅ Salario actualizado: ${fmt(newSalaryXOF)}`,
-        `✅ Stipendio aggiornato: ${fmt(newSalaryXOF)}`,
+        `Salaire mis à jour : ${fmt(newSalaryXOF)}`,
+        `Salary updated: ${fmt(newSalaryXOF)}`,
+        `Salario actualizado: ${fmt(newSalaryXOF)}`,
+        `Stipendio aggiornato: ${fmt(newSalaryXOF)}`,
       ))
       setShowSalaryModal(false)
     } catch (err: any) {
@@ -301,17 +301,17 @@ export default function HR() {
     if (failed === 0 && created.length > 0) {
       if (_empId === 'all') {
         toast.success(i(
-          `✅ Prime collective ${fmt(amountXOF)} (${created.length})`,
-          `✅ Group bonus ${fmt(amountXOF)} (${created.length})`,
-          `✅ Prima colectiva ${fmt(amountXOF)} (${created.length})`,
-          `✅ Premio collettivo ${fmt(amountXOF)} (${created.length})`,
+          `Prime collective ${fmt(amountXOF)} (${created.length})`,
+          `Group bonus ${fmt(amountXOF)} (${created.length})`,
+          `Prima colectiva ${fmt(amountXOF)} (${created.length})`,
+          `Premio collettivo ${fmt(amountXOF)} (${created.length})`,
         ))
       } else {
         toast.success(i(
-          `✅ Prime de ${fmt(amountXOF)} ajoutée`,
-          `✅ Bonus of ${fmt(amountXOF)} added`,
-          `✅ Prima de ${fmt(amountXOF)} añadida`,
-          `✅ Premio di ${fmt(amountXOF)} aggiunto`,
+          `Prime de ${fmt(amountXOF)} ajoutée`,
+          `Bonus of ${fmt(amountXOF)} added`,
+          `Prima de ${fmt(amountXOF)} añadida`,
+          `Premio di ${fmt(amountXOF)} aggiunto`,
         ))
       }
       setShowSalaryModal(false)
@@ -454,7 +454,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
         generatePayslipPDF(emp, { brut, bonus, cnss, ir, net, month: payrollMonth })
       }, i * 300)
     })
-    toast.success(lang === 'en' ? `📄 ${actifs.length} payslips generated!` : lang === 'es' ? `📄 ${actifs.length} nóminas generadas !` : lang === 'it' ? `📄 ${actifs.length} buste paga generate !` : `📄 ${actifs.length} bulletins générés !`)
+    toast.success(lang === 'en' ? `${actifs.length} payslips generated!` : lang === 'es' ? `${actifs.length} nóminas generadas !` : lang === 'it' ? `${actifs.length} buste paga generate !` : `${actifs.length} bulletins générés !`)
   }
 
   // Phase 6 — approbation/refus via l'API. Le backend /approve crée déjà le Shift Congé +
@@ -466,8 +466,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
     try {
       await (status === 'approved' ? leaveRequestsApi.approve(id) : leaveRequestsApi.refuse(id))
       toast.success(status === 'approved'
-        ? (lang === 'en' ? '✅ Leave approved' : lang === 'es' ? '✅ Permiso aprobado' : lang === 'it' ? '✅ Ferie approvate' : '✅ Congé approuvé')
-        : (lang === 'en' ? '❌ Leave refused' : lang === 'es' ? '❌ Permiso rechazado' : lang === 'it' ? '❌ Ferie rifiutate' : '❌ Congé refusé'))
+        ? (lang === 'en' ? 'Leave approved' : lang === 'es' ? 'Permiso aprobado' : lang === 'it' ? 'Ferie approvate' : 'Congé approuvé')
+        : (lang === 'en' ? 'Leave refused' : lang === 'es' ? 'Permiso rechazado' : lang === 'it' ? 'Ferie rifiutate' : 'Congé refusé'))
       announce(status === 'approved'
         ? (lang === 'en' ? 'Leave approved' : lang === 'es' ? 'Permiso aprobado' : lang === 'it' ? 'Ferie approvate' : 'Congé approuvé')
         : (lang === 'en' ? 'Leave refused' : lang === 'es' ? 'Permiso rechazado' : lang === 'it' ? 'Ferie rifiutate' : 'Congé refusé'))
@@ -488,7 +488,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       // empName depuis l'employé local si l'API ne le renvoie pas
       if (!created.empName) created.empName = employees.find(e => String(e.id) === String(form.empId))?.name
       setLeaves(p => [created, ...p])
-      toast.success('✅ ' + (lang === 'en' ? 'Request submitted!' : lang === 'es' ? '¡Solicitud enviada!' : lang === 'it' ? 'Richiesta inviata!' : 'Demande soumise !'))
+      toast.success(lang === 'en' ? 'Request submitted!' : lang === 'es' ? '¡Solicitud enviada!' : lang === 'it' ? 'Richiesta inviata!' : 'Demande soumise !')
     } catch {
       toast.error(lang === 'en' ? 'Submission failed' : lang === 'es' ? 'Envío fallido' : lang === 'it' ? 'Invio fallito' : 'Échec de la soumission')
     }

@@ -189,7 +189,7 @@ export default function POS() {
     )
     if (found) {
       addItem(found)
-      toast.success(`📦 ${found.name} scanné`)
+      toast.success(`${found.name} scanné`)
     } else {
       toast.error(`Produit non trouvé: ${barcode}`)
     }
@@ -376,15 +376,15 @@ export default function POS() {
           discount:    discountAmount > 0 ? Math.round(discountAmount) : undefined,
           reference:   `V${Date.now().toString().slice(-6)}`,
         })
-        toast.success(lang === 'en' ? `📱 Receipt sent to ${fullPhone}` : lang === 'es' ? `📱 Recibo enviado al ${fullPhone}` : lang === 'it' ? `📱 Ricevuta inviata al ${fullPhone}` : `📱 Ticket envoyé au ${fullPhone}`)
+        toast.success(lang === 'en' ? `Receipt sent to ${fullPhone}` : lang === 'es' ? `Recibo enviado al ${fullPhone}` : lang === 'it' ? `Ricevuta inviata al ${fullPhone}` : `Ticket envoyé au ${fullPhone}`)
       } catch (err: any) {
         const msg = err.message?.includes('inscrit sur WhatsApp')
-          ? (lang === 'en' ? `❌ ${fullPhone} is not on WhatsApp` : lang === 'es' ? `❌ ${fullPhone} no está en WhatsApp` : lang === 'it' ? `❌ ${fullPhone} non è su WhatsApp` : `❌ ${fullPhone} n'est pas sur WhatsApp`)
+          ? (lang === 'en' ? `${fullPhone} is not on WhatsApp` : lang === 'es' ? `${fullPhone} no está en WhatsApp` : lang === 'it' ? `${fullPhone} non è su WhatsApp` : `${fullPhone} n'est pas sur WhatsApp`)
           : err.message?.includes('invalide') || err.message?.includes('Format')
-            ? (lang === 'en' ? '❌ Invalid phone format' : lang === 'es' ? '❌ Formato de número inválido' : lang === 'it' ? '❌ Formato numero non valido' : '❌ Format de numéro invalide')
+            ? (lang === 'en' ? 'Invalid phone format' : lang === 'es' ? 'Formato de número inválido' : lang === 'it' ? 'Formato numero non valido' : 'Format de numéro invalide')
             : err.message?.includes('Authentification')
-              ? (lang === 'en' ? '❌ Twilio config error' : lang === 'es' ? '❌ Error de configuración Twilio' : lang === 'it' ? '❌ Errore configurazione Twilio' : '❌ Erreur configuration Twilio')
-              : `❌ ${err.message ?? 'Échec envoi WhatsApp'}`
+              ? (lang === 'en' ? 'Twilio config error' : lang === 'es' ? 'Error de configuración Twilio' : lang === 'it' ? 'Errore configurazione Twilio' : 'Erreur configuration Twilio')
+              : `${err.message ?? 'Échec envoi WhatsApp'}`
         toast.error(msg)
       } finally {
         setWaSending(false)
@@ -392,7 +392,7 @@ export default function POS() {
     }
 
     addCashierSale(total)
-    toast.success('✅ Vente encaissée !')
+    toast.success('Vente encaissée !')
     announce(lang === 'en' ? 'Sale completed' : lang === 'es' ? 'Venta registrada' : lang === 'it' ? 'Vendita registrata' : 'Vente encaissée')
     if (posAutoprint) printTicket() // impression auto si config POS — avant le vidage du panier
     // On NE vide PAS le panier ici : on ouvre la modale de SUCCÈS (récap + « Imprimer le reçu »
@@ -434,7 +434,7 @@ export default function POS() {
         locale={locale}
         onOpen={() => {
           openCashier(inputValue)
-          toast.success(`✅ ${ct.cashier_label} ouverte — Fond: ${displayFund}`)
+          toast.success(`${ct.cashier_label} ouverte — Fond: ${displayFund}`)
         }}
       />
     )

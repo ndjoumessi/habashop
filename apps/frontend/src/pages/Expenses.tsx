@@ -28,10 +28,10 @@ export default function Expenses() {
     try {
       const sales = await salesApi.list()
       exportAccountingExcel({ sales: sales ?? [], expenses, period, shopName, currency, lang })
-      toast.success(tr('📊 Export comptable téléchargé !', '📊 Accounting export downloaded!', '📊 ¡Exportación contable descargada!', '📊 Esportazione contabile scaricata!'))
+      toast.success(tr('Export comptable téléchargé !', 'Accounting export downloaded!', '¡Exportación contable descargada!', 'Esportazione contabile scaricata!'))
     } catch {
       exportAccountingExcel({ sales: [], expenses, period, shopName, currency, lang })
-      toast.success(tr('📊 Export téléchargé (dépenses uniquement)', '📊 Export downloaded (expenses only)', '📊 Exportación descargada (solo gastos)', '📊 Esportazione scaricata (solo spese)'))
+      toast.success(tr('Export téléchargé (dépenses uniquement)', 'Export downloaded (expenses only)', 'Exportación descargada (solo gastos)', 'Esportazione scaricata (solo spese)'))
     }
   }
 
@@ -146,7 +146,7 @@ export default function Expenses() {
        tr('Récurrent','Recurring','Recurrente','Ricorrente'), tr('Statut','Status','Estado','Stato')],
       expenses.map(e => [e.date, e.label, e.category, cv(e.amount), e.vat + ' %', cv(Math.round(e.amount * (1 + e.vat / 100))), e.mode, e.recurrent ? tr('Oui','Yes','Sí','Sì') : tr('Non','No','No','No'), e.status])
     )
-    toast.success(tr('📊 Export dépenses téléchargé !','📊 Expenses export downloaded!','📊 ¡Exportación de gastos descargada!','📊 Esportazione spese scaricata!'))
+    toast.success(tr('Export dépenses téléchargé !','Expenses export downloaded!','¡Exportación de gastos descargada!','Esportazione spese scaricata!'))
   }
 
   async function markPaid(id: number) {
@@ -215,7 +215,7 @@ export default function Expenses() {
         : e
     ))
     setExpEditMode(false)
-    toast.success(`✅ ${lang === 'en' ? 'Expense updated' : lang === 'es' ? 'Gasto modificado' : lang === 'it' ? 'Spesa modificata' : 'Dépense modifiée'}`)
+    toast.success(`${lang === 'en' ? 'Expense updated' : lang === 'es' ? 'Gasto modificado' : lang === 'it' ? 'Spesa modificata' : 'Dépense modifiée'}`)
   }
 
   const catSpent: Record<Category, number> = CATEGORIES.reduce((acc, cat) => {
@@ -266,7 +266,7 @@ export default function Expenses() {
           statFilter={statFilter} setStatFilter={setStatFilter}
           onAdd={() => setAddOpen(true)}
           onAccountingExport={handleAccountingExport}
-          onPrintPDF={() => { printExpensesPDF(); toast.success('📄 PDF ouvert !') }}
+          onPrintPDF={() => { printExpensesPDF(); toast.success('PDF ouvert !') }}
           onCSVExport={csvExport}
           onMarkPaid={markPaid}
           onDelete={deleteExpense}

@@ -96,7 +96,7 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
               active: true, phone:'', email:'', perf:3,
             }
             setEmployees(prev=>[...prev, newEmp])
-            toast.success('✅ '+(lang === 'en' ? 'Contract created!' : lang === 'es' ? '¡Contrato creado!' : lang === 'it' ? 'Contratto creato!' : 'Contrat créé !'))
+            toast.success(lang === 'en' ? 'Contract created!' : lang === 'es' ? '¡Contrato creado!' : lang === 'it' ? 'Contratto creato!' : 'Contrat créé !')
             setShowNewContractModal(false)
           }}>✅ {lang === 'en' ? 'Create contract' : lang === 'es' ? 'Crear el contrato' : lang === 'it' ? 'Crea il contratto' : 'Créer le contrat'}</button>
         </div>

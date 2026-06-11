@@ -142,7 +142,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   if (discountForm.type === 'percent' && discountForm.value > 100) { toast.error('Max 100 %'); return }
                   setDiscount(discountForm)
                   setShowDiscountModal(false)
-                  toast.success(`🏷️ Remise de ${discountForm.type === 'percent' ? discountForm.value + ' %' : fmt(discountForm.value)} appliquée`)
+                  toast.success(`Remise de ${discountForm.type === 'percent' ? discountForm.value + ' %' : fmt(discountForm.value)} appliquée`)
                 }}>
                 Appliquer la remise
               </button>

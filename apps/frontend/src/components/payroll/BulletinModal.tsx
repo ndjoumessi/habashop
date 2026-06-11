@@ -1,6 +1,6 @@
 import { useConfig } from '@/stores/appStore'
 import { useModalFocus } from '@/hooks/useModalFocus'
-import { X, CheckCircle, Printer, Download } from 'lucide-react'
+import { X, CheckCircle, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { monthLabel, roleLabel, statusLabel, printBulletin, payrollBreakdown } from './payrollShared'
 import type { PayRecord } from './payrollShared'
@@ -162,7 +162,9 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
               marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border)',
             }}>{lang === 'en' ? 'DEDUCTIONS' : lang === 'es' ? 'DEDUCCIONES' : lang === 'it' ? 'DETRAZIONI' : 'RETENUES'}</div>
             {([
-              { label:`${lang === 'en' ? 'CNSS employee' : lang === 'es' ? 'CNSS empleado' : lang === 'it' ? 'CNSS dipendente' : 'CNSS employé'} (5,6 %)`,     taux:'5,6 %', montant: bd.cnss },
+              // CNSS affichée UNIQUEMENT si des retenues sont réellement comprises dans le total
+              // (deductions === 0 → la CNSS n'est pas retenue : l'afficher fausserait lignes ≠ total).
+              ...(record.deductions > 0 ? [{ label:`${lang === 'en' ? 'CNSS employee' : lang === 'es' ? 'CNSS empleado' : lang === 'it' ? 'CNSS dipendente' : 'CNSS employé'} (5,6 %)`,     taux:'5,6 %', montant: bd.cnss }] : []),
               { label:lang === 'en' ? 'Income tax (IRPP)' : lang === 'es' ? 'Impuesto salarial (IRPP)' : lang === 'it' ? 'Imposta sul reddito (IRPP)' : 'Impôt sur salaire (IRPP)', taux:'',      montant: bd.irpp },
               ...(record.absences > 0 ? [{ label:`${lang === 'en' ? 'Absence' : lang === 'es' ? 'Ausencia' : lang === 'it' ? 'Assenza' : 'Absence'} (${record.absences}j)`, taux:'', montant: bd.absencePenalty }] : []),
             ] as { label:string; taux:string; montant:number }[])
@@ -217,26 +219,25 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
           padding:'16px 28px', borderTop:'1px solid var(--border)',
           display:'flex', gap:10, background:'var(--bg3)',
         }}>
-          <button
-            onClick={() => { onPay(record.id); onClose() }}
-            style={{
-              flex:1, background:'linear-gradient(135deg, var(--acc2), #059669)',
-              border:'none', borderRadius:10, padding:'11px',
-              fontSize:13, fontWeight:'var(--fw-semibold)', color:'#fff',
-              cursor:'pointer', fontFamily:'inherit',
-              boxShadow:'0 4px 14px rgba(14,196,126,.3)',
-            }}
-          ><CheckCircle size={14} style={{ verticalAlign:'middle', marginRight:5 }}/> {lang === 'en' ? 'Mark as paid' : lang === 'es' ? 'Marcar como pagado' : lang === 'it' ? 'Segna come pagato' : 'Marquer comme payé'}</button>
+          {/* Gating identique à la table paie : « Marquer comme payé » seulement si non payé */}
+          {(record.status === 'EN ATTENTE' || record.status === 'GÉNÉRÉ') && (
+            <button
+              onClick={() => { onPay(record.id); onClose() }}
+              style={{
+                flex:1, background:'linear-gradient(135deg, var(--acc2), #059669)',
+                border:'none', borderRadius:10, padding:'11px',
+                fontSize:13, fontWeight:'var(--fw-semibold)', color:'#fff',
+                cursor:'pointer', fontFamily:'inherit',
+                boxShadow:'0 4px 14px rgba(14,196,126,.3)',
+              }}
+            ><CheckCircle size={14} style={{ verticalAlign:'middle', marginRight:5 }}/> {lang === 'en' ? 'Mark as paid' : lang === 'es' ? 'Marcar como pagado' : lang === 'it' ? 'Segna come pagato' : 'Marquer comme payé'}</button>
+          )}
+          {/* « Imprimer » et « PDF » faisaient la même chose (printBulletin) → un seul bouton */}
           <button
             className="mini-btn"
-            onClick={() => { printBulletin(record); toast.success(lang === 'en' ? '📄 PDF opened!' : lang === 'es' ? '📄 ¡PDF abierto!' : lang === 'it' ? '📄 PDF aperto!' : '📄 PDF ouvert !') }}
+            onClick={() => { printBulletin(record); toast.success(lang === 'en' ? 'PDF opened!' : lang === 'es' ? '¡PDF abierto!' : lang === 'it' ? 'PDF aperto!' : 'PDF ouvert !') }}
             style={{ padding:'11px 16px', fontSize:13, display:'flex', alignItems:'center', gap:5 }}
-          ><Printer size={13}/> {lang === 'en' ? 'Print' : lang === 'es' ? 'Imprimir' : lang === 'it' ? 'Stampa' : 'Imprimer'}</button>
-          <button
-            className="mini-btn"
-            onClick={() => { printBulletin(record); toast.success(lang === 'en' ? '📄 PDF opened!' : lang === 'es' ? '📄 ¡PDF abierto!' : lang === 'it' ? '📄 PDF aperto!' : '📄 PDF ouvert !') }}
-            style={{ padding:'11px 16px', fontSize:13, display:'flex', alignItems:'center', gap:5 }}
-          ><Download size={13}/> PDF</button>
+          ><Printer size={13}/> {lang === 'en' ? 'Print PDF' : lang === 'es' ? 'Imprimir PDF' : lang === 'it' ? 'Stampa PDF' : 'Imprimer PDF'}</button>
         </div>
 
       </div>

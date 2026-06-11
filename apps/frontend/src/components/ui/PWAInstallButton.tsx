@@ -40,10 +40,10 @@ export default function PWAInstallButton() {
       setIsInstalled(true)
       setShowBanner(false)
       toast.success(
-        lang === 'fr' ? '✅ HabaShop installé !'
-        : lang === 'en' ? '✅ HabaShop installed!'
-        : lang === 'es' ? '✅ HabaShop instalado!'
-        : '✅ HabaShop installato!'
+        lang === 'fr' ? 'HabaShop installé !'
+        : lang === 'en' ? 'HabaShop installed!'
+        : lang === 'es' ? 'HabaShop instalado!'
+        : 'HabaShop installato!'
       )
     }
     setDeferredPrompt(null)

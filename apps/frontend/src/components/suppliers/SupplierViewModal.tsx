@@ -55,7 +55,7 @@ export default function SupplierViewModal({ supplier, onClose, onNewOrder }: Pro
         <div className="mb-4">
           <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text3)' }}>{i('Historique commandes', 'Order history', 'Historial de pedidos', 'Storico ordini')}</div>
           <div className="table-wrap">
-            <table>
+            <table aria-label={i('Historique commandes', 'Order history', 'Historial de pedidos', 'Storico ordini')}>
               <thead><tr><th scope="col">{i('Référence', 'Reference', 'Referencia', 'Riferimento')}</th><th scope="col">{i('Date', 'Date', 'Fecha', 'Data')}</th><th scope="col">{i('Montant', 'Amount', 'Importe', 'Importo')}</th><th scope="col">{t('col_status')}</th></tr></thead>
               <tbody>
                 {supplier.orders.map(o => (

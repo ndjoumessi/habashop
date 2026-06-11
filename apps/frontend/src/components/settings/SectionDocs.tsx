@@ -2,6 +2,7 @@ import type React from 'react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
+import { confirm } from '@/lib/confirm'
 import { ClipboardList, Download, Upload, Calculator, BookOpen, Printer, RotateCcw } from 'lucide-react'
 import { useConfig } from '@/stores/appStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
@@ -20,12 +21,12 @@ export default function SectionDocs() {
     const a = document.createElement('a')
     a.href = url; a.download = `habashop-config-${new Date().toISOString().split('T')[0]}.json`; a.click()
     URL.revokeObjectURL(url)
-    toast.success(i('📥 Configuration exportée', '📥 Configuration exported', '📥 Configuración exportada', '📥 Configurazione esportata'))
+    toast.success(i('Configuration exportée', 'Configuration exported', 'Configuración exportada', 'Configurazione esportata'))
   }
   const importConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
-    reader.onload = ev => { cfg.importConfig(ev.target?.result as string); toast.success(i('✅ Configuration importée', '✅ Configuration imported', '✅ Configuración importada', '✅ Configurazione importata')) }
+    reader.onload = ev => { cfg.importConfig(ev.target?.result as string); toast.success(i('Configuration importée', 'Configuration imported', 'Configuración importada', 'Configurazione importata')) }
     reader.readAsText(file)
   }
 
@@ -35,7 +36,17 @@ export default function SectionDocs() {
     { icon: <Calculator size={18} />, color: 'var(--warn)', label: { fr: 'Rapport comptable', en: 'Accounting report', es: 'Reporte contable', it: 'Report contabile' }, desc: { fr: 'Dépenses et revenus du mois', en: 'Monthly expenses and revenue', es: 'Gastos e ingresos del mes', it: 'Spese e ricavi del mese' }, action: () => setShowReport(true) },
     { icon: <BookOpen size={18} />, color: 'var(--p3)', label: { fr: 'Documentation', en: 'Documentation', es: 'Documentación', it: 'Documentazione' }, desc: { fr: 'Dépôt GitHub HabaShop', en: 'HabaShop GitHub repo', es: 'Repo GitHub HabaShop', it: 'Repo GitHub HabaShop' }, action: () => window.open('https://github.com/ndjoumessi/habashop', '_blank') },
     { icon: <Printer size={18} />, color: 'var(--text2)', label: { fr: 'Imprimer la configuration', en: 'Print configuration', es: 'Imprimir configuración', it: 'Stampa configurazione' }, desc: { fr: 'Imprime les paramètres actuels', en: 'Print current settings', es: 'Imprimir ajustes actuales', it: 'Stampa impostazioni correnti' }, action: () => window.print() },
-    { icon: <RotateCcw size={18} />, color: 'var(--danger)', label: { fr: 'Réinitialiser', en: 'Reset', es: 'Restablecer', it: 'Ripristina' }, desc: { fr: 'Restaure les paramètres par défaut', en: 'Restore default settings', es: 'Restaurar ajustes por defecto', it: 'Ripristina impostazioni predefinite' }, action: () => { cfg.resetConfig(); toast.success(i('♻️ Paramètres réinitialisés', '♻️ Settings reset', '♻️ Ajustes restablecidos', '♻️ Impostazioni ripristinate')) } },
+    { icon: <RotateCcw size={18} />, color: 'var(--danger)', label: { fr: 'Réinitialiser', en: 'Reset', es: 'Restablecer', it: 'Ripristina' }, desc: { fr: 'Restaure les paramètres par défaut', en: 'Restore default settings', es: 'Restaurar ajustes por defecto', it: 'Ripristina impostazioni predefinite' }, action: async () => {
+      // Action destructive → confirmation accessible (ConfirmModal) avant le reset.
+      const ok = await confirm({
+        title: i('Réinitialiser les paramètres ?', 'Reset settings?', '¿Restablecer ajustes?', 'Ripristinare le impostazioni?'),
+        message: i('Tous vos paramètres seront restaurés aux valeurs par défaut. Cette action est immédiate.', 'All your settings will be restored to their default values. This action is immediate.', 'Todos tus ajustes se restaurarán a los valores por defecto. Esta acción es inmediata.', 'Tutte le impostazioni saranno ripristinate ai valori predefiniti. Questa azione è immediata.'),
+        confirmLabel: i('Réinitialiser', 'Reset', 'Restablecer', 'Ripristina'),
+        danger: true,
+      })
+      if (!ok) return
+      cfg.resetConfig(); toast.success(i('Paramètres réinitialisés', 'Settings reset', 'Ajustes restablecidos', 'Impostazioni ripristinate'))
+    } },
   ]
 
   return (
@@ -48,8 +59,9 @@ export default function SectionDocs() {
         {DOCS.map(d => (
           <button key={pick(lang, d.label)} type="button" onClick={d.action}
             style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font)', transition: 'all .2s' }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--bg3)'; el.style.borderColor = 'var(--border)'; el.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--bg3)'; el.style.borderColor = 'var(--border)'; el.style.transform = 'none' }}>
+            // hover : seul le lift (transform) a un effet réel — les anciennes réassignations bg/border (no-op) ont été retirées
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none' }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `color-mix(in srgb, ${d.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${d.color} 18%, transparent)`, color: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{d.icon}</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 3 }}>{pick(lang, d.label)}</div>

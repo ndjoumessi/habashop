@@ -260,7 +260,7 @@ export default function Marketing() {
     try {
       const res = await marketingApi.broadcast({ phones, message, lang }) as { sent: number; failed: number; errors?: string[] }
       setResult(res)
-      toast.success(`✅ ${res.sent} ${res.sent > 1 ? mk.word_messages : mk.word_message} ${mk.sent_toast} !`)
+      toast.success(`${res.sent} ${res.sent > 1 ? mk.word_messages : mk.word_message} ${mk.sent_toast} !`)
       setSelected(new Set())
     } catch (err: any) {
       toast.error(err.message ?? mk.err_send)

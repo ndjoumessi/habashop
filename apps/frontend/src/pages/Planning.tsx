@@ -224,7 +224,7 @@ export default function Planning() {
     const a = document.createElement('a')
     a.href=url; a.download=`Planning_${ymd(days[0])}.csv`; a.click()
     URL.revokeObjectURL(url)
-    toast.success(lang === 'en' ? '📊 Schedule exported!' : lang === 'es' ? '📊 ¡Planificación exportada!' : lang === 'it' ? '📊 Pianificazione esportata!' : '📊 Planning exporté !')
+    toast.success(lang === 'en' ? 'Schedule exported!' : lang === 'es' ? '¡Planificación exportada!' : lang === 'it' ? 'Pianificazione esportata!' : 'Planning exporté !')
   }
 
   // Résumé de la semaine affichée (dérivé de la vue di).

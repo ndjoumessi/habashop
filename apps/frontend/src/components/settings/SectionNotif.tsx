@@ -107,6 +107,7 @@ export default function SectionNotif() {
                'Riepilogo vendite (20) e avviso scorte (8) inviati a questo numero. Lasciare vuoto per disattivare.')}
           </div>
           <input className="input" type="tel" value={ownerPhone} placeholder="+221 77 123 45 67"
+            aria-label={i('Numéro WhatsApp du gérant', "Owner's WhatsApp number", 'Número WhatsApp del gerente', 'Numero WhatsApp del gestore')}
             style={{ maxWidth: 260 }}
             onChange={e => setOwnerPhone(e.target.value)}
             onBlur={() => {

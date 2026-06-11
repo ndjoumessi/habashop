@@ -53,7 +53,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
 
         {/* Lignes */}
         <div className="table-wrap data-table mb-4">
-          <table>
+          <table aria-label={i('Lignes de la commande', 'Order lines', 'Líneas del pedido', "Righe dell'ordine")}>
             <thead>
               <tr><th scope="col">{i('Produit', 'Product', 'Producto', 'Prodotto')}</th><th scope="col">{i('Qté', 'Qty', 'Cant.', 'Qtà')}</th><th scope="col">{i('Unité', 'Unit', 'Unidad', 'Unità')}</th><th scope="col">{i('PU', 'UP', 'PU', 'PU')}</th><th scope="col">{i('Total', 'Total', 'Total', 'Totale')}</th></tr>
             </thead>
@@ -104,7 +104,7 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
               <XCircle size={14}/> {i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}
             </button>
           )}
-          <button className="btn btn-ghost" style={{ display:'flex', alignItems:'center', gap:6 }} onClick={() => { printOrderPDF(order); toast.success(i('📄 PDF ouvert !', '📄 PDF opened!', '📄 ¡PDF abierto!', '📄 PDF aperto!')) }}><Printer size={14}/> PDF</button>
+          <button className="btn btn-ghost" style={{ display:'flex', alignItems:'center', gap:6 }} onClick={() => { printOrderPDF(order); toast.success(i('PDF ouvert !', 'PDF opened!', '¡PDF abierto!', 'PDF aperto!')) }}><Printer size={14}/> PDF</button>
         </div>
       </div>
     </div>

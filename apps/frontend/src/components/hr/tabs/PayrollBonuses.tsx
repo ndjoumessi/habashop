@@ -72,7 +72,7 @@ export default function PayrollBonuses({ employees, fmt, lang, bonuses, setBonus
           </div>
         ) : (
           <div className="table-wrap">
-            <table>
+            <table aria-label={lang === 'en' ? 'Monthly bonuses' : lang === 'es' ? 'Primas del mes' : lang === 'it' ? 'Premi del mese' : 'Primes du mois'}>
               <thead>
                 <tr>
                   <th scope="col">{lang === 'en' ? 'EMPLOYEE' : lang === 'es' ? 'EMPLEADO' : lang === 'it' ? 'DIPENDENTE' : 'EMPLOYÉ'}</th>

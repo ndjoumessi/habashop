@@ -49,7 +49,7 @@ export default function PlanningGrid(props: Props) {
         overflow:'hidden', clip:'rect(0 0 0 0)', whiteSpace:'nowrap', border:0,
       }}>{announce}</div>
       <div style={{overflowX:'auto'}}>
-        <table style={{
+        <table aria-label={T.title} style={{
           width:'100%', borderCollapse:'collapse', minWidth:720,
         }}>
           <thead>
@@ -57,7 +57,7 @@ export default function PlanningGrid(props: Props) {
               background:'var(--bg2)',
               borderBottom:'1px solid var(--border)',
             }}>
-              <th style={{
+              <th scope="col" style={{
                 padding:'12px 16px', textAlign:'left',
                 width:160, fontSize:11, fontWeight:'var(--fw-bold)',
                 textTransform:'uppercase', letterSpacing:'.6px',
@@ -71,7 +71,7 @@ export default function PlanningGrid(props: Props) {
                 const isToday = day.toDateString()===new Date().toDateString()
                 const isWeekend = day.getDay()===0||day.getDay()===6
                 return (
-                  <th key={di} style={{
+                  <th key={di} scope="col" style={{
                     padding:'10px 6px', textAlign:'center',
                     /* colonne « aujourd'hui » : teinte primaire thémée (lisible dans les 9 thèmes, Soleil inclus) */
                     background: isToday
@@ -334,7 +334,9 @@ export default function PlanningGrid(props: Props) {
                                       }}
                                       style={{
                                         display:'flex', alignItems:'center', justifyContent:'center',
-                                        background:'transparent', border:'none', padding:1, margin:0,
+                                        // cible tactile élargie (padding 7) SANS casser la mise en page des chips :
+                                        // la marge négative compense pour garder la même boîte de layout qu'avant.
+                                        background:'transparent', border:'none', padding:7, margin:-6,
                                         cursor:'pointer', color: isGrabbed ? 'var(--p)' : s.color,
                                         opacity: isGrabbed ? 1 : .55, transition:'opacity .12s',
                                       }}

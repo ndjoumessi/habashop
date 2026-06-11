@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { X, Check } from 'lucide-react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
@@ -60,6 +60,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
           <ResponsiveGrid min={160} gap={8}>
             {(Object.entries(SHIFT_TYPES) as [ShiftType, typeof SHIFT_TYPES[ShiftType]][]).map(([key,s]) => (
               <button key={key} type="button"
+                aria-pressed={modalShift===key}
                 onClick={() => setModalShift(key)}
                 style={{
                   display:'flex', alignItems:'center', gap:8,
@@ -77,7 +78,7 @@ export default function AssignShiftModal({ lang, shiftModal, modalShift, setModa
                   {s.hours && <div style={{ fontSize:11, fontFamily:'var(--mono)', opacity:.7 }}>{s.hours}</div>}
                 </div>
                 {modalShift===key && (
-                  <span style={{ marginLeft:'auto', fontSize:11, background:`${s.color}30`, color:s.color, borderRadius:99, padding:'2px 6px', fontWeight:'var(--fw-bold)' }}>✓</span>
+                  <span style={{ marginLeft:'auto', display:'inline-flex', alignItems:'center', background:`${s.color}30`, color:s.color, borderRadius:99, padding:'3px 6px' }}><Check size={11} aria-hidden="true" /></span>
                 )}
               </button>
             ))}

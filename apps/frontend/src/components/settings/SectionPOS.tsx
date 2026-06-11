@@ -127,7 +127,7 @@ export default function SectionPOS() {
         const cur = useAppStore.getState().tenant
         if (cur) useAppStore.getState().setTenant({ ...cur, ...loyaltyDraft })
       }
-      toast.success(i('✅ Config POS sauvegardée', '✅ POS config saved', '✅ Config TPV guardada', '✅ Config POS salvata'))
+      toast.success(i('Config POS sauvegardée', 'POS config saved', 'Config TPV guardada', 'Config POS salvata'))
       setEditMode(false)
     } catch (e: any) {
       toast.error(i('Échec de la sauvegarde', 'Save failed', 'Error al guardar', 'Salvataggio fallito') + (e?.message ? ` : ${e.message}` : ''))
@@ -178,7 +178,7 @@ export default function SectionPOS() {
             </div>
             {editMode ? (
               <div style={{ position: 'relative' }}>
-                <input type="number" min={0} step={1} className="input" style={{ width: 150, textAlign: 'right', paddingRight: 44 }} value={fundInput} onChange={e => setFundInput(e.target.value)} />
+                <input type="number" min={0} step={1} className="input" aria-label={i('Fond de caisse', 'Opening fund', 'Fondo de caja', 'Fondo cassa')} style={{ width: 150, textAlign: 'right', paddingRight: 44 }} value={fundInput} onChange={e => setFundInput(e.target.value)} />
                 <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', fontSize: 11, pointerEvents: 'none', fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
               </div>
             ) : (
@@ -203,7 +203,7 @@ export default function SectionPOS() {
                 <span style={{ fontSize: 12, color: 'var(--text2)' }}>{i('1 point pour chaque', '1 point per', '1 punto por cada', '1 punto ogni')}</span>
                 {editMode ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <input type="number" min={1} step={1} className="input" style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.pointsPerAmount}
+                    <input type="number" min={1} step={1} className="input" aria-label={i('1 point pour chaque', '1 point per', '1 punto por cada', '1 punto ogni')} style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.pointsPerAmount}
                       onChange={e => setLoyaltyDraft(p => ({ ...p, pointsPerAmount: Math.max(1, Math.floor(+e.target.value || 0)) }))} />
                     <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 'var(--fw-semibold)', minWidth: 40 }}>{symbol}</span>
                   </div>
@@ -215,7 +215,7 @@ export default function SectionPOS() {
                 <span style={{ fontSize: 12, color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {i('Seuil Bronze', 'Bronze threshold', 'Umbral Bronze', 'Soglia Bronze')}</span>
                 {editMode ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <input type="number" min={1} step={1} className="input" style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.bronzeThreshold}
+                    <input type="number" min={1} step={1} className="input" aria-label={i('Seuil Bronze', 'Bronze threshold', 'Umbral Bronze', 'Soglia Bronze')} style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.bronzeThreshold}
                       onChange={e => setLoyaltyDraft(p => ({ ...p, bronzeThreshold: Math.max(1, Math.floor(+e.target.value || 0)) }))} />
                     <span style={{ fontSize: 12, color: 'var(--text3)', minWidth: 40 }}>pts</span>
                   </div>
@@ -227,7 +227,7 @@ export default function SectionPOS() {
                 <span style={{ fontSize: 12, color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {i('Seuil Silver', 'Silver threshold', 'Umbral Silver', 'Soglia Silver')}</span>
                 {editMode ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <input type="number" min={1} step={1} className="input" style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.silverThreshold}
+                    <input type="number" min={1} step={1} className="input" aria-label={i('Seuil Silver', 'Silver threshold', 'Umbral Silver', 'Soglia Silver')} style={{ width: 110, textAlign: 'right' }} value={loyaltyDraft.silverThreshold}
                       onChange={e => setLoyaltyDraft(p => ({ ...p, silverThreshold: Math.max(1, Math.floor(+e.target.value || 0)) }))} />
                     <span style={{ fontSize: 12, color: 'var(--text3)', minWidth: 40 }}>pts</span>
                   </div>
@@ -247,7 +247,7 @@ export default function SectionPOS() {
                   <span style={{ fontSize: 12, color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Medal size={12} color="var(--text3)" /> {label}</span>
                   {editMode ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <input type="number" min={0} max={100} step={0.5} className="input" style={{ width: 80, textAlign: 'right' }} value={loyaltyDraft[key]}
+                      <input type="number" min={0} max={100} step={0.5} className="input" aria-label={`${i('Remise', 'Discount', 'Descuento', 'Sconto')} ${label}`} style={{ width: 80, textAlign: 'right' }} value={loyaltyDraft[key]}
                         onChange={e => setLoyaltyDraft(p => ({ ...p, [key]: Math.max(0, Math.min(100, +e.target.value || 0)) }))} />
                       <span style={{ fontSize: 12, color: 'var(--text3)', minWidth: 20 }}>%</span>
                     </div>
@@ -294,7 +294,7 @@ export default function SectionPOS() {
             </div>
             {editMode ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input type="number" min={0} max={100} step={0.5} className="input" style={{ width: 80, textAlign: 'right' }} value={draft.posTaxRate} onChange={e => setDraft(p => ({ ...p, posTaxRate: Math.max(0, Math.min(100, +e.target.value)) }))} />
+                <input type="number" min={0} max={100} step={0.5} className="input" aria-label={i('Taux de TVA', 'VAT Rate', 'Tasa IVA', 'Aliquota IVA')} style={{ width: 80, textAlign: 'right' }} value={draft.posTaxRate} onChange={e => setDraft(p => ({ ...p, posTaxRate: Math.max(0, Math.min(100, +e.target.value)) }))} />
                 <span style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--acc)', width: 20 }}>%</span>
               </div>
             ) : (

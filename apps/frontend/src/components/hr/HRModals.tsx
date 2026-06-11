@@ -71,7 +71,7 @@ export default function HRModals(props: HRModalsProps) {
               active: true,
             }
             setEmployees(prev => [...prev, newEmp])
-            toast.success(lang === 'en' ? '✅ Employee added' : lang === 'es' ? '✅ Empleado agregado' : lang === 'it' ? '✅ Dipendente aggiunto' : '✅ Employé ajouté')
+            toast.success(lang === 'en' ? 'Employee added' : lang === 'es' ? 'Empleado agregado' : lang === 'it' ? 'Dipendente aggiunto' : 'Employé ajouté')
             announce(lang === 'en' ? 'Employee added' : lang === 'es' ? 'Empleado agregado' : lang === 'it' ? 'Dipendente aggiunto' : 'Employé ajouté')
             setShowModal(false)
           }}

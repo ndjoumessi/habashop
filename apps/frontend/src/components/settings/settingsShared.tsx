@@ -10,10 +10,10 @@ export const panel: React.CSSProperties = {
   border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden',
 }
 
-export function Switch({ on, onClick, color, disabled }: { on: boolean; onClick: () => void; color: string; disabled?: boolean }) {
+export function Switch({ on, onClick, color, disabled, label }: { on: boolean; onClick: () => void; color: string; disabled?: boolean; label?: string }) {
   // stopPropagation : la card parente (ToggleCard) est cliquable — sans ça, un clic sur le switch togglerait deux fois.
   return (
-    <button type="button" disabled={disabled} onClick={e => { e.stopPropagation(); onClick() }} aria-pressed={on} style={{
+    <button type="button" disabled={disabled} onClick={e => { e.stopPropagation(); onClick() }} role="switch" aria-checked={on} aria-label={label} style={{
       /* Pattern POSModals : piste OFF = var(--bg5) + bordure var(--border) (visible en Soleil), ON = couleur sémantique, knob #fff */
       width: 48, height: 26, borderRadius: 'var(--r-full)', flexShrink: 0, boxSizing: 'border-box',
       background: on ? color : 'var(--bg5)', border: '1px solid var(--border)',
@@ -40,7 +40,7 @@ export function ToggleCard({ icon, color, label, desc, on, onChange, disabled }:
         <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 11, color: 'var(--text3)' }}>{desc}</div>
       </div>
-      <Switch on={on} onClick={onChange} color={color} disabled={disabled} />
+      <Switch on={on} onClick={onChange} color={color} disabled={disabled} label={label} />
     </div>
   )
 }

@@ -138,7 +138,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
           return next
         })
         setOffFilled(filled)
-        toast.success(i('Produit trouvé ✨ champs pré-remplis', 'Product found ✨ fields pre-filled', 'Producto encontrado ✨ campos rellenados', 'Prodotto trovato ✨ campi precompilati'))
+        toast.success(i('Produit trouvé — champs pré-remplis', 'Product found — fields pre-filled', 'Producto encontrado — campos rellenados', 'Prodotto trovato — campi precompilati'))
       } else {
         if (r.reason === 'network') toast.error(i('Impossible de contacter la base produits', 'Could not reach the product database', 'No se pudo contactar la base de productos', 'Impossibile contattare il database prodotti'))
         else toast(i('Produit introuvable dans la base, saisie manuelle', 'Product not found in the database, manual entry', 'Producto no encontrado, entrada manual', 'Prodotto non trovato, inserimento manuale'))
@@ -637,7 +637,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               // En AJOUT : auto-remplissage Open Food Facts (qui toaste le résultat).
               // En ÉDITION : on confirme juste le code scanné (pas d'écrasement de champs).
               if (!editingSku) runOffLookup(barcode)
-              else toast.success(`✅ ${i('Code-barres', 'Barcode', 'Código de barras', 'Codice a barre')} : ${barcode}`)
+              else toast.success(`${i('Code-barres', 'Barcode', 'Código de barras', 'Codice a barre')} : ${barcode}`)
             }}
             onClose={() => setShowScanner(false)}
           />
@@ -709,10 +709,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 if (!catForm.name) { toast.error(i('Nom requis', 'Name required', 'Nombre requerido', 'Nome richiesto')); return }
                 if (editCat) {
                   setCategories(prev => prev.map(c => c.id === editCat.id ? {...c, ...catForm} : c))
-                  toast.success(`✅ ${i('Catégorie', 'Category', 'Categoría', 'Categoria')} "${catForm.name}" ${i('modifiée', 'updated', 'actualizada', 'aggiornata')}`)
+                  toast.success(`${i('Catégorie', 'Category', 'Categoría', 'Categoria')} "${catForm.name}" ${i('modifiée', 'updated', 'actualizada', 'aggiornata')}`)
                 } else {
                   setCategories(prev => [...prev, { id:Date.now(), ...catForm, productsCount:0 }])
-                  toast.success(`✅ ${i('Catégorie', 'Category', 'Categoría', 'Categoria')} "${catForm.name}" ${i('créée', 'created', 'creada', 'creata')}`)
+                  toast.success(`${i('Catégorie', 'Category', 'Categoría', 'Categoria')} "${catForm.name}" ${i('créée', 'created', 'creada', 'creata')}`)
                 }
                 setShowCatModal(false)
               }}>{editCat ? i('Modifier', 'Edit', 'Editar', 'Modifica') : i('Créer', 'Create', 'Crear', 'Crea')}</button>

@@ -82,7 +82,7 @@ export default function AdminDashboard() {
     if (!(await confirm({ title: i('Approuver la demande', 'Approve request', 'Aprobar solicitud', 'Approva richiesta'), message: i('Approuver cette demande et activer le plan ?', 'Approve this request and activate the plan?', '¿Aprobar esta solicitud y activar el plan?', 'Approvare questa richiesta e attivare il piano?') }))) return
     try {
       await adminApi.reviewPlanRequest(id, { action: 'approve', adminNotes: i('Paiement validé', 'Payment validated', 'Pago validado', 'Pagamento convalidato') })
-      toast.success(i('✅ Plan activé !', '✅ Plan activated!', '✅ ¡Plan activado!', '✅ Piano attivato!'))
+      toast.success(i('Plan activé !', 'Plan activated!', '¡Plan activado!', 'Piano attivato!'))
       setPlanRequests(prev => prev.filter(r => r.id !== id))
     } catch (e: any) { toast.error(e?.message ?? i('Erreur', 'Error', 'Error', 'Errore')) }
   }
@@ -529,7 +529,7 @@ export default function AdminDashboard() {
                   const created = await adminApi.createTenant(newTenantForm)
                   setTenants(prev => [created, ...prev])
                   setShowNewTenant(false)
-                  toast.success(i(`✅ Boutique "${newTenantForm.name}" créée !`, `✅ Shop "${newTenantForm.name}" created!`, `✅ ¡Tienda "${newTenantForm.name}" creada!`, `✅ Negozio "${newTenantForm.name}" creato!`))
+                  toast.success(i(`Boutique "${newTenantForm.name}" créée !`, `Shop "${newTenantForm.name}" created!`, `¡Tienda "${newTenantForm.name}" creada!`, `Negozio "${newTenantForm.name}" creato!`))
                   setNewTenantForm({ name: '', currency: 'XOF', country: 'SN', plan: 'starter', adminEmail: '', adminPassword: '' })
                 } catch {
                   toast.error(i('Erreur création boutique', 'Error creating shop', 'Error al crear tienda', 'Errore creazione negozio'))

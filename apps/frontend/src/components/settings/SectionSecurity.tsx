@@ -27,7 +27,7 @@ export default function SectionSecurity() {
     try {
       await authApi.changePassword(pwForm.current, pwForm.next)
       setPwForm({ current: '', next: '', confirm: '' })
-      toast.success(i('Mot de passe modifié ✅', 'Password changed ✅', 'Contraseña cambiada ✅', 'Password cambiato ✅'))
+      toast.success(i('Mot de passe modifié', 'Password changed', 'Contraseña cambiada', 'Password cambiato'))
     } catch (err: any) {
       setPwError(err?.message ?? i('Erreur lors du changement', 'Error changing password', 'Error al cambiar', 'Errore nel cambio'))
     } finally {

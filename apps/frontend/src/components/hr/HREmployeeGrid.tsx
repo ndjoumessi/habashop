@@ -194,7 +194,7 @@ export default function HREmployeeGrid({ search, setSearch, deptFilter, setDeptF
           {viewMode === 'table' && (
             <div className="panel" style={{ padding: 0 }}>
               <div className="table-wrap data-table">
-                <table>
+                <table aria-label={lang === 'en' ? 'Employees' : lang === 'es' ? 'Empleados' : lang === 'it' ? 'Dipendenti' : 'Employés'}>
                   <thead>
                     <tr>
                       <th scope="col">{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</th>

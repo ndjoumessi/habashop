@@ -48,11 +48,11 @@ export default function OrdersListPanel({
               [i('Référence', 'Reference', 'Referencia', 'Riferimento'), i('Fournisseur', 'Supplier', 'Proveedor', 'Fornitore'), i('Date', 'Date', 'Fecha', 'Data'), i('Livraison prévue', 'Expected delivery', 'Entrega prevista', 'Consegna prevista'), i('Articles', 'Items', 'Artículos', 'Articoli'), `${i('Montant', 'Amount', 'Importe', 'Importo')} (${currency})`, i('Statut', 'Status', 'Estado', 'Stato')],
               orders.map(o => [o.ref, o.supplier, o.date, o.expectedAt, o.items.length, cv(o.total), orderStatusLabel(o.status, lang)])
             )
-            toast.success(i('📊 Export CSV téléchargé !', '📊 CSV export downloaded!', '📊 ¡Exportación CSV descargada!', '📊 Esportazione CSV scaricata!'))
+            toast.success(i('Export CSV téléchargé !', 'CSV export downloaded!', '¡Exportación CSV descargada!', 'Esportazione CSV scaricata!'))
           }}>
             <Download size={13} /> {t('btn_export')}
           </button>
-          <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printOrdersListPDF(); toast.success(i('📄 PDF ouvert !', '📄 PDF opened!', '📄 ¡PDF abierto!', '📄 PDF aperto!')) }}>
+          <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { printOrdersListPDF(); toast.success(i('PDF ouvert !', 'PDF opened!', '¡PDF abierto!', 'PDF aperto!')) }}>
             <Download size={13} /> PDF
           </button>
           <button className="btn btn-primary btn-sm gap-1.5" onClick={openNewOrderModal}>

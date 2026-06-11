@@ -21,6 +21,7 @@ export default function PlanningFilters({ lang, filterDept, setFilterDept, filte
       alignItems:'center',
     }}>
       <select className="input"
+        aria-label={T.filterDeptAria}
         style={{width:'auto',minWidth:180,height:36,fontSize:12}}
         value={filterDept}
         onChange={e=>setFilterDept(e.target.value)}>
@@ -28,6 +29,7 @@ export default function PlanningFilters({ lang, filterDept, setFilterDept, filte
         {depts.map(d=><option key={d} value={d}>{deptLabel(d, lang)}</option>)}
       </select>
       <select className="input"
+        aria-label={T.filterStatusAria}
         style={{width:'auto',minWidth:180,height:36,fontSize:12}}
         value={filterStatus}
         onChange={e=>setFilterStatus(e.target.value as any)}>

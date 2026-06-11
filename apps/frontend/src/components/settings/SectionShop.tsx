@@ -44,7 +44,7 @@ export default function SectionShop() {
     try {
       await tenantApi.update({ name: shopData.name, email: shopData.email, phone: shopData.phone, address: shopData.address, country: shopData.country, vatRate: shopData.taxRate })
       cfg.updateConfig({ shopName: shopData.name, shopEmail: shopData.email, shopPhone: shopData.phone, shopAddress: shopData.address, shopCountry: shopData.country, shopVatRate: shopData.taxRate })
-      toast.success(i('✅ Paramètres sauvegardés', '✅ Settings saved', '✅ Ajustes guardados', '✅ Impostazioni salvate'))
+      toast.success(i('Paramètres sauvegardés', 'Settings saved', 'Ajustes guardados', 'Impostazioni salvate'))
       setEditMode(false)
     } catch (e: any) { toast.error(e.message) }
   }
@@ -122,10 +122,10 @@ export default function SectionShop() {
             </div>
           ))}
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{i('TAUX TVA', 'VAT RATE', 'TASA IVA', 'ALIQUOTA IVA')} (%)</label>
+            <label htmlFor="shop-vat-rate" style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>{i('TAUX TVA', 'VAT RATE', 'TASA IVA', 'ALIQUOTA IVA')} (%)</label>
             {editMode ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input type="number" min={0} max={100} step={0.5} className="input" style={{ flex: 1 }} value={shopData.taxRate} onChange={e => setShopData(d => ({ ...d, taxRate: Number(e.target.value) }))} />
+                <input id="shop-vat-rate" type="number" min={0} max={100} step={0.5} className="input" style={{ flex: 1 }} value={shopData.taxRate} onChange={e => setShopData(d => ({ ...d, taxRate: Number(e.target.value) }))} />
                 <span style={{ fontSize: 18, fontWeight: 'var(--fw-regular)', color: 'var(--acc)', width: 24 }}>%</span>
               </div>
             ) : (

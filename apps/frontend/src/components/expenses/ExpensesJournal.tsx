@@ -83,12 +83,12 @@ export default function ExpensesJournal(props: Props) {
       </div>
 
       <div className="table-wrap data-table">
-        <table>
+        <table aria-label={tr('Journal des dépenses','Expense log','Registro de gastos','Registro spese')}>
           <thead>
             <tr>
               <th scope="col">{tr('Date','Date','Fecha','Data')}</th><th scope="col">{tr('Libellé','Label','Etiqueta','Etichetta')}</th><th scope="col">{tr('Catégorie','Category','Categoría','Categoria')}</th>
               <th scope="col">{tr('Montant HT','Amount excl.','Importe s/IVA','Importo netto')}</th><th scope="col">TVA</th><th scope="col">TTC</th>
-              <th scope="col">{tr('Mode','Mode','Modo','Modo')}</th><th style={{ textAlign:'center' }}>{tr('Récurrent','Recurring','Recurrente','Ricorrente')}</th>
+              <th scope="col">{tr('Mode','Mode','Modo','Modo')}</th><th scope="col" style={{ textAlign:'center' }}>{tr('Récurrent','Recurring','Recurrente','Ricorrente')}</th>
               <th scope="col">{tr('Statut','Status','Estado','Stato')}</th><th scope="col">{tr('Actions','Actions','Acciones','Azioni')}</th>
             </tr>
           </thead>
