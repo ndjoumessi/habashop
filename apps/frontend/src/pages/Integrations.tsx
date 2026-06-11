@@ -496,7 +496,7 @@ export default function Integrations() {
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, padding:'8px 10px', marginBottom:10, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:9 }}>
               <div>
                 <div style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)' }}>
-                  {tx.count} {tx.count > 0 ? fmt(tx.amountXof) : ''}
+                  {tx.count} tx{tx.count > 0 ? ` · ${fmt(tx.amountXof)}` : ''}
                 </div>
                 <div style={{ fontSize:11, color:'var(--text4)', marginTop:1 }}>
                   {lang === 'en' ? 'Transactions today' : lang === 'es' ? 'Transacciones hoy' : lang === 'it' ? 'Transazioni oggi' : 'Transactions aujourd\'hui'}
