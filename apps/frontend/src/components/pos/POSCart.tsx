@@ -425,7 +425,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               </div>
             )}
 
-            {!mixedOn && (payMode === 'wave' || payMode === 'orange') && cart.length > 0 && (
+            {!mixedOn && payMode === 'wave' && cart.length > 0 && (
               <div style={{
                 marginTop:6, padding:'8px 10px',
                 background: payMode === 'wave' ? 'rgba(27,154,245,.08)' : 'rgba(255,102,0,.08)',
