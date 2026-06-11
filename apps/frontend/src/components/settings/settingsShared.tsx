@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useId } from 'react'
 
 export type L4 = 'fr' | 'en' | 'es' | 'it'
 export const makeI = (lang: string) => (fr: string, en: string, es: string, it: string) =>
@@ -10,10 +11,10 @@ export const panel: React.CSSProperties = {
   border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden',
 }
 
-export function Switch({ on, onClick, color, disabled, label }: { on: boolean; onClick: () => void; color: string; disabled?: boolean; label?: string }) {
+export function Switch({ on, onClick, color, disabled, label, describedBy }: { on: boolean; onClick: () => void; color: string; disabled?: boolean; label?: string; describedBy?: string }) {
   // stopPropagation : la card parente (ToggleCard) est cliquable — sans ça, un clic sur le switch togglerait deux fois.
   return (
-    <button type="button" disabled={disabled} onClick={e => { e.stopPropagation(); onClick() }} role="switch" aria-checked={on} aria-label={label} style={{
+    <button type="button" disabled={disabled} onClick={e => { e.stopPropagation(); onClick() }} role="switch" aria-checked={on} aria-label={label} aria-describedby={describedBy} style={{
       /* Pattern POSModals : piste OFF = var(--bg5) + bordure var(--border) (visible en Soleil), ON = couleur sémantique, knob #fff */
       width: 48, height: 26, borderRadius: 'var(--r-full)', flexShrink: 0, boxSizing: 'border-box',
       background: on ? color : 'var(--bg5)', border: '1px solid var(--border)',
@@ -29,6 +30,7 @@ export function Switch({ on, onClick, color, disabled, label }: { on: boolean; o
 export function ToggleCard({ icon, color, label, desc, on, onChange, disabled }: {
   icon: React.ReactNode; color: string; label: string; desc: string; on: boolean; onChange: () => void; disabled?: boolean
 }) {
+  const descId = useId() // la description est annoncée par le lecteur d'écran via aria-describedby sur le Switch
   return (
     <div
       onClick={() => { if (!disabled) onChange() }}
@@ -38,9 +40,9 @@ export function ToggleCard({ icon, color, label, desc, on, onChange, disabled }:
       <div style={{ width: 40, height: 40, borderRadius: 12, background: `color-mix(in srgb, ${color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 18%, transparent)`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{desc}</div>
+        <div id={descId} style={{ fontSize: 11, color: 'var(--text3)' }}>{desc}</div>
       </div>
-      <Switch on={on} onClick={onChange} color={color} disabled={disabled} label={label} />
+      <Switch on={on} onClick={onChange} color={color} disabled={disabled} label={label} describedBy={descId} />
     </div>
   )
 }

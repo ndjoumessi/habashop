@@ -224,11 +224,11 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
             <button
               onClick={() => { onPay(record.id); onClose() }}
               style={{
-                flex:1, background:'linear-gradient(135deg, var(--acc2), #059669)',
+                flex:1, background:'var(--grad-success)',
                 border:'none', borderRadius:10, padding:'11px',
                 fontSize:13, fontWeight:'var(--fw-semibold)', color:'#fff',
                 cursor:'pointer', fontFamily:'inherit',
-                boxShadow:'0 4px 14px rgba(14,196,126,.3)',
+                boxShadow:'0 4px 14px color-mix(in srgb, var(--success) 30%, transparent)',
               }}
             ><CheckCircle size={14} style={{ verticalAlign:'middle', marginRight:5 }}/> {lang === 'en' ? 'Mark as paid' : lang === 'es' ? 'Marcar como pagado' : lang === 'it' ? 'Segna come pagato' : 'Marquer comme payé'}</button>
           )}

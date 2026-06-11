@@ -209,7 +209,6 @@ export default function PlanningGrid(props: Props) {
                         tabIndex={0}
                         aria-label={cellLabel}
                         aria-disabled={isLocked || undefined}
-                        aria-dropeffect={grabbed && !isLocked ? 'move' : undefined}
                         data-pcell={`${ri}-${di}`}
                         // Drop target uniquement : on dépose un shift glissé (depuis un chip) sur cette
                         // case (non verrouillée) → le shift de ce TYPE est DÉPLACÉ (upsert cible + delete source).
@@ -293,7 +292,6 @@ export default function PlanningGrid(props: Props) {
                                 <div key={sh.type}
                                   title={shiftLabel(sh.type, lang)}
                                   draggable={draggableChip}
-                                  aria-grabbed={draggableChip ? isGrabbed : undefined}
                                   onDragStart={e=>{ e.stopPropagation(); e.dataTransfer.setData('text/plain', JSON.stringify({ empId: emp.id, di, type: sh.type })); e.dataTransfer.effectAllowed='move' }}
                                   onClick={e=>{ if (arr.length>1 && !grabbed) e.stopPropagation() }} // en mode déplacement, laisse le tap atteindre la case (dépôt)
                                   style={{
@@ -325,7 +323,6 @@ export default function PlanningGrid(props: Props) {
                                       type="button"
                                       aria-label={`${T.moveHandle} : ${shiftLabel(sh.type, lang)} — ${firstName}, ${cellDate}`}
                                       aria-pressed={isGrabbed}
-                                      aria-grabbed={isGrabbed}
                                       onClick={e=>{
                                         e.stopPropagation()
                                         if (isGrabbed) { cancelGrab(); return }
