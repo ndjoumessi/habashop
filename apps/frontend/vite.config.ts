@@ -32,6 +32,9 @@ export default defineConfig(({ mode }) => {
       manifest: false, // use public/manifest.json
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Gros chunks lazy (recharts, @zxing/jsbarcode/qrcode, html2canvas) : exclus du
+        // precache (ils plombaient ~1 Mo) — servis à la demande via runtimeCaching ci-dessous.
+        globIgnores: ['**/assets/charts-*.js', '**/assets/barcode-*.js', '**/assets/canvas-*.js'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
@@ -40,6 +43,19 @@ export default defineConfig(({ mode }) => {
         // n'existe plus après un redéploiement.
         navigateFallbackDenylist: [/^\/assets\//, /\.[a-zA-Z0-9]+$/],
         runtimeCaching: [
+          {
+            // Chunks lazy hors precache (cf. globIgnores) : noms hashés → immuables,
+            // CacheFirst = 1 seul fetch réseau puis servi depuis le cache (offline inclus).
+            urlPattern: /\/assets\/(charts|barcode|canvas)-[^/]+\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'lazy-chunks-cache',
+              expiration: {
+                maxEntries: 12,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+            },
+          },
           {
             urlPattern: /^https:\/\/habashop-production\.up\.railway\.app\/api\//,
             handler: 'NetworkFirst',
@@ -95,9 +111,14 @@ export default defineConfig(({ mode }) => {
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router')) {
             return 'vendor'
           }
-          // BarcodeScanner / @zxing — lourd, chargé seulement à l'ouverture du scanner
-          if (id.includes('@zxing')) {
+          // BarcodeScanner / @zxing + jsbarcode + qrcode — lourds, usages ponctuels
+          // (scanner, étiquettes, carte fidélité) → chunk identifiable, hors precache PWA
+          if (id.includes('node_modules/@zxing') || id.includes('node_modules/jsbarcode') || id.includes('node_modules/qrcode')) {
             return 'barcode'
+          }
+          // html2canvas — uniquement export PNG carte fidélité, hors precache PWA
+          if (id.includes('node_modules/html2canvas')) {
+            return 'canvas'
           }
           // Recharts / d3 — lazy via les routes Dashboard/Reports uniquement
           if (id.includes('recharts') || id.includes('node_modules/d3-')) {
