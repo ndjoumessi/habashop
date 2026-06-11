@@ -105,6 +105,13 @@ export default function App() {
     }
     // Mise à jour des taux de change au démarrage
     useAppStore.getState().fetchExchangeRates()
+    // Préchauffage des routes critiques (mêmes spécifieurs que les lazy() → même chunk) :
+    // dès que le thread est libre, Dashboard et POS sont déjà en cache au 1er clic.
+    if (token) {
+      const warm = () => { import('@/pages/Dashboard'); import('@/pages/POS') }
+      if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 3000 })
+      else setTimeout(warm, 1500)
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
