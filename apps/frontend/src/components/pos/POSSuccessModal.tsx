@@ -1,4 +1,5 @@
 import { CheckCircle2, Printer, Plus, X } from 'lucide-react'
+import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface Props {
   show: boolean
@@ -17,10 +18,14 @@ interface Props {
  * comportement où tout disparaissait sans proposer l'impression.
  */
 export default function POSSuccessModal({ show, lang, total, monnaie, showChange, fmt, onPrint, onNewSale }: Props) {
+  // Hook AVANT le return conditionnel (règle des hooks)
+  const boxRef = useModalFocus<HTMLDivElement>(show)
   if (!show) return null
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onNewSale()}>
-      <div className="modal-box" style={{ maxWidth: 380, textAlign: 'center', position: 'relative' }}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true"
+      aria-label={lang === 'en' ? 'Sale completed' : lang === 'es' ? 'Venta cobrada' : lang === 'it' ? 'Vendita incassata' : 'Vente encaissée'}
+      onClick={e => e.target === e.currentTarget && onNewSale()}>
+      <div ref={boxRef} className="modal-box" style={{ maxWidth: 380, textAlign: 'center', position: 'relative' }}>
         {/* Fermeture explicite (fallback si l'utilisateur ne veut ni imprimer ni enchaîner) */}
         <button type="button" aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={onNewSale}
           style={{ position: 'absolute', top: 10, right: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text3)', cursor: 'pointer' }}>

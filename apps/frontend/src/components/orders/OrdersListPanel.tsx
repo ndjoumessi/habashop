@@ -126,7 +126,7 @@ export default function OrdersListPanel({
 
       {/* Table */}
       <div className="table-wrap data-table">
-        <table>
+        <table aria-label={t('orders_title')}>
           <thead>
             <tr>
               <th scope="col">{t('col_ref')}</th>

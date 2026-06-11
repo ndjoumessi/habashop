@@ -1,4 +1,5 @@
 import { useConfig } from '@/stores/appStore'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { X, CheckCircle, Printer, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { monthLabel, roleLabel, statusLabel, printBulletin, payrollBreakdown } from './payrollShared'
@@ -14,6 +15,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
   // Source unique du calcul (cohérent avec le bulletin PDF et la table paie).
   const bd = payrollBreakdown(record)
   const totalRetenues = bd.totalDeductions
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   return (
     <div role="dialog" aria-modal="true"
@@ -24,7 +26,7 @@ export default function BulletinModal({ record, onClose, onPay, fmt }: {
       display:'flex', alignItems:'center', justifyContent:'center',
       padding:20, overflowY:'auto',
     }} onClick={onClose}>
-      <div style={{
+      <div ref={boxRef} style={{
         width:'100%', maxWidth:620,
         background:'var(--bg2)', border:'1px solid var(--border)',
         borderRadius:20, overflow:'hidden',

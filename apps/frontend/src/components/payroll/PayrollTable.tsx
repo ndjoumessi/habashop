@@ -40,6 +40,7 @@ export default function PayrollTable(props: Props) {
       {/* Toolbar */}
       <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
         <select className="input" value={month} onChange={e => setMonth(e.target.value)}
+          aria-label={lang === 'en' ? 'Payroll month' : lang === 'es' ? 'Mes de nómina' : lang === 'it' ? 'Mese di paga' : 'Mois de paie'}
           style={{ width:'auto', minWidth:180 }}>
           {MONTHS.map(m => <option key={m} value={m}>{monthLabel(m, lang)}</option>)}
         </select>
@@ -64,7 +65,7 @@ export default function PayrollTable(props: Props) {
           </div>
         ) : (
           <div className="table-wrap data-table">
-            <table>
+            <table aria-label={`${lang === 'en' ? 'Payroll' : lang === 'es' ? 'Nómina' : lang === 'it' ? 'Buste paga' : 'Paie'} — ${monthLabel(month, lang)}`}>
               <thead>
                 <tr>
                   <th scope="col">{lang === 'en' ? 'Employee' : lang === 'es' ? 'Empleado' : lang === 'it' ? 'Dipendente' : 'Employé'}</th><th scope="col">{lang === 'en' ? 'Role' : lang === 'es' ? 'Puesto' : lang === 'it' ? 'Ruolo' : 'Poste'}</th><th scope="col">{lang === 'en' ? 'Base' : lang === 'es' ? 'Base' : lang === 'it' ? 'Base' : 'Base'}</th>

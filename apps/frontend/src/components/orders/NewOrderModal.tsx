@@ -4,6 +4,7 @@ import IconButton from '@/components/ui/IconButton'
 import { ClipboardList, X, Users, Truck, User, CheckCircle, Phone, Plus, Package, Clock, Star } from 'lucide-react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
+import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface NewOrderItem { id: string; name: string; price: number; qty: number; emoji: string }
 export interface NewOrderForm { clientName: string; clientPhone: string; items: NewOrderItem[]; note: string }
@@ -40,11 +41,12 @@ export default function NewOrderModal({
   const { lang } = useConfig()
   const { i } = useI18n()
   const fmt = useFormatAmount()
+  const boxRef = useModalFocus<HTMLDivElement>()
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true"
       aria-label={i('Nouvelle commande', 'New order', 'Nueva orden', 'Nuovo ordine')}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{
+      <div ref={boxRef} style={{
         background: 'var(--bg2)', border: '1px solid var(--border2)',
         borderRadius: 20, width: '100%', maxWidth: 640,
         maxHeight: '92vh', overflow: 'hidden',

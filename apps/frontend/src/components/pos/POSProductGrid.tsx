@@ -278,7 +278,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                 <input
                   className="input"
                   style={{ paddingLeft: 34, width: '100%', fontSize: 13, boxSizing: 'border-box' }}
-                  aria-label="Rechercher" placeholder={t('pos_search')}
+                  aria-label={t('pos_search')} placeholder={t('pos_search')}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />
@@ -286,7 +286,8 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
               {posEnableScanner && (
                 <button
                   onClick={() => setShowScanner(true)}
-                  title="Scanner un code-barres"
+                  aria-label={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
+                  title={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
                   style={{
                     width: 40, height: 40, borderRadius: 10, fontSize: 18,
                     cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
@@ -344,6 +345,13 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
             </div>
           </div>}
 
+          {/* Compteur de résultats — annoncé aux lecteurs d'écran à chaque filtre/recherche */}
+          {posTab === 'pos' && (
+            <div className="sr-only" role="status" aria-live="polite">
+              {filtered.length} {lang === 'en' ? 'products displayed' : lang === 'es' ? 'productos mostrados' : lang === 'it' ? 'prodotti visualizzati' : 'produits affichés'}
+            </div>
+          )}
+
           {/* Grille produits — SCROLL ICI */}
           {posTab === 'pos' && <div style={{
             flex: 1,
@@ -384,7 +392,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                     </button>
                   </div>
                 ) : (
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'var(--text3)', fontSize: 14 }}>
+                  <div role="status" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'var(--text3)', fontSize: 14 }}>
                     {t('pos_not_found')}
                   </div>
                 )

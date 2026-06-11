@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { RotateCcw, X, AlertTriangle, PackageCheck, Info } from 'lucide-react'
 import type { Lang } from '@/stores/appStore'
+import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface RefundModalProps {
   sale: any | null
@@ -23,6 +24,8 @@ const TRACKING_MODES = ['wave', 'orange', 'mtn', 'mobile']
 export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fmt }: RefundModalProps) {
   const [reason, setReason] = useState('')
   const [restock, setRestock] = useState(true) // pré-coché (ON par défaut)
+  // Piège à focus (hook AVANT le return conditionnel — règle des hooks)
+  const boxRef = useModalFocus<HTMLDivElement>(!!sale)
   if (!sale) return null
 
   const i = (fr: string, en: string, es: string, it: string) =>
@@ -33,8 +36,9 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true"
+      aria-label={i('Rembourser la vente', 'Refund Sale', 'Reembolsar venta', 'Rimborsa vendita')}
       onClick={e => e.target === e.currentTarget && !saving && onClose()}>
-      <div className="modal-box" style={{ maxWidth: 460 }}>
+      <div ref={boxRef} className="modal-box" style={{ maxWidth: 460 }}>
         {/* En-tête */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontWeight: 'var(--fw-bold)', fontSize: 16, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -78,7 +82,7 @@ export default function RefundModal({ sale, onClose, onConfirm, saving, lang, fm
         />
 
         {/* Remettre en stock (pré-coché) */}
-        <button type="button" onClick={() => setRestock(r => !r)}
+        <button type="button" role="checkbox" aria-checked={restock} onClick={() => setRestock(r => !r)}
           style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', cursor: 'pointer', background: restock ? 'var(--c-green-bg2)' : 'var(--bg3)', border: `1px solid ${restock ? 'var(--c-green-border)' : 'var(--border)'}`, borderRadius: 'var(--r-md)', padding: '10px 12px', marginBottom: 14 }}>
           <span style={{ width: 18, height: 18, borderRadius: 'var(--r-xs)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: restock ? 'var(--acc2)' : 'transparent', border: `1.5px solid ${restock ? 'var(--acc2)' : 'var(--text4)'}` }}>
             {restock && <PackageCheck size={12} style={{ color: '#fff' }} />}

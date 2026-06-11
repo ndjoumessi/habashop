@@ -114,6 +114,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               <button type="button"
                 onClick={async () => { if (await confirm({ title: lang === 'en' ? 'Clear cart' : lang === 'es' ? 'Vaciar el carrito' : lang === 'it' ? 'Svuota il carrello' : 'Vider le panier', message: lang === 'en' ? 'All items will be removed from the cart.' : lang === 'es' ? 'Se eliminarán todos los artículos del carrito.' : lang === 'it' ? 'Tutti gli articoli del carrello saranno rimossi.' : 'Tous les articles du panier seront retirés.', danger: true })) setCart([]) }}
                 title={lang === 'en' ? 'Clear cart' : lang === 'es' ? 'Vaciar el carrito' : lang === 'it' ? 'Svuota il carrello' : 'Vider le panier'}
+                aria-label={lang === 'en' ? 'Clear cart' : lang === 'es' ? 'Vaciar el carrito' : lang === 'it' ? 'Svuota il carrello' : 'Vider le panier'}
                 style={{
                   width: 26, height: 26, borderRadius: 7,
                   background: 'rgba(232,64,74,.1)', border: '1px solid rgba(232,64,74,.2)',
@@ -347,7 +348,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                   <MethodPicker value={mixedM1} lang={lang} onChange={m => { setMixedM1(m); if (m === mixedM2) setMixedM2((['cash','mobile','card'] as const).find(x => x !== m)!) }} />
                   <input type="number" inputMode="decimal" min={0} value={mixedAmt1} onChange={e => setMixedAmt1(e.target.value)}
-                    placeholder="0" aria-label={lang==='en'?'Amount 1':'Montant 1'}
+                    placeholder="0" aria-label={lang==='en'?'Amount 1':lang==='es'?'Importe 1':lang==='it'?'Importo 1':'Montant 1'}
                     style={{ flex:1, minWidth:0, height:36, padding:'0 8px', background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontSize:13, fontFamily:'var(--mono)', textAlign:'right', boxSizing:'border-box' }} />
                 </div>
                 <div style={{ display:'flex', gap:6, alignItems:'center' }}>
@@ -396,7 +397,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
 
                 {/* Montant insuffisant → message rouge */}
                 {cashInsufficient && (
-                  <div style={{
+                  <div role="status" style={{
                     marginTop:6, display:'flex', alignItems:'center', gap:5,
                     fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--danger)', transition:'opacity .2s ease',
                   }}>

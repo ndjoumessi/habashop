@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
 import { productsApi, suppliersApi } from '@/lib/api'
 import { confirm } from '@/lib/confirm'
+import { announce } from '@/lib/announce'
 import Pagination from '@/components/ui/Pagination'
 import { usePagination } from '@/hooks/usePagination'
 
@@ -184,6 +185,7 @@ export default function Stock() {
         } : p
       ))
       toast.success(`✅ ${form.name} mis à jour !`)
+      announce(`${form.name} ${lang === 'en' ? 'updated' : lang === 'es' ? 'actualizado' : lang === 'it' ? 'aggiornato' : 'mis à jour'}`)
     } else {
       let apiId: string | undefined
       let createdSku = form.sku
@@ -207,6 +209,7 @@ export default function Stock() {
         description: form.description, notes: form.notes,
       }])
       toast.success('✅ Produit ajouté !')
+      announce(lang === 'en' ? 'Product added' : lang === 'es' ? 'Producto agregado' : lang === 'it' ? 'Prodotto aggiunto' : 'Produit ajouté')
     }
     setShowModal(false)
     resetForm()
@@ -245,6 +248,7 @@ export default function Stock() {
                 : lang === 'es' ? `🗑️ "${p.name}" eliminado`
                 : lang === 'it' ? `🗑️ "${p.name}" eliminato`
                 : `🗑️ « ${p.name} » supprimé`)
+    announce(lang === 'en' ? 'Product deleted' : lang === 'es' ? 'Producto eliminado' : lang === 'it' ? 'Prodotto eliminato' : 'Produit supprimé')
   }
 
   return (

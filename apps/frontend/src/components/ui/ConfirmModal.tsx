@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
+import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface ConfirmModalProps {
   open:          boolean
@@ -13,7 +14,8 @@ interface ConfirmModalProps {
 
 /**
  * Modale de confirmation accessible (remplace window.confirm) :
- * role="dialog" + aria-modal, focus initial sur Annuler, focus-trap + Escape.
+ * role="dialog" + aria-modal, focus initial sur Annuler, focus-trap
+ * + restauration du focus (useModalFocus) + Escape.
  */
 export default function ConfirmModal({
   open, title, message,
@@ -22,24 +24,14 @@ export default function ConfirmModal({
   danger = false,
   onConfirm, onCancel,
 }: ConfirmModalProps) {
-  const ref = useRef<HTMLDivElement>(null)
+  // Piège à focus + focus initial sur Annuler + restauration au déclencheur
+  const ref = useModalFocus<HTMLDivElement>(open, { initialFocus: '[data-cancel]' })
 
   useEffect(() => {
     if (!open) return
-    const el = ref.current
-    if (!el) return
-    const cancel = el.querySelector<HTMLElement>('[data-cancel]')
-    cancel?.focus()
+    // Escape conservé ici : confirm() peut être rendu hors AppLayout (handler global)
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onCancel(); return }
-      if (e.key !== 'Tab') return
-      const els = el.querySelectorAll<HTMLElement>('button,[href],input,[tabindex]:not([tabindex="-1"])')
-      const first = els[0]; const last = els[els.length - 1]
-      if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last.focus() }
-      } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus() }
-      }
+      if (e.key === 'Escape') onCancel()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)

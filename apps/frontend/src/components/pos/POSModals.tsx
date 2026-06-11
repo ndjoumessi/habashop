@@ -3,6 +3,7 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, formatInCurrency } from '@/stores/appStore'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
+import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface POSModalsProps {
   showDiscountModal: boolean; setShowDiscountModal: (b: boolean) => void
@@ -43,14 +44,20 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
   // En paiement mixte, c'est la validité du split (somme=total, 2 modes) qui conditionne.
   const payOK = mixedOn ? mixedValid : cashOK
   const blocked = isSaving || waSending || !payOK
+  // Pièges à focus (focus initial + Tab bouclé + restauration au déclencheur)
+  const discountBoxRef = useModalFocus<HTMLDivElement>(showDiscountModal)
+  const closeBoxRef    = useModalFocus<HTMLDivElement>(showCloseModal)
+  const confirmBoxRef  = useModalFocus<HTMLDivElement>(showModal)
   return (
     <>
       {showDiscountModal && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowDiscountModal(false)}>
-          <div className="modal-box" style={{ maxWidth:420 }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true"
+          aria-label={lang === 'en' ? 'Apply a discount' : lang === 'es' ? 'Aplicar un descuento' : lang === 'it' ? 'Applica uno sconto' : 'Appliquer une remise'}
+          onClick={e => e.target === e.currentTarget && setShowDiscountModal(false)}>
+          <div ref={discountBoxRef} className="modal-box" style={{ maxWidth:420 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>🏷️ Appliquer une remise</h3>
-              <button className="mini-btn" onClick={() => setShowDiscountModal(false)}>✕</button>
+              <button className="mini-btn" aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={() => setShowDiscountModal(false)}>✕</button>
             </div>
 
             {/* Type */}
@@ -152,8 +159,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
           MODAL FERMETURE CAISSE
       ════════════════════════════════ */}
       {showCloseModal && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && setShowCloseModal(false)}>
-          <div className="modal-box" style={{ maxWidth:480 }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={ct.close_title} onClick={e => e.target===e.currentTarget && setShowCloseModal(false)}>
+          <div ref={closeBoxRef} className="modal-box" style={{ maxWidth:480 }}>
             <h3 style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:20 }}>
               {ct.close_title}
             </h3>
@@ -237,9 +244,10 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
       {showModal && (
         <div
           className="modal-backdrop" role="dialog" aria-modal="true"
+          aria-label={t('pos_confirm_sale')}
           onClick={e => e.target === e.currentTarget && setShowModal(false)}
         >
-          <div className="modal-box">
+          <div ref={confirmBoxRef} className="modal-box">
             {/* Header modal */}
             <div style={{
               display: 'flex',

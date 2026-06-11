@@ -9,6 +9,7 @@ import PWAInstallButton from '@/components/ui/PWAInstallButton'
 import BillingBanner from '@/components/ui/BillingBanner'
 import OfflineBanner from '@/components/ui/OfflineBanner'
 import { useI18n } from '@/hooks/useI18n'
+import { setAnnounceRegion } from '@/lib/announce'
 
 export default function AppLayout() {
   const { theme } = useAppStore()
@@ -38,6 +39,8 @@ export default function AppLayout() {
 
   return (
     <div className="app-shell">
+      {/* Région d'annonces lecteurs d'écran (mutations clés : vente, produit, client…) */}
+      <div className="sr-only" role="status" aria-live="polite" ref={setAnnounceRegion} />
       <a href="#main-content" className="skip-to-content">
         {i('Aller au contenu principal', 'Skip to main content', 'Ir al contenido principal', 'Vai al contenuto principale')}
       </a>

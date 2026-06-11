@@ -89,10 +89,15 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
           />
         </div>
 
+        {/* Compteur de résultats — annoncé aux lecteurs d'écran à chaque filtre/recherche */}
+        <div className="sr-only" role="status" aria-live="polite">
+          {filtered.length} {i('clients affichés', 'customers displayed', 'clientes mostrados', 'clienti visualizzati')}
+        </div>
+
         {/* Vue tableau */}
         {viewMode === 'table' && (
           <div className="table-wrap data-table">
-            <table>
+            <table aria-label={t('customers_title')}>
               <thead>
                 <tr>
                   <th scope="col">{t('col_client')}</th><th scope="col">{t('col_type')}</th><th scope="col">{t('col_phone')}</th>
@@ -127,27 +132,30 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} /></td>
                     <td>
                       <div className="flex gap-1.5">
-                        <button className="btn btn-sm btn-ghost stock-action" title={i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>
+                        <button className="btn btn-sm btn-ghost stock-action" title={i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} aria-label={`${i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} ${c.name}`} style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>
                           <Eye size={14} />
                         </button>
-                        <button className="btn btn-sm btn-ghost stock-action" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} style={{ cursor: 'pointer' }} onClick={() => {
+                        <button className="btn btn-sm btn-ghost stock-action" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} aria-label={`${i('Modifier', 'Edit', 'Editar', 'Modifica')} ${c.name}`} style={{ cursor: 'pointer' }} onClick={() => {
                           setEditCustomer(c)
                           setEditCustForm({ name:c.name, type:c.type, phone:c.phone, email:c.email??'', address:c.address??'', notes:c.notes??'' })
                           setCustEditMode(false)
                           setShowEditCustModal(true)
                         }}><Pencil size={14} /></button>
                         <button className="btn btn-sm btn-ghost stock-action" title={i('Nouvelle vente', 'New sale', 'Nueva venta', 'Nuova vendita')}
+                          aria-label={`${i('Nouvelle vente', 'New sale', 'Nueva venta', 'Nuova vendita')} — ${c.name}`}
                           style={{ color: 'var(--acc2)', cursor: 'pointer' }}
                           onClick={() => navigate('/app/pos', { state: { customer: c } })}>
                           <ShoppingCart size={14} />
                         </button>
                         {/* Carte fidélité — bouton proéminent (gradient primaire) */}
                         <button className="btn btn-sm stock-action" title={i('Carte fidélité', 'Loyalty card', 'Tarjeta fidelidad', 'Carta fedeltà')}
+                          aria-label={`${i('Carte fidélité', 'Loyalty card', 'Tarjeta fidelidad', 'Carta fedeltà')} — ${c.name}`}
                           style={{ background: 'var(--grad-p)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: 8, boxShadow: 'var(--sh-xs)', transition: 'all .15s ease' }}
                           onClick={() => setDigitalCardCustomerId(c.id)}>
                           <CreditCard size={14} />
                         </button>
                         <button className="btn btn-sm btn-ghost stock-action" title={i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')}
+                          aria-label={`${i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')} — ${c.name}`}
                           style={{ color: 'var(--p2)', cursor: 'pointer' }}
                           onClick={() => generateInvoice({
                             type: 'devis', lang,
@@ -168,7 +176,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}><div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Users size={28} style={{ color: 'var(--text4)' }} /></div>{i('Aucun client trouvé', 'No customer found', 'Sin clientes', 'Nessun cliente trovato')}</td></tr>
+                  <tr><td colSpan={7} className="text-center py-10" style={{ color: 'var(--text3)' }}><div role="status"><div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Users size={28} aria-hidden="true" style={{ color: 'var(--text4)' }} /></div>{i('Aucun client trouvé', 'No customer found', 'Sin clientes', 'Nessun cliente trovato')}</div></td></tr>
                 )}
               </tbody>
             </table>
@@ -285,7 +293,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
               )
             })}
             {filtered.length === 0 && (
-              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 0', color: 'var(--text3)', fontSize: 14 }}><div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Users size={28} style={{ color: 'var(--text4)' }} /></div>{i('Aucun client trouvé', 'No customer found', 'Ningún cliente encontrado', 'Nessun cliente trovato')}</div>
+              <div role="status" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 0', color: 'var(--text3)', fontSize: 14 }}><div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Users size={28} aria-hidden="true" style={{ color: 'var(--text4)' }} /></div>{i('Aucun client trouvé', 'No customer found', 'Ningún cliente encontrado', 'Nessun cliente trovato')}</div>
             )}
           </ResponsiveGrid>
         )}

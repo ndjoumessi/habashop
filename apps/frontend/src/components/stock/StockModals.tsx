@@ -8,6 +8,7 @@ import ViewField from '@/components/ui/ViewField'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
 import { lookupProductByEan } from '@/lib/productLookup'
+import { useModalFocus } from '@/hooks/useModalFocus'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -76,6 +77,10 @@ function BarcodeDisplay({ value }: { value: string }) {
 export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection }: StockModalsProps) {
   const [supSearch, setSupSearch] = useState('')
   const [supOpen, setSupOpen] = useState(false)
+  // Pièges à focus des 3 modales (focus initial + Tab bouclé + restauration)
+  const productBoxRef = useModalFocus<HTMLDivElement>(showModal)
+  const catBoxRef     = useModalFocus<HTMLDivElement>(showCatModal)
+  const labelBoxRef   = useModalFocus<HTMLDivElement>(showLabelModal)
   const filteredSuppliers = useMemo(() => {
     const q = supSearch.trim().toLowerCase()
     return q ? suppliers.filter(s => s.name.toLowerCase().includes(q)) : suppliers
@@ -147,8 +152,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
     <>
       {/* ── Modal produit enrichi ── */}
       {showModal && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal-box" style={{ maxWidth:560, maxHeight:'90vh', display:'flex', flexDirection:'column', padding:0, overflow:'hidden' }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true"
+          aria-label={editingSku ? (form.name || editingSku) : i('Nouveau produit', 'New product', 'Nuevo producto', 'Nuovo prodotto')}
+          onClick={e => e.target === e.currentTarget && setShowModal(false)}>
+          <div ref={productBoxRef} className="modal-box" style={{ maxWidth:560, maxHeight:'90vh', display:'flex', flexDirection:'column', padding:0, overflow:'hidden' }}>
             {/* Fixed header */}
             <div className="flex items-center justify-between" style={{ padding:'20px 24px 0', flexShrink:0 }}>
               <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>
@@ -204,7 +211,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>IMAGE</label>
                     <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
                       {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🫧','📦'].map(em => (
-                        <button key={em} type="button" onClick={() => setForm(f => ({...f, image:em}))} style={{
+                        <button key={em} type="button" aria-label={`${i("Choisir l'image", 'Choose image', 'Elegir imagen', 'Scegli immagine')} ${em}`} aria-pressed={form.image === em} onClick={() => setForm(f => ({...f, image:em}))} style={{
                           width:40, height:40, borderRadius:10, fontSize:20,
                           background: form.image === em ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
                           border:`1.5px solid ${form.image === em ? 'var(--p2)' : 'var(--border)'}`,
@@ -527,7 +534,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                     <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}</div>
                     <div style={{ fontSize:11, color:'var(--text3)' }}>{i('Affiche un badge PROMO au POS', 'Shows a PROMO badge at POS', 'Muestra una insignia PROMO en POS', 'Mostra un badge PROMO al POS')}</div>
                   </div>
-                  <button onClick={() => setForm(f => ({...f, hasPromotion:!f.hasPromotion}))} style={{
+                  <button role="switch" aria-checked={form.hasPromotion}
+                    aria-label={i('Produit en promotion', 'Product on promotion', 'Producto en promoción', 'Prodotto in promozione')}
+                    onClick={() => setForm(f => ({...f, hasPromotion:!f.hasPromotion}))} style={{
                     width:48, height:26, borderRadius:99, position:'relative',
                     background: form.hasPromotion ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor:'pointer',
                   }}>
@@ -560,7 +569,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       <div style={{ fontSize:13, fontWeight:'var(--fw-regular)', color:'var(--text)' }}>{tog.label}</div>
                       <div style={{ fontSize:11, color:'var(--text3)' }}>{tog.sub}</div>
                     </div>
-                    <button onClick={() => productEditMode && setForm(f => ({...f, [tog.key]:!f[tog.key]}))} style={{
+                    <button role="switch" aria-checked={!!form[tog.key]} aria-label={tog.label}
+                      onClick={() => productEditMode && setForm(f => ({...f, [tog.key]:!f[tog.key]}))} style={{
                       width:48, height:26, borderRadius:99, position:'relative',
                       background: form[tog.key] ? 'var(--p2)' : 'var(--bg4)', border:'none', cursor: productEditMode ? 'pointer' : 'default',
                     }}>
@@ -633,8 +643,12 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
       {/* ── Modal Catégorie ── */}
       {showCatModal && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCatModal(false)}>
-          <div className="modal-box" style={{ maxWidth:440 }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true"
+          aria-label={editCat
+            ? i('Modifier la catégorie', 'Edit category', 'Editar categoría', 'Modifica categoria')
+            : i('Nouvelle catégorie', 'New category', 'Nueva categoría', 'Nuova categoria')}
+          onClick={e => e.target === e.currentTarget && setShowCatModal(false)}>
+          <div ref={catBoxRef} className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>
                 {editCat
@@ -652,7 +666,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{lang === 'en' ? 'Icon (emoji)' : lang === 'es' ? 'Icono (emoji)' : lang === 'it' ? 'Icona (emoji)' : 'Icône (emoji)'}</label>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
                   {['🌾','🫙','🍚','🧼','🥛','🍅','🫒','☕','🐟','🧃','🍬','🧴','🥤','🍫','🌽','🫚'].map(emoji => (
-                    <button key={emoji} onClick={() => setCatForm(f => ({...f, icon:emoji}))} style={{
+                    <button key={emoji} aria-label={`${i("Choisir l'icône", 'Choose icon', 'Elegir icono', "Scegli l'icona")} ${emoji}`} aria-pressed={catForm.icon === emoji} onClick={() => setCatForm(f => ({...f, icon:emoji}))} style={{
                       width:36, height:36, borderRadius:8, fontSize:18, cursor:'pointer',
                       background: catForm.icon === emoji ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
                       border:`1.5px solid ${catForm.icon === emoji ? 'var(--p2)' : 'var(--border)'}`,
@@ -665,7 +679,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color:'var(--text3)' }}>{i('Couleur', 'Color', 'Color', 'Colore')}</label>
                 <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:8 }}>
                   {['#818CF8','#F59E0B','#34D399','#F472B6','#60A5FA','#A78BFA','#EF4444','#14B8A6','#F97316','#84CC16'].map(color => (
-                    <button key={color} onClick={() => setCatForm(f => ({...f, color}))} style={{
+                    <button key={color} aria-label={`${i('Choisir la couleur', 'Choose color', 'Elegir color', 'Scegli il colore')} ${color}`} aria-pressed={catForm.color === color} onClick={() => setCatForm(f => ({...f, color}))} style={{
                       width:28, height:28, borderRadius:'50%', background:color, border:'none', cursor:'pointer',
                       boxShadow: catForm.color === color ? `0 0 0 3px white, 0 0 0 5px ${color}` : 'none', transition:'box-shadow .15s',
                     }} />
@@ -707,13 +721,15 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
 
       {/* ══ Modal Étiquettes ══ */}
       {showLabelModal && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowLabelModal(false)}>
-          <div className="modal-box" style={{ maxWidth: 500 }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true"
+          aria-label={lang === 'en' ? 'Print labels' : lang === 'es' ? 'Imprimir etiquetas' : lang === 'it' ? 'Stampa etichette' : 'Imprimer des étiquettes'}
+          onClick={e => e.target === e.currentTarget && setShowLabelModal(false)}>
+          <div ref={labelBoxRef} className="modal-box" style={{ maxWidth: 500 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
               <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
                 <Tag size={14} /> {lang === 'en' ? 'Print labels' : lang === 'es' ? 'Imprimir etiquetas' : lang === 'it' ? 'Stampa etichette' : 'Imprimer des étiquettes'}
               </h3>
-              <button className="mini-btn" onClick={() => setShowLabelModal(false)}><X size={14} /></button>
+              <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setShowLabelModal(false)}><X size={14} /></button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

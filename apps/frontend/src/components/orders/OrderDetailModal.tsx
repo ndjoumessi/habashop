@@ -3,6 +3,7 @@ import IconButton from '@/components/ui/IconButton'
 import toast from 'react-hot-toast'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { type Order, type OrderStatus, OrderStatusPill } from './ordersShared'
 
 interface Props {
@@ -16,9 +17,10 @@ export default function OrderDetailModal({ order, onClose, changeStatus, printOr
   const { lang } = useConfig()
   const { i } = useI18n()
   const fmt = useFormatAmount()
+  const boxRef = useModalFocus<HTMLDivElement>()
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={order.ref} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth: 580 }}>
+      <div ref={boxRef} className="modal-box" style={{ maxWidth: 580 }}>
         <div className="flex items-start justify-between mb-5">
           <div>
             <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}>

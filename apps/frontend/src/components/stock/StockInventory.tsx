@@ -169,6 +169,11 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
           />
         </div>
 
+        {/* Compteur de résultats — annoncé aux lecteurs d'écran à chaque filtre/recherche */}
+        <div className="sr-only" role="status" aria-live="polite">
+          {pg.total} {i('produits affichés', 'products displayed', 'productos mostrados', 'prodotti visualizzati')}
+        </div>
+
         {/* Grid / List view */}
         {stockView === 'grid' ? (
           <ResponsiveGrid min={200}>
@@ -237,7 +242,9 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                         <Package size={11} /> {lang === 'en' ? 'Order' : lang === 'es' ? 'Pedir' : lang === 'it' ? 'Ordina' : 'Commander'}
                       </button>
                     )}
-                    <button className="mini-btn" style={{ cursor:'pointer' }} title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'} onClick={() => {
+                    <button className="mini-btn" style={{ cursor:'pointer' }} title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'}
+                      aria-label={(lang === 'en' ? 'View ' : lang === 'es' ? 'Ver ' : lang === 'it' ? 'Vedi ' : 'Voir ') + p.name}
+                      onClick={() => {
                       const h = hydrate(p)
                       setForm(f => ({ ...f, sku: p.sku, name: p.name.replace(/^\S+\s/, ''), category: p.category, buy: h.buy, sell: h.sell, stock: p.stock, threshold: p.threshold, supplier: p.supplier, supplierId: p.supplierId ?? '', image: p.name.match(/^\S+/)?.[0] ?? '📦', barcode: p.barcode ?? '', description: p.description ?? '', notes: p.notes ?? '', priceWholesale: h.priceWholesale, priceSemiWholesale: h.priceSemiWholesale, priceTiers: h.priceTiers }))
                       setEditingSku(p.sku); setEditingId(p._id ?? null); setModalTab('general'); setProductEditMode(false); setShowModal(true)
@@ -254,7 +261,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
           </ResponsiveGrid>
         ) : (
           <div className="table-wrap stock-table">
-            <table>
+            <table aria-label={t('stock_title')}>
               <thead>
                 <tr>
                   <th scope="col" style={{ width: 36, padding: '0 8px' }}>
@@ -328,10 +335,14 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       <td>
                         <div className="flex gap-1.5">
                           {st.cls !== 'badge-green' && (
-                            <button className="btn btn-sm btn-ghost stock-action gap-1" title="Commander" style={{ cursor:'pointer' }}
+                            <button className="btn btn-sm btn-ghost stock-action gap-1"
+                              title={i('Commander', 'Order', 'Pedir', 'Ordina')}
+                              aria-label={`${i('Commander', 'Order', 'Pedir', 'Ordina')} ${p.name}`}
+                              style={{ cursor:'pointer' }}
                               onClick={() => navigate('/app/orders')}><Package size={14} /></button>
                           )}
                           <button className="btn btn-sm btn-ghost stock-action" title={lang === 'en' ? 'View' : lang === 'es' ? 'Ver' : lang === 'it' ? 'Vedi' : 'Voir'}
+                            aria-label={(lang === 'en' ? 'View ' : lang === 'es' ? 'Ver ' : lang === 'it' ? 'Vedi ' : 'Voir ') + p.name}
                             onClick={() => {
                               const h = hydrate(p)
                               setForm(f => ({ ...f,

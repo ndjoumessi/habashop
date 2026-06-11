@@ -5,6 +5,7 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { CATEGORIES, MODES, VAT_RATES, catLabel } from './expensesShared'
 import type { Category } from './expensesShared'
+import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface Props {
   nDate: string; setNDate: (v: string) => void
@@ -30,10 +31,11 @@ export default function AddExpenseModal(props: Props) {
   const fmt = useFormatAmount()
   const tr = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const cl = (c: string) => catLabel(c, lang)
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={tr('Ajouter une dépense','Add an expense','Agregar un gasto','Aggiungi una spesa')} onClick={onClose}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:480 }}>
+      <div ref={boxRef} className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:480 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <span style={{ fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)' }}>{tr('Ajouter une dépense','Add an expense','Agregar un gasto','Aggiungi una spesa')}</span>
           <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={15} />} onClick={onClose} variant="surface" />

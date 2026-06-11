@@ -4,6 +4,7 @@ import IconButton from '@/components/ui/IconButton'
 import { X, Pencil, FileText, Check, Trash2 } from 'lucide-react'
 import { CATEGORIES, MODES, VAT_RATES, catLabel } from './expensesShared'
 import type { Category, Expense } from './expensesShared'
+import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface EditExpForm {
   date: string; label: string; category: Category
@@ -27,6 +28,7 @@ export default function ExpenseDetailModal(props: Props) {
   const fmt = useFormatAmount()
   const cl = (c: string) => catLabel(c, lang)
   const editExpTTC = Math.round(editExpForm.amountHT * (1 + editExpForm.vat / 100))
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   const vf = (label: string, value: string | number, mono = false) => (
     <div>
@@ -45,7 +47,7 @@ export default function ExpenseDetailModal(props: Props) {
         ? (lang === 'en' ? 'Edit expense' : lang === 'es' ? 'Editar el gasto' : lang === 'it' ? 'Modifica la spesa' : 'Modifier la dépense')
         : (lang === 'en' ? 'Expense detail' : lang === 'es' ? 'Detalle del gasto' : lang === 'it' ? 'Dettaglio spesa' : 'Détail dépense')}
       onClick={e => e.target===e.currentTarget && onClose()}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
+      <div ref={boxRef} className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:500 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <span style={{ fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}>
             {expEditMode ? <><Pencil size={15}/> {lang === 'en' ? 'Edit expense' : lang === 'es' ? 'Editar el gasto' : lang === 'it' ? 'Modifica la spesa' : 'Modifier la dépense'}</> : <><FileText size={15}/> {lang === 'en' ? 'Expense detail' : lang === 'es' ? 'Detalle del gasto' : lang === 'it' ? 'Dettaglio spesa' : 'Détail dépense'}</>}

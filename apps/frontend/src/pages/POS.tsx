@@ -8,6 +8,7 @@ import { resolveTierPrice } from '@/lib/pricing'
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 import { ShoppingCart } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { announce } from '@/lib/announce'
 
 import POSProductGrid from '@/components/pos/POSProductGrid'
 import POSCart from '@/components/pos/POSCart'
@@ -124,6 +125,7 @@ export default function POS() {
         ? { ...s, status: 'refunded', refundedAt: new Date().toISOString(), restocked: restock }
         : s))
       toast.success(lang === 'en' ? 'Sale refunded' : lang === 'es' ? 'Venta reembolsada' : lang === 'it' ? 'Vendita rimborsata' : 'Vente remboursée')
+      announce(lang === 'en' ? 'Sale refunded' : lang === 'es' ? 'Venta reembolsada' : lang === 'it' ? 'Vendita rimborsata' : 'Vente remboursée')
       setRefundSale(null)
     } catch (e: any) {
       const status = e?.status ?? e?.response?.status
@@ -391,6 +393,7 @@ export default function POS() {
 
     addCashierSale(total)
     toast.success('✅ Vente encaissée !')
+    announce(lang === 'en' ? 'Sale completed' : lang === 'es' ? 'Venta registrada' : lang === 'it' ? 'Vendita registrata' : 'Vente encaissée')
     if (posAutoprint) printTicket() // impression auto si config POS — avant le vidage du panier
     // On NE vide PAS le panier ici : on ouvre la modale de SUCCÈS (récap + « Imprimer le reçu »
     // + « Nouvelle vente ») → le panier/total restent dispos pour réimprimer. Le reset se fait

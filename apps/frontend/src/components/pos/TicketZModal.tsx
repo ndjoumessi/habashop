@@ -3,6 +3,7 @@ import { X, FileText, Loader2, RefreshCw, TrendingUp, RotateCcw, Wallet, Smartph
 import toast from 'react-hot-toast'
 import { ticketZApi } from '@/lib/api'
 import { useI18n } from '@/hooks/useI18n'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { useFormatAmount } from '@/stores/appStore'
 
 interface Props { onClose: () => void }
@@ -43,9 +44,13 @@ export default function TicketZModal({ onClose }: Props) {
     </div>
   )
 
+  const boxRef = useModalFocus<HTMLDivElement>()
+
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth: 460 }}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true"
+      aria-label={i('Clôture journalière', 'Daily closing', 'Cierre diario', 'Chiusura giornaliera')}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div ref={boxRef} className="modal-box" style={{ maxWidth: 460 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <ClipboardList size={16} style={{ color: 'var(--p2)' }} /> {i('Clôture journalière', 'Daily closing', 'Cierre diario', 'Chiusura giornaliera')}

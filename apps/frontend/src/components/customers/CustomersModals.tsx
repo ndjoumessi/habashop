@@ -11,6 +11,8 @@ import { lazy, Suspense } from 'react'
 const LoyaltyCardDigital = lazy(() => import('@/components/ui/LoyaltyCardDigital'))
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyNextThreshold } from '@/components/customers/customersShared'
+import { useModalFocus } from '@/hooks/useModalFocus'
+import { announce } from '@/lib/announce'
 
 interface CustomersModalsProps {
   viewCustomer: Customer | null; setViewCustomer: (c: any) => void
@@ -34,11 +36,16 @@ interface CustomersModalsProps {
 export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, lang, i, navigate, setDetailCustomer, setShowDetailModal, showEditCustModal, editCustomer, setShowEditCustModal, custEditMode, setCustEditMode, editCustForm, setEditCustForm, setCustomers, showCreate, setShowCreate, form, setForm, handleCreateCustomer, resetCustForm, showDetailModal, detailCustomer, setEditCustomer, digitalCardCustomerId, setDigitalCardCustomerId }: CustomersModalsProps) {
   const loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   const tenant = useAppStore(s => s.tenant)
+  // Pièges à focus des 4 modales (focus initial + Tab bouclé + restauration)
+  const viewBoxRef   = useModalFocus<HTMLDivElement>(!!viewCustomer)
+  const editBoxRef   = useModalFocus<HTMLDivElement>(showEditCustModal && !!editCustomer)
+  const createBoxRef = useModalFocus<HTMLDivElement>(showCreate)
+  const detailBoxRef = useModalFocus<HTMLDivElement>(showDetailModal && !!detailCustomer)
   return (
     <>
       {viewCustomer && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setViewCustomer(null)}>
-          <div className="modal-box" style={{ maxWidth: 560 }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={viewCustomer.name} onClick={e => e.target === e.currentTarget && setViewCustomer(null)}>
+          <div ref={viewBoxRef} className="modal-box" style={{ maxWidth: 560 }}>
             <div className="flex items-start justify-between mb-5">
               <div>
                 <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Users size={15} style={{color:'var(--p2)',flexShrink:0}} /> {viewCustomer.name}</h3>
@@ -86,7 +93,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
               <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text3)' }}>{i('Historique achats', 'Purchase history', 'Historial compras', 'Storico acquisti')}</div>
               <div className="table-wrap">
                 <table>
-                  <thead><tr><th>{i('Référence', 'Reference', 'Referencia', 'Riferimento')}</th><th>{i('Date', 'Date', 'Fecha', 'Data')}</th><th>{i('Articles', 'Items', 'Artículos', 'Articoli')}</th><th>{i('Montant', 'Amount', 'Importe', 'Importo')}</th></tr></thead>
+                  <thead><tr><th scope="col">{i('Référence', 'Reference', 'Referencia', 'Riferimento')}</th><th scope="col">{i('Date', 'Date', 'Fecha', 'Data')}</th><th scope="col">{i('Articles', 'Items', 'Artículos', 'Articoli')}</th><th scope="col">{i('Montant', 'Amount', 'Importe', 'Importo')}</th></tr></thead>
                   <tbody>
                     {viewCustomer.purchases.map(p => (
                       <tr key={p.ref}>
@@ -137,8 +144,8 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
       )}
 
       {showEditCustModal && editCustomer && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowEditCustModal(false)}>
-          <div className="modal-box" style={{ maxWidth: 480 }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={editCustomer.name} onClick={e => e.target === e.currentTarget && setShowEditCustModal(false)}>
+          <div ref={editBoxRef} className="modal-box" style={{ maxWidth: 480 }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>👤 {editCustomer.name}</h3>
               <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="btn btn-ghost btn-sm" onClick={() => setShowEditCustModal(false)}><X size={14} /></button>
@@ -205,6 +212,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                         setCustomers(prev => prev.filter(c => c.id !== editCustomer.id))
                         setShowEditCustModal(false)
                         toast.success(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
+                        announce(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
                       } catch (e: any) { toast.error(e?.message ?? i('Erreur', 'Error', 'Error', 'Errore')) }
                     }}><Trash2 size={13} /> {i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}</button>
                   <button className="btn btn-ghost" onClick={() => setShowEditCustModal(false)}>{lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
@@ -223,6 +231,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                     ))
                     setShowEditCustModal(false)
                     toast.success(`${editCustForm.name} ${i('mis à jour', 'updated', 'actualizado', 'aggiornato')}`)
+                    announce(`${i('Client', 'Customer', 'Cliente', 'Cliente')} ${editCustForm.name} ${i('mis à jour', 'updated', 'actualizado', 'aggiornato')}`)
                   }}>{i('Enregistrer', 'Save', 'Guardar', 'Salva')}</button>
                 </>
               )}
@@ -232,8 +241,10 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
       )}
 
       {showCreate && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
-          <div style={{
+        <div className="modal-backdrop" role="dialog" aria-modal="true"
+          aria-label={lang === 'en' ? 'New customer' : lang === 'es' ? 'Nuevo cliente' : lang === 'it' ? 'Nuovo cliente' : 'Nouveau client'}
+          onClick={e => e.target === e.currentTarget && setShowCreate(false)}>
+          <div ref={createBoxRef} style={{
             background:'var(--card)',
             border:'1px solid var(--border)',
             borderRadius:24, width:'100%', maxWidth:480,
@@ -267,7 +278,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                   {lang === 'en' ? 'Add a customer to your CRM' : lang === 'es' ? 'Agregue un cliente a su CRM' : lang === 'it' ? 'Aggiungi un cliente al tuo CRM' : 'Ajoutez un client à votre CRM'}
                 </div>
               </div>
-              <button type="button" onClick={()=>setShowCreate(false)} style={{
+              <button type="button" aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={()=>setShowCreate(false)} style={{
                 width:30, height:30, borderRadius:9,
                 background:'var(--bg3)', border:'1px solid var(--border)',
                 cursor:'pointer', fontSize:14, color:'var(--text3)',
@@ -353,8 +364,8 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
       )}
 
       {showDetailModal && detailCustomer && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowDetailModal(false)}>
-          <div style={{
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={detailCustomer.name} onClick={e => e.target === e.currentTarget && setShowDetailModal(false)}>
+          <div ref={detailBoxRef} style={{
             background: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: 24, width: '100%', maxWidth: 600,
@@ -427,7 +438,7 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                     )}
                   </div>
                 </div>
-                <button type="button" onClick={() => setShowDetailModal(false)} style={{
+                <button type="button" aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={() => setShowDetailModal(false)} style={{
                   width: 32, height: 32, borderRadius: 10,
                   background: 'var(--bg3)', border: '1px solid var(--border)',
                   cursor: 'pointer', color: 'var(--text3)',
@@ -535,11 +546,11 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
                     <table>
                       <thead>
                         <tr>
-                          <th>{i('RÉFÉRENCE', 'REF', 'REF', 'RIF')}</th>
-                          <th>DATE</th>
-                          <th>{i('ARTICLES', 'ITEMS', 'ARTÍCULOS', 'ARTICOLI')}</th>
-                          <th>{i('MONTANT', 'AMOUNT', 'IMPORTE', 'IMPORTO')}</th>
-                          <th>STATUT</th>
+                          <th scope="col">{i('RÉFÉRENCE', 'REF', 'REF', 'RIF')}</th>
+                          <th scope="col">DATE</th>
+                          <th scope="col">{i('ARTICLES', 'ITEMS', 'ARTÍCULOS', 'ARTICOLI')}</th>
+                          <th scope="col">{i('MONTANT', 'AMOUNT', 'IMPORTE', 'IMPORTO')}</th>
+                          <th scope="col">STATUT</th>
                         </tr>
                       </thead>
                       <tbody>

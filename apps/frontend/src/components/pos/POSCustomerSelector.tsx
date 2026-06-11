@@ -132,6 +132,7 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
             <input
               className="input"
               style={{ width: '100%', paddingLeft: 32, fontSize: 13 }}
+              aria-label={i('Ajouter un client (nom, téléphone…)', 'Add a customer (name, phone…)', 'Añadir cliente (nombre, teléfono…)', 'Aggiungi cliente (nome, telefono…)')}
               placeholder={i('Ajouter un client (nom, téléphone…)', 'Add a customer (name, phone…)', 'Añadir cliente (nombre, teléfono…)', 'Aggiungi cliente (nome, telefono…)')}
               value={query}
               onChange={e => setQuery(e.target.value)}
@@ -158,8 +159,8 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
               boxShadow: 'var(--sh-xl, 0 10px 40px rgba(0,0,0,.3))', overflow: 'hidden', maxHeight: 240, overflowY: 'auto',
             }}>
               {results.length === 0 ? (
-                <div style={{ padding: '12px 14px', fontSize: 12, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <UserPlus size={13} /> {i('Aucun client trouvé', 'No customer found', 'Ningún cliente', 'Nessun cliente')}
+                <div role="status" style={{ padding: '12px 14px', fontSize: 12, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <UserPlus size={13} aria-hidden="true" /> {i('Aucun client trouvé', 'No customer found', 'Ningún cliente', 'Nessun cliente')}
                 </div>
               ) : results.map(c => (
                 <button key={c.id} type="button" onClick={() => select(c)}

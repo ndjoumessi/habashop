@@ -6,6 +6,7 @@ import { customersApi } from '@/lib/api'
 import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown, Navigation2, Globe, Flame, AlertTriangle, DollarSign, StickyNote, UserPlus, CheckCircle, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { confirm } from '@/lib/confirm'
+import { announce } from '@/lib/announce'
 import { exportCSV, openPDF, htmlTable, generateInvoice } from '@/utils/export'
 import LoyaltyCard from '@/components/ui/LoyaltyCard'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
@@ -154,6 +155,7 @@ export default function Customers() {
       await customersApi.delete(id)
       setCustomers(prev => prev.filter(x => x.id !== id))
       toast.success(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
+      announce(i('Client supprimé', 'Customer deleted', 'Cliente eliminado', 'Cliente eliminato'))
     } catch {
       toast.error(i('Échec de la suppression — réessayer', 'Delete failed — please retry', 'Error al eliminar — reintenta', 'Eliminazione fallita — riprova'))
     }
@@ -176,6 +178,7 @@ export default function Customers() {
       const created = await customersApi.create(data)
       setCustomers(prev => [...prev, mapApiCustomer(created)])
       toast.success(i('Client créé', 'Customer created', 'Cliente creado', 'Cliente creato'))
+      announce(i('Client créé', 'Customer created', 'Cliente creado', 'Cliente creato'))
       setShowCreate(false)
       resetCustForm()
     } catch {
@@ -194,6 +197,7 @@ export default function Customers() {
         notes: '',
       }])
       toast.success(i('Client créé (local)', 'Customer created (local)', 'Cliente creado (local)', 'Cliente creato (locale)'))
+      announce(i('Client créé', 'Customer created', 'Cliente creado', 'Cliente creato'))
       setShowCreate(false)
       resetCustForm()
     }

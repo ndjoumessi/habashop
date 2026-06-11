@@ -89,7 +89,7 @@ export default function SuppliersTable(props: Props) {
 
       {/* Tableau */}
       <div className="table-wrap data-table">
-        <table>
+        <table aria-label={t('suppliers_title')}>
           <thead>
             <tr>
               <th scope="col">{t('col_supplier')}</th><th scope="col">{t('col_category')}</th><th scope="col">{t('col_phone')}</th>
@@ -128,14 +128,15 @@ export default function SuppliersTable(props: Props) {
                 <td><SupplierStatusPill status={s.status} lang={lang} /></td>
                 <td>
                   <div className="flex gap-1.5">
-                    <button className="btn btn-sm btn-ghost stock-action" title={i('Voir fiche', 'View', 'Ver', 'Vedi')} onClick={() => onView(s)}>
+                    <button className="btn btn-sm btn-ghost stock-action" title={i('Voir fiche', 'View', 'Ver', 'Vedi')} aria-label={`${i('Voir fiche', 'View', 'Ver', 'Vedi')} ${s.name}`} onClick={() => onView(s)}>
                       <Eye size={14} />
                     </button>
                     <button className="btn btn-sm btn-ghost stock-action" title={`${i('Appeler', 'Call', 'Llamar', 'Chiamare')} ${s.phone}`}
+                      aria-label={`${i('Appeler', 'Call', 'Llamar', 'Chiamare')} ${s.name} — ${s.phone}`}
                       onClick={() => onCall(s)}>
                       <Phone size={14} />
                     </button>
-                    <button className="btn btn-sm btn-ghost stock-action" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} style={{ cursor: 'pointer' }} onClick={() => onEdit(s)}><Pencil size={14} /></button>
+                    <button className="btn btn-sm btn-ghost stock-action" title={i('Modifier', 'Edit', 'Editar', 'Modifica')} aria-label={`${i('Modifier', 'Edit', 'Editar', 'Modifica')} ${s.name}`} style={{ cursor: 'pointer' }} onClick={() => onEdit(s)}><Pencil size={14} /></button>
                     <button className="btn btn-sm btn-ghost stock-action"
                       title={i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
                       aria-label={i(`Supprimer ${s.name}`, `Delete ${s.name}`, `Eliminar ${s.name}`, `Elimina ${s.name}`)}
