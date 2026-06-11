@@ -8,7 +8,8 @@ SaaS de gestion commerciale multi-tenant pour boutiques/superettes (Afrique de l
 
 ## Stack technique
 
-- **`apps/frontend`** — React 18 + TypeScript + Vite, Zustand (state, persisté localStorage), React Router, Lucide icons, recharts, jsbarcode (EAN-13 SVG), @zxing (scan caméra), qrcode + html2canvas (carte fidélité), Playwright (E2E), Sentry (`@sentry/react` + `@sentry/vite-plugin`, source maps au build, org **haba-76** / projet **habashop-web**), PWA via vite-plugin-pwa.
+- **`apps/frontend`** — React 18 + TypeScript + **Vite 8** + **vitest 4**, Zustand (state, persisté localStorage), React Router (≥6.30.4, open redirect patché), Lucide icons, recharts, jsbarcode (EAN-13 SVG), @zxing (scan caméra), qrcode + html2canvas (carte fidélité), Playwright (E2E), Sentry (`@sentry/react` + `@sentry/vite-plugin`, source maps au build, org **haba-76** / projet **habashop-web**), PWA via vite-plugin-pwa 1.x.
+- **Perf web** : routes toutes lazy (App.tsx) + préchauffage idle Dashboard/POS post-login (mêmes spécifieurs d'import → même chunk). Precache PWA ~1,7 MB : les chunks `charts`/`barcode`/`canvas` (manualChunks) sont EXCLUS du precache (`workbox.globIgnores`) et servis en runtime CacheFirst `lazy-chunks-cache` — préserver ce découpage si on touche vite.config.ts. Chunk principal ~68 KB gz.
 - **`apps/backend`** — Fastify + Prisma + PostgreSQL (Railway), bcryptjs + JWT, Resend (emails), pdfkit (factures + Ticket Z, PDF serveur), twilio (WhatsApp auto + manuel), Sentry, crons `setInterval` natifs.
 - Multi-devises (XOF/XAF/EUR/USD/CAD/GBP, **base XOF** + conversion) et multi-langues (fr/en/es/it).
 
@@ -89,6 +90,10 @@ Autres helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
 - Montants : `useFormatAmount()` ou `fmt()` — jamais de formatage manuel.
 - Icônes : **Lucide uniquement** (pas d'emoji UI), `cursor:pointer` + transitions sur cliquables.
 - Couleurs : **`var(--*)`** systématiquement — jamais de hex hardcodé (9 thèmes). Exceptions intentionnelles : palettes sémantiques (avatars/catégories/charts/shifts), styles Google Maps, templates PDF, pages publiques `.public-scope`, `#fff` sur boutons colorés, défs de thème (`appStore.ts`). Le chantier de conversion est **CLOS** — ne pas relancer de lot, le restant est correct.
+- Graisses : **tokens `--fw-regular(500)/--fw-semibold(700)/--fw-bold(800)` uniquement** — jamais de `fontWeight` numérique brut (sweep 266 occ. fait ; exclusions assumées : templates print/PDF embarqués, SVG data-URL Maps, pages publiques `.public-scope`). Semibold = titres page/panel/modale, valeurs héro mono, boutons primaires ; regular = le reste.
+- **Toasts sans emoji** (purge faite sur 26 fichiers) — texte seul. Mutations clés : appeler **`announce(msg)`** (`@/lib/announce`, région aria-live globale AppLayout) à côté du `toast.success`.
+- **Toute nouvelle modale** : `const boxRef = useModalFocus<HTMLDivElement>()` (`@/hooks/useModalFocus` — piège Tab, pile de modales, restauration du focus) + `ref` sur la `.modal-box` + `role="dialog"`/`aria-modal`/`aria-label` i18n sur le backdrop. 34 modales branchées. ⚠️ `aria-grabbed`/`aria-dropeffect` = dépréciés ARIA 1.1, ne pas en poser (utiliser aria-pressed + aria-live).
+- Pills de statut : pattern tokens `--c-{green,orange,blue,red,amber}-bg/-border` + couleur texte sémantique (`--acc2`/`--warn`/`--acc3`/`--danger`), `--r-full`, 12px semibold — cf. `ordersShared.OrderStatusPill`, `suppliersShared.SupplierStatusPill`.
 - Logs : `logger.log/warn` (`@/lib/logger`, filtre `import.meta.env.DEV`) ; pas de `console.*` en commit.
 - Éditions de masse multi-octets/emoji : script Python ou `.ts` tsx-runnable, pas de `sed`.
 - UI : primitives `components/ui/` (`ResponsiveGrid`, `IconButton`, `Tabs`/TabBar, `Button`/AppButton, `FocusTooltip`, `Skeleton`, `FilterSelect`) — voir `components/ui/README.md`. Tokens `--sp-*`, `--fs-*` (plancher 11px), `--fw-*` (3 graisses). ⚠️ FS macOS case-insensitive : ne pas créer `Button.tsx`/`Tabs.tsx`/`Tooltip.tsx` (collision scaffolds shadcn minuscules, conservés car importés entre eux).
@@ -133,8 +138,14 @@ Welcome, trial reminders, upgrade, weekly report, invitation, stock alert, réca
 ### Multi-tenant
 Scope `tenantId` sur toutes les routes ; soft-delete `deletedAt` partout ; `email @unique` global libéré au soft-delete.
 
+### Accessibilité (chantier 2026-06 — audité)
+- **Scores audités** (lecture seule, post-correctifs) : UI/UX Paie 93 / Réglages 93 / Planning 95 (moyenne 93,7) ; a11y globale 91 (pondérée 7 pages).
+- Infra : `useModalFocus` (34 modales : piège Tab + pile + restauration), `lib/announce.ts` + région aria-live AppLayout (mutations annoncées sur 8 domaines), skip-link → `#main-content`, `*:focus-visible` global, `prefers-reduced-motion`.
+- Planning : déplacement de créneau **clavier + tactile** via poignée GripVertical (Entrée/tap = saisir, flèches/Tab/tap = cibler, Entrée/tap = déposer, Échap = annuler, Suppr = effacer) — réutilise `onMoveShift`, drag souris inchangé. Ne pas casser ce dispositif en retouchant PlanningGrid.
+- Tables labellisées (`aria-label` + `scope="col"`), `role="status"` sur compteurs de résultats/états vides, dropdowns maison en `aria-expanded`/listbox, Switch settings = `role="switch"` + `aria-checked` + label + `aria-describedby`.
+
 ### Tests
-- **386 vitest front / 306 back** (helpers purs + anchor tests de découpe + contraste AA 9 thèmes). Tests backend = **prisma mocké** (`vi.mock('../db')`) — jamais la DB prod. Routes testées via `Fastify().register(routes)` + `app.inject()` en mockant `../middleware/authenticate`.
+- **386 vitest front / 306 back** (vitest 4 ; helpers purs + anchor tests de découpe + contraste AA 9 thèmes). Tests backend = **prisma mocké** (`vi.mock('../db')`) — jamais la DB prod. Routes testées via `Fastify().register(routes)` + `app.inject()` en mockant `../middleware/authenticate`.
 - **Playwright E2E = live contre prod** (`baseURL = https://habashop.vercel.app`, login démo). Session réutilisée via `storageState` (projet `setup` → `e2e/.auth/user.json` gitignored) ; specs : `login()` no-op + **un SEUL `page.goto`** par test (un 2ᵉ goto annule le `/me` → `.catch(logout)` → bounce `/login`). **`workers:1`** (backend mono-réplique → parallélisation = cold starts = logout). `smoke.spec` surcharge storageState vide.
 - ⚠️ **Tenant démo partagé** : `i18n-es-it.spec` change la langue tenant (persistée) → reset **déterministe via API** (`PATCH /api/tenant {lang:'fr'}` awaité) en afterEach + afterAll, échec = throw. Seed force `lang:'fr'` (create ET update). Remède manuel si drift : `PATCH /api/tenant {lang:'fr'}`.
 
@@ -147,12 +158,13 @@ Scope `tenantId` sur toutes les routes ; soft-delete `deletedAt` partout ; `emai
 - **`ORANGE_MONEY_WEBHOOK_SECRET` à poser sur Railway** : sans lui, `verifyOrangeWebhook` (fail-closed) rejette tout → auto-activation Orange inerte. **S**
 
 ### 🟡 / 🟢
-- **Bundle recharts 110KB gz** : déjà lazy (hors rendu initial) ; remplacer par visx pour réduire le poids brut = **L**, non fait.
-- **npm audit** : 6 vulns modérées DEV-only (chaîne esbuild→vite→vitest), fix = upgrade majeur vite/vitest à planifier.
-- **Sweep styles inline → tokens** + migration long-tail vers primitives ui/ : incrémental, non fait (~65 grilles fixes, ~76 boutons icon-only hors surfaces nommées).
+- **Paie : statuts non persistés** — « Générer la paie »/« Marquer payé » = state local pur (`pages/Payroll.tsx`), perdu au refresh ; il n'existe pas de table Payroll en base. Seul point structurel relevé par les audits UI/UX. **M** (modèle + routes + câblage).
+- **Bundle recharts ~105KB gz** : lazy ET hors precache PWA (runtime cache) ; remplacer par visx pour réduire le poids brut = **L**, non fait.
+- **Sweep styles inline → tokens** + migration long-tail vers primitives ui/ : incrémental, partiellement fait (font-weights ✅, gradients CustomersModals ✅ ; restent ~65 grilles fixes, fallbacks `var(--acc3,#00B8FF)`, ambres SectionLang).
+- A11y résiduel signalé (mineur) : 3 champs SectionCatalog sans label, panneau indicatif pays POSModals non-listbox (restructuration DOM), vue liste Stock en divs sans sémantique table.
 - Tests logique métier backend au-delà des helpers existants : possible, **L**.
 
-> Tout le reste de l'ancienne dette est **CLOS** (découpes pages <600L avec anchor tests, HR XL, aria-labels, couleurs hardcodées chrome, WebSocket auth, devise SectionLang, og-image webp, i18n Marketing, émojis Head). Ne pas relancer ces chantiers.
+> Tout le reste de l'ancienne dette est **CLOS** (découpes pages <600L avec anchor tests, HR XL, aria-labels, couleurs hardcodées chrome, WebSocket auth, devise SectionLang, og-image webp, i18n Marketing, émojis Head, **npm audit 0 vuln** — vite 8/vitest 4 front+back sans aucun ajustement de config, **redesign visuel 10 pages**, **chantier a11y** — voir section A11y). Ne pas relancer ces chantiers.
 
 ## Application mobile
 
@@ -216,4 +228,4 @@ Seedés dans le backend réel (`demo1234`) → login normal = vrai JWT. L'ancien
 
 ## Historique
 
-i18n complété en 8 lots (fr/en/es/it partout). Découpes/refontes/design system « Daylight » (3 vagues : lisibilité AA, 6 primitives ui/, tokens + thème soleil ☀️ haut-contraste 9ᵉ thème) livrés. Thème par défaut `gold` (violet verrouillé + or `--acc2`). Détails : `git log`, `I18N_AUDIT.md`.
+i18n complété en 8 lots (fr/en/es/it partout). Découpes/refontes/design system « Daylight » (3 vagues : lisibilité AA, 6 primitives ui/, tokens + thème soleil ☀️ haut-contraste 9ᵉ thème) livrés. Thème par défaut `gold` (violet verrouillé + or `--acc2`). 2026-06 : redesign visuel des 10 pages (pills statut, `.data-table`, cards bg2, KPI sans glow) ; typo → tokens `--fw-*` (266 occ.) ; upgrade vite 8/vitest 4 (npm audit 0) ; precache PWA −39 % + warmup routes critiques ; chantier a11y complet audité (UI/UX 93,7 / a11y 91 — boucle audit→fix→re-audit, rapports `UIUX_AUDIT_COMPOSANTS.md` + transcripts). Détails : `git log`, `I18N_AUDIT.md`.
