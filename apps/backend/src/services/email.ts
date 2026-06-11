@@ -102,11 +102,13 @@ export async function sendWelcomeEmail(opts: {
 }): Promise<boolean> {
   const { to, shopName, ownerName } = opts
   const firstName = ownerName.split(' ')[0]
+  const eFirst    = escHtml(firstName)
+  const eShop     = escHtml(shopName)
   const loginUrl  = 'https://habashop.vercel.app/login'
 
   const html = baseTemplate(`
-    <h1>Bienvenue sur HabaShop, ${firstName} ! 🎉</h1>
-    <p>Votre boutique <strong>${shopName}</strong> est prête.
+    <h1>Bienvenue sur HabaShop, ${eFirst} ! 🎉</h1>
+    <p>Votre boutique <strong>${eShop}</strong> est prête.
     Vous bénéficiez d'un <strong>essai gratuit de 14 jours</strong>
     pour explorer toutes les fonctionnalités.</p>
 
@@ -158,11 +160,13 @@ export async function sendTrialReminder7Days(opts: {
 }): Promise<boolean> {
   const { to, shopName, ownerName, caToday, txCount } = opts
   const firstName   = ownerName.split(' ')[0]
+  const eFirst      = escHtml(firstName)
+  const eShop       = escHtml(shopName)
   const upgradeUrl  = 'https://habashop.vercel.app/app/upgrade'
 
   const html = baseTemplate(`
-    <h1>Plus que 7 jours d'essai, ${firstName}</h1>
-    <p>Votre essai gratuit de <strong>${shopName}</strong>
+    <h1>Plus que 7 jours d'essai, ${eFirst}</h1>
+    <p>Votre essai gratuit de <strong>${eShop}</strong>
     expire dans <strong>7 jours</strong>. Continuez sans interruption
     en passant au plan Pro.</p>
 
@@ -217,11 +221,13 @@ export async function sendTrialReminder3Days(opts: {
 }): Promise<boolean> {
   const { to, shopName, ownerName } = opts
   const firstName  = ownerName.split(' ')[0]
+  const eFirst     = escHtml(firstName)
+  const eShop      = escHtml(shopName)
   const upgradeUrl = 'https://habashop.vercel.app/app/upgrade'
 
   const html = baseTemplate(`
-    <h1>🚨 Plus que 3 jours — ${firstName}</h1>
-    <p>L'essai gratuit de <strong>${shopName}</strong>
+    <h1>🚨 Plus que 3 jours — ${eFirst}</h1>
+    <p>L'essai gratuit de <strong>${eShop}</strong>
     expire dans <strong>3 jours</strong>.
     Après cette date, l'accès à votre caisse et vos données
     sera suspendu.</p>
@@ -281,10 +287,13 @@ export async function sendUpgradeConfirmation(opts: {
     card:         'Carte bancaire',
   }
 
+  const eFirst = escHtml(firstName)
+  const eShop  = escHtml(shopName)
+
   const html = baseTemplate(`
     <h1>✅ Votre plan ${planLabel} est activé !</h1>
-    <p>Félicitations ${firstName} ! Votre boutique
-    <strong>${shopName}</strong> est maintenant sur le plan
+    <p>Félicitations ${eFirst} ! Votre boutique
+    <strong>${eShop}</strong> est maintenant sur le plan
     <strong>${planLabel}</strong>. Toutes les fonctionnalités
     sont débloquées.</p>
 
@@ -303,7 +312,7 @@ export async function sendUpgradeConfirmation(opts: {
       </div>
     </div>
 
-    ${ref ? `<p style="font-size:12px;color:#8888A8;">Référence de paiement : <code>${ref}</code></p>` : ''}
+    ${ref ? `<p style="font-size:12px;color:#8888A8;">Référence de paiement : <code>${escHtml(ref)}</code></p>` : ''}
 
     <div class="divider"></div>
 
@@ -340,11 +349,13 @@ export async function sendTrialExpired(opts: {
 }): Promise<boolean> {
   const { to, shopName, ownerName } = opts
   const firstName  = ownerName.split(' ')[0]
+  const eFirst     = escHtml(firstName)
+  const eShop      = escHtml(shopName)
   const upgradeUrl = 'https://habashop.vercel.app/app/upgrade'
 
   const html = baseTemplate(`
-    <h1>Votre essai a expiré, ${firstName}</h1>
-    <p>L'essai gratuit de <strong>${shopName}</strong> est terminé.
+    <h1>Votre essai a expiré, ${eFirst}</h1>
+    <p>L'essai gratuit de <strong>${eShop}</strong> est terminé.
     Votre compte est suspendu mais <strong>toutes vos données
     sont conservées</strong> — vos produits, clients et historique
     de ventes sont en sécurité.</p>
@@ -564,8 +575,8 @@ export async function sendWeeklyReport(opts: {
   const dashUrl = 'https://habashop.vercel.app/app/dashboard'
 
   const html = baseTemplate(`
-    <h1>📊 Rapport de la semaine — ${shopName}</h1>
-    <p>Bonjour ${firstName}, voici le bilan de la semaine
+    <h1>📊 Rapport de la semaine — ${escHtml(shopName)}</h1>
+    <p>Bonjour ${escHtml(firstName)}, voici le bilan de la semaine
     pour votre boutique.</p>
 
     <div class="kpi-row">

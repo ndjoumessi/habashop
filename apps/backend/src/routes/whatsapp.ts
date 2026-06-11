@@ -3,7 +3,12 @@ import twilio from 'twilio'
 import { CronJob } from 'cron'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { authenticateAdmin } from '../middleware/superAdmin'
 import { fmtMoney, localeOf } from '../services/whatsappSend'
+
+// Envois sortants via le Twilio plateforme : réservés aux rôles de gestion
+const WHATSAPP_SEND_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'] as const
+export const canSendWhatsApp = (role?: string): boolean => WHATSAPP_SEND_ROLES.includes(role as never)
 
 type I4 = (fr: string, en: string, es: string, it: string) => string
 const makeI = (lang: string): I4 => (fr, en, es, it) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
@@ -228,6 +233,9 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/whatsapp/send-alert', { preHandler: authenticate }, async (request, reply) => {
+    if (!canSendWhatsApp((request.user as any)?.role)) {
+      return reply.code(403).send({ error: 'Accès refusé — rôle MANAGER ou ADMIN requis' })
+    }
     const { phone, alertType, data, lang } = request.body as { phone?: string; alertType?: string; data?: any; lang?: string }
 
     try {
@@ -258,18 +266,22 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // ─── CRON TEST ROUTES ─────────────────
-  app.post('/api/whatsapp/test-evening', { preHandler: authenticate }, async () => {
+  // Itèrent TOUS les tenants via le Twilio plateforme → SUPER_ADMIN uniquement
+  app.post('/api/whatsapp/test-evening', { preHandler: authenticateAdmin }, async () => {
     await sendEveningReport()
     return { success: true, message: 'Résumé soir envoyé !' }
   })
 
-  app.post('/api/whatsapp/test-morning', { preHandler: authenticate }, async () => {
+  app.post('/api/whatsapp/test-morning', { preHandler: authenticateAdmin }, async () => {
     await sendMorningStockAlert()
     return { success: true, message: 'Alerte matin envoyée !' }
   })
 
   // ─── WHATSAPP BROADCAST ───────────────
   app.post('/api/whatsapp/broadcast', { preHandler: authenticate }, async (request, reply) => {
+    if (!canSendWhatsApp((request.user as any)?.role)) {
+      return reply.code(403).send({ error: 'Accès refusé — rôle MANAGER ou ADMIN requis' })
+    }
     const { phones, message, lang } = request.body as { phones: string[]; message: string; lang: string }
     if (!phones?.length || !message?.trim()) {
       return reply.code(400).send({ error: 'Paramètres manquants' })

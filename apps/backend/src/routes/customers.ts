@@ -215,7 +215,11 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/customers/:id/loyalty', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const { tenantId, role } = request.user as { tenantId: string; role?: string }
+    // Ajustement manuel de points = levier de remise → réservé aux rôles de gestion
+    if (!['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(role ?? '')) {
+      return reply.code(403).send({ error: 'Accès refusé — rôle MANAGER ou ADMIN requis' })
+    }
     const { id } = request.params as { id: string }
     const { points, reason } = request.body as { points: number; reason?: string }
     if (typeof points !== 'number' || !Number.isFinite(points) || points === 0) {
