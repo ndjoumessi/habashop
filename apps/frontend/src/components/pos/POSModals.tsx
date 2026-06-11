@@ -1,4 +1,4 @@
-import { X, Smartphone, Printer, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react'
+import { X, Smartphone, Printer, CheckCircle, AlertTriangle, Loader2, TestTube } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, formatInCurrency } from '@/stores/appStore'
@@ -769,21 +769,34 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 {/* Polling : QR code + lien + instruction */}
                 {cardStatus === 'polling' && (
                   <div>
-                    <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
-                      {cardQrDataUrl
-                        ? <img src={cardQrDataUrl} alt="QR paiement carte" width={160} height={160} style={{ borderRadius:8, display:'block' }} />
-                        : <div style={{ width:160, height:160, background:'var(--bg4)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                            <Loader2 size={24} style={{ animation:'spin 1s linear infinite', color:'#5B4EE8' }} />
-                          </div>
-                      }
-                    </div>
-                    {cardPaymentUrl && (
-                      <div style={{ textAlign:'center', marginBottom:8 }}>
-                        <a href={cardPaymentUrl} target="_blank" rel="noopener noreferrer"
-                          style={{ fontSize:11, color:'#5B4EE8', wordBreak:'break-all' as const }}>
-                          {lang === 'en' ? 'Or share this link' : lang === 'es' ? 'O comparta este enlace' : lang === 'it' ? 'O condividi questo link' : 'Ou partagez ce lien'}
-                        </a>
+                    {cardPaymentUrl?.includes('SANDBOX-CARD-') ? (
+                      /* Sandbox : lien fictif → indicateur mode test, pas de QR */
+                      <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 12px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, marginBottom:10 }}>
+                        <TestTube size={18} style={{ color:'var(--text2)', flexShrink:0 }} />
+                        <span style={{ fontSize:12, color:'var(--text2)', fontWeight:'var(--fw-semibold)' }}>
+                          {lang === 'en' ? 'Sandbox mode — payment simulated automatically' : lang === 'es' ? 'Modo sandbox — pago simulado automáticamente' : lang === 'it' ? 'Modalità sandbox — pagamento simulato automaticamente' : 'Mode sandbox — paiement simulé automatiquement'}
+                        </span>
                       </div>
+                    ) : (
+                      /* Production : QR réel + lien partageable */
+                      <>
+                        <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
+                          {cardQrDataUrl
+                            ? <img src={cardQrDataUrl} alt="QR paiement carte" width={160} height={160} style={{ borderRadius:8, display:'block' }} />
+                            : <div style={{ width:160, height:160, background:'var(--bg4)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                <Loader2 size={24} style={{ animation:'spin 1s linear infinite', color:'#5B4EE8' }} />
+                              </div>
+                          }
+                        </div>
+                        {cardPaymentUrl && (
+                          <div style={{ textAlign:'center', marginBottom:8 }}>
+                            <a href={cardPaymentUrl} target="_blank" rel="noopener noreferrer"
+                              style={{ fontSize:11, color:'#5B4EE8', wordBreak:'break-all' as const }}>
+                              {lang === 'en' ? 'Or share this link' : lang === 'es' ? 'O comparta este enlace' : lang === 'it' ? 'O condividi questo link' : 'Ou partagez ce lien'}
+                            </a>
+                          </div>
+                        )}
+                      </>
                     )}
                     <div style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 0', color:'var(--text3)', fontSize:12 }}>
                       <Loader2 size={14} style={{ animation:'spin 1s linear infinite', flexShrink:0 }} />
