@@ -47,9 +47,15 @@ interface POSModalsProps {
   orangeError: string
   startOrangePayment: () => void
   onOrangeRetry: () => void
+  // Carte Campay (QR / lien hébergé) — flux polling dans la modale de confirmation
+  cardStatus: 'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'
+  cardPaymentUrl: string|null
+  cardQrDataUrl: string|null
+  startCardPayment: () => void
+  onCardRetry: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
@@ -59,6 +65,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
   const isMtnMode = !mixedOn && payMode === 'mtn'
   // Orange Money (Campay) : idem — le bouton Confirmer est masqué pendant le flux polling.
   const isOrangeMode = !mixedOn && payMode === 'orange'
+  // Carte Campay : masque Confirmer pendant le flux QR / polling.
+  const isCardMode   = !mixedOn && payMode === 'card'
   const blocked = isSaving || waSending || !payOK
   // Pièges à focus (focus initial + Tab bouclé + restauration au déclencheur)
   const discountBoxRef = useModalFocus<HTMLDivElement>(showDiscountModal)
@@ -724,9 +732,95 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               </div>
             )}
 
+            {/* ── Section Carte Campay (QR / lien hébergé) ── */}
+            {isCardMode && (
+              <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
+                <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'#5B4EE8', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
+                  <span style={{ fontWeight:'var(--fw-bold)', fontSize:15 }}>💳</span>
+                  {lang === 'en' ? 'Card payment (Visa / Mastercard)' : lang === 'es' ? 'Pago con tarjeta (Visa / Mastercard)' : lang === 'it' ? 'Pagamento carta (Visa / Mastercard)' : 'Paiement carte (Visa / Mastercard)'}
+                </div>
+
+                {/* Idle : bouton de génération du lien */}
+                {cardStatus === 'idle' && (
+                  <button
+                    type="button"
+                    onClick={startCardPayment}
+                    style={{
+                      width:'100%', minHeight:44, borderRadius:10, border:'none',
+                      background:'#5B4EE8', color:'#fff',
+                      fontWeight:'var(--fw-semibold)', fontSize:13,
+                      cursor:'pointer', fontFamily:'inherit',
+                    }}
+                  >
+                    {lang === 'en' ? 'Generate payment QR' : lang === 'es' ? 'Generar QR de pago' : lang === 'it' ? 'Genera QR di pagamento' : 'Générer le QR de paiement'}
+                  </button>
+                )}
+
+                {/* Requesting : spinner */}
+                {cardStatus === 'requesting' && (
+                  <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 0' }}>
+                    <Loader2 size={20} style={{ animation:'spin 1s linear infinite', color:'#5B4EE8', flexShrink:0 }} />
+                    <span style={{ fontSize:13, color:'var(--text3)' }}>
+                      {lang === 'en' ? 'Generating payment link…' : lang === 'es' ? 'Generando enlace de pago…' : lang === 'it' ? 'Generazione link di pagamento…' : 'Génération du lien de paiement…'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Polling : QR code + lien + instruction */}
+                {cardStatus === 'polling' && (
+                  <div>
+                    <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
+                      {cardQrDataUrl
+                        ? <img src={cardQrDataUrl} alt="QR paiement carte" width={160} height={160} style={{ borderRadius:8, display:'block' }} />
+                        : <div style={{ width:160, height:160, background:'var(--bg4)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <Loader2 size={24} style={{ animation:'spin 1s linear infinite', color:'#5B4EE8' }} />
+                          </div>
+                      }
+                    </div>
+                    {cardPaymentUrl && (
+                      <div style={{ textAlign:'center', marginBottom:8 }}>
+                        <a href={cardPaymentUrl} target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize:11, color:'#5B4EE8', wordBreak:'break-all' as const }}>
+                          {lang === 'en' ? 'Or share this link' : lang === 'es' ? 'O comparta este enlace' : lang === 'it' ? 'O condividi questo link' : 'Ou partagez ce lien'}
+                        </a>
+                      </div>
+                    )}
+                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 0', color:'var(--text3)', fontSize:12 }}>
+                      <Loader2 size={14} style={{ animation:'spin 1s linear infinite', flexShrink:0 }} />
+                      {lang === 'en' ? 'Scan QR or share link — waiting for payment…' : lang === 'es' ? 'Escanee el QR o comparta el enlace — esperando pago…' : lang === 'it' ? 'Scansiona il QR o condividi il link — in attesa del pagamento…' : 'Scannez le QR ou partagez le lien — en attente du paiement…'}
+                    </div>
+                  </div>
+                )}
+
+                {/* Failed / timeout */}
+                {(cardStatus === 'failed' || cardStatus === 'timeout') && (
+                  <div>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 0', color:'var(--danger)', fontSize:13 }}>
+                      <AlertTriangle size={14} style={{ flexShrink:0 }} />
+                      {cardStatus === 'timeout'
+                        ? (lang === 'en' ? 'Payment timeout (2 min). Retry?' : lang === 'es' ? 'Tiempo de espera agotado (2 min). ¿Reintentar?' : lang === 'it' ? 'Timeout pagamento (2 min). Riprovare?' : 'Délai dépassé (2 min). Réessayer ?')
+                        : (lang === 'en' ? 'Payment failed or cancelled.' : lang === 'es' ? 'Pago fallido o cancelado.' : lang === 'it' ? 'Pagamento fallito o annullato.' : 'Paiement échoué ou annulé.')}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onCardRetry}
+                      style={{
+                        padding:'8px 14px', borderRadius:8, border:'none',
+                        background:'rgba(91,78,232,.15)', color:'#5B4EE8',
+                        fontSize:12, fontWeight:'var(--fw-semibold)',
+                        cursor:'pointer', fontFamily:'inherit',
+                      }}
+                    >
+                      {lang === 'en' ? 'Retry' : lang === 'es' ? 'Reintentar' : lang === 'it' ? 'Riprova' : 'Réessayer'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Boutons */}
             <div style={{ display: 'flex', gap: 10 }}>
-              {!isMtnMode && !isOrangeMode && (
+              {!isMtnMode && !isOrangeMode && !isCardMode && (
                 <button
                   onClick={confirmSale}
                   disabled={blocked}

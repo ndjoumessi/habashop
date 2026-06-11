@@ -4,8 +4,9 @@ import { campayPaymentRoutes } from '../routes/campayPayment'
 
 // ── Mock du service campay ───────────────────────────────────────────────────
 vi.mock('../services/campay', () => ({
-  collect:   vi.fn(),
-  getStatus: vi.fn(),
+  collect:         vi.fn(),
+  getStatus:       vi.fn(),
+  getPaymentLink:  vi.fn(),
 }))
 
 // ── Mock authenticate (bypass JWT) ──────────────────────────────────────────
@@ -26,10 +27,11 @@ vi.mock('../db', () => ({
   },
 }))
 
-import { collect, getStatus } from '../services/campay'
+import { collect, getStatus, getPaymentLink } from '../services/campay'
 
-const campayCollect = vi.mocked(collect)
-const campayStatus  = vi.mocked(getStatus)
+const campayCollect      = vi.mocked(collect)
+const campayStatus       = vi.mocked(getStatus)
+const campayPaymentLink  = vi.mocked(getPaymentLink)
 
 // Helpers
 const makeApp = async () => {
@@ -221,6 +223,58 @@ describe('POST /api/payments/campay/status', () => {
       payload: { reference: 'camp-ref-x' },
     })
     expect(res.statusCode).toBe(502)
+  })
+})
+
+// ── POST /api/payments/campay/card-link ─────────────────────────────────────
+describe('POST /api/payments/campay/card-link', () => {
+  it('200 succès : retourne paymentUrl + reference', async () => {
+    campayPaymentLink.mockResolvedValue({ payment_url: 'https://demo.campay.net/pay/abc123', reference: 'card-ref-1' })
+    const app = await makeApp()
+    const res = await app.inject({
+      method:  'POST',
+      url:     '/api/payments/campay/card-link',
+      payload: { amount: 10000 },
+    })
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.paymentUrl).toBe('https://demo.campay.net/pay/abc123')
+    expect(body.reference).toBe('card-ref-1')
+  })
+
+  it('400 si montant manquant', async () => {
+    const app = await makeApp()
+    const res = await app.inject({ method: 'POST', url: '/api/payments/campay/card-link', payload: {} })
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('400 si montant ≤ 0', async () => {
+    const app = await makeApp()
+    const res = await app.inject({ method: 'POST', url: '/api/payments/campay/card-link', payload: { amount: 0 } })
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('sandbox : force amount = 10 XAF (limite sandbox Campay 25 XAF max)', async () => {
+    campayPaymentLink.mockResolvedValue({ payment_url: 'https://demo.campay.net/pay/x', reference: 'r' })
+    const app = await makeApp()
+    await app.inject({ method: 'POST', url: '/api/payments/campay/card-link', payload: { amount: 99999 } })
+    expect(campayPaymentLink).toHaveBeenCalledWith(expect.objectContaining({ amount: 10 }))
+  })
+
+  it('502 si Campay lève une erreur réseau', async () => {
+    campayPaymentLink.mockRejectedValue(new Error('Campay link error'))
+    const app = await makeApp()
+    const res = await app.inject({ method: 'POST', url: '/api/payments/campay/card-link', payload: { amount: 5000 } })
+    expect(res.statusCode).toBe(502)
+    expect(JSON.parse(res.body).error).toContain('Campay link error')
+  })
+
+  it('retourne une URL valide (commence par http)', async () => {
+    campayPaymentLink.mockResolvedValue({ payment_url: 'https://demo.campay.net/pay/test-url', reference: 'r2' })
+    const app = await makeApp()
+    const res = await app.inject({ method: 'POST', url: '/api/payments/campay/card-link', payload: { amount: 5000 } })
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).paymentUrl).toMatch(/^https?:\/\//)
   })
 })
 

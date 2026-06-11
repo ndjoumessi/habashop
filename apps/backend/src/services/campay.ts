@@ -112,3 +112,36 @@ export async function getStatus(reference: string): Promise<'PENDING' | 'SUCCESS
   if (data.status === 'FAILED')     return 'FAILED'
   return 'PENDING'
 }
+
+export async function getPaymentLink(opts: {
+  amount:      number   // entier XAF
+  externalRef: string
+  description: string
+  redirectUrl?: string
+}): Promise<{ payment_url: string; reference: string }> {
+  const token = await getToken()
+
+  const res = await fetch(`${BASE_URL}/api/get-payment-link/`, {
+    method:  'POST',
+    headers: {
+      'Authorization': `Token ${token}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({
+      amount:             opts.amount,
+      currency:           'XAF',
+      description:        opts.description,
+      external_reference: opts.externalRef,
+      redirect_url:       opts.redirectUrl ?? 'https://habashop.vercel.app/app/pos',
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    console.error('[Campay] getPaymentLink error', { status: res.status, body })
+    throw new Error(`Campay getPaymentLink error: ${res.status}${body ? ' — ' + body : ''}`)
+  }
+
+  const data = await res.json() as { payment_url: string; reference: string }
+  return { payment_url: data.payment_url, reference: data.reference }
+}

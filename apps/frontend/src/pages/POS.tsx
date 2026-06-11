@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
+import { useState, useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react'
+import QRCode from 'qrcode'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -118,6 +119,12 @@ export default function POS() {
   const [orangeReference, setOrangeReference] = useState<string|null>(null)
   const [orangeError, setOrangeError]     = useState('')
   const orangeReferenceRef = useRef<string|null>(null)
+  // ── Carte Campay (QR / lien hébergé Visa-Mastercard) ──────────────────────
+  const [cardStatus, setCardStatus]         = useState<'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'>('idle')
+  const [cardPaymentUrl, setCardPaymentUrl] = useState<string|null>(null)
+  const [cardReference, setCardReference]   = useState<string|null>(null)
+  const [cardQrDataUrl, setCardQrDataUrl]   = useState<string|null>(null)
+  const cardReferenceRef = useRef<string|null>(null)
   const [posTab, setPosTab] = useState<'pos'|'history'>('pos')
   const [showTicketZ, setShowTicketZ] = useState(false)
   const [salesHistory, setSalesHistory] = useState<any[]>([])
@@ -509,6 +516,82 @@ export default function POS() {
     }
   }, [payMode])
 
+  // ── Carte Campay ────────────────────────────────────────────────────────────
+  const onCardRetry = () => {
+    setCardStatus('idle')
+    setCardPaymentUrl(null)
+    setCardQrDataUrl(null)
+    setCardReference(null)
+    cardReferenceRef.current = null
+  }
+
+  const startCardPayment = useCallback(async () => {
+    setCardStatus('requesting')
+    try {
+      const { paymentUrl, reference } = await campayApi.cardLink({ amount: netTotal })
+      cardReferenceRef.current = reference
+      setCardReference(reference)
+      setCardPaymentUrl(paymentUrl)
+      setCardStatus('polling')
+    } catch {
+      setCardStatus('failed')
+      toast.error(
+        lang === 'en' ? 'Card payment request failed — retry' :
+        lang === 'es' ? 'Error de pago con tarjeta — reintente' :
+        lang === 'it' ? 'Errore pagamento carta — riprova' :
+        'Échec de la demande de paiement carte — réessayez',
+      )
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [netTotal, lang])
+
+  // Génère le QR dès qu'une URL de paiement est disponible
+  useEffect(() => {
+    if (!cardPaymentUrl) { setCardQrDataUrl(null); return }
+    QRCode.toDataURL(cardPaymentUrl, { width: 160, margin: 1, color: { dark: '#000000', light: '#ffffff' } })
+      .then(url => setCardQrDataUrl(url))
+      .catch(() => setCardQrDataUrl(null))
+  }, [cardPaymentUrl])
+
+  // Polling carte 3s, max 40 tours (2 min)
+  useEffect(() => {
+    if (cardStatus !== 'polling') return
+    let done = false
+    let count = 0
+    const MAX = 40
+    const poll = async () => {
+      if (done) return
+      count++
+      if (count > MAX) { done = true; setCardStatus('timeout'); return }
+      try {
+        const ref = cardReferenceRef.current
+        if (!ref) return
+        const res = await campayApi.status(ref)
+        if (res.status === 'SUCCESSFUL') { done = true; setCardStatus('success') }
+        else if (res.status === 'FAILED') { done = true; setCardStatus('failed') }
+      } catch { /* fail-silent */ }
+    }
+    const timer = setInterval(poll, 3000)
+    return () => { done = true; clearInterval(timer) }
+  }, [cardStatus])
+
+  // Déclenche confirmSale dès que la carte passe à 'success'
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (cardStatus === 'success') confirmSale(undefined, cardReferenceRef.current ?? undefined)
+  }, [cardStatus]) // intentionally omits confirmSale (fresh via post-render execution)
+
+  // Réinitialise le flux carte quand on change de mode de paiement
+  useEffect(() => {
+    if (payMode !== 'card') {
+      setCardStatus('idle')
+      setCardPaymentUrl(null)
+      setCardQrDataUrl(null)
+      setCardReference(null)
+      cardReferenceRef.current = null
+    }
+  }, [payMode])
+
   const confirmSale = async (mtnRef?: string, campayRef?: string) => {
     // Garde-fou cash : refuser si le montant reçu (converti en XOF) < total.
     // Les modes Wave/Orange/Carte/Mobile n'ont pas de saisie de montant → pas concernés.
@@ -618,6 +701,11 @@ export default function POS() {
     setOrangeError('')
     setOrangeReference(null)
     orangeReferenceRef.current = null
+    setCardStatus('idle')
+    setCardPaymentUrl(null)
+    setCardQrDataUrl(null)
+    setCardReference(null)
+    cardReferenceRef.current = null
   }
 
   // ─── RENDER ──────────────────────────────
@@ -786,6 +874,8 @@ export default function POS() {
         orangePhone={orangePhone} setOrangePhone={handleOrangePhone}
         orangeStatus={orangeStatus} orangeError={orangeError}
         startOrangePayment={startOrangePayment} onOrangeRetry={onOrangeRetry}
+        cardStatus={cardStatus} cardPaymentUrl={cardPaymentUrl} cardQrDataUrl={cardQrDataUrl}
+        startCardPayment={startCardPayment} onCardRetry={onCardRetry}
       />
 
       {/* MODALE SUCCÈS — après vente : récap + Imprimer le reçu + Nouvelle vente */}

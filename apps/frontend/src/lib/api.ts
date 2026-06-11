@@ -149,6 +149,8 @@ export const campayApi = {
     api.post<{ reference: string; status: 'PENDING' }>('/api/payments/campay/request', data),
   status: (reference: string) =>
     api.post<{ reference: string; status: 'PENDING' | 'SUCCESSFUL' | 'FAILED' }>('/api/payments/campay/status', { reference }),
+  cardLink: (data: { amount: number }) =>
+    api.post<{ paymentUrl: string; reference: string }>('/api/payments/campay/card-link', data),
 }
 
 export const ticketZApi = {

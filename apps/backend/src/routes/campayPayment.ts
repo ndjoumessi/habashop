@@ -1,7 +1,7 @@
 import { timingSafeEqual, createHmac } from 'crypto'
 import type { FastifyInstance } from 'fastify'
 import { authenticate } from '../middleware/authenticate'
-import { collect, getStatus } from '../services/campay'
+import { collect, getStatus, getPaymentLink } from '../services/campay'
 import { prisma } from '../db'
 
 const IS_SANDBOX = (process.env.CAMPAY_ENVIRONMENT ?? 'demo') !== 'production'
@@ -94,6 +94,37 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
     } catch (err: any) {
       request.log.error({ err }, 'Campay status failed')
       return reply.code(502).send({ error: 'Erreur Campay status' })
+    }
+  })
+
+  // ── POST /api/payments/campay/card-link ──────────────────────────────
+  // Génère un lien de paiement hébergé Campay (carte Visa/Mastercard).
+  // Le client scanne le QR code ou clique le lien → paie sur la page Campay.
+  // RBAC : CASHIER et au-dessus.
+  app.post('/api/payments/campay/card-link', {
+    preHandler: [authenticate],
+    config:     { rateLimit: { max: 20, timeWindow: '1 minute' } },
+  }, async (request: any, reply: any) => {
+    const { amount } = (request.body ?? {}) as { amount?: number }
+
+    if (!amount || amount <= 0)
+      return reply.code(400).send({ error: 'Montant invalide' })
+
+    // XOF → XAF : parité 1:1 (arrondi entier).
+    // Sandbox Campay : montant limité à 25 XAF max — on force 10 pour les tests.
+    const xafAmount  = IS_SANDBOX ? 10 : Math.round(amount)
+    const externalRef = `HABA-CARD-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+
+    try {
+      const result = await getPaymentLink({
+        amount:      xafAmount,
+        externalRef,
+        description: `HabaShop Carte ${externalRef}`,
+      })
+      return { paymentUrl: result.payment_url, reference: result.reference }
+    } catch (err: any) {
+      request.log.error({ err, step: 'getPaymentLink', amount: xafAmount }, 'Campay getPaymentLink failed')
+      return reply.code(502).send({ error: err.message ?? 'Erreur Campay carte' })
     }
   })
 
