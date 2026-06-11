@@ -7,10 +7,6 @@ import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
 import ResendMonitor from '@/components/integrations/ResendMonitor'
 
-// Brouillon de config PayDunya stocké en local (par appareil) — l'intégration
-// backend PayDunya n'est pas encore branchée : ces clés sont conservées en attente.
-const PAYDUNYA_DRAFT_KEY = 'habashop_paydunya_draft'
-
 type PingState = 'checking' | 'ok' | 'slow' | 'error'
 
 interface Integration {
@@ -555,21 +551,11 @@ export default function Integrations() {
 
   function PayDunyaModal() {
     const ref = useModalFocus<HTMLDivElement>(true, { initialFocus: '[data-pd-first]' })
+    // État éphémère uniquement — JAMAIS de persistance navigateur des secrets de
+    // paiement (XSS/exfiltration). La sauvegarde réelle se fera côté serveur (chiffré
+    // au repos) une fois l'intégration PayDunya branchée — Save est désactivé en attendant.
     const [form, setForm] = useState({ masterKey:'', privateKey:'', publicKey:'', token:'', mode:'test' })
     const [show, setShow] = useState(false)
-
-    useEffect(() => {
-      try {
-        const raw = localStorage.getItem(PAYDUNYA_DRAFT_KEY)
-        if (raw) setForm(f => ({ ...f, ...JSON.parse(raw) }))
-      } catch { /* draft illisible — ignore */ }
-    }, [])
-
-    const save = () => {
-      try { localStorage.setItem(PAYDUNYA_DRAFT_KEY, JSON.stringify(form)) } catch { /* quota */ }
-      toast.success(lang === 'fr' ? 'Configuration PayDunya enregistrée (brouillon local)' : lang === 'en' ? 'PayDunya configuration saved (local draft)' : lang === 'es' ? 'Configuración PayDunya guardada (borrador local)' : 'Configurazione PayDunya salvata (bozza locale)')
-      setPayDunyaOpen(false)
-    }
 
     const FIELDS: { key: keyof typeof form; label: string; placeholder: string }[] = [
       { key:'masterKey',  label: lang === 'fr' ? 'Clé maître' : lang === 'en' ? 'Master key' : lang === 'es' ? 'Clave maestra' : 'Chiave master',     placeholder:'PAYDUNYA-MASTER-KEY' },
@@ -649,21 +635,23 @@ export default function Integrations() {
             </label>
           </div>
 
-          {/* Note */}
+          {/* Note sécurité : aucune clé n'est stockée tant que le backend n'est pas branché */}
           <p style={{ fontSize:11, color:'var(--text4)', lineHeight:1.5, margin:'0 0 16px' }}>
-            {lang === 'fr' ? 'Brouillon stocké localement. L\'intégration PayDunya sera activée une fois branchée côté serveur.' : lang === 'en' ? 'Stored locally as a draft. PayDunya integration activates once wired server-side.' : lang === 'es' ? 'Guardado localmente como borrador. La integración PayDunya se activará al conectarse en el servidor.' : 'Salvato localmente come bozza. L\'integrazione PayDunya si attiverà una volta collegata lato server.'}
+            {lang === 'fr' ? 'Aperçu de configuration. L\'enregistrement sera disponible une fois l\'intégration PayDunya branchée côté serveur (clés chiffrées au repos). Aucune clé n\'est stockée dans le navigateur.' : lang === 'en' ? 'Configuration preview. Saving becomes available once PayDunya is wired server-side (keys encrypted at rest). No key is stored in the browser.' : lang === 'es' ? 'Vista previa de configuración. El guardado estará disponible cuando PayDunya se conecte en el servidor (claves cifradas en reposo). No se almacena ninguna clave en el navegador.' : 'Anteprima di configurazione. Il salvataggio sarà disponibile una volta collegato PayDunya lato server (chiavi cifrate a riposo). Nessuna chiave viene memorizzata nel browser.'}
           </p>
 
           {/* Actions */}
           <div style={{ display:'flex', gap:10 }}>
             <button type="button" onClick={() => setPayDunyaOpen(false)} className="mini-btn" style={{ flex:1, justifyContent:'center' }}>
-              {lang === 'fr' ? 'Annuler' : lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : 'Annulla'}
+              {lang === 'fr' ? 'Fermer' : lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : 'Chiudi'}
             </button>
-            <button type="button" onClick={save} style={{
-              flex:1, padding:'10px', background:'linear-gradient(135deg,var(--p),var(--p2))',
-              border:'none', borderRadius:10, color:'#fff', fontSize:13, fontWeight:'var(--fw-semibold)', cursor:'pointer', fontFamily:'var(--font)',
-            }}>
-              {lang === 'fr' ? 'Enregistrer' : lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : 'Salva'}
+            <button type="button" disabled aria-disabled="true"
+              title={lang === 'fr' ? 'Disponible une fois l\'intégration backend connectée' : lang === 'en' ? 'Available once the backend integration is connected' : lang === 'es' ? 'Disponible cuando la integración backend esté conectada' : 'Disponibile una volta connessa l\'integrazione backend'}
+              style={{
+                flex:1, padding:'10px', background:'var(--bg4)',
+                border:'1px solid var(--border)', borderRadius:10, color:'var(--text4)', fontSize:13, fontWeight:'var(--fw-semibold)', cursor:'not-allowed', fontFamily:'var(--font)',
+              }}>
+              {lang === 'fr' ? 'Bientôt disponible' : lang === 'en' ? 'Coming soon' : lang === 'es' ? 'Próximamente' : 'Prossimamente'}
             </button>
           </div>
         </div>
