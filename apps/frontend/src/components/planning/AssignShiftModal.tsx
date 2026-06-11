@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { SHIFT_TYPES, shiftLabel, localeFor } from './planningShared'
@@ -16,15 +17,18 @@ interface Props {
 
 export default function AssignShiftModal({ lang, shiftModal, modalShift, setModalShift, weekDays, onConfirm, onClose }: Props) {
   const locale = localeFor(lang)
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   return (
-    <div style={{
+    <div role="dialog" aria-modal="true"
+      aria-label={lang === 'en' ? 'Assign shift' : lang === 'es' ? 'Asignar un turno' : lang === 'it' ? 'Assegna un turno' : 'Assigner un shift'}
+      style={{
       position:'fixed', inset:0, zIndex:200,
       background:'rgba(0,0,0,.7)', backdropFilter:'blur(6px)',
       display:'flex', alignItems:'center', justifyContent:'center',
       padding:20,
     }} onClick={e => e.target===e.currentTarget && onClose()}>
-      <div style={{
+      <div ref={boxRef} style={{
         width:'100%', maxWidth:400,
         background:'var(--card)', border:'1px solid var(--border)',
         borderRadius:20, overflow:'hidden',

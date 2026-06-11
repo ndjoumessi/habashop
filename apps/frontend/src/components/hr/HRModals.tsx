@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast'
+import { announce } from '@/lib/announce'
 import { type Employee } from '@/components/hr/hrShared'
 import SalaryModal from '@/components/hr/modals/SalaryModal'
 import EmpModal from '@/components/hr/modals/EmpModal'
@@ -71,6 +72,7 @@ export default function HRModals(props: HRModalsProps) {
             }
             setEmployees(prev => [...prev, newEmp])
             toast.success(lang === 'en' ? '✅ Employee added' : lang === 'es' ? '✅ Empleado agregado' : lang === 'it' ? '✅ Dipendente aggiunto' : '✅ Employé ajouté')
+            announce(lang === 'en' ? 'Employee added' : lang === 'es' ? 'Empleado agregado' : lang === 'it' ? 'Dipendente aggiunto' : 'Employé ajouté')
             setShowModal(false)
           }}
         />

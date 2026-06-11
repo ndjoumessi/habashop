@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { adminApi } from '@/lib/api'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { confirm } from '@/lib/confirm'
 import toast from 'react-hot-toast'
 import EmptyState from '@/components/ui/EmptyState'
@@ -55,6 +56,8 @@ export default function AdminDashboard() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [selected, setSelected] = useState<Tenant | null>(null)
   const [showNewTenant, setShowNewTenant] = useState(false)
+  const detailBoxRef = useModalFocus<HTMLDivElement>(!!selected)
+  const newTenantBoxRef = useModalFocus<HTMLDivElement>(showNewTenant)
   const [newTenantForm, setNewTenantForm] = useState({ name: '', currency: 'XOF', country: 'SN', plan: 'starter', adminEmail: '', adminPassword: '' })
   const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'requests'>('overview')
   const [planRequests, setPlanRequests] = useState<any[]>([])
@@ -438,8 +441,8 @@ export default function AdminDashboard() {
 
       {/* Detail drawer */}
       {selected && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setSelected(null)}>
-          <div style={{ position: 'fixed', top: 0, right: 0, height: '100vh', width: 'min(420px,100vw)', background: 'var(--card,#fff)', borderLeft: '1px solid var(--border,rgba(0,0,0,.08))', boxShadow: '-20px 0 60px rgba(0,0,0,.3)', padding: 24, overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={selected.name} onClick={e => e.target === e.currentTarget && setSelected(null)}>
+          <div ref={detailBoxRef} style={{ position: 'fixed', top: 0, right: 0, height: '100vh', width: 'min(420px,100vw)', background: 'var(--card,#fff)', borderLeft: '1px solid var(--border,rgba(0,0,0,.08))', boxShadow: '-20px 0 60px rgba(0,0,0,.3)', padding: 24, overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
                 <h3 style={{ fontSize: 18, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0 }}>{selected.name}</h3>
@@ -480,8 +483,8 @@ export default function AdminDashboard() {
 
       {/* New tenant modal */}
       {showNewTenant && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowNewTenant(false)}>
-          <div className="modal-box" style={{ maxWidth: 480 }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')} onClick={e => e.target === e.currentTarget && setShowNewTenant(false)}>
+          <div ref={newTenantBoxRef} className="modal-box" style={{ maxWidth: 480 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, alignItems: 'center' }}>
               <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}><Store size={16} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</h3>
               <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setShowNewTenant(false)}><X size={14} /></button>

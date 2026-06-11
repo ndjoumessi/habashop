@@ -267,6 +267,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                           className="input text-sm"
                           style={{ paddingLeft:30, width:'100%' }}
                           placeholder={selectedSupplierName || (lang === 'en' ? 'Search a supplier...' : lang === 'es' ? 'Buscar un proveedor...' : lang === 'it' ? 'Cerca un fornitore...' : 'Rechercher un fournisseur...')}
+                          aria-expanded={supOpen}
+                          aria-haspopup="listbox"
+                          aria-label={lang === 'en' ? 'Search a supplier' : lang === 'es' ? 'Buscar un proveedor' : lang === 'it' ? 'Cerca un fornitore' : 'Rechercher un fournisseur'}
                           value={supOpen ? supSearch : selectedSupplierName}
                           onFocus={() => { setSupOpen(true); setSupSearch('') }}
                           onBlur={() => setTimeout(() => setSupOpen(false), 150)}
@@ -274,12 +277,12 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         />
                       </div>
                       {supOpen && (
-                        <div style={{
+                        <div role="listbox" style={{
                           position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:10,
                           background:'var(--card)', border:'1px solid var(--border)', borderRadius:8,
                           maxHeight:200, overflowY:'auto', boxShadow:'var(--sh-md)',
                         }}>
-                          <button type="button" onMouseDown={() => { setForm(f => ({...f, supplierId:'', supplier:''})); setSupOpen(false) }} style={{
+                          <button type="button" role="option" aria-selected={!form.supplierId} onMouseDown={() => { setForm(f => ({...f, supplierId:'', supplier:''})); setSupOpen(false) }} style={{
                             width:'100%', textAlign:'left', padding:'8px 12px', background:'transparent', border:'none',
                             borderBottom:'1px solid var(--border)', cursor:'pointer', fontSize:12, color:'var(--text3)', fontStyle:'italic',
                           }}>
@@ -291,7 +294,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                             </div>
                           ) : (
                             filteredSuppliers.map(s => (
-                              <button key={s.id} type="button"
+                              <button key={s.id} type="button" role="option" aria-selected={form.supplierId === s.id}
                                 onMouseDown={() => { setForm(f => ({...f, supplierId:s.id, supplier:s.name})); setSupOpen(false) }}
                                 style={{
                                   width:'100%', textAlign:'left', padding:'8px 12px', background: form.supplierId === s.id ? 'rgba(91,78,232,.1)' : 'transparent',

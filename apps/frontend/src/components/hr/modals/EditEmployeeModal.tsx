@@ -1,5 +1,7 @@
 import { DollarSign, FileText, Pencil, Star, Trash2, User, Eye, MapPin } from 'lucide-react'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
+import { announce } from '@/lib/announce'
 import { employeesApi } from '@/lib/api'
 import { confirm } from '@/lib/confirm'
 import ViewField from '@/components/ui/ViewField'
@@ -25,10 +27,12 @@ interface Props {
 }
 
 export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm, setEditEmpForm, empEditMode, setEmpEditMode, salaryInput, setSalaryInput, toXOF, currencySymbol, setEmployees, setShowEditEmpModal, openEditModal }: Props) {
+  const boxRef = useModalFocus<HTMLDivElement>()
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true"
+      aria-label={lang === 'en' ? 'Employee details' : lang === 'es' ? 'Detalle del empleado' : lang === 'it' ? 'Dettaglio dipendente' : "Détail de l'employé"}
       onClick={e => e.target===e.currentTarget && setShowEditEmpModal(false)}>
-      <div className="modal-box" style={{ borderRadius:24, maxWidth:560, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', padding:0 }}>
+      <div ref={boxRef} className="modal-box" style={{ borderRadius:24, maxWidth:560, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', padding:0 }}>
 
         {/* Ligne décorative */}
         <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:'40%', height:1, background:`linear-gradient(90deg,transparent,${editEmpForm.color??'var(--p)'},transparent)` }} />
@@ -307,6 +311,7 @@ export default function EditEmployeeModal({ lang, fmt, selectedEmp, editEmpForm,
                     setEmployees((prev: Employee[]) => prev.map(e => e.id===selectedEmp!.id ? {...e, ...data, avatar} : e))
                     toast.success('✅ Local')
                   }
+                  announce(lang === 'en' ? 'Employee updated' : lang === 'es' ? 'Empleado actualizado' : lang === 'it' ? 'Dipendente aggiornato' : 'Employé mis à jour')
                   setEmpEditMode(false)
                   setShowEditEmpModal(false)
                 }}

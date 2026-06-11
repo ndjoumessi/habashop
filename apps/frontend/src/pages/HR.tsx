@@ -5,6 +5,7 @@ import { employeesApi, bonusesApi, salaryHistoryApi, attendanceApi, leaveRequest
 import { exportCSV } from '@/utils/export'
 import { Download, Plus, X, Users, DollarSign, FileText, TrendingUp, Star, Pencil, Clock, Umbrella, Search, LayoutGrid, AlignJustify, CheckCircle, XCircle, AlertTriangle, Gift, Trash2, BarChart3, Calendar, User, Eye, CheckCheck, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { announce } from '@/lib/announce'
 import ViewField from '@/components/ui/ViewField'
 import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
@@ -467,6 +468,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;color:#1a1a2e;p
       toast.success(status === 'approved'
         ? (lang === 'en' ? '✅ Leave approved' : lang === 'es' ? '✅ Permiso aprobado' : lang === 'it' ? '✅ Ferie approvate' : '✅ Congé approuvé')
         : (lang === 'en' ? '❌ Leave refused' : lang === 'es' ? '❌ Permiso rechazado' : lang === 'it' ? '❌ Ferie rifiutate' : '❌ Congé refusé'))
+      announce(status === 'approved'
+        ? (lang === 'en' ? 'Leave approved' : lang === 'es' ? 'Permiso aprobado' : lang === 'it' ? 'Ferie approvate' : 'Congé approuvé')
+        : (lang === 'en' ? 'Leave refused' : lang === 'es' ? 'Permiso rechazado' : lang === 'it' ? 'Ferie rifiutate' : 'Congé refusé'))
     } catch {
       setLeaves(prev) // revert : l'API a échoué
       toast.error(lang === 'en' ? 'Action failed' : lang === 'es' ? 'Acción fallida' : lang === 'it' ? 'Azione fallita' : 'Échec de l\'action')

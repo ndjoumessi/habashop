@@ -1,4 +1,5 @@
 import { useConfig, t } from '@/stores/appStore'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { X, Mail, Lock, Eye, EyeOff } from 'lucide-react'
@@ -21,10 +22,11 @@ export default function InviteUserModal({ form, setForm, showPwd, setShowPwd, on
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const ROLE_LABELS = buildRoleLabels()
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box">
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={i('Inviter un utilisateur', 'Invite a user', 'Invitar a un usuario', 'Invita un utente')} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div ref={boxRef} className="modal-box">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>{lang === 'en' ? 'Invite a user' : lang === 'es' ? 'Invitar a un usuario' : lang === 'it' ? 'Invita un utente' : 'Inviter un utilisateur'}</h3>

@@ -1,6 +1,7 @@
 import { useConfig, useFormatAmount, t } from '@/stores/appStore'
 import IconButton from '@/components/ui/IconButton'
 import { useI18n } from '@/hooks/useI18n'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { Factory, X, Package, FileText } from 'lucide-react'
 import { STATUS_CFG, statusLabel, StarRating } from './suppliersShared'
 import type { Supplier } from './suppliersShared'
@@ -15,10 +16,11 @@ export default function SupplierViewModal({ supplier, onClose, onNewOrder }: Pro
   const { lang } = useConfig()
   const fmt = useFormatAmount()
   const { i } = useI18n()
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={supplier.name} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth: 580 }}>
+      <div ref={boxRef} className="modal-box" style={{ maxWidth: 580 }}>
         <div className="flex items-start justify-between mb-5">
           <div>
             <h3 className="text-base font-bold" style={{ color: 'var(--text)', display:'flex', alignItems:'center', gap:6 }}><Factory size={15}/> {supplier.name}</h3>

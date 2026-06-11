@@ -1,3 +1,4 @@
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { type Employee, displayDate, calcAnciennete, roleLabel, deptLabel } from '@/components/hr/hrShared'
 
 interface Props {
@@ -9,9 +10,10 @@ interface Props {
 }
 
 export default function ContractDetailModal({ lang, fmt, selectedContract, setShowContractDetailModal, openEditModal }: Props) {
+  const boxRef = useModalFocus<HTMLDivElement>()
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget&&setShowContractDetailModal(false)}>
-      <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, width:'100%', maxWidth:480, boxShadow:'var(--sh-xl)', overflow:'hidden' }}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={lang === 'en' ? 'Contract details' : lang === 'es' ? 'Detalle del contrato' : lang === 'it' ? 'Dettaglio contratto' : 'Détail du contrat'} onClick={e => e.target===e.currentTarget&&setShowContractDetailModal(false)}>
+      <div ref={boxRef} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, width:'100%', maxWidth:480, boxShadow:'var(--sh-xl)', overflow:'hidden' }}>
         <div style={{ padding:'24px 24px 20px', background:`linear-gradient(135deg,${selectedContract.color}18,${selectedContract.color}05)`, borderBottom:'1px solid var(--border)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:14 }}>
             <div style={{ width:56, height:56, borderRadius:16, overflow:'hidden', background:`linear-gradient(135deg,${selectedContract.color},${selectedContract.color}88)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:'var(--fw-semibold)', color:'#fff', flexShrink:0, boxShadow:`0 6px 20px ${selectedContract.color}50` }}>

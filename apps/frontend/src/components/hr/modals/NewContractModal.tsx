@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { type Employee, COLORS, DEPT_COLORS, labelStyle, deptLabel, contractLabel } from '@/components/hr/hrShared'
@@ -20,9 +21,10 @@ export default function NewContractModal({ lang, fmt, currencySymbol, toXOF, emp
   const currencySuffix = currencySymbol
   // Montant saisi (devise d'affichage) → XOF pour les aperçus et le storage.
   const salaryXOF = toXOF(contractForm.salary || 0)
+  const boxRef = useModalFocus<HTMLDivElement>()
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
-      <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, padding:28, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--sh-xl)' }}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={lang === 'en' ? 'New contract' : lang === 'es' ? 'Nuevo contrato' : lang === 'it' ? 'Nuovo contratto' : 'Nouveau contrat'} onClick={e => e.target===e.currentTarget&&setShowNewContractModal(false)}>
+      <div ref={boxRef} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:20, padding:28, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--sh-xl)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
           <h3 style={{ margin:0, fontSize:17, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>📄 {lang === 'en' ? 'New contract' : lang === 'es' ? 'Nuevo contrato' : lang === 'it' ? 'Nuovo contratto' : 'Nouveau contrat'}</h3>
           <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={()=>setShowNewContractModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)' }}><X size={18}/></button>

@@ -1,5 +1,6 @@
 import { useConfig } from '@/stores/appStore'
 import IconButton from '@/components/ui/IconButton'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { X, Settings } from 'lucide-react'
 import { CATEGORIES, CATEGORY_STYLE, catLabel } from './expensesShared'
 import type { Category } from './expensesShared'
@@ -15,10 +16,11 @@ export default function EditBudgetsModal({ editBudgets, setEditBudgets, onClose,
   const { lang } = useConfig()
   const tr = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const cl = (c: string) => catLabel(c, lang)
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')} onClick={onClose}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
+      <div ref={boxRef} className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <span style={{ fontWeight:'var(--fw-bold)', fontSize:16, color:'var(--text)', display:'flex', alignItems:'center', gap:7 }}><Settings size={16}/> {tr('Modifier les budgets','Edit budgets','Editar presupuestos','Modifica budget')}</span>
           <IconButton label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} icon={<X size={15} />} onClick={onClose} variant="surface" />

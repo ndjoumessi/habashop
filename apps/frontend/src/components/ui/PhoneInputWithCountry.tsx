@@ -144,7 +144,8 @@ export default function PhoneInputWithCountry({
           disabled={disabled}
           onClick={() => { setOpen(!open); setSearch('') }}
           aria-expanded={open}
-          aria-label="Choisir indicatif pays"
+          aria-haspopup="listbox"
+          aria-label={lang === 'en' ? 'Choose country dial code' : lang === 'es' ? 'Elegir prefijo del país' : lang === 'it' ? 'Scegli prefisso paese' : "Choisir l'indicatif pays"}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '0 10px',
@@ -272,7 +273,7 @@ export default function PhoneInputWithCountry({
           </div>
 
           {/* Liste */}
-          <div style={{ maxHeight: 250, overflowY: 'auto' }}>
+          <div role="listbox" style={{ maxHeight: 250, overflowY: 'auto' }}>
             {filtered.length === 0 ? (
               <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>
                 {lang === 'en' ? 'No results' : lang === 'es' ? 'Sin resultados' : lang === 'it' ? 'Nessun risultato' : 'Aucun résultat'}
@@ -311,6 +312,8 @@ function CountryRow({ c, selected, onSelect }: { c: CountryEntry; selected: bool
   return (
     <button
       type="button"
+      role="option"
+      aria-selected={selected}
       onMouseDown={onSelect}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}

@@ -6,6 +6,7 @@ import { suppliersApi } from '@/lib/api'
 import { Plus } from 'lucide-react'
 import { confirm } from '@/lib/confirm'
 import toast from 'react-hot-toast'
+import { announce } from '@/lib/announce'
 import { exportCSV, openPDF, htmlTable } from '@/utils/export'
 import { usePagination } from '@/hooks/usePagination'
 import {
@@ -121,6 +122,7 @@ export default function Suppliers() {
     setShowCreate(false)
     setForm({ name: '', categories: '', phone: '', email: '', address: '', contact: '', leadTime: 5, rating: 4, status: 'Actif', notes: '' })
     toast.success(i(`✅ Fournisseur ${newS.name} ajouté !`, `✅ Supplier ${newS.name} added!`, `✅ Proveedor ${newS.name} añadido!`, `✅ Fornitore ${newS.name} aggiunto!`))
+    announce(i('Fournisseur ajouté', 'Supplier added', 'Proveedor añadido', 'Fornitore aggiunto'))
   }
 
   const handleDeleteSupplier = async (s: Supplier) => {
@@ -135,6 +137,7 @@ export default function Suppliers() {
       setSuppliers(prev => prev.filter(x => x.id !== s.id))
       if (editSupplier?.id === s.id) setShowEditSuppModal(false)
       toast.success(i('Fournisseur supprimé', 'Supplier deleted', 'Proveedor eliminado', 'Fornitore eliminato'))
+      announce(i('Fournisseur supprimé', 'Supplier deleted', 'Proveedor eliminado', 'Fornitore eliminato'))
     } catch {
       toast.error(i('Échec de la suppression — réessayer', 'Delete failed — please retry', 'Error al eliminar — reintenta', 'Eliminazione fallita — riprova'))
     }
@@ -166,6 +169,7 @@ export default function Suppliers() {
     ))
     setShowEditSuppModal(false)
     toast.success(i(`${editSuppForm.name} mis à jour`, `${editSuppForm.name} updated`, `${editSuppForm.name} actualizado`, `${editSuppForm.name} aggiornato`))
+    announce(i('Fournisseur mis à jour', 'Supplier updated', 'Proveedor actualizado', 'Fornitore aggiornato'))
   }
 
   return (

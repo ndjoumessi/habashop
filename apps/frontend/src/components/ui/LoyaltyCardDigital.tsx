@@ -4,6 +4,7 @@ import QRCode from 'qrcode'
 import html2canvas from 'html2canvas'
 import { loyaltyApi } from '@/lib/api'
 import { useI18n } from '@/hooks/useI18n'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { convertAmount, formatInCurrency } from '@/stores/appStore'
 
 interface Props { customerId: string; onClose: () => void }
@@ -24,6 +25,7 @@ const TIER_NAMES: Record<string, [string, string, string, string]> = {
 
 export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
   const { i } = useI18n()
+  const boxRef = useModalFocus<HTMLDivElement>()
   const cardRef = useRef<HTMLDivElement>(null)
   const [data, setData] = useState<Awaited<ReturnType<typeof loyaltyApi.getCard>> | null>(null)
   const [qrUrl, setQrUrl] = useState('')
@@ -88,8 +90,8 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
   const totalPurchases = data ? convertAmount(data.totalRevenue ?? 0, 'XOF', data.currency) : 0
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth: 400, padding: 24 }}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={i('Carte fidélité numérique', 'Digital loyalty card', 'Tarjeta de fidelidad digital', 'Carta fedeltà digitale')} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div ref={boxRef} className="modal-box" style={{ maxWidth: 400, padding: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 'var(--fw-bold)', fontSize: 16 }}>
             <CreditCard size={16} style={{ color: 'var(--p2)' }} />

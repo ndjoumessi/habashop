@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { usersApi } from '@/lib/api'
 import { confirm } from '@/lib/confirm'
 import toast from 'react-hot-toast'
+import { announce } from '@/lib/announce'
 import {
   mapApiUser,
   type Role, type User,
@@ -91,6 +92,7 @@ export default function Users() {
       setShowModal(false)
       setForm({ name:'', email:'', role:'CASHIER', password:'', confirm:'' })
       toast.success(i(`${form.name} invité(e)`, `${form.name} invited`, `${form.name} invitado(a)`, `${form.name} invitato(a)`))
+      announce(i('Invitation envoyée', 'Invitation sent', 'Invitación enviada', 'Invito inviato'))
     } catch (e: any) {
       toast.error(`${i('Échec invitation', 'Invitation failed', 'Error de invitación', 'Invito fallito')} : ${e?.message ?? ''}`)
     }

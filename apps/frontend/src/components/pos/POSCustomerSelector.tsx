@@ -134,6 +134,8 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
               style={{ width: '100%', paddingLeft: 32, fontSize: 13 }}
               aria-label={i('Ajouter un client (nom, téléphone…)', 'Add a customer (name, phone…)', 'Añadir cliente (nombre, teléfono…)', 'Aggiungi cliente (nome, telefono…)')}
               placeholder={i('Ajouter un client (nom, téléphone…)', 'Add a customer (name, phone…)', 'Añadir cliente (nombre, teléfono…)', 'Aggiungi cliente (nome, telefono…)')}
+              aria-expanded={open}
+              aria-haspopup="listbox"
               value={query}
               onChange={e => setQuery(e.target.value)}
               onFocus={() => { if (results.length) setOpen(true) }}
@@ -153,7 +155,7 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
 
           {/* Dropdown résultats */}
           {open && (
-            <div style={{
+            <div role="listbox" style={{
               position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 50,
               background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12,
               boxShadow: 'var(--sh-xl, 0 10px 40px rgba(0,0,0,.3))', overflow: 'hidden', maxHeight: 240, overflowY: 'auto',
@@ -163,7 +165,7 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
                   <UserPlus size={13} aria-hidden="true" /> {i('Aucun client trouvé', 'No customer found', 'Ningún cliente', 'Nessun cliente')}
                 </div>
               ) : results.map(c => (
-                <button key={c.id} type="button" onClick={() => select(c)}
+                <button key={c.id} type="button" role="option" aria-selected={false} onClick={() => select(c)}
                   style={{
                     width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
                     padding: '9px 14px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)',

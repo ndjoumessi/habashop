@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useAppStore } from '@/stores/appStore'
 import ValidatedInput from '@/components/ui/ValidatedInput'
 import PhoneInputWithCountry from '@/components/ui/PhoneInputWithCountry'
@@ -35,11 +36,14 @@ export default function EmpModal({ emp, onClose, onSave, onDelete }: {
   const [perf, setPerf]       = useState(emp?.perf ?? 3)
 
   const deptColor = DEPT_COLORS[dept] ?? color
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
+    <div role="dialog" aria-modal="true"
+      aria-label={emp ? T('Modifier un employé', 'Edit an employee', 'Editar un empleado', 'Modifica un dipendente') : T('Nouvel employé', 'New employee', 'Nuevo empleado', 'Nuovo dipendente')}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{
+      <div ref={boxRef} style={{
         background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20,
         width: '100%', maxWidth: 520, maxHeight: '90vh',
         overflow: 'hidden', display: 'flex', flexDirection: 'column',

@@ -3,6 +3,7 @@ import { useAppStore, useConfig, useFormatAmount, convertFromXOF, t } from '@/st
 import { expensesApi, salesApi } from '@/lib/api'
 import { Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { announce } from '@/lib/announce'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, exportAccountingExcel } from '@/utils/export'
 import {
   BUDGETS_INIT, CATEGORIES, ttcAmount, mapApiExpense, nextExpId,
@@ -159,6 +160,7 @@ export default function Expenses() {
     }
     setExpenses(prev => prev.map(e => e.id === id ? { ...e, status: 'PAYÉ' } : e))
     toast.success(tr('Dépense marquée comme payée','Expense marked as paid','Gasto marcado como pagado','Spesa contrassegnata come pagata'))
+    announce(tr('Dépense marquée comme payée','Expense marked as paid','Gasto marcado como pagado','Spesa contrassegnata come pagata'))
   }
 
   async function deleteExpense(id: number) {
@@ -171,6 +173,7 @@ export default function Expenses() {
     }
     setExpenses(prev => prev.filter(e => e.id !== id))
     toast.success(tr('Dépense supprimée','Expense deleted','Gasto eliminado','Spesa eliminata'))
+    announce(tr('Dépense supprimée','Expense deleted','Gasto eliminado','Spesa eliminata'))
   }
 
   async function addExpense() {
@@ -186,6 +189,7 @@ export default function Expenses() {
     } catch {}
     setExpenses(prev => [newExp, ...prev])
     toast.success(tr('Dépense enregistrée','Expense saved','Gasto registrado','Spesa registrata'))
+    announce(tr('Dépense enregistrée','Expense saved','Gasto registrado','Spesa registrata'))
     setAddOpen(false)
     setNLabel(''); setNHT(''); setNVat(0); setNRecurrent(false); setNNotes('')
   }

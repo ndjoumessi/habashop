@@ -376,6 +376,9 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       <button
                         type="button"
                         data-phone-picker
+                        aria-expanded={showCountryPicker}
+                        aria-haspopup="listbox"
+                        aria-label={`${lang==='en' ? 'Country dial code' : lang==='es' ? 'Prefijo del país' : lang==='it' ? 'Prefisso paese' : 'Indicatif pays'} ${waCountryCode}`}
                         onClick={() => { setShowCountryPicker(p => !p); setCountrySearch('') }}
                         style={{
                           display:'flex', alignItems:'center', gap:6,

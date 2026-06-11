@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Skeleton from '@/components/ui/skeleton'
 import { useAppStore, useFormatAmount, useCurrencyInfo } from '@/stores/appStore'
 import { dashboardApi, goalsApi } from '@/lib/api'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
 import { Plus, Trophy, Pencil, X, Check, Trash2, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import EmptyState from '@/components/ui/EmptyState'
@@ -44,6 +45,7 @@ export default function Goals() {
 
   const [goals, setGoals] = useState<Goal[]>([])
   const [showEditModal, setShowEditModal] = useState(false)
+  const modalBoxRef = useModalFocus<HTMLDivElement>(showEditModal)
   const [editGoal, setEditGoal]           = useState<Goal | null>(null)
   const [goalForm, setGoalForm]           = useState<Goal>(BLANK_GOAL)
   const [loading, setLoading]             = useState(true)
@@ -315,8 +317,8 @@ export default function Goals() {
 
       {/* ── Modal édition ── */}
       {showEditModal && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && setShowEditModal(false)}>
-          <div className="modal-box" style={{ maxWidth:440 }}>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={editGoal ? (lang === 'en' ? 'Edit goal' : lang === 'es' ? 'Editar el objetivo' : lang === 'it' ? "Modifica l'obiettivo" : "Modifier l'objectif") : (lang === 'en' ? 'New goal' : lang === 'es' ? 'Nuevo objetivo' : lang === 'it' ? 'Nuovo obiettivo' : 'Nouvel objectif')} onClick={e => e.target === e.currentTarget && setShowEditModal(false)}>
+          <div ref={modalBoxRef} className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
               <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)', display:'flex', alignItems:'center', gap:6 }}>
                 {editGoal

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { X, FileDown, FileText, TrendingUp, TrendingDown, Scale, Users, RefreshCw, Loader2, BarChart3, AlertTriangle } from 'lucide-react'
@@ -111,10 +112,11 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
   }
 
   const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)' }
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, width: '100%', maxWidth: 620, maxHeight: '92vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px var(--shadow, rgba(0,0,0,.6))' }}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={i('Rapport comptable', 'Accounting report', 'Reporte contable', 'Report contabile')} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div ref={boxRef} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, width: '100%', maxWidth: 620, maxHeight: '92vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px var(--shadow, rgba(0,0,0,.6))' }}>
         {/* Header */}
         <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'color-mix(in srgb, var(--acc2) 12%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { type Employee, labelStyle } from '@/components/hr/hrShared'
@@ -12,10 +13,13 @@ interface Props {
 }
 
 export default function LeaveRequestModal({ lang, employees, leaveForm, setLeaveForm, setShowLeaveModal, onSubmitLeave }: Props) {
+  const boxRef = useModalFocus<HTMLDivElement>()
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
+    <div role="dialog" aria-modal="true"
+      aria-label={lang === 'en' ? 'New leave request' : lang === 'es' ? 'Nueva solicitud de permiso' : lang === 'it' ? 'Nuova richiesta di congedo' : 'Nouvelle demande de congé'}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) setShowLeaveModal(false) }}>
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sh-xl)' }}>
+      <div ref={boxRef} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--sh-xl)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
             🌴 {lang === 'en' ? 'New request' : lang === 'es' ? 'Nueva solicitud' : lang === 'it' ? 'Nuova richiesta' : 'Nouvelle demande'}

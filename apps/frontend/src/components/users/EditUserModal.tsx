@@ -1,4 +1,5 @@
 import { useConfig, t } from '@/stores/appStore'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { X, Mail } from 'lucide-react'
@@ -20,10 +21,11 @@ export default function EditUserModal({ editUser, editForm, setEditForm, onClose
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const ROLE_LABELS = buildRoleLabels()
+  const boxRef = useModalFocus<HTMLDivElement>()
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth:480 }}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${i('Modifier', 'Edit', 'Editar', 'Modifica')} — ${editUser.name}`} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div ref={boxRef} className="modal-box" style={{ maxWidth:480 }}>
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="text-base font-bold" style={{ color:'var(--text)' }}>{lang === 'en' ? 'Edit' : lang === 'es' ? 'Editar' : lang === 'it' ? 'Modifica' : 'Modifier'} — {editUser.name}</h3>

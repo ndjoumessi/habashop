@@ -1,4 +1,5 @@
 import { TrendingUp, Gift } from 'lucide-react'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { type Employee } from '@/components/hr/hrShared'
 import SalaryRaiseForm from './SalaryRaiseForm'
 import BonusForm from './BonusForm'
@@ -14,9 +15,10 @@ interface Props {
 }
 
 export default function SalaryModal({ salaryTarget, lang, fmt, employees, handleConfirmRaise, handleConfirmBonus, onClose }: Props) {
+  const boxRef = useModalFocus<HTMLDivElement>()
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target===e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth:400 }}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={salaryTarget?.mode === 'raise' ? (lang === 'en' ? 'Salary raise' : lang === 'es' ? 'Aumento salarial' : lang === 'it' ? 'Aumento salariale' : 'Augmentation salariale') : (lang === 'en' ? 'Add bonus' : lang === 'es' ? 'Agregar una prima' : lang === 'it' ? 'Aggiungi un premio' : 'Ajouter une prime')} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div ref={boxRef} className="modal-box" style={{ maxWidth:400 }}>
         <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
           <h3 style={{ fontSize:15, fontWeight:'var(--fw-semibold)', color:'var(--text)', margin:0, display:'flex', alignItems:'center', gap:8 }}>
             {salaryTarget?.mode === 'raise'

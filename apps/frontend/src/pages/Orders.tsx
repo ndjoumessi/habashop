@@ -4,6 +4,7 @@ import { useI18n } from '@/hooks/useI18n'
 import { ordersApi, productsApi, suppliersApi, customersApi } from '@/lib/api'
 import { Plus, List, CalendarDays } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { announce } from '@/lib/announce'
 import { openPDF, htmlTable, htmlKPIs, htmlInfoGrid } from '@/utils/export'
 import { usePagination } from '@/hooks/usePagination'
 import { type Order, type OrderStatus, orderStatusLabel, LOCAL_TO_API_STATUS, mapApiOrder } from '@/components/orders/ordersShared'
@@ -116,6 +117,7 @@ export default function Orders() {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
     setViewOrder(prev => prev?.id === id ? { ...prev, status } : prev)
     toast.success(`${i('Statut mis à jour', 'Status updated', 'Estado actualizado', 'Stato aggiornato')} → ${orderStatusLabel(status, lang)}`)
+    announce(`${i('Statut mis à jour', 'Status updated', 'Estado actualizado', 'Stato aggiornato')} — ${orderStatusLabel(status, lang)}`)
   }
 
   const openNewOrderModal = () => {
@@ -168,6 +170,9 @@ export default function Orders() {
       ? i(`✅ Commande créée — ${fmt(total)}`, `✅ Order created — ${fmt(total)}`, `✅ Pedido creado — ${fmt(total)}`, `✅ Ordine creato — ${fmt(total)}`)
       : i(`📦 Bon de commande envoyé à ${supplierObj?.name}`, `📦 PO sent to ${supplierObj?.name}`, `📦 Orden enviada a ${supplierObj?.name}`, `📦 Ordine inviato a ${supplierObj?.name}`)
     )
+    announce(orderType === 'client'
+      ? i('Commande créée', 'Order created', 'Pedido creado', 'Ordine creato')
+      : i('Bon de commande envoyé', 'Purchase order sent', 'Orden de compra enviada', 'Ordine di acquisto inviato'))
   }
 
   const printOrderPDF = (order: Order) => {

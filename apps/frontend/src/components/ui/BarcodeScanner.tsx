@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser'
+import { useI18n } from '@/hooks/useI18n'
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void
@@ -7,6 +8,7 @@ interface BarcodeScannerProps {
 }
 
 export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
+  const { i } = useI18n()
   const videoRef    = useRef<HTMLVideoElement>(null)
   const controlsRef = useRef<IScannerControls | null>(null)
   const [error,    setError]    = useState<string | null>(null)
@@ -68,7 +70,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
         {/* Header */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
           <h3 style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>📷 Scanner un code-barres</h3>
-          <button onClick={onClose} style={{
+          <button onClick={onClose} aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} style={{
             background:'var(--bg3)', border:'none', borderRadius:8,
             width:32, height:32, cursor:'pointer', fontSize:16, color:'var(--text)',
           }}>✕</button>

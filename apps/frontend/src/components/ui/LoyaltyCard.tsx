@@ -3,6 +3,7 @@ import IconButton from '@/components/ui/IconButton'
 import { X, Gift, Award, Medal, Crown, Star, Copy, Loader2, Sparkles } from 'lucide-react'
 import { loyaltyApi } from '@/lib/api'
 import { useI18n } from '@/hooks/useI18n'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import { formatInCurrency, useAppStore } from '@/stores/appStore'
 import toast from 'react-hot-toast'
 
@@ -29,6 +30,7 @@ const TIER_CFG = {
 
 export default function LoyaltyCard({ customer, onClose }: Props) {
   const { i, lang } = useI18n()
+  const boxRef = useModalFocus<HTMLDivElement>()
   const dloc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   // pointsPerAmount est DÉJÀ exprimé dans la devise du tenant → on le formate tel quel,
   // SANS conversion de change (useFormatAmount convertirait depuis XOF → 1000 = 1,52 €, faux).
@@ -87,8 +89,8 @@ export default function LoyaltyCard({ customer, onClose }: Props) {
   }
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth: 420 }}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={i('Carte Fidélité', 'Loyalty Card', 'Tarjeta Fidelidad', 'Carta Fedeltà')} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div ref={boxRef} className="modal-box" style={{ maxWidth: 420 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}><Gift size={16} style={{ color: 'var(--p2)' }} /> {i('Carte Fidélité', 'Loyalty Card', 'Tarjeta Fidelidad', 'Carta Fedeltà')}</h3>
