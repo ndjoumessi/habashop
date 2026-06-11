@@ -1,4 +1,4 @@
-import { SHIFT_TYPES, shiftLabel } from './planningShared'
+import { SHIFT_TYPES, shiftLabel, buildT } from './planningShared'
 import type { ShiftType } from './planningShared'
 
 interface Props {
@@ -8,8 +8,9 @@ interface Props {
 }
 
 export default function ShiftSelector({ lang, activeShift, setActiveShift }: Props) {
+  const T = buildT(lang)
   return (
-    <div style={{
+    <div role="group" aria-label={T.assignGroup} style={{
       display:'flex', gap:6, flexWrap:'wrap',
       padding:'12px 16px',
       background:'var(--bg2)',
@@ -27,6 +28,7 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
       {(Object.entries(SHIFT_TYPES) as [ShiftType, typeof SHIFT_TYPES[ShiftType]][])
         .map(([key,s]) => (
         <button key={key} type="button"
+          aria-pressed={activeShift===key}
           onClick={()=>setActiveShift(key)}
           style={{
             display:'flex', alignItems:'center', gap:5,
@@ -43,7 +45,7 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
               ? `0 3px 10px ${s.color}30` : 'none',
             transform: activeShift===key ? 'scale(1.02)' : 'scale(1)',
           }}>
-          <span style={{ color: activeShift===key ? s.color : 'var(--text3)', display:'flex' }}>{s.icon}</span>
+          <span aria-hidden="true" style={{ color: activeShift===key ? s.color : 'var(--text3)', display:'flex' }}>{s.icon}</span>
           <span>{shiftLabel(key, lang)}</span>
           {s.hours && (
             <span style={{
@@ -51,7 +53,7 @@ export default function ShiftSelector({ lang, activeShift, setActiveShift }: Pro
             }}>{s.hours}</span>
           )}
           {activeShift===key && (
-            <span style={{
+            <span aria-hidden="true" style={{
               fontSize:11, background:'var(--p)',
               color:'#fff', borderRadius:99,
               padding:'1px 5px', fontWeight:'var(--fw-bold)',

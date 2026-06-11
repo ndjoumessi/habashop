@@ -64,11 +64,20 @@ export default function PlanningMonth({ lang, loading, monthGridDays, monthAncho
               const counts = byDate[dateStr] ?? {}
               const hasAny = SHIFT_ORDER.some(t => counts[t])
               const leaveCount = leaveDays[dateStr] ?? 0
+              const dayTitle = `${day.toLocaleDateString(lang==='en'?'en-US':lang==='es'?'es-ES':lang==='it'?'it-IT':'fr-FR',{weekday:'long',day:'numeric',month:'long'})}`
+              const openWeekLabel = lang==='en' ? `${dayTitle} — open week view`
+                : lang==='es' ? `${dayTitle} — abrir vista semana`
+                : lang==='it' ? `${dayTitle} — apri vista settimana`
+                : `${dayTitle} — ouvrir la vue semaine`
               return (
                 <div key={idx}
                   data-testid={`month-day-${dateStr}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={openWeekLabel}
                   onClick={()=>onPickDay(day)}
-                  title={`${day.toLocaleDateString(lang==='en'?'en-US':lang==='es'?'es-ES':lang==='it'?'it-IT':'fr-FR',{weekday:'long',day:'numeric',month:'long'})}`}
+                  onKeyDown={e=>{ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPickDay(day) } }}
+                  title={dayTitle}
                   style={{
                     minHeight:84, padding:'6px 6px 7px', cursor:'pointer',
                     borderRight: (idx%7!==6)?'1px solid var(--border)':'none',

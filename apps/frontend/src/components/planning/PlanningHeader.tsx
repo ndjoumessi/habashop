@@ -48,20 +48,20 @@ export default function PlanningHeader({ lang, view, setView, weekDays, monthAnc
       </div>
       <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
         {/* Bascule Semaine / Mois */}
-        <div style={{ display:'flex', gap:2, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:3 }}>
+        <div role="group" aria-label={T.viewToggle} style={{ display:'flex', gap:2, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:3 }}>
           <button aria-pressed={view==='week'} style={segBtn('week', T.week)} onClick={()=>setView('week')}>{T.week}</button>
           <button aria-pressed={view==='month'} style={segBtn('month', T.month)} onClick={()=>setView('month')}>{T.month}</button>
         </div>
-        <button className="mini-btn" onClick={()=>shift(-1)}>← {T.prev}</button>
+        <button className="mini-btn" aria-label={view==='month' ? T.prevMonth : T.prevWeek} onClick={()=>shift(-1)}><span aria-hidden="true">← </span>{T.prev}</button>
         <button className="mini-btn" onClick={()=>setPlanningWeek(new Date())}>{T.today}</button>
-        <button className="mini-btn" onClick={()=>shift(1)}>{T.next} →</button>
+        <button className="mini-btn" aria-label={view==='month' ? T.nextMonth : T.nextWeek} onClick={()=>shift(1)}>{T.next}<span aria-hidden="true"> →</span></button>
         {view === 'week' && (
-          <button className="mini-btn" onClick={onCopyWeek} title={copyLabel} style={{ display:'flex', alignItems:'center', gap:4 }}>
-            <CopyPlus size={12}/> {copyLabel}
+          <button className="mini-btn" onClick={onCopyWeek} title={T.copyWeekAria} aria-label={T.copyWeekAria} style={{ display:'flex', alignItems:'center', gap:4 }}>
+            <CopyPlus size={12} aria-hidden="true"/> {copyLabel}
           </button>
         )}
         <button className="mini-btn" onClick={onExport} style={{ display:'flex', alignItems:'center', gap:4 }}>
-          <Download size={12}/> {T.export}
+          <Download size={12} aria-hidden="true"/> {T.export}
         </button>
       </div>
     </div>

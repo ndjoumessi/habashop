@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react'
 import Skeleton from '@/components/ui/skeleton'
-import { Users, MousePointer2, Lock } from 'lucide-react'
+import { Users, MousePointer2, Lock, GripVertical } from 'lucide-react'
 import { deptLabel } from '@/components/hr/hrShared'
 import { SHIFT_TYPES, shiftLabel, getDayLabels, buildT } from './planningShared'
 import type { ShiftType, PlanningEmployee } from './planningShared'
@@ -27,12 +28,26 @@ export default function PlanningGrid(props: Props) {
     : lang === 'it' ? 'Congedo approvato — non modificabile'
     : 'Congé approuvé — non modifiable'
 
+  // Accessibilité : « saisie » d'un créneau (clavier Entrée/Espace ou tap sur la poignée) puis
+  // dépôt sur une case (Entrée ou tap) — MÊME mutation onMoveShift que le drag&drop HTML5.
+  // Échap / re-tap / tap sur la case source = annulation. État partagé clavier + tactile.
+  const [grabbed, setGrabbed] = useState<{ empId: string; di: number; type: ShiftType } | null>(null)
+  const [announce, setAnnounce] = useState('') // message lecteur d'écran (aria-live polite)
+  useEffect(() => { setGrabbed(null) }, [weekDays]) // changement de semaine → sélection caduque
+
+  const cancelGrab = () => { setGrabbed(null); setAnnounce(T.moveCancelled) }
+
   return (
     <div style={{
       background:'var(--bg2)',
       border:'0.5px solid var(--border)',
       borderRadius:12, overflow:'hidden',
     }}>
+      {/* Annonce lecteur d'écran (mode déplacement / dépôt / annulation) — visuellement masquée */}
+      <div role="status" aria-live="polite" style={{
+        position:'absolute', width:1, height:1, margin:-1, padding:0,
+        overflow:'hidden', clip:'rect(0 0 0 0)', whiteSpace:'nowrap', border:0,
+      }}>{announce}</div>
       <div style={{overflowX:'auto'}}>
         <table style={{
           width:'100%', borderCollapse:'collapse', minWidth:720,
@@ -160,6 +175,27 @@ export default function PlanningGrid(props: Props) {
                     || weekDays[di].getDay()===6
                   const isToday = weekDays[di].toDateString()===new Date().toDateString()
                   const preview = SHIFT_TYPES[activeShift]
+                  const firstName = emp.name.split(' ')[0]
+                  const cellDate = `${DAY_LABELS[di]} ${weekDays[di].getDate()}`
+                  const isSource = grabbed?.empId === emp.id && grabbed?.di === di
+                  const cellLabel = `${firstName}, ${cellDate} — ${hasShifts ? arr.map(sh => shiftLabel(sh.type, lang)).join(', ') : T.emptyCell}${isLocked ? `. ${lockedTitle}` : ''}`
+                  // Activation case (clic, tap OU Entrée/Espace) : si un créneau est saisi → dépôt
+                  // (même mutation que le drop HTML5) ; sinon comportement existant (modale/assignation).
+                  const activateCell = () => {
+                    if (grabbed) {
+                      if (isSource) { cancelGrab(); return } // dépôt sur la case source = annulation
+                      if (isLocked || !onMoveShift) return
+                      onMoveShift(grabbed.empId, grabbed.di, emp.id, di, grabbed.type)
+                      setGrabbed(null); setAnnounce(T.moved)
+                      return
+                    }
+                    if (isLocked) return  // congé approuvé : assignation bloquée
+                    if (!hasShifts) {
+                      onOpenModal(emp.id, di, firstName)
+                    } else {
+                      onAssign(emp.id,di)  // AJOUTE le shift actif (conserve les autres types)
+                    }
+                  }
 
                   return (
                     <td key={di} style={{
@@ -169,6 +205,12 @@ export default function PlanningGrid(props: Props) {
                     }}>
                       <div
                         title={isLocked ? lockedTitle : undefined}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={cellLabel}
+                        aria-disabled={isLocked || undefined}
+                        aria-dropeffect={grabbed && !isLocked ? 'move' : undefined}
+                        data-pcell={`${ri}-${di}`}
                         // Drop target uniquement : on dépose un shift glissé (depuis un chip) sur cette
                         // case (non verrouillée) → le shift de ce TYPE est DÉPLACÉ (upsert cible + delete source).
                         onDragOver={e=>{ if (!isLocked && onMoveShift) e.preventDefault() }}
@@ -180,12 +222,19 @@ export default function PlanningGrid(props: Props) {
                             if (src && typeof src.empId === 'string' && typeof src.di === 'number' && typeof src.type === 'string') onMoveShift(src.empId, src.di, emp.id, di, src.type)
                           } catch { /* drop non-shift ignoré */ }
                         }}
-                        onClick={()=>{
-                          if (isLocked) return  // congé approuvé : assignation bloquée
-                          if (!hasShifts) {
-                            onOpenModal(emp.id, di, emp.name.split(' ')[0])
-                          } else {
-                            onAssign(emp.id,di)  // AJOUTE le shift actif (conserve les autres types)
+                        onClick={activateCell}
+                        onKeyDown={e=>{
+                          // ignore les touches d'activation venues d'un enfant (poignée <button>)
+                          if ((e.key === 'Enter' || e.key === ' ' || e.key === 'Delete' || e.key === 'Backspace') && e.target !== e.currentTarget) return
+                          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateCell() }
+                          else if (e.key === 'Escape') { if (grabbed) cancelGrab() }
+                          else if ((e.key === 'Delete' || e.key === 'Backspace') && !grabbed && !isLocked && hasShifts) {
+                            e.preventDefault(); onClearShift(emp.id, di) // équivalent clavier du double-clic
+                          } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                            e.preventDefault()
+                            const dr = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0
+                            const dc = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0
+                            e.currentTarget.closest('table')?.querySelector<HTMLElement>(`[data-pcell="${ri + dr}-${di + dc}"]`)?.focus()
                           }
                         }}
                         onDoubleClick={()=>{ if (!isLocked) onClearShift(emp.id,di) }}
@@ -206,6 +255,8 @@ export default function PlanningGrid(props: Props) {
                           userSelect:'none',
                           position:'relative',
                           overflow:'hidden',
+                          // mode déplacement : matérialise les cases de dépôt valides (clavier + tactile)
+                          boxShadow: grabbed && !isLocked && !isSource ? 'inset 0 0 0 1px var(--p2)' : undefined,
                         }}
                         onMouseEnter={e=>{
                           if (!hasShifts && !isLocked) {
@@ -236,12 +287,14 @@ export default function PlanningGrid(props: Props) {
                             {arr.map(sh=>{
                               const s = SHIFT_TYPES[sh.type]
                               const draggableChip = !isLocked && !!onMoveShift && sh.type!=='leave'
+                              const isGrabbed = !!grabbed && grabbed.empId === emp.id && grabbed.di === di && grabbed.type === sh.type
                               return (
                                 <div key={sh.type}
                                   title={shiftLabel(sh.type, lang)}
                                   draggable={draggableChip}
+                                  aria-grabbed={draggableChip ? isGrabbed : undefined}
                                   onDragStart={e=>{ e.stopPropagation(); e.dataTransfer.setData('text/plain', JSON.stringify({ empId: emp.id, di, type: sh.type })); e.dataTransfer.effectAllowed='move' }}
-                                  onClick={e=>{ if (arr.length>1) e.stopPropagation() }}
+                                  onClick={e=>{ if (arr.length>1 && !grabbed) e.stopPropagation() }} // en mode déplacement, laisse le tap atteindre la case (dépôt)
                                   style={{
                                     display:'flex', alignItems:'center', justifyContent:'center', gap:3,
                                     cursor: draggableChip ? 'grab' : 'default',
@@ -249,6 +302,8 @@ export default function PlanningGrid(props: Props) {
                                       background:`${s.color}1a`, border:`1px solid ${s.color}40`,
                                       borderRadius:6, padding:'1px 5px', width:'100%',
                                     } : null),
+                                    // créneau saisi (clavier/tactile) : état visuel de sélection
+                                    ...(isGrabbed ? { outline:'2px solid var(--p)', outlineOffset:1, borderRadius:6 } : null),
                                   }}
                                 >
                                   <span style={{ color:s.color, display:'flex' }}>{s.icon}</span>
@@ -260,6 +315,30 @@ export default function PlanningGrid(props: Props) {
                                       letterSpacing:'-.3px',
                                       lineHeight:1,
                                     }}>{s.hours}</span>
+                                  )}
+                                  {/* Poignée de déplacement : cible focusable (Tab) + tactile (tap) — saisit/relâche
+                                      le créneau sans passer par le drag HTML5 (inopérant sans souris). */}
+                                  {draggableChip && (
+                                    <button
+                                      type="button"
+                                      aria-label={`${T.moveHandle} : ${shiftLabel(sh.type, lang)} — ${firstName}, ${cellDate}`}
+                                      aria-pressed={isGrabbed}
+                                      aria-grabbed={isGrabbed}
+                                      onClick={e=>{
+                                        e.stopPropagation()
+                                        if (isGrabbed) { cancelGrab(); return }
+                                        setGrabbed({ empId: emp.id, di, type: sh.type })
+                                        setAnnounce(`${shiftLabel(sh.type, lang)} — ${firstName}, ${cellDate}. ${T.moveMode}`)
+                                      }}
+                                      style={{
+                                        display:'flex', alignItems:'center', justifyContent:'center',
+                                        background:'transparent', border:'none', padding:1, margin:0,
+                                        cursor:'pointer', color: isGrabbed ? 'var(--p)' : s.color,
+                                        opacity: isGrabbed ? 1 : .55, transition:'opacity .12s',
+                                      }}
+                                    >
+                                      <GripVertical size={10}/>
+                                    </button>
                                   )}
                                 </div>
                               )
