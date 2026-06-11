@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   View, Text, Modal, TextInput, FlatList, Pressable, ActivityIndicator, StyleSheet,
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useQuery } from '@tanstack/react-query'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { customersApi } from '@/services/api'

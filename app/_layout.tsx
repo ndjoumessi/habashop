@@ -5,14 +5,16 @@ import { StatusBar } from 'expo-status-bar'
 import * as Notifications from 'expo-notifications'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import {
-  useFonts,
-  Outfit_400Regular, Outfit_600SemiBold,
-  Outfit_700Bold, Outfit_800ExtraBold, Outfit_900Black,
-} from '@expo-google-fonts/outfit'
-import {
-  JetBrainsMono_400Regular, JetBrainsMono_700Bold,
-} from '@expo-google-fonts/jetbrains-mono'
+// Imports subpath (pas le barrel) : le barrel `@expo-google-fonts/*` fait bundler
+// par Metro TOUTES les graisses (.ttf) du package — ~2 MB de polices mortes.
+import { useFonts } from '@expo-google-fonts/outfit/useFonts'
+import { Outfit_400Regular } from '@expo-google-fonts/outfit/400Regular'
+import { Outfit_600SemiBold } from '@expo-google-fonts/outfit/600SemiBold'
+import { Outfit_700Bold } from '@expo-google-fonts/outfit/700Bold'
+import { Outfit_800ExtraBold } from '@expo-google-fonts/outfit/800ExtraBold'
+import { Outfit_900Black } from '@expo-google-fonts/outfit/900Black'
+import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono/400Regular'
+import { JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono/700Bold'
 import * as SplashScreen from 'expo-splash-screen'
 import { useAuthStore } from '@/stores/authStore'
 import { useTheme } from '@/stores/appStore'

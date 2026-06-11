@@ -10,6 +10,7 @@ import type { Product, Customer } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { Spacing, BorderRadius, FontSize, withAlpha, ThemeColors } from '@/constants/theme'
 import Chip from '@/components/ui/Chip'
+import ErrorState from '@/components/ui/ErrorState'
 
 type ResultType = 'product' | 'customer'
 interface SearchResult {
@@ -32,12 +33,16 @@ export default function SearchScreen() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const {
+    data: products = [], isError: productsError, refetch: refetchProducts,
+  } = useQuery<Product[]>({
     queryKey: ['search-products'],
     queryFn: () => productsApi.list(),
     staleTime: 10 * 60 * 1000,
   })
-  const { data: customers = [] } = useQuery<Customer[]>({
+  const {
+    data: customers = [], isError: customersError, refetch: refetchCustomers,
+  } = useQuery<Customer[]>({
     queryKey: ['search-customers'],
     queryFn: () => customersApi.list(),
     staleTime: 10 * 60 * 1000,
@@ -117,6 +122,19 @@ export default function SearchScreen() {
 
       {searching ? (
         <ActivityIndicator color={C.primary} style={{ marginTop: 40 }} />
+      ) : productsError || customersError ? (
+        <ErrorState
+          message={i(
+            'Erreur réseau — toucher pour réessayer',
+            'Network error — tap to retry',
+            'Error de red — toca para reintentar',
+            'Errore di rete — tocca per riprovare',
+          )}
+          onRetry={() => {
+            if (productsError) refetchProducts()
+            if (customersError) refetchCustomers()
+          }}
+        />
       ) : results.length === 0 && query.length > 0 ? (
         <View style={s.emptyWrap}>
           <Text style={{ fontSize: 40 }}>🔍</Text>

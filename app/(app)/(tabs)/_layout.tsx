@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Tabs, router } from 'expo-router'
 import { View, Text, StyleSheet } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { ThemeColors, withAlpha, FontSize } from '@/constants/theme'
 import { useI18n, useTheme } from '@/stores/appStore'
 

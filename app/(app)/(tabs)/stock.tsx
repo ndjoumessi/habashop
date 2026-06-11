@@ -5,7 +5,7 @@ import {
   ActivityIndicator, Alert, Pressable, RefreshControl,
 } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi, apiErrorMessage } from '@/services/api'
 import type { Product } from '@/types'

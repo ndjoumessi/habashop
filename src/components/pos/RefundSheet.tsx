@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   View, Text, Modal, Pressable, TextInput, ScrollView, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import AccessibleButton from '@/components/ui/AccessibleButton'
 import InvoiceButton from '@/components/sales/InvoiceButton'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'

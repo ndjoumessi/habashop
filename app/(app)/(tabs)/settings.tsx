@@ -4,7 +4,7 @@ import {
   TouchableOpacity, Pressable, Switch, Alert,
 } from 'react-native'
 import { useQueryClient } from '@tanstack/react-query'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { router } from 'expo-router'
 import Constants from 'expo-constants'
 import * as Updates from 'expo-updates'

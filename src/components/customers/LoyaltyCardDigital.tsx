@@ -4,7 +4,7 @@ import {
 } from 'react-native'
 import QRCode from 'qrcode'
 import * as Print from 'expo-print'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useQuery } from '@tanstack/react-query'
 import { customersApi } from '@/services/api'
 import type { LoyaltyCardData } from '@/types'

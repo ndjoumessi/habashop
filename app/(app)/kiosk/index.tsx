@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, FlatList,
-  TextInput, TouchableOpacity, StatusBar, Alert,
+  TextInput, TouchableOpacity, StatusBar, Alert, ActivityIndicator,
 } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
@@ -15,6 +15,7 @@ import { usePosStore, vatBreakdown } from '@/stores/posStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useFmt, useAppStore } from '@/stores/appStore'
 import CustomerPicker from '@/components/pos/CustomerPicker'
+import ErrorState from '@/components/ui/ErrorState'
 import { Colors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
 
 // Boundary localisé du mode kiosque : un crash affiche un fallback (sortie possible)
@@ -42,7 +43,12 @@ export default function KioskScreen() {
   const [tapCount, setTapCount]         = useState(0)
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    isError:   productsError,
+    refetch:   refetchProducts,
+  } = useQuery<Product[]>({
     queryKey: ['products'],
     queryFn:  () => productsApi.list(),
     staleTime: 2 * 60 * 1000,
@@ -155,6 +161,13 @@ export default function KioskScreen() {
             </TouchableOpacity>
           </View>
 
+          {productsLoading ? (
+            <View style={s.gridState}>
+              <ActivityIndicator color={Colors.primary} size="large" />
+            </View>
+          ) : productsError ? (
+            <ErrorState onRetry={() => refetchProducts()} />
+          ) : (
           <FlatList
             removeClippedSubviews={false}
             data={filtered}
@@ -197,6 +210,7 @@ export default function KioskScreen() {
               )
             }}
           />
+          )}
         </View>
 
         {/* ── Colonne droite : panier permanent ── */}
@@ -229,6 +243,7 @@ export default function KioskScreen() {
                   <TouchableOpacity
                     style={s.qtyBtn}
                     onPress={() => pos.updateQty(item.productId, item.quantity - 1)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     accessibilityRole="button"
                     accessibilityLabel={i('Diminuer', 'Decrease', 'Reducir', 'Riduci')}
                   >
@@ -238,6 +253,7 @@ export default function KioskScreen() {
                   <TouchableOpacity
                     style={[s.qtyBtn, s.qtyBtnPlus]}
                     onPress={() => pos.updateQty(item.productId, item.quantity + 1)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     accessibilityRole="button"
                     accessibilityLabel={i('Augmenter', 'Increase', 'Aumentar', 'Aumenta')}
                   >
@@ -498,6 +514,7 @@ const s = StyleSheet.create({
   },
   tapCountText: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: Colors.black },
   grid: { padding: Spacing.md, paddingBottom: 40 },
+  gridState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
   productCard: {
     flex: 1, backgroundColor: Colors.card, borderRadius: BorderRadius.lg,
     borderWidth: 1, borderColor: Colors.border, padding: Spacing.sm,

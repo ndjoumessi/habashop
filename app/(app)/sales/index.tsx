@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { salesApi, apiErrorMessage, apiErrorStatus } from '@/services/api'
 import type { SaleRecord } from '@/types'

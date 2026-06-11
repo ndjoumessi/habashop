@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { memo, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import type { CartItem } from '@/stores/posStore'
 import type { Product } from '@/types'
 import { useTheme } from '@/stores/appStore'
@@ -8,12 +8,16 @@ import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow } from '@/constant
 import ErrorState from '@/components/ui/ErrorState'
 
 // ── Carte produit ────────────────────────────────
-function ProductCard({
-  product, qtyInCart, fmt, onPress,
+// memo : un tap d'ajout au panier modifie `cart` → sans memo, TOUTES les cartes
+// visibles re-rendent à chaque tap. Props stables (product/qty/fmt/onAdd) → seul
+// le produit dont la quantité change re-rend. (useTheme re-rend de toute façon
+// chaque carte au changement de thème — abonnement store interne.)
+const ProductCard = memo(function ProductCard({
+  product, qtyInCart, fmt, onAdd,
 }: {
   product: Product; qtyInCart: number
   fmt: (n: number) => string
-  onPress: () => void
+  onAdd: (product: Product) => void
 }) {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
@@ -23,7 +27,7 @@ function ProductCard({
       style={[s.prodCard, out && s.prodCardOut]}
       activeOpacity={0.7}
       disabled={out}
-      onPress={onPress}
+      onPress={() => onAdd(product)}
       accessibilityRole="button"
       accessibilityState={{ disabled: out }}
       accessibilityLabel={`${product.name?.trim() ?? ''}, ${fmt(product.sellPrice ?? 0)}`}
@@ -43,7 +47,7 @@ function ProductCard({
       <Text style={s.prodPrice}>{fmt(product.sellPrice ?? 0)}</Text>
     </TouchableOpacity>
   )
-}
+})
 
 interface POSProductGridProps {
   filtered:  Product[]
@@ -61,7 +65,18 @@ export default function POSProductGrid({
 }: POSProductGridProps) {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
-  const qtyOf = (id: string) => cart.find(c => c.productId === id)?.quantity ?? 0
+  // Quantités précalculées : évite un cart.find O(panier) PAR carte produit à chaque rendu.
+  const qtyByProductId = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const c of cart) if (!m.has(c.productId)) m.set(c.productId, c.quantity)
+    return m
+  }, [cart])
+  // Identité stable pour la prop onAdd (le parent passe une closure recréée à chaque
+  // rendu) — sans ça, React.memo sur ProductCard ne filtre rien. Comportement identique :
+  // la ref pointe toujours la dernière closure.
+  const onAddRef = useRef(onAdd)
+  onAddRef.current = onAdd
+  const handleAdd = useCallback((p: Product) => { onAddRef.current(p) }, [])
 
   if (isLoading) {
     return <View style={s.center}><ActivityIndicator color={C.primary} size="large" /></View>
@@ -88,9 +103,9 @@ export default function POSProductGrid({
       renderItem={({ item }: { item: Product }) => (
         <ProductCard
           product={item}
-          qtyInCart={qtyOf(item.id)}
+          qtyInCart={qtyByProductId.get(item.id) ?? 0}
           fmt={fmt}
-          onPress={() => onAdd(item)}
+          onAdd={handleAdd}
         />
       )}
     />

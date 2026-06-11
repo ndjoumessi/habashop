@@ -71,8 +71,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
       set({ token, user, tenant, isLoggedIn: true, isLoading: false })
       syncCurrencyFromTenant(tenant)
-    } catch {
-      await SecureStore.deleteItemAsync('auth_token')
+    } catch (err: any) {
+      // Ne purger le token que si le serveur l'a explicitement rejeté (401/403).
+      // Timeout / hors-ligne / cold-start Railway → on garde le token pour la
+      // prochaine ouverture, sinon déconnexion forcée à chaque réseau lent.
+      const status = err?.response?.status
+      if (status === 401 || status === 403) {
+        await SecureStore.deleteItemAsync('auth_token')
+      }
       set({ isLoading: false })
     }
   },

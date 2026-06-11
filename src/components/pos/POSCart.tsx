@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { View, Text, Modal, ScrollView, Pressable, TextInput, StyleSheet } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { vatBreakdown } from '@/stores/posStore'
 import type { CartItem, PaymentMode } from '@/stores/posStore'

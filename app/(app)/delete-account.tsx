@@ -4,7 +4,7 @@ import {
   View, Text, ScrollView, StyleSheet, TextInput,
   Alert, ActivityIndicator,
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQueryClient } from '@tanstack/react-query'
