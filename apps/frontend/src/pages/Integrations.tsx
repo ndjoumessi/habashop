@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/stores/appStore'
-import { ExternalLink, RotateCw, Globe, Zap, Settings2 } from 'lucide-react'
+import { ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound } from 'lucide-react'
 import Button from '@/components/ui/AppButton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
+import { useModalFocus } from '@/hooks/useModalFocus'
 import toast from 'react-hot-toast'
 import ResendMonitor from '@/components/integrations/ResendMonitor'
+
+// Brouillon de config PayDunya stocké en local (par appareil) — l'intégration
+// backend PayDunya n'est pas encore branchée : ces clés sont conservées en attente.
+const PAYDUNYA_DRAFT_KEY = 'habashop_paydunya_draft'
 
 type PingState = 'checking' | 'ok' | 'slow' | 'error'
 
@@ -16,6 +21,49 @@ interface Integration {
   pingUrl: string
   features: string[]
   IconSvg: () => JSX.Element
+  // Champs optionnels pour les intégrations paiement
+  paymentStatus?: 'sandbox' | 'production' | 'unconfigured'
+  countries?: string   // drapeaux + noms pays, affiché sous la description
+  noPing?: boolean     // sauter le ping auto (pas d'endpoint public testable)
+}
+
+// ── Catégories (regroupement des cartes) ─────────────────────────────────────
+const CATEGORIES: { key: string; label: Record<string, string> }[] = [
+  { key: 'payments',      label: { fr: 'Paiements',           en: 'Payments',          es: 'Pagos',              it: 'Pagamenti' } },
+  { key: 'notifications', label: { fr: 'Notifications',        en: 'Notifications',     es: 'Notificaciones',     it: 'Notifiche' } },
+  { key: 'database',      label: { fr: 'Base de données',      en: 'Database',          es: 'Base de datos',      it: 'Database' } },
+  { key: 'hosting',       label: { fr: 'Hébergement',          en: 'Hosting',           es: 'Alojamiento',        it: 'Hosting' } },
+  { key: 'monitoring',    label: { fr: 'Monitoring & IA',      en: 'Monitoring & AI',   es: 'Monitoreo e IA',     it: 'Monitoraggio e IA' } },
+]
+
+const CATEGORY_OF: Record<string, string> = {
+  mtnmomo: 'payments', campay: 'payments', paydunya: 'payments',
+  twilio: 'notifications', resend: 'notifications',
+  prisma: 'database', redis: 'database',
+  railway: 'hosting', vercel: 'hosting',
+  sentry: 'monitoring', anthropic: 'monitoring', googlemaps: 'monitoring',
+}
+
+// Version d'API exposée (facteur de confiance, affichée dans le bandeau endpoint)
+const API_VERSION: Record<string, string> = {
+  anthropic: 'Claude API', twilio: 'API 2010-04-01', resend: 'API v1',
+  googlemaps: 'JS API v3', railway: 'Platform', vercel: 'Platform', prisma: 'Prisma 5',
+  mtnmomo: 'MoMo API v1.0', campay: 'API v2', paydunya: 'API v1',
+  sentry: 'SDK 8.x', redis: 'Redis 7',
+}
+
+// Méthodes de paiement supportées (pills) — cartes paiement uniquement
+const METHODS: Record<string, string[]> = {
+  mtnmomo: ['USSD Push', 'MTN MoMo'],
+  campay:  ['Orange Money', 'Visa/MC', 'USSD Push'],
+  paydunya:['Wave', 'Orange Money', 'Free Money', 'Visa/MC'],
+}
+
+// Détail factuel sous la description (infra)
+const CARD_DETAIL: Record<string, Record<string, string>> = {
+  prisma: { fr: '22 modèles · migration 10/06/2026', en: '22 models · migration 2026-06-10', es: '22 modelos · migración 10/06/2026', it: '22 modelli · migrazione 10/06/2026' },
+  redis:  { fr: 'Cache rapports comptables & sessions', en: 'Accounting reports & session cache', es: 'Caché de informes y sesiones', it: 'Cache report e sessioni' },
+  sentry: { fr: 'Suivi des erreurs front + back', en: 'Front + back error tracking', es: 'Seguimiento de errores front + back', it: 'Tracciamento errori front + back' },
 }
 
 const IconAnthropicSvg = () => (
@@ -62,6 +110,39 @@ const IconPrismaSvg = () => (
 const IconResendSvg = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="#6C47FF">
     <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm8 7L4.5 7.2v.9L12 13l7.5-4.9v-.9L12 12z"/>
+  </svg>
+)
+
+const IconMtnSvg = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22">
+    <circle cx="12" cy="12" r="11" fill="#FFCC00"/>
+    <polyline points="4,17 4,7 12,14 20,7 20,17" fill="none" stroke="#000" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>
+  </svg>
+)
+
+const IconCampaySvg = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22">
+    <circle cx="12" cy="12" r="11" fill="#FFF3EC"/>
+    <path d="M17.5 8A7 7 0 1 0 17.5 16" stroke="#FF6B00" strokeWidth="2.4" fill="none" strokeLinecap="round"/>
+  </svg>
+)
+
+const IconPayDunyaSvg = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22">
+    <circle cx="12" cy="12" r="11" fill="#1B4DFF"/>
+    <path d="M9 5v14h2v-6h3.5a4.5 4.5 0 0 0 0-9H9zm2 2h3.5a2.5 2.5 0 0 1 0 5H11V7z" fill="#fff"/>
+  </svg>
+)
+
+const IconSentrySvg = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="#8E5CD9">
+    <path d="M12 2.5c.7 0 1.34.37 1.69.97l7.9 13.6c.36.62.36 1.38 0 2-.35.62-1 .99-1.71.99h-3.2a8.7 8.7 0 0 0-4.68-7.9l1.06-1.83a10.8 10.8 0 0 1 5.72 9.66l1.38.02-7.88-13.6L4.4 19.6h2.3a6.6 6.6 0 0 1 3.1-5.04l1.05 1.82A4.5 4.5 0 0 0 8.7 19.6c0 .19.27.4.6.4h2.3c.36 0 .6-.27.6-.5a6.5 6.5 0 0 0-2.5-5.13l2.6-4.5-.01-.01A1.95 1.95 0 0 1 12 2.5z"/>
+  </svg>
+)
+
+const IconRedisSvg = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="#DC382D">
+    <path d="M12 4l8 3-8 3-8-3 8-3zm-8 6l8 3 8-3v3l-8 3-8-3v-3zm0 5l8 3 8-3v3l-8 3-8-3v-3z"/>
   </svg>
 )
 
@@ -136,6 +217,66 @@ const INTEGRATIONS_LIST: Integration[] = [
     features:['ORM type-safe', 'Migrations versionnées', 'Requêtes optimisées'],
     IconSvg: IconPrismaSvg,
   },
+  {
+    id:'redis', name:'Redis',
+    desc:'Cache rapports comptables et sessions',
+    color:'#DC382D', status:'connected',
+    endpoint:'redis.railway.internal', lastCall:'Continu', calls:99999,
+    docs:'https://redis.io/docs',
+    uptime:'99.9%', pingUrl:'',
+    features:['Cache rapports', 'Sessions', 'Faible latence'],
+    IconSvg: IconRedisSvg,
+    noPing: true,
+  },
+  {
+    id:'sentry', name:'Sentry',
+    desc:'Suivi des erreurs front + back temps réel',
+    color:'#8E5CD9', status:'connected',
+    endpoint:'haba-76.sentry.io', lastCall:'Il y a 12 min', calls:0,
+    docs:'https://haba-76.sentry.io/projects/habashop-web/',
+    uptime:'99.9%', pingUrl:'https://haba-76.sentry.io',
+    features:['Erreurs front', 'Erreurs back', 'Source maps au build'],
+    IconSvg: IconSentrySvg,
+  },
+  {
+    id:'mtnmomo', name:'MTN MoMo',
+    desc:'Paiement mobile USSD push — 40+ pays MTN',
+    color:'#FFCC00', status:'connected',
+    endpoint:'sandbox.momodeveloper.mtn.com', lastCall:'Il y a 3 min', calls:47,
+    docs:'https://momodeveloper.mtn.com',
+    uptime:'99.5%', pingUrl:'',
+    features:['USSD push', 'Polling statut', 'Cameroun · CIV · Bénin'],
+    IconSvg: IconMtnSvg,
+    paymentStatus: 'sandbox',
+    countries: '🇨🇲 🇨🇮 🇧🇯 🇸🇳 🇬🇭',
+    noPing: true,
+  },
+  {
+    id:'campay', name:'Campay',
+    desc:'Orange Money + Visa/Mastercard — Cameroun & Gabon',
+    color:'#FF6B00', status:'connected',
+    endpoint:'demo.campay.net', lastCall:'Il y a 1 min', calls:23,
+    docs:'https://docs.campay.net',
+    uptime:'99.2%', pingUrl:'',
+    features:['Orange Money USSD', 'Carte Visa/Mastercard', 'QR code hébergé'],
+    IconSvg: IconCampaySvg,
+    paymentStatus: 'sandbox',
+    countries: '🇨🇲 🇬🇦',
+    noPing: true,
+  },
+  {
+    id:'paydunya', name:'PayDunya',
+    desc:'Wave · Orange Money · Visa — Sénégal, CIV, Mali',
+    color:'#1B4DFF', status:'disconnected',
+    endpoint:'app.paydunya.com', lastCall:'—', calls:0,
+    docs:'https://paydunya.com/docs',
+    uptime:'—', pingUrl:'',
+    features:['Wave', 'Orange Money', 'Carte Visa/Mastercard'],
+    IconSvg: IconPayDunyaSvg,
+    paymentStatus: 'unconfigured',
+    countries: '🇸🇳 🇨🇮 🇲🇱 🇧🇯 🇬🇼',
+    noPing: true,
+  },
 ]
 
 // Descriptions des services i18n (par id d'intégration)
@@ -147,6 +288,11 @@ const INTEGRATION_DESC_T: Record<string, Record<string, string>> = {
   railway:    { fr:'Hébergement backend PostgreSQL + Node.js',           en:'Backend hosting PostgreSQL + Node.js',            es:'Alojamiento backend PostgreSQL + Node.js',           it:'Hosting backend PostgreSQL + Node.js' },
   vercel:     { fr:'Déploiement frontend React + CDN global',            en:'Frontend deployment React + global CDN',          es:'Despliegue frontend React + CDN global',             it:'Deploy frontend React + CDN globale' },
   prisma:     { fr:'Accès base de données PostgreSQL',                   en:'PostgreSQL database access',                      es:'Acceso base de datos PostgreSQL',                    it:'Accesso database PostgreSQL' },
+  mtnmomo:    { fr:'Paiement mobile USSD push — 40+ pays MTN',           en:'USSD push mobile payment — 40+ MTN countries',     es:'Pago móvil USSD push — 40+ países MTN',              it:'Pagamento mobile USSD push — 40+ paesi MTN' },
+  campay:     { fr:'Orange Money + Visa/Mastercard — Cameroun & Gabon',  en:'Orange Money + Visa/Mastercard — Cameroon & Gabon', es:'Orange Money + Visa/Mastercard — Camerún y Gabón',   it:'Orange Money + Visa/Mastercard — Camerun e Gabon' },
+  paydunya:   { fr:'Wave · Orange Money · Free Money · Visa — Sénégal, CIV, Mali', en:'Wave · Orange Money · Free Money · Visa — Senegal, Ivory Coast, Mali', es:'Wave · Orange Money · Free Money · Visa — Senegal, CIV, Malí', it:'Wave · Orange Money · Free Money · Visa — Senegal, CIV, Mali' },
+  redis:      { fr:'Cache rapports comptables et sessions',             en:'Accounting reports and session cache',            es:'Caché de informes contables y sesiones',             it:'Cache report contabili e sessioni' },
+  sentry:     { fr:'Suivi des erreurs front + back temps réel',         en:'Real-time front + back error tracking',           es:'Seguimiento de errores front + back en tiempo real', it:'Tracciamento errori front + back in tempo reale' },
 }
 const integrationDesc = (itg: Integration, lang: string) =>
   INTEGRATION_DESC_T[itg.id]?.[lang] ?? itg.desc
@@ -168,6 +314,7 @@ export default function Integrations() {
   const [showResendMonitor, setShowResendMonitor] = useState(false)
   const [pingStatus, setPingStatus]   = useState<Record<string, PingState>>({})
   const [pingLatency, setPingLatency] = useState<Record<string, number>>({})
+  const [payDunyaOpen, setPayDunyaOpen] = useState(false)
 
   const pingIntegration = async (id: string, url: string): Promise<{ status: PingState; ms: number }> => {
     setPingStatus(s => ({ ...s, [id]: 'checking' }))
@@ -197,8 +344,23 @@ export default function Integrations() {
   }
 
   useEffect(() => {
-    INTEGRATIONS_LIST.forEach(itg => { pingIntegration(itg.id, itg.pingUrl) })
+    INTEGRATIONS_LIST.filter(itg => !itg.noPing).forEach(itg => { pingIntegration(itg.id, itg.pingUrl) })
   }, [])
+
+  function PaymentStatusBadge({ status }: { status: 'sandbox' | 'production' | 'unconfigured' }) {
+    const configs = {
+      sandbox:      { bg:'rgba(255,184,0,.12)',   border:'rgba(255,184,0,.3)',   color:'var(--warn)',   dot:'var(--warn)',   label: lang === 'en' ? 'Sandbox' : lang === 'es' ? 'Sandbox' : lang === 'it' ? 'Sandbox' : 'Sandbox' },
+      production:   { bg:'rgba(0,208,132,.1)',    border:'rgba(0,208,132,.25)',  color:'var(--acc2)',   dot:'var(--acc2)',   label: lang === 'en' ? 'Active' : lang === 'es' ? 'Activo' : lang === 'it' ? 'Attivo' : 'Actif' },
+      unconfigured: { bg:'var(--bg4)',            border:'var(--border)',         color:'var(--text3)', dot:'var(--text4)', label: lang === 'en' ? 'Not configured' : lang === 'es' ? 'No configurado' : lang === 'it' ? 'Non configurato' : 'Non configuré' },
+    }
+    const c = configs[status]
+    return (
+      <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 9px', borderRadius:99, fontSize:11, fontWeight:'var(--fw-semibold)', background:c.bg, border:`1px solid ${c.border}`, color:c.color }}>
+        <span style={{ width:5, height:5, borderRadius:'50%', background:c.dot }} />
+        {c.label}
+      </span>
+    )
+  }
 
   function PingBadge({ id }: { id: string }) {
     const status  = pingStatus[id] ?? 'checking'
@@ -222,13 +384,14 @@ export default function Integrations() {
     toast.success(lang === 'fr' ? `${itg.name} est géré automatiquement par HabaShop` : lang === 'es' ? `${itg.name} es gestionado automáticamente por HabaShop` : lang === 'it' ? `${itg.name} è gestito automaticamente da HabaShop` : `${itg.name} is managed automatically by HabaShop`)
   }
 
-  const pingedIds   = Object.keys(pingStatus)
-  const okCount     = pingedIds.filter(id => pingStatus[id] === 'ok' || pingStatus[id] === 'slow').length
-  const anyError    = pingedIds.some(id => pingStatus[id] === 'error')
-  const allChecked  = pingedIds.length === INTEGRATIONS_LIST.length && pingedIds.every(id => pingStatus[id] !== 'checking')
-  const allOk       = allChecked && !anyError
+  const pingableList = INTEGRATIONS_LIST.filter(itg => !itg.noPing)
+  const pingedIds    = Object.keys(pingStatus)
+  const okCount      = pingedIds.filter(id => pingStatus[id] === 'ok' || pingStatus[id] === 'slow').length
+  const anyError     = pingedIds.some(id => pingStatus[id] === 'error')
+  const allChecked   = pingedIds.length === pingableList.length && pingedIds.every(id => pingStatus[id] !== 'checking')
+  const allOk        = allChecked && !anyError
 
-  const totalConnected = INTEGRATIONS_LIST.length
+  const totalConnected = INTEGRATIONS_LIST.filter(itg => itg.status === 'connected').length
   const totalCalls     = INTEGRATIONS_LIST.reduce((acc, i) => acc + Math.min(i.calls, 100000), 0)
 
   const EMAIL_FLOWS = [
@@ -239,6 +402,274 @@ export default function Integrations() {
     { trigger: lang === 'en' ? '✅ Upgrade approved' : lang === 'es' ? '✅ Upgrade aprobado' : lang === 'it' ? '✅ Upgrade approvato' : '✅ Upgrade validé',        email: lang === 'en' ? 'Plan confirmation' : lang === 'es' ? 'Confirmación de plan' : lang === 'it' ? 'Conferma piano' : 'Confirmation plan', delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
     { trigger: lang === 'en' ? '📊 Monday 8am' : lang === 'es' ? '📊 Lunes 8h' : lang === 'it' ? '📊 Lunedì 8' : '📊 Lundi 8h',                   email: lang === 'en' ? 'Weekly report' : lang === 'es' ? 'Informe semanal' : lang === 'it' ? 'Report settimanale' : 'Rapport hebdomadaire',  delay: lang === 'en' ? 'Weekly cron' : lang === 'es' ? 'Cron semanal' : lang === 'it' ? 'Cron settimanale' : 'Cron hebdo' },
   ]
+
+  const formatCalls = (n: number) =>
+    n <= 0 ? '—' : n > 100000 ? '∞' : n.toLocaleString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR')
+
+  const renderCard = (itg: Integration) => {
+    const isActive = itg.status === 'connected'
+    const { IconSvg } = itg
+    const sv = itg.noPing
+      ? itg.paymentStatus === 'production' ? { border:'var(--acc2)',   glow:'color-mix(in srgb, var(--acc2) 15%, transparent)' }
+      : itg.paymentStatus === 'sandbox'     ? { border:'var(--warn)',   glow:'color-mix(in srgb, var(--warn) 12%, transparent)' }
+      :                                      { border:'var(--border)',  glow:'transparent' }
+      : statusVisual(pingStatus[itg.id])
+    const glowHover = sv.glow.replace('15%,', '30%,').replace('12%,', '25%,')
+    const methods = METHODS[itg.id]
+    const apiVer  = API_VERSION[itg.id]
+    const detail  = CARD_DETAIL[itg.id]?.[lang] ?? CARD_DETAIL[itg.id]?.fr
+
+    return (
+      <div key={itg.id} style={{
+        background:'var(--card)', border:`1px solid ${sv.border}`,
+        borderRadius:20, overflow:'hidden', transition:'all .3s ease',
+        display:'flex', flexDirection:'column',
+        boxShadow:`0 0 20px ${sv.glow}`,
+      }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = `0 8px 32px ${glowHover}` }}
+        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = `0 0 20px ${sv.glow}` }}
+      >
+        {/* Bande statut */}
+        <div style={{ height:3, background: isActive ? 'linear-gradient(90deg,var(--acc2),#00B574)' : 'var(--border)' }} />
+
+        <div style={{ padding:'20px', flex:1 }}>
+          {/* Header */}
+          <div style={{ display:'flex', alignItems:'flex-start', gap:12, marginBottom:14 }}>
+            <div style={{
+              width:44, height:44, borderRadius:12, flexShrink:0,
+              background:'var(--bg3)', border:'1px solid var(--border)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+              <IconSvg />
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:5 }}>{itg.name}</div>
+              {itg.paymentStatus
+                ? <PaymentStatusBadge status={itg.paymentStatus} />
+                : <PingBadge id={itg.id} />}
+            </div>
+            {!itg.noPing && (
+              <button type="button" onClick={() => pingIntegration(itg.id, itg.pingUrl)}
+                title={lang === 'fr' ? 'Rafraîchir le statut' : lang === 'es' ? 'Actualizar el estado' : lang === 'it' ? 'Aggiorna lo stato' : 'Refresh status'}
+                aria-label={`${lang === 'fr' ? 'Rafraîchir' : lang === 'es' ? 'Actualizar' : lang === 'it' ? 'Aggiorna' : 'Refresh'} ${itg.name}`}
+                style={{ width:28, height:28, borderRadius:8, flexShrink:0, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <RotateCw size={12} style={{ animation: pingStatus[itg.id] === 'checking' ? 'spin .8s linear infinite' : 'none' }} />
+              </button>
+            )}
+          </div>
+
+          {/* Description */}
+          <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, margin:'0 0 8px' }}>{integrationDesc(itg, lang)}</p>
+
+          {/* Détail factuel (infra) */}
+          {detail && (
+            <p style={{ fontSize:11, color:'var(--text3)', margin:'0 0 10px', fontFamily:'var(--mono)' }}>{detail}</p>
+          )}
+
+          {/* Pays (paiement) */}
+          {itg.countries && (
+            <p style={{ fontSize:13, color:'var(--text3)', margin:'0 0 8px', lineHeight:1.4 }}>{itg.countries}</p>
+          )}
+
+          {/* Méthodes supportées (pills, cartes paiement) */}
+          {methods && (
+            <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:12 }}>
+              {methods.map(m => (
+                <span key={m} style={{
+                  fontSize:11, fontWeight:'var(--fw-semibold)', padding:'2px 8px', borderRadius:99,
+                  background:'var(--bg4)', border:'1px solid var(--border)', color:'var(--text2)',
+                }}>{m}</span>
+              ))}
+            </div>
+          )}
+
+          {/* Stats API */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:10 }}>
+            {[
+              { label: lang === 'en' ? 'Calls/mo' : lang === 'es' ? 'Llamadas/mes' : lang === 'it' ? 'Chiamate/mese' : 'Appels/mois', value: formatCalls(itg.calls) },
+              { label: 'Uptime', value: itg.uptime },
+              { label: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—' },
+            ].map(stat => (
+              <div key={stat.label} style={{ background:'var(--bg3)', borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
+                <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)' }}>{stat.value}</div>
+                <div style={{ fontSize:11, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.4px', marginTop:2 }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Endpoint + version API */}
+          <div style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 10px', background:'var(--bg4)', borderRadius:7, border:'1px solid var(--border)', fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)' }}>
+            <Globe size={10} style={{ flexShrink:0 }} />
+            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{itg.endpoint}</span>
+            {apiVer && (
+              <span style={{ marginLeft:'auto', flexShrink:0, color:'var(--text4)', fontSize:11 }}>{apiVer}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding:'12px 20px', borderTop:'1px solid var(--border)', background:'var(--bg3)',
+          display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
+        }}>
+          <a href={itg.docs} target="_blank" rel="noopener noreferrer"
+            style={{ fontSize:11, color:'var(--text3)', textDecoration:'none', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:4 }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text2)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text3)' }}
+          >
+            <ExternalLink size={11} /> {itg.id === 'sentry' ? 'Dashboard' : 'Docs'}
+          </a>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            {!itg.noPing && (
+              <Button
+                variant="ghost"
+                className="btn-sm"
+                loading={pingStatus[itg.id] === 'checking'}
+                leftIcon={<Zap size={11} />}
+                onClick={() => testConnection(itg)}
+                aria-label={`${lang === 'fr' ? 'Tester' : lang === 'es' ? 'Probar' : lang === 'it' ? 'Testa' : 'Test'} ${itg.name}`}
+                style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--p3)', border: '1px solid var(--p)' }}
+              >
+                {lang === 'fr' ? 'Tester' : lang === 'en' ? 'Test' : lang === 'es' ? 'Probar' : 'Testa'}
+              </Button>
+            )}
+            <button type="button"
+              onClick={() => itg.id === 'paydunya' ? setPayDunyaOpen(true) : configure(itg)}
+              aria-label={`${lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'} ${itg.name}`}
+              style={{
+                display:'inline-flex', alignItems:'center', gap:5, padding:'7px 12px',
+                background: itg.paymentStatus === 'unconfigured' ? 'var(--p)' : 'transparent',
+                border:`1px solid ${itg.paymentStatus === 'unconfigured' ? 'var(--p)' : 'var(--border)'}`, borderRadius:8, fontSize:11, fontWeight:'var(--fw-semibold)',
+                color: itg.paymentStatus === 'unconfigured' ? '#fff' : 'var(--text3)', cursor:'pointer', fontFamily:'var(--font)', minHeight:32, transition:'all .15s',
+              }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; if (itg.paymentStatus !== 'unconfigured') { el.style.color = 'var(--text)'; el.style.borderColor = 'var(--border2)' } }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; if (itg.paymentStatus !== 'unconfigured') { el.style.color = 'var(--text3)'; el.style.borderColor = 'var(--border)' } }}
+            >
+              <Settings2 size={11} /> {lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  function PayDunyaModal() {
+    const ref = useModalFocus<HTMLDivElement>(true, { initialFocus: '[data-pd-first]' })
+    const [form, setForm] = useState({ masterKey:'', privateKey:'', publicKey:'', token:'', mode:'test' })
+    const [show, setShow] = useState(false)
+
+    useEffect(() => {
+      try {
+        const raw = localStorage.getItem(PAYDUNYA_DRAFT_KEY)
+        if (raw) setForm(f => ({ ...f, ...JSON.parse(raw) }))
+      } catch { /* draft illisible — ignore */ }
+    }, [])
+
+    const save = () => {
+      try { localStorage.setItem(PAYDUNYA_DRAFT_KEY, JSON.stringify(form)) } catch { /* quota */ }
+      toast.success(lang === 'fr' ? 'Configuration PayDunya enregistrée (brouillon local)' : lang === 'en' ? 'PayDunya configuration saved (local draft)' : lang === 'es' ? 'Configuración PayDunya guardada (borrador local)' : 'Configurazione PayDunya salvata (bozza locale)')
+      setPayDunyaOpen(false)
+    }
+
+    const FIELDS: { key: keyof typeof form; label: string; placeholder: string }[] = [
+      { key:'masterKey',  label: lang === 'fr' ? 'Clé maître' : lang === 'en' ? 'Master key' : lang === 'es' ? 'Clave maestra' : 'Chiave master',     placeholder:'PAYDUNYA-MASTER-KEY' },
+      { key:'privateKey', label: lang === 'fr' ? 'Clé privée' : lang === 'en' ? 'Private key' : lang === 'es' ? 'Clave privada' : 'Chiave privata',   placeholder:'live_private_…' },
+      { key:'publicKey',  label: lang === 'fr' ? 'Clé publique' : lang === 'en' ? 'Public key' : lang === 'es' ? 'Clave pública' : 'Chiave pubblica', placeholder:'live_public_…' },
+      { key:'token',      label:'Token',                                                                                                              placeholder:'PAYDUNYA-TOKEN' },
+    ]
+
+    return (
+      <div className="modal-backdrop" role="dialog" aria-modal="true"
+        aria-label={lang === 'fr' ? 'Configurer PayDunya' : lang === 'en' ? 'Configure PayDunya' : lang === 'es' ? 'Configurar PayDunya' : 'Configura PayDunya'}
+        onClick={e => e.target === e.currentTarget && setPayDunyaOpen(false)}
+      >
+        <div ref={ref} className="modal-box" style={{ maxWidth: 440 }}>
+          {/* Header */}
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
+            <div style={{ width:40, height:40, borderRadius:11, flexShrink:0, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <IconPayDunyaSvg />
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <h3 style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)', margin:0 }}>PayDunya</h3>
+              <p style={{ fontSize:11, color:'var(--text3)', margin:'2px 0 0' }}>
+                {lang === 'fr' ? 'Clés API — Wave, Orange Money, Free Money, Visa' : lang === 'en' ? 'API keys — Wave, Orange Money, Free Money, Visa' : lang === 'es' ? 'Claves API — Wave, Orange Money, Free Money, Visa' : 'Chiavi API — Wave, Orange Money, Free Money, Visa'}
+              </p>
+            </div>
+            <button type="button" onClick={() => setPayDunyaOpen(false)}
+              aria-label={lang === 'fr' ? 'Fermer' : lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : 'Chiudi'}
+              style={{ width:30, height:30, borderRadius:8, flexShrink:0, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <X size={15} />
+            </button>
+          </div>
+
+          {/* Environnement */}
+          <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+            {(['test','live'] as const).map(m => (
+              <button key={m} type="button" onClick={() => setForm(f => ({ ...f, mode:m }))}
+                style={{
+                  flex:1, padding:'8px', borderRadius:9, cursor:'pointer', fontFamily:'var(--font)',
+                  fontSize:12, fontWeight:'var(--fw-semibold)',
+                  background: form.mode === m ? 'var(--p)' : 'var(--bg3)',
+                  border:`1px solid ${form.mode === m ? 'var(--p)' : 'var(--border)'}`,
+                  color: form.mode === m ? '#fff' : 'var(--text3)',
+                }}>
+                {m === 'test'
+                  ? (lang === 'fr' ? 'Test (sandbox)' : lang === 'en' ? 'Test (sandbox)' : lang === 'es' ? 'Prueba (sandbox)' : 'Test (sandbox)')
+                  : (lang === 'fr' ? 'Production' : lang === 'en' ? 'Live' : lang === 'es' ? 'Producción' : 'Produzione')}
+              </button>
+            ))}
+          </div>
+
+          {/* Champs clés */}
+          <div style={{ display:'flex', flexDirection:'column', gap:11, marginBottom:16 }}>
+            {FIELDS.map((fld, i) => (
+              <label key={fld.key} style={{ display:'block' }}>
+                <span style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--text2)', marginBottom:4 }}>{fld.label}</span>
+                <div style={{ position:'relative' }}>
+                  <KeyRound size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text4)', pointerEvents:'none' }} />
+                  <input
+                    data-pd-first={i === 0 ? '' : undefined}
+                    type={show ? 'text' : 'password'}
+                    value={form[fld.key]}
+                    onChange={e => setForm(f => ({ ...f, [fld.key]: e.target.value }))}
+                    placeholder={fld.placeholder}
+                    autoComplete="off"
+                    style={{
+                      width:'100%', padding:'9px 10px 9px 30px', borderRadius:9,
+                      background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)',
+                      fontSize:12, fontFamily:'var(--mono)', boxSizing:'border-box',
+                    }}
+                  />
+                </div>
+              </label>
+            ))}
+            <label style={{ display:'flex', alignItems:'center', gap:7, fontSize:11, color:'var(--text3)', cursor:'pointer' }}>
+              <input type="checkbox" checked={show} onChange={e => setShow(e.target.checked)} />
+              {lang === 'fr' ? 'Afficher les clés' : lang === 'en' ? 'Show keys' : lang === 'es' ? 'Mostrar claves' : 'Mostra le chiavi'}
+            </label>
+          </div>
+
+          {/* Note */}
+          <p style={{ fontSize:11, color:'var(--text4)', lineHeight:1.5, margin:'0 0 16px' }}>
+            {lang === 'fr' ? 'Brouillon stocké localement. L\'intégration PayDunya sera activée une fois branchée côté serveur.' : lang === 'en' ? 'Stored locally as a draft. PayDunya integration activates once wired server-side.' : lang === 'es' ? 'Guardado localmente como borrador. La integración PayDunya se activará al conectarse en el servidor.' : 'Salvato localmente come bozza. L\'integrazione PayDunya si attiverà una volta collegata lato server.'}
+          </p>
+
+          {/* Actions */}
+          <div style={{ display:'flex', gap:10 }}>
+            <button type="button" onClick={() => setPayDunyaOpen(false)} className="mini-btn" style={{ flex:1, justifyContent:'center' }}>
+              {lang === 'fr' ? 'Annuler' : lang === 'en' ? 'Cancel' : lang === 'es' ? 'Cancelar' : 'Annulla'}
+            </button>
+            <button type="button" onClick={save} style={{
+              flex:1, padding:'10px', background:'linear-gradient(135deg,var(--p),var(--p2))',
+              border:'none', borderRadius:10, color:'#fff', fontSize:13, fontWeight:'var(--fw-semibold)', cursor:'pointer', fontFamily:'var(--font)',
+            }}>
+              {lang === 'fr' ? 'Enregistrer' : lang === 'en' ? 'Save' : lang === 'es' ? 'Guardar' : 'Salva'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5 animate-in">
@@ -264,7 +695,7 @@ export default function Integrations() {
             animation:'pulse 2s infinite',
           }} />
           <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--acc2)' }}>
-            {totalConnected}/{INTEGRATIONS_LIST.length} {lang === 'en' ? 'active' : lang === 'es' ? 'activas' : lang === 'it' ? 'attive' : 'actives'}
+            {totalConnected}/{INTEGRATIONS_LIST.length} {lang === 'en' ? 'connected' : lang === 'es' ? 'conectadas' : lang === 'it' ? 'connesse' : 'connectées'}
           </span>
         </div>
       </div>
@@ -299,119 +730,25 @@ export default function Integrations() {
             : (lang === 'fr' ? 'Vérification en cours...' : lang === 'es' ? 'Verificando...' : lang === 'it' ? 'Verifica in corso...' : 'Checking...')}
         </span>
         <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>
-          {okCount}/{INTEGRATIONS_LIST.length} OK
+          {okCount}/{pingableList.length} OK
         </span>
       </div>
 
-      {/* ── Grid intégrations ── */}
-      <ResponsiveGrid min={300} gap={14}>
-        {INTEGRATIONS_LIST.map(itg => {
-          const isActive = itg.status === 'connected'
-          const { IconSvg } = itg
-          const sv = statusVisual(pingStatus[itg.id])
-          const glowHover = sv.glow.replace('15%,', '30%,')
-
-          return (
-            <div key={itg.id} style={{
-              background:'var(--card)', border:`1px solid ${sv.border}`,
-              borderRadius:20, overflow:'hidden', transition:'all .3s ease',
-              display:'flex', flexDirection:'column',
-              boxShadow:`0 0 20px ${sv.glow}`,
-            }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-3px)'; el.style.boxShadow = `0 8px 32px ${glowHover}` }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = `0 0 20px ${sv.glow}` }}
-            >
-              {/* Bande statut */}
-              <div style={{ height:3, background: isActive ? 'linear-gradient(90deg,var(--acc2),#00B574)' : 'var(--border)' }} />
-
-              <div style={{ padding:'20px', flex:1 }}>
-                {/* Header */}
-                <div style={{ display:'flex', alignItems:'flex-start', gap:12, marginBottom:14 }}>
-                  <div style={{
-                    width:44, height:44, borderRadius:12, flexShrink:0,
-                    background:'var(--bg3)', border:'1px solid var(--border)',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                  }}>
-                    <IconSvg />
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:5 }}>{itg.name}</div>
-                    <PingBadge id={itg.id} />
-                  </div>
-                  <button type="button" onClick={() => pingIntegration(itg.id, itg.pingUrl)}
-                    title={lang === 'fr' ? 'Rafraîchir le statut' : lang === 'es' ? 'Actualizar el estado' : lang === 'it' ? 'Aggiorna lo stato' : 'Refresh status'}
-                    aria-label={`${lang === 'fr' ? 'Rafraîchir' : lang === 'es' ? 'Actualizar' : lang === 'it' ? 'Aggiorna' : 'Refresh'} ${itg.name}`}
-                    style={{ width:28, height:28, borderRadius:8, flexShrink:0, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <RotateCw size={12} style={{ animation: pingStatus[itg.id] === 'checking' ? 'spin .8s linear infinite' : 'none' }} />
-                  </button>
-                </div>
-
-                {/* Description */}
-                <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, margin:'0 0 12px' }}>{integrationDesc(itg, lang)}</p>
-
-                {/* Stats API */}
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:10 }}>
-                  {[
-                    { label: lang === 'en' ? 'Calls/mo' : lang === 'es' ? 'Llamadas/mes' : lang === 'it' ? 'Chiamate/mese' : 'Appels/mois', value: itg.calls > 100000 ? '∞' : itg.calls.toLocaleString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR') },
-                    { label: 'Uptime', value: itg.uptime },
-                    { label: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—' },
-                  ].map(stat => (
-                    <div key={stat.label} style={{ background:'var(--bg3)', borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
-                      <div style={{ fontSize:12, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)' }}>{stat.value}</div>
-                      <div style={{ fontSize:11, color:'var(--text4)', textTransform:'uppercase', letterSpacing:'.4px', marginTop:2 }}>{stat.label}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Endpoint */}
-                <div style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 10px', background:'var(--bg4)', borderRadius:7, border:'1px solid var(--border)', fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)' }}>
-                  <Globe size={10} style={{ flexShrink:0 }} />
-                  <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{itg.endpoint}</span>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div style={{
-                padding:'12px 20px', borderTop:'1px solid var(--border)', background:'var(--bg3)',
-                display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
-              }}>
-                <a href={itg.docs} target="_blank" rel="noopener noreferrer"
-                  style={{ fontSize:11, color:'var(--text3)', textDecoration:'none', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:4 }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text2)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text3)' }}
-                >
-                  <ExternalLink size={11} /> Docs
-                </a>
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <Button
-                    variant="ghost"
-                    className="btn-sm"
-                    loading={pingStatus[itg.id] === 'checking'}
-                    leftIcon={<Zap size={11} />}
-                    onClick={() => testConnection(itg)}
-                    aria-label={`${lang === 'fr' ? 'Tester' : lang === 'es' ? 'Probar' : lang === 'it' ? 'Testa' : 'Test'} ${itg.name}`}
-                    style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: 'var(--p3)', border: '1px solid var(--p)' }}
-                  >
-                    {lang === 'fr' ? 'Tester' : lang === 'en' ? 'Test' : lang === 'es' ? 'Probar' : 'Testa'}
-                  </Button>
-                  <button type="button" onClick={() => configure(itg)}
-                    aria-label={`${lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'} ${itg.name}`}
-                    style={{
-                      display:'inline-flex', alignItems:'center', gap:5, padding:'7px 12px', background:'transparent',
-                      border:'1px solid var(--border)', borderRadius:8, fontSize:11, fontWeight:'var(--fw-semibold)',
-                      color:'var(--text3)', cursor:'pointer', fontFamily:'var(--font)', minHeight:32, transition:'all .15s',
-                    }}
-                    onMouseEnter={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = 'var(--text)'; el.style.borderColor = 'var(--border2)' }}
-                    onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.color = 'var(--text3)'; el.style.borderColor = 'var(--border)' }}
-                  >
-                    <Settings2 size={11} /> {lang === 'fr' ? 'Configurer' : lang === 'es' ? 'Configurar' : lang === 'it' ? 'Configura' : 'Configure'}
-                  </button>
-                </div>
-              </div>
+      {/* ── Grids par catégorie ── */}
+      {CATEGORIES.map(cat => {
+        const items = INTEGRATIONS_LIST.filter(itg => CATEGORY_OF[itg.id] === cat.key)
+        if (!items.length) return null
+        return (
+          <div key={cat.key}>
+            <div style={{ fontSize:12, fontWeight:'var(--fw-regular)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px', margin:'0 0 10px 2px' }}>
+              {cat.label[lang] ?? cat.label.fr}
             </div>
-          )
-        })}
-      </ResponsiveGrid>
+            <ResponsiveGrid min={300} gap={14}>
+              {items.map(renderCard)}
+            </ResponsiveGrid>
+          </div>
+        )
+      })}
 
       {/* ── Détail Resend — Emails transactionnels ── */}
       <div style={{
@@ -549,6 +886,9 @@ export default function Integrations() {
           {' '}{lang === 'en' ? 'Integrations marked ∞ are continuously running services (backend, database, CDN).' : lang === 'es' ? 'Las integraciones marcadas con ∞ son servicios en ejecución permanente (backend, base de datos, CDN).' : lang === 'it' ? 'Le integrazioni contrassegnate con ∞ sono servizi in esecuzione permanente (backend, database, CDN).' : 'Les intégrations marquées ∞ sont des services en cours d\'exécution permanente (backend, base de données, CDN).'}
         </div>
       </div>
+
+      {/* ── Modale config PayDunya ── */}
+      {payDunyaOpen && <PayDunyaModal />}
     </div>
   )
 }
