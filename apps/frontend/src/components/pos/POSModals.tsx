@@ -249,14 +249,15 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
-                  width: 40, height: 40,
+                  width: 44, height: 44,
                   borderRadius: '50%',
-                  background: 'rgba(14,196,126,.15)',
-                  border: '1px solid rgba(14,196,126,.3)',
+                  background: 'var(--c-green-bg)',
+                  border: '1px solid var(--c-green-border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}><CheckCircle size={20} style={{ color:'var(--acc2)' }} /></div>
+                  animation: 'popIn .3s ease both',
+                }}><CheckCircle size={22} style={{ color:'var(--acc2)' }} /></div>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
+                  <div style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
                     {t('pos_confirm_sale')}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>
@@ -269,44 +270,51 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               </button>
             </div>
 
-            {/* Liste items */}
-            <div style={{ maxHeight: 220, overflowY: 'auto', marginBottom: 16 }}>
-              {cart.map(item => (
+            {/* Liste items — compacte */}
+            <div style={{
+              maxHeight: 220, overflowY: 'auto', marginBottom: 16,
+              background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10,
+              padding: '2px 12px',
+            }}>
+              {cart.map((item, idx) => (
                 <div key={item.id} style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
+                  gap: 8,
                   padding: '7px 0',
-                  borderBottom: '1px solid var(--border)',
+                  borderBottom: idx < cart.length - 1 ? '1px solid color-mix(in srgb, var(--border) 55%, transparent)' : 'none',
                   fontSize: 13,
                 }}>
-                  <span style={{ color: 'var(--text2)' }}>
-                    {item.emoji} {item.name} ×{item.qty}
+                  <span style={{ color: 'var(--text2)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.emoji} {item.name}
+                    <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)', marginLeft: 6 }}>×{item.qty}</span>
                   </span>
-                  <span style={{ fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', color: 'var(--text)' }}>
+                  <span style={{ fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', color: 'var(--text)', flexShrink: 0 }}>
                     {fmt(item.price * item.qty)}
                   </span>
                 </div>
               ))}
             </div>
 
-            {/* Total */}
+            {/* Total — mis en valeur */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '12px 14px',
-              background: 'rgba(14,196,126,.08)',
-              border: '1px solid rgba(14,196,126,.2)',
+              background: 'var(--c-green-bg2)',
+              border: '1px solid var(--c-green-border)',
               borderRadius: 10,
               marginBottom: 16,
             }}>
-              <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{t('pos_total')}</span>
+              <span style={{ fontSize: 12, fontWeight: 'var(--fw-bold)', color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.5px' }}>{t('pos_total')}</span>
               <span style={{
-                fontSize: 20,
-                fontWeight: 900,
+                fontSize: 24,
+                fontWeight: 'var(--fw-bold)',
                 color: 'var(--acc2)',
                 fontFamily: 'var(--mono)',
+                letterSpacing: '-.5px',
               }}>{fmt(total)}</span>
             </div>
 
@@ -492,7 +500,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             </div>
 
             {/* Boutons */}
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={confirmSale}
                 disabled={blocked}

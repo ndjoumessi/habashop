@@ -47,6 +47,7 @@ interface ProductTileProps {
 const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLabel, showStrike, isPromoRetail, posShowStockOnTile, onAdd }: ProductTileProps) {
   const inCart     = qty !== undefined
   const isLowStock = p.stock < 20
+  const isOut      = p.stock <= 0
   return (
     <div
       role="button"
@@ -58,16 +59,16 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
       }}
       style={{
         background: inCart
-          ? 'linear-gradient(135deg, rgba(91,78,232,.15), rgba(124,111,240,.08))'
-          : 'var(--card)',
-        border: inCart
-          ? '1.5px solid var(--p2)'
-          : '1px solid var(--border)',
+          ? 'color-mix(in srgb, var(--p) 8%, var(--bg2))'
+          : 'var(--bg2)',
+        // Sélection : anneau via box-shadow (0.5 + 1.5 = 2px visuels) → zéro décalage de layout
+        border: `0.5px solid ${inCart ? 'var(--p)' : 'var(--border)'}`,
+        boxShadow: inCart ? '0 0 0 1.5px var(--p)' : 'none',
         borderRadius: 12,
-        padding: '16px 12px 14px',
+        padding: posShowStockOnTile ? '16px 12px 30px' : '16px 12px 14px',
         cursor: 'pointer',
         textAlign: 'center',
-        transition: 'all .18s',
+        transition: 'all .15s ease',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
@@ -79,7 +80,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
           const el = e.currentTarget as HTMLElement
           el.style.borderColor = 'var(--p2)'
           el.style.transform = 'translateY(-2px)'
-          el.style.boxShadow = '0 8px 24px rgba(91,78,232,.18)'
+          el.style.boxShadow = 'var(--sh-sm)'
         }
       }}
       onMouseLeave={e => {
@@ -129,8 +130,8 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
 
       {/* Nom */}
       <div style={{
-        fontSize: 12.5,
-        fontWeight: 600,
+        fontSize: 14,
+        fontWeight: 'var(--fw-regular)',
         color: 'var(--text)',
         lineHeight: 1.3,
       }}>{p.name}</div>
@@ -142,20 +143,26 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
         </div>
       )}
       <div style={{
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: 'var(--fw-bold)',
-        color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
+        color: isPromoRetail ? 'var(--danger)' : 'var(--p2)',
         fontFamily: 'var(--mono)',
+        letterSpacing: '-.3px',
       }}>{priceLabel}</div>
 
-      {/* Stock */}
+      {/* Stock — pill sémantique ancrée en bas à droite (vert OK / orange bas / rouge rupture) */}
       {posShowStockOnTile && (
         <div style={{
-          fontSize: 11,
-          color: isLowStock ? 'var(--danger)' : 'var(--text3)',
-          fontWeight: isLowStock ? 600 : 400,
+          position: 'absolute', bottom: 8, right: 8,
+          display: 'inline-flex', alignItems: 'center', gap: 3,
+          padding: '2px 7px', borderRadius: 'var(--r-full)',
+          fontSize: 11, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', lineHeight: 1.4,
+          background: isOut ? 'var(--c-red-bg)' : isLowStock ? 'var(--c-orange-bg)' : 'var(--c-green-bg)',
+          border: `1px solid ${isOut ? 'var(--c-red-border)' : isLowStock ? 'var(--c-orange-border)' : 'var(--c-green-border)'}`,
+          color: isOut ? 'var(--danger)' : isLowStock ? 'var(--warn)' : 'var(--acc2)',
         }}>
-          {isLowStock && <AlertTriangle size={10} style={{ display:'inline', verticalAlign:'middle', marginRight:3 }} />}Stock : {p.stock}
+          {isLowStock && !isOut && <AlertTriangle size={9} style={{ flexShrink: 0 }} />}
+          {p.stock}
         </div>
       )}
     </div>
@@ -200,11 +207,12 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                 onClick={() => { setPosTab(tab.id); if (tab.id === 'history') fetchHistory() }}
                 style={{
                   flex:1, padding:'8px', borderRadius:8,
-                  fontSize:13, fontWeight:600,
+                  fontSize:13, fontWeight:'var(--fw-semibold)',
                   cursor:'pointer', fontFamily:'var(--font)',
-                  background: posTab === tab.id ? 'linear-gradient(135deg,var(--p),var(--p2))' : 'transparent',
+                  background: posTab === tab.id ? 'var(--p)' : 'transparent',
                   color: posTab === tab.id ? '#fff' : 'var(--text2)',
                   border:'none', transition:'all .15s',
+                  boxShadow: posTab === tab.id ? 'var(--sh-xs)' : 'none',
                   display:'flex', alignItems:'center', justifyContent:'center', gap:6,
                 }}
               >
@@ -214,38 +222,47 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
             ))}
           </div>
 
-          {/* Filtres catégories */}
+          {/* Filtres catégories — scroll horizontal + voile d'overflow à droite */}
           {posTab === 'pos' && (
-            <div style={{
-              flexShrink: 0,
-              display: 'flex',
-              gap: 6,
-              overflowX: 'auto',
-              flexWrap: 'nowrap',
-              paddingBottom: 2,
-            }}>
-              {CATS.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveCat(c.id)}
-                  style={{
-                    padding: '7px 14px',
-                    borderRadius: 20,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font)',
-                    transition: 'all .15s',
-                    border: 'none',
-                    whiteSpace: 'nowrap',
-                    background: activeCat === c.id
-                      ? 'linear-gradient(135deg, var(--p), var(--p2))'
-                      : 'var(--bg3)',
-                    color: activeCat === c.id ? '#fff' : 'var(--text2)',
-                    boxShadow: activeCat === c.id ? '0 4px 14px rgba(91,78,232,.35)' : 'none',
-                  }}
-                >{catLabel(c.id, lang)}</button>
-              ))}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div style={{
+                display: 'flex',
+                gap: 6,
+                overflowX: 'auto',
+                flexWrap: 'nowrap',
+                paddingBottom: 2,
+                paddingRight: 28,
+                scrollbarWidth: 'thin',
+                WebkitOverflowScrolling: 'touch',
+              }}>
+                {CATS.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setActiveCat(c.id)}
+                    aria-pressed={activeCat === c.id}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: 'var(--r-full)',
+                      fontSize: 12,
+                      fontWeight: 'var(--fw-semibold)',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font)',
+                      transition: 'all .15s',
+                      border: 'none',
+                      whiteSpace: 'nowrap',
+                      background: activeCat === c.id ? 'var(--p)' : 'var(--bg3)',
+                      color: activeCat === c.id ? '#fff' : 'var(--text2)',
+                      boxShadow: activeCat === c.id ? 'var(--sh-p)' : 'none',
+                    }}
+                  >{catLabel(c.id, lang)}</button>
+                ))}
+              </div>
+              {/* Indicateur d'overflow : voile dégradé côté droit (décoratif) */}
+              <div aria-hidden="true" style={{
+                position: 'absolute', top: 0, right: 0, bottom: 2, width: 28,
+                background: 'linear-gradient(90deg, transparent, var(--bg))',
+                pointerEvents: 'none',
+              }} />
             </div>
           )}
 

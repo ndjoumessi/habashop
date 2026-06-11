@@ -26,19 +26,31 @@ export default function POSSuccessModal({ show, lang, total, monnaie, showChange
           style={{ position: 'absolute', top: 10, right: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text3)', cursor: 'pointer' }}>
           <X size={15} />
         </button>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px auto 14px' }}>
-          <CheckCircle2 size={34} style={{ color: 'var(--acc2)' }} />
+        {/* Cercle ✓ : pop à l'apparition + anneau pulsé (box-shadow seul, aucun transform résiduel) */}
+        <div style={{
+          width: 72, height: 72, borderRadius: '50%',
+          background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '6px auto 16px',
+          animation: 'popIn .3s ease both, posRingPulse 1.8s ease-out .3s infinite',
+        }}>
+          <CheckCircle2 size={38} style={{ color: 'var(--acc2)' }} />
         </div>
-        <div style={{ fontSize: 17, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 4 }}>
+        <div style={{ fontSize: 17, fontWeight: 'var(--fw-bold)', color: 'var(--text)', marginBottom: 6 }}>
           {lang === 'en' ? 'Sale completed!' : lang === 'es' ? '¡Venta cobrada!' : lang === 'it' ? 'Vendita incassata!' : 'Vente encaissée !'}
         </div>
-        <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--acc2)', fontFamily: 'var(--mono)', marginBottom: showChange && monnaie > 0 ? 6 : 18 }}>
+        <div style={{ fontSize: 32, fontWeight: 'var(--fw-bold)', color: 'var(--acc2)', fontFamily: 'var(--mono)', letterSpacing: '-1px', marginBottom: showChange && monnaie > 0 ? 12 : 20 }}>
           {fmt(total)}
         </div>
         {showChange && monnaie > 0 && (
-          <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 18 }}>
-            {lang === 'en' ? 'Change' : lang === 'es' ? 'Cambio' : lang === 'it' ? 'Resto' : 'Monnaie à rendre'} :{' '}
-            <span style={{ fontWeight: 'var(--fw-bold)', fontFamily: 'var(--mono)', color: 'var(--text)' }}>{fmt(monnaie)}</span>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '12px 14px', marginBottom: 18,
+            background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10,
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)' }}>
+              {lang === 'en' ? 'Change' : lang === 'es' ? 'Cambio' : lang === 'it' ? 'Resto' : 'Monnaie à rendre'}
+            </span>
+            <span style={{ fontSize: 20, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--mono)', color: 'var(--text)' }}>{fmt(monnaie)}</span>
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

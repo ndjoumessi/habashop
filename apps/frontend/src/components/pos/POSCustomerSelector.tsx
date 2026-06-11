@@ -92,21 +92,35 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
   return (
     <div style={{ flexShrink: 0, padding: '8px 14px', borderTop: '1px solid var(--border)' }}>
       {linkedCustomer ? (
-        // ── Chip client lié ──
+        // ── Chip client lié : avatar initiales + nom + palier ──
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-          padding: '7px 10px', background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', borderRadius: 10,
+          padding: '8px 10px', background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', borderRadius: 10,
         }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text)', minWidth: 0 }}>
-            <Check size={14} style={{ color: 'var(--acc2)', flexShrink: 0 }} />
-            <span style={{ fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{linkedCustomer.name}</span>
-            {enableLoyalty && loyaltyTier && (
-              <span style={{ color: 'var(--text3)', flexShrink: 0 }}>· {tierLabel(loyaltyTier)}{loyaltyPct > 0 ? ` · −${loyaltyPct}%` : ''}</span>
-            )}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <span aria-hidden="true" style={{
+              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, var(--p), var(--p2))', color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 'var(--fw-bold)', letterSpacing: '.5px',
+            }}>
+              {linkedCustomer.name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('')}
+            </span>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {linkedCustomer.name}
+              </span>
+              {enableLoyalty && loyaltyTier && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text3)' }}>
+                  <Check size={11} style={{ color: 'var(--acc2)', flexShrink: 0 }} />
+                  <span>· {tierLabel(loyaltyTier)}{loyaltyPct > 0 ? ` · −${loyaltyPct}%` : ''}</span>
+                </span>
+              )}
+            </span>
           </span>
           <button type="button" onClick={() => setLinkedCustomer(null)}
             aria-label={i('Retirer le client', 'Remove customer', 'Quitar cliente', 'Rimuovi cliente')}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text3)', display: 'flex', flexShrink: 0 }}>
+            style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', color: 'var(--text3)', display: 'flex', flexShrink: 0 }}>
             <X size={15} />
           </button>
         </div>

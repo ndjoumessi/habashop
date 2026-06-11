@@ -83,21 +83,15 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               flexShrink: 0,
               boxShadow: '0 2px 8px rgba(108,71,255,.4)',
             }}><ShoppingCart size={16} style={{ color:'#fff' }} /></div>
-            <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', flex: 1 }}>
+            <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', flex: 1, display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
               {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
+              {cart.length > 0 && (
+                <span style={{ fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+                  ({cart.reduce((s, i) => s + i.qty, 0)}{' '}
+                  {lang === 'en' ? 'items' : lang === 'es' ? 'art.' : lang === 'it' ? 'art.' : 'articles'})
+                </span>
+              )}
             </span>
-            {cart.length > 0 && (
-              <span style={{
-                background: 'var(--p)',
-                color: '#fff', borderRadius: 20,
-                padding: '2px 8px', fontSize: 11,
-                fontWeight: 'var(--fw-bold)', fontFamily: 'var(--mono)',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}>
-                {cart.reduce((s, i) => s + i.qty, 0)}{' '}
-                {lang === 'en' ? 'items' : lang === 'es' ? 'art.' : lang === 'it' ? 'art.' : 'art.'}
-              </span>
-            )}
             {cashierSessionTx > 0 && (
               <span style={{
                 background: 'rgba(0,208,132,.15)',
@@ -165,19 +159,19 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               <div style={{ padding:'6px 8px' }}>
                 {cart.map((item, idx) => (
                   <div key={item.id} style={{
-                    display:'flex', alignItems:'center', gap:8, padding:'9px 10px',
-                    borderBottom: idx < cart.length - 1 ? '1px solid var(--border)' : 'none',
+                    display:'flex', alignItems:'center', gap:8, padding:'12px 10px',
+                    borderBottom: idx < cart.length - 1 ? '1px solid color-mix(in srgb, var(--border) 55%, transparent)' : 'none',
                     borderRadius:10, transition:'background .1s',
                   }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(91,78,232,.06)'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                   >
                     <div style={{
-                      width:36, height:36, borderRadius:10,
-                      background:'linear-gradient(135deg,rgba(91,78,232,.12),rgba(124,111,240,.08))',
-                      border:'1px solid rgba(91,78,232,.15)',
+                      width:32, height:32, borderRadius:9,
+                      background:'color-mix(in srgb, var(--p) 10%, transparent)',
+                      border:'1px solid color-mix(in srgb, var(--p) 16%, transparent)',
                       display:'flex', alignItems:'center', justifyContent:'center',
-                      fontSize:18, flexShrink:0,
+                      fontSize:16, flexShrink:0,
                     }}>{item.emoji ?? '📦'}</div>
 
                     <div style={{ flex:1, minWidth:0 }}>
@@ -203,40 +197,41 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                       )}
                     </div>
 
-                    <div style={{
-                      display:'flex', alignItems:'center', gap:3, flexShrink:0,
-                      background:'var(--bg3)', border:'1px solid var(--border)',
-                      borderRadius:8, padding:3,
-                    }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
                       <button type="button"
                         onClick={() => updateQty(item.id, -1)}
+                        aria-label={item.qty === 1
+                          ? (lang === 'en' ? `Remove ${item.name}` : lang === 'es' ? `Quitar ${item.name}` : lang === 'it' ? `Rimuovi ${item.name}` : `Retirer ${item.name}`)
+                          : (lang === 'en' ? 'Decrease quantity' : lang === 'es' ? 'Disminuir cantidad' : lang === 'it' ? 'Riduci quantità' : 'Diminuer la quantité')}
                         style={{
-                          width:22, height:22, borderRadius:6,
-                          background: item.qty === 1 ? 'rgba(232,64,74,.2)' : 'transparent',
-                          border:'none', cursor:'pointer', fontSize:12,
+                          width:32, height:32, borderRadius:8,
+                          background: item.qty === 1 ? 'var(--c-red-bg)' : 'var(--bg3)',
+                          border:`1px solid ${item.qty === 1 ? 'var(--c-red-border)' : 'var(--border)'}`,
+                          cursor:'pointer', fontSize:14,
                           color: item.qty === 1 ? 'var(--danger)' : 'var(--text2)',
-                          display:'flex', alignItems:'center', justifyContent:'center', transition:'all .1s',
+                          display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s',
                         }}>
                         {item.qty === 1 ? '×' : '−'}
                       </button>
                       <span style={{
-                        fontSize:13, fontWeight:900, color:'var(--text)',
-                        fontFamily:'var(--mono)', minWidth:20, textAlign:'center', lineHeight:1,
+                        fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)',
+                        fontFamily:'var(--mono)', minWidth:22, textAlign:'center', lineHeight:1,
                       }}>{item.qty}</span>
                       <button type="button"
                         onClick={() => updateQty(item.id, +1)}
+                        aria-label={lang === 'en' ? 'Increase quantity' : lang === 'es' ? 'Aumentar cantidad' : lang === 'it' ? 'Aumenta quantità' : 'Augmenter la quantité'}
                         style={{
-                          width:22, height:22, borderRadius:6,
-                          background:'var(--p)', border:'none', cursor:'pointer',
-                          fontSize:14, color:'#fff',
-                          display:'flex', alignItems:'center', justifyContent:'center', transition:'all .1s',
-                          boxShadow:'0 2px 6px rgba(91,78,232,.3)',
+                          width:32, height:32, borderRadius:8,
+                          background:'var(--bg3)', border:'1px solid var(--border)',
+                          cursor:'pointer', fontSize:15,
+                          color:'var(--p2)', fontWeight:'var(--fw-bold)',
+                          display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s',
                         }}>+</button>
                     </div>
 
                     <div style={{
-                      fontSize:13, fontWeight:900, color:'var(--p2)',
-                      fontFamily:'var(--mono)', minWidth:62, textAlign:'right', flexShrink:0,
+                      fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--p2)',
+                      fontFamily:'var(--mono)', minWidth:56, textAlign:'right', flexShrink:0,
                     }}>{fmt(item.price * item.qty)}</div>
                   </div>
                 ))}
@@ -296,12 +291,12 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               )}
               <div style={{
                 display:'flex', justifyContent:'space-between', alignItems:'center',
-                padding:'8px 10px',
-                background:'rgba(91,78,232,.08)', border:'1px solid rgba(91,78,232,.15)',
-                borderRadius:10,
+                padding:'10px 12px',
+                background:'var(--bg2)', border:'1px solid var(--border)',
+                borderRadius:8,
               }}>
                 <span style={{ fontSize:11, fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>TOTAL TTC</span>
-                <span style={{ fontSize:26, fontWeight:900, color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-1px' }}>{fmt(total)}</span>
+                <span style={{ fontSize:24, fontWeight:'var(--fw-regular)', color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-.5px' }}>{fmt(total)}</span>
               </div>
             </div>
           )}
@@ -311,12 +306,14 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 4, marginBottom: 6 }}>
               {PAY_MODES.map(mode => (
                 <button key={mode.id} type="button" onClick={() => setPayMode(mode.id)}
+                  aria-pressed={payMode === mode.id}
                   style={{
-                    padding: '6px 2px', borderRadius: 8, fontSize: 11, fontWeight: 'var(--fw-semibold)',
+                    padding: '7px 2px', borderRadius: 8, fontSize: 11, fontWeight: 'var(--fw-semibold)',
                     cursor: 'pointer', fontFamily: 'var(--font)',
-                    background: payMode === mode.id ? `${mode.color}20` : 'var(--bg3)',
-                    border: `1.5px solid ${payMode === mode.id ? mode.color : 'var(--border)'}`,
-                    color: payMode === mode.id ? mode.color : 'var(--text3)',
+                    background: payMode === mode.id ? 'var(--p)' : 'var(--bg3)',
+                    border: `1.5px solid ${payMode === mode.id ? 'var(--p)' : 'var(--border)'}`,
+                    color: payMode === mode.id ? '#fff' : 'var(--text2)',
+                    boxShadow: payMode === mode.id ? 'var(--sh-xs)' : 'none',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, transition: 'all .12s',
                   }}>
                   <span style={{ display:'flex', alignItems:'center', justifyContent:'center', height:16 }}>
@@ -465,13 +462,13 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 setShowModal(true)
               }}
               style={{
-                width:'100%', padding:'13px',
+                width:'100%', minHeight:52, padding:'13px',
                 background: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'var(--bg4)' : 'linear-gradient(135deg,var(--p),var(--p2))',
-                border:'none', borderRadius:11, fontSize:14, fontWeight:'var(--fw-bold)',
+                border:'none', borderRadius:10, fontSize:15, fontWeight:'var(--fw-bold)',
                 color: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'var(--text3)' : '#fff',
                 cursor: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'not-allowed' : 'pointer',
                 fontFamily:'var(--font)',
-                boxShadow: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'none' : '0 4px 16px rgba(91,78,232,.4)',
+                boxShadow: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'none' : 'var(--sh-md)',
                 transition:'all .2s',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               }}>

@@ -483,6 +483,13 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
   .customer-actions { max-height:64px!important; opacity:1!important }
 }
 @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
+/* POS — anneau pulsé du ✓ de succès (box-shadow seul : aucun transform, sans risque
+   pour les position:fixed ; élément feuille dans la modale). */
+@keyframes posRingPulse {
+  0%   { box-shadow:0 0 0 0 var(--c-green-border) }
+  70%  { box-shadow:0 0 0 16px transparent }
+  100% { box-shadow:0 0 0 0 transparent }
+}
 @keyframes slideDown { from { opacity:0; transform:translateY(-10px) } to { opacity:1; transform:translateY(0) } }
 @keyframes slideIn { from { opacity:0; transform:translateX(-10px) } to { opacity:1; transform:translateX(0) } }
 /* Entrée de page = OPACITÉ SEULE (aucun transform). ⚠️ Une animation `both` qui anime
