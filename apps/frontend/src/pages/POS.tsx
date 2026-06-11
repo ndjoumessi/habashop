@@ -325,12 +325,13 @@ export default function POS() {
   })
 
   // ── MTN MoMo — normalisation MSISDN Cameroun ──────────────────────────────
-  // Accepte : 6XXXXXXXX / +2376XXXXXXXX / 2376XXXXXXXX / 002376XXXXXXXX
+  // Accepte : 6XXXXXXXX / +2376XXXXXXXX / 2376XXXXXXXX / sandbox 10–12 chiffres
   const normalizeCameroonPhone = (raw: string): string | null => {
-    const s = raw.replace(/[\s\-\+\(\)]/g, '')
-    if (/^6\d{8}$/.test(s))    return `237${s}`      // 6XXXXXXXX → 2376XXXXXXXX
-    if (/^2376\d{8}$/.test(s)) return s               // déjà normalisé
-    if (/^002376/.test(s))     return s.slice(2)      // 002376... → 2376...
+    const s = raw.replace(/[\s\-\(\)]/g, '')          // garde + pour détecter +237
+    if (/^\+237[0-9]{9}$/.test(s)) return s.slice(1) // +237XXXXXXXXX → 237XXXXXXXXX
+    if (/^237[0-9]{9}$/.test(s))   return s           // déjà normalisé 12 chiffres
+    if (/^6[0-9]{8}$/.test(s))     return `237${s}`  // 9 chiffres locaux → préfixer 237
+    if (/^[0-9]{10,12}$/.test(s))  return s           // sandbox / catch-all
     return null
   }
 
