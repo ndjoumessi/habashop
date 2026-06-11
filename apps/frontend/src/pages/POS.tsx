@@ -110,6 +110,7 @@ export default function POS() {
   const [mtnPhone, setMtnPhone]   = useState('')
   const [mtnStatus, setMtnStatus] = useState<'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'>('idle')
   const [mtnReferenceId, setMtnReferenceId] = useState<string|null>(null)
+  const [mtnError, setMtnError]   = useState('')
   const mtnReferenceIdRef = useRef<string|null>(null)
   const [posTab, setPosTab] = useState<'pos'|'history'>('pos')
   const [showTicketZ, setShowTicketZ] = useState(false)
@@ -324,25 +325,38 @@ export default function POS() {
     mixed: mixedOn ? mixedSplit : null,
   })
 
-  // ── MTN MoMo — normalisation MSISDN Cameroun ──────────────────────────────
-  // Accepte : 6XXXXXXXX / +2376XXXXXXXX / 2376XXXXXXXX / sandbox 10–12 chiffres
+  // ── MTN MoMo — normalisation MSISDN ──────────────────────────────────────
+  // Cameroun : 6XXXXXXXX → 237XXXXXXXXX, +237/237 → normalisés.
+  // Tout autre pays : 8–15 chiffres acceptés tels quels (l'API MTN valide côté serveur).
   const normalizeCameroonPhone = (raw: string): string | null => {
     const s = raw.replace(/[\s\-\(\)]/g, '')          // garde + pour détecter +237
     if (/^\+237[0-9]{9}$/.test(s)) return s.slice(1) // +237XXXXXXXXX → 237XXXXXXXXX
     if (/^237[0-9]{9}$/.test(s))   return s           // déjà normalisé 12 chiffres
     if (/^6[0-9]{8}$/.test(s))     return `237${s}`  // 9 chiffres locaux → préfixer 237
-    if (/^[0-9]{10,12}$/.test(s))  return s           // sandbox / catch-all
+    const d = s.replace(/^\+/, '')                    // retire + éventuel
+    if (/^[0-9]{8,15}$/.test(d))   return d           // tout pays : 8–15 chiffres
     return null
   }
 
+  const handleMtnPhone = (v: string) => { setMtnPhone(v); if (mtnError) setMtnError('') }
+
+  const onMtnRetry = () => {
+    setMtnPhone('')
+    setMtnStatus('idle')
+    setMtnError('')
+    mtnReferenceIdRef.current = null
+    setMtnReferenceId(null)
+  }
+
   const startMtnPayment = async () => {
+    setMtnError('')
     const phone = normalizeCameroonPhone(mtnPhone)
     if (!phone) {
-      toast.error(
-        lang === 'en' ? 'Invalid MTN number (e.g. 677000000 or 237677000000)' :
-        lang === 'es' ? 'Número MTN inválido (ej: 677000000 o 237677000000)' :
-        lang === 'it' ? 'Numero MTN non valido (es: 677000000 o 237677000000)' :
-        'Numéro MTN invalide (ex: 677000000 ou 237677000000)',
+      setMtnError(
+        lang === 'en' ? 'Enter a valid number (8–15 digits, e.g. 677000000)' :
+        lang === 'es' ? 'Ingrese un número válido (8–15 dígitos, ej: 677000000)' :
+        lang === 'it' ? 'Inserire un numero valido (8–15 cifre, es: 677000000)' :
+        'Saisissez un numéro valide (8–15 chiffres, ex: 677000000)',
       )
       return
     }
@@ -502,6 +516,7 @@ export default function POS() {
     setMixedAmt1('')
     setMtnPhone('')
     setMtnStatus('idle')
+    setMtnError('')
     setMtnReferenceId(null)
     mtnReferenceIdRef.current = null
   }
@@ -666,8 +681,9 @@ export default function POS() {
         discount={discount} payMode={payMode}
         cashGiven={cashGiven} toXOF={toXOF}
         mixedOn={mixedOn} mixedValid={mixedValid}
-        mtnPhone={mtnPhone} setMtnPhone={setMtnPhone}
-        mtnStatus={mtnStatus} startMtnPayment={startMtnPayment}
+        mtnPhone={mtnPhone} setMtnPhone={handleMtnPhone}
+        mtnStatus={mtnStatus} mtnError={mtnError}
+        startMtnPayment={startMtnPayment} onMtnRetry={onMtnRetry}
       />
 
       {/* MODALE SUCCÈS — après vente : récap + Imprimer le reçu + Nouvelle vente */}

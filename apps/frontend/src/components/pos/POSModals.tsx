@@ -38,10 +38,12 @@ interface POSModalsProps {
   // MTN MoMo — flux USSD polling dans la modale de confirmation
   mtnPhone: string; setMtnPhone: (v: string) => void
   mtnStatus: 'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'
+  mtnError: string
   startMtnPayment: () => void
+  onMtnRetry: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, startMtnPayment }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
@@ -537,9 +539,12 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                         value={mtnPhone}
                         onChange={e => setMtnPhone(e.target.value.replace(/[^0-9\s\+\-]/g, ''))}
                         aria-label={lang === 'en' ? 'MTN MoMo phone number' : lang === 'es' ? 'Número MTN MoMo' : lang === 'it' ? 'Numero MTN MoMo' : 'Numéro MTN MoMo'}
+                        aria-describedby={mtnError ? 'mtn-phone-error' : undefined}
+                        aria-invalid={!!mtnError}
                         style={{
                           flex:1, minHeight:44, padding:'0 12px',
-                          background:'var(--bg4)', border:'1.5px solid var(--border)',
+                          background:'var(--bg4)',
+                          border:`1.5px solid ${mtnError ? 'var(--danger)' : 'var(--border)'}`,
                           borderRadius:10, color:'var(--text)', fontSize:13,
                           fontFamily:'var(--mono)', outline:'none',
                           boxSizing:'border-box' as const,
@@ -563,6 +568,11 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                           : (lang === 'en' ? 'Send request' : lang === 'es' ? 'Enviar solicitud' : lang === 'it' ? 'Invia richiesta' : 'Envoyer la demande')}
                       </button>
                     </div>
+                    {mtnError && (
+                      <div id="mtn-phone-error" role="alert" style={{ marginTop:5, fontSize:11, color:'var(--danger)', fontWeight:'var(--fw-regular)', display:'flex', gap:4, alignItems:'center' }}>
+                        <AlertTriangle size={10} /> {mtnError}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -592,7 +602,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     </div>
                     <button
                       type="button"
-                      onClick={() => { setMtnPhone(''); startMtnPayment() }}
+                      onClick={onMtnRetry}
                       style={{
                         padding:'8px 14px', borderRadius:8, border:'none',
                         background:'rgba(255,204,0,.15)', color:'#FFCC00',
