@@ -73,7 +73,7 @@ lsof -ti tcp:8081 | xargs kill 2>/dev/null   # libère le port
 npx expo start --clear        # Expo Go SDK 54
 npx expo start --dev-client   # dev build
 npx tsc --noEmit              # 0 erreur (0 `any` dans app/+src/) — rituel avant commit
-npm test                      # jest-expo (131 tests) doivent passer
+npm test                      # jest-expo (135 tests) doivent passer
 npx expo-doctor               # objectif 18/18
 
 # EAS (profils eas.json : development=APK dev-client, preview=APK test, production=AAB Play)
@@ -140,6 +140,7 @@ fmt(1000)                              // XOF→"1 000 FCFA" · EUR→"1,52 €"
 | `/api/sales/:id/refund` | POST | `{ reason, restock }` — 409 si déjà remboursée |
 | `/api/sales/:id/invoice` | GET | PDF binaire (arraybuffer, tous rôles) |
 | `/api/customers` | GET | `[{ id, name, phone, email, type, loyaltyPoints, totalRevenue }]` |
+| `/api/customers/:id` | GET | objet `Customer` unique (utilisé par le scan QR carte `HABA-CUST:`) |
 | `/api/customers/:id/loyalty` | GET | solde + palier **canonique** + historique + remises |
 | `/api/customers/:id/loyalty-card` | GET | `LoyaltyCardData` (scope tenant strict) |
 | `/api/dashboard/stats` | GET | data **plate** (PAS `/api/analytics/dashboard` → 404 ; pas `data.stats`) |
@@ -199,7 +200,12 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 - **OTA-safe, AUCUNE dep native.** ⚠️ NE PAS réintroduire `react-native-svg`/`-qrcode-svg`/`-view-shot` (module natif absent → export OTA cassé) sans nouveau build EAS.
 - **QR : `QRCode.create()` (pur JS, sans canvas) → matrice → grille de `<View>`.** ⚠️ **NE JAMAIS** `QRCode.toDataURL()`/`<Image>` base64 sous Hermes : `toDataURL` résout (champ `browser` de Metro) vers `CanvasRenderer` → `document.createElement('canvas')` **inexistant** → rejette `'You need to specify a canvas element'` → QR vide. Pour le **PDF**, **SVG inline** construit de la même matrice (rendu par le webview expo-print). Fallback texte monospace si `create()` échoue.
 - Design = web : 2 zones par palier (haute sombre `dark/mid/accent` Bronze `#1C1007/#3D2010/#F5A623`, Silver/Gold déclinés ; badge pill + nom + code + points + QR cadre blanc 64×64 ; basse fond thème : progression + stats 2 colonnes + bouton Partager). Montée **on-demand**. ⚠️ ces couleurs viennent du prompt, PAS du web actuel.
-- **Scan QR carte au POS (`customerQr.ts`) :** le QR encode **`HABA-<8 1ers car. de l'id, MAJ>`** (préfixe, **pas** l'id complet) → résolution par **`matchCustomerByCode`** contre la liste clients chargée (cache `['customers']` = `GET /api/customers`), pas un `GET /:id`. `BarcodeScanner` prop `mode:'customer'` → `barcodeTypes:['qr']` + trim (≠ `normalizeBarcode`). `CustomerPicker` prop `onScanCard` → bouton « Scanner la carte fidélité ». Carte non reconnue → alerte dédiée.
+- **Format QR :** `HABA-CUST:<customerId>` (ex. `HABA-CUST:demo-dkr-cust-3`). ⚠️ ancien format `HABA-<id8 MAJ>` abandonné — ne pas le réintroduire.
+- **Fiche client :** seule `LoyaltyCardDigital` (💳) est présente — `LoyaltyCard` (🎁 ancien composant inline) a été supprimé pour éviter le doublon.
+- **Scan QR carte au POS (`customerQr.ts`) :**
+  - Nouveau format `HABA-CUST:<id>` → `extractDirectCustomerId()` extrait l'id complet → `handleCustomerScan` appelle **`GET /api/customers/:id` directement** (pas de matching liste).
+  - Ancien format `HABA-<id8 MAJ>` → fallback `matchCustomerByCode` contre la liste chargée (cache `['customers']`).
+  - `BarcodeScanner` prop `mode:'customer'` → `barcodeTypes:['qr']` + trim (≠ `normalizeBarcode`). `CustomerPicker` prop `onScanCard` → bouton « Scanner la carte fidélité ». Carte non reconnue → alerte dédiée.
 
 ---
 
@@ -223,6 +229,6 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ---
 
 ## État courant
-- `main`, `tsc` 0, **131 tests verts**. Version **1.4.2** / runtime **1.4.2** ; dernières features diffusées en **OTA `preview`** (pas de nouveau build natif récent).
+- `main`, `tsc` 0, **135 tests verts**. Version **1.4.2** / runtime **1.4.2** ; dernières features diffusées en **OTA `preview`** (pas de nouveau build natif récent).
 - **À valider sur device** (cf. `runtime-verification-debt`) : offline+resync, ticket WhatsApp, widget, TalkBack, smoke Maestro (`.maestro/smoke.yaml`, non lancé), scanner durci (Android lent), remboursement/fidélité v2/carte QR (scan + partage PDF), boundaries, timeout→file.
 - **Reste / différé :** publier Play Store (AAB prêt, captures à faire) ; layouts tablette (iPad) ; build iOS réel (compte Apple) ; push réelles (token EAS, dev build) ; Wave/Orange prod ; fidélité créditée backend (hors repo).
