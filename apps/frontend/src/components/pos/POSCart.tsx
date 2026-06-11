@@ -83,14 +83,8 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               flexShrink: 0,
               boxShadow: '0 2px 8px rgba(108,71,255,.4)',
             }}><ShoppingCart size={16} style={{ color:'#fff' }} /></div>
-            <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', flex: 1, display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 }}>
+            <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', flex: 1, minWidth: 0 }}>
               {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
-              {cart.length > 0 && (
-                <span style={{ fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text3)', whiteSpace: 'nowrap' }}>
-                  ({cart.reduce((s, i) => s + i.qty, 0)}{' '}
-                  {lang === 'en' ? 'items' : lang === 'es' ? 'art.' : lang === 'it' ? 'art.' : 'articles'})
-                </span>
-              )}
             </span>
             {cashierSessionTx > 0 && (
               <span style={{
