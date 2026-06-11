@@ -41,9 +41,15 @@ interface POSModalsProps {
   mtnError: string
   startMtnPayment: () => void
   onMtnRetry: () => void
+  // Orange Money (Campay) — flux polling dans la modale de confirmation
+  orangePhone: string; setOrangePhone: (v: string) => void
+  orangeStatus: 'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'
+  orangeError: string
+  startOrangePayment: () => void
+  onOrangeRetry: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
@@ -51,6 +57,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
   const payOK = mixedOn ? mixedValid : cashOK
   // MTN MoMo : le bouton Confirmer est masqué (le flux polling gère la confirmation).
   const isMtnMode = !mixedOn && payMode === 'mtn'
+  // Orange Money (Campay) : idem — le bouton Confirmer est masqué pendant le flux polling.
+  const isOrangeMode = !mixedOn && payMode === 'orange'
   const blocked = isSaving || waSending || !payOK
   // Pièges à focus (focus initial + Tab bouclé + restauration au déclencheur)
   const discountBoxRef = useModalFocus<HTMLDivElement>(showDiscountModal)
@@ -617,9 +625,108 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               </div>
             )}
 
+            {/* ── Section Orange Money (Campay) ── */}
+            {isOrangeMode && (
+              <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
+                <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'#FF6600', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
+                  <span style={{ fontWeight:'var(--fw-bold)', fontSize:15 }}>OM</span> Orange Money
+                </div>
+
+                {/* Idle / requesting */}
+                {(orangeStatus === 'idle' || orangeStatus === 'requesting') && (
+                  <div>
+                    <label htmlFor="orange-phone" style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
+                      {lang === 'en' ? 'Orange number (e.g. 699000000)' : lang === 'es' ? 'Número Orange (ej: 699000000)' : lang === 'it' ? 'Numero Orange (es: 699000000)' : 'Numéro Orange (ex: 699000000)'}
+                    </label>
+                    <div style={{ display:'flex', gap:8 }}>
+                      <input
+                        id="orange-phone"
+                        type="tel" inputMode="numeric"
+                        placeholder="699 000 000"
+                        value={orangePhone}
+                        onChange={e => setOrangePhone(e.target.value.replace(/[^0-9\s\+\-]/g, ''))}
+                        aria-label={lang === 'en' ? 'Orange Money phone number' : lang === 'es' ? 'Número Orange Money' : lang === 'it' ? 'Numero Orange Money' : 'Numéro Orange Money'}
+                        aria-describedby={orangeError ? 'orange-phone-error' : undefined}
+                        aria-invalid={!!orangeError}
+                        style={{
+                          flex:1, minHeight:44, padding:'0 12px',
+                          background:'var(--bg4)',
+                          border:`1.5px solid ${orangeError ? 'var(--danger)' : 'var(--border)'}`,
+                          borderRadius:10, color:'var(--text)', fontSize:13,
+                          fontFamily:'var(--mono)', outline:'none',
+                          boxSizing:'border-box' as const,
+                        }}
+                      />
+                      <button
+                        type="button"
+                        disabled={!orangePhone.trim() || orangeStatus === 'requesting'}
+                        onClick={startOrangePayment}
+                        style={{
+                          minHeight:44, padding:'0 14px', borderRadius:10, border:'none',
+                          background: (!orangePhone.trim() || orangeStatus === 'requesting') ? 'var(--bg5)' : '#FF6600',
+                          color: (!orangePhone.trim() || orangeStatus === 'requesting') ? 'var(--text3)' : '#fff',
+                          fontWeight:'var(--fw-semibold)', fontSize:12, cursor: (!orangePhone.trim() || orangeStatus === 'requesting') ? 'not-allowed' : 'pointer',
+                          fontFamily:'inherit', whiteSpace:'nowrap' as const,
+                          display:'flex', alignItems:'center', gap:5,
+                        }}
+                      >
+                        {orangeStatus === 'requesting'
+                          ? <><Loader2 size={12} style={{ animation:'spin 1s linear infinite' }}/> {lang === 'en' ? 'Sending…' : lang === 'es' ? 'Enviando…' : lang === 'it' ? 'Invio…' : 'Envoi…'}</>
+                          : (lang === 'en' ? 'Send request' : lang === 'es' ? 'Enviar solicitud' : lang === 'it' ? 'Invia richiesta' : 'Envoyer la demande')}
+                      </button>
+                    </div>
+                    {orangeError && (
+                      <div id="orange-phone-error" role="alert" style={{ marginTop:5, fontSize:11, color:'var(--danger)', fontWeight:'var(--fw-regular)', display:'flex', gap:4, alignItems:'center' }}>
+                        <AlertTriangle size={10} /> {orangeError}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Polling */}
+                {orangeStatus === 'polling' && (
+                  <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 0' }}>
+                    <Loader2 size={20} style={{ animation:'spin 1s linear infinite', color:'#FF6600', flexShrink:0 }} />
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text)' }}>
+                        {lang === 'en' ? 'Waiting for customer confirmation…' : lang === 'es' ? 'Esperando confirmación del cliente…' : lang === 'it' ? 'In attesa della conferma del cliente…' : 'En attente de confirmation client…'}
+                      </div>
+                      <div style={{ fontSize:11, color:'var(--text3)', marginTop:3 }}>
+                        {lang === 'en' ? 'Customer received Orange Money prompt on their phone' : lang === 'es' ? 'El cliente recibió la solicitud en su teléfono' : lang === 'it' ? 'Il cliente ha ricevuto la richiesta sul telefono' : 'Le client a reçu la demande Orange Money sur son téléphone'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Failed / timeout */}
+                {(orangeStatus === 'failed' || orangeStatus === 'timeout') && (
+                  <div>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 0', color:'var(--danger)', fontSize:13 }}>
+                      <AlertTriangle size={14} style={{ flexShrink:0 }} />
+                      {orangeStatus === 'timeout'
+                        ? (lang === 'en' ? 'Payment timeout (2 min). Retry?' : lang === 'es' ? 'Tiempo de espera agotado (2 min). ¿Reintentar?' : lang === 'it' ? 'Timeout pagamento (2 min). Riprovare?' : 'Délai dépassé (2 min). Réessayer ?')
+                        : (lang === 'en' ? 'Payment refused or failed.' : lang === 'es' ? 'Pago rechazado o fallido.' : lang === 'it' ? 'Pagamento rifiutato o fallito.' : 'Paiement refusé ou échoué.')}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onOrangeRetry}
+                      style={{
+                        padding:'8px 14px', borderRadius:8, border:'none',
+                        background:'rgba(255,102,0,.15)', color:'#FF6600',
+                        fontSize:12, fontWeight:'var(--fw-semibold)',
+                        cursor:'pointer', fontFamily:'inherit',
+                      }}
+                    >
+                      {lang === 'en' ? 'Retry' : lang === 'es' ? 'Reintentar' : lang === 'it' ? 'Riprova' : 'Réessayer'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Boutons */}
             <div style={{ display: 'flex', gap: 10 }}>
-              {!isMtnMode && (
+              {!isMtnMode && !isOrangeMode && (
                 <button
                   onClick={confirmSale}
                   disabled={blocked}

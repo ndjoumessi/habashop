@@ -144,6 +144,13 @@ export const mtnMomoApi = {
     api.post<{ referenceId: string; status: 'PENDING' | 'SUCCESSFUL' | 'FAILED' }>('/api/payments/mtn/status', { referenceId }),
 }
 
+export const campayApi = {
+  request: (data: { amount: number; phoneNumber: string; operator: 'orange' | 'mtn'; saleId?: string }) =>
+    api.post<{ reference: string; status: 'PENDING' }>('/api/payments/campay/request', data),
+  status: (reference: string) =>
+    api.post<{ reference: string; status: 'PENDING' | 'SUCCESSFUL' | 'FAILED' }>('/api/payments/campay/status', { reference }),
+}
+
 export const ticketZApi = {
   today:    () => api.get<any>('/api/ticket-z/today'),
   history:  () => api.get<any[]>('/api/ticket-z/history'),

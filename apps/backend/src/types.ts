@@ -49,6 +49,8 @@ export interface SaleBody {
   cashAmount?: number; mobileMoneyAmount?: number; cardAmount?: number
   // MTN MoMo — UUID retourné par /api/payments/mtn/request (traçabilité).
   mtnMomoReference?: string | null
+  // Campay — référence retournée par /api/payments/campay/request (traçabilité).
+  campayReference?: string | null
 }
 export interface OrderBody {
   supplierId?: string; items?: any[]; expectedAt?: string; notes?: string; status?: string

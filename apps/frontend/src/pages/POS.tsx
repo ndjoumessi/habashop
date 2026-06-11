@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi } from '@/lib/api'
+import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
@@ -112,6 +112,12 @@ export default function POS() {
   const [mtnReferenceId, setMtnReferenceId] = useState<string|null>(null)
   const [mtnError, setMtnError]   = useState('')
   const mtnReferenceIdRef = useRef<string|null>(null)
+  // ── Orange Money (Campay) POS ──────────────────────────────────────────────
+  const [orangePhone, setOrangePhone]     = useState('')
+  const [orangeStatus, setOrangeStatus]   = useState<'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'>('idle')
+  const [orangeReference, setOrangeReference] = useState<string|null>(null)
+  const [orangeError, setOrangeError]     = useState('')
+  const orangeReferenceRef = useRef<string|null>(null)
   const [posTab, setPosTab] = useState<'pos'|'history'>('pos')
   const [showTicketZ, setShowTicketZ] = useState(false)
   const [salesHistory, setSalesHistory] = useState<any[]>([])
@@ -348,6 +354,55 @@ export default function POS() {
     setMtnReferenceId(null)
   }
 
+  const handleOrangePhone = (v: string) => { setOrangePhone(v); if (orangeError) setOrangeError('') }
+
+  const onOrangeRetry = () => {
+    setOrangePhone('')
+    setOrangeStatus('idle')
+    setOrangeError('')
+    orangeReferenceRef.current = null
+    setOrangeReference(null)
+  }
+
+  const normalizeOrangePhone = (raw: string): string | null => {
+    const s = raw.replace(/[\s\-\(\)]/g, '')
+    if (/^\+237[0-9]{9}$/.test(s)) return s.slice(1)
+    if (/^237[0-9]{9}$/.test(s))   return s
+    if (/^6[0-9]{8}$/.test(s))     return `237${s}`
+    const d = s.replace(/^\+/, '')
+    if (/^[0-9]{8,15}$/.test(d))   return d
+    return null
+  }
+
+  const startOrangePayment = async () => {
+    setOrangeError('')
+    const phone = normalizeOrangePhone(orangePhone)
+    if (!phone) {
+      setOrangeError(
+        lang === 'en' ? 'Enter a valid number (8–15 digits, e.g. 699000000)' :
+        lang === 'es' ? 'Ingrese un número válido (8–15 dígitos, ej: 699000000)' :
+        lang === 'it' ? 'Inserire un numero valido (8–15 cifre, es: 699000000)' :
+        'Saisissez un numéro valide (8–15 chiffres, ex: 699000000)',
+      )
+      return
+    }
+    setOrangeStatus('requesting')
+    try {
+      const { reference } = await campayApi.request({ amount: netTotal, phoneNumber: phone, operator: 'orange' })
+      orangeReferenceRef.current = reference
+      setOrangeReference(reference)
+      setOrangeStatus('polling')
+    } catch {
+      setOrangeStatus('failed')
+      toast.error(
+        lang === 'en' ? 'Orange Money request failed — retry' :
+        lang === 'es' ? 'Error Orange Money — reintente' :
+        lang === 'it' ? 'Errore Orange Money — riprova' :
+        'Échec de la demande Orange Money — réessayez',
+      )
+    }
+  }
+
   const startMtnPayment = async () => {
     setMtnError('')
     const phone = normalizeCameroonPhone(mtnPhone)
@@ -416,7 +471,45 @@ export default function POS() {
     }
   }, [payMode])
 
-  const confirmSale = async (mtnRef?: string) => {
+  // Polling Orange Money 3s, max 40 tours (2 min)
+  useEffect(() => {
+    if (orangeStatus !== 'polling') return
+    let done = false
+    let count = 0
+    const MAX = 40
+    const poll = async () => {
+      if (done) return
+      count++
+      if (count > MAX) { done = true; setOrangeStatus('timeout'); return }
+      try {
+        const ref = orangeReferenceRef.current
+        if (!ref) return
+        const res = await campayApi.status(ref)
+        if (res.status === 'SUCCESSFUL') { done = true; setOrangeStatus('success') }
+        else if (res.status === 'FAILED') { done = true; setOrangeStatus('failed') }
+      } catch { /* fail-silent */ }
+    }
+    const timer = setInterval(poll, 3000)
+    return () => { done = true; clearInterval(timer) }
+  }, [orangeStatus])
+
+  // Déclenche confirmSale dès que Orange passe à 'success'
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (orangeStatus === 'success') confirmSale(undefined, orangeReferenceRef.current ?? undefined)
+  }, [orangeStatus]) // intentionally omits confirmSale (fresh via post-render execution)
+
+  // Réinitialise le flux Orange quand on change de mode de paiement
+  useEffect(() => {
+    if (payMode !== 'orange') {
+      setOrangePhone('')
+      setOrangeStatus('idle')
+      setOrangeReference(null)
+      orangeReferenceRef.current = null
+    }
+  }, [payMode])
+
+  const confirmSale = async (mtnRef?: string, campayRef?: string) => {
     // Garde-fou cash : refuser si le montant reçu (converti en XOF) < total.
     // Les modes Wave/Orange/Carte/Mobile n'ont pas de saisie de montant → pas concernés.
     // En paiement mixte, le garde-fou cash ne s'applique pas (la somme = total par construction).
@@ -453,6 +546,7 @@ export default function POS() {
         discount: discount ? { type: discount.type, amount: discountAmount } : null,
         ...(mixedOn ? mixedSplit : {}),
         mtnMomoReference: mtnRef ?? null,
+        campayReference: campayRef ?? null,
       })
     } catch {
       // Hors-ligne : la vente est quand même enregistrée localement
@@ -519,6 +613,11 @@ export default function POS() {
     setMtnError('')
     setMtnReferenceId(null)
     mtnReferenceIdRef.current = null
+    setOrangePhone('')
+    setOrangeStatus('idle')
+    setOrangeError('')
+    setOrangeReference(null)
+    orangeReferenceRef.current = null
   }
 
   // ─── RENDER ──────────────────────────────
@@ -684,6 +783,9 @@ export default function POS() {
         mtnPhone={mtnPhone} setMtnPhone={handleMtnPhone}
         mtnStatus={mtnStatus} mtnError={mtnError}
         startMtnPayment={startMtnPayment} onMtnRetry={onMtnRetry}
+        orangePhone={orangePhone} setOrangePhone={handleOrangePhone}
+        orangeStatus={orangeStatus} orangeError={orangeError}
+        startOrangePayment={startOrangePayment} onOrangeRetry={onOrangeRetry}
       />
 
       {/* MODALE SUCCÈS — après vente : récap + Imprimer le reçu + Nouvelle vente */}

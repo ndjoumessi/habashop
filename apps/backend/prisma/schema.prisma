@@ -222,6 +222,9 @@ model Sale {
   // Référence MTN MoMo (UUID retourné par requesttopay) — traçabilité / réconciliation.
   mtnMomoReference  String?
 
+  // Référence Campay (Orange Money / cartes Cameroun) — traçabilité / réconciliation.
+  campayReference   String?
+
   tenant  Tenant     @relation(fields: [tenantId], references: [id])
   cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
   items   SaleItem[]
