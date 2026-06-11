@@ -153,6 +153,12 @@ export const campayApi = {
     api.post<{ paymentUrl: string; reference: string }>('/api/payments/campay/card-link', data),
 }
 
+export interface ProviderStat { count: number; amountXof: number; lastAt: string | null }
+export const paymentStatsApi = {
+  // Transactions MTN MoMo + Campay du jour (montants en XOF base → convertir à l'affichage).
+  today: () => api.get<{ mtn: ProviderStat; campay: ProviderStat }>('/api/payments/today-stats'),
+}
+
 export const ticketZApi = {
   today:    () => api.get<any>('/api/ticket-z/today'),
   history:  () => api.get<any[]>('/api/ticket-z/history'),

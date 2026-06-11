@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useAppStore } from '@/stores/appStore'
-import { ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound } from 'lucide-react'
+import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound, Activity } from 'lucide-react'
 import Button from '@/components/ui/AppButton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { paymentStatsApi, type ProviderStat } from '@/lib/api'
 import toast from 'react-hot-toast'
 import ResendMonitor from '@/components/integrations/ResendMonitor'
 
@@ -293,6 +294,16 @@ const INTEGRATION_DESC_T: Record<string, Record<string, string>> = {
 const integrationDesc = (itg: Integration, lang: string) =>
   INTEGRATION_DESC_T[itg.id]?.[lang] ?? itg.desc
 
+// Traduit le libellé « dernière activité » (stocké en FR dans les entrées).
+function relActivity(lastCall: string, lang: string): string {
+  if (lang === 'fr') return lastCall
+  if (lastCall === 'Continu') return lang === 'en' ? 'Continuous' : lang === 'es' ? 'Continuo' : 'Continuo'
+  if (lastCall === '—') return '—'
+  const m = lastCall.match(/^Il y a (.+)$/)
+  if (m) return lang === 'en' ? `${m[1]} ago` : lang === 'es' ? `hace ${m[1]}` : `${m[1]} fa`
+  return lastCall
+}
+
 // Bordure + glow d'une card selon le statut de ping :
 //   ok (<500ms) vert · slow (≥500ms) orange · error (injoignable) rouge · sinon neutre
 function statusVisual(status: PingState | undefined): { border: string; glow: string } {
@@ -306,11 +317,22 @@ function statusVisual(status: PingState | undefined): { border: string; glow: st
 
 export default function Integrations() {
   const { lang } = useAppStore()
+  const fmt = useFormatAmount()
 
   const [showResendMonitor, setShowResendMonitor] = useState(false)
   const [pingStatus, setPingStatus]   = useState<Record<string, PingState>>({})
   const [pingLatency, setPingLatency] = useState<Record<string, number>>({})
   const [payDunyaOpen, setPayDunyaOpen] = useState(false)
+  const [txStats, setTxStats] = useState<{ mtn: ProviderStat; campay: ProviderStat } | null>(null)
+
+  // Transactions paiement du jour (MTN MoMo + Campay) — données réelles backend.
+  useEffect(() => {
+    paymentStatsApi.today().then(setTxStats).catch(() => setTxStats(null))
+  }, [])
+
+  // Heure courte locale d'un ISO (dernière transaction réussie). null → '—'.
+  const shortTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleTimeString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—'
 
   const pingIntegration = async (id: string, url: string): Promise<{ status: PingState; ms: number }> => {
     setPingStatus(s => ({ ...s, [id]: 'checking' }))
@@ -414,6 +436,10 @@ export default function Integrations() {
     const methods = METHODS[itg.id]
     const apiVer  = API_VERSION[itg.id]
     const detail  = CARD_DETAIL[itg.id]?.[lang] ?? CARD_DETAIL[itg.id]?.fr
+    // Transactions du jour (cartes paiement MTN MoMo / Campay) — données réelles.
+    const tx: ProviderStat | undefined = itg.id === 'mtnmomo' ? txStats?.mtn : itg.id === 'campay' ? txStats?.campay : undefined
+    // Taux d'erreur : signal réel uniquement (un ping joignable = 0 erreur) ; sinon non mesuré.
+    const errorRate = itg.noPing ? '—' : pingStatus[itg.id] === 'error' ? '100%' : (pingStatus[itg.id] === 'ok' || pingStatus[itg.id] === 'slow') ? '0%' : '—'
 
     return (
       <div key={itg.id} style={{
@@ -479,6 +505,26 @@ export default function Integrations() {
             </div>
           )}
 
+          {/* Transactions du jour (cartes paiement) — données réelles backend */}
+          {tx && (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, padding:'8px 10px', marginBottom:10, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:9 }}>
+              <div>
+                <div style={{ fontSize:13, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)' }}>
+                  {tx.count} {tx.count > 0 ? fmt(tx.amountXof) : ''}
+                </div>
+                <div style={{ fontSize:11, color:'var(--text4)', marginTop:1 }}>
+                  {lang === 'en' ? 'Transactions today' : lang === 'es' ? 'Transacciones hoy' : lang === 'it' ? 'Transazioni oggi' : 'Transactions aujourd\'hui'}
+                </div>
+              </div>
+              <div style={{ textAlign:'right' }}>
+                <div style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color: tx.lastAt ? 'var(--acc2)' : 'var(--text4)', fontFamily:'var(--mono)' }}>{shortTime(tx.lastAt)}</div>
+                <div style={{ fontSize:11, color:'var(--text4)', marginTop:1 }}>
+                  {lang === 'en' ? 'Last success' : lang === 'es' ? 'Última exitosa' : lang === 'it' ? 'Ultima riuscita' : 'Dernière réussie'}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Stats API */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:10 }}>
             {[
@@ -500,6 +546,16 @@ export default function Integrations() {
             {apiVer && (
               <span style={{ marginLeft:'auto', flexShrink:0, color:'var(--text4)', fontSize:11 }}>{apiVer}</span>
             )}
+          </div>
+
+          {/* Dernière activité + taux d'erreur */}
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:8, fontSize:11, color:'var(--text4)' }}>
+            <Activity size={11} style={{ flexShrink:0 }} />
+            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{relActivity(itg.lastCall, lang)}</span>
+            <span style={{ marginLeft:'auto', flexShrink:0 }}>
+              {lang === 'en' ? 'Errors' : lang === 'es' ? 'Errores' : lang === 'it' ? 'Errori' : 'Erreurs'}{' '}
+              <span style={{ color: errorRate === '0%' ? 'var(--acc2)' : errorRate === '100%' ? 'var(--danger)' : 'var(--text4)', fontWeight:'var(--fw-semibold)' }}>{errorRate}</span>
+            </span>
           </div>
         </div>
 
