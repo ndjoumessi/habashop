@@ -117,11 +117,12 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       const result = await getPaymentLink({
-        amount:      xafAmount,
+        amount:         xafAmount,
         externalRef,
-        description: `HabaShop Carte ${externalRef}`,
+        description:    `HabaShop Carte ${externalRef}`,
+        paymentOptions: 'CARD',
       })
-      return { paymentUrl: result.payment_url, reference: result.reference }
+      return { paymentUrl: result.link, reference: result.reference }
     } catch (err: any) {
       request.log.error({ err, step: 'getPaymentLink', amount: xafAmount }, 'Campay getPaymentLink failed')
       return reply.code(502).send({ error: err.message ?? 'Erreur Campay carte' })

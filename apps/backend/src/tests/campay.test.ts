@@ -229,7 +229,7 @@ describe('POST /api/payments/campay/status', () => {
 // ── POST /api/payments/campay/card-link ─────────────────────────────────────
 describe('POST /api/payments/campay/card-link', () => {
   it('200 succès : retourne paymentUrl + reference', async () => {
-    campayPaymentLink.mockResolvedValue({ payment_url: 'https://demo.campay.net/pay/abc123', reference: 'card-ref-1' })
+    campayPaymentLink.mockResolvedValue({ link: 'https://demo.campay.net/pay/abc123', reference: 'card-ref-1' })
     const app = await makeApp()
     const res = await app.inject({
       method:  'POST',
@@ -255,7 +255,7 @@ describe('POST /api/payments/campay/card-link', () => {
   })
 
   it('sandbox : force amount = 10 XAF (limite sandbox Campay 25 XAF max)', async () => {
-    campayPaymentLink.mockResolvedValue({ payment_url: 'https://demo.campay.net/pay/x', reference: 'r' })
+    campayPaymentLink.mockResolvedValue({ link: 'https://demo.campay.net/pay/x', reference: 'r' })
     const app = await makeApp()
     await app.inject({ method: 'POST', url: '/api/payments/campay/card-link', payload: { amount: 99999 } })
     expect(campayPaymentLink).toHaveBeenCalledWith(expect.objectContaining({ amount: 10 }))
@@ -270,7 +270,7 @@ describe('POST /api/payments/campay/card-link', () => {
   })
 
   it('retourne une URL valide (commence par http)', async () => {
-    campayPaymentLink.mockResolvedValue({ payment_url: 'https://demo.campay.net/pay/test-url', reference: 'r2' })
+    campayPaymentLink.mockResolvedValue({ link: 'https://demo.campay.net/pay/test-url', reference: 'r2' })
     const app = await makeApp()
     const res = await app.inject({ method: 'POST', url: '/api/payments/campay/card-link', payload: { amount: 5000 } })
     expect(res.statusCode).toBe(200)

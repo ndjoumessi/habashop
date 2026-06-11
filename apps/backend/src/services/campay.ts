@@ -114,25 +114,36 @@ export async function getStatus(reference: string): Promise<'PENDING' | 'SUCCESS
 }
 
 export async function getPaymentLink(opts: {
-  amount:      number   // entier XAF
-  externalRef: string
-  description: string
-  redirectUrl?: string
-}): Promise<{ payment_url: string; reference: string }> {
+  amount:             number   // entier XAF
+  externalRef:        string
+  description:        string
+  redirectUrl?:       string
+  failureRedirectUrl?: string
+  from?:              string   // MSISDN client (optionnel en mode carte)
+  firstName?:         string
+  lastName?:          string
+  paymentOptions?:    string   // "CARD" | "MOMO" | "MOMO,CARD"
+}): Promise<{ link: string; reference: string }> {
   const token = await getToken()
 
-  const res = await fetch(`${BASE_URL}/api/get-payment-link/`, {
+  const res = await fetch(`${BASE_URL}/api/get_payment_link/`, {
     method:  'POST',
     headers: {
       'Authorization': `Token ${token}`,
       'Content-Type':  'application/json',
     },
     body: JSON.stringify({
-      amount:             opts.amount,
-      currency:           'XAF',
-      description:        opts.description,
-      external_reference: opts.externalRef,
-      redirect_url:       opts.redirectUrl ?? 'https://habashop.vercel.app/app/pos',
+      amount:               opts.amount,
+      currency:             'XAF',
+      description:          opts.description,
+      external_reference:   opts.externalRef,
+      from:                 opts.from              ?? '',
+      first_name:           opts.firstName         ?? 'Client',
+      last_name:            opts.lastName          ?? '',
+      email:                '',
+      redirect_url:         opts.redirectUrl        ?? 'https://habashop.vercel.app/app/pos',
+      failure_redirect_url: opts.failureRedirectUrl ?? 'https://habashop.vercel.app/app/pos',
+      payment_options:      opts.paymentOptions    ?? 'CARD',
     }),
   })
 
@@ -142,6 +153,9 @@ export async function getPaymentLink(opts: {
     throw new Error(`Campay getPaymentLink error: ${res.status}${body ? ' — ' + body : ''}`)
   }
 
-  const data = await res.json() as { payment_url: string; reference: string }
-  return { payment_url: data.payment_url, reference: data.reference }
+  const data = await res.json() as { link?: string; reference?: string; status?: string }
+  if (!data.link || !data.reference) {
+    throw new Error(`Campay getPaymentLink: réponse inattendue — ${JSON.stringify(data)}`)
+  }
+  return { link: data.link, reference: data.reference }
 }
