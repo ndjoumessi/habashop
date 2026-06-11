@@ -455,7 +455,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
           </div>
 
           {/* ── BOUTON ENCAISSER ── */}
-          <div style={{ flexShrink:0, padding:'8px 10px', borderTop:'1px solid var(--border)' }}>
+          <div style={{ flexShrink:0, padding:'10px 10px 0', borderTop:'1px solid var(--border)' }}>
             <button type="button"
               disabled={cart.length === 0 || (mixedOn && !mixedValid)}
               onClick={() => {
@@ -481,7 +481,9 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             {cashierSessionTx > 0 && (
               <div style={{
                 display:'flex', justifyContent:'space-between',
-                fontSize:11, color:'var(--text3)', marginTop:5, padding:'0 4px',
+                fontSize:11, color:'var(--text3)',
+                borderTop:'0.5px solid var(--border)',
+                marginTop:8, padding:'8px 4px',
               }}>
                 <span style={{ display:'flex', alignItems:'center', gap:4 }}><BarChart3 size={10} /> {cashierSessionTx} tx</span>
                 <span style={{ color:'var(--acc)', fontFamily:'var(--mono)', fontWeight:'var(--fw-regular)' }}>{fmt(cashierSessionCA)}</span>
