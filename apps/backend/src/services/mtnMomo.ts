@@ -22,7 +22,11 @@ export async function getAccessToken(): Promise<string> {
       'Ocp-Apim-Subscription-Key': SUB_KEY,
     },
   })
-  if (!res.ok) throw new Error(`MTN token error: ${res.status}`)
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    console.error('[MTN]', { step: 'getAccessToken', status: res.status, body })
+    throw new Error(`MTN token error: ${res.status}`)
+  }
   const data = await res.json() as { access_token: string; expires_in: number }
   _token    = data.access_token
   _tokenExp = Date.now() + (data.expires_in - 60) * 1000
@@ -67,6 +71,9 @@ export async function requestToPay(opts: {
   // MTN renvoie 202 Accepted (pas 200) pour une demande en cours.
   if (res.status !== 202 && !res.ok) {
     const body = await res.text().catch(() => '')
+    const headers: Record<string, string> = {}
+    res.headers.forEach((v, k) => { headers[k] = v })
+    console.error('[MTN]', { step: 'requestToPay', status: res.status, body, headers })
     throw new Error(`MTN requestToPay error: ${res.status}${body ? ' — ' + body : ''}`)
   }
 
@@ -77,20 +84,31 @@ export async function getPaymentStatus(
   referenceId: string,
 ): Promise<'PENDING' | 'SUCCESSFUL' | 'FAILED'> {
   const token = await getAccessToken()
+  const url   = `${BASE_URL}/collection/v1_0/requesttopay/${referenceId}`
 
-  const res = await fetch(
-    `${BASE_URL}/collection/v1_0/requesttopay/${referenceId}`,
-    {
-      headers: {
-        'Authorization':             `Bearer ${token}`,
-        'X-Target-Environment':      ENV,
-        'Ocp-Apim-Subscription-Key': SUB_KEY,
-      },
+  const res = await fetch(url, {
+    headers: {
+      'Authorization':             `Bearer ${token}`,
+      'X-Target-Environment':      ENV,
+      'Ocp-Apim-Subscription-Key': SUB_KEY,
     },
-  )
+  })
 
-  if (!res.ok) throw new Error(`MTN status error: ${res.status}`)
-  const data = await res.json() as { status: string }
+  const bodyText = await res.text().catch(() => '')
+  let body: unknown = bodyText
+  try { body = JSON.parse(bodyText) } catch { /* garde le texte brut */ }
+
+  console.error('[MTN status]', {
+    referenceId,
+    url,
+    env:    ENV,
+    subKey: SUB_KEY ? SUB_KEY.slice(0, 8) + '…' : '(vide)',
+    status: res.status,
+    body,
+  })
+
+  if (!res.ok) throw new Error(`MTN status error: ${res.status} — ${bodyText}`)
+  const data = body as { status?: string }
   if (data.status === 'SUCCESSFUL') return 'SUCCESSFUL'
   if (data.status === 'FAILED')     return 'FAILED'
   return 'PENDING'

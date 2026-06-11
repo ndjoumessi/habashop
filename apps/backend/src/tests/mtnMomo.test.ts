@@ -86,15 +86,29 @@ describe('POST /api/payments/mtn/request', () => {
     expect(JSON.parse(res.body).error).toContain('MTN network timeout')
   })
 
-  it('arrondit le montant en XAF avant appel service', async () => {
+  it('convertit XOF → EUR en sandbox (MTN_MOMO_ENVIRONMENT absent = sandbox)', async () => {
     mtnRequest.mockResolvedValue('uuid-ref-2')
     const app = await makeApp()
     await app.inject({
       method: 'POST', url: '/api/payments/mtn/request',
+      // 4999.9 XOF → arrondi 5000 → EUR = Math.round(5000/655.957) = 8 €
       payload: { amount: 4999.9, phoneNumber: '237677000001' },
     })
     expect(mtnRequest).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 5000, currency: 'XAF' }),
+      expect.objectContaining({ amount: 8, currency: 'EUR' }),
+    )
+  })
+
+  it('applique le minimum 1 EUR pour les très petits montants en sandbox', async () => {
+    mtnRequest.mockResolvedValue('uuid-ref-min')
+    const app = await makeApp()
+    // 100 XOF = 0.15 € arrondi à 0 → plancher 1 €
+    await app.inject({
+      method: 'POST', url: '/api/payments/mtn/request',
+      payload: { amount: 100, phoneNumber: '237677000001' },
+    })
+    expect(mtnRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 1, currency: 'EUR' }),
     )
   })
 
@@ -134,7 +148,9 @@ describe('POST /api/payments/mtn/status', () => {
     expect(JSON.parse(res.body).status).toBe('FAILED')
   })
 
-  it('retourne PENDING', async () => {
+  it('sandbox : PENDING → SUCCESSFUL (MTN sandbox ne résout jamais PENDING)', async () => {
+    // En sandbox (MTN_MOMO_ENVIRONMENT absent = sandbox), la route simule SUCCESSFUL
+    // dès que MTN retourne PENDING, car le sandbox MTN ne progresse jamais seul.
     mtnStatusMock.mockResolvedValue('PENDING')
     const app = await makeApp()
     const res = await app.inject({
@@ -142,7 +158,7 @@ describe('POST /api/payments/mtn/status', () => {
       payload: { referenceId: 'ref-wait' },
     })
     expect(res.statusCode).toBe(200)
-    expect(JSON.parse(res.body).status).toBe('PENDING')
+    expect(JSON.parse(res.body).status).toBe('SUCCESSFUL')
   })
 
   it('400 si referenceId manquant', async () => {

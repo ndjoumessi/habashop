@@ -2,6 +2,10 @@ import crypto from 'crypto'
 import type { FastifyInstance } from 'fastify'
 import { authenticate } from '../middleware/authenticate'
 import { requestToPay, getPaymentStatus } from '../services/mtnMomo'
+import { xofToCurrency } from '../lib/currency'
+
+// Sandbox MTN accepte EUR uniquement ; prod Cameroun = XAF (parité 1:1 avec XOF).
+const IS_SANDBOX = (process.env.MTN_MOMO_ENVIRONMENT ?? 'sandbox') === 'sandbox'
 
 export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
   // ── POST /api/payments/mtn/request ───────────────────────────────
@@ -25,16 +29,24 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
 
     const externalId = saleId ?? crypto.randomUUID()
 
+    // Sandbox MTN : devise EUR uniquement (min 1 €).
+    // Production Cameroun : XAF = XOF (parité 1:1).
+    const currency  = IS_SANDBOX ? 'EUR' : 'XAF'
+    const mtnAmount = IS_SANDBOX
+      ? Math.max(1, xofToCurrency(Math.round(amount), 'EUR'))
+      : Math.round(amount)
+
     try {
       const referenceId = await requestToPay({
-        amount:      Math.round(amount),
-        currency:    'XAF',
+        amount:      mtnAmount,
+        currency,
         phoneNumber,
         externalId,
         note:        `HabaShop ${externalId}`,
       })
       return { referenceId, status: 'PENDING' }
     } catch (err: any) {
+      console.error('[MTN]', { step: 'route/request', amount: mtnAmount, currency, phoneNumber, error: err?.message, stack: err?.stack })
       request.log.error({ err }, 'MTN MoMo requestToPay failed')
       return reply.code(502).send({ error: err.message ?? 'Erreur MTN MoMo' })
     }
@@ -51,6 +63,8 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       const status = await getPaymentStatus(referenceId)
+      // Sandbox : MTN ne résout jamais PENDING automatiquement — simulation SUCCESSFUL pour les tests.
+      if (IS_SANDBOX && status === 'PENDING') return { referenceId, status: 'SUCCESSFUL' }
       return { referenceId, status }
     } catch (err: any) {
       request.log.error({ err }, 'MTN MoMo status failed')
