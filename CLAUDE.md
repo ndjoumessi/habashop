@@ -105,10 +105,10 @@ app/                       # Expo Router
 src/
   constants/theme.ts       # Colors (sombre figé) + DarkColors/LightColors/ThemeColors + Spacing/BorderRadius/FontSize/Shadow + withAlpha()
   stores/                  # authStore · appStore (useI18n/useFmt/useTheme + theme/kioskMode + persist) · posStore
-  hooks/                   # useNetworkStatus · useOfflineSync · useProfilePhoto · useResponsive (⚠️ PRÊT mais PAS branché, ≠ code mort)
+  hooks/                   # useNetworkStatus · useOfflineSync · useProfilePhoto · useSupplierOcr · useResponsive (⚠️ PRÊT mais PAS branché, ≠ code mort)
   services/                # api · exchangeRate · notifications · offlineQueue · whatsappTicket · printReceipt · invoicePdf · biometric · widgetNotification · saleSubmit
   lib/                     # logger · barcode · customerQr · refund · idempotency · paymentSplit · loyalty · prefs
-  components/ui/ · pos/ · customers/ · sales/
+  components/ui/ · pos/ · customers/ · suppliers/ · sales/
   types/index.ts           # Product, Customer, User, Tenant, Sale*, DashboardStats, PriceTier, LoyaltyCardData…
 ```
 Alias TS : `@/*` → `src/*`.
@@ -143,6 +143,7 @@ fmt(1000)                              // XOF→"1 000 FCFA" · EUR→"1,52 €"
 | `/api/customers/:id` | GET | objet `Customer` unique (utilisé par le scan QR carte `HABA-CUST:`) |
 | `/api/customers/:id/loyalty` | GET | solde + palier **canonique** + historique + remises |
 | `/api/customers/:id/loyalty-card` | GET | `LoyaltyCardData` (scope tenant strict) |
+| `/api/suppliers/scan-invoice` | POST | ⚠️ **multipart/form-data** champ **`invoice`** (le fichier, PAS du base64). Rôle **MANAGER+** (403 sinon), 503 si `ANTHROPIC_API_KEY` absente, 413 > 10 Mo, 415 type ≠ jpeg/png/gif/webp/pdf. Réponse `OcrInvoiceResult` (Claude Vision côté serveur). |
 | `/api/dashboard/stats` | GET | data **plate** (PAS `/api/analytics/dashboard` → 404 ; pas `data.stats`) |
 | `/api/notifications/token` | POST | upsert idempotent |
 
@@ -209,6 +210,15 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 
 ---
 
+## OCR factures fournisseurs (`useSupplierOcr.ts` + `OcrInvoiceSheet.tsx`)
+- **Outil autonome LECTURE SEULE** — aucune écriture backend. Entrée : Réglages → section **Outils** (visible **MANAGER+** seulement, `canScanInvoiceRole`). ⚠️ il **n'existe AUCUN écran Fournisseurs/Commandes** sur le mobile (l'OCR web vit dans `orders/NewOrderModal`) — d'où l'outil standalone.
+- **Flux (`useSupplierOcr`) :** picker caméra **ou** galerie → compression JPEG locale (`ImageManipulator`, qualité **0.7**, largeur ≤ **1920**, mimeType uniforme `image/jpeg`) → **POST multipart** `/api/suppliers/scan-invoice` champ **`invoice`** via `apiClient` (⚠️ **override `Content-Type: multipart/form-data`** car le client est JSON par défaut ; **timeout 60 s** car Claude Vision est lent). Annulation du picker = **NI erreur NI loading**. Permission refusée → état `permission_denied`.
+- **`OcrInvoiceResult`** (miroir backend `invoiceOcr.ts`) : `{ supplierName, invoiceDate(YYYY-MM-DD), items[{name,qty,unitPrice}], total, notes, error?, rawText? }`. ⚠️ **PAS** de HT/TVA/TTC/référence — c'est une extraction **ligne-à-ligne** (bon de commande). `error:'parse_error'` → bannière « analyse incomplète ».
+- **`OcrInvoiceSheet` :** Modal montée **on-demand** (anti-Fabric) ; 4 états (choix source / loading / erreur+retry / résultat **éditable**) ; action = **Partager** (`Share.share` natif RN, récap texte — pas de dep clipboard) + **Recommencer**. Montants affichés **bruts** (devise facture inconnue) → JAMAIS `fmt()` (suppose une base XOF).
+- **Deps :** `expo-image-picker`/`-manipulator` déjà présents (rien à installer). **Aucune clé API côté mobile** (Claude Vision = serveur). ⚠️ textes de permission `app.json` parlent encore de « code-barres »/« photo de profil » — inchangés (un OTA ne met pas à jour Info.plist ; à élargir au prochain build natif).
+
+---
+
 ## Scanner code-barres (`BarcodeScanner.tsx` + `lib/barcode.ts`)
 - Mode produit : `barcodeTypes:['ean13','ean8','code128']` (qr/code39/upc retirés — parasites). `normalizeBarcode` strip espaces + **zéros de tête** (`^0+`) des **deux côtés** ; ignore un scan vide.
 - **Filtre de stabilité** (Android lent erratique) : code accepté seulement **lu 2× d'affilée à l'identique** (`lastCandidate`) + cooldown **1.5 s**. ⚠️ pas de `regionOfInterest` en SDK 54. Si même le bon code ne se répète jamais 2× → **vote majoritaire 2/3**. Cf. `barcode-scanner-android-unreliable`. Caisse = **scan seul** (recherche/saisie manuelle retirées).
@@ -230,5 +240,5 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 
 ## État courant
 - `main`, `tsc` 0, **135 tests verts**. Version **1.4.2** / runtime **1.4.2** ; dernières features diffusées en **OTA `preview`** (pas de nouveau build natif récent).
-- **À valider sur device** (cf. `runtime-verification-debt`) : offline+resync, ticket WhatsApp, widget, TalkBack, smoke Maestro (`.maestro/smoke.yaml`, non lancé), scanner durci (Android lent), remboursement/fidélité v2/carte QR (scan + partage PDF), boundaries, timeout→file.
+- **À valider sur device** (cf. `runtime-verification-debt`) : offline+resync, ticket WhatsApp, widget, TalkBack, smoke Maestro (`.maestro/smoke.yaml`, non lancé), scanner durci (Android lent), remboursement/fidélité v2/carte QR (scan + partage PDF), boundaries, timeout→file, **OCR facture fournisseur** (scan caméra+galerie sur compte MANAGER+, OTA `cb9ec339`).
 - **Reste / différé :** publier Play Store (AAB prêt, captures à faire) ; layouts tablette (iPad) ; build iOS réel (compte Apple) ; push réelles (token EAS, dev build) ; Wave/Orange prod ; fidélité créditée backend (hors repo).
