@@ -218,14 +218,25 @@ export default function POS() {
   const [openingFundInput, setOpeningFundInput] = useState(() => posDefaultFund > 0 ? String(posDefaultFund) : '')
   const [showCloseModal, setShowCloseModal]     = useState(false)
 
-  // Quand requireCashier est désactivé, aucune cérémonie d'ouverture n'est affichée →
-  // openCashier() n'est jamais appelé → cashierOpenedAt reste null et le fond reste 0.
-  // Fix : auto-ouvrir la session au chargement de la page pour capturer l'heure d'ouverture.
+  // Quand requireCashier=false, la caisse est ouverte EN PERMANENCE (pas de cérémonie ni de
+  // persistance). On dérive l'état d'ouverture de façon synchrone → pas de flash « Caisse fermée »
+  // dépendant d'un useEffect post-rendu (cashierOpen n'étant plus persisté, il repart false au refresh).
+  const cashierIsOpen = requireCashier ? cashierOpen : true
+
+  // L'auto-open reste utile uniquement pour CAPTURER les données de session (heure d'ouverture + fond)
+  // consommées par le rapport de fermeture — pas pour décider de l'affichage (géré par cashierIsOpen).
   useEffect(() => {
     if (!requireCashier && !cashierOpen) {
       openCashier(posDefaultFund)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Toggle « Envoyer le ticket WhatsApp » : reflète le réglage tenant `autoWhatsApp` à CHAQUE
+  // ouverture du modal de confirmation (et non un instantané figé au montage de la page, qui pouvait
+  // rester ON après un changement de réglage). autoWhatsApp=false (défaut démo) → toggle OFF.
+  useEffect(() => {
+    if (showModal) setSendWhatsApp(posAutoWhatsApp)
+  }, [showModal, posAutoWhatsApp])
 
   // Fond de caisse : l'input est dans la devise configurée, stockage direct
   const inputValue  = parseFloat(openingFundInput) || 0
@@ -720,8 +731,8 @@ export default function POS() {
   // ─── RENDER ──────────────────────────────
 
   // Ouverture de caisse exigée seulement si la config `requireCashier` est ON
-  // (sinon, la caisse peut vendre directement sans cérémonie d'ouverture).
-  if (requireCashier && !cashierOpen) {
+  // (sinon, la caisse peut vendre directement sans cérémonie d'ouverture → cashierIsOpen toujours true).
+  if (!cashierIsOpen) {
     return (
       <POSCashierClosed
         ct={ct}
