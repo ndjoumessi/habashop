@@ -3,7 +3,7 @@ import { computePaymentStats, type PaymentStatSale } from '../routes/paymentStat
 
 const sale = (over: Partial<PaymentStatSale>): PaymentStatSale => ({
   total: 1000, status: 'completed', createdAt: new Date('2026-06-12T08:00:00Z'),
-  mtnMomoReference: null, campayReference: null, ...over,
+  mtnMomoReference: null, campayReference: null, paydunyaReference: null, ...over,
 })
 
 describe('computePaymentStats', () => {
@@ -37,11 +37,24 @@ describe('computePaymentStats', () => {
     expect(r.mtn.amountXof).toBe(2000)
   })
 
+  it('agrège les ventes PayDunya séparément', () => {
+    const r = computePaymentStats([
+      sale({ paydunyaReference: 'pd1', total: 3000, createdAt: new Date('2026-06-12T09:00:00Z') }),
+      sale({ paydunyaReference: 'pd2', total: 1500, createdAt: new Date('2026-06-12T11:00:00Z') }),
+      sale({ mtnMomoReference: 'm1', total: 1000 }),
+    ])
+    expect(r.paydunya.count).toBe(2)
+    expect(r.paydunya.amountXof).toBe(4500)
+    expect(r.paydunya.lastAt).toBe('2026-06-12T11:00:00.000Z')
+    expect(r.mtn.count).toBe(1)
+  })
+
   it('retourne des stats vides sans ventes', () => {
     const r = computePaymentStats([])
     expect(r).toEqual({
-      mtn:    { count: 0, amountXof: 0, lastAt: null },
-      campay: { count: 0, amountXof: 0, lastAt: null },
+      mtn:      { count: 0, amountXof: 0, lastAt: null },
+      campay:   { count: 0, amountXof: 0, lastAt: null },
+      paydunya: { count: 0, amountXof: 0, lastAt: null },
     })
   })
 

@@ -166,7 +166,7 @@ export const paydunyaApi = {
 export interface ProviderStat { count: number; amountXof: number; lastAt: string | null }
 export const paymentStatsApi = {
   // Transactions MTN MoMo + Campay du jour (montants en XOF base → convertir à l'affichage).
-  today: () => api.get<{ mtn: ProviderStat; campay: ProviderStat }>('/api/payments/today-stats'),
+  today: () => api.get<{ mtn: ProviderStat; campay: ProviderStat; paydunya: ProviderStat }>('/api/payments/today-stats'),
 }
 
 export const ticketZApi = {

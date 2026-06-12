@@ -313,7 +313,7 @@ export default function Integrations() {
   const [pingStatus, setPingStatus]   = useState<Record<string, PingState>>({})
   const [pingLatency, setPingLatency] = useState<Record<string, number>>({})
   const [payDunyaOpen, setPayDunyaOpen] = useState(false)
-  const [txStats, setTxStats] = useState<{ mtn: ProviderStat; campay: ProviderStat } | null>(null)
+  const [txStats, setTxStats] = useState<{ mtn: ProviderStat; campay: ProviderStat; paydunya: ProviderStat } | null>(null)
   const [paydunyaCfg, setPaydunyaCfg] = useState<{ configured: boolean; mode: 'test' | 'live'; methods: string[] } | null>(null)
 
   // Transactions paiement du jour (MTN MoMo + Campay) — données réelles backend.
@@ -439,7 +439,7 @@ export default function Integrations() {
     const apiVer  = API_VERSION[itg.id]
     const detail  = CARD_DETAIL[itg.id]?.[lang] ?? CARD_DETAIL[itg.id]?.fr
     // Transactions du jour (cartes paiement MTN MoMo / Campay) — données réelles.
-    const tx: ProviderStat | undefined = itg.id === 'mtnmomo' ? txStats?.mtn : itg.id === 'campay' ? txStats?.campay : undefined
+    const tx: ProviderStat | undefined = itg.id === 'mtnmomo' ? txStats?.mtn : itg.id === 'campay' ? txStats?.campay : itg.id === 'paydunya' ? txStats?.paydunya : undefined
     // Taux d'erreur : signal réel uniquement (un ping joignable = 0 erreur) ; sinon non mesuré.
     const errorRate = itg.noPing ? '—' : pingStatus[itg.id] === 'error' ? '100%' : (pingStatus[itg.id] === 'ok' || pingStatus[itg.id] === 'slow') ? '0%' : '—'
 
