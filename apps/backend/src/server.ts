@@ -3,6 +3,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import jwt from '@fastify/jwt'
+import multipart from '@fastify/multipart'
 import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
 import * as Sentry from '@sentry/node'
@@ -138,6 +139,9 @@ async function start() {
     console.warn('⚠️  Rate-limit : REDIS_URL absent → store mémoire (non fiable en multi-replica)')
   }
   await app.register(rateLimit, rateLimitOpts)
+
+  // ─── MULTIPART (upload factures OCR) ───
+  await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024, files: 1 } })
 
   // ─── WEBSOCKET ──────────────────────────
   await app.register(websocket)

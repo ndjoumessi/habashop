@@ -181,6 +181,21 @@ export const suppliersApi = {
   create: (data: any) => api.post<any>('/api/suppliers', data),
   update: (id: string, data: any) => api.put<any>(`/api/suppliers/${id}`, data),
   delete: (id: string) => api.delete<void>(`/api/suppliers/${id}`),
+  scanInvoice: async (file: File): Promise<any> => {
+    const token = getToken()
+    const fd = new FormData()
+    fd.append('invoice', file)
+    const res = await fetch(`${BASE_URL}/api/suppliers/scan-invoice`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error((err as any).error ?? `Erreur ${res.status}`)
+    }
+    return res.json()
+  },
 }
 
 export const ordersApi = {

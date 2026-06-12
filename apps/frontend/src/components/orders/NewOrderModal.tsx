@@ -1,10 +1,11 @@
-import type { Dispatch, SetStateAction } from 'react'
+import { useState, useRef, type Dispatch, type SetStateAction } from 'react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
-import { ClipboardList, X, Users, Truck, User, CheckCircle, Phone, Plus, Package, Clock, Star } from 'lucide-react'
+import { ClipboardList, X, Users, Truck, User, CheckCircle, Phone, Plus, Package, Clock, Star, ScanLine, Loader2, AlertCircle } from 'lucide-react'
 import { useConfig, useFormatAmount } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { suppliersApi } from '@/lib/api'
 
 interface NewOrderItem { id: string; name: string; price: number; qty: number; emoji: string }
 export interface NewOrderForm { clientName: string; clientPhone: string; items: NewOrderItem[]; note: string }
@@ -42,6 +43,54 @@ export default function NewOrderModal({
   const { i } = useI18n()
   const fmt = useFormatAmount()
   const boxRef = useModalFocus<HTMLDivElement>()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [scanning, setScanning] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  async function handleScanFile(file: File) {
+    setScanError(null)
+    setScanning(true)
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    if (file.type.startsWith('image/')) setPreviewUrl(URL.createObjectURL(file))
+    else setPreviewUrl(null)
+    try {
+      const result = await suppliersApi.scanInvoice(file)
+      if (result.error === 'parse_error') {
+        setScanError(i(
+          `Analyse incomplète${result.rawText ? ' — vérifiez les articles' : ''}`,
+          `Incomplete analysis${result.rawText ? ' — check items' : ''}`,
+          `Análisis incompleto${result.rawText ? ' — revisa los artículos' : ''}`,
+          `Analisi incompleta${result.rawText ? ' — controlla gli articoli' : ''}`,
+        ))
+      }
+      if (result.items?.length) {
+        setNewOrderForm(f => ({
+          ...f,
+          items: result.items.map((item: any, idx: number) => ({
+            id: `ocr-${idx}`,
+            name: item.name ?? '',
+            price: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
+            qty: typeof item.qty === 'number' && item.qty > 0 ? item.qty : 1,
+            emoji: '📦',
+          })),
+          note: result.notes ?? f.note,
+        }))
+      }
+      if (result.supplierName && !selectedSupplierId) {
+        const match = suppliersList.find(s =>
+          s.name.toLowerCase().includes(result.supplierName.toLowerCase()) ||
+          result.supplierName.toLowerCase().includes(s.name.toLowerCase())
+        )
+        if (match) setSelectedSupplierId(match.id)
+      }
+    } catch (err: any) {
+      setScanError(err?.message ?? i('Erreur lors de l\'analyse', 'Analysis error', 'Error de análisis', 'Errore di analisi'))
+    } finally {
+      setScanning(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true"
       aria-label={i('Nouvelle commande', 'New order', 'Nueva orden', 'Nuovo ordine')}
@@ -304,6 +353,53 @@ export default function NewOrderModal({
             </div>
           )}
 
+          {/* Scan facture fournisseur */}
+          {orderType === 'supplier' && (
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+                style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleScanFile(f) }}
+              />
+              <button
+                type="button"
+                disabled={scanning}
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  width: '100%', padding: '10px 16px', borderRadius: 11, cursor: scanning ? 'wait' : 'pointer',
+                  border: '1.5px dashed rgba(108,71,255,.35)', background: 'rgba(108,71,255,.04)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  fontFamily: 'var(--font)', transition: 'all .15s',
+                }}
+                onMouseEnter={e => !scanning && ((e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.09)')}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(108,71,255,.04)')}
+              >
+                {scanning
+                  ? <><Loader2 size={15} style={{ color: 'var(--p3)', animation: 'spin 1s linear infinite' }}/><span style={{ fontSize: 13, color: 'var(--p3)', fontWeight: 'var(--fw-semibold)' }}>{i('Analyse en cours…', 'Analysing…', 'Analizando…', 'Analisi…')}</span></>
+                  : <><ScanLine size={15} style={{ color: 'var(--p3)' }}/><span style={{ fontSize: 13, color: 'var(--p3)', fontWeight: 'var(--fw-semibold)' }}>{i('Importer depuis une facture', 'Import from invoice', 'Importar desde factura', 'Importa da fattura')}</span><span style={{ fontSize: 11, color: 'var(--text3)' }}>JPEG · PNG · PDF</span></>
+                }
+              </button>
+              {previewUrl && !scanning && (
+                <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <img src={previewUrl} alt="" style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)', flexShrink: 0 }}/>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {scanError
+                      ? i('Facture analysée avec avertissement', 'Invoice analysed with warning', 'Factura analizada con aviso', 'Fattura analizzata con avviso')
+                      : i('Facture analysée — vérifiez les articles', 'Invoice analysed — check items', 'Factura analizada — revisa los artículos', 'Fattura analizzata — controlla gli articoli')
+                    }
+                  </span>
+                </div>
+              )}
+              {scanError && (
+                <div style={{ marginTop: 6, padding: '8px 12px', borderRadius: 8, background: 'rgba(255,59,48,.08)', border: '1px solid rgba(255,59,48,.2)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--danger)' }}>
+                  <AlertCircle size={13}/> {scanError}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Recherche + grille produits */}
           <div>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 6 }}>
@@ -366,10 +462,11 @@ export default function NewOrderModal({
                   <div key={item.id} style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '8px 12px', background: 'var(--bg3)',
-                    border: '1px solid var(--border)', borderRadius: 10,
+                    border: `1px solid ${item.id.startsWith('ocr-') ? 'rgba(108,71,255,.25)' : 'var(--border)'}`,
+                    borderRadius: 10,
                   }}>
                     <span style={{ fontSize: 16 }}>{item.emoji}</span>
-                    <span style={{ flex: 1, fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text)' }}>{item.name}</span>
+                    <span style={{ flex: 1, fontSize: 12, fontWeight: 'var(--fw-regular)', color: 'var(--text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <button type="button"
                         onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.map(i => i.id === item.id && i.qty > 1 ? { ...i, qty: i.qty - 1 } : i) }))}
@@ -379,7 +476,27 @@ export default function NewOrderModal({
                         onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i) }))}
                         style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--bg4)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text2)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                     </div>
-                    <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', fontSize: 12, color: 'var(--acc)', minWidth: 70, textAlign: 'right' }}>{fmt(item.price * item.qty)}</span>
+                    {orderType === 'supplier' ? (
+                      <input
+                        type="number"
+                        min={0}
+                        aria-label={i('Prix unitaire', 'Unit price', 'Precio unitario', 'Prezzo unitario')}
+                        value={item.price === 0 ? '' : item.price}
+                        placeholder="0"
+                        onChange={e => {
+                          const val = parseFloat(e.target.value) || 0
+                          setNewOrderForm(f => ({ ...f, items: f.items.map(it => it.id === item.id ? { ...it, price: val } : it) }))
+                        }}
+                        style={{
+                          width: 72, padding: '3px 6px', borderRadius: 6, fontSize: 12,
+                          fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)',
+                          border: '1px solid var(--border)', background: 'var(--bg4)',
+                          color: 'var(--acc)', textAlign: 'right',
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontFamily: 'var(--mono)', fontWeight: 'var(--fw-semibold)', fontSize: 12, color: 'var(--acc)', minWidth: 70, textAlign: 'right' }}>{fmt(item.price * item.qty)}</span>
+                    )}
                     <button aria-label={i('Retirer', 'Remove', 'Quitar', 'Rimuovi')} type="button"
                       onClick={() => setNewOrderForm(f => ({ ...f, items: f.items.filter(i => i.id !== item.id) }))}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: 15, padding: '2px 4px', display:'flex', alignItems:'center' }}><X size={13}/></button>

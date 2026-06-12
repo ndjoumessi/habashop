@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { analyzeInvoice, ALLOWED_INVOICE_TYPES } from '../services/invoiceOcr'
 
 export async function supplierRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/suppliers', { preHandler: authenticate }, async (request) => {
@@ -30,6 +31,43 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
       data: { tenantId, userId, module: 'suppliers', action: 'DELETE_SUPPLIER', description: JSON.stringify({ id, name: supplier.name }) },
     }).catch(() => {})
     return reply.code(204).send()
+  })
+
+  // OCR facture fournisseur — extrait les articles via Claude Vision (MANAGER+)
+  app.post('/api/suppliers/scan-invoice', { preHandler: authenticate }, async (request, reply) => {
+    const { role } = request.user
+    if (!['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(role)) {
+      return reply.code(403).send({ error: 'Manager ou admin requis' })
+    }
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return reply.code(503).send({ error: 'Service OCR non configuré (ANTHROPIC_API_KEY manquante)' })
+    }
+
+    let file: any
+    try {
+      file = await request.file()
+    } catch {
+      return reply.code(400).send({ error: 'Fichier manquant' })
+    }
+    if (!file) return reply.code(400).send({ error: 'Fichier manquant' })
+
+    if (!ALLOWED_INVOICE_TYPES.includes(file.mimetype)) {
+      return reply.code(415).send({ error: 'Format non supporté. Utilisez JPEG, PNG ou PDF.' })
+    }
+
+    const buffer = await file.toBuffer()
+    if (buffer.length > 10 * 1024 * 1024) {
+      return reply.code(413).send({ error: 'Fichier trop volumineux (max 10 Mo)' })
+    }
+
+    try {
+      const result = await analyzeInvoice(buffer, file.mimetype)
+      return result
+    } catch (err: any) {
+      request.log.error({ err, step: 'invoiceOcr' }, 'Erreur OCR facture')
+      return reply.code(422).send({ error: err?.message ?? 'Erreur lors de l\'analyse de la facture' })
+    }
   })
 
   // Restaurer un fournisseur soft-supprimé (ADMIN / SUPER_ADMIN)
