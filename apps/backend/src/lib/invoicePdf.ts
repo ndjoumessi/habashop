@@ -106,7 +106,7 @@ export function buildInvoicePdf(sale: InvoiceSale, tenant: InvoiceTenant, custom
   doc.text(i('Article', 'Item', 'Artículo', 'Articolo'), cols.name + 8, y + 7)
   doc.text(i('Qté', 'Qty', 'Cant.', 'Qtà'), cols.qty, y + 7, { width: 50, align: 'center' })
   doc.text(i('PU', 'Unit price', 'Precio unit.', 'Prezzo unit.'), cols.pu, y + 7, { width: 80, align: 'right' })
-  doc.text(i('Total', 'Total', 'Total', 'Totale'), cols.tot, y + 7, { width: 75, align: 'right' })
+  doc.text(i('Total', 'Total', 'Total', 'Totale'), cols.tot, y + 7, { width: 65, align: 'right' })
   y += 22
 
   // Lignes
@@ -117,7 +117,7 @@ export function buildInvoicePdf(sale: InvoiceSale, tenant: InvoiceTenant, custom
     doc.fillColor('#333333')
     doc.text(String(it.qty), cols.qty, y + 6, { width: 50, align: 'center' })
     doc.text(M(it.unitPrice), cols.pu, y + 6, { width: 80, align: 'right' })
-    doc.text(M(it.total), cols.tot, y + 6, { width: 75, align: 'right' })
+    doc.text(M(it.total), cols.tot, y + 6, { width: 65, align: 'right' })
     doc.moveTo(left, y + rowH).lineTo(right, y + rowH).strokeColor('#EEEEEE').stroke()
     y += rowH
   }

@@ -857,7 +857,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   {waSending
                     ? <><Smartphone size={14} /> {lang==='fr' ? 'Envoi WhatsApp…' : lang==='en' ? 'Sending WhatsApp…' : lang==='es' ? 'Enviando WhatsApp…' : 'Invio WhatsApp…'}</>
                     : isSaving
-                    ? (lang==='fr' ? 'Enregistrement…' : lang==='en' ? 'Saving…' : lang==='es' ? 'Guardando…' : 'Salvataggio…')
+                    ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite', flexShrink:0 }} /> {lang==='fr' ? 'Enregistrement…' : lang==='en' ? 'Saving…' : lang==='es' ? 'Guardando…' : 'Salvataggio…'}</>
                     : t('pos_validate')}
                 </button>
               )}

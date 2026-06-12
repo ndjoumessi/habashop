@@ -1,5 +1,5 @@
 import { memo, useMemo, useRef, useCallback } from 'react'
-import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History, RotateCcw, FileText } from 'lucide-react'
+import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History, RotateCcw, FileText, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
@@ -378,7 +378,12 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
               })}
 
               {filtered.length === 0 && (
-                totalProducts === 0 && !loadingProducts ? (
+                loadingProducts ? (
+                  <div role="status" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', gap: 10, color: 'var(--text3)' }}>
+                    <Loader2 size={22} style={{ animation: 'spin 1s linear infinite', color: 'var(--p)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 14 }}>{lang === 'en' ? 'Loading products…' : lang === 'es' ? 'Cargando productos…' : lang === 'it' ? 'Caricamento prodotti…' : 'Chargement des produits…'}</span>
+                  </div>
+                ) : totalProducts === 0 ? (
                   <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center' }}>
                     <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
                     <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)', marginBottom: 6 }}>
@@ -414,8 +419,9 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                 </button>
               )}
               {loadingHistory ? (
-                <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
-                  ⏳ {lang === 'en' ? 'Loading...' : lang === 'es' ? 'Cargando...' : lang === 'it' ? 'Caricamento...' : 'Chargement...'}
+                <div role="status" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:40, color:'var(--text3)' }}>
+                  <Loader2 size={20} style={{ animation:'spin 1s linear infinite', color:'var(--p)', flexShrink:0 }} />
+                  <span style={{ fontSize:14 }}>{lang === 'en' ? 'Loading…' : lang === 'es' ? 'Cargando…' : lang === 'it' ? 'Caricamento…' : 'Chargement…'}</span>
                 </div>
               ) : salesHistory.length === 0 ? (
                 <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
