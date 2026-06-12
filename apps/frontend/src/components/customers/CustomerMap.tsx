@@ -35,6 +35,7 @@ export default function CustomerMap({
   const [filter,    setFilter]    = useState('all')
   const [search,    setSearch]    = useState('')
   const [showHeat,  setShowHeat]  = useState(false)
+  const [mapVersion, setMapVersion] = useState(0)
 
   const geoCustomers: GeoCustomer[] = customers
     .filter(c => geoPositions[c.id])
@@ -126,13 +127,20 @@ export default function CustomerMap({
     mapObj.current = map
     map.addListener('click', () => { setSelected(null); infoWin.current?.close() })
     setMapReady(true)
-  }, [mapsLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mapsLoaded, mapVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Bascule le style des tuiles (clair/sombre) quand le thème change.
+  // setOptions({ styles }) n'est pas fiable pour changer les tuiles → réinitialisation complète.
   useEffect(() => {
-    if (!mapReady || !mapObj.current) return
-    mapObj.current.setOptions({ styles: getMapStyle(theme), backgroundColor: MAP_BG(theme) })
-  }, [theme, mapReady])
+    if (!mapObj.current) return
+    markersRef.current.forEach(m => m.setMap(null))
+    markersRef.current = []
+    heatLayer.current?.setMap(null)
+    infoWin.current?.close()
+    infoWin.current = null
+    mapObj.current = null
+    setMapReady(false)
+    setMapVersion(v => v + 1)
+  }, [theme])
 
   // Place markers
   useEffect(() => {
@@ -380,7 +388,7 @@ export default function CustomerMap({
 
       {/* ══ MAP ══ */}
       <div style={{ flex: 1, position: 'relative' }}>
-        <div ref={mapRef} style={{ width: '100%', height: '100%', background: MAP_BG(theme) }} />
+        <div key={mapVersion} ref={mapRef} style={{ width: '100%', height: '100%', background: MAP_BG(theme) }} />
 
         {/* Overlay controls */}
         <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
