@@ -1,4 +1,4 @@
-import { X, Smartphone, Printer, CheckCircle, AlertTriangle, Loader2, TestTube } from 'lucide-react'
+import { X, Smartphone, CheckCircle, AlertTriangle, Loader2, TestTube } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, formatInCurrency, useAppStore, CURRENCY_SYMBOLS } from '@/stores/appStore'
@@ -30,7 +30,6 @@ interface POSModalsProps {
   lang: string
   confirmSale: () => void
   isSaving: boolean; waSending: boolean
-  printTicket: () => void
   discount: any; payMode: string
   cashGiven: string; toXOF: (v: number) => number
   // Paiement mixte (split) — défini dans le PANIER ; le modal n'en lit que l'état pour bloquer.
@@ -55,7 +54,7 @@ interface POSModalsProps {
   onCardRetry: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
   // Devise du tenant (pas la devise d'affichage du device) — pour la caisse les montants sont en XOF.
   const tenantCurrency = useAppStore(s => s.tenant?.currency ?? 'XOF')
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
@@ -214,8 +213,11 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               </label>
               <div style={{ position:'relative' }}>
                 <input className="input" type="number"
+                  min={0}
                   placeholder={ct.counted_placeholder}
                   id="counted-amount"
+                  // Bloque les montants négatifs (saisie, collage, molette).
+                  onInput={e => { if (parseFloat(e.currentTarget.value) < 0) e.currentTarget.value = '0' }}
                   style={{ fontSize:14, paddingRight:48 }} />
                 <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text3)', pointerEvents:'none' }}>
                   {CURRENCY_SYMBOLS[tenantCurrency as keyof typeof CURRENCY_SYMBOLS] ?? tenantCurrency}
@@ -226,7 +228,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               <button
                 onClick={() => {
                   // counted et expected sont dans la devise configurée
-                  const counted = parseFloat((document.getElementById('counted-amount') as HTMLInputElement)?.value || '0')
+                  const counted = Math.max(0, parseFloat((document.getElementById('counted-amount') as HTMLInputElement)?.value || '0') || 0)
                   const expected = cashierOpeningFund + cashierSessionCA
                   const diff = counted - expected
                   const openedTime = cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--'
@@ -868,13 +870,9 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     : t('pos_validate')}
                 </button>
               )}
-              <button
-                onClick={printTicket}
-                style={{ padding: '12px 16px', minHeight: 44, fontSize: 13, cursor: 'pointer' }}
-                className="mini-btn"
-              ><Printer size={13} /> Ticket</button>
-              {/* Bouton « Facture » retiré : une facture n'a de sens qu'APRÈS création de la
-                  vente → la facture PDF (serveur, /api/sales/:id/invoice) est dans l'historique. */}
+              {/* Boutons « Ticket » et « Facture » retirés de ce modal de CONFIRMATION : l'impression
+                  du ticket et la facture PDF n'ont de sens qu'APRÈS création de la vente. Le ticket est
+                  proposé dans le modal de SUCCÈS (POSSuccessModal), la facture dans l'historique. */}
             </div>
           </div>
         </div>

@@ -47,8 +47,10 @@ export default function POS() {
   const [posProducts, setPosProducts] = useState<PosProduct[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
 
-  useEffect(() => {
-    productsApi.list()
+  // Chargement des produits — extrait en callback pour pouvoir RAFRAÎCHIR le stock après une vente
+  // (sinon l'UI affiche un stock périmé alors que le backend l'a bien décrémenté).
+  const loadProducts = useCallback(() => {
+    return productsApi.list()
       .then(data => setPosProducts(data.map((p: any): PosProduct => ({
         id: p.id,
         name: p.name,
@@ -64,8 +66,11 @@ export default function POS() {
         priceTiers: Array.isArray(p.priceTiers) ? p.priceTiers : undefined,
       }))))
       .catch(() => {})
-      .finally(() => setLoadingProducts(false))
   }, [])
+
+  useEffect(() => {
+    loadProducts().finally(() => setLoadingProducts(false))
+  }, [loadProducts])
 
   // cart est désormais dans useAppStore (persisté zustand). Voir destructuring ci-dessus.
   const [activeCat, setActiveCat] = useState('all')
@@ -651,9 +656,16 @@ export default function POS() {
         mtnMomoReference: mtnRef ?? null,
         campayReference: campayRef ?? null,
       })
-    } catch {
-      // Hors-ligne : la vente est quand même enregistrée localement
+    } catch (err: any) {
+      // Échec serveur (stock insuffisant, réseau, validation…) → on SURFACE l'erreur et on AVORTE.
+      // (Plus de fallback « hors-ligne » : il n'y a pas de persistance locale des ventes.)
+      toast.error(err?.message || (lang === 'en' ? 'Sale failed' : lang === 'es' ? 'Venta fallida' : lang === 'it' ? 'Vendita fallita' : 'Échec de la vente'))
+      setIsSaving(false)
+      return
     }
+
+    // Rafraîchit le catalogue → le stock affiché reflète la décrémentation serveur.
+    void loadProducts()
 
     // Envoi WhatsApp si activé
     const fullPhone = waNumber.trim() ? `${waCountryCode}${waNumber.replace(/[\s\-]/g, '')}` : ''
@@ -884,7 +896,6 @@ export default function POS() {
         lang={lang}
         confirmSale={confirmSale}
         isSaving={isSaving} waSending={waSending}
-        printTicket={printTicket}
         discount={discount} payMode={payMode}
         cashGiven={cashGiven} toXOF={toXOF}
         mixedOn={mixedOn} mixedValid={mixedValid}

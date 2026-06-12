@@ -57,9 +57,13 @@ export default function POSCashierClosed({
             <input
               className="input"
               type="number"
+              min={0}
               placeholder={ct.fund_placeholder}
               value={openingFundInput}
-              onChange={e => setOpeningFundInput(e.target.value)}
+              // Bloque les montants négatifs : on ignore toute saisie commençant par « - ».
+              onChange={e => { if (!e.target.value.startsWith('-')) setOpeningFundInput(e.target.value) }}
+              // Filet de sécurité (collage, molette…) : ramène une valeur négative/NaN à vide.
+              onBlur={e => { if (e.target.value !== '' && !(parseFloat(e.target.value) >= 0)) setOpeningFundInput('') }}
               style={{ fontSize:16, textAlign:'right', paddingRight:60 }}
             />
             <span style={{

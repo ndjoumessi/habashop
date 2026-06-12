@@ -88,12 +88,27 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     }
 
     // Pré-fetch des produits pour recalculer prix unitaire côté backend (sécurité tier/promo)
+    // + stockQty/name pour la garde anti-survente.
     const productIds = items.map((i: any) => i.productId)
     const productsList = await prisma.product.findMany({
       where: { tenantId, id: { in: productIds } },
-      select: { id: true, sellPrice: true, hasPromotion: true, promotionPrice: true, priceTiers: true },
+      select: { id: true, name: true, stockQty: true, sellPrice: true, hasPromotion: true, promotionPrice: true, priceTiers: true },
     })
     const productMap = new Map(productsList.map(p => [p.id, p]))
+
+    // ── Garde anti-survente : refuser si le stock dispo < qté demandée (évite les stocks négatifs). ──
+    // Vérifié AVANT la transaction → 400 propre. (Produit absent du map = vente démo/hors-catalogue → toléré.)
+    for (const item of items) {
+      const p = productMap.get(item.productId)
+      if (p && p.stockQty < item.qty) {
+        return reply.code(400).send({
+          error: `Stock insuffisant pour ${p.name} — disponible : ${p.stockQty}, demandé : ${item.qty}`,
+          code: 'INSUFFICIENT_STOCK',
+          productId: p.id,
+          available: p.stockQty,
+        })
+      }
+    }
 
     let newSale
     try {
