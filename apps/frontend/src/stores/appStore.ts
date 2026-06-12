@@ -506,9 +506,10 @@ export const useAppStore = create<AppStore>()(
     {
       name: 'habashop-config',
       partialize: (state) => {
-        // Ne pas persister les taux live (recalculés au démarrage)
+        // Ne pas persister les taux live (recalculés au démarrage) ni les états de session caisse
+        // (cashierOpen/Fund/Tx/CA doivent se réinitialiser à chaque connexion — pas hérités d'une session précédente).
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { currencyRates, fetchExchangeRates, ...rest } = state
+        const { currencyRates, fetchExchangeRates, cashierOpen, cashierOpenedAt, cashierOpeningFund, cashierSessionTx, cashierSessionCA, ...rest } = state
         return rest
       },
       // Fusion à la réhydratation (utilisateur de retour). Backfill des flags manuels

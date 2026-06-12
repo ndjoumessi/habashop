@@ -1,7 +1,7 @@
 import { X, Smartphone, Printer, CheckCircle, AlertTriangle, Loader2, TestTube } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
-import { t, formatInCurrency } from '@/stores/appStore'
+import { t, formatInCurrency, useAppStore } from '@/stores/appStore'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
 
@@ -56,6 +56,8 @@ interface POSModalsProps {
 }
 
 export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, printTicket, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
+  // Devise du tenant (pas la devise d'affichage du device) — pour la caisse les montants sont en XOF.
+  const tenantCurrency = useAppStore(s => s.tenant?.currency ?? 'XOF')
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
@@ -192,10 +194,10 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               {[
                 { label: ct.open_time,    value: cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--' },
                 { label: ct.close_time,   value: new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) },
-                { label: ct.initial_fund, value: fmt(cashierOpeningFund) },
+                { label: ct.initial_fund, value: formatInCurrency(cashierOpeningFund, tenantCurrency) },
                 { label: ct.transactions, value: String(cashierSessionTx) },
-                { label: ct.ca_cashed,    value: fmt(cashierSessionCA) },
-                { label: ct.total_cash,   value: fmt(cashierOpeningFund + cashierSessionCA) },
+                { label: ct.ca_cashed,    value: formatInCurrency(cashierSessionCA, tenantCurrency) },
+                { label: ct.total_cash,   value: formatInCurrency(cashierOpeningFund + cashierSessionCA, tenantCurrency) },
               ].map(s => (
                 <div key={s.label} style={{
                   background:'var(--bg3)', border:'1px solid var(--border)',
@@ -237,13 +239,13 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     <div class="row"><span>${ct.close_time}:</span><span>${new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'})}</span></div>
                     <div class="row"><span>Caissier:</span><span>Nelson D.</span></div>
                     <div class="divider"></div>
-                    <div class="row"><span>${ct.initial_fund}:</span><span>${fmt(cashierOpeningFund)}</span></div>
+                    <div class="row"><span>${ct.initial_fund}:</span><span>${formatInCurrency(cashierOpeningFund, tenantCurrency)}</span></div>
                     <div class="row"><span>${ct.transactions}:</span><span>${cashierSessionTx}</span></div>
-                    <div class="row bold"><span>${ct.ca_cashed}:</span><span>${fmt(cashierSessionCA)}</span></div>
+                    <div class="row bold"><span>${ct.ca_cashed}:</span><span>${formatInCurrency(cashierSessionCA, tenantCurrency)}</span></div>
                     <div class="divider"></div>
-                    <div class="row bold"><span>Attendu:</span><span>${fmt(expected)}</span></div>
-                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${formatInCurrency(counted, currency)}</span></div>
-                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${formatInCurrency(Math.abs(diff), currency)}</span></div>
+                    <div class="row bold"><span>Attendu:</span><span>${formatInCurrency(expected, tenantCurrency)}</span></div>
+                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${formatInCurrency(counted, tenantCurrency)}</span></div>
+                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${formatInCurrency(Math.abs(diff), tenantCurrency)}</span></div>
                     <div class="divider"></div>
                     <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
                     <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>
