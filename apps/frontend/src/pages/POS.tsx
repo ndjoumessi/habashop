@@ -252,19 +252,12 @@ export default function POS() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // État d'ouverture dérivé, synchrone :
-  // - requireCashier=true  → suit cashierOpen (cérémonie d'ouverture/fermeture classique).
-  // - requireCashier=false → ouverte par défaut, MAIS fermable explicitement via `cashierForcedClosed`
-  //   (sinon `… ? cashierOpen : true` resterait true et la fermeture de caisse n'aurait aucun effet).
-  //   cashierForcedClosed n'est pas persisté → un refresh rouvre la caisse (cohérent : pas de cérémonie).
+  // - requireCashier=true  → suit cashierOpen (cérémonie d'ouverture/fermeture classique avec fond).
+  // - requireCashier=false → ouverte par défaut, mais fermable explicitement via `cashierForcedClosed`.
+  //   cashierForcedClosed est mis à true par closeCashier() (appelé aussi au login/logout) → après une
+  //   reconnexion la caisse repart FERMÉE jusqu'à une ouverture explicite (bouton « Ouvrir », sans fond).
+  //   Pas d'auto-open : sinon openCashier() au montage remettrait cashierForcedClosed=false trop tôt.
   const cashierIsOpen = requireCashier ? cashierOpen : !cashierForcedClosed
-
-  // L'auto-open reste utile uniquement pour CAPTURER les données de session (heure d'ouverture + fond)
-  // consommées par le rapport de fermeture — pas pour décider de l'affichage (géré par cashierIsOpen).
-  useEffect(() => {
-    if (!requireCashier && !cashierOpen) {
-      openCashier(posDefaultFund)
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Toggle « Envoyer le ticket WhatsApp » : reflète le réglage tenant `autoWhatsApp` à CHAQUE
   // ouverture du modal de confirmation (et non un instantané figé au montage de la page, qui pouvait
@@ -783,8 +776,9 @@ export default function POS() {
     )
   }
 
-  // Ouverture de caisse exigée seulement si la config `requireCashier` est ON
-  // (sinon, la caisse peut vendre directement sans cérémonie d'ouverture → cashierIsOpen toujours true).
+  // Caisse fermée (après reconnexion ou fermeture explicite) → écran d'ouverture.
+  // - requireCashier=true  → cérémonie avec saisie du fond de caisse (fond stocké en XOF).
+  // - requireCashier=false → bouton « Ouvrir » seul (sans formulaire de fond), ouverture à 0.
   if (!cashierIsOpen) {
     return (
       <POSCashierClosed
@@ -796,11 +790,12 @@ export default function POS() {
         cashierName={cashierName}
         cashierInitial={cashierInitial}
         locale={locale}
+        showFundInput={requireCashier}
         onOpen={() => {
-          // `inputValue` est en devise d'AFFICHAGE → on stocke le fond en XOF (comme cashierSessionCA)
-          // pour que tous les montants caisse soient dans la même unité (base XOF).
-          openCashier(toXOF(inputValue))
-          toast.success(`${ct.cashier_label} ouverte — Fond: ${displayFund}`)
+          // requireCashier=true : `inputValue` est en devise d'AFFICHAGE → stocké en XOF (comme cashierSessionCA).
+          // requireCashier=false : ouverture simple, fond à 0.
+          openCashier(requireCashier ? toXOF(inputValue) : 0)
+          toast.success(`${ct.cashier_label} ouverte${requireCashier ? ` — Fond: ${displayFund}` : ''}`)
         }}
       />
     )

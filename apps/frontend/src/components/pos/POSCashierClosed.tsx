@@ -15,11 +15,13 @@ interface Props {
   cashierInitial: string
   locale: string
   onOpen: () => void
+  /** Affiche le formulaire « fond de caisse initial ». false (requireCashier=false) → bouton Ouvrir seul. */
+  showFundInput?: boolean
 }
 
 export default function POSCashierClosed({
   ct, currency, currencySymbol, openingFundInput, setOpeningFundInput,
-  cashierName, cashierInitial, locale, onOpen,
+  cashierName, cashierInitial, locale, onOpen, showFundInput = true,
 }: Props) {
   const inputValue  = parseFloat(openingFundInput) || 0
   const displayFund = formatInCurrency(inputValue, currency)
@@ -48,6 +50,7 @@ export default function POSCashierClosed({
         <p style={{ fontSize:13, color:'var(--text2)', marginBottom:28, lineHeight:1.6 }}>
           {ct.closed_sub}
         </p>
+        {showFundInput && (
         <div style={{ marginBottom:20, textAlign:'left' }}>
           <label style={{
             display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase',
@@ -77,6 +80,7 @@ export default function POSCashierClosed({
             </div>
           )}
         </div>
+        )}
         <div style={{
           padding:'12px 16px', borderRadius:10,
           background:'var(--bg3)', border:'1px solid var(--border)',
