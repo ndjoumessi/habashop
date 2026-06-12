@@ -30,6 +30,7 @@ import { billingRoutes }      from './routes/billing'
 import { paymentRoutes }      from './routes/payments'
 import { mtnPaymentRoutes }    from './routes/mtnPayment'
 import { campayPaymentRoutes } from './routes/campayPayment'
+import { paydunyaPaymentRoutes } from './routes/paydunyaPayment'
 import { paymentStatsRoutes }  from './routes/paymentStats'
 import { adminRoutes }        from './routes/admin'
 import { notificationRoutes } from './routes/notifications'
@@ -63,6 +64,11 @@ const OPTIONAL_ENV_VARS = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'ANTHROPIC
 OPTIONAL_ENV_VARS.forEach(v => {
   if (!process.env[v]) console.warn(`⚠️  Variable optionnelle manquante: ${v} — fonctionnalité associée désactivée`)
 })
+// PayDunya : warning groupé (pas de crash) si l'intégration n'est pas (ou partiellement) configurée.
+const PAYDUNYA_ENV_VARS = ['PAYDUNYA_MASTER_KEY', 'PAYDUNYA_PRIVATE_KEY', 'PAYDUNYA_PUBLIC_KEY', 'PAYDUNYA_TOKEN', 'PAYDUNYA_MODE']
+const paydunyaMissing = PAYDUNYA_ENV_VARS.filter(v => !process.env[v])
+if (paydunyaMissing.length > 0)
+  console.warn(`⚠️  PayDunya non (ou partiellement) configuré — variables manquantes: ${paydunyaMissing.join(', ')}`)
 
 // ─── Sentry (inerte sans SENTRY_DSN) ───
 if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
@@ -142,6 +148,14 @@ async function start() {
 
   // ─── MULTIPART (upload factures OCR) ───
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024, files: 1 } })
+
+  // ─── FORM-URLENCODED (IPN PayDunya — clés à plat data[hash]/data[status]/…) ───
+  // PayDunya poste son IPN en application/x-www-form-urlencoded avec des clés à crochets.
+  // URLSearchParams donne des clés plates (ex. "data[hash]") → suffisant pour vérifier le hash.
+  app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (_req, body: string, done) => {
+    try { done(null, { _form: Object.fromEntries(new URLSearchParams(body)) }) }
+    catch (err) { done(err as Error) }
+  })
 
   // ─── WEBSOCKET ──────────────────────────
   await app.register(websocket)
@@ -235,6 +249,7 @@ async function start() {
   await app.register(paymentRoutes)
   await app.register(mtnPaymentRoutes)
   await app.register(campayPaymentRoutes)
+  await app.register(paydunyaPaymentRoutes)
   await app.register(paymentStatsRoutes)
   await app.register(adminRoutes)
   await app.register(notificationRoutes)

@@ -153,6 +153,16 @@ export const campayApi = {
     api.post<{ paymentUrl: string; reference: string }>('/api/payments/campay/card-link', data),
 }
 
+export const paydunyaApi = {
+  config: () =>
+    api.get<{ configured: boolean; mode: 'test' | 'live'; methods: string[] }>('/api/payments/paydunya/config'),
+  initiate: (data: { amount: number; description?: string }) =>
+    api.post<{ token: string; redirectUrl: string }>('/api/payments/paydunya/initiate', data),
+  // statut normalisé PayDunya : completed | pending | cancelled | failed
+  status: (token: string) =>
+    api.post<{ status: 'completed' | 'pending' | 'cancelled' | 'failed' }>('/api/payments/paydunya/status', { token }),
+}
+
 export interface ProviderStat { count: number; amountXof: number; lastAt: string | null }
 export const paymentStatsApi = {
   // Transactions MTN MoMo + Campay du jour (montants en XOF base → convertir à l'affichage).

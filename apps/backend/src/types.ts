@@ -51,6 +51,8 @@ export interface SaleBody {
   mtnMomoReference?: string | null
   // Campay — référence retournée par /api/payments/campay/request (traçabilité).
   campayReference?: string | null
+  // PayDunya — token de facture retourné par /api/payments/paydunya/initiate (traçabilité).
+  paydunyaReference?: string | null
 }
 export interface OrderBody {
   supplierId?: string; items?: any[]; expectedAt?: string; notes?: string; status?: string

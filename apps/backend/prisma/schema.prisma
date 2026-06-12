@@ -225,6 +225,9 @@ model Sale {
   // Référence Campay (Orange Money / cartes Cameroun) — traçabilité / réconciliation.
   campayReference   String?
 
+  // Référence PayDunya (token facture — Wave/Orange Money Sénégal & UEMOA) — réconciliation.
+  paydunyaReference String?
+
   tenant  Tenant     @relation(fields: [tenantId], references: [id])
   cashier User       @relation("SaleCashier", fields: [cashierId], references: [id])
   items   SaleItem[]

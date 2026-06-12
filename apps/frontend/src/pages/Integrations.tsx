@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAppStore, useFormatAmount } from '@/stores/appStore'
 import { ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound } from 'lucide-react'
 import Button from '@/components/ui/AppButton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useModalFocus } from '@/hooks/useModalFocus'
-import { paymentStatsApi, type ProviderStat } from '@/lib/api'
+import { paymentStatsApi, paydunyaApi, type ProviderStat } from '@/lib/api'
 import toast from 'react-hot-toast'
 import ResendMonitor from '@/components/integrations/ResendMonitor'
 
@@ -314,11 +314,26 @@ export default function Integrations() {
   const [pingLatency, setPingLatency] = useState<Record<string, number>>({})
   const [payDunyaOpen, setPayDunyaOpen] = useState(false)
   const [txStats, setTxStats] = useState<{ mtn: ProviderStat; campay: ProviderStat } | null>(null)
+  const [paydunyaCfg, setPaydunyaCfg] = useState<{ configured: boolean; mode: 'test' | 'live'; methods: string[] } | null>(null)
 
   // Transactions paiement du jour (MTN MoMo + Campay) — données réelles backend.
   useEffect(() => {
     paymentStatsApi.today().then(setTxStats).catch(() => setTxStats(null))
   }, [])
+
+  // État réel de configuration PayDunya (backend) → statut connecté/déconnecté de la carte.
+  useEffect(() => {
+    paydunyaApi.config().then(setPaydunyaCfg).catch(() => setPaydunyaCfg(null))
+  }, [])
+
+  // Liste d'affichage : la carte PayDunya reflète l'état réel (configuré → connecté + sandbox/production).
+  const displayList = useMemo(() => INTEGRATIONS_LIST.map(itg => itg.id !== 'paydunya' ? itg : {
+    ...itg,
+    status:        paydunyaCfg?.configured ? 'connected' as const : 'disconnected' as const,
+    paymentStatus: paydunyaCfg
+      ? (paydunyaCfg.configured ? (paydunyaCfg.mode === 'live' ? 'production' as const : 'sandbox' as const) : 'unconfigured' as const)
+      : itg.paymentStatus,
+  }), [paydunyaCfg])
 
   // Heure courte locale d'un ISO (dernière transaction réussie). null → '—'.
   const shortTime = (iso: string | null) =>
@@ -399,7 +414,7 @@ export default function Integrations() {
   const allChecked   = pingedIds.length === pingableList.length && pingedIds.every(id => pingStatus[id] !== 'checking')
   const allOk        = allChecked && !anyError
 
-  const totalConnected = INTEGRATIONS_LIST.filter(itg => itg.status === 'connected').length
+  const totalConnected = displayList.filter(itg => itg.status === 'connected').length
 
   const EMAIL_FLOWS = [
     { trigger: lang === 'en' ? '🎉 Signup' : lang === 'es' ? '🎉 Registro' : lang === 'it' ? '🎉 Iscrizione' : '🎉 Inscription',                   email: lang === 'en' ? 'Welcome email' : lang === 'es' ? 'Email de bienvenida' : lang === 'it' ? 'Email di benvenuto' : 'Email de bienvenue',   delay: lang === 'en' ? 'Immediate' : lang === 'es' ? 'Inmediato' : lang === 'it' ? 'Immediato' : 'Immédiat' },
@@ -759,7 +774,7 @@ export default function Integrations() {
 
       {/* ── Grids par catégorie ── */}
       {CATEGORIES.map(cat => {
-        const items = INTEGRATIONS_LIST.filter(itg => CATEGORY_OF[itg.id] === cat.key)
+        const items = displayList.filter(itg => CATEGORY_OF[itg.id] === cat.key)
         if (!items.length) return null
         return (
           <div key={cat.key}>
