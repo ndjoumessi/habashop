@@ -434,7 +434,8 @@ export default function Integrations() {
       :                                      { border:'var(--border)',  glow:'transparent' }
       : statusVisual(pingStatus[itg.id])
     const glowHover = sv.glow.replace('15%,', '30%,').replace('12%,', '25%,')
-    const methods = METHODS[itg.id]
+    // PayDunya : méthodes réelles renvoyées par le backend (/config) si dispo, sinon liste statique.
+    const methods = itg.id === 'paydunya' && paydunyaCfg?.methods?.length ? paydunyaCfg.methods : METHODS[itg.id]
     const apiVer  = API_VERSION[itg.id]
     const detail  = CARD_DETAIL[itg.id]?.[lang] ?? CARD_DETAIL[itg.id]?.fr
     // Transactions du jour (cartes paiement MTN MoMo / Campay) — données réelles.
@@ -504,6 +505,16 @@ export default function Integrations() {
                 }}>{m}</span>
               ))}
             </div>
+          )}
+
+          {/* PayDunya en sandbox → call-to-action vers le dashboard pour activer la prod */}
+          {itg.id === 'paydunya' && paydunyaCfg?.configured && paydunyaCfg.mode === 'test' && (
+            <a href="https://paydunya.com/dashboard" target="_blank" rel="noopener noreferrer"
+              style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:'var(--fw-semibold)', color:'var(--p3)', textDecoration:'none', marginBottom:12 }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.textDecoration = 'underline' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.textDecoration = 'none' }}>
+              <ExternalLink size={11} /> {lang === 'en' ? 'Activate production' : lang === 'es' ? 'Activar producción' : lang === 'it' ? 'Attiva produzione' : 'Activer la production'}
+            </a>
           )}
 
           {/* Transactions du jour (cartes paiement) — données réelles backend */}
