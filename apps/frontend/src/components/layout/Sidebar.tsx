@@ -46,11 +46,14 @@ const NAV: NavEntry[] = [
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
-  const { theme, sidebarCollapsed, cashierOpen, updateConfig, lang } = useConfig()
+  const { theme, sidebarCollapsed, cashierOpen, cashierForcedClosed, requireCashier, updateConfig, lang } = useConfig()
   void lang
   const navigate = useNavigate()
   const collapsed = sidebarCollapsed
   const canPos = canAccess(user?.role, 'pos')
+  // Même dérivation que POS.tsx : cashierOpen est exclu de partialize (toujours false au refresh),
+  // donc on calcule l'état réel — requireCashier=false → !cashierForcedClosed (persisté).
+  const cashierIsOpen = requireCashier ? cashierOpen : !cashierForcedClosed
 
   return (
     <div
@@ -96,7 +99,7 @@ export default function Sidebar() {
       </div>
 
       {/* Caisse — état proéminent (action centrale du commerçant) */}
-      {canPos && cashierOpen && (
+      {canPos && cashierIsOpen && (
         collapsed ? (
           <div title={lang === 'en' ? 'Till open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
             style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
@@ -121,7 +124,7 @@ export default function Sidebar() {
           </div>
         )
       )}
-      {canPos && !cashierOpen && !collapsed && (
+      {canPos && !cashierIsOpen && !collapsed && (
         <button
           onClick={() => navigate('/app/pos')}
           style={{
