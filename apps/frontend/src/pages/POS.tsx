@@ -218,6 +218,15 @@ export default function POS() {
   const [openingFundInput, setOpeningFundInput] = useState(() => posDefaultFund > 0 ? String(posDefaultFund) : '')
   const [showCloseModal, setShowCloseModal]     = useState(false)
 
+  // Quand requireCashier est désactivé, aucune cérémonie d'ouverture n'est affichée →
+  // openCashier() n'est jamais appelé → cashierOpenedAt reste null et le fond reste 0.
+  // Fix : auto-ouvrir la session au chargement de la page pour capturer l'heure d'ouverture.
+  useEffect(() => {
+    if (!requireCashier && !cashierOpen) {
+      openCashier(posDefaultFund)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Fond de caisse : l'input est dans la devise configurée, stockage direct
   const inputValue  = parseFloat(openingFundInput) || 0
   const displayFund = formatInCurrency(inputValue, currency)
