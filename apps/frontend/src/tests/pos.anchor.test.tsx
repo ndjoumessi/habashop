@@ -13,6 +13,7 @@ const { mockState } = vi.hoisted(() => ({
     requireCashier: true, // ce test couvre le flux d'ouverture de caisse → la config l'exige
     enableScanner: true, autoWhatsApp: false,
     cart: [] as any[], addCartItem: vi.fn(), updateCartQty: vi.fn(), setCart: vi.fn(), clearCart: vi.fn(),
+    updateConfig: vi.fn(),
   },
 }))
 vi.mock('@/stores/appStore', () => ({
@@ -35,6 +36,7 @@ vi.mock('@/lib/api', () => ({
   ]) },
   salesApi: { list: vi.fn().mockResolvedValue([]), create: vi.fn().mockResolvedValue({}) },
   whatsappApi: { sendTicket: vi.fn().mockResolvedValue({}) },
+  tenantApi: { get: vi.fn().mockResolvedValue({ requireCashier: true }) },
 }))
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn(), useLocation: () => ({ state: null, pathname: '/app/pos' }) }))
 vi.mock('@/utils/export', () => ({ generateInvoice: vi.fn() }))
@@ -72,8 +74,9 @@ describe('POS — test d’ancrage (orchestration conteneur)', () => {
   it('caisse fermée → écran d’ouverture, le bouton ouvre la caisse avec le fond saisi', async () => {
     mockState.cashierOpen = false
     render(<POS />)
+    // settingsLoaded : loader bref (tenantApi.get) → puis l'écran d'ouverture une fois le réglage confirmé.
+    const input = await screen.findByPlaceholderText('Ex: 50 000')
     expect(screen.getByText('Caisse fermée')).toBeInTheDocument()
-    const input = screen.getByPlaceholderText('Ex: 50 000')
     fireEvent.change(input, { target: { value: '75000' } })
     fireEvent.click(screen.getByText('Ouvrir la caisse'))
     expect(mockState.openCashier).toHaveBeenCalledWith(75000)

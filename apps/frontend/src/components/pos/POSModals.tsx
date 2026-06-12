@@ -1,7 +1,7 @@
 import { X, Smartphone, CheckCircle, AlertTriangle, Loader2, TestTube } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
-import { t, formatInCurrency, useAppStore, CURRENCY_SYMBOLS } from '@/stores/appStore'
+import { t, CURRENCY_SYMBOLS } from '@/stores/appStore'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
 
@@ -55,8 +55,6 @@ interface POSModalsProps {
 }
 
 export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
-  // Devise du tenant (pas la devise d'affichage du device) — pour la caisse les montants sont en XOF.
-  const tenantCurrency = useAppStore(s => s.tenant?.currency ?? 'XOF')
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
@@ -193,10 +191,12 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               {[
                 { label: ct.open_time,    value: cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--' },
                 { label: ct.close_time,   value: new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) },
-                { label: ct.initial_fund, value: formatInCurrency(cashierOpeningFund, tenantCurrency) },
+                // Montants caisse stockés en XOF (base) → fmt() CONVERTIT vers la devise d'affichage.
+                // (Ne PAS utiliser formatInCurrency(xof, devise) : ça étiquetterait l'entier XOF sans convertir.)
+                { label: ct.initial_fund, value: fmt(cashierOpeningFund) },
                 { label: ct.transactions, value: String(cashierSessionTx) },
-                { label: ct.ca_cashed,    value: formatInCurrency(cashierSessionCA, tenantCurrency) },
-                { label: ct.total_cash,   value: formatInCurrency(cashierOpeningFund + cashierSessionCA, tenantCurrency) },
+                { label: ct.ca_cashed,    value: fmt(cashierSessionCA) },
+                { label: ct.total_cash,   value: fmt(cashierOpeningFund + cashierSessionCA) },
               ].map(s => (
                 <div key={s.label} style={{
                   background:'var(--bg3)', border:'1px solid var(--border)',
@@ -220,17 +220,19 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   onInput={e => { if (parseFloat(e.currentTarget.value) < 0) e.currentTarget.value = '0' }}
                   style={{ fontSize:14, paddingRight:48 }} />
                 <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text3)', pointerEvents:'none' }}>
-                  {CURRENCY_SYMBOLS[tenantCurrency as keyof typeof CURRENCY_SYMBOLS] ?? tenantCurrency}
+                  {CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency}
                 </span>
               </div>
             </div>
             <div style={{ display:'flex', gap:8 }}>
               <button
                 onClick={() => {
-                  // counted et expected sont dans la devise configurée
-                  const counted = Math.max(0, parseFloat((document.getElementById('counted-amount') as HTMLInputElement)?.value || '0') || 0)
-                  const expected = cashierOpeningFund + cashierSessionCA
-                  const diff = counted - expected
+                  // L'utilisateur compte le cash physique en devise d'AFFICHAGE → on convertit en XOF
+                  // pour comparer à `expected` (fond + CA, stockés en XOF). Tout est affiché ensuite via fmt().
+                  const countedDisplay = Math.max(0, parseFloat((document.getElementById('counted-amount') as HTMLInputElement)?.value || '0') || 0)
+                  const countedXOF = toXOF(countedDisplay)
+                  const expected = cashierOpeningFund + cashierSessionCA // XOF
+                  const diff = countedXOF - expected // XOF
                   const openedTime = cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--'
                   const win = window.open('', '_blank', 'width=400,height=600')
                   if (win) {
@@ -246,13 +248,13 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     <div class="row"><span>${ct.close_time}:</span><span>${new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'})}</span></div>
                     <div class="row"><span>Caissier:</span><span>Nelson D.</span></div>
                     <div class="divider"></div>
-                    <div class="row"><span>${ct.initial_fund}:</span><span>${formatInCurrency(cashierOpeningFund, tenantCurrency)}</span></div>
+                    <div class="row"><span>${ct.initial_fund}:</span><span>${fmt(cashierOpeningFund)}</span></div>
                     <div class="row"><span>${ct.transactions}:</span><span>${cashierSessionTx}</span></div>
-                    <div class="row bold"><span>${ct.ca_cashed}:</span><span>${formatInCurrency(cashierSessionCA, tenantCurrency)}</span></div>
+                    <div class="row bold"><span>${ct.ca_cashed}:</span><span>${fmt(cashierSessionCA)}</span></div>
                     <div class="divider"></div>
-                    <div class="row bold"><span>Attendu:</span><span>${formatInCurrency(expected, tenantCurrency)}</span></div>
-                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${formatInCurrency(counted, tenantCurrency)}</span></div>
-                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${formatInCurrency(Math.abs(diff), tenantCurrency)}</span></div>
+                    <div class="row bold"><span>Attendu:</span><span>${fmt(expected)}</span></div>
+                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${fmt(countedXOF)}</span></div>
+                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${fmt(Math.abs(diff))}</span></div>
                     <div class="divider"></div>
                     <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
                     <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>

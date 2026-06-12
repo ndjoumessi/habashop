@@ -3,11 +3,11 @@ import QRCode from 'qrcode'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi } from '@/lib/api'
+import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
 
@@ -32,6 +32,7 @@ export default function POS() {
     enableScanner: posEnableScanner, autoWhatsApp: posAutoWhatsApp, enableLoyalty,
     // Panier persisté dans le store (survit nav + refresh)
     cart, addCartItem, updateCartQty, setCart, clearCart,
+    updateConfig,
   } = useAppStore()
   const fmt    = useFormatAmount()
   const toXOF  = useConvertToXOF()
@@ -235,6 +236,20 @@ export default function POS() {
   // ─── CAISSE (état local uniquement pour l'input) ─
   const [openingFundInput, setOpeningFundInput] = useState(() => posDefaultFund > 0 ? String(posDefaultFund) : '')
   const [showCloseModal, setShowCloseModal]     = useState(false)
+
+  // ⚠️ requireCashier est PERSISTÉ dans localStorage et n'est resynchronisé depuis le backend que
+  // lorsqu'on ouvre les Réglages → au refresh il peut être STALE (ex. true alors que la DB dit false).
+  // On refetch le réglage autoritaire du tenant au montage et on n'évalue la gate qu'une fois chargé
+  // (`settingsLoaded`) → sinon on afficherait « Caisse fermée » sur une valeur périmée.
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
+  useEffect(() => {
+    let alive = true
+    tenantApi.get()
+      .then((t: any) => { if (alive && t) updateConfig({ requireCashier: t.requireCashier ?? false }) })
+      .catch(() => {}) // hors-ligne / erreur → on retombe sur la valeur persistée
+      .finally(() => { if (alive) setSettingsLoaded(true) })
+    return () => { alive = false }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Quand requireCashier=false, la caisse est ouverte EN PERMANENCE (pas de cérémonie ni de
   // persistance). On dérive l'état d'ouverture de façon synchrone → pas de flash « Caisse fermée »
@@ -755,6 +770,17 @@ export default function POS() {
 
   // ─── RENDER ──────────────────────────────
 
+  // Tant que le réglage tenant autoritaire (requireCashier) n'est pas confirmé depuis l'API,
+  // on affiche un loader NEUTRE plutôt que « Caisse fermée » sur une valeur persistée potentiellement périmée.
+  if (!settingsLoaded) {
+    return (
+      <div role="status" style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'calc(100vh - 54px)', gap:10, color:'var(--text3)' }}>
+        <Loader2 size={24} style={{ animation:'spin 1s linear infinite', color:'var(--p)', flexShrink:0 }} />
+        <span style={{ fontSize:14 }}>{lang==='en' ? 'Loading…' : lang==='es' ? 'Cargando…' : lang==='it' ? 'Caricamento…' : 'Chargement…'}</span>
+      </div>
+    )
+  }
+
   // Ouverture de caisse exigée seulement si la config `requireCashier` est ON
   // (sinon, la caisse peut vendre directement sans cérémonie d'ouverture → cashierIsOpen toujours true).
   if (!cashierIsOpen) {
@@ -769,7 +795,9 @@ export default function POS() {
         cashierInitial={cashierInitial}
         locale={locale}
         onOpen={() => {
-          openCashier(inputValue)
+          // `inputValue` est en devise d'AFFICHAGE → on stocke le fond en XOF (comme cashierSessionCA)
+          // pour que tous les montants caisse soient dans la même unité (base XOF).
+          openCashier(toXOF(inputValue))
           toast.success(`${ct.cashier_label} ouverte — Fond: ${displayFund}`)
         }}
       />
