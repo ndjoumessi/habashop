@@ -203,9 +203,10 @@ export const LIGHT_STYLE = [
 ]
 
 // Couleur de fond du conteneur carte selon le thème (affichée pendant le chargement des tuiles).
-export const MAP_BG = (theme: string) => (theme === 'light' ? '#F4F5FF' : '#0A0A16')
+const IS_LIGHT_THEME = (t: string) => t === 'light' || t === 'soleil'
+export const MAP_BG = (theme: string) => (IS_LIGHT_THEME(theme) ? '#F4F5FF' : '#0A0A16')
 // Sélectionne le style Google Maps selon le thème actif.
-export const getMapStyle = (theme: string) => (theme === 'light' ? LIGHT_STYLE : DARK_STYLE)
+export const getMapStyle = (theme: string) => (IS_LIGHT_THEME(theme) ? LIGHT_STYLE : DARK_STYLE)
 
 export function createMarkerIcon(google: any, color: string, size: number, text: string) {
   const s = size

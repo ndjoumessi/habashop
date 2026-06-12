@@ -69,7 +69,7 @@ export default function ReportsTabs({ reportTab, fmt, abbr, lang, chartData, pay
       <div style={{
         background: 'var(--card)', border: `1px solid ${d.color}40`,
         borderRadius: 12, padding: '10px 14px',
-        boxShadow: `0 8px 24px rgba(0,0,0,.6), 0 0 0 1px ${d.color}20`, minWidth: 140,
+        boxShadow: `var(--sh-md), 0 0 0 1px ${d.color}20`, minWidth: 140,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, boxShadow: `0 0 8px ${d.color}`, flexShrink: 0 }} />

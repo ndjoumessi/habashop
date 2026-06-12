@@ -206,7 +206,7 @@ export default function CustomerMap({
   const vipCount = customers.filter(c => Number(c.totalRevenue ?? c.totalCA ?? 0) >= 1_000_000).length
 
   return (
-    <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', height: 640, border: '1px solid var(--border)', boxShadow: '0 20px 60px rgba(0,0,0,.6)', display: 'flex' }}>
+    <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', height: 640, border: '1px solid var(--border)', boxShadow: 'var(--sh-xl)', display: 'flex' }}>
 
       {/* ══ SIDEBAR ══ */}
       <div style={{ width: 310, flexShrink: 0, background: 'var(--card)', backdropFilter: 'blur(20px)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', zIndex: 10, overflow: 'hidden' }}>
