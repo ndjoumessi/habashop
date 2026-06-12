@@ -261,3 +261,22 @@ export interface TenantUser {
   role?: Role | string
   deletedAt?: string | null
 }
+
+// ── OCR facture fournisseur ───────────────────────────────────────────────
+// POST /api/suppliers/scan-invoice (multipart, champ `invoice`) → extraction
+// ligne-à-ligne via Claude Vision côté backend. Miroir EXACT de
+// `InvoiceOcrResult` (apps/backend/src/services/invoiceOcr.ts) — lecture seule.
+export interface OcrInvoiceItem {
+  name: string
+  qty: number
+  unitPrice: number
+}
+export interface OcrInvoiceResult {
+  supplierName: string | null
+  invoiceDate: string | null   // "YYYY-MM-DD"
+  items: OcrInvoiceItem[]
+  total: number | null
+  notes: string | null
+  error?: string               // 'parse_error' si le JSON n'a pas pu être extrait
+  rawText?: string
+}

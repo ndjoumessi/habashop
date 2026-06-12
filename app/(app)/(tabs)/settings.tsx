@@ -13,6 +13,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { useAppStore, useI18n, useFmt, useTheme, type Lang, type ThemeMode } from '@/stores/appStore'
 import { sendLocalNotification } from '@/services/notifications'
 import { useProfilePhoto } from '@/hooks/useProfilePhoto'
+import { canScanInvoiceRole } from '@/hooks/useSupplierOcr'
+import OcrInvoiceSheet from '@/components/suppliers/OcrInvoiceSheet'
 import Avatar from '@/components/ui/Avatar'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import AccessibleButton from '@/components/ui/AccessibleButton'
@@ -73,6 +75,10 @@ export default function SettingsScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false)
   const [biometricType, setBiometricType] = useState<BiometricType>('fingerprint')
   const [widgetEnabled, setWidget] = useState(false)
+  const [showOcr, setShowOcr] = useState(false)
+
+  // Outil OCR facture : réservé MANAGER+ (le backend renvoie 403 sinon).
+  const canScanInvoice = canScanInvoiceRole(user?.role)
 
   useEffect(() => {
     const load = async () => {
@@ -294,6 +300,23 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </Section>
 
+        {/* C3) Outils — OCR facture fournisseur (MANAGER+) */}
+        {canScanInvoice && (
+          <Section title={i('Outils', 'Tools', 'Herramientas', 'Strumenti')}>
+            <TouchableOpacity
+              style={s.kioskBtn}
+              accessibilityRole="button"
+              accessibilityLabel={i('Scanner une facture', 'Scan an invoice', 'Escanear factura', 'Scansiona fattura')}
+              onPress={() => setShowOcr(true)}
+            >
+              <Text style={s.kioskBtnText}>
+                📄 {i('Scanner une facture', 'Scan an invoice', 'Escanear factura', 'Scansiona fattura')}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={C.text3} />
+            </TouchableOpacity>
+          </Section>
+        )}
+
         {/* D) Boutique */}
         <Section title={i('Boutique', 'Shop', 'Tienda', 'Negozio')}>
           {[
@@ -490,6 +513,9 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </Section>
       </ScrollView>
+
+      {/* Outil OCR facture — monté À LA DEMANDE (anti-crash Fabric) */}
+      {showOcr && <OcrInvoiceSheet onClose={() => setShowOcr(false)} />}
     </View>
   )
 }
