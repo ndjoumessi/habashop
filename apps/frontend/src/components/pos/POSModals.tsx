@@ -844,7 +844,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
             <div style={{ display: 'flex', gap: 10 }}>
               {!isMtnMode && !isOrangeMode && !isCardMode && (
                 <button
-                  onClick={confirmSale}
+                  onClick={() => confirmSale()}
                   disabled={blocked}
                   title={!cashOK ? (lang==='en' ? 'Enter the amount received' : lang==='es' ? 'Ingrese el monto recibido' : lang==='it' ? "Inserire l'importo ricevuto" : 'Saisissez le montant reçu') : undefined}
                   style={{

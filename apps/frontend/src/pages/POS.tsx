@@ -90,6 +90,19 @@ export default function POS() {
   const [mixedM1, setMixedM1]   = useState<'cash'|'mobile'|'card'>('cash')
   const [mixedM2, setMixedM2]   = useState<'cash'|'mobile'|'card'>('mobile')
   const [mixedAmt1, setMixedAmt1] = useState('')
+
+  // Panier vidé (ouverture de caisse, dernier article retiré, reset) → on réinitialise les états
+  // de paiement LOCAUX (montant reçu + split). Sinon « Montant reçu » / « Monnaie à rendre »
+  // (dérivée de cashGiven) gardent les valeurs de la session/vente précédente. openCashier() vide
+  // le cart côté store mais ne peut pas toucher ces useState locaux → ce useEffect fait le pont.
+  useEffect(() => {
+    if (cart.length === 0) {
+      setCashGiven('')
+      setMixedAmt1('')
+      setMixedOn(false)
+    }
+  }, [cart.length])
+
   // Client lié (via « Nouvelle vente » depuis la fiche client) → fidélité v2 (remise + points).
   const location = useLocation()
   // Client lié : initialisé depuis nav-state (« Nouvelle vente » fiche client) PUIS settable via le
