@@ -516,8 +516,10 @@ export const useAppStore = create<AppStore>()(
         // Ne pas persister : les taux live (recalculés au démarrage), les états de session caisse
         // (cashierOpen/Fund/Tx/CA — réinitialisés à chaque connexion) ni le panier `cart`
         // (état de session, vidé à l'ouverture de caisse — jamais hérité d'un refresh/connexion).
+        // NB : `cashierForcedClosed` EST persisté (dans ...rest) → un refresh conserve l'état
+        // ouvert/fermé de la caisse ; closeCashier (login/logout/fermeture) le passe à true.
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { currencyRates, fetchExchangeRates, cashierOpen, cashierOpenedAt, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cashierForcedClosed, cart, ...rest } = state
+        const { currencyRates, fetchExchangeRates, cashierOpen, cashierOpenedAt, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cart, ...rest } = state
         return rest
       },
       // Fusion à la réhydratation (utilisateur de retour). Backfill des flags manuels
