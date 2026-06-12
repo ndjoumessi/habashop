@@ -342,6 +342,9 @@ interface AppStore extends AppConfig {
   cashierOpeningFund: number
   cashierSessionTx: number
   cashierSessionCA: number
+  // Fermeture explicite quand requireCashier=false (session, non persisté) : permet de FERMER
+  // une caisse qui serait sinon « toujours ouverte » par dérivation. Reset par openCashier().
+  cashierForcedClosed: boolean
   openCashier: (fund: number) => void
   closeCashier: () => void
   addCashierSale: (amount: number) => void
@@ -428,6 +431,7 @@ export const useAppStore = create<AppStore>()(
       cashierOpeningFund: 0,
       cashierSessionTx:   0,
       cashierSessionCA:   0,
+      cashierForcedClosed: false,
 
       openCashier: (fund) => set({
         cashierOpen:        true,
@@ -435,6 +439,7 @@ export const useAppStore = create<AppStore>()(
         cashierOpeningFund: fund,
         cashierSessionTx:   0,
         cashierSessionCA:   0,
+        cashierForcedClosed: false, // réouverture → annule la fermeture explicite
         cart:               [], // panier vide à l'ouverture de caisse (nouvelle session)
       }),
 
@@ -444,6 +449,7 @@ export const useAppStore = create<AppStore>()(
         cashierOpeningFund: 0,
         cashierSessionTx:   0,
         cashierSessionCA:   0,
+        cashierForcedClosed: true, // fermeture effective même quand requireCashier=false
       }),
 
       addCashierSale: (amount) => set(state => ({
@@ -511,7 +517,7 @@ export const useAppStore = create<AppStore>()(
         // (cashierOpen/Fund/Tx/CA — réinitialisés à chaque connexion) ni le panier `cart`
         // (état de session, vidé à l'ouverture de caisse — jamais hérité d'un refresh/connexion).
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { currencyRates, fetchExchangeRates, cashierOpen, cashierOpenedAt, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cart, ...rest } = state
+        const { currencyRates, fetchExchangeRates, cashierOpen, cashierOpenedAt, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cashierForcedClosed, cart, ...rest } = state
         return rest
       },
       // Fusion à la réhydratation (utilisateur de retour). Backfill des flags manuels

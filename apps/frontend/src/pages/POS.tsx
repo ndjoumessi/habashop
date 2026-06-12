@@ -24,7 +24,7 @@ import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/
 export default function POS() {
   const {
     lang, currency,
-    cashierOpen, cashierOpenedAt,
+    cashierOpen, cashierOpenedAt, cashierForcedClosed,
     cashierOpeningFund, cashierSessionTx, cashierSessionCA,
     openCashier, closeCashier, addCashierSale,
     posTaxRate, posShowStockOnTile, posDefaultFund,
@@ -251,10 +251,12 @@ export default function POS() {
     return () => { alive = false }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Quand requireCashier=false, la caisse est ouverte EN PERMANENCE (pas de cérémonie ni de
-  // persistance). On dérive l'état d'ouverture de façon synchrone → pas de flash « Caisse fermée »
-  // dépendant d'un useEffect post-rendu (cashierOpen n'étant plus persisté, il repart false au refresh).
-  const cashierIsOpen = requireCashier ? cashierOpen : true
+  // État d'ouverture dérivé, synchrone :
+  // - requireCashier=true  → suit cashierOpen (cérémonie d'ouverture/fermeture classique).
+  // - requireCashier=false → ouverte par défaut, MAIS fermable explicitement via `cashierForcedClosed`
+  //   (sinon `… ? cashierOpen : true` resterait true et la fermeture de caisse n'aurait aucun effet).
+  //   cashierForcedClosed n'est pas persisté → un refresh rouvre la caisse (cohérent : pas de cérémonie).
+  const cashierIsOpen = requireCashier ? cashierOpen : !cashierForcedClosed
 
   // L'auto-open reste utile uniquement pour CAPTURER les données de session (heure d'ouverture + fond)
   // consommées par le rapport de fermeture — pas pour décider de l'affichage (géré par cashierIsOpen).

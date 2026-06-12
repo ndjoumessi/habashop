@@ -41,21 +41,25 @@ interface ProductTileProps {
   showStrike: boolean
   isPromoRetail: boolean
   posShowStockOnTile: boolean
+  ruptureLabel: string
   onAdd: (p: PosProduct) => void
 }
 
-const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLabel, showStrike, isPromoRetail, posShowStockOnTile, onAdd }: ProductTileProps) {
+const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLabel, showStrike, isPromoRetail, posShowStockOnTile, ruptureLabel, onAdd }: ProductTileProps) {
   const inCart     = qty !== undefined
   const isLowStock = p.stock < 20
   const isOut      = p.stock <= 0
+  // Rupture bloquante UNIQUEMENT si le stock est affiché (sinon le commerçant gère à la main).
+  const blocked    = posShowStockOnTile && isOut
   return (
     <div
       role="button"
-      tabIndex={0}
+      tabIndex={blocked ? -1 : 0}
       aria-label={`${p.name} — ${priceLabel}`}
-      onClick={() => onAdd(p)}
+      aria-disabled={blocked}
+      onClick={() => { if (!blocked) onAdd(p) }}
       onKeyDown={e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAdd(p) }
+        if (!blocked && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onAdd(p) }
       }}
       style={{
         background: inCart
@@ -66,7 +70,8 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
         boxShadow: inCart ? '0 0 0 1.5px var(--p)' : 'none',
         borderRadius: 12,
         padding: posShowStockOnTile ? '16px 12px 30px' : '16px 12px 14px',
-        cursor: 'pointer',
+        cursor: blocked ? 'not-allowed' : 'pointer',
+        opacity: blocked ? 0.45 : 1,
         textAlign: 'center',
         transition: 'all .15s ease',
         position: 'relative',
@@ -76,7 +81,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
         gap: 6,
       }}
       onMouseEnter={e => {
-        if (!inCart) {
+        if (!inCart && !blocked) {
           const el = e.currentTarget as HTMLElement
           el.style.borderColor = 'var(--p2)'
           el.style.transform = 'translateY(-2px)'
@@ -84,7 +89,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
         }
       }}
       onMouseLeave={e => {
-        if (!inCart) {
+        if (!inCart && !blocked) {
           const el = e.currentTarget as HTMLElement
           el.style.borderColor = 'var(--border)'
           el.style.transform = 'none'
@@ -162,7 +167,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
           color: isOut ? 'var(--danger)' : isLowStock ? 'var(--warn)' : 'var(--acc2)',
         }}>
           {isLowStock && !isOut && <AlertTriangle size={9} style={{ flexShrink: 0 }} />}
-          {p.stock}
+          {isOut ? ruptureLabel : p.stock}
         </div>
       )}
     </div>
@@ -372,6 +377,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                     showStrike={clientType !== 'retail' || isPromoRetail}
                     isPromoRetail={isPromoRetail}
                     posShowStockOnTile={posShowStockOnTile}
+                    ruptureLabel={lang === 'en' ? 'Out of stock' : lang === 'es' ? 'Agotado' : lang === 'it' ? 'Esaurito' : 'Rupture'}
                     onAdd={onAdd}
                   />
                 )
