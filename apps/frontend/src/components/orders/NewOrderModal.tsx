@@ -2,7 +2,7 @@ import { useState, useRef, type Dispatch, type SetStateAction } from 'react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { ClipboardList, X, Users, Truck, User, CheckCircle, Phone, Plus, Package, Clock, Star, ScanLine, Loader2, AlertCircle } from 'lucide-react'
-import { useConfig, useFormatAmount } from '@/stores/appStore'
+import { useConfig, useFormatAmount, formatInCurrency } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { suppliersApi } from '@/lib/api'
@@ -39,7 +39,7 @@ export default function NewOrderModal({
   selectedSupplierId, setSelectedSupplierId, availableProducts, productSearch, setProductSearch,
   handleCreateOrder,
 }: Props) {
-  const { lang } = useConfig()
+  const { lang, currency } = useConfig()
   const { i } = useI18n()
   const fmt = useFormatAmount()
   const boxRef = useModalFocus<HTMLDivElement>()
@@ -510,7 +510,12 @@ export default function NewOrderModal({
                     TOTAL ({newOrderForm.items.reduce((s, i) => s + i.qty, 0)} {i('art.', 'items', 'art.', 'art.')})
                   </span>
                   <span style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--acc2)', fontFamily: 'var(--mono)' }}>
-                    {fmt(newOrderForm.items.reduce((s, i) => s + i.price * i.qty, 0))}
+                    {(() => {
+                      const sum = newOrderForm.items.reduce((s, it) => s + it.price * it.qty, 0)
+                      return orderType === 'supplier'
+                        ? formatInCurrency(sum, currency)
+                        : fmt(sum)
+                    })()}
                   </span>
                 </div>
               </div>
