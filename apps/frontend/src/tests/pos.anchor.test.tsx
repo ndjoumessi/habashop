@@ -38,6 +38,7 @@ vi.mock('@/lib/api', () => ({
   salesApi: { list: vi.fn().mockResolvedValue([]), create: vi.fn().mockResolvedValue({}) },
   whatsappApi: { sendTicket: vi.fn().mockResolvedValue({}) },
   tenantApi: { get: vi.fn().mockResolvedValue({ requireCashier: true }) },
+  paydunyaApi: { config: vi.fn().mockResolvedValue({ configured: false, mode: 'test', methods: [] }), initiate: vi.fn(), status: vi.fn() },
 }))
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn(), useLocation: () => ({ state: null, pathname: '/app/pos' }) }))
 vi.mock('@/utils/export', () => ({ generateInvoice: vi.fn() }))

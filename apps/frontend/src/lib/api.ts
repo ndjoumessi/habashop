@@ -160,7 +160,7 @@ export const paydunyaApi = {
     api.post<{ token: string; redirectUrl: string }>('/api/payments/paydunya/initiate', data),
   // statut normalisé PayDunya : completed | pending | cancelled | failed
   status: (token: string) =>
-    api.post<{ status: 'completed' | 'pending' | 'cancelled' | 'failed' }>('/api/payments/paydunya/status', { token }),
+    api.get<{ status: 'completed' | 'pending' | 'cancelled' | 'failed' }>(`/api/payments/paydunya/status/${encodeURIComponent(token)}`),
 }
 
 export interface ProviderStat { count: number; amountXof: number; lastAt: string | null }

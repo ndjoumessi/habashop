@@ -3,7 +3,7 @@ import QRCode from 'qrcode'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, useCashierIsOpen, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
-import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi } from '@/lib/api'
+import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
@@ -18,6 +18,7 @@ import POSCashierClosed from '@/components/pos/POSCashierClosed'
 import RefundModal from '@/components/pos/RefundModal'
 import TicketZModal from '@/components/pos/TicketZModal'
 import POSSuccessModal from '@/components/pos/POSSuccessModal'
+import POSPaydunyaOverlay from '@/components/pos/POSPaydunyaOverlay'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
 import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
 
@@ -144,6 +145,12 @@ export default function POS() {
   const [cardReference, setCardReference]   = useState<string|null>(null)
   const [cardQrDataUrl, setCardQrDataUrl]   = useState<string|null>(null)
   const cardReferenceRef = useRef<string|null>(null)
+  // ── PayDunya (Wave / Orange Money Sénégal & UEMOA) — flux hébergé QR + polling ──
+  const [paydunyaOk, setPaydunyaOk]             = useState(false)  // backend configuré ?
+  const [paydunyaStatus, setPaydunyaStatus]     = useState<'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'>('idle')
+  const [paydunyaUrl, setPaydunyaUrl]           = useState<string|null>(null)
+  const [paydunyaQrDataUrl, setPaydunyaQrDataUrl] = useState<string|null>(null)
+  const paydunyaTokenRef = useRef<string|null>(null)
   const [posTab, setPosTab] = useState<'pos'|'history'>('pos')
   const [showTicketZ, setShowTicketZ] = useState(false)
   const [salesHistory, setSalesHistory] = useState<any[]>([])
@@ -635,7 +642,75 @@ export default function POS() {
     }
   }, [payMode])
 
-  const confirmSale = async (mtnRef?: string, campayRef?: string) => {
+  // ── PayDunya : disponibilité (config backend) chargée une fois au montage ──
+  useEffect(() => {
+    paydunyaApi.config().then(c => setPaydunyaOk(!!c?.configured)).catch(() => setPaydunyaOk(false))
+  }, [])
+
+  const onPaydunyaCancel = () => {
+    setPaydunyaStatus('idle')
+    setPaydunyaUrl(null)
+    setPaydunyaQrDataUrl(null)
+    paydunyaTokenRef.current = null
+  }
+
+  // Lance le paiement PayDunya (Wave / Orange Money) : crée la facture hébergée → polling.
+  const startPaydunyaPayment = useCallback(async () => {
+    setPaydunyaStatus('requesting')
+    try {
+      const { token, redirectUrl } = await paydunyaApi.initiate({ amount: Math.round(netTotal) })
+      paydunyaTokenRef.current = token
+      setPaydunyaUrl(redirectUrl)
+      setPaydunyaStatus('polling')
+    } catch {
+      setPaydunyaStatus('failed')
+      toast.error(
+        lang === 'en' ? 'PayDunya payment request failed — retry' :
+        lang === 'es' ? 'Error de pago PayDunya — reintente' :
+        lang === 'it' ? 'Errore pagamento PayDunya — riprova' :
+        'Échec de la demande de paiement PayDunya — réessayez',
+      )
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [netTotal, lang])
+
+  // QR dès qu'une URL hébergée est dispo (noir/blanc opaque, scannable).
+  useEffect(() => {
+    if (!paydunyaUrl) { setPaydunyaQrDataUrl(null); return }
+    QRCode.toDataURL(paydunyaUrl, { width: 180, margin: 1, color: { dark: '#000000', light: '#ffffff' } })
+      .then(url => setPaydunyaQrDataUrl(url))
+      .catch(() => setPaydunyaQrDataUrl(null))
+  }, [paydunyaUrl])
+
+  // Polling PayDunya 3s, max 100 tours (5 min — délai exigé par la spec).
+  useEffect(() => {
+    if (paydunyaStatus !== 'polling') return
+    let done = false
+    let count = 0
+    const MAX = 100
+    const poll = async () => {
+      if (done) return
+      count++
+      if (count > MAX) { done = true; setPaydunyaStatus('timeout'); return }
+      try {
+        const token = paydunyaTokenRef.current
+        if (!token) return
+        const res = await paydunyaApi.status(token)
+        if (res.status === 'completed') { done = true; setPaydunyaStatus('success') }
+        else if (res.status === 'cancelled' || res.status === 'failed') { done = true; setPaydunyaStatus('failed') }
+      } catch { /* fail-silent */ }
+    }
+    const timer = setInterval(poll, 3000)
+    return () => { done = true; clearInterval(timer) }
+  }, [paydunyaStatus])
+
+  // Finalise la vente quand PayDunya passe à 'success' (même flux qu'Espèces/Carte).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (paydunyaStatus === 'success') confirmSale(undefined, undefined, paydunyaTokenRef.current ?? undefined)
+  }, [paydunyaStatus]) // omet confirmSale volontairement (closure fraîche au post-rendu)
+
+  const confirmSale = async (mtnRef?: string, campayRef?: string, paydunyaRef?: string) => {
     // Garde-fou cash : refuser si le montant reçu (converti en XOF) < total.
     // Les modes Wave/Orange/Carte/Mobile n'ont pas de saisie de montant → pas concernés.
     // En paiement mixte, le garde-fou cash ne s'applique pas (la somme = total par construction).
@@ -673,6 +748,7 @@ export default function POS() {
         ...(mixedOn ? mixedSplit : {}),
         mtnMomoReference: mtnRef ?? null,
         campayReference: campayRef ?? null,
+        paydunyaReference: paydunyaRef ?? null,
       })
     } catch (err: any) {
       // Échec serveur (stock insuffisant, réseau, validation…) → on SURFACE l'erreur et on AVORTE.
@@ -756,6 +832,10 @@ export default function POS() {
     setCardQrDataUrl(null)
     setCardReference(null)
     cardReferenceRef.current = null
+    setPaydunyaStatus('idle')
+    setPaydunyaUrl(null)
+    setPaydunyaQrDataUrl(null)
+    paydunyaTokenRef.current = null
   }
 
   // ─── RENDER ──────────────────────────────
@@ -898,8 +978,23 @@ export default function POS() {
           mixedM1={mixedM1} setMixedM1={setMixedM1} mixedM2={mixedM2} setMixedM2={setMixedM2}
           mixedAmt1={mixedAmt1} setMixedAmt1={setMixedAmt1}
           mixedAmt2XOF={mixedAmt2XOF} mixedValid={mixedValid}
+          paydunyaOk={paydunyaOk} onPaydunyaStart={startPaydunyaPayment}
         />
       </div>
+
+      {/* PayDunya — overlay QR + polling (Wave / Orange Money). Masqué quand la vente est confirmée. */}
+      {paydunyaStatus !== 'idle' && !showSuccess && (
+        <POSPaydunyaOverlay
+          status={paydunyaStatus}
+          method={payMode === 'orange' ? 'orange' : 'wave'}
+          qrDataUrl={paydunyaQrDataUrl}
+          paymentUrl={paydunyaUrl}
+          amountLabel={fmt(netTotal)}
+          lang={lang}
+          onCancel={onPaydunyaCancel}
+          onRetry={() => { onPaydunyaCancel(); startPaydunyaPayment() }}
+        />
+      )}
 
       {/* ════════════════════════════════
           MODAL REMISE

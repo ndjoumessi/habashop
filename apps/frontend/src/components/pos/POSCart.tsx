@@ -31,9 +31,13 @@ interface POSCartProps {
   // Sélecteur client inline (recherche + scan QR carte fidélité)
   linkedCustomer?: LinkedCustomer | null; setLinkedCustomer?: (c: LinkedCustomer | null) => void
   enableLoyalty?: boolean; loyaltyTier?: string
+  // PayDunya (Wave / Orange Money Sénégal & UEMOA) : si configuré, Wave/OM passent par PayDunya.
+  paydunyaOk?: boolean; onPaydunyaStart?: () => void
 }
 
-export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '' }: POSCartProps) {
+export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '', paydunyaOk = false, onPaydunyaStart }: POSCartProps) {
+  // PayDunya actif pour Wave / Orange Money quand le backend est configuré → bouton unique dédié.
+  const isPaydunyaMode = paydunyaOk && !mixedOn && (payMode === 'wave' || payMode === 'orange')
   // Montant reçu : jamais négatif. Vide → '' (traité comme 0 en aval). Négatif (collé/contournement) → 0.
   const onCashChange = (raw: string) => {
     if (raw === '') { setCashGiven(''); return }
@@ -419,7 +423,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               </div>
             )}
 
-            {!mixedOn && payMode === 'wave' && cart.length > 0 && (
+            {!mixedOn && payMode === 'wave' && !isPaydunyaMode && cart.length > 0 && (
               <div style={{
                 marginTop:6, padding:'8px 10px',
                 background: payMode === 'wave' ? 'rgba(27,154,245,.08)' : 'rgba(255,102,0,.08)',
@@ -448,8 +452,29 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             )}
           </div>
 
-          {/* ── BOUTON ENCAISSER ── */}
+          {/* ── BOUTON PRINCIPAL : PayDunya (Wave/OM) OU Encaisser — jamais les deux ── */}
           <div style={{ flexShrink:0, padding:'10px 10px 0', borderTop:'1px solid var(--border)' }}>
+            {isPaydunyaMode ? (
+              <button type="button"
+                disabled={cart.length === 0}
+                onClick={() => {
+                  if (!cart.length) return toast.error(lang === 'en' ? 'Empty cart!' : lang === 'es' ? '¡Carrito vacío!' : lang === 'it' ? 'Carrello vuoto!' : 'Panier vide !')
+                  onPaydunyaStart?.()
+                }}
+                style={{
+                  width:'100%', minHeight:52, padding:'13px',
+                  background: cart.length === 0 ? 'var(--bg4)' : (payMode === 'wave' ? '#1B9AF5' : '#FF6600'),
+                  border:'none', borderRadius:10, fontSize:15, fontWeight:'var(--fw-bold)',
+                  color: cart.length === 0 ? 'var(--text3)' : '#fff',
+                  cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
+                  fontFamily:'var(--font)', boxShadow: cart.length === 0 ? 'none' : 'var(--sh-md)',
+                  transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                }}>
+                {cart.length === 0
+                  ? <><ShoppingCart size={15} /> {lang === 'en' ? 'Empty cart' : lang === 'es' ? 'Carrito vacío' : lang === 'it' ? 'Carrello vuoto' : 'Panier vide'}</>
+                  : <>{lang === 'fr' ? 'Confirmer' : lang === 'en' ? 'Confirm' : lang === 'es' ? 'Confirmar' : 'Conferma'} — {fmt(total)}</>}
+              </button>
+            ) : (
             <button type="button"
               disabled={cart.length === 0 || (mixedOn && !mixedValid)}
               onClick={() => {
@@ -472,6 +497,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                 ? <><ShoppingCart size={15} /> {lang === 'en' ? 'Empty cart' : lang === 'es' ? 'Carrito vacío' : lang === 'it' ? 'Carrello vuoto' : 'Panier vide'}</>
                 : <>{lang === 'fr' ? 'Encaisser' : lang === 'en' ? 'Checkout' : lang === 'es' ? 'Cobrar' : 'Incassare'} — {fmt(total)}</>}
             </button>
+            )}
             {cashierSessionTx > 0 && (
               <div style={{
                 display:'flex', justifyContent:'space-between',

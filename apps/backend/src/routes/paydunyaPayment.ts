@@ -53,10 +53,9 @@ export async function paydunyaPaymentRoutes(app: FastifyInstance): Promise<void>
     }
   })
 
-  // ── POST /api/payments/paydunya/status ───────────────────────────────────────
-  // Polling du statut d'une facture par token. CASHIER+.
-  app.post('/api/payments/paydunya/status', { preHandler: [authenticate] }, async (request: any, reply: any) => {
-    const { token } = (request.body ?? {}) as { token?: string }
+  // ── Statut d'une facture par token (polling). CASHIER+. ──────────────────────
+  // Deux formes acceptées : POST /status {token} et GET /status/:token (parité front).
+  async function statusHandler(token: string | undefined, request: any, reply: any) {
     if (!token) return reply.code(400).send({ error: 'token requis' })
 
     // Auto-success sandbox EXPLICITE (jamais en live, jamais sans le flag) — parité MTN/Campay.
@@ -70,7 +69,13 @@ export async function paydunyaPaymentRoutes(app: FastifyInstance): Promise<void>
       request.log.error({ err, step: 'confirmInvoice' }, 'PayDunya status failed')
       return reply.code(502).send({ error: 'Erreur PayDunya status' })
     }
-  })
+  }
+
+  app.post('/api/payments/paydunya/status', { preHandler: [authenticate] }, async (request: any, reply: any) =>
+    statusHandler((request.body ?? {}).token, request, reply))
+
+  app.get('/api/payments/paydunya/status/:token', { preHandler: [authenticate] }, async (request: any, reply: any) =>
+    statusHandler(request.params?.token, request, reply))
 
   // ── POST /api/payments/paydunya/ipn ──────────────────────────────────────────
   // Webhook IPN PayDunya (public, pas de JWT). Authentifié via hash = SHA-512(MASTER_KEY).
