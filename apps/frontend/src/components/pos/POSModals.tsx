@@ -1,7 +1,7 @@
 import { X, Smartphone, Printer, CheckCircle, AlertTriangle, Loader2, TestTube } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
-import { t, formatInCurrency, useAppStore } from '@/stores/appStore'
+import { t, formatInCurrency, useAppStore, CURRENCY_SYMBOLS } from '@/stores/appStore'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
 import { useModalFocus } from '@/hooks/useModalFocus'
 
@@ -212,10 +212,15 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
                 {ct.counted_label}
               </label>
-              <input className="input" type="number"
-                placeholder={ct.counted_placeholder}
-                id="counted-amount"
-                style={{ fontSize:14 }} />
+              <div style={{ position:'relative' }}>
+                <input className="input" type="number"
+                  placeholder={ct.counted_placeholder}
+                  id="counted-amount"
+                  style={{ fontSize:14, paddingRight:48 }} />
+                <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text3)', pointerEvents:'none' }}>
+                  {CURRENCY_SYMBOLS[tenantCurrency as keyof typeof CURRENCY_SYMBOLS] ?? tenantCurrency}
+                </span>
+              </div>
             </div>
             <div style={{ display:'flex', gap:8 }}>
               <button
