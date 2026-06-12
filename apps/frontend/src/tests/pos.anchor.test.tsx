@@ -18,6 +18,7 @@ const { mockState } = vi.hoisted(() => ({
 }))
 vi.mock('@/stores/appStore', () => ({
   useAppStore: () => mockState,
+  useCashierIsOpen: () => mockState.requireCashier ? mockState.cashierOpen : !(mockState as any).cashierForcedClosed,
   useFormatAmount: () => (n: number) => `${n} F`,
   useConvertToXOF: () => (n: number) => n,
   useConvertFromXOF: () => (n: number) => n,

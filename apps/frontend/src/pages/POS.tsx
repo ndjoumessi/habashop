@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react'
 import QRCode from 'qrcode'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, t, formatInCurrency } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, useCashierIsOpen, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
@@ -24,7 +24,7 @@ import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/
 export default function POS() {
   const {
     lang, currency,
-    cashierOpen, cashierOpenedAt, cashierForcedClosed,
+    cashierOpenedAt,
     cashierOpeningFund, cashierSessionTx, cashierSessionCA,
     openCashier, closeCashier, addCashierSale,
     posTaxRate, posShowStockOnTile, posDefaultFund,
@@ -251,13 +251,8 @@ export default function POS() {
     return () => { alive = false }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // État d'ouverture dérivé, synchrone :
-  // - requireCashier=true  → suit cashierOpen (cérémonie d'ouverture/fermeture classique avec fond).
-  // - requireCashier=false → ouverte par défaut, mais fermable explicitement via `cashierForcedClosed`.
-  //   cashierForcedClosed est mis à true par closeCashier() (appelé aussi au login/logout) → après une
-  //   reconnexion la caisse repart FERMÉE jusqu'à une ouverture explicite (bouton « Ouvrir », sans fond).
-  //   Pas d'auto-open : sinon openCashier() au montage remettrait cashierForcedClosed=false trop tôt.
-  const cashierIsOpen = requireCashier ? cashierOpen : !cashierForcedClosed
+  // État d'ouverture effectif (sélecteur partagé — même source de vérité que la Sidebar).
+  const cashierIsOpen = useCashierIsOpen()
 
   // Toggle « Envoyer le ticket WhatsApp » : reflète le réglage tenant `autoWhatsApp` à CHAQUE
   // ouverture du modal de confirmation (et non un instantané figé au montage de la page, qui pouvait

@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore, canAccess } from '@/stores/authStore'
-import { useConfig, t } from '@/stores/appStore'
+import { useConfig, useCashierIsOpen, t } from '@/stores/appStore'
 import {
   LayoutDashboard, ShoppingCart, Archive, Truck, Users,
   UserCog, Calendar, Wallet, Receipt, TrendingUp, BarChart2,
@@ -46,14 +46,12 @@ const NAV: NavEntry[] = [
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
-  const { theme, sidebarCollapsed, cashierOpen, cashierForcedClosed, requireCashier, updateConfig, lang } = useConfig()
+  const { theme, sidebarCollapsed, updateConfig, lang } = useConfig()
   void lang
   const navigate = useNavigate()
   const collapsed = sidebarCollapsed
   const canPos = canAccess(user?.role, 'pos')
-  // Même dérivation que POS.tsx : cashierOpen est exclu de partialize (toujours false au refresh),
-  // donc on calcule l'état réel — requireCashier=false → !cashierForcedClosed (persisté).
-  const cashierIsOpen = requireCashier ? cashierOpen : !cashierForcedClosed
+  const cashierIsOpen = useCashierIsOpen() // source unique de vérité (cashierOpen exclu de partialize)
 
   return (
     <div

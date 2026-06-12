@@ -547,6 +547,16 @@ export function useConfig() {
   return useAppStore()
 }
 
+/**
+ * État d'ouverture effectif de la caisse (source unique de vérité, à utiliser partout :
+ * POS, Sidebar, badges). `cashierOpen` est exclu de partialize (repart false au refresh) :
+ * - requireCashier=true  → suit cashierOpen (cérémonie d'ouverture/fermeture).
+ * - requireCashier=false → ouverte par défaut, fermable via cashierForcedClosed (persisté).
+ */
+export function useCashierIsOpen(): boolean {
+  return useAppStore(s => s.requireCashier ? s.cashierOpen : !s.cashierForcedClosed)
+}
+
 // ─── Formatage ─────────────────────────────────────────────────────────────────
 
 // Formate un montant directement dans une devise SANS conversion
