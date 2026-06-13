@@ -18,7 +18,7 @@ App mobile React Native (iOS + Android), écosystème HabaShop SaaS (gestion com
 | React | 19.1.0 | |
 | Expo Router | ~6.0.23 | File-based (`app/`, typed routes) |
 | Zustand | ^5.0.13 | State (`src/stores/`) + persist AsyncStorage |
-| TanStack Query | ^5.100.14 | Data fetching / cache |
+| TanStack Query | ^5.101 | Data fetching / cache (+ `react-query-persist-client` → cache offline) |
 | axios | ^1.16.1 | `src/services/api.ts` |
 | AsyncStorage | 2.2.0 | Persist lang/currency + cache FX |
 | expo-secure-store | ~15.0.8 | JWT |
@@ -52,14 +52,14 @@ App mobile React Native (iOS + Android), écosystème HabaShop SaaS (gestion com
 ---
 
 ## Règle backend
-**Ne PAS réécrire le backend.** API Railway consommée telle quelle (2 ajouts mobile faits/déployés : table `PushToken` + `POST /api/notifications/token`). **Toute migration DB future = PROD Railway → confirmer avec Nelson AVANT.** ⚠️ Toujours vérifier la **forme réelle** de l'API avant de coder (la doc/CDC peut diverger).
+**Ne PAS réécrire le backend.** API Railway consommée telle quelle. Ajouts mobile faits/déployés : table `PushToken` + `POST /api/notifications/token`, et `services/pushService.ts` + déclencheurs push (cf. **Offline + Push**). **Push to `main` backend = auto-deploy PROD Railway** ; **toute migration DB = confirmer avec Nelson AVANT.** ⚠️ Toujours vérifier la **forme réelle** de l'API avant de coder (la doc/CDC peut diverger).
 
 ---
 
 ## Compte Expo / EAS / versions
 - **Compte :** `ndjoumessi` (romel.djoumessi@gmail.com) · **Project ID :** `e7399d7a-e5ba-4e30-a333-8cff7ad10eb4` (`app.json` → `expo.extra.eas.projectId`) · **Keystore Android :** `sH_oz3rpgx` (auto, sur EAS).
 - **Versioning :** `appVersionSource: remote` → `versionCode` Android **géré par EAS** (celui d'`app.json` ignoré ; profil `preview` sans `autoIncrement` → resté à **3**). `runtimeVersion.policy = appVersion` → **bump version = change runtime** : un OTA ne touche que les builds du **même runtime** ; nouveau build natif sinon.
-- **Version courante : 1.4.2** (runtime **1.4.2**). Label Réglages lit `Constants.expoConfig?.version` (`dace38c` — avant : « 1.2.0 » hardcodé trompeur).
+- **Version courante : 1.4.3** (runtime **1.4.3**, iOS buildNumber 4 ; build natif `ef3dade7`). Label Réglages lit `Constants.expoConfig?.version` (`dace38c` — avant : « 1.2.0 » hardcodé trompeur).
 - **Play Store :** AAB v1.2.0 (build `1f6bf56f`), feature graphic `assets/feature_graphic.png` (1024×500). Politique de confidentialité = page web **`/privacy`** (https://habashop.vercel.app/privacy). Fiche : `PLAY_STORE.md`. iOS build réel = compte Apple Developer (`IOS_BUILD.md`).
 
 ---
@@ -73,7 +73,7 @@ lsof -ti tcp:8081 | xargs kill 2>/dev/null   # libère le port
 npx expo start --clear        # Expo Go SDK 54
 npx expo start --dev-client   # dev build
 npx tsc --noEmit              # 0 erreur (0 `any` dans app/+src/) — rituel avant commit
-npm test                      # jest-expo (135 tests) doivent passer
+npm test                      # jest-expo (141 tests) doivent passer
 npx expo-doctor               # objectif 18/18
 
 # EAS (profils eas.json : development=APK dev-client, preview=APK test, production=AAB Play)
@@ -96,7 +96,7 @@ curl -fL -o HabaShop-Mobile.apk "$URL"   # *.apk/*.aab gitignorés ; adb install
 ## Structure
 ```
 app/                       # Expo Router
-  _layout.tsx              # root : fonts, QueryClient, restoreSession, <OfflineSyncBridge/>, widget, ErrorBoundary
+  _layout.tsx              # root : fonts, PersistQueryClientProvider, restoreSession, <OfflineSyncBridge/> (+SyncToast), push register, widget, ErrorBoundary
   index.tsx                # '/' → Redirect (⚠️ ne pas supprimer, fix écran noir)
   (auth)/login.tsx         # login + biométrie
   (app)/(tabs)/…           # dashboard|stock|customers|settings|pos-tab
@@ -105,11 +105,12 @@ app/                       # Expo Router
 src/
   constants/theme.ts       # Colors (sombre figé) + DarkColors/LightColors/ThemeColors + Spacing/BorderRadius/FontSize/Shadow + withAlpha()
   stores/                  # authStore · appStore (useI18n/useFmt/useTheme + theme/kioskMode + persist) · posStore
-  hooks/                   # useNetworkStatus · useOfflineSync · useProfilePhoto · useSupplierOcr · useResponsive (⚠️ PRÊT mais PAS branché, ≠ code mort)
-  services/                # api · exchangeRate · notifications · offlineQueue · whatsappTicket · printReceipt · invoicePdf · biometric · widgetNotification · saleSubmit
+  hooks/                   # useNetworkStatus · useOfflineSync · usePendingSales · useProfilePhoto · useSupplierOcr · useResponsive (⚠️ PRÊT mais PAS branché, ≠ code mort)
+  services/                # api · exchangeRate · notifications · offlineQueue · queryPersist · whatsappTicket · printReceipt · invoicePdf · biometric · widgetNotification · saleSubmit
   lib/                     # logger · barcode · customerQr · refund · idempotency · paymentSplit · loyalty · prefs
-  components/ui/ · pos/ · customers/ · suppliers/ · sales/
+  components/ui/ (dont OfflineBanner · SyncToast) · pos/ · customers/ · suppliers/ · sales/
   types/index.ts           # Product, Customer, User, Tenant, Sale*, DashboardStats, PriceTier, LoyaltyCardData…
+plugins/withLocalizedPermissions.js  # NS*UsageDescription localisés fr/en/es/it (InfoPlist.strings, prébuild iOS)
 ```
 Alias TS : `@/*` → `src/*`.
 
@@ -166,7 +167,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ## Patterns transverses (à respecter)
 - **Auth :** `restoreSession` reconstruit `user` depuis `/api/auth/me` plat + `GET /api/tenant` (sinon user/tenant `undefined` + boucle refetch).
 - **Logger :** `src/lib/logger.ts` DEV-gated (`__DEV__`) — jamais `console.*` direct. `catch {}` vides comblés en `logger.warn` (les `catch{return false/[]}` à fallback restent).
-- **OfflineSyncBridge :** `useOfflineSync()` appelle `useQueryClient()` → encapsulé dans `<OfflineSyncBridge/>` **sous** `QueryClientProvider` (pas dans `RootLayout` direct).
+- **OfflineSyncBridge :** `useOfflineSync()` appelle `useQueryClient()` → encapsulé dans `<OfflineSyncBridge/>` **sous** `PersistQueryClientProvider` (pas dans `RootLayout` direct) ; rend aussi `<SyncToast/>`.
 - **expo-file-system v19 :** API legacy partie sous `/legacy`. Nouvelle API → `new File(Paths.cache, name); file.create(); file.write(x)` puis `Sharing.shareAsync(file.uri)`.
 - **Error Boundary :** racine (classe au-dessus du router) + **par route** (`export { default as ErrorBoundary } from RouteErrorFallback` sur `(tabs)/_layout`, `pos/index`, `kiosk/index`). Le fallback est une **fonction** (hooks i18n/theme) rendue par la classe.
 - **Modales :** alerte/print déclenchés après fermeture d'une Modal doivent être **différés ~350 ms** (`ALERT_AFTER_MODAL_MS`) sinon avalés pendant le teardown.
@@ -182,8 +183,20 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 - **Remise %** : champ 0–100 → `discount`.
 - **Paiement mixte (`paymentSplit.ts`) :** toggle dans `POSConfirmModal` ; 2 méthodes ≠ ; ligne 1 saisie (devise→XOF), **ligne 2 = reste auto XOF** (somme exacte = total). `paymentMode='mixed'` **jamais écrit dans posStore** → lu depuis le **payload envoyé** (`variables` de la mutation) en `onSuccess`. Historique : split lu depuis `SaleRecord`.
 - **Reçu :** `whatsappTicket.ts` (`TicketOptions`, `mixedSplitParts()`) + `printReceipt.ts` (expo-print, HTML échappé) partagés POS/historique. Annulation print = normale → log, pas d'alerte.
-- **Ventes résilientes (`saleSubmit.ts`) :** `idempotency.ts` = **1 clé/tentative, jamais régénérée** (retry online + resync offline → même clé, backend dédup). Online → `submitSaleResilient` : timeout/5xx → retry court (`isRetryableApiError`) → échec persistant **bascule file offline**. 4xx propagé. Hors-ligne dur → file directe. `useOfflineSync` reflush **30 s**.
-- **Offline :** `offlineQueue.ts` = file `{id,type:'SALE'|'STOCK_MOVE',payload,createdAt,synced}` (AsyncStorage), rejouée au retour réseau.
+- **Ventes résilientes (`saleSubmit.ts`) :** `idempotency.ts` = **1 clé/tentative, jamais régénérée** (retry online + resync offline → même clé, backend dédup). Online → `submitSaleResilient` : timeout/5xx → retry court (`isRetryableApiError`) → échec persistant **bascule file offline**. 4xx propagé. Hors-ligne dur → file directe. (Détails file/cache → **Offline + Push**.)
+
+---
+
+## Offline + Push
+**Offline**
+- **Cache persistant** (`services/queryPersist.ts`) : `@tanstack/react-query-persist-client` + `query-async-storage-persister` (pur JS, OTA-safe) → `_layout` = `PersistQueryClientProvider`. Persiste **uniquement** `['products','customers','dashboard']` ; `gcTime 24 h ≥ maxAge` → stock/clients consultables hors-ligne **à froid** (app tuée).
+- **File ventes** (`offlineQueue.ts`) : `{id,type:'SALE',payload,createdAt,retries}` (AsyncStorage). `useOfflineSync` rejoue **FIFO** au retour réseau + filet 30 s ; **dé-queue sur 4xx** (sinon boucle), abandon après `MAX_QUEUE_RETRIES=3` (5xx/réseau), expose `pendingCount`+`lastSync`.
+- **UI** : `OfflineBanner` (POS/Stock/Clients), `SyncToast` « X vente(s) synchronisée(s) », `usePendingSales` (lecture seule, pas de boucle sync). **POS + kiosque : espèces-only hors-ligne** (Wave/Orange/carte/mixte bloqués dans `confirmSale`/`handleConfirmSale`).
+
+**Push (Expo)** — dev/prod build requis (pas Expo Go)
+- **Mobile** : `notifications.ts` enregistre le token → `POST /api/notifications/token`. Tap notif routé par `data.type` dans `app/_layout.tsx` : `low_stock`→Stock, `trial_expiring`→Réglages, `new_sale|widget|payment_received|leave_pending`→Dashboard (**pas d'écran RH mobile**).
+- **Backend** (`apps/backend/src/services/pushService.ts`, déployé prod) : Expo push, chunk 100, purge `DeviceNotRegistered`, respecte `Tenant.notifPushAll`, **fail-silent** (jamais bloquant). Déclencheurs fire-and-forget : `sales.ts` (rupture stock → MANAGER+ADMIN ; paiement ≠ cash → ADMIN — couvre MTN/Campay/PayDunya qui aboutissent tous à `POST /api/sales`), `leaveRequests.ts` (congé → ADMIN), cron trial → `sendTrialExpiring`. `data.type` alignés mobile.
+- **iOS permissions** : localisées fr/en/es/it via `plugins/withLocalizedPermissions.js` (validable seulement sur build iOS réel). Si « Enhanced Security » Expo activé → poser `EXPO_ACCESS_TOKEN` dans les env Railway.
 
 ---
 
@@ -215,7 +228,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 - **Flux (`useSupplierOcr`) :** picker caméra **ou** galerie → compression JPEG locale (`ImageManipulator`, qualité **0.7**, largeur ≤ **1920**, mimeType uniforme `image/jpeg`) → **POST multipart** `/api/suppliers/scan-invoice` champ **`invoice`** via `apiClient` (⚠️ **override `Content-Type: multipart/form-data`** car le client est JSON par défaut ; **timeout 60 s** car Claude Vision est lent). Annulation du picker = **NI erreur NI loading**. Permission refusée → état `permission_denied`.
 - **`OcrInvoiceResult`** (miroir backend `invoiceOcr.ts`) : `{ supplierName, invoiceDate(YYYY-MM-DD), items[{name,qty,unitPrice}], total, notes, error?, rawText? }`. ⚠️ **PAS** de HT/TVA/TTC/référence — c'est une extraction **ligne-à-ligne** (bon de commande). `error:'parse_error'` → bannière « analyse incomplète ».
 - **`OcrInvoiceSheet` :** Modal montée **on-demand** (anti-Fabric) ; 4 états (choix source / loading / erreur+retry / résultat **éditable**) ; action = **Partager** (`Share.share` natif RN, récap texte — pas de dep clipboard) + **Recommencer**. Montants affichés **bruts** (devise facture inconnue) → JAMAIS `fmt()` (suppose une base XOF).
-- **Deps :** `expo-image-picker`/`-manipulator` déjà présents (rien à installer). **Aucune clé API côté mobile** (Claude Vision = serveur). ⚠️ textes de permission `app.json` parlent encore de « code-barres »/« photo de profil » — inchangés (un OTA ne met pas à jour Info.plist ; à élargir au prochain build natif).
+- **Deps :** `expo-image-picker`/`-manipulator` déjà présents (rien à installer). **Aucune clé API côté mobile** (Claude Vision = serveur). Textes de permission caméra/photos élargis à l'OCR factures + localisés 4 langues (build natif 1.4.3 ; cf. **Offline + Push**).
 
 ---
 
@@ -239,6 +252,6 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ---
 
 ## État courant
-- `main`, `tsc` 0, **135 tests verts**. Version **1.4.2** / runtime **1.4.2** ; dernières features diffusées en **OTA `preview`** (pas de nouveau build natif récent).
-- **À valider sur device** (cf. `runtime-verification-debt`) : offline+resync, ticket WhatsApp, widget, TalkBack, smoke Maestro (`.maestro/smoke.yaml`, non lancé), scanner durci (Android lent), remboursement/fidélité v2/carte QR (scan + partage PDF), boundaries, timeout→file, **OCR facture fournisseur** (scan caméra+galerie sur compte MANAGER+, OTA `cb9ec339`).
-- **Reste / différé :** publier Play Store (AAB prêt, captures à faire) ; layouts tablette (iPad) ; build iOS réel (compte Apple) ; push réelles (token EAS, dev build) ; Wave/Orange prod ; fidélité créditée backend (hors repo).
+- `main`, `tsc` 0, **141 tests verts**. Version **1.4.3** / runtime **1.4.3** ; build natif Android `ef3dade7` (APK preview). Backend push déployé prod.
+- **À valider sur device** (cf. `runtime-verification-debt`) : offline (cache à froid + resync, abandon 3 retries), **push réelles** (3 types : stock/paiement/congé + trial ; tap→nav ; opt-out `notifPushAll`), ticket WhatsApp, widget, TalkBack, smoke Maestro, scanner durci (Android lent), remboursement/fidélité v2/carte QR, boundaries.
+- **Reste / différé :** publier Play Store ; layouts tablette (iPad) ; build iOS réel (valide aussi les permissions localisées) ; Wave/Orange prod ; fidélité créditée backend (hors repo).
