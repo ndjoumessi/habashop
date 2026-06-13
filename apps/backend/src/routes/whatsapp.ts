@@ -2,9 +2,11 @@ import type { FastifyInstance } from 'fastify'
 import twilio from 'twilio'
 import { CronJob } from 'cron'
 import { prisma } from '../db'
+import { redis } from '../redis'
 import { authenticate } from '../middleware/authenticate'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { fmtMoney, localeOf } from '../services/whatsappSend'
+import { tierForPoints } from '../lib/loyalty'
 
 // Envois sortants via le Twilio plateforme : réservés aux rôles de gestion
 const WHATSAPP_SEND_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'] as const
@@ -312,5 +314,107 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     }
 
     return { sent, failed }
+  })
+
+  // ─── CAMPAGNES WHATSAPP MARKETING ───────────────────────────────────────────
+  // GET /api/marketing/whatsapp/campaigns — 20 dernières campagnes du tenant
+  app.get('/api/marketing/whatsapp/campaigns', { preHandler: authenticate }, async (request: any, reply: any) => {
+    if (!canSendWhatsApp((request.user as any)?.role)) {
+      return reply.code(403).send({ error: 'Accès refusé' })
+    }
+    const tenantId = request.tenantId as string
+    const campaigns = await prisma.campaign.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: {
+        id: true, message: true, segment: true,
+        recipientCount: true, sentCount: true, failedCount: true, createdAt: true,
+        user: { select: { name: true } },
+      },
+    })
+    return campaigns
+  })
+
+  // POST /api/marketing/whatsapp/campaign — envoi ciblé par segment (rate-limit 1/h/tenant)
+  app.post('/api/marketing/whatsapp/campaign', { preHandler: authenticate }, async (request: any, reply: any) => {
+    if (!canSendWhatsApp((request.user as any)?.role)) {
+      return reply.code(403).send({ error: 'Accès refusé' })
+    }
+    const tenantId   = request.tenantId as string
+    const userId     = (request.user as any).userId as string
+    const { message, segment = 'all' } = request.body as { message: string; segment?: string }
+
+    if (!message?.trim()) return reply.code(400).send({ error: 'Message requis' })
+
+    const VALID_SEGMENTS = ['all', 'bronze', 'silver', 'gold', 'wholesale', 'retail', 'semi']
+    if (!VALID_SEGMENTS.includes(segment)) return reply.code(400).send({ error: 'Segment invalide' })
+
+    // Rate-limit : 1 campagne/heure/tenant (Redis ou mémoire si Redis absent)
+    const rlKey = `rl:campaign:${tenantId}`
+    if (redis) {
+      const count = await redis.incr(rlKey).catch(() => null)
+      if (count === 1) await redis.expire(rlKey, 3600).catch(() => {})
+      if (count !== null && count > 1) {
+        return reply.code(429).send({ error: 'Une campagne maximum par heure. Réessayez plus tard.' })
+      }
+    }
+
+    // Résolution du segment → liste de numéros de téléphone
+    const tierSegments = ['bronze', 'silver', 'gold']
+    const typeSegments = ['wholesale', 'retail', 'semi']
+
+    let customers: { phone: string | null; loyaltyPoints: number }[]
+
+    if (tierSegments.includes(segment)) {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { bronzeThreshold: true, silverThreshold: true },
+      })
+      const bronzeT = tenant?.bronzeThreshold ?? 2000
+      const silverT = tenant?.silverThreshold ?? 5000
+      const all = await prisma.customer.findMany({
+        where: { tenantId, deletedAt: null, phone: { not: null } },
+        select: { phone: true, loyaltyPoints: true },
+      })
+      customers = all.filter(c => tierForPoints(c.loyaltyPoints, bronzeT, silverT) === segment)
+    } else if (typeSegments.includes(segment)) {
+      customers = await prisma.customer.findMany({
+        where: { tenantId, deletedAt: null, phone: { not: null }, type: segment },
+        select: { phone: true, loyaltyPoints: true },
+      })
+    } else {
+      customers = await prisma.customer.findMany({
+        where: { tenantId, deletedAt: null, phone: { not: null } },
+        select: { phone: true, loyaltyPoints: true },
+      })
+    }
+
+    const phones = customers
+      .map(c => c.phone!)
+      .filter(Boolean)
+      .map(p => p.replace(/[\s\-\(\)]/g, ''))
+      .map(p => p.startsWith('+') ? p : `+${p.replace(/^0/, '')}`)
+
+    let sent = 0, failed = 0
+
+    for (const phone of phones) {
+      try {
+        const client = getTwilioClient()
+        if (!client) { failed++; continue }
+        await client.messages.create({ from: TWILIO_FROM, to: `whatsapp:${phone}`, body: message })
+        sent++
+        await new Promise(r => setTimeout(r, 500))
+      } catch {
+        failed++
+      }
+    }
+
+    // Enregistre la campagne (idempotent — une seule ligne par envoi)
+    await prisma.campaign.create({
+      data: { tenantId, sentBy: userId, message, segment, recipientCount: phones.length, sentCount: sent, failedCount: failed },
+    }).catch(() => {})
+
+    return { sent, failed, recipientCount: phones.length }
   })
 }

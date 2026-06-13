@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
-import { X, FileDown, FileText, TrendingUp, TrendingDown, Scale, Users, RefreshCw, Loader2, BarChart3, AlertTriangle } from 'lucide-react'
+import { X, FileDown, FileText, TrendingUp, TrendingDown, Scale, Users, RefreshCw, Loader2, BarChart3, AlertTriangle, Receipt } from 'lucide-react'
 import { useConfig, formatInCurrency } from '@/stores/appStore'
-import { reportsApi, type AccountingReport } from '@/lib/api'
+import { reportsApi, type AccountingReport, type VatReport } from '@/lib/api'
 import { openPDF, htmlKPIs, htmlTable, exportCSV } from '@/utils/export'
 import { type L4, makeI } from '@/components/settings/settingsShared'
+import toast from 'react-hot-toast'
 
 const localeOf = (lang: string) => lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
 
@@ -45,6 +46,11 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
   const [data, setData]       = useState<AccountingReport | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(false)
+  const [vat, setVat]         = useState<VatReport | null>(null)
+  const [vatLoading, setVatLoading] = useState(false)
+  const [csvLoading, setCsvLoading] = useState(false)
+  const [vatCsvLoading, setVatCsvLoading] = useState(false)
+  const [vatPdfLoading, setVatPdfLoading] = useState(false)
 
   // Le backend renvoie déjà les montants dans la devise du tenant (data.currency).
   // On formate SANS reconvertir (≠ useFormatAmount qui convertirait depuis XOF →
@@ -58,9 +64,10 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
   }
 
   const load = useCallback(async (m: string) => {
-    setLoading(true); setError(false)
+    setLoading(true); setError(false); setVat(null)
     try {
-      setData(await reportsApi.accounting(m))
+      const [acc, v] = await Promise.all([reportsApi.accounting(m), reportsApi.vat(m).catch(() => null)])
+      setData(acc); setVat(v)
     } catch {
       setError(true); setData(null)
     } finally {
@@ -68,6 +75,25 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
     }
   }, [])
   useEffect(() => { load(month) }, [month, load])
+
+  const handleCsvDetailed = async () => {
+    setCsvLoading(true)
+    try { await reportsApi.accountingCsv(month); toast.success(i('CSV téléchargé !', 'CSV downloaded!', '¡CSV descargado!', 'CSV scaricato!')) }
+    catch { toast.error(i('Échec du téléchargement', 'Download failed', 'Error de descarga', 'Download fallito')) }
+    finally { setCsvLoading(false) }
+  }
+  const handleVatCsv = async () => {
+    setVatCsvLoading(true)
+    try { await reportsApi.vatCsv(month); toast.success(i('CSV TVA téléchargé !', 'VAT CSV downloaded!', '¡CSV IVA descargado!', 'CSV IVA scaricato!')) }
+    catch { toast.error(i('Échec du téléchargement', 'Download failed', 'Error de descarga', 'Download fallito')) }
+    finally { setVatCsvLoading(false) }
+  }
+  const handleVatPdf = async () => {
+    setVatPdfLoading(true)
+    try { await reportsApi.vatPdf(month); toast.success(i('PDF TVA téléchargé !', 'VAT PDF downloaded!', '¡PDF IVA descargado!', 'PDF IVA scaricato!')) }
+    catch { toast.error(i('Échec du téléchargement', 'Download failed', 'Error de descarga', 'Download fallito')) }
+    finally { setVatPdfLoading(false) }
+  }
 
   const isEmpty = !!data && data.revenue.total === 0 && data.expenses.total === 0
   const maxCat  = data ? Math.max(1, ...data.expenses.byCategory.map(c => c.amountTtc)) : 1
@@ -219,14 +245,50 @@ export default function AccountingReportModal({ onClose }: { onClose: () => void
                   ))}
                 </div>
               )}
+
+              {/* ── Rapport TVA ── */}
+              {vat && vat.totals.count > 0 && (
+                <div style={{ marginTop: 20, padding: '14px 16px', borderRadius: 12, background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                    <Receipt size={13} color="var(--p3)" />
+                    <span style={lbl}>{i(`TVA collectée — taux ${vat.vatRate} %`, `VAT collected — rate ${vat.vatRate}%`, `IVA recaudado — tasa ${vat.vatRate}%`, `IVA raccolto — aliquota ${vat.vatRate}%`)}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+                    {[
+                      { label: i('Total HT', 'Total excl. VAT', 'Total sin IVA', 'Totale IVA escl.'), val: formatInCurrency(vat.totals.totalHT, vat.currency), color: 'var(--text2)' },
+                      { label: i('TVA collectée', 'VAT collected', 'IVA recaudado', 'IVA raccolto'),    val: formatInCurrency(vat.totals.tva, vat.currency),     color: 'var(--p3)'   },
+                      { label: i('Total TTC', 'Total incl. VAT', 'Total con IVA', 'Totale IVA incl.'), val: formatInCurrency(vat.totals.totalTTC, vat.currency), color: 'var(--acc2)' },
+                    ].map(k => (
+                      <div key={k.label} style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>{k.label}</div>
+                        <div style={{ fontSize: 15, fontWeight: 'var(--fw-semibold)', color: k.color, fontFamily: 'var(--mono)' }}>{k.val}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button type="button" onClick={handleVatCsv} disabled={vatCsvLoading} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      {vatCsvLoading ? <Loader2 size={13} style={{ animation: 'spin .8s linear infinite' }} /> : <FileDown size={13} />}
+                      {i('TVA CSV', 'VAT CSV', 'IVA CSV', 'IVA CSV')}
+                    </button>
+                    <button type="button" onClick={handleVatPdf} disabled={vatPdfLoading} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      {vatPdfLoading ? <Loader2 size={13} style={{ animation: 'spin .8s linear infinite' }} /> : <FileText size={13} />}
+                      {i('TVA PDF', 'VAT PDF', 'IVA PDF', 'IVA PDF')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
 
         {/* Footer — export */}
-        <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, background: 'var(--bg2)' }}>
+        <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, background: 'var(--bg2)', flexWrap: 'wrap' }}>
           {loading && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text3)' }}><Loader2 size={13} style={{ animation: 'spin .8s linear infinite' }} /> {i('Chargement…', 'Loading…', 'Cargando…', 'Caricamento…')}</span>}
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" onClick={handleCsvDetailed} disabled={!data || isEmpty || csvLoading} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, opacity: (!data || isEmpty) ? .5 : 1, cursor: (!data || isEmpty) ? 'not-allowed' : 'pointer' }}>
+              {csvLoading ? <Loader2 size={13} style={{ animation: 'spin .8s linear infinite' }} /> : <FileDown size={13} />}
+              {i('CSV détaillé', 'Detailed CSV', 'CSV detallado', 'CSV dettagliato')}
+            </button>
             <button type="button" onClick={exportPdf} disabled={!data || isEmpty} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, opacity: (!data || isEmpty) ? .5 : 1, cursor: (!data || isEmpty) ? 'not-allowed' : 'pointer' }}>
               <FileText size={13} /> PDF
             </button>

@@ -1,3 +1,4 @@
+import PDFDocument from 'pdfkit'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { getCached } from '../lib/cache'
@@ -271,5 +272,240 @@ export async function reportsRoutes(app: any) {
     const now = new Date()
     // Cache court (5 min) : stock/ventes bougent, mais évite le recalcul à chaque ouverture d'onglet.
     return getCached(`reports:inventory:${tenantId}`, 300, () => buildInventoryInsights(prisma, tenantId, now))
+  })
+
+  // GET /api/reports/accounting/csv?month=YYYY-MM — CSV détaillé par vente (UTF-8 BOM, séparateur ;).
+  app.get('/api/reports/accounting/csv', { preHandler: authenticate }, async (request: any, reply: any) => {
+    const role = request.user?.role as string | undefined
+    if (!role || !ALLOWED_ROLES.has(role)) return reply.code(403).send({ error: 'Accès refusé' })
+
+    const tenantId = request.tenantId as string
+    const now = new Date()
+    const meta = resolveMonth(request.query?.month as string | undefined, now)
+
+    const [sales, tenant] = await Promise.all([
+      prisma.sale.findMany({
+        where: { tenantId, createdAt: { gte: meta.start, lt: meta.end } },
+        select: { id: true, createdAt: true, total: true, paymentMode: true, status: true, customerId: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.tenant.findUnique({ where: { id: tenantId }, select: { vatRate: true, posVatIncluded: true } }),
+    ])
+
+    // Chargement des noms clients en une requête (évite N+1)
+    const custIds = [...new Set(sales.map(s => s.customerId).filter(Boolean))] as string[]
+    const custMap = new Map<string, string>()
+    if (custIds.length) {
+      const custs = await prisma.customer.findMany({
+        where: { id: { in: custIds } },
+        select: { id: true, name: true },
+      })
+      custs.forEach(c => custMap.set(c.id, c.name))
+    }
+
+    const vatRate = tenant?.vatRate ?? 18
+    const posVatIncluded = tenant?.posVatIncluded ?? true
+    const calcVat = (total: number) => {
+      if (posVatIncluded) {
+        const ht = total / (1 + vatRate / 100)
+        return { ht, tva: total - ht, ttc: total }
+      }
+      const tva = total * vatRate / 100
+      return { ht: total, tva, ttc: total + tva }
+    }
+
+    const SEP = ';'
+    const BOM = '﻿'
+    const lines: string[] = [
+      ['Date', 'Référence', 'Client', 'Mode paiement', 'Montant HT', 'TVA', 'Montant TTC', 'Statut'].join(SEP),
+    ]
+    for (const s of sales) {
+      const { ht, tva, ttc } = calcVat(s.total)
+      const date = new Date(s.createdAt).toLocaleDateString('fr-FR')
+      const ref  = s.id.slice(-8).toUpperCase()
+      const cli  = (s.customerId ? (custMap.get(s.customerId) ?? '') : '').replace(/"/g, '""')
+      const mode = s.paymentMode
+      const stat = s.status === 'refunded' ? 'Remboursé' : 'Complété'
+      lines.push([date, ref, `"${cli}"`, mode, ht.toFixed(2), tva.toFixed(2), ttc.toFixed(2), stat].join(SEP))
+    }
+
+    reply.header('Content-Type', 'text/csv; charset=utf-8')
+    reply.header('Content-Disposition', `attachment; filename="comptabilite-${meta.monthStr}.csv"`)
+    return reply.send(BOM + lines.join('\n'))
+  })
+
+  // ── Rapport TVA ──────────────────────────────────────────────────────────────
+  // Helpers partagés par les 3 endpoints (JSON / CSV / PDF).
+  async function buildVatData(tenantId: string, meta: ReturnType<typeof resolveMonth>) {
+    const [sales, tenant] = await Promise.all([
+      prisma.sale.findMany({
+        where: { tenantId, status: { not: 'refunded' }, createdAt: { gte: meta.start, lt: meta.end } },
+        select: { id: true, createdAt: true, total: true, paymentMode: true, customerId: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.tenant.findUnique({ where: { id: tenantId }, select: { vatRate: true, posVatIncluded: true, currency: true } }),
+    ])
+    const vatRate = tenant?.vatRate ?? 18
+    const posVatIncluded = tenant?.posVatIncluded ?? true
+    const currency = tenant?.currency ?? 'XOF'
+
+    // Noms clients (batch)
+    const custIds = [...new Set(sales.map(s => s.customerId).filter(Boolean))] as string[]
+    const custMap = new Map<string, string>()
+    if (custIds.length) {
+      const custs = await prisma.customer.findMany({ where: { id: { in: custIds } }, select: { id: true, name: true } })
+      custs.forEach(c => custMap.set(c.id, c.name))
+    }
+
+    const rows = sales.map(s => {
+      const ttc = posVatIncluded ? s.total : s.total + s.total * vatRate / 100
+      const ht  = posVatIncluded ? s.total / (1 + vatRate / 100) : s.total
+      const tva = ttc - ht
+      return {
+        id: s.id, date: s.createdAt.toISOString(),
+        customerName: s.customerId ? (custMap.get(s.customerId) ?? null) : null,
+        paymentMode: s.paymentMode,
+        totalHT: ht, tva, totalTTC: ttc,
+      }
+    })
+    const totals = rows.reduce((acc, r) => ({
+      totalHT:  acc.totalHT  + r.totalHT,
+      tva:      acc.tva      + r.tva,
+      totalTTC: acc.totalTTC + r.totalTTC,
+      count:    acc.count    + 1,
+    }), { totalHT: 0, tva: 0, totalTTC: 0, count: 0 })
+
+    return { month: meta.monthStr, vatRate, posVatIncluded, currency, rows, totals }
+  }
+
+  // GET /api/reports/vat?month=YYYY-MM — JSON
+  app.get('/api/reports/vat', { preHandler: authenticate }, async (request: any, reply: any) => {
+    const role = request.user?.role as string | undefined
+    if (!role || !ALLOWED_ROLES.has(role)) return reply.code(403).send({ error: 'Accès refusé' })
+    const tenantId = request.tenantId as string
+    const meta = resolveMonth(request.query?.month as string | undefined, new Date())
+    return buildVatData(tenantId, meta)
+  })
+
+  // GET /api/reports/vat/csv?month=YYYY-MM — CSV téléchargeable
+  app.get('/api/reports/vat/csv', { preHandler: authenticate }, async (request: any, reply: any) => {
+    const role = request.user?.role as string | undefined
+    if (!role || !ALLOWED_ROLES.has(role)) return reply.code(403).send({ error: 'Accès refusé' })
+    const tenantId = request.tenantId as string
+    const meta = resolveMonth(request.query?.month as string | undefined, new Date())
+    const { vatRate, rows, totals, month } = await buildVatData(tenantId, meta)
+
+    const SEP = ';'
+    const BOM = '﻿'
+    const lines = [
+      [`Rapport TVA — ${month} (taux ${vatRate} %)`],
+      [],
+      ['Date', 'Référence', 'Client', 'Mode paiement', 'Montant HT', 'TVA', 'Montant TTC'].join(SEP),
+      ...rows.map(r => {
+        const date = new Date(r.date).toLocaleDateString('fr-FR')
+        const ref  = r.id.slice(-8).toUpperCase()
+        const cli  = (r.customerName ?? '').replace(/"/g, '""')
+        return [date, ref, `"${cli}"`, r.paymentMode, r.totalHT.toFixed(2), r.tva.toFixed(2), r.totalTTC.toFixed(2)].join(SEP)
+      }),
+      [],
+      ['TOTAL', '', '', '', totals.totalHT.toFixed(2), totals.tva.toFixed(2), totals.totalTTC.toFixed(2)].join(SEP),
+    ]
+
+    reply.header('Content-Type', 'text/csv; charset=utf-8')
+    reply.header('Content-Disposition', `attachment; filename="tva-${month}.csv"`)
+    return reply.send(BOM + lines.map(l => Array.isArray(l) ? l.join(SEP) : l).join('\n'))
+  })
+
+  // GET /api/reports/vat/pdf?month=YYYY-MM — PDF pdfkit
+  app.get('/api/reports/vat/pdf', { preHandler: authenticate }, async (request: any, reply: any) => {
+    const role = request.user?.role as string | undefined
+    if (!role || !ALLOWED_ROLES.has(role)) return reply.code(403).send({ error: 'Accès refusé' })
+    const tenantId = request.tenantId as string
+    const meta = resolveMonth(request.query?.month as string | undefined, new Date())
+    const { vatRate, rows, totals, month, currency } = await buildVatData(tenantId, meta)
+
+    const fmt2 = (n: number) => n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + currency
+
+    const doc = new PDFDocument({ size: 'A4', margin: 40 })
+    const chunks: Buffer[] = []
+    doc.on('data', (c: Buffer) => chunks.push(c))
+
+    await new Promise<void>((resolve, reject) => {
+      doc.on('end', resolve)
+      doc.on('error', reject)
+
+      // Header
+      doc.fontSize(16).font('Helvetica-Bold').text(`Rapport TVA — ${month}`, { align: 'center' })
+      doc.fontSize(10).font('Helvetica').text(`Taux TVA : ${vatRate} %`, { align: 'center' })
+      doc.moveDown(1)
+
+      // Totals summary
+      doc.fontSize(11).font('Helvetica-Bold').text('Récapitulatif')
+      doc.moveDown(0.3)
+      doc.fontSize(10).font('Helvetica')
+        .text(`Total HT :   ${fmt2(totals.totalHT)}`)
+        .text(`TVA collectée : ${fmt2(totals.tva)}`)
+        .text(`Total TTC :  ${fmt2(totals.totalTTC)}`)
+        .text(`Nombre de ventes : ${totals.count}`)
+      doc.moveDown(1)
+
+      if (rows.length > 0) {
+        // Column widths
+        const W = { date: 70, ref: 70, client: 120, mode: 70, ht: 70, tva: 65, ttc: 75 }
+        const startX = 40
+
+        // Table header
+        doc.fontSize(9).font('Helvetica-Bold')
+        let x = startX
+        const y0 = doc.y
+        doc.text('Date',        x, y0, { width: W.date }); x += W.date
+        doc.text('Référence',   x, y0, { width: W.ref });  x += W.ref
+        doc.text('Client',      x, y0, { width: W.client });x += W.client
+        doc.text('Mode',        x, y0, { width: W.mode }); x += W.mode
+        doc.text('HT',          x, y0, { width: W.ht, align: 'right' });   x += W.ht
+        doc.text('TVA',         x, y0, { width: W.tva, align: 'right' });  x += W.tva
+        doc.text('TTC',         x, y0, { width: W.ttc, align: 'right' })
+        doc.moveDown(0.5)
+        doc.moveTo(startX, doc.y).lineTo(startX + 540, doc.y).strokeColor('#ccc').stroke()
+        doc.moveDown(0.3)
+
+        // Table rows
+        doc.fontSize(8).font('Helvetica')
+        for (const r of rows) {
+          if (doc.y > 750) { doc.addPage(); doc.y = 40 }
+          let rx = startX
+          const ry = doc.y
+          const date = new Date(r.date).toLocaleDateString('fr-FR')
+          const ref  = r.id.slice(-8).toUpperCase()
+          const cli  = (r.customerName ?? '—').slice(0, 18)
+          doc.text(date,               rx, ry, { width: W.date }); rx += W.date
+          doc.text(ref,                rx, ry, { width: W.ref });  rx += W.ref
+          doc.text(cli,                rx, ry, { width: W.client });rx += W.client
+          doc.text(r.paymentMode,      rx, ry, { width: W.mode }); rx += W.mode
+          doc.text(r.totalHT.toFixed(2),  rx, ry, { width: W.ht, align: 'right' });  rx += W.ht
+          doc.text(r.tva.toFixed(2),      rx, ry, { width: W.tva, align: 'right' }); rx += W.tva
+          doc.text(r.totalTTC.toFixed(2), rx, ry, { width: W.ttc, align: 'right' })
+          doc.moveDown(0.6)
+        }
+
+        // Totals row
+        doc.moveTo(startX, doc.y).lineTo(startX + 540, doc.y).strokeColor('#999').stroke()
+        doc.moveDown(0.3)
+        let tx = startX
+        const ty = doc.y
+        doc.fontSize(9).font('Helvetica-Bold')
+        doc.text('TOTAL', tx, ty, { width: W.date + W.ref + W.client + W.mode }); tx += W.date + W.ref + W.client + W.mode
+        doc.text(totals.totalHT.toFixed(2),  tx, ty, { width: W.ht, align: 'right' });  tx += W.ht
+        doc.text(totals.tva.toFixed(2),      tx, ty, { width: W.tva, align: 'right' }); tx += W.tva
+        doc.text(totals.totalTTC.toFixed(2), tx, ty, { width: W.ttc, align: 'right' })
+      }
+
+      doc.end()
+    })
+
+    const pdf = Buffer.concat(chunks)
+    reply.header('Content-Type', 'application/pdf')
+    reply.header('Content-Disposition', `attachment; filename="tva-${month}.pdf"`)
+    return reply.send(pdf)
   })
 }

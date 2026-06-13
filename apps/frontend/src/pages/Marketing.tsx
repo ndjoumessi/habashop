@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import React from 'react'
 import { useAppStore } from '@/stores/appStore'
-import { customersApi, marketingApi } from '@/lib/api'
+import { customersApi, marketingApi, type Campaign } from '@/lib/api'
 import toast from 'react-hot-toast'
-import { Search, Send, Users, CheckSquare, Square, Smartphone, Tag, Package, Gift, MessageCircle } from 'lucide-react'
+import { Search, Send, Users, CheckSquare, Square, Smartphone, Tag, Package, Gift, MessageCircle, Megaphone, Clock, Loader2 } from 'lucide-react'
 
 interface Customer {
   id: string
@@ -219,6 +219,18 @@ export default function Marketing() {
   const [sending,       setSending]       = useState(false)
   const [result,        setResult]        = useState<{ sent: number; failed: number; errors?: string[] } | null>(null)
 
+  // Campagnes
+  const [campaigns,     setCampaigns]     = useState<Campaign[]>([])
+  const [segment,       setSegment]       = useState('all')
+  const [campaignMsg,   setCampaignMsg]   = useState('')
+  const [campaignSending, setCampaignSending] = useState(false)
+  const [campaignResult,  setCampaignResult]  = useState<{ sent: number; failed: number; recipientCount: number } | null>(null)
+
+  const loadCampaigns = useCallback(() => {
+    marketingApi.campaigns().then(setCampaigns).catch(() => {})
+  }, [])
+  useEffect(() => { loadCampaigns() }, [loadCampaigns])
+
   useEffect(() => {
     customersApi.list()
       .then(data => setCustomers(
@@ -266,6 +278,25 @@ export default function Marketing() {
       toast.error(err.message ?? mk.err_send)
     } finally {
       setSending(false)
+    }
+  }
+
+  const handleCampaign = async () => {
+    if (!campaignMsg.trim()) { toast.error(mk.err_msg); return }
+    setCampaignSending(true); setCampaignResult(null)
+    try {
+      const res = await marketingApi.campaign({ message: campaignMsg, segment })
+      setCampaignResult(res)
+      toast.success(`${res.sent} ${res.sent > 1 ? mk.word_messages : mk.word_message} ${mk.sent_toast} !`)
+      loadCampaigns()
+    } catch (err: any) {
+      if (err?.message?.includes('429') || err?.message?.toLowerCase().includes('heure')) {
+        toast.error(lang === 'en' ? 'Max 1 campaign per hour' : lang === 'es' ? 'Máx. 1 campaña por hora' : lang === 'it' ? 'Max 1 campagna per ora' : 'Max 1 campagne par heure')
+      } else {
+        toast.error(err.message ?? mk.err_send)
+      }
+    } finally {
+      setCampaignSending(false)
     }
   }
 
@@ -555,6 +586,117 @@ export default function Marketing() {
         </div>
         <div style={{ fontSize: 11, color: 'var(--acc)', textAlign: 'center', lineHeight: 1.5 }}>
           {mk.warning}
+        </div>
+
+        {/* ── Campagnes automatiques ────────────────────────────────────── */}
+        <div style={{ marginTop: 24 }}>
+          {/* Section header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(91,78,232,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Megaphone size={16} style={{ color: 'var(--p2)' }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+                {lang === 'en' ? 'Segment campaigns' : lang === 'es' ? 'Campañas por segmento' : lang === 'it' ? 'Campagne per segmento' : 'Campagnes par segment'}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                {lang === 'en' ? 'Target a customer group automatically · max 1/hour' : lang === 'es' ? 'Dirige un grupo de clientes automáticamente · máx. 1/hora' : lang === 'it' ? 'Target automatico per gruppo · max 1/ora' : 'Ciblage automatique par groupe · max 1/heure'}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Segment selector */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 'var(--fw-regular)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 8 }}>
+                {lang === 'en' ? 'Segment' : lang === 'es' ? 'Segmento' : lang === 'it' ? 'Segmento' : 'Segment'}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {[
+                  { val: 'all',       label: lang === 'en' ? 'All' : lang === 'es' ? 'Todos' : lang === 'it' ? 'Tutti' : 'Tous' },
+                  { val: 'bronze',    label: lang === 'en' ? 'Bronze' : 'Bronze' },
+                  { val: 'silver',    label: lang === 'en' ? 'Silver' : lang === 'es' ? 'Plata' : lang === 'it' ? 'Argento' : 'Silver' },
+                  { val: 'gold',      label: lang === 'en' ? 'Gold' : lang === 'es' ? 'Oro' : lang === 'it' ? 'Oro' : 'Gold' },
+                  { val: 'wholesale', label: lang === 'en' ? 'Wholesale' : lang === 'es' ? 'Mayorista' : lang === 'it' ? 'Ingrosso' : 'Gros' },
+                  { val: 'retail',    label: lang === 'en' ? 'Retail' : lang === 'es' ? 'Minorista' : lang === 'it' ? 'Dettaglio' : 'Détail' },
+                ].map(s => (
+                  <button key={s.val} onClick={() => setSegment(s.val)} style={{
+                    padding: '5px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer',
+                    border: `1.5px solid ${segment === s.val ? 'var(--p2)' : 'var(--border)'}`,
+                    background: segment === s.val ? 'rgba(91,78,232,.1)' : 'var(--bg3)',
+                    color: segment === s.val ? 'var(--p2)' : 'var(--text2)',
+                    fontFamily: 'var(--font)', fontWeight: segment === s.val ? 'var(--fw-semibold)' : 'var(--fw-regular)',
+                    transition: 'all .12s',
+                  }}>{s.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Message */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 'var(--fw-regular)', textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text3)', marginBottom: 6 }}>
+                {mk.msg_title}
+              </div>
+              <textarea className="input" style={{ width: '100%', resize: 'none', height: 120, fontSize: 13, lineHeight: 1.6, fontFamily: 'var(--font)' }}
+                placeholder={mk.msg_placeholder}
+                value={campaignMsg}
+                onChange={e => setCampaignMsg(e.target.value.slice(0, 1000))}
+              />
+              <span style={{ fontSize: 11, color: campaignMsg.length > 900 ? 'var(--danger)' : 'var(--text3)' }}>{campaignMsg.length} / 1000 {mk.chars}</span>
+            </div>
+
+            {/* Result */}
+            {campaignResult && (
+              <div style={{ background: campaignResult.failed === 0 ? 'rgba(14,196,126,.1)' : 'rgba(240,165,0,.1)', border: `1px solid ${campaignResult.failed === 0 ? 'rgba(14,196,126,.3)' : 'rgba(240,165,0,.3)'}`, borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--text2)' }}>
+                {campaignResult.sent} / {campaignResult.recipientCount} {mk.sent_toast}
+                {campaignResult.failed > 0 && ` · ${campaignResult.failed} ${mk.failed}`}
+              </div>
+            )}
+
+            {/* Send */}
+            <button onClick={handleCampaign} disabled={campaignSending || !campaignMsg.trim()} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '11px', borderRadius: 10, border: 'none', cursor: campaignSending || !campaignMsg.trim() ? 'not-allowed' : 'pointer',
+              background: campaignSending || !campaignMsg.trim() ? 'var(--bg4)' : 'linear-gradient(135deg, var(--p), var(--p2))',
+              color: campaignSending || !campaignMsg.trim() ? 'var(--text3)' : '#fff',
+              fontSize: 13, fontWeight: 'var(--fw-semibold)', fontFamily: 'inherit', transition: 'all .2s',
+            }}>
+              {campaignSending ? <><Loader2 size={15} style={{ animation: 'spin .7s linear infinite' }} /> {mk.sending}</> : <><Send size={15} /> {lang === 'en' ? 'Send campaign' : lang === 'es' ? 'Enviar campaña' : lang === 'it' ? 'Invia campagna' : 'Envoyer la campagne'}</>}
+            </button>
+          </div>
+
+          {/* Campaign history */}
+          {campaigns.length > 0 && (
+            <div style={{ marginTop: 16, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Clock size={13} style={{ color: 'var(--text3)' }} />
+                <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text2)' }}>
+                  {lang === 'en' ? 'Campaign history' : lang === 'es' ? 'Historial de campañas' : lang === 'it' ? 'Storico campagne' : 'Historique des campagnes'}
+                </span>
+              </div>
+              <div style={{ maxHeight: 280, overflowY: 'auto' }}>
+                {campaigns.map(c => (
+                  <div key={c.id} style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
+                        {new Date(c.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(91,78,232,.1)', color: 'var(--p2)', fontWeight: 'var(--fw-semibold)' }}>{c.segment}</span>
+                        <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: c.failedCount === 0 ? 'rgba(14,196,126,.1)' : 'rgba(240,165,0,.1)', color: c.failedCount === 0 ? 'var(--acc2)' : 'var(--acc)', fontWeight: 'var(--fw-semibold)' }}>
+                          {c.sentCount}/{c.recipientCount}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {c.message.slice(0, 80)}{c.message.length > 80 ? '…' : ''}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{c.user.name}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -91,6 +91,7 @@ model Tenant {
   loyaltyTxns    LoyaltyTransaction[]
   ticketZ        TicketZ[]
   subscriptions  Subscription[]
+  campaigns      Campaign[]
 
   @@index([deletedAt])
 }
@@ -138,6 +139,7 @@ model User {
   purchaseOrders PurchaseOrder[] @relation("OrderCreator")
   auditLogs      AuditLog[]
   pushTokens     PushToken[]
+  campaigns      Campaign[]
 
   @@index([tenantId])
   @@index([tenantId, deletedAt])
@@ -638,4 +640,23 @@ model SubscriptionItem {
   product      Product      @relation(fields: [productId], references: [id])
 
   @@index([subscriptionId])
+}
+
+// Campagnes WhatsApp marketing (segment-based) — 1/heure/tenant via Redis.
+model Campaign {
+  id             String   @id @default(cuid())
+  tenantId       String
+  sentBy         String
+  message        String   @db.Text
+  segment        String   @default("all") // all | bronze | silver | gold | wholesale | retail
+  recipientCount Int
+  sentCount      Int
+  failedCount    Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [sentBy], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
 }

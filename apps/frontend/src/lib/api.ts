@@ -39,6 +39,18 @@ export async function openAuthedPdf(path: string): Promise<void> {
   setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
+/** Télécharge un fichier (CSV, PDF…) depuis un endpoint JWT-authentifié. */
+export async function downloadAuthedFile(path: string, filename: string): Promise<void> {
+  const token = getToken()
+  const res = await fetch(`${BASE_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  if (!res.ok) throw new Error(`Erreur ${res.status}`)
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -272,10 +284,30 @@ export interface InventoryInsights {
   generatedAt: string
 }
 
+export interface VatReport {
+  month: string
+  vatRate: number
+  posVatIncluded: boolean
+  currency: string
+  rows: { id: string; date: string; customerName: string | null; paymentMode: string; totalHT: number; tva: number; totalTTC: number }[]
+  totals: { totalHT: number; tva: number; totalTTC: number; count: number }
+}
+
 export const reportsApi = {
   // Rapport comptable mensuel. month = 'YYYY-MM' (défaut backend = mois courant).
   accounting: (month?: string) =>
     api.get<AccountingReport>(`/api/reports/accounting${month ? `?month=${month}` : ''}`),
+  // CSV détaillé vente par vente (téléchargement direct).
+  accountingCsv: (month: string) =>
+    downloadAuthedFile(`/api/reports/accounting/csv?month=${month}`, `comptabilite-${month}.csv`),
+  // Rapport TVA (JSON).
+  vat: (month: string) => api.get<VatReport>(`/api/reports/vat?month=${month}`),
+  // Rapport TVA CSV (téléchargement direct).
+  vatCsv: (month: string) =>
+    downloadAuthedFile(`/api/reports/vat/csv?month=${month}`, `tva-${month}.csv`),
+  // Rapport TVA PDF (téléchargement direct).
+  vatPdf: (month: string) =>
+    downloadAuthedFile(`/api/reports/vat/pdf?month=${month}`, `tva-${month}.pdf`),
   // Rapports actionnables : à réapprovisionner + produits dormants (tenant courant).
   inventory: () => api.get<InventoryInsights>('/api/reports/inventory'),
 }
@@ -349,8 +381,21 @@ export const whatsappApi = {
   testMorning: () => api.post('/api/whatsapp/test-morning', {}),
 }
 
+export interface Campaign {
+  id: string
+  message: string
+  segment: string
+  recipientCount: number
+  sentCount: number
+  failedCount: number
+  createdAt: string
+  user: { name: string }
+}
+
 export const marketingApi = {
-  broadcast: (data: any) => api.post('/api/whatsapp/broadcast', data),
+  broadcast:  (data: any) => api.post('/api/whatsapp/broadcast', data),
+  campaign:   (data: { message: string; segment: string }) => api.post<{ sent: number; failed: number; recipientCount: number }>('/api/marketing/whatsapp/campaign', data),
+  campaigns:  () => api.get<Campaign[]>('/api/marketing/whatsapp/campaigns'),
 }
 
 export const loyaltyApi = {
