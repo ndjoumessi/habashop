@@ -9,6 +9,7 @@ import { pointsForAmount, tierForPoints, discountForTier, computeLoyaltyDiscount
 import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
 import { resolvePaymentSplit } from '../lib/paymentSplit'
 import { sendSaleWhatsApp } from '../services/whatsappSend'
+import * as pushService from '../services/pushService'
 
 // Remboursement réservé MANAGER + ADMIN (+ SUPER_ADMIN superset) — anti-fraude :
 // le caissier ne peut PAS rembourser. Helper pur exporté pour les tests.
@@ -207,6 +208,13 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     invalidateTenantCache(tenantId).catch(() => {})
 
     notifyTenant(tenantId, { type: 'new_sale', data: { id: newSale.id, total, paymentMode, itemCount: Array.isArray(items) ? items.length : 0 } })
+    // Push « paiement reçu » → ADMIN, pour les encaissements ÉLECTRONIQUES uniquement
+    // (mobile money / carte). On exclut 'cash' pour ne pas spammer à chaque vente comptoir.
+    // Les flux MTN/Campay/PayDunya aboutissent tous à un POST /api/sales (leurs webhooks ne
+    // font que réconcilier) → ce point couvre les 3 fournisseurs sans toucher leur code.
+    if (paymentMode && paymentMode !== 'cash') {
+      void pushService.sendPaymentReceived(tenantId, finalTotal, paymentMode)
+    }
     try {
       const ids = (items ?? []).map((i) => i.productId)
       const sold = await prisma.product.findMany({
@@ -214,7 +222,11 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
         select: { id: true, name: true, stockQty: true, stockMin: true },
       })
       const low = sold.filter((p) => p.stockQty <= p.stockMin)
-      if (low.length) notifyTenant(tenantId, { type: 'low_stock', data: { products: low.map((p) => ({ id: p.id, name: p.name, stockQty: p.stockQty })) } })
+      if (low.length) {
+        notifyTenant(tenantId, { type: 'low_stock', data: { products: low.map((p) => ({ id: p.id, name: p.name, stockQty: p.stockQty })) } })
+        // Push « rupture de stock » → MANAGER + ADMIN (fire-and-forget, un par produit bas).
+        for (const p of low) void pushService.sendStockAlert(tenantId, p.name, p.stockQty)
+      }
     } catch { /* non bloquant */ }
 
     // ── WhatsApp auto (reçu après vente) — async NON BLOQUANT : n'échoue jamais la vente ──

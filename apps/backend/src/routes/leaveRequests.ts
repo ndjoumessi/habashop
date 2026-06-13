@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { eachDateInclusive } from '../lib/dates'
+import * as pushService from '../services/pushService'
 
 export const LEAVE_STATUSES = ['PENDING', 'APPROVED', 'REFUSED'] as const
 const APPROVER_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'HR'] as const
@@ -64,18 +65,21 @@ export async function leaveRequestRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'employeeId, startDate, endDate (YYYY-MM-DD) requis' })
     }
     if (b.endDate < b.startDate) return reply.code(400).send({ error: 'endDate doit être ≥ startDate' })
-    const emp = await prisma.employee.findFirst({ where: { id: b.employeeId, tenantId }, select: { id: true } })
+    const emp = await prisma.employee.findFirst({ where: { id: b.employeeId, tenantId }, select: { id: true, name: true } })
     if (!emp) return reply.code(404).send({ error: 'Employé introuvable dans ce tenant' })
     // Un non-approbateur ne peut soumettre QUE pour lui-même (employeeId == son userId lié).
     if (!canApprove(request.user?.role) && b.employeeId !== request.user?.userId) {
       return reply.code(403).send({ error: 'Vous ne pouvez soumettre une demande que pour vous-même', code: 'LEAVE_SELF_ONLY' })
     }
-    return prisma.leaveRequest.create({
+    const created = await prisma.leaveRequest.create({
       data: {
         tenantId, employeeId: b.employeeId, startDate: b.startDate, endDate: b.endDate,
         leaveType: b.leaveType ?? 'Congé', status: 'PENDING', reason: b.reason ?? null,
       },
     })
+    // Push « congé en attente » → ADMIN (fire-and-forget, n'échoue jamais la demande).
+    void pushService.sendLeavePending(tenantId, emp.name)
+    return created
   })
 
   // PATCH /api/leave-requests/:id — maj partielle HORS status (dates/type/reason). Approbateur.
