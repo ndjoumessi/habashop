@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   RefreshCw, Plus, Pencil, Trash2, Pause, Play,
   ShoppingCart, User, ChevronDown, ChevronUp, X, Check,
-  PackageSearch,
+  PackageSearch, Minus, Calendar, Package, FileText, Tag,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useConfig } from '@/stores/appStore'
@@ -32,6 +32,13 @@ const DAY_LABELS: Record<string, string[]> = {
   en: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
   es: ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'],
   it: ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'],
+}
+
+const DAY_SHORT: Record<string, string[]> = {
+  fr: ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],
+  en: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+  es: ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],
+  it: ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'],
 }
 
 function i(fr: string, en: string, es: string, it: string) {
@@ -81,6 +88,19 @@ const T = {
 function tx(key: keyof typeof T, lang: string): string {
   const entry = T[key] as Record<string,string>
   return entry[lang] ?? entry.fr
+}
+
+// ─── Section label (icon + uppercase title + separator line) ─────────────────
+function SLabel({ icon, label }: { icon: JSX.Element; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+      {icon}
+      <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
+      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+    </div>
+  )
 }
 
 // ─── Modal Abonnement ─────────────────────────────────────────────────────────
@@ -162,99 +182,230 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
     } catch { toast.error('Erreur') } finally { setSaving(false) }
   }
 
-  const days = DAY_LABELS[lang] ?? DAY_LABELS.fr
+  const shortDays = DAY_SHORT[lang] ?? DAY_SHORT.fr
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal aria-label={sub ? tx('edit', lang) : tx('new', lang)} onClick={onClose}>
-      <div className="modal-box" ref={boxRef} style={{ maxWidth: 540, width: '100%' }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h2 style={{ fontWeight: 'var(--fw-semibold)', fontSize: 17, margin: 0 }}>{sub ? tx('edit', lang) : tx('new', lang)}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label={tx('cancel', lang)}><X size={18} /></button>
-        </div>
-
-        {/* Nom */}
-        <div className="form-group" style={{ marginBottom: 14 }}>
-          <label className="form-label">{tx('name_label', lang)}</label>
-          <input className="form-input" value={name} onChange={e => setName(e.target.value)} placeholder={tx('name_label', lang)} />
-        </div>
-
-        {/* Client */}
-        <div className="form-group" style={{ marginBottom: 14, position: 'relative' }}>
-          <label className="form-label">{tx('customer_label', lang)}</label>
-          {customer ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--bg3)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
-              <User size={14} color="var(--p2)" />
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 'var(--fw-semibold)' }}>{customer.name}</span>
-              <button className="icon-btn" onClick={() => { setCustomer(null); setCustSearch('') }} aria-label="Changer"><X size={14} /></button>
+      <div
+        className="modal-box"
+        ref={boxRef}
+        style={{ maxWidth: 560, width: '100%', padding: 0, display: 'flex', flexDirection: 'column', maxHeight: 'min(92vh, 700px)', overflow: 'hidden' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* ── Header ── */}
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 'var(--r-md)', background: 'color-mix(in srgb, var(--p2) 14%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <RefreshCw size={18} color="var(--p2)" />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 'var(--fw-semibold)', fontSize: 16, color: 'var(--text)', lineHeight: 1.2 }}>
+              {sub ? tx('edit', lang) : tx('new', lang)}
             </div>
-          ) : (
-            <>
-              <input className="form-input" value={custSearch} onChange={e => { setCustSearch(e.target.value); setShowCust(true) }} placeholder={tx('search_cust', lang)} onFocus={() => setShowCust(true)} />
-              {showCust && custResults.length > 0 && (
-                <div style={{ position: 'absolute', zIndex: 50, top: '100%', left: 0, right: 0, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', boxShadow: 'var(--sh-md)', marginTop: 2 }}>
-                  {custResults.map(c => (
-                    <button key={c.id} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--text)' }}
-                      onMouseDown={() => { setCustomer(c); setCustSearch(''); setShowCust(false) }}>
-                      {c.name}{c.phone ? ` · ${c.phone}` : ''}
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{tx('subtitle', lang)}</div>
+          </div>
+          <button className="icon-btn" onClick={onClose} aria-label={tx('cancel', lang)} style={{ flexShrink: 0 }}>
+            <X size={17} />
+          </button>
+        </div>
+
+        {/* ── Scrollable body ── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 0' }}>
+
+          {/* Nom du panier */}
+          <SLabel icon={<Tag size={12} color="var(--text3)" />} label={tx('name_label', lang)} />
+          <div style={{ marginBottom: 22 }}>
+            <input
+              className="form-input"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder={lang === 'en' ? 'e.g. Marie weekly basket' : lang === 'es' ? 'ej. Cesta semanal de Marie' : lang === 'it' ? 'es. Cesto settimanale di Marie' : 'ex. Panier hebdo Marie'}
+              autoFocus
+            />
+          </div>
+
+          {/* Client */}
+          <SLabel icon={<User size={12} color="var(--text3)" />} label={tx('customer_label', lang)} />
+          <div style={{ marginBottom: 22, position: 'relative' }}>
+            {customer ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'color-mix(in srgb, var(--p2) 8%, transparent)', borderRadius: 'var(--r-md)', border: '1.5px solid color-mix(in srgb, var(--p2) 28%, transparent)' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'color-mix(in srgb, var(--p2) 18%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <User size={14} color="var(--p2)" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customer.name}</div>
+                  {customer.phone && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{customer.phone}</div>}
+                </div>
+                <button
+                  className="icon-btn"
+                  onClick={() => { setCustomer(null); setCustSearch('') }}
+                  aria-label={lang === 'en' ? 'Change customer' : lang === 'es' ? 'Cambiar cliente' : lang === 'it' ? 'Cambia cliente' : 'Changer de client'}
+                  style={{ color: 'var(--text3)', flexShrink: 0 }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <>
+                <input
+                  className="form-input"
+                  value={custSearch}
+                  onChange={e => { setCustSearch(e.target.value); setShowCust(true) }}
+                  placeholder={tx('search_cust', lang)}
+                  onFocus={() => setShowCust(true)}
+                />
+                {showCust && custResults.length > 0 && (
+                  <div style={{ position: 'absolute', zIndex: 50, top: 'calc(100% + 4px)', left: 0, right: 0, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', boxShadow: 'var(--sh-lg)', overflow: 'hidden' }}>
+                    {custResults.map(c => (
+                      <button
+                        key={c.id}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '9px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)' }}
+                        onMouseDown={() => { setCustomer(c); setCustSearch(''); setShowCust(false) }}
+                      >
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <User size={13} color="var(--text3)" />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)' }}>{c.name}</div>
+                          {c.phone && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{c.phone}</div>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Jour de livraison */}
+          <SLabel icon={<Calendar size={12} color="var(--text3)" />} label={tx('day_label', lang)} />
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 22 }}>
+            {shortDays.map((d, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setDow(idx)}
+                aria-pressed={dow === idx}
+                style={{
+                  padding: '6px 13px',
+                  borderRadius: 99,
+                  fontSize: 12,
+                  fontWeight: 'var(--fw-semibold)',
+                  border: `1.5px solid ${dow === idx ? 'var(--p2)' : 'var(--border)'}`,
+                  background: dow === idx ? 'color-mix(in srgb, var(--p2) 13%, transparent)' : 'var(--bg3)',
+                  color: dow === idx ? 'var(--p2)' : 'var(--text2)',
+                  cursor: 'pointer',
+                  transition: 'border-color .15s, background .15s, color .15s',
+                }}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+
+          {/* Produits */}
+          <SLabel icon={<Package size={12} color="var(--text3)" />} label={tx('products_label', lang)} />
+          <div style={{ marginBottom: 22 }}>
+            {items.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                {items.map(it => (
+                  <div
+                    key={it.productId}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--bg3)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}
+                  >
+                    <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{it.product.emoji}</span>
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}>
+                      {it.product.name}
+                    </span>
+                    {/* Qty stepper */}
+                    <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', overflow: 'hidden', flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={() => updateQty(it.productId, it.quantity - 1)}
+                        style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}
+                        aria-label={lang === 'en' ? 'Decrease' : lang === 'es' ? 'Reducir' : lang === 'it' ? 'Riduci' : 'Réduire'}
+                      >
+                        <Minus size={11} />
+                      </button>
+                      <span style={{ minWidth: 30, textAlign: 'center', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', userSelect: 'none' }}>
+                        {it.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => updateQty(it.productId, it.quantity + 1)}
+                        style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}
+                        aria-label={lang === 'en' ? 'Increase' : lang === 'es' ? 'Aumentar' : lang === 'it' ? 'Aumenta' : 'Augmenter'}
+                      >
+                        <Plus size={11} />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      onClick={() => updateQty(it.productId, 0)}
+                      aria-label={lang === 'en' ? 'Remove' : lang === 'es' ? 'Quitar' : lang === 'it' ? 'Rimuovi' : 'Retirer'}
+                      style={{ color: 'var(--text4)', flexShrink: 0 }}
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ position: 'relative' }}>
+              <input
+                className="form-input"
+                value={prodSearch}
+                onChange={e => { setProdSearch(e.target.value); setShowProd(true) }}
+                placeholder={tx('search_prod', lang)}
+                onFocus={() => setShowProd(true)}
+              />
+              {showProd && prodResults.length > 0 && (
+                <div style={{ position: 'absolute', zIndex: 50, top: 'calc(100% + 4px)', left: 0, right: 0, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', boxShadow: 'var(--sh-lg)', overflow: 'hidden' }}>
+                  {prodResults.map(p => (
+                    <button
+                      key={p.id}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '9px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)' }}
+                      onMouseDown={() => addProduct(p)}
+                    >
+                      <span style={{ fontSize: 17, lineHeight: 1, flexShrink: 0 }}>{p.emoji}</span>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 'var(--fw-semibold)' }}>{p.name}</span>
+                      <span style={{ fontSize: 11, color: p.stockQty <= 0 ? 'var(--danger)' : 'var(--text3)', fontFamily: 'var(--font-mono, monospace)', flexShrink: 0 }}>
+                        {p.stockQty}
+                      </span>
                     </button>
                   ))}
                 </div>
               )}
-            </>
-          )}
-        </div>
-
-        {/* Jour */}
-        <div className="form-group" style={{ marginBottom: 14 }}>
-          <label className="form-label">{tx('day_label', lang)}</label>
-          <select className="form-select" value={dow} onChange={e => setDow(Number(e.target.value))}>
-            {days.map((d, i) => <option key={i} value={i}>{d}</option>)}
-          </select>
-        </div>
-
-        {/* Produits */}
-        <div className="form-group" style={{ marginBottom: 14 }}>
-          <label className="form-label">{tx('products_label', lang)}</label>
-          {items.length > 0 && (
-            <div style={{ marginBottom: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {items.map(it => (
-                <div key={it.productId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'var(--bg3)', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: 16 }}>{it.product.emoji}</span>
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 'var(--fw-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.product.name}</span>
-                  <input type="number" min={1} value={it.quantity} onChange={e => updateQty(it.productId, Number(e.target.value))}
-                    style={{ width: 52, textAlign: 'center', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', padding: '2px 4px', background: 'var(--bg)', color: 'var(--text)', fontSize: 13 }} />
-                  <button className="icon-btn" onClick={() => updateQty(it.productId, 0)} aria-label="Retirer"><X size={13} /></button>
-                </div>
-              ))}
             </div>
-          )}
-          <div style={{ position: 'relative' }}>
-            <input className="form-input" value={prodSearch} onChange={e => { setProdSearch(e.target.value); setShowProd(true) }} placeholder={tx('search_prod', lang)} onFocus={() => setShowProd(true)} />
-            {showProd && prodResults.length > 0 && (
-              <div style={{ position: 'absolute', zIndex: 50, top: '100%', left: 0, right: 0, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', boxShadow: 'var(--sh-md)', marginTop: 2 }}>
-                {prodResults.map(p => (
-                  <button key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text)' }}
-                    onMouseDown={() => addProduct(p)}>
-                    <span style={{ fontSize: 15 }}>{p.emoji}</span>
-                    <span style={{ flex: 1 }}>{p.name}</span>
-                    <span style={{ color: 'var(--text3)', fontSize: 12 }}>{p.stockQty} en stock</span>
-                  </button>
-                ))}
-              </div>
-            )}
+          </div>
+
+          {/* Note */}
+          <SLabel icon={<FileText size={12} color="var(--text3)" />} label={tx('note_label', lang)} />
+          <div style={{ paddingBottom: 20 }}>
+            <textarea
+              className="form-input"
+              rows={2}
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder={lang === 'en' ? 'Delivery instructions, preferences…' : lang === 'es' ? 'Instrucciones de entrega, preferencias…' : lang === 'it' ? 'Istruzioni di consegna, preferenze…' : 'Instructions de livraison, préférences…'}
+              style={{ resize: 'vertical' }}
+            />
           </div>
         </div>
 
-        {/* Note */}
-        <div className="form-group" style={{ marginBottom: 20 }}>
-          <label className="form-label">{tx('note_label', lang)}</label>
-          <textarea className="form-input" rows={2} value={note} onChange={e => setNote(e.target.value)} style={{ resize: 'vertical' }} />
-        </div>
-
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        {/* ── Footer ── */}
+        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10, justifyContent: 'flex-end', background: 'var(--bg2)', flexShrink: 0 }}>
           <button className="btn-secondary" onClick={onClose}>{tx('cancel', lang)}</button>
-          <button className="btn-primary" onClick={save} disabled={saving}>
-            {saving ? '…' : <><Check size={14} /> {tx('save', lang)}</>}
+          <button
+            className="btn-primary"
+            onClick={save}
+            disabled={saving}
+            style={{ minWidth: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+          >
+            {saving
+              ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+              : <><Check size={14} /> {tx('save', lang)}</>
+            }
           </button>
         </div>
       </div>
