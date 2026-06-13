@@ -90,6 +90,7 @@ model Tenant {
   leaveRequests  LeaveRequest[]
   loyaltyTxns    LoyaltyTransaction[]
   ticketZ        TicketZ[]
+  subscriptions  Subscription[]
 
   @@index([deletedAt])
 }
@@ -173,7 +174,8 @@ model Product {
   deletedAt          DateTime? // null = actif (soft delete ; distinct de isActive)
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id])
-  saleItems SaleItem[]
+  saleItems         SaleItem[]
+  subscriptionItems SubscriptionItem[]
 
   @@unique([tenantId, sku])
   @@index([tenantId])
@@ -293,8 +295,9 @@ model Customer {
   updatedAt     DateTime @updatedAt
   deletedAt     DateTime? // null = actif (soft delete)
 
-  tenant      Tenant               @relation(fields: [tenantId], references: [id])
-  loyaltyTxns LoyaltyTransaction[]
+  tenant        Tenant               @relation(fields: [tenantId], references: [id])
+  loyaltyTxns   LoyaltyTransaction[]
+  subscriptions Subscription[]
 
   @@index([tenantId])
   @@index([tenantId, totalRevenue])
@@ -602,4 +605,37 @@ model Goal {
 
   @@index([tenantId])
   @@index([tenantId, deletedAt])
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  tenantId    String
+  customerId  String
+  name        String
+  dayOfWeek   Int      // 0=Dim 1=Lun 2=Mar 3=Mer 4=Jeu 5=Ven 6=Sam
+  status      String   @default("active") // active | paused | cancelled
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id])
+  customer Customer           @relation(fields: [customerId], references: [id])
+  items    SubscriptionItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, customerId])
+  @@index([tenantId, status])
+  @@index([tenantId, dayOfWeek])
+}
+
+model SubscriptionItem {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  productId      String
+  quantity       Int          @default(1)
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  product      Product      @relation(fields: [productId], references: [id])
+
+  @@index([subscriptionId])
 }

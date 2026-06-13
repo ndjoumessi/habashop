@@ -41,6 +41,7 @@ import { goalsRoutes }        from './routes/goals'
 import { attendanceRoutes }   from './routes/attendance'
 import { shiftRoutes }        from './routes/shifts'
 import { leaveRequestRoutes } from './routes/leaveRequests'
+import { subscriptionRoutes } from './routes/subscriptions'
 import { publicRoutes }       from './routes/public'
 import {
   sendTrialReminder7Days,
@@ -257,6 +258,7 @@ async function start() {
   await app.register(aiRoutes)
   await app.register(docsRoutes)
   await app.register(goalsRoutes)
+  await app.register(subscriptionRoutes)
   await app.register(publicRoutes) // routes publiques (sans authentification) — /api/public/*
 
   // ─── CRONS EMAIL (rappels essai + rapport hebdo) ──

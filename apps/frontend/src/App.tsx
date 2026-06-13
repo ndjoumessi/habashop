@@ -30,6 +30,7 @@ const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'))
 const Marketing      = lazy(() => import('@/pages/Marketing'))
 const AIAssistant    = lazy(() => import('@/pages/AIAssistant'))
 const Goals          = lazy(() => import('@/pages/Goals'))
+const Subscriptions  = lazy(() => import('@/pages/Subscriptions'))
 const APIDocs        = lazy(() => import('@/pages/APIDocs'))
 const Integrations   = lazy(() => import('@/pages/Integrations'))
 const Onboarding     = lazy(() => import('@/pages/Onboarding'))
@@ -142,6 +143,7 @@ export default function App() {
         <Route path="orders"        element={<RoleRoute slug="orders"><Orders /></RoleRoute>} />
         <Route path="suppliers"     element={<RoleRoute slug="suppliers"><Suppliers /></RoleRoute>} />
         <Route path="customers"     element={<RoleRoute slug="customers"><Customers /></RoleRoute>} />
+        <Route path="subscriptions" element={<RoleRoute slug="subscriptions"><Subscriptions /></RoleRoute>} />
         <Route path="reports"       element={<RoleRoute slug="reports"><Reports /></RoleRoute>} />
         <Route path="hr"            element={<RoleRoute slug="hr"><HR /></RoleRoute>} />
         <Route path="planning"      element={<RoleRoute slug="planning"><Planning /></RoleRoute>} />

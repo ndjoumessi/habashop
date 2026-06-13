@@ -13,12 +13,12 @@ export const ROLE_PERMISSIONS: Record<string, readonly string[] | '*'> = {
   ADMIN:       '*',
   MANAGER: [
     'dashboard', 'pos', 'stock', 'customers', 'suppliers', 'orders',
-    'hr', 'planning', 'payroll',
+    'subscriptions', 'hr', 'planning', 'payroll',
     'reports', 'forecasts', 'expenses', 'goals', 'marketing', 'ai',
     'notifications', 'activity', 'settings',
   ],
   CASHIER: [
-    'dashboard', 'pos', 'stock', 'customers', 'notifications',
+    'dashboard', 'pos', 'stock', 'customers', 'subscriptions', 'notifications',
   ],
   ACCOUNTANT: [
     'dashboard', 'reports', 'forecasts', 'expenses', 'payroll',

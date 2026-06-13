@@ -6,7 +6,7 @@ import {
   UserCog, Calendar, Wallet, Receipt, TrendingUp, BarChart2,
   Megaphone, Bot, Target, Code2, Settings, ShieldCheck, Activity,
   Store, ChevronLeft, ChevronRight, Sun, Moon, LogOut,
-  ClipboardList, Wifi, Plug, Lock,
+  ClipboardList, Wifi, Plug, Lock, RefreshCw,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -20,9 +20,10 @@ const NAV: NavEntry[] = [
   { path: '/app/pos',       key: 'nav_pos',       Icon: ShoppingCart },
   { path: '/app/stock',     key: 'nav_stock',     Icon: Archive },
   { sectionKey: 'nav_sec_mgmt' },
-  { path: '/app/customers', key: 'nav_customers', Icon: Users },
-  { path: '/app/suppliers', key: 'nav_suppliers', Icon: Truck },
-  { path: '/app/orders',    key: 'nav_orders',    Icon: ClipboardList, badge: '4' },
+  { path: '/app/customers',     key: 'nav_customers',     Icon: Users },
+  { path: '/app/subscriptions', key: 'nav_subscriptions', Icon: RefreshCw },
+  { path: '/app/suppliers',     key: 'nav_suppliers',     Icon: Truck },
+  { path: '/app/orders',        key: 'nav_orders',        Icon: ClipboardList, badge: '4' },
   { sectionKey: 'nav_sec_hr' },
   { path: '/app/hr',        key: 'nav_hr',        Icon: UserCog },
   { path: '/app/planning',  key: 'nav_planning',  Icon: Calendar },
