@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import * as SecureStore from 'expo-secure-store'
 import { useAppStore, whenAppStoreHydrated } from './appStore'
 import { shouldApplyTenantCurrency } from '@/lib/prefs'
+import { getStoredPushToken, clearStoredPushToken } from '@/services/notifications'
 import type { User, Tenant } from '@/types'
 
 interface AuthState {
@@ -40,6 +41,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
+    // Désenregistrer le token push AVANT de vider l'auth (le DELETE nécessite un JWT valide).
+    const pushToken = await getStoredPushToken()
+    if (pushToken) {
+      try {
+        const { apiClient } = await import('../services/api')
+        await apiClient.delete('/api/notifications/token', { data: { token: pushToken } })
+      } catch {}
+      await clearStoredPushToken()
+    }
     await SecureStore.deleteItemAsync('auth_token')
     set({ user:null, tenant:null, token:null, isLoggedIn:false })
   },

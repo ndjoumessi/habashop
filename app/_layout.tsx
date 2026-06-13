@@ -84,6 +84,8 @@ export default function RootLayout() {
         router.push(data.route as Href)
       } else if (data?.type === 'low_stock') {
         router.push('/(app)/(tabs)/stock')
+      } else if (data?.type === 'trial_expiring') {
+        router.push('/(app)/(tabs)/settings')
       } else if (
         data?.type === 'new_sale' ||
         data?.type === 'widget' ||

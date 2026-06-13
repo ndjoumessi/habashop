@@ -1,9 +1,20 @@
 import { logger } from '@/lib/logger'
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
+import * as SecureStore from 'expo-secure-store'
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import { apiClient } from './api'
+
+const PUSH_TOKEN_KEY = 'push_token'
+
+export async function getStoredPushToken(): Promise<string | null> {
+  return SecureStore.getItemAsync(PUSH_TOKEN_KEY).catch(() => null)
+}
+
+export async function clearStoredPushToken(): Promise<void> {
+  await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY).catch(() => {})
+}
 
 // Configuration globale (expo-notifications SDK 54 : shouldShowBanner/List requis)
 Notifications.setNotificationHandler({
@@ -46,6 +57,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data
     logger.log('✅ Push token:', token)
+    await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token).catch(() => {})
 
     // Canal Android (avant l'enregistrement backend — affecte le rendu local)
     if (Platform.OS === 'android') {
