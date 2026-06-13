@@ -93,17 +93,11 @@ function tx(key: keyof typeof T, lang: string): string {
 // ─── Section label ────────────────────────────────────────────────────────────
 function SLabel({ icon, label, badge }: { icon: JSX.Element; label: string; badge?: string | number }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-      <div style={{
-        width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-        background: 'color-mix(in srgb, var(--p2) 13%, transparent)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {icon}
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+      {icon}
       <span style={{
         fontSize: 11, fontWeight: 'var(--fw-semibold)',
-        textTransform: 'uppercase', letterSpacing: '.7px',
+        textTransform: 'uppercase', letterSpacing: '0.08em',
         color: 'var(--text3)', whiteSpace: 'nowrap',
       }}>
         {label}
@@ -117,7 +111,6 @@ function SLabel({ icon, label, badge }: { icon: JSX.Element; label: string; badg
           {badge}
         </span>
       )}
-      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
     </div>
   )
 }
@@ -220,7 +213,7 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
         .sub-stepper-btn:hover { background: var(--bg3) !important; }
         .sub-remove-btn:hover  { color: var(--danger) !important; }
         .sub-dd-item:hover     { background: var(--bg3) !important; }
-        .sub-day-pill:hover:not([aria-pressed="true"]) { border-color: var(--p2) !important; color: var(--p2) !important; }
+        .sub-day-pill:hover:not([aria-pressed="true"]) { border-color: var(--p) !important; color: var(--p) !important; }
       `}</style>
 
       <div
@@ -236,7 +229,7 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
           style={{
             maxWidth: 560, width: '100%', padding: 0,
             display: 'flex', flexDirection: 'column',
-            maxHeight: 'min(92vh, 720px)', overflow: 'hidden',
+            maxHeight: 'min(90vh, 680px)', overflow: 'hidden',
             animation: 'subModalIn 200ms ease-out both',
           }}
           onClick={e => e.stopPropagation()}
@@ -280,11 +273,11 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
           </div>
 
           {/* ── Scrollable body ── */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '22px 22px 6px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 24px 6px' }}>
 
             {/* Nom du panier */}
-            <SLabel icon={<Tag size={11} color="var(--p2)" />} label={tx('name_label', lang)} />
-            <div style={{ marginBottom: 24 }}>
+            <SLabel icon={<Tag size={14} color="var(--p2)" />} label={tx('name_label', lang)} />
+            <div style={{ marginBottom: 20 }}>
               <input
                 className="form-input"
                 aria-label={tx('name_label', lang)}
@@ -297,12 +290,13 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
                   : 'ex. Panier hebdo Marie'
                 }
                 autoFocus
+                style={{ width: '100%', minHeight: 44 }}
               />
             </div>
 
             {/* Client */}
-            <SLabel icon={<User size={11} color="var(--p2)" />} label={tx('customer_label', lang)} />
-            <div style={{ marginBottom: 24, position: 'relative' }}>
+            <SLabel icon={<User size={14} color="var(--p2)" />} label={tx('customer_label', lang)} />
+            <div style={{ marginBottom: 20, position: 'relative' }}>
               {customer ? (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 12,
@@ -348,6 +342,7 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
                     onChange={e => { setCustSearch(e.target.value); setShowCust(true) }}
                     placeholder={tx('search_cust', lang)}
                     onFocus={() => setShowCust(true)}
+                    style={{ width: '100%', minHeight: 44 }}
                   />
                   {showCust && custResults.length > 0 && (
                     <div style={{
@@ -395,8 +390,8 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
             </div>
 
             {/* Jour de livraison */}
-            <SLabel icon={<Calendar size={11} color="var(--p2)" />} label={tx('day_label', lang)} />
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
+            <SLabel icon={<Calendar size={14} color="var(--p2)" />} label={tx('day_label', lang)} />
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
               {shortDays.map((d, idx) => (
                 <button
                   key={idx}
@@ -405,17 +400,17 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
                   onClick={() => setDow(idx)}
                   aria-pressed={dow === idx}
                   style={{
-                    padding: '8px 14px',
+                    minWidth: 52, height: 36, padding: '0 14px',
                     borderRadius: 99,
                     fontSize: 12,
                     fontWeight: 'var(--fw-semibold)',
-                    border: `1.5px solid ${dow === idx ? 'var(--p2)' : 'var(--border)'}`,
-                    background: dow === idx ? 'var(--p2)' : 'var(--bg3)',
+                    border: `1.5px solid ${dow === idx ? 'var(--p)' : 'var(--border)'}`,
+                    background: dow === idx ? 'var(--p)' : 'var(--bg3)',
                     color: dow === idx ? '#fff' : 'var(--text2)',
                     cursor: 'pointer',
                     transition: 'border-color .15s var(--ease), background .15s var(--ease), color .15s var(--ease)',
                     letterSpacing: '.2px',
-                    boxShadow: dow === idx ? 'var(--sh-p)' : 'none',
+                    boxShadow: dow === idx ? '0 2px 8px color-mix(in srgb, var(--p) 35%, transparent)' : 'none',
                   }}
                 >
                   {d}
@@ -425,11 +420,11 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
 
             {/* Produits */}
             <SLabel
-              icon={<Package size={11} color="var(--p2)" />}
+              icon={<Package size={14} color="var(--p2)" />}
               label={tx('products_label', lang)}
               badge={productCount > 0 ? productCount : undefined}
             />
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 20 }}>
               {items.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
                   {items.map(it => (
@@ -528,7 +523,7 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
                     onChange={e => { setProdSearch(e.target.value); setShowProd(true) }}
                     placeholder={tx('search_prod', lang)}
                     onFocus={() => setShowProd(true)}
-                    style={{ paddingLeft: 36 }}
+                    style={{ paddingLeft: 36, width: '100%', minHeight: 44 }}
                   />
                   <Plus size={14} style={{
                     position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)',
@@ -585,7 +580,7 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
             </div>
 
             {/* Note */}
-            <SLabel icon={<FileText size={11} color="var(--p2)" />} label={tx('note_label', lang)} />
+            <SLabel icon={<FileText size={14} color="var(--p2)" />} label={tx('note_label', lang)} />
             <div style={{ paddingBottom: 22 }}>
               <textarea
                 className="form-input"
@@ -599,7 +594,7 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
                   : lang === 'it' ? 'Istruzioni di consegna, preferenze…'
                   : 'Instructions de livraison, préférences…'
                 }
-                style={{ resize: 'vertical' }}
+                style={{ resize: 'vertical', fontFamily: 'var(--font-sans)', minHeight: 72, width: '100%' }}
               />
             </div>
           </div>
@@ -623,7 +618,7 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
               </span>
             )}
             <div style={{ display: 'flex', gap: 8, marginLeft: productCount > 0 ? 0 : 'auto' }}>
-              <button className="btn-secondary" onClick={onClose}>
+              <button className="btn-ghost" onClick={onClose}>
                 {tx('cancel', lang)}
               </button>
               <button
@@ -631,7 +626,7 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
                 onClick={save}
                 disabled={saving}
                 style={{
-                  minWidth: 128,
+                  minWidth: 140,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
               >
