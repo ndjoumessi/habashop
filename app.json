@@ -2,7 +2,7 @@
   "expo": {
     "name": "HabaShop",
     "slug": "habashop-mobile",
-    "version": "1.4.2",
+    "version": "1.4.3",
     "description": "HabaShop — Logiciel de caisse et gestion commerciale pour les boutiques et superettes en Afrique francophone. POS, stock, clients, rapports et analytics.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,10 +14,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.habashop.app",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
-        "NSCameraUsageDescription": "Scanner les codes-barres des produits",
-        "NSPhotoLibraryUsageDescription": "Choisir une photo de profil HabaShop",
+        "NSCameraUsageDescription": "HabaShop utilise la caméra pour scanner les codes-barres, photographier les profils et numériser les factures fournisseurs.",
+        "NSPhotoLibraryUsageDescription": "HabaShop accède à vos photos pour les photos de profil et l'import de factures fournisseurs.",
         "NSFaceIDUsageDescription": "Connexion rapide et sécurisée à HabaShop",
         "LSApplicationQueriesSchemes": [
           "whatsapp"
@@ -61,7 +61,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Scanner les codes-barres des produits"
+          "cameraPermission": "HabaShop utilise la caméra pour scanner les codes-barres, photographier les profils et numériser les factures fournisseurs."
         }
       ],
       [
@@ -74,8 +74,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Choisir une photo de profil HabaShop",
-          "cameraPermission": "Prendre une photo de profil HabaShop"
+          "photosPermission": "HabaShop accède à vos photos pour les photos de profil et l'import de factures fournisseurs.",
+          "cameraPermission": "HabaShop utilise la caméra pour scanner les codes-barres, photographier les profils et numériser les factures fournisseurs."
         }
       ],
       "expo-background-task",
@@ -86,7 +86,8 @@
           "organization": "haba-76",
           "project": "react-native"
         }
-      ]
+      ],
+      "./plugins/withLocalizedPermissions"
     ],
     "experiments": {
       "typedRoutes": true

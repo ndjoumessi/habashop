@@ -84,7 +84,13 @@ export default function RootLayout() {
         router.push(data.route as Href)
       } else if (data?.type === 'low_stock') {
         router.push('/(app)/(tabs)/stock')
-      } else if (data?.type === 'new_sale' || data?.type === 'widget') {
+      } else if (
+        data?.type === 'new_sale' ||
+        data?.type === 'widget' ||
+        data?.type === 'payment_received' ||
+        // Pas d'écran RH sur mobile → un congé en attente ouvre le dashboard par défaut.
+        data?.type === 'leave_pending'
+      ) {
         router.push('/(app)/(tabs)/dashboard')
       }
     })
