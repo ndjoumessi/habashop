@@ -44,6 +44,7 @@ const ACTION_LABELS: Record<string, [string, string, string, string]> = {
   CHANGE_PASSWORD:    ['Mot de passe changé',    'Password changed',      'Contraseña cambiada',      'Password cambiata'],
   RESTORE_PRODUCT:    ['Produit restauré',       'Product restored',      'Producto restaurado',      'Prodotto ripristinato'],
   RESTORE_SUPPLIER:   ['Fournisseur restauré',   'Supplier restored',     'Proveedor restaurado',     'Fornitore ripristinato'],
+  REFUND_SALE:        ['Remboursement vente',    'Refund sale',           'Reembolso de venta',       'Rimborso vendita'],
 }
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
@@ -68,6 +69,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   CHANGE_PASSWORD:    Lock,
   RESTORE_PRODUCT:    Package,
   RESTORE_SUPPLIER:   Truck,
+  REFUND_SALE:        ShoppingCart,
 }
 
 function actionLabel(action: string, lang: string): string {

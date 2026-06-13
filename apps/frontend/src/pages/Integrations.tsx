@@ -231,7 +231,7 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#8E5CD9', status:'connected',
     endpoint:'haba-76.sentry.io', lastCall:'Il y a 12 min', calls:0,
     docs:'https://haba-76.sentry.io/projects/habashop-web/',
-    uptime:'99.9%', pingUrl:'https://haba-76.sentry.io',
+    uptime:'99.9%', pingUrl:'https://sentry.io',
     features:['Erreurs front', 'Erreurs back', 'Source maps au build'],
     IconSvg: IconSentrySvg,
   },
