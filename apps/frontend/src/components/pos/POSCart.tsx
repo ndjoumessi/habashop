@@ -33,9 +33,11 @@ interface POSCartProps {
   enableLoyalty?: boolean; loyaltyTier?: string
   // PayDunya (Wave / Orange Money Sénégal & UEMOA) : si configuré, Wave/OM passent par PayDunya.
   paydunyaOk?: boolean; onPaydunyaStart?: () => void
+  // Stock dispo par produit — désactive le + quand qty = max (anti-survente UI)
+  getStock?: (id: number | string) => number
 }
 
-export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '', paydunyaOk = false, onPaydunyaStart }: POSCartProps) {
+export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '', paydunyaOk = false, onPaydunyaStart, getStock }: POSCartProps) {
   // PayDunya actif pour Wave / Orange Money quand le backend est configuré → bouton unique dédié.
   const isPaydunyaMode = paydunyaOk && !mixedOn && (payMode === 'wave' || payMode === 'orange')
   // Montant reçu : jamais négatif. Vide → '' (traité comme 0 en aval). Négatif (collé/contournement) → 0.
@@ -216,16 +218,24 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                         fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)',
                         fontFamily:'var(--mono)', minWidth:22, textAlign:'center', lineHeight:1,
                       }}>{item.qty}</span>
-                      <button type="button"
-                        onClick={() => updateQty(item.id, +1)}
-                        aria-label={lang === 'en' ? 'Increase quantity' : lang === 'es' ? 'Aumentar cantidad' : lang === 'it' ? 'Aumenta quantità' : 'Augmenter la quantité'}
-                        style={{
-                          width:32, height:32, borderRadius:8,
-                          background:'var(--bg3)', border:'1px solid var(--border)',
-                          cursor:'pointer', fontSize:15,
-                          color:'var(--p2)', fontWeight:'var(--fw-bold)',
-                          display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s',
-                        }}>+</button>
+                      {(() => {
+                        const stock = getStock ? getStock(item.id) : 0
+                        const atMax = stock > 0 && item.qty >= stock
+                        return (
+                          <button type="button"
+                            onClick={() => { if (!atMax) updateQty(item.id, +1) }}
+                            disabled={atMax}
+                            aria-label={lang === 'en' ? 'Increase quantity' : lang === 'es' ? 'Aumentar cantidad' : lang === 'it' ? 'Aumenta quantità' : 'Augmenter la quantité'}
+                            style={{
+                              width:32, height:32, borderRadius:8,
+                              background:'var(--bg3)', border:'1px solid var(--border)',
+                              cursor: atMax ? 'not-allowed' : 'pointer', fontSize:15,
+                              color: atMax ? 'var(--text3)' : 'var(--p2)',
+                              fontWeight:'var(--fw-bold)', opacity: atMax ? 0.4 : 1,
+                              display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s',
+                            }}>+</button>
+                        )
+                      })()}
                     </div>
 
                     <div style={{

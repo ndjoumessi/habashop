@@ -303,6 +303,7 @@ export default function POS() {
   const addItem = (p: PosProduct) => {
     const existing = cart.find(i => i.id === p.id)
     const newQty = existing ? existing.qty + 1 : 1
+    if (p.stock > 0 && newQty > p.stock) return // cap anti-survente
     const { price, tierLabel } = computePriceForItem(p, newQty)
     if (existing) {
       // produit déjà au panier → +1 et recalcule price (utile si on franchit un palier)
@@ -323,6 +324,7 @@ export default function POS() {
     }
     const product = productById.get(id)
     if (!product) { updateCartQty(id, delta); return }
+    if (delta > 0 && product.stock > 0 && newQty > product.stock) return // cap anti-survente
     const { price, tierLabel } = computePriceForItem(product, newQty)
     // Toast discret quand le palier change (UX : transparence prix)
     if ((item.tierLabel ?? '') !== (tierLabel ?? '')) {
@@ -979,6 +981,7 @@ export default function POS() {
           mixedAmt1={mixedAmt1} setMixedAmt1={setMixedAmt1}
           mixedAmt2XOF={mixedAmt2XOF} mixedValid={mixedValid}
           paydunyaOk={paydunyaOk} onPaydunyaStart={startPaydunyaPayment}
+          getStock={id => productById.get(id)?.stock ?? 0}
         />
       </div>
 
