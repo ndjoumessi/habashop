@@ -14,6 +14,7 @@ import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
+import OfflineBanner from '@/components/ui/OfflineBanner'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import SegmentedControl from '@/components/ui/SegmentedControl'
 import AccessibleButton from '@/components/ui/AccessibleButton'
@@ -144,6 +145,9 @@ export default function StockScreen() {
           </Pressable>
         }
       />
+
+      {/* Bandeau hors-ligne — le stock affiché vient du cache (peut être périmé). */}
+      <OfflineBanner context="cache" />
 
       {/* ── Stats ── */}
       <View style={s.statsRow}>

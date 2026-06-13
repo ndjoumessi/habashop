@@ -12,6 +12,7 @@ import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmi
 import { newIdempotencyKey } from '@/lib/idempotency'
 import type { Product } from '@/types'
 import { usePosStore, vatBreakdown } from '@/stores/posStore'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18n, useFmt, useAppStore } from '@/stores/appStore'
 import CustomerPicker from '@/components/pos/CustomerPicker'
@@ -34,6 +35,7 @@ export default function KioskScreen() {
   const pos      = usePosStore()
   const { tenant } = useAuthStore()
   const { setKioskMode } = useAppStore()
+  const { isOnline } = useNetworkStatus()
 
   const [search, setSearch]             = useState('')
   const [pin, setPin]                   = useState('')
@@ -90,6 +92,34 @@ export default function KioskScreen() {
       )
     },
   })
+
+  // Validation de la vente. Hors-ligne : seuls les paiements ESPÈCES sont autorisés (mêmes
+  // règles que la Caisse — Wave/Orange/carte exigent le réseau pour confirmer). La vente
+  // partira via la file offline (submitSaleResilient bascule en file si réseau lent/absent).
+  const handleConfirmSale = () => {
+    if (!isOnline && pos.paymentMode !== 'cash') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {})
+      Alert.alert(
+        i('Espèces uniquement hors-ligne', 'Cash only offline', 'Solo efectivo sin conexión', 'Solo contanti offline'),
+        i(
+          'Les paiements Mobile Money et carte nécessitent une connexion. Repassez en espèces pour encaisser hors-ligne.',
+          'Mobile Money and card payments require a connection. Switch to cash to check out offline.',
+          'Los pagos Mobile Money y tarjeta requieren conexión. Cambie a efectivo para cobrar sin conexión.',
+          'I pagamenti Mobile Money e carta richiedono una connessione. Passa ai contanti per incassare offline.',
+        ),
+      )
+      return
+    }
+    const discAmt = pos.subtotal() - pos.total()
+    createSale({
+      items: pos.cart.map(item => ({ productId: item.productId, qty: item.quantity, price: item.price })),
+      total: pos.total(),
+      paymentMode: pos.paymentMode,
+      ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
+      ...(pos.customer ? { customerId: pos.customer.id } : {}),
+      idempotencyKey: newIdempotencyKey(),
+    })
+  }
 
   const handleExit = () => {
     if (pin === EXIT_PIN) {
@@ -426,17 +456,7 @@ export default function KioskScreen() {
               <TouchableOpacity
                 style={s.confirmOk}
                 disabled={isPending}
-                onPress={() => {
-                  const discAmt = pos.subtotal() - pos.total()
-                  createSale({
-                    items: pos.cart.map(item => ({ productId: item.productId, qty: item.quantity, price: item.price })),
-                    total: pos.total(),
-                    paymentMode: pos.paymentMode,
-                    ...(discAmt > 0 ? { discount: { amount: discAmt, type: 'percent' } } : {}),
-                    ...(pos.customer ? { customerId: pos.customer.id } : {}),
-                    idempotencyKey: newIdempotencyKey(),
-                  })
-                }}
+                onPress={handleConfirmSale}
                 accessibilityRole="button" accessibilityLabel={i('Valider', 'Confirm', 'Confirmar', 'Conferma')}
               >
                 <Text style={s.confirmOkText}>

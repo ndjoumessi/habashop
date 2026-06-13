@@ -15,6 +15,7 @@ import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
+import OfflineBanner from '@/components/ui/OfflineBanner'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import LoyaltyCardDigital from '@/components/customers/LoyaltyCardDigital'
 
@@ -127,6 +128,9 @@ export default function CustomersScreen() {
           </Pressable>
         }
       />
+
+      {/* Bandeau hors-ligne — la liste affichée vient du cache (peut être périmée). */}
+      <OfflineBanner context="cache" />
 
       {/* ── Recherche (toggle) ── */}
       {showSearch && (

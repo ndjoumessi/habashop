@@ -28,6 +28,7 @@ import { sendWhatsAppTicket } from '@/services/whatsappTicket'
 import { printReceipt } from '@/services/printReceipt'
 import BarcodeScanner from '@/components/pos/BarcodeScanner'
 import ErrorState from '@/components/ui/ErrorState'
+import OfflineBanner from '@/components/ui/OfflineBanner'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import Chip from '@/components/ui/Chip'
 import AccessibleButton from '@/components/ui/AccessibleButton'
@@ -246,6 +247,22 @@ export default function POSScreen() {
   // `override` fourni uniquement en paiement MIXTE (paymentMode='mixed' + ventilation XOF).
   const confirmSale = async (override?: { paymentMode: string } & MixedSplit) => {
     const mode = override?.paymentMode ?? paymentMode
+    // Hors-ligne : seuls les paiements ESPÈCES sont autorisés. Mobile Money (Wave/Orange) et
+    // carte exigent le réseau pour confirmer la transaction → on bloque proprement (le paiement
+    // mixte inclut potentiellement ces modes → également refusé hors-ligne).
+    if (!isOnline && mode !== 'cash') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {})
+      Alert.alert(
+        i('Espèces uniquement hors-ligne', 'Cash only offline', 'Solo efectivo sin conexión', 'Solo contanti offline'),
+        i(
+          'Les paiements Mobile Money et carte nécessitent une connexion. Repassez en espèces pour encaisser hors-ligne.',
+          'Mobile Money and card payments require a connection. Switch to cash to check out offline.',
+          'Los pagos Mobile Money y tarjeta requieren conexión. Cambie a efectivo para cobrar sin conexión.',
+          'I pagamenti Mobile Money e carta richiedono una connessione. Passa ai contanti per incassare offline.',
+        ),
+      )
+      return
+    }
     // Garde espèces : interdit l'encaissement si le montant reçu est < total (mode cash
     // SIMPLE uniquement ; mixte / Wave / Orange / Carte non concernés). Filet défensif — le
     // bouton « Encaisser » est déjà désactivé côté panier dans ce cas. `cashGiven` est saisi
@@ -398,6 +415,9 @@ export default function POSScreen() {
           </>
         }
       />
+
+      {/* Bandeau hors-ligne (ventes mises en file, espèces uniquement). */}
+      <OfflineBanner context="pos" />
 
       {/* ── Filtres catégories ── */}
       <View>

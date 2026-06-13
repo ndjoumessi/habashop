@@ -4,7 +4,10 @@ import { Stack, router, type Href } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as Notifications from 'expo-notifications'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { asyncStoragePersister, shouldDehydrateQuery, PERSIST_MAX_AGE } from '@/services/queryPersist'
+import SyncToast from '@/components/ui/SyncToast'
 // Imports subpath (pas le barrel) : le barrel `@expo-google-fonts/*` fait bundler
 // par Metro TOUTES les graisses (.ttf) du package — ~2 MB de polices mortes.
 import { useFonts } from '@expo-google-fonts/outfit/useFonts'
@@ -26,14 +29,18 @@ import { setupWidgetChannel, isWidgetEnabled } from '@/services/widgetNotificati
 import { registerWidgetRefresh } from '@/tasks/backgroundRefresh'
 
 SplashScreen.preventAutoHideAsync()
+// gcTime 24 h (≥ PERSIST_MAX_AGE) : les requêtes restaurées depuis AsyncStorage doivent
+// survivre en mémoire au lieu d'être garbage-collectées aussitôt (5 min par défaut), sinon
+// la consultation offline à froid n'aurait rien à afficher.
 const qc = new QueryClient({
-  defaultOptions:{ queries:{ staleTime:5*60*1000, retry:2 } }
+  defaultOptions:{ queries:{ staleTime:5*60*1000, gcTime:PERSIST_MAX_AGE, retry:2 } }
 })
 
-// Doit vivre SOUS le QueryClientProvider (useOfflineSync utilise useQueryClient).
+// Doit vivre SOUS le provider Query (useOfflineSync utilise useQueryClient). Rend aussi le
+// toast « X vente(s) synchronisée(s) » piloté par le signal de resync de la file offline.
 function OfflineSyncBridge() {
-  useOfflineSync() // sync auto de la file offline au retour réseau
-  return null
+  const { lastSync } = useOfflineSync() // sync auto de la file offline au retour réseau
+  return <SyncToast signal={lastSync} />
 }
 
 export default function RootLayout() {
@@ -90,14 +97,21 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{flex:1}}>
       <ErrorBoundary>
-        <QueryClientProvider client={qc}>
+        <PersistQueryClientProvider
+          client={qc}
+          persistOptions={{
+            persister: asyncStoragePersister,
+            maxAge: PERSIST_MAX_AGE,
+            dehydrateOptions: { shouldDehydrateQuery },
+          }}
+        >
           <StatusBar style={isDark ? 'light' : 'dark'}/>
           <OfflineSyncBridge/>
           <Stack screenOptions={{headerShown:false}}>
             <Stack.Screen name="(auth)"/>
             <Stack.Screen name="(app)"/>
           </Stack>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </ErrorBoundary>
     </GestureHandlerRootView>
   )
