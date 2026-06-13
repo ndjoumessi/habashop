@@ -420,3 +420,9 @@ export const attendanceApi = {
 export const auditApi = {
   list: () => api.get<any[]>('/api/audit-logs'),
 }
+
+export const sentryStatusApi = {
+  check: () => api.get<{ connected: boolean; projectName: string | null; errorRate: string; ms: number }>(
+    '/api/integrations/sentry/status'
+  ),
+}

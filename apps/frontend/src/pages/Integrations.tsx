@@ -4,7 +4,7 @@ import { ExternalLink, RotateCw, Globe, Zap, Settings2, X, KeyRound } from 'luci
 import Button from '@/components/ui/AppButton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useModalFocus } from '@/hooks/useModalFocus'
-import { paymentStatsApi, paydunyaApi, type ProviderStat } from '@/lib/api'
+import { paymentStatsApi, paydunyaApi, sentryStatusApi, type ProviderStat } from '@/lib/api'
 import toast from 'react-hot-toast'
 import ResendMonitor from '@/components/integrations/ResendMonitor'
 
@@ -231,9 +231,10 @@ const INTEGRATIONS_LIST: Integration[] = [
     color:'#8E5CD9', status:'connected',
     endpoint:'haba-76.sentry.io', lastCall:'Il y a 12 min', calls:0,
     docs:'https://haba-76.sentry.io/projects/habashop-web/',
-    uptime:'99.9%', pingUrl:'https://sentry.io',
+    uptime:'99.9%', pingUrl:'',
     features:['Erreurs front', 'Erreurs back', 'Source maps au build'],
     IconSvg: IconSentrySvg,
+    noPing: true,
   },
   {
     id:'mtnmomo', name:'MTN MoMo',
@@ -356,8 +357,32 @@ export default function Integrations() {
     }
   }
 
+  // Sentry : vérification côté backend (CORS infiable en no-cors multi-browser)
+  const checkSentryBackend = async (showToast = false): Promise<PingState> => {
+    setPingStatus(s => ({ ...s, sentry: 'checking' }))
+    try {
+      const r = await sentryStatusApi.check()
+      const st: PingState = r.connected ? (r.ms >= 500 ? 'slow' : 'ok') : 'error'
+      setPingStatus(s => ({ ...s, sentry: st }))
+      setPingLatency(p => ({ ...p, sentry: r.ms }))
+      if (showToast) {
+        if (st === 'error') {
+          toast.error(lang === 'en' ? '✗ Sentry unreachable — check SENTRY_AUTH_TOKEN' : lang === 'es' ? '✗ Sentry inaccesible — revisa SENTRY_AUTH_TOKEN' : lang === 'it' ? '✗ Sentry irraggiungibile — controlla SENTRY_AUTH_TOKEN' : '✗ Sentry injoignable — vérifiez SENTRY_AUTH_TOKEN')
+        } else {
+          toast.success(lang === 'en' ? `✓ Sentry — Connection OK (${r.ms}ms)` : lang === 'es' ? `✓ Sentry — Conexión OK (${r.ms}ms)` : lang === 'it' ? `✓ Sentry — Connessione OK (${r.ms}ms)` : `✓ Sentry — Connexion OK (${r.ms}ms)`)
+        }
+      }
+      return st
+    } catch {
+      setPingStatus(s => ({ ...s, sentry: 'error' }))
+      if (showToast) toast.error(lang === 'en' ? '✗ Sentry check failed' : lang === 'es' ? '✗ Error al verificar Sentry' : lang === 'it' ? '✗ Verifica Sentry fallita' : '✗ Vérification Sentry échouée')
+      return 'error'
+    }
+  }
+
   // Bouton "Tester la connexion" : ping live + toast résultat
   const testConnection = async (itg: Integration) => {
+    if (itg.id === 'sentry') { checkSentryBackend(true); return }
     const { status, ms } = await pingIntegration(itg.id, itg.pingUrl)
     if (status === 'error') {
       toast.error(lang === 'en' ? '✗ Connection failed — check your configuration' : lang === 'es' ? '✗ Conexión fallida — verifique su configuración' : lang === 'it' ? '✗ Connessione fallita — verifica la configurazione' : '✗ Connexion échouée — vérifiez votre configuration')
@@ -368,6 +393,7 @@ export default function Integrations() {
 
   useEffect(() => {
     INTEGRATIONS_LIST.filter(itg => !itg.noPing).forEach(itg => { pingIntegration(itg.id, itg.pingUrl) })
+    checkSentryBackend() // vérifie Sentry via backend (pas de ping no-cors direct)
   }, [])
 
   function PaymentStatusBadge({ status }: { status: 'sandbox' | 'production' | 'unconfigured' }) {
@@ -428,7 +454,7 @@ export default function Integrations() {
   const renderCard = (itg: Integration) => {
     const isActive = itg.status === 'connected'
     const { IconSvg } = itg
-    const sv = itg.noPing
+    const sv = (itg.noPing && itg.id !== 'sentry')
       ? itg.paymentStatus === 'production' ? { border:'var(--acc2)',   glow:'color-mix(in srgb, var(--acc2) 15%, transparent)' }
       : itg.paymentStatus === 'sandbox'     ? { border:'var(--warn)',   glow:'color-mix(in srgb, var(--warn) 12%, transparent)' }
       :                                      { border:'var(--border)',  glow:'transparent' }
@@ -441,7 +467,7 @@ export default function Integrations() {
     // Transactions du jour (cartes paiement MTN MoMo / Campay) — données réelles.
     const tx: ProviderStat | undefined = itg.id === 'mtnmomo' ? txStats?.mtn : itg.id === 'campay' ? txStats?.campay : itg.id === 'paydunya' ? txStats?.paydunya : undefined
     // Taux d'erreur : signal réel uniquement (un ping joignable = 0 erreur) ; sinon non mesuré.
-    const errorRate = itg.noPing ? '—' : pingStatus[itg.id] === 'error' ? '100%' : (pingStatus[itg.id] === 'ok' || pingStatus[itg.id] === 'slow') ? '0%' : '—'
+    const errorRate = (itg.noPing && itg.id !== 'sentry') ? '—' : pingStatus[itg.id] === 'error' ? '100%' : (pingStatus[itg.id] === 'ok' || pingStatus[itg.id] === 'slow') ? '0%' : '—'
 
     return (
       <div key={itg.id} style={{
@@ -472,8 +498,9 @@ export default function Integrations() {
                 ? <PaymentStatusBadge status={itg.paymentStatus} />
                 : <PingBadge id={itg.id} />}
             </div>
-            {!itg.noPing && (
-              <button type="button" onClick={() => pingIntegration(itg.id, itg.pingUrl)}
+            {(!itg.noPing || itg.id === 'sentry') && (
+              <button type="button"
+                onClick={() => itg.id === 'sentry' ? checkSentryBackend() : pingIntegration(itg.id, itg.pingUrl)}
                 title={lang === 'fr' ? 'Rafraîchir le statut' : lang === 'es' ? 'Actualizar el estado' : lang === 'it' ? 'Aggiorna lo stato' : 'Refresh status'}
                 aria-label={`${lang === 'fr' ? 'Rafraîchir' : lang === 'es' ? 'Actualizar' : lang === 'it' ? 'Aggiorna' : 'Refresh'} ${itg.name}`}
                 style={{ width:28, height:28, borderRadius:8, flexShrink:0, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -540,7 +567,7 @@ export default function Integrations() {
           {/* Métriques mesurées en direct — latence + erreurs du ping réel.
               Masqué pour les services sans endpoint public testable (paiements, cache) :
               on n'affiche aucune valeur qui ne soit pas mesurée. */}
-          {!itg.noPing && (
+          {(!itg.noPing || itg.id === 'sentry') && (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:6, marginBottom:10 }}>
               {[
                 { label: lang === 'en' ? 'Latency' : lang === 'es' ? 'Latencia' : lang === 'it' ? 'Latenza' : 'Latence', value: pingLatency[itg.id] ? `${pingLatency[itg.id]}ms` : '—', color: 'var(--text)' },
@@ -577,7 +604,7 @@ export default function Integrations() {
             <ExternalLink size={11} /> {itg.id === 'sentry' ? 'Dashboard' : 'Docs'}
           </a>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            {!itg.noPing && (
+            {(!itg.noPing || itg.id === 'sentry') && (
               <Button
                 variant="ghost"
                 className="btn-sm"
