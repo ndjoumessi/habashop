@@ -214,6 +214,8 @@ function SubModal({ lang, sub, onClose, onSaved }: ModalProps) {
         .sub-remove-btn:hover  { color: var(--danger) !important; }
         .sub-dd-item:hover     { background: var(--bg3) !important; }
         .sub-day-pill:hover:not([aria-pressed="true"]) { border-color: var(--p) !important; color: var(--p) !important; }
+        .modal-box .form-input { background: var(--bg2); border: 1.5px solid var(--border); }
+        .modal-box .form-input:focus { border-color: var(--p); background: var(--bg2); }
       `}</style>
 
       <div
