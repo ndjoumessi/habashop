@@ -12,7 +12,7 @@ const expo = new Expo(
 )
 
 interface PushData {
-  type: 'low_stock' | 'payment_received' | 'leave_pending'
+  type: 'low_stock' | 'payment_received' | 'leave_pending' | 'trial_expiring'
   [key: string]: unknown
 }
 
@@ -116,5 +116,36 @@ export async function sendLeavePending(tenantId: string, employeeName: string): 
     '📋 Congé en attente',
     `${employeeName} a soumis une demande`,
     { type: 'leave_pending', employeeName },
+  )
+}
+
+// ⏰ Essai expirant dans N jours → ADMIN (+ SUPER_ADMIN). Envoyé depuis le cron trial reminders.
+export async function sendTrialExpiring(tenantId: string, daysLeft: number): Promise<void> {
+  const tokens = await tokensForRoles(tenantId, ['ADMIN', 'SUPER_ADMIN'])
+  await sendPush(
+    tokens,
+    '⏰ Essai expire bientôt',
+    `Votre essai HabaShop expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+    { type: 'trial_expiring', daysLeft },
+  )
+}
+
+// 📦 Alertes stock groupées (cron quotidien) → MANAGER + ADMIN + SUPER_ADMIN.
+// Envoie une seule notif résumant N produits en rupture (le pire en premier).
+export async function sendStockAlertBatch(
+  tenantId: string,
+  products: Array<{ name: string; stockQty: number }>,
+): Promise<void> {
+  if (products.length === 0) return
+  const tokens = await tokensForRoles(tenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'])
+  const worst = products[0]
+  const body = products.length === 1
+    ? `${worst.name} — stock : ${worst.stockQty}`
+    : `${worst.name} et ${products.length - 1} autre${products.length > 2 ? 's' : ''}`
+  await sendPush(
+    tokens,
+    `⚠️ ${products.length} produit${products.length > 1 ? 's' : ''} en rupture`,
+    body,
+    { type: 'low_stock', productName: worst.name, stock: worst.stockQty },
   )
 }

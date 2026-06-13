@@ -30,6 +30,15 @@ export async function notificationRoutes(app: FastifyInstance): Promise<void> {
     return { success: true, id: saved.id }
   })
 
+  // Désenregistre le token push de cet appareil (appelé au logout mobile).
+  app.delete('/api/notifications/token', { preHandler: authenticate }, async (request, reply) => {
+    const { userId } = request.user
+    const { token } = request.body as { token?: string }
+    if (!token?.trim()) return reply.code(400).send({ error: 'Token requis' })
+    await prisma.pushToken.deleteMany({ where: { token, userId } })
+    return { success: true }
+  })
+
   // @fastify/websocket v11 (Fastify 5) : le handler reçoit directement la
   // WebSocket en 1er argument (avant : un SocketStream avec `.socket`).
   app.get('/api/ws', { websocket: true }, async (socket: any, req: any) => {

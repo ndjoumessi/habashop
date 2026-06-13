@@ -53,6 +53,7 @@ import {
 } from './services/email'
 import { runMonthlyPayrollReports } from './services/payrollReport'
 import { payrollRoutes } from './routes/payroll'
+import { sendTrialExpiring, sendStockAlertBatch } from './services/pushService'
 
 // ─── Validation des variables d'environnement obligatoires ───
 const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET']
@@ -335,6 +336,7 @@ async function runTrialReminders(): Promise<void> {
     const admin = tenant.users[0]
     if (!admin?.email) continue
     await sendTrialReminder3Days({ to: admin.email, shopName: tenant.name, ownerName: admin.name ?? tenant.name }).catch(() => {})
+    void sendTrialExpiring(tenant.id, 3)
   }
 
   // Essai venant d'expirer (dernière fenêtre) → suspension + email
@@ -448,6 +450,7 @@ async function runDailyStockAlerts(): Promise<void> {
         products: lowStockProducts,
       })
       if (ok) sent++
+      void sendStockAlertBatch(tenant.id, lowStockProducts)
     } catch (err: any) {
       console.warn(`⚠️ Stock alert failed for tenant ${tenant.id}:`, err?.message)
     }

@@ -19,7 +19,7 @@ vi.mock('expo-server-sdk', () => {
   return { Expo }
 })
 
-import { sendStockAlert, sendPaymentReceived, sendLeavePending } from '../services/pushService'
+import { sendStockAlert, sendPaymentReceived, sendLeavePending, sendTrialExpiring, sendStockAlertBatch } from '../services/pushService'
 
 const TOKEN = 'ExponentPushToken[abc]'
 
@@ -74,6 +74,41 @@ describe('pushService — opt-in & robustesse', () => {
   it('fail-silent : une erreur DB ne lève jamais (fire-and-forget)', async () => {
     db.tenant.findUnique.mockRejectedValue(new Error('db down'))
     await expect(sendPaymentReceived('T1', 1000, 'orange')).resolves.toBeUndefined()
+    expect(sendMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('pushService — nouvelles fonctions cron', () => {
+  it('sendTrialExpiring envoie vers ADMIN + SUPER_ADMIN avec daysLeft', async () => {
+    await sendTrialExpiring('T1', 3)
+    expect(db.pushToken.findMany.mock.calls[0][0].where.user.role.in).toEqual(['ADMIN', 'SUPER_ADMIN'])
+    const msg = sendMock.mock.calls[0][0][0]
+    expect(msg.title).toBe('⏰ Essai expire bientôt')
+    expect(msg.body).toContain('3 jour')
+    expect(msg.data).toMatchObject({ type: 'trial_expiring', daysLeft: 3 })
+  })
+
+  it('sendStockAlertBatch — 1 produit → titre singulier', async () => {
+    await sendStockAlertBatch('T1', [{ name: 'Coca', stockQty: 0 }])
+    const msg = sendMock.mock.calls[0][0][0]
+    expect(msg.title).toBe('⚠️ 1 produit en rupture')
+    expect(msg.body).toContain('Coca')
+  })
+
+  it('sendStockAlertBatch — N produits → résumé avec pire produit', async () => {
+    await sendStockAlertBatch('T1', [
+      { name: 'Coca', stockQty: 0 },
+      { name: 'Fanta', stockQty: 1 },
+      { name: 'Sprite', stockQty: 2 },
+    ])
+    const msg = sendMock.mock.calls[0][0][0]
+    expect(msg.title).toBe('⚠️ 3 produits en rupture')
+    expect(msg.body).toMatch(/Coca.*2 autres/)
+    expect(msg.data).toMatchObject({ type: 'low_stock', productName: 'Coca' })
+  })
+
+  it('sendStockAlertBatch — liste vide → aucun envoi', async () => {
+    await sendStockAlertBatch('T1', [])
     expect(sendMock).not.toHaveBeenCalled()
   })
 })
