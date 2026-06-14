@@ -93,6 +93,8 @@ model Tenant {
   subscriptions  Subscription[]
   campaigns      Campaign[]
   userTenants    UserTenant[]
+  transfersFrom  StockTransfer[] @relation("TransferFrom")
+  transfersTo    StockTransfer[] @relation("TransferTo")
 
   @@index([deletedAt])
 }
@@ -198,12 +200,39 @@ model Product {
   tenant    Tenant     @relation(fields: [tenantId], references: [id])
   saleItems         SaleItem[]
   subscriptionItems SubscriptionItem[]
+  transfers         StockTransfer[]
 
   @@unique([tenantId, sku])
   @@index([tenantId])
   @@index([tenantId, isActive])
   @@index([tenantId, barcode])
   @@index([tenantId, deletedAt])
+}
+
+// Transfert de stock entre boutiques (multi-boutiques v2). Validation en 2 étapes :
+// SOURCE crée (pending → décrément immédiat), DESTINATION confirme (completed → incrément)
+// ou l'une des deux annule (cancelled → restitution du stock source).
+// `productId` = produit SOURCE ; à la confirmation, le produit destination est retrouvé
+// par SKU puis code-barres, sinon copié depuis la source.
+model StockTransfer {
+  id           String   @id @default(cuid())
+  fromTenantId String
+  toTenantId   String
+  productId    String
+  quantity     Int
+  status       String   @default("pending") // pending → completed | cancelled
+  note         String?
+  createdBy    String   // userId (boutique source)
+  confirmedBy  String?  // userId (boutique destination)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  fromTenant   Tenant   @relation("TransferFrom", fields: [fromTenantId], references: [id])
+  toTenant     Tenant   @relation("TransferTo",   fields: [toTenantId],   references: [id])
+  product      Product  @relation(fields: [productId], references: [id])
+
+  @@index([fromTenantId, status])
+  @@index([toTenantId, status])
 }
 
 model Sale {

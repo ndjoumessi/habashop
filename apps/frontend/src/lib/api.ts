@@ -167,6 +167,30 @@ export const productsApi = {
   lowStock: () => api.get<any[]>('/api/products/low-stock'),
 }
 
+export interface StockTransfer {
+  id: string
+  fromTenantId: string
+  toTenantId: string
+  productId: string
+  quantity: number
+  status: 'pending' | 'completed' | 'cancelled'
+  note: string | null
+  createdBy: string
+  confirmedBy: string | null
+  createdAt: string
+  product?: { id: string; name: string; sku: string; emoji?: string }
+  fromTenant?: { id: string; name: string }
+  toTenant?: { id: string; name: string }
+}
+
+export const stockTransfersApi = {
+  list:    (status?: string) => api.get<StockTransfer[]>(`/api/stock/transfers${status ? `?status=${status}` : ''}`),
+  create:  (data: { toTenantId: string; productId: string; quantity: number; note?: string }) =>
+    api.post<StockTransfer>('/api/stock/transfers', data),
+  confirm: (id: string) => api.patch<{ id: string; status: string }>(`/api/stock/transfers/${id}/confirm`, {}),
+  cancel:  (id: string) => api.patch<{ id: string; status: string }>(`/api/stock/transfers/${id}/cancel`, {}),
+}
+
 export const salesApi = {
   list:   () => api.get<any[]>('/api/sales'),
   create: (data: any) => api.post<any>('/api/sales', data),

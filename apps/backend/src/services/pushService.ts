@@ -12,7 +12,7 @@ const expo = new Expo(
 )
 
 interface PushData {
-  type: 'low_stock' | 'payment_received' | 'leave_pending' | 'trial_expiring'
+  type: 'low_stock' | 'payment_received' | 'leave_pending' | 'trial_expiring' | 'stock_transfer'
   [key: string]: unknown
 }
 
@@ -127,6 +127,28 @@ export async function sendTrialExpiring(tenantId: string, daysLeft: number): Pro
     '⏰ Essai expire bientôt',
     `Votre essai HabaShop expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
     { type: 'trial_expiring', daysLeft },
+  )
+}
+
+// ↔ Transfert confirmé par la destination → MANAGER + ADMIN de la boutique SOURCE.
+export async function sendTransferConfirmed(sourceTenantId: string, destShopName: string, productName: string, quantity: number): Promise<void> {
+  const tokens = await tokensForRoles(sourceTenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'])
+  await sendPush(
+    tokens,
+    '✅ Transfert confirmé',
+    `${destShopName} a reçu ${quantity} × ${productName}`,
+    { type: 'stock_transfer', status: 'completed', productName, quantity },
+  )
+}
+
+// ↔ Transfert annulé → MANAGER + ADMIN d'une boutique (appelé pour source ET destination).
+export async function sendTransferCancelled(tenantId: string, byShopName: string, productName: string): Promise<void> {
+  const tokens = await tokensForRoles(tenantId, ['MANAGER', 'ADMIN', 'SUPER_ADMIN'])
+  await sendPush(
+    tokens,
+    '❌ Transfert annulé',
+    `${byShopName} a annulé le transfert de ${productName}`,
+    { type: 'stock_transfer', status: 'cancelled', productName },
   )
 }
 

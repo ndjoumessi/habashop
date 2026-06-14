@@ -15,6 +15,7 @@ import { authRoutes }         from './routes/auth'
 import { accountRoutes }      from './routes/account'
 import { tenantRoutes }       from './routes/tenant'
 import { productRoutes }      from './routes/products'
+import { stockTransferRoutes } from './routes/stockTransfers'
 import { customerRoutes }     from './routes/customers'
 import { saleRoutes }         from './routes/sales'
 import { ticketZRoutes }      from './routes/ticketZ'
@@ -233,6 +234,7 @@ async function start() {
   await app.register(accountRoutes)
   await app.register(tenantRoutes)
   await app.register(productRoutes)
+  await app.register(stockTransferRoutes)
   await app.register(customerRoutes)
   await app.register(saleRoutes)
   await app.register(ticketZRoutes)

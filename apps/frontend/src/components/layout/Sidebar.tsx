@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import { useConfig, useCashierIsOpen, t } from '@/stores/appStore'
+import { stockTransfersApi } from '@/lib/api'
 import {
   LayoutDashboard, ShoppingCart, Archive, Truck, Users,
   UserCog, Calendar, Wallet, Receipt, TrendingUp, BarChart2,
@@ -48,12 +50,24 @@ const NAV: NavEntry[] = [
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
+  const tenants = useAuthStore(s => s.tenants)
+  const activeTenantId = useAuthStore(s => s.activeTenantId)
   const { theme, sidebarCollapsed, updateConfig, lang } = useConfig()
   void lang
   const navigate = useNavigate()
   const collapsed = sidebarCollapsed
   const canPos = canAccess(user?.role, 'pos')
   const cashierIsOpen = useCashierIsOpen() // source unique de vérité (cashierOpen exclu de partialize)
+
+  // Badge Stock : transferts reçus en attente de MA confirmation (multi-boutiques, MANAGER+).
+  const [pendingTransfers, setPendingTransfers] = useState(0)
+  const isManagerPlus = ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(String(user?.role).toUpperCase())
+  useEffect(() => {
+    if (tenants.length <= 1 || !isManagerPlus) { setPendingTransfers(0); return }
+    stockTransfersApi.list('pending')
+      .then(list => setPendingTransfers(list.filter(t => t.toTenantId === activeTenantId).length))
+      .catch(() => {})
+  }, [tenants.length, activeTenantId, isManagerPlus])
 
   return (
     <div
@@ -174,6 +188,8 @@ export default function Sidebar() {
               )
           }
           const { Icon } = item
+          // Badge dynamique « transferts en attente » sur Stock (multi-boutiques).
+          const dynBadge = item.path === '/app/stock' && pendingTransfers > 0 ? String(pendingTransfers) : item.badge
           return (
             <NavLink
               key={item.path}
@@ -186,10 +202,10 @@ export default function Sidebar() {
                 <Icon size={16} />
               </div>
               {!collapsed && <span className="nav-label">{t(item.key)}</span>}
-              {!collapsed && item.badge && (
-                <span className={`nav-badge${item.badgeTag ? ' tag' : ''}`}>{item.badge}</span>
+              {!collapsed && dynBadge && (
+                <span className={`nav-badge${item.badgeTag ? ' tag' : ''}`}>{dynBadge}</span>
               )}
-              {collapsed && item.badge && <span className="nav-dot" />}
+              {collapsed && dynBadge && <span className="nav-dot" />}
             </NavLink>
           )
         })}

@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useConfig, useFormatAmount, t, useAppStore } from '@/stores/appStore'
 import { hydratePricesFromApi, dehydratePricesForApi } from '@/lib/productCurrency'
-import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen, Tag, Printer, Camera, Pencil, Package, X, Eye, Trash2, LayoutGrid, AlignJustify } from 'lucide-react'
+import { Search, Download, Plus, AlertTriangle, List, Gem, FolderOpen, Tag, Printer, Camera, Pencil, Package, X, Eye, Trash2, LayoutGrid, AlignJustify, ArrowLeftRight } from 'lucide-react'
+import { useAuthStore } from '@/stores/authStore'
+import StockTransfers from '@/components/stock/StockTransfers'
 import ViewField from '@/components/ui/ViewField'
 import toast from 'react-hot-toast'
 import { exportCSV, openPDF, htmlTable, htmlKPIs, printProductLabels } from '@/utils/export'
@@ -27,6 +29,8 @@ export default function Stock() {
   const navigate = useNavigate()
   void lang // for t() reactivity
 
+  const multiShop = useAuthStore(s => s.tenants.length > 1)
+  const [activeTab, setActiveTab] = useState<'inventory' | 'transfers'>('inventory')
   const [products, setProducts] = useState<ProductItem[]>([])
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading]   = useState(true)
@@ -264,6 +268,29 @@ export default function Stock() {
         </button>
       </div>
 
+      {/* Onglets (Inventaire / Transferts) — Transferts visible uniquement si multi-boutiques */}
+      {multiShop && (
+        <div role="tablist" aria-label={t('nav_stock')} style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)' }}>
+          {([
+            { key: 'inventory'  as const, icon: <List size={15} />,           label: lang === 'en' ? 'Inventory' : lang === 'es' ? 'Inventario' : lang === 'it' ? 'Inventario' : 'Inventaire' },
+            { key: 'transfers'  as const, icon: <ArrowLeftRight size={15} />, label: lang === 'en' ? 'Transfers' : lang === 'es' ? 'Transferencias' : lang === 'it' ? 'Trasferimenti' : 'Transferts' },
+          ]).map(tab => (
+            <button key={tab.key} role="tab" aria-selected={activeTab === tab.key} type="button" onClick={() => setActiveTab(tab.key)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7, padding: '10px 16px', border: 'none', background: 'none',
+                cursor: 'pointer', fontFamily: 'var(--font)', fontSize: 14, fontWeight: 'var(--fw-semibold)',
+                color: activeTab === tab.key ? 'var(--p2)' : 'var(--text3)',
+                borderBottom: `2px solid ${activeTab === tab.key ? 'var(--p)' : 'transparent'}`, marginBottom: -1,
+              }}>
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {multiShop && activeTab === 'transfers' && <StockTransfers />}
+
+      {(!multiShop || activeTab === 'inventory') && (<>
       {/* Alert rupture */}
       {ruptures.length > 0 && (
         <div className="flex items-center gap-3 p-4 rounded-2xl"
@@ -443,6 +470,7 @@ export default function Stock() {
           ))}
         </ResponsiveGrid>
       </div>
+      </>)}
       <StockModals
         showModal={showModal} setShowModal={setShowModal}
         resetForm={resetForm}
