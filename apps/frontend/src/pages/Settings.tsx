@@ -110,7 +110,7 @@ export default function Settings() {
           fontSize: 11, color: 'var(--text3)',
           borderTop: '1px solid var(--border)',
         }}>
-          v2.0 · Railway + Vercel
+          {__BUILD_ID__}
         </div>
       </div>
 

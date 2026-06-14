@@ -274,6 +274,10 @@ export async function reportsRoutes(app: any) {
     return getCached(`reports:inventory:${tenantId}`, 300, () => buildInventoryInsights(prisma, tenantId, now))
   })
 
+  // Préfixe les valeurs CSV commençant par un opérateur Excel (=,+,-,@,tab,CR) pour
+  // éviter l'injection de formule (CSV formula injection / spreadsheet injection).
+  const sanitizeCsv = (v: string): string => /^[=+\-@\t\r]/.test(v) ? "'" + v : v
+
   // GET /api/reports/accounting/csv?month=YYYY-MM — CSV détaillé par vente (UTF-8 BOM, séparateur ;).
   app.get('/api/reports/accounting/csv', { preHandler: authenticate }, async (request: any, reply: any) => {
     const role = request.user?.role as string | undefined
@@ -323,7 +327,7 @@ export async function reportsRoutes(app: any) {
       const { ht, tva, ttc } = calcVat(s.total)
       const date = new Date(s.createdAt).toLocaleDateString('fr-FR')
       const ref  = s.id.slice(-8).toUpperCase()
-      const cli  = (s.customerId ? (custMap.get(s.customerId) ?? '') : '').replace(/"/g, '""')
+      const cli  = sanitizeCsv(s.customerId ? (custMap.get(s.customerId) ?? '') : '').replace(/"/g, '""')
       const mode = s.paymentMode
       const stat = s.status === 'refunded' ? 'Remboursé' : 'Complété'
       lines.push([date, ref, `"${cli}"`, mode, ht.toFixed(2), tva.toFixed(2), ttc.toFixed(2), stat].join(SEP))
@@ -404,7 +408,7 @@ export async function reportsRoutes(app: any) {
       ...rows.map(r => {
         const date = new Date(r.date).toLocaleDateString('fr-FR')
         const ref  = r.id.slice(-8).toUpperCase()
-        const cli  = (r.customerName ?? '').replace(/"/g, '""')
+        const cli  = sanitizeCsv(r.customerName ?? '').replace(/"/g, '""')
         return [date, ref, `"${cli}"`, r.paymentMode, r.totalHT.toFixed(2), r.tva.toFixed(2), r.totalTTC.toFixed(2)].join(SEP)
       }),
       [],

@@ -600,3 +600,13 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
    (fermeture via clic sur la carte ou ouverture d'un autre marqueur). */
 .gm-style .gm-style-iw-tc { display: none !important; }
 .gm-style .gm-style-iw-c button.gm-ui-hover-effect { display: none !important; }
+
+/* GlobalSearch — cmdk keyboard navigation highlight */
+[cmdk-item] { cursor: pointer; }
+[cmdk-item][aria-selected="true"],
+[cmdk-item][data-selected="true"] { background: var(--bg3); }
+[cmdk-group-heading] {
+  font-size: 10px; font-weight: var(--fw-semibold); color: var(--text3);
+  text-transform: uppercase; letter-spacing: .6px;
+  padding: 6px 10px 2px;
+}

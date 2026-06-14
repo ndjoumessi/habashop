@@ -4,17 +4,20 @@ import Header from './Header'
 import { useAppStore } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
-import { useEffect, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import PWAInstallButton from '@/components/ui/PWAInstallButton'
 import BillingBanner from '@/components/ui/BillingBanner'
 import OfflineBanner from '@/components/ui/OfflineBanner'
 import { useI18n } from '@/hooks/useI18n'
 import { setAnnounceRegion } from '@/lib/announce'
+import GlobalSearch from '@/components/GlobalSearch'
 
 export default function AppLayout() {
   const { theme } = useAppStore()
   const { i } = useI18n()
   const token = useAuthStore(s => s.token)
+  const [searchOpen, setSearchOpen] = useState(false)
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
@@ -27,8 +30,14 @@ export default function AppLayout() {
   // Échap ferme la modale la plus haute : déclenche le clic-backdrop déjà câblé
   // dans chaque modale (onClick={e => e.target === e.currentTarget && close}) →
   // fermeture clavier centralisée, sans toucher chaque composant de modale.
+  // Cmd+K / Ctrl+K ouvre la recherche globale.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(o => !o)
+        return
+      }
       if (e.key !== 'Escape') return
       const backdrops = document.querySelectorAll<HTMLElement>('.modal-backdrop')
       backdrops[backdrops.length - 1]?.click()
@@ -56,6 +65,7 @@ export default function AppLayout() {
         </main>
       </div>
       <PWAInstallButton />
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   )
 }

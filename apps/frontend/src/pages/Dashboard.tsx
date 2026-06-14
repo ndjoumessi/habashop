@@ -195,6 +195,13 @@ export default function Dashboard() {
           }
         }
         setCatData(mergedCats.map((c, i) => ({ ...c, color: DONUT_COLORS[i % DONUT_COLORS.length] })))
+        // Nouvel ADMIN sans produits ni ventes, non encore onboardé → wizard
+        if (
+          data.totalProducts === 0 && data.transactionsToday === 0 && data.salesMonth === 0 &&
+          user?.role === 'ADMIN' && !localStorage.getItem('habashop_onboarded')
+        ) {
+          navigate('/onboarding')
+        }
       })
       .catch(() => toast.error(lang === 'en' ? 'Data unavailable — please retry' : lang === 'es' ? 'Datos no disponibles — reintenta' : lang === 'it' ? 'Dati non disponibili — riprova' : 'Données indisponibles — réessayer'))
       .finally(() => setKpiLoading(false))
