@@ -87,6 +87,7 @@ app/
   (auth)/login.tsx
   (app)/(tabs)/…      # dashboard|stock|customers|settings|pos-tab
   (app)/pos/index.tsx # caisse (scanner, offline, ticket, mixte, fidélité)
+  (app)/delete-account.tsx  # Réglages → Compte (suppression RGPD)
   (app)/reports|sales|search|kiosk/index.tsx
 src/
   constants/theme.ts
@@ -133,6 +134,8 @@ Montants DB en **XOF**, `fmt()` à l'affichage. Montant saisi → **`convertToXO
 | `/api/dashboard/stats` | GET | ⚠️ PAS `/api/analytics/dashboard` → 404 |
 | `/api/notifications/token` | POST | upsert push token |
 | `/api/notifications/token` | DELETE | désenregistre `{ token }` au logout |
+| `/api/account/me` | DELETE | JWT + bcrypt password + body `"SUPPRIMER"` ; rate-limit 3/h/IP ; scope SUPER_ADMIN/ADMIN-seul→tenant, sinon→user |
+| `/api/tenant/users` | GET | liste users actifs (utilisé par `delete-account` pour compter les autres admins actifs) |
 
 `restoreSession` = `/api/auth/me` plat + `GET /api/tenant` → reconstruit user/tenant (sinon boucle refetch).
 
@@ -145,6 +148,8 @@ Colors.danger '#FF3B5C' · warn '#FFB800' · bg '#07070F' · card '#0F0F1E'
 Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ```
 **`const s = useMemo(() => makeStyles(C), [C])`** (C = `useTheme()`). Fonts : `Outfit_700Bold` / `JetBrainsMono`. `ThemeColors = { [K in keyof typeof DarkColors]: string }` (pas `typeof DarkColors`). `userInterfaceStyle:"automatic"`. `useTheme()`/`useMemo` **avant** tout `return` conditionnel. `Colors` statiques : kiosk + widgetNotification seulement.
+
+`ThemeMode = 'dark' | 'light' | 'soleil'`. `SoleilColors` = haut-contraste (parité web). Toggle 1-tap header Dashboard (`previousTheme` persisté) + option Réglages grille 2×2. Test contraste : `src/__tests__/contrast.test.ts` (73 tests × 3 thèmes, dont AA ≥4.5:1 text/text2/text3). Kiosk reste `Colors` sombre figé (Soleil non applicable).
 
 ---
 
@@ -215,6 +220,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 - **Widget CA :** notification persistante (`sticky:true`+`autoDismiss:false`), canal LOW, refresh background-task → dev build.
 - **Kiosque :** PIN `1234` (LONG ⚙️, `delayLongPress=600`), `kioskMode` persisté, route `fullScreenModal`.
 - **WhatsApp iOS :** `LSApplicationQueriesSchemes:["whatsapp"]` dans `ios.infoPlist` (déjà posé).
+- **Suppression compte (`delete-account.tsx`) :** Réglages → Compte. `accountApi.deleteMe` / `tenantUsers`. Scope : SUPER_ADMIN ou ADMIN seul→cascade tenant ; ADMIN avec autres actifs / autre rôle→user. `accountCleanup.ts` purge biométrie/photo/offline/panier + logout (garde lang/thème/devise). Erreurs : 401, 429, 410 déjà supprimé = succès silencieux. ⚠️ Tester sur tenant dédié, **JAMAIS le compte démo**.
 - **Sentry :** import dynamique + garde `executionEnvironment !== StoreClient`. `@expo/config-plugins ~54.0.4` **dépendance directe** (sinon prebuild échoue).
 - **iOS/tablette :** `useResponsive` prêt (non branché — ≠ code mort). Reflows Dashboard/POS/tab bar différés jusqu'à un iPad.
 
@@ -222,5 +228,6 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 
 ## État courant
 - `main`, `tsc` 0, **141 tests verts**. Version **1.4.3** / runtime **1.4.3**.
-- **À valider device :** offline+resync (cache à froid + abandon 3 retries), push (3 types + tap nav), ticket WhatsApp, widget (dev build), TalkBack, scanner Android, fidélité v2/carte QR, OCR MANAGER+.
+- **Validé device (2026-05-27, APK `382fe2ec`) :** scanner EAN13 ✅, thème clair ✅, kiosque+PIN ✅, encaissement→API ✅, biométrie ✅, suppression compte (scénario ADMIN seul→cascade tenant) ✅.
+- **À valider device :** offline+resync (cache à froid + abandon 3 retries), push (3 types + tap nav), ticket WhatsApp, widget (dev build), TalkBack, carte QR, OCR MANAGER+, **mode soleil en conditions réelles** (plein soleil extérieur).
 - **Différé :** Play Store (AAB `1f6bf56f` prêt, captures à faire) ; layouts tablette (iPad) ; build iOS réel ; Wave/Orange prod.
