@@ -27,6 +27,88 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     return prisma.tenant.findUnique({ where: { id: tenantId } })
   })
 
+  // ── Multi-boutiques : création d'une nouvelle boutique ─────────────────────────
+  // Le créateur (ADMIN/SUPER_ADMIN) est automatiquement lié comme ADMIN de la boutique.
+  // Réconciliation spec : ADMIN autorisé (et pas seulement SUPER_ADMIN) pour permettre
+  // à un propriétaire d'ouvrir une 2ᵉ boutique (cas d'usage central du multi-boutiques).
+  app.post('/api/tenants', { preHandler: authenticate }, async (request, reply) => {
+    if (!requireAdmin(request, reply)) return
+    const { userId } = request.user
+    const body = (request.body ?? {}) as { name?: string; currency?: string; lang?: string; address?: string; country?: string; phone?: string }
+    const name = body.name?.trim()
+    if (!name) return reply.code(400).send({ error: 'Le nom de la boutique est requis' })
+
+    const VALID_CURRENCIES = ['XOF', 'XAF', 'EUR', 'USD', 'CAD', 'GBP']
+    const VALID_LANGS = ['fr', 'en', 'es', 'it']
+    const currency = VALID_CURRENCIES.includes(body.currency ?? '') ? body.currency! : 'XOF'
+    const lang = VALID_LANGS.includes(body.lang ?? '') ? body.lang! : 'fr'
+
+    const tenant = await prisma.$transaction(async (tx) => {
+      const t = await tx.tenant.create({
+        data: {
+          name, currency, lang,
+          country: body.country ?? 'SN',
+          address: body.address ?? null,
+          phone: body.phone ?? null,
+          plan: 'starter', status: 'active', isActive: true,
+        },
+      })
+      await tx.userTenant.create({ data: { userId, tenantId: t.id, role: 'ADMIN' } })
+      return t
+    })
+
+    return reply.code(201).send({ tenant })
+  })
+
+  // Invitation d'un employé dans une boutique CHOISIE (multi-boutiques).
+  // Le caller doit être ADMIN de cette boutique (via UserTenant) ou SUPER_ADMIN.
+  app.post('/api/tenants/:id/invite', { preHandler: authenticate }, async (request, reply) => {
+    const { id: targetTenantId } = request.params as { id: string }
+    const { userId, role: callerRole } = request.user
+    const { name, email, password, role } = (request.body ?? {}) as { name?: string; email?: string; password?: string; role?: string }
+
+    // Autorisation : SUPER_ADMIN global, ou ADMIN lié à cette boutique précise.
+    const isSuper = String(callerRole).toUpperCase() === 'SUPER_ADMIN'
+    if (!isSuper) {
+      const callerLink = await prisma.userTenant.findUnique({ where: { userId_tenantId: { userId, tenantId: targetTenantId } }, select: { role: true } })
+      if (!callerLink || !isAdminRole(callerLink.role)) {
+        return reply.code(403).send({ error: 'Accès réservé à un administrateur de cette boutique' })
+      }
+    }
+    if (!email?.trim()) return reply.code(400).send({ error: 'Email requis' })
+    if (role && !VALID_ROLES.includes(role as Role)) {
+      return reply.code(400).send({ error: `Rôle invalide. Valides : ${VALID_ROLES.join(', ')}` })
+    }
+    const tenant = await prisma.tenant.findFirst({ where: { id: targetTenantId, deletedAt: null } })
+    if (!tenant) return reply.code(404).send({ error: 'Boutique introuvable' })
+
+    const finalRole = (role as Role) ?? 'CASHIER'
+    const existing = await prisma.user.findUnique({ where: { email: email.trim() } })
+
+    // User existant → simple rattachement à la boutique (idempotent).
+    if (existing) {
+      await prisma.userTenant.upsert({
+        where: { userId_tenantId: { userId: existing.id, tenantId: targetTenantId } },
+        update: { role: finalRole },
+        create: { userId: existing.id, tenantId: targetTenantId, role: finalRole },
+      })
+      return reply.code(200).send({ linked: true, userId: existing.id })
+    }
+
+    // Nouvel user → création + liaison. Mot de passe requis.
+    if (!name?.trim() || !password) return reply.code(400).send({ error: 'Nom et mot de passe requis pour un nouvel employé' })
+    const passwordHash = await bcrypt.hash(password, 12)
+    const user = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.create({ data: { name: name.trim(), email: email.trim(), passwordHash, role: finalRole, tenantId: targetTenantId } })
+      await tx.userTenant.create({ data: { userId: u.id, tenantId: targetTenantId, role: finalRole } })
+      return u
+    })
+    const inviter = await prisma.user.findUnique({ where: { id: userId } })
+    sendUserInvitationEmail({ to: user.email, inviteeName: user.name, shopName: tenant.name, tempPassword: password, invitedBy: inviter?.name }).catch(() => {})
+    const { passwordHash: _ph, twoFASecret: _2fa, ...safe } = user
+    return reply.code(201).send({ created: true, user: safe })
+  })
+
   const updateTenantHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     const tenantId = request.tenantId
     const data = request.body as TenantUpdateBody
@@ -187,6 +269,10 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         tenantId: request.tenantId,
       },
     })
+    // Liaison multi-boutiques : rattache l'employé à la boutique active.
+    await prisma.userTenant.create({
+      data: { userId: user.id, tenantId: request.tenantId, role: (role as Role) ?? 'CASHIER' },
+    }).catch(() => {})
     // Audit + email (best-effort, n'échoue pas l'invitation si l'email rate)
     const tenant = await prisma.tenant.findUnique({ where: { id: request.tenantId } })
     const inviter = await prisma.user.findUnique({ where: { id: request.user.userId } })

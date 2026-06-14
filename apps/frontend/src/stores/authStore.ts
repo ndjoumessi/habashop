@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { authApi } from '@/lib/api'
+import { authApi, type AccessibleTenant } from '@/lib/api'
 import { useAppStore } from '@/stores/appStore'
 
 export type UserRole = 'ADMIN' | 'MANAGER' | 'CASHIER' | 'ACCOUNTANT' | 'HR' | 'SUPER_ADMIN' | 'admin' | 'manager' | 'cashier' | 'accountant' | 'hr'
@@ -61,8 +61,12 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
+  // Multi-boutiques
+  tenants: AccessibleTenant[]          // boutiques accessibles à l'user
+  activeTenantId: string | null        // null = aucune boutique sélectionnée (sélecteur requis)
   login: (email: string, password: string) => Promise<void>
   register: (data: any) => Promise<void>
+  switchTenant: (tenantId: string) => Promise<void>
   logout: () => void
   updateUser: (data: Partial<User>) => void
   clearError: () => void
@@ -76,16 +80,23 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      tenants: [],
+      activeTenantId: null,
 
       login: async (email, password) => {
         set({ isLoading: true, error: null })
         try {
-          const { token, user, tenant } = await authApi.login(email, password)
+          const { token, user, tenant, tenants, activeTenantId } = await authApi.login(email, password)
           localStorage.setItem('habashop_token', token)
+          // 1 boutique → tenant fourni ; >1 → tenant null (sélecteur affiché avant l'entrée).
           useAppStore.getState().setTenant(tenant ?? null)
           useAppStore.getState().closeCashier() // pas de session caisse héritée d'une connexion précédente
           useAppStore.getState().clearCart()    // panier vide à chaque nouvelle session
-          set({ user, token, isAuthenticated: true, isLoading: false })
+          set({
+            user, token, isAuthenticated: true, isLoading: false,
+            tenants: tenants ?? [],
+            activeTenantId: activeTenantId ?? null,
+          })
         } catch (err: any) {
           // ⚠️ PAS de fallback démo « hors-ligne » ici. Les 5 comptes démo existent dans le backend
           // réel (mot de passe demo1234) → un login normal renvoie un VRAI JWT. L'ancien fallback
@@ -105,11 +116,30 @@ export const useAuthStore = create<AuthState>()(
           const { token, user, tenant } = await authApi.register(data)
           localStorage.setItem('habashop_token', token)
           useAppStore.getState().setTenant(tenant ?? null)
-          set({ user, token, isAuthenticated: true, isLoading: false })
+          set({
+            user, token, isAuthenticated: true, isLoading: false,
+            tenants: tenant ? [{ id: tenant.id, name: tenant.name, currency: tenant.currency, plan: tenant.plan, logo: tenant.logo ?? null, address: tenant.address ?? null, role: 'ADMIN' }] : [],
+            activeTenantId: tenant?.id ?? null,
+          })
         } catch (err: any) {
           set({ error: err.message, isLoading: false })
           throw err
         }
+      },
+
+      // Bascule de boutique active : nouveau JWT, MAJ stores. Le caller rafraîchit
+      // les données par un rechargement complet (navigation window.location).
+      switchTenant: async (tenantId) => {
+        const { token, tenant, role } = await authApi.switchTenant(tenantId)
+        localStorage.setItem('habashop_token', token)
+        useAppStore.getState().setTenant(tenant ?? null)
+        useAppStore.getState().closeCashier() // session caisse propre à chaque boutique
+        useAppStore.getState().clearCart()
+        set((state) => ({
+          token,
+          activeTenantId: tenantId,
+          user: state.user ? { ...state.user, role: (role as UserRole) ?? state.user.role, shopName: tenant?.name ?? state.user.shopName } : state.user,
+        }))
       },
 
       logout: () => {
@@ -117,7 +147,7 @@ export const useAuthStore = create<AuthState>()(
         useAppStore.getState().clearTenant()
         useAppStore.getState().closeCashier()
         useAppStore.getState().clearCart() // panier vide — pas hérité d'une session précédente
-        set({ user: null, token: null, isAuthenticated: false })
+        set({ user: null, token: null, isAuthenticated: false, tenants: [], activeTenantId: null })
       },
 
       updateUser: (data) => {
@@ -132,6 +162,8 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
+        tenants: state.tenants,
+        activeTenantId: state.activeTenantId,
       }),
     }
   )

@@ -34,6 +34,7 @@ const Subscriptions  = lazy(() => import('@/pages/Subscriptions'))
 const APIDocs        = lazy(() => import('@/pages/APIDocs'))
 const Integrations   = lazy(() => import('@/pages/Integrations'))
 const Onboarding     = lazy(() => import('@/pages/Onboarding'))
+const SelectShop     = lazy(() => import('@/pages/SelectShop'))
 const Pricing        = lazy(() => import('@/pages/Pricing'))
 const UpgradePlan    = lazy(() => import('@/pages/UpgradePlan'))
 const PaymentCallback = lazy(() => import('@/pages/PaymentCallback'))
@@ -49,8 +50,20 @@ function RouteFallback() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore()
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
+  const { isAuthenticated, tenants, activeTenantId } = useAuthStore()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  // Multi-boutiques : authentifié mais aucune boutique active → sélection requise.
+  if (tenants.length > 1 && !activeTenantId) return <Navigate to="/select-shop" replace />
+  return <>{children}</>
+}
+
+// Sélecteur de boutique : authentification requise, mais PAS de boutique active
+// (c'est l'écran qui sert à en choisir une). Redirige si rien à choisir.
+function ProtectedSelectShop() {
+  const { isAuthenticated, tenants, activeTenantId, user } = useAuthStore()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (activeTenantId || tenants.length <= 1) return <Navigate to={getLandingForRole(user?.role)} replace />
+  return <SelectShop />
 }
 
 function RoleRoute({ slug, children }: { slug: string; children: React.ReactNode }) {
@@ -126,6 +139,7 @@ export default function App() {
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/c/:slug" element={<PublicCatalog />} />
       <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/select-shop" element={<ProtectedSelectShop />} />
       <Route
         path="/app"
         element={

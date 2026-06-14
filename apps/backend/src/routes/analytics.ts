@@ -124,6 +124,46 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
+  // ── Dashboard consolidé multi-boutiques ───────────────────────────────────────
+  // Stats du jour pour TOUTES les boutiques de l'user (CA en XOF base → total commun).
+  // Accessible sans boutique active (cf. authenticate : exempté du 400).
+  app.get('/api/dashboard/consolidated', { preHandler: authenticate }, async (request) => {
+    const { userId } = request.user
+    const links = await prisma.userTenant.findMany({
+      where: { userId, tenant: { deletedAt: null } },
+      select: { tenant: { select: { id: true, name: true, currency: true } } },
+      orderBy: { createdAt: 'asc' },
+    })
+    const tenantsMeta = links.map(l => l.tenant).filter(Boolean) as { id: string; name: string; currency: string }[]
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const perTenant = await Promise.all(tenantsMeta.map(async (t) => {
+      const [agg, lowStock] = await Promise.all([
+        prisma.sale.aggregate({
+          where: { tenantId: t.id, status: { not: 'refunded' }, createdAt: { gte: today } },
+          _sum: { total: true },
+          _count: true,
+        }),
+        prisma.product.count({ where: { tenantId: t.id, isActive: true, deletedAt: null, stockQty: { lte: prisma.product.fields.stockMin } } }).catch(() => 0),
+      ])
+      return {
+        id: t.id,
+        name: t.name,
+        currency: t.currency,
+        caToday: agg._sum.total ?? 0,            // XOF base
+        transactionsToday: agg._count,
+        stockAlerts: lowStock,
+      }
+    }))
+
+    const totalCaToday = perTenant.reduce((s, t) => s + t.caToday, 0)
+    const totalTransactions = perTenant.reduce((s, t) => s + t.transactionsToday, 0)
+
+    return { tenants: perTenant, totalCaToday, totalTransactions }
+  })
+
   app.get('/api/reports/sales', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     const { period = '7days' } = request.query as { period?: string }

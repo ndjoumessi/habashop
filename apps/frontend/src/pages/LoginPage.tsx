@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, getLandingForRole } from '@/stores/authStore'
 import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
 import { Crown, Briefcase, ShoppingCart, Calculator, Users, Package, BarChart3, Coins, ShieldCheck, Globe, Mail, Lock, Eye, EyeOff, Rocket, AlertCircle } from 'lucide-react'
@@ -28,8 +28,19 @@ export default function LoginPage() {
     clearError()
     try {
       await login(email, password)
+      const { tenants, activeTenantId, user } = useAuthStore.getState()
+      // Aucune boutique → compte sans accès (ne devrait pas arriver après backfill).
+      if (tenants.length === 0) {
+        setError(i('Aucune boutique associée à ce compte','No shop linked to this account','Ninguna tienda asociada a esta cuenta','Nessun negozio associato a questo account'))
+        return
+      }
+      // Plusieurs boutiques sans sélection → écran de choix avant d'entrer.
+      if (tenants.length > 1 && !activeTenantId) {
+        navigate('/select-shop')
+        return
+      }
       toast.success(i('Connexion réussie !','Login successful!','¡Inicio de sesión exitoso!','Accesso riuscito!'))
-      navigate('/app/dashboard')
+      navigate(getLandingForRole(user?.role))
     } catch (err: any) {
       setError(err?.message || i('Email ou mot de passe incorrect','Incorrect email or password','Correo o contraseña incorrectos','Email o password non corretti'))
     } finally {

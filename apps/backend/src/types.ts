@@ -2,8 +2,11 @@ import type { FastifyRequest, FastifyReply } from 'fastify'
 
 export interface JWTPayload {
   userId:   string
-  tenantId: string
+  // Boutique active : null tant qu'aucune boutique n'est sélectionnée (multi-boutiques).
+  tenantId: string | null
   role:     string
+  // Multi-boutiques : boutique active explicite. Absent des anciens JWT (rétro-compat).
+  activeTenantId?: string | null
 }
 
 // ── Helpers de typage des handlers Fastify ──

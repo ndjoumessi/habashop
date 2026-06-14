@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useConfig } from '@/stores/appStore'
+import { useAuthStore } from '@/stores/authStore'
 import { makeI, pick } from '@/components/settings/settingsShared'
-import { Store, ShoppingCart, Globe, Bell, Lock, FileText, Share2 } from 'lucide-react'
+import { Store, ShoppingCart, Globe, Bell, Lock, FileText, Share2, Building2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import SectionShop from '@/components/settings/SectionShop'
 import SectionPOS from '@/components/settings/SectionPOS'
@@ -10,8 +11,9 @@ import SectionNotif from '@/components/settings/SectionNotif'
 import SectionSecurity from '@/components/settings/SectionSecurity'
 import SectionDocs from '@/components/settings/SectionDocs'
 import SectionCatalog from '@/components/settings/SectionCatalog'
+import SectionShops from '@/components/settings/SectionShops'
 
-type SectionId = 'shop' | 'pos' | 'catalog' | 'lang' | 'notif' | 'security' | 'docs'
+type SectionId = 'shop' | 'pos' | 'catalog' | 'boutiques' | 'lang' | 'notif' | 'security' | 'docs'
 
 interface SectionDef {
   id:    SectionId
@@ -25,6 +27,7 @@ const SECTIONS: SectionDef[] = [
   { id: 'shop',     Icon: Store,        color: 'var(--p2)',           label: { fr: 'Boutique',         en: 'Shop',                es: 'Tienda',             it: 'Negozio'             }, desc: { fr: 'Infos générales',     en: 'General info',     es: 'Info general',     it: 'Info generali'      } },
   { id: 'pos',      Icon: ShoppingCart, color: 'var(--acc2)',         label: { fr: 'Config POS',       en: 'POS Config',          es: 'Config TPV',         it: 'Config POS'          }, desc: { fr: 'Caisse & TVA',        en: 'Cashier & VAT',    es: 'Caja & IVA',       it: 'Cassa & IVA'        } },
   { id: 'catalog',  Icon: Share2,       color: '#25D366',             label: { fr: 'Catalogue WhatsApp', en: 'WhatsApp Catalog',  es: 'Catálogo WhatsApp',  it: 'Catalogo WhatsApp'   }, desc: { fr: 'Lien public partageable', en: 'Public shareable link', es: 'Enlace público compartible', it: 'Link pubblico condivisibile' } },
+  { id: 'boutiques', Icon: Building2,    color: 'var(--p)',            label: { fr: 'Mes boutiques',    en: 'My shops',            es: 'Mis tiendas',        it: 'I miei negozi'       }, desc: { fr: 'Multi-boutiques & employés', en: 'Multi-shop & staff', es: 'Multi-tienda & personal', it: 'Multi-negozio & staff' } },
   { id: 'lang',     Icon: Globe,        color: 'var(--acc3,#00B8FF)', label: { fr: 'Langue & Devise',  en: 'Language & Currency', es: 'Idioma & Divisa',    it: 'Lingua & Valuta'     }, desc: { fr: 'Localisation & thème',en: 'Localization & theme', es: 'Localización & tema', it: 'Localizzazione & tema' } },
   { id: 'notif',    Icon: Bell,         color: 'var(--warn)',         label: { fr: 'Notifications',    en: 'Notifications',       es: 'Notificaciones',     it: 'Notifiche'           }, desc: { fr: 'Alertes & rapports',  en: 'Alerts & reports', es: 'Alertas & reportes',it: 'Avvisi & rapporti'  } },
   { id: 'security', Icon: Lock,         color: 'var(--danger)',       label: { fr: 'Sécurité',         en: 'Security',            es: 'Seguridad',          it: 'Sicurezza'           }, desc: { fr: 'Accès & sessions',    en: 'Access & sessions', es: 'Acceso & sesiones',it: 'Accesso & sessioni' } },
@@ -35,8 +38,12 @@ export default function Settings() {
   const cfg = useConfig()
   const lang = cfg.lang
   const i = makeI(lang)
+  const role = String(useAuthStore(s => s.user?.role) ?? '').toUpperCase()
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+  // « Mes boutiques » réservé aux administrateurs (multi-boutiques).
+  const sections = SECTIONS.filter(s => s.id !== 'boutiques' || isAdmin)
   const [activeSection, setActiveSection] = useState<SectionId>('shop')
-  const active = SECTIONS.find(s => s.id === activeSection) ?? SECTIONS[0]
+  const active = sections.find(s => s.id === activeSection) ?? sections[0]
   const ActiveIcon = active.Icon
 
   return (
@@ -67,7 +74,7 @@ export default function Settings() {
 
         {/* Items navigation */}
         <div style={{ padding: 8 }}>
-          {SECTIONS.map(s => {
+          {sections.map(s => {
             const isActive = s.id === activeSection
             const SectionIcon = s.Icon
             return (
@@ -155,10 +162,11 @@ export default function Settings() {
           padding: '24px 32px 32px',
           maxWidth: 880,
         }}>
-          {activeSection === 'shop'     && <SectionShop />}
-          {activeSection === 'pos'      && <SectionPOS />}
-          {activeSection === 'catalog'  && <SectionCatalog />}
-          {activeSection === 'lang'     && <SectionLang />}
+          {activeSection === 'shop'      && <SectionShop />}
+          {activeSection === 'pos'       && <SectionPOS />}
+          {activeSection === 'catalog'   && <SectionCatalog />}
+          {activeSection === 'boutiques' && isAdmin && <SectionShops />}
+          {activeSection === 'lang'      && <SectionLang />}
           {activeSection === 'notif'    && <SectionNotif />}
           {activeSection === 'security' && <SectionSecurity />}
           {activeSection === 'docs'     && <SectionDocs />}

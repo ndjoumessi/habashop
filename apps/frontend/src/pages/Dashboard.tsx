@@ -13,6 +13,7 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import Skeleton from '@/components/ui/skeleton'
 import { normCat } from '@/utils/normCat'
 import { payModeLabel } from '@/components/pos/posShared'
+import ConsolidatedShops from '@/components/dashboard/ConsolidatedShops'
 // Charts isolés dans le chunk `charts` (recharts) → lazy pour ne pas bloquer le rendu des KPIs
 const DashSalesArea = lazy(() => import('@/components/charts/DashSalesArea'))
 const DashCategoryDonut = lazy(() => import('@/components/charts/DashCategoryDonut'))
@@ -277,6 +278,9 @@ export default function Dashboard() {
           </button>
         )}
       </div>
+
+      {/* Vue globale multi-boutiques (affichée seulement si > 1 boutique) */}
+      <ConsolidatedShops />
 
       {isNewTenant && (
         <div style={{

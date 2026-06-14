@@ -5,7 +5,48 @@ import { authenticate } from '../middleware/authenticate'
 import { sendWelcomeEmail } from '../services/email'
 import type { LoginBody, RegisterBody } from '../types'
 
+// Résumé d'une boutique accessible, exposé au frontend (sélecteur / switcher).
+export interface AccessibleTenant {
+  id: string
+  name: string
+  currency: string
+  plan: string
+  logo: string | null
+  address: string | null
+  role: string // rôle de l'user DANS cette boutique (peut différer du User.role global)
+}
+
+/**
+ * Liste les boutiques accessibles à un user via UserTenant (actives, non supprimées).
+ * Rétro-compat : si aucune liaison (user antérieur au backfill), retombe sur User.tenantId.
+ */
+export async function accessibleTenants(userId: string, fallbackTenantId?: string, fallbackRole?: string): Promise<AccessibleTenant[]> {
+  const links = await prisma.userTenant.findMany({
+    where: { userId, tenant: { deletedAt: null } },
+    select: {
+      role: true,
+      tenant: { select: { id: true, name: true, currency: true, plan: true, logo: true, address: true } },
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+  const list = links
+    .filter(l => l.tenant)
+    .map(l => ({ id: l.tenant.id, name: l.tenant.name, currency: l.tenant.currency, plan: l.tenant.plan, logo: l.tenant.logo, address: l.tenant.address, role: l.role }))
+
+  if (list.length === 0 && fallbackTenantId) {
+    const t = await prisma.tenant.findFirst({ where: { id: fallbackTenantId, deletedAt: null }, select: { id: true, name: true, currency: true, plan: true, logo: true, address: true } })
+    if (t) list.push({ ...t, role: fallbackRole ?? 'CASHIER' })
+  }
+  return list
+}
+
 export async function authRoutes(app: FastifyInstance): Promise<void> {
+  // Jeton avec boutique active (single tenant ou après switch). role = rôle PAR boutique.
+  const signActive = (userId: string, role: string, tenantId: string) =>
+    app.jwt.sign({ userId, role, tenantId, activeTenantId: tenantId }, { expiresIn: '7d' })
+  // Jeton SANS boutique active (multi-boutiques : sélection requise avant d'entrer).
+  const signNoTenant = (userId: string, role: string) =>
+    app.jwt.sign({ userId, role, tenantId: null, activeTenantId: null }, { expiresIn: '7d' })
   app.post('/api/auth/login', {
     config: {
       rateLimit: {
@@ -34,23 +75,33 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     if (!user.isActive) return reply.code(403).send({ error: 'Compte désactivé' })
 
-    const token = app.jwt.sign(
-      { userId: user.id, tenantId: user.tenantId, role: user.role },
-      { expiresIn: '7d' }
-    )
+    const tenants = await accessibleTenants(user.id, user.tenantId, user.role)
 
-    const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId } })
+    const baseUser = { id: user.id, name: user.name, email: user.email }
 
+    // 1 seule boutique → connexion directe (comportement historique), boutique active = celle-ci.
+    if (tenants.length === 1) {
+      const t = tenants[0]
+      const token = signActive(user.id, t.role, t.id)
+      const tenant = await prisma.tenant.findUnique({ where: { id: t.id } })
+      return {
+        token,
+        user: { ...baseUser, role: t.role, shopName: tenant?.name ?? 'HabaShop' },
+        tenant,
+        tenants,
+        activeTenantId: t.id,
+      }
+    }
+
+    // 0 ou >1 boutiques → pas de boutique active : le frontend affiche le sélecteur
+    // (ou un message « Aucune boutique » si la liste est vide).
+    const token = signNoTenant(user.id, user.role)
     return {
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        shopName: tenant?.name ?? 'HabaShop',
-      },
-      tenant,
+      user: { ...baseUser, role: user.role, shopName: 'HabaShop' },
+      tenant: null,
+      tenants,
+      activeTenantId: null,
     }
   })
 
@@ -93,13 +144,12 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const user = await tx.user.create({
         data: { name: resolvedName, email, passwordHash, role: 'ADMIN', tenantId: tenant.id },
       })
+      // Liaison multi-boutiques : le créateur est ADMIN de sa boutique.
+      await tx.userTenant.create({ data: { userId: user.id, tenantId: tenant.id, role: 'ADMIN' } })
       return { tenant, user }
     })
 
-    const token = app.jwt.sign(
-      { userId: user.id, tenantId: tenant.id, role: user.role },
-      { expiresIn: '7d' }
-    )
+    const token = signActive(user.id, user.role, tenant.id)
 
     // Email de bienvenue — non-bloquant : ne doit jamais faire échouer l'inscription
     sendWelcomeEmail({
@@ -117,20 +167,50 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.get('/api/auth/me', { preHandler: authenticate }, async (request) => {
-    const { userId } = request.user
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { tenant: true },
-    })
+    const { userId, role } = request.user
+    const activeTenantId = request.tenantId as string | null
+    const user = await prisma.user.findUnique({ where: { id: userId } })
     if (!user) throw new Error('Utilisateur introuvable')
+    // Boutique active (peut différer du User.tenantId en multi-boutiques).
+    const tenant = activeTenantId ? await prisma.tenant.findUnique({ where: { id: activeTenantId } }) : null
     return {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
-      shopName: user.tenant?.name,
-      currency: user.tenant?.currency,
+      role: role ?? user.role,
+      shopName: tenant?.name,
+      currency: tenant?.currency,
     }
+  })
+
+  // ── Multi-boutiques ──────────────────────────────────────────────────────────
+  // Liste des boutiques accessibles à l'user courant (sélecteur / switcher).
+  app.get('/api/auth/tenants', { preHandler: authenticate }, async (request) => {
+    const { userId } = request.user
+    return accessibleTenants(userId)
+  })
+
+  // Bascule de boutique active : émet un nouveau JWT (activeTenantId = boutique choisie).
+  app.post('/api/auth/switch-tenant', {
+    preHandler: authenticate,
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
+    const { userId } = request.user
+    const { tenantId } = (request.body ?? {}) as { tenantId?: string }
+    if (!tenantId) return reply.code(400).send({ error: 'tenantId requis' })
+
+    // L'user doit avoir accès à cette boutique via UserTenant (source autoritaire).
+    const link = await prisma.userTenant.findUnique({
+      where: { userId_tenantId: { userId, tenantId } },
+      select: { role: true, tenant: { select: { id: true, name: true, currency: true, plan: true, logo: true, address: true, deletedAt: true } } },
+    })
+    if (!link || !link.tenant || link.tenant.deletedAt) {
+      return reply.code(403).send({ error: 'Accès refusé à cette boutique' })
+    }
+
+    const token = signActive(userId, link.role, tenantId)
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } })
+    return { token, tenant, activeTenantId: tenantId, role: link.role }
   })
 
   app.patch('/api/auth/password', { preHandler: authenticate }, async (request, reply) => {

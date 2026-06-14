@@ -92,6 +92,7 @@ model Tenant {
   ticketZ        TicketZ[]
   subscriptions  Subscription[]
   campaigns      Campaign[]
+  userTenants    UserTenant[]
 
   @@index([deletedAt])
 }
@@ -140,9 +141,28 @@ model User {
   auditLogs      AuditLog[]
   pushTokens     PushToken[]
   campaigns      Campaign[]
+  userTenants    UserTenant[]
 
   @@index([tenantId])
   @@index([tenantId, deletedAt])
+}
+
+// Liaison many-to-many User ↔ Tenant (multi-boutiques v1).
+// `User.tenantId` reste le tenant "principal" (rétro-compat) ; UserTenant liste
+// TOUTES les boutiques accessibles + le rôle PAR boutique (peut différer du User.role).
+model UserTenant {
+  id        String   @id @default(cuid())
+  userId    String
+  tenantId  String
+  role      String   @default("CASHIER")
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
 }
 
 model Product {

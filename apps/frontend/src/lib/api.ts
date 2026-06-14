@@ -124,13 +124,39 @@ export const api = {
   delete: <T>(path: string) => request<T>('DELETE', path),
 }
 
+export interface AccessibleTenant {
+  id: string
+  name: string
+  currency: string
+  plan: string
+  logo: string | null
+  address: string | null
+  role: string
+}
+
 export const authApi = {
   login: (email: string, password: string) =>
-    api.post<{token:string; user:any; tenant?:any}>('/api/auth/login', { email, password }),
+    api.post<{token:string; user:any; tenant?:any; tenants?: AccessibleTenant[]; activeTenantId?: string | null}>('/api/auth/login', { email, password }),
   me: () => api.get<any>('/api/auth/me'),
   register: (data: any) => api.post<{token:string; user:any; tenant?:any}>('/api/auth/register', data),
   changePassword: (currentPassword: string, newPassword: string) =>
     api.patch<{ success: boolean; message: string }>('/api/auth/password', { currentPassword, newPassword }),
+  // Multi-boutiques
+  tenants: () => api.get<AccessibleTenant[]>('/api/auth/tenants'),
+  switchTenant: (tenantId: string) =>
+    api.post<{ token: string; tenant: any; activeTenantId: string; role: string }>('/api/auth/switch-tenant', { tenantId }),
+  createTenant: (data: { name: string; currency?: string; lang?: string; address?: string; country?: string; phone?: string }) =>
+    api.post<{ tenant: any }>('/api/tenants', data),
+  inviteToTenant: (tenantId: string, data: { name?: string; email: string; password?: string; role?: string }) =>
+    api.post<{ linked?: boolean; created?: boolean; userId?: string; user?: any }>(`/api/tenants/${tenantId}/invite`, data),
+}
+
+export const consolidatedApi = {
+  get: () => api.get<{
+    tenants: { id: string; name: string; currency: string; caToday: number; transactionsToday: number; stockAlerts: number }[]
+    totalCaToday: number
+    totalTransactions: number
+  }>('/api/dashboard/consolidated'),
 }
 
 export const productsApi = {

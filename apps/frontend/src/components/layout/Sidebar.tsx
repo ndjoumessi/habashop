@@ -9,6 +9,7 @@ import {
   ClipboardList, Wifi, Plug, Lock, RefreshCw,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import TenantSwitcher from './TenantSwitcher'
 
 type NavSection = { sectionKey: string }
 type NavItem    = { path: string; key: string; Icon: LucideIcon; badge?: string; badgeTag?: boolean }
@@ -96,6 +97,9 @@ export default function Sidebar() {
           </div>
         )}
       </div>
+
+      {/* Switcher multi-boutiques (affiché seulement si > 1 boutique) */}
+      <TenantSwitcher collapsed={collapsed} />
 
       {/* Caisse — état proéminent (action centrale du commerçant) */}
       {canPos && cashierIsOpen && (
