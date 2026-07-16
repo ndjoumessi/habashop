@@ -61,6 +61,7 @@ export default function SelectShop() {
               <button
                 key={t.id}
                 type="button"
+                data-testid={`shop-option-${t.id}`}
                 disabled={!!pending}
                 onClick={() => choose(t.id)}
                 style={{

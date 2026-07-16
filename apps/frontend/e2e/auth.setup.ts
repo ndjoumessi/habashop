@@ -1,4 +1,5 @@
 import { test as setup, expect } from '@playwright/test'
+import { loginViaUI } from './helpers/auth'
 
 // UN SEUL login pour toute la suite : on se connecte ici, on sauvegarde l'état
 // (localStorage habashop_token + habashop-auth) → les autres specs le réutilisent via
@@ -7,11 +8,8 @@ const BASE = process.env.E2E_BASE ?? 'https://habashop.vercel.app'
 const authFile = 'e2e/.auth/user.json'
 
 setup('authentifie une fois et sauvegarde la session', async ({ page }) => {
-  await page.goto(`${BASE}/login`)
-  await page.fill('input[type="email"]', 'admin@habashop.com')
-  await page.fill('input[type="password"]', 'demo1234')
-  await page.click('button[type="submit"]')
-  await page.waitForURL(/\/app\/dashboard/, { timeout: 15000 })
+  // admin@ est multi-boutiques → loginViaUI gère la sélection de boutique avant le dashboard.
+  await loginViaUI(page, BASE)
   // Garantit un VRAI JWT en localStorage (pas un état partiel) avant sauvegarde.
   await expect.poll(() => page.evaluate(() => localStorage.getItem('habashop_token')), { timeout: 10000 })
     .toBeTruthy()

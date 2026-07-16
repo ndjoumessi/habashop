@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { loginViaUI } from './helpers/auth'
 
 const BASE = 'https://habashop.vercel.app'
 
@@ -29,61 +30,37 @@ test.describe('HabaShop — Smoke Tests', () => {
   })
 
   test('Login avec compte démo', async ({ page }) => {
-    await page.goto(`${BASE}/login`)
-    await page.fill('input[type="email"]', 'admin@habashop.com')
-    await page.fill('input[type="password"]', 'demo1234')
-    await page.click('button[type="submit"]')
-    await page.waitForURL(/\/app\/dashboard/, { timeout: 10000 })
+    await loginViaUI(page, BASE)
     expect(page.url()).toContain('/app/dashboard')
   })
 
   test('Dashboard charge les KPIs', async ({ page }) => {
-    await page.goto(`${BASE}/login`)
-    await page.fill('input[type="email"]', 'admin@habashop.com')
-    await page.fill('input[type="password"]', 'demo1234')
-    await page.click('button[type="submit"]')
-    await page.waitForURL(/\/app\/dashboard/, { timeout: 10000 })
+    await loginViaUI(page, BASE)
     await expect(page.locator('[aria-label*="CA"], [class*="kpi"]').first()).toBeVisible({ timeout: 5000 })
   })
 
   test('Navigation sidebar fonctionne', async ({ page }) => {
-    await page.goto(`${BASE}/login`)
-    await page.fill('input[type="email"]', 'admin@habashop.com')
-    await page.fill('input[type="password"]', 'demo1234')
-    await page.click('button[type="submit"]')
-    await page.waitForURL(/\/app\/dashboard/, { timeout: 10000 })
+    await loginViaUI(page, BASE)
     await page.click('[aria-label*="Stock"], [href*="/stock"]')
     await page.waitForURL(/\/app\/stock/, { timeout: 5000 })
     expect(page.url()).toContain('/app/stock')
   })
 
   test('Page POS accessible', async ({ page }) => {
-    await page.goto(`${BASE}/login`)
-    await page.fill('input[type="email"]', 'admin@habashop.com')
-    await page.fill('input[type="password"]', 'demo1234')
-    await page.click('button[type="submit"]')
-    await page.waitForURL(/\/app\/dashboard/, { timeout: 10000 })
+    await loginViaUI(page, BASE)
     await page.goto(`${BASE}/app/pos`)
     expect(page.url()).toContain('/app/pos')
     await expect(page.locator('input[type="search"], input[aria-label*="produit"]').first()).toBeVisible({ timeout: 5000 })
   })
 
   test('Page Settings accessible', async ({ page }) => {
-    await page.goto(`${BASE}/login`)
-    await page.fill('input[type="email"]', 'admin@habashop.com')
-    await page.fill('input[type="password"]', 'demo1234')
-    await page.click('button[type="submit"]')
-    await page.waitForURL(/\/app\/dashboard/, { timeout: 10000 })
+    await loginViaUI(page, BASE)
     await page.goto(`${BASE}/app/settings`)
     expect(page.url()).toContain('/app/settings')
   })
 
   test('Super-admin accessible', async ({ page }) => {
-    await page.goto(`${BASE}/login`)
-    await page.fill('input[type="email"]', 'admin@habashop.com')
-    await page.fill('input[type="password"]', 'demo1234')
-    await page.click('button[type="submit"]')
-    await page.waitForURL(/\/app\/dashboard/, { timeout: 10000 })
+    await loginViaUI(page, BASE)
     await page.goto(`${BASE}/admin`)
     expect(page.url()).toContain('/admin')
   })
