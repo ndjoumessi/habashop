@@ -2,7 +2,8 @@ import axios, { AxiosError } from 'axios'
 import * as SecureStore from 'expo-secure-store'
 import { logger } from '@/lib/logger'
 import type {
-  LoginResponse, MeResponse,
+  LoginResponse, RawLoginResponse, MeResponse,
+  TenantSummary, SwitchTenantResponse,
   Product, ProductUpdate,
   SalePayload, SaleResponse, SaleRecord, RefundResponse,
   DashboardStats, Customer, TenantUser, LoyaltyResponse, LoyaltyCardData,
@@ -18,6 +19,9 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(async (config) => {
   try {
+    // Respecte un Authorization déjà posé sur la requête (ex. switch-tenant pendant le login,
+    // où le token frais n'est pas encore en SecureStore) → ne l'écrase pas.
+    if (config.headers.Authorization) return config
     const token = await SecureStore.getItemAsync('auth_token')
     if (token) config.headers.Authorization = `Bearer ${token}`
   } catch (e) {
@@ -48,10 +52,42 @@ export function isRetryableApiError(err: unknown): boolean {
 }
 
 export const authApi = {
-  login: (email: string, password: string): Promise<LoginResponse> =>
-    apiClient.post<LoginResponse>('/api/auth/login', { email, password }).then(r => r.data),
+  // Login + résolution de la boutique active. Multi-boutiques v2 : un compte lié à ≠ 1
+  // boutique reçoit un JWT sans boutique active → les routes tenant-scopées (dont
+  // /api/dashboard/stats) renvoient 400 NO_ACTIVE_TENANT. On auto-sélectionne alors la 1ʳᵉ
+  // boutique (switch-tenant → nouveau token) pour garantir un `tenant` actif au reste de l'app.
+  // Comptes mono-boutique : `tenant`/`activeTenantId` déjà présents → aucun switch, inchangé.
+  login: async (email: string, password: string): Promise<LoginResponse> => {
+    const raw = await apiClient
+      .post<RawLoginResponse>('/api/auth/login', { email, password })
+      .then(r => r.data)
+    if (raw.tenant && raw.activeTenantId) {
+      return { token: raw.token, user: raw.user, tenant: raw.tenant }
+    }
+    const first = raw.tenants?.[0]
+    if (first) {
+      const sw = await authApi.switchTenant(first.id, raw.token)
+      return { token: sw.token, user: raw.user, tenant: sw.tenant }
+    }
+    // Edge : compte sans aucune boutique → tenant minimal pour ne pas crasher l'app.
+    return {
+      token: raw.token, user: raw.user,
+      tenant: raw.tenant ?? { id: '', name: raw.user?.name ?? 'HabaShop', plan: '', currency: 'XOF', lang: 'fr', status: 'active' },
+    }
+  },
   me: (): Promise<MeResponse> =>
     apiClient.get<MeResponse>('/api/auth/me').then(r => r.data),
+  // Liste des boutiques accessibles (token courant). Utilisé par restoreSession pour
+  // débloquer un token déjà stocké sans boutique active (fix OTA sans re-login).
+  tenants: (): Promise<TenantSummary[]> =>
+    apiClient.get<TenantSummary[]>('/api/auth/tenants').then(r => r.data),
+  // Sélection de boutique active → nouveau JWT. `token` explicite quand le token courant
+  // n'est pas encore en SecureStore (pendant le login).
+  switchTenant: (tenantId: string, token?: string): Promise<SwitchTenantResponse> =>
+    apiClient
+      .post<SwitchTenantResponse>('/api/auth/switch-tenant', { tenantId },
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined)
+      .then(r => r.data),
 }
 
 export const productsApi = {

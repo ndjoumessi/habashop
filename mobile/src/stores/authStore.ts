@@ -57,21 +57,38 @@ export const useAuthStore = create<AuthState>((set) => ({
   restoreSession: async () => {
     set({ isLoading: true })
     try {
-      const token = await SecureStore.getItemAsync('auth_token')
+      let token = await SecureStore.getItemAsync('auth_token')
       if (!token) { set({ isLoading: false }); return }
-      const { apiClient } = await import('../services/api')
+      const { apiClient, authApi } = await import('../services/api')
       apiClient.defaults.headers.common.Authorization = `Bearer ${token}`
       // GET /api/auth/me renvoie un objet À PLAT { id, name, email, role, shopName, currency }
       // (et PAS { user, tenant }). On reconstruit donc `user` depuis ces champs et on récupère
       // le tenant complet via GET /api/tenant — sinon `tenant` restait undefined, ce qui
       // (1) cassait Settings (tenant.plan.toUpperCase()) et (2) déclenchait une boucle de
       // refetch /me infinie (le garde-fou Settings relançait restoreSession en boucle).
-      const [meRes, tenantRes] = await Promise.all([
+      const [meRes, tenantResult] = await Promise.all([
         apiClient.get('/api/auth/me'),
-        apiClient.get('/api/tenant').catch(() => null),
+        apiClient.get('/api/tenant')
+          .then((r) => ({ ok: true as const, data: r.data }))
+          .catch((e: any) => ({ ok: false as const, err: e })),
       ])
+      let tenantData: Tenant | null = tenantResult.ok ? tenantResult.data : null
+      // Multi-boutiques v2 : un token déjà stocké SANS boutique active → /api/tenant renvoie
+      // 400 NO_ACTIVE_TENANT. On auto-sélectionne la 1ʳᵉ boutique et on remplace le token
+      // (débloque un compte multi-boutique déjà connecté via OTA, sans re-login).
+      // Comptes mono-boutique : /api/tenant renvoie 200 → cette branche ne s'exécute jamais.
+      if (!tenantResult.ok && (tenantResult.err?.response?.data?.code === 'NO_ACTIVE_TENANT')) {
+        const list = await authApi.tenants().catch(() => [] as { id: string }[])
+        if (list.length >= 1) {
+          const sw = await authApi.switchTenant(list[0].id, token)
+          token = sw.token
+          await SecureStore.setItemAsync('auth_token', token)
+          apiClient.defaults.headers.common.Authorization = `Bearer ${token}`
+          tenantData = sw.tenant
+        }
+      }
       const me = meRes.data
-      const tenant: Tenant = tenantRes?.data ?? {
+      const tenant: Tenant = tenantData ?? {
         id: '', name: me?.shopName ?? 'HabaShop', plan: '',
         currency: me?.currency ?? 'XOF', lang: 'fr', status: 'active',
       }
