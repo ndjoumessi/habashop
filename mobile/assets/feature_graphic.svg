@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4A2FCC"/><stop offset="100%" stop-color="#6C47FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <circle cx="900" cy="80" r="200" fill="rgba(255,255,255,0.04)"/>
+  <circle cx="100" cy="420" r="150" fill="rgba(255,255,255,0.04)"/>
+  <text x="512" y="150" font-size="72" text-anchor="middle">&#128717;</text>
+  <text x="512" y="235" font-family="system-ui,sans-serif" font-size="56" font-weight="800" fill="white" text-anchor="middle" letter-spacing="-1">HabaShop</text>
+  <text x="512" y="285" font-family="system-ui,sans-serif" font-size="22" fill="rgba(255,255,255,0.8)" text-anchor="middle">Caisse &amp; Gestion Commerciale</text>
+  <text x="512" y="345" font-family="system-ui,sans-serif" font-size="20" fill="rgba(255,255,255,0.7)" text-anchor="middle">POS &#183; Stock &#183; Clients &#183; Rapports</text>
+  <text x="512" y="385" font-family="system-ui,sans-serif" font-size="20" fill="rgba(255,255,255,0.7)" text-anchor="middle">4 langues &#183; 6 devises &#183; Hors-ligne</text>
+  <text x="512" y="460" font-family="system-ui,sans-serif" font-size="16" fill="rgba(255,255,255,0.55)" text-anchor="middle">habashop.vercel.app</text>
+</svg>
