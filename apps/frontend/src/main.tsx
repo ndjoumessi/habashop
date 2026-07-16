@@ -44,7 +44,7 @@ const SentryBoundary = (SENTRY_DSN
 
 function ErrorFallback({ error, resetError }: { error: unknown; resetError: () => void }) {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#07070F', color: '#F0F0FF', fontFamily: 'sans-serif', gap: 16, padding: 24 }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#131011', color: '#F5F1EC', fontFamily: 'sans-serif', gap: 16, padding: 24 }}>
       <div style={{ fontSize: 48 }}>⚠️</div>
       <h1 style={{ fontSize: 20, fontWeight: 'var(--fw-semibold)' }}>Une erreur est survenue</h1>
       <p style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', textAlign: 'center', maxWidth: 400 }}>

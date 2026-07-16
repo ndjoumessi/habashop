@@ -13,8 +13,8 @@ import { THEMES, type Theme } from '@/stores/appStore'
 
 // Miroir des valeurs :root d'index.css (baseline sombre) — si tu modifies l'un, modifie l'autre.
 const BASE: Record<string, string> = {
-  '--bg': '#07070F', '--bg2': '#0A0A16', '--bg3': '#0D0D1C',
-  '--text': '#F0F0FF', '--text2': '#C4C4D4', '--text3': '#8888A8', '--text4': '#7C7C91',
+  '--bg': '#131011', '--bg2': '#171412', '--bg3': '#1C1815',
+  '--text': '#F5F1EC', '--text2': '#C9C0B6', '--text3': '#9A9082', '--text4': '#96897A',
 }
 // LIGHT_EXTRA_VARS['--text4'] d'appStore (appliqué aux thèmes clairs ne définissant pas text4).
 const LIGHT_EXTRA_TEXT4 = '#686677'
