@@ -1,7 +1,13 @@
 import { test, expect } from '@playwright/test'
+import { getPreconditions } from './helpers/preconditions'
 
 const BASE = process.env.POS_BASE ?? 'https://habashop.vercel.app'
 const PHASE = process.env.PHASE ?? 'after' // 'before' (prod actuel) | 'after' (après deploy)
+
+test.beforeEach(async () => {
+  const pre = await getPreconditions()
+  test.skip(!pre.requiresCashierFund, 'tenant démo requireCashier=false (pas de champ fond de caisse) — dette suivie #5')
+})
 
 test('POS — champ Montant reçu (captures négatif + états)', async ({ page }) => {
   await page.goto(`${BASE}/app/pos`)

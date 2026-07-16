@@ -1,4 +1,5 @@
 import { test } from '@playwright/test'
+import { getPreconditions } from './helpers/preconditions'
 
 // Capture before/after du redesign POS — dark (thème device par défaut) + Mode soleil.
 // N'effectue AUCUN encaissement (pas de vente créée) ; la caisse ouverte + panier sont
@@ -7,6 +8,11 @@ const BASE = process.env.POS_BASE ?? 'https://habashop.vercel.app'
 const TAG = process.env.SHOT_TAG ?? 'before'
 
 test.use({ viewport: { width: 1440, height: 900 } })
+
+test.beforeEach(async () => {
+  const pre = await getPreconditions()
+  test.skip(!pre.requiresCashierFund, 'tenant démo requireCashier=false (pas de champ fond de caisse) — dette suivie #5')
+})
 
 test(`POS captures ${TAG} — dark + soleil`, async ({ page }) => {
   await page.goto(`${BASE}/app/pos`)

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { getPreconditions } from './helpers/preconditions'
 
 const BASE = process.env.POS_BASE ?? 'https://habashop.vercel.app'
 
@@ -10,6 +11,11 @@ async function login(page: import('@playwright/test').Page) {
 }
 
 // NB: does NOT complete a checkout (would create a real sale). Verifies render only.
+test.beforeEach(async () => {
+  const pre = await getPreconditions()
+  test.skip(!pre.requiresCashierFund, 'tenant démo requireCashier=false (pas de champ fond de caisse) — dette suivie #5')
+})
+
 test('POS — open register, grid + cart + discount modal render', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', e => errors.push(String(e)))
