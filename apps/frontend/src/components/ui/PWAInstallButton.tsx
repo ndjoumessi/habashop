@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/stores/appStore'
+import LogoMark from '@/components/ui/LogoMark'
 import toast from 'react-hot-toast'
 
 const DISMISS_KEY = 'pwa-install-dismissed'
@@ -72,10 +73,8 @@ export default function PWAInstallButton() {
     }}>
       <div style={{
         width:48, height:48, borderRadius:12, flexShrink:0,
-        background:'linear-gradient(135deg,var(--p),var(--p2))',
-        display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:24, fontWeight:'var(--fw-semibold)', color:'#fff',
-      }}>H</div>
+        overflow:'hidden', display:'flex',
+      }}><LogoMark /></div>
 
       <div style={{ flex:1 }}>
         <div style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:2 }}>{tx.title}</div>
