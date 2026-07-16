@@ -46,22 +46,27 @@ test.describe('HabaShop — Smoke Tests', () => {
     expect(page.url()).toContain('/app/stock')
   })
 
+  // NB: on navigue par CLIC de lien (nav client-side) et non par page.goto : un rechargement
+  // dur (goto/reload) revalide la session côté backend et, sur cold start, redirige vers /login.
   test('Page POS accessible', async ({ page }) => {
     await loginViaUI(page, BASE)
-    await page.goto(`${BASE}/app/pos`)
+    await page.click('[href*="/app/pos"]')
+    await page.waitForURL(/\/app\/pos/, { timeout: 8000 })
     expect(page.url()).toContain('/app/pos')
     await expect(page.locator('input[type="search"], input[aria-label*="produit"]').first()).toBeVisible({ timeout: 5000 })
   })
 
   test('Page Settings accessible', async ({ page }) => {
     await loginViaUI(page, BASE)
-    await page.goto(`${BASE}/app/settings`)
+    await page.click('[href*="/app/settings"]')
+    await page.waitForURL(/\/app\/settings/, { timeout: 8000 })
     expect(page.url()).toContain('/app/settings')
   })
 
   test('Super-admin accessible', async ({ page }) => {
     await loginViaUI(page, BASE)
-    await page.goto(`${BASE}/admin`)
+    await page.click('[aria-label="Admin Panel"]')
+    await page.waitForURL(/\/admin/, { timeout: 8000 })
     expect(page.url()).toContain('/admin')
   })
 })
