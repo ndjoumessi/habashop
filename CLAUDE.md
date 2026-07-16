@@ -1,6 +1,6 @@
 # HabaShop — Guide Claude Code
 
-SaaS de gestion commerciale multi-tenant (boutiques/superettes, Afrique de l'Ouest). Monorepo npm workspaces.
+SaaS de gestion commerciale multi-tenant **et multi-boutiques** (boutiques/superettes, Afrique de l'Ouest). Monorepo npm workspaces.
 
 ## Stack
 
@@ -46,7 +46,7 @@ src/
   pages/         # 1 fichier par écran. ⚠️ /privacy = route PUBLIQUE (Google Play)
   components/    # par domaine — souvent un *Shared.tsx par domaine
   stores/        # appStore.ts (lang, currency, tenant, caisse, cart)
-                 # authStore.ts (user, token, ROLE_PERMISSIONS + canAccess slug)
+                 # authStore.ts (user, token, tenants[], activeTenantId, switchTenant, ROLE_PERMISSIONS + canAccess slug)
   i18n/index.ts  # t() : { fr, en, es, it }, 575+ clés
   lib/api.ts     # tous les *Api
   components/ui/ # ResponsiveGrid, IconButton, Tabs/TabBar, AppButton,
@@ -105,6 +105,7 @@ Backend autoritaire : `loyaltyDiscount = total × tierPct` (plafond 50%), `sale.
 
 ### Autres modules
 - **Produits** : SKU `PRD-NNNN`, EAN-13, scan @zxing, priceTiers, étiquettes Avery.
+- **Transferts stock** (multi-boutiques v2) : `StockTransfer` (`pending → completed | cancelled`), MANAGER+. `POST /api/stock/transfers` (vérif accès aux 2 boutiques, anti-soi-même, **décrément gardé** `updateMany stockQty>=qty`), `GET` (source OU dest = active, `?status`), `PATCH /:id/confirm` (dest only → incrément ; produit dest retrouvé **SKU→barcode, sinon copié depuis source**), `PATCH /:id/cancel` (source ou dest → restitue stock source). Push `stock_transfer`. Front : onglet Stock « ↔ Transferts » (si >1 boutique), badge sidebar Stock = transferts reçus en attente.
 - **OCR factures** : `POST /api/suppliers/scan-invoice` (multipart 10MB), Claude Sonnet 4.6 Vision. `unitPrice` OCR = devise facture → `formatInCurrency` (pas `fmt`). `suppliersApi.scanInvoice` = fetch brut FormData.
 - **Facture PDF** : `openAuthedPdf` (fetch JWT → blob), `FAC-{YYYY}-{NNNNN}` idempotent (`Sale.invoiceNumber`).
 - **Ticket Z** : `@@unique([tenantId,date])`, upsert idempotent, CA hors refunded, breakdown COALESCE(split, paymentMode).
@@ -115,12 +116,13 @@ Backend autoritaire : `loyaltyDiscount = total × tierPct` (plafond 50%), `sale.
 - **Rapport comptable** : `GET /api/reports/accounting?month=YYYY-MM` (Redis cache), conversion XOF→devise serveur → modale formate sans reconvertir.
 - **Intégrations** : métriques réelles uniquement. `noPing` masque grille latence. Sentry = `GET /api/integrations/sentry/status` backend.
 - **Auth** : JWT + bcrypt12, `ROLE_PERMISSIONS` slug-based, `canAccess(role, slug)`. Rate-limit login 30/15min/IP. WS `/api/ws` fail-closed.
+- **Multi-boutiques** : `UserTenant` (many-to-many User↔Tenant, **rôle PAR boutique**). JWT porte `activeTenantId` (nullable) + `role` de la boutique active ; rétro-compat anciens tokens (`tenantId`). `authenticate` → `req.tenantId = activeTenantId`, **400 `NO_ACTIVE_TENANT`** sur routes métier sans boutique (exemptés : `/api/auth/*`, `/api/dashboard/consolidated`). Login : 1 boutique → directe ; >1 → `activeTenantId=null` + `tenants[]` (sélecteur). Endpoints : `POST /api/auth/switch-tenant` (rate-limit 10/min, vérif `UserTenant`→403), `GET /api/auth/tenants`, `POST /api/tenants` (ADMIN+, créateur lié ADMIN), `POST /api/tenants/:id/invite`, `GET /api/dashboard/consolidated` (CA XOF tous tenants). Front : `authStore.switchTenant()` → **rechargement complet** (`window.location`, pas de TanStack Query). `SelectShop.tsx` (sélecteur login), `TenantSwitcher.tsx` (sidebar, si >1), `ConsolidatedShops.tsx` (dashboard), Settings « Mes boutiques » (`SectionShops`, ADMIN+).
 - **Emails Resend** : `escHtml()` + `baseTemplate()`. `email @unique` libéré au soft-delete.
 - **GlobalSearch** : `GlobalSearch.tsx` (cmdk), Cmd+K/Ctrl+K dans AppLayout. Catégories : produits, clients, commandes, fournisseurs, actions rapides. Filtrées par `canAccess(role, slug)`.
 - **Onboarding** : wizard 5 étapes `Onboarding.tsx`, route `/onboarding`. Flag `habashop_onboarded` localStorage. Auto-redirect depuis Dashboard pour ADMIN sans produits/ventes.
 
 ### Tests
-- **Front : 405 vitest** (helpers purs + anchor tests + contraste AA 9 thèmes). **Back : 410 vitest** (prisma mocké `vi.mock('../db')`, routes via `app.inject()`, mock `authenticate` via `vi.hoisted`). OCR : `vi.hoisted()` + classe constructeur.
+- **Front : 405 vitest** (helpers purs + anchor tests + contraste AA 9 thèmes). **Back : 430 vitest** (prisma mocké `vi.mock('../db')`, routes via `app.inject()`, mock `authenticate` via `vi.hoisted`). OCR : `vi.hoisted()` + classe constructeur.
 - **E2E Playwright** : live prod, `storageState` `e2e/.auth/user.json`, `workers:1`. **Un seul `page.goto` par test** (2ᵉ → logout). Reset langue : `PATCH /api/tenant {lang:'fr'}` afterEach/afterAll.
 - **A11y** : `useModalFocus` (34 modales), `announce()` (8 domaines), skip-link, `*:focus-visible`, `prefers-reduced-motion`.
 
@@ -175,7 +177,8 @@ Backend autoritaire : `loyaltyDiscount = total × tierPct` (plafond 50%), `sale.
 
 ## Comptes démo
 
-`demo1234` — `admin@`/`manager@`/`cashier@`/`accountant@`/`hr@habashop.com`, tenant `demo-tenant-001`. 5 employés (`demo-emp-${name}`). Données hors seed : `currency='EUR'`, `requireCashier=false`, `ownerPhone='+221771234567'`. Si reseed → repasser `requireCashier=false`.
+`demo1234` — `admin@`/`manager@`/`cashier@`/`accountant@`/`hr@habashop.com`, tenant principal `demo-tenant-001` (« HabaShop — Dakar Central »). 5 employés (`demo-emp-${name}`). Données hors seed : `currency='EUR'`, `requireCashier=false`, `ownerPhone='+221771234567'`. Si reseed → repasser `requireCashier=false`.
+**Multi-boutiques** : `admin@` et `manager@` sont liés à une 2ᵉ boutique `demo-tenant-002` (« Alimentation Koné — Abidjan », XOF) via `UserTenant` → login déclenche le sélecteur. `admin@` = SUPER_ADMIN/ADMIN, `manager@` = MANAGER/MANAGER. Les 3 autres restent mono-boutique.
 
 ## Env vars
 
