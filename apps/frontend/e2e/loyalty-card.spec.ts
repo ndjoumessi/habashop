@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { getPreconditions } from './helpers/preconditions'
 
 // ⚠️ Le service worker PWA peut prendre la main en cours de test et court-circuiter
 // page.route() (mock /loyalty-card ignoré → data réelle rendue). On le bloque.
@@ -26,6 +27,11 @@ const TIERS = [
   { tier: 'Silver', points: 3200, nextTier: 'Gold', pointsToNext: 1800 },
   { tier: 'Gold', points: 7450, nextTier: null, pointsToNext: 0 },
 ] as const
+
+test.beforeEach(async () => {
+  const pre = await getPreconditions()
+  test.skip(!pre.hasCustomers, 'tenant démo sans clients (pas de bouton « Carte numérique ») — dette suivie #5')
+})
 
 test('Carte fidélité numérique — rendu des 3 paliers + captures', async ({ page }) => {
   const errors: string[] = []

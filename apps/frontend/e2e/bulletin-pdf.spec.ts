@@ -1,10 +1,16 @@
 import { test, expect } from '@playwright/test'
+import { getPreconditions } from './helpers/preconditions'
 
 const BASE = 'https://habashop.vercel.app'
 
 // Vérifie en LIVE que le bulletin PDF (printBulletin) affiche le MÊME montant que
 // l'écran en devise EUR — régression BUG 2 (double conversion : 686,02 € → 1,05 €).
 // NOTE : /api/auth/login est rate-limité (10 / 15 min / IP) → un seul login ici.
+test.beforeEach(async () => {
+  const pre = await getPreconditions()
+  test.skip(!pre.currencyIsEUR, 'tenant démo non en EUR (affichage FCFA) — dette suivie #5')
+})
+
 test('Bulletin PDF = écran en EUR (pas de double conversion)', async ({ page }) => {
   // 1) Force la devise d'AFFICHAGE = EUR AVANT toute navigation (init script → s'exécute sur
   //    l'origine, après le seed storageState, avant le code de l'app). Évite l'evaluate sur

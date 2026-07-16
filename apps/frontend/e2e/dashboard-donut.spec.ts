@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { getPreconditions } from './helpers/preconditions'
 
 // Vérif live des 3 fixes post-review (commit "% source unique + couleurs modulo + cursor:help") :
 //  F1 — le % du tooltip == le % de la légende pour CHAQUE catégorie (source unique = catPcts).
@@ -7,6 +8,11 @@ import { test, expect } from '@playwright/test'
 const BASE = process.env.DASH_BASE ?? 'https://habashop.vercel.app'
 
 const TITLES = /CA par catégorie|Revenue by category|Ingresos por categoría|Ricavi per categoria/
+
+test.beforeEach(async () => {
+  const pre = await getPreconditions()
+  test.skip(!pre.hasRecentSales, 'tenant démo sans ventes récentes (categoryBreakdown vide) — dette suivie #5')
+})
 
 test('Dashboard — donut : tooltip % == légende % (source unique) + cursor help badges', async ({ page }) => {
   const errors: string[] = []

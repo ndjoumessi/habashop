@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { getPreconditions } from './helpers/preconditions'
 
 const BASE = process.env.POS_BASE ?? 'https://habashop.vercel.app'
 
@@ -7,6 +8,11 @@ test.use({
   serviceWorkers: 'block',
   permissions: ['camera'],
   launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] },
+})
+
+test.beforeEach(async () => {
+  const pre = await getPreconditions()
+  test.skip(!pre.requiresCashierFund, 'tenant démo requireCashier=false (pas de champ fond de caisse) — dette suivie #5')
 })
 
 test('POS — sélecteur client inline : recherche + scan QR (captures)', async ({ page }) => {
