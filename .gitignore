@@ -42,3 +42,11 @@ apps/frontend/e2e/screenshots/
 
 # Local deploy helper (auto-deploy Vercel actif, script obsolète)
 deploy.sh
+
+# Monorepo : app mobile (Expo, gérée indépendamment)
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/*.apk
+mobile/*.aab
+mobile/.env
