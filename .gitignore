@@ -51,6 +51,6 @@ mobile/*.apk
 mobile/*.aab
 mobile/.env
 
-# Config locale Claude Code (racine) — ancré à la racine pour ne PAS toucher
-# mobile/.claude/settings.json, suivi volontairement (hérité du repo mobile).
-/.claude/
+# Config locale Claude Code — à tout niveau (racine + apps/*/.claude, etc.).
+# mobile/.claude/settings.json reste suivi (déjà tracké ; .gitignore ne dé-tracke pas).
+.claude/
