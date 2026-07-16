@@ -17,12 +17,29 @@ async function apiCall(
   return { status: res.status, body }
 }
 
-async function login(email: string, pwd: string): Promise<string> {
+type LoginResult = { token: string; activeTenantId: string | null; tenants: any[] }
+
+async function login(email: string, pwd: string): Promise<LoginResult> {
   const { body } = await apiCall('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password: pwd }),
   })
-  return body?.token ?? ''
+  return {
+    token: body?.token ?? '',
+    activeTenantId: body?.activeTenantId ?? null,
+    tenants: Array.isArray(body?.tenants) ? body.tenants : [],
+  }
+}
+
+// Multi-boutiques v2 : un token sans boutique active reçoit 400 NO_ACTIVE_TENANT sur
+// les routes métier. On sélectionne une boutique → nouveau JWT avec activeTenantId.
+async function selectTenant(token: string, tenantId: string): Promise<string> {
+  const { body } = await apiCall('/api/auth/switch-tenant', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ tenantId }),
+  })
+  return body?.token ?? token
 }
 
 // Tokens partagés (connexion unique au démarrage du fichier)
@@ -31,8 +48,21 @@ let token2 = ''
 const auth = () => ({ Authorization: `Bearer ${token}` })
 
 beforeAll(async () => {
-  token = await login('admin@habashop.com', 'demo1234')
-  token2 = await login('kone@habashop.com', 'demo1234')
+  const admin = await login('admin@habashop.com', 'demo1234')
+  const kone = await login('kone@habashop.com', 'demo1234')
+
+  // kone : 1 seule boutique → boutique active dès le login (pas de switch).
+  token2 = kone.token
+
+  // admin : SUPER_ADMIN multi-boutiques → login sans boutique active. On sélectionne
+  // une boutique DIFFÉRENTE de celle de kone pour que le test d'isolation compare bien
+  // deux boutiques distinctes (robuste quel que soit l'ordre du tableau `tenants`).
+  if (admin.activeTenantId) {
+    token = admin.token
+  } else {
+    const target = admin.tenants.find((t: any) => t.id !== kone.activeTenantId) ?? admin.tenants[0]
+    token = target ? await selectTenant(admin.token, target.id) : admin.token
+  }
 })
 
 // ── Auth ─────────────────────────────────────
