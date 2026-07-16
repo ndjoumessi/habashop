@@ -137,6 +137,16 @@ jobs:
         run: npm ci
       - name: Install Playwright (chromium)
         run: npx playwright install --with-deps chromium
+      # Seed du tenant E2E dédié AVANT les tests (fixtures relatives à la date → donut vert
+      # dans le temps). Guard en dur : scope `e2e-tenant` uniquement, jamais demo/prod réel.
+      - name: Seed tenant E2E dédié (e2e-tenant)
+        working-directory: apps/backend
+        run: |
+          npx prisma generate
+          E2E_SEED=1 npx tsx scripts/seed-e2e-tenant.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        timeout-minutes: 3
       - name: E2E smoke (prod) — ~6 logins, sous la limite 10/15 min
         run: npm run e2e --workspace=apps/frontend
         timeout-minutes: 10
