@@ -333,8 +333,8 @@ export default function StockScreen() {
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl, gap: Spacing.sm },
-  emptyTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text2, marginTop: Spacing.sm },
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', maxWidth: 260 },
+  emptyTitle: { fontSize: FontSize.lg, fontFamily: 'Geist_800ExtraBold', color: C.text2, marginTop: Spacing.sm },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3, textAlign: 'center', maxWidth: 260 },
 
   headerBtn: {
     width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
@@ -347,11 +347,11 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderColor: C.border, paddingVertical: Spacing.md, alignItems: 'center', gap: 2, ...Shadow.sm,
   },
   statVal: { fontSize: FontSize.xxl, fontFamily: 'JetBrainsMono_700Bold' },
-  statLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  statLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
 
   alertChips: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
   alertChip: { paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: BorderRadius.full, borderWidth: 1 },
-  alertChipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold' },
+  alertChipTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold' },
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
@@ -359,7 +359,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     paddingHorizontal: Spacing.md, height: 44,
     backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
-  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
+  searchInput: { flex: 1, fontSize: FontSize.md, fontFamily: 'Geist_400Regular', color: C.text },
 
   tabsWrap: { paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm },
 
@@ -368,11 +368,11 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border,
     padding: Spacing.md, ...Shadow.sm,
   },
-  rowName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
-  rowCat: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
+  rowName: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.text },
+  rowCat: { fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text3, marginTop: 2 },
   rowQty: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: BorderRadius.full, borderWidth: 1 },
-  statusTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold' },
+  statusTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold' },
 
   // Sheet édition
   sheet: { flex: 1, backgroundColor: C.bg },
@@ -380,17 +380,17 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: C.border,
   },
-  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
+  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Geist_800ExtraBold', color: C.text },
   prodHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  prodName: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
-  prodCat: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
+  prodName: { fontSize: FontSize.lg, fontFamily: 'Geist_800ExtraBold', color: C.text },
+  prodCat: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3, marginTop: 2 },
 
   editStats: { flexDirection: 'row', gap: Spacing.sm },
   editStat: {
     flex: 1, backgroundColor: C.card, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
     padding: Spacing.md, alignItems: 'center', gap: 4,
   },
-  editStatLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
+  editStatLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.4 },
   editStatVal: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
 
   qtyEditor: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.sm },

@@ -7,7 +7,7 @@ type L4 = 'fr' | 'en' | 'es' | 'it'
 
 const PLANS = [
   {
-    id: 'starter', icon: '🌱', color: '#00D084', popular: false,
+    id: 'starter', icon: '🌱', color: '#22C77A', popular: false,
     price: { monthly: { XOF: 9900, EUR: 15, USD: 15 }, yearly: { XOF: 99000, EUR: 149, USD: 149 } },
     label: { fr: 'Starter', en: 'Starter', es: 'Starter', it: 'Starter' },
     desc: { fr: 'Parfait pour démarrer', en: 'Perfect to get started', es: 'Perfecto para empezar', it: 'Perfetto per iniziare' },
@@ -33,7 +33,7 @@ const PLANS = [
     cta: { fr: 'Essayer Pro 14 jours', en: 'Try Pro 14 days', es: 'Probar Pro 14 días', it: 'Prova Pro 14 giorni' },
   },
   {
-    id: 'enterprise', icon: '🏢', color: '#FF9500', popular: false,
+    id: 'enterprise', icon: '🏢', color: '#FFB020', popular: false,
     price: { monthly: { XOF: 49900, EUR: 76, USD: 76 }, yearly: { XOF: 499000, EUR: 759, USD: 759 } },
     label: { fr: 'Enterprise', en: 'Enterprise', es: 'Enterprise', it: 'Enterprise' },
     desc: { fr: 'Pour les grandes enseignes', en: 'For large businesses', es: 'Para grandes empresas', it: 'Per grandi aziende' },
@@ -94,13 +94,13 @@ export default function Pricing() {
   const symbol = priceKey === 'EUR' ? '€' : priceKey === 'USD' ? '$' : 'FCFA'
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#07070F,#0D0D1C,#111128)', fontFamily: 'var(--font)', padding: '60px 20px' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0A0C14,#0D1019,#11151F)', fontFamily: 'var(--font)', padding: '60px 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
         <button type="button" onClick={() => navigate('/')} style={{ position: 'absolute', top: 24, left: 24, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '8px 14px', color: 'var(--text2)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font)' }}>← {i('Accueil', 'Home', 'Inicio', 'Home')}</button>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '6px 14px', borderRadius: 99, background: 'rgba(108,71,255,.1)', border: '1px solid rgba(108,71,255,.2)' }}>
           <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--p3)', textTransform: 'uppercase', letterSpacing: '.6px' }}>{i('TARIFS SIMPLES ET TRANSPARENTS', 'SIMPLE & TRANSPARENT PRICING', 'PRECIOS SIMPLES Y TRANSPARENTES', 'PREZZI SEMPLICI E TRASPARENTI')}</span>
         </div>
-        <h1 style={{ fontSize: 36, fontWeight: 900, color: '#F0F0FF', letterSpacing: '-1px', marginBottom: 12, lineHeight: 1.15 }}>{i('Choisissez votre plan', 'Choose your plan', 'Elige tu plan', 'Scegli il tuo piano')}</h1>
+        <h1 style={{ fontSize: 36, fontWeight: 900, color: '#EAEEF6', letterSpacing: '-1px', marginBottom: 12, lineHeight: 1.15 }}>{i('Choisissez votre plan', 'Choose your plan', 'Elige tu plan', 'Scegli il tuo piano')}</h1>
         <p style={{ fontSize: 15, color: 'var(--text3)', maxWidth: 480, margin: '0 auto 24px' }}>{i('Commencez gratuitement. Évoluez selon vos besoins.', 'Start for free. Scale as you grow.', 'Empieza gratis. Crece según tus necesidades.', 'Inizia gratis. Cresci secondo le tue esigenze.')}</p>
         <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, padding: 4, gap: 4 }}>
           {([{ id: 'monthly', label: i('Mensuel', 'Monthly', 'Mensual', 'Mensile') }, { id: 'yearly', label: i('Annuel -20%', 'Yearly -20%', 'Anual -20%', 'Annuale -20%') }] as const).map(p => (
@@ -115,7 +115,7 @@ export default function Pricing() {
           const displayPrice = (plan.price[billing] as Record<string, number>)[priceKey]
           const features = plan.features[lang === 'en' ? 'en' : lang === 'es' ? 'es' : lang === 'it' ? 'it' : 'fr'] ?? plan.features.en
           return (
-            <div key={plan.id} style={{ background: plan.popular ? 'linear-gradient(160deg,#0D0D1C,#161636)' : 'linear-gradient(160deg,#0D0D1C,#111128)', border: `${plan.popular ? '2' : '1'}px solid ${plan.popular ? 'rgba(108,71,255,.4)' : 'rgba(255,255,255,.07)'}`, borderRadius: 24, overflow: 'hidden', position: 'relative', boxShadow: plan.popular ? '0 24px 64px rgba(108,71,255,.2)' : 'none' }}>
+            <div key={plan.id} style={{ background: plan.popular ? 'linear-gradient(160deg,#0D1019,#161C2B)' : 'linear-gradient(160deg,#0D1019,#11151F)', border: `${plan.popular ? '2' : '1'}px solid ${plan.popular ? 'rgba(108,71,255,.4)' : 'rgba(255,255,255,.07)'}`, borderRadius: 24, overflow: 'hidden', position: 'relative', boxShadow: plan.popular ? '0 24px 64px rgba(108,71,255,.2)' : 'none' }}>
               {plan.popular && (
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, textAlign: 'center', padding: 7, background: 'linear-gradient(135deg,#6C47FF,#8B6FFF)', fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: '.3px' }}>⚡ {i('PLUS POPULAIRE', 'MOST POPULAR', 'MÁS POPULAR', 'PIÙ POPOLARE')}</div>
               )}
@@ -123,7 +123,7 @@ export default function Pricing() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 14, background: `${plan.color}20`, border: `1px solid ${plan.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{plan.icon}</div>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: '#F0F0FF' }}>{plan.label[lang] ?? plan.label.fr}</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: '#EAEEF6' }}>{plan.label[lang] ?? plan.label.fr}</div>
                     <div style={{ fontSize: 11, color: 'var(--text3)' }}>{plan.desc[lang] ?? plan.desc.fr}</div>
                   </div>
                 </div>
@@ -147,7 +147,7 @@ export default function Pricing() {
       </div>
 
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 900, color: '#F0F0FF', textAlign: 'center', marginBottom: 20 }}>{i('Questions fréquentes', 'FAQ', 'Preguntas frecuentes', 'Domande frequenti')}</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 900, color: '#EAEEF6', textAlign: 'center', marginBottom: 20 }}>{i('Questions fréquentes', 'FAQ', 'Preguntas frecuentes', 'Domande frequenti')}</h2>
         {FAQ.map((item, idx) => <FaqItem key={idx} q={item.q[lang] ?? item.q.fr} a={item.a[lang] ?? item.a.fr} />)}
       </div>
     </div>

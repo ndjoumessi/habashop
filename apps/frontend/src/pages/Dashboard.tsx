@@ -359,7 +359,7 @@ export default function Dashboard() {
           return (
             <div key={k.label} className="kpi-card kpi-animate" style={{
               background: 'var(--bg2)',
-              border: '0.5px solid var(--border)',
+              border: k.hero ? '1px solid var(--border3)' : '0.5px solid var(--border)',
               borderRadius: 12, padding: 16,
               position: 'relative', overflow: 'hidden',
               transition: 'all .15s ease',

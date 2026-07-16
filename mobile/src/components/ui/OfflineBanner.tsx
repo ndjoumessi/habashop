@@ -58,5 +58,5 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.warn, borderRadius: BorderRadius.md,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.xs,
   },
-  txt: { flex: 1, fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.white },
+  txt: { flex: 1, fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.white },
 })

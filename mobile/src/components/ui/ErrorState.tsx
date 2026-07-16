@@ -35,5 +35,5 @@ export default function ErrorState({ onRetry, message }: ErrorStateProps) {
 
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
-  txt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger, textAlign: 'center' },
+  txt: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.danger, textAlign: 'center' },
 })

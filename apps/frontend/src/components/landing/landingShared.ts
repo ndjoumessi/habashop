@@ -446,28 +446,28 @@ export const LANDING_TRANSLATIONS = {
 // ─── DARK PALETTE ─────────────────────────────────────────────────────────────
 
 export const D = {
-  bg:      '#07070F',
-  bg2:     '#0D0D1C',
-  bg3:     '#111128',
-  bg4:     '#161636',
+  bg:      '#0A0C14',
+  bg2:     '#0D1019',
+  bg3:     '#11151F',
+  bg4:     '#161C2B',
   p:       '#6C47FF',
   p2:      '#8B6FFF',
   p3:      '#A991FF',
-  gold:    '#EAB308',
-  gold2:   '#FCD34D',
-  text:    '#F0F0FF',
-  text2:   'rgba(240,240,255,.66)',
-  text3:   'rgba(240,240,255,.65)',
-  text4:   'rgba(240,240,255,.55)',
-  border:  'rgba(255,255,255,.08)',
-  border2: 'rgba(255,255,255,.15)',
-  acc:     '#00D084',
-  acc2:    '#00B8FF',
-  acc3:    '#FF9500',
-  acc4:    '#FF3B5C',
+  gold:    '#FFB020',
+  gold2:   '#FFC53D',
+  text:    '#EAEEF6',
+  text2:   'rgba(234,238,246,.66)',
+  text3:   'rgba(234,238,246,.65)',
+  text4:   'rgba(234,238,246,.55)',
+  border:  'rgba(255,255,255,.06)',
+  border2: 'rgba(255,255,255,.11)',
+  acc:     '#22C77A',
+  acc2:    '#4F86F0',
+  acc3:    '#FFB020',
+  acc4:    '#FF5C72',
 }
 
-export const FONT = "'Outfit', system-ui, -apple-system, sans-serif"
+export const FONT = "'Geist Variable', 'Geist', system-ui, -apple-system, sans-serif"
 export const MONO = "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
 
 export const scrollTo = (id: string) => {
