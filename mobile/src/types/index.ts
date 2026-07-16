@@ -38,11 +38,41 @@ export interface Tenant {
   [key: string]: unknown
 }
 
-// POST /api/auth/login → { token, user, tenant }
+// Boutique accessible (multi-boutiques v2). Renvoyée dans login.tenants[] et GET /api/auth/tenants.
+export interface TenantSummary {
+  id: string
+  name: string
+  currency?: string
+  plan?: string
+  role?: string
+}
+
+// Réponse BRUTE de POST /api/auth/login.
+// Multi-boutiques v2 : un compte lié à ≠ 1 boutique reçoit `tenant: null` + `activeTenantId: null`
+// + `tenants[]` → sélection requise avant les routes tenant-scopées (sinon 400 NO_ACTIVE_TENANT).
+export interface RawLoginResponse {
+  token: string
+  user: User
+  tenant: Tenant | null
+  tenants?: TenantSummary[]
+  activeTenantId?: string | null
+}
+
+// Réponse RÉSOLUE renvoyée par authApi.login() : boutique active toujours garantie
+// (auto-sélection de la 1ʳᵉ boutique si le compte est multi-boutique). Contrat inchangé pour
+// les appelants (setAuth attend un `tenant` non-null).
 export interface LoginResponse {
   token: string
   user: User
   tenant: Tenant
+}
+
+// POST /api/auth/switch-tenant → { token, tenant, activeTenantId, role }
+export interface SwitchTenantResponse {
+  token: string
+  tenant: Tenant
+  activeTenantId: string
+  role: string
 }
 
 // GET /api/auth/me → objet À PLAT (PAS { user, tenant }).
