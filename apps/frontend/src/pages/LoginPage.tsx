@@ -172,7 +172,11 @@ export default function LoginPage() {
         padding: '48px 56px',
         background: 'var(--public-bg2)',
       }}>
-        <div style={{ width: '100%', maxWidth: 380 }}>
+        <div style={{
+          width: '100%', maxWidth: 380,
+          border: '1px solid var(--border3)', borderRadius: 20,
+          padding: '36px 32px', background: 'rgba(255,255,255,.02)',
+        }}>
 
           <div style={{ marginBottom: 36 }}>
             <h2 style={{

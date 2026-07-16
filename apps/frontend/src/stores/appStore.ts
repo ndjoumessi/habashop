@@ -224,7 +224,7 @@ function applyAccentColor(color: string) {
 // ─── Thèmes (palettes CSS appliquées sur :root) ────────────────────────────────
 export const THEMES: Record<Theme, { label: Record<string, string>; emoji: string; vars: Record<string, string> }> = {
   dark:     { label: { fr: 'Sombre', en: 'Dark', es: 'Oscuro', it: 'Scuro' }, emoji: '🌑',
-    vars: { '--bg': '#131011', '--bg2': '#171412', '--bg3': '#1C1815', '--bg4': '#221D19', '--bg5': '#2A231E', '--p': '#6C47FF', '--p2': '#8B6FFF', '--p3': '#A991FF', '--acc2': '#22C77A', '--text': '#F5F1EC', '--text2': '#C9C0B6', '--text3': '#9A9082', '--card': '#1C1815', '--border': 'rgba(255,255,255,.07)' } },
+    vars: { '--bg': '#0A0C14', '--bg2': '#0D1019', '--bg3': '#11151F', '--bg4': '#161C2B', '--bg5': '#1B2233', '--p': '#6C47FF', '--p2': '#8B6FFF', '--p3': '#A991FF', '--acc2': '#22C77A', '--text': '#EAEEF6', '--text2': '#AAB2C4', '--text3': '#8E96AA', '--card': '#121724', '--border': 'rgba(255,255,255,.06)' } },
   darker:   { label: { fr: 'Très sombre', en: 'Darker', es: 'Muy oscuro', it: 'Molto scuro' }, emoji: '⬛',
     vars: { '--bg': '#020208', '--bg2': '#050510', '--bg3': '#080814', '--bg4': '#0C0C1E', '--bg5': '#101025', '--p': '#7C57FF', '--p2': '#9B7FFF', '--p3': '#B9A1FF', '--acc2': '#00E090', '--text': '#F5F5FF', '--text2': '#CCCCDD', '--text3': '#7777AA', '--card': '#080814', '--card2': '#0C0C1E', '--grad-card': 'linear-gradient(160deg,#080814,#0C0C1E)', '--border': 'rgba(255,255,255,.05)', '--border2': 'rgba(255,255,255,.10)', '--text4': '#787891', '--header-bg': 'rgba(2,2,8,.88)' } },
   midnight: { label: { fr: 'Minuit', en: 'Midnight', es: 'Medianoche', it: 'Mezzanotte' }, emoji: '🌌',

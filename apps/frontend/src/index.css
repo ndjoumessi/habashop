@@ -13,12 +13,12 @@
   --c-orange-border: rgba(255,176,32,.25);
   --c-amber-bg:      rgba(255,197,61,.05);  /* fond ambre SUBTIL (panneaux) — sombre ; clair via applyTheme */
   --c-amber-border:  rgba(255,197,61,.12);
-  --header-bg:       rgba(19,16,17,.88);   /* barre du haut translucide (charbon chaud #131011) — sombre ; clair via applyTheme */
-  --c-blue-bg:       rgba(51,180,255,.12);
-  --c-blue-border:   rgba(51,180,255,.25);
-  --c-red-bg:        rgba(255,77,103,.12);
-  --c-red-border:    rgba(255,77,103,.25);
-  --c-red-bg2:       rgba(255,77,103,.08);
+  --header-bg:       rgba(10,12,20,.72);   /* barre du haut translucide (NKONI bleu-noir #0A0C14) — sombre ; clair via applyTheme */
+  --c-blue-bg:       rgba(79,134,240,.12);
+  --c-blue-border:   rgba(79,134,240,.25);
+  --c-red-bg:        rgba(255,92,114,.12);
+  --c-red-border:    rgba(255,92,114,.25);
+  --c-red-bg2:       rgba(255,92,114,.08);
   /* Marques tierces (paiement) */
   --brand-wave:      #1B9AF5;
   --brand-om:        #FF6600;
@@ -34,30 +34,30 @@
   --p4:   #C4B5FD;
   --acc:  #FFB020;
   --acc2: #22C77A;
-  --acc3: #33B4FF;
+  --acc3: #4F86F0;
   --warn: #FFC53D;
-  --danger:#FF4D67;
+  --danger:#FF5C72;
   --success:#22C77A;
-  --info: #33B4FF;
-  --bg:   #131011;
-  --bg2:  #171412;
-  --bg3:  #1C1815;
-  --bg4:  #221D19;
-  --bg5:  #2A231E;
-  --bg6:  #332A24;
-  --card:  #1C1815;
-  --card2: #221D19;
-  --card3: #2A231E;
-  --border:  rgba(255,255,255,.07);
-  --border2: rgba(255,255,255,.12);
-  --border3: rgba(108,71,255,.35);
-  --text:  #F5F1EC;
-  --text2: #C9C0B6;
-  --text3: #9A9082;
-  --text4: #96897A; /* charbon chaud → AA small-text sur --bg/bg2/bg3 */
-  --grad-p:    linear-gradient(135deg,#6C47FF,#8B6FFF);
-  --grad-card: linear-gradient(160deg,#1C1815,#221D19);
-  --grad-dark: linear-gradient(180deg,#131011,#1C1815);
+  --info: #4F86F0;
+  --bg:   #0A0C14;
+  --bg2:  #0D1019;
+  --bg3:  #11151F;
+  --bg4:  #161C2B;
+  --bg5:  #1B2233;
+  --bg6:  #222C42;
+  --card:  #121724;
+  --card2: #161C2B;
+  --card3: #1B2233;
+  --border:  rgba(255,255,255,.06);
+  --border2: rgba(255,255,255,.11);
+  --border3: rgba(124,92,255,.28);
+  --text:  #EAEEF6;
+  --text2: #AAB2C4;
+  --text3: #8E96AA;
+  --text4: #868EA2; /* NKONI bleu-noir → AA small-text sur --bg/bg2/bg3 */
+  --grad-p:    linear-gradient(135deg,#6C47FF,#4F86F0);
+  --grad-card: linear-gradient(160deg,#121724,#161C2B);
+  --grad-dark: linear-gradient(180deg,#0A0C14,#121724);
   --grad-acc2: linear-gradient(135deg,#22C77A,#17A866);
   --sh-xs: 0 2px 8px rgba(0,0,0,.35);
   --sh-sm: 0 4px 16px rgba(0,0,0,.45);
@@ -67,7 +67,7 @@
   --sh-p:  0 4px 16px rgba(108,71,255,.35);
   --sh-p2: 0 8px 28px rgba(108,71,255,.25);
   --sh-acc2: 0 4px 16px rgba(0,208,132,.25);
-  --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font: 'Geist Variable', 'Geist', system-ui, -apple-system, sans-serif;
   --mono: 'JetBrains Mono', 'Fira Code', monospace;
   --r-xs:6px; --r-sm:8px; --r-md:12px; --r-lg:16px;
   --r-xl:20px; --r-2xl:24px; --r-full:9999px;
@@ -92,7 +92,7 @@
   --sh-acc: 0 6px 24px rgba(0,208,132,.35);
   --grad-success: linear-gradient(135deg,#22C77A,#17A866);
   --grad-acc: linear-gradient(135deg,#FFB020,#E8940D);
-  --grad-danger: linear-gradient(135deg,#FF4D67,#E23A54);
+  --grad-danger: linear-gradient(135deg,#FF5C72,#E23A54);
   --t-fast: all .12s cubic-bezier(.4,0,.2,1);
   --t-base: all .18s cubic-bezier(.4,0,.2,1);
   --t-slow: all .28s cubic-bezier(.4,0,.2,1);

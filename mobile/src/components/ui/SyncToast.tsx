@@ -61,5 +61,5 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderRadius: BorderRadius.full, backgroundColor: C.accent2,
     ...Shadow.md,
   },
-  txt: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.white },
+  txt: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.white },
 })

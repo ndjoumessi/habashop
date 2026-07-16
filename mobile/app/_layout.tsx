@@ -10,12 +10,12 @@ import { asyncStoragePersister, shouldDehydrateQuery, PERSIST_MAX_AGE } from '@/
 import SyncToast from '@/components/ui/SyncToast'
 // Imports subpath (pas le barrel) : le barrel `@expo-google-fonts/*` fait bundler
 // par Metro TOUTES les graisses (.ttf) du package — ~2 MB de polices mortes.
-import { useFonts } from '@expo-google-fonts/outfit/useFonts'
-import { Outfit_400Regular } from '@expo-google-fonts/outfit/400Regular'
-import { Outfit_600SemiBold } from '@expo-google-fonts/outfit/600SemiBold'
-import { Outfit_700Bold } from '@expo-google-fonts/outfit/700Bold'
-import { Outfit_800ExtraBold } from '@expo-google-fonts/outfit/800ExtraBold'
-import { Outfit_900Black } from '@expo-google-fonts/outfit/900Black'
+import { useFonts } from '@expo-google-fonts/geist/useFonts'
+import { Geist_400Regular } from '@expo-google-fonts/geist/400Regular'
+import { Geist_600SemiBold } from '@expo-google-fonts/geist/600SemiBold'
+import { Geist_700Bold } from '@expo-google-fonts/geist/700Bold'
+import { Geist_800ExtraBold } from '@expo-google-fonts/geist/800ExtraBold'
+import { Geist_900Black } from '@expo-google-fonts/geist/900Black'
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono/400Regular'
 import { JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono/700Bold'
 import * as SplashScreen from 'expo-splash-screen'
@@ -47,8 +47,8 @@ export default function RootLayout() {
   const restoreSession = useAuthStore(s=>s.restoreSession)
   const { isDark } = useTheme()
   const [fontsLoaded, fontError] = useFonts({
-    Outfit_400Regular, Outfit_600SemiBold,
-    Outfit_700Bold, Outfit_800ExtraBold, Outfit_900Black,
+    Geist_400Regular, Geist_600SemiBold,
+    Geist_700Bold, Geist_800ExtraBold, Geist_900Black,
     JetBrainsMono_400Regular, JetBrainsMono_700Bold,
   })
 

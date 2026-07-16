@@ -5,21 +5,21 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 .public-scope {
-  --public-bg:          #0A0A0F;
-  --public-bg2:         #0F0F1A;
-  --public-border:      rgba(139, 92, 246, 0.15);
-  --public-border-gold: rgba(234, 179, 8, 0.25);
-  --public-primary:     #7C3AED;
-  --public-primary-2:   #8B5CF6;
-  --public-gold:        #EAB308;
-  --public-gold-2:      #FCD34D;
-  --public-text:        #F8FAFC;
-  --public-text-2:      #94A3B8;
-  --public-text-3:      #64748B;
+  --public-bg:          #0A0C14;
+  --public-bg2:         #0D1019;
+  --public-border:      rgba(124, 92, 255, 0.15);
+  --public-border-gold: rgba(255, 176, 32, 0.25);
+  --public-primary:     #6C47FF;
+  --public-primary-2:   #8B6FFF;
+  --public-gold:        #FFB020;
+  --public-gold-2:      #FFC53D;
+  --public-text:        #EAEEF6;
+  --public-text-2:      #AAB2C4;
+  --public-text-3:      #8E96AA;
 
-  --grad-hero: linear-gradient(135deg, #7C3AED 0%, #5B21B6 50%, #1E1B4B 100%);
-  --grad-gold: linear-gradient(135deg, #EAB308 0%, #F59E0B 100%);
-  --grad-card: linear-gradient(135deg, rgba(124,58,237,0.10) 0%, rgba(234,179,8,0.05) 100%);
+  --grad-hero: linear-gradient(135deg, #6C47FF 0%, #4F86F0 55%, #11151F 100%);
+  --grad-gold: linear-gradient(135deg, #FFB020 0%, #E8940D 100%);
+  --grad-card: linear-gradient(135deg, rgba(108,71,255,0.10) 0%, rgba(255,176,32,0.05) 100%);
 }
 
 /* ─── Inputs ─── */
@@ -27,19 +27,19 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: 12px;
-  color: #F8FAFC;
+  color: #EAEEF6;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.public-input::placeholder { color: #64748B; }
+.public-input::placeholder { color: #8E96AA; }
 .public-input:focus {
-  border-color: #7C3AED;
+  border-color: #6C47FF;
   outline: none;
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 /* ─── Boutons ─── */
 .public-btn-primary {
-  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  background: linear-gradient(135deg, #6C47FF 0%, #6D28D9 100%);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -60,36 +60,36 @@
 }
 
 .public-btn-gold {
-  border: 1px solid rgba(234, 179, 8, 0.5);
-  color: #EAB308;
+  border: 1px solid rgba(255, 176, 32, 0.5);
+  color: #FFB020;
   border-radius: 12px;
   font-weight: 600;
-  background: rgba(234, 179, 8, 0.05);
+  background: rgba(255, 176, 32, 0.05);
   transition: background 0.2s, border-color 0.2s, transform 0.2s;
   cursor: pointer;
 }
 .public-btn-gold:hover {
-  background: rgba(234, 179, 8, 0.1);
-  border-color: #EAB308;
+  background: rgba(255, 176, 32, 0.1);
+  border-color: #FFB020;
   transform: translateY(-1px);
 }
 
 /* ─── Cards ─── */
 .public-card {
-  background: rgba(15, 15, 26, 0.8);
+  background: rgba(13, 16, 25, 0.8);
   border: 1px solid rgba(139, 92, 246, 0.15);
   border-radius: 16px;
   transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
 }
 .public-card:hover {
-  border-color: rgba(234, 179, 8, 0.3);
-  box-shadow: 0 8px 32px rgba(234, 179, 8, 0.05);
+  border-color: rgba(255, 176, 32, 0.3);
+  box-shadow: 0 8px 32px rgba(255, 176, 32, 0.05);
   transform: translateY(-4px);
 }
 
 /* ─── Texte doré (gradient clip) ─── */
 .gold-text {
-  background: linear-gradient(135deg, #EAB308 0%, #FCD34D 100%);
+  background: linear-gradient(135deg, #FFB020 0%, #FFC53D 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -98,7 +98,7 @@
 
 /* ─── Onboarding réutilise les boutons .btn de l'app → re-teinte violet public ─── */
 .public-scope .btn-primary {
-  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  background: linear-gradient(135deg, #6C47FF 0%, #6D28D9 100%);
   box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
 }
 .public-scope .btn-primary:hover:not(:disabled) {

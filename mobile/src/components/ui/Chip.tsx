@@ -35,6 +35,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border,
   },
   chipOn: { backgroundColor: C.primary, borderColor: C.primary },
-  txt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
+  txt: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text2 },
   txtOn: { color: C.white },
 })
