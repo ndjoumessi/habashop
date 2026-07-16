@@ -137,6 +137,9 @@ jobs:
         run: npm ci
       - name: Install Playwright (chromium)
         run: npx playwright install --with-deps chromium
+      # Pas de step seed / credential DB : les fixtures datées (ventes du jour → donut) sont
+      # créées via l'API authentifiée (compte e2e@) dans le setup Playwright. Le repo est
+      # PUBLIC → on n'expose AUCUN DATABASE_URL. Fixtures statiques = seed-e2e-tenant.ts (manuel).
       - name: E2E smoke (prod) — ~6 logins, sous la limite 10/15 min
         run: npm run e2e --workspace=apps/frontend
         timeout-minutes: 10

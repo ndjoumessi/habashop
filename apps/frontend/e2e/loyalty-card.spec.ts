@@ -46,14 +46,14 @@ test('Carte fidélité numérique — rendu des 3 paliers + captures', async ({ 
 
   for (const t of TIERS) {
     current = t
-    await page.locator('button[title="Carte numérique"], button[title="Digital card"]').first().click()
+    await page.locator('button[title="Carte fidélité"], button[title="Loyalty card"]').first().click()
 
     // Zone haute : label + nom boutique + badge palier localisé
     const modal = page.locator('.modal-box').last()
     await expect(modal.getByText('Superette Plateau')).toBeVisible({ timeout: 8000 })
     const tierFr = t.tier === 'Bronze' ? 'Bronze' : t.tier === 'Silver' ? 'Argent' : 'Or'
     await expect(modal.getByText(tierFr, { exact: true })).toBeVisible()
-    await expect(modal.getByText(`HS-${baseCard.customerId.slice(0, 8).toUpperCase()}`)).toBeVisible()
+    await expect(modal.getByText(`HABA-${baseCard.customerId.slice(0, 8).toUpperCase()}`)).toBeVisible()
     // Zone basse : progression + stats
     if (t.nextTier) {
       const nextFr = t.nextTier === 'Gold' ? 'Or' : 'Argent'
