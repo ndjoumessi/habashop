@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, getLandingForRole } from '@/stores/authStore'
+import LogoMark from '@/components/ui/LogoMark'
 import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
 import { Crown, Briefcase, ShoppingCart, Calculator, Users, Package, BarChart3, Coins, ShieldCheck, Globe, Mail, Lock, Eye, EyeOff, Rocket, AlertCircle } from 'lucide-react'
@@ -94,12 +95,11 @@ export default function LoginPage() {
           {/* Logo */}
           <div style={{
             width: 72, height: 72, borderRadius: 22,
-            background: 'linear-gradient(135deg,var(--public-primary),var(--public-primary-2))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 24px', color: '#fff',
+            overflow: 'hidden', display: 'flex',
+            margin: '0 auto 24px',
             boxShadow: '0 16px 48px rgba(124,58,237,.5)',
           }}>
-            <ShoppingCart size={32} strokeWidth={2.4} />
+            <LogoMark />
           </div>
 
           <h1 style={{

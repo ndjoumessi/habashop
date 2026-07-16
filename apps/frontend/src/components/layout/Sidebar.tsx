@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import LogoMark from '@/components/ui/LogoMark'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import { useConfig, useCashierIsOpen, t } from '@/stores/appStore'
 import { stockTransfersApi } from '@/lib/api'
@@ -86,11 +87,8 @@ export default function Sidebar() {
       >
         <div style={{
           width: 36, height: 36, borderRadius: 'var(--r-md)', flexShrink: 0,
-          background: 'var(--grad-p)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 'var(--fw-bold)', color: '#fff', fontSize: 17,
-          boxShadow: 'var(--sh-p)',
-        }}>H</div>
+          overflow: 'hidden', boxShadow: 'var(--sh-p)', display: 'flex',
+        }}><LogoMark /></div>
         {!collapsed && (
           <div style={{ minWidth: 0 }}>
             <div style={{

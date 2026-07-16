@@ -1,4 +1,5 @@
-import { ShoppingCart, Shield } from 'lucide-react'
+import { Shield } from 'lucide-react'
+import LogoMark from '@/components/ui/LogoMark'
 import { D } from './landingShared'
 import type { LandingT } from './landingShared'
 
@@ -20,11 +21,9 @@ export default function LandingFooter({ lp }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 30, height: 30, borderRadius: 9,
-              background: `linear-gradient(135deg,${D.p},${D.p2})`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff',
+              overflow: 'hidden', display: 'flex',
             }}>
-              <ShoppingCart size={15} strokeWidth={2.4}/>
+              <LogoMark />
             </div>
             <span style={{ fontSize: 16, fontWeight: 900, color: D.text }}>HabaShop</span>
           </div>

@@ -1,4 +1,8 @@
-# 🛒 HabaShop — SaaS de Gestion Commerciale
+<p align="center">
+  <img src="docs/habashop-lockup.png" alt="HabaShop" width="360">
+</p>
+
+# HabaShop — SaaS de Gestion Commerciale
 
 > Solution complète de gestion pour commerces d'Afrique francophone
 > (Sénégal, Côte d'Ivoire, Mali, Cameroun, RDC…) — épiceries, grossistes, demi-grossistes.

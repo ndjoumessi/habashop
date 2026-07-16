@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, getLandingForRole } from '@/stores/authStore'
+import LogoMark from '@/components/ui/LogoMark'
 import { useI18n } from '@/hooks/useI18n'
 import { Store, ChevronRight, LogOut, Loader2 } from 'lucide-react'
 
@@ -38,7 +39,7 @@ export default function SelectShop() {
   return (
     <div className="public-scope" style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 0%, rgba(124,58,237,.16), transparent 55%), linear-gradient(135deg,#0F0A2E 0%,#0A0A0F 58%,#0F0F1A 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'var(--font)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#7C3AED,#8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: 20, boxShadow: '0 8px 24px rgba(124,58,237,.4)' }}>H</div>
+        <div style={{ width: 44, height: 44, borderRadius: 14, overflow: 'hidden', display: 'flex', boxShadow: '0 8px 24px rgba(124,58,237,.4)' }}><LogoMark /></div>
         <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--public-text)', letterSpacing: '-.5px' }}>Haba<span className="gold-text">Shop</span></span>
       </div>
 

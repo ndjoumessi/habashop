@@ -1,4 +1,4 @@
-import { ShoppingCart } from 'lucide-react'
+import LogoMark from '@/components/ui/LogoMark'
 import { D, FONT, scrollTo } from './landingShared'
 import type { LandingT, Lang, Currency } from './landingShared'
 
@@ -27,11 +27,10 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 11,
-            background: `linear-gradient(135deg,${D.p},${D.p2})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', boxShadow: 'var(--sh-p)', flexShrink: 0,
+            overflow: 'hidden', display: 'flex',
+            boxShadow: 'var(--sh-p)', flexShrink: 0,
           }}>
-            <ShoppingCart size={18} strokeWidth={2.4}/>
+            <LogoMark />
           </div>
           <span style={{ fontSize: 18, fontWeight: 900, color: D.text, letterSpacing: '-.3px', whiteSpace: 'nowrap' }}>
             Haba<span style={{ background: `linear-gradient(135deg,${D.p2},${D.p3})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Shop</span>
