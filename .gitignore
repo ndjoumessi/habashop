@@ -50,3 +50,7 @@ mobile/dist/
 mobile/*.apk
 mobile/*.aab
 mobile/.env
+
+# Config locale Claude Code (racine) — ancré à la racine pour ne PAS toucher
+# mobile/.claude/settings.json, suivi volontairement (hérité du repo mobile).
+/.claude/
