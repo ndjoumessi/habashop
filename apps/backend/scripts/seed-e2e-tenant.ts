@@ -92,13 +92,14 @@ async function main(): Promise<void> {
   console.log(`✅ Compte: ${E2E_EMAIL} (SUPER_ADMIN, mono-boutique)`)
 
   // ── 3. Produits (≥2 catégories, stock>0 ; « Riz parfumé » attendu par pos-cash-field) ─
+  // SKU au format app `PRD-NNNN` (attendu par stock-redesign-capture : /PRD-\d+/).
   const products = [
-    { sku: 'E2E-0001', name: 'Riz parfumé 5kg',      category: 'Céréales',  emoji: '🌾', buyPrice: 4000, sellPrice: 6000, stockQty: 120, stockMin: 20 },
-    { sku: 'E2E-0002', name: 'Huile végétale 1L',    category: 'Épicerie',  emoji: '🛢️', buyPrice: 1200, sellPrice: 1800, stockQty: 90,  stockMin: 15 },
-    { sku: 'E2E-0003', name: 'Lait concentré 397g',  category: 'Laitiers',  emoji: '🥛', buyPrice: 750,  sellPrice: 1100, stockQty: 80,  stockMin: 20 },
-    { sku: 'E2E-0004', name: 'Savon de Marseille',   category: 'Hygiène',   emoji: '🧼', buyPrice: 300,  sellPrice: 500,  stockQty: 150, stockMin: 30 },
-    { sku: 'E2E-0005', name: 'Eau minérale 1.5L',    category: 'Boissons',  emoji: '💧', buyPrice: 250,  sellPrice: 400,  stockQty: 200, stockMin: 40 },
-    { sku: 'E2E-0006', name: 'Café moulu 250g',      category: 'Épicerie',  emoji: '☕', buyPrice: 900,  sellPrice: 1300, stockQty: 60,  stockMin: 15 },
+    { sku: 'PRD-0001', name: 'Riz parfumé 5kg',      category: 'Céréales',  emoji: '🌾', buyPrice: 4000, sellPrice: 6000, stockQty: 120, stockMin: 20 },
+    { sku: 'PRD-0002', name: 'Huile végétale 1L',    category: 'Épicerie',  emoji: '🛢️', buyPrice: 1200, sellPrice: 1800, stockQty: 90,  stockMin: 15 },
+    { sku: 'PRD-0003', name: 'Lait concentré 397g',  category: 'Laitiers',  emoji: '🥛', buyPrice: 750,  sellPrice: 1100, stockQty: 80,  stockMin: 20 },
+    { sku: 'PRD-0004', name: 'Savon de Marseille',   category: 'Hygiène',   emoji: '🧼', buyPrice: 300,  sellPrice: 500,  stockQty: 150, stockMin: 30 },
+    { sku: 'PRD-0005', name: 'Eau minérale 1.5L',    category: 'Boissons',  emoji: '💧', buyPrice: 250,  sellPrice: 400,  stockQty: 200, stockMin: 40 },
+    { sku: 'PRD-0006', name: 'Café moulu 250g',      category: 'Épicerie',  emoji: '☕', buyPrice: 900,  sellPrice: 1300, stockQty: 60,  stockMin: 15 },
   ]
   for (const p of products) {
     await prisma.product.upsert({
@@ -107,12 +108,20 @@ async function main(): Promise<void> {
       create: { tenantId: scope(tenantId), unit: 'unité', taxRate: 18, isActive: true, ...p },
     })
   }
-  console.log(`✅ Produits upsert: ${products.length}`)
+  // Purge (soft-delete) des produits E2E hors jeu courant (ex. anciens SKU) → idempotence propre.
+  const keepSkus = products.map(p => p.sku)
+  const purgedP = await prisma.product.updateMany({
+    where: { tenantId: scope(tenantId), deletedAt: null, sku: { notIn: keepSkus } },
+    data: { deletedAt: new Date() },
+  })
+  console.log(`✅ Produits upsert: ${products.length} | anciens SKU retirés: ${purgedP.count}`)
 
   // ── 4. Clients (≥1 requis par loyalty-card : bouton « Carte numérique » par ligne) ─
+  // « Espace Sahel » : attendu (exact) par pos-customer-selector (recherche « es »).
   const customers = [
     { id: 'e2e-cust-001', name: 'Boutique Teranga', type: 'Grossiste', phone: '+221 77 000 90 01', email: 'teranga@e2e.test', loyaltyPoints: 480, totalRevenue: 1250000 },
     { id: 'e2e-cust-002', name: 'Comptoir Baobab',  type: 'Détail',    phone: '+221 77 000 90 02', email: 'baobab@e2e.test',  loyaltyPoints: 120, totalRevenue: 215000 },
+    { id: 'e2e-cust-003', name: 'Espace Sahel',     type: 'Semi-gros', phone: '+221 77 000 90 03', email: 'sahel@e2e.test',   loyaltyPoints: 260, totalRevenue: 685000 },
   ]
   for (const c of customers) {
     const { id, ...rest } = c
