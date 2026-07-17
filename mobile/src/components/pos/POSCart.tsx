@@ -417,13 +417,13 @@ export default function POSCart({
 }
 
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', paddingVertical: Spacing.xxxl },
   sheet: { flex: 1, backgroundColor: C.bg },
   sheetHead: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: C.border,
   },
-  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Geist_800ExtraBold', color: C.text },
+  sheetTitle: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   sheetFoot: {
     padding: Spacing.lg, gap: Spacing.sm,
     borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.bg2,
@@ -433,10 +433,10 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.card, borderRadius: BorderRadius.md,
     borderWidth: 1, borderColor: C.border, padding: Spacing.md,
   },
-  cartName: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.text },
-  cartLine: { fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text3, marginTop: 2 },
-  cartTag: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.accent2, marginTop: 2 },
-  cartMax: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.warn, marginTop: 2 },
+  cartName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
+  cartLine: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
+  cartTag: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.accent2, marginTop: 2 },
+  cartMax: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.warn, marginTop: 2 },
   qtyBox: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   qtyBtn: {
     width: 28, height: 28, borderRadius: 8, backgroundColor: C.bg4,
@@ -447,12 +447,12 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   delBtn: { padding: 4 },
 
   recapRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  recapLabel: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3 },
-  recapVal: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text },
+  recapLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3 },
+  recapVal: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
   recapTotal: { borderTopWidth: 1, borderTopColor: C.border, paddingTop: Spacing.sm, marginTop: 2 },
   detailToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 2 },
-  detailToggleTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3 },
-  recapTotalLabel: { fontSize: FontSize.md, fontFamily: 'Geist_800ExtraBold', color: C.text },
+  detailToggleTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
+  recapTotalLabel: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   recapTotalVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.primary3 },
 
   payGrid: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.sm },
@@ -461,7 +461,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
   payChipOn: { backgroundColor: withAlpha(C.primary, 0.15), borderColor: C.primary },
-  payTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3 },
+  payTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   payTxtOn: { color: C.primary3 },
 
   cashWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.md, marginTop: Spacing.xs },
@@ -472,35 +472,35 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   changeVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', marginTop: 4 },
 
-  cashWarn: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.danger, textAlign: 'center' },
+  cashWarn: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.danger, textAlign: 'center' },
 
   // Paiement mixte
   mixedToggle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm, minHeight: 44, paddingHorizontal: Spacing.sm, borderRadius: BorderRadius.md, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border },
   mixedToggleOn: { backgroundColor: withAlpha(C.primary, 0.1), borderColor: withAlpha(C.primary, 0.4) },
   checkbox: { width: 20, height: 20, borderRadius: BorderRadius.sm, borderWidth: 1.5, borderColor: C.text3, alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { backgroundColor: C.primary, borderColor: C.primary },
-  mixedToggleTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.text },
+  mixedToggleTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
   mixedBox: { gap: Spacing.xs, padding: Spacing.sm, borderRadius: BorderRadius.md, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border },
-  lineLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: Spacing.xs },
+  lineLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: Spacing.xs },
   methodRow: { flexDirection: 'row', gap: Spacing.xs },
   methodChip: { flex: 1, minHeight: 40, paddingHorizontal: Spacing.xs, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: C.border, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' },
   methodChipOn: { backgroundColor: withAlpha(C.primary, 0.14), borderColor: C.primary },
-  methodChipTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text2 },
+  methodChipTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
   methodChipTxtOn: { color: C.primary3 },
   custBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
     paddingVertical: Spacing.sm, borderRadius: BorderRadius.md,
     borderWidth: 1, borderColor: C.border, borderStyle: 'dashed', backgroundColor: C.bg3,
   },
-  custBtnTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.primary3 },
+  custBtnTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.primary3 },
   custChip: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.md,
     borderWidth: 1, borderColor: withAlpha(C.primary, 0.4), backgroundColor: withAlpha(C.primary, 0.08),
   },
-  custName: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.text },
-  custSub: { fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text3, marginTop: 1 },
-  custChange: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.primary3 },
+  custName: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
+  custSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 1 },
+  custChange: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.primary3 },
   discountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   discountInputWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -510,9 +510,9 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   discountInput: {
     flex: 1, textAlign: 'right', fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: C.text, padding: 0,
   },
-  discountPct: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.text3 },
+  discountPct: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text3 },
   clearBtn: { alignItems: 'center', paddingVertical: Spacing.sm },
-  clearTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.danger },
+  clearTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger },
   loyaltyBadge: { backgroundColor: withAlpha(C.accent2, 0.12), borderWidth: 1, borderColor: withAlpha(C.accent2, 0.3), borderRadius: BorderRadius.md, paddingVertical: Spacing.xs, paddingHorizontal: Spacing.sm, alignItems: 'center' },
-  loyaltyBadgeTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.accent2 },
+  loyaltyBadgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.accent2 },
 })

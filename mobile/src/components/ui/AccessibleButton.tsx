@@ -79,5 +79,5 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   ghost:        { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.border },
   dangerSubtle: { backgroundColor: withAlpha(C.danger, 0.1), borderWidth: 1, borderColor: withAlpha(C.danger, 0.25) },
   disabled: { opacity: 0.5 },
-  text: { fontSize: FontSize.md, fontFamily: 'Geist_800ExtraBold' },
+  text: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold' },
 })

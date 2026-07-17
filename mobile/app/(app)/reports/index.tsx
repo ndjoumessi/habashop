@@ -288,7 +288,7 @@ export default function ReportsScreen() {
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl },
-  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3, textAlign: 'center', padding: Spacing.lg },
+  emptyTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', padding: Spacing.lg },
 
   headerBtn: {
     width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: C.bg3,
@@ -302,13 +302,13 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     width: '47%', backgroundColor: C.card, borderRadius: BorderRadius.lg,
     borderWidth: 1, padding: Spacing.md, gap: 2, ...Shadow.sm,
   },
-  kpiLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3 },
+  kpiLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   kpiValue: { fontSize: FontSize.xxxl, fontFamily: 'JetBrainsMono_700Bold', letterSpacing: -0.5 },
-  kpiSub: { fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text3, marginTop: 2 },
+  kpiSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
 
   section: { paddingHorizontal: Spacing.lg, marginTop: Spacing.xl },
   sectionTitle: {
-    fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.text3,
+    fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3,
     textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.md,
   },
   card: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, gap: Spacing.md },
@@ -318,17 +318,17 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   barCol: { flex: 1, alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' },
   barTrack: { width: '70%', flex: 1, backgroundColor: C.bg4, borderRadius: BorderRadius.sm, justifyContent: 'flex-end', overflow: 'hidden' },
   barFill: { width: '100%', backgroundColor: C.primary, borderRadius: BorderRadius.sm },
-  barLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3 },
+  barLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
 
   topRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   topRank: { fontSize: 18, width: 26 },
-  topName: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text },
+  topName: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text },
   topCa: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
   progTrack: { height: 5, backgroundColor: C.bg4, borderRadius: 3, marginTop: 5, overflow: 'hidden' },
   progFill: { height: '100%', backgroundColor: C.accent, borderRadius: 3 },
 
   payRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  payLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text, width: 110 },
+  payLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text, width: 110 },
   payBarTrack: { flex: 1, height: 8, backgroundColor: C.bg4, borderRadius: 4, overflow: 'hidden' },
   payBarFill: { height: '100%', backgroundColor: C.primary, borderRadius: 4 },
   payPct: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_700Bold', color: C.text2, width: 38, textAlign: 'right' },

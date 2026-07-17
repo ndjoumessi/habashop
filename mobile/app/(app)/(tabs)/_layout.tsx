@@ -98,6 +98,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     alignItems:'center',
     backgroundColor: withAlpha(C.primary, 0.10),
   },
-  lbl:{ fontSize:FontSize.xs, color:C.text3, fontFamily:'Geist_600SemiBold', textAlign:'center' },
+  lbl:{ fontSize:FontSize.xs, color:C.text3, fontFamily:'Outfit_600SemiBold', textAlign:'center' },
   lblActive:{ color:C.primary3 },
 })

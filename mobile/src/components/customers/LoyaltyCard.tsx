@@ -148,27 +148,27 @@ function fmtDay(iso: string): string {
 
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   wrap: { gap: Spacing.sm },
-  cardLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5 },
+  cardLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   card: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 2, padding: Spacing.md, gap: Spacing.sm },
   loadingRow: { height: 40, alignItems: 'center', justifyContent: 'center' },
   ptsRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.xs, flexWrap: 'wrap' },
   ptsVal: { fontSize: FontSize.xxxl, fontFamily: 'JetBrainsMono_700Bold' },
-  ptsUnit: { fontSize: FontSize.md, fontFamily: 'Geist_600SemiBold', color: C.text2 },
+  ptsUnit: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
   tierBadge: { marginLeft: Spacing.xs, borderWidth: 1, borderRadius: BorderRadius.full, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
-  tierTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_800ExtraBold' },
+  tierTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold' },
 
   barTrack: { height: 8, backgroundColor: C.bg3, borderRadius: BorderRadius.full, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: BorderRadius.full },
-  progressTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text3 },
-  maxTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold' },
+  progressTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3 },
+  maxTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold' },
 
   infoCard: { backgroundColor: C.bg3, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, gap: Spacing.xs },
-  infoHead: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
-  infoLine: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text2, lineHeight: 20 },
-  infoSoon: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3, fontStyle: 'italic', lineHeight: 20 },
+  infoHead: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  infoLine: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text2, lineHeight: 20 },
+  infoSoon: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3, fontStyle: 'italic', lineHeight: 20 },
 
   histRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.sm },
-  histLabel: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3 },
+  histLabel: { flex: 1, fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3 },
   histPts: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold' },
 })

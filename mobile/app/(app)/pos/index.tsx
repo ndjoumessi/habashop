@@ -554,7 +554,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderRadius: 9, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: C.bg,
   },
-  cartBadgeTxt: { fontSize: FontSize.xs, fontFamily: 'Geist_800ExtraBold', color: C.white },
+  cartBadgeTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 
   cats: { gap: Spacing.xs, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xs },
 
@@ -564,6 +564,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     paddingHorizontal: Spacing.lg, paddingTop: Spacing.md,
     backgroundColor: C.bg2, borderTopWidth: 1, borderTopColor: C.border,
   },
-  totalBarLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3 },
+  totalBarLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   totalBarAmt: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
 })

@@ -52,7 +52,7 @@ export default function Avatar({
 
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   wrap: { backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  initials: { fontFamily: 'Geist_800ExtraBold', color: C.white },
+  initials: { fontFamily: 'Outfit_800ExtraBold', color: C.white },
   editBadge: {
     position: 'absolute', bottom: 0, right: 0, width: 22, height: 22, borderRadius: 11,
     backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center',

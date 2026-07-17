@@ -62,9 +62,9 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   titleBlock: { flex: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   titleRowCenter: { justifyContent: 'center' },
-  title: { fontSize: FontSize.xxl, fontFamily: 'Geist_800ExtraBold', color: C.text },
+  title: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   titleCenter: { textAlign: 'center' },
-  subtitle: { fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text3, marginTop: 2 },
+  subtitle: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2 },
   right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   spacer: { width: 44, height: 44 },
 })

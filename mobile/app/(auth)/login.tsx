@@ -325,11 +325,11 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     ...Shadow.colored(C.primary),
   },
   logoText:{
-    fontSize:FontSize.xxxl,fontFamily:'Geist_900Black',
+    fontSize:FontSize.xxxl,fontFamily:'Outfit_900Black',
     color:C.text,
   },
   logoSub:{
-    fontSize:FontSize.sm,fontFamily:'Geist_400Regular',
+    fontSize:FontSize.sm,fontFamily:'Outfit_400Regular',
     color:C.text3,textAlign:'center',
   },
   card:{
@@ -338,12 +338,12 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     padding:Spacing.xl,gap:Spacing.lg,...Shadow.md,
   },
   title:{
-    fontSize:FontSize.xl,fontFamily:'Geist_800ExtraBold',
+    fontSize:FontSize.xl,fontFamily:'Outfit_800ExtraBold',
     color:C.text,
   },
   field:{gap:Spacing.xs},
   label:{
-    fontSize:FontSize.xs,fontFamily:'Geist_700Bold',
+    fontSize:FontSize.xs,fontFamily:'Outfit_700Bold',
     color:C.text3,textTransform:'uppercase',
     letterSpacing:0.5,
   },
@@ -351,7 +351,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor:C.bg3,borderWidth:1,
     borderColor:C.border,borderRadius:BorderRadius.md,
     paddingHorizontal:Spacing.md,height:48,
-    fontSize:FontSize.md,fontFamily:'Geist_400Regular',
+    fontSize:FontSize.md,fontFamily:'Outfit_400Regular',
     color:C.text,
   },
   eyeBtn:{
@@ -360,7 +360,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   demoWrap:{alignItems:'center',gap:Spacing.sm},
   demoLabel:{
-    fontSize:FontSize.xs,fontFamily:'Geist_400Regular',
+    fontSize:FontSize.xs,fontFamily:'Outfit_400Regular',
     color:C.text3,
   },
   demoRow:{
@@ -373,7 +373,7 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor:C.bg3,borderWidth:1,borderColor:C.border,
   },
   demoChipTxt:{
-    fontSize:FontSize.xs,fontFamily:'Geist_700Bold',
+    fontSize:FontSize.xs,fontFamily:'Outfit_700Bold',
     color:C.primary3,
   },
   biometricBtn: {
@@ -382,17 +382,17 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: C.border, backgroundColor: C.bg3,
   },
   biometricIcon: { fontSize: 22 },
-  biometricText: { fontSize: FontSize.md, fontFamily: 'Geist_600SemiBold', color: C.text2 },
+  biometricText: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: C.text2 },
   usePasswordLink: { alignItems: 'center', paddingVertical: Spacing.sm },
-  usePasswordTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text3 },
+  usePasswordTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   biometricModal: {
     flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center',
     padding: Spacing.xxxl, gap: Spacing.lg,
   },
   biometricModalIcon: { fontSize: 72 },
-  biometricModalTitle: { fontSize: FontSize.xxl, fontFamily: 'Geist_800ExtraBold', color: C.text, textAlign: 'center' },
-  biometricModalDesc: { fontSize: FontSize.md, fontFamily: 'Geist_400Regular', color: C.text3, textAlign: 'center', lineHeight: 24 },
+  biometricModalTitle: { fontSize: FontSize.xxl, fontFamily: 'Outfit_800ExtraBold', color: C.text, textAlign: 'center' },
+  biometricModalDesc: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3, textAlign: 'center', lineHeight: 24 },
   biometricModalSkip: { paddingVertical: Spacing.md },
-  biometricModalSkipText: { fontSize: FontSize.md, fontFamily: 'Geist_400Regular', color: C.text3 },
+  biometricModalSkipText: { fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text3 },
   flags:{textAlign:'center',fontSize:20,letterSpacing:6},
 })

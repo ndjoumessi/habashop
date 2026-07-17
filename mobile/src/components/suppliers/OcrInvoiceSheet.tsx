@@ -240,22 +240,22 @@ export default function OcrInvoiceSheet({ onClose }: Props) {
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   sheet: { flex: 1, backgroundColor: C.bg },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.lg, borderBottomWidth: 1, borderBottomColor: C.border },
-  headTitle: { fontSize: FontSize.lg, fontFamily: 'Geist_800ExtraBold', color: C.text },
+  headTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xxxl, gap: Spacing.md },
-  introTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text2, textAlign: 'center', maxWidth: 300, lineHeight: 20 },
-  loadingTxt: { fontSize: FontSize.md, fontFamily: 'Geist_700Bold', color: C.text, marginTop: Spacing.sm },
-  loadingSub: { fontSize: FontSize.sm, fontFamily: 'Geist_400Regular', color: C.text3 },
-  errorTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text2, textAlign: 'center', maxWidth: 300, lineHeight: 20 },
+  introTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text2, textAlign: 'center', maxWidth: 300, lineHeight: 20 },
+  loadingTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_700Bold', color: C.text, marginTop: Spacing.sm },
+  loadingSub: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text3 },
+  errorTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text2, textAlign: 'center', maxWidth: 300, lineHeight: 20 },
 
   warnBanner: { backgroundColor: withAlpha(C.warn, 0.12), borderWidth: 1, borderColor: withAlpha(C.warn, 0.3), borderRadius: BorderRadius.md, padding: Spacing.md },
-  warnTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.warn, lineHeight: 19 },
+  warnTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.warn, lineHeight: 19 },
 
   field: { gap: Spacing.xs },
-  label: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5 },
-  sectionLabel: { fontSize: FontSize.sm, fontFamily: 'Geist_800ExtraBold', color: C.text, marginTop: Spacing.sm },
-  miniLabel: { fontSize: FontSize.xs, fontFamily: 'Geist_600SemiBold', color: C.text3, marginBottom: 2 },
-  input: { backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, fontSize: FontSize.md, fontFamily: 'Geist_400Regular', color: C.text },
+  label: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_800ExtraBold', color: C.text, marginTop: Spacing.sm },
+  miniLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3, marginBottom: 2 },
+  input: { backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text },
   inputMulti: { minHeight: 64, textAlignVertical: 'top' },
 
   itemCard: { backgroundColor: C.card, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, gap: Spacing.sm },
@@ -267,10 +267,10 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, height: 50, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.lg },
   btnFull: { alignSelf: 'stretch' },
   btnPrimary: { flex: 1, backgroundColor: C.primary, ...Shadow.sm },
-  btnPrimaryTxt: { fontSize: FontSize.md, fontFamily: 'Geist_800ExtraBold', color: C.white },
+  btnPrimaryTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.white },
   btnGhost: { flex: 1, backgroundColor: withAlpha(C.primary, 0.12), borderWidth: 1, borderColor: withAlpha(C.primary, 0.3) },
-  btnGhostTxt: { fontSize: FontSize.md, fontFamily: 'Geist_800ExtraBold', color: C.primary3 },
+  btnGhostTxt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.primary3 },
 
   retryBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, height: 46, paddingHorizontal: Spacing.xl, borderRadius: BorderRadius.md, backgroundColor: C.primary, marginTop: Spacing.sm },
-  retryTxt: { fontSize: FontSize.sm, fontFamily: 'Geist_800ExtraBold', color: C.white },
+  retryTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_800ExtraBold', color: C.white },
 })

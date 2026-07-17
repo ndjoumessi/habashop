@@ -65,5 +65,5 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   },
   busy: { opacity: 0.7 },
   content: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  txt: { fontSize: FontSize.md, fontFamily: 'Geist_800ExtraBold', color: C.accent3 },
+  txt: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.accent3 },
 })

@@ -147,30 +147,30 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   box: { backgroundColor: C.bg, borderRadius: BorderRadius.xl, borderWidth: 1, borderColor: C.border, padding: Spacing.lg, maxHeight: '88%' },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
   headTitle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
-  title: { fontSize: FontSize.lg, fontFamily: 'Geist_800ExtraBold', color: C.text },
+  title: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
 
   recap: { backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border, padding: Spacing.md, gap: Spacing.xs },
   recapRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  recapRef: { fontSize: FontSize.sm, fontFamily: 'Geist_600SemiBold', color: C.text3 },
+  recapRef: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   recapTotal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
-  recapNote: { fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text3, lineHeight: 16 },
+  recapNote: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, lineHeight: 16 },
 
-  label: { fontSize: FontSize.xs, fontFamily: 'Geist_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5 },
+  label: { fontSize: FontSize.xs, fontFamily: 'Outfit_700Bold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5 },
   input: {
     backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, borderRadius: BorderRadius.md,
     padding: Spacing.md, minHeight: 84, textAlignVertical: 'top',
-    fontSize: FontSize.md, fontFamily: 'Geist_400Regular', color: C.text,
+    fontSize: FontSize.md, fontFamily: 'Outfit_400Regular', color: C.text,
   },
 
   restock: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, borderRadius: BorderRadius.md, padding: Spacing.md, minHeight: 44 },
   restockOn: { backgroundColor: withAlpha(C.accent2, 0.12), borderColor: withAlpha(C.accent2, 0.4) },
   checkbox: { width: 22, height: 22, borderRadius: BorderRadius.sm, borderWidth: 1.5, borderColor: C.text3, alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { backgroundColor: C.accent2, borderColor: C.accent2 },
-  restockTitle: { fontSize: FontSize.sm, fontFamily: 'Geist_700Bold', color: C.text },
-  restockSub: { fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text3, marginTop: 2, lineHeight: 16 },
+  restockTitle: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: C.text },
+  restockSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 2, lineHeight: 16 },
 
   trackingNote: { flexDirection: 'row', gap: Spacing.sm, alignItems: 'flex-start', backgroundColor: withAlpha(C.warn, 0.1), borderWidth: 1, borderColor: withAlpha(C.warn, 0.3), borderRadius: BorderRadius.md, padding: Spacing.md },
-  trackingTxt: { flex: 1, fontSize: FontSize.xs, fontFamily: 'Geist_400Regular', color: C.text2, lineHeight: 17 },
+  trackingTxt: { flex: 1, fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text2, lineHeight: 17 },
 
   actions: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs },
 })
