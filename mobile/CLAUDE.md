@@ -152,7 +152,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ```
 **`const s = useMemo(() => makeStyles(C), [C])`** (C = `useTheme()`). Fonts : `Outfit_700Bold` / `JetBrainsMono`. `ThemeColors = { [K in keyof typeof DarkColors]: string }` (pas `typeof DarkColors`). `userInterfaceStyle:"automatic"`. `useTheme()`/`useMemo` **avant** tout `return` conditionnel. `Colors` statiques : kiosk + widgetNotification seulement.
 
-`ThemeMode = 'dark' | 'light' | 'system'` (3 options, défaut `dark`) : Sombre / Clair / **Système** (`useColorScheme` ; `useTheme()` résout dark/light, sombre par défaut si indéterminé). **Fallback gracieux** : thème persisté obsolète (ancien `soleil`) → `dark` via `onRehydrateStorage` (`VALID_THEMES`). Option Réglages en grille. Test contraste : `src/__tests__/contrast.test.ts` (Dark + Light, AA ≥4.5:1 text/text2/text3). Kiosk reste `Colors` sombre figé. *(Le « Mode soleil » et son toggle 1-tap Dashboard ont été retirés — parité avec la réduction web 9→3.)*
+`ThemeMode = 'dark' | 'light' | 'system'` (3 options, défaut `dark`) : Sombre / Clair / **Système** (`useColorScheme` ; `useTheme()` résout dark/light, sombre par défaut si indéterminé). **Fallback gracieux** : thème persisté obsolète (ancien `soleil`) → `dark` via `onRehydrateStorage` (`VALID_THEMES`). Option Réglages en grille 3 colonnes (une ligne, `flex:1`). Test contraste : `src/__tests__/contrast.test.ts` (Dark + Light, AA ≥4.5:1 text/text2/text3). Kiosk reste `Colors` sombre figé. *(Le « Mode soleil » et son toggle 1-tap Dashboard ont été retirés — parité avec la réduction web 9→3.)*
 
 ---
 
@@ -231,8 +231,8 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 
 ## État courant
 - **Monorepo** : le mobile vit désormais dans `ndjoumessi/habashop` sous `mobile/` (les repos `habashop-mobile`/`-legal` sont archivés). `.env` mobile non commité (gitignored).
-- `main`, `tsc` 0, **141 tests verts**. `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
-- **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`). Police = **Outfit** (Geist attend le build natif, #13).
+- `main`, `tsc` 0, **129 tests verts (16 suites)**. `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
+- **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`), **thèmes réduits à 3** (Sombre/Clair/Système, #19) + grille 3 colonnes (#20) — dernier update group `95673916-5efe-44f7-a521-719616634a1c` (Android `019f6dfe-d23e-7f55…`, iOS `019f6dfe-d23e-7592…`, commit `1c38fae4`). Police = **Outfit** (Geist attend le build natif, #13).
 - **En attente du build natif 1.5.0** (quota EAS) : **logo Sac+H** (icône/splash) + **police Geist**.
 - **Validé device (2026-05-27, APK `382fe2ec`) :** scanner EAN13 ✅, thème clair ✅, kiosque+PIN ✅, encaissement→API ✅, biométrie ✅, suppression compte (scénario ADMIN seul→cascade tenant) ✅.
 - **À valider device :** offline+resync (cache à froid + abandon 3 retries), push (3 types + tap nav), ticket WhatsApp, widget (dev build), TalkBack, carte QR, OCR MANAGER+.
