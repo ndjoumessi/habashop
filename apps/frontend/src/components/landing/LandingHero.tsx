@@ -1,4 +1,4 @@
-import { Sparkles, Globe, Star, Zap, Play } from 'lucide-react'
+import { Sparkles, Globe, Star, Zap, Play, Check, TrendingUp, ShoppingBag } from 'lucide-react'
 import { D, FONT, MONO } from './landingShared'
 import type { LandingT } from './landingShared'
 
@@ -104,6 +104,25 @@ export default function LandingHero({ lp, i, navigate }: Props) {
             </button>
           </div>
 
+          {/* Réassurance — pattern Stripe/Vercel : lever les frictions juste sous les CTA */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px,2vw,18px)',
+            flexWrap: 'wrap', marginBottom: 44, fontSize: 13, fontWeight: 600, color: D.text3,
+          }}>
+            {[
+              i('Sans carte bancaire', 'No credit card', 'Sin tarjeta', 'Nessuna carta'),
+              i('14 jours d\'essai', '14-day trial', '14 días de prueba', '14 giorni di prova'),
+              i('Wave & Orange Money', 'Wave & Orange Money', 'Wave y Orange Money', 'Wave e Orange Money'),
+            ].map((txt, idx) => (
+              <div key={txt} style={{ display: 'inline-flex', alignItems: 'center', gap: 'clamp(10px,2vw,18px)' }}>
+                {idx > 0 && <span style={{ width: 4, height: 4, borderRadius: '50%', background: D.text4 }}/>}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Check size={14} strokeWidth={3} color={D.acc}/>{txt}
+                </span>
+              </div>
+            ))}
+          </div>
+
           {/* Stats row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(20px,5vw,44px)', flexWrap: 'wrap', marginBottom: 48 }}>
             {[
@@ -152,6 +171,70 @@ export default function LandingHero({ lp, i, navigate }: Props) {
             <div style={{ width: 4, height: 4, borderRadius: '50%', background: D.text4 }}/>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: D.text2 }}>
               <Globe size={14} color={D.text3}/>{lp.proof_countries}
+            </div>
+          </div>
+
+          {/* Aperçu produit — carte glow (mini-dashboard) : signature visuelle Linear/Stripe */}
+          <div style={{
+            marginTop: 56, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto',
+            borderRadius: 20, padding: 'clamp(16px,3vw,24px)',
+            background: `linear-gradient(160deg,${D.bg3},${D.bg4})`,
+            border: `1px solid rgba(124,92,255,.28)`,
+            boxShadow: '0 30px 80px -20px rgba(108,71,255,.4)',
+            textAlign: 'left',
+          }}>
+            {/* Barre de fenêtre */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 9, height: 9, borderRadius: '50%', background: D.acc4 }}/>
+                <span style={{ width: 9, height: 9, borderRadius: '50%', background: D.gold }}/>
+                <span style={{ width: 9, height: 9, borderRadius: '50%', background: D.acc }}/>
+              </div>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: D.acc }}>
+                <span className="public-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: D.acc, display: 'inline-block' }}/>
+                {i('En direct', 'Live', 'En vivo', 'In diretta')}
+              </span>
+            </div>
+
+            {/* CA du jour */}
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: D.text3, marginBottom: 6 }}>
+              {i('Chiffre d\'affaires du jour', 'Today\'s revenue', 'Ingresos de hoy', 'Fatturato di oggi')}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 'clamp(26px,5vw,36px)', fontWeight: 900, color: D.gold, fontFamily: MONO, letterSpacing: '-1px', lineHeight: 1 }}>1 240 000</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: D.text3 }}>FCFA</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: D.acc, background: 'rgba(34,199,122,.12)', border: '1px solid rgba(34,199,122,.25)', borderRadius: 99, padding: '2px 8px' }}>
+                <TrendingUp size={12} strokeWidth={2.6}/> +18%
+              </span>
+            </div>
+
+            {/* Mini KPIs */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+              {[
+                { Icon: ShoppingBag, v: '42', l: i('Ventes', 'Sales', 'Ventas', 'Vendite'), c: D.acc2 },
+                { Icon: TrendingUp,  v: '29 500', l: i('Panier moyen', 'Avg. basket', 'Cesta media', 'Scontrino medio'), c: D.p2 },
+              ].map(k => (
+                <div key={k.l} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,.03)', border: `1px solid ${D.border}`, borderRadius: 12 }}>
+                  <span style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(124,92,255,.12)', color: k.c, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <k.Icon size={15} strokeWidth={2.4}/>
+                  </span>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: D.text, fontFamily: MONO, lineHeight: 1.1 }}>{k.v}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: D.text3 }}>{k.l}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Barre d'objectif */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: D.text3 }}>{i('Objectif du jour', 'Daily goal', 'Objetivo del día', 'Obiettivo del giorno')}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: D.text2, fontFamily: MONO }}>78%</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: '78%', borderRadius: 99, background: `linear-gradient(90deg,${D.p},${D.p2})`, boxShadow: '0 0 12px rgba(108,71,255,.5)' }}/>
+              </div>
             </div>
           </div>
         </div>

@@ -5,7 +5,7 @@ import type { CartItem } from '@/components/pos/posShared'
 
 export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP'
 export type Lang     = 'fr' | 'en' | 'es' | 'it'
-export type Theme    = 'dark' | 'darker' | 'midnight' | 'forest' | 'ocean' | 'sunset' | 'light' | 'gold' | 'soleil'
+export type Theme    = 'dark' | 'light' | 'system'
 export type AppTheme = Theme
 
 // ─── Taux par rapport à XOF (devise de base) ──────────────────────────────────
@@ -143,7 +143,7 @@ export const DEFAULT_CONFIG: AppConfig = {
 
   lang: 'fr',
   langManuallySet: false,
-  theme: 'gold',
+  theme: 'dark',
   sidebarCollapsed: false,
 
   currency: 'XOF',
@@ -197,23 +197,6 @@ export const ACCENT_PAIRS: Record<string, { p: string; p2: string; p3: string }>
 
 function applyAccentColor(color: string) {
   const root = document.documentElement
-  // Thème "gold" : on force le violet premium, indépendamment de l'accent choisi
-  // (l'or vit dans --acc2). applyTheme() pose body.className='theme-gold' AVANT chaque
-  // appel à applyAccentColor() → couvre tous les chemins (updateConfig UI, setTheme,
-  // rehydrate, reset) sans devoir patcher chacun.
-  if (document.body.className === 'theme-gold') {
-    root.style.setProperty('--p',  '#7C3AED')
-    root.style.setProperty('--p2', '#6D28D9')
-    root.style.setProperty('--p3', '#8B5CF6')
-    return
-  }
-  // Mode soleil : primaire violet profond verrouillé (AA sur blanc), indépendant de l'accent.
-  if (document.body.className === 'theme-soleil') {
-    root.style.setProperty('--p',  '#5B21B6')
-    root.style.setProperty('--p2', '#6D28D9')
-    root.style.setProperty('--p3', '#7C3AED')
-    return
-  }
   const pair = ACCENT_PAIRS[color]
   if (!pair) return
   root.style.setProperty('--p',  pair.p)
@@ -222,30 +205,43 @@ function applyAccentColor(color: string) {
 }
 
 // ─── Thèmes (palettes CSS appliquées sur :root) ────────────────────────────────
-export const THEMES: Record<Theme, { label: Record<string, string>; emoji: string; vars: Record<string, string> }> = {
+// Set réduit à 3 options exposées : Sombre (NKONI, = :root d'index.css), Clair, Système.
+// « Système » n'a pas de palette propre : il se résout en dark/light selon la préférence OS
+// (resolveTheme + listener prefers-color-scheme plus bas). THEMES ne contient donc que les
+// deux palettes concrètes.
+export const THEMES: Record<'dark' | 'light', { label: Record<string, string>; emoji: string; vars: Record<string, string> }> = {
   dark:     { label: { fr: 'Sombre', en: 'Dark', es: 'Oscuro', it: 'Scuro' }, emoji: '🌑',
     vars: { '--bg': '#0A0C14', '--bg2': '#0D1019', '--bg3': '#11151F', '--bg4': '#161C2B', '--bg5': '#1B2233', '--p': '#6C47FF', '--p2': '#8B6FFF', '--p3': '#A991FF', '--acc2': '#22C77A', '--text': '#EAEEF6', '--text2': '#AAB2C4', '--text3': '#8E96AA', '--card': '#121724', '--border': 'rgba(255,255,255,.06)' } },
-  darker:   { label: { fr: 'Très sombre', en: 'Darker', es: 'Muy oscuro', it: 'Molto scuro' }, emoji: '⬛',
-    vars: { '--bg': '#020208', '--bg2': '#050510', '--bg3': '#080814', '--bg4': '#0C0C1E', '--bg5': '#101025', '--p': '#7C57FF', '--p2': '#9B7FFF', '--p3': '#B9A1FF', '--acc2': '#00E090', '--text': '#F5F5FF', '--text2': '#CCCCDD', '--text3': '#7777AA', '--card': '#080814', '--card2': '#0C0C1E', '--grad-card': 'linear-gradient(160deg,#080814,#0C0C1E)', '--border': 'rgba(255,255,255,.05)', '--border2': 'rgba(255,255,255,.10)', '--text4': '#787891', '--header-bg': 'rgba(2,2,8,.88)' } },
-  midnight: { label: { fr: 'Minuit', en: 'Midnight', es: 'Medianoche', it: 'Mezzanotte' }, emoji: '🌌',
-    vars: { '--bg': '#020B18', '--bg2': '#041525', '--bg3': '#061C30', '--bg4': '#0A2540', '--bg5': '#0E2E4E', '--p': '#3B82F6', '--p2': '#60A5FA', '--p3': '#93C5FD', '--acc2': '#10B981', '--text': '#F0F9FF', '--text2': '#BAE6FD', '--text3': '#7CB9D8', '--card': '#061C30', '--card2': '#0A2540', '--grad-card': 'linear-gradient(160deg,#061C30,#0A2540)', '--border': 'rgba(59,130,246,.15)', '--border2': 'rgba(59,130,246,.28)', '--text4': '#6788A6', '--header-bg': 'rgba(2,11,24,.88)' } },
-  forest:   { label: { fr: 'Forêt', en: 'Forest', es: 'Bosque', it: 'Foresta' }, emoji: '🌲',
-    vars: { '--bg': '#030D08', '--bg2': '#051408', '--bg3': '#071A0C', '--bg4': '#0A2212', '--bg5': '#0E2C18', '--p': '#22C55E', '--p2': '#4ADE80', '--p3': '#86EFAC', '--acc2': '#34D399', '--text': '#F0FDF4', '--text2': '#BBF7D0', '--text3': '#6EE7B7', '--card': '#071A0C', '--card2': '#0A2212', '--grad-card': 'linear-gradient(160deg,#071A0C,#0A2212)', '--border': 'rgba(34,197,94,.15)', '--border2': 'rgba(34,197,94,.28)', '--text4': '#558C70', '--header-bg': 'rgba(3,13,8,.88)' } },
-  ocean:    { label: { fr: 'Océan', en: 'Ocean', es: 'Océano', it: 'Oceano' }, emoji: '🌊',
-    vars: { '--bg': '#020A14', '--bg2': '#041220', '--bg3': '#061A2E', '--bg4': '#0A2440', '--bg5': '#0E2E52', '--p': '#06B6D4', '--p2': '#22D3EE', '--p3': '#67E8F9', '--acc2': '#2DD4BF', '--text': '#ECFEFF', '--text2': '#A5F3FC', '--text3': '#67C8D8', '--card': '#061A2E', '--card2': '#0A2440', '--grad-card': 'linear-gradient(160deg,#061A2E,#0A2440)', '--border': 'rgba(6,182,212,.15)', '--border2': 'rgba(6,182,212,.28)', '--text4': '#5A8A9C', '--header-bg': 'rgba(2,10,20,.88)' } },
-  sunset:   { label: { fr: 'Coucher de soleil', en: 'Sunset', es: 'Atardecer', it: 'Tramonto' }, emoji: '🌅',
-    vars: { '--bg': '#140A02', '--bg2': '#200F04', '--bg3': '#2C1506', '--bg4': '#3C1E0A', '--bg5': '#4A2610', '--p': '#F97316', '--p2': '#FB923C', '--p3': '#FDBA74', '--acc2': '#FCD34D', '--text': '#FFF7ED', '--text2': '#FED7AA', '--text3': '#F8A96B', '--card': '#2C1506', '--card2': '#3C1E0A', '--grad-card': 'linear-gradient(160deg,#2C1506,#3C1E0A)', '--border': 'rgba(249,115,22,.15)', '--border2': 'rgba(249,115,22,.28)', '--text4': '#9E7E65', '--header-bg': 'rgba(20,10,2,.88)' } },
   light:    { label: { fr: 'Clair', en: 'Light', es: 'Claro', it: 'Chiaro' }, emoji: '☀️',
     vars: { '--bg': '#F8F9FF', '--bg2': '#F0F2FF', '--bg3': '#E8EBFF', '--bg4': '#FFFFFF', '--bg5': '#F4F5FF', '--p': '#6C47FF', '--p2': '#8B6FFF', '--p3': '#6C47FF', '--acc2': '#059669', '--text': '#1A1A2E', '--text2': '#374151', '--text3': '#626976', '--card': '#FFFFFF', '--border': 'rgba(0,0,0,.1)' } },
-  gold:     { label: { fr: 'Violet & Or', en: 'Violet & Gold', es: 'Violeta & Oro', it: 'Viola & Oro' }, emoji: '✨',
-    vars: { '--bg': '#0A0A0F', '--bg2': '#0F0F1A', '--bg3': '#141428', '--bg4': '#1A1A35', '--bg5': '#1F1F40', '--p': '#7C3AED', '--p2': '#6D28D9', '--p3': '#8B5CF6', '--acc2': '#EAB308', '--acc3': '#FCD34D', '--text': '#F8FAFC', '--text2': '#CBD5E1', '--text3': '#94A3B8', '--text4': '#748297', '--card': '#0F0F1A', '--card2': '#141428', '--border': 'rgba(139,92,246,0.2)', '--border2': 'rgba(234,179,8,0.2)', '--grad-card': 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(234,179,8,0.04) 100%)', '--header-bg': 'rgba(10,10,15,0.85)', '--shadow': 'rgba(0,0,0,0.6)', '--danger': '#EF4444', '--warn': '#F59E0B', '--acc': '#10B981' } },
-  // « Mode soleil » : thème clair HAUT-CONTRASTE pour usage en étal extérieur (plein soleil).
-  // Texte quasi-noir, surfaces blanches pures, bordures fortes, accents profonds AA sur blanc.
-  // Activable d'un tap via le bouton ☀️ du header (SunModeToggle) ; primaire violet verrouillé
-  // (applyAccentColor) pour garantir l'AA quelle que soit la couleur d'accent choisie.
-  soleil:   { label: { fr: 'Mode soleil', en: 'Sun mode', es: 'Modo sol', it: 'Modalità sole' }, emoji: '🔆',
-    vars: { '--bg': '#FFFFFF', '--bg2': '#FFFFFF', '--bg3': '#EFEFF2', '--bg4': '#FFFFFF', '--bg5': '#F6F6F8', '--bg6': '#FFFFFF', '--p': '#5B21B6', '--p2': '#6D28D9', '--p3': '#7C3AED', '--acc': '#047857', '--acc2': '#047857', '--text': '#000000', '--text2': '#1A1A22', '--text3': '#3A3A45', '--text4': '#55555F', '--card': '#FFFFFF', '--card2': '#F6F6F8', '--card3': '#EFEFF2', '--border': 'rgba(0,0,0,.30)', '--border2': 'rgba(0,0,0,.45)', '--grad-card': 'linear-gradient(160deg,#FFFFFF,#F6F6F8)', '--header-bg': 'rgba(255,255,255,.95)', '--danger': '#C81E1E', '--warn': '#B45309', '--success': '#047857', '--info': '#1D4ED8' } },
 }
+
+// Préférence OS (matchMedia) — défaut « sombre » si indisponible (SSR / jsdom sans matchMedia).
+export function systemPrefersDark(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) return true
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
+// Résout un thème (dont « system ») vers la palette concrète effective.
+export function resolveTheme(theme: Theme): 'dark' | 'light' {
+  if (theme === 'system') return systemPrefersDark() ? 'dark' : 'light'
+  return theme
+}
+
+// Le thème effectif est-il clair ? (comparaisons UI qui pilotent des rendus clair/sombre.)
+export function isThemeLight(theme: string): boolean {
+  return resolveTheme(theme as Theme) === 'light'
+}
+
+// Thèmes valides du set réduit — sert au fallback gracieux d'une préférence persistée obsolète.
+export const VALID_THEMES = new Set<Theme>(['dark', 'light', 'system'])
+
+// Options du sélecteur d'apparence (Sombre / Clair / Système), dans l'ordre d'affichage.
+export const THEME_OPTIONS: { key: Theme; emoji: string; label: Record<string, string> }[] = [
+  { key: 'dark',   emoji: THEMES.dark.emoji,  label: THEMES.dark.label },
+  { key: 'light',  emoji: THEMES.light.emoji, label: THEMES.light.label },
+  { key: 'system', emoji: '🖥️', label: { fr: 'Système', en: 'System', es: 'Sistema', it: 'Sistema' } },
+]
 
 // Vars de surface NON couvertes par THEMES[*].vars (sinon issues du :root sombre d'index.css).
 // Injectées en mode CLAIR ; retirées sinon → le :root (sombre) reprend (pas de valeur claire "collée").
@@ -262,10 +258,11 @@ const LIGHT_EXTRA_VARS: Record<string, string> = {
 }
 
 export function applyTheme(theme: Theme) {
-  const t = THEMES[theme] ?? THEMES.dark
+  // « system » → palette concrète selon la préférence OS ; body.className reflète l'effectif.
+  const resolved = resolveTheme(theme)
+  const t = THEMES[resolved] ?? THEMES.dark
   const root = document.documentElement
-  // 'soleil' est un thème clair haut-contraste → même traitement light que 'light'.
-  const isLight = theme === 'light' || theme === 'soleil'
+  const isLight = resolved === 'light'
   Object.entries(t.vars).forEach(([k, val]) => root.style.setProperty(k, val))
   // Surfaces manquantes : valeurs claires en mode clair (sauf si le thème les définit déjà
   // dans ses vars → soleil garde ses surfaces blanches pures) ; sinon retrait → :root sombre.
@@ -276,7 +273,7 @@ export function applyTheme(theme: Theme) {
   // Rendu natif des contrôles (popup <select>, autofill Chrome, scrollbars).
   root.style.setProperty('color-scheme', isLight ? 'light' : 'dark')
   root.setAttribute('data-theme', isLight ? 'light' : 'dark')
-  document.body.className = `theme-${theme}`
+  document.body.className = `theme-${resolved}`
 }
 
 // ─── Tenant ──────────────────────────────────────────────────────────────────
@@ -531,6 +528,10 @@ export const useAppStore = create<AppStore>()(
         return {
           ...current,
           ...p,
+          // Fallback gracieux : un thème persisté retiré du set réduit (darker/midnight/forest/
+          // ocean/sunset/gold/soleil…) n'existe plus → on retombe sur « Sombre » plutôt que de
+          // laisser un utilisateur bloqué sur un thème inconnu (sélecteur sans option active).
+          theme: (p.theme && VALID_THEMES.has(p.theme)) ? p.theme : 'dark',
           currencyManuallySet: p.currencyManuallySet ?? (p.currency != null),
           langManuallySet:     p.langManuallySet     ?? (p.lang != null),
         }
@@ -545,6 +546,17 @@ export const useAppStore = create<AppStore>()(
 
 export function useConfig() {
   return useAppStore()
+}
+
+// Thème « Système » réactif : quand la préférence OS bascule ET que l'utilisateur est réglé sur
+// « system », on ré-applique la palette effective sans qu'il ait à recharger la page.
+if (typeof window !== 'undefined' && window.matchMedia) {
+  const mq = window.matchMedia('(prefers-color-scheme: dark)')
+  const onSchemeChange = () => { if (useAppStore.getState().theme === 'system') applyTheme('system') }
+  if (mq.addEventListener) mq.addEventListener('change', onSchemeChange)
+  else if ((mq as MediaQueryList & { addListener?: (cb: () => void) => void }).addListener) {
+    (mq as MediaQueryList & { addListener: (cb: () => void) => void }).addListener(onSchemeChange)
+  }
 }
 
 /**

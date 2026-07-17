@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore, getLandingForRole } from '@/stores/authStore'
 import LogoMark from '@/components/ui/LogoMark'
 import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
-import { Crown, Briefcase, ShoppingCart, Calculator, Users, Package, BarChart3, Coins, ShieldCheck, Globe, Mail, Lock, Eye, EyeOff, Rocket, AlertCircle } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { ShoppingCart, Users, Package, BarChart3, Coins, ShieldCheck, Globe, Mail, Lock, Eye, EyeOff, Rocket, AlertCircle, ArrowLeft, Sparkles } from 'lucide-react'
 
 export default function LoginPage() {
   const navigate              = useNavigate()
@@ -16,7 +15,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPwd,  setShowPwd]  = useState(false)
   const [loading,  setLoading]  = useState(false)
+  const [demoLoading, setDemoLoading] = useState(false)
+  const [remember, setRemember] = useState(true)
   const [error,    setError]    = useState('')
+
+  // Cœur de connexion partagé entre le formulaire et le bouton « Explorer la démo ».
+  const doLogin = async (mail: string, pwd: string) => {
+    setError('')
+    clearError()
+    await login(mail, pwd)
+    const { tenants, activeTenantId, user } = useAuthStore.getState()
+    // Aucune boutique → compte sans accès (ne devrait pas arriver après backfill).
+    if (tenants.length === 0) {
+      setError(i('Aucune boutique associée à ce compte','No shop linked to this account','Ninguna tienda asociada a esta cuenta','Nessun negozio associato a questo account'))
+      return
+    }
+    // Plusieurs boutiques sans sélection → écran de choix avant d'entrer.
+    if (tenants.length > 1 && !activeTenantId) {
+      navigate('/select-shop')
+      return
+    }
+    toast.success(i('Connexion réussie !','Login successful!','¡Inicio de sesión exitoso!','Accesso riuscito!'))
+    navigate(getLandingForRole(user?.role))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,28 +46,36 @@ export default function LoginPage() {
       return
     }
     setLoading(true)
-    setError('')
-    clearError()
     try {
-      await login(email, password)
-      const { tenants, activeTenantId, user } = useAuthStore.getState()
-      // Aucune boutique → compte sans accès (ne devrait pas arriver après backfill).
-      if (tenants.length === 0) {
-        setError(i('Aucune boutique associée à ce compte','No shop linked to this account','Ninguna tienda asociada a esta cuenta','Nessun negozio associato a questo account'))
-        return
-      }
-      // Plusieurs boutiques sans sélection → écran de choix avant d'entrer.
-      if (tenants.length > 1 && !activeTenantId) {
-        navigate('/select-shop')
-        return
-      }
-      toast.success(i('Connexion réussie !','Login successful!','¡Inicio de sesión exitoso!','Accesso riuscito!'))
-      navigate(getLandingForRole(user?.role))
+      await doLogin(email, password)
     } catch (err: any) {
       setError(err?.message || i('Email ou mot de passe incorrect','Incorrect email or password','Correo o contraseña incorrectos','Email o password non corretti'))
     } finally {
       setLoading(false)
     }
+  }
+
+  // « Explorer la démo » : connexion au compte de démonstration, sans saisie manuelle.
+  const handleDemo = async () => {
+    setEmail('admin@habashop.com')
+    setPassword('demo1234')
+    setDemoLoading(true)
+    try {
+      await doLogin('admin@habashop.com', 'demo1234')
+    } catch (err: any) {
+      setError(err?.message || i('Connexion démo indisponible','Demo login unavailable','Acceso demo no disponible','Accesso demo non disponibile'))
+    } finally {
+      setDemoLoading(false)
+    }
+  }
+
+  const handleForgot = () => {
+    toast(i(
+      'Contactez votre administrateur ou support@habashop.com pour réinitialiser votre mot de passe.',
+      'Contact your administrator or support@habashop.com to reset your password.',
+      'Contacta a tu administrador o support@habashop.com para restablecer tu contraseña.',
+      'Contatta il tuo amministratore o support@habashop.com per reimpostare la password.',
+    ), { icon: '🔑', duration: 5000 })
   }
 
   return (
@@ -92,15 +121,15 @@ export default function LoginPage() {
         {/* Contenu branding */}
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 380 }}>
 
-          {/* Logo */}
-          <div style={{
+          {/* Logo (cliquable → accueil) */}
+          <Link to="/" aria-label={i('Retour à l\'accueil','Back to home','Volver al inicio','Torna alla home')} style={{
             width: 72, height: 72, borderRadius: 22,
             overflow: 'hidden', display: 'flex',
             margin: '0 auto 24px',
             boxShadow: '0 16px 48px rgba(124,58,237,.5)',
           }}>
             <LogoMark />
-          </div>
+          </Link>
 
           <h1 style={{
             fontSize: 36, fontWeight: 900, color: 'var(--public-text)',
@@ -169,9 +198,29 @@ export default function LoginPage() {
       <div style={{
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: '48px 56px',
+        padding: '48px 56px', position: 'relative',
         background: 'var(--public-bg2)',
       }}>
+        {/* Retour à l'accueil — corrige le cul-de-sac : plus de page login sans issue. */}
+        <div style={{ width: '100%', maxWidth: 380, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link to="/" className="login-back-link" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7,
+            fontSize: 13, fontWeight: 600, color: 'var(--public-text-2)',
+            textDecoration: 'none', padding: '6px 10px 6px 4px', borderRadius: 8,
+            transition: 'color .15s',
+          }}>
+            <ArrowLeft size={15} strokeWidth={2.4} />
+            {i('Retour à l\'accueil','Back to home','Volver al inicio','Torna alla home')}
+          </Link>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: 11, fontWeight: 700, color: 'var(--public-gold)',
+            background: 'rgba(255,176,32,.1)', border: '1px solid rgba(255,176,32,.22)',
+            borderRadius: 99, padding: '4px 9px',
+          }}>
+            <ShieldCheck size={12} strokeWidth={2.4} /> SSL/TLS
+          </span>
+        </div>
         <div style={{
           width: '100%', maxWidth: 380,
           border: '1px solid var(--border3)', borderRadius: 20,
@@ -209,6 +258,7 @@ export default function LoginPage() {
                 }}><Mail size={16} strokeWidth={2.2} /></span>
                 <input
                   id="login-email"
+                  data-testid="login-email"
                   className="public-input"
                   type="email"
                   autoComplete="email"
@@ -244,6 +294,7 @@ export default function LoginPage() {
                 }}><Lock size={16} strokeWidth={2.2} /></span>
                 <input
                   id="login-password"
+                  data-testid="login-password"
                   className="public-input"
                   type={showPwd ? 'text' : 'password'}
                   autoComplete="current-password"
@@ -279,6 +330,26 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Rester connecté · Mot de passe oublié */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: -2 }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--public-text-2)', cursor: 'pointer', userSelect: 'none' }}>
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={e => setRemember(e.target.checked)}
+                  style={{ width: 15, height: 15, accentColor: 'var(--public-primary)', cursor: 'pointer' }}
+                />
+                {i('Rester connecté','Stay signed in','Mantener sesión','Resta connesso')}
+              </label>
+              <button
+                type="button"
+                onClick={handleForgot}
+                style={{ background: 'none', border: 'none', padding: '2px 0', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--public-primary-2)', fontFamily: 'var(--font)' }}
+              >
+                {i('Mot de passe oublié ?','Forgot password?','¿Olvidaste tu contraseña?','Password dimenticata?')}
+              </button>
+            </div>
+
             {/* Erreur */}
             {error && (
               <div style={{
@@ -297,8 +368,9 @@ export default function LoginPage() {
             {/* Bouton connexion */}
             <button
               type="submit"
+              data-testid="login-submit"
               className="public-btn-primary"
-              disabled={loading}
+              disabled={loading || demoLoading}
               style={{
                 width: '100%', padding: '14px',
                 fontSize: 15, fontWeight: 800,
@@ -323,41 +395,40 @@ export default function LoginPage() {
             {/* Séparateur */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
               <div style={{ flex: 1, height: 1, background: 'var(--public-border)' }}/>
-              <span style={{ fontSize: 11, color: 'var(--public-text-3)', fontWeight: 600 }}>{i('ACCÈS DÉMO','DEMO ACCESS','ACCESO DEMO','ACCESSO DEMO')}</span>
+              <span style={{ fontSize: 11, color: 'var(--public-text-3)', fontWeight: 600 }}>{i('OU','OR','O','O')}</span>
               <div style={{ flex: 1, height: 1, background: 'var(--public-border)' }}/>
             </div>
 
-            {/* Boutons démo (5 rôles) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(110px,1fr))', gap: 8 }}>
-              {([
-                { label: i('Admin','Admin','Administrador','Amministratore'),     email: 'admin@habashop.com',      Icon: Crown,        color: 'rgba(124,58,237,.15)', border: 'rgba(124,58,237,.35)',  text: '#A78BFA'  },
-                { label: i('Manager','Manager','Gerente','Manager'),   email: 'manager@habashop.com',    Icon: Briefcase,    color: 'rgba(0,208,132,.12)',  border: 'rgba(0,208,132,.28)', text: '#34D399' },
-                { label: i('Caissier','Cashier','Cajero','Cassiere'),  email: 'cashier@habashop.com',    Icon: ShoppingCart, color: 'rgba(0,184,255,.1)',   border: 'rgba(0,184,255,.25)', text: '#38BDF8' },
-                { label: i('Comptable','Accountant','Contable','Contabile'), email: 'accountant@habashop.com', Icon: Calculator,   color: 'rgba(234,179,8,.12)',  border: 'rgba(234,179,8,.30)', text: '#FBBF24' },
-                { label: i('RH','HR','RR. HH.','Risorse Umane'),        email: 'hr@habashop.com',         Icon: Users,        color: 'rgba(244,114,182,.12)',border: 'rgba(244,114,182,.28)', text: '#F472B6' },
-              ] as { label: string; email: string; Icon: LucideIcon; color: string; border: string; text: string }[]).map(demo => (
-                <button
-                  key={demo.label}
-                  type="button"
-                  onClick={() => { setEmail(demo.email); setPassword('demo1234'); setError('') }}
-                  style={{
-                    padding: '9px',
-                    background: demo.color,
-                    border: `1px solid ${demo.border}`,
-                    borderRadius: 10, cursor: 'pointer',
-                    color: demo.text, fontSize: 12, fontWeight: 700,
-                    fontFamily: 'var(--font)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    transition: 'opacity .15s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '.8'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
-                >
-                  <demo.Icon size={13} strokeWidth={2.4} />
-                  {demo.label}
-                </button>
-              ))}
-            </div>
+            {/* Accès démo — un seul bouton (remplace les 5 rôles) */}
+            <button
+              type="button"
+              data-testid="login-demo"
+              onClick={handleDemo}
+              disabled={loading || demoLoading}
+              style={{
+                width: '100%', padding: '13px',
+                background: 'transparent',
+                border: '1px solid var(--border3)',
+                borderRadius: 12,
+                color: 'var(--public-text)', fontSize: 14, fontWeight: 700,
+                fontFamily: 'var(--font)', cursor: demoLoading ? 'wait' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+                minHeight: 48, transition: 'background .15s, border-color .15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(124,92,255,.08)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            >
+              {demoLoading ? (
+                <>
+                  <span style={{
+                    width: 16, height: 16, borderRadius: '50%',
+                    border: '2px solid var(--public-border)', borderTopColor: 'var(--public-primary-2)',
+                    animation: 'spin 1s linear infinite', display: 'inline-block', flexShrink: 0,
+                  }}/>
+                  {i('Ouverture de la démo…','Opening demo…','Abriendo la demo…','Apertura demo…')}
+                </>
+              ) : <><Sparkles size={16} strokeWidth={2.4} style={{ color: 'var(--public-gold)' }} /> {i('Explorer la démo','Explore the demo','Explorar la demo','Esplora la demo')}</>}
+            </button>
           </form>
 
           {/* Footer */}
@@ -374,6 +445,7 @@ export default function LoginPage() {
       </div>
 
       <style>{`
+        .login-back-link:hover { color: var(--public-text) !important; }
         @media (max-width: 768px) {
           body .login-grid { grid-template-columns: 1fr !important; }
           body .login-brand { display: none !important; }
