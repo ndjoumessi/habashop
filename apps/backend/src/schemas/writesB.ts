@@ -1,0 +1,85 @@
+import { z } from 'zod'
+
+// Schémas de validation (item 6, lot 4B) — employees / expenses / goals /
+// subscriptions / stockTransfers. Les règles métier (champs requis avec message
+// dédié, gardes RBAC) restent dans les handlers ; ici on valide types + structure
+// et on ferme le mass-assignment là où le body brut atteignait Prisma.
+
+export const ID_PARAMS = z.object({ id: z.string().min(1) })
+
+// ── Employees ── (handler mappe explicitement → passthrough, non vulnérable) ──
+const EMPLOYEE_FIELDS = {
+  name:     z.string().optional(),          // « Nom requis » reste géré par le handler
+  role:     z.string().optional(),
+  dept:     z.string().optional(),
+  type:     z.string().optional(),
+  salary:   z.coerce.number().optional(),
+  phone:    z.string().nullish(),
+  email:    z.string().nullish(),
+  address:  z.string().nullish(),
+  photo:    z.string().nullish(),
+  isActive: z.boolean().optional(),
+  color:    z.string().optional(),
+  hiredAt:  z.any().optional(),
+  perf:     z.coerce.number().optional(),
+  avatar:   z.string().optional(),
+}
+export const EMPLOYEE_CREATE = z.object(EMPLOYEE_FIELDS).passthrough()
+export const EMPLOYEE_UPDATE = z.object(EMPLOYEE_FIELDS).passthrough()
+
+// ── Expenses ── (create/update passaient le body BRUT à Prisma → mass-assignment) ──
+// Liste blanche STRICTE (strip) : tenantId/id/timestamps injectés sont supprimés.
+const EXPENSE_FIELDS = {
+  date:      z.any().optional(),
+  label:     z.string().optional(),
+  category:  z.string().optional(),
+  amountHT:  z.coerce.number().optional(),
+  vat:       z.coerce.number().optional(),
+  amountTTC: z.coerce.number().optional(),
+  mode:      z.string().optional(),
+  recurrent: z.boolean().optional(),
+  status:    z.string().optional(),
+  notes:     z.string().nullish(),
+}
+export const EXPENSE_CREATE = z.object({ ...EXPENSE_FIELDS, label: z.string().min(1) })
+export const EXPENSE_UPDATE = z.object(EXPENSE_FIELDS)
+
+// ── Goals ── (handler mappe explicitement ; label/target requis restent au handler) ──
+const GOAL_FIELDS = {
+  label:        z.string().optional(),
+  target:       z.coerce.number().optional(),
+  current:      z.coerce.number().optional(),
+  unit:         z.string().optional(),
+  period:       z.string().optional(),
+  color:        z.string().optional(),
+  icon:         z.string().optional(),
+  category:     z.string().optional(),
+  linkedMetric: z.string().nullish(),
+}
+export const GOAL_CREATE = z.object(GOAL_FIELDS).passthrough()
+export const GOAL_UPDATE = z.object(GOAL_FIELDS).passthrough()
+
+// ── Subscriptions ── (handler mappe explicitement) ──
+const SUB_ITEM = z.object({}).passthrough()
+export const SUB_CREATE = z.object({
+  customerId: z.string().min(1),
+  name:       z.string().min(1),
+  dayOfWeek:  z.coerce.number(),
+  note:       z.string().nullish(),
+  items:      z.array(SUB_ITEM).min(1),
+}).passthrough()
+export const SUB_UPDATE = z.object({
+  name:      z.string().optional(),
+  dayOfWeek: z.coerce.number().optional(),
+  status:    z.string().optional(),
+  note:      z.string().nullish(),
+  items:     z.array(SUB_ITEM).optional(),
+}).passthrough()
+
+// ── StockTransfers create ── (toTenantId/productId requis restent aussi au handler) ──
+export const TRANSFER_CREATE = z.object({
+  toTenantId: z.string().min(1),
+  productId:  z.string().min(1),
+  quantity:   z.coerce.number(),
+  note:       z.string().nullish(),
+}).passthrough()

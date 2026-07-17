@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { ID_PARAMS, GOAL_CREATE, GOAL_UPDATE } from '../schemas/writesB'
 
 interface GoalBody {
   label?:        string
@@ -23,7 +24,7 @@ export async function goalsRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
-  app.post('/api/goals', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/goals', { preHandler: authenticate, schema: { body: GOAL_CREATE } }, async (request, reply) => {
     const { tenantId, userId } = request.user
     const b = request.body as GoalBody
     if (!b.label?.trim() || b.target === undefined || b.target === null) {
@@ -53,7 +54,7 @@ export async function goalsRoutes(app: FastifyInstance): Promise<void> {
     return reply.code(201).send(goal)
   })
 
-  app.put('/api/goals/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.put('/api/goals/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: GOAL_UPDATE } }, async (request, reply) => {
     const { tenantId, userId } = request.user
     const { id } = request.params as { id: string }
     const existing = await prisma.goal.findFirst({ where: { id, tenantId, deletedAt: null } })
@@ -83,7 +84,7 @@ export async function goalsRoutes(app: FastifyInstance): Promise<void> {
     return updated
   })
 
-  app.delete('/api/goals/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.delete('/api/goals/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId, userId } = request.user
     const { id } = request.params as { id: string }
     const existing = await prisma.goal.findFirst({ where: { id, tenantId, deletedAt: null } })

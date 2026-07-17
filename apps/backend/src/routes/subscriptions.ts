@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { ID_PARAMS, SUB_CREATE, SUB_UPDATE } from '../schemas/writesB'
 
 const MANAGER_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER']
 
@@ -60,7 +61,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // POST /api/subscriptions — créer (MANAGER+)
-  app.post('/api/subscriptions', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/subscriptions', { preHandler: authenticate, schema: { body: SUB_CREATE } }, async (request, reply) => {
     const { tenantId, role } = request.user
     if (!MANAGER_ROLES.includes(role)) return reply.code(403).send({ error: 'Accès réservé aux managers' })
     const { customerId, name, dayOfWeek, note, items } = request.body as any
@@ -96,7 +97,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // PUT /api/subscriptions/:id — mettre à jour (MANAGER+)
-  app.put('/api/subscriptions/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.put('/api/subscriptions/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: SUB_UPDATE } }, async (request, reply) => {
     const { tenantId, role } = request.user
     if (!MANAGER_ROLES.includes(role)) return reply.code(403).send({ error: 'Accès réservé aux managers' })
     const { id } = request.params as { id: string }
@@ -143,7 +144,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // DELETE /api/subscriptions/:id — annuler (soft: status=cancelled)
-  app.delete('/api/subscriptions/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.delete('/api/subscriptions/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId, role } = request.user
     if (!MANAGER_ROLES.includes(role)) return reply.code(403).send({ error: 'Accès réservé aux managers' })
     const { id } = request.params as { id: string }

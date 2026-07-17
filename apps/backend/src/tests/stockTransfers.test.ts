@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 const { db, authMock } = vi.hoisted(() => ({
@@ -24,6 +25,7 @@ import { stockTransferRoutes } from '../routes/stockTransfers'
 
 async function buildApp() {
   const app = Fastify()
+  app.setValidatorCompiler(validatorCompiler)
   app.addContentTypeParser('application/json', { parseAs: 'string' }, (_r, body: string, done) => done(null, body ? JSON.parse(body) : {}))
   await app.register(stockTransferRoutes)
   await app.ready()
