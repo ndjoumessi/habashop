@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { X, Smartphone, AlertTriangle, AlertCircle, Loader2, TestTube, CreditCard, Coins, Waves, Wallet, Split, Check, Printer } from 'lucide-react'
+import { X, Smartphone, AlertTriangle, AlertCircle, Loader2, TestTube, CreditCard, Coins, Waves, Wallet, Split, Check, Printer, Percent } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
-import { t, CURRENCY_SYMBOLS } from '@/stores/appStore'
+import { t, CURRENCY_SYMBOLS, formatInCurrency } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
 import POSCashField from '@/components/pos/POSCashField'
@@ -54,6 +54,7 @@ interface POSModalsProps {
   paydunyaOk?: boolean; onPaydunyaStart?: () => void
   // « dont TVA » sous le total (spec §2) + total en devise d'affichage (raccourcis espèces)
   tvaAmount?: number
+  tvaRate?: number
   totalDisplay?: number
   // MTN MoMo — flux USSD polling dans la modale de confirmation
   mtnPhone: string; setMtnPhone: (v: string) => void
@@ -75,7 +76,7 @@ interface POSModalsProps {
   onCardRetry: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cashierName = '', closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, PAY_MODES, setPayMode, isOnline = true, setCashGiven, monnaie, currencySymbol, mixedOn, mixedValid, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, paydunyaOk = false, onPaydunyaStart, tvaAmount = 0, totalDisplay, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cashierName = '', closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, PAY_MODES, setPayMode, isOnline = true, setCashGiven, monnaie, currencySymbol, mixedOn, mixedValid, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, paydunyaOk = false, onPaydunyaStart, tvaAmount = 0, tvaRate = 0, totalDisplay, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
@@ -151,9 +152,9 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:8 }}>Type de remise</label>
               <ResponsiveGrid min={160} gap={8}>
                 {([
-                  { type:'percent', label:'Pourcentage (%)', icon:'%' },
-                  { type:'amount',  label:'Montant fixe',    icon:'F' },
-                ] as { type:'percent'|'amount'; label:string; icon:string }[]).map(rt => (
+                  { type:'percent', label:'Pourcentage (%)', icon:<Percent size={22} /> },
+                  { type:'amount',  label:'Montant fixe',    icon:<Coins size={22} /> },
+                ] as { type:'percent'|'amount'; label:string; icon:JSX.Element }[]).map(rt => (
                   <button key={rt.type} onClick={() => setDiscountForm(f => ({...f, type:rt.type}))} style={{
                     padding:'12px', borderRadius:10, cursor:'pointer', fontFamily:'var(--font)',
                     fontSize:13, fontWeight:'var(--fw-regular)', transition:'all .15s',
@@ -162,7 +163,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     color: discountForm.type === rt.type ? 'var(--p2)' : 'var(--text2)',
                     display:'flex', flexDirection:'column', alignItems:'center', gap:6,
                   }}>
-                    <span style={{ fontSize:22, fontWeight:'var(--fw-semibold)' }}>{rt.icon}</span>
+                    <span style={{ display:'flex' }}>{rt.icon}</span>
                     {rt.label}
                   </button>
                 ))}
@@ -193,12 +194,12 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               </label>
               <div style={{ position:'relative' }}>
                 <input className="input" type="number"
-                  placeholder={discountForm.type === 'percent' ? 'Ex: 12' : 'Ex: 5000'}
+                  placeholder={discountForm.type === 'percent' ? 'Ex: 12' : currency === 'XOF' || currency === 'XAF' ? 'Ex: 5000' : 'Ex: 5'}
                   value={discountForm.value || ''}
                   onChange={e => setDiscountForm(f => ({...f, value:+e.target.value}))}
-                  style={{ paddingRight:50 }} />
+                  style={{ paddingRight:60 }} />
                 <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text3)' }}>
-                  {discountForm.type === 'percent' ? '%' : 'F'}
+                  {discountForm.type === 'percent' ? '%' : currencySymbol}
                 </span>
               </div>
               {discountForm.value > 0 && (
@@ -207,7 +208,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)' }}>
                     − {discountForm.type === 'percent'
                       ? fmt(subtotalBeforeDiscount * discountForm.value / 100)
-                      : fmt(discountForm.value)}
+                      : formatInCurrency(discountForm.value, currency)}
                   </span>
                 </div>
               )}
@@ -226,9 +227,11 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 onClick={() => {
                   if (!discountForm.value) { toast.error('Entrez une valeur'); return }
                   if (discountForm.type === 'percent' && discountForm.value > 100) { toast.error('Max 100 %'); return }
-                  setDiscount(discountForm)
+                  // Saisie en devise d'AFFICHAGE → stockée en XOF (convention formulaires) ;
+                  // en XOF/XAF (taux 1) strictement identique à l'existant.
+                  setDiscount(discountForm.type === 'amount' ? { ...discountForm, value: toXOF(discountForm.value) } : discountForm)
                   setShowDiscountModal(false)
-                  toast.success(`Remise de ${discountForm.type === 'percent' ? discountForm.value + ' %' : fmt(discountForm.value)} appliquée`)
+                  toast.success(`Remise de ${discountForm.type === 'percent' ? discountForm.value + ' %' : formatInCurrency(discountForm.value, currency)} appliquée`)
                 }}>
                 Appliquer la remise
               </button>
@@ -460,7 +463,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               </div>
               {tvaAmount > 0 && (
                 <div style={{ color: 'var(--text3)', fontSize: 11, marginTop: 4 }}>
-                  {lang === 'en' ? 'incl. VAT' : lang === 'es' ? 'IVA incl.' : lang === 'it' ? 'IVA incl.' : 'dont TVA'}{' '}
+                  {lang === 'en' ? 'incl. VAT' : lang === 'es' ? 'IVA incl.' : lang === 'it' ? 'IVA incl.' : 'dont TVA'}
+                  {tvaRate > 0 ? ` (${tvaRate} %)` : ''}{' · '}
                   <span style={{ fontFamily: 'var(--mono)' }}>{fmt(Math.round(tvaAmount))}</span>
                 </div>
               )}

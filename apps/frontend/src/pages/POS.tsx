@@ -1157,7 +1157,7 @@ export default function POS() {
         mixedM1={mixedM1} setMixedM1={setMixedM1} mixedM2={mixedM2} setMixedM2={setMixedM2}
         mixedAmt1={mixedAmt1} setMixedAmt1={setMixedAmt1} mixedAmt2XOF={mixedAmt2XOF}
         paydunyaOk={paydunyaOk} onPaydunyaStart={startPaydunyaPayment}
-        tvaAmount={tva} totalDisplay={fromXOF(netTotal)}
+        tvaAmount={tva} tvaRate={posTaxRate} totalDisplay={fromXOF(netTotal)}
         mtnPhone={mtnPhone} setMtnPhone={handleMtnPhone}
         mtnStatus={mtnStatus} mtnError={mtnError}
         startMtnPayment={startMtnPayment} onMtnRetry={onMtnRetry}
