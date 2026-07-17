@@ -77,6 +77,7 @@ Helpers : `makeI(lang)` (settings), `pick(lang, obj)`.
 - **Montants** : `useFormatAmount()`/`fmt()` — jamais formatage manuel.
 - **Icônes** : Lucide uniquement (pas d'emoji UI), `cursor:pointer` + transitions.
 - **Couleurs** : `var(--)` systématiquement (9 thèmes). Exceptions : palettes sémantiques, Google Maps, PDF, `.public-scope`, `#fff` boutons colorés, défs thème. ⚠️ FS macOS : ne pas créer `Button.tsx`/`Tabs.tsx`/`Tooltip.tsx` (collision shadcn minuscules).
+- **Branding / thème** : logo **« Sac + H »** = composant `components/ui/LogoMark.tsx` (SVG, violet `#6C47FF` + or) — utilisé Sidebar/Login/PWA/SelectShop/Landing. Assets dans `public/` + `mobile/assets/` (source éditable : `../habashop-brand/`). **Mode sombre = « NKONI »** (bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `--border3` glow violet sur cartes clés, CTA `--grad-p` violet→bleu) ; refonte **sombre uniquement** (clair/soleil + thèmes alternatifs `darker/midnight/forest/ocean` intacts). Police UI = **Geist** (`@fontsource-variable/geist`, `--font`) ; mono = JetBrains. `THEMES.dark.vars` (appStore) **doit rester synchro** avec le `:root` sombre d'`index.css` (sinon `applyTheme` réintroduit l'ancien fond) ; miroir `BASE` de `contrast-aa.test.ts` idem.
 - **Graisses** : `--fw-regular/--fw-semibold/--fw-bold` uniquement. Exclusions : PDF, SVG Maps, `.public-scope`.
 - **Toasts** : sans emoji. Mutations clés → `announce(msg)` (`@/lib/announce`) + `toast.success`.
 - **Modales** : `useModalFocus<HTMLDivElement>()` + `ref` sur `.modal-box` + `role="dialog"`/`aria-modal`/`aria-label`. ⚠️ `aria-grabbed`/`aria-dropeffect` = dépréciés.
@@ -131,7 +132,7 @@ Backend autoritaire : `loyaltyDiscount = total × tierPct` (plafond 50%), `sale.
 
 ### Tests
 - **Front : 405 vitest** (helpers purs + anchor tests + contraste AA 9 thèmes). **Back : 430 vitest** (prisma mocké `vi.mock('../db')`, routes via `app.inject()`, mock `authenticate` via `vi.hoisted`). OCR : `vi.hoisted()` + classe constructeur.
-- **E2E Playwright** : live prod, `storageState` `e2e/.auth/user.json`, `workers:1`. **Un seul `page.goto` par test** (2ᵉ → logout). Reset langue : `PATCH /api/tenant {lang:'fr'}` afterEach/afterAll.
+- **E2E Playwright** : live prod sur **tenant dédié `e2e-tenant`** (EUR, `requireCashier=true`, compte `e2e@habashop.com` SUPER_ADMIN mono-boutique) — issue #5 close. Fixtures **statiques** via `apps/backend/scripts/seed-e2e-tenant.ts` (idempotent, guard `E2E_SEED=1` + scope `e2e-tenant`, **manuel** ; jamais demo/prod). Fixtures **datées** (ventes du jour → `dashboard-donut`) créées par API dans `auth.setup` (`e2e/helpers/fixtures.ts`, **pas de secret DB** en repo public). `auth.setup` login `e2e@` ; `e2e/helpers/preconditions.ts` + `test.skip` conditionnels = garde-fou (0 skip nominal). `storageState` `e2e/.auth/user.json`, `workers:1`. **Smoke : navigation par clic** (pas `page.goto` après login → logout cold-start).
 - **A11y** : `useModalFocus` (34 modales), `announce()` (8 domaines), skip-link, `*:focus-visible`, `prefers-reduced-motion`.
 
 ## Règles devise / montants ⚠️

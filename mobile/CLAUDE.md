@@ -49,7 +49,8 @@ App mobile React Native (iOS + Android) — caisse POS, stock, dashboard, client
 ## Compte EAS / versions
 - `ndjoumessi` · Project ID : `e7399d7a-e5ba-4e30-a333-8cff7ad10eb4` · Keystore Android : `sH_oz3rpgx`.
 - `appVersionSource: remote` → versionCode géré EAS. `runtimeVersion.policy = appVersion` → **bump version = change runtime** (OTA = même runtime seulement ; sinon build natif requis).
-- **Version courante : 1.4.3** / runtime **1.4.3**. Label Réglages : `Constants.expoConfig?.version`.
+- **`app.json` = 1.5.0** (runtime 1.5.0) MAIS **build natif 1.5.0 JAMAIS fait** (quota EAS Free). Le **device tourne encore en runtime 1.4.3**. → OTA vers le device = **swap temporaire `app.json` version→1.4.3**, `eas update --branch preview`, restaure 1.5.0 (non commité). Le build 1.5.0 (à faire quand quota débloqué : reset 1er août / upgrade) embarquera **logo Sac+H + police Geist**.
+- ⚠️ **Polices `@expo-google-fonts` non livrables par OTA** (.ttf bundlées au build natif seulement) → mobile reste en **Outfit** ; Geist attend le build 1.5.0 (issue #13). Label Réglages : `Constants.expoConfig?.version`.
 - Play Store : AAB v1.2.0 (`1f6bf56f`). `assets/feature_graphic.png` (1024×500). Politique : `https://habashop.vercel.app/privacy`. iOS : `IOS_BUILD.md`.
 
 ---
@@ -118,7 +119,9 @@ Montants DB en **XOF**, `fmt()` à l'affichage. Montant saisi → **`convertToXO
 ## Endpoints API (vérifiés)
 | Endpoint | M | Forme / piège |
 |----------|---|---------------|
-| `/api/auth/login` | POST | `{ token, user, tenant }` |
+| `/api/auth/login` | POST | `{ token, user, tenant, tenants[], activeTenantId }`. ⚠️ **Multi-boutiques v2** : compte lié à ≠1 boutique → `tenant:null` + `activeTenantId:null` → routes tenant-scopées **400 `NO_ACTIVE_TENANT`**. `authApi.login()` **auto-sélectionne `tenants[0]`** (switch-tenant) ; `restoreSession` idem si token stocké sans boutique active. Sélecteur complet = suivi (#9). |
+| `/api/auth/tenants` | GET | `[{id,name,…}]` boutiques accessibles (token courant) |
+| `/api/auth/switch-tenant` | POST | `{tenantId}` → `{ token, tenant, activeTenantId, role }` (nouveau JWT) |
 | `/api/auth/me` | GET | ⚠️ À PLAT `{ id, name, email, role, shopName, currency }` — PAS `{user,tenant}` |
 | `/api/tenant` | GET | `{ currency, vatRate, posVatIncluded, priceMode, plan, lang, enableLoyalty… }` |
 | `/api/products` | GET | `[{ id, name, sellPrice, emoji, stockQty, stockMin, barcode, priceTiers?, promotionPrice? }]` — `ean` n'existe PAS |
@@ -227,7 +230,10 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ---
 
 ## État courant
-- `main`, `tsc` 0, **141 tests verts**. Version **1.4.3** / runtime **1.4.3**.
+- **Monorepo** : le mobile vit désormais dans `ndjoumessi/habashop` sous `mobile/` (les repos `habashop-mobile`/`-legal` sont archivés). `.env` mobile non commité (gitignored).
+- `main`, `tsc` 0, **141 tests verts**. `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
+- **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`). Police = **Outfit** (Geist attend le build natif, #13).
+- **En attente du build natif 1.5.0** (quota EAS) : **logo Sac+H** (icône/splash) + **police Geist**.
 - **Validé device (2026-05-27, APK `382fe2ec`) :** scanner EAN13 ✅, thème clair ✅, kiosque+PIN ✅, encaissement→API ✅, biométrie ✅, suppression compte (scénario ADMIN seul→cascade tenant) ✅.
 - **À valider device :** offline+resync (cache à froid + abandon 3 retries), push (3 types + tap nav), ticket WhatsApp, widget (dev build), TalkBack, carte QR, OCR MANAGER+, **mode soleil en conditions réelles** (plein soleil extérieur).
 - **Différé :** Play Store (AAB `1f6bf56f` prêt, captures à faire) ; layouts tablette (iPad) ; build iOS réel ; Wave/Orange prod.
