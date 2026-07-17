@@ -1,6 +1,7 @@
 import { t, formatInCurrency } from '@/stores/appStore'
 import type { Currency } from '@/stores/appStore'
 import type { CartItem } from './posShared'
+import { printableAmount } from '@/utils/export'
 
 interface PrintTicketParams {
   lang: string
@@ -23,7 +24,10 @@ interface PrintTicketParams {
 
 // Ouvre une fenêtre d'impression avec le ticket de caisse formaté (80mm).
 export function printTicket(p: PrintTicketParams) {
-  const { lang, locale, cart, discount, discountAmount, totalHT, tva, posTaxRate, total, payMode, cashGiven, currency, monnaie, fmt, mixed } = p
+  const { lang, locale, cart, discount, discountAmount, totalHT, tva, posTaxRate, total, payMode, cashGiven, currency, monnaie, fmt: rawFmt, mixed } = p
+  // Corps du ticket en 'Courier New' (monospace) : sans glyphe U+202F, le séparateur
+  // de milliers d'Intl fr-FR est rendu « / » (« 2 /800 ») → normalisation systématique.
+  const fmt = (n: number) => printableAmount(rawFmt(n))
   const mLabel = (m: 'cash'|'mobile'|'card') => m === 'cash' ? t('pos_cash') : m === 'card' ? t('pos_card') : t('pos_mobile')
   // Bloc paiement : mixte (2 lignes) si fourni, sinon ligne unique + reçu/monnaie.
   const paymentRows = mixed
@@ -34,7 +38,7 @@ export function printTicket(p: PrintTicketParams) {
       ].join('')
     : `<div class="row" style="margin-top:6px;"><span>${t('pos_ticket_payment')}</span><span>${payMode === 'cash' ? t('pos_cash') : payMode === 'card' ? t('pos_card') : t('pos_mobile')}</span></div>` +
       (cashGiven ? `
-    <div class="row"><span>${t('pos_ticket_received')}</span><span>${formatInCurrency(parseFloat(cashGiven), currency)}</span></div>
+    <div class="row"><span>${t('pos_ticket_received')}</span><span>${printableAmount(formatInCurrency(parseFloat(cashGiven), currency))}</span></div>
     <div class="row bold"><span>${t('pos_ticket_change')}</span><span>${fmt(Math.max(monnaie, 0))}</span></div>
   ` : '')
   const win = window.open('', '_blank', 'width=400,height=600')
