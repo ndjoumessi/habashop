@@ -1,4 +1,5 @@
 import { timingSafeEqual, createHmac } from 'crypto'
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import { authenticate } from '../middleware/authenticate'
 import { collect, getStatus, getPaymentLink } from '../services/campay'
@@ -37,17 +38,15 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/payments/campay/request', {
     preHandler: [authenticate],
     config:     { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    schema: {
+      body: z.object({
+        amount:      z.coerce.number().positive({ message: 'Montant invalide' }),
+        phoneNumber: z.string().trim().min(1, { message: 'Numéro de téléphone requis' }),
+        operator:    z.enum(['orange', 'mtn']).optional(),
+      }),
+    },
   }, async (request: any, reply: any) => {
-    const { amount, phoneNumber, operator } = (request.body ?? {}) as {
-      amount?:      number
-      phoneNumber?: string
-      operator?:    'orange' | 'mtn'
-    }
-
-    if (!amount || amount <= 0)
-      return reply.code(400).send({ error: 'Montant invalide' })
-    if (!phoneNumber)
-      return reply.code(400).send({ error: 'Numéro de téléphone requis' })
+    const { amount, phoneNumber, operator } = request.body as { amount: number; phoneNumber: string; operator?: 'orange' | 'mtn' }
 
     // XOF → XAF : parité 1:1 (arrondi entier).
     // Sandbox Campay : montant limité à 25 XAF max — on force 10 pour les tests.

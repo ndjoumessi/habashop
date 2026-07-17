@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import { authenticate } from '../middleware/authenticate'
 import { requestToPay, getPaymentStatus } from '../services/mtnMomo'
@@ -15,17 +16,15 @@ export async function mtnPaymentRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/payments/mtn/request', {
     preHandler: [authenticate],
     config:     { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    schema: {
+      body: z.object({
+        amount:      z.coerce.number().positive({ message: 'Montant invalide' }),
+        phoneNumber: z.string().trim().min(1, { message: 'Numéro de téléphone requis' }),
+        saleId:      z.string().trim().min(1).optional(),
+      }),
+    },
   }, async (request: any, reply: any) => {
-    const { amount, phoneNumber, saleId } = (request.body ?? {}) as {
-      amount?:      number
-      phoneNumber?: string
-      saleId?:      string
-    }
-
-    if (!amount || amount <= 0)
-      return reply.code(400).send({ error: 'Montant invalide' })
-    if (!phoneNumber)
-      return reply.code(400).send({ error: 'Numéro de téléphone requis' })
+    const { amount, phoneNumber, saleId } = request.body as { amount: number; phoneNumber: string; saleId?: string }
 
     const externalId = saleId ?? crypto.randomUUID()
 

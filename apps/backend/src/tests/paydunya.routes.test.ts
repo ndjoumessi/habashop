@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 import { createHash } from 'crypto'
 
 const { db } = vi.hoisted(() => ({
@@ -17,6 +18,7 @@ import { paydunyaPaymentRoutes } from '../routes/paydunyaPayment'
 
 async function buildApp() {
   const app = Fastify()
+  app.setValidatorCompiler(validatorCompiler)
   // Même parser urlencoded que server.ts (clés à plat data[...]).
   app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (_r, body: string, done) => {
     try { done(null, { _form: Object.fromEntries(new URLSearchParams(body)) }) } catch (e) { done(e as Error) }

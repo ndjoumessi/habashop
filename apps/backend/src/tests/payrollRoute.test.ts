@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 
 const { db, sendSpy } = vi.hoisted(() => ({
   db: {
@@ -29,6 +30,7 @@ const tenantRec = (over: Record<string, any> = {}) => ({
 
 async function buildApp() {
   const app = Fastify()
+  app.setValidatorCompiler(validatorCompiler)
   await app.register(payrollRoutes)
   await app.ready()
   return app
