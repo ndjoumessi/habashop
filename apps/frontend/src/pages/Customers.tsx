@@ -20,7 +20,7 @@ import CustomerMap from '@/components/customers/CustomerMap'
 import CustomersList from '@/components/customers/CustomersList'
 import CustomersStats from '@/components/customers/CustomersStats'
 import CustomersModals from '@/components/customers/CustomersModals'
-import { type ClientType, type Customer, mapApiCustomer, useGoogleMaps, GMAPS_KEY } from '@/components/customers/customersShared'
+import { type ClientType, type Customer, mapApiCustomer, useGoogleMaps, GMAPS_KEY, AmountCur } from '@/components/customers/customersShared'
 
 export default function Customers() {
   const { lang } = useConfig()
@@ -288,7 +288,7 @@ export default function Customers() {
         {[
           { label: t('customers_total'),     value: customers.length.toString(), hex: 'var(--p)', icon: <Users size={18} /> },
           { label: t('customers_active'),    value: activeThisMonth.toString(),  hex: 'var(--acc2)', icon: <UserCheck size={18} /> },
-          { label: t('customers_avg_cart'),  value: fmt(avgCart),                hex: 'var(--acc)', icon: <ShoppingCart size={18} /> },
+          { label: t('customers_avg_cart'),  value: <AmountCur xof={avgCart} suffixSize={12} />, hex: 'var(--acc)', icon: <ShoppingCart size={18} /> },
           { label: t('customers_retention'), value: `${retentionRate}%`,         hex: 'var(--acc3)', icon: <TrendingUp size={18} /> },
         ].map(k => (
           /* KPI compact (icône + label + valeur sur une ligne) — densité dashboard NKONI, sans espace mort */

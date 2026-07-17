@@ -5,7 +5,7 @@ import { generateInvoice } from '@/utils/export'
 import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import FilterSelect from '@/components/ui/FilterSelect'
-import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyTier } from '@/components/customers/customersShared'
+import { type Customer, type ClientType, TYPE_CFG, typeLabel, LoyaltyBar, loyaltyTier, AmountCur } from '@/components/customers/customersShared'
 
 interface CustomersListProps {
   customers: Customer[]
@@ -127,7 +127,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     <td><span className={`badge ${TYPE_CFG[c.type].cls}`}>{typeLabel(c.type, lang)}</span></td>
                     <td className="td-mono">{c.phone}</td>
                     <td className="td-num" style={{ color: 'var(--text2)' }}>{c.purchasesPerMonth}×</td>
-                    <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(c.totalCA)}</td>
+                    <td className="td-num" style={{ color: 'var(--acc2)' }}><AmountCur xof={c.totalCA} /></td>
                     <td style={{ minWidth: 100 }}><LoyaltyBar points={c.loyaltyPoints} /></td>
                     <td>
                       <div className="flex gap-1">
@@ -234,7 +234,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                   {/* MÉTRIQUES : 3 blocs */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, background: 'var(--border)', borderTop: '1px solid var(--border)' }}>
                     {[
-                      { label: i('CA', 'Rev.', 'Ing.', 'Fatt.'), value: fmt(c.totalCA ?? 0), color: '#FF9500' },
+                      { label: i('CA', 'Rev.', 'Ing.', 'Fatt.'), value: <AmountCur xof={c.totalCA ?? 0} suffixSize={9} />, color: '#FF9500' },
                       { label: i('Cmds', 'Orders', 'Ped.', 'Ord.'), value: String(c.purchasesPerMonth ?? 0), color: tc.h },
                       { label: 'Pts', value: String(c.loyaltyPoints ?? 0), color: '#00D084' },
                     ].map((m, idx) => (
