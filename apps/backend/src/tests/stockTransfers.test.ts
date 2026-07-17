@@ -7,7 +7,7 @@ const { db, authMock } = vi.hoisted(() => ({
   db: {
     userTenant: { findUnique: vi.fn() },
     product: { findFirst: vi.fn(), updateMany: vi.fn(), update: vi.fn(), create: vi.fn() },
-    stockTransfer: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+    stockTransfer: { create: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
     tenant: { findUnique: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -34,6 +34,14 @@ async function buildApp() {
 
 // Helper : exécute le callback de transaction avec un tx = db (mocks partagés).
 const runTx = async (fn: any) => fn(db)
+
+// Mock fidèle au findFirst scopé (item 8-B) : ne renvoie le transfert que si le
+// where matche id + une branche du OR source/destination — comme le ferait Prisma.
+const mockScopedTransfer = (rec: any) => db.stockTransfer.findFirst.mockImplementation(
+  async ({ where }: any) =>
+    where.id === rec.id && where.OR?.some((c: any) => Object.entries(c).every(([k, v]) => rec[k] === v))
+      ? rec : null
+)
 
 const PRODUCT = { id: 'p1', tenantId: 'SRC', sku: 'PRD-0001', name: 'Riz 5kg', category: 'Épicerie', unit: 'sac', buyPrice: 3000, sellPrice: 4000, wholesalePrice: null, semiWholesalePrice: null, stockQty: 50, stockMin: 5, barcode: '123', taxRate: 18, emoji: '🍚', description: '' }
 
@@ -100,7 +108,7 @@ describe('PATCH /api/stock/transfers/:id/confirm', () => {
 
   it('boutique destination → completed + stock dest incrémenté (produit existant)', async () => {
     authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u2', role: 'MANAGER' }; req.tenantId = 'DEST' })
-    db.stockTransfer.findUnique.mockResolvedValue(TRANSFER)
+    mockScopedTransfer(TRANSFER)
     db.product.findFirst.mockResolvedValue({ id: 'pDest', tenantId: 'DEST', sku: 'PRD-0001' }) // existe à dest
     db.tenant.findUnique.mockResolvedValue({ name: 'Boutique DEST' })
     const app = await buildApp()
@@ -114,7 +122,7 @@ describe('PATCH /api/stock/transfers/:id/confirm', () => {
 
   it('produit absent à destination → création (copie source)', async () => {
     authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u2', role: 'MANAGER' }; req.tenantId = 'DEST' })
-    db.stockTransfer.findUnique.mockResolvedValue(TRANSFER)
+    mockScopedTransfer(TRANSFER)
     db.product.findFirst.mockResolvedValue(null) // ni SKU ni barcode
     db.tenant.findUnique.mockResolvedValue({ name: 'Boutique DEST' })
     const app = await buildApp()
@@ -125,7 +133,7 @@ describe('PATCH /api/stock/transfers/:id/confirm', () => {
 
   it('mauvaise boutique (source confirme) → 403', async () => {
     authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u1', role: 'MANAGER' }; req.tenantId = 'SRC' })
-    db.stockTransfer.findUnique.mockResolvedValue(TRANSFER)
+    mockScopedTransfer(TRANSFER)
     const app = await buildApp()
     const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/confirm' })
     // La source est partie au transfert → 403 explicite (elle connaît déjà son existence).
@@ -134,7 +142,7 @@ describe('PATCH /api/stock/transfers/:id/confirm', () => {
 
   it('W1 — boutique tierce confirme → 404 uniforme (pas d\'oracle d\'existence)', async () => {
     authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u9', role: 'MANAGER' }; req.tenantId = 'OTHER' })
-    db.stockTransfer.findUnique.mockResolvedValue(TRANSFER) // le transfert existe (SRC→DEST)…
+    mockScopedTransfer(TRANSFER) // le transfert existe (SRC→DEST) mais le fetch scopé du tiers → null…
     const app = await buildApp()
     const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/confirm' })
     // …mais un tiers reçoit 404, indistinguable de « n'existe pas ». Aucune mutation.
@@ -144,16 +152,26 @@ describe('PATCH /api/stock/transfers/:id/confirm', () => {
 
   it('W1 — boutique tierce confirme un transfert déjà traité → 404 (pas de fuite de statut)', async () => {
     authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u9', role: 'MANAGER' }; req.tenantId = 'OTHER' })
-    db.stockTransfer.findUnique.mockResolvedValue({ ...TRANSFER, status: 'completed' })
+    mockScopedTransfer({ ...TRANSFER, status: 'completed' })
     const app = await buildApp()
     const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/confirm' })
     // Un tiers ne doit PAS distinguer « déjà traité » (400) de « introuvable » (404).
     expect(res.statusCode).toBe(404)
   })
 
+  it('ceinture-bretelles (Q3) — même si le fetch renvoyait le transfert à un tiers, la garde manuelle W1 → 404', async () => {
+    authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u9', role: 'MANAGER' }; req.tenantId = 'OTHER' })
+    // Simule une défaillance du scoping requête : le record est renvoyé BRUT au tiers.
+    db.stockTransfer.findFirst.mockResolvedValue(TRANSFER)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/confirm' })
+    expect(res.statusCode).toBe(404)
+    expect(db.stockTransfer.update).not.toHaveBeenCalled()
+  })
+
   it('transfert déjà traité → 400', async () => {
     authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u2', role: 'MANAGER' }; req.tenantId = 'DEST' })
-    db.stockTransfer.findUnique.mockResolvedValue({ ...TRANSFER, status: 'completed' })
+    mockScopedTransfer({ ...TRANSFER, status: 'completed' })
     const app = await buildApp()
     const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/confirm' })
     expect(res.statusCode).toBe(400)
@@ -165,7 +183,7 @@ describe('PATCH /api/stock/transfers/:id/cancel', () => {
   const TRANSFER = { id: 't1', fromTenantId: 'SRC', toTenantId: 'DEST', productId: 'p1', quantity: 10, status: 'pending', product: { name: 'Riz 5kg' } }
 
   it('annulation par la source → cancelled + stock source restitué', async () => {
-    db.stockTransfer.findUnique.mockResolvedValue(TRANSFER)
+    mockScopedTransfer(TRANSFER)
     db.tenant.findUnique.mockResolvedValue({ name: 'Boutique SRC' })
     const app = await buildApp()
     const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/cancel' })
@@ -176,7 +194,7 @@ describe('PATCH /api/stock/transfers/:id/cancel', () => {
 
   it('W1 — annulation par une boutique tierce → 404 uniforme (pas d\'oracle d\'existence)', async () => {
     authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u9', role: 'MANAGER' }; req.tenantId = 'OTHER' })
-    db.stockTransfer.findUnique.mockResolvedValue(TRANSFER)
+    mockScopedTransfer(TRANSFER)
     const app = await buildApp()
     const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/cancel' })
     // Un tiers (ni source ni destination) reçoit 404, indistinguable de « n'existe pas ».

@@ -32,9 +32,13 @@ const STORE: Record<string, Record<string, any>> = {
 }
 
 const p2025 = () => { const e: any = new Error('Record not found'); e.code = 'P2025'; return e }
+// OR présent dans le where ET aucune branche ne matche le record → aucun match
+// (fidèle à Prisma — exerce le findFirst scopé source/destination des transferts, item 8-B)
+const orMiss = (where: any, rec: any) =>
+  Array.isArray(where?.OR) && !where.OR.some((c: any) => Object.entries(c).every(([k, v]) => rec?.[k] === v))
 // tenantId présent dans le where ET != propriétaire → aucun match
 const scopedOut = (where: any, rec: any) =>
-  !rec || (where?.tenantId !== undefined && where.tenantId !== rec.tenantId)
+  !rec || (where?.tenantId !== undefined && where.tenantId !== rec.tenantId) || orMiss(where, rec)
 
 function model(store: Record<string, any>) {
   return {
