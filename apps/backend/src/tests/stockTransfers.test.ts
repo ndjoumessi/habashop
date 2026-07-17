@@ -126,7 +126,27 @@ describe('PATCH /api/stock/transfers/:id/confirm', () => {
     db.stockTransfer.findUnique.mockResolvedValue(TRANSFER)
     const app = await buildApp()
     const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/confirm' })
+    // La source est partie au transfert → 403 explicite (elle connaît déjà son existence).
     expect(res.statusCode).toBe(403)
+  })
+
+  it('W1 — boutique tierce confirme → 404 uniforme (pas d\'oracle d\'existence)', async () => {
+    authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u9', role: 'MANAGER' }; req.tenantId = 'OTHER' })
+    db.stockTransfer.findUnique.mockResolvedValue(TRANSFER) // le transfert existe (SRC→DEST)…
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/confirm' })
+    // …mais un tiers reçoit 404, indistinguable de « n'existe pas ». Aucune mutation.
+    expect(res.statusCode).toBe(404)
+    expect(db.stockTransfer.update).not.toHaveBeenCalled()
+  })
+
+  it('W1 — boutique tierce confirme un transfert déjà traité → 404 (pas de fuite de statut)', async () => {
+    authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u9', role: 'MANAGER' }; req.tenantId = 'OTHER' })
+    db.stockTransfer.findUnique.mockResolvedValue({ ...TRANSFER, status: 'completed' })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/confirm' })
+    // Un tiers ne doit PAS distinguer « déjà traité » (400) de « introuvable » (404).
+    expect(res.statusCode).toBe(404)
   })
 
   it('transfert déjà traité → 400', async () => {
@@ -152,12 +172,13 @@ describe('PATCH /api/stock/transfers/:id/cancel', () => {
     expect(db.product.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'p1' }, data: { stockQty: { increment: 10 } } }))
   })
 
-  it('annulation par une boutique tierce → 403', async () => {
+  it('W1 — annulation par une boutique tierce → 404 uniforme (pas d\'oracle d\'existence)', async () => {
     authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u9', role: 'MANAGER' }; req.tenantId = 'OTHER' })
     db.stockTransfer.findUnique.mockResolvedValue(TRANSFER)
     const app = await buildApp()
     const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/cancel' })
-    expect(res.statusCode).toBe(403)
+    // Un tiers (ni source ni destination) reçoit 404, indistinguable de « n'existe pas ».
+    expect(res.statusCode).toBe(404)
     expect(db.product.update).not.toHaveBeenCalled()
   })
 })

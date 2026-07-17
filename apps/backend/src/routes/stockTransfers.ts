@@ -100,7 +100,14 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
     const { id } = request.params as { id: string }
 
     const transfer = await prisma.stockTransfer.findUnique({ where: { id }, include: { product: true } })
-    if (!transfer) return reply.code(404).send({ error: 'Transfert introuvable' })
+    // W1 — scope tenant AVANT toute divulgation : un tiers (ni source ni destination)
+    // reçoit un 404 uniforme, identique à « n'existe pas ». On ne révèle jamais l'existence
+    // ni le statut d'un transfert d'autrui (pas d'oracle 403 vs 400 vs 404).
+    // Le statut (400 « déjà traité ») et le rôle (403 « destination seule ») ne sont exposés
+    // qu'aux deux boutiques réellement parties au transfert.
+    if (!transfer || (transfer.fromTenantId !== tenantId && transfer.toTenantId !== tenantId)) {
+      return reply.code(404).send({ error: 'Transfert introuvable' })
+    }
     if (transfer.status !== 'pending') return reply.code(400).send({ error: 'Transfert déjà traité' })
     if (transfer.toTenantId !== tenantId) return reply.code(403).send({ error: 'Seule la boutique destination peut confirmer' })
 
@@ -159,11 +166,12 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
     const { id } = request.params as { id: string }
 
     const transfer = await prisma.stockTransfer.findUnique({ where: { id }, include: { product: { select: { name: true } } } })
-    if (!transfer) return reply.code(404).send({ error: 'Transfert introuvable' })
-    if (transfer.status !== 'pending') return reply.code(400).send({ error: 'Transfert déjà traité' })
-    if (transfer.fromTenantId !== tenantId && transfer.toTenantId !== tenantId) {
-      return reply.code(403).send({ error: 'Accès refusé à ce transfert' })
+    // W1 — même garde uniforme que pour /confirm : un tiers (ni source ni destination)
+    // reçoit un 404 identique à « n'existe pas », sans oracle d'existence/statut.
+    if (!transfer || (transfer.fromTenantId !== tenantId && transfer.toTenantId !== tenantId)) {
+      return reply.code(404).send({ error: 'Transfert introuvable' })
     }
+    if (transfer.status !== 'pending') return reply.code(400).send({ error: 'Transfert déjà traité' })
 
     await prisma.$transaction(async (tx) => {
       await tx.stockTransfer.update({ where: { id }, data: { status: 'cancelled' } })

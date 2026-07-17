@@ -149,8 +149,11 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     const cleaned = phone.replace(/[\s\-\(\)]/g, '').replace(/^00/, '+')
     const waPhone = cleaned.startsWith('+') ? `whatsapp:${cleaned}` : `whatsapp:+${cleaned}`
 
-    // Devise + langue + nom = ceux du TENANT (les montants reçus sont en base XOF).
-    const tenant = await prisma.tenant.findUnique({ where: { id: request.user.tenantId } })
+    // Devise + langue + nom = ceux de la boutique ACTIVE (les montants reçus sont en base XOF).
+    // W2 — `request.tenantId` (boutique active, garantie non-null par authenticate) et non
+    // `request.user.tenantId` (tenant principal du JWT) : sinon un reçu émis depuis la boutique B
+    // serait brandé avec le nom/la devise de la boutique A en multi-boutiques.
+    const tenant = await prisma.tenant.findUnique({ where: { id: request.tenantId as string } })
     const lang = tenant?.lang ?? 'fr'
     const cur  = tenant?.currency || 'XOF'
     const shop = tenant?.name ?? 'HabaShop'
