@@ -1,4 +1,5 @@
 import { isUserActive } from '../lib/userStatus'
+import { bindActiveTenant } from '../lib/tenantContext'
 
 // Chemins accessibles SANS boutique active (sélection multi-boutiques + dashboard consolidé).
 // `request.url` peut contenir une query string → on teste le préfixe du pathname.
@@ -30,6 +31,12 @@ export async function authenticate(request, reply): Promise<void> {
   // Rétro-compat : anciens JWT sans champ activeTenantId → on utilise tenantId.
   const active = u && ('activeTenantId' in u) ? u.activeTenantId : u?.tenantId
   request.tenantId = active ?? null
+
+  // Defense-in-depth (item 8) : renseigne la boutique active dans le store ALS
+  // (établi par le hook onRequest) → l'extension Prisma auto-scope les modèles
+  // tenant-scopés si un handler oublie `where:{ tenantId }`. `null` si aucune
+  // boutique active (sélecteur multi-boutiques, dashboard consolidé) → pas d'injection.
+  bindActiveTenant(request.tenantId)
 
   if (!(await isUserActive(u?.userId))) {
     return reply.code(401).send({ error: 'Compte introuvable' })

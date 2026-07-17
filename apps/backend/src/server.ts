@@ -7,6 +7,7 @@ import multipart from '@fastify/multipart'
 import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
 import { validatorCompiler, hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod'
+import { initTenantStore } from './lib/tenantContext'
 import * as Sentry from '@sentry/node'
 import { prisma } from './db'
 import { redis } from './redis'
@@ -112,6 +113,10 @@ async function start() {
   // un `schema.body/params/querystring` zod sont validées. Les routes sans schéma sont
   // inchangées. Zod strip les clés inconnues et coerce les types déclarés.
   app.setValidatorCompiler(validatorCompiler)
+
+  // Contexte tenant (item 8) : établi au plus tôt (contexte racine de la requête)
+  // pour se propager jusqu'au handler ; `authenticate` y renseigne la boutique active.
+  app.addHook('onRequest', (_req, _reply, done) => { initTenantStore(); done() })
 
   // ─── CORS ───────────────────────────────
   const allowedOrigins = [

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { prisma } from '../db'
+import { prisma, basePrisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { getCached } from '../lib/cache'
 
@@ -140,13 +140,15 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
     today.setHours(0, 0, 0, 0)
 
     const perTenant = await Promise.all(tenantsMeta.map(async (t) => {
+      // Cross-tenant LÉGITIME (boutiques de l'utilisateur) → client NON étendu :
+      // l'extension tenant ne doit jamais restreindre cet agrégat multi-boutiques.
       const [agg, lowStock] = await Promise.all([
-        prisma.sale.aggregate({
+        basePrisma.sale.aggregate({
           where: { tenantId: t.id, status: { not: 'refunded' }, createdAt: { gte: today } },
           _sum: { total: true },
           _count: true,
         }),
-        prisma.product.count({ where: { tenantId: t.id, isActive: true, deletedAt: null, stockQty: { lte: prisma.product.fields.stockMin } } }).catch(() => 0),
+        basePrisma.product.count({ where: { tenantId: t.id, isActive: true, deletedAt: null, stockQty: { lte: basePrisma.product.fields.stockMin } } }).catch(() => 0),
       ])
       return {
         id: t.id,
