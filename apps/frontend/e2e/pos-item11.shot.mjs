@@ -4,7 +4,7 @@ import { readFileSync } from 'fs'
 // Captures écran 1 (item 11 — POS principal) sur le build local `vite preview`.
 // Desktop + mobile étroit + variante hors-ligne, API mockée (aucune vente réelle).
 const BASE = process.env.SHOT_BASE ?? 'http://localhost:4173'
-const OUT = 'playwright-report'
+const OUT = 'e2e/screenshots/item11'
 
 const auth = JSON.parse(readFileSync('e2e/.auth/user.json', 'utf8'))
 const authLS = (auth.origins?.[0]?.localStorage ?? [])
@@ -77,7 +77,7 @@ const browser = await chromium.launch()
 
 // ── Desktop 1440×900 ──
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' })
   const page = await preparePage(ctx)
   await page.goto(`${BASE}/app/pos`)
   await page.getByRole('button', { name: /Riz parfumé/ }).waitFor({ timeout: 20000 })
@@ -93,7 +93,7 @@ const browser = await chromium.launch()
 
 // ── Mobile étroit 390×844 : vue produits puis vue panier ──
 {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
   const page = await preparePage(ctx)
   await page.goto(`${BASE}/app/pos`)
   await page.getByRole('button', { name: /Riz parfumé/ }).waitFor({ timeout: 20000 })
@@ -111,7 +111,7 @@ const browser = await chromium.launch()
 
 // ── Desktop hors-ligne : badge ambre + modes non-cash désactivés ──
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' })
   const page = await preparePage(ctx, { offline: true })
   await page.goto(`${BASE}/app/pos`)
   await page.getByRole('button', { name: /Riz parfumé/ }).waitFor({ timeout: 20000 })
