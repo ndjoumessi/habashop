@@ -613,8 +613,11 @@ export default function CustomersModals({ viewCustomer, setViewCustomer, fmt, la
         </div>
       )}
 
-      {/* Carte fidélité numérique (si enableLoyalty) */}
-      {digitalCardCustomerId && setDigitalCardCustomerId && tenant?.enableLoyalty && (
+      {/* Carte fidélité numérique — le gate programme actif vit AU CLIC (Customers.tsx
+          openLoyaltyCard : toast si désactivé) ; ici on rend dès qu'un id est posé,
+          la carte fetch la donnée serveur autoritaire. Un gate supplémentaire sur
+          tenant?.enableLoyalty rendait le clic MORT (tenant périmé/absent → rien). */}
+      {digitalCardCustomerId && setDigitalCardCustomerId && (
         <Suspense fallback={null}>
           <LoyaltyCardDigital customerId={digitalCardCustomerId} onClose={() => setDigitalCardCustomerId(null)} />
         </Suspense>

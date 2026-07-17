@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useConfig, useFormatAmount, useAbbrevAmount, t } from '@/stores/appStore'
+import { useConfig, useFormatAmount, useAbbrevAmount, useAppStore, convertFromXOF, t } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
 import { customersApi } from '@/lib/api'
-import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown, Navigation2, Globe, Flame, AlertTriangle, DollarSign, StickyNote, UserPlus, CheckCircle, Trash2 } from 'lucide-react'
+import { Search, Download, Plus, Eye, X, Users, UserCheck, ShoppingCart, TrendingUp, MapPin, Grid3X3, LayoutList, Pencil, Gift, FileText, BarChart3, Building2, ShoppingBag, Star, Phone, Mail, Crown, Navigation2, Globe, Flame, AlertTriangle, DollarSign, StickyNote, UserPlus, CheckCircle, Trash2, ChevronDown, FileSpreadsheet } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { confirm } from '@/lib/confirm'
 import { announce } from '@/lib/announce'
@@ -62,6 +62,25 @@ export default function Customers() {
     name: '', type: 'Détail' as ClientType, phone: '', email: '', address: '', notes: '',
   })
   const [digitalCardCustomerId, setDigitalCardCustomerId] = useState<string | null>(null)
+  // P0 fidélité : le gate `tenant?.enableLoyalty` dans CustomersModals rendait le clic
+  // MORT (aucun feedback) quand le programme est désactivé — cas du tenant démo réel
+  // (enableLoyalty=false en base). Garde AU CLIC : toast explicite uniquement si le
+  // tenant chargé dit explicitement false (tenant pas encore chargé → on ouvre, la
+  // carte fetch la donnée serveur autoritaire — pas de faux négatif pendant le fetch).
+  const tenant = useAppStore(s => s.tenant)
+  const loyaltyKnownOff = tenant != null && tenant.enableLoyalty === false
+  const openLoyaltyCard = (id: string | null) => {
+    if (id !== null && loyaltyKnownOff) {
+      toast(i(
+        'Programme fidélité désactivé — activez-le dans Réglages → POS',
+        'Loyalty program disabled — enable it in Settings → POS',
+        'Programa de fidelidad desactivado — actívalo en Ajustes → TPV',
+        'Programma fedeltà disattivato — attivalo in Impostazioni → POS',
+      ), { icon: <Star size={16} style={{ color: 'var(--warn)' }} /> })
+      return
+    }
+    setDigitalCardCustomerId(id)
+  }
   const [customersTab, setCustomersTab] = useState<'list' | 'map' | 'stats'>('list')
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [detailCustomer, setDetailCustomer]   = useState<Customer | null>(null)
@@ -125,6 +144,29 @@ export default function Customers() {
   const retentionRate = customers.length > 0
     ? Math.round((customers.filter(c => c.purchasesPerMonth >= 3).length / customers.length) * 100)
     : 0
+
+  // Export : UN SEUL contrôle (menu CSV + PDF dans le header) — le doublon
+  // barre-du-haut vs section (Exporter/PDF dans le panel) est supprimé.
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!showExportMenu) return
+    const onDoc = (e: MouseEvent) => { if (!exportMenuRef.current?.contains(e.target as Node)) setShowExportMenu(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowExportMenu(false) }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey) }
+  }, [showExportMenu])
+
+  const exportCustomersCSV = () => {
+    // Montants stockés en base XOF → convertis vers la devise d'affichage (pattern reportsExport)
+    const currency = useAppStore.getState().currency
+    const cv = (xof: number) => Math.round(convertFromXOF(xof ?? 0, currency) * 100) / 100
+    exportCSV('habashop_clients',
+      [i('Nom', 'Name', 'Nombre', 'Nome'), i('Type', 'Type', 'Tipo', 'Tipo'), i('Téléphone', 'Phone', 'Teléfono', 'Telefono'), 'Email', i('Achats/mois', 'Purchases/month', 'Compras/mes', 'Acquisti/mese'), `${i('CA total', 'Total revenue', 'Ingresos totales', 'Ricavi totali')} (${currency})`, i('Points fidélité', 'Loyalty points', 'Puntos fidelidad', 'Punti fedeltà')],
+      customers.map(c => [c.name, c.type, c.phone, c.email ?? '', c.purchasesPerMonth, cv(c.totalCA), c.loyaltyPoints]))
+    toast.success(i('Export CSV téléchargé', 'CSV exported', 'CSV exportado', 'CSV esportato'))
+  }
 
   const printCustomersPDF = () => {
     const body = `
@@ -210,12 +252,31 @@ export default function Customers() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('nav_customers')}</h1>
-          <p className="page-subtitle">{customers.length} {i('clients enregistrés', 'registered customers', 'clientes registrados', 'clienti registrati')}</p>
+          {/* Pluriel i18n : 1 → singulier dans les 4 langues */}
+          <p className="page-subtitle">
+            {customers.length}{' '}
+            {customers.length === 1
+              ? i('client enregistré', 'registered customer', 'cliente registrado', 'cliente registrato')
+              : i('clients enregistrés', 'registered customers', 'clientes registrados', 'clienti registrati')}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => { printCustomersPDF(); toast.success(i('PDF ouvert', 'PDF opened', 'PDF abierto', 'PDF aperto')) }}>
-            <Download size={14} /> Export
-          </button>
+          <div ref={exportMenuRef} style={{ position: 'relative' }}>
+            <button className="btn btn-ghost btn-sm" aria-haspopup="menu" aria-expanded={showExportMenu}
+              onClick={() => setShowExportMenu(v => !v)}>
+              <Download size={14} /> {i('Exporter', 'Export', 'Exportar', 'Esporta')} <ChevronDown size={12} style={{ transition: 'transform .15s', transform: showExportMenu ? 'rotate(180deg)' : 'none' }} />
+            </button>
+            {showExportMenu && (
+              <div role="menu" aria-label={i('Exporter', 'Export', 'Exportar', 'Esporta')} className="menu-pop" style={{ right: 0, top: 'calc(100% + 6px)' }}>
+                <button role="menuitem" className="menu-pop-item" onClick={() => { setShowExportMenu(false); exportCustomersCSV() }}>
+                  <FileSpreadsheet size={13} /> CSV
+                </button>
+                <button role="menuitem" className="menu-pop-item" onClick={() => { setShowExportMenu(false); printCustomersPDF(); toast.success(i('PDF ouvert', 'PDF opened', 'PDF abierto', 'PDF aperto')) }}>
+                  <FileText size={13} /> PDF
+                </button>
+              </div>
+            )}
+          </div>
           <button className="topbar-btn" onClick={() => setShowCreate(true)}>
             <Plus size={14} /> {i('Nouveau client', 'New customer', 'Nuevo cliente', 'Nuovo cliente')}
           </button>
@@ -230,38 +291,42 @@ export default function Customers() {
           { label: t('customers_avg_cart'),  value: fmt(avgCart),                hex: 'var(--acc)', icon: <ShoppingCart size={18} /> },
           { label: t('customers_retention'), value: `${retentionRate}%`,         hex: 'var(--acc3)', icon: <TrendingUp size={18} /> },
         ].map(k => (
-          <div key={k.label} className="kpi-card" style={{ position:'relative', overflow:'hidden', background:'var(--bg2)', border:'0.5px solid var(--border)', borderRadius:12, padding:16, transition:'all .15s ease', cursor:'default' }}
-            onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='translateY(-2px)';el.style.boxShadow='var(--sh-sm)'}}
-            onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='';el.style.boxShadow=''}}>
-            <div className="kpi-icon-w" style={{ color: k.hex, background:'var(--bg3)', border:'1px solid var(--border)' }}>{k.icon}</div>
-            <div className="kpi-label">{k.label}</div>
-            <div className="kpi-value" style={{ color: k.hex, fontSize: 24, fontWeight: 'var(--fw-bold)' }}>{k.value}</div>
+          /* KPI compact (icône + label + valeur sur une ligne) — densité dashboard NKONI, sans espace mort */
+          <div key={k.label} className="kpi-card" style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg2)', border:'0.5px solid var(--border)', borderRadius:12, padding:'12px 14px', cursor:'default' }}>
+            <div style={{ width:36, height:36, borderRadius:10, flexShrink:0, color:k.hex, background:'var(--bg3)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center' }}>{k.icon}</div>
+            <div style={{ minWidth:0 }}>
+              <div className="kpi-label" style={{ marginBottom:2 }}>{k.label}</div>
+              <div className="kpi-value" style={{ color:k.hex, fontSize:20, fontWeight:'var(--fw-bold)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{k.value}</div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Onglets */}
+      {/* Onglets — segmented control léger (même langage que le sélecteur de tarif POS),
+          plus de barre pleine largeur au remplissage dégradé */}
       <div style={{
-        display: 'flex', gap: 4,
-        background: 'var(--bg3)', borderRadius: 10, padding: 4,
+        display: 'inline-flex', gap: 2, width: 'fit-content',
+        background: 'var(--bg3)', border: '1px solid var(--border)',
+        borderRadius: 'var(--r-full)', padding: 2,
       }}>
         {[
-          { id: 'list',  label: i('Liste', 'List', 'Lista', 'Elenco')       },
-          { id: 'map',   label: i('Carte', 'Map', 'Mapa', 'Mappa')        },
-          { id: 'stats', label: i('Statistiques', 'Statistics', 'Estadísticas', 'Statistiche')  },
+          { id: 'list',  icon: <LayoutList size={13} />, label: i('Liste', 'List', 'Lista', 'Elenco')       },
+          { id: 'map',   icon: <MapPin size={13} />,     label: i('Carte', 'Map', 'Mapa', 'Mappa')        },
+          { id: 'stats', icon: <BarChart3 size={13} />,  label: i('Statistiques', 'Statistics', 'Estadísticas', 'Statistiche')  },
         ].map(tab => (
           <button key={tab.id} type="button"
             onClick={() => setCustomersTab(tab.id as any)}
             aria-pressed={customersTab === tab.id}
             style={{
-              flex: 1, padding: '8px', borderRadius: 8,
-              fontSize: 13, fontWeight: 'var(--fw-semibold)',
+              padding: '7px 16px', minHeight: 36, borderRadius: 'var(--r-full)',
+              fontSize: 12, fontWeight: 'var(--fw-semibold)',
               cursor: 'pointer', fontFamily: 'var(--font)',
+              display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
               background: customersTab === tab.id ? 'var(--p)' : 'transparent',
-              color: customersTab === tab.id ? '#fff' : 'var(--text2)',
-              boxShadow: customersTab === tab.id ? 'var(--sh-xs)' : 'none',
+              color: customersTab === tab.id ? '#fff' : 'var(--text3)',
               border: 'none', transition: 'all .15s',
             }}>
+            {tab.icon}
             {tab.label}
           </button>
         ))}
@@ -283,11 +348,10 @@ export default function Customers() {
           pg={pg} filtered={filtered}
           fmt={fmt} abbr={abbr} lang={lang} i={i}
           navigate={navigate}
-          printCustomersPDF={printCustomersPDF}
           setViewCustomer={setViewCustomer}
           setEditCustomer={setEditCustomer} setEditCustForm={setEditCustForm}
           setCustEditMode={setCustEditMode} setShowEditCustModal={setShowEditCustModal}
-          setDigitalCardCustomerId={setDigitalCardCustomerId}
+          setDigitalCardCustomerId={openLoyaltyCard}
           setDetailCustomer={setDetailCustomer} setShowDetailModal={setShowDetailModal}
           onDelete={handleDeleteCustomer}
         />
@@ -303,7 +367,10 @@ export default function Customers() {
                 {i('Carte des clients', 'Customer map', 'Mapa de clientes', 'Mappa clienti')}
               </h2>
               <p style={{ fontSize: 12, color: 'var(--text3)' }}>
-                {Object.keys(geoPositions).length} {i('client(s) localisé(s) sur', 'customer(s) located out of', 'cliente(s) localizado(s) de', 'cliente/i localizzato/i su')} {customers.length}
+                {Object.keys(geoPositions).length}{' '}
+                {Object.keys(geoPositions).length === 1
+                  ? i('client localisé sur', 'customer located out of', 'cliente localizado de', 'cliente localizzato su')
+                  : i('clients localisés sur', 'customers located out of', 'clientes localizados de', 'clienti localizzati su')} {customers.length}
               </p>
             </div>
             <button
