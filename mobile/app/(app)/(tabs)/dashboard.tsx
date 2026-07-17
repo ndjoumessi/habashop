@@ -9,7 +9,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { analyticsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
-import { useI18n, useFmt, useTheme, useAppStore } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme } from '@/stores/appStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { updateWidgetNotification, isWidgetEnabled } from '@/services/widgetNotification'
 import Avatar from '@/components/ui/Avatar'
@@ -79,14 +79,12 @@ function QuickAction({
 
 // ── Écran Dashboard ──────────────────────────────
 export default function DashboardScreen() {
-  const { C, theme } = useTheme()
+  const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
   const insets = useSafeAreaInsets()
   const { user, tenant } = useAuthStore()
   const { i, lang } = useI18n()
   const { fmt } = useFmt()
-  const toggleSoleil = useAppStore(st => st.toggleSoleil)
-  const soleilOn = theme === 'soleil'
   const { isOnline } = useNetworkStatus()
   const { photoUri } = useProfilePhoto()
 
@@ -164,21 +162,6 @@ export default function DashboardScreen() {
               accessibilityLabel={i('Rechercher', 'Search', 'Buscar', 'Cerca')}
             >
               <Text style={{ fontSize: 18 }}>🔍</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[s.searchBtn, soleilOn && { backgroundColor: withAlpha(C.warn, 0.18), borderColor: C.warn }]}
-              onPress={toggleSoleil}
-              accessibilityRole="button"
-              accessibilityState={{ selected: soleilOn }}
-              accessibilityLabel={soleilOn
-                ? i('Désactiver le mode soleil', 'Disable sun mode', 'Desactivar modo sol', 'Disattiva modalità sole')
-                : i('Activer le mode soleil (plein soleil)', 'Enable sun mode (bright sunlight)', 'Activar modo sol (pleno sol)', 'Attiva modalità sole (pieno sole)')}
-            >
-              <Ionicons
-                name={soleilOn ? 'sunny' : 'sunny-outline'}
-                size={20}
-                color={soleilOn ? C.warn : C.text2}
-              />
             </TouchableOpacity>
           </View>
         </View>

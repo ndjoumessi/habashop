@@ -152,7 +152,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ```
 **`const s = useMemo(() => makeStyles(C), [C])`** (C = `useTheme()`). Fonts : `Outfit_700Bold` / `JetBrainsMono`. `ThemeColors = { [K in keyof typeof DarkColors]: string }` (pas `typeof DarkColors`). `userInterfaceStyle:"automatic"`. `useTheme()`/`useMemo` **avant** tout `return` conditionnel. `Colors` statiques : kiosk + widgetNotification seulement.
 
-`ThemeMode = 'dark' | 'light' | 'soleil'`. `SoleilColors` = haut-contraste (parité web). Toggle 1-tap header Dashboard (`previousTheme` persisté) + option Réglages grille 2×2. Test contraste : `src/__tests__/contrast.test.ts` (73 tests × 3 thèmes, dont AA ≥4.5:1 text/text2/text3). Kiosk reste `Colors` sombre figé (Soleil non applicable).
+`ThemeMode = 'dark' | 'light' | 'system'` (3 options, défaut `dark`) : Sombre / Clair / **Système** (`useColorScheme` ; `useTheme()` résout dark/light, sombre par défaut si indéterminé). **Fallback gracieux** : thème persisté obsolète (ancien `soleil`) → `dark` via `onRehydrateStorage` (`VALID_THEMES`). Option Réglages en grille. Test contraste : `src/__tests__/contrast.test.ts` (Dark + Light, AA ≥4.5:1 text/text2/text3). Kiosk reste `Colors` sombre figé. *(Le « Mode soleil » et son toggle 1-tap Dashboard ont été retirés — parité avec la réduction web 9→3.)*
 
 ---
 
@@ -235,5 +235,5 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 - **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`). Police = **Outfit** (Geist attend le build natif, #13).
 - **En attente du build natif 1.5.0** (quota EAS) : **logo Sac+H** (icône/splash) + **police Geist**.
 - **Validé device (2026-05-27, APK `382fe2ec`) :** scanner EAN13 ✅, thème clair ✅, kiosque+PIN ✅, encaissement→API ✅, biométrie ✅, suppression compte (scénario ADMIN seul→cascade tenant) ✅.
-- **À valider device :** offline+resync (cache à froid + abandon 3 retries), push (3 types + tap nav), ticket WhatsApp, widget (dev build), TalkBack, carte QR, OCR MANAGER+, **mode soleil en conditions réelles** (plein soleil extérieur).
+- **À valider device :** offline+resync (cache à froid + abandon 3 retries), push (3 types + tap nav), ticket WhatsApp, widget (dev build), TalkBack, carte QR, OCR MANAGER+.
 - **Différé :** Play Store (AAB `1f6bf56f` prêt, captures à faire) ; layouts tablette (iPad) ; build iOS réel ; Wave/Orange prod.
