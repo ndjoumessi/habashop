@@ -100,7 +100,11 @@ async function sendAlert(title: string, message: string, level: 'info' | 'warnin
 }
 
 async function start() {
-  const app = Fastify({ logger: true, trustProxy: true }) // derrière le proxy Railway : request.ip = vrai client (X-Forwarded-For) → clé rate-limit stable
+  // bodyLimit 4 Mo : borne explicite (défaut Fastify = 1 Mo). Doit couvrir le plus gros
+  // corps JSON légitime = photo employé base64 (front autorise 2 Mo brut → ~2,7 Mo base64,
+  // cf. EditEmployeeModal). Les uploads multipart (OCR facture, 10 Mo) passent par
+  // @fastify/multipart avec sa propre limite et ne sont PAS bornés par bodyLimit.
+  const app = Fastify({ logger: true, trustProxy: true, bodyLimit: 4 * 1024 * 1024 }) // derrière le proxy Railway : request.ip = vrai client (X-Forwarded-For) → clé rate-limit stable
 
   // ─── CORS ───────────────────────────────
   const allowedOrigins = [
@@ -137,9 +141,18 @@ async function start() {
 
   // ─── RATE LIMIT ─────────────────────────
   // Store partagé Redis si REDIS_URL est défini (sinon mémoire — non fiable en multi-replica).
+  // GLOBAL : plafond de base par IP sur TOUTES les routes (défense anti-abus/scraping).
+  // Les routes sensibles gardent leurs overrides plus stricts via config.rateLimit
+  // (auth 5-30/fenêtre, checkouts 5/h, paiements 20/min) — un override par-route PRIME
+  // sur ce défaut global. Les webhooks/IPN paiement et les health checks sont exemptés
+  // (config.rateLimit:false sur leurs routes) pour ne jamais throttler un provider ou un moniteur.
+  // Plafond généreux (300/min) : une boutique multi-caisses derrière un même NAT partage l'IP.
+  // Plafond ajustable en prod via RATE_LIMIT_MAX (sans redéploiement) si une grosse boutique
+  // multi-caisses derrière un même NAT le nécessite. Défaut 300/min. L'E2E prod (workers:1,
+  // série) reste très en-dessous.
   const rateLimitOpts: any = {
-    global: false, // n'applique qu'aux routes qui déclarent config.rateLimit
-    max: 100,
+    global: true,
+    max: Number(process.env.RATE_LIMIT_MAX) || 300,
     timeWindow: '1 minute',
   }
   if (redis) {
@@ -181,14 +194,15 @@ async function start() {
   })
 
   // ─── HEALTH CHECK ───────────────────────
-  app.get('/health', async () => ({
+  // Exemptés du rate-limit global : sondes de monitoring / uptime pingées en continu.
+  app.get('/health', { config: { rateLimit: false } }, async () => ({
     status: 'ok',
     version: '2.1.0',
     build: 'p2025-404',
     timestamp: new Date().toISOString(),
   }))
 
-  app.get('/api/health-extended', async (_request, reply) => {
+  app.get('/api/health-extended', { config: { rateLimit: false } }, async (_request, reply) => {
     const start = Date.now()
     let dbStatus = 'ok'
     let dbLatency = 0
