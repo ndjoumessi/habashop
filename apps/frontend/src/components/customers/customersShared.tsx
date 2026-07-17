@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react'
 import { Building2, ShoppingBag, Star, ShoppingCart } from 'lucide-react'
-import { useAppStore, isThemeLight } from '@/stores/appStore'
+import { useAppStore, isThemeLight, useCurrencyInfo, useConvertFromXOF } from '@/stores/appStore'
+
+/** Montant avec suffixe devise DISCRET (pattern tuiles POS item 11) : chiffre
+ *  proéminent, symbole plus petit et atténué — au lieu du fmt() d'un seul tenant. */
+export function AmountCur({ xof, suffixSize = 10, suffixColor = 'var(--text3)' }: { xof: number; suffixSize?: number; suffixColor?: string }) {
+  const { symbol, locale, decimals } = useCurrencyInfo()
+  const fromXOF = useConvertFromXOF()
+  return (
+    <>
+      {fromXOF(xof ?? 0).toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}
+      <span style={{ fontSize: suffixSize, color: suffixColor, marginLeft: 4, fontWeight: 'var(--fw-semibold)' }}>{symbol}</span>
+    </>
+  )
+}
 
 export type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
