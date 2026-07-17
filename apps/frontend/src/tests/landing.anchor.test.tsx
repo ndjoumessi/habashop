@@ -21,7 +21,10 @@ beforeEach(() => { vi.clearAllMocks() })
 describe('LandingPage — test d’ancrage (comportement à figer avant/après découpe)', () => {
   it('rend le hero (titre + sous-titre) et les liens de navigation', () => {
     render(<LandingPage />)
-    expect(screen.getByText('Gérez votre boutique en Afrique')).toBeInTheDocument()
+    // H1 réparti sur plusieurs nœuds (préfixe + <span>clarté</span> + « . ») → on ancre sur le
+    // mot d'accent, et le sous-titre (nœud unique) prouve le rendu du hero.
+    expect(screen.getByText('clarté')).toBeInTheDocument()
+    expect(screen.getByText(/une seule plateforme, même hors-ligne/)).toBeInTheDocument()
     // liens nav (présents en double : nav desktop + ancres) → getAllByText
     expect(screen.getAllByText('Fonctionnalités').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Tarifs').length).toBeGreaterThan(0)
