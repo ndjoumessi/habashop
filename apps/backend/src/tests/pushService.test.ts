@@ -7,7 +7,8 @@ const { db } = vi.hoisted(() => ({
     pushToken: { findMany: vi.fn(), deleteMany: vi.fn() },
   },
 }))
-vi.mock('../db', () => ({ prisma: db }))
+// `basePrisma` = même mock (la purge des tokens morts l'utilise — nettoyage cross-tenant par token exact).
+vi.mock('../db', () => ({ prisma: db, basePrisma: db }))
 
 const { sendMock, chunkMock } = vi.hoisted(() => ({ sendMock: vi.fn(), chunkMock: vi.fn() }))
 vi.mock('expo-server-sdk', () => {

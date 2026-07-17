@@ -153,6 +153,33 @@ describe('GET /api/dashboard/consolidated', () => {
     expect(body.tenants[0]).toMatchObject({ id: 't1', caToday: 30000, transactionsToday: 5, stockAlerts: 2 })
   })
 
+  // Exigence C (item 8) : `basePrisma` ≠ « aucun filtre ». Le consolidé doit rester
+  // borné aux boutiques UserTenant de l'utilisateur AUTHENTIFIÉ, même sans extension.
+  it('exigence C — n\'agrège QUE les boutiques liées à l\'utilisateur (dérivées de UserTenant.userId)', async () => {
+    db.userTenant.findMany.mockResolvedValue([{ tenant: { id: 't1', name: 'A', currency: 'XOF' } }])
+    db.sale.aggregate.mockResolvedValue({ _sum: { total: 1000 }, _count: 1 })
+    db.product.count.mockResolvedValue(0)
+
+    const app = await buildApp()
+    const token = app.jwt.sign({ userId: 'u1', role: 'ADMIN', tenantId: null, activeTenantId: null })
+    const res = await app.inject({ method: 'GET', url: '/api/dashboard/consolidated', headers: { Authorization: `Bearer ${token}` } })
+    expect(res.statusCode).toBe(200)
+
+    // La liste des boutiques est dérivée de UserTenant filtré par l'userId du JWT…
+    expect(db.userTenant.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ userId: 'u1' }),
+    }))
+    // …et CHAQUE agrégat basePrisma est explicitement scopé à un tenant de cette liste.
+    expect(db.sale.aggregate).toHaveBeenCalledTimes(1)
+    expect(db.sale.aggregate).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ tenantId: 't1' }),
+    }))
+    expect(db.product.count).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ tenantId: 't1' }),
+    }))
+    expect(res.json().tenants.map((t: any) => t.id)).toEqual(['t1'])
+  })
+
   it('accessible sans boutique active (pas de 400)', async () => {
     db.userTenant.findMany.mockResolvedValue([])
     const app = await buildApp()

@@ -39,6 +39,7 @@ export async function ticketZRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/ticket-z/today', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     const { dayStart } = todayRangeUTC()
+    // findUnique CONSERVÉ (revue item 8-B) : la clé composite contient tenantId → déjà scopé.
     return prisma.ticketZ.findUnique({ where: { tenantId_date: { tenantId, date: dayStart } } })
   })
 

@@ -100,12 +100,18 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
     const { userId } = request.user
     const { id } = request.params as { id: string }
 
-    const transfer = await prisma.stockTransfer.findUnique({ where: { id }, include: { product: true } })
+    // Item 8-B : plus de findUnique par id nu — le fetch est scopé aux 2 parties
+    // (source OU destination) dès la requête. Un tiers ne récupère RIEN.
+    const transfer = await prisma.stockTransfer.findFirst({
+      where: { id, OR: [{ fromTenantId: tenantId }, { toTenantId: tenantId }] },
+      include: { product: true },
+    })
     // W1 — scope tenant AVANT toute divulgation : un tiers (ni source ni destination)
     // reçoit un 404 uniforme, identique à « n'existe pas ». On ne révèle jamais l'existence
     // ni le statut d'un transfert d'autrui (pas d'oracle 403 vs 400 vs 404).
     // Le statut (400 « déjà traité ») et le rôle (403 « destination seule ») ne sont exposés
-    // qu'aux deux boutiques réellement parties au transfert.
+    // qu'aux deux boutiques réellement parties au transfert. La vérif manuelle ci-dessous
+    // est désormais redondante avec le findFirst scopé — conservée (ceinture-bretelles, Q3).
     if (!transfer || (transfer.fromTenantId !== tenantId && transfer.toTenantId !== tenantId)) {
       return reply.code(404).send({ error: 'Transfert introuvable' })
     }
@@ -166,9 +172,14 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
     const tenantId = request.tenantId as string
     const { id } = request.params as { id: string }
 
-    const transfer = await prisma.stockTransfer.findUnique({ where: { id }, include: { product: { select: { name: true } } } })
+    // Item 8-B : fetch scopé aux 2 parties dès la requête (cf. /confirm).
+    const transfer = await prisma.stockTransfer.findFirst({
+      where: { id, OR: [{ fromTenantId: tenantId }, { toTenantId: tenantId }] },
+      include: { product: { select: { name: true } } },
+    })
     // W1 — même garde uniforme que pour /confirm : un tiers (ni source ni destination)
     // reçoit un 404 identique à « n'existe pas », sans oracle d'existence/statut.
+    // Vérif manuelle redondante avec le findFirst scopé — conservée (ceinture-bretelles).
     if (!transfer || (transfer.fromTenantId !== tenantId && transfer.toTenantId !== tenantId)) {
       return reply.code(404).send({ error: 'Transfert introuvable' })
     }

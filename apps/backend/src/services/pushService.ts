@@ -1,5 +1,5 @@
 import { Expo, type ExpoPushMessage } from 'expo-server-sdk'
-import { prisma } from '../db'
+import { basePrisma, prisma } from '../db'
 
 // Service d'envoi de notifications push Expo (serveur → appareils mobiles via exp.host).
 // ⚠️ FIRE-AND-FORGET : tout est fail-silent — une erreur push ne doit JAMAIS faire échouer
@@ -77,7 +77,10 @@ export async function sendPush(
 
     if (invalid.length > 0) {
       // Purge des tokens morts → évite de réenvoyer indéfiniment vers des appareils désinscrits.
-      await prisma.pushToken.deleteMany({ where: { token: { in: invalid } } }).catch(() => {})
+      // `basePrisma` : nettoyage TECHNIQUE par token exact (renvoyé par Expo), souvent déclenché
+      // fire-and-forget dans le ctx d'une AUTRE boutique (ex. push transfert vers la partenaire) —
+      // l'injection tenant scinderait la purge au mauvais tenant et raterait les tokens morts.
+      await basePrisma.pushToken.deleteMany({ where: { token: { in: invalid } } }).catch(() => {})
     }
   } catch (err) {
     console.warn('[push] sendPush échec global (non bloquant):', err)

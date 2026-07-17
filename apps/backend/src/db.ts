@@ -13,9 +13,11 @@ import { tenantCtx } from './lib/tenantContext'
  * `prisma` — client ÉTENDU (defense-in-depth, item 8) : injecte automatiquement
  * `tenantId` sur les modèles tenant-scopés QUAND il est absent, à partir du
  * contexte `tenantCtx` posé par `authenticate`. Filet de sécurité si un handler
- * oublie `where:{ tenantId }`. N'ÉCRASE JAMAIS un `tenantId` explicite (les
- * requêtes cross-tenant volontaires — dashboard consolidé — restent correctes).
- * Le filtrage manuel existant est conservé (ceinture-bretelles).
+ * oublie `where:{ tenantId }`. N'ÉCRASE JAMAIS un `tenantId` explicite : en
+ * LECTURE il est conservé (cross-tenant volontaire) ; en ÉCRITURE
+ * (create/createMany/upsert) un `tenantId` ≠ contexte fait ÉCHOUER la requête
+ * (`TenantScopeMismatchError` → 403). Le filtrage manuel existant est conservé
+ * (ceinture-bretelles).
  */
 export const basePrisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
@@ -35,22 +37,63 @@ const SCOPED_MODELS = new Set([
 
 // Opérations dont le `where` accepte un filtre non-unique → injection sûre.
 // (findUnique/update/delete par clé unique EXCLUS : Prisma refuse un tenantId
-// non-unique dans un where unique ; upsert exclu — clé composite ex. TicketZ.)
+// non-unique dans un where unique ; le `where` d'upsert idem — clé composite
+// ex. TicketZ — mais son PAYLOAD create/update est gardé, cf. ci-dessous.)
 const INJECT_OPS = /^(findMany|findFirst|updateMany|deleteMany|count|aggregate|groupBy)$/
 
 /**
+ * Écriture avec `tenantId` explicite ≠ boutique active du contexte : on REFUSE
+ * (jamais d'écrasement silencieux — un mismatch = bug ou tentative d'injection).
+ * `statusCode` 403 → l'error handler global renvoie un 403 propre.
+ */
+export class TenantScopeMismatchError extends Error {
+  statusCode = 403
+  constructor(model: string, operation: string) {
+    super(`Écriture ${model}.${operation} refusée : tenantId du payload ≠ boutique active`)
+    this.name = 'TenantScopeMismatchError'
+  }
+}
+
+// Garde d'écriture commune (create/createMany/upsert) : injecte `tenantId` si
+// absent, THROW s'il est présent et différent du tenant du contexte.
+function guardWriteRows(model: string, operation: string, data: any, tenantId: string): boolean {
+  if (!data) return false
+  const rows = Array.isArray(data) ? data : [data]
+  let injected = false
+  for (const row of rows) {
+    if (row.tenantId === undefined) { row.tenantId = tenantId; injected = true }
+    else if (row.tenantId !== tenantId) throw new TenantScopeMismatchError(model, operation)
+  }
+  return injected
+}
+
+/**
  * Cœur de l'auto-scoping (pur, testable). Mute `args` EN PLACE selon les règles :
- * - modèle non scopé, op hors périmètre, ou tenantId déjà présent → aucun changement ;
- * - lecture/màj-many/agrégat sans `where.tenantId` → injecte `where.tenantId` ;
- * - `create` sans `data.tenantId` → pose `data.tenantId`.
+ * - modèle non scopé ou op hors périmètre → aucun changement ;
+ * - lecture/màj-many/agrégat sans `where.tenantId` → injecte `where.tenantId`
+ *   (un `where.tenantId` explicite est CONSERVÉ : cross-tenant volontaire en
+ *   lecture, ex. push vers la boutique partenaire d'un transfert) ;
+ * - ÉCRITURES `create`/`createMany`/`upsert` : `tenantId` absent → injecté ;
+ *   présent et ≠ contexte → `TenantScopeMismatchError` (403), jamais écrasé
+ *   en silence. Pour `upsert` : payloads `create` ET `update` gardés (le
+ *   `where` composite reste hors périmètre).
  * Retourne `true` si une injection a eu lieu (pour l'observabilité/les tests).
  */
 export function applyTenantScope(model: string | undefined, operation: string, args: any, tenantId: string): boolean {
   if (!model || !SCOPED_MODELS.has(model) || !args) return false
   if (INJECT_OPS.test(operation)) {
     if (args.where?.tenantId === undefined) { args.where = { ...(args.where ?? {}), tenantId }; return true }
-  } else if (operation === 'create') {
-    if (args.data && args.data.tenantId === undefined) { args.data.tenantId = tenantId; return true }
+    return false
+  }
+  if (operation === 'create' || operation === 'createMany') {
+    return guardWriteRows(model, operation, args.data, tenantId)
+  }
+  if (operation === 'upsert') {
+    const injected = guardWriteRows(model, operation, args.create, tenantId)
+    if (args.update?.tenantId !== undefined && args.update.tenantId !== tenantId) {
+      throw new TenantScopeMismatchError(model, operation)
+    }
+    return injected
   }
   return false
 }

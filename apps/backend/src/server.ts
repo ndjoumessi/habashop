@@ -424,7 +424,8 @@ async function runWeeklyReports(): Promise<void> {
 
     let topProduct = 'Aucune vente cette semaine'
     if (topItems[0]) {
-      const prod = await prisma.product.findUnique({ where: { id: topItems[0].productId }, select: { name: true } }).catch(() => null)
+      // Item 8-B : scopé au tenant du rapport (findUnique par id nu = trou d'isolation).
+      const prod = await prisma.product.findFirst({ where: { id: topItems[0].productId, tenantId: tenant.id }, select: { name: true } }).catch(() => null)
       if (prod) topProduct = prod.name
     }
 
