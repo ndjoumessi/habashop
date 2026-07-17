@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 import { campayPaymentRoutes } from '../routes/campayPayment'
 
 // ── Mock du service campay ───────────────────────────────────────────────────
@@ -36,6 +37,7 @@ const campayPaymentLink  = vi.mocked(getPaymentLink)
 // Helpers
 const makeApp = async () => {
   const app = Fastify({ logger: false })
+  app.setValidatorCompiler(validatorCompiler)
   await app.register(campayPaymentRoutes)
   return app
 }

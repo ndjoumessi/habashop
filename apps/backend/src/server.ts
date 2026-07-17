@@ -6,6 +6,7 @@ import jwt from '@fastify/jwt'
 import multipart from '@fastify/multipart'
 import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
+import { validatorCompiler, hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod'
 import * as Sentry from '@sentry/node'
 import { prisma } from './db'
 import { redis } from './redis'
@@ -106,6 +107,12 @@ async function start() {
   // @fastify/multipart avec sa propre limite et ne sont PAS bornés par bodyLimit.
   const app = Fastify({ logger: true, trustProxy: true, bodyLimit: 4 * 1024 * 1024 }) // derrière le proxy Railway : request.ip = vrai client (X-Forwarded-For) → clé rate-limit stable
 
+  // Validation déclarative Zod : seul le validatorCompiler est posé (PAS le serializer)
+  // → les réponses existantes ne sont pas touchées ; seules les routes qui déclarent
+  // un `schema.body/params/querystring` zod sont validées. Les routes sans schéma sont
+  // inchangées. Zod strip les clés inconnues et coerce les types déclarés.
+  app.setValidatorCompiler(validatorCompiler)
+
   // ─── CORS ───────────────────────────────
   const allowedOrigins = [
     'https://habashop.vercel.app',
@@ -182,6 +189,14 @@ async function start() {
   // scopés par tenant (where:{id, tenantId}) : un accès cross-tenant ne
   // matche aucun enregistrement et doit renvoyer 404, pas 500.
   app.setErrorHandler((error: any, request, reply) => {
+    // Erreurs de validation Zod (schema.body/params/querystring) → 400 au format maison
+    // { error, code:'VALIDATION' } cohérent avec les 400 manuels existants.
+    if (hasZodFastifySchemaValidationErrors(error)) {
+      const first = error.validation?.[0]
+      const path = first?.params?.issue?.path?.join('.') || first?.instancePath || ''
+      const msg = first?.params?.issue?.message || first?.message || 'Requête invalide'
+      return reply.code(400).send({ error: path ? `${path}: ${msg}` : msg, code: 'VALIDATION' })
+    }
     if (error?.code === 'P2025') {
       return reply.code(404).send({ error: 'Ressource introuvable' })
     }

@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
@@ -20,6 +21,13 @@ const PRICES: Record<string, Record<string, number>> = {
   pro:        { monthly: 24900, yearly: 249000 },
   enterprise: { monthly: 49900, yearly: 499000 },
 }
+
+// Body des checkouts d'abonnement (Wave & Orange). La validation sémantique fine
+// (couple plan/period existant dans PRICES) reste dans le handler → 400 « Plan invalide ».
+const CHECKOUT_BODY = z.object({
+  plan:   z.string().trim().min(1),
+  period: z.string().trim().min(1),
+})
 
 /**
  * Routes de paiement automatique Wave & Orange Money.
@@ -108,8 +116,9 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/payments/wave/checkout', {
     preHandler: [authenticate],
     config: { rateLimit: { max: 5, timeWindow: '1 hour' } },
+    schema: { body: CHECKOUT_BODY },
   }, async (request: any, reply: any) => {
-    const { plan, period } = (request.body ?? {}) as { plan?: string; period?: string }
+    const { plan, period } = request.body as { plan?: string; period?: string }
     const tenantId = request.tenantId as string
 
     if (!plan || !period || !PRICES[plan]?.[period]) {
@@ -167,8 +176,9 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/payments/orange/checkout', {
     preHandler: [authenticate],
     config: { rateLimit: { max: 5, timeWindow: '1 hour' } },
+    schema: { body: CHECKOUT_BODY },
   }, async (request: any, reply: any) => {
-    const { plan, period } = (request.body ?? {}) as { plan?: string; period?: string }
+    const { plan, period } = request.body as { plan?: string; period?: string }
     const tenantId = request.tenantId as string
 
     if (!plan || !period || !PRICES[plan]?.[period]) {

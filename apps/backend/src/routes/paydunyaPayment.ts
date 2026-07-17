@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import { authenticate } from '../middleware/authenticate'
 import { prisma } from '../db'
@@ -24,13 +25,17 @@ export async function paydunyaPaymentRoutes(app: FastifyInstance): Promise<void>
   app.post('/api/payments/paydunya/initiate', {
     preHandler: [authenticate],
     config:     { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    schema: {
+      body: z.object({
+        amount:      z.coerce.number().positive({ message: 'Montant invalide' }),
+        description: z.string().trim().max(500).optional(),
+      }),
+    },
   }, async (request: any, reply: any) => {
     if (!paydunyaConfigured())
       return reply.code(503).send({ error: 'PayDunya non configuré', code: 'PAYDUNYA_NOT_CONFIGURED' })
 
-    const { amount, description } = (request.body ?? {}) as { amount?: number; description?: string }
-    if (!amount || amount <= 0)
-      return reply.code(400).send({ error: 'Montant invalide' })
+    const { amount, description } = request.body as { amount: number; description?: string }
 
     const tenantId = request.user?.tenantId ?? request.tenantId
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } })

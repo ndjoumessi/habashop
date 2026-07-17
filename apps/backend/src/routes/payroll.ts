@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { buildPayrollReport, deliverPayrollReport } from '../services/payrollReport'
@@ -10,7 +11,16 @@ export async function payrollRoutes(app: any): Promise<void> {
   // dryRun=true (défaut) : calcule et RENVOIE le récap, AUCUN email, AUCUN marqueur.
   // dryRun=false : envoi réel pour CE tenant (respecte le toggle, sauf `force:true` pour test).
   // Destinataire = admin du tenant, dérivé SERVEUR — aucun champ email accepté du client.
-  app.post('/api/admin/payroll-report/run', { preHandler: authenticate }, async (request: any, reply: any) => {
+  app.post('/api/admin/payroll-report/run', {
+    preHandler: authenticate,
+    schema: {
+      body: z.object({
+        dryRun:   z.boolean().optional(),
+        tenantId: z.string().trim().min(1).optional(),
+        force:    z.boolean().optional(),
+      }),
+    },
+  }, async (request: any, reply: any) => {
     const role = request.user?.role as string | undefined
     if (!role || !ADMIN_ROLES.has(role)) {
       return reply.code(403).send({ error: 'Accès refusé — admin requis' })

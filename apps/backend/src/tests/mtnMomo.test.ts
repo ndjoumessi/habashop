@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 import { mtnPaymentRoutes } from '../routes/mtnPayment'
 
 // ── Mock du service mtnMomo ──────────────────────────────────────────────────
@@ -24,6 +25,7 @@ const mtnStatusMock  = vi.mocked(getPaymentStatus)
 // Helpers
 const makeApp = async () => {
   const app = Fastify({ logger: false })
+  app.setValidatorCompiler(validatorCompiler) // schémas zod des routes (parité server.ts)
   await app.register(mtnPaymentRoutes)
   return app
 }
