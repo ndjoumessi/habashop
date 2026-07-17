@@ -124,8 +124,12 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
   const countedXOF = toXOF(Math.max(0, parseFloat(countedInput) || 0))
   const countedEntered = countedInput.trim() !== ''
   const cashGap = countedXOF - expectedCash
-  // Seuils d'alerte : juste (0) / petit écart (< 5 % de l'attendu) / important.
-  const gapLevel = cashGap === 0 ? 'ok' : Math.abs(cashGap) < Math.max(500, expectedCash * 0.05) ? 'warn' : 'danger'
+  // Couleur de l'écart : la MAGNITUDE décide, jamais le signe (+ surplus / − manque).
+  // « Juste » = |écart| ≤ 1 XOF (tolérance d'arrondi de conversion devise) ;
+  // ambre = |écart| < max(500 XOF, 5 % de l'attendu) ; rouge au-delà.
+  // ⚠️ Source de vérité UNIQUE : l'écran (écart live) ET le rapport Z imprimé
+  // consomment ce même gapLevel — pas de logique divergente.
+  const gapLevel = Math.abs(cashGap) <= 1 ? 'ok' : Math.abs(cashGap) < Math.max(500, expectedCash * 0.05) ? 'warn' : 'danger'
   // Pièges à focus (focus initial + Tab bouclé + restauration au déclencheur)
   const discountBoxRef = useModalFocus<HTMLDivElement>(showDiscountModal)
   const closeBoxRef    = useModalFocus<HTMLDivElement>(showCloseModal)
@@ -378,7 +382,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     <style>body{font-family:'Courier New',monospace;font-size:12px;padding:20px;max-width:300px;margin:0 auto;}
                     .center{text-align:center;}.bold{font-weight:bold;}.big{font-size:16px;font-weight:900;}
                     .divider{border-top:1px dashed #000;margin:8px 0;}.row{display:flex;justify-content:space-between;margin:4px 0;}
-                    .ok{color:green;}.err{color:red;}</style></head><body>
+                    .ok{color:green;}.warn{color:#b45309;}.err{color:red;}</style></head><body>
                     <div class="center"><div class="big">HabaShop</div><div>${esc(ct.close_title.toUpperCase())} — TICKET Z</div>
                     <div>${esc(ct.cashier_label)} — ${esc(new Date().toLocaleDateString(locale))}</div></div>
                     <div class="divider"></div>
@@ -393,7 +397,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     <div class="divider"></div>
                     <div class="row bold"><span>Attendu (espèces):</span><span>${esc(fmt(expectedCash))}</span></div>
                     <div class="row bold"><span>Compté:</span><span>${esc(fmt(countedXOF))}</span></div>
-                    <div class="row bold ${cashGap >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${cashGap >= 0 ? '+' : '−'}${esc(fmt(Math.abs(cashGap)))}</span></div>
+                    <div class="row bold ${gapLevel === 'ok' ? 'ok' : gapLevel === 'warn' ? 'warn' : 'err'}"><span>Écart:</span><span>${cashGap >= 0 ? '+' : '−'}${esc(fmt(Math.abs(cashGap)))}</span></div>
                     <div class="divider"></div>
                     <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
                     <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>
