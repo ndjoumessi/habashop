@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 import { nextInvoiceNumber, fmtMoney } from '../lib/invoicePdf'
 
 // ── 1. Helpers purs ──
@@ -34,7 +35,7 @@ vi.mock('../lib/cache', () => ({ invalidateTenantCache: vi.fn().mockResolvedValu
 
 import { saleRoutes } from '../routes/sales'
 
-async function buildApp() { const app = Fastify(); await app.register(saleRoutes); await app.ready(); return app }
+async function buildApp() { const app = Fastify(); app.setValidatorCompiler(validatorCompiler); await app.register(saleRoutes); await app.ready(); return app }
 const SALE = {
   id: 's1', tenantId: 'T1', total: 5900, paymentMode: 'cash', discountAmount: 0,
   createdAt: new Date('2026-06-05T10:00:00Z'), invoiceNumber: null, customerId: null,

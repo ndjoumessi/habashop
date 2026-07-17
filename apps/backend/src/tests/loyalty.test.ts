@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 import { pointsForAmount, tierForPoints } from '../lib/loyalty'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ import { saleRoutes } from '../routes/sales'
 
 async function buildApp() {
   const app = Fastify()
+  app.setValidatorCompiler(validatorCompiler)
   await app.register(saleRoutes)
   await app.ready()
   return app
