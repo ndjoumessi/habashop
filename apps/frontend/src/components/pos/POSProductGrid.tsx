@@ -12,6 +12,9 @@ interface POSProductGridProps {
   activeCat: string; setActiveCat: (v: string) => void
   clientType: 'retail' | 'wholesale' | 'semi'; setClientType: (v: any) => void
   fmt: (n: number) => string
+  // Prix tuile façon maquette : montant (devise d'affichage, sans symbole) + suffixe discret
+  amountLabel: (n: number) => string
+  curSuffix: string
   filtered: PosProduct[]
   cart: CartItem[]
   addItem: (p: any) => void
@@ -32,8 +35,10 @@ interface POSProductGridProps {
 interface ProductTileProps {
   p: PosProduct
   qty: number | undefined
-  priceLabel: string
-  basePriceLabel: string
+  priceLabel: string        // libellé complet (aria) — ex. « 4 500 FCFA »
+  amount: string            // montant seul — ex. « 4 500 »
+  suffix: string            // devise discrète — ex. « FCFA »
+  baseAmount: string        // montant barré (promo / tarif) — sans devise
   showStrike: boolean
   isPromoRetail: boolean
   posShowStockOnTile: boolean
@@ -41,7 +46,7 @@ interface ProductTileProps {
   onAdd: (p: PosProduct) => void
 }
 
-const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLabel, showStrike, isPromoRetail, posShowStockOnTile, ruptureLabel, onAdd }: ProductTileProps) {
+const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suffix, baseAmount, showStrike, isPromoRetail, posShowStockOnTile, ruptureLabel, onAdd }: ProductTileProps) {
   const inCart     = qty !== undefined
   const isLowStock = p.stock < 20
   const isOut      = p.stock <= 0
@@ -67,16 +72,13 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
         border: `0.5px solid ${inCart ? 'var(--p)' : lowStockRing ? 'var(--warn)' : 'var(--border)'}`,
         boxShadow: inCart ? '0 0 0 1.5px var(--p)' : 'none',
         borderRadius: 12,
-        padding: posShowStockOnTile ? '16px 12px 30px' : '16px 12px 14px',
+        // Maquette : padding 11, contenu aligné à gauche (padding bas élargi si pill stock)
+        padding: posShowStockOnTile ? '11px 11px 26px' : 11,
         cursor: blocked ? 'not-allowed' : 'pointer',
         opacity: blocked ? 0.45 : 1,
-        textAlign: 'center',
+        textAlign: 'left',
         transition: 'all .15s ease',
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 6,
       }}
       onMouseEnter={e => {
         if (!inCart && !blocked) {
@@ -129,39 +131,36 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
         }}>×{qty}</div>
       )}
 
-      {/* Emoji dans cercle */}
+      {/* Zone visuelle produit (maquette : 38px, centrée) */}
       <div style={{
-        width: 56, height: 56,
-        borderRadius: '50%',
-        background: 'var(--bg3)',
-        border: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 28,
-      }}>{p.emoji}</div>
+        height: 38,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 22,
+      }} aria-hidden="true">{p.emoji}</div>
 
-      {/* Nom */}
+      {/* Nom — gauche, 12px (maquette) */}
       <div style={{
-        fontSize: 14,
-        fontWeight: 'var(--fw-regular)',
+        fontSize: 12,
+        fontWeight: 'var(--fw-semibold)',
         color: 'var(--text)',
         lineHeight: 1.3,
+        marginTop: 6,
       }}>{p.name}</div>
 
-      {/* Prix */}
-      {showStrike && (
-        <div style={{ fontSize:11, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
-          {basePriceLabel}
-        </div>
-      )}
-      {/* Prix : or (--acc) = code couleur « argent » de la charte (spec item 11) */}
-      <div style={{
-        fontSize: 16,
-        fontWeight: 'var(--fw-bold)',
-        color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
-        fontFamily: 'var(--mono)',
-        letterSpacing: '-.3px',
-      }}>{priceLabel}</div>
+      {/* Prix : montant or (--acc) + suffixe devise discret (maquette) */}
+      <div style={{ marginTop: 3 }}>
+        {showStrike && (
+          <span style={{ fontSize: 10, color: 'var(--text3)', textDecoration: 'line-through', fontFamily: 'var(--mono)', marginRight: 5 }}>
+            {baseAmount}
+          </span>
+        )}
+        <span style={{
+          fontSize: 13, fontWeight: 'var(--fw-semibold)',
+          color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
+          fontFamily: 'var(--mono)',
+        }}>{amount}</span>{' '}
+        <span style={{ fontSize: 10, color: 'color-mix(in srgb, var(--acc) 55%, var(--text3))' }}>{suffix}</span>
+      </div>
 
       {/* Stock — pill sémantique ancrée en bas à droite (vert OK / orange bas / rouge rupture) */}
       {posShowStockOnTile && (
@@ -182,7 +181,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
   )
 })
 
-export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, clientType, setClientType, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, clientType, setClientType, fmt, amountLabel, curSuffix, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
   // Quantités panier indexées par produit (first-wins = même sémantique que cart.find)
   const qtyById = useMemo(() => {
     const m = new Map<string | number, number>()
@@ -226,19 +225,19 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                     onClick={() => setActiveCat(c.id)}
                     aria-pressed={activeCat === c.id}
                     style={{
-                      padding: '7px 14px',
-                      minHeight: isMobile ? 44 : 34, // cible tactile ≥ 44px en usage réel (spec)
+                      padding: '6px 13px',
+                      minHeight: isMobile ? 44 : 30, // cible tactile ≥ 44px en usage réel (spec)
                       borderRadius: 'var(--r-full)',
                       fontSize: 12,
                       fontWeight: 'var(--fw-semibold)',
                       cursor: 'pointer',
                       fontFamily: 'var(--font)',
                       transition: 'all .15s',
-                      border: 'none',
                       whiteSpace: 'nowrap',
-                      background: activeCat === c.id ? 'var(--p)' : 'var(--bg3)',
+                      // Maquette : active = --p plein / inactive = carte bordée
+                      background: activeCat === c.id ? 'var(--p)' : 'var(--card)',
+                      border: `1px solid ${activeCat === c.id ? 'var(--p)' : 'var(--border2)'}`,
                       color: activeCat === c.id ? '#fff' : 'var(--text2)',
-                      boxShadow: activeCat === c.id ? 'var(--sh-p)' : 'none',
                     }}
                   >{catLabel(c.id, lang)}</button>
                 ))}
@@ -310,7 +309,9 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                     p={p}
                     qty={qtyById.get(p.id)}
                     priceLabel={fmt(getPrice(p))}
-                    basePriceLabel={fmt(p.price)}
+                    amount={amountLabel(getPrice(p))}
+                    suffix={curSuffix}
+                    baseAmount={amountLabel(p.price)}
                     showStrike={clientType !== 'retail' || isPromoRetail}
                     isPromoRetail={isPromoRetail}
                     posShowStockOnTile={posShowStockOnTile}

@@ -13,16 +13,14 @@ const USER = authState?.state?.user ?? { name: 'Admin', role: 'ADMIN', shopName:
 if (!USER.shopName) USER.shopName = 'HabaShop — Dakar Central'
 
 const PRODUCTS = [
-  { id: 'p1',  name: 'Riz parfumé 5kg',    sellPrice: 4500, category: 'cereals', emoji: '🌾', stockQty: 120 },
-  { id: 'p2',  name: 'Huile palme 1L',     sellPrice: 1800, category: 'fat',     emoji: '🫙', stockQty: 12, hasPromotion: true, promotionPrice: 1500, promotionEnd: '2027-01-01T00:00:00Z' },
-  { id: 'p3',  name: 'Sucre 1kg',          sellPrice: 850,  category: 'grocery', emoji: '🍚', stockQty: 245 },
-  { id: 'p4',  name: 'Farine blé 1kg',     sellPrice: 650,  category: 'cereals', emoji: '🌾', stockQty: 89 },
-  { id: 'p5',  name: 'Savon 500g',         sellPrice: 500,  category: 'hygiene', emoji: '🧼', stockQty: 8 },
-  { id: 'p6',  name: 'Lait poudre 400g',   sellPrice: 2200, category: 'dairy',   emoji: '🥛', stockQty: 67 },
-  { id: 'p7',  name: 'Tomate conc. 800g',  sellPrice: 1400, category: 'canned',  emoji: '🍅', stockQty: 0 },
-  { id: 'p8',  name: 'Huile végétale 5L',  sellPrice: 8500, category: 'fat',     emoji: '🫒', stockQty: 34 },
-  { id: 'p9',  name: 'Café soluble 200g',  sellPrice: 2800, category: 'grocery', emoji: '☕', stockQty: 15 },
-  { id: 'p10', name: 'Sardines 155g',      sellPrice: 900,  category: 'canned',  emoji: '🐟', stockQty: 200 },
+  { id: 'p1', name: 'Café soluble 200g', sellPrice: 2800, category: 'grocery', emoji: '☕', stockQty: 64 },
+  { id: 'p2', name: 'Farine blé 1kg',    sellPrice: 650,  category: 'cereals', emoji: '🌾', stockQty: 89 },
+  { id: 'p3', name: 'Huile palme 1L',    sellPrice: 1800, category: 'fat',     emoji: '🫙', stockQty: 12 },
+  { id: 'p4', name: 'Lait concentré',    sellPrice: 1100, category: 'dairy',   emoji: '🥛', stockQty: 95 },
+  { id: 'p5', name: 'Riz parfumé 5kg',   sellPrice: 4500, category: 'cereals', emoji: '🍚', stockQty: 120 },
+  { id: 'p6', name: 'Thé Lipton 25',     sellPrice: 1200, category: 'grocery', emoji: '🍵', stockQty: 47 },
+  { id: 'p7', name: 'Savon OMO 500g',    sellPrice: 900,  category: 'hygiene', emoji: '🧼', stockQty: 8 },
+  { id: 'p8', name: 'Sucre 1kg',         sellPrice: 700,  category: 'grocery', emoji: '🍬', stockQty: 245 },
 ]
 
 async function preparePage(ctx, { offline } = {}) {
@@ -33,7 +31,7 @@ async function preparePage(ctx, { offline } = {}) {
       // Caisse ouverte sans cérémonie : requireCashier=false + pas de fermeture forcée.
       const raw = localStorage.getItem('habashop-config')
       const o = raw ? JSON.parse(raw) : { state: {}, version: 0 }
-      o.state = { ...(o.state || {}), theme: 'dark', lang: 'fr', currency: 'XOF', requireCashier: false, cashierForcedClosed: false }
+      o.state = { ...(o.state || {}), theme: 'dark', lang: 'fr', currency: 'XOF', requireCashier: false, cashierForcedClosed: false, enableLoyalty: true }
       localStorage.setItem('habashop-config', JSON.stringify(o))
     } catch {}
   }, { authLS })
@@ -46,7 +44,7 @@ async function preparePage(ctx, { offline } = {}) {
   // customersApi.search = GET /api/customers?search=… (prédicat : '?' est un métachar de glob)
   await page.route(u => u.pathname.endsWith('/api/customers') && u.searchParams.has('search'),
     r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'c1', name: 'Awa Diop', phone: '+221 77 000 00 00', tier: 'Bronze' }]) }))
-  await page.route('**/api/customers/c1/loyalty', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ points: 340, tier: 'Bronze', bronzeDiscount: 5, history: [] }) }))
+  await page.route('**/api/customers/c1/loyalty', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ points: 340, tier: 'Silver', silverDiscount: 5, history: [] }) }))
   // Statut réseau : /health forcé OK (en ligne) ou coupé (hors-ligne).
   await page.route('**/health', r => offline ? r.abort() : r.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' }))
   return page
@@ -60,20 +58,30 @@ async function resetScroll(page) {
 }
 
 async function fillCart(page) {
-  // .first() : une fois au panier, le stepper « Retirer <produit> » matche aussi le nom.
-  await page.getByRole('button', { name: /Riz parfumé.*—/ }).first().click()
-  await page.getByRole('button', { name: /Riz parfumé.*—/ }).first().click()
-  await page.getByRole('button', { name: /Huile palme.*—/ }).first().click()
+  // Panier maquette : Café ×2, Huile palme ×1, Riz ×1
   await page.getByRole('button', { name: /Café soluble.*—/ }).first().click()
+  await page.getByRole('button', { name: /Café soluble.*—/ }).first().click()
+  await page.getByRole('button', { name: /Huile palme.*—/ }).first().click()
+  await page.getByRole('button', { name: /Riz parfumé.*—/ }).first().click()
 }
 
 async function linkCustomer(page) {
   await page.getByPlaceholder(/Ajouter un client/).fill('Aw')
   await page.getByText('Awa Diop', { exact: true }).click()
-  await page.getByText(/Bronze · −5%/).waitFor({ timeout: 5000 }).catch(() => {})
+  await page.getByText(/Silver|Argent/).first().waitFor({ timeout: 5000 }).catch(() => {})
 }
 
 const browser = await chromium.launch()
+
+// ── Capture de la MAQUETTE (référence 1:1) ──
+{
+  const ctx = await browser.newContext({ viewport: { width: 1240, height: 820 } })
+  const page = await ctx.newPage()
+  await page.goto('file://' + process.cwd() + '/../../docs/ux-mockups/01-pos-principal.view.html')
+  await page.waitForTimeout(1200)
+  await page.screenshot({ path: `${OUT}/maquette-01-pos.png`, fullPage: true })
+  await ctx.close()
+}
 
 // ── Desktop 1440×900 ──
 {

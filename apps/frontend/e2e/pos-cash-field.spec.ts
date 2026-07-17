@@ -27,7 +27,10 @@ test('POS — champ Montant reçu (captures négatif + états)', async ({ page }
     await page.locator('[style*="cursor: pointer"]').first().click()
   })
 
-  // S'assurer du mode Espèces.
+  // Item 11 : le champ Montant reçu vit dans la FEUILLE D'ENCAISSEMENT → l'ouvrir.
+  await page.getByRole('button', { name: /^Encaisser$|^Checkout$/ }).first().click()
+
+  // S'assurer du mode Espèces (tuile dans la feuille).
   await page.getByRole('button', { name: /^Espèces$|^Cash$/ }).first().click().catch(() => {})
 
   const field = page.getByPlaceholder(/Montant reçu|Amount received/)

@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react'
 import QRCode from 'qrcode'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAppStore, useFormatAmount, useConvertToXOF, useCurrencyInfo, useCashierIsOpen, t, formatInCurrency } from '@/stores/appStore'
+import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useCashierIsOpen, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
-import { ShoppingCart, Loader2, Search, Barcode, Wifi, WifiOff, History } from 'lucide-react'
+import { ShoppingCart, Loader2, Search, Barcode, Wifi, WifiOff, History, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -38,6 +38,7 @@ export default function POS() {
   } = useAppStore()
   const fmt    = useFormatAmount()
   const toXOF  = useConvertToXOF()
+  const fromXOF = useConvertFromXOF()
   const { symbol: currencySymbol } = useCurrencyInfo()
   const user = useAuthStore(s => s.user)
   const cashierName = user?.name?.trim() || 'Caissier'
@@ -913,91 +914,104 @@ export default function POS() {
         gap: 0,
       }}>
 
-        {/* ── BARRE POS UNIQUE (spec item 11) : recherche+scan proéminente · statut caisse ·
-             historique (action discrète) · réseau. Le contexte boutique vit dans le shell
-             (topbar/sidebar) — aucune duplication ici. ── */}
+        {/* ── HEADER POS UNIQUE — 1:1 maquette 01-pos-principal.view.html :
+             [boutique] [pill caisse] [recherche+scan] [historique] [réseau].
+             La pill caisse est le point d'entrée discret de la CLÔTURE (modale). ── */}
         <div data-testid="pos-header" style={{
           flexShrink: 0,
-          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-          padding: '10px 16px 8px',
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          padding: '14px 16px',
           borderBottom: '1px solid var(--border)',
         }}>
-          {/* Recherche + scan (catalogue) — en mode historique, un titre la remplace */}
+          {/* Boutique active */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <Store size={17} style={{ color: 'var(--p2)', flexShrink: 0 }} aria-hidden="true" />
+            <span style={{
+              color: 'var(--text)', fontSize: 14, fontWeight: 'var(--fw-semibold)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180,
+            }}>{user?.shopName ?? ''}</span>
+          </div>
+
+          {/* Pill statut caisse — cliquable : ouvre la modale de fermeture */}
+          <button type="button" data-testid="pos-cashier-pill"
+            onClick={() => setShowCloseModal(true)}
+            title={lang === 'en' ? 'Close the register' : lang === 'es' ? 'Cerrar la caja' : lang === 'it' ? 'Chiudi la cassa' : 'Fermer la caisse'}
+            aria-label={lang === 'en' ? 'Register open — close the register' : lang === 'es' ? 'Caja abierta — cerrar la caja' : lang === 'it' ? 'Cassa aperta — chiudi la cassa' : 'Caisse ouverte — fermer la caisse'}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+              padding: '4px 10px', borderRadius: 'var(--r-full)',
+              background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)',
+              color: 'var(--acc2)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+              cursor: 'pointer', fontFamily: 'var(--font)',
+            }}>
+            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc2)' }} />
+            {lang === 'en' ? 'Register open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
+          </button>
+
+          {/* Recherche + scan — icône code-barres DANS le champ (maquette) */}
           {posTab === 'pos' ? (
-            <div style={{ flex: 1, minWidth: 200, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <Search size={15} style={{
-                  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                  color: 'var(--text3)', pointerEvents: 'none',
-                }} />
-                <input
-                  className="input"
-                  style={{ paddingLeft: 36, width: '100%', fontSize: 14, minHeight: 44, boxSizing: 'border-box' }}
-                  aria-label={t('pos_search')} placeholder={t('pos_search')}
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-              </div>
+            <div style={{ flex: 1, minWidth: 180, maxWidth: 360, position: 'relative' }}>
+              <Search size={15} style={{
+                position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+                color: 'var(--text3)', pointerEvents: 'none',
+              }} />
+              <input
+                className="input"
+                style={{ paddingLeft: 36, paddingRight: posEnableScanner ? 42 : 12, width: '100%', fontSize: 13, minHeight: 40, boxSizing: 'border-box' }}
+                aria-label={t('pos_search')}
+                placeholder={lang === 'en' ? 'Search or scan…' : lang === 'es' ? 'Buscar o escanear…' : lang === 'it' ? 'Cerca o scansiona…' : 'Rechercher ou scanner…'}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
               {posEnableScanner && (
                 <button
                   onClick={() => setShowScanner(true)}
                   aria-label={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
                   title={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
                   style={{
-                    width: 44, height: 44, borderRadius: 10,
-                    cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
-                    background: 'var(--bg3)', border: '1px solid var(--border)',
-                    color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
+                    position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+                    width: 34, height: 34, borderRadius: 8,
+                    cursor: 'pointer', transition: 'all .15s',
+                    background: 'transparent', border: 'none',
+                    color: 'var(--p2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
-                ><Barcode size={19} /></button>
+                ><Barcode size={17} /></button>
               )}
             </div>
           ) : (
-            <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}>
-              <History size={15} style={{ color: 'var(--text3)' }} />
+            <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <History size={15} style={{ color: 'var(--text3)' }} aria-hidden="true" />
               {lang === 'en' ? 'Sales history' : lang === 'es' ? 'Historial de ventas' : lang === 'it' ? 'Storico vendite' : 'Historique des ventes'}
             </span>
           )}
 
-          {/* Pill statut caisse — cet écran n'est rendu que caisse OUVERTE */}
-          <span data-testid="pos-cashier-pill" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
-            padding: '3px 10px', borderRadius: 'var(--r-full)',
-            background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)',
-            color: 'var(--acc2)', fontSize: 11, fontWeight: 'var(--fw-semibold)',
-          }}>
-            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)' }} />
-            {lang === 'en' ? 'Register open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
-          </span>
-
-          {/* Historique — action discrète (progressive disclosure), hors du flux caisse */}
+          {/* Historique — action discrète, hors du flux caisse */}
           <button type="button"
             onClick={() => { const next = posTab === 'pos' ? 'history' : 'pos'; setPosTab(next); if (next === 'history') fetchHistory() }}
             aria-pressed={posTab === 'history'}
             aria-label={lang === 'en' ? 'History' : lang === 'es' ? 'Historial' : lang === 'it' ? 'Storico' : 'Historique'}
             title={lang === 'en' ? 'History' : lang === 'es' ? 'Historial' : lang === 'it' ? 'Storico' : 'Historique'}
             style={{
-              width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+              width: 38, height: 38, borderRadius: 10, flexShrink: 0, marginLeft: 'auto',
               cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
-              background: posTab === 'history' ? 'var(--p)' : 'var(--bg3)',
+              background: posTab === 'history' ? 'var(--p)' : 'var(--card)',
               border: `1px solid ${posTab === 'history' ? 'var(--p)' : 'var(--border)'}`,
               color: posTab === 'history' ? '#fff' : 'var(--text2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          ><History size={17} /></button>
+          ><History size={16} /></button>
 
           {/* Indicateur réseau : vert discret / ambre hors-ligne (cash-only) */}
           <span data-testid="pos-network" role="status" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
-            padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 11, fontWeight: 'var(--fw-semibold)',
-            background: isOnline ? 'transparent' : 'var(--c-amber-bg, rgba(255,197,61,.12))',
+            display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+            padding: '4px 10px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+            background: isOnline ? 'transparent' : 'var(--c-amber-bg, rgba(255,197,61,.14))',
             border: `1px solid ${isOnline ? 'transparent' : 'var(--c-amber-border, rgba(255,197,61,.3))'}`,
             color: isOnline ? 'var(--text3)' : 'var(--warn)',
           }}>
             {isOnline
-              ? <><Wifi size={12} style={{ color: 'var(--acc2)' }} /> {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}</>
-              : <><WifiOff size={12} /> {lang === 'en' ? 'Offline' : lang === 'es' ? 'Sin conexión' : lang === 'it' ? 'Offline' : 'Hors-ligne'}</>}
+              ? <><Wifi size={13} style={{ color: 'var(--acc2)' }} /> {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}</>
+              : <><WifiOff size={13} /> {lang === 'en' ? 'Offline' : lang === 'es' ? 'Sin conexión' : lang === 'it' ? 'Offline' : 'Hors-ligne'}</>}
           </span>
         </div>
 
@@ -1053,6 +1067,8 @@ export default function POS() {
           activeCat={activeCat} setActiveCat={setActiveCat}
           clientType={clientType} setClientType={setClientType}
           fmt={fmt}
+          amountLabel={n => fromXOF(n).toLocaleString(locale, { maximumFractionDigits: 2 })}
+          curSuffix={currencySymbol}
           filtered={filtered}
           cart={cart}
           addItem={addItem}
@@ -1073,29 +1089,16 @@ export default function POS() {
         <POSCart
           lang={lang}
           cart={cart} setCart={setCart}
-          cashierSessionTx={cashierSessionTx} cashierSessionCA={cashierSessionCA}
-          setShowCloseModal={setShowCloseModal}
           fmt={fmt}
           discount={discount} discountAmount={discountAmount}
           setShowDiscountModal={setShowDiscountModal} setDiscount={setDiscount}
           totalHT={totalHT} tva={tva} posTaxRate={posTaxRate} total={netTotal}
           loyaltyDiscount={loyaltyDiscount} loyaltyPct={loyaltyPct} loyaltyCustomerName={linkedCustomer?.name ?? null}
           linkedCustomer={linkedCustomer} setLinkedCustomer={setLinkedCustomer} enableLoyalty={enableLoyalty} loyaltyTier={loyaltyTier} loyaltyPoints={loyaltyPoints}
-          PAY_MODES={PAY_MODES} payMode={payMode} setPayMode={setPayMode}
-          currencySymbol={currencySymbol}
-          cashGiven={cashGiven} setCashGiven={setCashGiven}
-          monnaie={monnaie}
-          confirmSale={confirmSale}
           setShowModal={setShowModal}
           updateQty={updateQty}
           isMobile={isMobile} mobileView={mobileView}
-          mixedOn={mixedOn} setMixedOn={setMixedOn}
-          mixedM1={mixedM1} setMixedM1={setMixedM1} mixedM2={mixedM2} setMixedM2={setMixedM2}
-          mixedAmt1={mixedAmt1} setMixedAmt1={setMixedAmt1}
-          mixedAmt2XOF={mixedAmt2XOF} mixedValid={mixedValid}
-          paydunyaOk={paydunyaOk} onPaydunyaStart={startPaydunyaPayment}
           getStock={id => productById.get(id)?.stock ?? 0}
-          isOnline={isOnline}
         />
         </div>
       </div>
@@ -1144,7 +1147,14 @@ export default function POS() {
         isSaving={isSaving} waSending={waSending}
         discount={discount} payMode={payMode}
         cashGiven={cashGiven} toXOF={toXOF}
+        PAY_MODES={PAY_MODES} setPayMode={setPayMode}
+        isOnline={isOnline}
+        setCashGiven={setCashGiven} monnaie={monnaie} currencySymbol={currencySymbol}
         mixedOn={mixedOn} mixedValid={mixedValid}
+        setMixedOn={setMixedOn}
+        mixedM1={mixedM1} setMixedM1={setMixedM1} mixedM2={mixedM2} setMixedM2={setMixedM2}
+        mixedAmt1={mixedAmt1} setMixedAmt1={setMixedAmt1} mixedAmt2XOF={mixedAmt2XOF}
+        paydunyaOk={paydunyaOk} onPaydunyaStart={startPaydunyaPayment}
         mtnPhone={mtnPhone} setMtnPhone={handleMtnPhone}
         mtnStatus={mtnStatus} mtnError={mtnError}
         startMtnPayment={startMtnPayment} onMtnRetry={onMtnRetry}
