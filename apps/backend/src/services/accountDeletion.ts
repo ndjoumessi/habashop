@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto'
-import type { Prisma } from '@prisma/client'
-import { prisma } from '../db'
+import { prisma, type TxClient } from '../db'
 import { invalidateUserStatus } from '../lib/userStatus'
 
 /**
@@ -37,7 +36,7 @@ const ANON = {
 const deletedEmail = () => `deleted-${randomUUID()}@deleted.local`
 
 /** Anonymise un User + purge ses PII annexes (IP des logs, push tokens). */
-async function anonymizeUser(tx: Prisma.TransactionClient, userId: string, now: Date): Promise<void> {
+async function anonymizeUser(tx: TxClient, userId: string, now: Date): Promise<void> {
   await tx.user.update({
     where: { id: userId },
     data: {
@@ -55,7 +54,7 @@ async function anonymizeUser(tx: Prisma.TransactionClient, userId: string, now: 
 }
 
 /** Décide la portée selon la règle finale (option A + garde-fou). */
-async function decideScope(tx: Prisma.TransactionClient, user: { id: string; tenantId: string; role: string }): Promise<DeletionScope> {
+async function decideScope(tx: TxClient, user: { id: string; tenantId: string; role: string }): Promise<DeletionScope> {
   if (user.role === 'SUPER_ADMIN') return 'tenant'
   if (user.role === 'ADMIN') {
     const otherActiveAdmins = await tx.user.count({

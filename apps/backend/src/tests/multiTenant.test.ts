@@ -13,7 +13,8 @@ const { db } = vi.hoisted(() => ({
     product:    { count: vi.fn(), fields: { stockMin: {} } },
   },
 }))
-vi.mock('../db', () => ({ prisma: db }))
+// `basePrisma` = même mock (le dashboard consolidé l'utilise pour l'agrégat cross-tenant).
+vi.mock('../db', () => ({ prisma: db, basePrisma: db }))
 vi.mock('../lib/userStatus', () => ({ isUserActive: vi.fn().mockResolvedValue(true) }))
 vi.mock('../lib/cache', () => ({ getCached: (_k: string, _t: number, fn: any) => fn() }))
 vi.mock('../services/email', () => ({ sendWelcomeEmail: vi.fn().mockResolvedValue(undefined) }))
