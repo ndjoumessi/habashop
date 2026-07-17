@@ -15,9 +15,11 @@ interface Props {
   fmt: (n: number) => string
   /** Total à payer en devise d'AFFICHAGE (raccourcis Exact/arrondis) — optionnel. */
   totalDisplay?: number
+  /** Décimales de la devise d'affichage (0 = XOF/XAF) — pilote les pas des raccourcis. */
+  currencyDecimals?: number
 }
 
-export default function POSCashField({ lang, cashGiven, setCashGiven, monnaie, currencySymbol, fmt, totalDisplay }: Props) {
+export default function POSCashField({ lang, cashGiven, setCashGiven, monnaie, currencySymbol, fmt, totalDisplay, currencyDecimals = 0 }: Props) {
   // Montant reçu : jamais négatif. Vide → '' (traité comme 0 en aval). Négatif (collé/contournement) → 0.
   const onCashChange = (raw: string) => {
     if (raw === '') { setCashGiven(''); return }
@@ -28,11 +30,13 @@ export default function POSCashField({ lang, cashGiven, setCashGiven, monnaie, c
   const cashSufficient   = cashEntered && monnaie >= 0
   const cashInsufficient = cashEntered && monnaie < 0
 
-  // Raccourcis : Exact + arrondis supérieurs (millier / 5 milliers / dizaine de milliers), dédupliqués.
+  // Raccourcis : Exact + arrondis supérieurs, dédupliqués. Pas adaptés à la devise :
+  // sans décimales (XOF/XAF) → coupures franc CFA ; avec décimales (EUR/USD…) → billets usuels.
   const quicks: { label: string; value: number }[] = []
   if (totalDisplay && totalDisplay > 0) {
     const exact = Math.ceil(totalDisplay * 100) / 100
-    const ups = [1000, 5000, 10000]
+    const steps = currencyDecimals > 0 ? [5, 10, 50] : [1000, 5000, 10000]
+    const ups = steps
       .map(step => Math.ceil(totalDisplay / step) * step)
       .filter(v => v > exact)
     const seen = new Set<number>()

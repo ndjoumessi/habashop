@@ -60,3 +60,36 @@ describe('POSCashField — champ Montant reçu (clamp négatif + états)', () =>
     expect(screen.queryByText(/Montant insuffisant/)).not.toBeInTheDocument()
   })
 })
+
+describe('POSCashField — raccourcis adaptés à la devise', () => {
+  it('devise sans décimales (XOF) → pas 1000/5000/10000', () => {
+    render(<POSCashField {...baseProps({ totalDisplay: 11400, currencyDecimals: 0 })} />)
+    expect(screen.getByRole('button', { name: 'Exact' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^12\s000$/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^15\s000$/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^20\s000$/ })).toBeInTheDocument()
+  })
+
+  it('devise à décimales (EUR) → pas 5/10/50, pas de coupures CFA', () => {
+    render(<POSCashField {...baseProps({ totalDisplay: 13.14, currencyDecimals: 2, currencySymbol: '€' })} />)
+    expect(screen.getByRole('button', { name: 'Exact' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '15' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '20' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '50' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^1\s000$/ })).not.toBeInTheDocument()
+  })
+
+  it('défaut (prop absente) → comportement XOF historique', () => {
+    render(<POSCashField {...baseProps({ totalDisplay: 700 })} />)
+    expect(screen.getByRole('button', { name: /^1\s000$/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^5\s000$/ })).toBeInTheDocument()
+  })
+
+  it('arrondi déjà atteint (total = coupure) → pas de doublon', () => {
+    render(<POSCashField {...baseProps({ totalDisplay: 10, currencyDecimals: 2 })} />)
+    // exact = 10 ; ups 10 filtré (pas > exact) → Exact, 50 uniquement
+    expect(screen.getByRole('button', { name: 'Exact' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '50' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '10' })).not.toBeInTheDocument()
+  })
+})

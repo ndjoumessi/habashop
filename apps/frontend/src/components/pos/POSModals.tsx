@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { X, Smartphone, AlertTriangle, AlertCircle, Loader2, TestTube, CreditCard, Coins, Waves, Wallet, Split, Check, Printer, Percent } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
-import { t, CURRENCY_SYMBOLS, formatInCurrency } from '@/stores/appStore'
+import { t, CURRENCY_SYMBOLS, CURRENCY_DECIMALS, formatInCurrency } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
 import POSCashField from '@/components/pos/POSCashField'
@@ -570,7 +570,7 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               {/* Espèces : MONTANT REÇU + raccourcis + Rendu monnaie (maquette 02) */}
               {!mixedOn && payMode === 'cash' && (
                 <div style={{ marginTop: 8 }}>
-                  <POSCashField lang={lang} cashGiven={cashGiven} setCashGiven={setCashGiven} monnaie={monnaie} currencySymbol={currencySymbol} fmt={fmt} totalDisplay={totalDisplay} />
+                  <POSCashField lang={lang} cashGiven={cashGiven} setCashGiven={setCashGiven} monnaie={monnaie} currencySymbol={currencySymbol} fmt={fmt} totalDisplay={totalDisplay} currencyDecimals={CURRENCY_DECIMALS[currency as keyof typeof CURRENCY_DECIMALS] ?? 2} />
                 </div>
               )}
             </div>
