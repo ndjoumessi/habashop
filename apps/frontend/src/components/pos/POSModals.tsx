@@ -1,7 +1,9 @@
-import { X, Smartphone, AlertTriangle, AlertCircle, Loader2, TestTube, CreditCard, Coins, Waves, Wallet, Split, Check } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { X, Smartphone, AlertTriangle, AlertCircle, Loader2, TestTube, CreditCard, Coins, Waves, Wallet, Split, Check, Printer } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, CURRENCY_SYMBOLS } from '@/stores/appStore'
+import { salesApi } from '@/lib/api'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
 import POSCashField from '@/components/pos/POSCashField'
 import { useModalFocus } from '@/hooks/useModalFocus'
@@ -16,6 +18,7 @@ interface POSModalsProps {
   ct: any
   cashierOpenedAt: any; locale: string
   cashierOpeningFund: number; cashierSessionTx: number; cashierSessionCA: number
+  cashierName?: string
   closeCashier: () => void
   setOpeningFundInput: (v: string) => void
   currency: any
@@ -72,7 +75,7 @@ interface POSModalsProps {
   onCardRetry: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, PAY_MODES, setPayMode, isOnline = true, setCashGiven, monnaie, currencySymbol, mixedOn, mixedValid, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, paydunyaOk = false, onPaydunyaStart, tvaAmount = 0, totalDisplay, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, cashierName = '', closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, PAY_MODES, setPayMode, isOnline = true, setCashGiven, monnaie, currencySymbol, mixedOn, mixedValid, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, paydunyaOk = false, onPaydunyaStart, tvaAmount = 0, totalDisplay, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
@@ -87,6 +90,42 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
   // Carte Campay : masque Confirmer pendant le flux QR / polling.
   const isCardMode   = !mixedOn && payMode === 'card'
   const blocked = isSaving || waSending || !payOK
+
+  // ── Clôture de caisse (maquette 03) — état UI pur ────────────────────────────
+  // Montant compté (devise d'affichage) : contrôlé → écart LIVE coloré.
+  const [countedInput, setCountedInput] = useState('')
+  // Ventilation par mode des ventes du JOUR (lecture seule, affichage) — le PDF
+  // Ticket Z serveur reste autoritaire (breakdown COALESCE(split, paymentMode)).
+  const [dayByMode, setDayByMode] = useState<Record<string, number> | null>(null)
+  useEffect(() => {
+    if (!showCloseModal) { setCountedInput(''); return }
+    let alive = true
+    salesApi.list()
+      .then((sales: any[]) => {
+        if (!alive || !Array.isArray(sales)) return
+        const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
+        const acc: Record<string, number> = {}
+        for (const s of sales) {
+          if (s.status === 'refunded') continue
+          if (new Date(s.createdAt) < dayStart) continue
+          const m = s.paymentMode || 'cash'
+          acc[m] = (acc[m] ?? 0) + (Number(s.total) || 0)
+        }
+        setDayByMode(acc)
+      })
+      .catch(() => { if (alive) setDayByMode(null) })  // hors-ligne → repli session (sans ventilation)
+    return () => { alive = false }
+  }, [showCloseModal])
+
+  // Espèces attendues = fond + ventes ESPÈCES (maquette/spec : seules les espèces se
+  // comptent). Repli si ventilation indisponible : CA session (comportement historique).
+  const dayCashSales = dayByMode?.cash ?? null
+  const expectedCash = cashierOpeningFund + (dayCashSales ?? cashierSessionCA)
+  const countedXOF = toXOF(Math.max(0, parseFloat(countedInput) || 0))
+  const countedEntered = countedInput.trim() !== ''
+  const cashGap = countedXOF - expectedCash
+  // Seuils d'alerte : juste (0) / petit écart (< 5 % de l'attendu) / important.
+  const gapLevel = cashGap === 0 ? 'ok' : Math.abs(cashGap) < Math.max(500, expectedCash * 0.05) ? 'warn' : 'danger'
   // Pièges à focus (focus initial + Tab bouclé + restauration au déclencheur)
   const discountBoxRef = useModalFocus<HTMLDivElement>(showDiscountModal)
   const closeBoxRef    = useModalFocus<HTMLDivElement>(showCloseModal)
@@ -203,56 +242,131 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
       ════════════════════════════════ */}
       {showCloseModal && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={ct.close_title} onClick={e => e.target===e.currentTarget && setShowCloseModal(false)}>
-          <div ref={closeBoxRef} className="modal-box" style={{ maxWidth:480 }}>
-            <h3 style={{ fontSize:16, fontWeight:'var(--fw-bold)', color:'var(--text)', marginBottom:20 }}>
-              {ct.close_title}
-            </h3>
-            <ResponsiveGrid min={160} gap={10} style={{ marginBottom: 20 }}>
-              {[
-                { label: ct.open_time,    value: cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--' },
-                { label: ct.close_time,   value: new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) },
-                // Montants caisse stockés en XOF (base) → fmt() CONVERTIT vers la devise d'affichage.
-                // (Ne PAS utiliser formatInCurrency(xof, devise) : ça étiquetterait l'entier XOF sans convertir.)
-                { label: ct.initial_fund, value: fmt(cashierOpeningFund) },
-                { label: ct.transactions, value: String(cashierSessionTx) },
-                { label: ct.ca_cashed,    value: fmt(cashierSessionCA) },
-                { label: ct.total_cash,   value: fmt(cashierOpeningFund + cashierSessionCA) },
-              ].map(s => (
-                <div key={s.label} style={{
-                  background:'var(--bg3)', border:'1px solid var(--border)',
-                  borderRadius:10, padding:'10px 14px',
-                }}>
-                  <div style={{ fontSize:11, color:'var(--text3)', marginBottom:4, textTransform:'uppercase', letterSpacing:'.5px' }}>{s.label}</div>
-                  <div style={{ fontSize:14, fontWeight:'var(--fw-bold)', color:'var(--text)', fontFamily:'var(--mono)' }}>{s.value}</div>
+          <div ref={closeBoxRef} className="modal-box" style={{ maxWidth:420 }}>
+            {/* Header — « Clôture de caisse » + badge Ticket Z · date (maquette 03) */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4, gap:8 }}>
+              <span style={{ color:'var(--text)', fontSize:16, fontWeight:'var(--fw-semibold)' }}>{ct.close_title}</span>
+              <span style={{
+                background:'color-mix(in srgb, var(--p) 16%, transparent)', color:'var(--p3)',
+                fontSize:11, fontWeight:'var(--fw-semibold)', padding:'4px 10px', borderRadius:'var(--r-full)', flexShrink:0,
+              }}>
+                Ticket Z · {new Date().toLocaleDateString(locale, { day:'2-digit', month:'2-digit' })}
+              </span>
+            </div>
+            {/* Ligne session : caissier · heure d'ouverture · N ventes */}
+            <div style={{ color:'var(--text3)', fontSize:12, marginBottom:16 }}>
+              {cashierName || ct.cashier_label}
+              {' · '}
+              {lang === 'en' ? 'opened at' : lang === 'es' ? 'abierta a las' : lang === 'it' ? 'aperta alle' : 'ouverte à'}{' '}
+              {cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--'}
+              {' · '}
+              {cashierSessionTx} {lang === 'en' ? 'sales' : lang === 'es' ? 'ventas' : lang === 'it' ? 'vendite' : 'ventes'}
+            </div>
+
+            {/* VENTES PAR MODE — pastilles couleur → Total ventes (or) */}
+            {dayByMode && Object.keys(dayByMode).length > 0 && (
+              <>
+                <div style={{ color:'var(--text3)', fontSize:11, letterSpacing:'.5px', textTransform:'uppercase', fontWeight:'var(--fw-semibold)', marginBottom:9 }}>
+                  {lang === 'en' ? 'Sales by method' : lang === 'es' ? 'Ventas por método' : lang === 'it' ? 'Vendite per metodo' : 'Ventes par mode'}
                 </div>
-              ))}
-            </ResponsiveGrid>
-            <div style={{ marginBottom:20 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-semibold)', textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text3)', marginBottom:6 }}>
-                {ct.counted_label}
-              </label>
-              <div style={{ position:'relative' }}>
-                <input className="input" type="number"
-                  min={0}
+                <div style={{ background:'var(--bg)', border:'1px solid var(--border2)', borderRadius:12, padding:'6px 14px', marginBottom:16 }}>
+                  {(['cash','wave','orange','mtn','card','mixed'] as const).filter(m => (dayByMode[m] ?? 0) > 0).map(m => {
+                    const dot = m === 'cash' ? 'var(--acc2)' : m === 'wave' ? 'var(--acc3)' : m === 'orange' ? '#FF9F45' : m === 'mtn' ? 'var(--warn)' : m === 'card' ? 'var(--p3)' : 'var(--text3)'
+                    const label = m === 'cash' ? (lang==='en'?'Cash':lang==='es'?'Efectivo':lang==='it'?'Contanti':'Espèces')
+                      : m === 'wave' ? 'Wave' : m === 'orange' ? 'Orange Money' : m === 'mtn' ? 'MTN MoMo'
+                      : m === 'card' ? (lang==='en'?'Card':lang==='es'?'Tarjeta':lang==='it'?'Carta':'Carte')
+                      : (lang==='en'?'Mixed':lang==='es'?'Mixto':lang==='it'?'Misto':'Mixte')
+                    return (
+                      <div key={m} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid color-mix(in srgb, var(--border) 55%, transparent)' }}>
+                        <span style={{ color:'var(--text)', fontSize:13, display:'flex', alignItems:'center' }}>
+                          <span aria-hidden="true" style={{ display:'inline-block', width:8, height:8, borderRadius:'50%', background:dot, marginRight:8 }} />
+                          {label}
+                        </span>
+                        <span style={{ color:'var(--text2)', fontSize:13, fontFamily:'var(--mono)' }}>{fmt(dayByMode[m])}</span>
+                      </div>
+                    )
+                  })}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0' }}>
+                    <span style={{ color:'var(--text)', fontSize:14, fontWeight:'var(--fw-semibold)' }}>
+                      {lang === 'en' ? 'Total sales' : lang === 'es' ? 'Total ventas' : lang === 'it' ? 'Totale vendite' : 'Total ventes'}
+                    </span>
+                    <span style={{ color:'var(--acc)', fontSize:16, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)' }}>
+                      {fmt(Object.values(dayByMode).reduce((a, b) => a + b, 0))}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* CAISSE ESPÈCES : fond + ventes espèces = attendu */}
+            <div style={{ color:'var(--text3)', fontSize:11, letterSpacing:'.5px', textTransform:'uppercase', fontWeight:'var(--fw-semibold)', marginBottom:9 }}>
+              {lang === 'en' ? 'Cash drawer' : lang === 'es' ? 'Caja efectivo' : lang === 'it' ? 'Cassa contanti' : 'Caisse espèces'}
+            </div>
+            <div style={{ background:'var(--bg)', border:'1px solid var(--border2)', borderRadius:12, padding:'12px 14px', marginBottom:16 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text2)', fontSize:13, marginBottom:6 }}>
+                <span>{ct.initial_fund}</span><span style={{ fontFamily:'var(--mono)' }}>{fmt(cashierOpeningFund)}</span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text2)', fontSize:13, marginBottom:6 }}>
+                <span>+ {lang === 'en' ? 'Cash sales' : lang === 'es' ? 'Ventas en efectivo' : lang === 'it' ? 'Vendite in contanti' : 'Ventes espèces'}</span>
+                <span style={{ fontFamily:'var(--mono)' }}>{fmt(dayCashSales ?? cashierSessionCA)}</span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text)', fontSize:13, fontWeight:'var(--fw-semibold)', paddingTop:6, borderTop:'1px solid color-mix(in srgb, var(--border) 55%, transparent)' }}>
+                <span>= {lang === 'en' ? 'Expected cash' : lang === 'es' ? 'Efectivo esperado' : lang === 'it' ? 'Contanti attesi' : 'Espèces attendues'}</span>
+                <span style={{ fontFamily:'var(--mono)' }}>{fmt(expectedCash)}</span>
+              </div>
+            </div>
+
+            {/* Montant compté (devise d'affichage → XOF pour l'écart) */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, marginBottom:10, flexWrap:'wrap' }}>
+              <label htmlFor="counted-amount" style={{ color:'var(--text2)', fontSize:13 }}>{ct.counted_label}</label>
+              <div style={{ background:'var(--bg)', border:'1px solid var(--border)', borderRadius:10, padding:'2px 13px', display:'flex', alignItems:'baseline', gap:5, flex:1, maxWidth:200 }}>
+                <input id="counted-amount" className="no-spin" type="number" min={0} inputMode="decimal"
                   placeholder={ct.counted_placeholder}
-                  id="counted-amount"
-                  // Bloque les montants négatifs (saisie, collage, molette).
-                  onInput={e => { if (parseFloat(e.currentTarget.value) < 0) e.currentTarget.value = '0' }}
-                  style={{ fontSize:14, paddingRight:48 }} />
-                <span style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', fontSize:13, fontWeight:'var(--fw-semibold)', color:'var(--text3)', pointerEvents:'none' }}>
+                  value={countedInput}
+                  onKeyDown={e => { if (e.key === '-') e.preventDefault() }}
+                  onChange={e => { const v = e.target.value; setCountedInput(v === '' ? '' : (parseFloat(v) < 0 ? '0' : v)) }}
+                  style={{ flex:1, minWidth:0, textAlign:'right', background:'transparent', border:'none', outline:'none', color:'var(--text)', fontSize:16, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)', padding:'7px 0' }} />
+                <span aria-hidden="true" style={{ color:'var(--text3)', fontSize:12, flexShrink:0 }}>
                   {CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency}
                 </span>
               </div>
             </div>
-            <div style={{ display:'flex', gap:8 }}>
-              <button
+
+            {/* Écart — vert juste / ambre petit / rouge important */}
+            {countedEntered && (
+              <div role="status" style={{
+                display:'flex', alignItems:'center', justifyContent:'space-between',
+                background: gapLevel === 'ok' ? 'color-mix(in srgb, var(--acc2) 10%, transparent)'
+                  : gapLevel === 'warn' ? 'color-mix(in srgb, var(--warn) 10%, transparent)'
+                  : 'color-mix(in srgb, var(--danger) 10%, transparent)',
+                borderRadius:11, padding:'11px 14px', marginBottom:18,
+              }}>
+                <span style={{ color:'var(--text2)', fontSize:13, display:'flex', alignItems:'center', gap:6 }}>
+                  {gapLevel === 'ok'
+                    ? <Check size={14} style={{ color:'var(--acc2)' }} />
+                    : <AlertTriangle size={14} style={{ color: gapLevel === 'warn' ? 'var(--warn)' : 'var(--danger)' }} />}
+                  {gapLevel === 'ok'
+                    ? (lang === 'en' ? 'Drawer balanced' : lang === 'es' ? 'Caja cuadrada' : lang === 'it' ? 'Cassa esatta' : 'Caisse juste')
+                    : (lang === 'en' ? 'Difference' : lang === 'es' ? 'Diferencia' : lang === 'it' ? 'Differenza' : 'Écart')}
+                </span>
+                <span style={{
+                  color: gapLevel === 'ok' ? 'var(--acc2)' : gapLevel === 'warn' ? 'var(--warn)' : 'var(--danger)',
+                  fontSize:16, fontWeight:'var(--fw-semibold)', fontFamily:'var(--mono)',
+                }}>
+                  {gapLevel === 'ok' ? fmt(0) : `${cashGap > 0 ? '+ ' : '− '}${fmt(Math.abs(cashGap))}`}
+                </span>
+              </div>
+            )}
+
+            {/* Actions : Annuler (1) + Clôturer & imprimer Z (2) */}
+            <div style={{ display:'flex', gap:9 }}>
+              <button type="button" onClick={() => setShowCloseModal(false)}
+                style={{ flex:1, background:'var(--card2)', color:'var(--text2)', border:'1px solid var(--border)',
+                  borderRadius:12, padding:13, minHeight:48, fontSize:14, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer' }}>
+                {ct.cancel}
+              </button>
+              <button type="button"
                 onClick={() => {
-                  // L'utilisateur compte le cash physique en devise d'AFFICHAGE → on convertit en XOF
-                  // pour comparer à `expected` (fond + CA, stockés en XOF). Tout est affiché ensuite via fmt().
-                  const countedDisplay = Math.max(0, parseFloat((document.getElementById('counted-amount') as HTMLInputElement)?.value || '0') || 0)
-                  const countedXOF = toXOF(countedDisplay)
-                  const expected = cashierOpeningFund + cashierSessionCA // XOF
-                  const diff = countedXOF - expected // XOF
                   const openedTime = cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--'
                   const win = window.open('', '_blank', 'width=400,height=600')
                   if (win) {
@@ -261,20 +375,21 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     .center{text-align:center;}.bold{font-weight:bold;}.big{font-size:16px;font-weight:900;}
                     .divider{border-top:1px dashed #000;margin:8px 0;}.row{display:flex;justify-content:space-between;margin:4px 0;}
                     .ok{color:green;}.err{color:red;}</style></head><body>
-                    <div class="center"><div class="big">HabaShop</div><div>${ct.close_title.toUpperCase()}</div>
+                    <div class="center"><div class="big">HabaShop</div><div>${ct.close_title.toUpperCase()} — TICKET Z</div>
                     <div>${ct.cashier_label} — ${new Date().toLocaleDateString(locale)}</div></div>
                     <div class="divider"></div>
                     <div class="row"><span>${ct.open_time}:</span><span>${openedTime}</span></div>
                     <div class="row"><span>${ct.close_time}:</span><span>${new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'})}</span></div>
-                    <div class="row"><span>Caissier:</span><span>Nelson D.</span></div>
+                    <div class="row"><span>Caissier:</span><span>${cashierName || '—'}</span></div>
                     <div class="divider"></div>
                     <div class="row"><span>${ct.initial_fund}:</span><span>${fmt(cashierOpeningFund)}</span></div>
                     <div class="row"><span>${ct.transactions}:</span><span>${cashierSessionTx}</span></div>
                     <div class="row bold"><span>${ct.ca_cashed}:</span><span>${fmt(cashierSessionCA)}</span></div>
+                    ${dayByMode ? Object.entries(dayByMode).map(([m, v]) => `<div class="row"><span>${m}:</span><span>${fmt(v as number)}</span></div>`).join('') : ''}
                     <div class="divider"></div>
-                    <div class="row bold"><span>Attendu:</span><span>${fmt(expected)}</span></div>
-                    <div class="row bold"><span>${ct.counted_label.split(' ')[0]}:</span><span>${fmt(countedXOF)}</span></div>
-                    <div class="row bold ${diff >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${diff >= 0 ? '+' : ''}${fmt(Math.abs(diff))}</span></div>
+                    <div class="row bold"><span>Attendu (espèces):</span><span>${fmt(expectedCash)}</span></div>
+                    <div class="row bold"><span>Compté:</span><span>${fmt(countedXOF)}</span></div>
+                    <div class="row bold ${cashGap >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${cashGap >= 0 ? '+' : '−'}${fmt(Math.abs(cashGap))}</span></div>
                     <div class="divider"></div>
                     <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
                     <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>
@@ -284,13 +399,13 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   closeCashier()
                   setOpeningFundInput('')
                   setShowCloseModal(false)
-                  toast.success('Caisse fermée — Rapport imprimé')
+                  toast.success(lang === 'en' ? 'Register closed — Z report printed' : lang === 'es' ? 'Caja cerrada — informe Z impreso' : lang === 'it' ? 'Cassa chiusa — rapporto Z stampato' : 'Caisse fermée — Ticket Z imprimé')
                 }}
-                className="topbar-btn"
-                style={{ flex:1, justifyContent:'center', background:'linear-gradient(135deg,var(--danger),#dc2626)' }}
-              >{ct.confirm_close}</button>
-              <button className="mini-btn" style={{ padding:'10px 16px' }}
-                onClick={() => setShowCloseModal(false)}>{ct.cancel}</button>
+                style={{ flex:2, background:'var(--grad-p)', color:'#fff', border:'none',
+                  borderRadius:12, padding:13, minHeight:48, fontSize:14, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)',
+                  cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'var(--sh-md)' }}>
+                <Printer size={15} /> {lang === 'en' ? 'Close & print Z' : lang === 'es' ? 'Cerrar e imprimir Z' : lang === 'it' ? 'Chiudi e stampa Z' : 'Clôturer & imprimer Z'}
+              </button>
             </div>
           </div>
         </div>

@@ -7,7 +7,7 @@ import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, 
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
-import { ShoppingCart, Loader2, Search, Barcode, Wifi, WifiOff, History, Store } from 'lucide-react'
+import { ShoppingCart, Loader2, Search, Barcode, WifiOff, History, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -1001,18 +1001,19 @@ export default function POS() {
             }}
           ><History size={16} /></button>
 
-          {/* Indicateur réseau : vert discret / ambre hors-ligne (cash-only) */}
-          <span data-testid="pos-network" role="status" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
-            padding: '4px 10px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
-            background: isOnline ? 'transparent' : 'var(--c-amber-bg, rgba(255,197,61,.14))',
-            border: `1px solid ${isOnline ? 'transparent' : 'var(--c-amber-border, rgba(255,197,61,.3))'}`,
-            color: isOnline ? 'var(--text3)' : 'var(--warn)',
-          }}>
-            {isOnline
-              ? <><Wifi size={13} style={{ color: 'var(--acc2)' }} /> {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}</>
-              : <><WifiOff size={13} /> {lang === 'en' ? 'Offline' : lang === 'es' ? 'Sin conexión' : lang === 'it' ? 'Offline' : 'Hors-ligne'}</>}
-          </span>
+          {/* Badge réseau : UNIQUEMENT hors-ligne (cash-only) — l'état « En ligne »
+              est déjà porté par la barre d'app (pas de doublon). */}
+          {!isOnline && (
+            <span data-testid="pos-network" role="status" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+              padding: '4px 10px', borderRadius: 'var(--r-full)', fontSize: 12, fontWeight: 'var(--fw-semibold)',
+              background: 'var(--c-amber-bg, rgba(255,197,61,.14))',
+              border: '1px solid var(--c-amber-border, rgba(255,197,61,.3))',
+              color: 'var(--warn)',
+            }}>
+              <WifiOff size={13} /> {lang === 'en' ? 'Offline' : lang === 'es' ? 'Sin conexión' : lang === 'it' ? 'Offline' : 'Hors-ligne'}
+            </span>
+          )}
         </div>
 
         {/* Mobile nav bar */}
@@ -1130,6 +1131,7 @@ export default function POS() {
         ct={ct}
         cashierOpenedAt={cashierOpenedAt} locale={locale}
         cashierOpeningFund={cashierOpeningFund} cashierSessionTx={cashierSessionTx} cashierSessionCA={cashierSessionCA}
+        cashierName={cashierName}
         closeCashier={closeCashier}
         setOpeningFundInput={setOpeningFundInput}
         currency={currency}

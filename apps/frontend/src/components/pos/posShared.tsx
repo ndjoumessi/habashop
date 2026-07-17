@@ -120,7 +120,7 @@ export const CASHIER_TEXTS = {
     cashier_label: 'Caisse 1',
     open_btn: 'Ouvrir la caisse',
     close_btn: '🔒 Fermer',
-    close_title: 'Fermeture de caisse',
+    close_title: 'Clôture de caisse',
     open_time: 'Heure ouverture',
     close_time: 'Heure fermeture',
     initial_fund: 'Fond de caisse',
