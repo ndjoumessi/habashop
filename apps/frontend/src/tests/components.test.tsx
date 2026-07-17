@@ -122,11 +122,11 @@ describe('BillingBanner — logique', () => {
 })
 
 describe('Thèmes', () => {
-  it('7 thèmes disponibles', () => {
-    const themes = ['dark', 'darker', 'midnight', 'forest', 'ocean', 'sunset', 'light']
-    expect(themes.length).toBe(7)
+  it('3 thèmes disponibles (Sombre / Clair / Système)', () => {
+    const themes = ['dark', 'light', 'system']
+    expect(themes.length).toBe(3)
     expect(themes.includes('dark')).toBe(true)
-    expect(themes.includes('pink')).toBe(false)
+    expect(themes.includes('gold')).toBe(false)
   })
 })
 

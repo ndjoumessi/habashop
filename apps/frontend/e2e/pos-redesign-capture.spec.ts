@@ -1,7 +1,7 @@
 import { test } from '@playwright/test'
 import { getPreconditions } from './helpers/preconditions'
 
-// Capture before/after du redesign POS — dark (thème device par défaut) + Mode soleil.
+// Capture before/after du redesign POS — thème sombre (défaut device).
 // N'effectue AUCUN encaissement (pas de vente créée) ; la caisse ouverte + panier sont
 // des états locaux au device (appStore persisté dans le contexte éphémère du test).
 const BASE = process.env.POS_BASE ?? 'https://habashop.vercel.app'
@@ -14,7 +14,7 @@ test.beforeEach(async () => {
   test.skip(!pre.requiresCashierFund, 'tenant démo requireCashier=false (pas de champ fond de caisse) — dette suivie #5')
 })
 
-test(`POS captures ${TAG} — dark + soleil`, async ({ page }) => {
+test(`POS captures ${TAG} — dark`, async ({ page }) => {
   await page.goto(`${BASE}/app/pos`)
 
   const openBtn = page.getByRole('button', { name: /Ouvrir la caisse|Open register/ })
@@ -36,10 +36,4 @@ test(`POS captures ${TAG} — dark + soleil`, async ({ page }) => {
   await page.waitForTimeout(600)
 
   await page.screenshot({ path: `e2e/screenshots/pos-${TAG}-dark.png` })
-
-  // Mode soleil via le toggle header (état device-local, aucune pollution tenant)
-  const sunBtn = page.locator('button[aria-pressed]:has(svg.lucide-sun)').first()
-  await sunBtn.click()
-  await page.waitForTimeout(600)
-  await page.screenshot({ path: `e2e/screenshots/pos-${TAG}-soleil.png` })
 })

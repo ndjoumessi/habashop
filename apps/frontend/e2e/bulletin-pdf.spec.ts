@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test'
 import { getPreconditions } from './helpers/preconditions'
 
-const BASE = 'https://habashop.vercel.app'
+// Prod par défaut (CI) ; surchargeable pour valider un build local (aligné sur les autres specs).
+const BASE = process.env.PAYROLL_BASE ?? 'https://habashop.vercel.app'
 
 // Vérifie en LIVE que le bulletin PDF (printBulletin) affiche le MÊME montant que
 // l'écran en devise EUR — régression BUG 2 (double conversion : 686,02 € → 1,05 €).

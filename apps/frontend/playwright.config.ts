@@ -9,7 +9,9 @@ export default defineConfig({
   workers: 1,
 
   use: {
-    baseURL: 'https://habashop.vercel.app',
+    // Prod par défaut (CI) ; surchargeable via E2E_BASE pour valider un build local (vite preview).
+    // Aligné avec auth.setup.ts qui lit le même E2E_BASE → setup et specs ciblent la même origine.
+    baseURL: process.env.E2E_BASE ?? 'https://habashop.vercel.app',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
     trace: 'on-first-retry',

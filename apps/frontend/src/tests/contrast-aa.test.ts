@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { THEMES, type Theme } from '@/stores/appStore'
+import { THEMES } from '@/stores/appStore'
 
 /**
  * Garde-fou anti-régression de contraste (Vague 3, item 6).
@@ -30,11 +30,13 @@ function ratio(a: string, b: string) {
   return (hi + 0.05) / (lo + 0.05)
 }
 
-function resolve(theme: Theme): Record<string, string> {
+type ConcreteTheme = keyof typeof THEMES // 'dark' | 'light' (set réduit — « system » se résout)
+
+function resolve(theme: ConcreteTheme): Record<string, string> {
   const vars = THEMES[theme].vars as Record<string, string>
   const eff = { ...BASE }
   for (const k of Object.keys(eff)) if (vars[k]) eff[k] = vars[k]
-  const isLight = theme === 'light' || theme === 'soleil'
+  const isLight = theme === 'light'
   if (isLight && !vars['--text4']) eff['--text4'] = LIGHT_EXTRA_TEXT4
   return eff
 }
@@ -44,12 +46,11 @@ const TEXT_TOKENS = ['--text2', '--text3', '--text4'] as const
 const BG_TOKENS = ['--bg', '--bg2', '--bg3'] as const
 
 describe('Contraste AA — chaque thème', () => {
-  const themes = Object.keys(THEMES) as Theme[]
+  const themes = Object.keys(THEMES) as ConcreteTheme[]
 
-  it('couvre tous les thèmes déclarés (incl. soleil)', () => {
-    expect(themes).toContain('gold')
+  it('couvre les thèmes concrets déclarés (Sombre + Clair)', () => {
+    expect(themes).toContain('dark')
     expect(themes).toContain('light')
-    expect(themes).toContain('soleil')
   })
 
   for (const theme of themes) {

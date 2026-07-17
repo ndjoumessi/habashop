@@ -1,4 +1,4 @@
-import { useConfig, useFormatAmount, ACCENT_PAIRS, THEMES, type Currency, type Lang, type Theme } from '@/stores/appStore'
+import { useConfig, useFormatAmount, ACCENT_PAIRS, THEMES, THEME_OPTIONS, resolveTheme, type Currency, type Lang } from '@/stores/appStore'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { useAuthStore } from '@/stores/authStore'
 import { type L4, makeI, pick, panel, Head } from '@/components/settings/settingsShared'
@@ -185,9 +185,11 @@ export default function SectionLang() {
           <div>
             <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10 }}>{i('Thème', 'Theme', 'Tema', 'Tema')}</div>
             <ResponsiveGrid min={118} gap={10}>
-              {(Object.entries(THEMES) as [Theme, typeof THEMES[Theme]][]).map(([key, th]) => {
+              {THEME_OPTIONS.map(({ key, emoji, label }) => {
                 const active = cfg.theme === key
-                const tbg = th.vars['--bg']; const tp = th.vars['--p']; const tacc = th.vars['--acc2']; const ttext = th.vars['--text']
+                // « Système » n'a pas de palette propre → aperçu = thème effectif (dark/light selon l'OS).
+                const pv = THEMES[resolveTheme(key)].vars
+                const tbg = pv['--bg']; const tp = pv['--p']; const tacc = pv['--acc2'] ?? pv['--p']; const ttext = pv['--text']
                 return (
                   <button key={key} type="button" aria-pressed={active} onClick={() => cfg.updateConfig({ theme: key })}
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', borderRadius: 14, background: active ? `${tp}18` : 'var(--bg3)', border: `2px solid ${active ? tp + '66' : 'var(--border)'}`, cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .2s', position: 'relative' }}>
@@ -201,8 +203,8 @@ export default function SectionLang() {
                       </div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 16, marginBottom: 1 }}>{th.emoji}</div>
-                      <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: active ? 'var(--p3)' : 'var(--text2)' }}>{pick(lang, th.label)}</div>
+                      <div style={{ fontSize: 16, marginBottom: 1 }}>{emoji}</div>
+                      <div style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', color: active ? 'var(--p3)' : 'var(--text2)' }}>{pick(lang, label)}</div>
                     </div>
                   </button>
                 )
@@ -212,18 +214,13 @@ export default function SectionLang() {
           <div>
             <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.6px', color: 'var(--text3)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {i('Couleur d\'accent', 'Accent color', 'Color de acento', 'Colore d\'accento')}
-              {cfg.theme === 'gold' && (
-                <span style={{ fontSize: 11, fontWeight: 'var(--fw-semibold)', textTransform: 'none', letterSpacing: 0, color: 'var(--acc2)', background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.25)', borderRadius: 99, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <Lock size={9} /> {i('Verrouillé sur le violet premium', 'Locked to premium violet', 'Bloqueado en violeta premium', 'Bloccato sul viola premium')}
-                </span>
-              )}
             </div>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', opacity: cfg.theme === 'gold' ? 0.4 : 1, pointerEvents: cfg.theme === 'gold' ? 'none' : 'auto', transition: 'opacity .2s' }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               {Object.keys(ACCENT_PAIRS).map(hex => (
-                <button key={hex} type="button" disabled={cfg.theme === 'gold'} onClick={() => cfg.updateConfig({ accentColor: hex })}
+                <button key={hex} type="button" onClick={() => cfg.updateConfig({ accentColor: hex })}
                   aria-pressed={cfg.accentColor === hex}
                   aria-label={pick(lang, ACCENT_NAMES[hex] ?? { fr: hex, en: hex, es: hex, it: hex })}
-                  style={{ width: 36, height: 36, borderRadius: 10, background: hex, border: 'none', cursor: cfg.theme === 'gold' ? 'not-allowed' : 'pointer', outline: cfg.accentColor === hex ? `3px solid ${hex}` : '3px solid transparent', outlineOffset: 2, boxShadow: cfg.accentColor === hex ? `0 0 0 2px rgba(255,255,255,.25)` : 'none', transition: 'all .15s', transform: cfg.accentColor === hex ? 'scale(1.12)' : 'none' }} />
+                  style={{ width: 36, height: 36, borderRadius: 10, background: hex, border: 'none', cursor: 'pointer', outline: cfg.accentColor === hex ? `3px solid ${hex}` : '3px solid transparent', outlineOffset: 2, boxShadow: cfg.accentColor === hex ? `0 0 0 2px rgba(255,255,255,.25)` : 'none', transition: 'all .15s', transform: cfg.accentColor === hex ? 'scale(1.12)' : 'none' }} />
               ))}
             </div>
           </div>

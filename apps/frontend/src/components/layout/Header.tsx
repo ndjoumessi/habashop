@@ -5,7 +5,6 @@ import { useAppStore, t, getTrialInfo } from '@/stores/appStore'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import CurrencyBadge from '@/components/ui/CurrencyBadge'
-import SunModeToggle from '@/components/ui/SunModeToggle'
 import { useNetworkStatus } from '@/hooks/useOnlineStatus'
 import toast from 'react-hot-toast'
 import { alertsApi, tenantApi } from '@/lib/api'
@@ -388,7 +387,6 @@ export default function Header() {
           )
         })()}
 
-        <SunModeToggle />
         <LanguageSwitcher />
         <CurrencyBadge />
 
