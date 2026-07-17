@@ -45,7 +45,7 @@ describe('persistance des préférences', () => {
   it('réhydrate les prefs depuis AsyncStorage au boot (≠ valeurs par défaut)', async () => {
     // Simule un device déjà configuré (install précédente) : prefs en storage durable.
     await AsyncStorage.setItem(STORE_KEY, JSON.stringify({
-      state: { lang: 'es', currency: 'GBP', currencyManuallySet: true, theme: 'dark', previousTheme: 'dark', kioskMode: false },
+      state: { lang: 'es', currency: 'GBP', currencyManuallySet: true, theme: 'dark', kioskMode: false },
       version: 0,
     }))
     // Ce que fait le persist au lancement de l'app.

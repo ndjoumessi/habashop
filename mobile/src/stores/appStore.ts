@@ -4,23 +4,22 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { fetchRates, convertFromXOF } from '@/services/exchangeRate'
-import { DarkColors, LightColors, SoleilColors } from '@/constants/theme'
+import { DarkColors, LightColors } from '@/constants/theme'
 
 export type Lang = 'fr' | 'en' | 'es' | 'it'
-export type ThemeMode = 'dark' | 'light' | 'system' | 'soleil'
+export type ThemeMode = 'dark' | 'light' | 'system'
+const VALID_THEMES: ThemeMode[] = ['dark', 'light', 'system']
 
 interface AppState {
   lang:         Lang
   currency:     string
   currencyManuallySet: boolean // true dès que l'user choisit une devise → ne plus écraser depuis le tenant
   theme:        ThemeMode
-  previousTheme: ThemeMode     // thème mémorisé avant bascule en 'soleil' (pour le retour au tap)
   kioskMode:    boolean
   setLang:      (l: Lang) => void
   setCurrency:  (c: string) => void
   setCurrencyManuallySet: (v: boolean) => void
   setTheme:     (t: ThemeMode) => void
-  toggleSoleil: () => void     // bascule 1-tap soleil ↔ thème précédent (mémorisé)
   setKioskMode: (v: boolean) => void
 }
 
@@ -31,16 +30,11 @@ export const useAppStore = create<AppState>()(
       currency:     'XOF',
       currencyManuallySet: false,
       theme:        'dark',
-      previousTheme: 'dark',
       kioskMode:    false,
       setLang:      (lang) => set({ lang }),
       setCurrency:  (currency) => set({ currency }),
       setCurrencyManuallySet: (currencyManuallySet) => set({ currencyManuallySet }),
       setTheme:     (theme) => set({ theme }),
-      // Bascule 1-tap : entre en 'soleil' en mémorisant le thème courant ; en sort en le restaurant.
-      toggleSoleil: () => set((s) => s.theme === 'soleil'
-        ? { theme: s.previousTheme === 'soleil' ? 'dark' : s.previousTheme }
-        : { previousTheme: s.theme, theme: 'soleil' }),
       setKioskMode: (kioskMode) => set({ kioskMode }),
     }),
     {
@@ -51,9 +45,12 @@ export const useAppStore = create<AppState>()(
         currency:  state.currency,
         currencyManuallySet: state.currencyManuallySet,
         theme:     state.theme,
-        previousTheme: state.previousTheme,
         kioskMode: state.kioskMode,
       }),
+      // Fallback gracieux : un thème persisté retiré du set réduit (ancien 'soleil') → 'dark'.
+      onRehydrateStorage: () => (state) => {
+        if (state && !VALID_THEMES.includes(state.theme)) state.setTheme('dark')
+      },
     },
   ),
 )
@@ -80,11 +77,8 @@ export function useTheme() {
   const isDark =
     theme === 'dark'   ? true  :
     theme === 'light'  ? false :
-    theme === 'soleil' ? false : // soleil = thème clair → StatusBar contenu sombre
     systemScheme !== 'light'     // 'system' : sombre par défaut si indéterminé
-  const C =
-    theme === 'soleil' ? SoleilColors :
-    isDark ? DarkColors : LightColors
+  const C = isDark ? DarkColors : LightColors
   return { isDark, theme, C }
 }
 

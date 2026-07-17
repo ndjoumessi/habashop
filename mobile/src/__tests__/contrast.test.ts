@@ -1,4 +1,4 @@
-import { DarkColors, LightColors, SoleilColors } from '@/constants/theme'
+import { DarkColors, LightColors } from '@/constants/theme'
 
 // ── Garde-fou contraste WCAG (Vague 3) ────────────────────────────────────────
 // Vérifie que chaque tier de texte « lu » respecte le ratio AA (4.5:1) sur les
@@ -34,7 +34,6 @@ describe('Contraste WCAG AA — paires texte/fond (Dark + Light)', () => {
   const palettes = [
     ['Dark', DarkColors],
     ['Light', LightColors],
-    ['Soleil', SoleilColors],
   ] as const
 
   for (const [name, palette] of palettes) {
