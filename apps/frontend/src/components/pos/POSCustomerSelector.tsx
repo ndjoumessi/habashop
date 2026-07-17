@@ -15,6 +15,7 @@ interface Props {
   enableLoyalty: boolean
   loyaltyPct?: number
   loyaltyTier?: string
+  loyaltyPoints?: number | null
 }
 
 const TIER_NAME: Record<string, [string, string, string, string]> = {
@@ -30,7 +31,7 @@ function parseScannedCustomerId(text: string): string {
   return t
 }
 
-export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCustomer, enableLoyalty, loyaltyPct = 0, loyaltyTier = '' }: Props) {
+export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCustomer, enableLoyalty, loyaltyPct = 0, loyaltyTier = '', loyaltyPoints = null }: Props) {
   const i = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
 
   const [query, setQuery]       = useState('')
@@ -92,10 +93,10 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
   return (
     <div style={{ flexShrink: 0, padding: '8px 14px', borderTop: '1px solid var(--border)' }}>
       {linkedCustomer ? (
-        // ── Chip client lié : avatar initiales + nom + palier ──
+        // ── Puce client lié (spec item 11) : avatar initiales + nom + palier + points, bordure --border3 ──
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-          padding: '8px 10px', background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', borderRadius: 10,
+          padding: '8px 10px', background: 'var(--card2)', border: '1px solid var(--border3)', borderRadius: 10,
         }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <span aria-hidden="true" style={{
@@ -113,7 +114,8 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
               {enableLoyalty && loyaltyTier && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text3)' }}>
                   <Check size={11} style={{ color: 'var(--acc2)', flexShrink: 0 }} />
-                  <span>· {tierLabel(loyaltyTier)}{loyaltyPct > 0 ? ` · −${loyaltyPct}%` : ''}</span>
+                  {/* ⚠️ E2E matche /Bronze · −5%/ — garder ce format, les points s'ajoutent APRÈS */}
+                  <span>· {tierLabel(loyaltyTier)}{loyaltyPct > 0 ? ` · −${loyaltyPct}%` : ''}{loyaltyPoints != null ? ` · ${loyaltyPoints} pts` : ''}</span>
                 </span>
               )}
             </span>

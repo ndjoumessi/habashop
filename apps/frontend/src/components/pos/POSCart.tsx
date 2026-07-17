@@ -30,16 +30,22 @@ interface POSCartProps {
   loyaltyDiscount?: number; loyaltyPct?: number; loyaltyCustomerName?: string | null
   // Sélecteur client inline (recherche + scan QR carte fidélité)
   linkedCustomer?: LinkedCustomer | null; setLinkedCustomer?: (c: LinkedCustomer | null) => void
-  enableLoyalty?: boolean; loyaltyTier?: string
+  enableLoyalty?: boolean; loyaltyTier?: string; loyaltyPoints?: number | null
   // PayDunya (Wave / Orange Money Sénégal & UEMOA) : si configuré, Wave/OM passent par PayDunya.
   paydunyaOk?: boolean; onPaydunyaStart?: () => void
   // Stock dispo par produit — désactive le + quand qty = max (anti-survente UI)
   getStock?: (id: number | string) => number
+  // Réseau (spec item 11) : hors-ligne → Mobile Money / Carte désactivés (cash-only)
+  isOnline?: boolean
 }
 
-export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '', paydunyaOk = false, onPaydunyaStart, getStock }: POSCartProps) {
+export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '', loyaltyPoints = null, paydunyaOk = false, onPaydunyaStart, getStock, isOnline = true }: POSCartProps) {
   // PayDunya actif pour Wave / Orange Money quand le backend est configuré → bouton unique dédié.
   const isPaydunyaMode = paydunyaOk && !mixedOn && (payMode === 'wave' || payMode === 'orange')
+  // Sous-total AVANT remises (affichage récap fiscal — spec item 11).
+  const cartSubtotal = cart.reduce((s, i) => s + i.price * i.qty, 0)
+  // Cibles tactiles ≥ 44px en usage réel (spec) ; densité souris au desktop.
+  const tapSize = isMobile ? 44 : 36
   // Montant reçu : jamais négatif. Vide → '' (traité comme 0 en aval). Négatif (collé/contournement) → 0.
   const onCashChange = (raw: string) => {
     if (raw === '') { setCashGiven(''); return }
@@ -52,7 +58,9 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
   const cashInsufficient = cashEntered && monnaie < 0
   return (
         <div style={{
-          width: isMobile ? '100%' : 320,
+          // Largeur pilotée par la colonne grid du parent (~1fr min 270px — spec item 11)
+          width: '100%',
+          minWidth: 0,
           flexShrink: 0,
           display: isMobile && mobileView === 'products' ? 'none' : 'flex',
           flexDirection: 'column',
@@ -60,7 +68,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
           overflow: 'hidden',
         }}>
 
-          {/* Cart card */}
+          {/* Cart card — mobile : la feuille défile (les sections fixes dépassent l'écran) */}
           <div style={{
             flex: 1,
             height: '100%',
@@ -69,7 +77,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             background: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: isMobile ? 0 : 14,
-            overflow: 'hidden',
+            overflow: isMobile ? 'auto' : 'hidden',
           }}>
 
           {/* ── HEADER PANIER UNIQUE ── */}
@@ -89,8 +97,16 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               flexShrink: 0,
               boxShadow: '0 2px 8px rgba(108,71,255,.4)',
             }}><ShoppingCart size={16} style={{ color:'#fff' }} /></div>
-            <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', flex: 1, minWidth: 0 }}>
-              {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
+            {/* « Panier · N » — 2 nœuds texte séparés : l'E2E matche ^Panier$|^Cart$ sur le 1er */}
+            <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 5 }}>
+              <span style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
+                {lang === 'fr' ? 'Panier' : lang === 'en' ? 'Cart' : lang === 'es' ? 'Carrito' : 'Carrello'}
+              </span>
+              {cart.length > 0 && (
+                <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
+                  · {cart.length}
+                </span>
+              )}
             </span>
             {cashierSessionTx > 0 && (
               <span style={{
@@ -133,10 +149,11 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
             }}><Lock size={11} /> {lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'}</button>
           </div>
 
-          {/* ── LISTE ITEMS — ZONE SCROLLABLE ── */}
+          {/* ── LISTE ITEMS — ZONE SCROLLABLE (mobile : hauteur mini, la feuille entière défile) ── */}
           <div style={{
             flexGrow: 1, flexShrink: 1, flexBasis: '0px',
-            overflowY: 'auto', overflowX: 'hidden', minHeight: 0,
+            overflowY: 'auto', overflowX: 'hidden',
+            minHeight: isMobile ? (cart.length > 0 ? Math.min(cart.length, 3) * 64 : 140) : 0,
           }}>
             {cart.length === 0 ? (
               <div style={{
@@ -205,7 +222,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                           ? (lang === 'en' ? `Remove ${item.name}` : lang === 'es' ? `Quitar ${item.name}` : lang === 'it' ? `Rimuovi ${item.name}` : `Retirer ${item.name}`)
                           : (lang === 'en' ? 'Decrease quantity' : lang === 'es' ? 'Disminuir cantidad' : lang === 'it' ? 'Riduci quantità' : 'Diminuer la quantité')}
                         style={{
-                          width:32, height:32, borderRadius:8,
+                          width:tapSize, height:tapSize, borderRadius:8,
                           background: item.qty === 1 ? 'var(--c-red-bg)' : 'var(--bg3)',
                           border:`1px solid ${item.qty === 1 ? 'var(--c-red-border)' : 'var(--border)'}`,
                           cursor:'pointer', fontSize:14,
@@ -227,7 +244,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                             disabled={atMax}
                             aria-label={lang === 'en' ? 'Increase quantity' : lang === 'es' ? 'Aumentar cantidad' : lang === 'it' ? 'Aumenta quantità' : 'Augmenter la quantité'}
                             style={{
-                              width:32, height:32, borderRadius:8,
+                              width:tapSize, height:tapSize, borderRadius:8,
                               background:'var(--bg3)', border:'1px solid var(--border)',
                               cursor: atMax ? 'not-allowed' : 'pointer', fontSize:15,
                               color: atMax ? 'var(--text3)' : 'var(--p2)',
@@ -257,55 +274,59 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               enableLoyalty={enableLoyalty}
               loyaltyPct={loyaltyPct}
               loyaltyTier={loyaltyTier}
+              loyaltyPoints={loyaltyPoints}
             />
           )}
 
-          {/* ── TOTAUX ── */}
+          {/* ── RÉCAP TOTAUX — ventilation fiscale (spec item 11) :
+               Sous-total → remises (vert) → divider → HT/TVA discrets → TTC héros (--acc) ── */}
           {cart.length > 0 && (
             <div style={{
               flexShrink:0, padding:'10px 14px',
               borderTop:'1px solid var(--border)',
               background:'linear-gradient(180deg,var(--bg3),var(--bg4))',
             }}>
-              {discount && discountAmount > 0 && (
-                <div style={{
-                  display:'flex', justifyContent:'space-between', alignItems:'center',
-                  padding:'4px 8px', marginBottom:6,
-                  background:'rgba(14,196,126,.08)', border:'1px solid rgba(14,196,126,.15)',
-                  borderRadius:8,
-                }}>
-                  <span style={{ fontSize:11, color:'var(--acc2)', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:4 }}>
-                    <Tag size={11} /> {lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'}{discount.type === 'percent' ? ` ${discount.value}%` : ''}
-                  </span>
-                  <span style={{ fontSize:11, fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>
-                    − {fmt(discountAmount)}
-                  </span>
-                </div>
-              )}
-              <div style={{
-                display:'flex', justifyContent:'space-between',
-                fontSize:11, color:'var(--text3)', marginBottom:6, padding:'0 2px',
-              }}>
-                <span>HT : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(totalHT))}</span></span>
-                <span>TVA {posTaxRate}% : <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(tva))}</span></span>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text2)', marginBottom:4, padding:'0 2px' }}>
+                <span>{lang === 'en' ? 'Subtotal' : lang === 'es' ? 'Subtotal' : lang === 'it' ? 'Subtotale' : 'Sous-total'}</span>
+                <span style={{ fontFamily:'var(--mono)' }}>{fmt(cartSubtotal)}</span>
               </div>
-              {/* Fidélité v2 : badge remise auto du client lié (−X%) */}
-              {loyaltyDiscount > 0 && (
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6, padding:'6px 10px', background:'var(--c-green-bg)', border:'1px solid var(--c-green-border)', borderRadius:8, fontSize:12 }}>
-                  <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)', display:'flex', alignItems:'center', gap:5 }}>
-                    ⭐ {lang === 'en' ? 'Loyalty discount' : lang === 'es' ? 'Descuento fidelidad' : lang === 'it' ? 'Sconto fedeltà' : 'Remise fidélité'}{loyaltyCustomerName ? ` · ${loyaltyCustomerName}` : ''} −{loyaltyPct}%
+              {discount && discountAmount > 0 && (
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:12, marginBottom:4, padding:'0 2px' }}>
+                  <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)', display:'flex', alignItems:'center', gap:4 }}>
+                    <Tag size={11} /> {lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'}{discount.type === 'percent' ? ` (${discount.value}%)` : ''}
                   </span>
-                  <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', color:'var(--acc2)' }}>− {fmt(loyaltyDiscount)}</span>
+                  <span style={{ fontWeight:'var(--fw-bold)', color:'var(--acc2)', fontFamily:'var(--mono)' }}>− {fmt(discountAmount)}</span>
                 </div>
               )}
+              {/* Fidélité v2 : remise auto du client lié (−X%) */}
+              {loyaltyDiscount > 0 && (
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:12, marginBottom:4, padding:'0 2px' }}>
+                  <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)', display:'flex', alignItems:'center', gap:5, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    ⭐ {lang === 'en' ? 'Loyalty discount' : lang === 'es' ? 'Descuento fidelidad' : lang === 'it' ? 'Sconto fedeltà' : 'Remise fidélité'}{loyaltyCustomerName ? ` · ${loyaltyCustomerName}` : ''} (−{loyaltyPct}%)
+                  </span>
+                  <span style={{ fontFamily:'var(--mono)', fontWeight:'var(--fw-bold)', color:'var(--acc2)', flexShrink:0 }}>− {fmt(loyaltyDiscount)}</span>
+                </div>
+              )}
+              <div aria-hidden="true" style={{ height:1, background:'var(--border)', margin:'6px 0' }} />
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--text3)', marginBottom:3, padding:'0 2px' }}>
+                <span>{lang === 'en' ? 'Net total (excl. VAT)' : lang === 'es' ? 'Total sin IVA' : lang === 'it' ? 'Totale imponibile' : 'Total HT'}</span>
+                <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(totalHT))}</span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--text3)', marginBottom:6, padding:'0 2px' }}>
+                <span>{lang === 'en' ? 'VAT' : lang === 'es' ? 'IVA' : lang === 'it' ? 'IVA' : 'TVA'} ({posTaxRate}%)</span>
+                <span style={{ fontFamily:'var(--mono)' }}>{fmt(Math.round(tva))}</span>
+              </div>
               <div style={{
                 display:'flex', justifyContent:'space-between', alignItems:'center',
                 padding:'10px 12px',
                 background:'var(--bg2)', border:'1px solid var(--border)',
                 borderRadius:8,
               }}>
-                <span style={{ fontSize:11, fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>TOTAL TTC</span>
-                <span style={{ fontSize:24, fontWeight:'var(--fw-regular)', color:'var(--p2)', fontFamily:'var(--mono)', letterSpacing:'-.5px' }}>{fmt(total)}</span>
+                <span style={{ fontSize:11, fontWeight:'var(--fw-bold)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'.5px' }}>
+                  {lang === 'en' ? 'TOTAL (incl. VAT)' : lang === 'es' ? 'TOTAL CON IVA' : lang === 'it' ? 'TOTALE IVATO' : 'TOTAL TTC'}
+                </span>
+                {/* Chiffre héros : or --acc (code couleur argent de la charte) */}
+                <span style={{ fontSize:24, fontWeight:'var(--fw-semibold)', color:'var(--acc)', fontFamily:'var(--mono)', letterSpacing:'-.5px' }}>{fmt(total)}</span>
               </div>
             </div>
           )}
@@ -313,16 +334,22 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
           {/* ── MODES PAIEMENT — 5 colonnes ── */}
           <div style={{ flexShrink: 0, padding: '8px 10px', borderTop: '1px solid var(--border)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 4, marginBottom: 6 }}>
-              {PAY_MODES.map(mode => (
-                <button key={mode.id} type="button" onClick={() => setPayMode(mode.id)}
+              {PAY_MODES.map(mode => {
+                // Hors-ligne (spec item 11) : Mobile Money / Carte indisponibles → cash-only
+                const offline = !isOnline && mode.id !== 'cash'
+                return (
+                <button key={mode.id} type="button" onClick={() => { if (!offline) setPayMode(mode.id) }}
                   aria-pressed={payMode === mode.id}
+                  aria-disabled={offline}
+                  disabled={offline}
                   style={{
-                    padding: '7px 2px', borderRadius: 8, fontSize: 11, fontWeight: 'var(--fw-semibold)',
-                    cursor: 'pointer', fontFamily: 'var(--font)',
+                    padding: '7px 2px', minHeight: isMobile ? 44 : undefined, borderRadius: 8, fontSize: 11, fontWeight: 'var(--fw-semibold)',
+                    cursor: offline ? 'not-allowed' : 'pointer', fontFamily: 'var(--font)',
                     background: payMode === mode.id ? 'var(--p)' : 'var(--bg3)',
                     border: `1.5px solid ${payMode === mode.id ? 'var(--p)' : 'var(--border)'}`,
                     color: payMode === mode.id ? '#fff' : 'var(--text2)',
                     boxShadow: payMode === mode.id ? 'var(--sh-xs)' : 'none',
+                    opacity: offline ? 0.4 : 1,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, transition: 'all .12s',
                   }}>
                   <span style={{ display:'flex', alignItems:'center', justifyContent:'center', height:16 }}>
@@ -335,14 +362,25 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
                   </span>
                   {mode.label}
                 </button>
-              ))}
+                )
+              })}
             </div>
 
-            {/* ── Toggle Paiement mixte (split, 2 méthodes) ── */}
-            <button type="button" role="switch" aria-checked={mixedOn} onClick={() => setMixedOn(!mixedOn)}
+            {/* Hint cash-only hors-ligne */}
+            {!isOnline && (
+              <div role="status" style={{ marginTop: 2, marginBottom: 4, fontSize: 11, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <AlertCircle size={12} style={{ flexShrink: 0 }} />
+                {lang === 'en' ? 'Offline — cash only' : lang === 'es' ? 'Sin conexión — solo efectivo' : lang === 'it' ? 'Offline — solo contanti' : 'Hors-ligne — espèces uniquement'}
+              </div>
+            )}
+
+            {/* ── Toggle Paiement mixte (split, 2 méthodes) — hors-ligne : indisponible (inclut mobile/carte) ── */}
+            <button type="button" role="switch" aria-checked={mixedOn} disabled={!isOnline}
+              onClick={() => { if (isOnline) setMixedOn(!mixedOn) }}
               style={{ width:'100%', marginTop:6, display:'flex', alignItems:'center', justifyContent:'space-between', gap:8,
                 padding:'8px 10px', background: mixedOn ? 'rgba(91,78,232,.08)' : 'var(--bg3)',
-                border:`1.5px solid ${mixedOn ? 'var(--p2)' : 'var(--border)'}`, borderRadius:8, cursor:'pointer', fontFamily:'var(--font)' }}>
+                border:`1.5px solid ${mixedOn ? 'var(--p2)' : 'var(--border)'}`, borderRadius:8,
+                cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.4, fontFamily:'var(--font)' }}>
               <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color: mixedOn ? 'var(--p2)' : 'var(--text2)' }}>
                 {lang==='en'?'Split payment':lang==='es'?'Pago mixto':lang==='it'?'Pagamento misto':'Paiement mixte'}
               </span>
@@ -494,7 +532,7 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               }}
               style={{
                 width:'100%', minHeight:52, padding:'13px',
-                background: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'var(--bg4)' : 'linear-gradient(135deg,var(--p),var(--p2))',
+                background: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'var(--bg4)' : 'var(--grad-p)',
                 border:'none', borderRadius:10, fontSize:15, fontWeight:'var(--fw-bold)',
                 color: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'var(--text3)' : '#fff',
                 cursor: (cart.length === 0 || (mixedOn && !mixedValid)) ? 'not-allowed' : 'pointer',

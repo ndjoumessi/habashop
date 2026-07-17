@@ -1,5 +1,5 @@
 import { memo, useMemo, useRef, useCallback } from 'react'
-import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History, RotateCcw, FileText, Loader2 } from 'lucide-react'
+import { ShoppingCart, X, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History, RotateCcw, FileText, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
@@ -10,8 +10,6 @@ interface POSProductGridProps {
   posTab: 'pos' | 'history'; setPosTab: (v: any) => void; fetchHistory: () => void
   lang: string
   activeCat: string; setActiveCat: (v: string) => void
-  search: string; setSearch: (v: string) => void
-  posEnableScanner: boolean; setShowScanner: (b: boolean) => void
   clientType: 'retail' | 'wholesale' | 'semi'; setClientType: (v: any) => void
   setShowDiscountModal: (b: boolean) => void
   discount: any; setDiscount: (v: any) => void
@@ -51,6 +49,8 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
   const isOut      = p.stock <= 0
   // Rupture bloquante UNIQUEMENT si le stock est affiché (sinon le commerçant gère à la main).
   const blocked    = posShowStockOnTile && isOut
+  // Spec item 11 : stock bas = bordure --warn + point ambre — n'empêche PAS la vente.
+  const lowStockRing = isLowStock && !isOut && !inCart
   return (
     <div
       role="button"
@@ -66,7 +66,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
           ? 'color-mix(in srgb, var(--p) 8%, var(--bg2))'
           : 'var(--bg2)',
         // Sélection : anneau via box-shadow (0.5 + 1.5 = 2px visuels) → zéro décalage de layout
-        border: `0.5px solid ${inCart ? 'var(--p)' : 'var(--border)'}`,
+        border: `0.5px solid ${inCart ? 'var(--p)' : lowStockRing ? 'var(--warn)' : 'var(--border)'}`,
         boxShadow: inCart ? '0 0 0 1.5px var(--p)' : 'none',
         borderRadius: 12,
         padding: posShowStockOnTile ? '16px 12px 30px' : '16px 12px 14px',
@@ -105,6 +105,14 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
           borderRadius:6, padding:'2px 6px',
           fontSize:11, fontWeight:'var(--fw-bold)',
         }}>PROMO</div>
+      )}
+      {/* Point ambre stock bas (spec item 11) — remplacé par le badge quantité une fois au panier */}
+      {lowStockRing && (
+        <span aria-hidden="true" style={{
+          position: 'absolute', top: 7, right: 7,
+          width: 8, height: 8, borderRadius: '50%',
+          background: 'var(--warn)', boxShadow: '0 0 6px var(--warn)',
+        }} />
       )}
       {/* Badge quantité si dans panier */}
       {inCart && (
@@ -147,10 +155,11 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
           {basePriceLabel}
         </div>
       )}
+      {/* Prix : or (--acc) = code couleur « argent » de la charte (spec item 11) */}
       <div style={{
         fontSize: 16,
         fontWeight: 'var(--fw-bold)',
-        color: isPromoRetail ? 'var(--danger)' : 'var(--p2)',
+        color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
         fontFamily: 'var(--mono)',
         letterSpacing: '-.3px',
       }}>{priceLabel}</div>
@@ -174,7 +183,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
   )
 })
 
-export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
   // Quantités panier indexées par produit (first-wins = même sémantique que cart.find)
   const qtyById = useMemo(() => {
     const m = new Map<string | number, number>()
@@ -247,6 +256,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                     aria-pressed={activeCat === c.id}
                     style={{
                       padding: '7px 14px',
+                      minHeight: isMobile ? 44 : 34, // cible tactile ≥ 44px en usage réel (spec)
                       borderRadius: 'var(--r-full)',
                       fontSize: 12,
                       fontWeight: 'var(--fw-semibold)',
@@ -271,39 +281,7 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
             </div>
           )}
 
-          {/* Recherche + Scan */}
-          {posTab === 'pos' && (
-            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <Search size={14} style={{
-                  position: 'absolute', left: 10,
-                  top: '50%', transform: 'translateY(-50%)',
-                  color: 'var(--text3)', pointerEvents: 'none',
-                }} />
-                <input
-                  className="input"
-                  style={{ paddingLeft: 34, width: '100%', fontSize: 13, boxSizing: 'border-box' }}
-                  aria-label={t('pos_search')} placeholder={t('pos_search')}
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-              </div>
-              {posEnableScanner && (
-                <button
-                  onClick={() => setShowScanner(true)}
-                  aria-label={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
-                  title={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
-                  style={{
-                    width: 40, height: 40, borderRadius: 10, fontSize: 18,
-                    cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
-                    background: 'var(--bg3)', border: '1px solid var(--border)',
-                    color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                ><Camera size={18} /></button>
-              )}
-            </div>
-          )}
+          {/* (Recherche + scan : déplacés dans le header POS — spec item 11) */}
 
           {/* Barre type client + remise */}
           {posTab === 'pos' && <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
@@ -364,7 +342,8 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
             overflowY: 'auto',
             paddingTop: 8,
           }}>
-            <ResponsiveGrid min={160} gap={10} style={{ paddingBottom: 8 }}>
+            {/* Spec item 11 : grille auto-fill minmax(112px, 1fr) */}
+            <ResponsiveGrid min={112} gap={10} style={{ paddingBottom: 8 }}>
               {filtered.map(p => {
                 const isPromoRetail = !!p.promotion && clientType === 'retail'
                 return (

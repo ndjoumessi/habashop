@@ -7,9 +7,10 @@ import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, 
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
-import { ShoppingCart, Loader2 } from 'lucide-react'
+import { ShoppingCart, Loader2, Search, Barcode, Wifi, WifiOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 import POSProductGrid from '@/components/pos/POSProductGrid'
 import POSCart from '@/components/pos/POSCart'
@@ -112,13 +113,15 @@ export default function POS() {
   const [linkedCustomer, setLinkedCustomer] = useState<{ id: string; name: string } | null>(() => ((location.state as any)?.customer ?? null))
   const [loyaltyPct, setLoyaltyPct] = useState(0)  // % remise du palier du client lié (0 si N/A)
   const [loyaltyTier, setLoyaltyTier] = useState('')  // palier du client lié (chip sélecteur)
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null)  // solde points (puce panier — spec item 11)
   useEffect(() => {
-    if (!linkedCustomer?.id || !enableLoyalty) { setLoyaltyPct(0); setLoyaltyTier(''); return }
+    if (!linkedCustomer?.id || !enableLoyalty) { setLoyaltyPct(0); setLoyaltyTier(''); setLoyaltyPoints(null); return }
     loyaltyApi.get(linkedCustomer.id).then(d => {
       const pct = d.tier === 'Gold' ? (d.goldDiscount ?? 0) : d.tier === 'Silver' ? (d.silverDiscount ?? 0) : (d.bronzeDiscount ?? 0)
       setLoyaltyPct(Number(pct) || 0)
       setLoyaltyTier(d.tier ?? '')
-    }).catch(() => { setLoyaltyPct(0); setLoyaltyTier('') })
+      setLoyaltyPoints(Number.isFinite(d.points) ? d.points : null)
+    }).catch(() => { setLoyaltyPct(0); setLoyaltyTier(''); setLoyaltyPoints(null) })
   }, [linkedCustomer?.id, enableLoyalty])
   const [showModal, setShowModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -190,14 +193,33 @@ export default function POS() {
     }
   }
   const [showScanner, setShowScanner] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  // Spec item 11 : < 900px → panier en vue dédiée (feuille/plein écran)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 900)
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products')
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 900)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // ── Réseau (spec item 11) : indicateur header + cash-only hors-ligne ──
+  // Source de vérité partagée (ping backend) — même signal que le badge global.
+  const isOnline = useOnlineStatus()
+  // Hors-ligne : Mobile Money / Carte indisponibles (webhooks impossibles) → bascule UI sur Espèces.
+  useEffect(() => {
+    if (!isOnline && payMode !== 'cash') setPayMode('cash')
+  }, [isOnline, payMode])
+  // Changement d'état réseau annoncé aux lecteurs d'écran (jamais au premier rendu).
+  const prevOnlineRef = useRef(isOnline)
+  useEffect(() => {
+    if (prevOnlineRef.current !== isOnline) {
+      prevOnlineRef.current = isOnline
+      announce(isOnline
+        ? (lang === 'en' ? 'Back online' : lang === 'es' ? 'De nuevo en línea' : lang === 'it' ? 'Di nuovo online' : 'Connexion rétablie')
+        : (lang === 'en' ? 'Offline — cash only' : lang === 'es' ? 'Sin conexión — solo efectivo' : lang === 'it' ? 'Offline — solo contanti' : 'Hors-ligne — espèces uniquement'))
+    }
+  }, [isOnline, lang])
 
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
@@ -880,15 +902,88 @@ export default function POS() {
 
   return (
     <>
-      {/* PAGE WRAPPER */}
+      {/* PAGE WRAPPER — colonne : header POS puis les 2 colonnes catalogue/panier */}
       <div style={{
         display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
+        flexDirection: 'column',
         height: 'calc(100vh - 54px)',
         overflow: 'hidden',
         background: 'var(--bg)',
         gap: 0,
       }}>
+
+        {/* ── HEADER POS (spec item 11) : boutique · statut caisse · recherche+scan · réseau ── */}
+        <div data-testid="pos-header" style={{
+          flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+          padding: '10px 16px 8px',
+          borderBottom: '1px solid var(--border)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            {user?.shopName && (
+              <span style={{
+                fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220,
+              }}>{user.shopName}</span>
+            )}
+            {/* Pill statut caisse — cet écran n'est rendu que caisse OUVERTE */}
+            <span data-testid="pos-cashier-pill" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
+              padding: '3px 10px', borderRadius: 'var(--r-full)',
+              background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)',
+              color: 'var(--acc2)', fontSize: 11, fontWeight: 'var(--fw-semibold)',
+            }}>
+              <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)' }} />
+              {lang === 'en' ? 'Register open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
+            </span>
+          </div>
+
+          {/* Recherche + scan proéminents (catalogue uniquement) */}
+          {posTab === 'pos' && (
+            <div style={{ flex: 1, minWidth: 200, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <Search size={15} style={{
+                  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+                  color: 'var(--text3)', pointerEvents: 'none',
+                }} />
+                <input
+                  className="input"
+                  style={{ paddingLeft: 36, width: '100%', fontSize: 14, minHeight: 44, boxSizing: 'border-box' }}
+                  aria-label={t('pos_search')} placeholder={t('pos_search')}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+              {posEnableScanner && (
+                <button
+                  onClick={() => setShowScanner(true)}
+                  aria-label={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
+                  title={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
+                  style={{
+                    width: 44, height: 44, borderRadius: 10,
+                    cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+                    background: 'var(--bg3)', border: '1px solid var(--border)',
+                    color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                ><Barcode size={19} /></button>
+              )}
+            </div>
+          )}
+
+          {/* Indicateur réseau : vert discret / ambre hors-ligne (cash-only) */}
+          <span data-testid="pos-network" role="status" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0, marginLeft: 'auto',
+            padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 11, fontWeight: 'var(--fw-semibold)',
+            background: isOnline ? 'transparent' : 'var(--c-amber-bg, rgba(255,197,61,.12))',
+            border: `1px solid ${isOnline ? 'transparent' : 'var(--c-amber-border, rgba(255,197,61,.3))'}`,
+            color: isOnline ? 'var(--text3)' : 'var(--warn)',
+          }}>
+            {isOnline
+              ? <><Wifi size={12} style={{ color: 'var(--acc2)' }} /> {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}</>
+              : <><WifiOff size={12} /> {lang === 'en' ? 'Offline' : lang === 'es' ? 'Sin conexión' : lang === 'it' ? 'Offline' : 'Hors-ligne'}</>}
+          </span>
+        </div>
 
         {/* Mobile nav bar */}
         {isMobile && (
@@ -917,11 +1012,21 @@ export default function POS() {
                 }}
               >
                 <ShoppingCart size={14} />
-                {view === 'products' ? t('pos_products') || 'Produits' : `${t('pos_cart')} (${cart.length})`}
+                {view === 'products'
+                  ? (lang === 'en' ? 'Products' : lang === 'es' ? 'Productos' : lang === 'it' ? 'Prodotti' : 'Produits')
+                  : `${t('pos_cart')} (${cart.length})`}
               </button>
             ))}
           </div>
         )}
+
+        {/* ── 2 COLONNES (spec) : catalogue ~1.6fr · panier ~1fr min 270px ── */}
+        <div style={{
+          flex: 1, minHeight: 0,
+          display: isMobile ? 'flex' : 'grid',
+          flexDirection: 'column',
+          gridTemplateColumns: '1.6fr minmax(270px, 1fr)',
+        }}>
 
         {/* ════════════════════════════════
             COLONNE GAUCHE — CATALOGUE
@@ -930,8 +1035,6 @@ export default function POS() {
           posTab={posTab} setPosTab={setPosTab} fetchHistory={fetchHistory}
           lang={lang}
           activeCat={activeCat} setActiveCat={setActiveCat}
-          search={search} setSearch={setSearch}
-          posEnableScanner={posEnableScanner} setShowScanner={setShowScanner}
           clientType={clientType} setClientType={setClientType}
           setShowDiscountModal={setShowDiscountModal}
           discount={discount} setDiscount={setDiscount}
@@ -950,11 +1053,6 @@ export default function POS() {
           navigate={navigate}
         />
 
-        {/* Séparateur vertical */}
-        {!isMobile && (
-          <div style={{ width: 1, background: 'var(--border)', margin: '12px 0', flexShrink: 0 }} />
-        )}
-
         {/* ════════════════════════════════
             COLONNE DROITE — PANIER
         ════════════════════════════════ */}
@@ -967,7 +1065,7 @@ export default function POS() {
           discount={discount} discountAmount={discountAmount}
           totalHT={totalHT} tva={tva} posTaxRate={posTaxRate} total={netTotal}
           loyaltyDiscount={loyaltyDiscount} loyaltyPct={loyaltyPct} loyaltyCustomerName={linkedCustomer?.name ?? null}
-          linkedCustomer={linkedCustomer} setLinkedCustomer={setLinkedCustomer} enableLoyalty={enableLoyalty} loyaltyTier={loyaltyTier}
+          linkedCustomer={linkedCustomer} setLinkedCustomer={setLinkedCustomer} enableLoyalty={enableLoyalty} loyaltyTier={loyaltyTier} loyaltyPoints={loyaltyPoints}
           PAY_MODES={PAY_MODES} payMode={payMode} setPayMode={setPayMode}
           currencySymbol={currencySymbol}
           cashGiven={cashGiven} setCashGiven={setCashGiven}
@@ -982,7 +1080,9 @@ export default function POS() {
           mixedAmt2XOF={mixedAmt2XOF} mixedValid={mixedValid}
           paydunyaOk={paydunyaOk} onPaydunyaStart={startPaydunyaPayment}
           getStock={id => productById.get(id)?.stock ?? 0}
+          isOnline={isOnline}
         />
+        </div>
       </div>
 
       {/* PayDunya — overlay QR + polling (Wave / Orange Money). Masqué quand la vente est confirmée. */}
