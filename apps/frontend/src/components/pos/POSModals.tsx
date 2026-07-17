@@ -367,29 +367,33 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               </button>
               <button type="button"
                 onClick={() => {
+                  // ⚠️ Rapport bâti en HTML : TOUTE valeur dynamique passe par esc() —
+                  // cashierName (donnée utilisateur) et libellés/valeurs interpolés (anti-XSS).
+                  const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c =>
+                    c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;')
                   const openedTime = cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--'
                   const win = window.open('', '_blank', 'width=400,height=600')
                   if (win) {
-                    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${ct.close_title}</title>
+                    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(ct.close_title)}</title>
                     <style>body{font-family:'Courier New',monospace;font-size:12px;padding:20px;max-width:300px;margin:0 auto;}
                     .center{text-align:center;}.bold{font-weight:bold;}.big{font-size:16px;font-weight:900;}
                     .divider{border-top:1px dashed #000;margin:8px 0;}.row{display:flex;justify-content:space-between;margin:4px 0;}
                     .ok{color:green;}.err{color:red;}</style></head><body>
-                    <div class="center"><div class="big">HabaShop</div><div>${ct.close_title.toUpperCase()} — TICKET Z</div>
-                    <div>${ct.cashier_label} — ${new Date().toLocaleDateString(locale)}</div></div>
+                    <div class="center"><div class="big">HabaShop</div><div>${esc(ct.close_title.toUpperCase())} — TICKET Z</div>
+                    <div>${esc(ct.cashier_label)} — ${esc(new Date().toLocaleDateString(locale))}</div></div>
                     <div class="divider"></div>
-                    <div class="row"><span>${ct.open_time}:</span><span>${openedTime}</span></div>
-                    <div class="row"><span>${ct.close_time}:</span><span>${new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'})}</span></div>
-                    <div class="row"><span>Caissier:</span><span>${cashierName || '—'}</span></div>
+                    <div class="row"><span>${esc(ct.open_time)}:</span><span>${esc(openedTime)}</span></div>
+                    <div class="row"><span>${esc(ct.close_time)}:</span><span>${esc(new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}))}</span></div>
+                    <div class="row"><span>Caissier:</span><span>${esc(cashierName || '—')}</span></div>
                     <div class="divider"></div>
-                    <div class="row"><span>${ct.initial_fund}:</span><span>${fmt(cashierOpeningFund)}</span></div>
-                    <div class="row"><span>${ct.transactions}:</span><span>${cashierSessionTx}</span></div>
-                    <div class="row bold"><span>${ct.ca_cashed}:</span><span>${fmt(cashierSessionCA)}</span></div>
-                    ${dayByMode ? Object.entries(dayByMode).map(([m, v]) => `<div class="row"><span>${m}:</span><span>${fmt(v as number)}</span></div>`).join('') : ''}
+                    <div class="row"><span>${esc(ct.initial_fund)}:</span><span>${esc(fmt(cashierOpeningFund))}</span></div>
+                    <div class="row"><span>${esc(ct.transactions)}:</span><span>${esc(cashierSessionTx)}</span></div>
+                    <div class="row bold"><span>${esc(ct.ca_cashed)}:</span><span>${esc(fmt(cashierSessionCA))}</span></div>
+                    ${dayByMode ? Object.entries(dayByMode).map(([m, v]) => `<div class="row"><span>${esc(m)}:</span><span>${esc(fmt(v as number))}</span></div>`).join('') : ''}
                     <div class="divider"></div>
-                    <div class="row bold"><span>Attendu (espèces):</span><span>${fmt(expectedCash)}</span></div>
-                    <div class="row bold"><span>Compté:</span><span>${fmt(countedXOF)}</span></div>
-                    <div class="row bold ${cashGap >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${cashGap >= 0 ? '+' : '−'}${fmt(Math.abs(cashGap))}</span></div>
+                    <div class="row bold"><span>Attendu (espèces):</span><span>${esc(fmt(expectedCash))}</span></div>
+                    <div class="row bold"><span>Compté:</span><span>${esc(fmt(countedXOF))}</span></div>
+                    <div class="row bold ${cashGap >= 0 ? 'ok' : 'err'}"><span>Écart:</span><span>${cashGap >= 0 ? '+' : '−'}${esc(fmt(Math.abs(cashGap)))}</span></div>
                     <div class="divider"></div>
                     <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
                     <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>
