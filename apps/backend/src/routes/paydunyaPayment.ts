@@ -81,7 +81,8 @@ export async function paydunyaPaymentRoutes(app: FastifyInstance): Promise<void>
   // Webhook IPN PayDunya (public, pas de JWT). Authentifié via hash = SHA-512(MASTER_KEY).
   // Fail-closed : MASTER_KEY absente ou hash invalide → 401. RÉCONCILIATION uniquement
   // (la vente est créée par le front au polling completed → POST /api/sales). Renvoie 200 vite.
-  app.post('/api/payments/paydunya/ipn', async (request: any, reply: any) => {
+  // Exempté du rate-limit global : IPN provider (bursts/retries légitimes), authentifié par signature.
+  app.post('/api/payments/paydunya/ipn', { config: { rateLimit: false } }, async (request: any, reply: any) => {
     // Le parser urlencoded (server.ts) expose les champs à plat : data[hash], data[status], …
     const form = (request.body?._form ?? request.body ?? {}) as Record<string, any>
     const receivedHash = form['data[hash]'] ?? form?.data?.hash ?? form.hash

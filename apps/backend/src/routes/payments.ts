@@ -225,7 +225,8 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
   // 2) Validation montant/devise/référence CONTRE le record en attente.
   // 3) Idempotence (un rejeu n'active pas deux fois). Le payload n'est jamais
   //    cru tant que la signature n'est pas valide ; l'activation lit le RECORD.
-  app.post('/api/payments/wave/webhook', async (request: any, reply: any) => {
+  // Exempté du rate-limit global : webhook provider (bursts/retries légitimes), authentifié par HMAC.
+  app.post('/api/payments/wave/webhook', { config: { rateLimit: false } }, async (request: any, reply: any) => {
     const event     = (request.body ?? {}) as any
     const rawBody   = (request.rawBody ?? JSON.stringify(event)) as string
     const signature = request.headers['x-wave-signature'] as string | undefined
@@ -267,7 +268,8 @@ export async function paymentRoutes(app: FastifyInstance): Promise<void> {
   // 2) Validation montant/devise/référence CONTRE le record en attente.
   // 3) Idempotence (un rejeu n'active pas deux fois). Le payload n'est jamais
   //    cru tant que la signature n'est pas valide.
-  app.post('/api/payments/orange/webhook', async (request: any, reply: any) => {
+  // Exempté du rate-limit global : webhook provider (bursts/retries légitimes), authentifié par HMAC.
+  app.post('/api/payments/orange/webhook', { config: { rateLimit: false } }, async (request: any, reply: any) => {
     const data      = (request.body ?? {}) as any
     const rawBody   = (request.rawBody ?? JSON.stringify(data)) as string
     const signature = request.headers['x-orange-signature'] as string | undefined

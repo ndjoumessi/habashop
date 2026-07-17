@@ -151,7 +151,8 @@ export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
   // Webhook Campay : notification asynchrone de statut de paiement.
   // Pas d'auth JWT — authentifié via signature HMAC-SHA256.
   // Fail-closed : si CAMPAY_WEBHOOK_KEY absent, toute requête est rejetée (401).
-  app.post('/api/payments/campay/webhook', async (request: any, reply: any) => {
+  // Exempté du rate-limit global : webhook provider (bursts/retries légitimes), authentifié par HMAC.
+  app.post('/api/payments/campay/webhook', { config: { rateLimit: false } }, async (request: any, reply: any) => {
     const webhookKey = process.env.CAMPAY_WEBHOOK_KEY
 
     // Fail-closed : pas de clé = pas de traitement
