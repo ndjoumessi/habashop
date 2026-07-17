@@ -245,6 +245,9 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
    le padding du conteneur + height:calc(100vh-54px) créent ~2×padding de débordement
    permanent (CTA Encaisser coupé). */
 .page-content:has(.pos-fullbleed) { padding:0; overflow:hidden }
+/* Champ montant sans spinners natifs (feuille d'encaissement — maquette 02) */
+.no-spin::-webkit-outer-spin-button, .no-spin::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+.no-spin { -moz-appearance:textfield; appearance:textfield }
 
 /* ── Page header ── */
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; gap:12px; flex-wrap:wrap }

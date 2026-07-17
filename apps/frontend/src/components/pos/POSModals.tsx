@@ -1,4 +1,4 @@
-import { X, Smartphone, CheckCircle, AlertTriangle, AlertCircle, Loader2, TestTube, Banknote, CreditCard } from 'lucide-react'
+import { X, Smartphone, AlertTriangle, AlertCircle, Loader2, TestTube, CreditCard, Coins, Waves, Wallet, Split, Check } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, CURRENCY_SYMBOLS } from '@/stores/appStore'
@@ -49,6 +49,9 @@ interface POSModalsProps {
   mixedAmt2XOF: number
   // PayDunya (Wave / OM Sénégal & UEMOA) : si configuré, Wave/Orange passent par PayDunya
   paydunyaOk?: boolean; onPaydunyaStart?: () => void
+  // « dont TVA » sous le total (spec §2) + total en devise d'affichage (raccourcis espèces)
+  tvaAmount?: number
+  totalDisplay?: number
   // MTN MoMo — flux USSD polling dans la modale de confirmation
   mtnPhone: string; setMtnPhone: (v: string) => void
   mtnStatus: 'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'
@@ -69,7 +72,7 @@ interface POSModalsProps {
   onCardRetry: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, PAY_MODES, setPayMode, isOnline = true, setCashGiven, monnaie, currencySymbol, mixedOn, mixedValid, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, paydunyaOk = false, onPaydunyaStart, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, PAY_MODES, setPayMode, isOnline = true, setCashGiven, monnaie, currencySymbol, mixedOn, mixedValid, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, paydunyaOk = false, onPaydunyaStart, tvaAmount = 0, totalDisplay, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
@@ -300,114 +303,108 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
           onClick={e => e.target === e.currentTarget && setShowModal(false)}
         >
           <div ref={confirmBoxRef} className="modal-box">
-            {/* Header modal */}
+            {/* Header — « Encaissement » + compteur articles (maquette 02) */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 20,
+              marginBottom: 16,
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{
-                  width: 44, height: 44,
-                  borderRadius: '50%',
-                  background: 'var(--c-green-bg)',
-                  border: '1px solid var(--c-green-border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  animation: 'popIn .3s ease both',
-                }}><CheckCircle size={22} style={{ color:'var(--acc2)' }} /></div>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
-                    {t('pos_confirm_sale')}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {cart.length} article{cart.length > 1 ? 's' : ''}
-                  </div>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
+                <span style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>
+                  {lang === 'en' ? 'Checkout' : lang === 'es' ? 'Cobro' : lang === 'it' ? 'Incasso' : 'Encaissement'}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {cart.length} article{cart.length > 1 ? 's' : ''}
+                </span>
               </div>
               <button aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} className="mini-btn" style={{ minWidth: 44, minHeight: 44 }} onClick={() => setShowModal(false)}>
                 <X size={14} />
               </button>
             </div>
 
-            {/* Liste items — compacte */}
+            {/* TOTAL À PAYER — bloc centré or (maquette) + « dont TVA » (spec §2) */}
             <div style={{
-              maxHeight: 220, overflowY: 'auto', marginBottom: 16,
-              background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10,
-              padding: '2px 12px',
+              background: 'var(--bg)',
+              border: '1px solid color-mix(in srgb, var(--acc) 20%, transparent)',
+              borderRadius: 12, padding: 16, textAlign: 'center', marginBottom: 18,
             }}>
-              {cart.map((item, idx) => (
-                <div key={item.id} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '7px 0',
-                  borderBottom: idx < cart.length - 1 ? '1px solid color-mix(in srgb, var(--border) 55%, transparent)' : 'none',
-                  fontSize: 13,
-                }}>
-                  <span style={{ color: 'var(--text2)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.emoji} {item.name}
-                    <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)', marginLeft: 6 }}>×{item.qty}</span>
-                  </span>
-                  <span style={{ fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', color: 'var(--text)', flexShrink: 0 }}>
-                    {fmt(item.price * item.qty)}
-                  </span>
+              <div style={{ color: 'var(--text3)', fontSize: 11, letterSpacing: '.5px', textTransform: 'uppercase', fontWeight: 'var(--fw-semibold)' }}>
+                {lang === 'en' ? 'Total to pay' : lang === 'es' ? 'Total a pagar' : lang === 'it' ? 'Totale da pagare' : 'Total à payer'}
+              </div>
+              <div style={{ color: 'var(--acc)', fontSize: 30, fontWeight: 'var(--fw-semibold)', fontFamily: 'var(--mono)', marginTop: 3, letterSpacing: '-.5px' }}>
+                {fmt(total)}
+              </div>
+              {tvaAmount > 0 && (
+                <div style={{ color: 'var(--text3)', fontSize: 11, marginTop: 4 }}>
+                  {lang === 'en' ? 'incl. VAT' : lang === 'es' ? 'IVA incl.' : lang === 'it' ? 'IVA incl.' : 'dont TVA'}{' '}
+                  <span style={{ fontFamily: 'var(--mono)' }}>{fmt(Math.round(tvaAmount))}</span>
                 </div>
-              ))}
+              )}
             </div>
 
-            {/* Total — mis en valeur */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '12px 14px',
-              background: 'var(--c-green-bg2)',
-              border: '1px solid var(--c-green-border)',
-              borderRadius: 10,
-              marginBottom: 16,
-            }}>
-              <span style={{ fontSize: 12, fontWeight: 'var(--fw-bold)', color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.5px' }}>{t('pos_total')}</span>
-              <span style={{
-                fontSize: 24,
-                fontWeight: 'var(--fw-bold)',
-                color: 'var(--acc2)',
-                fontFamily: 'var(--mono)',
-                letterSpacing: '-.5px',
-              }}>{fmt(total)}</span>
-            </div>
-
-            {/* ── MODE DE PAIEMENT (feuille d'encaissement — item 11, restylée écran 2) ── */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 4, marginBottom: 6 }}>
-                {PAY_MODES.map(mode => {
+            {/* ── MODE DE PAIEMENT — grille 3×2, Mixte en tuile pointillée (maquette 02) ── */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ color: 'var(--text3)', fontSize: 11, letterSpacing: '.5px', textTransform: 'uppercase', fontWeight: 'var(--fw-semibold)', marginBottom: 9 }}>
+                {lang === 'en' ? 'Payment method' : lang === 'es' ? 'Método de pago' : lang === 'it' ? 'Metodo di pagamento' : 'Mode de paiement'}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
+                {(['cash', 'wave', 'orange', 'mtn', 'card'] as const).map(id => {
+                  const mode = PAY_MODES.find(m => m.id === id)
+                  if (!mode) return null
                   // Hors-ligne : Mobile Money / Carte indisponibles (webhooks impossibles) → cash-only
-                  const offline = !isOnline && mode.id !== 'cash'
+                  const offline = !isOnline && id !== 'cash'
+                  const active = !mixedOn && payMode === id
+                  // Teinte de marque par opérateur (icône dans un carré 30px)
+                  const tint =
+                    id === 'cash'   ? 'var(--acc2)'  :
+                    id === 'wave'   ? 'var(--acc3)'  :
+                    id === 'orange' ? '#FF9F45'      :
+                    id === 'mtn'    ? 'var(--warn)'  :
+                                      'var(--p3)'
+                  const TileIcon =
+                    id === 'cash'   ? Coins :
+                    id === 'wave'   ? Waves :
+                    id === 'orange' ? Smartphone :
+                    id === 'mtn'    ? Wallet :
+                                      CreditCard
                   return (
-                    <button key={mode.id} type="button" onClick={() => { if (!offline) setPayMode(mode.id) }}
-                      aria-pressed={payMode === mode.id}
+                    <button key={id} type="button" onClick={() => { if (!offline) { setPayMode(id); if (mixedOn) setMixedOn(false) } }}
+                      aria-pressed={active}
                       disabled={offline}
                       style={{
-                        padding: '8px 2px', minHeight: 44, borderRadius: 8, fontSize: 11, fontWeight: 'var(--fw-semibold)',
+                        background: 'var(--card2)',
+                        border: active ? '1.5px solid var(--p)' : '1px solid var(--border2)',
+                        borderRadius: 11, padding: '11px 8px', minHeight: 44, textAlign: 'center',
                         cursor: offline ? 'not-allowed' : 'pointer', fontFamily: 'var(--font)',
-                        background: payMode === mode.id ? 'var(--p)' : 'var(--bg3)',
-                        border: `1.5px solid ${payMode === mode.id ? 'var(--p)' : 'var(--border)'}`,
-                        color: payMode === mode.id ? '#fff' : 'var(--text2)',
-                        opacity: offline ? 0.4 : 1,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, transition: 'all .12s',
+                        opacity: offline ? 0.4 : 1, transition: 'all .12s',
                       }}>
-                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 16 }}>
-                        {mode.id === 'cash'   ? <Banknote size={14} />   :
-                         mode.id === 'card'   ? <CreditCard size={14} /> :
-                         mode.id === 'wave'   ? <span style={{ fontWeight: 'var(--fw-semibold)', fontSize: 11, lineHeight: 1 }}>W</span>  :
-                         mode.id === 'orange' ? <span style={{ fontWeight: 'var(--fw-semibold)', fontSize: 11, lineHeight: 1 }}>OM</span> :
-                                                <span style={{ fontWeight: 'var(--fw-semibold)', fontSize: 11, lineHeight: 1 }}>M</span>}
-                      </span>
-                      {mode.label}
+                      <span style={{
+                        width: 30, height: 30, borderRadius: 8, margin: '0 auto',
+                        background: `color-mix(in srgb, ${tint} 17%, transparent)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: tint,
+                      }}><TileIcon size={16} /></span>
+                      <span style={{ display: 'block', color: 'var(--text)', fontSize: 12, fontWeight: 'var(--fw-semibold)', marginTop: 6 }}>{mode.label}</span>
                     </button>
                   )
                 })}
+                {/* Tuile Mixte (pointillée) — remplace l'ancien toggle */}
+                <button type="button" onClick={() => { if (isOnline) setMixedOn(!mixedOn) }}
+                  aria-pressed={mixedOn}
+                  disabled={!isOnline}
+                  style={{
+                    background: 'var(--card2)',
+                    border: mixedOn ? '1.5px solid var(--p)' : '1px dashed color-mix(in srgb, var(--text3) 40%, transparent)',
+                    borderRadius: 11, padding: '11px 8px', minHeight: 44, textAlign: 'center',
+                    cursor: isOnline ? 'pointer' : 'not-allowed', fontFamily: 'var(--font)',
+                    opacity: isOnline ? 1 : 0.4, transition: 'all .12s',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                  <span style={{ color: mixedOn ? 'var(--p3)' : 'var(--text3)', display: 'flex' }}><Split size={16} /></span>
+                  <span style={{ color: mixedOn ? 'var(--text)' : 'var(--text3)', fontSize: 12, fontWeight: 'var(--fw-semibold)', marginTop: 6 }}>
+                    {lang === 'en' ? 'Mixed' : lang === 'es' ? 'Mixto' : lang === 'it' ? 'Misto' : 'Mixte'}
+                  </span>
+                </button>
               </div>
 
               {!isOnline && (
@@ -416,21 +413,6 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   {lang === 'en' ? 'Offline — cash only' : lang === 'es' ? 'Sin conexión — solo efectivo' : lang === 'it' ? 'Offline — solo contanti' : 'Hors-ligne — espèces uniquement'}
                 </div>
               )}
-
-              {/* Toggle Paiement mixte (split, 2 méthodes) — indisponible hors-ligne */}
-              <button type="button" role="switch" aria-checked={mixedOn} disabled={!isOnline}
-                onClick={() => { if (isOnline) setMixedOn(!mixedOn) }}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                  padding: '8px 10px', background: mixedOn ? 'rgba(91,78,232,.08)' : 'var(--bg3)',
-                  border: `1.5px solid ${mixedOn ? 'var(--p2)' : 'var(--border)'}`, borderRadius: 8,
-                  cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.4, fontFamily: 'var(--font)' }}>
-                <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: mixedOn ? 'var(--p2)' : 'var(--text2)' }}>
-                  {lang === 'en' ? 'Split payment' : lang === 'es' ? 'Pago mixto' : lang === 'it' ? 'Pagamento misto' : 'Paiement mixte'}
-                </span>
-                <span style={{ position: 'relative', display: 'block', width: 38, height: 22, borderRadius: 99, flexShrink: 0, boxSizing: 'border-box', background: mixedOn ? 'var(--p)' : 'var(--bg5)', border: '1px solid var(--border)', transition: 'background .2s' }}>
-                  <span style={{ position: 'absolute', top: 2, width: 16, height: 16, left: mixedOn ? 18 : 2, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,.3)' }} />
-                </span>
-              </button>
 
               {mixedOn && (
                 <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -442,8 +424,12 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <MethodPicker value={mixedM2} exclude={mixedM1} lang={lang} onChange={setMixedM2} />
-                    <div style={{ flex: 1, minWidth: 0, height: 36, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', background: 'var(--bg3)', border: '1px dashed var(--border)', borderRadius: 8, color: 'var(--text2)', fontSize: 13, fontFamily: 'var(--mono)' }}>
-                      {fmt(mixedAmt2XOF)}
+                    {/* « Reste à payer » décompté (spec §2) — complété par la 2e méthode */}
+                    <div style={{ flex: 1, minWidth: 0, height: 36, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, background: 'var(--bg3)', border: '1px dashed var(--border)', borderRadius: 8, fontSize: 12 }}>
+                      <span style={{ color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {lang === 'en' ? 'Remaining' : lang === 'es' ? 'Restante' : lang === 'it' ? 'Rimanente' : 'Reste à payer'}
+                      </span>
+                      <span style={{ color: 'var(--text2)', fontFamily: 'var(--mono)', fontSize: 13, flexShrink: 0 }}>{fmt(mixedAmt2XOF)}</span>
                     </div>
                   </div>
                   {!mixedValid && (
@@ -454,10 +440,10 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                 </div>
               )}
 
-              {/* Espèces : montant reçu + monnaie à rendre */}
+              {/* Espèces : MONTANT REÇU + raccourcis + Rendu monnaie (maquette 02) */}
               {!mixedOn && payMode === 'cash' && (
                 <div style={{ marginTop: 8 }}>
-                  <POSCashField lang={lang} cashGiven={cashGiven} setCashGiven={setCashGiven} monnaie={monnaie} currencySymbol={currencySymbol} fmt={fmt} />
+                  <POSCashField lang={lang} cashGiven={cashGiven} setCashGiven={setCashGiven} monnaie={monnaie} currencySymbol={currencySymbol} fmt={fmt} totalDisplay={totalDisplay} />
                 </div>
               )}
             </div>
@@ -967,25 +953,26 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   title={!cashOK ? (lang==='en' ? 'Enter the amount received' : lang==='es' ? 'Ingrese el monto recibido' : lang==='it' ? "Inserire l'importo ricevuto" : 'Saisissez le montant reçu') : undefined}
                   style={{
                     flex: 1,
-                    background: blocked ? 'var(--bg4)' : 'linear-gradient(135deg, var(--acc2), #059669)',
+                    background: blocked ? 'var(--bg4)' : 'var(--grad-p)',
                     border: 'none',
-                    borderRadius: 10,
-                    padding: '12px',
-                    minHeight: 44,
-                    fontSize: 14,
+                    borderRadius: 12,
+                    padding: '14px',
+                    minHeight: 48,
+                    fontSize: 15,
                     fontWeight: 'var(--fw-semibold)',
                     color: blocked ? 'var(--text3)' : '#fff',
                     cursor: blocked ? 'not-allowed' : 'pointer',
                     opacity: blocked ? 0.6 : 1,
                     fontFamily: 'inherit',
-                    boxShadow: blocked ? 'none' : '0 4px 16px rgba(14,196,126,.35)',
+                    boxShadow: blocked ? 'none' : 'var(--sh-md)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
                   {waSending
                     ? <><Smartphone size={14} /> {lang==='fr' ? 'Envoi WhatsApp…' : lang==='en' ? 'Sending WhatsApp…' : lang==='es' ? 'Enviando WhatsApp…' : 'Invio WhatsApp…'}</>
                     : isSaving
                     ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite', flexShrink:0 }} /> {lang==='fr' ? 'Enregistrement…' : lang==='en' ? 'Saving…' : lang==='es' ? 'Guardando…' : 'Salvataggio…'}</>
-                    : t('pos_validate')}
+                    : <><Check size={16} /> {lang === 'en' ? 'Confirm payment' : lang === 'es' ? 'Validar el cobro' : lang === 'it' ? "Conferma l'incasso" : "Valider l'encaissement"}</>}
                 </button>
               )}
               {/* Boutons « Ticket » et « Facture » retirés de ce modal de CONFIRMATION : l'impression

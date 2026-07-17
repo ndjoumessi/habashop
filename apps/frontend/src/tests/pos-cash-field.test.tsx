@@ -51,12 +51,12 @@ describe('POSCashField — champ Montant reçu (clamp négatif + états)', () =>
   it('montant insuffisant (monnaie < 0) → message rouge', () => {
     render(<POSCashField {...baseProps({ cashGiven: '1', monnaie: -3845 })} />)
     expect(screen.getByText(/Montant insuffisant/)).toBeInTheDocument()
-    expect(screen.queryByText(/Monnaie à rendre/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Rendu monnaie/)).not.toBeInTheDocument()
   })
 
   it('montant suffisant (monnaie ≥ 0) → monnaie à rendre, pas de message rouge', () => {
     render(<POSCashField {...baseProps({ cashGiven: '9999', monnaie: 5499 })} />)
-    expect(screen.getByText(/Monnaie à rendre/)).toBeInTheDocument()
+    expect(screen.getByText(/Rendu monnaie/)).toBeInTheDocument()
     expect(screen.queryByText(/Montant insuffisant/)).not.toBeInTheDocument()
   })
 })
