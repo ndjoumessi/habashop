@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import type { ProductBody } from '../types'
 import { prisma } from '../db'
@@ -5,13 +6,66 @@ import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { validatePriceTiers } from '../utils/pricing'
 
+// ── Schémas (item 6) ─────────────────────────────────────────────────────────
+const ID_PARAMS = z.object({ id: z.string().min(1) })
+// CREATE : structurel (types) ; les règles métier (nom requis, prix ≥ 0, paliers)
+// restent dans le handler → messages conservés. passthrough (le handler mappe
+// explicitement les champs).
+const PRODUCT_CREATE = z.object({
+  name: z.string().optional(),
+  category: z.string().optional(),
+  buyPrice: z.coerce.number().optional(),
+  sellPrice: z.coerce.number().optional(),
+  stockQty: z.coerce.number().optional(),
+  stockMin: z.coerce.number().optional(),
+  unit: z.string().optional(),
+  emoji: z.string().optional(),
+  taxRate: z.coerce.number().optional(),
+  description: z.string().optional(),
+  barcode: z.string().optional(),
+  isActive: z.boolean().optional(),
+  wholesalePrice: z.coerce.number().nullish(),
+  semiWholesalePrice: z.coerce.number().nullish(),
+  hasPromotion: z.boolean().optional(),
+  promotionPrice: z.coerce.number().nullish(),
+  supplierId: z.string().nullish(),
+  notes: z.string().optional(),
+  priceTiers: z.any().optional(),
+}).passthrough()
+// UPDATE : liste blanche STRICTE (strip par défaut) → ferme le mass-assignment
+// (le handler faisait `...data` dans prisma.update : un `tenantId`/`id` injecté
+// aurait pu réassigner le produit). sku reste ignoré par le handler.
+const PRODUCT_UPDATE = z.object({
+  name: z.string().optional(),
+  description: z.string().nullish(),
+  category: z.string().optional(),
+  unit: z.string().optional(),
+  buyPrice: z.coerce.number().optional(),
+  sellPrice: z.coerce.number().optional(),
+  wholesalePrice: z.coerce.number().nullish(),
+  semiWholesalePrice: z.coerce.number().nullish(),
+  stockQty: z.coerce.number().optional(),
+  stockMin: z.coerce.number().optional(),
+  supplierId: z.string().nullish(),
+  barcode: z.string().nullish(),
+  taxRate: z.coerce.number().optional(),
+  isActive: z.boolean().optional(),
+  hasPromotion: z.boolean().optional(),
+  promotionPrice: z.coerce.number().nullish(),
+  promotionEnd: z.any().optional(),
+  emoji: z.string().optional(),
+  notes: z.string().nullish(),
+  priceTiers: z.any().optional(),
+  sku: z.any().optional(),
+})
+
 export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/products', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
     return prisma.product.findMany({ where: { tenantId, deletedAt: null }, orderBy: { name: 'asc' } })
   })
 
-  app.post('/api/products', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/products', { preHandler: authenticate, schema: { body: PRODUCT_CREATE } }, async (request, reply) => {
     const { tenantId } = request.user
     const {
       name, category, buyPrice, sellPrice,
@@ -83,7 +137,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.put('/api/products/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.put('/api/products/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: PRODUCT_UPDATE } }, async (request, reply) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
     // SKU est immutable (auto-généré à la création) — on retire tout sku envoyé par le client.
@@ -101,7 +155,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     return updated
   })
 
-  app.delete('/api/products/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.delete('/api/products/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId, userId } = request.user
     const { id } = request.params as { id: string }
     const product = await prisma.product.findFirst({ where: { id, tenantId, deletedAt: null } })
@@ -115,7 +169,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // Restaurer un produit soft-supprimé (ADMIN / SUPER_ADMIN)
-  app.patch('/api/products/:id/restore', { preHandler: authenticate }, async (request, reply) => {
+  app.patch('/api/products/:id/restore', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId, userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
     const { id } = request.params as { id: string }

@@ -1,7 +1,25 @@
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { analyzeInvoice, ALLOWED_INVOICE_TYPES } from '../services/invoiceOcr'
+
+// ── Schémas (item 6) — liste blanche STRICTE (strip) : ferme le mass-assignment
+// (create/update faisaient `...body`/`data: body` dans Prisma → tenantId injectable). ──
+const ID_PARAMS = z.object({ id: z.string().min(1) })
+const SUPPLIER_FIELDS = {
+  name:       z.string().optional(),
+  categories: z.string().nullish(),
+  phone:      z.string().nullish(),
+  email:      z.string().nullish(),
+  address:    z.string().nullish(),
+  leadTime:   z.coerce.number().optional(),
+  rating:     z.coerce.number().optional(),
+  status:     z.string().optional(),
+  notes:      z.string().nullish(),
+}
+const SUPPLIER_CREATE = z.object({ ...SUPPLIER_FIELDS, name: z.string().min(1) })
+const SUPPLIER_UPDATE = z.object(SUPPLIER_FIELDS)
 
 export async function supplierRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/suppliers', { preHandler: authenticate }, async (request) => {
@@ -9,18 +27,18 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
     return prisma.supplier.findMany({ where: { tenantId, deletedAt: null } })
   })
 
-  app.post('/api/suppliers', { preHandler: authenticate }, async (request) => {
+  app.post('/api/suppliers', { preHandler: authenticate, schema: { body: SUPPLIER_CREATE } }, async (request) => {
     const { tenantId } = request.user
     return prisma.supplier.create({ data: { ...(request.body as any), tenantId } })
   })
 
-  app.put('/api/suppliers/:id', { preHandler: authenticate }, async (request) => {
+  app.put('/api/suppliers/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: SUPPLIER_UPDATE } }, async (request) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
     return prisma.supplier.update({ where: { id, tenantId }, data: request.body as any })
   })
 
-  app.delete('/api/suppliers/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.delete('/api/suppliers/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId, userId } = request.user
     const { id } = request.params as { id: string }
     // Soft delete : la ligne reste (FK des commandes liées intacte) → plus de P2003/409

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 
 const { db, tx } = vi.hoisted(() => {
   const tx = { customer: { update: vi.fn() }, loyaltyTransaction: { create: vi.fn() } }
@@ -27,6 +28,7 @@ import { customerRoutes } from '../routes/customers'
 
 async function buildApp() {
   const app = Fastify()
+  app.setValidatorCompiler(validatorCompiler)
   await app.register(customerRoutes)
   await app.ready()
   return app
