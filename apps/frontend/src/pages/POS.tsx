@@ -7,7 +7,7 @@ import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, 
 import { resolveTierPrice } from '@/lib/pricing'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
-import { ShoppingCart, Loader2, Search, Barcode, Wifi, WifiOff } from 'lucide-react'
+import { ShoppingCart, Loader2, Search, Barcode, Wifi, WifiOff, History } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { announce } from '@/lib/announce'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -902,8 +902,9 @@ export default function POS() {
 
   return (
     <>
-      {/* PAGE WRAPPER — colonne : header POS puis les 2 colonnes catalogue/panier */}
-      <div style={{
+      {/* PAGE WRAPPER — colonne : barre POS puis les 2 colonnes catalogue/panier.
+          .pos-fullbleed : neutralise padding/scroll du .page-content (cf. index.css). */}
+      <div className="pos-fullbleed" style={{
         display: 'flex',
         flexDirection: 'column',
         height: 'calc(100vh - 54px)',
@@ -912,34 +913,17 @@ export default function POS() {
         gap: 0,
       }}>
 
-        {/* ── HEADER POS (spec item 11) : boutique · statut caisse · recherche+scan · réseau ── */}
+        {/* ── BARRE POS UNIQUE (spec item 11) : recherche+scan proéminente · statut caisse ·
+             historique (action discrète) · réseau. Le contexte boutique vit dans le shell
+             (topbar/sidebar) — aucune duplication ici. ── */}
         <div data-testid="pos-header" style={{
           flexShrink: 0,
           display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
           padding: '10px 16px 8px',
           borderBottom: '1px solid var(--border)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            {user?.shopName && (
-              <span style={{
-                fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220,
-              }}>{user.shopName}</span>
-            )}
-            {/* Pill statut caisse — cet écran n'est rendu que caisse OUVERTE */}
-            <span data-testid="pos-cashier-pill" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
-              padding: '3px 10px', borderRadius: 'var(--r-full)',
-              background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)',
-              color: 'var(--acc2)', fontSize: 11, fontWeight: 'var(--fw-semibold)',
-            }}>
-              <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)' }} />
-              {lang === 'en' ? 'Register open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
-            </span>
-          </div>
-
-          {/* Recherche + scan proéminents (catalogue uniquement) */}
-          {posTab === 'pos' && (
+          {/* Recherche + scan (catalogue) — en mode historique, un titre la remplace */}
+          {posTab === 'pos' ? (
             <div style={{ flex: 1, minWidth: 200, display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ position: 'relative', flex: 1 }}>
                 <Search size={15} style={{
@@ -969,11 +953,43 @@ export default function POS() {
                 ><Barcode size={19} /></button>
               )}
             </div>
+          ) : (
+            <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <History size={15} style={{ color: 'var(--text3)' }} />
+              {lang === 'en' ? 'Sales history' : lang === 'es' ? 'Historial de ventas' : lang === 'it' ? 'Storico vendite' : 'Historique des ventes'}
+            </span>
           )}
+
+          {/* Pill statut caisse — cet écran n'est rendu que caisse OUVERTE */}
+          <span data-testid="pos-cashier-pill" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
+            padding: '3px 10px', borderRadius: 'var(--r-full)',
+            background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)',
+            color: 'var(--acc2)', fontSize: 11, fontWeight: 'var(--fw-semibold)',
+          }}>
+            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)' }} />
+            {lang === 'en' ? 'Register open' : lang === 'es' ? 'Caja abierta' : lang === 'it' ? 'Cassa aperta' : 'Caisse ouverte'}
+          </span>
+
+          {/* Historique — action discrète (progressive disclosure), hors du flux caisse */}
+          <button type="button"
+            onClick={() => { const next = posTab === 'pos' ? 'history' : 'pos'; setPosTab(next); if (next === 'history') fetchHistory() }}
+            aria-pressed={posTab === 'history'}
+            aria-label={lang === 'en' ? 'History' : lang === 'es' ? 'Historial' : lang === 'it' ? 'Storico' : 'Historique'}
+            title={lang === 'en' ? 'History' : lang === 'es' ? 'Historial' : lang === 'it' ? 'Storico' : 'Historique'}
+            style={{
+              width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+              cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+              background: posTab === 'history' ? 'var(--p)' : 'var(--bg3)',
+              border: `1px solid ${posTab === 'history' ? 'var(--p)' : 'var(--border)'}`,
+              color: posTab === 'history' ? '#fff' : 'var(--text2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          ><History size={17} /></button>
 
           {/* Indicateur réseau : vert discret / ambre hors-ligne (cash-only) */}
           <span data-testid="pos-network" role="status" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0, marginLeft: 'auto',
+            display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
             padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 11, fontWeight: 'var(--fw-semibold)',
             background: isOnline ? 'transparent' : 'var(--c-amber-bg, rgba(255,197,61,.12))',
             border: `1px solid ${isOnline ? 'transparent' : 'var(--c-amber-border, rgba(255,197,61,.3))'}`,
@@ -1032,12 +1048,10 @@ export default function POS() {
             COLONNE GAUCHE — CATALOGUE
         ════════════════════════════════ */}
         <POSProductGrid
-          posTab={posTab} setPosTab={setPosTab} fetchHistory={fetchHistory}
+          posTab={posTab}
           lang={lang}
           activeCat={activeCat} setActiveCat={setActiveCat}
           clientType={clientType} setClientType={setClientType}
-          setShowDiscountModal={setShowDiscountModal}
-          discount={discount} setDiscount={setDiscount}
           fmt={fmt}
           filtered={filtered}
           cart={cart}
@@ -1063,6 +1077,7 @@ export default function POS() {
           setShowCloseModal={setShowCloseModal}
           fmt={fmt}
           discount={discount} discountAmount={discountAmount}
+          setShowDiscountModal={setShowDiscountModal} setDiscount={setDiscount}
           totalHT={totalHT} tva={tva} posTaxRate={posTaxRate} total={netTotal}
           loyaltyDiscount={loyaltyDiscount} loyaltyPct={loyaltyPct} loyaltyCustomerName={linkedCustomer?.name ?? null}
           linkedCustomer={linkedCustomer} setLinkedCustomer={setLinkedCustomer} enableLoyalty={enableLoyalty} loyaltyTier={loyaltyTier} loyaltyPoints={loyaltyPoints}

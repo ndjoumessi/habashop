@@ -11,6 +11,8 @@ interface POSCartProps {
   setShowCloseModal: (b: boolean) => void
   fmt: (n: number) => string
   discount: any; discountAmount: number
+  // Remise manuelle — action secondaire DANS le panier (spec item 11, progressive disclosure)
+  setShowDiscountModal?: (b: boolean) => void; setDiscount?: (v: any) => void
   totalHT: number; tva: number; posTaxRate: number; total: number
   PAY_MODES: any[]; payMode: string; setPayMode: (v: any) => void
   currencySymbol: string
@@ -39,7 +41,7 @@ interface POSCartProps {
   isOnline?: boolean
 }
 
-export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '', loyaltyPoints = null, paydunyaOk = false, onPaydunyaStart, getStock, isOnline = true }: POSCartProps) {
+export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashierSessionCA, setShowCloseModal, fmt, discount, discountAmount, setShowDiscountModal, setDiscount, totalHT, tva, posTaxRate, total, PAY_MODES, payMode, setPayMode, currencySymbol, cashGiven, setCashGiven, monnaie, confirmSale, setShowModal, updateQty, isMobile, mobileView, mixedOn, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, mixedValid, loyaltyDiscount = 0, loyaltyPct = 0, loyaltyCustomerName = null, linkedCustomer = null, setLinkedCustomer, enableLoyalty = false, loyaltyTier = '', loyaltyPoints = null, paydunyaOk = false, onPaydunyaStart, getStock, isOnline = true }: POSCartProps) {
   // PayDunya actif pour Wave / Orange Money quand le backend est configuré → bouton unique dédié.
   const isPaydunyaMode = paydunyaOk && !mixedOn && (payMode === 'wave' || payMode === 'orange')
   // Sous-total AVANT remises (affichage récap fiscal — spec item 11).
@@ -276,6 +278,43 @@ export default function POSCart({ lang, cart, setCart, cashierSessionTx, cashier
               loyaltyTier={loyaltyTier}
               loyaltyPoints={loyaltyPoints}
             />
+          )}
+
+          {/* ── REMISE MANUELLE — action secondaire discrète du panier ── */}
+          {setShowDiscountModal && (
+            <div style={{ flexShrink:0, padding:'8px 14px', borderTop:'1px solid var(--border)' }}>
+              {!discount ? (
+                <button type="button" onClick={() => setShowDiscountModal(true)}
+                  style={{
+                    display:'flex', alignItems:'center', gap:6,
+                    background:'transparent', border:'none', padding:'4px 0',
+                    minHeight: isMobile ? 44 : undefined,
+                    cursor:'pointer', fontFamily:'var(--font)',
+                    fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--text3)',
+                  }}>
+                  <Tag size={12} />
+                  {lang === 'en' ? 'Apply discount' : lang === 'es' ? 'Aplicar descuento' : lang === 'it' ? 'Applica sconto' : 'Appliquer une remise'}
+                </button>
+              ) : (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, fontSize:12 }}>
+                  <span style={{ color:'var(--acc2)', fontWeight:'var(--fw-semibold)', display:'flex', alignItems:'center', gap:5 }}>
+                    <Tag size={12} />
+                    {lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'} : {discount.type === 'percent' ? `${discount.value} %` : fmt(discount.value)}
+                  </span>
+                  {setDiscount && (
+                    <button type="button" onClick={() => setDiscount(null)}
+                      aria-label={lang === 'en' ? 'Clear discount' : lang === 'es' ? 'Quitar descuento' : lang === 'it' ? 'Rimuovi sconto' : 'Annuler remise'}
+                      title={lang === 'en' ? 'Clear discount' : lang === 'es' ? 'Quitar descuento' : lang === 'it' ? 'Rimuovi sconto' : 'Annuler remise'}
+                      style={{
+                        width:26, height:26, borderRadius:7, flexShrink:0,
+                        background:'var(--c-red-bg)', border:'1px solid var(--c-red-border)',
+                        color:'var(--danger)', cursor:'pointer',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                      }}>✕</button>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {/* ── RÉCAP TOTAUX — ventilation fiscale (spec item 11) :

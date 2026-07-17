@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Zap } from 'lucide-react'
 import { useAppStore } from '@/stores/appStore'
 import { useI18n } from '@/hooks/useI18n'
@@ -17,6 +17,7 @@ interface BillingStatus {
 export default function BillingBanner() {
   const lang = useAppStore(s => s.lang)
   const navigate = useNavigate()
+  const location = useLocation()
   const [status, setStatus] = useState<BillingStatus | null>(null)
   const [dismissed, setDismissed] = useState(false)
 
@@ -26,7 +27,13 @@ export default function BillingBanner() {
     billingApi.status().then(setStatus).catch(() => {})
   }, [])
 
+  // Zone de travail POS (item 11) : pas de bannière au-dessus de la caisse —
+  // l'info d'essai reste visible sur toutes les autres pages.
+  if (location.pathname.startsWith('/app/pos')) return null
   if (!status || dismissed) return null
+  // Réponse malformée/partielle (ex. backend billing pas déployé → {}) → rien,
+  // plutôt que « undefined jour(s) d'essai restant(s) ».
+  if (typeof status.status !== 'string' || typeof status.trialDaysLeft !== 'number') return null
   if (status.status === 'active' && !status.isTrialExpired) return null
 
   // Demande en cours
