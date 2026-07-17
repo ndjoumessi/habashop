@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 
 // tx mock contrôlable (hoisté pour la factory de vi.mock)
 const { db, tx } = vi.hoisted(() => {
@@ -33,6 +34,7 @@ import { saleRoutes, canRefund } from '../routes/sales'
 
 async function buildApp() {
   const app = Fastify()
+  app.setValidatorCompiler(validatorCompiler)
   await app.register(saleRoutes)
   await app.ready()
   return app

@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import type { SaleBody } from '../types'
 import { prisma } from '../db'
@@ -10,6 +11,39 @@ import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
 import { resolvePaymentSplit } from '../lib/paymentSplit'
 import { sendSaleWhatsApp } from '../services/whatsappSend'
 import * as pushService from '../services/pushService'
+
+// ── Schémas de validation (item 6) ──────────────────────────────────────────
+// Volontairement PERMISSIF pour matcher la tolérance du handler (Number(price)||0,
+// items démo hors-catalogue) : on valide types + présence, on coerce les nombres,
+// on laisse passer les champs d'item supplémentaires (passthrough) et la validation
+// métier (anti-survente, split, total<0) reste dans le handler.
+const SALE_ITEM = z.object({
+  productId: z.string().min(1),
+  qty:       z.coerce.number(),          // décrément stock ; le handler garde l'anti-survente
+  price:     z.coerce.number().optional(),
+  tierLabel: z.string().nullish(),
+}).passthrough()
+
+const SALE_BODY = z.object({
+  items:       z.array(SALE_ITEM).min(1, { message: 'Une vente doit contenir au moins un article' }),
+  paymentMode: z.string().optional(),
+  total:       z.coerce.number(),        // présence requise ; le handler rejette total<0
+  discount:    z.object({ amount: z.coerce.number().optional(), type: z.string().nullish() }).nullish(),
+  customerId:  z.string().nullish(),
+  idempotencyKey: z.string().nullish(),
+  cashAmount:        z.coerce.number().optional(),
+  mobileMoneyAmount: z.coerce.number().optional(),
+  cardAmount:        z.coerce.number().optional(),
+  mtnMomoReference:  z.string().nullish(),
+  campayReference:   z.string().nullish(),
+  paydunyaReference: z.string().nullish(),
+}).passthrough()
+
+const REFUND_PARAMS = z.object({ id: z.string().min(1) })
+const REFUND_BODY = z.object({
+  reason:  z.string().optional(),        // « obligatoire » (non-vide) reste vérifié dans le handler
+  restock: z.boolean().optional(),
+}).passthrough()
 
 // Remboursement réservé MANAGER + ADMIN (+ SUPER_ADMIN superset) — anti-fraude :
 // le caissier ne peut PAS rembourser. Helper pur exporté pour les tests.
@@ -32,7 +66,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
-  app.post('/api/sales', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/sales', { preHandler: authenticate, schema: { body: SALE_BODY } }, async (request, reply) => {
     const { tenantId, userId } = request.user
     const { items, paymentMode, total, discount, customerId, mtnMomoReference, campayReference, paydunyaReference } = request.body as SaleBody
 
@@ -255,7 +289,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
   // RBAC manager/admin · motif requis · idempotent (409 si déjà remboursé) ·
   // restock optionnel (pré-coché côté UI) · entrée d'audit · vente CONSERVÉE
   // (status='refunded' → exclue du CA). Wave/Orange = suivi only (mouvement réel externe).
-  app.post('/api/sales/:id/refund', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/sales/:id/refund', { preHandler: authenticate, schema: { params: REFUND_PARAMS, body: REFUND_BODY } }, async (request, reply) => {
     const { tenantId, userId, role } = request.user
     if (!canRefund(role)) {
       return reply.code(403).send({ error: 'Seuls un manager ou un administrateur peuvent rembourser une vente' })

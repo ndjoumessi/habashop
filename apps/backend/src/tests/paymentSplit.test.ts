@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 import { resolvePaymentSplit } from '../lib/paymentSplit'
 import { computeTicketZ } from '../lib/ticketZ'
 
@@ -63,7 +64,7 @@ vi.mock('../routes/notifications', () => ({ notifyTenant: vi.fn() }))
 vi.mock('../lib/cache', () => ({ invalidateTenantCache: vi.fn().mockResolvedValue(undefined) }))
 
 import { saleRoutes } from '../routes/sales'
-async function buildApp() { const app = Fastify(); await app.register(saleRoutes); await app.ready(); return app }
+async function buildApp() { const app = Fastify(); app.setValidatorCompiler(validatorCompiler); await app.register(saleRoutes); await app.ready(); return app }
 const PRODUCT = { id: 'p1', sellPrice: 2500, hasPromotion: false, promotionPrice: null, priceTiers: null, name: 'P1', stockQty: 10, stockMin: 2 }
 const body = (over: any = {}) => ({ items: [{ productId: 'p1', qty: 2, price: 2500 }], paymentMode: 'cash', total: 5000, ...over })
 
