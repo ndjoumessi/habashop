@@ -58,11 +58,17 @@ vi.mock('@/components/pos/POSCart', () => ({
     <div data-testid="cart">
       <span>cart:{props.cart.length}</span>
       <span>total:{props.total}</span>
-      <button onClick={props.confirmSale}>stub-confirm</button>
     </div>
   ),
 }))
-vi.mock('@/components/pos/POSModals', () => ({ default: () => <div data-testid="modals" /> }))
+// confirmSale vit dans la feuille d'encaissement (POSModals) depuis l'item 11.
+vi.mock('@/components/pos/POSModals', () => ({
+  default: (props: any) => (
+    <div data-testid="modals">
+      <button onClick={() => props.confirmSale()}>stub-confirm</button>
+    </div>
+  ),
+}))
 
 import POS from '@/pages/POS'
 

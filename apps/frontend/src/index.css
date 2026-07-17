@@ -241,6 +241,10 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
   display:flex; align-items:center; padding:0 20px; gap:10px;
 }
 .app-content,.page-content { flex:1; overflow-y:auto; padding:var(--sp-5); background:var(--bg) }
+/* POS plein écran (item 11) : la caisse gère son propre layout interne — sans ça,
+   le padding du conteneur + height:calc(100vh-54px) créent ~2×padding de débordement
+   permanent (CTA Encaisser coupé). */
+.page-content:has(.pos-fullbleed) { padding:0; overflow:hidden }
 
 /* ── Page header ── */
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; gap:12px; flex-wrap:wrap }

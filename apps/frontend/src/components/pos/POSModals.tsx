@@ -1,8 +1,9 @@
-import { X, Smartphone, CheckCircle, AlertTriangle, Loader2, TestTube } from 'lucide-react'
+import { X, Smartphone, CheckCircle, AlertTriangle, AlertCircle, Loader2, TestTube, Banknote, CreditCard } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, CURRENCY_SYMBOLS } from '@/stores/appStore'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
+import POSCashField from '@/components/pos/POSCashField'
 import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface POSModalsProps {
@@ -32,8 +33,22 @@ interface POSModalsProps {
   isSaving: boolean; waSending: boolean
   discount: any; payMode: string
   cashGiven: string; toXOF: (v: number) => number
-  // Paiement mixte (split) — défini dans le PANIER ; le modal n'en lit que l'état pour bloquer.
+  // ── Sélection du MODE DE PAIEMENT — vit dans cette feuille depuis l'item 11 (maquette) ──
+  PAY_MODES: { id: string; label: string; color?: string }[]
+  setPayMode: (v: any) => void
+  isOnline?: boolean                       // hors-ligne → cash-only
+  setCashGiven: (v: string) => void
+  monnaie: number
+  currencySymbol: string
+  // Paiement mixte (split, 2 méthodes)
   mixedOn: boolean; mixedValid: boolean
+  setMixedOn: (b: boolean) => void
+  mixedM1: 'cash'|'mobile'|'card'; setMixedM1: (m: 'cash'|'mobile'|'card') => void
+  mixedM2: 'cash'|'mobile'|'card'; setMixedM2: (m: 'cash'|'mobile'|'card') => void
+  mixedAmt1: string; setMixedAmt1: (v: string) => void
+  mixedAmt2XOF: number
+  // PayDunya (Wave / OM Sénégal & UEMOA) : si configuré, Wave/Orange passent par PayDunya
+  paydunyaOk?: boolean; onPaydunyaStart?: () => void
   // MTN MoMo — flux USSD polling dans la modale de confirmation
   mtnPhone: string; setMtnPhone: (v: string) => void
   mtnStatus: 'idle'|'requesting'|'polling'|'success'|'failed'|'timeout'
@@ -54,16 +69,18 @@ interface POSModalsProps {
   onCardRetry: () => void
 }
 
-export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, mixedOn, mixedValid, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
+export default function POSModals({ showDiscountModal, setShowDiscountModal, discountForm, setDiscountForm, fmt, subtotalBeforeDiscount, setDiscount, showCloseModal, setShowCloseModal, ct, cashierOpenedAt, locale, cashierOpeningFund, cashierSessionTx, cashierSessionCA, closeCashier, setOpeningFundInput, currency, showModal, setShowModal, cart, total, sendWhatsApp, setSendWhatsApp, waCountryFlag, waCountryCode, setWaCountryCode, setWaCountryFlag, showCountryPicker, setShowCountryPicker, countrySearch, setCountrySearch, waNumber, setWaNumber, lang, confirmSale, isSaving, waSending, discount, payMode, cashGiven, toXOF, PAY_MODES, setPayMode, isOnline = true, setCashGiven, monnaie, currencySymbol, mixedOn, mixedValid, setMixedOn, mixedM1, setMixedM1, mixedM2, setMixedM2, mixedAmt1, setMixedAmt1, mixedAmt2XOF, paydunyaOk = false, onPaydunyaStart, mtnPhone, setMtnPhone, mtnStatus, mtnError, startMtnPayment, onMtnRetry, orangePhone, setOrangePhone, orangeStatus, orangeError, startOrangePayment, onOrangeRetry, cardStatus, cardPaymentUrl, cardQrDataUrl, startCardPayment, onCardRetry }: POSModalsProps) {
   // Garde-fou cash : en mode espèces, exiger un montant reçu (converti en XOF) ≥ total.
   // Les autres modes (Wave/Orange/Carte/Mobile) ne saisissent pas de montant → toujours OK.
   const cashOK  = payMode !== 'cash' || toXOF(parseFloat(cashGiven) || 0) >= total
   // En paiement mixte, c'est la validité du split (somme=total, 2 modes) qui conditionne.
   const payOK = mixedOn ? mixedValid : cashOK
+  // PayDunya configuré → Wave/Orange passent par la facture hébergée (QR overlay), pas Campay.
+  const paydunyaMode = paydunyaOk && !mixedOn && (payMode === 'wave' || payMode === 'orange')
   // MTN MoMo : le bouton Confirmer est masqué (le flux polling gère la confirmation).
   const isMtnMode = !mixedOn && payMode === 'mtn'
-  // Orange Money (Campay) : idem — le bouton Confirmer est masqué pendant le flux polling.
-  const isOrangeMode = !mixedOn && payMode === 'orange'
+  // Orange Money (Campay) : idem — sauf si PayDunya prend la main sur Orange.
+  const isOrangeMode = !paydunyaMode && !mixedOn && payMode === 'orange'
   // Carte Campay : masque Confirmer pendant le flux QR / polling.
   const isCardMode   = !mixedOn && payMode === 'card'
   const blocked = isSaving || waSending || !payOK
@@ -361,6 +378,89 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
               }}>{fmt(total)}</span>
             </div>
 
+            {/* ── MODE DE PAIEMENT (feuille d'encaissement — item 11, restylée écran 2) ── */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 4, marginBottom: 6 }}>
+                {PAY_MODES.map(mode => {
+                  // Hors-ligne : Mobile Money / Carte indisponibles (webhooks impossibles) → cash-only
+                  const offline = !isOnline && mode.id !== 'cash'
+                  return (
+                    <button key={mode.id} type="button" onClick={() => { if (!offline) setPayMode(mode.id) }}
+                      aria-pressed={payMode === mode.id}
+                      disabled={offline}
+                      style={{
+                        padding: '8px 2px', minHeight: 44, borderRadius: 8, fontSize: 11, fontWeight: 'var(--fw-semibold)',
+                        cursor: offline ? 'not-allowed' : 'pointer', fontFamily: 'var(--font)',
+                        background: payMode === mode.id ? 'var(--p)' : 'var(--bg3)',
+                        border: `1.5px solid ${payMode === mode.id ? 'var(--p)' : 'var(--border)'}`,
+                        color: payMode === mode.id ? '#fff' : 'var(--text2)',
+                        opacity: offline ? 0.4 : 1,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, transition: 'all .12s',
+                      }}>
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 16 }}>
+                        {mode.id === 'cash'   ? <Banknote size={14} />   :
+                         mode.id === 'card'   ? <CreditCard size={14} /> :
+                         mode.id === 'wave'   ? <span style={{ fontWeight: 'var(--fw-semibold)', fontSize: 11, lineHeight: 1 }}>W</span>  :
+                         mode.id === 'orange' ? <span style={{ fontWeight: 'var(--fw-semibold)', fontSize: 11, lineHeight: 1 }}>OM</span> :
+                                                <span style={{ fontWeight: 'var(--fw-semibold)', fontSize: 11, lineHeight: 1 }}>M</span>}
+                      </span>
+                      {mode.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {!isOnline && (
+                <div role="status" style={{ marginBottom: 6, fontSize: 11, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <AlertCircle size={12} style={{ flexShrink: 0 }} />
+                  {lang === 'en' ? 'Offline — cash only' : lang === 'es' ? 'Sin conexión — solo efectivo' : lang === 'it' ? 'Offline — solo contanti' : 'Hors-ligne — espèces uniquement'}
+                </div>
+              )}
+
+              {/* Toggle Paiement mixte (split, 2 méthodes) — indisponible hors-ligne */}
+              <button type="button" role="switch" aria-checked={mixedOn} disabled={!isOnline}
+                onClick={() => { if (isOnline) setMixedOn(!mixedOn) }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                  padding: '8px 10px', background: mixedOn ? 'rgba(91,78,232,.08)' : 'var(--bg3)',
+                  border: `1.5px solid ${mixedOn ? 'var(--p2)' : 'var(--border)'}`, borderRadius: 8,
+                  cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.4, fontFamily: 'var(--font)' }}>
+                <span style={{ fontSize: 12, fontWeight: 'var(--fw-semibold)', color: mixedOn ? 'var(--p2)' : 'var(--text2)' }}>
+                  {lang === 'en' ? 'Split payment' : lang === 'es' ? 'Pago mixto' : lang === 'it' ? 'Pagamento misto' : 'Paiement mixte'}
+                </span>
+                <span style={{ position: 'relative', display: 'block', width: 38, height: 22, borderRadius: 99, flexShrink: 0, boxSizing: 'border-box', background: mixedOn ? 'var(--p)' : 'var(--bg5)', border: '1px solid var(--border)', transition: 'background .2s' }}>
+                  <span style={{ position: 'absolute', top: 2, width: 16, height: 16, left: mixedOn ? 18 : 2, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,.3)' }} />
+                </span>
+              </button>
+
+              {mixedOn && (
+                <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <MethodPicker value={mixedM1} lang={lang} onChange={m => { setMixedM1(m); if (m === mixedM2) setMixedM2((['cash', 'mobile', 'card'] as const).find(x => x !== m)!) }} />
+                    <input type="number" inputMode="decimal" min={0} value={mixedAmt1} onChange={e => setMixedAmt1(e.target.value)}
+                      placeholder="0" aria-label={lang === 'en' ? 'Amount 1' : lang === 'es' ? 'Importe 1' : lang === 'it' ? 'Importo 1' : 'Montant 1'}
+                      style={{ flex: 1, minWidth: 0, height: 36, padding: '0 8px', background: 'var(--bg4)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 13, fontFamily: 'var(--mono)', textAlign: 'right', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <MethodPicker value={mixedM2} exclude={mixedM1} lang={lang} onChange={setMixedM2} />
+                    <div style={{ flex: 1, minWidth: 0, height: 36, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', background: 'var(--bg3)', border: '1px dashed var(--border)', borderRadius: 8, color: 'var(--text2)', fontSize: 13, fontFamily: 'var(--mono)' }}>
+                      {fmt(mixedAmt2XOF)}
+                    </div>
+                  </div>
+                  {!mixedValid && (
+                    <div style={{ fontSize: 11, color: 'var(--danger)' }}>
+                      {lang === 'en' ? 'Amount 1 must be between 0 and the total' : lang === 'es' ? 'El monto 1 debe estar entre 0 y el total' : lang === 'it' ? "L'importo 1 deve essere tra 0 e il totale" : 'Le montant 1 doit être entre 0 et le total'}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Espèces : montant reçu + monnaie à rendre */}
+              {!mixedOn && payMode === 'cash' && (
+                <div style={{ marginTop: 8 }}>
+                  <POSCashField lang={lang} cashGiven={cashGiven} setCashGiven={setCashGiven} monnaie={monnaie} currencySymbol={currencySymbol} fmt={fmt} />
+                </div>
+              )}
+            </div>
 
             {/* WhatsApp toggle */}
             <div style={{ padding:'14px 16px', marginBottom:12, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:12 }}>
@@ -844,7 +944,23 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
 
             {/* Boutons */}
             <div style={{ display: 'flex', gap: 10 }}>
-              {!isMtnMode && !isOrangeMode && !isCardMode && (
+              {/* PayDunya (Wave / OM UEMOA) : lance la facture hébergée (overlay QR + polling) */}
+              {paydunyaMode && (
+                <button
+                  type="button"
+                  onClick={() => { setShowModal(false); onPaydunyaStart?.() }}
+                  disabled={isSaving}
+                  style={{
+                    flex: 1, minHeight: 44, padding: '12px', borderRadius: 10, border: 'none',
+                    background: payMode === 'wave' ? '#1B9AF5' : '#FF6600',
+                    color: '#fff', fontSize: 14, fontWeight: 'var(--fw-semibold)',
+                    cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--sh-md)',
+                  }}
+                >
+                  {(lang === 'en' ? 'Confirm via ' : lang === 'es' ? 'Confirmar vía ' : lang === 'it' ? 'Conferma via ' : 'Confirmer via ') + (payMode === 'wave' ? 'Wave' : 'Orange Money')} — {fmt(total)}
+                </button>
+              )}
+              {!isMtnMode && !isOrangeMode && !isCardMode && !paydunyaMode && (
                 <button
                   onClick={() => confirmSale()}
                   disabled={blocked}
@@ -880,5 +996,30 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
         </div>
       )}
     </>
+  )
+}
+
+// ── Sélecteur de méthode (paiement mixte) — vit dans la feuille d'encaissement ──
+function methodLabel(m: 'cash'|'mobile'|'card', lang: string): string {
+  if (m === 'cash') return lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces'
+  if (m === 'card') return lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte'
+  return 'Mobile'
+}
+function MethodPicker({ value, onChange, exclude, lang }: {
+  value: 'cash'|'mobile'|'card'; onChange: (m: 'cash'|'mobile'|'card') => void
+  exclude?: 'cash'|'mobile'|'card'; lang: string
+}) {
+  const methods = (['cash', 'mobile', 'card'] as const).filter(m => m !== exclude)
+  return (
+    <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+      {methods.map(m => (
+        <button key={m} type="button" onClick={() => onChange(m)}
+          style={{ padding: '0 7px', height: 36, borderRadius: 7, fontSize: 11, fontWeight: 'var(--fw-regular)', cursor: 'pointer', fontFamily: 'var(--font)',
+            background: value === m ? 'var(--p)' : 'var(--bg4)', color: value === m ? '#fff' : 'var(--text2)',
+            border: `1px solid ${value === m ? 'var(--p)' : 'var(--border)'}` }}>
+          {methodLabel(m, lang)}
+        </button>
+      ))}
+    </div>
   )
 }

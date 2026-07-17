@@ -1,5 +1,5 @@
-import { memo, useMemo, useRef, useCallback } from 'react'
-import { Search, ShoppingCart, X, Camera, User, Factory, Package, Tag, CreditCard, ClipboardList, AlertTriangle, History, RotateCcw, FileText, Loader2 } from 'lucide-react'
+import { memo, useMemo, useRef, useCallback, type ReactNode } from 'react'
+import { User, Factory, Package, CreditCard, ClipboardList, AlertTriangle, RotateCcw, FileText, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
@@ -7,15 +7,14 @@ import { salesApi } from '@/lib/api'
 import { CATS, catLabel, payModeLabel, type PosProduct, type CartItem } from '@/components/pos/posShared'
 
 interface POSProductGridProps {
-  posTab: 'pos' | 'history'; setPosTab: (v: any) => void; fetchHistory: () => void
+  posTab: 'pos' | 'history'
   lang: string
   activeCat: string; setActiveCat: (v: string) => void
-  search: string; setSearch: (v: string) => void
-  posEnableScanner: boolean; setShowScanner: (b: boolean) => void
   clientType: 'retail' | 'wholesale' | 'semi'; setClientType: (v: any) => void
-  setShowDiscountModal: (b: boolean) => void
-  discount: any; setDiscount: (v: any) => void
   fmt: (n: number) => string
+  // Prix tuile façon maquette : montant (devise d'affichage, sans symbole) + suffixe discret
+  amountLabel: (n: number) => string
+  curSuffix: string
   filtered: PosProduct[]
   cart: CartItem[]
   addItem: (p: any) => void
@@ -36,8 +35,10 @@ interface POSProductGridProps {
 interface ProductTileProps {
   p: PosProduct
   qty: number | undefined
-  priceLabel: string
-  basePriceLabel: string
+  priceLabel: string        // libellé complet (aria) — ex. « 4 500 FCFA »
+  amount: string            // montant seul — ex. « 4 500 »
+  suffix: string            // devise discrète — ex. « FCFA »
+  baseAmount: string        // montant barré (promo / tarif) — sans devise
   showStrike: boolean
   isPromoRetail: boolean
   posShowStockOnTile: boolean
@@ -45,12 +46,14 @@ interface ProductTileProps {
   onAdd: (p: PosProduct) => void
 }
 
-const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLabel, showStrike, isPromoRetail, posShowStockOnTile, ruptureLabel, onAdd }: ProductTileProps) {
+const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suffix, baseAmount, showStrike, isPromoRetail, posShowStockOnTile, ruptureLabel, onAdd }: ProductTileProps) {
   const inCart     = qty !== undefined
   const isLowStock = p.stock < 20
   const isOut      = p.stock <= 0
   // Rupture bloquante UNIQUEMENT si le stock est affiché (sinon le commerçant gère à la main).
   const blocked    = posShowStockOnTile && isOut
+  // Spec item 11 : stock bas = bordure --warn + point ambre — n'empêche PAS la vente.
+  const lowStockRing = isLowStock && !isOut && !inCart
   return (
     <div
       role="button"
@@ -66,19 +69,16 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
           ? 'color-mix(in srgb, var(--p) 8%, var(--bg2))'
           : 'var(--bg2)',
         // Sélection : anneau via box-shadow (0.5 + 1.5 = 2px visuels) → zéro décalage de layout
-        border: `0.5px solid ${inCart ? 'var(--p)' : 'var(--border)'}`,
+        border: `0.5px solid ${inCart ? 'var(--p)' : lowStockRing ? 'var(--warn)' : 'var(--border)'}`,
         boxShadow: inCart ? '0 0 0 1.5px var(--p)' : 'none',
         borderRadius: 12,
-        padding: posShowStockOnTile ? '16px 12px 30px' : '16px 12px 14px',
+        // Maquette : padding 11, contenu aligné à gauche (padding bas élargi si pill stock)
+        padding: posShowStockOnTile ? '11px 11px 26px' : 11,
         cursor: blocked ? 'not-allowed' : 'pointer',
         opacity: blocked ? 0.45 : 1,
-        textAlign: 'center',
+        textAlign: 'left',
         transition: 'all .15s ease',
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 6,
       }}
       onMouseEnter={e => {
         if (!inCart && !blocked) {
@@ -97,14 +97,23 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
         }
       }}
     >
-      {/* Badge promo */}
+      {/* Badge promo — subtil (spec item 11) : teinte, pas d'aplat criard */}
       {isPromoRetail && (
         <div style={{
           position:'absolute', top:6, left:6,
-          background:'var(--danger)', color:'#fff',
-          borderRadius:6, padding:'2px 6px',
-          fontSize:11, fontWeight:'var(--fw-bold)',
+          background:'var(--c-red-bg)', color:'var(--danger)',
+          border:'1px solid var(--c-red-border)',
+          borderRadius:'var(--r-full)', padding:'1px 7px',
+          fontSize:9.5, fontWeight:'var(--fw-bold)', letterSpacing:'.5px',
         }}>PROMO</div>
+      )}
+      {/* Point ambre stock bas (spec item 11) — remplacé par le badge quantité une fois au panier */}
+      {lowStockRing && (
+        <span aria-hidden="true" style={{
+          position: 'absolute', top: 7, right: 7,
+          width: 8, height: 8, borderRadius: '50%',
+          background: 'var(--warn)', boxShadow: '0 0 6px var(--warn)',
+        }} />
       )}
       {/* Badge quantité si dans panier */}
       {inCart && (
@@ -122,38 +131,36 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
         }}>×{qty}</div>
       )}
 
-      {/* Emoji dans cercle */}
+      {/* Zone visuelle produit (maquette : 38px, centrée) */}
       <div style={{
-        width: 56, height: 56,
-        borderRadius: '50%',
-        background: 'var(--bg3)',
-        border: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 28,
-      }}>{p.emoji}</div>
+        height: 38,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 22,
+      }} aria-hidden="true">{p.emoji}</div>
 
-      {/* Nom */}
+      {/* Nom — gauche, 12px (maquette) */}
       <div style={{
-        fontSize: 14,
-        fontWeight: 'var(--fw-regular)',
+        fontSize: 12,
+        fontWeight: 'var(--fw-semibold)',
         color: 'var(--text)',
         lineHeight: 1.3,
+        marginTop: 6,
       }}>{p.name}</div>
 
-      {/* Prix */}
-      {showStrike && (
-        <div style={{ fontSize:11, color:'var(--text3)', textDecoration:'line-through', fontFamily:'var(--mono)' }}>
-          {basePriceLabel}
-        </div>
-      )}
-      <div style={{
-        fontSize: 16,
-        fontWeight: 'var(--fw-bold)',
-        color: isPromoRetail ? 'var(--danger)' : 'var(--p2)',
-        fontFamily: 'var(--mono)',
-        letterSpacing: '-.3px',
-      }}>{priceLabel}</div>
+      {/* Prix : montant or (--acc) + suffixe devise discret (maquette) */}
+      <div style={{ marginTop: 3 }}>
+        {showStrike && (
+          <span style={{ fontSize: 10, color: 'var(--text3)', textDecoration: 'line-through', fontFamily: 'var(--mono)', marginRight: 5 }}>
+            {baseAmount}
+          </span>
+        )}
+        <span style={{
+          fontSize: 13, fontWeight: 'var(--fw-semibold)',
+          color: isPromoRetail ? 'var(--danger)' : 'var(--acc)',
+          fontFamily: 'var(--mono)',
+        }}>{amount}</span>{' '}
+        <span style={{ fontSize: 10, color: 'color-mix(in srgb, var(--acc) 55%, var(--text3))' }}>{suffix}</span>
+      </div>
 
       {/* Stock — pill sémantique ancrée en bas à droite (vert OK / orange bas / rouge rupture) */}
       {posShowStockOnTile && (
@@ -174,7 +181,7 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, basePriceLab
   )
 })
 
-export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, activeCat, setActiveCat, search, setSearch, posEnableScanner, setShowScanner, clientType, setClientType, setShowDiscountModal, discount, setDiscount, fmt, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, clientType, setClientType, fmt, amountLabel, curSuffix, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
   // Quantités panier indexées par produit (first-wins = même sémantique que cart.find)
   const qtyById = useMemo(() => {
     const m = new Map<string | number, number>()
@@ -196,40 +203,12 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
           overflow: 'hidden',
         }}>
 
-          {/* Onglets Caisse / Historique */}
-          <div style={{
-            display: 'flex', gap: 4,
-            background: 'var(--card)',
-            border: '1px solid var(--border)',
-            borderRadius: 12, padding: 5,
-            flexShrink: 0,
-          }}>
-            {([
-              { id:'pos',     label: lang === 'fr' ? 'Caisse'     : lang === 'en' ? 'Register'  : lang === 'es' ? 'Caja'      : 'Cassa'   },
-              { id:'history', label: lang === 'fr' ? 'Historique' : lang === 'en' ? 'History'   : lang === 'es' ? 'Historial' : 'Storico' },
-            ] as const).map(tab => (
-              <button key={tab.id} type="button"
-                onClick={() => { setPosTab(tab.id); if (tab.id === 'history') fetchHistory() }}
-                style={{
-                  flex:1, padding:'8px', borderRadius:8,
-                  fontSize:13, fontWeight:'var(--fw-semibold)',
-                  cursor:'pointer', fontFamily:'var(--font)',
-                  background: posTab === tab.id ? 'var(--p)' : 'transparent',
-                  color: posTab === tab.id ? '#fff' : 'var(--text2)',
-                  border:'none', transition:'all .15s',
-                  boxShadow: posTab === tab.id ? 'var(--sh-xs)' : 'none',
-                  display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                }}
-              >
-                {tab.id === 'pos' ? <ShoppingCart size={13} /> : <History size={13} />}
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Filtres catégories — scroll horizontal + voile d'overflow à droite */}
+          {/* Filtres catégories SEULS au-dessus du catalogue (sobriété maquette) +
+              sélecteur de tarif discret en bout de ligne (progressive disclosure).
+              L'accès Historique vit dans la barre POS ; la remise vit dans le panier. */}
           {posTab === 'pos' && (
-            <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{ position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
               <div style={{
                 display: 'flex',
                 gap: 6,
@@ -246,18 +225,19 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                     onClick={() => setActiveCat(c.id)}
                     aria-pressed={activeCat === c.id}
                     style={{
-                      padding: '7px 14px',
+                      padding: '6px 13px',
+                      minHeight: isMobile ? 44 : 30, // cible tactile ≥ 44px en usage réel (spec)
                       borderRadius: 'var(--r-full)',
                       fontSize: 12,
                       fontWeight: 'var(--fw-semibold)',
                       cursor: 'pointer',
                       fontFamily: 'var(--font)',
                       transition: 'all .15s',
-                      border: 'none',
                       whiteSpace: 'nowrap',
-                      background: activeCat === c.id ? 'var(--p)' : 'var(--bg3)',
+                      // Maquette : active = --p plein / inactive = carte bordée
+                      background: activeCat === c.id ? 'var(--p)' : 'var(--card)',
+                      border: `1px solid ${activeCat === c.id ? 'var(--p)' : 'var(--border2)'}`,
                       color: activeCat === c.id ? '#fff' : 'var(--text2)',
-                      boxShadow: activeCat === c.id ? 'var(--sh-p)' : 'none',
                     }}
                   >{catLabel(c.id, lang)}</button>
                 ))}
@@ -268,87 +248,42 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                 background: 'linear-gradient(90deg, transparent, var(--bg))',
                 pointerEvents: 'none',
               }} />
-            </div>
-          )}
-
-          {/* Recherche + Scan */}
-          {posTab === 'pos' && (
-            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <Search size={14} style={{
-                  position: 'absolute', left: 10,
-                  top: '50%', transform: 'translateY(-50%)',
-                  color: 'var(--text3)', pointerEvents: 'none',
-                }} />
-                <input
-                  className="input"
-                  style={{ paddingLeft: 34, width: '100%', fontSize: 13, boxSizing: 'border-box' }}
-                  aria-label={t('pos_search')} placeholder={t('pos_search')}
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
               </div>
-              {posEnableScanner && (
-                <button
-                  onClick={() => setShowScanner(true)}
-                  aria-label={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
-                  title={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
-                  style={{
-                    width: 40, height: 40, borderRadius: 10, fontSize: 18,
-                    cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
-                    background: 'var(--bg3)', border: '1px solid var(--border)',
-                    color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                ><Camera size={18} /></button>
-              )}
+
+              {/* Tarif client — toggle segmenté discret (Détail / Grossiste / Demi-gros) */}
+              <div role="group"
+                aria-label={lang === 'en' ? 'Price tier' : lang === 'es' ? 'Tarifa' : lang === 'it' ? 'Tariffa' : 'Tarif client'}
+                style={{
+                  display: 'flex', flexShrink: 0, gap: 2,
+                  background: 'var(--bg3)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--r-full)', padding: 2,
+                }}>
+                {([
+                  { id:'retail',    icon: <User size={12} />,    label: lang === 'en' ? 'Retail'         : lang === 'es' ? 'Minorista'      : lang === 'it' ? 'Dettaglio'     : 'Détail'    },
+                  { id:'wholesale', icon: <Factory size={12} />, label: lang === 'en' ? 'Wholesaler'     : lang === 'es' ? 'Mayorista'      : lang === 'it' ? 'Grossista'     : 'Grossiste' },
+                  { id:'semi',      icon: <Package size={12} />, label: lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayorista' : lang === 'it' ? 'Semi-ingrosso' : 'Demi-gros' },
+                ] as { id:'retail'|'wholesale'|'semi'; icon: ReactNode; label:string }[]).map(ct => (
+                  <button key={ct.id} type="button" onClick={() => setClientType(ct.id)}
+                    aria-pressed={clientType === ct.id}
+                    title={ct.label}
+                    style={{
+                      padding: isMobile ? '8px 10px' : '5px 10px', borderRadius: 'var(--r-full)',
+                      minHeight: isMobile ? 40 : undefined,
+                      fontSize: 11, fontWeight: 'var(--fw-semibold)',
+                      cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all .15s',
+                      background: clientType === ct.id ? 'var(--p)' : 'transparent',
+                      border: 'none',
+                      color: clientType === ct.id ? '#fff' : 'var(--text3)',
+                      display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
+                    }}>
+                    {ct.icon}
+                    {/* Libellé texte : requis a11y/E2E (^Grossiste$) — masqué visuellement nulle part */}
+                    <span>{ct.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
-
-          {/* Barre type client + remise */}
-          {posTab === 'pos' && <div style={{ flexShrink:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-            {([
-              { id:'retail',    label: lang === 'en' ? 'Retail'         : lang === 'es' ? 'Minorista'      : lang === 'it' ? 'Dettaglio'      : 'Détail'    },
-              { id:'wholesale', label: lang === 'en' ? 'Wholesaler'     : lang === 'es' ? 'Mayorista'      : lang === 'it' ? 'Grossista'      : 'Grossiste' },
-              { id:'semi',      label: lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayorista' : lang === 'it' ? 'Semi-ingrosso' : 'Demi-gros' },
-            ] as { id:'retail'|'wholesale'|'semi'; label:string }[]).map(ct => (
-              <button key={ct.id} onClick={() => setClientType(ct.id)} style={{
-                padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:'var(--fw-regular)',
-                cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
-                background: clientType === ct.id ? 'rgba(91,78,232,.2)' : 'var(--bg3)',
-                border:`1px solid ${clientType === ct.id ? 'var(--p2)' : 'var(--border)'}`,
-                color: clientType === ct.id ? 'var(--p2)' : 'var(--text2)',
-                display:'flex', alignItems:'center', gap:5,
-              }}>
-                {ct.id === 'retail' ? <User size={12} /> : ct.id === 'wholesale' ? <Factory size={12} /> : <Package size={12} />}
-                {ct.label}
-              </button>
-            ))}
-            <div style={{ width:1, height:20, background:'var(--border)', margin:'0 4px' }} />
-            <button onClick={() => setShowDiscountModal(true)} style={{
-              padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:'var(--fw-regular)',
-              cursor:'pointer', fontFamily:'var(--font)', transition:'all .15s',
-              background: discount ? 'rgba(14,196,126,.15)' : 'var(--bg3)',
-              border:`1px solid ${discount ? 'rgba(14,196,126,.3)' : 'var(--border)'}`,
-              color: discount ? 'var(--acc2)' : 'var(--text2)',
-              display:'flex', alignItems:'center', gap:6,
-            }}>
-              <Tag size={12} /> {discount
-                ? `${lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'}: ${discount.type === 'percent' ? discount.value + ' %' : fmt(discount.value)}`
-                : (lang === 'en' ? 'Apply discount' : lang === 'es' ? 'Aplicar descuento' : lang === 'it' ? 'Applica sconto' : 'Appliquer une remise')}
-            </button>
-            {discount && (
-              <button onClick={() => setDiscount(null)} style={{
-                padding:'6px 8px', borderRadius:8, fontSize:11,
-                background:'rgba(232,64,74,.1)', border:'1px solid rgba(232,64,74,.2)',
-                color:'var(--danger)', cursor:'pointer', fontFamily:'var(--font)',
-                display:'flex', alignItems:'center', gap:4,
-              }}><X size={11} /> {lang === 'en' ? 'Clear discount' : lang === 'es' ? 'Quitar descuento' : lang === 'it' ? 'Rimuovi sconto' : 'Annuler remise'}</button>
-            )}
-            <div style={{ marginLeft:'auto', fontSize:11, color:'var(--acc)', fontWeight:'var(--fw-regular)', display:'flex', alignItems:'center', gap:4 }}>
-              <Tag size={11} /> {filtered.filter(p => p.promotion).length} {lang === 'en' ? 'active promotions' : lang === 'es' ? 'promociones activas' : lang === 'it' ? 'promozioni attive' : 'promotions actives'}
-            </div>
-          </div>}
 
           {/* Compteur de résultats — annoncé aux lecteurs d'écran à chaque filtre/recherche */}
           {posTab === 'pos' && (
@@ -364,7 +299,8 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
             overflowY: 'auto',
             paddingTop: 8,
           }}>
-            <ResponsiveGrid min={160} gap={10} style={{ paddingBottom: 8 }}>
+            {/* Spec item 11 : grille auto-fill minmax(112px, 1fr) */}
+            <ResponsiveGrid min={112} gap={10} style={{ paddingBottom: 8 }}>
               {filtered.map(p => {
                 const isPromoRetail = !!p.promotion && clientType === 'retail'
                 return (
@@ -373,7 +309,9 @@ export default function POSProductGrid({ posTab, setPosTab, fetchHistory, lang, 
                     p={p}
                     qty={qtyById.get(p.id)}
                     priceLabel={fmt(getPrice(p))}
-                    basePriceLabel={fmt(p.price)}
+                    amount={amountLabel(getPrice(p))}
+                    suffix={curSuffix}
+                    baseAmount={amountLabel(p.price)}
                     showStrike={clientType !== 'retail' || isPromoRetail}
                     isPromoRetail={isPromoRetail}
                     posShowStockOnTile={posShowStockOnTile}

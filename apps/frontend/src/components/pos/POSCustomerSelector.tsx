@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { Search, QrCode, X, Check, UserPlus, Loader2 } from 'lucide-react'
+import { Search, QrCode, X, UserPlus, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { customersApi } from '@/lib/api'
 
@@ -15,6 +15,7 @@ interface Props {
   enableLoyalty: boolean
   loyaltyPct?: number
   loyaltyTier?: string
+  loyaltyPoints?: number | null
 }
 
 const TIER_NAME: Record<string, [string, string, string, string]> = {
@@ -30,7 +31,7 @@ function parseScannedCustomerId(text: string): string {
   return t
 }
 
-export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCustomer, enableLoyalty, loyaltyPct = 0, loyaltyTier = '' }: Props) {
+export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCustomer, enableLoyalty, loyaltyPct = 0, loyaltyTier = '', loyaltyPoints = null }: Props) {
   const i = (fr: string, en: string, es: string, it: string) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
 
   const [query, setQuery]       = useState('')
@@ -90,33 +91,31 @@ export default function POSCustomerSelector({ lang, linkedCustomer, setLinkedCus
   }
 
   return (
-    <div style={{ flexShrink: 0, padding: '8px 14px', borderTop: '1px solid var(--border)' }}>
+    <div style={{ flexShrink: 0, marginBottom: 12 }}>
       {linkedCustomer ? (
-        // ── Chip client lié : avatar initiales + nom + palier ──
+        // ── Puce client lié (maquette item 11) : avatar carré violet + nom + « Palier · pts » ──
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-          padding: '8px 10px', background: 'var(--c-green-bg)', border: '1px solid var(--c-green-border)', borderRadius: 10,
+          display: 'flex', alignItems: 'center', gap: 9,
+          padding: '9px 11px', background: 'var(--card)', border: '1px solid var(--border3)', borderRadius: 11,
         }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span aria-hidden="true" style={{
-              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-              background: 'linear-gradient(135deg, var(--p), var(--p2))', color: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 'var(--fw-bold)', letterSpacing: '.5px',
-            }}>
-              {linkedCustomer.name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('')}
+          <span aria-hidden="true" style={{
+            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+            background: 'color-mix(in srgb, var(--p) 16%, transparent)', color: 'var(--p3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 'var(--fw-semibold)', letterSpacing: '.5px',
+          }}>
+            {linkedCustomer.name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('')}
+          </span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {linkedCustomer.name}
             </span>
-            <span style={{ minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {linkedCustomer.name}
+            {enableLoyalty && loyaltyTier && (
+              /* ⚠️ E2E matche /Bronze · −5%/ — garder « <palier> · −X% », les points APRÈS */
+              <span style={{ display: 'block', fontSize: 11, color: 'var(--text3)' }}>
+                {tierLabel(loyaltyTier)}{loyaltyPct > 0 ? ` · −${loyaltyPct}%` : ''}{loyaltyPoints != null ? ` · ${loyaltyPoints} pts` : ''}
               </span>
-              {enableLoyalty && loyaltyTier && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text3)' }}>
-                  <Check size={11} style={{ color: 'var(--acc2)', flexShrink: 0 }} />
-                  <span>· {tierLabel(loyaltyTier)}{loyaltyPct > 0 ? ` · −${loyaltyPct}%` : ''}</span>
-                </span>
-              )}
-            </span>
+            )}
           </span>
           <button type="button" onClick={() => setLinkedCustomer(null)}
             aria-label={i('Retirer le client', 'Remove customer', 'Quitar cliente', 'Rimuovi cliente')}
