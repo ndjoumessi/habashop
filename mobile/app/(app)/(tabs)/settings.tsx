@@ -550,10 +550,10 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   gridLabelOn: { color: C.primary3 },
   gridCheck: { position: 'absolute', top: 4, right: 4 },
 
-  // Apparence (thème) — 3 options : sombre / clair / système
-  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  // Apparence (thème) — 3 options sur une ligne (sombre / clair / système)
+  themeGrid: { flexDirection: 'row', gap: Spacing.sm },
   themeBtn: {
-    width: '47%', alignItems: 'center', gap: Spacing.xs,
+    flex: 1, alignItems: 'center', gap: Spacing.xs,
     paddingVertical: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1,
     backgroundColor: C.card,
   },
