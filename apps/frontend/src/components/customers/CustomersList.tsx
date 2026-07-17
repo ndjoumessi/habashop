@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import { Search, Download, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, FileText, Phone, Mail, MapPin, Star, Trash2, ExternalLink, Tag, CreditCard, Users } from 'lucide-react'
-import toast from 'react-hot-toast'
-import { t, useAppStore, convertFromXOF } from '@/stores/appStore'
-import { exportCSV, generateInvoice } from '@/utils/export'
+import { useEffect, useState } from 'react'
+import { Search, Eye, ShoppingCart, Grid3X3, LayoutList, Pencil, FileText, Phone, MapPin, Star, Trash2, ExternalLink, Tag, CreditCard, Users, MoreHorizontal } from 'lucide-react'
+import { t } from '@/stores/appStore'
+import { generateInvoice } from '@/utils/export'
 import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import FilterSelect from '@/components/ui/FilterSelect'
@@ -20,7 +19,6 @@ interface CustomersListProps {
   lang: string
   i: (...a: string[]) => string
   navigate: (path: string, opts?: any) => void
-  printCustomersPDF: () => void
   setViewCustomer: (c: any) => void
   setEditCustomer: (c: any) => void
   setEditCustForm: (v: any) => void
@@ -32,8 +30,22 @@ interface CustomersListProps {
   onDelete: (id: string) => void
 }
 
-export default function CustomersList({ customers, search, setSearch, typeFilter, setTypeFilter, viewMode, setViewMode, pg, filtered, fmt, abbr, lang, i, navigate, printCustomersPDF, setViewCustomer, setEditCustomer, setEditCustForm, setCustEditMode, setShowEditCustModal, setDigitalCardCustomerId, setDetailCustomer, setShowDetailModal, onDelete }: CustomersListProps) {
+export default function CustomersList({ customers, search, setSearch, typeFilter, setTypeFilter, viewMode, setViewMode, pg, filtered, fmt, abbr, lang, i, navigate, setViewCustomer, setEditCustomer, setEditCustForm, setCustEditMode, setShowEditCustModal, setDigitalCardCustomerId, setDetailCustomer, setShowDetailModal, onDelete }: CustomersListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Menu « ⋯ » par ligne (devis PDF + suppression) — position:fixed (le .table-wrap
+  // scrolle en X, un menu absolute y serait rogné). Fermé sur clic hors, Échap, scroll.
+  const [rowMenu, setRowMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  useEffect(() => {
+    if (!rowMenu) return
+    const close = () => setRowMenu(null)
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    const onDoc = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.menu-pop')) close() }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    window.addEventListener('scroll', close, true)
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); window.removeEventListener('scroll', close, true) }
+  }, [rowMenu])
+  const menuCustomer = rowMenu ? pg.paginated.find((c: Customer) => c.id === rowMenu.id) ?? null : null
   return (
     <div className="panel">
         <div className="panel-head">
@@ -47,21 +59,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                 <Grid3X3 size={14} />
               </button>
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => {
-              // Montants stockés en base XOF → convertis vers la devise d'affichage (pattern reportsExport)
-              const currency = useAppStore.getState().currency
-              const cv = (xof: number) => Math.round(convertFromXOF(xof ?? 0, currency) * 100) / 100
-              exportCSV('habashop_clients',
-                [i('Nom','Name','Nombre','Nome'), i('Type','Type','Tipo','Tipo'), i('Téléphone','Phone','Teléfono','Telefono'), 'Email', i('Achats/mois','Purchases/month','Compras/mes','Acquisti/mese'), `${i('CA total','Total revenue','Ingresos totales','Ricavi totali')} (${currency})`, i('Points fidélité','Loyalty points','Puntos fidelidad','Punti fedeltà')],
-                customers.map(c => [c.name, c.type, c.phone, c.email ?? '', c.purchasesPerMonth, cv(c.totalCA), c.loyaltyPoints])
-              )
-              toast.success(i('Export CSV téléchargé', 'CSV exported', 'CSV exportado', 'CSV esportato'))
-            }}>
-              <Download size={13} /> {t('btn_export')}
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={() => { printCustomersPDF(); toast.success(i('PDF ouvert', 'PDF opened', 'PDF abierto', 'PDF aperto')) }}>
-              <Download size={13} /> PDF
-            </button>
+            {/* Export : contrôle unique dans le header de page (menu CSV + PDF) — doublon supprimé */}
           </div>
         </div>
 
@@ -96,12 +94,13 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
 
         {/* Vue tableau */}
         {viewMode === 'table' && (
-          <div className="table-wrap data-table">
+          <div className="table-wrap data-table customers-table">
             <table aria-label={t('customers_title')}>
               <thead>
                 <tr>
                   <th scope="col">{t('col_client')}</th><th scope="col">{t('col_type')}</th><th scope="col">{t('col_phone')}</th>
-                  <th scope="col">{t('customers_purchases')}</th><th scope="col">{t('customers_total_revenue')}</th><th scope="col">{t('col_loyalty')}</th><th scope="col">{t('col_actions')}</th>
+                  {/* Colonnes numériques : en-têtes alignés à droite comme les cellules (.td-num) */}
+                  <th scope="col" style={{ textAlign: 'right' }}>{t('customers_purchases')}</th><th scope="col" style={{ textAlign: 'right' }}>{t('customers_total_revenue')}</th><th scope="col">{t('col_loyalty')}</th><th scope="col">{t('col_actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -129,9 +128,9 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                     <td className="td-mono">{c.phone}</td>
                     <td className="td-num" style={{ color: 'var(--text2)' }}>{c.purchasesPerMonth}×</td>
                     <td className="td-num" style={{ color: 'var(--acc2)' }}>{fmt(c.totalCA)}</td>
-                    <td style={{ minWidth: 120 }}><LoyaltyBar points={c.loyaltyPoints} /></td>
+                    <td style={{ minWidth: 100 }}><LoyaltyBar points={c.loyaltyPoints} /></td>
                     <td>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1">
                         <button className="btn btn-sm btn-ghost stock-action" title={i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} aria-label={`${i('Voir fiche', 'View profile', 'Ver ficha', 'Vedi scheda')} ${c.name}`} style={{ cursor: 'pointer' }} onClick={() => setViewCustomer(c)}>
                           <Eye size={14} />
                         </button>
@@ -154,22 +153,19 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                           onClick={() => setDigitalCardCustomerId(c.id)}>
                           <CreditCard size={14} />
                         </button>
-                        <button className="btn btn-sm btn-ghost stock-action" title={i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')}
-                          aria-label={`${i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')} — ${c.name}`}
-                          style={{ color: 'var(--p2)', cursor: 'pointer' }}
-                          onClick={() => generateInvoice({
-                            type: 'devis', lang,
-                            customer: { name: c.name, phone: c.phone },
-                            items: [{ name: i('Article', 'Item', 'Artículo', 'Articolo'), qty: 1, price: 0 }],
-                          })}>
-                          <FileText size={14} />
-                        </button>
+                        {/* Actions secondaires (devis PDF, suppression) regroupées dans un menu « ⋯ » */}
                         <button className="btn btn-sm btn-ghost stock-action"
-                          title={i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
-                          aria-label={i(`Supprimer ${c.name}`, `Delete ${c.name}`, `Eliminar ${c.name}`, `Elimina ${c.name}`)}
-                          style={{ color: 'var(--danger)', cursor: 'pointer' }}
-                          onClick={e => { e.stopPropagation(); onDelete(c.id) }}>
-                          <Trash2 size={14} />
+                          title={i('Plus d’actions', 'More actions', 'Más acciones', 'Altre azioni')}
+                          aria-label={`${i('Plus d’actions', 'More actions', 'Más acciones', 'Altre azioni')} — ${c.name}`}
+                          aria-haspopup="menu" aria-expanded={rowMenu?.id === c.id}
+                          style={{ cursor: 'pointer' }}
+                          onClick={e => {
+                            e.stopPropagation()
+                            if (rowMenu?.id === c.id) { setRowMenu(null); return }
+                            const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                            setRowMenu({ id: c.id, x: r.right, y: r.bottom + 4 })
+                          }}>
+                          <MoreHorizontal size={14} />
                         </button>
                       </div>
                     </td>
@@ -298,6 +294,26 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
           </ResponsiveGrid>
         )}
                 <Pagination page={pg.page} totalPages={pg.totalPages} total={pg.total} pageSize={pg.pageSize} onPage={pg.onPage} onPageSize={pg.onSize} lang={lang} />
+
+        {/* Menu « ⋯ » — actions secondaires de la ligne active */}
+        {rowMenu && menuCustomer && (
+          <div role="menu" aria-label={`${i('Plus d’actions', 'More actions', 'Más acciones', 'Altre azioni')} — ${menuCustomer.name}`}
+            className="menu-pop" style={{ position: 'fixed', left: rowMenu.x, top: rowMenu.y, transform: 'translateX(-100%)' }}>
+            <button role="menuitem" className="menu-pop-item" onClick={() => {
+              setRowMenu(null)
+              generateInvoice({
+                type: 'devis', lang,
+                customer: { name: menuCustomer.name, phone: menuCustomer.phone },
+                items: [{ name: i('Article', 'Item', 'Artículo', 'Articolo'), qty: 1, price: 0 }],
+              })
+            }}>
+              <FileText size={13} style={{ color: 'var(--p2)' }} /> {i('Générer un devis PDF', 'Generate PDF quote', 'Generar presupuesto PDF', 'Genera preventivo PDF')}
+            </button>
+            <button role="menuitem" className="menu-pop-item danger" onClick={() => { setRowMenu(null); onDelete(menuCustomer.id) }}>
+              <Trash2 size={13} /> {i('Supprimer', 'Delete', 'Eliminar', 'Elimina')}
+            </button>
+          </div>
+        )}
     </div>
   )
 }

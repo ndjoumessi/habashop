@@ -287,6 +287,14 @@ textarea.input { resize:vertical; min-height:80px; line-height:1.6 }
 .stock-table td, .data-table td { padding:12px 14px }
 .stock-table .td-num, .data-table .td-num { font-size:14px }
 .stock-action { min-width:36px; min-height:36px; justify-content:center }
+/* Table Clients — colonnes resserrées (opt-in, n'affecte pas les autres data-table) */
+.customers-table th, .customers-table td { padding:8px 10px }
+/* ── Menus contextuels légers (Clients : « Exporter », actions « ⋯ ») ── */
+.menu-pop { position:absolute; z-index:var(--z-dropdown); min-width:170px; background:var(--card); border:1px solid var(--border2); border-radius:10px; box-shadow:var(--sh-md); padding:4px; display:flex; flex-direction:column }
+.menu-pop-item { display:flex; align-items:center; gap:8px; width:100%; padding:9px 12px; border:none; border-radius:7px; background:transparent; color:var(--text2); font-size:13px; font-family:var(--font); cursor:pointer; text-align:left; transition:background .12s, color .12s }
+.menu-pop-item:hover { background:var(--bg3); color:var(--text) }
+.menu-pop-item.danger { color:var(--danger) }
+.menu-pop-item.danger:hover { background:var(--c-red-bg); color:var(--danger) }
 table { width:100%; border-collapse:collapse; font-size:13px }
 thead tr { background:var(--bg4); border-bottom:1px solid var(--border) }
 th { padding:10px 14px; text-align:left; font-size:11px; font-weight:var(--fw-regular); text-transform:uppercase; letter-spacing:.6px; color:var(--text3); white-space:nowrap }

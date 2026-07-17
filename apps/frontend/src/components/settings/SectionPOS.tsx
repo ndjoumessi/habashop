@@ -121,12 +121,12 @@ export default function SectionPOS() {
         } : {}),
       })
       cfg.updateConfig({ ...draft, posVatIncluded: draft.priceMode !== 'HT', posDefaultFund: fundXOF, shopVatRate: draft.posTaxRate } as any)
-      if (draft.enableLoyalty) {
-        setLoyalty(loyaltyDraft)
-        // Reflète immédiatement dans le store (LoyaltyBar lit tenant.bronze/silver).
-        const cur = useAppStore.getState().tenant
-        if (cur) useAppStore.getState().setTenant({ ...cur, ...loyaltyDraft })
-      }
+      // Reflète immédiatement dans le store tenant — TOUJOURS enableLoyalty (sinon la
+      // page Clients lit un tenant périmé jusqu'au prochain rechargement complet :
+      // toggle ON en réglages → carte fidélité toujours bloquée = P0 clic mort).
+      const cur = useAppStore.getState().tenant
+      if (cur) useAppStore.getState().setTenant({ ...cur, enableLoyalty: draft.enableLoyalty, ...(draft.enableLoyalty ? loyaltyDraft : {}) })
+      if (draft.enableLoyalty) setLoyalty(loyaltyDraft)
       toast.success(i('Config POS sauvegardée', 'POS config saved', 'Config TPV guardada', 'Config POS salvata'))
       setEditMode(false)
     } catch (e: any) {
