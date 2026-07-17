@@ -1,8 +1,24 @@
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import type { OrderBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
+
+// ── Schémas (item 6) ─────────────────────────────────────────────────────────
+const ID_PARAMS = z.object({ id: z.string().min(1) })
+// items requis (le handler .reduce/.map → crasherait sinon) ; supplierId requis (FK).
+const ORDER_CREATE = z.object({
+  supplierId: z.string().min(1),
+  items: z.array(z.object({
+    product:   z.string(),
+    qty:       z.coerce.number(),
+    unitPrice: z.coerce.number(),
+  }).passthrough()).min(1),
+  expectedAt: z.any().nullish(),
+  notes:      z.string().nullish(),
+}).passthrough()
+const ORDER_STATUS = z.object({ status: z.string().min(1) })
 
 export async function orderRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/orders', { preHandler: authenticate }, async (request) => {
@@ -14,7 +30,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
-  app.post('/api/orders', { preHandler: authenticate }, async (request) => {
+  app.post('/api/orders', { preHandler: authenticate, schema: { body: ORDER_CREATE } }, async (request) => {
     const { tenantId, userId } = request.user
     const { supplierId, items, expectedAt, notes } = request.body as OrderBody
 
@@ -42,14 +58,14 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
     return order
   })
 
-  app.patch('/api/orders/:id/status', { preHandler: authenticate }, async (request) => {
+  app.patch('/api/orders/:id/status', { preHandler: authenticate, schema: { params: ID_PARAMS, body: ORDER_STATUS } }, async (request) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
     const { status } = request.body as { status?: string }
     return prisma.purchaseOrder.update({ where: { id, tenantId }, data: { status } })
   })
 
-  app.delete('/api/orders/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.delete('/api/orders/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId, userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
       return reply.code(403).send({ error: 'Admin requis pour supprimer une commande' })
@@ -65,7 +81,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // Restaurer une commande soft-supprimée (ADMIN / SUPER_ADMIN)
-  app.patch('/api/orders/:id/restore', { preHandler: authenticate }, async (request, reply) => {
+  app.patch('/api/orders/:id/restore', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId, userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
     const { id } = request.params as { id: string }

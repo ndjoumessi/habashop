@@ -1,9 +1,26 @@
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import type { CustomerBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 import { tierForPoints } from '../lib/loyalty'
+
+// ── Schémas (item 6) ─────────────────────────────────────────────────────────
+const ID_PARAMS = z.object({ id: z.string().min(1) })
+const CUSTOMER_FIELDS = {
+  name:    z.string().optional(),
+  type:    z.string().optional(),
+  phone:   z.string().nullish(),
+  email:   z.string().nullish(),
+  address: z.string().nullish(),
+  loyaltyPoints: z.coerce.number().optional(),
+  totalRevenue:  z.coerce.number().optional(),
+}
+const CUSTOMER_CREATE = z.object(CUSTOMER_FIELDS).passthrough() // « nom requis » reste géré par le handler
+const CUSTOMER_UPDATE = z.object(CUSTOMER_FIELDS).passthrough()
+// Ajustement fidélité manuel : points requis (nombre) ; le handler garde ses gardes (0, rôle).
+const LOYALTY_BODY = z.object({ points: z.coerce.number(), reason: z.string().nullish() }).passthrough()
 
 export async function customerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/customers', { preHandler: authenticate }, async (request) => {
@@ -52,7 +69,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     return customer
   })
 
-  app.post('/api/customers', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/customers', { preHandler: authenticate, schema: { body: CUSTOMER_CREATE } }, async (request, reply) => {
     const { tenantId } = request.user
     const {
       name, type, phone, email, address,
@@ -87,7 +104,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.put('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.put('/api/customers/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: CUSTOMER_UPDATE } }, async (request, reply) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
     const data = request.body as CustomerBody
@@ -107,7 +124,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.delete('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.delete('/api/customers/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId, userId } = request.user
     const { id } = request.params as { id: string }
     const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
@@ -120,7 +137,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // Restaurer un client soft-supprimé (ADMIN / SUPER_ADMIN)
-  app.patch('/api/customers/:id/restore', { preHandler: authenticate }, async (request, reply) => {
+  app.patch('/api/customers/:id/restore', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId, userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
     const { id } = request.params as { id: string }
@@ -214,7 +231,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.post('/api/customers/:id/loyalty', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/customers/:id/loyalty', { preHandler: authenticate, schema: { params: ID_PARAMS, body: LOYALTY_BODY } }, async (request, reply) => {
     const { tenantId, role } = request.user as { tenantId: string; role?: string }
     // Ajustement manuel de points = levier de remise → réservé aux rôles de gestion
     if (!['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(role ?? '')) {
