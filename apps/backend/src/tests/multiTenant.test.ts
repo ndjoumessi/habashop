@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
 import jwt from '@fastify/jwt'
+import { validatorCompiler } from 'fastify-type-provider-zod'
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 const { db } = vi.hoisted(() => ({
@@ -25,6 +26,7 @@ const SECRET = 'test-secret-multi-tenant'
 
 async function buildApp() {
   const app = Fastify()
+  app.setValidatorCompiler(validatorCompiler)
   await app.register(jwt, { secret: SECRET })
   await app.register(authRoutes)
   await app.register(analyticsRoutes)
