@@ -66,7 +66,7 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
 
   it('le filtre par type de shift réduit la liste (employés sans ce shift exclus)', async () => {
     // Marie (emp1) a un shift "matin" lundi (via /api/shifts) ; Kofi (emp2) aucun.
-    ;(shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    (shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
     render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     const shiftSelect = screen.getByDisplayValue('Tous les shifts')
@@ -114,7 +114,7 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
   })
 
   it('Phase 7 — "Copier → suiv." duplique les shifts à J+7 (upsert /api/shifts)', async () => {
-    ;(shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    (shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
     render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     // attend que le shift source soit chargé dans la grille (cellule + légende = ≥2 occurrences)
@@ -128,7 +128,7 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
 
   it('Phase 7 — drag&drop : déplace le shift (upsert cible + delete source)', async () => {
     // Marie (emp1) a un shift matin lundi (id s1) ; on le glisse vers la case lundi de Kofi (emp2).
-    ;(shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    (shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
     const { container } = render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     await waitFor(() => expect(screen.getAllByText('08:00-13:00').length).toBeGreaterThanOrEqual(2))
@@ -150,7 +150,7 @@ describe('Planning — test d’ancrage (comportement à figer avant/après déc
 
   it('multi-shift : cliquer une case déjà pleine AJOUTE le shift actif (les deux types coexistent)', async () => {
     // Marie a un shift matin lundi ; le shift actif par défaut = "full" (Journée).
-    ;(shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
+    (shiftsApi.list as any).mockResolvedValue([{ id: 's1', employeeId: 'emp1', date: mondayYmd(), shiftTypeKey: 'morning' }])
     const { container } = render(<Planning />)
     await waitFor(() => expect(screen.getByText('Marie')).toBeInTheDocument())
     await waitFor(() => expect(screen.getAllByText('08:00-13:00').length).toBeGreaterThanOrEqual(2))
