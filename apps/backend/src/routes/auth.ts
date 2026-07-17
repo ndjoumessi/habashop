@@ -1,9 +1,35 @@
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { sendWelcomeEmail } from '../services/email'
 import type { LoginBody, RegisterBody } from '../types'
+
+// ── Schémas de validation (item 6) ──────────────────────────────────────────
+// Login : PERMISSIF (présence seule) — la vérif des identifiants reste un 401 générique.
+const LOGIN_BODY = z.object({
+  email:    z.string().min(1),
+  password: z.string().min(1),
+})
+// Register : email + mot de passe ≥ 8 (parité avec le changement de mdp) ; le reste optionnel.
+const REGISTER_BODY = z.object({
+  email:    z.string().trim().min(1),
+  password: z.string().min(8, { message: 'Le mot de passe doit faire au moins 8 caractères' }),
+  name:     z.string().optional(),
+  ownerName: z.string().optional(),
+  shopName: z.string().optional(),
+  currency: z.string().optional(),
+  country:  z.string().optional(),
+  language: z.string().optional(),
+  phone:    z.string().optional(),
+}).passthrough()
+const SWITCH_TENANT_BODY = z.object({ tenantId: z.string().min(1) })
+// Force du nouveau mdp (≥8) conservée dans le handler → message métier inchangé.
+const PASSWORD_BODY = z.object({
+  currentPassword: z.string().optional(),
+  newPassword:     z.string().optional(),
+}).passthrough()
 
 // Résumé d'une boutique accessible, exposé au frontend (sélecteur / switcher).
 export interface AccessibleTenant {
@@ -64,6 +90,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         }),
       },
     },
+    schema: { body: LOGIN_BODY },
   }, async (request, reply) => {
     const { email, password } = request.body as LoginBody
 
@@ -118,6 +145,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         }),
       },
     },
+    schema: { body: REGISTER_BODY },
   }, async (request, reply) => {
     const { name, ownerName, email, password, shopName, currency, country, language, phone } = request.body as RegisterBody
     const resolvedName = name ?? ownerName ?? shopName
@@ -194,6 +222,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/auth/switch-tenant', {
     preHandler: authenticate,
     config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+    schema: { body: SWITCH_TENANT_BODY },
   }, async (request, reply) => {
     const { userId } = request.user
     const { tenantId } = (request.body ?? {}) as { tenantId?: string }
@@ -213,7 +242,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     return { token, tenant, activeTenantId: tenantId, role: link.role }
   })
 
-  app.patch('/api/auth/password', { preHandler: authenticate }, async (request, reply) => {
+  app.patch('/api/auth/password', { preHandler: authenticate, schema: { body: PASSWORD_BODY } }, async (request, reply) => {
     const { userId, tenantId } = request.user
     const { currentPassword, newPassword } = request.body as { currentPassword?: string; newPassword?: string }
 
