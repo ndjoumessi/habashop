@@ -96,7 +96,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
         {/* CTAs */}
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" onClick={() => navigate('/login')}
-            className="lp-btn-ghost"
+            className="lp-btn-ghost lp-nav-login"
             style={{
               padding: '8px 16px', borderRadius: 10, background: 'transparent',
               border: `1px solid ${D.border2}`, color: D.text2,
@@ -107,6 +107,7 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
             onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.color = D.text2 }}
           >{lp.nav_login}</button>
           <button type="button" onClick={() => navigate('/signup')}
+            className="lp-nav-cta-signup"
             style={{
               padding: '8px 18px', borderRadius: 10,
               background: `linear-gradient(135deg,${D.p},${D.p2})`,
@@ -120,6 +121,18 @@ export default function LandingNav({ lp, navigate, lang, setLang, currency, setC
           >{lp.cta1}</button>
         </div>
       </nav>
+
+      {/* Responsive nav : sous 640px, la barre = logo + CTA principal seulement.
+          On masque « Connexion » (le login reste accessible via le CTA / le hero) pour
+          éviter que les 2 boutons + le logo ne se chevauchent sur petits écrans. */}
+      <style>{`
+        @media (max-width: 640px) {
+          .lp-nav-login { display: none !important; }
+        }
+        @media (max-width: 380px) {
+          .lp-nav-cta-signup { padding: 8px 14px !important; }
+        }
+      `}</style>
     </>
   )
 }
