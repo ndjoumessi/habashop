@@ -3,6 +3,7 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { sendTransferConfirmed, sendTransferCancelled } from '../services/pushService'
+import { ID_PARAMS, TRANSFER_CREATE } from '../schemas/writesB'
 
 const MANAGER_ROLES = ['MANAGER', 'ADMIN', 'SUPER_ADMIN']
 const isManagerPlus = (role: unknown) => typeof role === 'string' && MANAGER_ROLES.includes(role.toUpperCase())
@@ -28,7 +29,7 @@ async function userHasTenant(userId: string, tenantId: string): Promise<boolean>
 export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
 
   // ── 2.1 Créer un transfert (boutique SOURCE) ──────────────────────────────────
-  app.post('/api/stock/transfers', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/stock/transfers', { preHandler: authenticate, schema: { body: TRANSFER_CREATE } }, async (request, reply) => {
     if (!requireManager(request, reply)) return
     const fromTenantId = request.tenantId as string
     const { userId } = request.user
@@ -93,7 +94,7 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // ── 2.3 Confirmer la réception (boutique DESTINATION) ──────────────────────────
-  app.patch('/api/stock/transfers/:id/confirm', { preHandler: authenticate }, async (request, reply) => {
+  app.patch('/api/stock/transfers/:id/confirm', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     if (!requireManager(request, reply)) return
     const tenantId = request.tenantId as string
     const { userId } = request.user
@@ -160,7 +161,7 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // ── 2.4 Annuler (boutique SOURCE ou DESTINATION) — restitue le stock source ────
-  app.patch('/api/stock/transfers/:id/cancel', { preHandler: authenticate }, async (request, reply) => {
+  app.patch('/api/stock/transfers/:id/cancel', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     if (!requireManager(request, reply)) return
     const tenantId = request.tenantId as string
     const { id } = request.params as { id: string }

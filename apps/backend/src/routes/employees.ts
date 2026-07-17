@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import type { EmployeeBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { ID_PARAMS, EMPLOYEE_CREATE, EMPLOYEE_UPDATE } from '../schemas/writesB'
 
 export async function employeeRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/employees', { preHandler: authenticate }, async (request) => {
@@ -9,7 +10,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
     return prisma.employee.findMany({ where: { tenantId } })
   })
 
-  app.post('/api/employees', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/employees', { preHandler: authenticate, schema: { body: EMPLOYEE_CREATE } }, async (request, reply) => {
     const { tenantId } = request.user
     const {
       name, role, dept, type, salary,
@@ -46,7 +47,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.put('/api/employees/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.put('/api/employees/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: EMPLOYEE_UPDATE } }, async (request, reply) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
     const {
@@ -81,7 +82,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.delete('/api/employees/:id', { preHandler: authenticate }, async (request, reply) => {
+  app.delete('/api/employees/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
     const { tenantId } = request.user
     const { id } = request.params as { id: string }
     try {
