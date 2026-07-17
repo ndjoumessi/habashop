@@ -4,7 +4,19 @@ import { useAuthStore, getLandingForRole } from '@/stores/authStore'
 import LogoMark from '@/components/ui/LogoMark'
 import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
-import { ShoppingCart, Users, Package, BarChart3, Coins, ShieldCheck, Globe, Mail, Lock, Eye, EyeOff, Rocket, AlertCircle, ArrowLeft, Sparkles } from 'lucide-react'
+import { ShoppingCart, Users, Package, BarChart3, Coins, ShieldCheck, Globe, Mail, Lock, Eye, EyeOff, Rocket, AlertCircle, ArrowLeft, Crown, Briefcase, Calculator } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
+// Comptes de démonstration par rôle (mapping restauré depuis l'historique pré-redesign).
+// Un clic → connexion directe au compte correspondant (mdp démo commun).
+const DEMO_PASSWORD = 'demo1234'
+const DEMO_ROLES: { key: string; email: string; Icon: LucideIcon; tint: string; testid: string }[] = [
+  { key: 'admin',      email: 'admin@habashop.com',      Icon: Crown,        tint: 'var(--p3)',     testid: 'demo-admin' },
+  { key: 'manager',    email: 'manager@habashop.com',    Icon: Briefcase,    tint: 'var(--acc2)',   testid: 'demo-manager' },
+  { key: 'cashier',    email: 'cashier@habashop.com',    Icon: ShoppingCart, tint: 'var(--acc3)',   testid: 'demo-cashier' },
+  { key: 'accountant', email: 'accountant@habashop.com', Icon: Calculator,   tint: 'var(--acc)',    testid: 'demo-accountant' },
+  { key: 'hr',         email: 'hr@habashop.com',         Icon: Users,        tint: 'var(--danger)', testid: 'demo-hr' },
+]
 
 export default function LoginPage() {
   const navigate              = useNavigate()
@@ -15,7 +27,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPwd,  setShowPwd]  = useState(false)
   const [loading,  setLoading]  = useState(false)
-  const [demoLoading, setDemoLoading] = useState(false)
+  const [demoRole, setDemoRole] = useState<string | null>(null)
   const [remember, setRemember] = useState(true)
   const [error,    setError]    = useState('')
 
@@ -55,17 +67,18 @@ export default function LoginPage() {
     }
   }
 
-  // « Explorer la démo » : connexion au compte de démonstration, sans saisie manuelle.
-  const handleDemo = async () => {
-    setEmail('admin@habashop.com')
-    setPassword('demo1234')
-    setDemoLoading(true)
+  // Connexion instantanée par rôle : remplit les identifiants du compte démo puis connecte.
+  const handleDemoRole = async (key: string, mail: string) => {
+    if (demoRole || loading) return
+    setEmail(mail)
+    setPassword(DEMO_PASSWORD)
+    setDemoRole(key)
     try {
-      await doLogin('admin@habashop.com', 'demo1234')
+      await doLogin(mail, DEMO_PASSWORD)
     } catch (err: any) {
       setError(err?.message || i('Connexion démo indisponible','Demo login unavailable','Acceso demo no disponible','Accesso demo non disponibile'))
     } finally {
-      setDemoLoading(false)
+      setDemoRole(null)
     }
   }
 
@@ -370,7 +383,7 @@ export default function LoginPage() {
               type="submit"
               data-testid="login-submit"
               className="public-btn-primary"
-              disabled={loading || demoLoading}
+              disabled={loading || !!demoRole}
               style={{
                 width: '100%', padding: '14px',
                 fontSize: 15, fontWeight: 800,
@@ -399,36 +412,65 @@ export default function LoginPage() {
               <div style={{ flex: 1, height: 1, background: 'var(--public-border)' }}/>
             </div>
 
-            {/* Accès démo — un seul bouton (remplace les 5 rôles) */}
-            <button
-              type="button"
-              data-testid="login-demo"
-              onClick={handleDemo}
-              disabled={loading || demoLoading}
-              style={{
-                width: '100%', padding: '13px',
-                background: 'transparent',
-                border: '1px solid var(--border3)',
-                borderRadius: 12,
-                color: 'var(--public-text)', fontSize: 14, fontWeight: 700,
-                fontFamily: 'var(--font)', cursor: demoLoading ? 'wait' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
-                minHeight: 48, transition: 'background .15s, border-color .15s',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(124,92,255,.08)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-            >
-              {demoLoading ? (
-                <>
-                  <span style={{
-                    width: 16, height: 16, borderRadius: '50%',
-                    border: '2px solid var(--public-border)', borderTopColor: 'var(--public-primary-2)',
-                    animation: 'spin 1s linear infinite', display: 'inline-block', flexShrink: 0,
-                  }}/>
-                  {i('Ouverture de la démo…','Opening demo…','Abriendo la demo…','Apertura demo…')}
-                </>
-              ) : <><Sparkles size={16} strokeWidth={2.4} style={{ color: 'var(--public-gold)' }} /> {i('Explorer la démo','Explore the demo','Explorar la demo','Esplora la demo')}</>}
-            </button>
+            {/* Connexion instantanée par rôle — grille de puces compactes (un clic = connexion) */}
+            {(() => {
+              const meta: Record<string, { label: string; sub: string }> = {
+                admin:      { label: i('Admin','Admin','Administrador','Amministratore'),      sub: i('Accès total','Full access','Acceso total','Accesso totale') },
+                manager:    { label: i('Manager','Manager','Gerente','Manager'),               sub: i('Gestion','Management','Gestión','Gestione') },
+                cashier:    { label: i('Caissier','Cashier','Cajero','Cassiere'),              sub: i('POS','POS','TPV','Cassa') },
+                accountant: { label: i('Comptable','Accountant','Contable','Contabile'),       sub: i('Finances','Finance','Finanzas','Finanze') },
+                hr:         { label: i('RH','HR','RR. HH.','Risorse Umane'),                   sub: i('Employés & paie','Staff & payroll','Personal y nóminas','Personale e buste paga') },
+              }
+              return (
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.6px', textAlign: 'center', marginBottom: 10 }}>
+                    {i('Connexion instantanée par rôle','Instant login by role','Acceso instantáneo por rol','Accesso istantaneo per ruolo')}
+                  </div>
+                  <div className="login-demo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {DEMO_ROLES.map(r => {
+                      const m = meta[r.key]
+                      const busy = demoRole === r.key
+                      return (
+                        <button
+                          key={r.key}
+                          type="button"
+                          data-testid={r.testid}
+                          onClick={() => handleDemoRole(r.key, r.email)}
+                          disabled={loading || !!demoRole}
+                          aria-label={`${i('Connexion démo','Demo login','Acceso demo','Accesso demo')} — ${m.label}`}
+                          style={{
+                            gridColumn: r.key === 'hr' ? '1 / -1' : 'auto',
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '10px 12px', textAlign: 'left',
+                            background: 'var(--card2)', border: '1px solid var(--border)',
+                            borderRadius: 10, fontFamily: 'var(--font)',
+                            cursor: (loading || demoRole) ? 'wait' : 'pointer',
+                            opacity: demoRole && !busy ? 0.5 : 1,
+                            transition: 'background .15s, border-color .15s, opacity .15s',
+                          }}
+                          onMouseEnter={e => { if (!demoRole && !loading) { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--card3)'; el.style.borderColor = 'var(--border2)' } }}
+                          onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--card2)'; el.style.borderColor = 'var(--border)' }}
+                        >
+                          <span style={{
+                            width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                            background: `color-mix(in srgb, ${r.tint} 16%, transparent)`, color: r.tint,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {busy
+                              ? <span style={{ width: 15, height: 15, borderRadius: '50%', border: '2px solid color-mix(in srgb, currentColor 30%, transparent)', borderTopColor: 'currentColor', animation: 'spin 1s linear infinite', display: 'inline-block' }}/>
+                              : <r.Icon size={16} strokeWidth={2.3} />}
+                          </span>
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>{m.label}</span>
+                            <span style={{ display: 'block', fontSize: 11, color: 'var(--text3)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.sub}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
           </form>
 
           {/* Footer */}
@@ -446,6 +488,9 @@ export default function LoginPage() {
 
       <style>{`
         .login-back-link:hover { color: var(--public-text) !important; }
+        @media (max-width: 380px) {
+          .login-demo-grid { grid-template-columns: 1fr !important; }
+        }
         @media (max-width: 768px) {
           body .login-grid { grid-template-columns: 1fr !important; }
           body .login-brand { display: none !important; }
