@@ -124,7 +124,7 @@ export function openPDF(title: string, bodyHTML: string) {
   const now = new Date()
   const dateStr = now.toLocaleDateString(locale)
   const timeStr = now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
-  const name = shopName || 'HabaShop'
+  const name = escHtml(shopName || 'HabaShop')
   const currLabel = currency !== 'XOF' ? ` · ${currency}` : ''
 
   const win = window.open('', '_blank', 'width=900,height=700')
@@ -226,6 +226,25 @@ export function htmlKPIs(items: { label: string; value: string }[]): string {
   `
 }
 
+/**
+ * Normalise les espaces insécables — fine U+202F (séparateur de milliers d'Intl
+ * fr-FR) et classique U+00A0 — en espace simple U+0020. Les polices monospace des
+ * documents d'impression (« Courier New ») n'ont pas de glyphe pour U+202F : le
+ * fallback rend « 2 /800 » sur certaines plateformes. À appliquer à TOUT montant
+ * interpolé dans un document imprimé (facture, devis, ticket, rapport Z).
+ */
+export function printableAmount(s: string): string {
+  return s.replace(/[\u202F\u00A0]/g, ' ')
+}
+
+// \u00C9chappement HTML \u2014 TOUTE donn\u00E9e dynamique interpol\u00E9e dans un document
+// d'impression passe par escHtml() (m\u00EAme r\u00E8gle que le rapport Ticket Z, anti-XSS :
+// noms client/article/boutique = donn\u00E9es utilisateur).
+function escHtml(v: unknown): string {
+  return String(v ?? '').replace(/[&<>"']/g, c =>
+    c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;')
+}
+
 // ─── DEVIS / FACTURE PDF ─────────────────────
 const INV_STR: Record<string, Record<string, string>> = {
   devis:        { fr: 'DEVIS',          en: 'QUOTE',        es: 'PRESUPUESTO',  it: 'PREVENTIVO'  },
@@ -241,11 +260,13 @@ const INV_STR: Record<string, Record<string, string>> = {
   subtotal:     { fr: 'Sous-total',    en: 'Subtotal',     es: 'Subtotal',     it: 'Subtotale'   },
   vat:          { fr: 'TVA',           en: 'VAT',          es: 'IVA',          it: 'IVA'         }, // taux dynamique ajouté à l'usage : `${is('vat')} (X %)`
   discount:     { fr: 'Remise',        en: 'Discount',     es: 'Descuento',    it: 'Sconto'      },
-  net_total:    { fr: 'NET À PAYER',   en: 'TOTAL DUE',    es: 'TOTAL A PAGAR', it: 'TOTALE DA PAGARE' },
   payment:      { fr: 'Mode de règlement', en: 'Payment method', es: 'Método de pago', it: 'Metodo pagamento' },
-  thanks:       { fr: 'Merci pour votre confiance !', en: 'Thank you for your business!', es: '¡Gracias por su confianza!', it: 'Grazie per la fiducia!' },
-  sign_client:  { fr: 'Signature client', en: 'Customer signature', es: 'Firma del cliente', it: 'Firma cliente' },
-  sign_seller:  { fr: 'Signature vendeur', en: 'Seller signature',  es: 'Firma del vendedor', it: 'Firma venditore' },
+  thanks:       { fr: 'Merci de votre confiance', en: 'Thank you for your business', es: 'Gracias por su confianza', it: 'Grazie per la fiducia' },
+  billed_to:      { fr: 'FACTURÉ À',      en: 'BILLED TO',           es: 'FACTURADO A',       it: 'INTESTATO A' },
+  subtotal_ht:    { fr: 'Sous-total HT',  en: 'Subtotal (excl. VAT)', es: 'Subtotal (sin IVA)', it: 'Subtotale (IVA escl.)' },
+  total_ttc:      { fr: 'Total TTC',      en: 'Total (incl. VAT)',    es: 'Total (IVA incl.)',  it: 'Totale (IVA incl.)' },
+  status_paid:    { fr: 'Payée',          en: 'Paid',                es: 'Pagada',            it: 'Pagata' },
+  status_pending: { fr: 'En attente',     en: 'Pending',             es: 'Pendiente',         it: 'In attesa' },
 }
 
 function is(key: string, lang: string): string {
@@ -267,15 +288,23 @@ export interface InvoiceOptions {
   discount?: { type: 'percent' | 'amount'; value: number }
   paymentMode?: string
   ref?: string
+  /** Statut affiché — défaut : facture avec paymentMode → 'paid', sinon 'pending'. */
+  status?: 'paid' | 'pending'
 }
 
+// Logo « Sac + H » — même dessin que components/ui/LogoMark.tsx (login/sidebar),
+// décliné en SVG statique pour le document imprimé.
+const INVOICE_LOGO_SVG = `<svg viewBox="0 0 100 100" width="42" height="42" role="img" aria-label="HabaShop"><rect width="100" height="100" rx="24" fill="#6C47FF"/><path d="M38 38 C38 24 62 24 62 38" fill="none" stroke="#F0A500" stroke-width="4.5" stroke-linecap="round"/><rect x="29" y="37" width="42" height="40" rx="5" fill="#fff"/><rect x="44" y="46" width="4.6" height="22" rx="1.4" fill="#6C47FF"/><rect x="52" y="46" width="4.6" height="22" rx="1.4" fill="#6C47FF"/><rect x="44" y="55" width="12.6" height="4.6" rx="1.4" fill="#6C47FF"/></svg>`
+
 export function generateInvoice(opts: InvoiceOptions) {
-  const { type, lang, customer, items, discount, paymentMode, ref } = opts
-  const { currency, shopName } = useAppStore.getState()
+  const { type, lang, customer, items, discount, paymentMode, ref, status } = opts
+  const state = useAppStore.getState()
+  const { currency, shopName } = state
+  const tenant = state.tenant as (typeof state.tenant & { ninea?: string; rccm?: string; vatNumber?: string }) | null
   const locale = LOCALES[lang] ?? 'fr-FR'
   const now = new Date()
   const dateStr = now.toLocaleDateString(locale)
-  const refStr = ref ?? `${type === 'devis' ? 'D' : 'F'}${Date.now().toString().slice(-6)}`
+  const refStr = escHtml(ref ?? `${type === 'devis' ? 'D' : 'F'}${Date.now().toString().slice(-6)}`)
   const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(locale)
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0)
@@ -286,102 +315,136 @@ export function generateInvoice(opts: InvoiceOptions) {
       : discount.value
   }
   const afterDiscount = subtotal - discountAmt
-  const _taxRate = (useAppStore.getState().posTaxRate ?? 18) / 100
-  const tva = Math.round(afterDiscount * _taxRate)
+  const taxRatePct = state.posTaxRate ?? 18
+  const tva = Math.round(afterDiscount * (taxRatePct / 100))
   const netTotal = afterDiscount + tva
 
-  // Les montants reçus sont en base XOF → convertir vers la devise tenant AVANT formatage.
-  // (Bug : l'ancien fmt collait le label devise sur le montant XOF brut → « 2 800 EUR ».)
-  const fmt = (v: number) => formatInCurrency(convertAmount(v, 'XOF', currency ?? 'XOF'), currency ?? 'XOF')
+  // Montants base XOF → devise tenant AVANT formatage, puis normalisation des
+  // espaces insécables (U+202F rendu « / » par les polices monospace d'impression).
+  const fmt = (v: number) => printableAmount(formatInCurrency(convertAmount(v, 'XOF', currency ?? 'XOF'), currency ?? 'XOF'))
+
+  // Statut : facture réglée (paymentMode fourni ou status explicite) → « Payée » vert.
+  const docStatus = status ?? (type === 'facture' && paymentMode ? 'paid' : 'pending')
+  const statusPill = docStatus === 'paid'
+    ? `<span style="display:inline-flex;align-items:center;gap:6px;background:#E7F7EF;color:#0E8A55;border:1px solid #BFE8D2;border-radius:999px;padding:5px 13px;font-size:11.5px;font-weight:700">● ${is('status_paid', lang)}</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:6px;background:#FDF3E2;color:#9A6700;border:1px solid #F0DDB4;border-radius:999px;padding:5px 13px;font-size:11.5px;font-weight:700">● ${is('status_pending', lang)}</span>`
 
   const itemRows = items.map(i => `
     <tr>
-      <td>${i.emoji ?? '📦'} ${i.name}</td>
+      <td>${i.emoji ?? '📦'} ${escHtml(i.name)}</td>
       <td style="text-align:center">${i.qty}</td>
       <td style="text-align:right;font-family:monospace">${fmt(i.price)}</td>
       <td style="text-align:right;font-family:monospace;font-weight:700">${fmt(i.price * i.qty)}</td>
     </tr>
   `).join('')
 
-  const body = `
-    ${customer?.name ? `
-    <div class="info-grid" style="margin-bottom:20px">
-      <div class="info-item">
-        <div class="info-label">${is('ref', lang)}</div>
-        <div class="info-value" style="font-family:monospace;font-size:15px;font-weight:900;color:#5B4EE8">${refStr}</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">${is('date', lang)}</div>
-        <div class="info-value">${dateStr}</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">${is('client', lang)}</div>
-        <div class="info-value">${customer.name}${customer.phone ? ' · ' + customer.phone : ''}</div>
-      </div>
-      ${type === 'devis' ? `<div class="info-item">
-        <div class="info-label">${is('valid_until', lang)}</div>
-        <div class="info-value">${validUntil}</div>
-      </div>` : `<div class="info-item">
-        <div class="info-label">${is('payment', lang)}</div>
-        <div class="info-value">${paymentMode ?? '—'}</div>
-      </div>`}
-    </div>` : `
-    <div class="info-grid" style="margin-bottom:20px">
-      <div class="info-item">
-        <div class="info-label">${is('ref', lang)}</div>
-        <div class="info-value" style="font-family:monospace;font-size:15px;font-weight:900;color:#5B4EE8">${refStr}</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">${is('date', lang)}</div>
-        <div class="info-value">${dateStr}</div>
-      </div>
-    </div>`}
+  // Mentions légales : UNIQUEMENT les identifiants réellement configurés sur le
+  // tenant (jamais de faux numéros). Champs absents du modèle → ligne omise.
+  const legalParts = [
+    tenant?.ninea ? `NINEA ${escHtml(tenant.ninea)}` : null,
+    tenant?.rccm ? `RC ${escHtml(tenant.rccm)}` : null,
+    tenant?.vatNumber ? `N° TVA ${escHtml(tenant.vatNumber)}` : null,
+  ].filter(Boolean)
 
-    <table>
-      <thead>
-        <tr>
-          <th>${is('description', lang)}</th>
-          <th style="text-align:center;width:60px">${is('qty', lang)}</th>
-          <th style="text-align:right;width:110px">${is('unit_price', lang)}</th>
-          <th style="text-align:right;width:110px">${is('total', lang)}</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${itemRows}
-      </tbody>
-    </table>
-
-    <div style="display:flex;justify-content:flex-end;margin-top:16px">
-      <div style="min-width:280px">
-        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#666;border-bottom:1px solid #f0f0f0">
-          <span>${is('subtotal', lang)}</span>
-          <span style="font-family:monospace">${fmt(subtotal)}</span>
-        </div>
-        ${discountAmt > 0 ? `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#059669;border-bottom:1px solid #f0f0f0">
-          <span>${is('discount', lang)} ${discount?.type === 'percent' ? '(' + discount.value + '%)' : ''}</span>
-          <span style="font-family:monospace">− ${fmt(discountAmt)}</span>
-        </div>` : ''}
-        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:#666;border-bottom:1px solid #f0f0f0">
-          <span>${is('vat', lang)} (${useAppStore.getState().posTaxRate ?? 18} %)</span>
-          <span style="font-family:monospace">${fmt(tva)}</span>
-        </div>
-        <div class="net-payer" style="margin-top:8px">
-          <span class="net-label">${is('net_total', lang)}</span>
-          <span class="net-value">${fmt(netTotal)}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="signature-block" style="margin-top:30px">
-      <div class="signature-line">${is('sign_client', lang)}</div>
-      <div class="signature-line">${is('sign_seller', lang)}</div>
-    </div>
-
-    <div style="margin-top:24px;text-align:center;font-size:13px;color:#5B4EE8;font-weight:700">${is('thanks', lang)}</div>
-  `
+  const totalsRow = (label: string, value: string, color = '#666') => `
+    <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:12px;color:${color};border-bottom:1px solid #f0f0f2">
+      <span>${label}</span>
+      <span style="font-family:monospace">${value}</span>
+    </div>`
 
   const title = `${is(type, lang)} ${refStr}`
-  openPDF(title, body)
+  const name = escHtml(shopName || 'HabaShop')
+  const win = window.open('', '_blank', 'width=900,height=700')
+  if (!win) {
+    alert('Veuillez autoriser les popups pour ce site')
+    return
+  }
+  win.document.write(`<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+  <meta charset="UTF-8">
+  <title>${name} — ${title}</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:'Geist','Geist Variable',system-ui,-apple-system,'Segoe UI',sans-serif;
+      color:#1A1A2E; font-size:13px; background:#fff; padding:38px 42px;
+    }
+    .inv-table { width:100%; border-collapse:collapse; margin:18px 0 6px; }
+    .inv-table thead th {
+      color:#6C47FF; background:none; text-align:left;
+      font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
+      padding:9px 10px; border-bottom:2px solid #6C47FF;
+    }
+    .inv-table tbody td { padding:10px; border-bottom:1px solid #f0f0f2; font-size:12.5px; }
+    @media print { body { padding:18px 22px; } @page { margin:1cm; size:A4; } }
+  </style>
+</head>
+<body>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:30px">
+    <div style="display:flex;align-items:center;gap:13px">
+      ${INVOICE_LOGO_SVG}
+      <div>
+        <div style="font-size:19px;font-weight:800;color:#1A1A2E;letter-spacing:-.3px">${name}</div>
+        <div style="font-size:11px;color:#8A8AA3">${ps('software', lang)}</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:21px;font-weight:800;color:#6C47FF;letter-spacing:1px">${is(type, lang)}</div>
+      <div style="font-family:monospace;font-size:12.5px;font-weight:700;color:#1A1A2E;margin-top:3px">N° ${refStr}</div>
+      <div style="font-size:11px;color:#8A8AA3;margin-top:2px">${is('date', lang)} : ${dateStr}</div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px">
+    <div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#8A8AA3;margin-bottom:5px">${is('billed_to', lang)}</div>
+      <div style="font-size:15px;font-weight:700;color:#1A1A2E">${escHtml(customer?.name ?? '—')}</div>
+      ${customer?.phone ? `<div style="font-size:12px;color:#666;margin-top:2px">${escHtml(customer.phone)}</div>` : ''}
+    </div>
+    <div style="text-align:right">
+      ${statusPill}
+      ${type === 'devis'
+        ? `<div style="font-size:11px;color:#8A8AA3;margin-top:6px">${is('valid_until', lang)} ${validUntil}</div>`
+        : paymentMode ? `<div style="font-size:11px;color:#8A8AA3;margin-top:6px">${is('payment', lang)} : ${escHtml(paymentMode)}</div>` : ''}
+    </div>
+  </div>
+
+  <table class="inv-table">
+    <thead>
+      <tr>
+        <th>${is('description', lang)}</th>
+        <th style="text-align:center;width:60px">${is('qty', lang)}</th>
+        <th style="text-align:right;width:120px">${is('unit_price', lang)}</th>
+        <th style="text-align:right;width:120px">${is('total', lang)}</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${itemRows}
+    </tbody>
+  </table>
+
+  <div style="display:flex;justify-content:flex-end;margin-top:14px">
+    <div style="min-width:290px">
+      ${totalsRow(is('subtotal_ht', lang), fmt(subtotal))}
+      ${discountAmt > 0 ? totalsRow(`${is('discount', lang)} ${discount?.type === 'percent' ? '(' + discount.value + '%)' : ''}`, `− ${fmt(discountAmt)}`, '#059669') : ''}
+      ${totalsRow(`${is('vat', lang)} (${taxRatePct} %)`, fmt(tva))}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0 0;margin-top:4px;border-top:2px solid #6C47FF">
+        <span style="font-size:13.5px;font-weight:800;color:#1A1A2E">${is('total_ttc', lang)}</span>
+        <span style="font-family:monospace;font-size:19px;font-weight:800;color:#6C47FF">${fmt(netTotal)}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:44px;padding-top:14px;border-top:1px solid #ECECF2;text-align:center">
+    ${legalParts.length ? `<div style="font-size:10.5px;color:#8A8AA3;margin-bottom:6px">${name} · ${legalParts.join(' · ')}</div>` : ''}
+    <div style="font-size:12.5px;font-weight:700;color:#6C47FF">${is('thanks', lang)}</div>
+  </div>
+
+  <script>window.onload=function(){setTimeout(function(){window.print();},400);}<\/script>
+</body>
+</html>`)
+  win.document.close()
 }
 
 // ─── ÉTIQUETTES PRODUITS ─────────────────────

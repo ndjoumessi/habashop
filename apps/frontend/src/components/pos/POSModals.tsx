@@ -4,6 +4,7 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, CURRENCY_SYMBOLS, CURRENCY_DECIMALS, formatInCurrency } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
+import { printableAmount } from '@/utils/export'
 import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
 import POSCashField from '@/components/pos/POSCashField'
 import { useModalFocus } from '@/hooks/useModalFocus'
@@ -378,6 +379,9 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                   // cashierName (donnée utilisateur) et libellés/valeurs interpolés (anti-XSS).
                   const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c =>
                     c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;')
+                  // Rapport en 'Courier New' (monospace) : normalise l'espace fine U+202F
+                  // des montants (sinon rendue « / » — même P0 que la facture PDF).
+                  const pfmt = (n: number) => printableAmount(fmt(n))
                   const openedTime = cashierOpenedAt ? new Date(cashierOpenedAt).toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}) : '--:--'
                   const win = window.open('', '_blank', 'width=400,height=600')
                   if (win) {
@@ -393,14 +397,14 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                     <div class="row"><span>${esc(ct.close_time)}:</span><span>${esc(new Date().toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'}))}</span></div>
                     <div class="row"><span>Caissier:</span><span>${esc(cashierName || '—')}</span></div>
                     <div class="divider"></div>
-                    <div class="row"><span>${esc(ct.initial_fund)}:</span><span>${esc(fmt(cashierOpeningFund))}</span></div>
+                    <div class="row"><span>${esc(ct.initial_fund)}:</span><span>${esc(pfmt(cashierOpeningFund))}</span></div>
                     <div class="row"><span>${esc(ct.transactions)}:</span><span>${esc(cashierSessionTx)}</span></div>
-                    <div class="row bold"><span>${esc(ct.ca_cashed)}:</span><span>${esc(fmt(cashierSessionCA))}</span></div>
-                    ${dayByMode ? Object.entries(dayByMode).map(([m, v]) => `<div class="row"><span>${esc(m)}:</span><span>${esc(fmt(v as number))}</span></div>`).join('') : ''}
+                    <div class="row bold"><span>${esc(ct.ca_cashed)}:</span><span>${esc(pfmt(cashierSessionCA))}</span></div>
+                    ${dayByMode ? Object.entries(dayByMode).map(([m, v]) => `<div class="row"><span>${esc(m)}:</span><span>${esc(pfmt(v as number))}</span></div>`).join('') : ''}
                     <div class="divider"></div>
-                    <div class="row bold"><span>Attendu (espèces):</span><span>${esc(fmt(expectedCash))}</span></div>
-                    <div class="row bold"><span>Compté:</span><span>${esc(fmt(countedXOF))}</span></div>
-                    <div class="row bold ${gapLevel === 'ok' ? 'ok' : gapLevel === 'warn' ? 'warn' : 'err'}"><span>Écart:</span><span>${cashGap >= 0 ? '+' : '−'}${esc(fmt(Math.abs(cashGap)))}</span></div>
+                    <div class="row bold"><span>Attendu (espèces):</span><span>${esc(pfmt(expectedCash))}</span></div>
+                    <div class="row bold"><span>Compté:</span><span>${esc(pfmt(countedXOF))}</span></div>
+                    <div class="row bold ${gapLevel === 'ok' ? 'ok' : gapLevel === 'warn' ? 'warn' : 'err'}"><span>Écart:</span><span>${cashGap >= 0 ? '+' : '−'}${esc(pfmt(Math.abs(cashGap)))}</span></div>
                     <div class="divider"></div>
                     <div class="center" style="margin-top:20px;"><div>________________________</div><div>Signature caissier</div></div>
                     <script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},300)}<\/script>
