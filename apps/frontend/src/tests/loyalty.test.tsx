@@ -54,11 +54,11 @@ describe('LoyaltyCard — pointsPerAmount affiché SANS conversion de change (fi
   afterEach(() => useAppStore.setState({ currency: 'XOF', tenant: null } as any))
 
   it('tenant EUR, pointsPerAmount=1000 → « 1 000 € » (pas « 1,52 € »)', async () => {
-    ;(loyaltyApi.get as any).mockResolvedValueOnce({ points: 100, tier: 'Bronze', history: [], pointsPerAmount: 1000, bronzeThreshold: 2000, silverThreshold: 5000 })
+    (loyaltyApi.get as any).mockResolvedValueOnce({ points: 100, tier: 'Bronze', history: [], pointsPerAmount: 1000, bronzeThreshold: 2000, silverThreshold: 5000 })
     useAppStore.setState({ currency: 'EUR', tenant: { id: 't', name: 'X', plan: 'pro', currency: 'EUR', country: 'SN', vatRate: 18 } } as any)
     const { container } = render(<LoyaltyCard customer={{ id: 'c1', name: 'Test', loyaltyPoints: 100 }} onClose={() => {}} />)
     await screen.findByText(/Comment ça marche/)
-    const txt = container.textContent!.replace(/[  ]/g, ' ') // normalise les espaces insécables
+    const txt = container.textContent!.replace(/[\u202F\u00A0]/g, ' ') // normalise les espaces insécables
     expect(txt).toContain('1 000')          // montant stocké tel quel, devise tenant
     expect(txt).not.toMatch(/1[.,]5\d/)     // PAS la valeur convertie ~1,52 (bug)
   })
