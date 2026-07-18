@@ -277,6 +277,10 @@ model Sale {
   // ── Loyalty v2 : remise fidélité appliquée au total (0 si pas de client/palier). ──
   loyaltyDiscount   Float?   @default(0)
 
+  // ── Intégrité prix : au moins une ligne a un prix soumis ≠ prix catalogue serveur.
+  //    Flag d'AUDIT (filtre `?priceDivergence=true` dans l'historique). Le détail vit sur SaleItem. ──
+  priceDivergence   Boolean? @default(false)
+
   // ── Paiement mixte (split, max 2 méthodes/vente) : ventilation du total par mode. ──
   // Toujours renseignés sur les NOUVELLES ventes (0 si mode non utilisé) ; NULL sur les
   // ventes antérieures → fallback paymentMode via COALESCE dans les agrégats (Ticket Z).
@@ -336,6 +340,12 @@ model SaleItem {
   unitPrice Float
   total     Float
   tierLabel String? // label du palier appliqué au moment de la vente (null = prix de base)
+
+  // ── Intégrité prix (ticket) : TRACE d'une divergence entre le prix SOUMIS par le client
+  //    et le prix CATALOGUE serveur (détail). Renseignés SEULEMENT en cas de divergence
+  //    (le prix soumis ne correspond à aucun point de tarif serveur) ; null sinon. ──
+  submittedPrice Float?  // prix unitaire envoyé par le client
+  catalogPrice   Float?  // prix unitaire autoritaire serveur (référence détail)
 
   sale    Sale    @relation(fields: [saleId], references: [id])
   product Product @relation(fields: [productId], references: [id])

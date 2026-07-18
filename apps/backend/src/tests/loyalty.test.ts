@@ -120,8 +120,9 @@ describe('POST /api/sales — créditage fidélité', () => {
 
   it('après remise : crédite sur le total PAYÉ (floor)', async () => {
     const app = await buildApp()
-    // total payé = 3990 → floor(3990/1000) = 3 points
-    await app.inject({ method: 'POST', url: '/api/sales', payload: saleBody({ customerId: 'c1', total: 3990, items: [{ productId: 'p1', qty: 2, price: 2500 }] }) })
+    // 2×2500 = 5000, remise 1010 → payé 3990 → floor(3990/1000) = 3 points.
+    // (Total SERVEUR-autoritaire : le « payé » vient de la remise réelle, plus d'un total client fictif.)
+    await app.inject({ method: 'POST', url: '/api/sales', payload: saleBody({ customerId: 'c1', items: [{ productId: 'p1', qty: 2, price: 2500 }], discount: { amount: 1010, type: 'amount' } }) })
     expect(tx.loyaltyTransaction.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ points: 3 }) }))
   })
 
@@ -152,8 +153,9 @@ describe('POST /api/sales — créditage fidélité', () => {
   })
 
   it('total < 1000 → 0 point, pas de ligne fidélité (mais revenu crédité)', async () => {
+    db.product.findMany.mockResolvedValue([{ ...PRODUCT, sellPrice: 800 }]) // produit à 800 → prix soumis légitime
     const app = await buildApp()
-    await app.inject({ method: 'POST', url: '/api/sales', payload: saleBody({ customerId: 'c1', total: 800, items: [{ productId: 'p1', qty: 1, price: 800 }] }) })
+    await app.inject({ method: 'POST', url: '/api/sales', payload: saleBody({ customerId: 'c1', items: [{ productId: 'p1', qty: 1, price: 800 }] }) })
     expect(tx.loyaltyTransaction.create).not.toHaveBeenCalled()
     expect(tx.customer.update).toHaveBeenCalledWith(expect.objectContaining({ data: { totalRevenue: { increment: 800 } } }))
   })
