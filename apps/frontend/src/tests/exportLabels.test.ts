@@ -51,7 +51,7 @@ describe('printProductLabels — impression étiquettes', () => {
     expect(jsbarcodeMock).not.toHaveBeenCalled()
     expect(written).not.toContain('CODE128')
     expect(written).not.toContain('Code interne') // plus de badge trompeur
-    expect(written).toContain('Code-barres à générer') // mention non scannable
+    expect(written).toContain('Code-barres manquant') // mention non scannable
   })
 
   it('🟡 aucune dépendance CDN externe dans la fenêtre d’impression', () => {

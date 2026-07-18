@@ -46,7 +46,7 @@ describe('printThermalLabels — PDF 40×30 mm', () => {
     expect(pdfInst.addImage).not.toHaveBeenCalled()
     const texts = pdfInst.text.mock.calls.map(c => c[0])
     expect(texts).not.toContain('Code interne')
-    expect(texts).toContain('Code-barres à générer')
+    expect(texts).toContain('Code-barres manquant')
   })
 
   it('copies = une page par étiquette (produits × copies)', async () => {

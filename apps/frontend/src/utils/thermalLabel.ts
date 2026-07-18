@@ -95,7 +95,7 @@ export async function printThermalLabels(
         doc.setFont('helvetica', 'italic')
         doc.setFontSize(5)
         doc.setTextColor(150)
-        doc.text(li(options.lang, 'Code-barres à générer', 'Barcode to generate', 'Código a generar', 'Codice da generare'), W / 2, y, { align: 'center' })
+        doc.text(li(options.lang, 'Code-barres manquant', 'Missing barcode', 'Código de barras faltante', 'Codice a barre mancante'), W / 2, y, { align: 'center' })
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(0)
         y += 2

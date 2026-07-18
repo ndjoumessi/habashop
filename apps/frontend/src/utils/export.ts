@@ -503,7 +503,10 @@ function renderBarcodeMarkup(
   const canonical = normalizeBarcode(barcode)
   const format = canonical ? barcodeFormat(canonical) : null // EAN13 | EAN8 | null
   if (!format) {
-    const note = lang === 'en' ? 'Barcode to generate' : lang === 'es' ? 'Código a generar' : lang === 'it' ? 'Codice da generare' : 'Code-barres à générer'
+    // Neutre (« manquant ») : constate sans prescrire la génération — sur un produit
+    // industriel le bon geste reste de scanner l'emballage (la génération interne
+    // est le second recours, réservé au vrac).
+    const note = lang === 'en' ? 'Missing barcode' : lang === 'es' ? 'Código de barras faltante' : lang === 'it' ? 'Codice a barre mancante' : 'Code-barres manquant'
     return `<div style="text-align:center;border-top:1px solid #eee;padding-top:4px;"><span style="display:inline-block;font-size:9px;color:#9CA3AF;font-style:italic;">${esc(note)}</span></div>`
   }
   let svg = ''
