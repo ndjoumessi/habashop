@@ -165,6 +165,15 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       }
     }
 
+    // ── Identifiants légaux (pied de facture/devis) : chaînes courtes optionnelles ──
+    for (const [k, v] of [['ninea', data.ninea], ['rccm', data.rccm], ['vatNumber', data.vatNumber]] as const) {
+      if (v !== undefined && v !== null && (typeof v !== 'string' || v.trim().length > 64)) {
+        return reply.code(400).send({ error: `${k} : chaîne de 64 caractères maximum`, code: 'VALIDATION' })
+      }
+    }
+    // '' normalisé en null (efface le champ) — même convention que ownerPhone.
+    const legal = (v: string | null | undefined) => v === undefined ? undefined : (v?.trim() || null)
+
     return prisma.tenant.update({
       where: { id: tenantId },
       data: {
@@ -206,6 +215,10 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         catalogVisible: data.catalogVisible,
         // Rapports WhatsApp auto — '' normalisé en null (désactive l'envoi)
         ownerPhone:     data.ownerPhone === undefined ? undefined : (data.ownerPhone?.trim() || null),
+        // Identifiants légaux (pied de facture/devis)
+        ninea:     legal(data.ninea),
+        rccm:      legal(data.rccm),
+        vatNumber: legal(data.vatNumber),
       },
     })
   }

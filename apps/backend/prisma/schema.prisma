@@ -21,6 +21,12 @@ model Tenant {
   logo      String?
   lang      String   @default("fr") // fr | en | es | it — langue par défaut du tenant
 
+  // ── Identifiants légaux (pied de facture/devis — noms consommés par
+  //    apps/frontend/src/utils/export.ts generateInvoice : ninea/rccm/vatNumber) ──
+  ninea     String?  // NINEA (SN) ou identifiant fiscal national équivalent
+  rccm      String?  // Registre du commerce (RC / RCCM)
+  vatNumber String?  // N° TVA intracommunautaire / assujetti
+
   // ── Paramètres POS ── (vatRate ci-dessus = TVA POS, single source of truth)
   posVatIncluded    Boolean  @default(true)
   posAutoprint      Boolean  @default(false)
