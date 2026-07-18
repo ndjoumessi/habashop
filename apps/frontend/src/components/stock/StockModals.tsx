@@ -900,6 +900,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       name: p.name.split(' ').slice(1).join(' ') || p.name,
                       sku: p.sku,
                       price: p.sell,
+                      barcode: p.barcode, // 🔴 était omis → l'EAN-13 persisté n'était jamais imprimé
                       emoji: p.name.split(' ')[0],
                     }))
                   printProductLabels(selectedProducts, fmt, { ...labelConfig, shopName: tenant?.name ?? 'HabaShop', lang })
