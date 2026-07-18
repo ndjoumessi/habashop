@@ -104,7 +104,6 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
     ? discountForTierDisplay(t as LoyaltyTier, loyalty?.bronzeDiscount ?? 0, loyalty?.silverDiscount ?? 0, loyalty?.goldDiscount ?? 0)
     : 0
   const currentPct = tierPct(tier)
-  const nextPct = tierPct(data?.nextTier)
   const history = loyalty?.history ?? []
 
   // Matrice QR (pur JS, synchrone, OTA-safe) → grille <View> + SVG du PDF.
@@ -121,7 +120,7 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
     if (!data) return
     setSharing(true)
     try {
-      const html = buildCardHtml(data, qrSvg(qrCells, cfg.dark), i)
+      const html = buildCardHtml(data, qrSvg(qrCells, cfg.dark), i, currentPct)
       await Print.printAsync({ html })
     } catch (e: any) {
       // Annulation print = normale (utilisateur a fermé) → on ne logue qu'en erreur vraie.
@@ -185,7 +184,9 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
                         ))}
                       </View>
                     ) : (
-                      <Text style={s.qrFallback} numberOfLines={2}>{qrValue}</Text>
+                      // QR indisponible → placeholder NEUTRE (jamais l'identifiant interne
+                      // en clair : c'est un artefact client, le QR porte déjà la donnée).
+                      <Ionicons name="qr-code-outline" size={40} color={cfg.dark} />
                     )}
                   </View>
                 </View>
@@ -205,22 +206,23 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
                 )}
               </View>
 
-              {/* ── Paliers actuel / prochain (maquette 04) ── */}
+              {/* ── Palier actuel + sa remise (maquette 04). Le prochain palier est déjà
+                  porté par la barre de progression du hero → on ne le répète pas ici
+                  (sinon la même info « prochain palier » apparaît deux fois). ── */}
               <View style={s.tierCardsRow}>
                 <View style={s.tierCard}>
                   <Text style={s.tierCardLabel}>{i('Palier actuel', 'Current tier', 'Nivel actual', 'Livello attuale')}</Text>
-                  <Text style={s.tierCardVal}>{tierName(tier, i)}{currentPct > 0 ? ` · ${currentPct}%` : ''}</Text>
-                  <Text style={s.tierCardSub}>{currentPct > 0 ? i('de remise', 'discount', 'de descuento', 'di sconto') : i('sans remise', 'no discount', 'sin descuento', 'senza sconto')}</Text>
+                  <Text style={s.tierCardVal}>{cfg.icon} {tierName(tier, i)}</Text>
                 </View>
                 <View style={s.tierCard}>
-                  <Text style={s.tierCardLabel}>{i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')}</Text>
-                  {data.nextTier ? (
+                  <Text style={s.tierCardLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')}</Text>
+                  {currentPct > 0 ? (
                     <>
-                      <Text style={[s.tierCardVal, { color: cfg.accent }]}>{tierName(data.nextTier, i)}{nextPct > 0 ? ` · ${nextPct}%` : ''}</Text>
-                      <Text style={s.tierCardSub}>{i('à', 'at', 'a', 'a')} {(nextThreshold ?? 0).toLocaleString()} pts</Text>
+                      <Text style={[s.tierCardVal, { color: cfg.accent }]}>{currentPct}%</Text>
+                      <Text style={s.tierCardSub}>{i('sur vos achats', 'on your purchases', 'en tus compras', 'sui tuoi acquisti')}</Text>
                     </>
                   ) : (
-                    <Text style={[s.tierCardVal, { color: cfg.accent }]}>{i('Maximum', 'Maximum', 'Máximo', 'Massimo')}</Text>
+                    <Text style={s.tierCardVal}>{i('Aucune', 'None', 'Ninguna', 'Nessuna')}</Text>
                   )}
                 </View>
               </View>
@@ -270,6 +272,7 @@ function buildCardHtml(
   data: LoyaltyCardData,
   qrSvgMarkup: string,
   i: (fr: string, en: string, es: string, it: string) => string,
+  currentPct: number,
 ): string {
   const cfg = TIER_CFG[data.tier] ?? TIER_CFG.Bronze
   const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c))
@@ -284,7 +287,6 @@ function buildCardHtml(
     .row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
     .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 10px;background:${cfg.mid};border:1px solid ${cfg.accent}66;border-radius:20px;color:${cfg.accent};margin-bottom:6px}
     .name{font-size:18px;font-weight:900;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .id{font-size:10px;font-family:monospace;color:${cfg.accent};margin-top:2px}
     .qr{width:64px;height:64px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center}
     .pts-row{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
     .pts{font-size:28px;font-weight:900;color:#fff;font-family:monospace;letter-spacing:-1px}
@@ -306,7 +308,6 @@ function buildCardHtml(
         <div>
           <div class="badge">${cfg.icon} ${esc(tierName(data.tier, i))}</div>
           <div class="name">${esc(data.customerName)}</div>
-          <div class="id">HABA-${data.customerId.slice(0, 8).toUpperCase()}</div>
         </div>
         <div class="qr">${qrSvgMarkup}</div>
       </div>
@@ -314,7 +315,7 @@ function buildCardHtml(
         <span class="pts">${data.points.toLocaleString()}</span>
         <span style="font-size:13px;color:#fff9">pts</span>
       </div>
-      <div class="shop">${esc(data.shopName)} · habashop</div>
+      <div class="shop">${esc(data.shopName)}</div>
     </div>
     <div class="bottom">
       ${data.nextTier
@@ -322,12 +323,12 @@ function buildCardHtml(
         : `<div class="progress" style="color:${cfg.accent};font-weight:700">🎉 ${i('Niveau maximum !', 'Max level!', '¡Nivel máximo!', 'Livello massimo!')}</div>`}
       <div class="stats">
         <div class="stat">
-          <div class="stat-label">${i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')}</div>
-          <div class="stat-value">${data.nextTier ? esc(tierName(data.nextTier, i)) : i('Maximum', 'Maximum', 'Máximo', 'Massimo')}</div>
+          <div class="stat-label">${i('Palier actuel', 'Current tier', 'Nivel actual', 'Livello attuale')}</div>
+          <div class="stat-value">${cfg.icon} ${esc(tierName(data.tier, i))}</div>
         </div>
         <div class="stat">
-          <div class="stat-label">${i('Points restants', 'Points to go', 'Puntos restantes', 'Punti mancanti')}</div>
-          <div class="stat-value">${data.nextTier ? data.pointsToNext.toLocaleString() : '—'}</div>
+          <div class="stat-label">${i('Remise', 'Discount', 'Descuento', 'Sconto')}</div>
+          <div class="stat-value">${currentPct > 0 ? `${currentPct}%` : i('Aucune', 'None', 'Ninguna', 'Nessuna')}</div>
         </div>
       </div>
     </div>
@@ -376,7 +377,6 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   qrBox: { width: 64, height: 64, borderRadius: 8, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   qrGrid: { flexDirection: 'column' },
   qrRow: { flexDirection: 'row' },
-  qrFallback: { fontSize: 9, fontFamily: 'JetBrainsMono_400Regular', color: '#1C1007', textAlign: 'center', paddingHorizontal: 2 },
   ptsRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.xs },
   ptsVal: { fontSize: FontSize.xxxl, fontFamily: 'JetBrainsMono_700Bold', color: '#FFFFFF' },
   ptsUnit: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: withAlpha('#FFFFFF', 0.6) },

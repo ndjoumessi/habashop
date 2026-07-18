@@ -193,7 +193,10 @@ export default function CustomersScreen() {
       {!!sel && (
       <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSel(null)}>
         <View style={s.sheet}>
-          <View style={s.sheetHead}>
+          {/* Safe-area haute (même correctif que la feuille panier, #58) : sur Android
+              `pageSheet` est ignoré → plein écran → sans paddingTop le titre passe sous
+              la barre d'état. insets.top = 0 sur iOS pageSheet → sans effet indésirable. */}
+          <View style={[s.sheetHead, { paddingTop: insets.top + Spacing.lg }]}>
             <Text style={s.sheetTitle}>{i('Fiche client', 'Customer', 'Cliente', 'Scheda cliente')}</Text>
             <Pressable onPress={() => setSel(null)} hitSlop={8}
               accessibilityRole="button"
