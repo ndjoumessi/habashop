@@ -347,7 +347,9 @@ export default function POSCart({
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <Text style={s.recapLabel}>{i('Monnaie', 'Change', 'Cambio', 'Resto')}</Text>
-                      <Text style={[s.changeVal, { color: change >= 0 ? C.accent2 : C.danger }]}>
+                      {/* Couleur neutre tant qu'aucun montant n'est saisi (même principe
+                          que le message d'erreur) : pas de rouge sur une erreur non commise. */}
+                      <Text style={[s.changeVal, { color: cashGiven > 0 ? (change >= 0 ? C.accent2 : C.danger) : C.text3 }]}>
                         {fmt(Math.max(0, change))}
                       </Text>
                     </View>
