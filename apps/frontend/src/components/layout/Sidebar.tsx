@@ -208,8 +208,8 @@ export default function Sidebar() {
           )
         })}
 
-        {/* Admin Panel (SUPER_ADMIN only) */}
-        {user?.role === 'SUPER_ADMIN' && (
+        {/* Admin Panel — admin PLATEFORME uniquement (jamais le rôle tenant SUPER_ADMIN) */}
+        {user?.isPlatformAdmin === true && (
           <button
             type="button"
             className={`nav-item${collapsed ? ' collapsed' : ''}`}

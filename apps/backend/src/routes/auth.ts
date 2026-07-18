@@ -68,11 +68,12 @@ export async function accessibleTenants(userId: string, fallbackTenantId?: strin
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   // Jeton avec boutique active (single tenant ou après switch). role = rôle PAR boutique.
-  const signActive = (userId: string, role: string, tenantId: string) =>
-    app.jwt.sign({ userId, role, tenantId, activeTenantId: tenantId }, { expiresIn: '7d' })
+  // isPlatformAdmin = statut super-admin SaaS (per-user, hors rôle tenant), signé serveur.
+  const signActive = (userId: string, role: string, tenantId: string, isPlatformAdmin = false) =>
+    app.jwt.sign({ userId, role, tenantId, activeTenantId: tenantId, isPlatformAdmin }, { expiresIn: '7d' })
   // Jeton SANS boutique active (multi-boutiques : sélection requise avant d'entrer).
-  const signNoTenant = (userId: string, role: string) =>
-    app.jwt.sign({ userId, role, tenantId: null, activeTenantId: null }, { expiresIn: '7d' })
+  const signNoTenant = (userId: string, role: string, isPlatformAdmin = false) =>
+    app.jwt.sign({ userId, role, tenantId: null, activeTenantId: null, isPlatformAdmin }, { expiresIn: '7d' })
   app.post('/api/auth/login', {
     config: {
       rateLimit: {
@@ -109,11 +110,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     // 1 seule boutique → connexion directe (comportement historique), boutique active = celle-ci.
     if (tenants.length === 1) {
       const t = tenants[0]
-      const token = signActive(user.id, t.role, t.id)
+      const token = signActive(user.id, t.role, t.id, user.isPlatformAdmin)
       const tenant = await prisma.tenant.findUnique({ where: { id: t.id } })
       return {
         token,
-        user: { ...baseUser, role: t.role, shopName: tenant?.name ?? 'HabaShop' },
+        user: { ...baseUser, role: t.role, shopName: tenant?.name ?? 'HabaShop', isPlatformAdmin: user.isPlatformAdmin },
         tenant,
         tenants,
         activeTenantId: t.id,
@@ -122,10 +123,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     // 0 ou >1 boutiques → pas de boutique active : le frontend affiche le sélecteur
     // (ou un message « Aucune boutique » si la liste est vide).
-    const token = signNoTenant(user.id, user.role)
+    const token = signNoTenant(user.id, user.role, user.isPlatformAdmin)
     return {
       token,
-      user: { ...baseUser, role: user.role, shopName: 'HabaShop' },
+      user: { ...baseUser, role: user.role, shopName: 'HabaShop', isPlatformAdmin: user.isPlatformAdmin },
       tenant: null,
       tenants,
       activeTenantId: null,
@@ -189,7 +190,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     return reply.code(201).send({
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, shopName: tenant.name },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, shopName: tenant.name, isPlatformAdmin: user.isPlatformAdmin },
       tenant: { ...tenant, trialDaysLeft: 14, canUpgrade: true },
     })
   })
@@ -208,6 +209,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       role: role ?? user.role,
       shopName: tenant?.name,
       currency: tenant?.currency,
+      isPlatformAdmin: user.isPlatformAdmin,
     }
   })
 
@@ -237,7 +239,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(403).send({ error: 'Accès refusé à cette boutique' })
     }
 
-    const token = signActive(userId, link.role, tenantId)
+    // Statut plateforme relu depuis la DB (et non du JWT courant) → une révocation
+    // prend effet au prochain switch, sans attendre l'expiration du token.
+    const owner = await prisma.user.findUnique({ where: { id: userId }, select: { isPlatformAdmin: true } })
+    const token = signActive(userId, link.role, tenantId, owner?.isPlatformAdmin ?? false)
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } })
     return { token, tenant, activeTenantId: tenantId, role: link.role }
   })

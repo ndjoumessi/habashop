@@ -135,6 +135,9 @@ model User {
   email        String    @unique
   passwordHash String
   role         String    @default("CASHIER")
+  // Admin PLATEFORME (super-admin SaaS) — orthogonal au rôle tenant. Seul ce flag
+  // (jamais role==='SUPER_ADMIN') ouvre /api/admin/*. Provisionné hors API (script serveur).
+  isPlatformAdmin Boolean @default(false)
   twoFASecret  String?
   twoFAEnabled Boolean   @default(false)
   isActive     Boolean   @default(true)

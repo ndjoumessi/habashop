@@ -7,6 +7,10 @@ export interface JWTPayload {
   role:     string
   // Multi-boutiques : boutique active explicite. Absent des anciens JWT (rétro-compat).
   activeTenantId?: string | null
+  // Admin PLATEFORME (super-admin SaaS) — propriété per-user, INDÉPENDANTE du rôle tenant.
+  // Signé côté serveur depuis User.isPlatformAdmin ; jamais modifiable côté client.
+  // Absent des anciens JWT → traité comme false (fail-closed) par authenticateAdmin.
+  isPlatformAdmin?: boolean
 }
 
 // ── Helpers de typage des handlers Fastify ──
