@@ -76,7 +76,10 @@ export async function registerForPushNotifications(): Promise<string | null> {
         token,
         platform:   Platform.OS,
         deviceId:   Device.modelName ?? Device.deviceName ?? 'unknown',
-        appVersion: Constants.expoConfig?.version ?? '1.0.0',
+        // Repli HONNÊTE : si la version est indisponible, ne PAS affirmer un faux numéro
+        // (un semver en dur laissait croire à une vraie version). 'unknown' = aligné sur
+        // le repli deviceId juste au-dessus, et jamais confondu avec un vrai numéro.
+        appVersion: Constants.expoConfig?.version ?? 'unknown',
       })
       logger.log('✅ Token enregistré (Railway):', res.data)
     } catch (e) {
