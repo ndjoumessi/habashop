@@ -47,6 +47,12 @@ export function discountForTier(
  * MAX_TOTAL_DISCOUNT_PCT pour éviter les abus.
  *
  * Retourne 0 si pas de client, pas de loyaltyOn, discountPct ≤ 0.
+ *
+ * ⚠️ MIROIR MOBILE : `mobile/src/lib/loyalty.ts` `computeLoyaltyDiscount` DOIT rester
+ * identique (le POS mobile calcule le net hors-ligne pour l'affichage + le split). Toute
+ * modification de la règle (arrondi, plafond 50 %, remise manuelle) doit être répercutée
+ * là-bas. Les cas partagés `docs/shared-fixtures/loyalty-discount-cases.json` (testés des
+ * DEUX côtés) font échouer le test en cas de dérive.
  */
 export function computeLoyaltyDiscount(
   total: number,

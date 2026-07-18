@@ -16,6 +16,7 @@ import { newIdempotencyKey } from '@/lib/idempotency'
 import type { MixedSplit } from '@/lib/paymentSplit'
 import { usePosStore } from '@/stores/posStore'
 import { useI18n, useFmt, useTheme, formatAmountParts, plural } from '@/stores/appStore'
+import { loyaltyDiscountFor } from '@/lib/loyalty'
 import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
@@ -111,6 +112,10 @@ export default function POSScreen() {
   const totalAmt   = total()
   const subAmt     = subtotal()
   const discAmt    = subAmt - totalAmt
+  // NET après remise fidélité (miroir backend) — le montant réellement dû. La garde
+  // espèces doit comparer à CE net, pas au brut (sinon un paiement net valide est bloqué).
+  // L'envoi reste brut + customerId (backend redérive le net). En XOF, net = valeur affichée.
+  const netTotalXOF = Math.max(0, totalAmt - loyaltyDiscountFor(customer, tenant, totalAmt, discAmt))
 
   const onAdd = (p: Product) => {
     // Anti sur-vente : refuse d'ajouter au-delà du stock (le store plafonne aussi par sécurité).
@@ -269,7 +274,7 @@ export default function POSScreen() {
     // SIMPLE uniquement ; mixte / Wave / Orange / Carte non concernés). Filet défensif — le
     // bouton « Encaisser » est déjà désactivé côté panier dans ce cas. `cashGiven` est saisi
     // en devise d'affichage → ramené en XOF de base (comme totalAmt) avant comparaison.
-    if (mode === 'cash' && convertToXOF(cashGiven, currency, rates) < totalAmt) {
+    if (mode === 'cash' && convertToXOF(cashGiven, currency, rates) < netTotalXOF) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
       Alert.alert(
         i('Montant insuffisant', 'Insufficient amount', 'Monto insuficiente', 'Importo insufficiente'),
