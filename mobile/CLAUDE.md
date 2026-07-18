@@ -62,7 +62,7 @@ lsof -ti tcp:8081 | xargs kill 2>/dev/null
 npx expo start --clear        # Expo Go SDK 54
 npx expo start --dev-client
 npx tsc --noEmit              # 0 erreur — rituel avant commit
-npm test                      # jest-expo (141 tests)
+npm test                      # jest-expo (193 tests)
 npx expo-doctor               # objectif 18/18
 
 eas build --platform android --profile preview      # APK
@@ -219,7 +219,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ---
 
 ## Scanner code-barres
-- `barcodeTypes:['ean13','ean8','code128']`. `normalizeBarcode` strip espaces + zéros de tête.
+- `barcodeTypes:['ean13','ean8','code128']`. **Règle canonique `src/lib/barcode.ts`** = MIROIR à l'identique de `apps/backend`/`apps/frontend` (testée contre `docs/shared-fixtures/barcode-cases.json`) : `normalizeBarcode` strip espaces + **UPC-A(12)→EAN-13** (préfixe 0), **JAMAIS de strip des zéros de tête** (casserait le round-trip). `matchesScannedCode` (scan→panier `pos/index.tsx handleProductScan`) = barcode canonique **OU SKU EXACT** (résout les étiquettes CODE128-sur-SKU) ; `barcodeMatches` = recherche (stock + globale, nom/**SKU**/barcode). Complétion d'un code manquant : champ + Scanner dans le modal d'édition stock (`(tabs)/stock.tsx`). ⚠️ `Product.ean` = legacy jamais peuplé (pas de colonne backend) → non comparé au scan.
 - **Filtre stabilité (Android) :** code accepté 2× d'affilée (`lastCandidate`) + cooldown 1.5 s. Fallback vote 2/3.
 
 ---
@@ -239,7 +239,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ## État courant
 - **Monorepo** : le mobile vit désormais dans `ndjoumessi/habashop` sous `mobile/` (les repos `habashop-mobile`/`-legal` sont archivés). `.env` mobile non commité (gitignored).
 - `main`, `tsc` 0, **151 tests verts (18 suites)**. `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
-- **Item 11 (portage refonte UX web) — lot UI OTA'd sur canal preview** : fuites devise, POS 01 (tuiles bi-ton + stock bas), safe-area panier, encaissement 02 (Mixte tuile + pluriel), fix argent fidélité (NET), carte fidélité 04. **Hors lot (logique, à cadrer)** : Ticket Z, onboarding, sélecteur tarif, peuplement barcodes, fraîcheur cache POS, provider MTN. Cf. `[[mobile-item11-scope]]`.
+- **Item 11 (portage refonte UX web) — lot UI OTA'd sur canal preview** : fuites devise, POS 01 (tuiles bi-ton + stock bas), safe-area panier, encaissement 02 (Mixte tuile + pluriel), fix argent fidélité (NET), carte fidélité 04. **Hors lot (logique, à cadrer)** : Ticket Z, onboarding, sélecteur tarif, fraîcheur cache POS, provider MTN. Cf. `[[mobile-item11-scope]]`. *(Codes-barres = FAIT, Chantier A : scan/complétion fiche + recherche SKU + règle canonique partagée.)*
 - **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`), **thèmes réduits à 3** (Sombre/Clair/Système, #19) + grille 3 colonnes (#20) — dernier update group `95673916-5efe-44f7-a521-719616634a1c` (Android `019f6dfe-d23e-7f55…`, iOS `019f6dfe-d23e-7592…`, commit `1c38fae4`). Police = **Outfit** (Geist attend le build natif, #13).
 - **En attente du build natif 1.5.0** (quota EAS) : **logo Sac+H** (icône/splash) + **police Geist**.
 - **Validé device (2026-05-27, APK `382fe2ec`) :** scanner EAN13 ✅, thème clair ✅, kiosque+PIN ✅, encaissement→API ✅, biométrie ✅, suppression compte (scénario ADMIN seul→cascade tenant) ✅.
