@@ -560,14 +560,20 @@ export function printProductLabels(
     const justify = hasBarcode ? 'space-between' : 'flex-start'
     const cellGap = hasBarcode ? '' : 'gap:6px;'
     const shopStyle = hasBarcode ? '' : 'margin-top:auto;'
+    // Nom sur DEUX lignes (l'émoji retiré a libéré la largeur) : en épicerie le grammage
+    // distingue deux produits voisins (Lait concentré 397g vs Lait poudre 400g) — tronquer
+    // supprime l'info discriminante. `-webkit-line-clamp:2` = ellipse SEULEMENT au-delà de
+    // 2 lignes ; taille réduite pour un nom long → tient dans la cellule sans pousser le
+    // code-barres dehors (line-clamp borne la hauteur + `overflow:hidden` de la cellule).
+    const nameFont = product.name.length > 24 ? Math.max(s.fontSize - 3, 9) : s.fontSize
     return `
     <div class="label" style="${labelCellStyle} justify-content:${justify}; ${cellGap}">
       <!-- Pas d'emoji sur l'etiquette : le pictogramme generique par defaut n'apporte
            aucune information, et l'etiquette est collee SUR le produit -> il est
            redondant avec l'objet lui-meme (+ aplat gris pale en N&B). -->
       <div>
-        <div style="font-size:${s.fontSize}px;font-weight:700;line-height:1.2;color:#1a1a2e;">
-          ${esc(product.name.length > 20 ? product.name.slice(0, 20) + '...' : product.name)}
+        <div style="font-size:${nameFont}px;font-weight:700;line-height:1.15;color:#1a1a2e;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+          ${esc(product.name)}
         </div>
         ${options.showSku ? `<div style="font-size:9px;color:#888;">${esc(product.sku)}</div>` : ''}
       </div>

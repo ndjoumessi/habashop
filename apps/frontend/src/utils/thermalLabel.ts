@@ -73,12 +73,27 @@ export async function printThermalLabels(
     // Code EAN calculé une seule fois : détermine la mise en page (avec/sans).
     const png = options.showBarcode ? barcodePng(product.barcode) : null
 
-    // Nom (tronqué pour tenir sur la largeur), gras.
+    // Nom sur DEUX lignes, gras. En épicerie le grammage discrimine deux produits
+    // voisins (Lait concentré 397g vs Lait poudre 400g) → ne pas tronquer avant 2 lignes.
+    // On calcule le retour à la ligne (splitTextToSize), réduit la taille 7→6 si ça
+    // déborde encore, puis ellipse SEULEMENT au-delà de 2 lignes. Budget vertical borné
+    // (≤2 lignes) → le code-barres reste dans les 40×30 mm.
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(7)
-    const name = product.name.length > 26 ? product.name.slice(0, 26) + '…' : product.name
-    doc.text(name, W / 2, y, { align: 'center', maxWidth: W - MARGIN * 2 })
-    y += 3
+    let nameFont = 7
+    doc.setFontSize(nameFont)
+    let nameLines: string[] = doc.splitTextToSize(product.name, W - MARGIN * 2)
+    if (nameLines.length > 2) {
+      nameFont = 6
+      doc.setFontSize(nameFont)
+      nameLines = doc.splitTextToSize(product.name, W - MARGIN * 2)
+    }
+    if (nameLines.length > 2) {
+      nameLines = nameLines.slice(0, 2)
+      nameLines[1] = nameLines[1].replace(/.$/, '…')
+    }
+    const nameStep = nameFont * 0.4 // ≈ interligne en mm (pt→mm ~0,353 × 1,15)
+    nameLines.forEach((ln, i) => doc.text(ln, W / 2, y + i * nameStep, { align: 'center' }))
+    y += nameLines.length * nameStep + 0.5
 
     // SKU (optionnel), petit gris.
     if (options.showSku && product.sku) {
