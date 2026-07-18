@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Fastify from 'fastify'
 import { validatorCompiler } from 'fastify-type-provider-zod'
-import { nextInvoiceNumber, fmtMoney } from '../lib/invoicePdf'
+import { nextInvoiceNumber, fmtMoney, pdfSafeSpaces } from '../lib/invoicePdf'
 
 // ── 1. Helpers purs ──
 describe('nextInvoiceNumber', () => {
@@ -12,9 +12,21 @@ describe('nextInvoiceNumber', () => {
   })
 })
 describe('fmtMoney', () => {
-  it('XOF entier + FCFA ; EUR converti 2 décimales', () => {
-    expect(fmtMoney(5900, 'XOF')).toBe('5 900 FCFA') // espace fine insécable fr-FR
+  it('XOF entier + FCFA ; EUR converti 2 décimales — séparateur ESPACE SIMPLE', () => {
+    // U+202F (fine insécable fr-FR) n'a pas de glyphe en Helvetica/WinAnsi → pdfkit
+    // rendait « 5 /900 ». fmtMoney doit sortir une espace simple U+0020.
+    expect(fmtMoney(5900, 'XOF')).toBe('5 900 FCFA')
     expect(fmtMoney(655.957, 'EUR')).toBe('1,00 €')
+  })
+
+  it("aucune espace insécable (U+202F / U+00A0) dans la sortie — c'est CE chemin que les 352 tests front ne couvraient pas", () => {
+    for (const [amount, cur] of [[8500, 'XOF'], [1234567, 'XOF'], [8500000, 'EUR'], [999999, 'USD'], [42000, 'GBP']] as [number, string][]) {
+      expect(fmtMoney(amount, cur)).not.toMatch(/[\u202F\u00A0]/)
+    }
+  })
+
+  it('pdfSafeSpaces : U+202F et U+00A0 → espace simple', () => {
+    expect(pdfSafeSpaces('8\u202F500\u00A0FCFA')).toBe('8 500 FCFA')
   })
 })
 

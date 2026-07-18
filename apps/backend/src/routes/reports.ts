@@ -3,6 +3,7 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { getCached } from '../lib/cache'
 import { xofToCurrency } from '../lib/currency'
+import { pdfSafeSpaces } from '../lib/invoicePdf'
 
 // Rôles autorisés à lire le rapport comptable (lecture seule).
 const ALLOWED_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'ACCOUNTANT'])
@@ -428,7 +429,8 @@ export async function reportsRoutes(app: any) {
     const meta = resolveMonth(request.query?.month as string | undefined, new Date())
     const { vatRate, rows, totals, month, currency } = await buildVatData(tenantId, meta)
 
-    const fmt2 = (n: number) => n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + currency
+    // pdfSafeSpaces : Helvetica (WinAnsi) n'a pas de glyphe U+202F → « 8 /500 » sinon.
+    const fmt2 = (n: number) => pdfSafeSpaces(n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) + ' ' + currency
 
     const doc = new PDFDocument({ size: 'A4', margin: 40 })
     const chunks: Buffer[] = []

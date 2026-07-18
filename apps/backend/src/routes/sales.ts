@@ -404,7 +404,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     if (!sale) return reply.code(404).send({ error: 'Vente introuvable' })
 
     const [tenant, customer] = await Promise.all([
-      prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true, address: true, phone: true, email: true, currency: true, vatRate: true, lang: true } }),
+      prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true, address: true, phone: true, email: true, currency: true, vatRate: true, lang: true, ninea: true, rccm: true, vatNumber: true } }),
       sale.customerId ? prisma.customer.findFirst({ where: { id: sale.customerId, tenantId }, select: { name: true, phone: true } }) : Promise.resolve(null),
     ])
     if (!tenant) return reply.code(404).send({ error: 'Boutique introuvable' })
