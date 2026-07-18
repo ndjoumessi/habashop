@@ -10,7 +10,7 @@ import Constants from 'expo-constants'
 import * as Updates from 'expo-updates'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '@/stores/authStore'
-import { useAppStore, useI18n, useFmt, useTheme, type Lang, type ThemeMode } from '@/stores/appStore'
+import { useAppStore, useI18n, useFmt, useTheme, formatAmount, type Lang, type ThemeMode } from '@/stores/appStore'
 import { sendLocalNotification } from '@/services/notifications'
 import { useProfilePhoto } from '@/hooks/useProfilePhoto'
 import { canScanInvoiceRole } from '@/hooks/useSupplierOcr'
@@ -256,7 +256,7 @@ export default function SettingsScreen() {
           })}
           {currency !== 'XOF' && currency !== 'XAF' && (
             <View style={s.rateInfo}>
-              <Text style={s.rateText}>💱 1 000 FCFA = {fmt(1000)}</Text>
+              <Text style={s.rateText}>💱 {formatAmount(1000, 'XOF')} = {fmt(1000)}</Text>
               <Text style={s.rateSubText}>
                 {i(
                   'Taux mis à jour toutes les 6h',
