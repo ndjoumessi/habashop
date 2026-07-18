@@ -11,8 +11,9 @@ const { pdfInst, jsPDFCtor } = vi.hoisted(() => {
   return { pdfInst: inst, jsPDFCtor: vi.fn(function () { return inst }) }
 })
 vi.mock('jspdf', () => ({ jsPDF: jsPDFCtor }))
-// Mock jsbarcode : no-op (le canvas est stubé pour toDataURL).
-vi.mock('jsbarcode', () => ({ default: vi.fn() }))
+// Mock jsbarcode : capture les options pour vérifier les quiet zones (canvas stubé).
+const { jsbarcodeMock } = vi.hoisted(() => ({ jsbarcodeMock: vi.fn() }))
+vi.mock('jsbarcode', () => ({ default: jsbarcodeMock }))
 
 import { printThermalLabels } from '@/utils/thermalLabel'
 
@@ -39,6 +40,13 @@ describe('printThermalLabels — PDF 40×30 mm', () => {
     expect(pdfInst.addImage).toHaveBeenCalledWith('data:image/png;base64,AAA', 'PNG', expect.any(Number), expect.any(Number), expect.any(Number), expect.any(Number))
     const texts = pdfInst.text.mock.calls.map(c => c[0])
     expect(texts).not.toContain('Code interne')
+  })
+
+  it('⚠️ QUIET ZONES ≥10 modules (marges horizontales) — thermique', async () => {
+    await printThermalLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
+    const opts = jsbarcodeMock.mock.calls.at(-1)![2] as Record<string, number>
+    expect(opts.marginLeft / opts.width).toBeGreaterThanOrEqual(10)
+    expect(opts.marginRight / opts.width).toBeGreaterThanOrEqual(10)
   })
 
   it('(b) sans code EAN → PAS d’image code-barres (plus de CODE128-sur-SKU) + mention', async () => {

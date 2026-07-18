@@ -67,6 +67,19 @@ export function barcodeFormat(code: string): 'EAN13' | 'EAN8' | null {
   return null
 }
 
+// ── Quiet zones (silence latéral) — SOURCE UNIQUE ────────────────────────────
+// ⚠️ Le silence latéral EAN/UPC est NON NÉGOCIABLE pour la lecture scanner
+// (douchette caisse < tolérance téléphone). GS1 : 11 modules à gauche, 7 à droite.
+// On prend 11 des DEUX côtés (marge de sécurité). Un « module » = la largeur de la
+// barre la plus fine = l'option JsBarcode `width` (px) → margin_modules = margin_px/width.
+// À passer en marginLeft/marginRight de JsBarcode partout (affichage + impression).
+// NE JAMAIS descendre sous 10 modules (verrouillé par les tests barcode*).
+export const QUIET_ZONE_MODULES = 11
+/** Quiet zone latérale en px pour une largeur de module (`width` JsBarcode) donnée. */
+export function quietZonePx(moduleWidth: number): number {
+  return Math.ceil(QUIET_ZONE_MODULES * moduleWidth)
+}
+
 /**
  * Forme CANONIQUE d'un code-barres, RÈGLE UNIQUE stockage + saisie + recherche :
  *   - supprime tout espace (les lecteurs en insèrent parfois) ;

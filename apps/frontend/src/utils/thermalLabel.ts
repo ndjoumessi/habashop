@@ -1,5 +1,5 @@
 import JsBarcode from 'jsbarcode'
-import { barcodeFormat, normalizeBarcode } from '@/lib/barcode'
+import { barcodeFormat, normalizeBarcode, quietZonePx } from '@/lib/barcode'
 
 // ── Étiquettes THERMIQUES 40×30 mm (Chantier A, PR4) ─────────────────────────
 // À l'UNITÉ (à la création/réception), en COEXISTENCE avec la planche A4 Avery
@@ -33,9 +33,13 @@ function barcodePng(barcode: string | undefined): string | null {
   if (!format) return null
   try {
     const canvas = document.createElement('canvas')
+    // ⚠️ Quiet zones ≥10 modules (marginLeft/Right via quietZonePx) — CRITIQUE en
+    // impression (douchette caisse). width 2 → quietZonePx(2)=22 px = 11 modules.
+    // Compromis dimension sur 40 mm documenté dans la PR (module ≈ 0,31 mm, > min GS1).
     JsBarcode(canvas, canonical, {
       format, width: 2, height: 60, displayValue: true, fontSize: 16,
-      margin: 4, background: '#FFFFFF', lineColor: '#000000',
+      marginTop: 2, marginBottom: 2, marginLeft: quietZonePx(2), marginRight: quietZonePx(2),
+      background: '#FFFFFF', lineColor: '#000000',
     })
     return canvas.toDataURL('image/png')
   } catch {

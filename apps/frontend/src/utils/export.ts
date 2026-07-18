@@ -1,6 +1,6 @@
 import JsBarcode from 'jsbarcode'
 import { useAppStore, convertAmount, formatInCurrency } from '@/stores/appStore'
-import { barcodeFormat, normalizeBarcode } from '@/lib/barcode'
+import { barcodeFormat, normalizeBarcode, quietZonePx } from '@/lib/barcode'
 
 const LOCALES: Record<string, string> = {
   fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT',
@@ -512,7 +512,9 @@ function renderBarcodeMarkup(
   let svg = ''
   try {
     const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    JsBarcode(el, canonical, { format, width: 1.5, height: 40, displayValue: true, fontSize: 10, margin: 4, background: '#FFFFFF', lineColor: '#000000' })
+    // ⚠️ Quiet zones ≥10 modules (marginLeft/Right via quietZonePx) — NE PAS réduire.
+    // Vertical resserré. width 1.5 → quietZonePx(1.5)=17 px ≈ 11,3 modules.
+    JsBarcode(el, canonical, { format, width: 1.5, height: 40, displayValue: true, fontSize: 10, marginTop: 2, marginBottom: 2, marginLeft: quietZonePx(1.5), marginRight: quietZonePx(1.5), background: '#FFFFFF', lineColor: '#000000' })
     svg = el.outerHTML
   } catch { svg = '' }
   return `<div style="text-align:center;border-top:1px solid #eee;padding-top:4px;">${svg}</div>`
