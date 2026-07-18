@@ -55,7 +55,7 @@ export default function SearchScreen() {
     const ql = q.toLowerCase()
     const found: SearchResult[] = []
     for (const p of products) {
-      if (p.name?.toLowerCase().includes(ql) || barcodeMatches(p.barcode, q) || p.category?.toLowerCase().includes(ql)) {
+      if (p.name?.toLowerCase().includes(ql) || p.sku?.toLowerCase().includes(ql) || barcodeMatches(p.barcode, q) || p.category?.toLowerCase().includes(ql)) {
         found.push({
           id: p.id, type: 'product', title: p.name,
           subtitle: `${fmt(p.sellPrice ?? 0)} · ${p.stockQty ?? 0} ${i('en stock', 'in stock', 'en stock', 'in stock')}`,

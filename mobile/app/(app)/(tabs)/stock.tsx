@@ -103,8 +103,8 @@ export default function StockScreen() {
       const st = statusOf(p)
       if (filter === 'low' && st !== 'low') return false
       if (filter === 'out' && st !== 'out') return false
-      // Code-barres via la règle canonique (un UPC-A tapé retrouve l'EAN-13 stocké).
-      return !q || p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q) || barcodeMatches(p.barcode, search)
+      // Nom + SKU (imprimé/affiché) + catégorie + code-barres (règle canonique).
+      return !q || p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q) || barcodeMatches(p.barcode, search)
     })
   }, [active, filter, search])
 
