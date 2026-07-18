@@ -9,6 +9,7 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
 import { lookupProductByEan } from '@/lib/productLookup'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { normalizeBarcode, isValidBarcode, barcodeFormat, generateEAN13 } from '@/lib/barcode'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -35,26 +36,17 @@ interface StockModalsProps {
   hideProductSelection?: boolean
 }
 
-function generateEAN13(): string {
-  const prefix = '200'
-  const random = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10)).join('')
-  const base = prefix + random
-  const sum = base.split('').reduce((acc, d, i) => acc + parseInt(d, 10) * (i % 2 === 0 ? 1 : 3), 0)
-  const check = (10 - (sum % 10)) % 10
-  return base + String(check)
-}
-
 function BarcodeDisplay({ value }: { value: string }) {
   const svgRef = useRef<SVGSVGElement>(null)
   useEffect(() => {
-    if (svgRef.current && /^\d{13}$/.test(value)) {
+    const format = barcodeFormat(value) // EAN13 | EAN8 (UPC-A déjà canonicalisé en EAN-13)
+    if (svgRef.current && format) {
       try {
         // ⚠️ Barres NOIRES sur fond BLANC (jamais var(--text)/transparent : en thème
         // sombre ça donne un code inversé que les lecteurs physiques refusent).
-        // displayValue:true + quiet zones blanches = EAN-13 conforme GS1, scannable.
-        // Option B — EAN-13 « slim label » : compact mais net et scannable.
+        // displayValue:true + quiet zones blanches = code conforme GS1, scannable.
         JsBarcode(svgRef.current, value, {
-          format: 'EAN13',
+          format,
           width: 1.8,
           height: 52,
           displayValue: true,    // chiffres EAN-13 affichés sous les barres
@@ -86,7 +78,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
     return q ? suppliers.filter(s => s.name.toLowerCase().includes(q)) : suppliers
   }, [suppliers, supSearch])
   const selectedSupplierName = suppliers.find(s => s.id === form.supplierId)?.name || ''
-  const barcodeInvalid = !!form.barcode && !/^\d{13}$/.test(form.barcode)
+  // Valide si canonicalisé (UPC-A→EAN-13) c'est un EAN-13 ou EAN-8 conforme.
+  const barcodeInvalid = !!form.barcode && !isValidBarcode(normalizeBarcode(form.barcode))
   const tenant = useAppStore(s => s.tenant)
   const currency = useAppStore(s => s.currency)
   // Format direct sans conversion (form state = devise d'affichage, pas XOF)
@@ -94,13 +87,13 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   const emptyLabel = lang === 'en' ? 'Not specified' : lang === 'es' ? 'No especificado' : lang === 'it' ? 'Non specificato' : 'Non renseigné'
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
-  // EAN-13 manquant (vide) OU non valide → bandeau warning « scanner l'emballage ».
-  // Disparaît dès qu'un EAN-13 valide (13 chiffres) est renseigné.
-  const eanMissing = !/^\d{13}$/.test(form.barcode ?? '')
+  // Code-barres manquant (vide) OU non valide → bandeau warning « scanner l'emballage ».
+  // Disparaît dès qu'un code valide (EAN-13/EAN-8, UPC-A canonicalisé) est renseigné.
+  const eanMissing = !isValidBarcode(normalizeBarcode(form.barcode ?? ''))
   const eanWarning = eanMissing ? (
     <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:8, background:'color-mix(in srgb, var(--warn) 10%, transparent)', border:'1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius:6, padding:'8px 10px', fontSize:12, color:'var(--warn)' }}>
       <AlertTriangle size={15} style={{ color:'var(--warn)', flexShrink:0 }} />
-      <span>{i("Aucun EAN-13 renseigné — scannez l'emballage pour l'ajouter", 'No EAN-13 set — scan the packaging to add it', 'Sin EAN-13 — escanea el envase para añadirlo', 'Nessun EAN-13 — scansiona la confezione per aggiungerlo')}</span>
+      <span>{i("Aucun code-barres — scannez l'emballage pour l'ajouter", 'No barcode — scan the packaging to add it', 'Sin código de barras — escanea el envase para añadirlo', 'Nessun codice a barre — scansiona la confezione per aggiungerlo')}</span>
     </div>
   ) : null
 
@@ -314,20 +307,29 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 {/* ── Code-barres + scanner ── */}
                 {productEditMode ? (
                   <ViewField label={i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')} value={form.barcode||''} editing={true}>
+                    {/* Scan = geste PRINCIPAL (bouton primaire mis en avant) ; la saisie
+                        manuelle reste possible ; « Générer » est un second recours discret. */}
                     <div style={{ display:'flex', gap:8 }}>
-                      <input className="input text-sm" style={{ flex:1, borderColor: barcodeInvalid ? 'var(--danger)' : undefined }} placeholder="EAN-13..." value={form.barcode} onChange={e => { const v = e.target.value; setForm(f => ({...f, barcode:v})); runOffLookup(v) }} />
-                      <button type="button" className="mini-btn"
-                        onClick={() => {
-                          if (form.barcode && !window.confirm(lang === 'en' ? 'Replace the existing barcode?' : lang === 'es' ? '¿Reemplazar el código de barras existente?' : lang === 'it' ? 'Sostituire il codice a barre esistente?' : 'Remplacer le code-barres existant ?')) return
-                          setForm(f => ({ ...f, barcode: generateEAN13() }))
-                        }}
-                        title={lang === 'en' ? 'Generate EAN-13' : lang === 'es' ? 'Generar EAN-13' : lang === 'it' ? 'Genera EAN-13' : 'Générer EAN-13'}
-                        style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Wand2 size={18} /></button>
-                      <button type="button" className="mini-btn" onClick={() => setShowScanner(true)}
-                        title={i('Scanner un code-barres', 'Scan a barcode', 'Escanear un código de barras', 'Scansiona un codice a barre')} style={{ padding:'8px 14px', cursor:'pointer', display:'flex', alignItems:'center' }}><Camera size={18} /></button>
+                      <input className="input text-sm" style={{ flex:1, borderColor: barcodeInvalid ? 'var(--danger)' : undefined }} placeholder={i('EAN-13 / EAN-8 / UPC-A…', 'EAN-13 / EAN-8 / UPC-A…', 'EAN-13 / EAN-8 / UPC-A…', 'EAN-13 / EAN-8 / UPC-A…')} value={form.barcode} onChange={e => { const v = e.target.value; setForm(f => ({...f, barcode:v})); runOffLookup(v) }} />
+                      <button type="button" onClick={() => setShowScanner(true)}
+                        title={i('Scanner un code-barres', 'Scan a barcode', 'Escanear un código de barras', 'Scansiona un codice a barre')}
+                        style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 16px', minHeight:40, whiteSpace:'nowrap',
+                          background:'var(--p2)', color:'#fff', border:'none', borderRadius:8, cursor:'pointer',
+                          fontSize:13, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', transition:'all .15s' }}>
+                        <Camera size={17} /> {i('Scanner', 'Scan', 'Escanear', 'Scansiona')}
+                      </button>
                     </div>
-                    {/* Warning EAN manquant/invalide (remplace l'ancien message rouge ; bordure rouge + blocage au save conservés) */}
+                    {/* Warning code-barres manquant/invalide (bordure rouge + blocage au save conservés) */}
                     {eanWarning}
+                    {/* Second recours : générer un code interne si pas de code fabricant à scanner. */}
+                    <button type="button"
+                      onClick={() => {
+                        if (form.barcode && !window.confirm(lang === 'en' ? 'Replace the existing barcode?' : lang === 'es' ? '¿Reemplazar el código de barras existente?' : lang === 'it' ? 'Sostituire il codice a barre esistente?' : 'Remplacer le code-barres existant ?')) return
+                        setForm(f => ({ ...f, barcode: generateEAN13() }))
+                      }}
+                      style={{ marginTop:8, display:'inline-flex', alignItems:'center', gap:6, background:'transparent', border:'none', padding:0, color:'var(--text3)', fontSize:12, fontFamily:'var(--font)', cursor:'pointer' }}>
+                      <Wand2 size={13} /> {i('Pas de code fabricant ? Générer un code interne', 'No manufacturer code? Generate an internal one', 'Sin código del fabricante? Generar un código interno', 'Nessun codice produttore? Genera un codice interno')}
+                    </button>
                     {/* État du lookup Open Food Facts (ajout seulement) */}
                     {!editingSku && offLooking && (
                       <div style={{ marginTop:6, fontSize:11, color:'var(--text3)', display:'flex', alignItems:'center', gap:6 }}>
@@ -344,7 +346,7 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 ) : (
                   <div>
                     <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
-                    {form.barcode && /^\d{13}$/.test(form.barcode) ? (
+                    {form.barcode && isValidBarcode(form.barcode) ? (
                       // Conteneur intégré : surface bg3 englobant l'étiquette (blanc OBLIGATOIRE
                       // pour la lisibilité scanner) + numéro EAN + bouton Copier bien visible.
                       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, padding:'14px 12px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10 }}>
@@ -631,7 +633,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
       {showScanner && (
         <Suspense fallback={null}>
           <BarcodeScanner
-            onScan={barcode => {
+            onScan={raw => {
+              // Canonicalise (UPC-A→EAN-13, espaces) → même forme qu'en base.
+              const barcode = normalizeBarcode(raw)
               setForm(f => ({ ...f, barcode }))
               setShowScanner(false)
               // En AJOUT : auto-remplissage Open Food Facts (qui toaste le résultat).

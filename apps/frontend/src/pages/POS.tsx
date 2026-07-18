@@ -5,6 +5,7 @@ import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCu
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
+import { normalizeBarcode } from '@/lib/barcode'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 import { ShoppingCart, Loader2, Search, Barcode, WifiOff, History, Store } from 'lucide-react'
@@ -58,6 +59,7 @@ export default function POS() {
       .then(data => setPosProducts(data.map((p: any): PosProduct => ({
         id: p.id,
         name: p.name,
+        barcode: p.barcode ?? '',
         price: p.sellPrice ?? 0,
         priceWholesale: p.wholesalePrice ?? p.sellPrice ?? 0,
         priceSemiWholesale: p.semiWholesalePrice ?? p.sellPrice ?? 0,
@@ -249,17 +251,21 @@ export default function POS() {
     }
   }
 
-  const handleScan = (barcode: string) => {
+  const handleScan = (raw: string) => {
     setShowScanner(false)
+    // Priorité au CODE-BARRES (règle canonique partagée : UPC-A→EAN-13, espaces,
+    // jamais de strip des zéros de tête) ; repli nom/id pour la saisie manuelle.
+    const scanned = normalizeBarcode(raw)
     const found = posProducts.find(p =>
-      p.name.toLowerCase().includes(barcode.toLowerCase()) ||
-      String(p.id) === barcode
+      (!!scanned && normalizeBarcode(p.barcode) === scanned) ||
+      p.name.toLowerCase().includes(raw.toLowerCase()) ||
+      String(p.id) === raw
     )
     if (found) {
       addItem(found)
       toast.success(`${found.name} scanné`)
     } else {
-      toast.error(`Produit non trouvé: ${barcode}`)
+      toast.error(`Produit non trouvé: ${raw}`)
     }
   }
 
