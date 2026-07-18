@@ -17,14 +17,16 @@ const BUILD_SHA =
   (() => { try { return execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim() } catch { return '' } })()
 const BUILD_DATE = new Date()
 const BUILD_ID = BUILD_DATE.toISOString().slice(0, 16).replace('T', ' ') + (BUILD_SHA ? ` · ${BUILD_SHA}` : '')
-// Forme COURTE et complète pour la sidebar (conçue pour tenir, pas tronquée) :
-// « v<version> · JJ/MM ». Le détail complet (horodatage + SHA) reste dans le title au survol.
-// Version lue depuis package.json d'apps/frontend (résolu via import.meta.url → robuste
-// quel que soit le cwd, y compris build Vercel depuis la racine du monorepo).
+// Version PRODUIT = SOURCE UNIQUE = package.json RACINE du monorepo (jamais un littéral
+// en dur — cf. méta-test versionSource). Résolu via import.meta.url (= apps/frontend/
+// vite.config.ts) → `../../package.json` = racine, robuste quel que soit le cwd (build
+// Vercel depuis la racine inclus). ⚠️ NE PAS lire apps/frontend/package.json (resté à 1.0.0).
 const PKG_VERSION = (() => {
-  try { return JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')).version as string }
+  try { return JSON.parse(readFileSync(fileURLToPath(new URL('../../package.json', import.meta.url)), 'utf8')).version as string }
   catch { return '' }
 })()
+// Forme COURTE et complète pour la sidebar (conçue pour tenir, pas tronquée) :
+// « v<version> · JJ/MM ». Le détail complet (horodatage + SHA) reste dans le title au survol.
 const BUILD_SHORT = `${PKG_VERSION ? `v${PKG_VERSION} · ` : ''}${String(BUILD_DATE.getUTCDate()).padStart(2, '0')}/${String(BUILD_DATE.getUTCMonth() + 1).padStart(2, '0')}`
 
 export default defineConfig(({ mode }) => {
@@ -35,7 +37,7 @@ export default defineConfig(({ mode }) => {
   const sentryAuthToken = env.SENTRY_AUTH_TOKEN || process.env.SENTRY_AUTH_TOKEN
 
   return {
-  define: { __BUILD_ID__: JSON.stringify(BUILD_ID), __BUILD_SHORT__: JSON.stringify(BUILD_SHORT) },
+  define: { __BUILD_ID__: JSON.stringify(BUILD_ID), __BUILD_SHORT__: JSON.stringify(BUILD_SHORT), __APP_VERSION__: JSON.stringify(PKG_VERSION) },
   plugins: [
     react(),
     VitePWA({

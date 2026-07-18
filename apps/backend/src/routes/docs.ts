@@ -1,10 +1,11 @@
 import type { FastifyInstance } from 'fastify'
+import { getAppVersion } from '../lib/version'
 
 export async function docsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/docs', async () => {
     return {
       name: 'HabaShop API',
-      version: '2.0.0',
+      version: getAppVersion(), // source unique = package.json racine (jamais un littéral)
       description: 'API REST pour HabaShop — Logiciel de gestion commerciale',
       baseUrl: 'https://habashop-production.up.railway.app',
       authentication: {

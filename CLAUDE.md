@@ -51,6 +51,15 @@ Auto-deploy GitHub sur push `main` (lag ~20-25 min → `railway up --ci` pour fo
 
 **Rituel commit** : `npx tsc --noEmit` (0) → `npm test` (verts) → `npm run build` (OK) → commit/push `main`. Git : push direct sur `main`, pas de feature branch.
 
+## Versionnage ⚠️ SOURCE UNIQUE
+
+**La version PRODUIT vit dans UN SEUL endroit : `version` du `package.json` RACINE** (actuellement **2.6.0**). Tout affichage/retour de version en dérive — **jamais de littéral en dur** (on a eu 6 versions divergentes : admin 2.6.0, /health 2.1.0, /health-extended 2.3.0, /api/docs 2.0.0, sidebar 1.0.0…).
+- **Web** : injectée au build par Vite (`vite.config.ts` lit `../../package.json` racine) → `__APP_VERSION__` (brut « 2.6.0 ») + `__BUILD_SHORT__` (« v2.6.0 · JJ/MM », sidebar) + `__BUILD_ID__` (horodatage+SHA, `title`/Réglages). `AdminDashboard` utilise `__APP_VERSION__`. ⚠️ NE PAS lire `apps/frontend/package.json` (resté à 1.0.0).
+- **Backend** : `getAppVersion()` (`src/lib/version.ts`) lit le `package.json` racine au boot (remonte jusqu'à `name === 'habashop'`, robuste dev/dist/cwd) → `/health`, `/api/health-extended`, `/api/docs` renvoient tous la même.
+- **Garde** : méta-tests `versionSource.test.ts` (front + back) — échouent si un semver entre guillemets réapparaît dans `src/` (même principe que le méta-test quiet zones). Un repli non-semver (`'0.0.0-unknown'`) est toléré.
+- **QUAND bumper** (sinon la version se fige comme les `package.json` se sont figés à 1.0.0) : **à chaque release fonctionnelle visible**, éditer la racine avant déploiement — `npm version <patch|minor|major> --no-git-tag-version` à la racine (patch = fix, minor = feature, major = rupture). Fait partie du rituel de release.
+- **Mobile = piste SÉPARÉE, NE PAS aligner** ⚠️ : `mobile/app.json` `version` (1.5.0) pilote le `runtimeVersion` (policy `appVersion`) → c'est un **paramètre fonctionnel de l'OTA**, pas un numéro d'affichage. L'aligner sur la version produit **casserait la continuité OTA** (les installs existantes ne recevraient plus les updates jusqu'à réinstallation). Réglages mobile affiche `Constants.expoConfig.version` (= app.json) : c'est **intentionnel**, ne pas « corriger » cette divergence.
+
 ## Pièges critiques
 
 - **`DATABASE_URL` = DB PROD Railway.** JAMAIS `migrate dev/reset/seed` sans confirmation. `prisma db push` OK pour ajouts sans data loss. Migration additive : `ADD COLUMN IF NOT EXISTS` + `prisma migrate resolve --applied`.
