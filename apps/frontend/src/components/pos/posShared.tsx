@@ -66,6 +66,7 @@ export const PRODUCTS = [
 
 export type PosProduct = typeof PRODUCTS[0] & {
   id: number | string
+  barcode?: string
   priceTiers?: { minQty: number; price: number; label?: string }[]
 }
 
