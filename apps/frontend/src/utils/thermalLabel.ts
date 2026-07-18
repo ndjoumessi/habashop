@@ -20,9 +20,6 @@ export interface ThermalLabelOptions {
 
 type ThermalProduct = { name: string; sku: string; price: number; barcode?: string; emoji?: string }
 
-const li = (lang: string, fr: string, en: string, es: string, it: string) =>
-  lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
-
 // Rend un code-barres en PNG (data URL) via un canvas hors-écran. EAN-13/EAN-8
 // selon le code canonicalisé (UPC-A hérité → EAN-13). (b) : plus de CODE128-sur-SKU
 // → sans code EAN valide, retourne null (l'appelant affiche une mention non
@@ -73,6 +70,8 @@ export async function printThermalLabels(
   labels.forEach((product, idx) => {
     if (idx > 0) doc.addPage([40, 30], 'landscape')
     let y = MARGIN + 2.5
+    // Code EAN calculé une seule fois : détermine la mise en page (avec/sans).
+    const png = options.showBarcode ? barcodePng(product.barcode) : null
 
     // Nom (tronqué pour tenir sur la largeur), gras.
     doc.setFont('helvetica', 'bold')
@@ -91,31 +90,25 @@ export async function printThermalLabels(
       y += 2
     }
 
-    // Code-barres (image EAN), centré. (b) : sans code EAN valide → mention non
-    // scannable (pas de CODE128-sur-SKU). Le SKU reste imprimé ci-dessus via showSku.
-    if (options.showBarcode) {
-      const png = barcodePng(product.barcode)
-      if (png) {
-        const imgW = W - MARGIN * 2
-        const imgH = 11
-        doc.addImage(png, 'PNG', MARGIN, y, imgW, imgH)
-        y += imgH + 1
-      } else {
-        doc.setFont('helvetica', 'italic')
-        doc.setFontSize(5)
-        doc.setTextColor(150)
-        doc.text(li(options.lang, 'Code-barres manquant', 'Missing barcode', 'Código de barras faltante', 'Codice a barre mancante'), W / 2, y, { align: 'center' })
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(0)
-        y += 2
-      }
+    // Code-barres (image EAN), centré. (b) : sans code EAN valide, on n'imprime RIEN
+    // (ni CODE128-sur-SKU, ni mention — l'étiquette est face client) → la zone est
+    // repliée et le contenu remonte (cf. prix ci-dessous).
+    if (png) {
+      const imgW = W - MARGIN * 2
+      const imgH = 11
+      doc.addImage(png, 'PNG', MARGIN, y, imgW, imgH)
+      y += imgH + 1
     }
 
-    // Prix (optionnel), gras, en bas.
+    // Prix (optionnel), gras. AVEC code : ancré en bas (inchangé). SANS code : remonte
+    // juste sous le contenu (étiquette de prix propre, pas de vide central), un peu plus grand.
     if (options.showPrice) {
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(10)
-      doc.text(fmt(product.price), W / 2, 30 - MARGIN - 0.5, { align: 'center' })
+      doc.setTextColor(0) // NOIR explicite : thermique = monochrome de toute façon, mais
+                          // on verrouille le prix en noir (jamais une teinte écran).
+      doc.setFontSize(png ? 10 : 12)
+      const priceY = png ? (30 - MARGIN - 0.5) : (y + 3)
+      doc.text(fmt(product.price), W / 2, priceY, { align: 'center' })
     }
   })
 

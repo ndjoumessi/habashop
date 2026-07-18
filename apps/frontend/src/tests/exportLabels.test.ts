@@ -45,13 +45,16 @@ describe('printProductLabels — impression étiquettes', () => {
     expect(jsbarcodeMock).toHaveBeenCalledWith(expect.anything(), '0036000291452', expect.objectContaining({ format: 'EAN13' }))
   })
 
-  it('(b) sans code EAN : AUCUN code scannable imprimé (plus de CODE128-sur-SKU) + mention', () => {
+  it('(b) sans code EAN : zone repliée — aucun code NI mention sur l’étiquette (face client)', () => {
     printProductLabels([{ name: 'Vrac', sku: 'PRD-0004', price: 300, barcode: '' }], fmt, baseOpts)
     // Aucun appel JsBarcode (ni EAN ni CODE128) pour un produit sans code valide.
     expect(jsbarcodeMock).not.toHaveBeenCalled()
     expect(written).not.toContain('CODE128')
-    expect(written).not.toContain('Code interne') // plus de badge trompeur
-    expect(written).toContain('Code-barres manquant') // mention non scannable
+    expect(written).not.toContain('Code interne')       // plus de badge trompeur
+    expect(written).not.toContain('Code-barres manquant') // plus de diagnostic sur l'étiquette
+    // Le nom + le prix restent imprimés (étiquette de prix propre).
+    expect(written).toContain('Vrac')
+    expect(written).toContain('300 F')
   })
 
   it('⚠️ QUIET ZONES ≥10 modules (marges horizontales) — Avery', () => {
@@ -59,6 +62,20 @@ describe('printProductLabels — impression étiquettes', () => {
     const opts = jsbarcodeMock.mock.calls.at(-1)![2] as unknown as Record<string, number>
     expect(opts.marginLeft / opts.width).toBeGreaterThanOrEqual(10)
     expect(opts.marginRight / opts.width).toBeGreaterThanOrEqual(10)
+  })
+
+  it('prix en NOIR gras (pas le violet écran) — lisible en N&B + pas d’encre couleur', () => {
+    printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
+    // Le prix est le bloc inline font-weight:900 → doit être noir, jamais le violet
+    // écran (#5B4EE8). (Le violet reste légitime dans le chrome de la fenêtre d'impression.)
+    expect(written).toContain('font-weight:900;color:#000;')
+    expect(written).not.toContain('font-weight:900;color:#5B4EE8')
+  })
+
+  it('aucun émoji sur l’étiquette (redondant avec le produit, gris pâle en N&B)', () => {
+    printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931', emoji: '🥛' }], fmt, baseOpts)
+    expect(written).not.toContain('🥛') // émoji custom non imprimé
+    expect(written).not.toContain('📦') // ni le générique par défaut
   })
 
   it('🟡 aucune dépendance CDN externe dans la fenêtre d’impression', () => {

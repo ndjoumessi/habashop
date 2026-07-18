@@ -49,12 +49,14 @@ describe('printThermalLabels — PDF 40×30 mm', () => {
     expect(opts.marginRight / opts.width).toBeGreaterThanOrEqual(10)
   })
 
-  it('(b) sans code EAN → PAS d’image code-barres (plus de CODE128-sur-SKU) + mention', async () => {
+  it('(b) sans code EAN → zone repliée : pas d’image, pas de mention (face client) ; nom+prix restent', async () => {
     await printThermalLabels([{ name: 'Vrac', sku: 'PRD-0004', price: 300, barcode: '' }], fmt, baseOpts)
     expect(pdfInst.addImage).not.toHaveBeenCalled()
     const texts = pdfInst.text.mock.calls.map(c => c[0])
     expect(texts).not.toContain('Code interne')
-    expect(texts).toContain('Code-barres manquant')
+    expect(texts).not.toContain('Code-barres manquant')
+    expect(texts).toContain('Vrac')       // nom conservé
+    expect(texts).toContain('300 F')      // prix conservé (remonté)
   })
 
   it('copies = une page par étiquette (produits × copies)', async () => {

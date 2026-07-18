@@ -490,25 +490,13 @@ export type AveryPreset = keyof typeof AVERY_PRESETS
 // Rendu du code-barres DANS la fenêtre parente (paquet jsbarcode LOCAL, plus de
 // CDN externe) → impression fiable même hors ligne. EAN-13/EAN-8 selon le code
 // canonicalisé (UPC-A hérité → EAN-13). Barres NOIRES sur fond BLANC.
-// (b) : on n'imprime PLUS de CODE128-sur-SKU. Une étiquette scannable doit porter
-// un code résoluble et STANDARD (EAN) ; un CODE128-sur-SKU n'est ni l'un ni
-// l'autre (piège à la caisse). Sans code valide → aucune symbologie scannable,
-// juste une mention explicite (le SKU reste en texte via l'option showSku, et
-// l'app oriente vers la génération d'un code — cf. modale Étiquettes / rattrapage).
-function renderBarcodeMarkup(
-  barcode: string | undefined,
-  lang: string,
-  esc: (v: unknown) => string,
-): string {
+// (b) : on n'imprime PLUS de CODE128-sur-SKU. Sans code EAN valide → chaîne VIDE :
+// la zone est repliée (pas de vide, pas de mention). L'étiquette est face client →
+// aucun diagnostic de gestion dessus ; l'alerte vit dans la modale (avant impression).
+function renderBarcodeMarkup(barcode: string | undefined): string {
   const canonical = normalizeBarcode(barcode)
   const format = canonical ? barcodeFormat(canonical) : null // EAN13 | EAN8 | null
-  if (!format) {
-    // Neutre (« manquant ») : constate sans prescrire la génération — sur un produit
-    // industriel le bon geste reste de scanner l'emballage (la génération interne
-    // est le second recours, réservé au vrac).
-    const note = lang === 'en' ? 'Missing barcode' : lang === 'es' ? 'Código de barras faltante' : lang === 'it' ? 'Codice a barre mancante' : 'Code-barres manquant'
-    return `<div style="text-align:center;border-top:1px solid #eee;padding-top:4px;"><span style="display:inline-block;font-size:9px;color:#9CA3AF;font-style:italic;">${esc(note)}</span></div>`
-  }
+  if (!format) return ''
   let svg = ''
   try {
     const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -556,31 +544,44 @@ export function printProductLabels(
   const useGrid = !!presetKey && presetKey !== 'CUSTOM'
   const preset: GridPreset | null = useGrid ? (AVERY_PRESETS[presetKey] as unknown as GridPreset) : null
 
-  // En mode grille, la taille du label est imposée par le preset (mm) ; sinon px du SIZES
+  // En mode grille, la taille du label est imposée par le preset (mm) ; sinon px du SIZES.
+  // `justify-content` est injecté PAR PRODUIT (avec code = space-between inchangé ;
+  // sans code = flex-start → le contenu remonte, la boutique reste en bas via margin-auto).
   const labelCellStyle = useGrid && preset
-    ? `width:${preset.labelWidth}; height:${preset.labelHeight}; padding:6px; overflow:hidden; box-sizing:border-box; background:white; display:flex; flex-direction:column; justify-content:space-between; page-break-inside:avoid;`
-    : `width:${s.w}px; height:${s.h}px; border:1px solid #ddd; border-radius:6px; padding:8px; margin:4px; display:inline-flex; flex-direction:column; justify-content:space-between; background:white; page-break-inside:avoid;`
+    ? `width:${preset.labelWidth}; height:${preset.labelHeight}; padding:6px; overflow:hidden; box-sizing:border-box; background:white; display:flex; flex-direction:column; page-break-inside:avoid;`
+    : `width:${s.w}px; height:${s.h}px; border:1px solid #ddd; border-radius:6px; padding:8px; margin:4px; display:inline-flex; flex-direction:column; background:white; page-break-inside:avoid;`
 
   const labelHTML = (product: typeof products[0]) => {
-    const barcodeBlock = options.showBarcode ? renderBarcodeMarkup(product.barcode, options.lang, esc) : ''
+    const barcodeBlock = options.showBarcode ? renderBarcodeMarkup(product.barcode) : ''
+    const hasBarcode = !!barcodeBlock
+    // Avec code : space-between (mise en page inchangée). Sans code : contenu remonté
+    // en haut (flex-start + gap) et la boutique poussée en bas (margin-top:auto) → pas
+    // de vide central, étiquette de prix propre et intentionnelle.
+    const justify = hasBarcode ? 'space-between' : 'flex-start'
+    const cellGap = hasBarcode ? '' : 'gap:6px;'
+    const shopStyle = hasBarcode ? '' : 'margin-top:auto;'
     return `
-    <div class="label" style="${labelCellStyle}">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:${s.priceSize}px;">${esc(product.emoji ?? '📦')}</span>
-        <div>
-          <div style="font-size:${s.fontSize}px;font-weight:700;line-height:1.2;color:#1a1a2e;">
-            ${esc(product.name.length > 20 ? product.name.slice(0, 20) + '...' : product.name)}
-          </div>
-          ${options.showSku ? `<div style="font-size:9px;color:#888;">${esc(product.sku)}</div>` : ''}
+    <div class="label" style="${labelCellStyle} justify-content:${justify}; ${cellGap}">
+      <!-- Pas d'emoji sur l'etiquette : le pictogramme generique par defaut n'apporte
+           aucune information, et l'etiquette est collee SUR le produit -> il est
+           redondant avec l'objet lui-meme (+ aplat gris pale en N&B). -->
+      <div>
+        <div style="font-size:${s.fontSize}px;font-weight:700;line-height:1.2;color:#1a1a2e;">
+          ${esc(product.name.length > 20 ? product.name.slice(0, 20) + '...' : product.name)}
         </div>
+        ${options.showSku ? `<div style="font-size:9px;color:#888;">${esc(product.sku)}</div>` : ''}
       </div>
       ${options.showPrice ? `
-        <div style="font-size:${s.priceSize}px;font-weight:900;color:#5B4EE8;">
+        <!-- Prix en NOIR gras (pas le violet écran) : l'étiquette est souvent imprimée
+             en N&B sur imprimante de bureau — le violet y ressort en gris pâle, rendant
+             l'info la PLUS importante la MOINS lisible ; le noir reste net et n'appelle
+             pas d'encre couleur. Le violet reste l'identité à l'écran, pas au papier. -->
+        <div style="font-size:${s.priceSize}px;font-weight:900;color:#000;">
           ${esc(fmt(product.price))}
         </div>
       ` : ''}
       ${barcodeBlock}
-      <div style="font-size:7px;color:#bbb;text-align:right;">
+      <div style="font-size:7px;color:#bbb;text-align:right;${shopStyle}">
         ${esc(options.shopName)}
       </div>
     </div>
