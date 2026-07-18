@@ -957,20 +957,27 @@ export default function POS() {
               }} />
               <input
                 className="input"
-                style={{ paddingLeft: 36, paddingRight: posEnableScanner ? 42 : 12, width: '100%', fontSize: 13, minHeight: 40, boxSizing: 'border-box' }}
+                style={{ paddingLeft: 36, paddingRight: posEnableScanner ? 46 : 12, width: '100%', fontSize: 13, minHeight: 40, boxSizing: 'border-box' }}
                 aria-label={t('pos_search')}
-                placeholder={lang === 'en' ? 'Search or scan…' : lang === 'es' ? 'Buscar o escanear…' : lang === 'it' ? 'Cerca o scansiona…' : 'Rechercher ou scanner…'}
+                // Placeholder honnête : ne promet « …ou scanner » QUE si le scan est activé
+                // pour le tenant (Réglages → POS). Sinon l'affordance n'existe pas → « Rechercher… ».
+                placeholder={posEnableScanner
+                  ? (lang === 'en' ? 'Search or scan…' : lang === 'es' ? 'Buscar o escanear…' : lang === 'it' ? 'Cerca o scansiona…' : 'Rechercher ou scanner…')
+                  : (lang === 'en' ? 'Search…' : lang === 'es' ? 'Buscar…' : lang === 'it' ? 'Cerca…' : 'Rechercher…')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
+              {/* Scan produit — même handler que le scanner plein écran (handleScan), pas de
+                  duplication de logique. Cible ≥ 44px (déborde le champ de 40px sans le
+                  déformer, fond transparent), focus-visible via la règle globale. */}
               {posEnableScanner && (
                 <button
                   onClick={() => setShowScanner(true)}
                   aria-label={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
                   title={lang === 'en' ? 'Scan a barcode' : lang === 'es' ? 'Escanear un código de barras' : lang === 'it' ? 'Scansiona un codice a barre' : 'Scanner un code-barres'}
                   style={{
-                    position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-                    width: 34, height: 34, borderRadius: 8,
+                    position: 'absolute', right: 2, top: '50%', transform: 'translateY(-50%)',
+                    width: 44, height: 44, borderRadius: 8,
                     cursor: 'pointer', transition: 'all .15s',
                     background: 'transparent', border: 'none',
                     color: 'var(--p2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
