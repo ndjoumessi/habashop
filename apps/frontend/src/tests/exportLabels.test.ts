@@ -72,6 +72,21 @@ describe('printProductLabels — impression étiquettes', () => {
     expect(written).not.toContain('font-weight:900;color:#5B4EE8')
   })
 
+  it('nom long : 2 lignes (line-clamp) + taille réduite, PAS de troncature à 20 car.', () => {
+    const name = 'Lait concentré sucré 397g GLORIA' // 32 car. (> 24)
+    printProductLabels([{ name, sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
+    expect(written).toContain(name)                    // nom complet (grammage conservé)
+    expect(written).not.toContain('397g GLORI...')     // plus de coupe à 20 car.
+    expect(written).toContain('-webkit-line-clamp:2')  // borné à 2 lignes
+    // baseOpts = medium (fontSize 12) → nom long réduit à 9px pour tenir.
+    expect(written).toContain('font-size:9px;font-weight:700')
+  })
+
+  it('nom court : taille pleine (pas de réduction inutile)', () => {
+    printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
+    expect(written).toContain('font-size:12px;font-weight:700')
+  })
+
   it('aucun émoji sur l’étiquette (redondant avec le produit, gris pâle en N&B)', () => {
     printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931', emoji: '🥛' }], fmt, baseOpts)
     expect(written).not.toContain('🥛') // émoji custom non imprimé
