@@ -54,6 +54,13 @@ describe('printProductLabels — impression étiquettes', () => {
     expect(written).toContain('Code-barres manquant') // mention non scannable
   })
 
+  it('⚠️ QUIET ZONES ≥10 modules (marges horizontales) — Avery', () => {
+    printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
+    const opts = jsbarcodeMock.mock.calls.at(-1)![2] as unknown as Record<string, number>
+    expect(opts.marginLeft / opts.width).toBeGreaterThanOrEqual(10)
+    expect(opts.marginRight / opts.width).toBeGreaterThanOrEqual(10)
+  })
+
   it('🟡 aucune dépendance CDN externe dans la fenêtre d’impression', () => {
     printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
     expect(written).not.toContain('cdn.jsdelivr.net')

@@ -10,7 +10,7 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
 import { lookupProductByEan } from '@/lib/productLookup'
 import { useModalFocus } from '@/hooks/useModalFocus'
-import { normalizeBarcode, isValidBarcode, barcodeFormat, generateEAN13 } from '@/lib/barcode'
+import { normalizeBarcode, isValidBarcode, barcodeFormat, generateEAN13, quietZonePx } from '@/lib/barcode'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -65,7 +65,7 @@ export function BarcodeVignette({ value, lang }: { value: string; lang: string }
           fontSize: 13,
           textMargin: 3,
           marginTop: 2, marginBottom: 0,   // blanc vertical resserré (décoratif)
-          marginLeft: 20, marginRight: 20, // ⚠️ QUIET ZONES ~11 modules (20/1.8) — NE PAS RÉDUIRE (GS1 : gauche 11, droite 7)
+          marginLeft: quietZonePx(1.8), marginRight: quietZonePx(1.8), // ⚠️ QUIET ZONES 11 modules (source unique) — NE PAS RÉDUIRE
           background: '#FFFFFF',
           lineColor: '#000000',
         })

@@ -1,5 +1,5 @@
 import JsBarcode from 'jsbarcode'
-import { barcodeFormat, normalizeBarcode } from '@/lib/barcode'
+import { barcodeFormat, normalizeBarcode, quietZonePx } from '@/lib/barcode'
 
 // ── Étiquettes THERMIQUES 40×30 mm (Chantier A, PR4) ─────────────────────────
 // À l'UNITÉ (à la création/réception), en COEXISTENCE avec la planche A4 Avery
@@ -33,9 +33,14 @@ function barcodePng(barcode: string | undefined): string | null {
   if (!format) return null
   try {
     const canvas = document.createElement('canvas')
+    // ⚠️ Quiet zones ≥10 modules (marginLeft/Right via quietZonePx) — CRITIQUE en
+    // impression (douchette caisse). width 2 → quietZonePx(2)=22 px = 11 modules.
+    // Dimension 40 mm : EAN-13 (95 mod.) + 22 quiet = 117 ; image 38 mm (marge page
+    // 1 mm) → module ≈ 0,325 mm, proche du nominal GS1 0,33 (cf. MARGIN ci-dessous).
     JsBarcode(canvas, canonical, {
       format, width: 2, height: 60, displayValue: true, fontSize: 16,
-      margin: 4, background: '#FFFFFF', lineColor: '#000000',
+      marginTop: 2, marginBottom: 2, marginLeft: quietZonePx(2), marginRight: quietZonePx(2),
+      background: '#FFFFFF', lineColor: '#000000',
     })
     return canvas.toDataURL('image/png')
   } catch {
@@ -56,7 +61,11 @@ export async function printThermalLabels(
   // orientation paysage + [40,30] → page 40 mm (large) × 30 mm (haut).
   const doc = new jsPDF({ unit: 'mm', format: [40, 30], orientation: 'landscape' })
   const W = doc.internal.pageSize.getWidth()
-  const MARGIN = 2
+  // Marge de page 1 mm (et non 2) → imgW = 38 mm → module EAN-13 ≈ 0,325 mm (proche
+  // du nominal GS1 0,33). Absorbe l'étalement d'encre thermique (barres élargies à
+  // l'impression) qui dégrade le rapport barre/espace → lecture douchette fiable
+  // du premier coup. Gabarit 40 mm conservé.
+  const MARGIN = 1
 
   const labels = products.flatMap(p => Array(Math.max(1, options.copies)).fill(p) as ThermalProduct[])
   if (labels.length === 0) return
