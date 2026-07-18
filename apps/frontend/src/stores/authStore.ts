@@ -25,7 +25,9 @@ export const ROLE_PERMISSIONS: Record<string, readonly string[] | '*'> = {
     'orders', 'suppliers', 'notifications',
   ],
   HR: [
-    'dashboard', 'hr', 'planning', 'payroll', 'notifications', 'activity',
+    // 'activity' (journal d'audit) retiré : peut contenir des actions hors-RH
+    // (ventes, paie d'autrui) → réservé MANAGER+ / ADMIN.
+    'dashboard', 'hr', 'planning', 'payroll', 'notifications',
   ],
 }
 

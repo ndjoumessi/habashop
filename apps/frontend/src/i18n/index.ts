@@ -30,6 +30,8 @@ const fr: TranslationMap = {
   nav_sec_main: 'Principal', nav_sec_mgmt: 'Gestion', nav_sec_hr: 'RH & Planning',
   nav_sec_finance: 'Finance', nav_sec_growth: 'Croissance', nav_sec_system: 'Système',
   nav_sec_admin: 'Administration',
+  nav_sec_daily: 'Quotidien', nav_sec_sell: 'Vendre', nav_sec_manage: 'Gérer',
+  nav_sec_analyze: 'Analyser', nav_sec_configure: 'Configurer',
 
   // KPIs (compat)
   kpi_sales_today: 'Ventes du jour',
@@ -687,6 +689,8 @@ const en: TranslationMap = {
   nav_sec_main: 'Main', nav_sec_mgmt: 'Management', nav_sec_hr: 'HR & Scheduling',
   nav_sec_finance: 'Finance', nav_sec_growth: 'Growth', nav_sec_system: 'System',
   nav_sec_admin: 'Administration',
+  nav_sec_daily: 'Daily', nav_sec_sell: 'Sell', nav_sec_manage: 'Manage',
+  nav_sec_analyze: 'Analyze', nav_sec_configure: 'Configure',
 
   kpi_sales_today: "Today's Sales", kpi_monthly_revenue: 'Monthly Revenue',
   kpi_employees: 'Active Employees', kpi_stock: 'Items in Stock',
@@ -1042,6 +1046,8 @@ const es: TranslationMap = {
   nav_sec_main: 'Principal', nav_sec_mgmt: 'Gestión', nav_sec_hr: 'RR. HH. y Planificación',
   nav_sec_finance: 'Finanzas', nav_sec_growth: 'Crecimiento', nav_sec_system: 'Sistema',
   nav_sec_admin: 'Administración',
+  nav_sec_daily: 'Diario', nav_sec_sell: 'Vender', nav_sec_manage: 'Gestionar',
+  nav_sec_analyze: 'Analizar', nav_sec_configure: 'Configurar',
 
   kpi_sales_today: 'Ventas del día', kpi_monthly_revenue: 'Ingresos mensuales',
   kpi_employees: 'Empleados activos', kpi_stock: 'Artículos en stock',
@@ -1398,6 +1404,8 @@ const it: TranslationMap = {
   nav_sec_main: 'Principale', nav_sec_mgmt: 'Gestione', nav_sec_hr: 'HR e Pianificazione',
   nav_sec_finance: 'Finanza', nav_sec_growth: 'Crescita', nav_sec_system: 'Sistema',
   nav_sec_admin: 'Amministrazione',
+  nav_sec_daily: 'Quotidiano', nav_sec_sell: 'Vendere', nav_sec_manage: 'Gestire',
+  nav_sec_analyze: 'Analizzare', nav_sec_configure: 'Configurare',
 
   kpi_sales_today: 'Vendite oggi', kpi_monthly_revenue: 'Fatturato mensile',
   kpi_employees: 'Dipendenti attivi', kpi_stock: 'Articoli in stock',
