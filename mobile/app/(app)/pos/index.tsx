@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   View, Text, ScrollView,
   StyleSheet, Alert, Pressable,
@@ -15,7 +15,7 @@ import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmi
 import { newIdempotencyKey } from '@/lib/idempotency'
 import type { MixedSplit } from '@/lib/paymentSplit'
 import { usePosStore } from '@/stores/posStore'
-import { useI18n, useFmt, useTheme } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme, formatAmountParts } from '@/stores/appStore'
 import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
@@ -53,6 +53,8 @@ export default function POSScreen() {
   const s = useMemo(() => makeStyles(C), [C])
   const { i, lang } = useI18n()
   const { fmt, currency, rates } = useFmt()
+  // Prix bi-ton des tuiles (montant or + devise atténuée) — stable comme `fmt`.
+  const fmtParts = useCallback((n: number) => formatAmountParts(n, currency, rates), [currency, rates])
   const { tenant } = useAuthStore()
   const { isOnline } = useNetworkStatus()
   const qc = useQueryClient()
@@ -444,6 +446,7 @@ export default function POSScreen() {
         cart={cart}
         onAdd={onAdd}
         fmt={fmt}
+        fmtParts={fmtParts}
         i={i}
         isLoading={isLoading}
         isError={isError}
@@ -565,5 +568,5 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.bg2, borderTopWidth: 1, borderTopColor: C.border,
   },
   totalBarLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
-  totalBarAmt: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.text },
+  totalBarAmt: { fontSize: FontSize.xl, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
 })

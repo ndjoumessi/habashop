@@ -1,4 +1,4 @@
-import { formatAmount } from '@/stores/appStore'
+import { formatAmount, formatAmountParts } from '@/stores/appStore'
 
 // Non-régression fuites devise (widget backgroundRefresh + libellé settings) :
 // formatAmount doit être DYNAMIQUE — jamais « F »/« FCFA » figé pour un tenant non-XOF.
@@ -27,5 +27,25 @@ describe('formatAmount — devise dynamique (partagé écrans + widget + libell�
 
   it('XAF (Afrique centrale) → FCFA aussi', () => {
     expect(formatAmount(1000, 'XAF', RATES)).toMatch(/^1\s000 FCFA$/)
+  })
+})
+
+describe('formatAmountParts — rendu bi-ton tuiles POS (maquette 01)', () => {
+  it('XOF → suffixe FCFA séparé, pas de préfixe', () => {
+    const p = formatAmountParts(2800, 'XOF', RATES)
+    expect(p.prefix).toBe('')
+    expect(p.suffix).toBe('FCFA')
+    expect(p.amount).toMatch(/^2\s800$/)
+  })
+
+  it('USD → préfixe $, suffixe vide', () => {
+    const p = formatAmountParts(1000, 'USD', RATES)
+    expect(p.prefix).toBe('$')
+    expect(p.suffix).toBe('')
+  })
+
+  it('formatAmount = préfixe+montant+suffixe (composition, sortie inchangée)', () => {
+    const p = formatAmountParts(1000, 'EUR', RATES)
+    expect(formatAmount(1000, 'EUR', RATES)).toBe(`${p.prefix}${p.amount} ${p.suffix}`)
   })
 })

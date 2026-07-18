@@ -3,8 +3,8 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet }
 import Ionicons from '@expo/vector-icons/Ionicons'
 import type { CartItem } from '@/stores/posStore'
 import type { Product } from '@/types'
-import { useTheme } from '@/stores/appStore'
-import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow } from '@/constants/theme'
+import { useTheme, type AmountParts } from '@/stores/appStore'
+import { ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha } from '@/constants/theme'
 import ErrorState from '@/components/ui/ErrorState'
 
 // ── Carte produit ────────────────────────────────
@@ -13,18 +13,24 @@ import ErrorState from '@/components/ui/ErrorState'
 // le produit dont la quantité change re-rend. (useTheme re-rend de toute façon
 // chaque carte au changement de thème — abonnement store interne.)
 const ProductCard = memo(function ProductCard({
-  product, qtyInCart, fmt, onAdd,
+  product, qtyInCart, fmt, fmtParts, onAdd,
 }: {
   product: Product; qtyInCart: number
   fmt: (n: number) => string
+  fmtParts: (n: number) => AmountParts
   onAdd: (product: Product) => void
 }) {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
-  const out = (product.stockQty ?? 0) <= 0
+  const stock = product.stockQty ?? 0
+  const out = stock <= 0
+  // Stock bas (maquette 01) : bordure + point d'alerte quand stock ≤ seuil (mais > 0).
+  const low = !out && (product.stockMin ?? 0) > 0 && stock <= (product.stockMin ?? 0)
+  // Prix bi-ton : montant en or + devise atténuée (séparés), fidèle à la maquette.
+  const price = fmtParts(product.sellPrice ?? 0)
   return (
     <TouchableOpacity
-      style={[s.prodCard, out && s.prodCardOut]}
+      style={[s.prodCard, low && s.prodCardLow, out && s.prodCardOut]}
       activeOpacity={0.7}
       disabled={out}
       onPress={() => onAdd(product)}
@@ -42,9 +48,13 @@ const ProductCard = memo(function ProductCard({
           <Ionicons name="close" size={11} color={C.white} />
         </View>
       )}
+      {low && <View style={s.prodLowDot} />}
       <Text style={s.prodEmoji}>{product.emoji ?? '📦'}</Text>
       <Text style={s.prodName} numberOfLines={2}>{product.name?.trim()}</Text>
-      <Text style={s.prodPrice}>{fmt(product.sellPrice ?? 0)}</Text>
+      <Text style={s.prodPrice}>
+        {price.prefix}{price.amount}
+        {price.suffix ? <Text style={s.prodPriceCur}> {price.suffix}</Text> : null}
+      </Text>
     </TouchableOpacity>
   )
 })
@@ -54,6 +64,7 @@ interface POSProductGridProps {
   cart:      CartItem[]
   onAdd:     (product: Product) => void
   fmt:       (n: number) => string
+  fmtParts:  (n: number) => AmountParts
   i:         (fr: string, en: string, es: string, it: string) => string
   isLoading: boolean
   isError:   boolean
@@ -61,7 +72,7 @@ interface POSProductGridProps {
 }
 
 export default function POSProductGrid({
-  filtered, cart, onAdd, fmt, i, isLoading, isError, onRetry,
+  filtered, cart, onAdd, fmt, fmtParts, i, isLoading, isError, onRetry,
 }: POSProductGridProps) {
   const { C } = useTheme()
   const s = useMemo(() => makeStyles(C), [C])
@@ -105,6 +116,7 @@ export default function POSProductGrid({
           product={item}
           qtyInCart={qtyByProductId.get(item.id) ?? 0}
           fmt={fmt}
+          fmtParts={fmtParts}
           onAdd={handleAdd}
         />
       )}
@@ -123,9 +135,12 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     position: 'relative', ...Shadow.sm,
   },
   prodCardOut: { opacity: 0.45 },
+  prodCardLow: { borderColor: withAlpha(C.warn, 0.35) },
+  prodLowDot: { position: 'absolute', top: 7, right: 7, width: 7, height: 7, borderRadius: 4, backgroundColor: C.warn, zIndex: 2 },
   prodEmoji: { fontSize: 30 },
   prodName: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text, textAlign: 'center' },
-  prodPrice: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.accent },
+  prodPrice: { fontSize: FontSize.sm, fontFamily: 'JetBrainsMono_700Bold', color: C.accent, textAlign: 'center' },
+  prodPriceCur: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_700Bold', color: withAlpha(C.accent, 0.62) },
   prodBadge: {
     position: 'absolute', top: 5, right: 5, minWidth: 20, height: 20, paddingHorizontal: 5,
     borderRadius: 10, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', zIndex: 2,
