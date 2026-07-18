@@ -18,35 +18,41 @@ type NavSection = { sectionKey: string }
 type NavItem    = { path: string; key: string; Icon: LucideIcon; badge?: string; badgeTag?: boolean }
 type NavEntry   = NavSection | NavItem
 
-const NAV: NavEntry[] = [
-  { sectionKey: 'nav_sec_main' },
-  { path: '/app/dashboard', key: 'nav_dashboard', Icon: LayoutDashboard },
+// Zone QUOTIDIENNE : les 2-3 écrans ouverts chaque jour. Épinglée en tête et
+// rendue visuellement distincte (bloc surélevé) — role-filtrée comme le reste.
+const DAILY: NavItem[] = [
   { path: '/app/pos',       key: 'nav_pos',       Icon: ShoppingCart },
+  { path: '/app/dashboard', key: 'nav_dashboard', Icon: LayoutDashboard },
   { path: '/app/stock',     key: 'nav_stock',     Icon: Archive },
-  { sectionKey: 'nav_sec_mgmt' },
+]
+
+// Refonte : 7 groupes → 4 groupes d'INTENTION (Vendre / Gérer / Analyser /
+// Configurer). Système + Administration fusionnés dans « Configurer » (fin du
+// recouvrement Gestion/Système/Administration). Badges factices supprimés
+// (Commandes « 4 », Activité « 12 ») ; seul Stock garde un badge de données réelles.
+const NAV: NavEntry[] = [
+  { sectionKey: 'nav_sec_sell' },
   { path: '/app/customers',     key: 'nav_customers',     Icon: Users },
   { path: '/app/subscriptions', key: 'nav_subscriptions', Icon: RefreshCw },
+  { path: '/app/marketing',     key: 'nav_marketing',     Icon: Megaphone },
+  { sectionKey: 'nav_sec_manage' },
   { path: '/app/suppliers',     key: 'nav_suppliers',     Icon: Truck },
-  { path: '/app/orders',        key: 'nav_orders',        Icon: ClipboardList, badge: '4' },
-  { sectionKey: 'nav_sec_hr' },
-  { path: '/app/hr',        key: 'nav_hr',        Icon: UserCog },
-  { path: '/app/planning',  key: 'nav_planning',  Icon: Calendar },
-  { path: '/app/payroll',   key: 'nav_payroll',   Icon: Wallet },
-  { sectionKey: 'nav_sec_finance' },
+  { path: '/app/orders',        key: 'nav_orders',        Icon: ClipboardList },
+  { path: '/app/hr',            key: 'nav_hr',            Icon: UserCog },
+  { path: '/app/planning',      key: 'nav_planning',      Icon: Calendar },
+  { path: '/app/payroll',       key: 'nav_payroll',       Icon: Wallet },
+  { sectionKey: 'nav_sec_analyze' },
   { path: '/app/expenses',  key: 'nav_expenses',  Icon: Receipt },
   { path: '/app/reports',   key: 'nav_reports',   Icon: BarChart2 },
   { path: '/app/forecasts', key: 'nav_forecasts', Icon: TrendingUp },
   { path: '/app/goals',     key: 'nav_goals',     Icon: Target },
-  { sectionKey: 'nav_sec_growth' },
-  { path: '/app/marketing', key: 'nav_marketing', Icon: Megaphone },
-  { path: '/app/ai',        key: 'nav_ai',        Icon: Bot, badge: 'AI', badgeTag: true },
-  { sectionKey: 'nav_sec_system' },
-  { path: '/app/settings',  key: 'nav_settings',  Icon: Settings },
-  { path: '/app/integrations',  key: 'nav_integrations',  Icon: Plug  },
+  { sectionKey: 'nav_sec_configure' },
+  { path: '/app/ai',            key: 'nav_ai',            Icon: Bot, badge: 'AI', badgeTag: true },
+  { path: '/app/settings',      key: 'nav_settings',      Icon: Settings },
+  { path: '/app/integrations',  key: 'nav_integrations',  Icon: Plug },
   { path: '/app/api-docs',      key: 'nav_api_docs',      Icon: Code2 },
-  { sectionKey: 'nav_sec_admin' },
-  { path: '/app/users',     key: 'nav_users',     Icon: ShieldCheck },
-  { path: '/app/activity',  key: 'nav_activity',  Icon: Activity, badge: '12' },
+  { path: '/app/users',         key: 'nav_users',         Icon: ShieldCheck },
+  { path: '/app/activity',      key: 'nav_activity',      Icon: Activity },
 ]
 
 export default function Sidebar() {
@@ -160,6 +166,38 @@ export default function Sidebar() {
 
       {/* Navigation (filtered by role) */}
       <nav role="navigation" aria-label={lang === 'en' ? 'Main navigation' : lang === 'es' ? 'Navegación principal' : lang === 'it' ? 'Navigazione principale' : 'Navigation principale'} style={{ flex: 1, overflowY: 'auto', padding: '6px 0 8px' }}>
+        {/* Zone QUOTIDIENNE épinglée — actions du jour, visuellement distinctes */}
+        {(() => {
+          const daily = DAILY.filter(it => canAccess(user?.role, it.path.split('/').pop() || ''))
+          if (daily.length === 0) return null
+          return (
+            <div className="nav-daily" style={{ margin: collapsed ? '2px 8px 6px' : '2px 10px 8px', padding: collapsed ? '4px' : '6px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12 }}>
+              {!collapsed && (
+                <div className="nav-section" style={{ padding: '2px 6px 4px' }}>
+                  <span>{t('nav_sec_daily')}</span>
+                </div>
+              )}
+              {daily.map(item => {
+                const { Icon } = item
+                const dynBadge = item.path === '/app/stock' && pendingTransfers > 0 ? String(pendingTransfers) : undefined
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}${collapsed ? ' collapsed' : ''}`}
+                    aria-label={t(item.key)}
+                    title={collapsed ? t(item.key) : undefined}
+                  >
+                    <div className="nav-icon-wrap"><Icon size={18} /></div>
+                    {!collapsed && <span className="nav-label" style={{ fontWeight: 'var(--fw-semibold)' }}>{t(item.key)}</span>}
+                    {!collapsed && dynBadge && <span className="nav-badge">{dynBadge}</span>}
+                    {collapsed && dynBadge && <span className="nav-dot" />}
+                  </NavLink>
+                )
+              })}
+            </div>
+          )
+        })()}
         {(() => {
           // Walk NAV: only emit a section header if at least one following item
           // (before the next section) is allowed by the current role.
