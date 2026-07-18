@@ -1,0 +1,68 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+// Mock jsPDF : instance capturant les appels de dessin/pages.
+const { pdfInst, jsPDFCtor } = vi.hoisted(() => {
+  const inst = {
+    internal: { pageSize: { getWidth: () => 40, getHeight: () => 30 } },
+    setFont: vi.fn(), setFontSize: vi.fn(), setTextColor: vi.fn(),
+    text: vi.fn(), addImage: vi.fn(), addPage: vi.fn(), autoPrint: vi.fn(),
+    output: vi.fn(() => 'blob:fake-url'), save: vi.fn(),
+  }
+  return { pdfInst: inst, jsPDFCtor: vi.fn(function () { return inst }) }
+})
+vi.mock('jspdf', () => ({ jsPDF: jsPDFCtor }))
+// Mock jsbarcode : no-op (le canvas est stubé pour toDataURL).
+vi.mock('jsbarcode', () => ({ default: vi.fn() }))
+
+import { printThermalLabels } from '@/utils/thermalLabel'
+
+const fmt = (n: number) => `${n} F`
+const baseOpts = { showPrice: true, showSku: true, showBarcode: true, copies: 1, shopName: 'Boutique', lang: 'fr' }
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,AAA')
+  vi.spyOn(window, 'open').mockReturnValue({} as unknown as Window)
+})
+
+describe('printThermalLabels — PDF 40×30 mm', () => {
+  it('page au format EXACT 40×30 mm (paysage) + autoPrint + ouverture', async () => {
+    await printThermalLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
+    expect(jsPDFCtor).toHaveBeenCalledWith(expect.objectContaining({ unit: 'mm', format: [40, 30], orientation: 'landscape' }))
+    expect(pdfInst.autoPrint).toHaveBeenCalled()
+    expect(pdfInst.output).toHaveBeenCalledWith('bloburl')
+    expect(window.open).toHaveBeenCalled()
+  })
+
+  it('code-barres rendu en image (EAN-13 valide) → addImage, pas de « Code interne »', async () => {
+    await printThermalLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
+    expect(pdfInst.addImage).toHaveBeenCalledWith('data:image/png;base64,AAA', 'PNG', expect.any(Number), expect.any(Number), expect.any(Number), expect.any(Number))
+    const texts = pdfInst.text.mock.calls.map(c => c[0])
+    expect(texts).not.toContain('Code interne')
+  })
+
+  it('sans code fabricant → CODE128 sur SKU + mention « Code interne »', async () => {
+    await printThermalLabels([{ name: 'Vrac', sku: 'PRD-0004', price: 300, barcode: '' }], fmt, baseOpts)
+    expect(pdfInst.addImage).toHaveBeenCalled()
+    const texts = pdfInst.text.mock.calls.map(c => c[0])
+    expect(texts).toContain('Code interne')
+  })
+
+  it('copies = une page par étiquette (produits × copies)', async () => {
+    await printThermalLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, { ...baseOpts, copies: 3 })
+    // 3 étiquettes → 1re page implicite + 2 addPage.
+    expect(pdfInst.addPage).toHaveBeenCalledTimes(2)
+    expect(pdfInst.addPage).toHaveBeenCalledWith([40, 30], 'landscape')
+  })
+
+  it('popup bloqué → repli téléchargement', async () => {
+    ;(window.open as unknown as { mockReturnValue: (v: unknown) => void }).mockReturnValue(null)
+    await printThermalLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
+    expect(pdfInst.save).toHaveBeenCalled()
+  })
+
+  it('aucun produit → ne génère rien', async () => {
+    await printThermalLabels([], fmt, baseOpts)
+    expect(pdfInst.autoPrint).not.toHaveBeenCalled()
+  })
+})

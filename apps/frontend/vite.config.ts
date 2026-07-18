@@ -32,9 +32,9 @@ export default defineConfig(({ mode }) => {
       manifest: false, // use public/manifest.json
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        // Gros chunks lazy (recharts, @zxing/jsbarcode/qrcode, html2canvas) : exclus du
-        // precache (ils plombaient ~1 Mo) — servis à la demande via runtimeCaching ci-dessous.
-        globIgnores: ['**/assets/charts-*.js', '**/assets/barcode-*.js', '**/assets/canvas-*.js'],
+        // Gros chunks lazy (recharts, @zxing/jsbarcode/qrcode, html2canvas, jspdf) : exclus
+        // du precache (ils plombaient ~1 Mo) — servis à la demande via runtimeCaching ci-dessous.
+        globIgnores: ['**/assets/charts-*.js', '**/assets/barcode-*.js', '**/assets/canvas-*.js', '**/assets/pdf-*.js'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => {
           {
             // Chunks lazy hors precache (cf. globIgnores) : noms hashés → immuables,
             // CacheFirst = 1 seul fetch réseau puis servi depuis le cache (offline inclus).
-            urlPattern: /\/assets\/(charts|barcode|canvas)-[^/]+\.js$/,
+            urlPattern: /\/assets\/(charts|barcode|canvas|pdf)-[^/]+\.js$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'lazy-chunks-cache',
@@ -119,6 +119,17 @@ export default defineConfig(({ mode }) => {
           // html2canvas — uniquement export PNG carte fidélité, hors precache PWA
           if (id.includes('node_modules/html2canvas')) {
             return 'canvas'
+          }
+          // jsPDF + ses deps lourdes (canvg 150 Ko, fast-png, fflate, dompurify) —
+          // uniquement étiquettes thermiques 40×30 (import dynamique), hors precache PWA.
+          if (
+            id.includes('node_modules/jspdf') ||
+            id.includes('node_modules/canvg') ||
+            id.includes('node_modules/fast-png') ||
+            id.includes('node_modules/fflate') ||
+            id.includes('node_modules/dompurify')
+          ) {
+            return 'pdf'
           }
           // Recharts / d3 — lazy via les routes Dashboard/Reports uniquement
           if (id.includes('recharts') || id.includes('node_modules/d3-')) {
