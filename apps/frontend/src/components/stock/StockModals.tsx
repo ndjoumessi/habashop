@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useMemo, useEffect, useRef, type CSSProperties } from 'react'
-import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy, Trash2, AlertTriangle } from 'lucide-react'
+import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy, Check, Trash2, AlertTriangle } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
 import { t, useAppStore, formatInCurrency } from '@/stores/appStore'
@@ -38,34 +38,66 @@ interface StockModalsProps {
   onOpenBackfill?: () => void
 }
 
-function BarcodeDisplay({ value }: { value: string }) {
+// Vignette code-barres = UNE seule surface blanche « étiquette » (barres sombres
+// obligatoires pour la lisibilité scanner), cliquable pour copier le code.
+// ⚠️ QUIET ZONES : les marges horizontales du SVG (marginLeft/Right) portent le
+// silence latéral EAN-13 (≥10 modules = 10×1.8 ≈ 18 px) — BAKÉES dans le SVG donc
+// jamais rognées par le CSS. NE PAS RÉDUIRE. Le blanc vertical est décoratif → resserré.
+// Surface blanche intentionnelle (comme le code lui-même) → couleurs internes FIXES
+// (gris neutres), pas de token thème qui serait illisible sur blanc en mode sombre.
+export function BarcodeVignette({ value, lang }: { value: string; lang: string }) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const [copied, setCopied] = useState(false)
+  const i = (fr: string, en: string, es: string, it: string) =>
+    lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
+  const canonical = normalizeBarcode(value)            // UPC-A → EAN-13
+  const format = barcodeFormat(canonical)              // 'EAN13' | 'EAN8' | null
   useEffect(() => {
-    const format = barcodeFormat(value) // EAN13 | EAN8 (UPC-A déjà canonicalisé en EAN-13)
     if (svgRef.current && format) {
       try {
-        // ⚠️ Barres NOIRES sur fond BLANC (jamais var(--text)/transparent : en thème
-        // sombre ça donne un code inversé que les lecteurs physiques refusent).
-        // displayValue:true + quiet zones blanches = code conforme GS1, scannable.
-        JsBarcode(svgRef.current, value, {
+        JsBarcode(svgRef.current, canonical, {
           format,
           width: 1.8,
-          height: 52,
-          displayValue: true,    // chiffres EAN-13 affichés sous les barres
-          fontSize: 13,
-          font: 'monospace',     // chasse fixe (proche OCR-B) → chiffres réguliers
+          height: 46,
+          displayValue: true,      // chiffres (groupement EAN-13 standard) sous les barres
+          font: 'monospace',       // chasse fixe (proche OCR-B)
           fontOptions: 'bold',
-          textMargin: 4,
-          margin: 4,             // quiet zones resserrées (slim)
+          fontSize: 13,
+          textMargin: 3,
+          marginTop: 2, marginBottom: 0,   // blanc vertical resserré (décoratif)
+          marginLeft: 20, marginRight: 20, // ⚠️ QUIET ZONES ~11 modules (20/1.8) — NE PAS RÉDUIRE (GS1 : gauche 11, droite 7)
           background: '#FFFFFF',
           lineColor: '#000000',
         })
       } catch {}
     }
-  }, [value])
-  // Dimensions naturelles du barcode (pas de width:100% qui l'étirerait) ;
-  // centré dans la carte blanche, le container fit-content s'adapte à cette taille.
-  return <svg ref={svgRef} style={{ display: 'block', margin: '0 auto', borderRadius: 4, maxWidth: '100%' }} />
+  }, [canonical, format])
+  if (!format) return null
+  const copy = () => {
+    navigator.clipboard.writeText(canonical)
+      .then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1600) })
+      .catch(() => {})
+  }
+  return (
+    <button type="button" onClick={copy}
+      aria-label={`${i('Copier le code-barres', 'Copy the barcode', 'Copiar el código de barras', 'Copia il codice a barre')} ${canonical}`}
+      style={{
+        position: 'relative', display: 'block', width: '100%', minHeight: 44, cursor: 'pointer',
+        background: '#FFFFFF', border: '1px solid var(--border)', borderRadius: 10, boxShadow: 'var(--sh-sm)',
+        padding: '8px 14px 6px', fontFamily: 'var(--font)', transition: 'box-shadow .15s',
+      }}>
+      {/* Badge format détecté (surface blanche → gris fixe discret) */}
+      <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 10, fontWeight: 'var(--fw-semibold)', letterSpacing: '.4px', color: '#9CA3AF' }}>
+        {format === 'EAN8' ? 'EAN-8' : 'EAN-13'}
+      </span>
+      <svg ref={svgRef} style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }} />
+      {/* Affordance copie — chiffres NON répétés (déjà sous les barres) */}
+      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 2, fontSize: 11, fontWeight: 'var(--fw-semibold)', color: copied ? '#059669' : '#6B7280' }}>
+        {copied ? <Check size={12} /> : <Copy size={12} />}
+        {copied ? i('Copié', 'Copied', 'Copiado', 'Copiato') : i('Copier', 'Copy', 'Copiar', 'Copia')}
+      </span>
+    </button>
+  )
 }
 
 export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection, onOpenBackfill }: StockModalsProps) {
@@ -344,6 +376,10 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         <Camera size={17} /> {i('Scanner', 'Scan', 'Escanear', 'Scansiona')}
                       </button>
                     </div>
+                    {/* Aperçu vignette dès qu'un code valide est saisi/scanné (« ET édition »). */}
+                    {isValidBarcode(normalizeBarcode(form.barcode)) && (
+                      <div style={{ marginTop:10 }}><BarcodeVignette value={form.barcode} lang={lang} /></div>
+                    )}
                     {/* Warning code-barres manquant/invalide (bordure rouge + blocage au save conservés).
                         En édition, le bouton Scanner est déjà à côté → bandeau non cliquable. */}
                     {renderEanWarning()}
@@ -372,25 +408,8 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                 ) : (
                   <div>
                     <label style={{ display:'block', fontSize:11, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.6px', color:'var(--text3)', marginBottom:5 }}>{i('CODE-BARRES', 'BARCODE', 'CÓDIGO DE BARRAS', 'CODICE A BARRE')}</label>
-                    {form.barcode && isValidBarcode(form.barcode) ? (
-                      // Conteneur intégré : surface bg3 englobant l'étiquette (blanc OBLIGATOIRE
-                      // pour la lisibilité scanner) + numéro EAN + bouton Copier bien visible.
-                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, padding:'14px 12px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10 }}>
-                        <div style={{ maxWidth:'100%', width:'fit-content', padding:'4px 6px', background:'#FFFFFF', border:'1px solid var(--border)', borderRadius:6, boxShadow:'var(--sh-sm)' }}>
-                          <BarcodeDisplay value={form.barcode} />
-                        </div>
-                        <button type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(form.barcode).then(() => {
-                              toast.success(lang === 'en' ? 'Copied!' : lang === 'es' ? '¡Copiado!' : lang === 'it' ? 'Copiato!' : 'Copié !')
-                            }).catch(() => {})
-                          }}
-                          title={lang === 'en' ? 'Copy' : lang === 'es' ? 'Copiar' : lang === 'it' ? 'Copia' : 'Copier'}
-                          style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 16px', minHeight:36,
-                            background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:8,
-                            color:'var(--text)', fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)',
-                            cursor:'pointer', transition:'all .15s' }}><Copy size={13} />{i('Copier', 'Copy', 'Copiar', 'Copia')} <span style={{ fontFamily:'var(--mono)', color:'var(--text3)' }}>{form.barcode}</span></button>
-                      </div>
+                    {form.barcode && isValidBarcode(normalizeBarcode(form.barcode)) ? (
+                      <BarcodeVignette value={form.barcode} lang={lang} />
                     ) : (
                       <div style={{ padding:'9px 13px', background:'transparent', border:'1px solid var(--border)', borderRadius:10, fontSize:13, minHeight:40, display:'flex', alignItems:'center' }}>
                         <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{emptyLabel}</span>
