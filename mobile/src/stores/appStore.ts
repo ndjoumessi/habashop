@@ -142,10 +142,15 @@ function localeNumber(value: number, locale: string, decimals: number): string {
 
 // Helper devise — sélectionne `currency` + convertit XOF → devise cible.
 // Les montants backend sont en XOF ; la conversion est UNIQUEMENT à l'affichage.
+// Montant décomposé : préfixe (symbole avant, ex. « $ »), nombre, suffixe (symbole
+// après, ex. « FCFA »/« € »). Permet un rendu bi-ton (montant coloré + devise
+// atténuée) fidèle aux maquettes POS, sans réinterpréter le format.
+export interface AmountParts { prefix: string; amount: string; suffix: string }
+
 // Formatteur devise PUR (hors React) — SOURCE UNIQUE de la logique symbole/décimales.
 // Réutilisé par useFmt (écrans) ET les contextes sans hook (widget background, libellés
-// de taux) → plus de « FCFA »/« F » codés en dur ailleurs. `rates` par défaut = cachedRates.
-export function formatAmount(amountXOF: number, currency: string, rates: Record<string, number> = cachedRates): string {
+// de taux, tuiles POS) → plus de « FCFA »/« F » codés en dur ailleurs.
+export function formatAmountParts(amountXOF: number, currency: string, rates: Record<string, number> = cachedRates): AmountParts {
   const n = amountXOF ?? 0
   const converted = convertFromXOF(n, currency, rates)
 
@@ -153,18 +158,24 @@ export function formatAmount(amountXOF: number, currency: string, rates: Record<
     case 'XOF':
     case 'XAF':
       // Franc CFA — pas de décimales, symbole FCFA
-      return `${localeNumber(Math.round(converted), 'fr-FR', 0)} FCFA`
+      return { prefix: '', amount: localeNumber(Math.round(converted), 'fr-FR', 0), suffix: 'FCFA' }
     case 'EUR':
-      return `${localeNumber(converted, 'fr-FR', 2)} €`
+      return { prefix: '', amount: localeNumber(converted, 'fr-FR', 2), suffix: '€' }
     case 'USD':
-      return `$${localeNumber(converted, 'en-US', 2)}`
+      return { prefix: '$', amount: localeNumber(converted, 'en-US', 2), suffix: '' }
     case 'GBP':
-      return `£${localeNumber(converted, 'en-GB', 2)}`
+      return { prefix: '£', amount: localeNumber(converted, 'en-GB', 2), suffix: '' }
     case 'CAD':
-      return `CA$${localeNumber(converted, 'fr-CA', 2)}`
+      return { prefix: 'CA$', amount: localeNumber(converted, 'fr-CA', 2), suffix: '' }
     default:
-      return `${localeNumber(Math.round(converted), 'fr-FR', 0)} ${currency}`
+      return { prefix: '', amount: localeNumber(Math.round(converted), 'fr-FR', 0), suffix: currency }
   }
+}
+
+// Chaîne complète (préfixe + montant + suffixe) — sortie inchangée vs avant.
+export function formatAmount(amountXOF: number, currency: string, rates: Record<string, number> = cachedRates): string {
+  const p = formatAmountParts(amountXOF, currency, rates)
+  return `${p.prefix}${p.amount}${p.suffix ? ' ' + p.suffix : ''}`
 }
 
 export function useFmt() {
