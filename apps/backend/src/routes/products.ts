@@ -5,6 +5,32 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { validatePriceTiers } from '../utils/pricing'
+import { isValidEAN13, normalizeBarcode } from '../lib/barcode'
+
+// Valide un code-barres (EAN-13 + unicité par tenant) et renvoie sa forme
+// normalisée. `excludeId` : produit à ignorer dans le contrôle de doublon (PUT).
+// `error` renseigné ⇒ échec (le handler traduit en 400/409).
+interface BarcodeCheck { barcode: string; error?: { code: 400 | 409; message: string } }
+async function checkBarcode(
+  db: typeof prisma,
+  tenantId: string,
+  raw: unknown,
+  excludeId?: string,
+): Promise<BarcodeCheck> {
+  const barcode = normalizeBarcode(raw)
+  if (!barcode) return { barcode: '' } // pas de code-barres = valide
+  if (!isValidEAN13(barcode)) {
+    return { barcode, error: { code: 400, message: 'Code-barres invalide : EAN-13 attendu (13 chiffres, clé de contrôle correcte)' } }
+  }
+  const dup = await db.product.findFirst({
+    where: { tenantId, barcode, deletedAt: null, ...(excludeId ? { id: { not: excludeId } } : {}) },
+    select: { name: true },
+  })
+  if (dup) {
+    return { barcode, error: { code: 409, message: `Ce code-barres est déjà utilisé par « ${dup.name} »` } }
+  }
+  return { barcode }
+}
 
 // ── Schémas (item 6) ─────────────────────────────────────────────────────────
 const ID_PARAMS = z.object({ id: z.string().min(1) })
@@ -96,6 +122,9 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     }
     const tiersOk = tiersResult as { ok: true; tiers: { minQty: number; price: number; label?: string }[] }
 
+    const bc = await checkBarcode(prisma, tenantId, barcode)
+    if (bc.error) return reply.code(bc.error.code).send({ error: bc.error.message, code: bc.error.code === 409 ? 'DUPLICATE_BARCODE' : 'INVALID_BARCODE' })
+
     // SKU séquentiel par tenant (inclut soft-deleted pour éviter les collisions de réutilisation).
     const count = await prisma.product.count({ where: { tenantId } })
     const generatedSku = `PRD-${String(count + 1).padStart(4, '0')}`
@@ -115,7 +144,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
           emoji: emoji || '📦',
           taxRate: taxRate || 18,
           description: description || '',
-          barcode: barcode || '',
+          barcode: bc.barcode,
           isActive: isActive !== false,
           wholesalePrice: wholesalePrice || null,
           semiWholesalePrice: semiWholesalePrice || null,
@@ -149,6 +178,12 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       if (!r.ok) return reply.code(400).send({ error: `Paliers invalides : ${(r as { error: string }).error}` })
       const ok = r as { ok: true; tiers: { minQty: number; price: number; label?: string }[] }
       ;(data as any).priceTiers = ok.tiers.length ? ok.tiers : null
+    }
+    // Si barcode présent : EAN-13 valide + unique par tenant (hors soi-même).
+    if (data.barcode !== undefined) {
+      const bc = await checkBarcode(prisma, tenantId, data.barcode, id)
+      if (bc.error) return reply.code(bc.error.code).send({ error: bc.error.message, code: bc.error.code === 409 ? 'DUPLICATE_BARCODE' : 'INVALID_BARCODE' })
+      data.barcode = bc.barcode
     }
     const updated = await prisma.product.update({ where: { id, tenantId }, data: data as any })
     invalidateTenantCache(tenantId).catch(() => {})
