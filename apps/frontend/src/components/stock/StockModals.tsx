@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useMemo, useEffect, useRef } from 'react'
+import { lazy, Suspense, useState, useMemo, useEffect, useRef, type CSSProperties } from 'react'
 import { X, Eye, Pencil, Camera, Tag, Printer, Wand2, Search, Copy, Trash2, AlertTriangle } from 'lucide-react'
 import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
@@ -90,12 +90,32 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   // Code-barres manquant (vide) OU non valide → bandeau warning « scanner l'emballage ».
   // Disparaît dès qu'un code valide (EAN-13/EAN-8, UPC-A canonicalisé) est renseigné.
   const eanMissing = !isValidBarcode(normalizeBarcode(form.barcode ?? ''))
-  const eanWarning = eanMissing ? (
-    <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:8, background:'color-mix(in srgb, var(--warn) 10%, transparent)', border:'1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius:6, padding:'8px 10px', fontSize:12, color:'var(--warn)' }}>
-      <AlertTriangle size={15} style={{ color:'var(--warn)', flexShrink:0 }} />
-      <span>{i("Aucun code-barres — scannez l'emballage pour l'ajouter", 'No barcode — scan the packaging to add it', 'Sin código de barras — escanea el envase para añadirlo', 'Nessun codice a barre — scansiona la confezione per aggiungerlo')}</span>
-    </div>
-  ) : null
+  // `onActivate` fourni (mode visualisation) → l'alerte devient un BOUTON : un clic
+  // bascule en édition ET ouvre le scanner (le hint ne suggère plus un geste
+  // indisponible sur l'écran). Sans onActivate (mode édition) → simple bandeau, le
+  // bouton Scanner étant déjà à côté.
+  const renderEanWarning = (onActivate?: () => void) => {
+    if (!eanMissing) return null
+    const baseStyle: CSSProperties = { marginTop:8, display:'flex', alignItems:'center', gap:8, background:'color-mix(in srgb, var(--warn) 10%, transparent)', border:'1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius:6, padding:'8px 10px', fontSize:12, color:'var(--warn)' }
+    const label = i("Aucun code-barres — scannez l'emballage pour l'ajouter", 'No barcode — scan the packaging to add it', 'Sin código de barras — escanea el envase para añadirlo', 'Nessun codice a barre — scansiona la confezione per aggiungerlo')
+    if (!onActivate) {
+      return (
+        <div style={baseStyle}>
+          <AlertTriangle size={15} style={{ color:'var(--warn)', flexShrink:0 }} />
+          <span>{label}</span>
+        </div>
+      )
+    }
+    return (
+      <button type="button" onClick={onActivate}
+        aria-label={i("Ajouter un code-barres en scannant l'emballage", 'Add a barcode by scanning the packaging', 'Añadir un código escaneando el envase', 'Aggiungi un codice scansionando la confezione')}
+        style={{ ...baseStyle, width:'100%', cursor:'pointer', fontFamily:'var(--font)', textAlign:'left' }}>
+        <AlertTriangle size={15} style={{ color:'var(--warn)', flexShrink:0 }} />
+        <span style={{ flex:1 }}>{label}</span>
+        <Camera size={15} style={{ color:'var(--warn)', flexShrink:0 }} />
+      </button>
+    )
+  }
 
   // ── Auto-remplissage Open Food Facts (frontend, sans clé) ──────────────────
   const UNIT_OPTIONS = ['unité', 'kg', 'g', 'litre', 'ml', 'carton', 'sac', 'boîte', 'palette', 'douzaine']
@@ -322,8 +342,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         <Camera size={17} /> {i('Scanner', 'Scan', 'Escanear', 'Scansiona')}
                       </button>
                     </div>
-                    {/* Warning code-barres manquant/invalide (bordure rouge + blocage au save conservés) */}
-                    {eanWarning}
+                    {/* Warning code-barres manquant/invalide (bordure rouge + blocage au save conservés).
+                        En édition, le bouton Scanner est déjà à côté → bandeau non cliquable. */}
+                    {renderEanWarning()}
                     {/* Second recours : générer un code interne si pas de code fabricant à scanner. */}
                     <button type="button"
                       onClick={() => {
@@ -373,8 +394,9 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                         <span style={{ color:'var(--text4)', fontStyle:'italic', fontSize:12 }}>{emptyLabel}</span>
                       </div>
                     )}
-                    {/* Warning EAN manquant — visible aussi en mode visualisation */}
-                    {eanWarning}
+                    {/* Warning EAN manquant — ACTIONNABLE en visualisation : clic → édition + scanner
+                        (un geste au lieu de trois ; pas de scan accessible autrement ici). */}
+                    {renderEanWarning(() => { setProductEditMode(true); setShowScanner(true) })}
                   </div>
                 )}
                 <ViewField label={i('DESCRIPTION', 'DESCRIPTION', 'DESCRIPCIÓN', 'DESCRIZIONE')} value={form.description||''} editing={productEditMode} emptyLabel={emptyLabel} multiline>
