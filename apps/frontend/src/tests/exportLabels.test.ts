@@ -45,10 +45,13 @@ describe('printProductLabels — impression étiquettes', () => {
     expect(jsbarcodeMock).toHaveBeenCalledWith(expect.anything(), '0036000291452', expect.objectContaining({ format: 'EAN13' }))
   })
 
-  it('sans code fabricant : CODE128 sur le SKU + badge « Code interne »', () => {
+  it('(b) sans code EAN : AUCUN code scannable imprimé (plus de CODE128-sur-SKU) + mention', () => {
     printProductLabels([{ name: 'Vrac', sku: 'PRD-0004', price: 300, barcode: '' }], fmt, baseOpts)
-    expect(jsbarcodeMock).toHaveBeenCalledWith(expect.anything(), 'PRD-0004', expect.objectContaining({ format: 'CODE128' }))
-    expect(written).toContain('Code interne')
+    // Aucun appel JsBarcode (ni EAN ni CODE128) pour un produit sans code valide.
+    expect(jsbarcodeMock).not.toHaveBeenCalled()
+    expect(written).not.toContain('CODE128')
+    expect(written).not.toContain('Code interne') // plus de badge trompeur
+    expect(written).toContain('Code-barres manquant') // mention non scannable
   })
 
   it('🟡 aucune dépendance CDN externe dans la fenêtre d’impression', () => {
