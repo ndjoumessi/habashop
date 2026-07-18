@@ -16,6 +16,16 @@ export function computePosVat(
   return { totalHT: subtotalAfterDiscount, tva, total: subtotalAfterDiscount + tva }
 }
 
+/**
+ * Prix barré (référence) affiché UNIQUEMENT s'il dépasse strictement le prix effectif —
+ * c.-à-d. quand un vrai écart existe (tarif grossiste/demi-gros distinct, ou promo).
+ * Égalité (produit sans tarif de gros → fallback sur le prix détail) → un seul montant,
+ * jamais « 2 800 2 800 FCFA ». Pur/testable ; l'affichage seul, aucun calcul de prix.
+ */
+export function showStrikePrice(referencePrice: number, effectivePrice: number): boolean {
+  return referencePrice > effectivePrice
+}
+
 export const CATS = [
   { id: 'all',     label: 'Tous' },
   { id: 'cereals', label: 'Céréales' },

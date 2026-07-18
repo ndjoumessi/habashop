@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
-import { CATS, catLabel, payModeLabel, type PosProduct, type CartItem } from '@/components/pos/posShared'
+import { CATS, catLabel, payModeLabel, showStrikePrice, type PosProduct, type CartItem } from '@/components/pos/posShared'
 
 interface POSProductGridProps {
   posTab: 'pos' | 'history'
@@ -292,6 +292,26 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
             </div>
           )}
 
+          {/* Tarif actif — mention discrète ancrée AU-DESSUS de la grille (le sélecteur est
+              loin à droite) : explique pourquoi les prix diffèrent du prix détail. Affichée
+              seulement hors Détail (le mode par défaut n'a rien à justifier). */}
+          {posTab === 'pos' && clientType !== 'retail' && (
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text2)' }}>
+              <span style={{ display: 'flex', color: 'var(--p2)' }}>
+                {clientType === 'wholesale' ? <Factory size={12} /> : <Package size={12} />}
+              </span>
+              <span>
+                {lang === 'en' ? 'Pricing' : lang === 'es' ? 'Tarifa' : lang === 'it' ? 'Tariffa' : 'Tarif'}{' '}
+                <b style={{ color: 'var(--p2)', fontWeight: 'var(--fw-semibold)' }}>
+                  {clientType === 'wholesale'
+                    ? (lang === 'en' ? 'Wholesaler' : lang === 'es' ? 'Mayorista' : lang === 'it' ? 'Grossista' : 'Grossiste')
+                    : (lang === 'en' ? 'Semi-wholesale' : lang === 'es' ? 'Semi-mayorista' : lang === 'it' ? 'Semi-ingrosso' : 'Demi-gros')}
+                </b>{' '}
+                {lang === 'en' ? 'applied' : lang === 'es' ? 'aplicada' : lang === 'it' ? 'applicata' : 'appliqué'}
+              </span>
+            </div>
+          )}
+
           {/* Grille produits — SCROLL ICI */}
           {posTab === 'pos' && <div style={{
             flex: 1,
@@ -303,16 +323,19 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
             <ResponsiveGrid min={112} gap={10} style={{ paddingBottom: 8 }}>
               {filtered.map(p => {
                 const isPromoRetail = !!p.promotion && clientType === 'retail'
+                const effective = getPrice(p)
                 return (
                   <ProductTile
                     key={p.id}
                     p={p}
                     qty={qtyById.get(p.id)}
-                    priceLabel={fmt(getPrice(p))}
-                    amount={amountLabel(getPrice(p))}
+                    priceLabel={fmt(effective)}
+                    amount={amountLabel(effective)}
                     suffix={curSuffix}
                     baseAmount={amountLabel(p.price)}
-                    showStrike={clientType !== 'retail' || isPromoRetail}
+                    // Barré seulement en cas de vrai écart (prix réf > effectif) — plus de
+                    // « 2 800 2 800 » quand le tarif de gros retombe sur le prix détail.
+                    showStrike={showStrikePrice(p.price, effective)}
                     isPromoRetail={isPromoRetail}
                     posShowStockOnTile={posShowStockOnTile}
                     ruptureLabel={lang === 'en' ? 'Out of stock' : lang === 'es' ? 'Agotado' : lang === 'it' ? 'Esaurito' : 'Rupture'}
