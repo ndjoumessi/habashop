@@ -299,6 +299,10 @@ export interface Tenant {
   silverDiscount?: number
   goldDiscount?: number
   enableLoyalty?: boolean
+  // Identifiants légaux (pied de facture/devis — generateInvoice)
+  ninea?: string | null
+  rccm?: string | null
+  vatNumber?: string | null
 }
 
 const TRIAL_DAYS = 14
