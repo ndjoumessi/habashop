@@ -67,7 +67,9 @@ export interface InvoiceCustomer { name: string; phone?: string | null }
 
 // Logo « Sac + H » — même dessin que components/ui/LogoMark.tsx (frontend), tracé
 // en vectoriel pdfkit (tuile violette arrondie, anse or, sac blanc, monogramme H).
-function drawLogo(doc: PDFKit.PDFDocument, x: number, y: number, size: number) {
+// Exporté → réutilisé par Ticket Z (ticketZ.ts) et PDF TVA (reports.ts) pour la
+// cohérence de marque sur tous les documents A4.
+export function drawLogo(doc: PDFKit.PDFDocument, x: number, y: number, size: number) {
   const s = size / 100
   doc.save().translate(x, y).scale(s)
   doc.roundedRect(0, 0, 100, 100, 24).fill('#6C47FF')

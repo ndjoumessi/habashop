@@ -3,7 +3,7 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { getCached } from '../lib/cache'
 import { xofToCurrency } from '../lib/currency'
-import { pdfSafeSpaces } from '../lib/invoicePdf'
+import { pdfSafeSpaces, drawLogo } from '../lib/invoicePdf'
 
 // Rôles autorisés à lire le rapport comptable (lecture seule).
 const ALLOWED_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'MANAGER', 'ACCOUNTANT'])
@@ -440,9 +440,12 @@ export async function reportsRoutes(app: any) {
       doc.on('end', resolve)
       doc.on('error', reject)
 
-      // Header
-      doc.fontSize(16).font('Helvetica-Bold').text(`Rapport TVA — ${month}`, { align: 'center' })
-      doc.fontSize(10).font('Helvetica').text(`Taux TVA : ${vatRate} %`, { align: 'center' })
+      // Header — logo Sac+H centré (cohérence de marque avec la facture) + titre
+      drawLogo(doc, 297.5 - 20, 40, 40)
+      doc.y = 92
+      doc.fontSize(16).font('Helvetica-Bold').fillColor('#111111').text(`Rapport TVA — ${month}`, { align: 'center' })
+      doc.fontSize(10).font('Helvetica').fillColor('#666666').text(`Taux TVA : ${vatRate} %`, { align: 'center' })
+      doc.fillColor('#000000')
       doc.moveDown(1)
 
       // Totals summary
