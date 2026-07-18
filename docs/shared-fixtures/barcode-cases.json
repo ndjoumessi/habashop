@@ -24,5 +24,16 @@
     { "label": "aucune correspondance", "stored": "4006381333931", "query": "9999", "match": false },
     { "label": "produit sans code-barres → jamais de match", "stored": "", "query": "4006", "match": false },
     { "label": "requête vide → jamais de match", "stored": "4006381333931", "query": "", "match": false }
+  ],
+  "scanNote": "matchesScannedCode(product, raw) — résolution d'un code SCANNÉ vers un produit (POS). EXACT uniquement (jamais sous-chaîne). Lu par les tests web ET mobile.",
+  "scanCases": [
+    { "label": "code-barres canonique exact", "barcode": "4006381333931", "sku": "PRD-0001", "scanned": "4006381333931", "match": true },
+    { "label": "UPC-A scanné (12) → EAN-13 stocké (13)", "barcode": "0036000291452", "sku": "PRD-0002", "scanned": "036000291452", "match": true },
+    { "label": "étiquette CODE128-sur-SKU → SKU exact résolu", "barcode": "", "sku": "PRD-0009", "scanned": "PRD-0009", "match": true },
+    { "label": "SKU insensible à la casse", "barcode": "", "sku": "PRD-0009", "scanned": "prd-0009", "match": true },
+    { "label": "SKU en sous-chaîne → JAMAIS (anti faux positif caisse)", "barcode": "", "sku": "PRD-0009", "scanned": "0009", "match": false },
+    { "label": "code inconnu → pas de match", "barcode": "4006381333931", "sku": "PRD-0001", "scanned": "9999999999999", "match": false },
+    { "label": "scan vide → pas de match", "barcode": "4006381333931", "sku": "PRD-0001", "scanned": "", "match": false },
+    { "label": "produit sans code ni SKU pertinent → pas de match", "barcode": "", "sku": "", "scanned": "PRD-0001", "match": false }
   ]
 }

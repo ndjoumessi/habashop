@@ -5,7 +5,7 @@ import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCu
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
-import { normalizeBarcode, barcodeMatches } from '@/lib/barcode'
+import { barcodeMatches, matchesScannedCode } from '@/lib/barcode'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 import { ShoppingCart, Loader2, Search, Barcode, WifiOff, History, Store } from 'lucide-react'
@@ -254,14 +254,10 @@ export default function POS() {
 
   const handleScan = (raw: string) => {
     setShowScanner(false)
-    // Priorité au CODE-BARRES (règle canonique partagée : UPC-A→EAN-13, espaces,
-    // jamais de strip des zéros de tête) ; repli nom/id pour la saisie manuelle.
-    const scanned = normalizeBarcode(raw)
-    const found = posProducts.find(p =>
-      (!!scanned && normalizeBarcode(p.barcode) === scanned) ||
-      p.name.toLowerCase().includes(raw.toLowerCase()) ||
-      String(p.id) === raw
-    )
+    // Résolution EXACTE (brique partagée) : code-barres canonique OU SKU exact
+    // (étiquettes CODE128-sur-SKU). Pas de match par NOM ici : à la caisse un faux
+    // positif (mauvais produit ajouté) coûte plus cher qu'un échec de scan.
+    const found = posProducts.find(p => matchesScannedCode(p, raw) || String(p.id) === raw)
     if (found) {
       addItem(found)
       toast.success(`${found.name} scanné`)
