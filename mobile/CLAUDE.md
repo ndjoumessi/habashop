@@ -113,6 +113,7 @@ i('Bonjour','Hello','Hola','Ciao') // 4 langues — JAMAIS binaire fr/en, JAMAIS
 fmt(1000)                           // XOF→"1 000 FCFA" · EUR→"1,52 €" (taux cache 6h, fallback)
 ```
 Montants DB en **XOF**, `fmt()` à l'affichage. Montant saisi → **`convertToXOF`** avant comparaison. Jours graphiques **en dur** (Hermes ignore `toLocaleDateString`).
+**Helpers devise PURS (appStore, hors React)** : `formatAmount(xof, currency, rates)` = SOURCE UNIQUE de la logique symbole/décimales (utilisé par `useFmt` ET les contextes sans hook — widget, libellés) ; `formatAmountParts(...)` → `{prefix, amount, suffix}` (rendu bi-ton tuiles POS). **Jamais de « F »/« FCFA » figé** (bug corrigé : widget `backgroundRefresh`, `settings`). **Accord pluriel** : `plural(n, one, many)` (« 1 article »).
 
 ---
 
@@ -158,7 +159,7 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 
 ## Patterns transverses
 - **Logger :** `src/lib/logger.ts` DEV-gated — jamais `console.*` direct.
-- **Offline :** `<OfflineSyncBridge/>` sous `QueryClientProvider`. Cache persistant `['products','customers','dashboard']` (gcTime 24 h). File `offlineQueue.ts` reflush 30 s au retour réseau.
+- **Offline :** `<OfflineSyncBridge/>` sous `QueryClientProvider`. Cache persistant `['products','customers','dashboard']` (gcTime 24 h). File `offlineQueue.ts` reflush 30 s au retour réseau. ⚠️ **Cache périmé = piège récurrent** (scan « introuvable » sur catalogue en retard, remise fidélité sur palier obsolète refusée backend) → lot logique « stratégie de fraîcheur du cache POS » (revalider avant opération sensible + message distinguant « rejet » de « cache en retard »), cf. `[[mobile-item11-scope]]`.
 - **expo-file-system v19 :** `new File(Paths.cache, name); file.create(); file.write(x)` + `Sharing.shareAsync(uri)`.
 - **Error Boundary :** racine (classe) + par route (`(tabs)/_layout`, `pos/index`, `kiosk/index`). Fallback = fonction (hooks i18n/theme).
 - **Modales :** alertes/print après fermeture → différer **~350 ms** (`ALERT_AFTER_MODAL_MS`).
@@ -167,13 +168,17 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ---
 
 ## POS / Caisse
-- **Prix ligne :** `resolveLinePrice` = miroir backend (`promo > palier > base`), recalculé à chaque qty.
+- **Prix ligne :** `resolveLinePrice` = miroir backend (`promo > palier > base`), recalculé à chaque qty. Pas de `clientType`/tarif Grossiste/Demi-gros sur mobile (= lot logique, cf. `[[mobile-item11-scope]]`).
+- **Tuiles produit (item 11, maquette 01) :** prix **bi-ton** = montant en or + suffixe devise atténué SÉPARÉS (`formatAmountParts` d'appStore → `{prefix,amount,suffix}`), jamais `fmt()` entier. Stock bas (`stock ≤ stockMin >0`) = bordure `warn` + point. Barre total en or.
+- **Encaissement (item 11, maquette 02) :** modes = **grille unique** avec « Mixte » en **tuile** (plus de toggle séparé). Messages d'erreur affichés **après saisie** (`cashGiven>0` / `amt` non vide). Libellé unifié « **Montant reçu** ». Providers actuels = Espèces/Wave/Orange/Carte (MTN + méthodes du split spécifiques = lot logique).
+- **Remise fidélité = NET affiché + split :** `POSCart` calcule `netTotal = total − loyaltyDiscount` via `loyaltyDiscountFor()`/`computeLoyaltyDiscount()` (MIROIR backend, cf. § Fidélité). Total, split mixte, garde espèces (panier ET `confirmSale`) sur le **NET**. ⚠️ L'envoi reste **brut + `customerId`** (backend autoritaire redérive le net → pas de double remise). Avant ce fix : brut affiché/encaissé, net enregistré → écart + mixte rejeté.
 - **Anti sur-vente :** `capToStock` dans `addItem`/`updateQty` ; bouton `+` désactivé au max.
-- **Paiement mixte :** ligne 1 saisie (devise→XOF), **ligne 2 = reste auto XOF**. `paymentMode='mixed'` jamais dans posStore → lu depuis `variables` mutation en `onSuccess`.
+- **Paiement mixte :** ligne 1 saisie (devise→XOF), **ligne 2 = reste auto XOF** (basé NET). `paymentMode='mixed'` jamais dans posStore → lu depuis `variables` mutation en `onSuccess`.
 - **Ventes résilientes (`saleSubmit.ts`) :** 1 clé idempotente/tentative (jamais régénérée). Online : timeout/5xx → retry → bascule file offline. 4xx propagé. Offline dur → file directe.
-- **Reçu :** `whatsappTicket.ts` + `printReceipt.ts` (HTML échappé). Annulation print = normale.
-- **TVA :** `vatBreakdown(total, vatRate)` = TTC (`HT=total/(1+t)`). Mode HT (`posVatIncluded:false`) non géré.
+- **Reçu :** `whatsappTicket.ts` + `printReceipt.ts` (HTML échappé, `fmt` dynamique). Annulation print = normale.
+- **TVA :** `vatBreakdown(netTotal, vatRate)` = TTC (`HT=total/(1+t)`). Mode HT (`posVatIncluded:false`) non géré.
 - **Hors-ligne POS :** espèces-only (Wave/Orange/carte/mixte bloqués dans `confirmSale`).
+- **Compteurs :** accord singulier/pluriel via `plural(n, one, many)` (appStore) — « 1 article » (barre POS, historique, stock, widget).
 
 ---
 
@@ -186,16 +191,18 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 ---
 
 ## Fidélité (`lib/loyalty.ts`)
-- **Calcul 100 % serveur** (plafond 50 %). Mobile = affichage seul, ne jamais recalculer.
+- **Points = calcul 100 % serveur** (plafond 50 %). Mobile = affichage seul pour les points/paliers, ne jamais recalculer un solde.
+- **Remise fidélité (XOF) = MIROIR backend** : `computeLoyaltyDiscount(total, pct, manualDiscount)` **identique** à `apps/backend/src/lib/loyalty.ts` (arrondi `Math.round`, plafond 50 %) + `loyaltyDiscountFor(customer, tenant, total, manual)` (source unique côté mobile : POSCart + garde espèces de l'écran POS). ⚠️ **Anti-dérive** : cas partagés `docs/shared-fixtures/loyalty-discount-cases.json` testés des DEUX côtés (`loyaltyDiscountShared.test.ts`) + commentaires croisés. Le mobile calcule le net hors-ligne (affichage/split) MAIS envoie **brut + `customerId`** (backend autoritaire). ⚠️ Le net vient du palier EN CACHE → si le palier change serveur sans resync, remise refusée par le backend (cf. lot logique « fraîcheur cache POS », `[[mobile-item11-scope]]`).
 - Config tenant : `pointsPerAmount` / `bronze/silver/goldThreshold+Discount`. Source : `/loyalty` → store → défauts.
 - Post-vente : `GET /api/customers/:id/loyalty` → delta réel (après−avant), jamais local.
-- POSCart : chip « Nom · Palier · −X% » + badge remise fidélité.
+- POSCart : chip client + **ligne de récap « Remise fidélité − X »** (réduit réellement le total au NET ; l'ancien badge décoratif est retiré).
 - **Remboursement (`refund.ts`) :** `RefundSheet` on-demand. Rôles MANAGER+, motif obligatoire, 409 géré. Bouton inline par ligne d'historique.
 - **Facture PDF (`invoicePdf.ts`) :** arraybuffer → cache `File`/`Paths` → `Sharing.shareAsync`. Tous rôles.
 
 ---
 
-## Carte fidélité QR (`LoyaltyCardDigital.tsx`)
+## Carte fidélité QR (`LoyaltyCardDigital.tsx`) — maquette 04
+- **Structure (item 11)** : carte **hero** teintée par palier (couleurs FIXES = artefact export PDF, hors thème ; dégradé approximé par aplat teinté — **pas d'`expo-linear-gradient`**) avec pastille palier + points (or) + QR + barre de progression intégrée ; 2 cartes **palier actuel/prochain** (% remise via `discountForTierDisplay`) ; **activité récente** = historique serveur (`GET /api/customers/:id/loyalty`, 2ᵉ query — gains verts / retraits rouges).
 - ⚠️ NE PAS réintroduire `react-native-svg`/`-qrcode-svg`/`-view-shot` (natif absent → OTA cassé).
 - **QR :** `QRCode.create()` pur JS → matrice → grille `<View>`. ⚠️ JAMAIS `QRCode.toDataURL()` sous Hermes → `CanvasRenderer` → `document.createElement('canvas')` inexistant → crash.
 - Format : `HABA-CUST:<customerId>`. PDF : SVG inline depuis même matrice (expo-print webview).
@@ -231,7 +238,8 @@ Colors.text '#F0F0FF' · text2 '#A0A0C0' · text3 '#606080'
 
 ## État courant
 - **Monorepo** : le mobile vit désormais dans `ndjoumessi/habashop` sous `mobile/` (les repos `habashop-mobile`/`-legal` sont archivés). `.env` mobile non commité (gitignored).
-- `main`, `tsc` 0, **129 tests verts (16 suites)**. `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
+- `main`, `tsc` 0, **151 tests verts (18 suites)**. `app.json` **1.5.0** (runtime 1.5.0) mais **device en runtime 1.4.3** (build 1.5.0 pas encore fait, cf. section Versions).
+- **Item 11 (portage refonte UX web) — lot UI OTA'd sur canal preview** : fuites devise, POS 01 (tuiles bi-ton + stock bas), safe-area panier, encaissement 02 (Mixte tuile + pluriel), fix argent fidélité (NET), carte fidélité 04. **Hors lot (logique, à cadrer)** : Ticket Z, onboarding, sélecteur tarif, peuplement barcodes, fraîcheur cache POS, provider MTN. Cf. `[[mobile-item11-scope]]`.
 - **Livré par OTA (canal preview, runtime 1.4.3)** : fix multi-boutiques (auto-sélection boutique), **mode sombre NKONI** (fond bleu-noir `#0A0C14`, cartes `#121724`, or `#FFB020`, `border3` glow violet ; `src/constants/theme.ts` `Colors`+`DarkColors`), **thèmes réduits à 3** (Sombre/Clair/Système, #19) + grille 3 colonnes (#20) — dernier update group `95673916-5efe-44f7-a521-719616634a1c` (Android `019f6dfe-d23e-7f55…`, iOS `019f6dfe-d23e-7592…`, commit `1c38fae4`). Police = **Outfit** (Geist attend le build natif, #13).
 - **En attente du build natif 1.5.0** (quota EAS) : **logo Sac+H** (icône/splash) + **police Geist**.
 - **Validé device (2026-05-27, APK `382fe2ec`) :** scanner EAN13 ✅, thème clair ✅, kiosque+PIN ✅, encaissement→API ✅, biométrie ✅, suppression compte (scénario ADMIN seul→cascade tenant) ✅.
