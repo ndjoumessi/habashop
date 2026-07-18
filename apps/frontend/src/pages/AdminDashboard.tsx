@@ -18,7 +18,9 @@ import {
 } from 'lucide-react'
 import LogoMark from '@/components/ui/LogoMark'
 
-const APP_VERSION = '2.6.0'
+// Version PRODUIT = SOURCE UNIQUE injectée au build (package.json racine), jamais un
+// littéral (la garde `versionSource.test.ts` échoue si un semver en dur réapparaît).
+const APP_VERSION = __APP_VERSION__
 
 type Tenant = {
   id: string; name: string; plan: string; currency: string; country: string

@@ -8,6 +8,7 @@ import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
 import { validatorCompiler, hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod'
 import { initTenantStore } from './lib/tenantContext'
+import { getAppVersion } from './lib/version'
 import * as Sentry from '@sentry/node'
 import { prisma } from './db'
 import { redis } from './redis'
@@ -217,8 +218,7 @@ async function start() {
   // Exemptés du rate-limit global : sondes de monitoring / uptime pingées en continu.
   app.get('/health', { config: { rateLimit: false } }, async () => ({
     status: 'ok',
-    version: '2.1.0',
-    build: 'p2025-404',
+    version: getAppVersion(), // source unique = package.json racine (jamais un littéral)
     timestamp: new Date().toISOString(),
   }))
 
@@ -243,7 +243,8 @@ async function start() {
     const mem = process.memoryUsage()
     return reply.send({
       status: dbStatus === 'ok' ? 'ok' : 'degraded',
-      version: '2.3.0',
+      version: getAppVersion(), // source unique = package.json racine
+
       uptime: Math.round(process.uptime()),
       latency: Date.now() - start,
       services: {
