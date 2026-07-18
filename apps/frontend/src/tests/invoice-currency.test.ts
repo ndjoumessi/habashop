@@ -84,6 +84,23 @@ describe('generateInvoice — refonte (séparateur, statut, mentions légales, a
     expect(html).toContain('&lt;script&gt;bad')
   })
 
+  it('SANS client → bloc « FACTURÉ À » entièrement masqué (pas de « — »), pill à droite conservée', () => {
+    useAppStore.setState({ currency: 'XOF', posTaxRate: 18 } as any)
+    const html = capturePdfHtml(() =>
+      generateInvoice({ type: 'facture', lang: 'fr', paymentMode: 'Espèces', items: [{ name: 'Riz', qty: 1, price: 1000 }] } as any))
+    expect(html).not.toContain('FACTURÉ À')
+    expect(html).not.toContain('>—<') // aucun tiret nu comme valeur
+    expect(html).toContain('Payée')   // statut toujours présent
+  })
+
+  it('AVEC client → « FACTURÉ À » + nom présents', () => {
+    useAppStore.setState({ currency: 'XOF', posTaxRate: 18 } as any)
+    const html = capturePdfHtml(() =>
+      generateInvoice({ type: 'facture', lang: 'fr', paymentMode: 'Espèces', customer: { name: 'Awa Diop' }, items: [{ name: 'Riz', qty: 1, price: 1000 }] } as any))
+    expect(html).toContain('FACTURÉ À')
+    expect(html).toContain('Awa Diop')
+  })
+
   it('bloc structure maquette : FACTURÉ À, Sous-total HT, Total TTC, filet violet', () => {
     useAppStore.setState({ currency: 'XOF', posTaxRate: 18 } as any)
     const html = capturePdfHtml(() =>

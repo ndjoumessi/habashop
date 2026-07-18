@@ -397,11 +397,11 @@ export function generateInvoice(opts: InvoiceOptions) {
   </div>
 
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px">
-    <div>
+    ${customer?.name ? `<div>
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#8A8AA3;margin-bottom:5px">${is('billed_to', lang)}</div>
-      <div style="font-size:15px;font-weight:700;color:#1A1A2E">${escHtml(customer?.name ?? '—')}</div>
-      ${customer?.phone ? `<div style="font-size:12px;color:#666;margin-top:2px">${escHtml(customer.phone)}</div>` : ''}
-    </div>
+      <div style="font-size:15px;font-weight:700;color:#1A1A2E">${escHtml(customer.name)}</div>
+      ${customer.phone ? `<div style="font-size:12px;color:#666;margin-top:2px">${escHtml(customer.phone)}</div>` : ''}
+    </div>` : '<div></div>'}
     <div style="text-align:right">
       ${statusPill}
       ${type === 'devis'

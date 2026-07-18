@@ -118,19 +118,26 @@ export function buildInvoicePdf(sale: InvoiceSale, tenant: InvoiceTenant, custom
   doc.text(`N° ${sale.invoiceNumber}`, 330, 72, { width: 215, align: 'right' })
   doc.font('Helvetica').fillColor(GREY).fontSize(9).text(`${i('Date', 'Date', 'Fecha', 'Data')} : ${dateStr}`, 330, 86, { width: 215, align: 'right' })
 
-  // Client + statut « ● Payée » (une facture émise depuis une vente est réglée)
+  // Statut « ● Payée » — toujours à droite, à la même hauteur (indépendant du client).
+  // Cercle + texte : le glyphe « ● » n'existe pas en WinAnsi.
   let y = 128
   {
-    doc.fillColor(GREY).font('Helvetica-Bold').fontSize(8).text(i('FACTURÉ À', 'BILLED TO', 'FACTURADO A', 'FATTURATO A'), left, y, { characterSpacing: .8 })
-    doc.fillColor('#111111').font('Helvetica-Bold').fontSize(12).text(customer?.name ?? '—', left, y + 12)
-    if (customer?.phone) doc.fillColor(GREY).font('Helvetica').fontSize(9).text(customer.phone, left, y + 28)
-    // Pill statut (droite) — cercle + texte (le glyphe « ● » n'existe pas en WinAnsi)
     const pillW = 64
     doc.roundedRect(right - pillW, y + 4, pillW, 20, 10).fillAndStroke('#E7F7EF', '#BFE8D2')
     doc.circle(right - pillW + 13, y + 14, 2.6).fill('#0E8A55')
     doc.fillColor('#0E8A55').font('Helvetica-Bold').fontSize(9)
       .text(i('Payée', 'Paid', 'Pagada', 'Pagata'), right - pillW + 20, y + 10)
+  }
+  // Bloc « FACTURÉ À » — UNIQUEMENT si un client est rattaché. Vente de passage
+  // (pas de client) → bloc entièrement masqué, jamais de « — » nu sur un document
+  // officiel (même règle que les mentions légales vides). L'espacement se resserre.
+  if (customer) {
+    doc.fillColor(GREY).font('Helvetica-Bold').fontSize(8).text(i('FACTURÉ À', 'BILLED TO', 'FACTURADO A', 'FATTURATO A'), left, y, { characterSpacing: .8 })
+    doc.fillColor('#111111').font('Helvetica-Bold').fontSize(12).text(customer.name, left, y + 12)
+    if (customer.phone) doc.fillColor(GREY).font('Helvetica').fontSize(9).text(customer.phone, left, y + 28)
     y += 50
+  } else {
+    y += 30 // hauteur de la pill seule + petit espace : pas de trou
   }
 
   // En-tête tableau : libellés violets + filet violet 2 pt (plus de bandeau plein)
