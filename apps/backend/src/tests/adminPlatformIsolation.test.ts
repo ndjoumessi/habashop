@@ -22,11 +22,12 @@ const SECRET = 'test-secret-platform-isolation'
 // plateforme (le gate coupe avant). Le contrôle positif renvoie des données neutres.
 const db = {
   tenant:  { findMany: vi.fn(async () => [{ id: 'A', name: 'Boutique A', _count: { users: 1, products: 2, sales: 3 } }]), count: vi.fn(async () => 3), create: vi.fn(async () => ({ id: 'new' })) },
-  user:    { count: vi.fn(async () => 5), create: vi.fn(async () => ({ id: 'u' })) },
+  user:    { create: vi.fn(async () => ({ id: 'u' })) },
   planRequest: { findMany: vi.fn(async () => []), findUnique: vi.fn(async () => null), update: vi.fn() },
 }
-// basePrisma : agrégats cross-tenant (Sale/Product scopés par l'extension → client de base).
+// basePrisma : agrégats cross-tenant (Sale/Product/User via relation tenant.isPlatform).
 const baseDb = {
+  user:    { count: vi.fn(async () => 5) },
   sale:    { aggregate: vi.fn(async () => ({ _sum: { total: 999 }, _count: 3 })), groupBy: vi.fn(async () => [{ tenantId: 'A', _sum: { total: 5000 }, _max: { createdAt: '2026-07-10T00:00:00.000Z' } }]) },
   product: { count: vi.fn(async () => 2) },
 }
@@ -90,5 +91,14 @@ describe('P0 — /api/admin/* gate sur isPlatformAdmin, jamais sur le rôle tena
     expect(res.statusCode).toBe(200)
     const rows = res.json()
     expect(rows[0]).toMatchObject({ id: 'A', revenue: 5000, lastActivityAt: '2026-07-10T00:00:00.000Z' })
+  })
+
+  it('exclut les tenants INTERNES plateforme (isPlatform) des listings ET des totaux', async () => {
+    await app.inject({ method: 'GET', url: '/api/admin/tenants', headers: { authorization: `Bearer ${platformAdminToken}` } })
+    expect(db.tenant.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { isPlatform: false } }))
+    await app.inject({ method: 'GET', url: '/api/admin/stats', headers: { authorization: `Bearer ${platformAdminToken}` } })
+    expect(db.tenant.count).toHaveBeenCalledWith({ where: { isPlatform: false } })
+    expect(baseDb.user.count).toHaveBeenCalledWith({ where: { tenant: { isPlatform: false } } })
+    expect(baseDb.sale.aggregate).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ tenant: { isPlatform: false } }) }))
   })
 })
