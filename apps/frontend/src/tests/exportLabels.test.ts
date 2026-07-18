@@ -45,13 +45,16 @@ describe('printProductLabels — impression étiquettes', () => {
     expect(jsbarcodeMock).toHaveBeenCalledWith(expect.anything(), '0036000291452', expect.objectContaining({ format: 'EAN13' }))
   })
 
-  it('(b) sans code EAN : AUCUN code scannable imprimé (plus de CODE128-sur-SKU) + mention', () => {
+  it('(b) sans code EAN : zone repliée — aucun code NI mention sur l’étiquette (face client)', () => {
     printProductLabels([{ name: 'Vrac', sku: 'PRD-0004', price: 300, barcode: '' }], fmt, baseOpts)
     // Aucun appel JsBarcode (ni EAN ni CODE128) pour un produit sans code valide.
     expect(jsbarcodeMock).not.toHaveBeenCalled()
     expect(written).not.toContain('CODE128')
-    expect(written).not.toContain('Code interne') // plus de badge trompeur
-    expect(written).toContain('Code-barres manquant') // mention non scannable
+    expect(written).not.toContain('Code interne')       // plus de badge trompeur
+    expect(written).not.toContain('Code-barres manquant') // plus de diagnostic sur l'étiquette
+    // Le nom + le prix restent imprimés (étiquette de prix propre).
+    expect(written).toContain('Vrac')
+    expect(written).toContain('300 F')
   })
 
   it('⚠️ QUIET ZONES ≥10 modules (marges horizontales) — Avery', () => {
