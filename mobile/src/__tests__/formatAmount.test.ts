@@ -1,4 +1,4 @@
-import { formatAmount, formatAmountParts } from '@/stores/appStore'
+import { formatAmount, formatAmountParts, plural } from '@/stores/appStore'
 
 // Non-régression fuites devise (widget backgroundRefresh + libellé settings) :
 // formatAmount doit être DYNAMIQUE — jamais « F »/« FCFA » figé pour un tenant non-XOF.
@@ -48,4 +48,10 @@ describe('formatAmountParts — rendu bi-ton tuiles POS (maquette 01)', () => {
     const p = formatAmountParts(1000, 'EUR', RATES)
     expect(formatAmount(1000, 'EUR', RATES)).toBe(`${p.prefix}${p.amount} ${p.suffix}`)
   })
+})
+
+describe('plural — accord singulier/pluriel (compteurs)', () => {
+  it('n=1 → singulier', () => expect(plural(1, 'article', 'articles')).toBe('article'))
+  it('n=0 → pluriel', () => expect(plural(0, 'article', 'articles')).toBe('articles'))
+  it('n=2 → pluriel', () => expect(plural(2, 'article', 'articles')).toBe('articles'))
 })

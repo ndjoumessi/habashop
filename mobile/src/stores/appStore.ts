@@ -96,6 +96,11 @@ export function useI18n() {
   return { i, lang }
 }
 
+// Accord singulier/pluriel : renvoie `one` si |n| == 1, sinon `many`. Les 4 langues
+// (fr/en/es/it) ont un pluriel régulier → l'appelant fournit les deux formes déjà
+// traduites (via i()). Évite les « 1 articles ».
+export const plural = (n: number, one: string, many: string): string => (Math.abs(n) === 1 ? one : many)
+
 // Cache global des taux (en mémoire) — chargé au démarrage du module.
 let cachedRates: Record<string, number> = {
   XOF: 1, XAF: 1,

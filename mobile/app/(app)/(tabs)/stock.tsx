@@ -9,7 +9,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi, apiErrorMessage } from '@/services/api'
 import type { Product } from '@/types'
-import { useI18n, useFmt, useTheme } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme, plural } from '@/stores/appStore'
 import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
@@ -136,7 +136,7 @@ export default function StockScreen() {
       <ScreenHeader
         icon="cube"
         title="Stock"
-        subtitle={`${active.length} ${i('produits actifs', 'active products', 'productos activos', 'prodotti attivi')}`}
+        subtitle={`${active.length} ${plural(active.length, i('produit actif', 'active product', 'producto activo', 'prodotto attivo'), i('produits actifs', 'active products', 'productos activos', 'prodotti attivi'))}`}
         right={
           <Pressable style={s.headerBtn} onPress={() => refetch()} hitSlop={8}
             accessibilityRole="button"

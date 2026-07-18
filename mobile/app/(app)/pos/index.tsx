@@ -15,7 +15,7 @@ import { submitSaleResilient, type SaleSubmitResult } from '@/services/saleSubmi
 import { newIdempotencyKey } from '@/lib/idempotency'
 import type { MixedSplit } from '@/lib/paymentSplit'
 import { usePosStore } from '@/stores/posStore'
-import { useI18n, useFmt, useTheme, formatAmountParts } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme, formatAmountParts, plural } from '@/stores/appStore'
 import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow,
 } from '@/constants/theme'
@@ -457,7 +457,7 @@ export default function POSScreen() {
       {cart.length > 0 && (
         <View style={[s.totalBar, { paddingBottom: insets.bottom + Spacing.sm }]}>
           <View style={{ flex: 1 }}>
-            <Text style={s.totalBarLabel}>{totalQty} {i('articles', 'items', 'artículos', 'articoli')}</Text>
+            <Text style={s.totalBarLabel}>{totalQty} {plural(totalQty, i('article', 'item', 'artículo', 'articolo'), i('articles', 'items', 'artículos', 'articoli'))}</Text>
             <Text style={s.totalBarAmt}>{fmt(totalAmt)}</Text>
           </View>
           <AccessibleButton

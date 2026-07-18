@@ -282,47 +282,46 @@ export default function POSCart({
               </View>
             )}
 
-            {/* Toggle paiement mixte (à côté des modes de paiement) */}
-            <Pressable
-              style={[s.mixedToggle, mixed && s.mixedToggleOn]}
-              onPress={() => setMixed(v => !v)}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: mixed }}
-              accessibilityLabel={i('Paiement mixte', 'Split payment', 'Pago mixto', 'Pagamento misto')}
-            >
-              <View style={[s.checkbox, mixed && s.checkboxOn]}>
-                {mixed && <Ionicons name="checkmark" size={13} color={C.white} />}
-              </View>
-              <Text style={s.mixedToggleTxt}>{i('Paiement mixte', 'Split payment', 'Pago mixto', 'Pagamento misto')}</Text>
-            </Pressable>
+            {/* Modes de paiement — grille unique incluant Mixte (maquette 02). Mixte est
+                désormais une tuile (l'ancien toggle séparé est supprimé) ; l'état mixed/
+                paymentMode et la logique d'encaissement sont inchangés. */}
+            <View style={s.payGrid}>
+              {PAY_MODES.map(m => {
+                const on = !mixed && paymentMode === m.id
+                return (
+                  <Pressable
+                    key={m.id}
+                    style={[s.payChip, on && s.payChipOn]}
+                    onPress={() => { setMixed(false); onSetPaymentMode(m.id) }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    accessibilityLabel={i(m.fr, m.en, m.es, m.it)}
+                  >
+                    <Text style={{ fontSize: 18 }}>{m.icon}</Text>
+                    <Text style={[s.payTxt, on && s.payTxtOn]}>{i(m.fr, m.en, m.es, m.it)}</Text>
+                  </Pressable>
+                )
+              })}
+              <Pressable
+                style={[s.payChip, s.payChipDashed, mixed && s.payChipOn]}
+                onPress={() => setMixed(true)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: mixed }}
+                accessibilityLabel={i('Paiement mixte', 'Split payment', 'Pago mixto', 'Pagamento misto')}
+              >
+                <Text style={{ fontSize: 18 }}>🔀</Text>
+                <Text style={[s.payTxt, mixed && s.payTxtOn]}>{i('Mixte', 'Split', 'Mixto', 'Misto')}</Text>
+              </Pressable>
+            </View>
 
             {!mixed ? (
               <>
-                {/* Modes de paiement */}
-                <View style={s.payGrid}>
-                  {PAY_MODES.map(m => {
-                    const on = paymentMode === m.id
-                    return (
-                      <Pressable
-                        key={m.id}
-                        style={[s.payChip, on && s.payChipOn]}
-                        onPress={() => onSetPaymentMode(m.id)}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: on }}
-                        accessibilityLabel={i(m.fr, m.en, m.es, m.it)}
-                      >
-                        <Text style={{ fontSize: 18 }}>{m.icon}</Text>
-                        <Text style={[s.payTxt, on && s.payTxtOn]}>{i(m.fr, m.en, m.es, m.it)}</Text>
-                      </Pressable>
-                    )
-                  })}
-                </View>
 
                 {/* Montant donné (espèces) */}
                 {paymentMode === 'cash' && (
                   <View style={s.cashWrap}>
                     <View style={{ flex: 1 }}>
-                      <Text style={s.recapLabel}>{i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}</Text>
+                      <Text style={s.recapLabel}>{i('Montant reçu', 'Amount received', 'Importe recibido', 'Importo ricevuto')}</Text>
                       <TextInput
                         style={s.cashInput}
                         keyboardType="numeric"
@@ -330,7 +329,7 @@ export default function POSCart({
                         placeholderTextColor={C.text3}
                         value={cashGiven ? String(cashGiven) : ''}
                         onChangeText={t => onSetCashGiven(Number(t.replace(/[^0-9.]/g, '')) || 0)}
-                        accessibilityLabel={i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}
+                        accessibilityLabel={i('Montant reçu', 'Amount received', 'Importe recibido', 'Importo ricevuto')}
                       />
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
@@ -342,7 +341,9 @@ export default function POSCart({
                   </View>
                 )}
 
-                {cashShort && (
+                {/* Erreur affichée seulement APRÈS saisie (cashGiven > 0) — pas à
+                    l'ouverture, champ vide (sinon message trompeur avant interaction). */}
+                {cashShort && cashGiven > 0 && (
                   <Text style={s.cashWarn}>
                     {i(
                       'Montant reçu insuffisant',
@@ -391,7 +392,8 @@ export default function POSCart({
                   <Text style={s.recapVal}>{fmt(remainingXOF)}</Text>
                 </View>
 
-                {!mixedValid && (
+                {/* Idem : pas de message tant que rien n'est saisi (amt vide). */}
+                {!mixedValid && amt.trim() !== '' && (
                   <Text style={s.cashWarn}>
                     {i('Saisis un montant entre 0 et le total, 2 méthodes différentes.',
                        'Enter an amount between 0 and the total, two different methods.',
@@ -458,12 +460,14 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   recapTotalLabel: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   recapTotalVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.primary3 },
 
-  payGrid: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.sm },
+  payGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, marginTop: Spacing.sm },
   payChip: {
-    flex: 1, alignItems: 'center', gap: 3, paddingVertical: Spacing.sm,
+    flexBasis: '30%', flexGrow: 1, flexShrink: 1, minWidth: 88,
+    alignItems: 'center', gap: 3, paddingVertical: Spacing.sm,
     backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
   payChipOn: { backgroundColor: withAlpha(C.primary, 0.15), borderColor: C.primary },
+  payChipDashed: { borderStyle: 'dashed', borderColor: C.border2 },
   payTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   payTxtOn: { color: C.primary3 },
 
