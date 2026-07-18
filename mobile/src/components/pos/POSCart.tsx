@@ -152,7 +152,10 @@ export default function POSCart({
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={s.sheet}>
-        <View style={s.sheetHead}>
+        {/* Safe-area haute : sur Android `pageSheet` est ignoré → feuille plein écran ;
+            sans paddingTop le titre passe sous la barre d'état. insets.top = 0 sur iOS
+            pageSheet (déjà sous la barre d'état) → sans effet indésirable. */}
+        <View style={[s.sheetHead, { paddingTop: insets.top + Spacing.lg }]}>
           <Text style={s.sheetTitle}>{i('Panier', 'Cart', 'Carrito', 'Carrello')} ({totalQty})</Text>
           <Pressable onPress={onClose} hitSlop={8}
             accessibilityRole="button"
