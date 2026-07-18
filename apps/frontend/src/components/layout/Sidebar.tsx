@@ -9,7 +9,7 @@ import {
   UserCog, Calendar, Wallet, Receipt, TrendingUp, BarChart2,
   Megaphone, Bot, Target, Code2, Settings, ShieldCheck, Activity,
   Store, ChevronLeft, ChevronRight, Sun, Moon, LogOut,
-  ClipboardList, Wifi, Plug, Lock, RefreshCw,
+  ClipboardList, Plug, Lock, RefreshCw,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import TenantSwitcher from './TenantSwitcher'
@@ -170,10 +170,14 @@ export default function Sidebar() {
         {(() => {
           const daily = DAILY.filter(it => canAccess(user?.role, it.path.split('/').pop() || ''))
           if (daily.length === 0) return null
+          // Encadré distinctif (fond + bordure) SANS voler de largeur aux items :
+          // padding horizontal 0, et marge 7px = gutter normal 8px − 1px de bordure
+          // → le contenu des items s'aligne pixel-près sur les autres entrées (les
+          // items internes reprennent 100% de largeur via `.nav-daily .nav-item`).
           return (
-            <div className="nav-daily" style={{ margin: collapsed ? '2px 8px 6px' : '2px 10px 8px', padding: collapsed ? '4px' : '6px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12 }}>
+            <div className="nav-daily" style={{ margin: collapsed ? '2px 8px 6px' : '2px 7px 8px', padding: collapsed ? '4px' : '6px 0', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12 }}>
               {!collapsed && (
-                <div className="nav-section" style={{ padding: '2px 6px 4px' }}>
+                <div className="nav-section" style={{ padding: '2px 10px 4px' }}>
                   <span>{t('nav_sec_daily')}</span>
                 </div>
               )}
@@ -263,85 +267,67 @@ export default function Sidebar() {
         )}
       </nav>
 
-      {/* Footer */}
-      <div
-        className="sidebar-footer"
-        style={collapsed ? { flexDirection: 'column', gap: 8, padding: '8px 0', alignItems: 'center' } : undefined}
-      >
-        {/* Avatar with online indicator */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: '50%',
-            background: 'var(--grad-p)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 'var(--fw-bold)', color: '#fff', fontSize: 13,
-            boxShadow: 'var(--sh-p)',
-          }}>
-            {user?.name?.charAt(0)?.toUpperCase() || 'N'}
+      {/* Footer — bloc utilisateur. Déplié : 3 rangées (avatar+nom / version / actions).
+          Replié : avatar seul (pastille = statut) + chevron d'expansion (contrôle
+          structurel indispensable pour ré-ouvrir). La pastille verte EST le signal
+          « en ligne » → title/aria explicites, plus de texte « En ligne » (qui bouclait
+          sur 2 lignes et doublonnait la pastille). */}
+      {(() => {
+        const onlineLabel = lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'
+        const logoutLabel = lang === 'en' ? 'Sign out' : lang === 'es' ? 'Cerrar sesión' : lang === 'it' ? 'Disconnetti' : 'Déconnexion'
+        const themeLabel = lang === 'en' ? 'Toggle theme' : lang === 'es' ? 'Cambiar tema' : lang === 'it' ? 'Cambia tema' : 'Changer de thème'
+        const expandLabel = lang === 'en' ? 'Expand sidebar' : lang === 'es' ? 'Expandir menú' : lang === 'it' ? 'Espandi menu' : 'Déployer le menu'
+        const collapseLabel = lang === 'en' ? 'Collapse sidebar' : lang === 'es' ? 'Contraer menú' : lang === 'it' ? 'Comprimi menu' : 'Replier le menu'
+        const avatar = (
+          <div className="footer-avatar" role="img" aria-label={onlineLabel} title={onlineLabel}>
+            <div className="footer-avatar-circle">{user?.name?.charAt(0)?.toUpperCase() || 'N'}</div>
+            <span className="footer-status-dot" />
           </div>
-          <div style={{
-            position: 'absolute', bottom: 0, right: 0,
-            width: 9, height: 9, borderRadius: '50%',
-            background: 'var(--acc2)',
-            border: '2px solid var(--bg2)',
-            boxShadow: '0 0 5px var(--acc2)',
-          }} />
-        </div>
-
-        {!collapsed && (
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="user-name">{user?.name || 'Nelson'}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
-              <Wifi size={9} style={{ color: 'var(--acc2)' }} />
-              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--acc2)', fontWeight: 'var(--fw-semibold)' }}>
-                {lang === 'en' ? 'Online' : lang === 'es' ? 'En línea' : lang === 'it' ? 'Online' : 'En ligne'}
-              </span>
+        )
+        if (collapsed) {
+          return (
+            <div className="sidebar-footer collapsed">
+              {avatar}
+              <button className="footer-btn" onClick={() => updateConfig({ sidebarCollapsed: false })}
+                aria-label={expandLabel} title={expandLabel}>
+                <ChevronRight size={16} />
+              </button>
             </div>
-            {/* Identifiant de build : permet de vérifier d'un coup d'œil qu'on est
-                bien sur la dernière version (et non une copie en cache). */}
-            <div title={lang === 'en' ? 'Build version' : 'Version du build'}
-              style={{ fontSize: 'var(--fs-caption)', color: 'var(--text4)', fontFamily: 'var(--mono)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {__BUILD_ID__}
+          )
+        }
+        return (
+          <div className="sidebar-footer">
+            {/* Rangée 1 : avatar (pastille = statut) + nom complet */}
+            <div className="footer-user">
+              {avatar}
+              <div className="user-name">{user?.name || 'Nelson'}</div>
+            </div>
+
+            {/* Rangée 2 : identifiant de version — court et COMPLET (détail horodatage+SHA
+                en title au survol, pour distinguer d'une copie en cache). Le chantier B
+                posera l'indicateur « dernière synchro » à côté, dans cette même rangée. */}
+            <div className="footer-meta">
+              <span className="footer-build" title={__BUILD_ID__}>{__BUILD_SHORT__}</span>
+            </div>
+
+            {/* Rangée 3 : actions espacées, cibles ≥ 44px */}
+            <div className="footer-actions">
+              <button className="footer-btn" onClick={() => updateConfig({ sidebarCollapsed: true })}
+                aria-label={collapseLabel} title={collapseLabel}>
+                <ChevronLeft size={16} />
+              </button>
+              <button className="footer-btn" onClick={() => updateConfig({ theme: theme === 'dark' ? 'light' : 'dark' })}
+                aria-label={themeLabel} title={themeLabel}>
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <button className="footer-btn danger" onClick={() => { logout(); navigate('/login') }}
+                aria-label={logoutLabel} title={logoutLabel}>
+                <LogOut size={16} />
+              </button>
             </div>
           </div>
-        )}
-
-        {/* Collapse toggle */}
-        <button
-          onClick={() => updateConfig({ sidebarCollapsed: !collapsed })}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text4)', display: 'flex', alignItems: 'center', transition: 'color .15s' }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text2)'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text4)'}
-        >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-
-        {/* Theme toggle */}
-        <button
-          onClick={() => updateConfig({ theme: theme === 'dark' ? 'light' : 'dark' })}
-          aria-label="Toggle theme"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', color: 'var(--text4)', transition: 'color .15s' }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text2)'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text4)'}
-        >
-          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-        </button>
-
-        {/* Logout */}
-        {!collapsed && (
-          <button
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text4)', display: 'flex', alignItems: 'center', transition: 'color .15s' }}
-            onClick={() => { logout(); navigate('/login') }}
-            title={lang === 'en' ? 'Sign out' : lang === 'es' ? 'Cerrar sesión' : lang === 'it' ? 'Disconnetti' : 'Déconnexion'}
-            aria-label={lang === 'en' ? 'Sign out' : lang === 'es' ? 'Cerrar sesión' : lang === 'it' ? 'Disconnetti' : 'Déconnexion'}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text4)'}
-          >
-            <LogOut size={14} />
-          </button>
-        )}
-      </div>
+        )
+      })()}
     </div>
   )
 }

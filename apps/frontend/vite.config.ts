@@ -5,6 +5,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'path'
 import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 // Identifiant de build visible dans l'app (sidebar) → permet de voir d'un coup d'œil
 // si on est sur la dernière version ou sur une copie en cache (service worker / PWA).
@@ -13,7 +15,17 @@ import { execFileSync } from 'node:child_process'
 const BUILD_SHA =
   process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ||
   (() => { try { return execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim() } catch { return '' } })()
-const BUILD_ID = new Date().toISOString().slice(0, 16).replace('T', ' ') + (BUILD_SHA ? ` · ${BUILD_SHA}` : '')
+const BUILD_DATE = new Date()
+const BUILD_ID = BUILD_DATE.toISOString().slice(0, 16).replace('T', ' ') + (BUILD_SHA ? ` · ${BUILD_SHA}` : '')
+// Forme COURTE et complète pour la sidebar (conçue pour tenir, pas tronquée) :
+// « v<version> · JJ/MM ». Le détail complet (horodatage + SHA) reste dans le title au survol.
+// Version lue depuis package.json d'apps/frontend (résolu via import.meta.url → robuste
+// quel que soit le cwd, y compris build Vercel depuis la racine du monorepo).
+const PKG_VERSION = (() => {
+  try { return JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')).version as string }
+  catch { return '' }
+})()
+const BUILD_SHORT = `${PKG_VERSION ? `v${PKG_VERSION} · ` : ''}${String(BUILD_DATE.getUTCDate()).padStart(2, '0')}/${String(BUILD_DATE.getUTCMonth() + 1).padStart(2, '0')}`
 
 export default defineConfig(({ mode }) => {
   // Charge TOUTES les variables (préfixe '') → récupère SENTRY_AUTH_TOKEN (.env.local en
@@ -23,7 +35,7 @@ export default defineConfig(({ mode }) => {
   const sentryAuthToken = env.SENTRY_AUTH_TOKEN || process.env.SENTRY_AUTH_TOKEN
 
   return {
-  define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
+  define: { __BUILD_ID__: JSON.stringify(BUILD_ID), __BUILD_SHORT__: JSON.stringify(BUILD_SHORT) },
   plugins: [
     react(),
     VitePWA({
