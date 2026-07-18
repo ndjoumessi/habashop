@@ -140,11 +140,11 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
     <>
       {showDiscountModal && (
         <div className="modal-backdrop" role="dialog" aria-modal="true"
-          aria-label={lang === 'en' ? 'Apply a discount' : lang === 'es' ? 'Aplicar un descuento' : lang === 'it' ? 'Applica uno sconto' : 'Appliquer une remise'}
+          aria-label={lang === 'en' ? 'Apply a manual discount' : lang === 'es' ? 'Aplicar un descuento manual' : lang === 'it' ? 'Applica uno sconto manuale' : 'Appliquer une remise manuelle'}
           onClick={e => e.target === e.currentTarget && setShowDiscountModal(false)}>
           <div ref={discountBoxRef} className="modal-box" style={{ maxWidth:420 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-              <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>🏷️ Appliquer une remise</h3>
+              <h3 style={{ fontSize:15, fontWeight:'var(--fw-bold)', color:'var(--text)' }}>🏷️ Appliquer une remise manuelle</h3>
               <button className="mini-btn" aria-label={lang === 'en' ? 'Close' : lang === 'es' ? 'Cerrar' : lang === 'it' ? 'Chiudi' : 'Fermer'} onClick={() => setShowDiscountModal(false)}>✕</button>
             </div>
 

@@ -222,9 +222,9 @@ export default function POSCart({
               </Pressable>
             )}
 
-            {/* Remise (%) */}
+            {/* Remise MANUELLE (%) — distincte de la remise fidélité auto ci-dessous */}
             <View style={s.discountRow}>
-              <Text style={s.recapLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')} (%)</Text>
+              <Text style={s.recapLabel}>{i('Remise manuelle', 'Manual discount', 'Descuento manual', 'Sconto manuale')} (%)</Text>
               <View style={s.discountInputWrap}>
                 <TextInput
                   style={s.discountInput}
@@ -236,7 +236,7 @@ export default function POSCart({
                     const n = Math.max(0, Math.min(100, Number(t.replace(/[^0-9.]/g, '')) || 0))
                     onSetDiscount(n)
                   }}
-                  accessibilityLabel={i('Remise en pourcentage', 'Discount percentage', 'Descuento en porcentaje', 'Sconto in percentuale')}
+                  accessibilityLabel={i('Remise manuelle en pourcentage', 'Manual discount percentage', 'Descuento manual en porcentaje', 'Sconto manuale in percentuale')}
                 />
                 <Text style={s.discountPct}>%</Text>
               </View>
@@ -249,7 +249,7 @@ export default function POSCart({
             </View>
             {discAmt > 0 && (
               <View style={s.recapRow}>
-                <Text style={s.recapLabel}>{i('Remise', 'Discount', 'Descuento', 'Sconto')}</Text>
+                <Text style={s.recapLabel}>{i('Remise manuelle', 'Manual discount', 'Descuento manual', 'Sconto manuale')}</Text>
                 <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(discAmt)}</Text>
               </View>
             )}
