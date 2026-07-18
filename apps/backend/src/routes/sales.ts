@@ -31,6 +31,9 @@ const SALE_BODY = z.object({
   discount:    z.object({ amount: z.coerce.number().optional(), type: z.string().nullish() }).nullish(),
   customerId:  z.string().nullish(),
   idempotencyKey: z.string().nullish(),
+  // Horodatage client (ISO) : NON vérifiable → sert seulement à honorer un prix offline
+  // en cas de divergence (cf. handler + CLAUDE.md § Intégrité prix). Falsifiable = la trace protège.
+  clientCreatedAt:   z.string().nullish(),
   cashAmount:        z.coerce.number().optional(),
   mobileMoneyAmount: z.coerce.number().optional(),
   cardAmount:        z.coerce.number().optional(),
@@ -38,6 +41,12 @@ const SALE_BODY = z.object({
   campayReference:   z.string().nullish(),
   paydunyaReference: z.string().nullish(),
 }).passthrough()
+
+// Au-delà de ce délai de rejeu (now − clientCreatedAt), une vente est considérée « offline
+// rejouée » → en cas de divergence prix on HONORE le montant encaissé (sinon prix serveur).
+// ⚠️ clientCreatedAt est falsifiable : ce seuil n'est PAS une garantie de sécurité, la
+// protection est la TRACE (priceDivergence) exploitée en audit. Cf. CLAUDE.md.
+const REPLAY_THRESHOLD_MS = 90_000
 
 const REFUND_PARAMS = z.object({ id: z.string().min(1) })
 const REFUND_BODY = z.object({
@@ -56,9 +65,13 @@ class RefundConflict extends Error {}
 export async function saleRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/sales', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    const { limit = 50, offset = 0 } = request.query as { limit?: number; offset?: number }
+    const { limit = 50, offset = 0, priceDivergence } = request.query as { limit?: number; offset?: number; priceDivergence?: string }
+    // Filtre d'AUDIT : `?priceDivergence=true` → ventes dont un prix soumis ≠ prix catalogue
+    // (le détail submitted/catalog vit sur chaque SaleItem, renvoyé via include). Rend la trace
+    // exploitable dès l'API (l'UI propriétaire suivra) — pas un journal write-only.
+    const divergenceOnly = priceDivergence === 'true' || priceDivergence === '1'
     return prisma.sale.findMany({
-      where: { tenantId },
+      where: { tenantId, ...(divergenceOnly ? { priceDivergence: true } : {}) },
       include: { items: { include: { product: true } } },
       orderBy: { createdAt: 'desc' },
       take: Number(limit),
@@ -80,59 +93,51 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     const body = request.body as SaleBody
     const manualDiscount = Number(discount?.amount) || 0
 
-    // ── Config tenant (fidélité + remises paliers, + WhatsApp/devise pour l'après-vente) ──
+    // Horodatage client (offline) : sert UNIQUEMENT à décider quel prix FACTURER en cas de
+    // divergence (honorer le montant encaissé offline vs prix serveur en ligne). ⚠️ NON
+    // VÉRIFIABLE — un client peut le falsifier. La protection anti-fraude n'est PAS cette
+    // branche mais la TRACE (submittedPrice/catalogPrice/priceDivergence), écrite dans les
+    // DEUX cas → audit a posteriori. Cf. CLAUDE.md § Intégrité prix.
+    const clientCreatedAt = String((request.body as SaleBody)?.clientCreatedAt ?? '').trim()
+    const replayMs = clientCreatedAt ? (Date.now() - Date.parse(clientCreatedAt)) : 0
+    const honorClientPrice = Number.isFinite(replayMs) && replayMs > REPLAY_THRESHOLD_MS
+
+    // ── Config tenant (fidélité + TVA POS + WhatsApp/devise pour l'après-vente) ──
     const tCfg = await prisma.tenant.findUnique({
       where: { id: tenantId },
       select: {
         enableLoyalty: true, pointsPerAmount: true, bronzeThreshold: true, silverThreshold: true,
         bronzeDiscount: true, silverDiscount: true, goldDiscount: true,
+        vatRate: true, posVatIncluded: true,
         name: true, currency: true, lang: true, enableAutoWhatsApp: true,
       },
     })
     const loyaltyOn = !!tCfg?.enableLoyalty
 
-    // ── Loyalty v2 : remise auto selon le palier du client lié (plafonnée 50%) ──
-    let loyaltyDiscount = 0
-    if (customerId && loyaltyOn) {
-      const cust = await prisma.customer.findFirst({ where: { id: customerId, tenantId }, select: { loyaltyPoints: true } })
-      const tier = tierForPoints(cust?.loyaltyPoints ?? 0, tCfg?.bronzeThreshold ?? undefined, tCfg?.silverThreshold ?? undefined)
-      const pct = discountForTier(tier, tCfg?.bronzeDiscount ?? undefined, tCfg?.silverDiscount ?? undefined, tCfg?.goldDiscount ?? undefined)
-      loyaltyDiscount = computeLoyaltyDiscount(total, pct, manualDiscount)
-    }
-    const finalTotal = Math.max(0, total - loyaltyDiscount)
-
-    // ── Ventilation paiement (sur le total NET après remise fidélité) ──
-    const split = resolvePaymentSplit(paymentMode ?? 'cash', finalTotal, body)
-    if ('error' in split) {
-      const msg = split.error === 'MIXED_NEEDS_TWO'
-        ? 'Un paiement mixte requiert au moins 2 modes'
-        : 'La somme des paiements doit égaler le total'
-      return reply.code(400).send({ error: msg, code: split.error })
-    }
-
     // ── Idempotence : clé envoyée par le client (body ou header Idempotency-Key) ──
     // Pas de clé → comportement historique inchangé (rétro-compat).
     const idempotencyKey =
       String((request.body as SaleBody)?.idempotencyKey ?? request.headers['idempotency-key'] ?? '').trim() || null
-
-    // Renvoi en double (retry/resync) : la vente existe déjà → on la renvoie SANS
-    // re-créer (pas de re-décrément stock ni re-créditage fidélité).
     if (idempotencyKey) {
+      // Renvoi en double (retry/resync) : la vente existe déjà → renvoyée SANS re-créer.
       const existing = await prisma.sale.findFirst({ where: { tenantId, idempotencyKey } })
       if (existing) return existing
     }
 
-    // Pré-fetch des produits pour recalculer prix unitaire côté backend (sécurité tier/promo)
-    // + stockQty/name pour la garde anti-survente.
+    // ── Pré-fetch produits : TOUS les tarifs serveur (détail/demi-gros/gros) + tier/promo
+    //    + stock/nom. Le prix de base est désormais SERVEUR-autoritaire (cf. intégrité ci-dessous). ──
     const productIds = items.map((i: any) => i.productId)
     const productsList = await prisma.product.findMany({
       where: { tenantId, id: { in: productIds } },
-      select: { id: true, name: true, stockQty: true, sellPrice: true, hasPromotion: true, promotionPrice: true, priceTiers: true },
+      select: {
+        id: true, name: true, stockQty: true,
+        sellPrice: true, semiWholesalePrice: true, wholesalePrice: true,
+        hasPromotion: true, promotionPrice: true, priceTiers: true,
+      },
     })
     const productMap = new Map(productsList.map(p => [p.id, p]))
 
-    // ── Garde anti-survente : refuser si le stock dispo < qté demandée (évite les stocks négatifs). ──
-    // Vérifié AVANT la transaction → 400 propre. (Produit absent du map = vente démo/hors-catalogue → toléré.)
+    // ── Garde anti-survente (AVANT tx). Produit absent du map = démo/hors-catalogue → toléré. ──
     for (const item of items) {
       const p = productMap.get(item.productId)
       if (p && p.stockQty < item.qty) {
@@ -145,6 +150,71 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       }
     }
 
+    // ── INTÉGRITÉ PRIX (A/E) : le prix de base est SERVEUR-autoritaire. On accepte le prix
+    //    soumis SEULEMENT s'il correspond à un point de tarif serveur légitime (détail / demi-gros
+    //    / gros, chacun résolu via palier+promo à cette quantité) → pas besoin du clientType.
+    //    Sinon = DIVERGENCE (prix arbitraire, ex. caissier forgeant la requête) : en ligne on
+    //    FACTURE le prix serveur détail ; offline (honorClientPrice) on honore le montant encaissé.
+    //    Dans TOUS les cas de divergence : TRACE (submitted/catalog) + flag pour l'audit. ──
+    type ItemRow = { productId: string; qty: number; unitPrice: number; total: number; tierLabel: string | null; submittedPrice?: number; catalogPrice?: number }
+    let anyDivergence = false
+    const itemsData: ItemRow[] = items.map((item: any): ItemRow => {
+      const submitted = Number(item.price) || 0
+      const p = productMap.get(item.productId)
+      if (!p) {
+        // Hors-catalogue (démo) : rien à comparer → prix soumis conservé, sans trace.
+        return { productId: item.productId, qty: item.qty, unitPrice: submitted, total: submitted * item.qty, tierLabel: item.tierLabel ?? null }
+      }
+      const tiers = Array.isArray(p.priceTiers) ? (p.priceTiers as unknown as PriceTier[]) : null
+      const promo = { active: !!p.hasPromotion, price: p.promotionPrice }
+      const retail = resolveTierPrice(item.qty, p.sellPrice, tiers, promo) // référence catalogue (détail)
+      // Ensemble des prix LÉGITIMES = chaque tarif défini, résolu via palier/promo à cette qté.
+      const legit = new Set<number>()
+      for (const base of [p.sellPrice, p.semiWholesalePrice, p.wholesalePrice]) {
+        if (base != null) legit.add(Math.round(resolveTierPrice(item.qty, base, tiers, promo).price))
+      }
+      if (legit.has(Math.round(submitted))) {
+        // Prix soumis = un tarif serveur légitime → autorisé, facturé tel quel (pas de trace).
+        return { productId: item.productId, qty: item.qty, unitPrice: submitted, total: submitted * item.qty, tierLabel: item.tierLabel ?? null }
+      }
+      // DIVERGENCE : prix soumis hors de tout tarif serveur.
+      anyDivergence = true
+      const charged = honorClientPrice ? submitted : retail.price
+      const tierLabel = honorClientPrice ? (item.tierLabel ?? null) : (retail.tierLabel ?? null)
+      console.warn(`[sales][integrity] divergence prix ${p.id} par user ${userId}: soumis=${submitted} catalogue=${retail.price} → facturé=${charged}${honorClientPrice ? ' (offline honoré)' : ''}`)
+      return {
+        productId: item.productId, qty: item.qty,
+        unitPrice: charged, total: charged * item.qty, tierLabel,
+        submittedPrice: submitted, catalogPrice: retail.price, // TRACE (audit)
+      }
+    })
+
+    // ── Total SERVEUR-autoritaire (D) : Σ lignes facturées − remise, TVA selon mode (C), − fidélité. ──
+    const chargedSubtotal = itemsData.reduce((s, it) => s + it.total, 0)
+    const subAfterDiscount = Math.max(0, chargedSubtotal - manualDiscount)
+    const vatIncluded = tCfg?.posVatIncluded ?? true // TTC (défaut) = TVA extraite (total inchangé) ; HT = ajoutée
+    const vatRate = Math.max(0, Number(tCfg?.vatRate) || 0)
+    const gross = vatIncluded ? subAfterDiscount : Math.round(subAfterDiscount * (1 + vatRate / 100))
+
+    // ── Loyalty v2 : remise auto selon le palier du client lié (plafonnée 50%), sur le gross SERVEUR ──
+    let loyaltyDiscount = 0
+    if (customerId && loyaltyOn) {
+      const cust = await prisma.customer.findFirst({ where: { id: customerId, tenantId }, select: { loyaltyPoints: true } })
+      const tier = tierForPoints(cust?.loyaltyPoints ?? 0, tCfg?.bronzeThreshold ?? undefined, tCfg?.silverThreshold ?? undefined)
+      const pct = discountForTier(tier, tCfg?.bronzeDiscount ?? undefined, tCfg?.silverDiscount ?? undefined, tCfg?.goldDiscount ?? undefined)
+      loyaltyDiscount = computeLoyaltyDiscount(gross, pct, manualDiscount)
+    }
+    const finalTotal = Math.max(0, gross - loyaltyDiscount)
+
+    // ── Ventilation paiement (sur le total NET serveur après remise fidélité) ──
+    const split = resolvePaymentSplit(paymentMode ?? 'cash', finalTotal, body)
+    if ('error' in split) {
+      const msg = split.error === 'MIXED_NEEDS_TWO'
+        ? 'Un paiement mixte requiert au moins 2 modes'
+        : 'La somme des paiements doit égaler le total'
+      return reply.code(400).send({ error: msg, code: split.error })
+    }
+
     let newSale
     try {
       newSale = await prisma.$transaction(async (tx) => {
@@ -152,13 +222,14 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
         data: {
           tenantId,
           cashierId: userId,
-          total: finalTotal,             // NET = total − remise fidélité (Modèle A)
+          total: finalTotal,             // NET serveur = Σ lignes − remise − fidélité (Modèle A)
           paymentMode,
           discountAmount: discount?.amount ?? 0,
           discountType: discount?.type ?? null,
           customerId: customerId ?? null,
           idempotencyKey,
           loyaltyDiscount: loyaltyDiscount,
+          priceDivergence: anyDivergence, // flag d'audit (détail sur SaleItem)
           cashAmount: split.cashAmount,
           mobileMoneyAmount: split.mobileMoneyAmount,
           cardAmount: split.cardAmount,
@@ -168,44 +239,11 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
         },
       })
 
-      for (const item of items) {
-        const product = productMap.get(item.productId)
-        // basePrice = ce que le frontend a calculé (inclut le tarif client retail/semi/wholesale)
-        // Si le produit existe, on applique tier + promo par-dessus (sécurité backend).
-        const frontendBasePrice = Number(item.price) || 0
-        let unitPrice = frontendBasePrice
-        let tierLabel: string | undefined = undefined
-
-        if (product) {
-          const rawTiers = product.priceTiers as unknown
-          const tiers = Array.isArray(rawTiers) ? (rawTiers as PriceTier[]) : null
-          const promotion = { active: !!product.hasPromotion, price: product.promotionPrice }
-          const r = resolveTierPrice(item.qty, frontendBasePrice, tiers, promotion)
-          unitPrice = r.price
-          tierLabel = r.tierLabel
-          if (unitPrice !== frontendBasePrice) {
-            // Le backend a calculé un prix différent (palier matché ou promo). Comportement normal.
-            // On logge en debug si l'écart est inattendu (frontend devrait être aligné).
-            const frontendTierLabel = item.tierLabel ?? null
-            if (frontendTierLabel !== (tierLabel ?? null) || Number(item.price) !== unitPrice) {
-              console.warn(`[sales] prix ajusté pour ${product.id}: frontend=${frontendBasePrice}/${frontendTierLabel} → backend=${unitPrice}/${tierLabel ?? '—'}`)
-            }
-          }
-        }
-
-        await tx.saleItem.create({
-          data: {
-            saleId: newSale.id,
-            productId: item.productId,
-            qty: item.qty,
-            unitPrice,
-            total: unitPrice * item.qty,
-            tierLabel: tierLabel ?? null,
-          },
-        })
+      for (const it of itemsData) {
+        await tx.saleItem.create({ data: { saleId: newSale.id, ...it } })
         await tx.product.update({
-          where: { id: item.productId },
-          data: { stockQty: { decrement: item.qty } },
+          where: { id: it.productId },
+          data: { stockQty: { decrement: it.qty } },
         })
       }
 
@@ -241,7 +279,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     // Les agrégats analytics dépendent des ventes → on purge le cache du tenant.
     invalidateTenantCache(tenantId).catch(() => {})
 
-    notifyTenant(tenantId, { type: 'new_sale', data: { id: newSale.id, total, paymentMode, itemCount: Array.isArray(items) ? items.length : 0 } })
+    notifyTenant(tenantId, { type: 'new_sale', data: { id: newSale.id, total: finalTotal, paymentMode, itemCount: Array.isArray(items) ? items.length : 0 } })
     // Push « paiement reçu » → ADMIN, pour les encaissements ÉLECTRONIQUES uniquement
     // (mobile money / carte). On exclut 'cash' pour ne pas spammer à chaque vente comptoir.
     // Les flux MTN/Campay/PayDunya aboutissent tous à un POST /api/sales (leurs webhooks ne
