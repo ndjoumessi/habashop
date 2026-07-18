@@ -13,5 +13,16 @@
     { "label": "trop court → conservé, invalide", "raw": "12345", "canonical": "12345", "valid": false },
     { "label": "non-chiffres → conservé, invalide", "raw": "ABC6381333931", "canonical": "ABC6381333931", "valid": false },
     { "label": "vide → vide (pas de code-barres)", "raw": "", "canonical": "", "valid": false }
+  ],
+  "searchNote": "barcodeMatches(stored, query) — recherche par code-barres (inventaire/POS/mobile). Lu par les tests web ET mobile.",
+  "searchCases": [
+    { "label": "frappe partielle → sous-chaîne", "stored": "4006381333931", "query": "4006", "match": true },
+    { "label": "code complet exact", "stored": "4006381333931", "query": "4006381333931", "match": true },
+    { "label": "espaces dans la requête ignorés", "stored": "4006381333931", "query": "4006 3813", "match": true },
+    { "label": "UPC-A tapé (12) retrouve l'EAN-13 stocké (13)", "stored": "0036000291452", "query": "036000291452", "match": true },
+    { "label": "EAN-8 exact", "stored": "96385074", "query": "96385074", "match": true },
+    { "label": "aucune correspondance", "stored": "4006381333931", "query": "9999", "match": false },
+    { "label": "produit sans code-barres → jamais de match", "stored": "", "query": "4006", "match": false },
+    { "label": "requête vide → jamais de match", "stored": "4006381333931", "query": "", "match": false }
   ]
 }

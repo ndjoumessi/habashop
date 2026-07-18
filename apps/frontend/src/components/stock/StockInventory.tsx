@@ -1,13 +1,17 @@
-import { Search, Download, Plus, Tag, Package, Eye, Trash2, LayoutGrid, AlignJustify } from 'lucide-react'
+import { lazy, Suspense, useState } from 'react'
+import { Search, Download, Plus, Tag, Package, Eye, Trash2, LayoutGrid, AlignJustify, Camera } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t, useAppStore, convertFromXOF } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
 import { hydratePricesFromApi } from '@/lib/productCurrency'
+import { normalizeBarcode } from '@/lib/barcode'
 import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import FilterSelect, { type FilterOption } from '@/components/ui/FilterSelect'
 import { normCat } from '@/utils/normCat'
 import { type ProductItem, statusOf, stockCatLabel } from '@/components/stock/stockShared'
+// Chargé à la demande (@zxing) — uniquement à l'ouverture du scanner de recherche.
+const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
 interface StockInventoryProps {
   products: ProductItem[]
@@ -41,6 +45,9 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const currency = useAppStore(s => s.currency)
+  // Scan pour la recherche : remplit la barre avec le code canonicalisé (filtre
+  // seulement, pas d'ouverture de fiche — geste d'inventaire en série).
+  const [showSearchScanner, setShowSearchScanner] = useState(false)
   // ProductItem est en XOF (cohérence DB). On hydrate vers la devise d'affichage
   // au moment de remplir le form (form fonctionne dans la devise du tenant).
   const hydrate = (p: ProductItem) => hydratePricesFromApi({
@@ -147,13 +154,27 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
 
         {/* Filtres */}
         <div className="flex flex-wrap gap-2 mb-4">
-          <div className="search-wrap flex-1 min-w-40">
+          <div className="search-wrap flex-1 min-w-40" style={{ display:'flex', alignItems:'center' }}>
             <span className="search-icon"><Search size={13} /></span>
             <input className="input pl-8 py-2 text-sm w-full"
-              aria-label={i('Rechercher', 'Search', 'Buscar', 'Cerca')}
-              placeholder={i('Rechercher un produit', 'Search a product', 'Buscar un producto', 'Cerca un prodotto') + '…'}
+              aria-label={i('Rechercher (nom, SKU, code-barres)', 'Search (name, SKU, barcode)', 'Buscar (nombre, SKU, código de barras)', 'Cerca (nome, SKU, codice a barre)')}
+              placeholder={i('Rechercher (nom, SKU, code-barres)', 'Search (name, SKU, barcode)', 'Buscar (nombre, SKU, código)', 'Cerca (nome, SKU, codice)') + '…'}
               value={search} onChange={e => setSearch(e.target.value)} />
+            <button type="button" onClick={() => setShowSearchScanner(true)}
+              aria-label={i('Scanner pour rechercher', 'Scan to search', 'Escanear para buscar', 'Scansiona per cercare')}
+              title={i('Scanner pour rechercher', 'Scan to search', 'Escanear para buscar', 'Scansiona per cercare')}
+              style={{ display:'flex', alignItems:'center', justifyContent:'center', width:32, height:32, marginRight:4, background:'transparent', border:'none', color:'var(--text3)', cursor:'pointer' }}>
+              <Camera size={16} />
+            </button>
           </div>
+          {showSearchScanner && (
+            <Suspense fallback={null}>
+              <BarcodeScanner
+                onScan={code => { setSearch(normalizeBarcode(code)); setShowSearchScanner(false) }}
+                onClose={() => setShowSearchScanner(false)}
+              />
+            </Suspense>
+          )}
           <FilterSelect
             value={cat} onChange={setCat}
             ariaLabel={t('col_category')}

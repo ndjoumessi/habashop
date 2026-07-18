@@ -5,7 +5,7 @@ import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCu
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
 import { resolveTierPrice } from '@/lib/pricing'
-import { normalizeBarcode } from '@/lib/barcode'
+import { normalizeBarcode, barcodeMatches } from '@/lib/barcode'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 import { ShoppingCart, Loader2, Search, Barcode, WifiOff, History, Store } from 'lucide-react'
@@ -59,6 +59,7 @@ export default function POS() {
       .then(data => setPosProducts(data.map((p: any): PosProduct => ({
         id: p.id,
         name: p.name,
+        sku: p.sku ?? '',
         barcode: p.barcode ?? '',
         price: p.sellPrice ?? 0,
         priceWholesale: p.wholesalePrice ?? p.sellPrice ?? 0,
@@ -318,7 +319,11 @@ export default function POS() {
   // Filtrage produits — mémoïsé : recalculé seulement quand produits/catégorie/recherche changent
   const filtered = useMemo(() => posProducts.filter(p =>
     (activeCat === 'all' || p.cat === activeCat) &&
-    p.name.toLowerCase().includes(search.toLowerCase())
+    // Recherche : nom + SKU (imprimé sur les étiquettes) + code-barres (règle canonique)
+    (!search ||
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.sku ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      barcodeMatches(p.barcode, search))
   ), [posProducts, activeCat, search])
 
   // Index produits par id pour recalcul rapide

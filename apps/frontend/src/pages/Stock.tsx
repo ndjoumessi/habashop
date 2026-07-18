@@ -21,6 +21,7 @@ import Skeleton from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { type ProductItem, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc } from '@/components/stock/stockShared'
+import { normalizeBarcode, isAcceptableBarcode, barcodeMatches } from '@/lib/barcode'
 
 export default function Stock() {
   const { stockLowThreshold, stockShowSKU, lang } = useConfig()
@@ -84,7 +85,7 @@ export default function Stock() {
   const filtered = products.filter(p => {
     const s = statusOf(p.stock, p.threshold)
     return (
-      (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())) &&
+      (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase()) || barcodeMatches(p.barcode, search)) &&
       (!cat || p.category === cat) &&
       (!statusFilter || s.label === statusFilter)
     )
@@ -138,14 +139,18 @@ export default function Stock() {
   }, [])
 
   const saveProduct = async () => {
-    // Validation code-barres : si rempli, doit être 13 chiffres (EAN-13).
-    if (form.barcode && !/^\d{13}$/.test(form.barcode)) {
-      toast.error(lang === 'en' ? 'Invalid barcode (13 digits required)'
-                : lang === 'es' ? 'Código de barras inválido (13 dígitos requeridos)'
-                : lang === 'it' ? 'Codice a barre non valido (13 cifre richieste)'
-                : 'Code-barres invalide (13 chiffres requis)')
+    // Garde code-barres : si rempli, doit être un EAN-13/EAN-8 (UPC-A canonicalisé).
+    // Brique UNIQUE isAcceptableBarcode (plus de garde « 13 chiffres » locale — accepte EAN-8/UPC-A).
+    if (!isAcceptableBarcode(form.barcode)) {
+      toast.error(lang === 'en' ? 'Invalid barcode (EAN-13, EAN-8 or UPC-A expected)'
+                : lang === 'es' ? 'Código de barras inválido (se espera EAN-13, EAN-8 o UPC-A)'
+                : lang === 'it' ? 'Codice a barre non valido (atteso EAN-13, EAN-8 o UPC-A)'
+                : 'Code-barres invalide (EAN-13, EAN-8 ou UPC-A attendu)')
       return
     }
+    // Canonicalisation avant envoi/stockage (UPC-A→EAN-13, espaces retirés) → même
+    // forme qu'en base et que la recherche (sinon un UPC-A saisi serait stocké 12 ch.).
+    const canonicalBarcode = normalizeBarcode(form.barcode)
     const supplierName = suppliers.find(s => s.id === form.supplierId)?.name || ''
     // Conversion display currency (form state) → XOF (DB) sur tous les champs prix
     const dh = dehydratePricesForApi(form, currency)
@@ -162,7 +167,7 @@ export default function Stock() {
       isActive: form.isActive,
       hasPromotion: form.hasPromotion,
       promotionPrice: dh.promotionPrice,
-      barcode: form.barcode || null,
+      barcode: canonicalBarcode || null,
       supplierId: form.supplierId || null,
       description: form.description || '',
       notes: form.notes || '',
@@ -185,7 +190,7 @@ export default function Stock() {
           priceTiers: dh.priceTiers ?? [],
           stock: form.stock, threshold: form.threshold,
           supplier: supplierName, supplierId: form.supplierId,
-          barcode: form.barcode, description: form.description, notes: form.notes,
+          barcode: canonicalBarcode, description: form.description, notes: form.notes,
         } : p
       ))
       toast.success(`${form.name} mis à jour !`)
@@ -209,7 +214,7 @@ export default function Stock() {
         priceTiers: dh.priceTiers ?? [],
         stock: form.stock, threshold: form.threshold,
         supplier: supplierName, supplierId: form.supplierId,
-        barcode: form.barcode,
+        barcode: canonicalBarcode,
         description: form.description, notes: form.notes,
       }])
       toast.success('Produit ajouté !')
