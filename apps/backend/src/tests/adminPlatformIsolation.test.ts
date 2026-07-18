@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
-import Fastify from 'fastify'
+import Fastify, { type FastifyInstance } from 'fastify'
 import jwt from '@fastify/jwt'
 
 /**
@@ -23,16 +23,19 @@ const SECRET = 'test-secret-platform-isolation'
 const db = {
   tenant:  { findMany: vi.fn(async () => [{ id: 'A', name: 'Boutique A', _count: { users: 1, products: 2, sales: 3 } }]), count: vi.fn(async () => 3), create: vi.fn(async () => ({ id: 'new' })) },
   user:    { count: vi.fn(async () => 5), create: vi.fn(async () => ({ id: 'u' })) },
-  sale:    { aggregate: vi.fn(async () => ({ _sum: { total: 999 }, _count: 3 })) },
-  product: { count: vi.fn(async () => 2) },
   planRequest: { findMany: vi.fn(async () => []), findUnique: vi.fn(async () => null), update: vi.fn() },
 }
-vi.mock('../db', () => ({ prisma: db }))
+// basePrisma : agrégats cross-tenant (Sale/Product scopés par l'extension → client de base).
+const baseDb = {
+  sale:    { aggregate: vi.fn(async () => ({ _sum: { total: 999 }, _count: 3 })), groupBy: vi.fn(async () => [{ tenantId: 'A', _sum: { total: 5000 }, _max: { createdAt: '2026-07-10T00:00:00.000Z' } }]) },
+  product: { count: vi.fn(async () => 2) },
+}
+vi.mock('../db', () => ({ prisma: db, basePrisma: baseDb }))
 
 // Les GET admin exposent ces routes ; on les liste pour la garde 403 systématique.
 const ADMIN_GET_ROUTES = ['/api/admin/tenants', '/api/admin/stats', '/api/admin/plan-requests']
 
-let app: any
+let app: FastifyInstance
 let tenantSuperAdminToken: string  // SUPER_ADMIN d'un tenant, PAS admin plateforme
 let legacyToken: string            // ancien JWT sans le claim isPlatformAdmin
 let platformAdminToken: string     // vrai admin plateforme
@@ -80,5 +83,12 @@ describe('P0 — /api/admin/* gate sur isPlatformAdmin, jamais sur le rôle tena
     const res = await app.inject({ method: 'GET', url: '/api/admin/stats', headers: { authorization: `Bearer ${platformAdminToken}` } })
     expect(res.statusCode).toBe(200)
     expect(res.json()).toMatchObject({ totalTenants: 3, totalUsers: 5 })
+  })
+
+  it('/api/admin/tenants (admin plateforme) enrichit chaque boutique de CA + dernière activité', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/admin/tenants', headers: { authorization: `Bearer ${platformAdminToken}` } })
+    expect(res.statusCode).toBe(200)
+    const rows = res.json()
+    expect(rows[0]).toMatchObject({ id: 'A', revenue: 5000, lastActivityAt: '2026-07-10T00:00:00.000Z' })
   })
 })

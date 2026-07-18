@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import type { AdminCreateTenantBody, AdminReviewBody } from '../types'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../db'
+import { prisma, basePrisma } from '../db'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import {
   sendUpgradeConfirmation,
@@ -14,24 +14,40 @@ import {
 
 export async function adminRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/admin/tenants', { preHandler: authenticateAdmin }, async () => {
-    return prisma.tenant.findMany({
+    const tenants = await prisma.tenant.findMany({
       include: { _count: { select: { users: true, products: true, sales: true } } },
       orderBy: { createdAt: 'desc' },
     })
+    // Agrégat par boutique — CA (refunded exclu) + dernière activité (dernière vente).
+    // ⚠️ Cross-tenant légitime → basePrisma (le client étendu scoperait Sale sur le
+    // tenant du contexte ; les routes admin lisent TOUTES les boutiques).
+    const perTenant = await basePrisma.sale.groupBy({
+      by: ['tenantId'],
+      where: { status: { not: 'refunded' } },
+      _sum: { total: true },
+      _max: { createdAt: true },
+    })
+    const byTenant = new Map(perTenant.map(r => [r.tenantId, r]))
+    return tenants.map(t => ({
+      ...t,
+      revenue: byTenant.get(t.id)?._sum.total ?? 0,
+      lastActivityAt: byTenant.get(t.id)?._max.createdAt ?? null,
+    }))
   })
 
   app.get('/api/admin/stats', { preHandler: authenticateAdmin }, async () => {
+    // Sale/Product sont scopés par l'extension → basePrisma pour les totaux plateforme.
     const [tenants, users, sales, products] = await Promise.all([
       prisma.tenant.count(),
       prisma.user.count(),
-      prisma.sale.aggregate({ where: { status: { not: 'refunded' } }, _sum: { total: true }, _count: true }),
-      prisma.product.count(),
+      basePrisma.sale.aggregate({ where: { status: { not: 'refunded' } }, _sum: { total: true }, _count: true }),
+      basePrisma.product.count(),
     ])
     return {
       totalTenants: tenants,
       totalUsers: users,
-      totalSales: (sales as any)._count,
-      totalRevenue: (sales as any)._sum.total ?? 0,
+      totalSales: sales._count,
+      totalRevenue: sales._sum.total ?? 0,
       totalProducts: products,
     }
   })
