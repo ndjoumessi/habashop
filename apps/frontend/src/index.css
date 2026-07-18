@@ -347,6 +347,10 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 .nav-item.collapsed { justify-content:center; padding:8px 0; margin:1px 0; width:100% }
 .nav-item.collapsed.active::before { left:0 }
 .nav-label { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+/* Items du bloc QUOTIDIEN : le cadre porte le gutter (marge 7px + bordure 1px) →
+   les items reprennent 100% de largeur, sans leur gutter propre, pour aligner
+   libellé et largeur utile sur les entrées normales de la sidebar. */
+.nav-daily .nav-item { width:100%; margin-left:0; margin-right:0 }
 
 .nav-badge { margin-left:auto; display:inline-flex; align-items:center; justify-content:center; background:var(--c-purple-bg); color:var(--p3); border:1px solid var(--border3); font-size:var(--fs-caption); font-weight:var(--fw-bold); padding:0 7px; border-radius:var(--r-full); min-width:20px; height:18px; line-height:1 }
 .nav-badge.tag { background:var(--grad-p); color:#fff; border-color:transparent }
@@ -364,7 +368,23 @@ td { padding:12px 14px; color:var(--text2); vertical-align:middle }
 
 /* sidebar misc */
 .sidebar-logo { padding:17px 17px 13px; display:flex; align-items:center; gap:9px; border-bottom:1px solid var(--border) }
-.sidebar-footer { margin-top:auto; border-top:1px solid var(--border); padding:12px 15px; display:flex; align-items:center; gap:9px }
+/* Pied de sidebar : 3 rangées (avatar+nom / version / actions). Replié → centré, avatar+expand. */
+.sidebar-footer { margin-top:auto; border-top:1px solid var(--border); padding:12px 15px; display:flex; flex-direction:column; gap:10px }
+.sidebar-footer.collapsed { align-items:center; gap:8px; padding:10px 0 }
+.footer-user { display:flex; align-items:center; gap:9px; min-width:0 }
+.footer-avatar { position:relative; flex-shrink:0; width:34px; height:34px }
+.footer-avatar-circle { width:34px; height:34px; border-radius:50%; background:var(--grad-p); display:flex; align-items:center; justify-content:center; font-weight:var(--fw-bold); color:#fff; font-size:13px; box-shadow:var(--sh-p) }
+/* Pastille = SEUL signal « en ligne » (title/aria sur .footer-avatar) */
+.footer-status-dot { position:absolute; bottom:0; right:0; width:9px; height:9px; border-radius:50%; background:var(--acc2); border:2px solid var(--bg2); box-shadow:0 0 5px var(--acc2) }
+/* Rangée version : flex-wrap → laisse la place à un futur indicateur « dernière synchro » (chantier B) */
+.footer-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-height:14px }
+.footer-build { font-size:var(--fs-caption); color:var(--text4); font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.footer-actions { display:flex; align-items:center; justify-content:space-between; gap:4px }
+.footer-btn { flex:1; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:var(--r-md); cursor:pointer; color:var(--text4); transition:color .15s,background .15s }
+.footer-btn:hover { color:var(--text2); background:var(--c-purple-bg2) }
+.footer-btn:focus-visible { outline:none; box-shadow:0 0 0 2px var(--p2) }
+.footer-btn.danger:hover { color:var(--danger); background:var(--c-red-bg) }
+.sidebar-footer.collapsed .footer-btn { flex:none; width:40px; min-width:40px; height:40px; min-height:40px }
 .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--p),var(--acc)); display:flex; align-items:center; justify-content:center; font-weight:var(--fw-semibold); color:#fff; font-size:12px; flex-shrink:0 }
 .user-name { font-weight:var(--fw-regular); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
 .user-role,.user-info .user-role { color:var(--text2); font-size:11px }
