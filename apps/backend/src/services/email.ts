@@ -70,7 +70,7 @@ function baseTemplate(content: string): string {
 <body>
   <div class="wrapper">
     <div class="header">
-      <p class="header-logo">🛍️ HabaShop</p>
+      <p class="header-logo"><img src="https://habashop.vercel.app/pwa-192x192.png" width="34" height="34" alt="" style="vertical-align:middle;border-radius:8px;margin-right:9px;display:inline-block"/>HabaShop</p>
       <p class="header-sub">Gestion commerciale pour l'Afrique</p>
     </div>
     <div class="body">${content}</div>
@@ -112,7 +112,7 @@ export async function sendWelcomeEmail(opts: {
     Vous bénéficiez d'un <strong>essai gratuit de 14 jours</strong>
     pour explorer toutes les fonctionnalités.</p>
 
-    <div class="flag-row">🛍️</div>
+    <div style="text-align:center;margin:16px 0;"><img src="https://habashop.vercel.app/pwa-192x192.png" width="48" height="48" alt="HabaShop" style="border-radius:12px;display:inline-block"/></div>
 
     <p>Avec HabaShop vous pouvez :</p>
     <ul style="color:#444464;font-size:15px;line-height:2;padding-left:20px;">

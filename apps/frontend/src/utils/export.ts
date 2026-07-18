@@ -142,7 +142,7 @@ export function openPDF(title: string, bodyHTML: string) {
 <body>
   <div class="header">
     <div class="logo">
-      <div class="logo-icon">H</div>
+      ${INVOICE_LOGO_SVG}
       <div>
         <div class="logo-name">${name}</div>
         <div style="font-size:11px;color:#888;">${ps('software', lang)}</div>

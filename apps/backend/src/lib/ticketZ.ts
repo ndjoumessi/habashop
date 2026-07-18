@@ -1,5 +1,5 @@
 import PDFDocument from 'pdfkit'
-import { fmtMoney } from './invoicePdf'
+import { fmtMoney, drawLogo } from './invoicePdf'
 
 // ── Agrégat (pur, testable) ──
 export interface TZSale {
@@ -89,6 +89,8 @@ export function buildTicketZPdf(tz: TicketZRecord, tenant: TZTenant, generatedBy
     y += size + 7
   }
 
+  // Logo Sac+H centré (cohérence de marque avec la facture) puis titre.
+  drawLogo(doc, left + inner / 2 - 17, y, 34); y += 42
   center(i('TICKET Z — CLÔTURE', 'Z TICKET — CLOSING', 'TICKET Z — CIERRE', 'TICKET Z — CHIUSURA'), 13, VIOLET, 'Helvetica-Bold')
   center(tenant.name || 'HabaShop', 11, '#111111', 'Helvetica-Bold')
   center(dateStr, 9, GREY)
