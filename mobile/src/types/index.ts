@@ -166,6 +166,14 @@ export interface SalePayload {
   paymentMode: string
   discount?: SaleDiscount
   customerId?: string
+  /**
+   * Horodatage (ISO) de la vente CÔTÉ DEVICE, figé à la confirmation. Sert au backend à
+   * distinguer une vente en ligne d'un rejeu offline (délai de rejeu) → en cas de divergence
+   * de prix, honorer le montant réellement encaissé offline plutôt que re-tarifer. ⚠️ NON
+   * vérifiable (falsifiable) : ce n'est pas un signal de sécurité, la protection est la trace
+   * serveur (priceDivergence). Cf. backend `sales.ts` + CLAUDE.md § Intégrité prix.
+   */
+  clientCreatedAt?: string
   // Paiement mixte (paymentMode='mixed') : ventilation en XOF base, somme = total.
   // Le backend dédup/valide (≥2 seaux non nuls, somme ±1).
   cashAmount?: number
