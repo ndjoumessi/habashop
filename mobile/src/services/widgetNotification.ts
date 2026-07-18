@@ -48,11 +48,13 @@ export async function updateWidgetNotification(
       : lang === 'es' ? `💰 Hoy: ${fmt(salesToday)}`
       : lang === 'it' ? `💰 Oggi: ${fmt(salesToday)}`
       : `💰 Aujourd'hui: ${fmt(salesToday)}`
+    // Accord singulier/pluriel (« 1 vente » et non « 1 ventes »).
+    const one = transactionsToday === 1
     const body =
-      lang === 'en' ? `${transactionsToday} sales`
-      : lang === 'es' ? `${transactionsToday} ventas`
-      : lang === 'it' ? `${transactionsToday} vendite`
-      : `${transactionsToday} ventes`
+      lang === 'en' ? `${transactionsToday} ${one ? 'sale' : 'sales'}`
+      : lang === 'es' ? `${transactionsToday} ${one ? 'venta' : 'ventas'}`
+      : lang === 'it' ? `${transactionsToday} ${one ? 'vendita' : 'vendite'}`
+      : `${transactionsToday} ${one ? 'vente' : 'ventes'}`
 
     await Notifications.scheduleNotificationAsync({
       identifier: WIDGET_NOTIF_ID,

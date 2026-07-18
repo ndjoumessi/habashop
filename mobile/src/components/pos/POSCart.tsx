@@ -14,7 +14,7 @@ import {
   SPLIT_METHODS, buildMixedSplit, isMixedValid, type SplitMethod, type MixedSplit,
 } from '@/lib/paymentSplit'
 import { useAuthStore } from '@/stores/authStore'
-import { tierForPoints, discountForTierDisplay, loyaltyConfig } from '@/lib/loyalty'
+import { tierForPoints, discountForTierDisplay, loyaltyConfig, loyaltyDiscountFor } from '@/lib/loyalty'
 
 // ── Ligne panier ─────────────────────────────────
 function CartRow({
@@ -113,13 +113,21 @@ export default function POSCart({
     const pct = discountForTierDisplay(tier, tenant.bronzeDiscount ?? 0, tenant.silverDiscount ?? 0, tenant.goldDiscount ?? 0)
     return { tier, pct }
   }, [customer, tenant])
-  const vat = vatBreakdown(total, vatRate)
+  // Remise fidélité (XOF) — MIROIR du backend (computeLoyaltyDiscount), mêmes entrées :
+  // total (brut incl. remise manuelle) + pct palier + remise manuelle (discAmt). Le NET
+  // sert à l'AFFICHAGE, au split et à la garde espèces ; l'envoi reste brut+customerId
+  // (backend autoritaire, redérive le même net → pas de double remise). Corrige l'écart
+  // « annoncé ≠ encaissé » + débloque le mixte (le split était calculé sur le brut).
+  const loyaltyDiscount = loyaltyDiscountFor(customer, tenant, total, discAmt)
+  const netTotal = Math.max(0, total - loyaltyDiscount)
+
+  const vat = vatBreakdown(netTotal, vatRate)
   // `cashGiven` est saisi dans la devise d'AFFICHAGE → on le ramène en XOF de base pour
-  // comparer/monnaie (total est en XOF). En XOF/XAF la conversion est l'identité.
+  // comparer/monnaie (netTotal est en XOF). En XOF/XAF la conversion est l'identité.
   const cashGivenXOF = convertToXOF(cashGiven, currency, rates)
-  const change = cashGivenXOF - total
-  // Garde espèces : en mode cash, montant reçu < total → encaissement bloqué.
-  const cashShort = paymentMode === 'cash' && cashGivenXOF < total
+  const change = cashGivenXOF - netTotal
+  // Garde espèces : en mode cash, montant reçu < net → encaissement bloqué.
+  const cashShort = paymentMode === 'cash' && cashGivenXOF < netTotal
 
   // ── Paiement mixte (état local, déplacé ici depuis la modale de confirmation) ──
   const [mixed, setMixed] = useState(false)
@@ -132,10 +140,11 @@ export default function POSCart({
     : m === 'card' ? `💳 ${i('Carte', 'Card', 'Tarjeta', 'Carta')}`
     : `📱 ${i('Mobile Money', 'Mobile Money', 'Dinero móvil', 'Mobile Money')}`
 
-  // Montant ligne 1 en XOF (borné [0,total]) ; reste auto en XOF.
-  const amount1XOF = Math.min(total, Math.max(0, convertToXOF(Number(amt.replace(',', '.').replace(/[^0-9.]/g, '')) || 0, currency, rates)))
-  const remainingXOF = Math.max(0, total - amount1XOF)
-  const mixedValid = isMixedValid(method1, method2, amount1XOF, total)
+  // Montant ligne 1 en XOF (borné [0,netTotal]) ; reste auto en XOF. Basé sur le NET
+  // (remise fidélité incluse) → la somme du split = ce que le backend attend.
+  const amount1XOF = Math.min(netTotal, Math.max(0, convertToXOF(Number(amt.replace(',', '.').replace(/[^0-9.]/g, '')) || 0, currency, rates)))
+  const remainingXOF = Math.max(0, netTotal - amount1XOF)
+  const mixedValid = isMixedValid(method1, method2, amount1XOF, netTotal)
 
   const pickMethod1 = (m: SplitMethod) => {
     setMethod1(m)
@@ -145,7 +154,7 @@ export default function POSCart({
   // Encaisser désactivé : espèces insuffisantes (mode simple) OU split mixte invalide.
   const checkoutDisabled = mixed ? !mixedValid : cashShort
   const handleCheckout = () => {
-    if (mixed) onCheckout({ paymentMode: 'mixed', ...buildMixedSplit(method1, amount1XOF, method2, total) })
+    if (mixed) onCheckout({ paymentMode: 'mixed', ...buildMixedSplit(method1, amount1XOF, method2, netTotal) })
     else onCheckout()
   }
 
@@ -244,6 +253,14 @@ export default function POSCart({
                 <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(discAmt)}</Text>
               </View>
             )}
+            {/* Remise fidélité = LIGNE réelle qui réduit le total (comme le web), plus
+                un simple bandeau : le total affiché passe au NET. */}
+            {loyaltyDiscount > 0 && (
+              <View style={s.recapRow}>
+                <Text style={s.recapLabel}>{i('Remise fidélité', 'Loyalty discount', 'Descuento fidelidad', 'Sconto fedeltà')}{loyalty ? ` (${loyalty.pct}%)` : ''}</Text>
+                <Text style={[s.recapVal, { color: C.accent2 }]}>− {fmt(loyaltyDiscount)}</Text>
+              </View>
+            )}
             {vat.rate > 0 && (
               <>
                 <Pressable
@@ -272,57 +289,52 @@ export default function POSCart({
             )}
             <View style={[s.recapRow, s.recapTotal]}>
               <Text style={s.recapTotalLabel}>Total{vat.rate > 0 ? ' ' + i('TTC', 'incl. tax', 'con IVA', 'IVA incl.') : ''}</Text>
-              <Text style={s.recapTotalVal}>{fmt(total)}</Text>
+              <Text style={s.recapTotalVal}>{fmt(netTotal)}</Text>
             </View>
 
-            {/* Badge remise fidélité v2 (si client lié + enableLoyalty + remise > 0) */}
-            {loyalty && loyalty.pct > 0 && (
-              <View style={s.loyaltyBadge}>
-                <Text style={s.loyaltyBadgeTxt}>⭐ {i(`Remise fidélité ${loyalty.pct} % appliquée`, `${loyalty.pct}% loyalty discount applied`, `Descuento fidelidad ${loyalty.pct}% aplicado`, `Sconto fedeltà ${loyalty.pct}% applicato`)}</Text>
-              </View>
-            )}
+            {/* (Le badge fidélité décoratif est remplacé par la ligne de récap « Remise
+                fidélité » ci-dessus, qui réduit réellement le total.) */}
 
-            {/* Toggle paiement mixte (à côté des modes de paiement) */}
-            <Pressable
-              style={[s.mixedToggle, mixed && s.mixedToggleOn]}
-              onPress={() => setMixed(v => !v)}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: mixed }}
-              accessibilityLabel={i('Paiement mixte', 'Split payment', 'Pago mixto', 'Pagamento misto')}
-            >
-              <View style={[s.checkbox, mixed && s.checkboxOn]}>
-                {mixed && <Ionicons name="checkmark" size={13} color={C.white} />}
-              </View>
-              <Text style={s.mixedToggleTxt}>{i('Paiement mixte', 'Split payment', 'Pago mixto', 'Pagamento misto')}</Text>
-            </Pressable>
+            {/* Modes de paiement — grille unique incluant Mixte (maquette 02). Mixte est
+                désormais une tuile (l'ancien toggle séparé est supprimé) ; l'état mixed/
+                paymentMode et la logique d'encaissement sont inchangés. */}
+            <View style={s.payGrid}>
+              {PAY_MODES.map(m => {
+                const on = !mixed && paymentMode === m.id
+                return (
+                  <Pressable
+                    key={m.id}
+                    style={[s.payChip, on && s.payChipOn]}
+                    onPress={() => { setMixed(false); onSetPaymentMode(m.id) }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    accessibilityLabel={i(m.fr, m.en, m.es, m.it)}
+                  >
+                    <Text style={{ fontSize: 18 }}>{m.icon}</Text>
+                    <Text style={[s.payTxt, on && s.payTxtOn]}>{i(m.fr, m.en, m.es, m.it)}</Text>
+                  </Pressable>
+                )
+              })}
+              <Pressable
+                style={[s.payChip, s.payChipDashed, mixed && s.payChipOn]}
+                onPress={() => setMixed(true)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: mixed }}
+                accessibilityLabel={i('Paiement mixte', 'Split payment', 'Pago mixto', 'Pagamento misto')}
+              >
+                <Text style={{ fontSize: 18 }}>🔀</Text>
+                <Text style={[s.payTxt, mixed && s.payTxtOn]}>{i('Mixte', 'Split', 'Mixto', 'Misto')}</Text>
+              </Pressable>
+            </View>
 
             {!mixed ? (
               <>
-                {/* Modes de paiement */}
-                <View style={s.payGrid}>
-                  {PAY_MODES.map(m => {
-                    const on = paymentMode === m.id
-                    return (
-                      <Pressable
-                        key={m.id}
-                        style={[s.payChip, on && s.payChipOn]}
-                        onPress={() => onSetPaymentMode(m.id)}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: on }}
-                        accessibilityLabel={i(m.fr, m.en, m.es, m.it)}
-                      >
-                        <Text style={{ fontSize: 18 }}>{m.icon}</Text>
-                        <Text style={[s.payTxt, on && s.payTxtOn]}>{i(m.fr, m.en, m.es, m.it)}</Text>
-                      </Pressable>
-                    )
-                  })}
-                </View>
 
                 {/* Montant donné (espèces) */}
                 {paymentMode === 'cash' && (
                   <View style={s.cashWrap}>
                     <View style={{ flex: 1 }}>
-                      <Text style={s.recapLabel}>{i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}</Text>
+                      <Text style={s.recapLabel}>{i('Montant reçu', 'Amount received', 'Importe recibido', 'Importo ricevuto')}</Text>
                       <TextInput
                         style={s.cashInput}
                         keyboardType="numeric"
@@ -330,7 +342,7 @@ export default function POSCart({
                         placeholderTextColor={C.text3}
                         value={cashGiven ? String(cashGiven) : ''}
                         onChangeText={t => onSetCashGiven(Number(t.replace(/[^0-9.]/g, '')) || 0)}
-                        accessibilityLabel={i('Montant donné', 'Amount given', 'Monto entregado', 'Importo dato')}
+                        accessibilityLabel={i('Montant reçu', 'Amount received', 'Importe recibido', 'Importo ricevuto')}
                       />
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
@@ -342,7 +354,9 @@ export default function POSCart({
                   </View>
                 )}
 
-                {cashShort && (
+                {/* Erreur affichée seulement APRÈS saisie (cashGiven > 0) — pas à
+                    l'ouverture, champ vide (sinon message trompeur avant interaction). */}
+                {cashShort && cashGiven > 0 && (
                   <Text style={s.cashWarn}>
                     {i(
                       'Montant reçu insuffisant',
@@ -391,7 +405,8 @@ export default function POSCart({
                   <Text style={s.recapVal}>{fmt(remainingXOF)}</Text>
                 </View>
 
-                {!mixedValid && (
+                {/* Idem : pas de message tant que rien n'est saisi (amt vide). */}
+                {!mixedValid && amt.trim() !== '' && (
                   <Text style={s.cashWarn}>
                     {i('Saisis un montant entre 0 et le total, 2 méthodes différentes.',
                        'Enter an amount between 0 and the total, two different methods.',
@@ -403,7 +418,7 @@ export default function POSCart({
             )}
 
             <AccessibleButton
-              label={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(total)}`}
+              label={`${i('Encaisser', 'Checkout', 'Cobrar', 'Incassare')} ${fmt(netTotal)}`}
               onPress={handleCheckout}
               disabled={checkoutDisabled}
             />
@@ -458,12 +473,14 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   recapTotalLabel: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   recapTotalVal: { fontSize: FontSize.lg, fontFamily: 'JetBrainsMono_700Bold', color: C.primary3 },
 
-  payGrid: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.sm },
+  payGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs, marginTop: Spacing.sm },
   payChip: {
-    flex: 1, alignItems: 'center', gap: 3, paddingVertical: Spacing.sm,
+    flexBasis: '30%', flexGrow: 1, flexShrink: 1, minWidth: 88,
+    alignItems: 'center', gap: 3, paddingVertical: Spacing.sm,
     backgroundColor: C.bg3, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: C.border,
   },
   payChipOn: { backgroundColor: withAlpha(C.primary, 0.15), borderColor: C.primary },
+  payChipDashed: { borderStyle: 'dashed', borderColor: C.border2 },
   payTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3 },
   payTxtOn: { color: C.primary3 },
 

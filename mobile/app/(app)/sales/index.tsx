@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { salesApi, apiErrorMessage, apiErrorStatus } from '@/services/api'
 import type { SaleRecord } from '@/types'
 import { useAuthStore } from '@/stores/authStore'
-import { useI18n, useFmt, useTheme } from '@/stores/appStore'
+import { useI18n, useFmt, useTheme, plural } from '@/stores/appStore'
 import { sendWhatsAppTicket, type TicketOptions } from '@/services/whatsappTicket'
 import { printReceipt } from '@/services/printReceipt'
 import { canRefundRole, isRefunded } from '@/lib/refund'
@@ -139,7 +139,7 @@ export default function SalesScreen() {
       {/* Header */}
       <ScreenHeader
         title={i('Historique', 'History', 'Historial', 'Storico')}
-        subtitle={`${tx} ${i('ventes', 'sales', 'ventas', 'vendite')}`}
+        subtitle={`${tx} ${plural(tx, i('vente', 'sale', 'venta', 'vendita'), i('ventes', 'sales', 'ventas', 'vendite'))}`}
         onBack={() => router.back()}
       />
 
@@ -198,7 +198,7 @@ export default function SalesScreen() {
                   )}
                 </View>
                 <Text style={s.rowSub} numberOfLines={1}>
-                  {fmtDateTime(item.createdAt)} · {item.items?.length ?? 0} {i('articles', 'items', 'artículos', 'articoli')}
+                  {fmtDateTime(item.createdAt)} · {item.items?.length ?? 0} {plural(item.items?.length ?? 0, i('article', 'item', 'artículo', 'articolo'), i('articles', 'items', 'artículos', 'articoli'))}
                 </Text>
               </View>
               {/* Action inline (parité web : bouton « Rembourser » directement dans la

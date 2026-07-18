@@ -1,0 +1,16 @@
+{
+  "_comment": "SOURCE UNIQUE des cas de test de computeLoyaltyDiscount. Lu par apps/backend/src/tests/loyalty.test.ts ET mobile/src/__tests__/loyalty.test.ts. Objectif anti-dérive : un changement de la règle (arrondi Math.round, plafond 50 %, interaction remise manuelle) d'UN côté fait échouer le test des DEUX. Ne pas modifier sans mettre à jour les deux implémentations (apps/backend/src/lib/loyalty.ts + mobile/src/lib/loyalty.ts).",
+  "maxTotalDiscountPct": 50,
+  "cases": [
+    { "label": "pct 0 → aucune remise", "total": 10000, "pct": 0, "manual": 0, "expected": 0 },
+    { "label": "5% simple", "total": 10000, "pct": 5, "manual": 0, "expected": 500 },
+    { "label": "arrondi .95 → sup (round half-up)", "total": 999, "pct": 5, "manual": 0, "expected": 50 },
+    { "label": "arrondi .5 → sup (round half-up)", "total": 1010, "pct": 5, "manual": 0, "expected": 51 },
+    { "label": "plafond 50% (pct 60 borné)", "total": 10000, "pct": 60, "manual": 0, "expected": 5000 },
+    { "label": "interaction remise manuelle (30% + 3000 manuel → plafond 5000)", "total": 10000, "pct": 30, "manual": 3000, "expected": 2000 },
+    { "label": "remise manuelle ne borne pas (5% + 600 manuel)", "total": 10000, "pct": 5, "manual": 600, "expected": 500 },
+    { "label": "manuel > plafond → fidélité nulle (jamais négative)", "total": 10000, "pct": 5, "manual": 6000, "expected": 0 },
+    { "label": "petit montant", "total": 100, "pct": 5, "manual": 0, "expected": 5 },
+    { "label": "total 0", "total": 0, "pct": 5, "manual": 0, "expected": 0 }
+  ]
+}
