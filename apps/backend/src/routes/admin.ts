@@ -15,6 +15,7 @@ import {
 export async function adminRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/admin/tenants', { preHandler: authenticateAdmin }, async () => {
     const tenants = await prisma.tenant.findMany({
+      where: { isPlatform: false }, // exclure les tenants INTERNES plateforme (staff)
       include: { _count: { select: { users: true, products: true, sales: true } } },
       orderBy: { createdAt: 'desc' },
     })
@@ -37,11 +38,13 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/api/admin/stats', { preHandler: authenticateAdmin }, async () => {
     // Sale/Product sont scopés par l'extension → basePrisma pour les totaux plateforme.
+    // Tenants INTERNES plateforme (isPlatform) exclus de TOUS les totaux (boutiques,
+    // users, ventes, produits) → métriques SaaS = boutiques CLIENTES uniquement.
     const [tenants, users, sales, products] = await Promise.all([
-      prisma.tenant.count(),
-      prisma.user.count(),
-      basePrisma.sale.aggregate({ where: { status: { not: 'refunded' } }, _sum: { total: true }, _count: true }),
-      basePrisma.product.count(),
+      prisma.tenant.count({ where: { isPlatform: false } }),
+      basePrisma.user.count({ where: { tenant: { isPlatform: false } } }),
+      basePrisma.sale.aggregate({ where: { status: { not: 'refunded' }, tenant: { isPlatform: false } }, _sum: { total: true }, _count: true }),
+      basePrisma.product.count({ where: { tenant: { isPlatform: false } } }),
     ])
     return {
       totalTenants: tenants,

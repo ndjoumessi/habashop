@@ -9,6 +9,9 @@ datasource db {
 }
 
 model Tenant {
+  // Tenant INTERNE plateforme (staff super-admin SaaS), PAS une boutique cliente.
+  // Exclu des listings/quotas/agrégats de la console (/api/admin/*). Défaut false.
+  isPlatform Boolean @default(false)
   id        String   @id @default(cuid())
   name      String
   currency  String   @default("XOF")
