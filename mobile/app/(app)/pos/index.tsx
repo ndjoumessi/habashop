@@ -301,6 +301,10 @@ export default function POSScreen() {
         cardAmount: override.cardAmount,
       } : {}),
       idempotencyKey: newIdempotencyKey(),
+      // Figé à la confirmation → un rejeu offline porte l'heure RÉELLE de la vente (le backend
+      // honore alors le montant encaissé au lieu de re-tarifer). Non vérifiable → la sécurité
+      // reste la trace serveur (priceDivergence), pas cet horodatage. Cf. § Intégrité prix.
+      clientCreatedAt: new Date().toISOString(),
     }
     // Hors-ligne dur (NetInfo) → file directe, pas d'aller-retour réseau inutile.
     if (!isOnline) {
