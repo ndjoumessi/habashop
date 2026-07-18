@@ -11,17 +11,20 @@ import { Skeleton } from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import {
-  Shield, Store, Users, CreditCard, Wallet, Package, TrendingUp,
+  Store, Users, CreditCard, Wallet, TrendingUp,
   Search, X, Plus, ArrowLeft, ChevronRight, Layers, BarChart3,
   LayoutDashboard, Inbox, Check, RefreshCw, Mail, Calendar,
+  AlertTriangle, Clock, Globe, TrendingDown,
 } from 'lucide-react'
+import LogoMark from '@/components/ui/LogoMark'
 
 const APP_VERSION = '2.6.0'
 
 type Tenant = {
   id: string; name: string; plan: string; currency: string; country: string
-  vatRate?: number; createdAt: string
+  vatRate?: number; createdAt: string; trialEnds?: string | null
   status?: string; isActive?: boolean; email?: string
+  revenue?: number; lastActivityAt?: string | null
   _count?: { users: number; products: number; sales: number }
 }
 
@@ -40,6 +43,16 @@ const planColor = (p?: string) => PLAN_COLOR[planKey(p)] ?? 'var(--text3)'
 // Teinte translucide dérivée d'une couleur (token CSS) — respecte les 7 thèmes.
 const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
 const darken = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, #000)`
+// Temps relatif compact (4 langues) pour la dernière activité d'une boutique.
+function relTime(iso: string | null | undefined, i: (fr: string, en: string, es: string, it: string) => string): string {
+  if (!iso) return i('jamais', 'never', 'nunca', 'mai')
+  const diff = Date.now() - new Date(iso).getTime()
+  const d = Math.floor(diff / 86400000)
+  if (d >= 1) return i(`il y a ${d} j`, `${d}d ago`, `hace ${d} d`, `${d} g fa`)
+  const h = Math.floor(diff / 3600000)
+  if (h >= 1) return i(`il y a ${h} h`, `${h}h ago`, `hace ${h} h`, `${h} h fa`)
+  return i("à l'instant", 'just now', 'ahora', 'adesso')
+}
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -52,7 +65,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [query, setQuery] = useState('')
-  const [sortKey, setSortKey] = useState<'name' | 'plan' | 'users' | 'products' | 'sales' | 'createdAt'>('createdAt')
+  const [sortKey, setSortKey] = useState<'name' | 'plan' | 'users' | 'products' | 'sales' | 'createdAt' | 'revenue' | 'lastActivityAt'>('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [selected, setSelected] = useState<Tenant | null>(null)
   const [showNewTenant, setShowNewTenant] = useState(false)
@@ -99,7 +112,6 @@ export default function AdminDashboard() {
 
   const mrr = useMemo(() => tenants.reduce((s, t) => s + planPrice(t.plan), 0), [tenants])
   const activePlans = useMemo(() => tenants.filter(t => PAID_PLANS.includes(planKey(t.plan))).length, [tenants])
-  const activeShops = useMemo(() => tenants.filter(t => t.isActive !== false && t.status !== 'suspended').length, [tenants])
 
   const planDist = useMemo(() => {
     const m: Record<string, number> = {}
@@ -124,6 +136,36 @@ export default function AdminDashboard() {
   }, [tenants, lang])
   const maxMonth = Math.max(1, ...months.map(m => m.count))
 
+  // Ventilation statut : actives / essai / expirée (expirée = essai dont trialEnds
+  // est dépassé, ou boutique suspendue). Données réelles issues de la liste tenants.
+  const isExpired = (t: Tenant) => t.status === 'suspended' || (t.status === 'trial' && !!t.trialEnds && new Date(t.trialEnds).getTime() < Date.now())
+  const health = useMemo(() => {
+    let active = 0, trial = 0, expired = 0
+    for (const t of tenants) {
+      if (isExpired(t)) expired++
+      else if (t.status === 'trial') trial++
+      else if (t.isActive !== false) active++
+    }
+    return { active, trial, expired }
+  }, [tenants])
+
+  // Churn ESTIMÉ (pas d'historique de transitions en base) : expirées ÷ (actives + expirées).
+  // Marqué « estimé » à l'affichage — proxy, à remplacer par un vrai suivi si besoin.
+  const churnPct = useMemo(() => {
+    const denom = health.active + health.expired
+    return denom > 0 ? Math.round((health.expired / denom) * 100) : 0
+  }, [health])
+
+  // Alertes actionnables — dérivées des données réelles (tenants + demandes de plan).
+  const DAY = 86400000
+  const alerts = useMemo(() => {
+    const now = Date.now()
+    const trialsExpiring = tenants.filter(t => t.status === 'trial' && t.trialEnds && new Date(t.trialEnds).getTime() - now < 3 * DAY && new Date(t.trialEnds).getTime() >= now)
+    const inactive = tenants.filter(t => t.lastActivityAt && now - new Date(t.lastActivityAt).getTime() > 14 * DAY)
+    const failedPayments = planRequests.filter(r => r.status === 'pending' || r.paymentRef)
+    return { trialsExpiring, inactive, failedPayments }
+  }, [tenants, planRequests])
+
   const view = useMemo(() => {
     let arr = tenants
     const q = query.trim().toLowerCase()
@@ -136,6 +178,8 @@ export default function AdminDashboard() {
         case 'products': return t._count?.products ?? 0
         case 'sales': return t._count?.sales ?? 0
         case 'createdAt': return new Date(t.createdAt).getTime()
+        case 'revenue': return t.revenue ?? 0
+        case 'lastActivityAt': return t.lastActivityAt ? new Date(t.lastActivityAt).getTime() : 0
       }
     }
     return [...arr].sort((a, b) => {
@@ -159,14 +203,15 @@ export default function AdminDashboard() {
     return { h: 'var(--text3)', label: st }
   }
 
-  // KPIs globaux (données réelles uniquement — pas de tendances fictives)
+  // KPIs plateforme — hiérarchisés (pilotage SaaS : MRR d'abord), sans redondance.
+  // La carte « Boutiques » porte la ventilation actives/essai/expirée (plus de doublon
+  // « N » + « N actives »). Churn = estimé (proxy, cf. churnPct). Données réelles only.
   const kpis = stats ? [
-    { label: i('Boutiques actives', 'Active shops', 'Tiendas activas', 'Negozi attivi'), value: stats.totalTenants ?? 0, sub: `${activeShops} ${i('actives', 'active', 'activas', 'attivi')}`, color: 'var(--p)', icon: <Store size={18} /> },
-    { label: i('Plans payants', 'Paid plans', 'Planes de pago', 'Piani a pagamento'), value: activePlans, sub: `${i('sur', 'of', 'de', 'su')} ${stats.totalTenants ?? 0}`, color: 'var(--acc2)', icon: <CreditCard size={18} /> },
-    { label: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), value: stats.totalUsers ?? 0, sub: i('comptes', 'accounts', 'cuentas', 'account'), color: 'var(--acc3)', icon: <Users size={18} /> },
-    { label: i('Ventes totales', 'Total sales', 'Ventas totales', 'Vendite totali'), value: stats.totalSales ?? 0, sub: i('toutes boutiques', 'all shops', 'todas las tiendas', 'tutti i negozi'), color: 'var(--acc)', icon: <Package size={18} /> },
-    { label: i('CA cumulé', 'Total GMV', 'GMV total', 'GMV totale'), value: fmt(stats.totalRevenue ?? 0), sub: i('XOF cumulé', 'XOF cumulative', 'XOF acumulado', 'XOF cumulativo'), color: 'var(--acc3)', icon: <Wallet size={18} />, isStr: true },
-    { label: i('MRR estimé', 'Est. MRR', 'MRR est.', 'MRR stim.'), value: fmt(mrr), sub: i('abonnements', 'subscriptions', 'suscripciones', 'abbonamenti'), color: 'var(--p)', icon: <TrendingUp size={18} />, isStr: true },
+    { label: i('MRR estimé', 'Est. MRR', 'MRR est.', 'MRR stim.'), value: fmt(mrr), sub: `${activePlans} ${i('plans payants', 'paid plans', 'planes de pago', 'piani a pagamento')}`, color: 'var(--p)', icon: <TrendingUp size={18} />, isStr: true },
+    { label: i('Boutiques', 'Shops', 'Tiendas', 'Negozi'), value: stats.totalTenants ?? 0, sub: `${health.active} ${i('actives', 'active', 'activas', 'attivi')} · ${health.trial} ${i('essai', 'trial', 'prueba', 'prova')} · ${health.expired} ${i('expirée', 'expired', 'expirada', 'scaduta')}`, color: 'var(--acc2)', icon: <Store size={18} /> },
+    { label: i('CA cumulé', 'Total GMV', 'GMV total', 'GMV totale'), value: fmt(stats.totalRevenue ?? 0), sub: `${(stats.totalSales ?? 0).toLocaleString('fr-FR')} ${i('ventes', 'sales', 'ventas', 'vendite')}`, color: 'var(--acc3)', icon: <Wallet size={18} />, isStr: true },
+    { label: i('Churn estimé', 'Est. churn', 'Churn est.', 'Churn stim.'), value: `${churnPct}%`, sub: i('estimé — sans historique', 'estimated — no history', 'estimado — sin historial', 'stimato — senza storico'), color: churnPct > 10 ? 'var(--danger)' : 'var(--text3)', icon: <TrendingDown size={18} />, isStr: true },
+    { label: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), value: stats.totalUsers ?? 0, sub: i('comptes', 'accounts', 'cuentas', 'account'), color: 'var(--acc)', icon: <Users size={18} /> },
   ] : []
 
   const TABS = [
@@ -177,14 +222,19 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: 24 }}>
-      {/* ── Header enrichi ── */}
+      {/* ── Bandeau CONTEXTE PLATEFORME : distinction forte (couleur + libellé) pour
+          ne JAMAIS confondre « toutes les boutiques » avec « ma boutique ». ── */}
+      <div role="note" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '8px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--acc) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--acc) 40%, transparent)', color: 'var(--acc)', fontSize: 12, fontWeight: 'var(--fw-semibold)' }}>
+        <Globe size={14} />
+        <span>{i('Contexte plateforme — vous consultez TOUTES les boutiques', 'Platform context — you are viewing ALL shops', 'Contexto de plataforma — está viendo TODAS las tiendas', 'Contesto piattaforma — stai visualizzando TUTTI i negozi')}</span>
+      </div>
+
+      {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,var(--p),var(--p2))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, boxShadow: 'var(--sh-p)' }}>
-            <Shield size={22} />
-          </div>
+          <LogoMark size={44} />
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, letterSpacing: '-.5px' }}>HabaShop Admin</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', margin: 0, letterSpacing: '-.5px' }}>{i('Console plateforme', 'Platform console', 'Consola de plataforma', 'Console piattaforma')}</h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 'var(--fw-semibold)', background: 'rgba(0,208,132,.1)', border: '1px solid rgba(0,208,132,.25)', color: 'var(--acc2)' }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--acc2)', boxShadow: '0 0 6px var(--acc2)' }} />
@@ -255,6 +305,32 @@ export default function AdminDashboard() {
         ) : tenants.length === 0 ? (
           <EmptyState icon="🏪" title={i('Aucune boutique', 'No shops', 'Sin tiendas', 'Nessun negozio')} message={i('Aucun tenant inscrit pour le moment.', 'No tenants registered yet.', 'Ningún inquilino registrado todavía.', 'Nessun tenant registrato.')} action={{ label: i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio'), onClick: () => setShowNewTenant(true) }} />
         ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* ── Alertes actionnables ── */}
+          {(() => {
+            const rows = [
+              { key: 'trials', n: alerts.trialsExpiring.length, color: 'var(--warn)', icon: <Clock size={14} />, label: i('essais expirent sous 3 jours', 'trials expiring within 3 days', 'pruebas expiran en 3 días', 'prove in scadenza entro 3 giorni'), tab: 'tenants' as const },
+              { key: 'inactive', n: alerts.inactive.length, color: 'var(--acc)', icon: <TrendingDown size={14} />, label: i('boutiques inactives depuis 14 j+', 'shops inactive for 14+ days', 'tiendas inactivas 14 d+', 'negozi inattivi da 14 g+'), tab: 'tenants' as const },
+              { key: 'failed', n: alerts.failedPayments.length, color: 'var(--danger)', icon: <CreditCard size={14} />, label: i('paiements à vérifier', 'payments to review', 'pagos por revisar', 'pagamenti da verificare'), tab: 'requests' as const },
+            ].filter(r => r.n > 0)
+            return (
+              <div className="panel">
+                <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><AlertTriangle size={15} /> {i('Alertes actionnables', 'Actionable alerts', 'Alertas accionables', 'Avvisi azionabili')}</span></div>
+                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {rows.length === 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--acc2)', fontSize: 13, fontWeight: 'var(--fw-semibold)' }}><Check size={15} /> {i('Rien à signaler — tout est à jour.', 'Nothing to report — all clear.', 'Nada que reportar — todo al día.', 'Niente da segnalare — tutto ok.')}</div>
+                  ) : rows.map(r => (
+                    <button key={r.key} onClick={() => setActiveTab(r.tab)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${mix(r.color, 30)}`, background: mix(r.color, 8), cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'var(--font)' }}>
+                      <span style={{ width: 26, height: 26, borderRadius: 7, background: mix(r.color, 16), color: r.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{r.icon}</span>
+                      <span style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: r.color, fontFamily: 'var(--mono)', minWidth: 24 }}>{r.n}</span>
+                      <span style={{ fontSize: 13, color: 'var(--text2)', flex: 1 }}>{r.label}</span>
+                      <ChevronRight size={15} style={{ color: 'var(--text4)', flexShrink: 0 }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
           <ResponsiveGrid min={300} gap={16}>
             <div className="panel">
               <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={15} /> {i('Répartition des plans', 'Plan distribution', 'Distribución de planes', 'Distribuzione piani')}</span></div>
@@ -289,6 +365,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </ResponsiveGrid>
+          </div>
         )
       )}
 
@@ -304,6 +381,8 @@ export default function AdminDashboard() {
               </div>
               <select aria-label={i('Trier par', 'Sort by', 'Ordenar por', 'Ordina per')} className="input" style={{ width: 'auto', height: 38 }} value={sortKey} onChange={e => setSortKey(e.target.value as any)}>
                 <option value="createdAt">{i('Date', 'Date', 'Fecha', 'Data')}</option>
+                <option value="lastActivityAt">{i('Dernière activité', 'Last activity', 'Última actividad', 'Ultima attività')}</option>
+                <option value="revenue">{i('CA', 'Revenue', 'Ingresos', 'Fatturato')}</option>
                 <option value="name">{i('Nom', 'Name', 'Nombre', 'Nome')}</option>
                 <option value="plan">Plan</option>
                 <option value="sales">{i('Ventes', 'Sales', 'Ventas', 'Vendite')}</option>
@@ -366,10 +445,16 @@ export default function AdminDashboard() {
                         ))}
                       </div>
 
+                      {/* CA boutique (refunded exclu) — donnée réelle via /api/admin/tenants */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 10px', borderRadius: 8, background: mix('var(--acc3)', 8), marginBottom: 10 }}>
+                        <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', display: 'flex', alignItems: 'center', gap: 5 }}><Wallet size={11} /> {i('CA', 'Revenue', 'Ingresos', 'Fatturato')}</span>
+                        <span style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--acc3)', fontFamily: 'var(--mono)' }}>{fmt(t.revenue ?? 0)}</span>
+                      </div>
+
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                         <div style={{ fontSize: 11, color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <Mail size={10} style={{ color: 'var(--text4)', flexShrink: 0 }} />
-                          {t.email || `${t.country} · ${t.currency}`}
+                          <Clock size={10} style={{ color: 'var(--text4)', flexShrink: 0 }} />
+                          {i('Activité', 'Activity', 'Actividad', 'Attività')} {relTime(t.lastActivityAt, i)}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text4)', fontFamily: 'var(--mono)', flexShrink: 0 }}>
                           {new Date(t.createdAt).toLocaleDateString(lang, { day: '2-digit', month: 'short', year: '2-digit' })}
