@@ -39,9 +39,12 @@ interface StockInventoryProps {
   onToggleSelect: (sku: string) => void
   onSelectAllVisible: () => void
   onClearSelection: () => void
+  // Rattrapage codes-barres (PR5)
+  missingBarcodeCount: number
+  onOpenBackfill: () => void
 }
 
-export default function StockInventory({ products, fmt, lang, stockShowSKU, navigate, stockView, setStockView, search, setSearch, cat, setCat, cats, statusFilter, setStatusFilter, pg, setSelectedForLabel, setShowLabelModal, setProductEditMode, setShowModal, setForm, setEditingSku, setEditingId, setModalTab, onDeleteProduct, selectedSkus, onToggleSelect, onSelectAllVisible, onClearSelection }: StockInventoryProps) {
+export default function StockInventory({ products, fmt, lang, stockShowSKU, navigate, stockView, setStockView, search, setSearch, cat, setCat, cats, statusFilter, setStatusFilter, pg, setSelectedForLabel, setShowLabelModal, setProductEditMode, setShowModal, setForm, setEditingSku, setEditingId, setModalTab, onDeleteProduct, selectedSkus, onToggleSelect, onSelectAllVisible, onClearSelection, missingBarcodeCount, onOpenBackfill }: StockInventoryProps) {
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const currency = useAppStore(s => s.currency)
@@ -143,6 +146,13 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
             }}>
               <Download size={13} /> PDF
             </button>
+            {missingBarcodeCount > 0 && (
+              <button className="btn btn-ghost btn-sm gap-1.5" onClick={onOpenBackfill}
+                title={i('Compléter les codes-barres manquants', 'Complete missing barcodes', 'Completar códigos faltantes', 'Completa i codici mancanti')}
+                style={{ color: 'var(--warn)', borderColor: 'color-mix(in srgb, var(--warn) 40%, transparent)' }}>
+                <Camera size={13} /> {i('Codes manquants', 'Missing codes', 'Códigos faltantes', 'Codici mancanti')} ({missingBarcodeCount})
+              </button>
+            )}
             <button className="btn btn-ghost btn-sm gap-1.5" onClick={() => { setSelectedForLabel(products.map(p => p.sku)); setShowLabelModal(true) }}>
               <Tag size={13} /> {lang === 'en' ? 'Labels' : lang === 'es' ? 'Etiquetas' : lang === 'it' ? 'Etichette' : 'Étiquettes'}
             </button>
