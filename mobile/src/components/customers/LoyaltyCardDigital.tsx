@@ -7,11 +7,11 @@ import * as Print from 'expo-print'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useQuery } from '@tanstack/react-query'
 import { customersApi } from '@/services/api'
-import type { LoyaltyCardData } from '@/types'
+import type { LoyaltyCardData, LoyaltyResponse } from '@/types'
 import { useI18n, useTheme } from '@/stores/appStore'
 import { ThemeColors, Spacing, BorderRadius, FontSize, withAlpha } from '@/constants/theme'
 import { logger } from '@/lib/logger'
-import type { LoyaltyTier } from '@/lib/loyalty'
+import { discountForTierDisplay, type LoyaltyTier } from '@/lib/loyalty'
 
 // Design carte = web (zone haute sombre par palier / zone basse fond thème).
 // Bronze = specs web ; Silver/Gold déclinés sur le même schéma dark/mid/accent.
@@ -87,10 +87,25 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
     queryFn: () => customersApi.loyaltyCard(customerId),
     staleTime: 60 * 1000,
   })
+  // Historique + remises par palier (maquette 04 : paliers actuel/prochain + activité).
+  // Endpoint distinct (/loyalty) — source la plus fraîche des remises tenant.
+  const { data: loyalty } = useQuery<LoyaltyResponse>({
+    queryKey: ['loyalty', customerId],
+    queryFn: () => customersApi.loyalty(customerId),
+    staleTime: 60 * 1000,
+  })
 
   const tier = (data?.tier ?? 'Bronze') as LoyaltyTier
   const cfg = TIER_CFG[tier] ?? TIER_CFG.Bronze
   const qrValue = `HABA-CUST:${customerId}`
+
+  // Remises par palier (affichage) — actuel + prochain, via config tenant (loyalty response).
+  const tierPct = (t: string | null | undefined): number => t
+    ? discountForTierDisplay(t as LoyaltyTier, loyalty?.bronzeDiscount ?? 0, loyalty?.silverDiscount ?? 0, loyalty?.goldDiscount ?? 0)
+    : 0
+  const currentPct = tierPct(tier)
+  const nextPct = tierPct(data?.nextTier)
+  const history = loyalty?.history ?? []
 
   // Matrice QR (pur JS, synchrone, OTA-safe) → grille <View> + SVG du PDF.
   const qrCells = useMemo(() => qrMatrix(qrValue), [qrValue])
@@ -136,78 +151,100 @@ export default function LoyaltyCardDigital({ customerId, onClose }: Props) {
             <Text style={s.errorTxt}>⚠ {i('Erreur de chargement', 'Load error', 'Error de carga', 'Errore')}</Text>
           ) : (
             <View style={{ gap: Spacing.md }}>
-              {/* ── Carte deux zones (design web) ── */}
-              <View style={[s.card, { borderColor: withAlpha(cfg.accent, 0.35) }]}>
+              {/* ── Carte hero (maquette 04) — teinte FIXE par palier (artefact : la carte
+                  s'exporte en PDF, ses couleurs ne suivent donc PAS le thème). Dégradé
+                  approximé par un aplat teinté (pas d'expo-linear-gradient → OTA-safe). ── */}
+              <View style={[s.hero, { backgroundColor: cfg.mid, borderColor: withAlpha(cfg.accent, 0.35) }]}>
+                <Text style={s.watermark}>{cfg.icon}</Text>
 
-                {/* Zone haute — fond sombre du palier */}
-                <View style={[s.cardTop, { backgroundColor: cfg.dark }]}>
-                  <Text style={s.watermark}>{cfg.icon}</Text>
-
-                  <View style={s.cardRow}>
-                    <View style={{ flex: 1 }}>
-                      <View style={[s.tierBadge, { backgroundColor: cfg.mid, borderColor: withAlpha(cfg.accent, 0.4) }]}>
-                        <Text style={[s.tierTxt, { color: cfg.accent }]}>{cfg.icon} {tierName(tier, i)}</Text>
-                      </View>
-                      <Text style={s.cardName} numberOfLines={1}>{data.customerName}</Text>
-                      <Text style={[s.cardId, { color: cfg.accent }]}>{qrValue}</Text>
-                    </View>
-                    {/* QR dans un cadre blanc 64×64 — grille de modules (pur JS) */}
-                    <View style={s.qrBox}>
-                      {qrCells ? (
-                        <View style={s.qrGrid}>
-                          {qrCells.map((row, r) => (
-                            <View key={r} style={s.qrRow}>
-                              {row.map((dark, c) => (
-                                <View
-                                  key={c}
-                                  style={{ width: module, height: module, backgroundColor: dark ? cfg.dark : '#FFFFFF' }}
-                                />
-                              ))}
-                            </View>
-                          ))}
-                        </View>
-                      ) : (
-                        // Fallback si la génération échoue : code lisible en monospace.
-                        <Text style={s.qrFallback} numberOfLines={2}>{qrValue}</Text>
-                      )}
-                    </View>
+                <View style={s.heroTop}>
+                  <Text style={s.heroLabel}>{i('Carte fidélité', 'Loyalty card', 'Tarjeta de fidelidad', 'Carta fedeltà')}</Text>
+                  <View style={[s.tierBadge, { backgroundColor: withAlpha(cfg.accent, 0.16), borderColor: withAlpha(cfg.accent, 0.4) }]}>
+                    <Text style={[s.tierTxt, { color: cfg.accent }]}>{cfg.icon} {tierName(tier, i)}</Text>
                   </View>
-
-                  <View style={s.ptsRow}>
-                    <Text style={s.ptsVal}>{data.points.toLocaleString()}</Text>
-                    <Text style={s.ptsUnit}>pts</Text>
-                  </View>
-
-                  <Text style={s.shopName}>{data.shopName} · habashop</Text>
                 </View>
 
-                {/* Zone basse — fond thème */}
-                <View style={s.cardBottom}>
-                  {data.nextTier ? (
-                    <View style={{ gap: 4 }}>
-                      <View style={s.barTrack}>
-                        <View style={[s.barFill, { width: `${progress}%` as any, backgroundColor: cfg.accent }]} />
-                      </View>
-                      <Text style={s.progressTxt}>{data.pointsToNext.toLocaleString()} pts → {tierName(data.nextTier, i)}</Text>
-                    </View>
-                  ) : (
-                    <Text style={[s.maxTxt, { color: cfg.accent }]}>🎉 {i('Niveau maximum !', 'Max level!', '¡Nivel máximo!', 'Livello massimo!')}</Text>
-                  )}
-
-                  {/* Stats 2 colonnes */}
-                  <View style={s.statsRow}>
-                    <View style={s.statCell}>
-                      <Text style={s.statLabel}>{i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')}</Text>
-                      <Text style={s.statValue}>{data.nextTier ? tierName(data.nextTier, i) : i('Maximum', 'Maximum', 'Máximo', 'Massimo')}</Text>
-                    </View>
-                    <View style={s.statSep} />
-                    <View style={s.statCell}>
-                      <Text style={s.statLabel}>{i('Points restants', 'Points to go', 'Puntos restantes', 'Punti mancanti')}</Text>
-                      <Text style={s.statValue}>{data.nextTier ? data.pointsToNext.toLocaleString() : '—'}</Text>
+                <View style={s.heroMid}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.cardName} numberOfLines={1}>{data.customerName}</Text>
+                    <View style={s.ptsRow}>
+                      <Text style={s.ptsVal}>{data.points.toLocaleString()}</Text>
+                      <Text style={s.ptsUnit}>{i('points', 'points', 'puntos', 'punti')}</Text>
                     </View>
                   </View>
+                  {/* QR dans un cadre blanc — grille de modules (pur JS, OTA-safe) */}
+                  <View style={s.qrBox}>
+                    {qrCells ? (
+                      <View style={s.qrGrid}>
+                        {qrCells.map((row, r) => (
+                          <View key={r} style={s.qrRow}>
+                            {row.map((dark, c) => (
+                              <View key={c} style={{ width: module, height: module, backgroundColor: dark ? cfg.dark : '#FFFFFF' }} />
+                            ))}
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <Text style={s.qrFallback} numberOfLines={2}>{qrValue}</Text>
+                    )}
+                  </View>
+                </View>
+
+                {data.nextTier ? (
+                  <View style={{ marginTop: Spacing.md, gap: 6 }}>
+                    <View style={s.progRow}>
+                      <Text style={s.progTxt}>{data.pointsToNext.toLocaleString()} {i("pts jusqu'à", 'pts to', 'pts hasta', 'pts fino a')} {tierName(data.nextTier, i)}</Text>
+                      <Text style={s.progTxt}>{data.points.toLocaleString()} / {(nextThreshold ?? 0).toLocaleString()}</Text>
+                    </View>
+                    <View style={s.barTrack}>
+                      <View style={[s.barFill, { width: `${progress}%` as any, backgroundColor: cfg.accent }]} />
+                    </View>
+                  </View>
+                ) : (
+                  <Text style={[s.maxTxt, { color: cfg.accent, marginTop: Spacing.md }]}>🎉 {i('Niveau maximum !', 'Max level!', '¡Nivel máximo!', 'Livello massimo!')}</Text>
+                )}
+              </View>
+
+              {/* ── Paliers actuel / prochain (maquette 04) ── */}
+              <View style={s.tierCardsRow}>
+                <View style={s.tierCard}>
+                  <Text style={s.tierCardLabel}>{i('Palier actuel', 'Current tier', 'Nivel actual', 'Livello attuale')}</Text>
+                  <Text style={s.tierCardVal}>{tierName(tier, i)}{currentPct > 0 ? ` · ${currentPct}%` : ''}</Text>
+                  <Text style={s.tierCardSub}>{currentPct > 0 ? i('de remise', 'discount', 'de descuento', 'di sconto') : i('sans remise', 'no discount', 'sin descuento', 'senza sconto')}</Text>
+                </View>
+                <View style={s.tierCard}>
+                  <Text style={s.tierCardLabel}>{i('Prochain palier', 'Next tier', 'Próximo nivel', 'Prossimo livello')}</Text>
+                  {data.nextTier ? (
+                    <>
+                      <Text style={[s.tierCardVal, { color: cfg.accent }]}>{tierName(data.nextTier, i)}{nextPct > 0 ? ` · ${nextPct}%` : ''}</Text>
+                      <Text style={s.tierCardSub}>{i('à', 'at', 'a', 'a')} {(nextThreshold ?? 0).toLocaleString()} pts</Text>
+                    </>
+                  ) : (
+                    <Text style={[s.tierCardVal, { color: cfg.accent }]}>{i('Maximum', 'Maximum', 'Máximo', 'Massimo')}</Text>
+                  )}
                 </View>
               </View>
+
+              {/* ── Activité récente (maquette 04) — historique serveur (gains/retraits) ── */}
+              {history.length > 0 && (
+                <View>
+                  <Text style={s.sectionLabel}>{i('ACTIVITÉ RÉCENTE', 'RECENT ACTIVITY', 'ACTIVIDAD RECIENTE', 'ATTIVITÀ RECENTE')}</Text>
+                  <View style={s.histCard}>
+                    {history.slice(0, 6).map((h, idx, arr) => {
+                      const earn = (h.points ?? 0) >= 0
+                      return (
+                        <View key={h.id ?? idx} style={[s.histRow, idx < arr.length - 1 && s.histRowBorder]}>
+                          <Text style={s.histLabel} numberOfLines={1}>
+                            {earn ? i('Vente', 'Sale', 'Venta', 'Vendita') : i('Remboursement', 'Refund', 'Reembolso', 'Rimborso')}
+                            {h.createdAt ? ` · ${fmtDay(h.createdAt)}` : ''}
+                          </Text>
+                          <Text style={[s.histPts, { color: earn ? C.accent2 : C.danger }]}>{earn ? '+' : ''}{h.points} pts</Text>
+                        </View>
+                      )
+                    })}
+                  </View>
+                </View>
+              )}
 
               {/* Action : partager (PDF via expo-print) */}
               <Pressable
@@ -298,22 +335,44 @@ function buildCardHtml(
   </body></html>`
 }
 
+// Date courte JJ/MM (activité récente) — Hermes-safe (pas de toLocaleDateString).
+function fmtDay(iso: string): string {
+  const d = new Date(iso)
+  if (isNaN(+d)) return ''
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}`
+}
+
 const makeStyles = (C: ThemeColors) => StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: withAlpha('#000000', 0.6), justifyContent: 'center', padding: Spacing.lg },
+  // Maquette 04 — carte hero (aplat teinté par palier) + paliers + activité
+  hero: { borderRadius: 18, borderWidth: 1, padding: Spacing.lg, overflow: 'hidden' },
+  heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
+  heroLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: withAlpha('#FFFFFF', 0.7) },
+  heroMid: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: Spacing.sm },
+  progRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  progTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: withAlpha('#FFFFFF', 0.7) },
+  tierCardsRow: { flexDirection: 'row', gap: Spacing.sm },
+  tierCard: { flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: BorderRadius.lg, padding: Spacing.md, gap: 2 },
+  tierCardLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3 },
+  tierCardVal: { fontSize: FontSize.md, fontFamily: 'Outfit_700Bold', color: C.text, marginTop: 2 },
+  tierCardSub: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3 },
+  sectionLabel: { fontSize: FontSize.xs, fontFamily: 'Outfit_600SemiBold', color: C.text3, letterSpacing: 0.5, marginBottom: Spacing.sm },
+  histCard: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.md },
+  histRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.sm },
+  histRowBorder: { borderBottomWidth: 1, borderBottomColor: C.border },
+  histLabel: { fontSize: FontSize.sm, fontFamily: 'Outfit_400Regular', color: C.text, flex: 1, marginRight: Spacing.sm },
+  histPts: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold' },
   box: { backgroundColor: C.bg, borderRadius: BorderRadius.xl, borderWidth: 1, borderColor: C.border, padding: Spacing.lg },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
   headTitle: { fontSize: FontSize.lg, fontFamily: 'Outfit_800ExtraBold', color: C.text },
   loadingBox: { height: 100, alignItems: 'center', justifyContent: 'center' },
   errorTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_600SemiBold', color: C.danger, textAlign: 'center' },
 
-  card: { borderRadius: 18, borderWidth: 2, overflow: 'hidden' },
-  cardTop: { padding: Spacing.lg, gap: Spacing.sm, overflow: 'hidden' },
   watermark: { position: 'absolute', top: -10, right: -10, fontSize: 96, opacity: 0.06, lineHeight: 100 },
-  cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
-  tierBadge: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: BorderRadius.full, paddingHorizontal: Spacing.sm, paddingVertical: 2, marginBottom: 6 },
+  tierBadge: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: BorderRadius.full, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   tierTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_800ExtraBold' },
   cardName: { fontSize: FontSize.xl, fontFamily: 'Outfit_800ExtraBold', color: '#FFFFFF', maxWidth: 200 },
-  cardId: { fontSize: FontSize.xs, fontFamily: 'JetBrainsMono_400Regular', marginTop: 2 },
   qrBox: { width: 64, height: 64, borderRadius: 8, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   qrGrid: { flexDirection: 'column' },
   qrRow: { flexDirection: 'row' },
@@ -321,18 +380,9 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
   ptsRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.xs },
   ptsVal: { fontSize: FontSize.xxxl, fontFamily: 'JetBrainsMono_700Bold', color: '#FFFFFF' },
   ptsUnit: { fontSize: FontSize.md, fontFamily: 'Outfit_600SemiBold', color: withAlpha('#FFFFFF', 0.6) },
-  shopName: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: withAlpha('#FFFFFF', 0.5), textTransform: 'uppercase', letterSpacing: 1 },
-
-  cardBottom: { backgroundColor: C.bg, padding: Spacing.md, gap: Spacing.md },
-  barTrack: { height: 7, backgroundColor: C.bg3, borderRadius: BorderRadius.full, overflow: 'hidden' },
+  barTrack: { height: 7, backgroundColor: withAlpha('#000000', 0.35), borderRadius: BorderRadius.full, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: BorderRadius.full },
-  progressTxt: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3 },
   maxTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold' },
-  statsRow: { flexDirection: 'row', alignItems: 'stretch' },
-  statCell: { flex: 1, gap: 2 },
-  statSep: { width: 1, backgroundColor: C.border, marginHorizontal: Spacing.md },
-  statLabel: { fontSize: 10, fontFamily: 'Outfit_600SemiBold', color: C.text3, textTransform: 'uppercase', letterSpacing: 0.5 },
-  statValue: { fontSize: FontSize.md, fontFamily: 'Outfit_800ExtraBold', color: C.text },
 
   shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, minHeight: 50, backgroundColor: withAlpha(C.primary, 0.12), borderWidth: 1, borderColor: withAlpha(C.primary, 0.3), borderRadius: BorderRadius.md },
   shareBtnBusy: { opacity: 0.6 },
