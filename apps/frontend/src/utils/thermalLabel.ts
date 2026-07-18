@@ -24,21 +24,20 @@ const li = (lang: string, fr: string, en: string, es: string, it: string) =>
   lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
 
 // Rend un code-barres en PNG (data URL) via un canvas hors-écran. EAN-13/EAN-8
-// selon le code canonicalisé (UPC-A hérité → EAN-13) ; à défaut CODE128 sur le SKU.
-// Retourne null si rien à encoder → l'appelant affiche « code interne ».
-function barcodePng(barcode: string | undefined, sku: string): { png: string; internal: boolean } | null {
+// selon le code canonicalisé (UPC-A hérité → EAN-13). (b) : plus de CODE128-sur-SKU
+// → sans code EAN valide, retourne null (l'appelant affiche une mention non
+// scannable, pas un code piège). Le SKU reste imprimé en texte via showSku.
+function barcodePng(barcode: string | undefined): string | null {
   const canonical = normalizeBarcode(barcode)
   const format = canonical ? barcodeFormat(canonical) : null // EAN13 | EAN8 | null
-  const value = format ? canonical : (sku || '')
-  if (!value) return null
+  if (!format) return null
   try {
     const canvas = document.createElement('canvas')
-    JsBarcode(canvas, value, {
-      format: format ?? 'CODE128',
-      width: 2, height: 60, displayValue: true, fontSize: 16,
+    JsBarcode(canvas, canonical, {
+      format, width: 2, height: 60, displayValue: true, fontSize: 16,
       margin: 4, background: '#FFFFFF', lineColor: '#000000',
     })
-    return { png: canvas.toDataURL('image/png'), internal: !format }
+    return canvas.toDataURL('image/png')
   } catch {
     return null
   }
@@ -83,22 +82,23 @@ export async function printThermalLabels(
       y += 2
     }
 
-    // Code-barres (image), centré.
+    // Code-barres (image EAN), centré. (b) : sans code EAN valide → mention non
+    // scannable (pas de CODE128-sur-SKU). Le SKU reste imprimé ci-dessus via showSku.
     if (options.showBarcode) {
-      const bc = barcodePng(product.barcode, product.sku)
-      if (bc) {
+      const png = barcodePng(product.barcode)
+      if (png) {
         const imgW = W - MARGIN * 2
         const imgH = 11
-        doc.addImage(bc.png, 'PNG', MARGIN, y, imgW, imgH)
+        doc.addImage(png, 'PNG', MARGIN, y, imgW, imgH)
         y += imgH + 1
-        if (bc.internal) {
-          doc.setFont('helvetica', 'normal')
-          doc.setFontSize(4.5)
-          doc.setTextColor(120)
-          doc.text(li(options.lang, 'Code interne', 'Internal code', 'Código interno', 'Codice interno'), W / 2, y, { align: 'center' })
-          doc.setTextColor(0)
-          y += 2
-        }
+      } else {
+        doc.setFont('helvetica', 'italic')
+        doc.setFontSize(5)
+        doc.setTextColor(150)
+        doc.text(li(options.lang, 'Code-barres à générer', 'Barcode to generate', 'Código a generar', 'Codice da generare'), W / 2, y, { align: 'center' })
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(0)
+        y += 2
       }
     }
 

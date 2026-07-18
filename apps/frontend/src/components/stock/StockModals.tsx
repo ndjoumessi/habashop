@@ -35,6 +35,7 @@ interface StockModalsProps {
   selectedForLabel: string[]; setSelectedForLabel: (v: any) => void
   suppliers: { id: string; name: string }[]
   hideProductSelection?: boolean
+  onOpenBackfill?: () => void
 }
 
 function BarcodeDisplay({ value }: { value: string }) {
@@ -67,7 +68,7 @@ function BarcodeDisplay({ value }: { value: string }) {
   return <svg ref={svgRef} style={{ display: 'block', margin: '0 auto', borderRadius: 4, maxWidth: '100%' }} />
 }
 
-export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection }: StockModalsProps) {
+export default function StockModals({ showModal, setShowModal, resetForm, editingSku, form, setForm, productEditMode, setProductEditMode, modalTab, setModalTab, categories, setCategories, showScanner, setShowScanner, fmt, products, saveProduct, showCatModal, setShowCatModal, editCat, catForm, setCatForm, showLabelModal, setShowLabelModal, lang, labelConfig, setLabelConfig, selectedForLabel, setSelectedForLabel, suppliers, hideProductSelection, onOpenBackfill }: StockModalsProps) {
   const [supSearch, setSupSearch] = useState('')
   const [supOpen, setSupOpen] = useState(false)
   // Pièges à focus des 3 modales (focus initial + Tab bouclé + restauration)
@@ -923,6 +924,31 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
               </div>
               )}
             </div>
+
+            {/* Steer actionnable : des produits sélectionnés sans code EAN valide
+                n'auront pas de code-barres imprimé (plus de CODE128-sur-SKU) →
+                proposer d'aller les compléter (génération / scan). */}
+            {(() => {
+              if (!labelConfig.showBarcode || !onOpenBackfill) return null
+              const missing = products.filter(p => selectedForLabel.includes(p.sku) && !isValidBarcode(normalizeBarcode(p.barcode ?? ''))).length
+              if (missing === 0) return null
+              return (
+                <button type="button" onClick={onOpenBackfill}
+                  style={{ marginTop: 12, width: '100%', display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', cursor: 'pointer', fontFamily: 'var(--font)',
+                    background: 'color-mix(in srgb, var(--warn) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--warn) 30%, transparent)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: 'var(--warn)' }}>
+                  <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                  <span style={{ flex: 1 }}>
+                    {i(
+                      `${missing} produit(s) sans code-barres ne l'afficheront pas — compléter les codes manquants`,
+                      `${missing} product(s) without a barcode won't show one — complete the missing codes`,
+                      `${missing} producto(s) sin código no lo mostrarán — completar los códigos faltantes`,
+                      `${missing} prodotto(i) senza codice non lo mostreranno — completa i codici mancanti`,
+                    )}
+                  </span>
+                  <Wand2 size={15} style={{ flexShrink: 0 }} />
+                </button>
+              )
+            })()}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
               <button className="topbar-btn" style={{ flex: 1, justifyContent: 'center' }}

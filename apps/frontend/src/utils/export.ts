@@ -489,32 +489,30 @@ export type AveryPreset = keyof typeof AVERY_PRESETS
 
 // Rendu du code-barres DANS la fenêtre parente (paquet jsbarcode LOCAL, plus de
 // CDN externe) → impression fiable même hors ligne. EAN-13/EAN-8 selon le code
-// canonicalisé (UPC-A hérité → EAN-13) ; à défaut de code fabricant, CODE128 sur
-// le SKU + badge « Code interne ». Barres NOIRES sur fond BLANC (lisibilité scanner).
+// canonicalisé (UPC-A hérité → EAN-13). Barres NOIRES sur fond BLANC.
+// (b) : on n'imprime PLUS de CODE128-sur-SKU. Une étiquette scannable doit porter
+// un code résoluble et STANDARD (EAN) ; un CODE128-sur-SKU n'est ni l'un ni
+// l'autre (piège à la caisse). Sans code valide → aucune symbologie scannable,
+// juste une mention explicite (le SKU reste en texte via l'option showSku, et
+// l'app oriente vers la génération d'un code — cf. modale Étiquettes / rattrapage).
 function renderBarcodeMarkup(
   barcode: string | undefined,
-  sku: string,
   lang: string,
   esc: (v: unknown) => string,
 ): string {
   const canonical = normalizeBarcode(barcode)
   const format = canonical ? barcodeFormat(canonical) : null // EAN13 | EAN8 | null
-  const value = format ? canonical : (sku || '')
-  const symbology = format ?? 'CODE128'
-  let svg = ''
-  if (value) {
-    try {
-      const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-      JsBarcode(el, value, { format: symbology, width: 1.5, height: 40, displayValue: true, fontSize: 10, margin: 4, background: '#FFFFFF', lineColor: '#000000' })
-      svg = el.outerHTML
-    } catch { svg = '' }
+  if (!format) {
+    const note = lang === 'en' ? 'Barcode to generate' : lang === 'es' ? 'Código a generar' : lang === 'it' ? 'Codice da generare' : 'Code-barres à générer'
+    return `<div style="text-align:center;border-top:1px solid #eee;padding-top:4px;"><span style="display:inline-block;font-size:9px;color:#9CA3AF;font-style:italic;">${esc(note)}</span></div>`
   }
-  const internalBadge = !format
-    ? `<div style="margin-top:3px;text-align:center;"><span style="display:inline-block;background:#F3F4F6;color:#6B7280;font-size:10px;border-radius:4px;padding:2px 6px;">${esc(
-        lang === 'en' ? 'Internal code' : lang === 'es' ? 'Código interno' : lang === 'it' ? 'Codice interno' : 'Code interne'
-      )}</span></div>`
-    : ''
-  return `<div style="text-align:center;border-top:1px solid #eee;padding-top:4px;">${svg}${internalBadge}</div>`
+  let svg = ''
+  try {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    JsBarcode(el, canonical, { format, width: 1.5, height: 40, displayValue: true, fontSize: 10, margin: 4, background: '#FFFFFF', lineColor: '#000000' })
+    svg = el.outerHTML
+  } catch { svg = '' }
+  return `<div style="text-align:center;border-top:1px solid #eee;padding-top:4px;">${svg}</div>`
 }
 
 export function printProductLabels(
@@ -559,7 +557,7 @@ export function printProductLabels(
     : `width:${s.w}px; height:${s.h}px; border:1px solid #ddd; border-radius:6px; padding:8px; margin:4px; display:inline-flex; flex-direction:column; justify-content:space-between; background:white; page-break-inside:avoid;`
 
   const labelHTML = (product: typeof products[0]) => {
-    const barcodeBlock = options.showBarcode ? renderBarcodeMarkup(product.barcode, product.sku, options.lang, esc) : ''
+    const barcodeBlock = options.showBarcode ? renderBarcodeMarkup(product.barcode, options.lang, esc) : ''
     return `
     <div class="label" style="${labelCellStyle}">
       <div style="display:flex;align-items:center;gap:6px;">

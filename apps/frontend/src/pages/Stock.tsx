@@ -529,6 +529,7 @@ export default function Stock() {
         selectedForLabel={selectedForLabel} setSelectedForLabel={setSelectedForLabel}
         suppliers={suppliers}
         hideProductSelection={labelModalFromSelection}
+        onOpenBackfill={() => { setShowLabelModal(false); setShowBackfill(true) }}
       />
     </div>
   )
