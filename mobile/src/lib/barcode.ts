@@ -72,3 +72,17 @@ export const normalizeBarcode = (b: string | null | undefined): string => {
   if (isValidUPCA(digits)) return '0' + digits
   return digits
 }
+
+/**
+ * BRIQUE UNIQUE de la RECHERCHE par code-barres (mirror du web) : vrai si `query`
+ * retrouve le produit au code `stored` — sous-chaîne de chiffres (frappe partielle)
+ * OU égalité canonique (un UPC-A tapé/scanné retrouve l'EAN-13 stocké). Les deux
+ * côtés passent par normalizeBarcode → aucune dérive avec le stockage.
+ */
+export const barcodeMatches = (stored: string | null | undefined, query: string): boolean => {
+  const s = normalizeBarcode(stored)
+  if (!s) return false
+  const q = String(query ?? '').replace(/\s+/g, '')
+  if (!q) return false
+  return s.includes(q) || s === normalizeBarcode(query)
+}

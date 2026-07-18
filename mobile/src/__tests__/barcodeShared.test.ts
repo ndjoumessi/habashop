@@ -1,14 +1,15 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { normalizeBarcode, isValidBarcode } from '@/lib/barcode'
+import { normalizeBarcode, isValidBarcode, barcodeMatches } from '@/lib/barcode'
 
-// Anti-dérive du miroir backend ↔ mobile : ce test ET son jumeau
-// apps/backend/src/tests/barcodeShared.test.ts lisent le MÊME fichier de cas.
-// Si la règle change d'un côté sans l'autre, l'un des deux tests échoue.
+// Anti-dérive du miroir backend ↔ mobile ↔ frontend : ce test ET ses jumeaux
+// (apps/backend, apps/frontend) lisent le MÊME fichier de cas.
+// Si la règle change d'un côté sans les autres, un des tests échoue.
 interface Case { label: string; raw: string; canonical: string; valid: boolean }
+interface SearchCase { label: string; stored: string; query: string; match: boolean }
 const fixture = JSON.parse(
   readFileSync(join(__dirname, '../../../docs/shared-fixtures/barcode-cases.json'), 'utf8'),
-) as { cases: Case[] }
+) as { cases: Case[]; searchCases: SearchCase[] }
 
 describe('barcode — cas PARTAGÉS backend/mobile (anti-dérive)', () => {
   for (const c of fixture.cases) {
@@ -24,4 +25,13 @@ describe('barcode — cas PARTAGÉS backend/mobile (anti-dérive)', () => {
     expect(normalizeBarcode('036000291452')).toBe('0036000291452')
     expect(normalizeBarcode('036000291452')).toBe(normalizeBarcode('0036000291452'))
   })
+})
+
+// Verrouille la RECHERCHE par code-barres mobile — G7 (stock), G8 (recherche globale).
+describe('barcodeMatches — cas PARTAGÉS (recherche)', () => {
+  for (const c of fixture.searchCases) {
+    it(c.label, () => {
+      expect(barcodeMatches(c.stored, c.query)).toBe(c.match)
+    })
+  }
 })

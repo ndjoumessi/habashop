@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi, apiErrorMessage } from '@/services/api'
 import type { Product, ProductUpdate } from '@/types'
 import { useI18n, useFmt, useTheme, plural } from '@/stores/appStore'
-import { normalizeBarcode, isValidBarcode } from '@/lib/barcode'
+import { normalizeBarcode, isValidBarcode, barcodeMatches } from '@/lib/barcode'
 import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
@@ -103,7 +103,8 @@ export default function StockScreen() {
       const st = statusOf(p)
       if (filter === 'low' && st !== 'low') return false
       if (filter === 'out' && st !== 'out') return false
-      return !q || p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q) || p.barcode?.includes(q)
+      // Code-barres via la règle canonique (un UPC-A tapé retrouve l'EAN-13 stocké).
+      return !q || p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q) || barcodeMatches(p.barcode, search)
     })
   }, [active, filter, search])
 

@@ -109,7 +109,12 @@ export interface Product {
   stockMin: number
   supplierId?: string | null
   barcode?: string | null
-  /** Champ non garanti côté backend — référencé en fallback de scan. */
+  /**
+   * ⚠️ LEGACY / mort par construction : AUCUNE colonne `ean` dans le modèle Prisma
+   * Product (le backend n'a que `barcode`) → l'API ne renvoie JAMAIS ce champ, il
+   * est toujours `undefined`. Conservé en lecture au scan (`pos/index.tsx`) comme
+   * filet de sécurité, plus jamais écrit. À retirer si confirmé définitivement inutile.
+   */
   ean?: string | null
   taxRate?: number
   isActive: boolean
