@@ -182,13 +182,13 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
                 fontSize: 12, fontWeight: 'var(--fw-semibold)', color: 'var(--text3)',
               }}>
               <Tag size={12} />
-              {lang === 'en' ? 'Apply discount' : lang === 'es' ? 'Aplicar descuento' : lang === 'it' ? 'Applica sconto' : 'Appliquer une remise'}
+              {lang === 'en' ? 'Apply manual discount' : lang === 'es' ? 'Aplicar descuento manual' : lang === 'it' ? 'Applica sconto manuale' : 'Appliquer une remise manuelle'}
             </button>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 12 }}>
               <span style={{ color: 'var(--acc2)', fontWeight: 'var(--fw-semibold)', display: 'flex', alignItems: 'center', gap: 5 }}>
                 <Tag size={12} />
-                {lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'} : {discount.type === 'percent' ? `${discount.value} %` : fmt(discount.value)}
+                {lang === 'en' ? 'Manual discount' : lang === 'es' ? 'Descuento manual' : lang === 'it' ? 'Sconto manuale' : 'Remise manuelle'} : {discount.type === 'percent' ? `${discount.value} %` : fmt(discount.value)}
               </span>
               {setDiscount && (
                 <button type="button" onClick={() => setDiscount(null)}
@@ -216,7 +216,7 @@ export default function POSCart({ lang, cart, setCart, fmt, discount, discountAm
             </div>
             {discount && discountAmount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--acc2)', fontSize: 13, marginBottom: 5 }}>
-                <span>{lang === 'en' ? 'Discount' : lang === 'es' ? 'Descuento' : lang === 'it' ? 'Sconto' : 'Remise'}{discount.type === 'percent' ? ` (${discount.value}%)` : ''}</span>
+                <span>{lang === 'en' ? 'Manual discount' : lang === 'es' ? 'Descuento manual' : lang === 'it' ? 'Sconto manuale' : 'Remise manuelle'}{discount.type === 'percent' ? ` (${discount.value}%)` : ''}</span>
                 <span style={{ fontFamily: 'var(--mono)' }}>− {fmt(discountAmount)}</span>
               </div>
             )}
