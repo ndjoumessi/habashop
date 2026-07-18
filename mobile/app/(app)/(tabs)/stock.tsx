@@ -8,8 +8,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { productsApi, apiErrorMessage } from '@/services/api'
-import type { Product } from '@/types'
+import type { Product, ProductUpdate } from '@/types'
 import { useI18n, useFmt, useTheme, plural } from '@/stores/appStore'
+import { normalizeBarcode, isValidBarcode } from '@/lib/barcode'
 import {
   ThemeColors, Spacing, BorderRadius, FontSize, Shadow, withAlpha,
 } from '@/constants/theme'
@@ -18,6 +19,7 @@ import OfflineBanner from '@/components/ui/OfflineBanner'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import SegmentedControl from '@/components/ui/SegmentedControl'
 import AccessibleButton from '@/components/ui/AccessibleButton'
+import BarcodeScanner from '@/components/pos/BarcodeScanner'
 
 type Filter = 'all' | 'low' | 'out'
 
@@ -75,6 +77,8 @@ export default function StockScreen() {
   const [filter, setFilter]   = useState<Filter>('all')
   const [editP, setEditP]     = useState<any | null>(null)
   const [newQty, setNewQty]   = useState(0)
+  const [newBarcode, setNewBarcode] = useState('')
+  const [scannerVisible, setScannerVisible] = useState(false)
 
   const STATUS_COLOR = { ok: C.accent2, low: C.warn, out: C.danger }
 
@@ -103,17 +107,18 @@ export default function StockScreen() {
     })
   }, [active, filter, search])
 
-  // ── Mutation maj stock ──
+  // ── Mutation maj produit (stock + éventuellement code-barres) ──
   const updateMut = useMutation({
-    mutationFn: (vars: { id: string; stockQty: number }) =>
-      productsApi.update(vars.id, { stockQty: vars.stockQty }),
+    mutationFn: (vars: { id: string; data: ProductUpdate }) =>
+      productsApi.update(vars.id, vars.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })  // partagé avec la Caisse (POS)
       qc.invalidateQueries({ queryKey: ['dashboard'] }) // alertes stock du dashboard
       setEditP(null)
-      Alert.alert(i('✅ Stock mis à jour', '✅ Stock updated', '✅ Stock actualizado', '✅ Stock aggiornato'), '')
+      Alert.alert(i('✅ Enregistré', '✅ Saved', '✅ Guardado', '✅ Salvato'), '')
     },
     onError: (e: unknown) => {
+      // Le backend renvoie 400 (code-barres invalide) ou 409 (déjà utilisé — message nomme le produit).
       Alert.alert(
         i('Erreur', 'Error', 'Error', 'Errore'),
         apiErrorMessage(e) ?? i('Échec de la mise à jour', 'Update failed', 'Error al actualizar', 'Aggiornamento fallito'),
@@ -121,7 +126,21 @@ export default function StockScreen() {
     },
   })
 
-  const openEdit = (p: Product) => { setEditP(p); setNewQty(p.stockQty ?? 0) }
+  const openEdit = (p: Product) => { setEditP(p); setNewQty(p.stockQty ?? 0); setNewBarcode(p.barcode ?? '') }
+
+  // Code-barres : canonicalisation partagée (UPC-A→EAN-13) + validation EAN-13/EAN-8.
+  const canonicalBarcode = normalizeBarcode(newBarcode)
+  const barcodeInvalid = !!canonicalBarcode && !isValidBarcode(canonicalBarcode)
+  const qtyChanged = editP ? newQty !== (editP.stockQty ?? 0) : false
+  const barcodeChanged = editP ? canonicalBarcode !== (editP.barcode ?? '') : false
+  const saveEdit = () => {
+    if (!editP) return
+    const data: ProductUpdate = {
+      ...(qtyChanged ? { stockQty: newQty } : {}),
+      ...(barcodeChanged ? { barcode: canonicalBarcode } : {}),
+    }
+    updateMut.mutate({ id: editP.id, data })
+  }
 
   const StatBox = ({ label, value, color }: { label: string; value: number; color: string }) => (
     <View style={s.statBox}>
@@ -312,19 +331,59 @@ export default function StockScreen() {
                 </View>
               </View>
 
+              {/* Code-barres — compléter un code manquant, produit en main (scan = principal) */}
+              <View>
+                <Text style={s.editStatLabel}>{i('Code-barres', 'Barcode', 'Código de barras', 'Codice a barre')}</Text>
+                <View style={s.barcodeRow}>
+                  <TextInput
+                    style={[s.barcodeInput, barcodeInvalid && { borderColor: C.danger }]}
+                    value={newBarcode}
+                    onChangeText={setNewBarcode}
+                    placeholder={i('EAN-13 / EAN-8 / UPC-A…', 'EAN-13 / EAN-8 / UPC-A…', 'EAN-13 / EAN-8 / UPC-A…', 'EAN-13 / EAN-8 / UPC-A…')}
+                    placeholderTextColor={C.text3}
+                    keyboardType="numeric"
+                    autoCapitalize="none"
+                    accessibilityLabel={i('Code-barres', 'Barcode', 'Código de barras', 'Codice a barre')}
+                  />
+                  <Pressable style={s.scanBtn} onPress={() => setScannerVisible(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={i('Scanner le code-barres', 'Scan barcode', 'Escanear código de barras', 'Scansiona codice a barre')}>
+                    <Ionicons name="barcode-outline" size={20} color="#fff" />
+                    <Text style={s.scanBtnTxt}>{i('Scanner', 'Scan', 'Escanear', 'Scansiona')}</Text>
+                  </Pressable>
+                </View>
+                {barcodeInvalid ? (
+                  <Text style={[s.barcodeHint, { color: C.danger }]}>
+                    {i('Code-barres invalide (EAN-13, EAN-8 ou UPC-A attendu)', 'Invalid barcode (EAN-13, EAN-8 or UPC-A expected)', 'Código inválido (se espera EAN-13, EAN-8 o UPC-A)', 'Codice non valido (atteso EAN-13, EAN-8 o UPC-A)')}
+                  </Text>
+                ) : !editP.barcode ? (
+                  <Text style={s.barcodeHint}>
+                    {i("Scannez l'emballage pour compléter le code manquant", 'Scan the packaging to complete the missing code', 'Escanee el envase para completar el código faltante', 'Scansiona la confezione per completare il codice mancante')}
+                  </Text>
+                ) : null}
+              </View>
+
               {/* Enregistrer */}
               <AccessibleButton
                 label={i('Enregistrer', 'Save', 'Guardar', 'Salva')}
-                hint={i('Enregistrer le stock', 'Save stock', 'Guardar stock', 'Salva stock')}
-                onPress={() => updateMut.mutate({ id: editP.id, stockQty: newQty })}
+                hint={i('Enregistrer les modifications', 'Save changes', 'Guardar cambios', 'Salva modifiche')}
+                onPress={saveEdit}
                 loading={updateMut.isPending}
-                disabled={newQty === (editP.stockQty ?? 0)}
+                disabled={(!qtyChanged && !barcodeChanged) || barcodeInvalid}
               />
             </View>
           )}
         </View>
       </Modal>
       )}
+
+      {/* ── Scanner code-barres (compléter un code produit) ── */}
+      <BarcodeScanner
+        visible={scannerVisible}
+        mode="product"
+        onScan={(code) => { setNewBarcode(code); setScannerVisible(false) }}
+        onClose={() => setScannerVisible(false)}
+      />
     </View>
   )
 }
@@ -403,4 +462,18 @@ const makeStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: C.border, textAlign: 'center',
     fontSize: FontSize.xxl, fontFamily: 'JetBrainsMono_700Bold', color: C.text,
   },
+
+  // Code-barres
+  barcodeRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm },
+  barcodeInput: {
+    flex: 1, height: 48, backgroundColor: C.bg3, borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: C.border, paddingHorizontal: Spacing.md,
+    fontSize: FontSize.md, fontFamily: 'JetBrainsMono_700Bold', color: C.text,
+  },
+  scanBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, height: 48,
+    paddingHorizontal: Spacing.lg, borderRadius: BorderRadius.md, backgroundColor: C.primary,
+  },
+  scanBtnTxt: { fontSize: FontSize.sm, fontFamily: 'Outfit_700Bold', color: '#fff' },
+  barcodeHint: { fontSize: FontSize.xs, fontFamily: 'Outfit_400Regular', color: C.text3, marginTop: 6 },
 })
