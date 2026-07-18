@@ -63,10 +63,11 @@ test.describe('HabaShop — Smoke Tests', () => {
     expect(page.url()).toContain('/app/settings')
   })
 
-  test('Super-admin accessible', async ({ page }) => {
+  // P0 — le panneau plateforme est réservé aux admins PLATEFORME (isPlatformAdmin),
+  // jamais au rôle tenant SUPER_ADMIN. Le compte démo (admin@, SUPER_ADMIN de sa
+  // boutique) ne doit donc PLUS voir l'entrée « Admin Panel » ni atteindre /admin.
+  test('Panneau plateforme masqué pour un SUPER_ADMIN de tenant', async ({ page }) => {
     await loginViaUI(page, BASE)
-    await page.click('[aria-label="Admin Panel"]')
-    await page.waitForURL(/\/admin/, { timeout: 8000 })
-    expect(page.url()).toContain('/admin')
+    await expect(page.locator('[aria-label="Admin Panel"]')).toHaveCount(0)
   })
 })

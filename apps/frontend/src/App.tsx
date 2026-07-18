@@ -88,6 +88,17 @@ function AdminOnly({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+// Panneau PLATEFORME (/admin) : réservé aux admins plateforme (isPlatformAdmin),
+// jamais au rôle tenant SUPER_ADMIN. Le gate serveur (/api/admin/*) reste l'autorité ;
+// ceci évite juste d'afficher un écran vide/403 à un non-admin plateforme.
+function PlatformAdminOnly({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore()
+  if (user?.isPlatformAdmin !== true) {
+    return <Navigate to={getLandingForRole(user?.role)} replace />
+  }
+  return <>{children}</>
+}
+
 export default function App() {
   const { token, logout, updateUser } = useAuthStore()
 
@@ -176,9 +187,9 @@ export default function App() {
       </Route>
       <Route path="/admin" element={
         <ProtectedRoute>
-          <AdminOnly>
+          <PlatformAdminOnly>
             <AdminDashboard />
-          </AdminOnly>
+          </PlatformAdminOnly>
         </ProtectedRoute>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />

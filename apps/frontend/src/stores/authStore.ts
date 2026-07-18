@@ -53,6 +53,9 @@ export interface User {
   role: UserRole
   avatar?: string
   shopName: string
+  // Admin PLATEFORME (super-admin SaaS) — seul critère du panneau /admin. Distinct du
+  // rôle tenant SUPER_ADMIN. Masquage UI seulement ; le gate autoritaire est côté serveur.
+  isPlatformAdmin?: boolean
 }
 
 interface AuthState {
