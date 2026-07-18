@@ -572,7 +572,11 @@ export function printProductLabels(
         </div>
       </div>
       ${options.showPrice ? `
-        <div style="font-size:${s.priceSize}px;font-weight:900;color:#5B4EE8;">
+        <!-- Prix en NOIR gras (pas le violet écran) : l'étiquette est souvent imprimée
+             en N&B sur imprimante de bureau — le violet y ressort en gris pâle, rendant
+             l'info la PLUS importante la MOINS lisible ; le noir reste net et n'appelle
+             pas d'encre couleur. Le violet reste l'identité à l'écran, pas au papier. -->
+        <div style="font-size:${s.priceSize}px;font-weight:900;color:#000;">
           ${esc(fmt(product.price))}
         </div>
       ` : ''}

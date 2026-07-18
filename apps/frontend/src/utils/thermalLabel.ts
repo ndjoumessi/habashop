@@ -104,6 +104,8 @@ export async function printThermalLabels(
     // juste sous le contenu (étiquette de prix propre, pas de vide central), un peu plus grand.
     if (options.showPrice) {
       doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0) // NOIR explicite : thermique = monochrome de toute façon, mais
+                          // on verrouille le prix en noir (jamais une teinte écran).
       doc.setFontSize(png ? 10 : 12)
       const priceY = png ? (30 - MARGIN - 0.5) : (y + 3)
       doc.text(fmt(product.price), W / 2, priceY, { align: 'center' })

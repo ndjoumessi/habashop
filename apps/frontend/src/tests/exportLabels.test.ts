@@ -64,6 +64,14 @@ describe('printProductLabels — impression étiquettes', () => {
     expect(opts.marginRight / opts.width).toBeGreaterThanOrEqual(10)
   })
 
+  it('prix en NOIR gras (pas le violet écran) — lisible en N&B + pas d’encre couleur', () => {
+    printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
+    // Le prix est le bloc inline font-weight:900 → doit être noir, jamais le violet
+    // écran (#5B4EE8). (Le violet reste légitime dans le chrome de la fenêtre d'impression.)
+    expect(written).toContain('font-weight:900;color:#000;')
+    expect(written).not.toContain('font-weight:900;color:#5B4EE8')
+  })
+
   it('🟡 aucune dépendance CDN externe dans la fenêtre d’impression', () => {
     printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
     expect(written).not.toContain('cdn.jsdelivr.net')
