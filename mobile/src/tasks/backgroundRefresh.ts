@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger'
 import * as TaskManager from 'expo-task-manager'
 import * as BackgroundTask from 'expo-background-task'
 import { refreshWidget } from '@/services/widgetNotification'
+import { useAppStore, whenAppStoreHydrated, formatAmount } from '@/stores/appStore'
 
 // expo-background-task (remplace expo-background-fetch déprécié). Best effort sur
 // Android (≥ 15 min, non garanti) ; ne tourne pas pendant que l'app est tuée en
@@ -11,9 +12,13 @@ const TASK_NAME = 'HABASHOP_WIDGET_REFRESH'
 
 TaskManager.defineTask(TASK_NAME, async () => {
   try {
-    // fmt simplifié (FCFA) côté background — pas d'accès au store i18n ici.
-    const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`
-    await refreshWidget(fmt, 'fr')
+    // Devise + langue lues depuis le store persisté (hydraté) → widget cohérent avec
+    // le tenant : plus de « F » ni de « fr » figés. formatAmount = même logique que
+    // les écrans (symbole/décimales/conversion via cachedRates).
+    await whenAppStoreHydrated()
+    const { currency, lang } = useAppStore.getState()
+    const fmt = (n: number) => formatAmount(n, currency)
+    await refreshWidget(fmt, lang)
     return BackgroundTask.BackgroundTaskResult.Success
   } catch {
     return BackgroundTask.BackgroundTaskResult.Failed

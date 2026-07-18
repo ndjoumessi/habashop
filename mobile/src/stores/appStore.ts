@@ -142,6 +142,31 @@ function localeNumber(value: number, locale: string, decimals: number): string {
 
 // Helper devise — sélectionne `currency` + convertit XOF → devise cible.
 // Les montants backend sont en XOF ; la conversion est UNIQUEMENT à l'affichage.
+// Formatteur devise PUR (hors React) — SOURCE UNIQUE de la logique symbole/décimales.
+// Réutilisé par useFmt (écrans) ET les contextes sans hook (widget background, libellés
+// de taux) → plus de « FCFA »/« F » codés en dur ailleurs. `rates` par défaut = cachedRates.
+export function formatAmount(amountXOF: number, currency: string, rates: Record<string, number> = cachedRates): string {
+  const n = amountXOF ?? 0
+  const converted = convertFromXOF(n, currency, rates)
+
+  switch (currency) {
+    case 'XOF':
+    case 'XAF':
+      // Franc CFA — pas de décimales, symbole FCFA
+      return `${localeNumber(Math.round(converted), 'fr-FR', 0)} FCFA`
+    case 'EUR':
+      return `${localeNumber(converted, 'fr-FR', 2)} €`
+    case 'USD':
+      return `$${localeNumber(converted, 'en-US', 2)}`
+    case 'GBP':
+      return `£${localeNumber(converted, 'en-GB', 2)}`
+    case 'CAD':
+      return `CA$${localeNumber(converted, 'fr-CA', 2)}`
+    default:
+      return `${localeNumber(Math.round(converted), 'fr-FR', 0)} ${currency}`
+  }
+}
+
 export function useFmt() {
   const currency = useAppStore(s => s.currency)
   const [rates, setRates] = useState(cachedRates)
@@ -153,27 +178,7 @@ export function useFmt() {
     }).catch(() => {})
   }, [])
 
-  const fmt = useCallback((amountXOF: number): string => {
-    const n = amountXOF ?? 0
-    const converted = convertFromXOF(n, currency, rates)
-
-    switch (currency) {
-      case 'XOF':
-      case 'XAF':
-        // Franc CFA — pas de décimales, symbole FCFA
-        return `${localeNumber(Math.round(converted), 'fr-FR', 0)} FCFA`
-      case 'EUR':
-        return `${localeNumber(converted, 'fr-FR', 2)} €`
-      case 'USD':
-        return `$${localeNumber(converted, 'en-US', 2)}`
-      case 'GBP':
-        return `£${localeNumber(converted, 'en-GB', 2)}`
-      case 'CAD':
-        return `CA$${localeNumber(converted, 'fr-CA', 2)}`
-      default:
-        return `${localeNumber(Math.round(converted), 'fr-FR', 0)} ${currency}`
-    }
-  }, [currency, rates])
+  const fmt = useCallback((amountXOF: number): string => formatAmount(amountXOF, currency, rates), [currency, rates])
 
   return { fmt, currency, rates }
 }
