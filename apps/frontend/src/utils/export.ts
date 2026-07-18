@@ -562,14 +562,14 @@ export function printProductLabels(
     const shopStyle = hasBarcode ? '' : 'margin-top:auto;'
     return `
     <div class="label" style="${labelCellStyle} justify-content:${justify}; ${cellGap}">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:${s.priceSize}px;">${esc(product.emoji ?? '📦')}</span>
-        <div>
-          <div style="font-size:${s.fontSize}px;font-weight:700;line-height:1.2;color:#1a1a2e;">
-            ${esc(product.name.length > 20 ? product.name.slice(0, 20) + '...' : product.name)}
-          </div>
-          ${options.showSku ? `<div style="font-size:9px;color:#888;">${esc(product.sku)}</div>` : ''}
+      <!-- Pas d'emoji sur l'etiquette : le pictogramme generique par defaut n'apporte
+           aucune information, et l'etiquette est collee SUR le produit -> il est
+           redondant avec l'objet lui-meme (+ aplat gris pale en N&B). -->
+      <div>
+        <div style="font-size:${s.fontSize}px;font-weight:700;line-height:1.2;color:#1a1a2e;">
+          ${esc(product.name.length > 20 ? product.name.slice(0, 20) + '...' : product.name)}
         </div>
+        ${options.showSku ? `<div style="font-size:9px;color:#888;">${esc(product.sku)}</div>` : ''}
       </div>
       ${options.showPrice ? `
         <!-- Prix en NOIR gras (pas le violet écran) : l'étiquette est souvent imprimée

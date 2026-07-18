@@ -72,6 +72,12 @@ describe('printProductLabels — impression étiquettes', () => {
     expect(written).not.toContain('font-weight:900;color:#5B4EE8')
   })
 
+  it('aucun émoji sur l’étiquette (redondant avec le produit, gris pâle en N&B)', () => {
+    printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931', emoji: '🥛' }], fmt, baseOpts)
+    expect(written).not.toContain('🥛') // émoji custom non imprimé
+    expect(written).not.toContain('📦') // ni le générique par défaut
+  })
+
   it('🟡 aucune dépendance CDN externe dans la fenêtre d’impression', () => {
     printProductLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
     expect(written).not.toContain('cdn.jsdelivr.net')
