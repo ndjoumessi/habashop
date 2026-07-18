@@ -131,6 +131,22 @@ describe('PATCH /api/stock/transfers/:id/confirm', () => {
     expect(db.product.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ tenantId: 'DEST', sku: 'PRD-0001', stockQty: 10 }) }))
   })
 
+  it('G9 — code-barres UPC-A source → match dest + copie CANONIQUE (EAN-13)', async () => {
+    // src en UPC-A (12 ch.) : la recherche dest ET la copie doivent utiliser la
+    // forme canonique EAN-13 (règle partagée normalizeBarcode), pas le brut 12 ch.
+    authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u2', role: 'MANAGER' }; req.tenantId = 'DEST' })
+    mockScopedTransfer({ ...TRANSFER, product: { ...PRODUCT, sku: 'PRD-9999', barcode: '036000291452' } })
+    db.product.findFirst.mockResolvedValue(null) // ni SKU ni barcode à dest → création
+    db.tenant.findUnique.mockResolvedValue({ name: 'Boutique DEST' })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PATCH', url: '/api/stock/transfers/t1/confirm' })
+    expect(res.statusCode).toBe(200)
+    // Recherche dest par code-barres canonicalisé (EAN-13), pas l'UPC-A brut
+    expect(db.product.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ barcode: '0036000291452', deletedAt: null }) }))
+    // Produit dest créé avec le code canonique
+    expect(db.product.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ barcode: '0036000291452' }) }))
+  })
+
   it('mauvaise boutique (source confirme) → 403', async () => {
     authMock.mockImplementation(async (req: any) => { req.user = { userId: 'u1', role: 'MANAGER' }; req.tenantId = 'SRC' })
     mockScopedTransfer(TRANSFER)

@@ -90,3 +90,28 @@ export function generateEAN13(rnd: () => number = Math.random): string {
   const base = '200' + Array.from({ length: 9 }, () => Math.floor(rnd() * 10)).join('')
   return base + String(ean13CheckDigit(base))
 }
+
+/**
+ * Un code-barres est ACCEPTABLE s'il est vide (pas de code = OK) ou canoniquement
+ * valide (EAN-13/EAN-8, UPC-A converti). BRIQUE UNIQUE de la garde de saisie —
+ * remplace tout `/^\d{13}$/` local (fiche produit, save, lookup auto-remplissage).
+ */
+export function isAcceptableBarcode(raw: unknown): boolean {
+  const c = normalizeBarcode(raw)
+  return !c || isValidBarcode(c)
+}
+
+/**
+ * BRIQUE UNIQUE de la RECHERCHE par code-barres (inventaire, POS, mobile).
+ * Vrai si `query` retrouve le produit au code `stored` :
+ *   - sous-chaîne de chiffres → frappe manuelle partielle (« 4006 ») ;
+ *   - égalité canonique → un UPC-A tapé/scanné (12) retrouve l'EAN-13 stocké (13).
+ * Les deux côtés passent par `normalizeBarcode` → aucune dérive avec le stockage.
+ */
+export function barcodeMatches(stored: string | null | undefined, query: string): boolean {
+  const s = normalizeBarcode(stored ?? '')
+  if (!s) return false
+  const q = String(query ?? '').replace(/\s+/g, '')
+  if (!q) return false
+  return s.includes(q) || s === normalizeBarcode(query)
+}

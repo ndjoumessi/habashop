@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser'
 import { useI18n } from '@/hooks/useI18n'
+import { normalizeBarcode } from '@/lib/barcode'
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void
@@ -35,7 +36,9 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
           videoRef.current!,
           (result) => {
             if (result) {
-              onScan(result.getText())
+              // Normalise à la sortie (UPC-A→EAN-13, espaces) — symétrie avec le
+              // scanner mobile ; les callers re-normalisent (idempotent).
+              onScan(normalizeBarcode(result.getText()))
               setScanning(false)
               controls?.stop()
             }
@@ -53,7 +56,8 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const submitManual = () => {
-    if (manualVal.trim()) { onScan(manualVal.trim()); onClose() }
+    const c = normalizeBarcode(manualVal)
+    if (c) { onScan(c); onClose() }
   }
 
   return (

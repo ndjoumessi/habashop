@@ -104,9 +104,12 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
   const lastEanLookedUp = useRef('')
   // Pré-remplit (jamais de sauvegarde auto ; tout reste éditable). Seulement en AJOUT
   // (pas en édition d'un produit existant, pour ne pas écraser des données saisies).
-  async function runOffLookup(ean: string) {
+  async function runOffLookup(rawEan: string) {
     if (editingSku) return
-    if (!/^\d{13}$/.test(ean) || ean === lastEanLookedUp.current) return
+    // Canonicalise (UPC-A→EAN-13) puis déclenche pour tout code valide EAN-13/EAN-8
+    // (avant : garde « 13 chiffres » locale → l'auto-remplissage ratait EAN-8/UPC-A).
+    const ean = normalizeBarcode(rawEan)
+    if (!isValidBarcode(ean) || ean === lastEanLookedUp.current) return
     lastEanLookedUp.current = ean
     setOffLooking(true)
     try {

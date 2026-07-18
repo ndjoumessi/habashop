@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { sendTransferConfirmed, sendTransferCancelled } from '../services/pushService'
 import { ID_PARAMS, TRANSFER_CREATE } from '../schemas/writesB'
+import { normalizeBarcode } from '../lib/barcode'
 
 const MANAGER_ROLES = ['MANAGER', 'ADMIN', 'SUPER_ADMIN']
 const isManagerPlus = (role: unknown) => typeof role === 'string' && MANAGER_ROLES.includes(role.toUpperCase())
@@ -124,9 +125,12 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
       await tx.stockTransfer.update({ where: { id }, data: { status: 'completed', confirmedBy: userId } })
 
       // Produit destination : SKU → code-barres → création (copie source).
+      // Code-barres canonicalisé (règle partagée) pour un match robuste, y compris
+      // sur d'anciens enregistrements non canoniques (UPC-A stocké 12 ch.).
+      const srcBarcode = normalizeBarcode(src.barcode)
       let dest = await tx.product.findFirst({ where: { tenantId, sku: src.sku } })
-      if (!dest && src.barcode) {
-        dest = await tx.product.findFirst({ where: { tenantId, barcode: src.barcode, deletedAt: null } })
+      if (!dest && srcBarcode) {
+        dest = await tx.product.findFirst({ where: { tenantId, barcode: srcBarcode, deletedAt: null } })
       }
       if (dest) {
         // Incrément ; restaure le produit s'il était soft-deleted/inactif.
@@ -148,7 +152,7 @@ export async function stockTransferRoutes(app: FastifyInstance): Promise<void> {
             semiWholesalePrice: src.semiWholesalePrice,
             stockQty: transfer.quantity,
             stockMin: src.stockMin,
-            barcode: src.barcode,
+            barcode: srcBarcode, // copie canonique (même règle que products.ts)
             taxRate: src.taxRate,
             emoji: src.emoji,
             description: src.description,
