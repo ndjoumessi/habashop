@@ -4,6 +4,7 @@ import JsBarcode from 'jsbarcode'
 import toast from 'react-hot-toast'
 import { t, useAppStore, formatInCurrency } from '@/stores/appStore'
 import { printProductLabels } from '@/utils/export'
+import { printThermalLabels } from '@/utils/thermalLabel'
 import ViewField from '@/components/ui/ViewField'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { type ProductItem, stockCatLabel } from '@/components/stock/stockShared'
@@ -759,14 +760,22 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                   <option value="L7165">Avery L7165 — 99.1×67.7mm — 8/page</option>
                   <option value="L7651">Avery L7651 — 38.1×21.2mm — 65/page</option>
                   <option value="CUSTOM">{i('Personnalisé (sans grille A4)', 'Custom (no A4 grid)', 'Personalizado (sin cuadrícula A4)', 'Personalizzato (senza griglia A4)')}</option>
+                  <option value="THERMAL_40x30">{i('Thermique 40×30 mm (PDF, à l\'unité)', 'Thermal 40×30 mm (PDF, per unit)', 'Térmica 40×30 mm (PDF, por unidad)', 'Termica 40×30 mm (PDF, per unità)')}</option>
                 </select>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6, lineHeight: 1.4 }}>
-                  {i(
-                    'Insérez une planche d\'étiquettes Avery correspondante dans votre imprimante avant l\'impression.',
-                    'Insert a matching Avery label sheet into your printer before printing.',
-                    'Inserte una hoja de etiquetas Avery correspondiente en su impresora antes de imprimir.',
-                    'Inserisci un foglio di etichette Avery corrispondente nella stampante prima di stampare.',
-                  )}
+                  {labelConfig.averyPreset === 'THERMAL_40x30'
+                    ? i(
+                      'PDF au format exact 40×30 mm (une étiquette par page) — imprimez à « taille réelle » sur votre imprimante thermique.',
+                      'Exact 40×30 mm PDF (one label per page) — print at "actual size" on your thermal printer.',
+                      'PDF de tamaño exacto 40×30 mm (una etiqueta por página) — imprima a «tamaño real» en su impresora térmica.',
+                      'PDF in formato esatto 40×30 mm (un\'etichetta per pagina) — stampa a «dimensione reale» sulla tua stampante termica.',
+                    )
+                    : i(
+                      'Insérez une planche d\'étiquettes Avery correspondante dans votre imprimante avant l\'impression.',
+                      'Insert a matching Avery label sheet into your printer before printing.',
+                      'Inserte una hoja de etiquetas Avery correspondiente en su impresora antes de imprimir.',
+                      'Inserisci un foglio di etichette Avery corrispondente nella stampante prima di stampare.',
+                    )}
                 </div>
               </div>
 
@@ -906,7 +915,13 @@ export default function StockModals({ showModal, setShowModal, resetForm, editin
                       barcode: p.barcode, // 🔴 était omis → l'EAN-13 persisté n'était jamais imprimé
                       emoji: p.name.split(' ')[0],
                     }))
-                  printProductLabels(selectedProducts, fmt, { ...labelConfig, shopName: tenant?.name ?? 'HabaShop', lang })
+                  const cfg = { ...labelConfig, shopName: tenant?.name ?? 'HabaShop', lang }
+                  // Thermique 40×30 = PDF taille exacte (à l'unité) ; sinon planche A4 (en masse).
+                  if (labelConfig.averyPreset === 'THERMAL_40x30') {
+                    void printThermalLabels(selectedProducts, fmt, cfg)
+                  } else {
+                    printProductLabels(selectedProducts, fmt, cfg)
+                  }
                   setShowLabelModal(false)
                 }}>
                 <Printer size={13} /> {lang === 'en' ? 'Print' : lang === 'es' ? 'Imprimir' : lang === 'it' ? 'Stampa' : 'Imprimer'}
