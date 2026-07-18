@@ -21,7 +21,8 @@ import Skeleton from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import { type ProductItem, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc } from '@/components/stock/stockShared'
-import { normalizeBarcode, isAcceptableBarcode, barcodeMatches } from '@/lib/barcode'
+import { normalizeBarcode, isValidBarcode, isAcceptableBarcode, barcodeMatches } from '@/lib/barcode'
+import StockBackfill from '@/components/stock/StockBackfill'
 
 export default function Stock() {
   const { stockLowThreshold, stockShowSKU, lang } = useConfig()
@@ -77,6 +78,29 @@ export default function Stock() {
   const clearSelection = () => setSelectedSkus(new Set())
   const [editCat, setEditCat] = useState<typeof CATEGORIES_INIT[0] | null>(null)
   const [catForm, setCatForm] = useState({ name:'', color:'#818CF8', icon:'📦', description:'' })
+
+  // ── Rattrapage codes-barres (PR5) : produits sans code valide.
+  const [showBackfill, setShowBackfill] = useState(false)
+  const [backfillSaving, setBackfillSaving] = useState(false)
+  const missingBarcode = products.filter(p => !isValidBarcode(normalizeBarcode(p.barcode ?? '')))
+  const saveBackfill = async (entries: { sku: string; barcode: string }[], print: boolean) => {
+    setBackfillSaving(true)
+    const savedSkus: string[] = []
+    for (const e of entries) {
+      const prod = products.find(p => p.sku === e.sku)
+      if (!prod?._id) continue
+      try { await productsApi.update(prod._id, { barcode: e.barcode }); savedSkus.push(e.sku) } catch {}
+    }
+    const saved = new Set(savedSkus)
+    setProducts(prev => prev.map(p => {
+      const e = entries.find(x => x.sku === p.sku)
+      return e && saved.has(p.sku) ? { ...p, barcode: e.barcode } : p
+    }))
+    setBackfillSaving(false)
+    setShowBackfill(false)
+    toast.success(`${savedSkus.length} ${lang === 'en' ? 'barcodes saved' : lang === 'es' ? 'códigos guardados' : lang === 'it' ? 'codici salvati' : 'codes enregistrés'}`)
+    if (print && savedSkus.length) { setSelectedForLabel(savedSkus); setLabelModalFromSelection(true); setShowLabelModal(true) }
+  }
 
   const cats     = ['', ...Array.from(new Set(products.map(p => p.category)))]
   const ruptures = products.filter(p => p.stock <= p.threshold)
@@ -372,7 +396,19 @@ export default function Stock() {
         onToggleSelect={toggleSelect}
         onSelectAllVisible={() => setSelectedSkus(new Set([...selectedSkus, ...pg.paginated.map((p: ProductItem) => p.sku)]))}
         onClearSelection={clearSelection}
+        missingBarcodeCount={missingBarcode.length}
+        onOpenBackfill={() => setShowBackfill(true)}
       />
+      )}
+
+      {showBackfill && (
+        <StockBackfill
+          products={missingBarcode}
+          lang={lang}
+          onClose={() => setShowBackfill(false)}
+          onSave={saveBackfill}
+          saving={backfillSaving}
+        />
       )}
 
       {/* ── ACTION BAR : visible quand >= 1 produit sélectionné ── */}
