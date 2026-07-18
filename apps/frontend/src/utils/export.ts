@@ -1,4 +1,6 @@
+import JsBarcode from 'jsbarcode'
 import { useAppStore, convertAmount, formatInCurrency } from '@/stores/appStore'
+import { barcodeFormat, normalizeBarcode } from '@/lib/barcode'
 
 const LOCALES: Record<string, string> = {
   fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT',
@@ -485,6 +487,36 @@ export const AVERY_PRESETS = {
 
 export type AveryPreset = keyof typeof AVERY_PRESETS
 
+// Rendu du code-barres DANS la fenêtre parente (paquet jsbarcode LOCAL, plus de
+// CDN externe) → impression fiable même hors ligne. EAN-13/EAN-8 selon le code
+// canonicalisé (UPC-A hérité → EAN-13) ; à défaut de code fabricant, CODE128 sur
+// le SKU + badge « Code interne ». Barres NOIRES sur fond BLANC (lisibilité scanner).
+function renderBarcodeMarkup(
+  barcode: string | undefined,
+  sku: string,
+  lang: string,
+  esc: (v: unknown) => string,
+): string {
+  const canonical = normalizeBarcode(barcode)
+  const format = canonical ? barcodeFormat(canonical) : null // EAN13 | EAN8 | null
+  const value = format ? canonical : (sku || '')
+  const symbology = format ?? 'CODE128'
+  let svg = ''
+  if (value) {
+    try {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      JsBarcode(el, value, { format: symbology, width: 1.5, height: 40, displayValue: true, fontSize: 10, margin: 4, background: '#FFFFFF', lineColor: '#000000' })
+      svg = el.outerHTML
+    } catch { svg = '' }
+  }
+  const internalBadge = !format
+    ? `<div style="margin-top:3px;text-align:center;"><span style="display:inline-block;background:#F3F4F6;color:#6B7280;font-size:10px;border-radius:4px;padding:2px 6px;">${esc(
+        lang === 'en' ? 'Internal code' : lang === 'es' ? 'Código interno' : lang === 'it' ? 'Codice interno' : 'Code interne'
+      )}</span></div>`
+    : ''
+  return `<div style="text-align:center;border-top:1px solid #eee;padding-top:4px;">${svg}${internalBadge}</div>`
+}
+
 export function printProductLabels(
   products: { name: string; sku: string; price: number; barcode?: string; emoji?: string }[],
   fmt: (amount: number) => string,
@@ -526,7 +558,9 @@ export function printProductLabels(
     ? `width:${preset.labelWidth}; height:${preset.labelHeight}; padding:6px; overflow:hidden; box-sizing:border-box; background:white; display:flex; flex-direction:column; justify-content:space-between; page-break-inside:avoid;`
     : `width:${s.w}px; height:${s.h}px; border:1px solid #ddd; border-radius:6px; padding:8px; margin:4px; display:inline-flex; flex-direction:column; justify-content:space-between; background:white; page-break-inside:avoid;`
 
-  const labelHTML = (product: typeof products[0]) => `
+  const labelHTML = (product: typeof products[0]) => {
+    const barcodeBlock = options.showBarcode ? renderBarcodeMarkup(product.barcode, product.sku, options.lang, esc) : ''
+    return `
     <div class="label" style="${labelCellStyle}">
       <div style="display:flex;align-items:center;gap:6px;">
         <span style="font-size:${s.priceSize}px;">${esc(product.emoji ?? '📦')}</span>
@@ -542,23 +576,13 @@ export function printProductLabels(
           ${esc(fmt(product.price))}
         </div>
       ` : ''}
-      ${options.showBarcode ? `
-        <div style="text-align:center;border-top:1px solid #eee;padding-top:4px;">
-          <svg class="barcode" data-barcode="${esc(product.barcode ?? '')}" data-sku="${esc(product.sku ?? '')}"></svg>
-          ${!/^\d{13}$/.test(product.barcode ?? '') ? `
-            <div style="margin-top:3px;text-align:center;">
-              <span style="display:inline-block;background:#F3F4F6;color:#6B7280;font-size:10px;border-radius:4px;padding:2px 6px;">${esc(
-                options.lang === 'en' ? 'Internal code' : options.lang === 'es' ? 'Código interno' : options.lang === 'it' ? 'Codice interno' : 'Code interne'
-              )}</span>
-            </div>
-          ` : ''}
-        </div>
-      ` : ''}
+      ${barcodeBlock}
       <div style="font-size:7px;color:#bbb;text-align:right;">
         ${esc(options.shopName)}
       </div>
     </div>
   `
+  }
 
   const allLabels = products
     .flatMap(p => Array(options.copies).fill(p))
@@ -607,7 +631,6 @@ export function printProductLabels(
 <head>
   <meta charset="UTF-8">
   <title>${li('Étiquettes produits', 'Product labels', 'Etiquetas de productos', 'Etichette prodotti')}</title>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" integrity="sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a" crossorigin="anonymous"></script>
   <style>${gridCSS}</style>
 </head>
 <body>
@@ -622,23 +645,8 @@ export function printProductLabels(
       ${products.length} ${li('produit(s)', 'product(s)', 'producto(s)', 'prodotto/i')} × ${options.copies} ${li('copie(s)', 'copy(ies)', 'copia(s)', 'copia/e')} = ${products.length * options.copies} ${li('étiquette(s)', 'label(s)', 'etiqueta(s)', 'etichetta/e')}${useGrid && preset ? ` — ${esc(preset.label)}` : ''}
     </span>
   </div>
+  <!-- Les codes-barres sont rendus en amont (SVG inline, paquet jsbarcode local) — plus de CDN ni de script popup. -->
   <div class="labels">${allLabels}</div>
-  <script>
-    window.addEventListener('load', function() {
-      if (typeof JsBarcode === 'undefined') return
-      document.querySelectorAll('.barcode').forEach(function(svg) {
-        var val = svg.dataset.barcode
-        var sku = svg.dataset.sku
-        try {
-          if (val && /^\\d{13}$/.test(val)) {
-            JsBarcode(svg, val, { format: 'EAN13', width: 1.5, height: 40, displayValue: true, fontSize: 10, margin: 4, background: 'transparent' })
-          } else if (sku) {
-            JsBarcode(svg, sku, { format: 'CODE128', width: 1.5, height: 40, displayValue: true, fontSize: 10, margin: 4, background: 'transparent' })
-          }
-        } catch (e) {}
-      })
-    })
-  </script>
 </body>
 </html>`)
   win.document.close()
