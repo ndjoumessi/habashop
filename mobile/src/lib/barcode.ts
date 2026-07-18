@@ -86,3 +86,22 @@ export const barcodeMatches = (stored: string | null | undefined, query: string)
   if (!q) return false
   return s.includes(q) || s === normalizeBarcode(query)
 }
+
+/**
+ * BRIQUE UNIQUE de la RÉSOLUTION d'un code SCANNÉ vers un produit (mirror du web).
+ * Distincte de `barcodeMatches` (recherche texte) : à la caisse on exige une
+ * correspondance EXACTE — jamais de sous-chaîne (un faux positif coûte plus cher
+ * qu'un échec de scan) :
+ *   - code-barres canonique (UPC-A→EAN-13, espaces) ; OU
+ *   - SKU EXACT (insensible à la casse) → résout les étiquettes CODE128-sur-SKU.
+ */
+export const matchesScannedCode = (
+  p: { barcode?: string | null; sku?: string | null },
+  raw: string,
+): boolean => {
+  const scanned = normalizeBarcode(raw)
+  if (scanned && normalizeBarcode(p.barcode) === scanned) return true
+  const sku = (p.sku ?? '').trim().toLowerCase()
+  const q = String(raw ?? '').trim().toLowerCase()
+  return !!sku && !!q && sku === q
+}

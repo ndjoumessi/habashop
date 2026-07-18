@@ -24,7 +24,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { enqueueAction } from '@/services/offlineQueue'
 import { convertToXOF } from '@/services/exchangeRate'
-import { normalizeBarcode } from '@/lib/barcode'
+import { matchesScannedCode } from '@/lib/barcode'
 import { sendWhatsAppTicket } from '@/services/whatsappTicket'
 import { printReceipt } from '@/services/printReceipt'
 import BarcodeScanner from '@/components/pos/BarcodeScanner'
@@ -368,17 +368,10 @@ export default function POSScreen() {
   // tête (UPC-A 12 chiffres ↔ EAN-13 13 chiffres) ou les espaces parasites.
   // → on normalise les deux côtés avant comparaison (cf. tests `barcode`).
   const handleProductScan = (barcode: string) => {
-    const scanned = normalizeBarcode(barcode)
-    const product = scanned
-      ? products.find(
-          (p) =>
-            normalizeBarcode(p.barcode) === scanned ||
-            // `p.ean` : champ LEGACY jamais peuplé (pas de colonne en base — cf. types.ts).
-            // Conservé par sécurité ; toujours undefined en pratique → branche morte.
-            normalizeBarcode(p.ean) === scanned ||
-            p.id === barcode,
-        )
-      : undefined
+    // Résolution EXACTE (brique partagée) : code-barres canonique OU SKU exact
+    // (étiquettes CODE128-sur-SKU) ; repli id. Pas de match par nom (faux positif
+    // caisse). `p.ean` (legacy jamais peuplé) n'est plus comparé — cf. types.ts.
+    const product = products.find((p) => matchesScannedCode(p, barcode) || p.id === barcode)
     if (product) {
       addItem(product)
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
