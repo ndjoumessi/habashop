@@ -5,7 +5,7 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { validatePriceTiers } from '../utils/pricing'
-import { isValidEAN13, normalizeBarcode } from '../lib/barcode'
+import { isValidBarcode, normalizeBarcode } from '../lib/barcode'
 
 // Valide un code-barres (EAN-13 + unicité par tenant) et renvoie sa forme
 // normalisée. `excludeId` : produit à ignorer dans le contrôle de doublon (PUT).
@@ -17,10 +17,10 @@ async function checkBarcode(
   raw: unknown,
   excludeId?: string,
 ): Promise<BarcodeCheck> {
-  const barcode = normalizeBarcode(raw)
+  const barcode = normalizeBarcode(raw) // UPC-A (12) → EAN-13 canonique ici
   if (!barcode) return { barcode: '' } // pas de code-barres = valide
-  if (!isValidEAN13(barcode)) {
-    return { barcode, error: { code: 400, message: 'Code-barres invalide : EAN-13 attendu (13 chiffres, clé de contrôle correcte)' } }
+  if (!isValidBarcode(barcode)) {
+    return { barcode, error: { code: 400, message: 'Code-barres invalide : EAN-13, EAN-8 ou UPC-A attendu (clé de contrôle correcte)' } }
   }
   const dup = await db.product.findFirst({
     where: { tenantId, barcode, deletedAt: null, ...(excludeId ? { id: { not: excludeId } } : {}) },

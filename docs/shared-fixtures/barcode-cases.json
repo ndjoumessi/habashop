@@ -1,0 +1,17 @@
+{
+  "note": "Anti-dérive backend↔mobile de la règle de code-barres (Chantier A). Lu par apps/backend/src/tests/barcodeShared.test.ts ET mobile/src/__tests__/barcodeShared.test.ts. Pour chaque cas : canonical = normalizeBarcode(raw) ; valid = isValidBarcode(canonical). La règle DOIT être identique des deux côtés (miroir), sinon un des deux tests échoue. UPC-A (12 ch.) → EAN-13 par préfixe 0 (sans perte) ; EAN-8 conservé tel quel ; JAMAIS de suppression des zéros de tête (casserait le round-trip scan d'un EAN-13 dérivé d'UPC-A).",
+  "cases": [
+    { "label": "EAN-13 valide conservé", "raw": "4006381333931", "canonical": "4006381333931", "valid": true },
+    { "label": "EAN-13 valide (autre)", "raw": "9780201379624", "canonical": "9780201379624", "valid": true },
+    { "label": "EAN-13 clé de contrôle fausse → invalide", "raw": "4006381333930", "canonical": "4006381333930", "valid": false },
+    { "label": "UPC-A (12) → EAN-13 par préfixe 0, sans perte", "raw": "036000291452", "canonical": "0036000291452", "valid": true },
+    { "label": "EAN-13 issu du même UPC-A → identique (round-trip scan)", "raw": "0036000291452", "canonical": "0036000291452", "valid": true },
+    { "label": "espaces retirés puis UPC-A converti", "raw": " 036000 291452 ", "canonical": "0036000291452", "valid": true },
+    { "label": "UPC-A clé fausse → conservé 12 ch. (non converti), invalide", "raw": "036000291451", "canonical": "036000291451", "valid": false },
+    { "label": "EAN-8 valide conservé (zéros de tête préservés)", "raw": "96385074", "canonical": "96385074", "valid": true },
+    { "label": "EAN-8 clé de contrôle fausse → invalide", "raw": "96385070", "canonical": "96385070", "valid": false },
+    { "label": "trop court → conservé, invalide", "raw": "12345", "canonical": "12345", "valid": false },
+    { "label": "non-chiffres → conservé, invalide", "raw": "ABC6381333931", "canonical": "ABC6381333931", "valid": false },
+    { "label": "vide → vide (pas de code-barres)", "raw": "", "canonical": "", "valid": false }
+  ]
+}
