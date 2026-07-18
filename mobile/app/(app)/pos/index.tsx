@@ -373,6 +373,8 @@ export default function POSScreen() {
       ? products.find(
           (p) =>
             normalizeBarcode(p.barcode) === scanned ||
+            // `p.ean` : champ LEGACY jamais peuplé (pas de colonne en base — cf. types.ts).
+            // Conservé par sécurité ; toujours undefined en pratique → branche morte.
             normalizeBarcode(p.ean) === scanned ||
             p.id === barcode,
         )

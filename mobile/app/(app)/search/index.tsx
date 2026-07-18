@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { productsApi, customersApi } from '@/services/api'
 import type { Product, Customer } from '@/types'
 import { useI18n, useFmt, useTheme } from '@/stores/appStore'
+import { barcodeMatches } from '@/lib/barcode'
 import { Spacing, BorderRadius, FontSize, withAlpha, ThemeColors } from '@/constants/theme'
 import Chip from '@/components/ui/Chip'
 import ErrorState from '@/components/ui/ErrorState'
@@ -54,7 +55,7 @@ export default function SearchScreen() {
     const ql = q.toLowerCase()
     const found: SearchResult[] = []
     for (const p of products) {
-      if (p.name?.toLowerCase().includes(ql) || p.barcode?.includes(q) || p.category?.toLowerCase().includes(ql)) {
+      if (p.name?.toLowerCase().includes(ql) || barcodeMatches(p.barcode, q) || p.category?.toLowerCase().includes(ql)) {
         found.push({
           id: p.id, type: 'product', title: p.name,
           subtitle: `${fmt(p.sellPrice ?? 0)} · ${p.stockQty ?? 0} ${i('en stock', 'in stock', 'en stock', 'in stock')}`,
