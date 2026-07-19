@@ -72,7 +72,8 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     const divergenceOnly = priceDivergence === 'true' || priceDivergence === '1'
     return prisma.sale.findMany({
       where: { tenantId, ...(divergenceOnly ? { priceDivergence: true } : {}) },
-      include: { items: { include: { product: true } } },
+      // cashier.name : requis par l'audit des écarts de prix (« question au caissier »).
+      include: { items: { include: { product: true } }, cashier: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
       take: Number(limit),
       skip: Number(offset),

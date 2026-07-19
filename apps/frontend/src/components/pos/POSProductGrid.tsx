@@ -1,5 +1,5 @@
-import { memo, useMemo, useRef, useCallback, type ReactNode } from 'react'
-import { User, Factory, Package, CreditCard, ClipboardList, AlertTriangle, RotateCcw, FileText, Loader2 } from 'lucide-react'
+import { memo, useMemo, useState, useRef, useCallback, type ReactNode } from 'react'
+import { User, Factory, Package, CreditCard, ClipboardList, AlertTriangle, RotateCcw, FileText, Loader2, Tag } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
@@ -22,12 +22,37 @@ interface POSProductGridProps {
   posShowStockOnTile: boolean
   loadingHistory: boolean
   salesHistory: any[]
+  // Audit des écarts de prix — ADMIN uniquement (filtre + badges + détail masqués aux autres rôles).
+  canAuditPrices: boolean
+  divergenceOnly: boolean
+  onToggleDivergence: (v: boolean) => void
   canRefund: boolean
   onRefundClick: (sale: any) => void
   canCloseDay?: boolean; onCloseDay?: () => void
   isMobile: boolean; mobileView: string
   totalProducts: number; loadingProducts: boolean
   navigate: (path: string, opts?: any) => void
+}
+
+// ── Audit des ÉCARTS de prix (ADMIN) ─────────────────────────────────────────────
+// Dérive, depuis les lignes stockées, chaque écart prix soumis/catalogue + son SENS :
+//  - « corrigé » (EN LIGNE) : le serveur a facturé SON prix (unitPrice === catalogPrice) →
+//    une tentative d'envoyer un autre prix, À REGARDER ;
+//  - « honoré » (HORS-LIGNE) : le montant encaissé a été gardé (unitPrice === submittedPrice) →
+//    bénin (le tarif avait changé entre la vente et la synchro).
+// Vocabulaire FACTUEL : « écart de prix », jamais « suspect »/« fraude ».
+type DivRow = { name: string; qty: number; submitted: number; catalog: number; corrected: boolean; deltaXOF: number }
+function priceDivergenceRows(sale: any): DivRow[] {
+  return (sale?.items ?? [])
+    .filter((it: any) => it?.submittedPrice != null && it?.catalogPrice != null && it.submittedPrice !== it.catalogPrice)
+    .map((it: any) => ({
+      name: it.product?.name ?? 'Produit',
+      qty: it.qty,
+      submitted: it.submittedPrice,
+      catalog: it.catalogPrice,
+      corrected: it.unitPrice === it.catalogPrice, // en ligne : prix serveur facturé (soumis rejeté)
+      deltaXOF: (it.submittedPrice - it.catalogPrice) * it.qty, // signé (base XOF) : <0 = sous le catalogue
+    }))
 }
 
 // Tuile produit mémoïsée : props primitives (labels pré-formatés) → seule la tuile dont
@@ -181,7 +206,14 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
   )
 })
 
-export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, clientType, setClientType, fmt, amountLabel, curSuffix, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, clientType, setClientType, fmt, amountLabel, curSuffix, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canAuditPrices, divergenceOnly, onToggleDivergence, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
+  // Audit écarts (ADMIN) : « en ligne uniquement » = filtre CLIENT sur la liste chargée (le
+  // filtre serveur `divergenceOnly` renvoie en ligne ET hors-ligne ; on affine ici).
+  const [onlineGapsOnly, setOnlineGapsOnly] = useState(false)
+  const historyToShow = useMemo(() => {
+    if (!canAuditPrices || !onlineGapsOnly) return salesHistory
+    return salesHistory.filter(s => priceDivergenceRows(s).some(r => r.corrected))
+  }, [salesHistory, canAuditPrices, onlineGapsOnly])
   // Quantités panier indexées par produit (first-wins = même sémantique que cart.find)
   const qtyById = useMemo(() => {
     const m = new Map<string | number, number>()
@@ -385,23 +417,49 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                   <ClipboardList size={15} /> {lang === 'en' ? 'Close the day (Z ticket)' : lang === 'es' ? 'Cerrar el día (ticket Z)' : lang === 'it' ? 'Chiudi la giornata (ticket Z)' : 'Clôturer la journée (Ticket Z)'}
                 </button>
               )}
+              {/* Filtre d'audit des écarts de prix — ADMIN uniquement (invisible aux autres rôles) */}
+              {canAuditPrices && (
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', padding:'0 4px 10px' }}>
+                  <button type="button" onClick={() => onToggleDivergence(!divergenceOnly)} aria-pressed={divergenceOnly}
+                    style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer',
+                      borderRadius:'var(--r-full)', padding:'5px 12px', minHeight:32,
+                      background: divergenceOnly ? 'var(--c-amber-bg)' : 'var(--card)', color: divergenceOnly ? 'var(--warn)' : 'var(--text2)',
+                      border:`1px solid ${divergenceOnly ? 'var(--c-amber-border)' : 'var(--border)'}` }}>
+                    <Tag size={13} /> {lang === 'en' ? 'Price gaps' : lang === 'es' ? 'Diferencias de precio' : lang === 'it' ? 'Scarti di prezzo' : 'Écarts de prix'}
+                  </button>
+                  {divergenceOnly && (
+                    <button type="button" onClick={() => setOnlineGapsOnly(v => !v)} aria-pressed={onlineGapsOnly}
+                      style={{ fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer', borderRadius:'var(--r-full)', padding:'5px 12px', minHeight:32,
+                        background: onlineGapsOnly ? 'var(--c-purple-bg)' : 'var(--card)', color: onlineGapsOnly ? 'var(--p2)' : 'var(--text2)',
+                        border:`1px solid ${onlineGapsOnly ? 'var(--border3)' : 'var(--border)'}` }}>
+                      {lang === 'en' ? 'Online only' : lang === 'es' ? 'Solo en línea' : lang === 'it' ? 'Solo online' : 'En ligne uniquement'}
+                    </button>
+                  )}
+                </div>
+              )}
               {loadingHistory ? (
                 <div role="status" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:40, color:'var(--text3)' }}>
                   <Loader2 size={20} style={{ animation:'spin 1s linear infinite', color:'var(--p)', flexShrink:0 }} />
                   <span style={{ fontSize:14 }}>{lang === 'en' ? 'Loading…' : lang === 'es' ? 'Cargando…' : lang === 'it' ? 'Caricamento…' : 'Chargement…'}</span>
                 </div>
-              ) : salesHistory.length === 0 ? (
+              ) : historyToShow.length === 0 ? (
                 <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>
                   <ClipboardList size={32} style={{ marginBottom:12, color:'var(--text3)' }} />
-                  <div>{lang === 'fr' ? 'Aucune vente enregistrée' : lang === 'en' ? 'No sales recorded' : lang === 'es' ? 'Sin ventas registradas' : 'Nessuna vendita registrata'}</div>
+                  <div>{divergenceOnly
+                    ? (lang === 'en' ? 'No price gaps' : lang === 'es' ? 'Sin diferencias de precio' : lang === 'it' ? 'Nessuno scarto di prezzo' : 'Aucun écart de prix')
+                    : (lang === 'fr' ? 'Aucune vente enregistrée' : lang === 'en' ? 'No sales recorded' : lang === 'es' ? 'Sin ventas registradas' : 'Nessuna vendita registrata')}</div>
                 </div>
               ) : (
                 <div style={{ display:'flex', flexDirection:'column', gap:8, padding:'0 4px' }}>
-                  {salesHistory.slice(0, 50).map((sale: any, i: number) => {
+                  {historyToShow.slice(0, 50).map((sale: any, i: number) => {
                     const date = new Date(sale.createdAt)
                     const timeAgo = Math.round((Date.now() - date.getTime()) / 60000)
                     const timeLabel = timeAgo < 60 ? `${timeAgo} min` : `${Math.round(timeAgo / 60)}h`
                     const refunded = sale.status === 'refunded'
+                    // Écarts de prix (ADMIN) : lignes + sens (corrigé/honoré) + écart en argent.
+                    const divRows = canAuditPrices && sale.priceDivergence ? priceDivergenceRows(sale) : []
+                    const hasCorrected = divRows.some(r => r.corrected)
+                    const totalDeltaXOF = divRows.reduce((s, r) => s + r.deltaXOF, 0)
                     return (
                       <div key={sale.id ?? i} style={{
                         background:'var(--bg3)', border:`1px solid ${refunded ? 'var(--c-red-border)' : 'var(--border)'}`, borderRadius:12, padding:'12px 14px',
@@ -414,6 +472,17 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                               {refunded && (
                                 <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-red-bg)', color:'var(--danger)', border:'1px solid var(--c-red-border)' }}>
                                   <RotateCcw size={10} /> {lang === 'en' ? 'Refunded' : lang === 'es' ? 'Reembolsada' : lang === 'it' ? 'Rimborsata' : 'Remboursé'}
+                                </span>
+                              )}
+                              {/* Badge écart — traitement DISTINCT : corrigé (en ligne, ambre = à regarder)
+                                  vs honoré (hors-ligne, gris = bénin, tarif changé avant synchro). */}
+                              {divRows.length > 0 && (
+                                <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px',
+                                  background: hasCorrected ? 'var(--c-amber-bg)' : 'var(--bg5)',
+                                  color: hasCorrected ? 'var(--warn)' : 'var(--text3)',
+                                  border:`1px solid ${hasCorrected ? 'var(--c-amber-border)' : 'var(--border)'}` }}>
+                                  <Tag size={10} /> {lang === 'en' ? 'Price gap' : lang === 'es' ? 'Diferencia de precio' : lang === 'it' ? 'Scarto di prezzo' : 'Écart de prix'}
+                                  {!hasCorrected && ` · ${lang === 'en' ? 'offline' : lang === 'es' ? 'sin conexión' : lang === 'it' ? 'offline' : 'hors-ligne'}`}
                                 </span>
                               )}
                             </div>
@@ -452,6 +521,36 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                         {sale.items?.length > 3 && (
                           <div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>
                             +{sale.items.length - 3} {lang === 'en' ? 'more items' : lang === 'es' ? 'otros artículos' : lang === 'it' ? 'altri articoli' : 'autres articles'}
+                          </div>
+                        )}
+                        {/* Détail de l'écart de prix — ADMIN uniquement. Montre soumis/catalogue,
+                            l'écart EN ARGENT (signé) et le caissier → décide s'il faut une question. */}
+                        {divRows.length > 0 && (
+                          <div style={{ marginTop:8, padding:'8px 10px', borderRadius:'var(--r-md)',
+                            background: hasCorrected ? 'var(--c-amber-bg)' : 'var(--bg4)',
+                            border:`1px solid ${hasCorrected ? 'var(--c-amber-border)' : 'var(--border)'}` }}>
+                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:5, flexWrap:'wrap' }}>
+                              <span style={{ fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: hasCorrected ? 'var(--warn)' : 'var(--text3)' }}>
+                                {hasCorrected
+                                  ? (lang === 'en' ? 'Price corrected (online)' : lang === 'es' ? 'Precio corregido (en línea)' : lang === 'it' ? 'Prezzo corretto (online)' : 'Prix corrigé (en ligne)')
+                                  : (lang === 'en' ? 'Amount honored (offline)' : lang === 'es' ? 'Monto respetado (sin conexión)' : lang === 'it' ? 'Importo onorato (offline)' : 'Montant honoré (hors-ligne)')}
+                              </span>
+                              <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', fontFamily:'var(--mono)', color: totalDeltaXOF < 0 ? 'var(--danger)' : 'var(--acc2)' }}>
+                                {totalDeltaXOF < 0 ? '−' : '+'}{fmt(Math.abs(totalDeltaXOF))}
+                              </span>
+                            </div>
+                            {divRows.map((r, k) => (
+                              <div key={k} style={{ display:'flex', justifyContent:'space-between', gap:8, fontSize:11, color:'var(--text2)', flexWrap:'wrap', padding:'2px 0' }}>
+                                <span>×{r.qty} {r.name}</span>
+                                <span style={{ fontFamily:'var(--mono)' }}>
+                                  {lang === 'en' ? 'submitted' : lang === 'es' ? 'enviado' : lang === 'it' ? 'inviato' : 'soumis'} {fmt(r.submitted)}
+                                  {' · '}{lang === 'en' ? 'catalog' : lang === 'es' ? 'catálogo' : lang === 'it' ? 'catalogo' : 'catalogue'} {fmt(r.catalog)}
+                                </span>
+                              </div>
+                            ))}
+                            <div style={{ fontSize:10, color:'var(--text3)', marginTop:5 }}>
+                              {lang === 'en' ? 'Cashier' : lang === 'es' ? 'Cajero' : lang === 'it' ? 'Cassiere' : 'Caissier'} : {sale.cashier?.name ?? '—'}
+                            </div>
                           </div>
                         )}
                         {/* Facture PDF — tous rôles, ouvre le PDF serveur dans un nouvel onglet */}

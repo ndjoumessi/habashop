@@ -192,7 +192,8 @@ export const stockTransfersApi = {
 }
 
 export const salesApi = {
-  list:   () => api.get<any[]>('/api/sales'),
+  // opts.priceDivergence → n'renvoie que les ventes avec un écart prix soumis/catalogue (audit ADMIN).
+  list:   (opts?: { priceDivergence?: boolean }) => api.get<any[]>(`/api/sales${opts?.priceDivergence ? '?priceDivergence=true' : ''}`),
   create: (data: any) => api.post<any>('/api/sales', data),
   refund: (id: string, data: { reason: string; restock: boolean }) =>
     api.post<{ ok: boolean; id: string; status: string; restocked: boolean }>(`/api/sales/${id}/refund`, data),
