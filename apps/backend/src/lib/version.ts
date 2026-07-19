@@ -1,15 +1,20 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { BAKED_APP_VERSION } from '../version.generated'
 
 // Version PRODUIT = SOURCE UNIQUE = package.json RACINE du monorepo (« habashop »).
-// Lue au boot en remontant l'arborescence depuis ce fichier jusqu'au package.json dont
-// `name === 'habashop'` → robuste au layout (src en dev via tsx, dist/ en prod) ET au cwd.
-// AUCUN numéro de version en dur ailleurs (health, docs, admin…) — cf. `versionSource.test.ts`.
+// ⚠️ BAKÉE AU BUILD (`version.generated.ts` via prebuild) → le binaire déployé ne fait
+// AUCUNE lecture runtime : le walk FS échouait sur l'image slim Railway (/health=0.0.0-unknown).
+// Repli (dev/local) = remontée FS jusqu'au package.json « habashop ». AUCUN numéro en dur
+// ailleurs (health, docs, admin…) — cf. `versionSource.test.ts` + smoke post-déploiement.
 // ⚠️ Mobile (mobile/app.json) est une piste SÉPARÉE (pilote runtimeVersion/OTA) — cf. CLAUDE.md.
 let cached: string | null = null
 
 export function getAppVersion(): string {
   if (cached) return cached
+  // 1) Version bakée au build (source de vérité en prod — pas d'hypothèse conteneur).
+  if (BAKED_APP_VERSION && /^\d+\.\d+\.\d+/.test(BAKED_APP_VERSION)) { cached = BAKED_APP_VERSION; return cached }
+  // 2) Repli dev/local : remontée FS (la racine est présente hors conteneur).
   let dir = __dirname
   for (let i = 0; i < 8; i++) {
     try {
