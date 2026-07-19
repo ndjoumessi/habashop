@@ -37,19 +37,16 @@ npm run lint --workspaces                    # eslint front+back
 
 ## Déploiement
 
-**Frontend Vercel** — TOUJOURS depuis la **racine** (jamais `apps/frontend` → path doublé = échec) :
-```bash
-vercel --prod --yes
-```
+**Frontend Vercel** — **auto-déploiement prod sur push `main`** (vérifié 2026-07-19, Settings → Git : Production suit `main`). **NE PAS lancer `vercel --prod` manuel** — c'est redondant (la prod se déploie seule) et ça consomme le quota. Repli d'URGENCE seulement (si l'auto-deploy est cassé) : `vercel --prod --yes` depuis la **racine** (jamais `apps/frontend` → path doublé = échec).
 
 **Backend Railway** — service `habashop`, projet `grateful-happiness` :
 ```bash
 railway up --ci   # depuis la racine
 ```
 Auto-deploy GitHub sur push `main` (lag ~20-25 min → `railway up --ci` pour forcer). Après déploiement backend : `npm run smoke:version --workspace=apps/backend` (le `/health` DÉPLOYÉ doit renvoyer la version racine — cf. § Versionnage).
-**Déploiement couplé : Railway D'ABORD, puis Vercel.**
+**Déploiement couplé** : le push `main` déclenche les deux auto-deploys ; si le backend introduit une rupture d'API, forcer Railway (`railway up --ci`) **avant** que le front prod (auto) ne l'appelle.
 
-⚠️ **Vercel — la PROD ne s'auto-déploie PAS sur push `main` (historiquement).** Le check « Vercel » de chaque PR = un **déploiement de PRÉVISUALISATION** ; la **PRODUCTION** partait par `vercel --prod --yes` **manuel** (racine). Preuve : à la PR #49 les déploiements prod n'avaient **aucune métadonnée git** → ils venaient du **CLI**, pas d'un auto-deploy. **Config en cours de bascule** (Settings → Git) : activer l'auto-deploy prod sur `main` **+ désactiver les previews par PR** → cible = **exactement 1 déploiement prod par merge, zéro geste manuel, zéro preview**. ⚠️ **Tant que ce n'est pas confirmé actif : garder le `vercel --prod`** (ne pas le retirer) et **VÉRIFIER que le déploiement a bien eu lieu** (`vercel ls --prod` → un déploiement **plus récent que le merge** et `Ready`) — ne JAMAIS conclure « déployé » sans vérifier. **Free-tier = 100 déploiements/jour** (preview + prod confondus) → éviter tout déploiement redondant (ne pas cumuler auto-deploy + `vercel --prod` manuel).
+⚠️ **Vercel — la PROD s'auto-déploie sur push `main`** (vérifié 2026-07-19). L'ancienne inférence « prod = manuelle » (basée sur PR #49 : déploiements prod sans métadonnée git) était **FAUSSE** : ces prod-là venaient bien du CLI **parce qu'on lançait `vercel --prod` en plus**, pas parce que l'auto-deploy manquait ; l'absence de prod après certains merges venait du **QUOTA épuisé**, pas d'une config absente. Donc : **rien à lancer à la main** — au prochain push sur `main` (quota revenu), la prod part seule. Le rôle de Claude = **VÉRIFIER** (`vercel ls --prod` → un déploiement **plus récent que le merge** et `Ready`), jamais conclure « déployé » sans ça, et **ne JAMAIS relancer `vercel --prod`**. **Preview branch tracking DÉSACTIVÉ** (Settings → Git) — il était sur « All unassigned git branches » = 1 preview par PR = la moitié du quota. Cible = **1 déploiement prod par merge, zéro preview, zéro geste manuel**. **Free-tier = 100 déploiements/jour.**
 
 **Rituel commit** : `npx tsc --noEmit` (0) → `npm test` (verts) → `npm run build` (OK) → commit/push `main`. Git : push direct sur `main`, pas de feature branch.
 
