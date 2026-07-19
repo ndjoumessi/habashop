@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "prebuild": "node scripts/gen-version.mjs",
     "build": "tsc",
+    "smoke:version": "node scripts/smoke-deployed-version.mjs",
     "start": "node dist/server.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",

@@ -22,7 +22,8 @@ function walk(dir: string): string[] {
     if (statSync(p).isDirectory()) {
       if (entry === 'tests') continue // exclut ce méta-test lui-même
       out.push(...walk(p))
-    } else if (/\.ts$/.test(entry)) {
+    } else if (/\.ts$/.test(entry) && entry !== 'version.generated.ts') {
+      // version.generated.ts = version BAKÉE au build (source légitime) → hors scan.
       out.push(p)
     }
   }
