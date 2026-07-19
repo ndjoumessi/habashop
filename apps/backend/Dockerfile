@@ -20,8 +20,12 @@ RUN npx prisma generate
 # Copie le code source
 COPY src ./src
 COPY tsconfig.json ./
+# scripts/ : requis par le hook `prebuild` (gen-version.mjs). Le contexte Docker = apps/backend
+# seul (pas la racine du monorepo) → gen-version ne trouve pas le package.json racine et NO-OP
+# proprement : la version BAKÉE = le `src/version.generated.ts` committé (copié via `COPY src`).
+COPY scripts ./scripts/
 
-# Build TypeScript
+# Build TypeScript (prebuild gen-version → tsc)
 RUN npm run build
 
 EXPOSE 3001
