@@ -1,11 +1,10 @@
 import { useState, type ReactNode } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import { api } from '@/lib/api'
-import { generateCDC } from '@/utils/export'
 import toast from 'react-hot-toast'
 import {
-  Link2, ClipboardList, Globe, Zap, Code2, FlaskConical,
-  FileDown, Copy, BookOpen, Plug, HeartPulse, Lock,
+  Link2, Globe, Zap, Code2, FlaskConical,
+  Copy, BookOpen, Plug, HeartPulse, Lock,
   Play, Loader2, AlertCircle, ArrowRight,
 } from 'lucide-react'
 
@@ -94,26 +93,8 @@ export default function APIDocs() {
         </p>
       </div>
 
-      {/* CDC PDF */}
-      <div className="panel">
-        <div className="panel-h">
-          <span className="panel-t" style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
-            <ClipboardList size={15} /> {lang === 'en' ? 'Specification document' : lang === 'es' ? 'Pliego de condiciones' : lang === 'it' ? 'Capitolato' : 'Cahier des charges'}
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div style={{ fontSize: 13, color: 'var(--text2)', flex: 1 }}>
-            {lang === 'en' ? 'Full HabaShop v2.0 document — 16 modules, tech stack, architecture, security.' : lang === 'es' ? 'Documento completo HabaShop v2.0 — 16 módulos, stack técnico, arquitectura, seguridad.' : lang === 'it' ? 'Documento completo HabaShop v2.0 — 16 moduli, stack tecnico, architettura, sicurezza.' : 'Document complet HabaShop v2.0 — 16 modules, stack technique, architecture, sécurité.'}
-          </div>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={() => generateCDC()}
-            style={{ whiteSpace: 'nowrap', flexShrink: 0, display:'inline-flex', alignItems:'center', gap:6 }}
-          >
-            <FileDown size={13} /> {lang === 'en' ? 'Generate PDF' : lang === 'es' ? 'Generar el PDF' : lang === 'it' ? 'Genera il PDF' : 'Générer le PDF'}
-          </button>
-        </div>
-      </div>
+      {/* Cahier des charges retiré (étape 1bis) : document INTERNE de conception (16 modules,
+          stack, architecture, sécurité) — pas de la doc d'intégration client. */}
 
       {/* Base URL */}
       <div className="panel">

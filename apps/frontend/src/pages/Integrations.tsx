@@ -10,7 +10,7 @@ import ResendMonitor from '@/components/integrations/ResendMonitor'
 
 type PingState = 'checking' | 'ok' | 'slow' | 'error'
 
-interface Integration {
+export interface Integration {
   id: string; name: string; desc: string
   color: string; status: 'connected' | 'disconnected'
   endpoint: string; lastCall: string; calls: number; docs: string
@@ -24,8 +24,16 @@ interface Integration {
   noPing?: boolean     // sauter le ping auto (pas d'endpoint public testable)
 }
 
+// ── Répartition par PUBLIC (étape 1bis) ──────────────────────────────────────
+// MERCHANT : ses moyens d'encaissement + canaux (paiements + notifications) — il doit
+// pouvoir vérifier que Wave répond avant d'ouvrir sa caisse. OPS : l'infrastructure
+// (base/hébergement/monitoring) — aucun intérêt commerçant, et ça publierait la stack
+// à tous les clients. La console opérateur consomme OPS via `OpsInfrastructure`.
+export const MERCHANT_CATS = new Set(['payments', 'notifications'])
+export const OPS_CATS = new Set(['database', 'hosting', 'monitoring'])
+
 // ── Catégories (regroupement des cartes) ─────────────────────────────────────
-const CATEGORIES: { key: string; label: Record<string, string> }[] = [
+export const CATEGORIES: { key: string; label: Record<string, string> }[] = [
   { key: 'payments',      label: { fr: 'Paiements',           en: 'Payments',          es: 'Pagos',              it: 'Pagamenti' } },
   { key: 'notifications', label: { fr: 'Notifications',        en: 'Notifications',     es: 'Notificaciones',     it: 'Notifiche' } },
   { key: 'database',      label: { fr: 'Base de données',      en: 'Database',          es: 'Base de datos',      it: 'Database' } },
@@ -33,7 +41,7 @@ const CATEGORIES: { key: string; label: Record<string, string> }[] = [
   { key: 'monitoring',    label: { fr: 'Monitoring & IA',      en: 'Monitoring & AI',   es: 'Monitoreo e IA',     it: 'Monitoraggio e IA' } },
 ]
 
-const CATEGORY_OF: Record<string, string> = {
+export const CATEGORY_OF: Record<string, string> = {
   mtnmomo: 'payments', campay: 'payments', paydunya: 'payments',
   twilio: 'notifications', resend: 'notifications',
   prisma: 'database', redis: 'database',
@@ -42,7 +50,7 @@ const CATEGORY_OF: Record<string, string> = {
 }
 
 // Version d'API exposée (facteur de confiance, affichée dans le bandeau endpoint)
-const API_VERSION: Record<string, string> = {
+export const API_VERSION: Record<string, string> = {
   anthropic: 'Claude API', twilio: 'API 2010-04-01', resend: 'API v1',
   googlemaps: 'JS API v3', railway: 'Platform', vercel: 'Platform', prisma: 'Prisma 5',
   mtnmomo: 'MoMo API v1.0', campay: 'API v2', paydunya: 'API v1',
@@ -57,7 +65,7 @@ const METHODS: Record<string, string[]> = {
 }
 
 // Détail factuel sous la description (infra)
-const CARD_DETAIL: Record<string, Record<string, string>> = {
+export const CARD_DETAIL: Record<string, Record<string, string>> = {
   prisma: { fr: '22 modèles · migration 10/06/2026', en: '22 models · migration 2026-06-10', es: '22 modelos · migración 10/06/2026', it: '22 modelli · migrazione 10/06/2026' },
   redis:  { fr: 'Cache rapports comptables & sessions', en: 'Accounting reports & session cache', es: 'Caché de informes y sesiones', it: 'Cache report e sessioni' },
   sentry: { fr: 'Suivi des erreurs front + back', en: 'Front + back error tracking', es: 'Seguimiento de errores front + back', it: 'Tracciamento errori front + back' },
@@ -143,7 +151,7 @@ const IconRedisSvg = () => (
   </svg>
 )
 
-const INTEGRATIONS_LIST: Integration[] = [
+export const INTEGRATIONS_LIST: Integration[] = [
   {
     id:'anthropic', name:'Anthropic Claude',
     desc:'Assistant IA et analyses intelligentes',
@@ -328,13 +336,17 @@ export default function Integrations() {
   }, [])
 
   // Liste d'affichage : la carte PayDunya reflète l'état réel (configuré → connecté + sandbox/production).
-  const displayList = useMemo(() => INTEGRATIONS_LIST.map(itg => itg.id !== 'paydunya' ? itg : {
-    ...itg,
-    status:        paydunyaCfg?.configured ? 'connected' as const : 'disconnected' as const,
-    paymentStatus: paydunyaCfg
-      ? (paydunyaCfg.configured ? (paydunyaCfg.mode === 'live' ? 'production' as const : 'sandbox' as const) : 'unconfigured' as const)
-      : itg.paymentStatus,
-  }), [paydunyaCfg])
+  // Page COMMERÇANT : uniquement ses paiements + canaux. L'infrastructure (OPS) est
+  // exclue ici et vit dans la console opérateur (cf. OpsInfrastructure). Ne publie pas la stack.
+  const displayList = useMemo(() => INTEGRATIONS_LIST
+    .filter(itg => MERCHANT_CATS.has(CATEGORY_OF[itg.id]))
+    .map(itg => itg.id !== 'paydunya' ? itg : {
+      ...itg,
+      status:        paydunyaCfg?.configured ? 'connected' as const : 'disconnected' as const,
+      paymentStatus: paydunyaCfg
+        ? (paydunyaCfg.configured ? (paydunyaCfg.mode === 'live' ? 'production' as const : 'sandbox' as const) : 'unconfigured' as const)
+        : itg.paymentStatus,
+    }), [paydunyaCfg])
 
   // Heure courte locale d'un ISO (dernière transaction réussie). null → '—'.
   const shortTime = (iso: string | null) =>
@@ -392,7 +404,7 @@ export default function Integrations() {
   }
 
   useEffect(() => {
-    INTEGRATIONS_LIST.filter(itg => !itg.noPing).forEach(itg => { pingIntegration(itg.id, itg.pingUrl) })
+    displayList.filter(itg => !itg.noPing).forEach(itg => { pingIntegration(itg.id, itg.pingUrl) })
     checkSentryBackend() // vérifie Sentry via backend (pas de ping no-cors direct)
   }, [])
 
@@ -433,7 +445,7 @@ export default function Integrations() {
     toast.success(lang === 'fr' ? `${itg.name} est géré automatiquement par HabaShop` : lang === 'es' ? `${itg.name} es gestionado automáticamente por HabaShop` : lang === 'it' ? `${itg.name} è gestito automaticamente da HabaShop` : `${itg.name} is managed automatically by HabaShop`)
   }
 
-  const pingableList = INTEGRATIONS_LIST.filter(itg => !itg.noPing)
+  const pingableList = displayList.filter(itg => !itg.noPing)
   const pingedIds    = Object.keys(pingStatus)
   const okCount      = pingedIds.filter(id => pingStatus[id] === 'ok' || pingStatus[id] === 'slow').length
   const anyError     = pingedIds.some(id => pingStatus[id] === 'error')
@@ -771,7 +783,7 @@ export default function Integrations() {
             animation:'pulse 2s infinite',
           }} />
           <span style={{ fontSize:12, fontWeight:'var(--fw-semibold)', color:'var(--acc2)' }}>
-            {totalConnected}/{INTEGRATIONS_LIST.length} {lang === 'en' ? 'connected' : lang === 'es' ? 'conectadas' : lang === 'it' ? 'connesse' : 'connectées'}
+            {totalConnected}/{displayList.length} {lang === 'en' ? 'connected' : lang === 'es' ? 'conectadas' : lang === 'it' ? 'connesse' : 'connectées'}
           </span>
         </div>
       </div>
@@ -779,7 +791,7 @@ export default function Integrations() {
       {/* ── KPIs (réels uniquement) ── */}
       <div className="kpi-grid">
         {[
-          { label:lang === 'en' ? 'Integrations' : lang === 'es' ? 'Integraciones' : lang === 'it' ? 'Integrazioni' : 'Intégrations', value:INTEGRATIONS_LIST.length, color:'var(--text)'  },
+          { label:lang === 'en' ? 'Integrations' : lang === 'es' ? 'Integraciones' : lang === 'it' ? 'Integrazioni' : 'Intégrations', value:displayList.length, color:'var(--text)'  },
           { label:lang === 'en' ? 'Connected' : lang === 'es' ? 'Conectadas' : lang === 'it' ? 'Connesse' : 'Connectées',    value:totalConnected,            color:'var(--acc)'   },
           { label:lang === 'en' ? 'Reachable' : lang === 'es' ? 'Accesibles' : lang === 'it' ? 'Raggiungibili' : 'Joignables',   value:allChecked ? `${okCount}/${pingableList.length}` : '…', color:'var(--acc2)' },
           { label:lang === 'en' ? 'Transactions today' : lang === 'es' ? 'Transacciones hoy' : lang === 'it' ? 'Transazioni oggi' : 'Transactions du jour', value: txStats ? (txStats.mtn.count + txStats.campay.count) : '—', color:'var(--p)' },
