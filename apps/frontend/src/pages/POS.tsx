@@ -165,6 +165,11 @@ export default function POS() {
   // Remboursement : réservé MANAGER + ADMIN (anti-fraude). Le caissier ne voit pas l'action.
   const canRefund = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(user?.role ?? '')
   const [refundSale, setRefundSale] = useState<any | null>(null)
+  // Audit des ÉCARTS de prix : ADMIN uniquement (ni MANAGER ni CASHIER). Un écart peut trahir
+  // une tentative du caissier → ne pas lui montrer ce qui est marqué (sinon il apprend le seuil).
+  const canAuditPrices = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role ?? '')
+  const [histDivergenceOnly, setHistDivergenceOnly] = useState(false)
+  const toggleDivergenceFilter = (v: boolean) => { setHistDivergenceOnly(v); fetchHistory(v) }
   const [refunding, setRefunding] = useState(false)
 
   const doRefund = async (reason: string, restock: boolean) => {
@@ -236,10 +241,10 @@ export default function POS() {
     return () => document.removeEventListener('mousedown', handleOutside)
   }, [])
 
-  const fetchHistory = async () => {
+  const fetchHistory = async (divergenceOnly = histDivergenceOnly) => {
     setLoadingHistory(true)
     try {
-      const data = await salesApi.list()
+      const data = await salesApi.list(divergenceOnly ? { priceDivergence: true } : undefined)
       setSalesHistory(data ?? [])
     } catch {
       setSalesHistory([{
@@ -1091,6 +1096,7 @@ export default function POS() {
           posShowStockOnTile={posShowStockOnTile}
           loadingHistory={loadingHistory}
           salesHistory={salesHistory}
+          canAuditPrices={canAuditPrices} divergenceOnly={histDivergenceOnly} onToggleDivergence={toggleDivergenceFilter}
           canRefund={canRefund} onRefundClick={setRefundSale}
           canCloseDay={canRefund} onCloseDay={() => setShowTicketZ(true)}
           isMobile={isMobile} mobileView={mobileView}
