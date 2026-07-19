@@ -376,10 +376,25 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* ══ UNE liste « à traiter » — fusion rétention + facturation, motif en étiquette ══ */}
-          {toTreat.length > 0 && (
-            <div className="panel">
+          {/* ══ UNE liste « à traiter » — fusion rétention + facturation, motif en étiquette ══
+               TOUJOURS affichée (outil de surveillance) : vide → état explicite qui nomme chaque
+               signal surveillé comme sain, jamais un panneau qui disparaît (= « fonction absente ? »). */}
+          <div className="panel">
               <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Inbox size={15} /> {i('Boutiques à traiter', 'Shops to handle', 'Tiendas por atender', 'Negozi da gestire')} <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: 'var(--bg3)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{toTreat.length}</span></span></div>
+              {toTreat.length === 0 ? (
+                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    i("aucun essai n'expire dans les 3 jours", 'no trial ends within 3 days', 'ninguna prueba vence en 3 días', 'nessuna prova scade entro 3 giorni'),
+                    i('aucune boutique inactive', 'no inactive shop', 'ninguna tienda inactiva', 'nessun negozio inattivo'),
+                    i('aucune demande de plan en attente', 'no pending plan request', 'sin solicitudes de plan pendientes', 'nessuna richiesta di piano in sospeso'),
+                    i('aucun paiement à vérifier', 'no payment to review', 'ningún pago por revisar', 'nessun pagamento da verificare'),
+                  ].map(line => (
+                    <div key={line} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: 'var(--text3)' }}>
+                      <CheckCircle2 size={15} style={{ color: 'var(--acc2)', flexShrink: 0 }} /> {line}
+                    </div>
+                  ))}
+                </div>
+              ) : (
               <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {toTreat.map(({ tenant, reasons }) => (
                   <div key={tenant.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
@@ -395,8 +410,8 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+              )}
+          </div>
 
           {/* ══ SANTÉ TECHNIQUE — statut infra (vert tant que rien ne casse), source 1bis ══ */}
           <div className="panel">
