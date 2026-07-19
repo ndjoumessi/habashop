@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuthStore, getLandingForRole } from '@/stores/authStore'
+import { useAuthStore, landingFor } from '@/stores/authStore'
 import LogoMark from '@/components/ui/LogoMark'
 import { useI18n } from '@/hooks/useI18n'
 import toast from 'react-hot-toast'
@@ -42,13 +42,20 @@ export default function LoginPage() {
       setError(i('Aucune boutique associée à ce compte','No shop linked to this account','Ninguna tienda asociada a esta cuenta','Nessun negozio associato a questo account'))
       return
     }
+    // Opérateur SaaS (isPlatformAdmin) → console plateforme directement, jamais le sélecteur
+    // ni l'app commerçant (critère EN PARALLÈLE du rôle, cf. landingFor).
+    if (user?.isPlatformAdmin === true) {
+      toast.success(i('Connexion réussie !','Login successful!','¡Inicio de sesión exitoso!','Accesso riuscito!'))
+      navigate('/admin')
+      return
+    }
     // Plusieurs boutiques sans sélection → écran de choix avant d'entrer.
     if (tenants.length > 1 && !activeTenantId) {
       navigate('/select-shop')
       return
     }
     toast.success(i('Connexion réussie !','Login successful!','¡Inicio de sesión exitoso!','Accesso riuscito!'))
-    navigate(getLandingForRole(user?.role))
+    navigate(landingFor(user))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

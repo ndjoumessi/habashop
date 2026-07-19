@@ -1,6 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthStore, canAccess, getLandingForRole } from '@/stores/authStore'
+import { useAuthStore, canAccess, getLandingForRole, landingFor } from '@/stores/authStore'
 import { authApi, tenantApi } from '@/lib/api'
 import { useAppStore } from '@/stores/appStore'
 import AppLayout from '@/components/layout/AppLayout'
@@ -76,7 +76,8 @@ function RoleRoute({ slug, children }: { slug: string; children: React.ReactNode
 
 function AppIndex() {
   const { user } = useAuthStore()
-  return <Navigate to={getLandingForRole(user?.role)} replace />
+  // Opérateur SaaS → console plateforme (critère isPlatformAdmin en parallèle du rôle).
+  return <Navigate to={landingFor(user)} replace />
 }
 
 function AdminOnly({ children }: { children: React.ReactNode }) {
