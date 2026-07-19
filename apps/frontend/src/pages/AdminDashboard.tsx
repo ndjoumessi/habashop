@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import LogoMark from '@/components/ui/LogoMark'
 import OpsInfrastructure from '@/components/integrations/OpsInfrastructure'
-import { Server, Rocket } from 'lucide-react'
+import { Server, Rocket, CheckCircle2 } from 'lucide-react'
 
 // Version PRODUIT = SOURCE UNIQUE injectée au build (package.json racine), jamais un
 // littéral (la garde `versionSource.test.ts` échoue si un semver en dur réapparaît).
@@ -307,20 +307,34 @@ export default function AdminDashboard() {
           <EmptyState icon="🏪" title={i('Aucune boutique', 'No shops', 'Sin tiendas', 'Nessun negozio')} message={i('Aucun tenant inscrit pour le moment.', 'No tenants registered yet.', 'Ningún inquilino registrado todavía.', 'Nessun tenant registrato.')} action={{ label: i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio'), onClick: () => setShowNewTenant(true) }} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* ══ ACTIVATION — HÉROS : le chiffre qui décide de la vie du SaaS, en tête ══ */}
-          <div className="panel" style={{ borderColor: 'color-mix(in srgb, var(--warn) 30%, var(--border))' }}>
+          {/* ══ ACTIVATION — HÉROS : le chiffre qui décide de la vie du SaaS, en tête ══
+               À zéro « jamais activées » = BONNE nouvelle → état de succès (vert discret),
+               pas une carte d'alerte avec un zéro géant. Le compte à rebours n'apparaît qu'≥1. */}
+          <div className="panel" style={{ borderColor: activation.neverProduct.length === 0
+            ? 'color-mix(in srgb, var(--acc2) 30%, var(--border))'
+            : 'color-mix(in srgb, var(--warn) 30%, var(--border))' }}>
             <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Rocket size={15} /> {i('Activation', 'Activation', 'Activación', 'Attivazione')}</span></div>
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+                {activation.neverProduct.length === 0 ? (
+                  <div style={{ minWidth: 220, display: 'flex', alignItems: 'center', gap: 12, background: 'color-mix(in srgb, var(--acc2) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--acc2) 25%, var(--border))', borderRadius: 12, padding: '12px 14px' }}>
+                    <CheckCircle2 size={30} style={{ color: 'var(--acc2)', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>{i('Toutes vos boutiques ont démarré', 'All your shops have started', 'Todas sus tiendas han arrancado', 'Tutti i tuoi negozi sono partiti')}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 3 }}>{activation.registered} {i('inscrites, chacune avec au moins un produit', 'signed up, each with at least one product', 'registradas, cada una con al menos un producto', 'registrati, ciascuno con almeno un prodotto')}</div>
+                    </div>
+                  </div>
+                ) : (
                 <div style={{ minWidth: 220 }}>
                   <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--warn)' }}>{i('Jamais activées', 'Never activated', 'Nunca activadas', 'Mai attivate')}</div>
                   <div style={{ fontSize: 46, fontWeight: 'var(--fw-bold)', lineHeight: 1, color: 'var(--text)', fontFamily: 'var(--mono)' }}>
                     {activation.neverProduct.length}<span style={{ fontSize: 16, color: 'var(--text3)' }}> / {activation.registered} {i('boutiques', 'shops', 'tiendas', 'negozi')}</span>
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--text2)', maxWidth: '42ch', marginTop: 6 }}>
-                    {i("boutiques inscrites qui n'ont JAMAIS ajouté de produit — c'est là qu'un SaaS se perd.", 'shops signed up that NEVER added a product — this is where a SaaS is lost.', 'tiendas registradas que NUNCA agregaron un producto — aquí se pierde un SaaS.', 'negozi registrati che non hanno MAI aggiunto un prodotto — è qui che un SaaS si perde.')}
+                    {i('inscrites sans aucun produit enregistré.', 'signed up with no product recorded.', 'registradas sin ningún producto registrado.', 'registrati senza alcun prodotto registrato.')}
                   </div>
                 </div>
+                )}
                 {/* entonnoir Inscrites → Produit → Vente */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1, minWidth: 240 }}>
                   {[
