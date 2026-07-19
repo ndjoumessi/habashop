@@ -11,12 +11,15 @@ const rootPkg = join(here, '../../../package.json')   // racine du monorepo
 const out = join(here, '../src/version.generated.ts')
 
 try {
-  const version = JSON.parse(readFileSync(rootPkg, 'utf8')).version
-  if (!version || !/^\d+\.\d+\.\d+/.test(String(version))) throw new Error(`version racine absente/invalide: ${version}`)
+  const version = String(JSON.parse(readFileSync(rootPkg, 'utf8')).version ?? '')
+  // Regex ANCRÉE des deux côtés (semver strict, pré-release optionnel) → refuse toute valeur
+  // hors-forme AVANT interpolation. + JSON.stringify pour un littéral échappé : deux verrous
+  // contre l'injection de code dans le fichier généré (le finding de revue de sécurité).
+  if (!/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(version)) throw new Error(`version racine absente/invalide: ${version}`)
   writeFileSync(out,
     `// ⚠️ GÉNÉRÉ AU BUILD par scripts/gen-version.mjs (hook prebuild) depuis le package.json RACINE.\n` +
     `// NE PAS éditer à la main. Baké à la compilation → aucune lecture runtime, aucune hypothèse conteneur.\n` +
-    `export const BAKED_APP_VERSION = '${version}'\n`)
+    `export const BAKED_APP_VERSION = ${JSON.stringify(version)}\n`)
   console.log('[gen-version] BAKED_APP_VERSION =', version)
 } catch (e) {
   // Racine illisible au build (cas limite) → on CONSERVE le fichier committé (dernière valeur connue),
