@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { adminApi } from '@/lib/api'
-import { useAppStore, useFormatAmount } from '@/stores/appStore'
+import { adminApi, authApi } from '@/lib/api'
+import { useAppStore, useFormatAmount, THEME_OPTIONS } from '@/stores/appStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useI18n } from '@/hooks/useI18n'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { confirm } from '@/lib/confirm'
@@ -12,9 +13,9 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import {
   Store, Users, CreditCard, Wallet, TrendingUp,
-  Search, X, Plus, ArrowLeft, ChevronRight, Layers, BarChart3,
+  Search, X, Plus, ChevronRight, Layers, BarChart3,
   LayoutDashboard, Inbox, Check, RefreshCw, Mail, Calendar,
-  AlertTriangle, Clock, Globe, TrendingDown,
+  AlertTriangle, Clock, Globe, TrendingDown, LogOut, Settings, Lock,
 } from 'lucide-react'
 import LogoMark from '@/components/ui/LogoMark'
 
@@ -59,6 +60,9 @@ function relTime(iso: string | null | undefined, i: (fr: string, en: string, es:
 export default function AdminDashboard() {
   const navigate = useNavigate()
   const lang = useAppStore(s => s.lang)
+  const theme = useAppStore(s => s.theme)
+  const updateConfig = useAppStore(s => s.updateConfig)
+  const logout = useAuthStore(s => s.logout)
   const fmt = useFormatAmount()
   const { i } = useI18n()
 
@@ -71,8 +75,28 @@ export default function AdminDashboard() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [selected, setSelected] = useState<Tenant | null>(null)
   const [showNewTenant, setShowNewTenant] = useState(false)
+  // Volet compte MINIMAL de la coquille /admin (mot de passe, langue, thème) — PAS la page
+  // Réglages commerçant (qui parle d'une boutique que l'opérateur ne gère pas).
+  const [showAccount, setShowAccount] = useState(false)
+  const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' })
+  const [savingPwd, setSavingPwd] = useState(false)
   const detailBoxRef = useModalFocus<HTMLDivElement>(!!selected)
   const newTenantBoxRef = useModalFocus<HTMLDivElement>(showNewTenant)
+  const accountBoxRef = useModalFocus<HTMLDivElement>(showAccount)
+
+  const doLogout = () => { logout(); navigate('/login') }
+  const changePassword = async () => {
+    if (pwd.next.length < 8) { toast.error(i('Mot de passe : 8 caractères minimum', 'Password: 8 characters minimum', 'Contraseña: mínimo 8 caracteres', 'Password: minimo 8 caratteri')); return }
+    if (pwd.next !== pwd.confirm) { toast.error(i('Les mots de passe ne correspondent pas', 'Passwords do not match', 'Las contraseñas no coinciden', 'Le password non corrispondono')); return }
+    setSavingPwd(true)
+    try {
+      await authApi.changePassword(pwd.current, pwd.next)
+      toast.success(i('Mot de passe mis à jour', 'Password updated', 'Contraseña actualizada', 'Password aggiornata'))
+      setPwd({ current: '', next: '', confirm: '' })
+    } catch (e: any) {
+      toast.error(e?.message || i('Échec de la mise à jour', 'Update failed', 'Error al actualizar', 'Aggiornamento fallito'))
+    } finally { setSavingPwd(false) }
+  }
   const [newTenantForm, setNewTenantForm] = useState({ name: '', currency: 'XOF', country: 'SN', plan: 'starter', adminEmail: '', adminPassword: '' })
   const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'requests'>('overview')
   const [planRequests, setPlanRequests] = useState<any[]>([])
@@ -251,8 +275,10 @@ export default function AdminDashboard() {
           <div style={{ padding: '8px 14px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Calendar size={13} /> {new Date().toLocaleDateString(lang, { day: '2-digit', month: 'short', year: 'numeric' })}
           </div>
-          <button className="mini-btn" onClick={() => navigate('/app/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 40 }}><ArrowLeft size={14} /> {i('Retour', 'Back', 'Volver', 'Indietro')}</button>
           <button className="topbar-btn" onClick={() => setShowNewTenant(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Plus size={14} /> {i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio')}</button>
+          {/* Coquille opérateur : compte (minimal) + déconnexion. AUCUN retour vers l'app commerçant. */}
+          <IconButton label={i('Mon compte', 'My account', 'Mi cuenta', 'Il mio account')} icon={<Settings size={16} />} onClick={() => setShowAccount(true)} variant="surface" />
+          <IconButton label={i('Déconnexion', 'Sign out', 'Cerrar sesión', 'Disconnetti')} icon={<LogOut size={16} />} onClick={doLogout} variant="surface" />
         </div>
       </div>
 
@@ -623,6 +649,51 @@ export default function AdminDashboard() {
                 }
               }}>{i('Créer la boutique', 'Create shop', 'Crear tienda', 'Crea negozio')}</button>
               <button className="mini-btn" style={{ padding: '10px 16px' }} onClick={() => setShowNewTenant(false)}>{i('Annuler', 'Cancel', 'Cancelar', 'Annulla')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Volet COMPTE minimal (opérateur) : mot de passe, langue, thème. Volontairement
+          PAS la page Réglages commerçant (TVA/POS/boutique) — hors périmètre d'un opérateur. ── */}
+      {showAccount && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={i('Mon compte', 'My account', 'Mi cuenta', 'Il mio account')} onClick={e => e.target === e.currentTarget && setShowAccount(false)}>
+          <div ref={accountBoxRef} className="modal-box" style={{ maxWidth: 460 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}><Settings size={16} /> {i('Mon compte', 'My account', 'Mi cuenta', 'Il mio account')}</h3>
+              <button className="mini-btn" aria-label={i('Fermer', 'Close', 'Cerrar', 'Chiudi')} onClick={() => setShowAccount(false)}><X size={14} /></button>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={lbl}><Globe size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />{i('Langue', 'Language', 'Idioma', 'Lingua')}</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {([['fr', 'Français'], ['en', 'English'], ['es', 'Español'], ['it', 'Italiano']] as const).map(([code, label]) => (
+                  <button key={code} className="mini-btn" onClick={() => updateConfig({ lang: code })}
+                    style={lang === code ? { background: 'var(--c-purple-bg)', borderColor: 'var(--p2)', color: 'var(--p2)' } : undefined}>{label}</button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={lbl}>{i('Thème', 'Theme', 'Tema', 'Tema')}</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {THEME_OPTIONS.map(o => (
+                  <button key={o.key} className="mini-btn" onClick={() => updateConfig({ theme: o.key })}
+                    style={theme === o.key ? { background: 'var(--c-purple-bg)', borderColor: 'var(--p2)', color: 'var(--p2)' } : undefined}>{o.emoji} {o.label[lang] ?? o.label.fr}</button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label style={lbl}><Lock size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />{i('Changer le mot de passe', 'Change password', 'Cambiar contraseña', 'Cambia password')}</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input className="input" type="password" autoComplete="current-password" aria-label={i('Mot de passe actuel', 'Current password', 'Contraseña actual', 'Password attuale')} placeholder={i('Mot de passe actuel', 'Current password', 'Contraseña actual', 'Password attuale')} value={pwd.current} onChange={e => setPwd(p => ({ ...p, current: e.target.value }))} />
+                <input className="input" type="password" autoComplete="new-password" aria-label={i('Nouveau mot de passe', 'New password', 'Nueva contraseña', 'Nuova password')} placeholder={i('Nouveau (min. 8 caractères)', 'New (min. 8 chars)', 'Nueva (mín. 8 caracteres)', 'Nuova (min. 8 caratteri)')} value={pwd.next} onChange={e => setPwd(p => ({ ...p, next: e.target.value }))} />
+                <input className="input" type="password" autoComplete="new-password" aria-label={i('Confirmer le nouveau mot de passe', 'Confirm new password', 'Confirmar nueva contraseña', 'Conferma nuova password')} placeholder={i('Confirmer', 'Confirm', 'Confirmar', 'Conferma')} value={pwd.confirm} onChange={e => setPwd(p => ({ ...p, confirm: e.target.value }))} />
+                <button className="topbar-btn" style={{ justifyContent: 'center' }} disabled={savingPwd || !pwd.current || !pwd.next} onClick={changePassword}>
+                  {savingPwd ? '…' : i('Mettre à jour', 'Update', 'Actualizar', 'Aggiorna')}
+                </button>
+              </div>
             </div>
           </div>
         </div>

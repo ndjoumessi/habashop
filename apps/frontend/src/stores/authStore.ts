@@ -48,6 +48,14 @@ export function getLandingForRole(role: UserRole | undefined | null): string {
   return '/app/dashboard'
 }
 
+// Atterrissage à la connexion. ⚠️ Le critère `isPlatformAdmin` prime EN PARALLÈLE du rôle
+// (jamais À LA PLACE) : un opérateur SaaS atterrit sur sa console `/admin`, pas dans l'app
+// commerçant. `getLandingForRole` (basé rôle) reste INTACT → aucun impact sur les commerçants.
+export function landingFor(user: { role?: UserRole | null; isPlatformAdmin?: boolean } | null | undefined): string {
+  if (user?.isPlatformAdmin === true) return '/admin'
+  return getLandingForRole(user?.role)
+}
+
 export interface User {
   id: string
   name: string
