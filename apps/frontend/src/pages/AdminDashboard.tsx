@@ -12,14 +12,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
 import {
-  Store, Users, CreditCard, Wallet, TrendingUp,
-  Search, X, Plus, ChevronRight, Layers, BarChart3,
+  Store, CreditCard, Wallet,
+  Search, X, Plus, ChevronRight,
   LayoutDashboard, Inbox, Check, RefreshCw, Mail, Calendar,
-  AlertTriangle, Clock, Globe, TrendingDown, LogOut, Settings, Lock,
+  Clock, Globe, LogOut, Settings, Lock,
 } from 'lucide-react'
 import LogoMark from '@/components/ui/LogoMark'
 import OpsInfrastructure from '@/components/integrations/OpsInfrastructure'
-import { Server } from 'lucide-react'
+import { Server, Rocket } from 'lucide-react'
 
 // Version PRODUIT = SOURCE UNIQUE injectée au build (package.json racine), jamais un
 // littéral (la garde `versionSource.test.ts` échoue si un semver en dur réapparaît).
@@ -41,7 +41,6 @@ const PLAN_COLOR: Record<string, string> = {
   free: 'var(--text3)', trial: 'var(--warn)', starter: 'var(--acc2)',
   pro: 'var(--p2)', business: 'var(--p2)', enterprise: 'var(--p)',
 }
-const PAID_PLANS = ['pro', 'business', 'enterprise']
 const planKey = (p?: string) => (p || 'free').toLowerCase()
 const planPrice = (p?: string) => PLAN_PRICE[planKey(p)] ?? 0
 const planColor = (p?: string) => PLAN_COLOR[planKey(p)] ?? 'var(--text3)'
@@ -138,61 +137,61 @@ export default function AdminDashboard() {
     } catch (e: any) { toast.error(e?.message ?? i('Erreur', 'Error', 'Error', 'Errore')) }
   }
 
-  const mrr = useMemo(() => tenants.reduce((s, t) => s + planPrice(t.plan), 0), [tenants])
-  const activePlans = useMemo(() => tenants.filter(t => PAID_PLANS.includes(planKey(t.plan))).length, [tenants])
-
-  const planDist = useMemo(() => {
-    const m: Record<string, number> = {}
-    tenants.forEach(t => { const p = planKey(t.plan); m[p] = (m[p] || 0) + 1 })
-    return Object.entries(m).map(([plan, count]) => ({ plan, count })).sort((a, b) => b.count - a.count)
-  }, [tenants])
-
-  const months = useMemo(() => {
-    const now = new Date()
-    const buckets = Array.from({ length: 6 }, (_, idx) => {
-      const k = 5 - idx
-      const d = new Date(now.getFullYear(), now.getMonth() - k, 1)
-      return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: d.toLocaleDateString(lang, { month: 'short' }), count: 0 }
-    })
-    tenants.forEach(t => {
-      const d = new Date(t.createdAt)
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-      const b = buckets.find(x => x.key === key)
-      if (b) b.count++
-    })
-    return buckets
-  }, [tenants, lang])
-  const maxMonth = Math.max(1, ...months.map(m => m.count))
-
-  // Ventilation statut : actives / essai / expirée (expirée = essai dont trialEnds
-  // est dépassé, ou boutique suspendue). Données réelles issues de la liste tenants.
-  const isExpired = (t: Tenant) => t.status === 'suspended' || (t.status === 'trial' && !!t.trialEnds && new Date(t.trialEnds).getTime() < Date.now())
-  const health = useMemo(() => {
-    let active = 0, trial = 0, expired = 0
-    for (const t of tenants) {
-      if (isExpired(t)) expired++
-      else if (t.status === 'trial') trial++
-      else if (t.isActive !== false) active++
-    }
-    return { active, trial, expired }
-  }, [tenants])
-
-  // Churn ESTIMÉ (pas d'historique de transitions en base) : expirées ÷ (actives + expirées).
-  // Marqué « estimé » à l'affichage — proxy, à remplacer par un vrai suivi si besoin.
-  const churnPct = useMemo(() => {
-    const denom = health.active + health.expired
-    return denom > 0 ? Math.round((health.expired / denom) * 100) : 0
-  }, [health])
-
-  // Alertes actionnables — dérivées des données réelles (tenants + demandes de plan).
   const DAY = 86400000
-  const alerts = useMemo(() => {
+
+  // ── ACTIVATION (héros) : le chiffre qui décide de la vie du SaaS — inscrites n'ayant JAMAIS
+  //    ajouté de produit. Entonnoir Inscrites → Produit → Vente. Liste triée « jamais revenues »
+  //    d'abord (pas de lastActivityAt), puis inscription la plus ancienne. Données réelles.
+  const activation = useMemo(() => {
+    const withProduct = tenants.filter(t => (t._count?.products ?? 0) > 0).length
+    const withSale = tenants.filter(t => (t._count?.sales ?? 0) > 0).length
+    const neverProduct = tenants.filter(t => (t._count?.products ?? 0) === 0).sort((a, b) => {
+      const aBack = a.lastActivityAt ? 1 : 0, bBack = b.lastActivityAt ? 1 : 0
+      if (aBack !== bBack) return aBack - bBack
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    })
+    return { registered: tenants.length, withProduct, withSale, neverProduct }
+  }, [tenants])
+
+  // ── UNE seule liste « à traiter » (fusion rétention + facturation) : chaque boutique porte
+  //    SES motifs (essai ≤3j / inactive / demande de plan / paiement à vérifier). Le rapprochement
+  //    est fait pour l'opérateur (une payante silencieuse + paiement en échec = une seule entrée).
+  const toTreat = useMemo(() => {
     const now = Date.now()
-    const trialsExpiring = tenants.filter(t => t.status === 'trial' && t.trialEnds && new Date(t.trialEnds).getTime() - now < 3 * DAY && new Date(t.trialEnds).getTime() >= now)
-    const inactive = tenants.filter(t => t.lastActivityAt && now - new Date(t.lastActivityAt).getTime() > 14 * DAY)
-    const failedPayments = planRequests.filter(r => r.status === 'pending' || r.paymentRef)
-    return { trialsExpiring, inactive, failedPayments }
-  }, [tenants, planRequests])
+    const map = new Map<string, { tenant: Tenant; reasons: { kind: string; label: string; color: string }[] }>()
+    const add = (t: Tenant | undefined, kind: string, label: string, color: string) => {
+      if (!t) return
+      const e = map.get(t.id) ?? { tenant: t, reasons: [] as { kind: string; label: string; color: string }[] }
+      if (!e.reasons.some(r => r.kind === kind)) e.reasons.push({ kind, label, color })
+      map.set(t.id, e)
+    }
+    for (const t of tenants) {
+      if (t.status === 'trial' && t.trialEnds) {
+        const ms = new Date(t.trialEnds).getTime() - now
+        if (ms >= 0 && ms < 3 * DAY) add(t, 'trial', i('essai expire ≤ 3 j', 'trial ends ≤ 3 d', 'prueba ≤ 3 d', 'prova ≤ 3 g'), 'var(--warn)')
+      }
+      if (t.lastActivityAt && now - new Date(t.lastActivityAt).getTime() > 14 * DAY) add(t, 'inactive', i('inactive', 'inactive', 'inactiva', 'inattiva'), 'var(--acc)')
+    }
+    for (const r of planRequests) {
+      const t = tenants.find(x => x.name === r.tenant?.name)
+      if (r.paymentRef) add(t, 'payment', i('paiement à vérifier', 'payment to review', 'pago por revisar', 'pagamento da verificare'), 'var(--danger)')
+      else add(t, 'plan', i('demande de plan', 'plan request', 'solicitud de plan', 'richiesta piano'), 'var(--p2)')
+    }
+    return [...map.values()].sort((a, b) => b.reasons.length - a.reasons.length)
+  }, [tenants, planRequests, i])
+
+  // « Relancer » = lien de contact PRÉ-REMPLI (e-mail). Pas d'envoi automatisé (gabarits/suivi/
+  // désinscription pour un volume qui n'existe pas encore). L'opérateur écrit, personnellement.
+  const relancer = (t: Tenant) => {
+    if (!t.email) { toast.error(i('Aucun e-mail pour cette boutique', 'No email for this shop', 'Sin email para esta tienda', 'Nessuna email per questo negozio')); return }
+    const subject = encodeURIComponent(i('Un coup de main pour démarrer sur HabaShop ?', 'A hand getting started on HabaShop?', '¿Ayuda para empezar en HabaShop?', 'Una mano per iniziare su HabaShop?'))
+    const body = encodeURIComponent(i(
+      `Bonjour,\n\nVous vous êtes inscrit sur HabaShop mais n'avez pas encore ajouté de produit. Puis-je vous aider à démarrer ?`,
+      `Hello,\n\nYou signed up on HabaShop but haven't added a product yet. Can I help you get started?`,
+      `Hola,\n\nSe registró en HabaShop pero aún no ha agregado un producto. ¿Puedo ayudarle a empezar?`,
+      `Ciao,\n\nTi sei registrato su HabaShop ma non hai ancora aggiunto un prodotto. Posso aiutarti a iniziare?`))
+    window.location.href = `mailto:${t.email}?subject=${subject}&body=${body}`
+  }
 
   const view = useMemo(() => {
     let arr = tenants
@@ -230,17 +229,6 @@ export default function AdminDashboard() {
     if (st === 'pending_payment') return { h: 'var(--acc)', label: i('Paiement', 'Payment', 'Pago', 'Pagamento') }
     return { h: 'var(--text3)', label: st }
   }
-
-  // KPIs plateforme — hiérarchisés (pilotage SaaS : MRR d'abord), sans redondance.
-  // La carte « Boutiques » porte la ventilation actives/essai/expirée (plus de doublon
-  // « N » + « N actives »). Churn = estimé (proxy, cf. churnPct). Données réelles only.
-  const kpis = stats ? [
-    { label: i('MRR estimé', 'Est. MRR', 'MRR est.', 'MRR stim.'), value: fmt(mrr), sub: `${activePlans} ${i('plans payants', 'paid plans', 'planes de pago', 'piani a pagamento')}`, color: 'var(--p)', icon: <TrendingUp size={18} />, isStr: true },
-    { label: i('Boutiques', 'Shops', 'Tiendas', 'Negozi'), value: stats.totalTenants ?? 0, sub: `${health.active} ${i('actives', 'active', 'activas', 'attivi')} · ${health.trial} ${i('essai', 'trial', 'prueba', 'prova')} · ${health.expired} ${i('expirée', 'expired', 'expirada', 'scaduta')}`, color: 'var(--acc2)', icon: <Store size={18} /> },
-    { label: i('CA cumulé', 'Total GMV', 'GMV total', 'GMV totale'), value: fmt(stats.totalRevenue ?? 0), sub: `${(stats.totalSales ?? 0).toLocaleString('fr-FR')} ${i('ventes', 'sales', 'ventas', 'vendite')}`, color: 'var(--acc3)', icon: <Wallet size={18} />, isStr: true },
-    { label: i('Churn estimé', 'Est. churn', 'Churn est.', 'Churn stim.'), value: `${churnPct}%`, sub: i('estimé — sans historique', 'estimated — no history', 'estimado — sin historial', 'stimato — senza storico'), color: churnPct > 10 ? 'var(--danger)' : 'var(--text3)', icon: <TrendingDown size={18} />, isStr: true },
-    { label: i('Utilisateurs', 'Users', 'Usuarios', 'Utenti'), value: stats.totalUsers ?? 0, sub: i('comptes', 'accounts', 'cuentas', 'account'), color: 'var(--acc)', icon: <Users size={18} /> },
-  ] : []
 
   const TABS = [
     { id: 'overview' as const, label: i("Vue d'ensemble", 'Overview', 'Resumen', 'Panoramica'), icon: <LayoutDashboard size={15} />, count: null as number | null, alert: false },
@@ -284,25 +272,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── KPIs globaux (toujours visibles) ── */}
-      {stats && (
-        <ResponsiveGrid min={200} gap={10} style={{ marginBottom: 24 }}>
-          {kpis.map((k, idx) => (
-            <div key={idx} style={{ background: 'var(--card)', border: `1px solid ${mix(k.color, 22)}`, borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, transition: 'transform .15s ease, box-shadow .15s ease' }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 24px rgba(0,0,0,.2)' }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.boxShadow = '' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 'var(--fw-semibold)', textTransform: 'uppercase', letterSpacing: '.4px' }}>{k.label}</span>
-                <span style={{ width: 32, height: 32, borderRadius: 8, background: mix(k.color, 12), display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>{k.icon}</span>
-              </div>
-              <div style={{ fontSize: 24, fontWeight: 'var(--fw-semibold)', color: 'var(--text)', fontFamily: 'var(--mono)', letterSpacing: '-1px', lineHeight: 1 }}>
-                {k.isStr ? k.value : (k.value as number).toLocaleString('fr-FR')}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text4)', fontWeight: 'var(--fw-regular)' }}>{k.sub}</div>
-            </div>
-          ))}
-        </ResponsiveGrid>
-      )}
+      {/* KPIs MRR / segments / churn RETIRÉS (étape 2) : des chiffres qu'on regarde sans
+          pouvoir agir dessus. Remplacés par l'activation (héros) + la liste « à traiter ». */}
 
       {/* ── Onglets premium ── */}
       <div role="tablist" style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg3)', borderRadius: 12, border: '1px solid var(--border)', marginBottom: 20, overflowX: 'auto', flexWrap: 'nowrap' }}>
@@ -336,69 +307,86 @@ export default function AdminDashboard() {
           <EmptyState icon="🏪" title={i('Aucune boutique', 'No shops', 'Sin tiendas', 'Nessun negozio')} message={i('Aucun tenant inscrit pour le moment.', 'No tenants registered yet.', 'Ningún inquilino registrado todavía.', 'Nessun tenant registrato.')} action={{ label: i('Nouvelle boutique', 'New shop', 'Nueva tienda', 'Nuovo negozio'), onClick: () => setShowNewTenant(true) }} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* ── Alertes actionnables ── */}
-          {(() => {
-            const rows = [
-              { key: 'trials', n: alerts.trialsExpiring.length, color: 'var(--warn)', icon: <Clock size={14} />, label: i('essais expirent sous 3 jours', 'trials expiring within 3 days', 'pruebas expiran en 3 días', 'prove in scadenza entro 3 giorni'), tab: 'tenants' as const },
-              { key: 'inactive', n: alerts.inactive.length, color: 'var(--acc)', icon: <TrendingDown size={14} />, label: i('boutiques inactives depuis 14 j+', 'shops inactive for 14+ days', 'tiendas inactivas 14 d+', 'negozi inattivi da 14 g+'), tab: 'tenants' as const },
-              { key: 'failed', n: alerts.failedPayments.length, color: 'var(--danger)', icon: <CreditCard size={14} />, label: i('paiements à vérifier', 'payments to review', 'pagos por revisar', 'pagamenti da verificare'), tab: 'requests' as const },
-            ].filter(r => r.n > 0)
-            return (
-              <div className="panel">
-                <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><AlertTriangle size={15} /> {i('Alertes actionnables', 'Actionable alerts', 'Alertas accionables', 'Avvisi azionabili')}</span></div>
-                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {rows.length === 0 ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--acc2)', fontSize: 13, fontWeight: 'var(--fw-semibold)' }}><Check size={15} /> {i('Rien à signaler — tout est à jour.', 'Nothing to report — all clear.', 'Nada que reportar — todo al día.', 'Niente da segnalare — tutto ok.')}</div>
-                  ) : rows.map(r => (
-                    <button key={r.key} onClick={() => setActiveTab(r.tab)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${mix(r.color, 30)}`, background: mix(r.color, 8), cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'var(--font)' }}>
-                      <span style={{ width: 26, height: 26, borderRadius: 7, background: mix(r.color, 16), color: r.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{r.icon}</span>
-                      <span style={{ fontSize: 16, fontWeight: 'var(--fw-bold)', color: r.color, fontFamily: 'var(--mono)', minWidth: 24 }}>{r.n}</span>
-                      <span style={{ fontSize: 13, color: 'var(--text2)', flex: 1 }}>{r.label}</span>
-                      <ChevronRight size={15} style={{ color: 'var(--text4)', flexShrink: 0 }} />
-                    </button>
-                  ))}
+          {/* ══ ACTIVATION — HÉROS : le chiffre qui décide de la vie du SaaS, en tête ══ */}
+          <div className="panel" style={{ borderColor: 'color-mix(in srgb, var(--warn) 30%, var(--border))' }}>
+            <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Rocket size={15} /> {i('Activation', 'Activation', 'Activación', 'Attivazione')}</span></div>
+            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ minWidth: 220 }}>
+                  <div style={{ fontSize: 11, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--warn)' }}>{i('Jamais activées', 'Never activated', 'Nunca activadas', 'Mai attivate')}</div>
+                  <div style={{ fontSize: 46, fontWeight: 'var(--fw-bold)', lineHeight: 1, color: 'var(--text)', fontFamily: 'var(--mono)' }}>
+                    {activation.neverProduct.length}<span style={{ fontSize: 16, color: 'var(--text3)' }}> / {activation.registered} {i('boutiques', 'shops', 'tiendas', 'negozi')}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--text2)', maxWidth: '42ch', marginTop: 6 }}>
+                    {i("boutiques inscrites qui n'ont JAMAIS ajouté de produit — c'est là qu'un SaaS se perd.", 'shops signed up that NEVER added a product — this is where a SaaS is lost.', 'tiendas registradas que NUNCA agregaron un producto — aquí se pierde un SaaS.', 'negozi registrati che non hanno MAI aggiunto un prodotto — è qui che un SaaS si perde.')}
+                  </div>
+                </div>
+                {/* entonnoir Inscrites → Produit → Vente */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1, minWidth: 240 }}>
+                  {[
+                    { lab: i('Inscrites', 'Signed up', 'Registradas', 'Registrate'), n: activation.registered, c: 'var(--p)' },
+                    { lab: i('Ont ajouté un produit', 'Added a product', 'Agregaron producto', 'Prodotto aggiunto'), n: activation.withProduct, c: 'var(--acc3)' },
+                    { lab: i('Ont vendu', 'Made a sale', 'Vendieron', 'Hanno venduto'), n: activation.withSale, c: 'var(--acc2)' },
+                  ].map(s => {
+                    const w = activation.registered ? Math.round((s.n / activation.registered) * 100) : 0
+                    return (
+                      <div key={s.lab} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 11, color: 'var(--text3)', minWidth: 130 }}>{s.lab}</span>
+                        <div style={{ height: 24, borderRadius: 6, background: s.c, width: `${Math.max(9, w)}%`, display: 'flex', alignItems: 'center', padding: '0 9px', color: '#fff', fontSize: 12, fontWeight: 'var(--fw-bold)', fontFamily: 'var(--mono)' }}>{s.n}</div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
-            )
-          })()}
-          <ResponsiveGrid min={300} gap={16}>
-            <div className="panel">
-              <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={15} /> {i('Répartition des plans', 'Plan distribution', 'Distribución de planes', 'Distribuzione piani')}</span></div>
-              <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {planDist.map(({ plan, count }) => {
-                  const pct = Math.round((count / tenants.length) * 100)
-                  return (
-                    <div key={plan}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
-                        <span style={{ color: 'var(--text)', fontWeight: 'var(--fw-semibold)', textTransform: 'capitalize' }}>{plan} <span style={{ color: 'var(--text3)', fontWeight: 'var(--fw-regular)' }}>· {fmt(planPrice(plan))}/{i('mois', 'mo', 'mes', 'mese')}</span></span>
-                        <span style={{ color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{count} ({pct}%)</span>
+              {/* liste actionnable — « jamais revenues » d'abord */}
+              {activation.neverProduct.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {activation.neverProduct.slice(0, 6).map(t => (
+                    <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: 150 }}>
+                        <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{t.name}</div>
+                        <div style={{ fontSize: 11, color: t.lastActivityAt ? 'var(--text3)' : 'var(--danger)', fontWeight: t.lastActivityAt ? 'var(--fw-regular)' : 'var(--fw-semibold)' }}>
+                          {t.lastActivityAt ? `${i('dern. connexion', 'last login', 'últ. conexión', 'ultimo accesso')} ${relTime(t.lastActivityAt, i)}` : i('jamais revenue', 'never returned', 'nunca volvió', 'mai tornata')}
+                          {' · '}{i('inscrite', 'joined', 'registrada', 'iscritta')} {relTime(t.createdAt, i)}
+                        </div>
                       </div>
-                      <div style={{ height: 8, background: 'var(--bg)', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', background: planColor(plan), borderRadius: 99, transition: 'width .4s' }} />
+                      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                        <button className="mini-btn" style={{ minHeight: 36, display: 'flex', alignItems: 'center', gap: 5 }} onClick={() => relancer(t)}><Mail size={13} /> {i('Relancer', 'Follow up', 'Contactar', 'Ricontatta')}</button>
+                        <button className="mini-btn" style={{ minHeight: 36 }} onClick={() => setSelected(t)}>{i('Fiche', 'Details', 'Ficha', 'Scheda')}</button>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
+                  ))}
+                  {activation.neverProduct.length > 6 && <div style={{ fontSize: 12, color: 'var(--text3)', paddingLeft: 2 }}>+{activation.neverProduct.length - 6} {i('autres', 'more', 'más', 'altre')}</div>}
+                </div>
+              )}
             </div>
+          </div>
 
+          {/* ══ UNE liste « à traiter » — fusion rétention + facturation, motif en étiquette ══ */}
+          {toTreat.length > 0 && (
             <div className="panel">
-              <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><BarChart3 size={15} /> {i('Nouvelles boutiques (6 mois)', 'New shops (6 months)', 'Nuevas tiendas (6 meses)', 'Nuovi negozi (6 mesi)')}</span></div>
-              <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', gap: 10, height: 160 }}>
-                {months.map(m => (
-                  <div key={m.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: 12, fontWeight: 'var(--fw-bold)', color: 'var(--text)', fontFamily: 'var(--mono)' }}>{m.count}</span>
-                    <div title={`${m.label}: ${m.count}`} style={{ width: '70%', height: `${(m.count / maxMonth) * 100}%`, minHeight: m.count ? 6 : 2, background: m.count ? 'linear-gradient(180deg,var(--p2),var(--p))' : 'var(--bg)', borderRadius: '6px 6px 0 0', transition: 'height .5s' }} />
-                    <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'capitalize' }}>{m.label}</span>
+              <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Inbox size={15} /> {i('Boutiques à traiter', 'Shops to handle', 'Tiendas por atender', 'Negozi da gestire')} <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: 'var(--bg3)', color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{toTreat.length}</span></span></div>
+              <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {toTreat.map(({ tenant, reasons }) => (
+                  <div key={tenant.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 160 }}>
+                      <div style={{ fontSize: 13, fontWeight: 'var(--fw-semibold)', color: 'var(--text)' }}>{tenant.name}</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                        {reasons.map(r => (
+                          <span key={r.kind} style={{ fontSize: 10, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '.4px', borderRadius: 99, padding: '2px 8px', background: mix(r.color, 12), color: r.color, border: `1px solid ${mix(r.color, 25)}` }}>{r.label}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <button className="mini-btn" style={{ minHeight: 36, flexShrink: 0 }} onClick={() => setSelected(tenant)}>{i('Fiche', 'Details', 'Ficha', 'Scheda')}</button>
                   </div>
                 ))}
               </div>
             </div>
-          </ResponsiveGrid>
+          )}
 
-          {/* ── Infrastructure opérateur (récupérée des intégrations, étape 1bis) ── */}
+          {/* ══ SANTÉ TECHNIQUE — statut infra (vert tant que rien ne casse), source 1bis ══ */}
           <div className="panel">
-            <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Server size={15} /> {i('Infrastructure', 'Infrastructure', 'Infraestructura', 'Infrastruttura')}</span></div>
+            <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Server size={15} /> {i('Santé technique', 'Technical health', 'Salud técnica', 'Salute tecnica')}</span></div>
             <div style={{ padding: 16 }}>
               <OpsInfrastructure />
             </div>
