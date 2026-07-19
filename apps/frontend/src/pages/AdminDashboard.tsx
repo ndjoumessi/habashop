@@ -18,6 +18,8 @@ import {
   AlertTriangle, Clock, Globe, TrendingDown, LogOut, Settings, Lock,
 } from 'lucide-react'
 import LogoMark from '@/components/ui/LogoMark'
+import OpsInfrastructure from '@/components/integrations/OpsInfrastructure'
+import { Server } from 'lucide-react'
 
 // Version PRODUIT = SOURCE UNIQUE injectée au build (package.json racine), jamais un
 // littéral (la garde `versionSource.test.ts` échoue si un semver en dur réapparaît).
@@ -393,6 +395,14 @@ export default function AdminDashboard() {
               </div>
             </div>
           </ResponsiveGrid>
+
+          {/* ── Infrastructure opérateur (récupérée des intégrations, étape 1bis) ── */}
+          <div className="panel">
+            <div className="panel-head"><span className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Server size={15} /> {i('Infrastructure', 'Infrastructure', 'Infraestructura', 'Infrastruttura')}</span></div>
+            <div style={{ padding: 16 }}>
+              <OpsInfrastructure />
+            </div>
+          </div>
           </div>
         )
       )}
