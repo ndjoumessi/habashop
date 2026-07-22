@@ -45,6 +45,8 @@ export type SendResult = {
   results: RecipientOutcome[]
   /** Premier code d'erreur Twilio rencontré (raccourci pour les envois unitaires). */
   errorCode?: number
+  /** Unités encore disponibles aujourd'hui quand le refus vient du quota. */
+  remaining?: number
 }
 
 function getClient() {
@@ -84,6 +86,10 @@ export async function sendWhatsApp(opts: {
   body: string
   /** Pays de la boutique (`Tenant.country`) — indicatif par défaut des numéros nationaux. */
   country?: string
+  /** Seau de quota : 'whatsapp' = transactionnel (défaut), 'marketing' = diffusion/campagne. */
+  kind?: 'whatsapp' | 'marketing'
+  /** `false` pour un envoi transactionnel déclenché par une vente (pas de plafond minute). */
+  burst?: boolean
 }): Promise<SendResult> {
   const raw = (Array.isArray(opts.to) ? opts.to : [opts.to]).filter(p => !!p && String(p).trim())
   if (raw.length === 0) return empty()
@@ -101,10 +107,11 @@ export async function sendWhatsApp(opts: {
   }
 
   // Pré-check du N COMPLET (des seuls numéros exploitables) avant la boucle.
-  const decision = await authorizeSpend(opts.tenantId, 'whatsapp', deliverable.length)
+  const kind = opts.kind ?? 'whatsapp'
+  const decision = await authorizeSpend(opts.tenantId, kind, deliverable.length, { burst: opts.burst })
   if (!decision.ok) {
     return empty({
-      denied: true, code: decision.code, message: decision.message,
+      denied: true, code: decision.code, message: decision.message, remaining: decision.remaining,
       failed: raw.length, skipped: raw.length,
       results: addressed.map(a => ({ to: a.addr ?? a.raw, ok: false, error: decision.message })),
     })
@@ -118,7 +125,7 @@ export async function sendWhatsApp(opts: {
     // ⚠️ Ces destinataires n'ont JAMAIS été contactés → ils comptent comme échecs.
     // La première version renvoyait `failed: 0`, ce qui faisait apparaître une campagne
     // de 180 numéros comme réussie et sans erreur dans l'historique.
-    await releaseQuota(opts.tenantId!, 'whatsapp', deliverable.length, reservedKey)
+    await releaseQuota(opts.tenantId!, kind, deliverable.length, reservedKey)
     console.warn('[twilioClient] configuration Twilio incomplète (SID/TOKEN/FROM) → aucun envoi')
     return empty({
       failed: raw.length, skipped: raw.length, code: TWILIO_NOT_CONFIGURED,
@@ -149,7 +156,7 @@ export async function sendWhatsApp(opts: {
   }
 
   // Le compteur mesure les envois RÉELS : on rend ce qui n'est pas parti.
-  if (failedSends > 0) await releaseQuota(opts.tenantId!, 'whatsapp', failedSends, reservedKey)
+  if (failedSends > 0) await releaseQuota(opts.tenantId!, kind, failedSends, reservedKey)
 
   return {
     sent,

@@ -274,7 +274,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     // Le quota est réservé pour les N destinataires AVANT le premier envoi : soit tout
     // part, soit rien (pas de diffusion tronquée à mi-liste).
     const bcTenant = await prisma.tenant.findUnique({ where: { id: request.tenantId as string }, select: { country: true } })
-    const res = await sendWhatsApp({ tenantId: request.tenantId, to: phones, body: message, country: bcTenant?.country })
+    const res = await sendWhatsApp({ tenantId: request.tenantId, to: phones, body: message, country: bcTenant?.country, kind: 'marketing' })
     if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
 
     // `failed` inclut les destinataires JAMAIS contactés (Twilio non configuré, numéro
@@ -317,7 +317,14 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     if (!VALID_SEGMENTS.includes(segment)) return reply.code(400).send({ error: 'Segment invalide' })
 
     // Rate-limit : 1 campagne/heure/tenant (Redis ou mémoire si Redis absent)
+    // ⚠️ Le créneau horaire est CONSOMMÉ ici mais RENDU si la campagne n'envoie rien
+    // (voir `releaseCampaignSlot` plus bas). Sinon un refus de quota — qui n'expédie aucun
+    // message — bloquait le commerçant 60 minutes : il réduisait son segment, réessayait,
+    // et se heurtait à « Une campagne maximum par heure » sans avoir rien envoyé.
     const rlKey = `rl:campaign:${tenantId}`
+    const releaseCampaignSlot = async () => {
+      if (redis) await redis.decr(rlKey).catch(() => {})
+    }
     if (redis) {
       const count = await redis.incr(rlKey).catch(() => null)
       if (count === 1) await redis.expire(rlKey, 3600).catch(() => {})
@@ -365,11 +372,16 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     // réserve N unités AVANT la boucle. Si ça ne rentre pas, l'envoi entier est refusé
     // (message nommant le restant et le requis) plutôt que tronqué à mi-cible.
     const campTenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { country: true } })
-    const res = await sendWhatsApp({ tenantId, to: phones, body: message, country: campTenant?.country })
+    const res = await sendWhatsApp({ tenantId, to: phones, body: message, country: campTenant?.country, kind: 'marketing' })
     if (res.denied) {
+      await releaseCampaignSlot() // rien n'est parti → le créneau reste disponible
       return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({
         error: res.message, code: res.code, recipientCount: phones.length,
+        remaining: res.remaining,
       })
+    }
+    if (res.sent === 0) {
+      await releaseCampaignSlot() // Twilio non configuré / numéros inexploitables
     }
     const sent = res.sent
     // `failed` compte AUSSI les destinataires jamais contactés — l'historique de campagne
