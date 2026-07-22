@@ -3,9 +3,23 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { blockDemoTenant } from '../middleware/demoTenant'
+import { costQuota, COST_ROUTE_RATE_LIMIT } from '../middleware/costQuota'
+
+// (b) Garde de RÔLE sur l'IA — MANAGER+, comme l'OCR facture. Ces deux routes
+// appelaient Opus avec un contexte large (produits, 30 j de ventes, dépenses,
+// employés) SANS aucun contrôle de rôle : n'importe quel compte authentifié,
+// caissier compris, pouvait engager la dépense.
+// preHandler (et non contrôle en tête de handler) → posé AVANT costQuota :
+// un refus de rôle ne doit pas consommer de quota.
+export const AI_ROLES = ['MANAGER', 'ADMIN', 'SUPER_ADMIN']
+export async function requireAiRole(request: any, reply: any): Promise<void> {
+  if (!AI_ROLES.includes(String(request.user?.role))) {
+    return reply.code(403).send({ error: 'Accès refusé — rôle MANAGER ou ADMIN requis' })
+  }
+}
 
 export async function aiRoutes(app: FastifyInstance): Promise<void> {
-  app.post('/api/ai/analyze', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
+  app.post('/api/ai/analyze', { preHandler: [authenticate, blockDemoTenant, requireAiRole, costQuota('ai')], config: { rateLimit: COST_ROUTE_RATE_LIMIT } }, async (request, reply) => {
     const { type, lang } = request.body as { type?: string; lang?: string }
     const { tenantId } = request.user
 
@@ -145,7 +159,7 @@ En ${langLabel}, analyse :
   })
 
   // ─── AI CHAT ──────────────────────────
-  app.post('/api/ai/chat', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
+  app.post('/api/ai/chat', { preHandler: [authenticate, blockDemoTenant, requireAiRole, costQuota('ai')], config: { rateLimit: COST_ROUTE_RATE_LIMIT } }, async (request, reply) => {
     // Accepte {message: string} (simple) ou {messages: array} (historique)
     const { message: singleMsg, messages: msgHistory, lang } = request.body as { message?: string; messages?: any[]; lang?: string }
     const { tenantId } = request.user

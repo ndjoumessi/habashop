@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { blockDemoTenant } from '../middleware/demoTenant'
+import { costQuota, COST_ROUTE_RATE_LIMIT } from '../middleware/costQuota'
 import { analyzeInvoice, ALLOWED_INVOICE_TYPES } from '../services/invoiceOcr'
 
 // ── Schémas (item 6) — liste blanche STRICTE (strip) : ferme le mass-assignment
@@ -53,7 +54,7 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // OCR facture fournisseur — extrait les articles via Claude Vision (MANAGER+)
-  app.post('/api/suppliers/scan-invoice', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
+  app.post('/api/suppliers/scan-invoice', { preHandler: [authenticate, blockDemoTenant, costQuota('ocr')], config: { rateLimit: COST_ROUTE_RATE_LIMIT } }, async (request, reply) => {
     const { role } = request.user
     if (!['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(role)) {
       return reply.code(403).send({ error: 'Manager ou admin requis' })

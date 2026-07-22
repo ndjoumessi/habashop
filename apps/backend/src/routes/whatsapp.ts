@@ -5,6 +5,7 @@ import { prisma } from '../db'
 import { redis } from '../redis'
 import { authenticate } from '../middleware/authenticate'
 import { blockDemoTenant } from '../middleware/demoTenant'
+import { costQuota, COST_ROUTE_RATE_LIMIT } from '../middleware/costQuota'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { fmtMoney, localeOf } from '../services/whatsappSend'
 import { tierForPoints } from '../lib/loyalty'
@@ -131,7 +132,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   new CronJob('0 8 * * *', sendMorningStockAlert, null, true, 'Africa/Dakar')
   console.log('⏰ Cron jobs planifiés : résumé 20h + alertes 8h')
 
-  app.post('/api/whatsapp/send-ticket', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
+  app.post('/api/whatsapp/send-ticket', { preHandler: [authenticate, blockDemoTenant, costQuota('whatsapp')], config: { rateLimit: COST_ROUTE_RATE_LIMIT } }, async (request, reply) => {
     const { phone, items, total, paymentMode, discount, reference } = request.body as { phone?: string; items?: any[]; total?: number; paymentMode?: string; discount?: number; reference?: string }
 
     if (!phone?.trim()) {
@@ -238,7 +239,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
-  app.post('/api/whatsapp/send-alert', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
+  app.post('/api/whatsapp/send-alert', { preHandler: [authenticate, blockDemoTenant, costQuota('whatsapp')], config: { rateLimit: COST_ROUTE_RATE_LIMIT } }, async (request, reply) => {
     if (!canSendWhatsApp((request.user as any)?.role)) {
       return reply.code(403).send({ error: 'Accès refusé — rôle MANAGER ou ADMIN requis' })
     }
@@ -284,7 +285,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // ─── WHATSAPP BROADCAST ───────────────
-  app.post('/api/whatsapp/broadcast', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
+  app.post('/api/whatsapp/broadcast', { preHandler: [authenticate, blockDemoTenant, costQuota('whatsapp')], config: { rateLimit: COST_ROUTE_RATE_LIMIT } }, async (request, reply) => {
     if (!canSendWhatsApp((request.user as any)?.role)) {
       return reply.code(403).send({ error: 'Accès refusé — rôle MANAGER ou ADMIN requis' })
     }
@@ -341,7 +342,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // POST /api/marketing/whatsapp/campaign — envoi ciblé par segment (rate-limit 1/h/tenant)
-  app.post('/api/marketing/whatsapp/campaign', { preHandler: [authenticate, blockDemoTenant] }, async (request: any, reply: any) => {
+  app.post('/api/marketing/whatsapp/campaign', { preHandler: [authenticate, blockDemoTenant, costQuota('whatsapp')], config: { rateLimit: COST_ROUTE_RATE_LIMIT } }, async (request: any, reply: any) => {
     if (!canSendWhatsApp((request.user as any)?.role)) {
       return reply.code(403).send({ error: 'Accès refusé' })
     }
