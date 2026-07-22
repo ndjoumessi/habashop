@@ -54,13 +54,15 @@ export async function createMessage(opts: {
 
   const client = new Anthropic({ apiKey })
   try {
-    // Les PDF passent par le canal beta (`betas: ['pdfs-...']`), les images par le canal standard.
-    const useBeta = Array.isArray((opts.params as any).betas) && (opts.params as any).betas.length > 0
-    const message = useBeta
-      ? await (client.beta as any).messages.create(opts.params)
+    // Les PDF passent par le canal beta (`betas: ['pdfs-...']`), les images par le canal
+    // standard. `beta` n'est pas typé dans le SDK → accès via un type de passage étroit.
+    const betas = opts.params.betas
+    const message = betas && betas.length > 0
+      ? await (client.beta as unknown as { messages: { create: (p: unknown) => Promise<Anthropic.Message> } })
+          .messages.create(opts.params)
       : await client.messages.create(opts.params)
     return { ok: true, message }
-  } catch (err: any) {
+  } catch (err: unknown) {
     // L'appel a échoué → rien de facturable côté fournisseur pour un refus amont ;
     // on rend l'unité pour ne pas pénaliser un incident réseau.
     await releaseQuota(opts.tenantId!, opts.kind, 1)

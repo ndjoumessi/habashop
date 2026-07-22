@@ -22,6 +22,23 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+// Le garde de dépense cache isDemo/statut 60 s côté serveur (Redis). Ce script tourne
+// hors du process API : on invalide directement la clé pour que la bascule prenne effet
+// tout de suite plutôt qu'à l'expiration du cache.
+async function invalidateSpendCache(tenantId: string): Promise<void> {
+  const url = process.env.REDIS_URL
+  if (!url) return
+  try {
+    const { default: Redis } = await import('ioredis')
+    const r = new Redis(url)
+    await r.del(`tenant:spend:${tenantId}`)
+    await r.quit()
+    console.log(`   ↳ cache du garde invalidé (tenant:spend:${tenantId})`)
+  } catch (e: any) {
+    console.warn(`   ⚠️ cache non invalidé (${e?.message ?? e}) — effet dans ≤ 60 s`)
+  }
+}
+
 async function main() {
   const list = process.env.LIST === '1'
   const revoke = process.env.REVOKE === '1'
@@ -56,11 +73,12 @@ async function main() {
     if (!t) { console.error(`⚠️  ${id} : introuvable, ignoré.`); continue }
     if (t.isDemo === target) { console.log(`= ${id} : déjà isDemo=${target} (« ${t.name} »)`); continue }
     await prisma.tenant.update({ where: { id }, data: { isDemo: target } })
+    await invalidateSpendCache(id)
     console.log(`✅ ${id} : isDemo = ${target} (« ${t.name} »)`)
   }
 
   // Le garde cache le statut ~60 s dans Redis (cf. middleware/demoTenant.ts).
-  console.log('\nℹ️  Propagation : jusqu\'à 60 s (cache Redis du garde).')
+  console.log('\nℹ️  Propagation : immédiate si REDIS_URL est joignable, sinon ≤ 60 s.')
 }
 
 main()

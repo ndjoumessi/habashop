@@ -431,6 +431,7 @@ async function runWeeklyReports(): Promise<void> {
     }
 
     await sendWeeklyReport({
+      tenantId: tenant.id,
       to: admin.email, shopName: tenant.name, ownerName: admin.name ?? tenant.name,
       caWeek: salesWeek._sum.total ?? 0, txWeek: salesWeek._count.id ?? 0,
       caLastWeek: salesLastWeek._sum.total ?? 0, topProduct, lowStock: lowStock as number,
@@ -483,6 +484,7 @@ async function runDailyStockAlerts(): Promise<void> {
       if (!admin?.email) continue
 
       const ok = await sendStockAlertEmail({
+        tenantId: tenant.id,
         to: admin.email,
         shopName: tenant.name,
         products: lowStockProducts,

@@ -85,9 +85,9 @@ export async function sendWhatsApp(opts: {
       const msg = await client.messages.create({ from, to: normalize(String(phone)), body: opts.body })
       if (msg?.sid) sids.push(msg.sid)
       sent++
-    } catch (e: any) {
+    } catch (e: unknown) {
       failed++
-      console.warn('[twilioClient] échec envoi (non bloquant):', e?.message ?? e)
+      console.warn('[twilioClient] échec envoi (non bloquant):', e instanceof Error ? e.message : e)
     }
   }
   // Le compteur mesure les envois RÉELS : on rend ce qui n'est pas parti.

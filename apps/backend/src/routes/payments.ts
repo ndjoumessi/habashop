@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
+import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticate } from '../middleware/authenticate'
 import {
   createWaveCheckout,
@@ -395,6 +396,8 @@ async function activatePlan(opts: {
       },
     }),
   ])
+  // Activation par webhook → relecture immédiate du statut par le garde de dépense.
+  await invalidateTenantSpendInfo([planReq.tenantId])
 
   // Journal d'audit (non bloquant) — userId est une FK obligatoire vers User,
   // donc on ne logge que si un admin existe réellement.

@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import type { AdminCreateTenantBody, AdminReviewBody } from '../types'
 import bcrypt from 'bcryptjs'
 import { prisma, basePrisma } from '../db'
+import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import {
   sendUpgradeConfirmation,
@@ -109,6 +110,9 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
           },
         }),
       ])
+      // Plan activé → le statut caché par le garde de dépense doit être relu tout de suite
+      // (sinon le nouveau plafond ne s'applique qu'à la minute suivante).
+      await invalidateTenantSpendInfo([planRequest.tenantId])
 
       // Email de confirmation d'upgrade (non-bloquant)
       const admin = await prisma.user.findFirst({
@@ -179,7 +183,9 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       remind3: () => sendTrialReminder3Days(testData),
       expired: () => sendTrialExpired(testData),
       upgrade: () => sendUpgradeConfirmation(testData),
-      weekly:  () => sendWeeklyReport(testData),
+      // Le rapport hebdo est un e-mail OPÉRATIONNEL (gardé) : le test l'émet au nom
+      // du tenant de l'admin plateforme, exclu des quotas comme des listings.
+      weekly:  () => sendWeeklyReport({ ...testData, tenantId: request.user.tenantId }),
     }
 
     const fn = senders[type]

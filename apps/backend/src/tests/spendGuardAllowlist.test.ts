@@ -23,6 +23,7 @@ const SRC = join(__dirname, '..')
 const ALLOWLIST = [
   'lib/spend/twilioClient.ts',
   'lib/spend/anthropicClient.ts',
+  'lib/spend/resendClient.ts',
 ]
 
 const FORBIDDEN: { label: string; re: RegExp }[] = [
@@ -30,6 +31,8 @@ const FORBIDDEN: { label: string; re: RegExp }[] = [
   { label: "import du SDK Anthropic", re: /(?:import\s+[\w{},\s*]*\s+from\s+['"]@anthropic-ai\/sdk['"]|require\(\s*['"]@anthropic-ai\/sdk['"]\s*\))/m },
   { label: "instanciation Anthropic", re: /new\s+Anthropic\s*\(/ },
   { label: "appel twilio(...)",       re: /(^|[^.\w])twilio\s*\(/m },
+  { label: "import du SDK Resend",    re: /(?:import\s+[\w{},\s*]*\s+from\s+['"]resend['"]|require\(\s*['"]resend['"]\s*\))/m },
+  { label: "instanciation Resend",    re: /new\s+Resend\s*\(/ },
 ]
 
 /** `import type` ne tire aucun code à l'exécution → toléré (typage seul). */
@@ -86,5 +89,7 @@ describe('Méta-test — accès aux SDK facturés confiné aux clients gardés',
     expect(FORBIDDEN.some(f => f.re.test(sample))).toBe(true)
     const sample2 = "import Anthropic from '@anthropic-ai/sdk'\nnew Anthropic({ apiKey })\n"
     expect(FORBIDDEN.some(f => f.re.test(sample2))).toBe(true)
+    const sample3 = "import { Resend } from 'resend'\nconst r = new Resend(key)\n"
+    expect(FORBIDDEN.some(f => f.re.test(sample3))).toBe(true)
   })
 })

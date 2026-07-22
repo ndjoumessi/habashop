@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
+import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticate } from '../middleware/authenticate'
 import type { BillingBody } from '../types'
 
@@ -102,6 +103,9 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
         where: { id: tenantId },
         data: { status: 'suspended', suspendedAt: new Date(), suspendReason: 'trial_expired', isActive: false },
       })
+      // Le garde de dépense cache le statut 60 s → sans ça, la boutique suspendue
+      // continuerait à dépenser jusqu'à une minute après la bascule.
+      await invalidateTenantSpendInfo([tenantId])
     }
 
     return {

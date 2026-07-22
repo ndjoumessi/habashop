@@ -1,12 +1,14 @@
-import { Resend } from 'resend'
+import { sendTenantEmail, sendPlatformEmail } from '../lib/spend/resendClient'
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null
-
-// FROM configurable via EMAIL_FROM. Par défaut on utilise onboarding@resend.dev
-// qui fonctionne immédiatement avec n'importe quelle clé Resend (sans domaine vérifié).
-const FROM = process.env.EMAIL_FROM || 'HabaShop <onboarding@resend.dev>'
+/**
+ * Envois d'e-mails. Le SDK Resend vit dans `lib/spend/resendClient` (goulot gardé).
+ *
+ * `send()` prend un `tenantId` OPTIONNEL :
+ *  • fourni  → e-mail opérationnel d'une boutique, soumis au garde de dépense ;
+ *  • absent  → e-mail de cycle de vie SaaS (bienvenue, relances, essai expiré,
+ *    confirmation d'abonnement), volontairement EXEMPT — le garder bloquerait
+ *    l'e-mail qui annonce justement l'expiration ou la suspension.
+ */
 
 // ── Helper d'envoi sécurisé ──────────────────
 async function send(opts: {
@@ -14,25 +16,10 @@ async function send(opts: {
   subject: string
   html:    string
   text?:   string
+  tenantId?: string | null
 }): Promise<boolean> {
-  if (!resend) {
-    console.warn('⚠️  RESEND_API_KEY manquant — email non envoyé:', opts.subject)
-    return false
-  }
-  try {
-    await resend.emails.send({
-      from:    FROM,
-      to:      opts.to,
-      subject: opts.subject,
-      html:    opts.html,
-      text:    opts.text ?? opts.html.replace(/<[^>]+>/g, ''),
-    })
-    console.log('📧 Email envoyé:', opts.subject, '→', opts.to)
-    return true
-  } catch (err) {
-    console.error('❌ Email échoué:', err)
-    return false
-  }
+  const { tenantId, ...mail } = opts
+  return tenantId ? sendTenantEmail(tenantId, mail) : sendPlatformEmail(mail)
 }
 
 // ── Template de base ─────────────────────────
@@ -403,6 +390,8 @@ function escHtml(v: unknown): string {
 // EMAIL — Alerte stock bas (cron quotidien)
 // ════════════════════════════════════════════
 export async function sendStockAlertEmail(opts: {
+  /** Boutique émettrice — soumet l'envoi au garde de dépense (démo/essai/quota). */
+  tenantId: string
   to:           string
   shopName:     string
   products:     { name: string; stockQty: number; stockMin: number }[]
@@ -482,6 +471,7 @@ export async function sendStockAlertEmail(opts: {
   `)
 
   return send({
+    tenantId: opts.tenantId,
     to,
     subject: `⚠️ ${shopName} — ${totalCount} produit${totalCount > 1 ? 's' : ''} en alerte stock`,
     html,
@@ -492,6 +482,8 @@ export async function sendStockAlertEmail(opts: {
 // EMAIL — Invitation d'un nouvel utilisateur par un admin
 // ════════════════════════════════════════════
 export async function sendUserInvitationEmail(opts: {
+  /** Boutique émettrice — soumet l'envoi au garde de dépense (démo/essai/quota). */
+  tenantId: string
   to:           string
   inviteeName:  string
   shopName:     string
@@ -541,6 +533,7 @@ export async function sendUserInvitationEmail(opts: {
   `)
 
   return send({
+    tenantId: opts.tenantId,
     to,
     subject: `Vous avez été invité sur HabaShop — ${shopName}`,
     html,
@@ -551,6 +544,8 @@ export async function sendUserInvitationEmail(opts: {
 // EMAIL 6 — Rapport hebdomadaire
 // ════════════════════════════════════════════
 export async function sendWeeklyReport(opts: {
+  /** Boutique émettrice — soumet l'envoi au garde de dépense (démo/essai/quota). */
+  tenantId: string
   to:          string
   shopName:    string
   ownerName:   string
@@ -617,6 +612,7 @@ export async function sendWeeklyReport(opts: {
   `)
 
   return send({
+    tenantId: opts.tenantId,
     to,
     subject: `📊 ${shopName} — Bilan semaine : ${caWeek.toLocaleString('fr-FR')} F CFA (${evolLabel})`,
     html,
@@ -662,6 +658,8 @@ const PAYROLL_I18N: Record<L4, {
 }
 
 export async function sendPayrollSummaryEmail(opts: {
+  /** Boutique émettrice — soumet l'envoi au garde de dépense (démo/essai/quota). */
+  tenantId: string
   to: string; shopName: string; ownerName: string
   lang: string; currency: string; month: string // 'YYYY-MM'
   headcount: number; payroll: number; bonuses: number
@@ -689,5 +687,6 @@ export async function sendPayrollSummaryEmail(opts: {
     </table>
     <p style="font-size:12px;color:#999;line-height:1.5;">${L.note}</p>
   `)
-  return send({ to: opts.to, subject: `${L.subject} ${eShop} — ${monthName}`, html })
+  return send({
+    tenantId: opts.tenantId, to: opts.to, subject: `${L.subject} ${eShop} — ${monthName}`, html })
 }

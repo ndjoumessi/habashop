@@ -83,6 +83,7 @@ export async function deliverPayrollReport(
   if (!report.hasData)   return { sent: false, reason: 'no_data' }
 
   await sendPayrollSummaryEmail({
+    tenantId: report.tenantId,
     to: report.recipient, shopName: report.shopName, ownerName: report.ownerName,
     lang: report.lang, currency: report.currency, month: report.month,
     headcount: report.headcount, payroll: report.payroll, bonuses: report.bonuses,

@@ -20,7 +20,7 @@ import { redis } from '../../redis'
  *    reçus d'un client payant). Sans la trace, un fail-open exploité serait invisible.
  */
 
-export type SpendKind = 'ai' | 'ocr' | 'whatsapp'
+export type SpendKind = 'ai' | 'ocr' | 'whatsapp' | 'email'
 
 export const DEMO_TENANT_FORBIDDEN = 'DEMO_TENANT_FORBIDDEN'
 export const TRIAL_EXPIRED         = 'TRIAL_EXPIRED'
@@ -46,8 +46,9 @@ const DEFAULTS: Record<SpendKind, { trial: number; active: number }> = {
   ai:       { trial: 20,  active: 200 },
   ocr:      { trial: 15,  active: 150 },
   whatsapp: { trial: 30,  active: 300 },
+  email:    { trial: 20,  active: 200 },
 }
-const ENV_KEY: Record<SpendKind, string> = { ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP' }
+const ENV_KEY: Record<SpendKind, string> = { ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP', email: 'EMAIL' }
 
 export function quotaLimit(kind: SpendKind, status: string): number {
   const tier = status === 'trial' ? 'trial' : 'active'
@@ -108,7 +109,7 @@ export function tenantSpendState(t: TenantSpendInfo | null, now: Date = new Date
 function logFailOpen(tenantId: string, kind: SpendKind, err: unknown): void {
   const msg = `[spend-guard] FAIL-OPEN — quota non compté (Redis indisponible) tenant=${tenantId} kind=${kind}`
   console.warn(msg, err instanceof Error ? err.message : err)
-  Sentry.captureMessage(msg, { level: 'warning', extra: { tenantId, kind, reason: String(err) } } as any)
+  Sentry.captureMessage(msg, { level: 'warning', extra: { tenantId, kind, reason: String(err) } })
 }
 
 /**

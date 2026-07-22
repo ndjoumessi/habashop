@@ -44,7 +44,7 @@ vi.mock('../services/email', () => ({ sendUserInvitationEmail: vi.fn(async () =>
 
 import { tenantRoutes } from '../routes/tenant'
 import { AI_ROLES } from '../routes/ai'
-import { authorizeSpend, BURST_EXCEEDED } from '../lib/spend/spendGuard'
+import { authorizeSpend, BURST_EXCEEDED, invalidateTenantSpendInfo, resolveTenantSpendInfo } from '../lib/spend/spendGuard'
 
 const DAY = 24 * 3600 * 1000
 
@@ -168,5 +168,37 @@ describe('#9 — rafale par TENANT, jamais par IP', () => {
     redisMock.incrby.mockRejectedValue(new Error('Redis down'))
     const d = await authorizeSpend('T', 'ai', 1)
     expect(d.ok).toBe(true)
+  })
+})
+
+// ── Cache de statut : la fenetre de 60 s doit etre refermable ─────────────────
+describe('Invalidation du cache de statut', () => {
+  it('un statut cache est relu depuis le cache (sans toucher la DB)', async () => {
+    redisMock.get.mockResolvedValue(JSON.stringify({ d: false, s: 'active', t: null }))
+    const info = await resolveTenantSpendInfo('T')
+    expect(info).toMatchObject({ isDemo: false, status: 'active' })
+    expect(db.tenant.findUnique).not.toHaveBeenCalled()
+  })
+
+  it('invalidateTenantSpendInfo supprime la cle puis la DB est relue', async () => {
+    await invalidateTenantSpendInfo(['T'])
+    expect(redisMock.del).toHaveBeenCalledWith('tenant:spend:T')
+
+    redisMock.get.mockResolvedValue(null) // cle supprimee
+    db.tenant.findUnique.mockResolvedValue({ isDemo: true, status: 'active', trialEnds: null })
+    const info = await resolveTenantSpendInfo('T')
+    expect(info).toMatchObject({ isDemo: true }) // bascule vue tout de suite
+  })
+
+  it('sans invalidation la bascule ne serait vue qu a l expiration (raison du cablage)', async () => {
+    redisMock.get.mockResolvedValue(JSON.stringify({ d: false, s: 'active', t: null }))
+    db.tenant.findUnique.mockResolvedValue({ isDemo: true, status: 'active', trialEnds: null })
+    const info = await resolveTenantSpendInfo('T')
+    expect(info.isDemo).toBe(false) // valeur perimee servie -> d ou les appels d invalidation
+  })
+
+  it('liste vide : aucun appel Redis', async () => {
+    await invalidateTenantSpendInfo([])
+    expect(redisMock.del).not.toHaveBeenCalled()
   })
 })

@@ -122,7 +122,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       return u
     })
     const inviter = await prisma.user.findUnique({ where: { id: userId } })
-    sendUserInvitationEmail({ to: user.email, inviteeName: user.name, shopName: tenant.name, tempPassword: password, invitedBy: inviter?.name }).catch(() => {})
+    sendUserInvitationEmail({ tenantId: targetTenantId, to: user.email, inviteeName: user.name, shopName: tenant.name, tempPassword: password, invitedBy: inviter?.name }).catch(() => {})
     const { passwordHash: _ph, twoFASecret: _2fa, ...safe } = user
     return reply.code(201).send({ created: true, user: safe })
   })
@@ -318,6 +318,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       },
     }).catch(() => {})
     sendUserInvitationEmail({
+      tenantId: request.tenantId,
       to: user.email,
       inviteeName: user.name,
       shopName: tenant?.name ?? 'HabaShop',
