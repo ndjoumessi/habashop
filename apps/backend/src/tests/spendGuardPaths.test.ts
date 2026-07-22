@@ -16,7 +16,9 @@ const { createMock, tenantStore, redisMock } = vi.hoisted(() => ({
   tenantStore: { current: null as any },
   redisMock: {
     get: vi.fn(async () => null), setex: vi.fn(async () => 'OK'), del: vi.fn(async () => 1),
-    incrby: vi.fn(async () => 1), decrby: vi.fn(async () => 0), expire: vi.fn(async () => 1),
+    incrby: vi.fn(async (_k: string, _by: number) => 1),
+    decrby: vi.fn(async (_k: string, _by: number) => 0),
+    expire: vi.fn(async (_k: string, _t: number) => 1),
   },
 }))
 
@@ -41,13 +43,19 @@ function seedTenant(over: Partial<{ isDemo: boolean; status: string; trialEnds: 
   tenantStore.current = { isDemo: false, status: 'active', trialEnds: null, ...over }
 }
 
+/** `n` pilote le compteur quotidien ; la rafale reste à 1 (opérations, pas unités). */
+function seedCounter(n: number) {
+  redisMock.incrby.mockImplementation(async (key: string) =>
+    String(key).startsWith('burst:') ? 1 : n)
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   seedTenant()
   process.env.TWILIO_ACCOUNT_SID = 'AC_test'
   process.env.TWILIO_AUTH_TOKEN = 'token_test'
   process.env.TWILIO_WHATSAPP_FROM = 'whatsapp:+14155238886'
-  redisMock.incrby.mockResolvedValue(1)
+  seedCounter(1)
 })
 
 describe('Reçu automatique de vente — le plus gros poste Twilio', () => {
@@ -112,7 +120,7 @@ describe('Crons 20h / 8h — dépense hors requête HTTP', () => {
 describe('Quota par MESSAGE et non par requête (campagne)', () => {
   it('une campagne de N destinataires réserve N unités', async () => {
     const phones = Array.from({ length: 40 }, (_, i) => `+2217712345${String(i).padStart(2, '0')}`)
-    redisMock.incrby.mockResolvedValue(40)
+    seedCounter(40)
     await sendWhatsApp({ tenantId: 'T', to: phones, body: 'promo' })
     expect(redisMock.incrby).toHaveBeenCalledWith(expect.stringContaining('quota:whatsapp:T:'), 40)
   })
@@ -120,7 +128,7 @@ describe('Quota par MESSAGE et non par requête (campagne)', () => {
   it('si le N complet ne rentre pas → refus ENTIER, réservation rendue, zéro envoi', async () => {
     const phones = Array.from({ length: 40 }, (_, i) => `+2217712345${String(i).padStart(2, '0')}`)
     seedTenant({ status: 'trial', trialEnds: new Date(Date.now() + 86400000) }) // plafond 30
-    redisMock.incrby.mockResolvedValue(40) // 0 déjà utilisés + 40 demandés > 30
+    seedCounter(40) // 0 déjà utilisés + 40 demandés > 30
     const res = await sendWhatsApp({ tenantId: 'T', to: phones, body: 'promo' })
 
     expect(res.denied).toBe(true)
@@ -132,7 +140,7 @@ describe('Quota par MESSAGE et non par requête (campagne)', () => {
   })
 
   it('les envois échoués sont rendus au compteur', async () => {
-    redisMock.incrby.mockResolvedValue(3)
+    seedCounter(3)
     createMock
       .mockResolvedValueOnce({ sid: 'SM1' } as any)
       .mockRejectedValueOnce(new Error('numéro invalide') as any)

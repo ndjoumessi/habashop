@@ -26,6 +26,7 @@ export const DEMO_TENANT_FORBIDDEN = 'DEMO_TENANT_FORBIDDEN'
 export const TRIAL_EXPIRED         = 'TRIAL_EXPIRED'
 export const TENANT_INACTIVE       = 'TENANT_INACTIVE'
 export const QUOTA_EXCEEDED        = 'QUOTA_EXCEEDED'
+export const BURST_EXCEEDED        = 'BURST_EXCEEDED'
 
 // Forme UNIQUE plutôt qu'une union discriminée : ce workspace compile en `strict: false`,
 // où le narrowing sur un littéral booléen ne s'applique pas.
@@ -142,6 +143,38 @@ async function reserveQuota(tenantId: string, kind: SpendKind, units: number, st
   }
 }
 
+/**
+ * Rafale courte PAR TENANT (et non par IP).
+ *
+ * ⚠️ Pourquoi pas `@fastify/rate-limit` : son hook s'exécute en `onRequest`, donc AVANT
+ * `authenticate` — `request.tenantId` n'existe pas encore, et se rabattre sur un JWT non
+ * vérifié laisserait un attaquant choisir sa propre clé. Surtout, une clé par IP est
+ * fausse ici : en Afrique de l'Ouest le CGNAT fait partager une IP à des boutiques sans
+ * lien, et les caisses d'un même magasin sortent toutes par la même adresse — un plafond
+ * par IP bloque des commerçants légitimes. Ici le tenant vient d'un JWT vérifié (ou de la
+ * boucle du cron), donc la clé est exacte.
+ */
+async function burstOk(tenantId: string, kind: SpendKind): Promise<boolean> {
+  const max = Number(process.env.COST_BURST_PER_MIN) || 10
+  if (!redis || max <= 0) return true
+  try {
+    const minute = new Date().toISOString().slice(0, 16) // AAAA-MM-JJTHH:MM
+    const key = `burst:${kind}:${tenantId}:${minute}`
+    // ⚠️ Compte des OPÉRATIONS, pas des unités : une campagne légitime de 500
+    // destinataires est UNE opération (elle reste bornée par le quota quotidien).
+    // Compter les unités ici bloquerait tout envoi groupé au-delà de `max`.
+    const n = await redis.incrby(key, 1)
+    if (n === 1) await redis.expire(key, 120)
+    if (n > max) {
+      await redis.decrby(key, 1).catch(() => {})
+      return false
+    }
+    return true
+  } catch {
+    return true // fail-open : borner le coût ne doit pas casser un client payant
+  }
+}
+
 /** Rend des unités réservées mais finalement NON consommées (envoi partiel/échoué). */
 export async function releaseQuota(tenantId: string, kind: SpendKind, units: number): Promise<void> {
   if (!redis || units <= 0) return
@@ -172,6 +205,10 @@ export async function authorizeSpend(
 
   const state = tenantSpendState(info)
   if (!state.ok) return deny(state.code!, state.message!)
+
+  if (!(await burstOk(tenantId, kind))) {
+    return deny(BURST_EXCEEDED, 'Trop de demandes en une minute pour cette boutique. Réessayez dans un instant.')
+  }
 
   return reserveQuota(tenantId, kind, units, info!.status)
 }

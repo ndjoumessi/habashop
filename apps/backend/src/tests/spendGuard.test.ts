@@ -63,7 +63,10 @@ function seedTenant(status = 'trial', trialEnds: Date | null = new Date(Date.now
 }
 /** Le compteur du jour vaut `n` APRÈS incrément (valeur renvoyée par INCR). */
 function seedCounter(n: number) {
-  redisMock.incrby.mockResolvedValue(n)
+  // Clé-consciente : `n` pilote le compteur QUOTIDIEN ; la rafale (burst:) reste à 1,
+  // sinon un seedCounter(21) déclencherait BURST_EXCEEDED avant le quota.
+  redisMock.incrby.mockImplementation(async (key: string) =>
+    String(key).startsWith('burst:') ? 1 : n)
   redisMock.decrby.mockResolvedValue(0)
   redisMock.expire.mockResolvedValue(1)
   redisMock.get.mockResolvedValue(null) // pas de cache tenant → lecture DB à chaque test
@@ -205,12 +208,13 @@ describe('(a) Quota quotidien par tenant', () => {
   })
 
   it('le TTL n’est posé qu’au premier appel du jour', async () => {
+    const quotaExpires = () => redisMock.expire.mock.calls.filter(c => String(c[0]).startsWith('quota:'))
     seedCounter(1)
     await authorizeSpend('T', 'ai', 1)
-    expect(redisMock.expire).toHaveBeenCalled()
+    expect(quotaExpires()).toHaveLength(1)      // 1er appel du jour → TTL posé
     vi.clearAllMocks(); seedTenant(); seedCounter(2)
     await authorizeSpend('T', 'ai', 1)
-    expect(redisMock.expire).not.toHaveBeenCalled()
+    expect(quotaExpires()).toHaveLength(0)      // appels suivants → pas de TTL
   })
 })
 

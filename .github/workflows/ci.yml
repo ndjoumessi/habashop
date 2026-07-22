@@ -27,6 +27,8 @@ jobs:
       - name: TypeScript check
         working-directory: apps/backend
         run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint --workspace=apps/backend
       - name: Unit tests
         run: npm run test:unit --workspace=apps/backend
         env:
@@ -49,6 +51,8 @@ jobs:
       - name: TypeScript check
         working-directory: apps/frontend
         run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint --workspace=apps/frontend
       - name: Unit tests
         run: npm test --workspace=apps/frontend
       - name: Build

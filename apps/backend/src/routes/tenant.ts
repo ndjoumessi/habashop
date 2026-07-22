@@ -47,6 +47,17 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     const currency = VALID_CURRENCIES.includes(body.currency ?? '') ? body.currency! : 'XOF'
     const lang = VALID_LANGS.includes(body.lang ?? '') ? body.lang! : 'fr'
 
+    // ⚠️ La boutique créée HÉRITE du statut de celle du créateur. Sans ça, un compte à
+    // l'essai (même expiré) créait une boutique `status:'active'` sans `trialEnds`, y
+    // basculait, et retrouvait le plafond du palier PAYANT — deux appels suffisaient à
+    // remettre le compteur à zéro autant de fois que voulu.
+    const origin = await prisma.tenant.findUnique({
+      where: { id: request.tenantId },
+      select: { status: true, trialEnds: true, plan: true },
+    })
+    const inheritedStatus = origin?.status === 'trial' ? 'trial' : (origin?.status ?? 'trial')
+    const inheritedTrialEnds = origin?.status === 'trial' ? origin.trialEnds : null
+
     const tenant = await prisma.$transaction(async (tx) => {
       const t = await tx.tenant.create({
         data: {
@@ -54,7 +65,10 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
           country: body.country ?? 'SN',
           address: body.address ?? null,
           phone: body.phone ?? null,
-          plan: 'starter', status: 'active', isActive: true,
+          plan: origin?.plan ?? 'starter',
+          status: inheritedStatus,
+          trialEnds: inheritedTrialEnds,
+          isActive: true,
         },
       })
       await tx.userTenant.create({ data: { userId, tenantId: t.id, role: 'ADMIN' } })
@@ -406,7 +420,9 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     return safe
   })
 
-  app.delete('/api/tenant/users/:id', { preHandler: authenticate }, async (request, reply) => {
+  // Gardé démo au même titre que POST /api/tenant/users : supprimer les comptes de la
+  // boutique de démo (mot de passe public) casserait la démo jusqu'à un reseed manuel.
+  app.delete('/api/tenant/users/:id', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
     if (id === request.user.userId) return reply.code(403).send({ error: 'Vous ne pouvez pas supprimer votre propre compte' })
