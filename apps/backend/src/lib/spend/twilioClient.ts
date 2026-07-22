@@ -1,5 +1,6 @@
 import twilio from 'twilio'
 import { authorizeSpend, releaseQuota } from './spendGuard'
+import { redactError } from '../redactPhone'
 
 /**
  * SEUL module autorisé à instancier le SDK Twilio.
@@ -88,7 +89,8 @@ export async function sendWhatsApp(opts: {
       sent++
     } catch (e: unknown) {
       failed++
-      console.warn('[twilioClient] échec envoi (non bloquant):', e instanceof Error ? e.message : e)
+      // ⚠️ Le message Twilio embarque le numéro destinataire → caviardé (CLAUDE.md § PII).
+      console.warn('[twilioClient] échec envoi (non bloquant):', redactError(e))
     }
   }
   // Le compteur mesure les envois RÉELS : on rend ce qui n'est pas parti.

@@ -1,4 +1,5 @@
 import { sendWhatsApp } from '../lib/spend/twilioClient'
+import { redactError } from '../lib/redactPhone'
 import { xofToCurrency } from '../lib/currency'
 import { pointsForAmount } from '../lib/loyalty'
 
@@ -70,7 +71,7 @@ export async function sendSaleWhatsApp(sale: WaSale, items: WaItem[], customer: 
     }
     return res.sent > 0
   } catch (e: any) {
-    console.warn('[whatsappSend] échec envoi (non bloquant):', e?.message ?? e)
+    console.warn('[whatsappSend] échec envoi (non bloquant):', redactError(e))
     return false
   }
 }

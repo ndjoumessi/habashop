@@ -5,6 +5,7 @@ import { redis } from '../redis'
 import { authenticate } from '../middleware/authenticate'
 import { blockDemoTenant } from '../middleware/demoTenant'
 import { sendWhatsApp, isTwilioConfigured, twilioVersion } from '../lib/spend/twilioClient'
+import { redactPhone, redactError } from '../lib/redactPhone'
 import { costQuota } from '../middleware/costQuota'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { fmtMoney, localeOf } from '../services/whatsappSend'
@@ -66,7 +67,7 @@ async function sendEveningReport() {
       else if (res.denied) console.warn(`⏭️  Résumé soir ignoré (${res.code}) pour ${tenant.name}`)
     }
   } catch (err) {
-    console.error('Cron evening error:', err.message)
+    console.error('Cron evening error:', redactError(err))
   }
 }
 
@@ -97,7 +98,7 @@ async function sendMorningStockAlert() {
       else if (res.denied) console.warn(`⏭️  Alerte matin ignorée (${res.code}) pour ${tenant.name}`)
     }
   } catch (err) {
-    console.error('Cron morning error:', err.message)
+    console.error('Cron morning error:', redactError(err))
   }
 }
 
@@ -171,7 +172,8 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       `_${i('Conservez-le comme justificatif.', 'Keep it as proof of purchase.', 'Consérvelo como justificante.', 'Conservalo come giustificativo.')}_`,
     ].filter(l => l !== null && l !== undefined).join('\n')
 
-    console.log('📱 Envoi WhatsApp vers:', waPhone)
+    // ⚠️ Numéro CLIENT : caviardé avant journalisation (CLAUDE.md § PII).
+    console.log('📱 Envoi WhatsApp vers:', redactPhone(waPhone))
     console.log('📤 From:', TWILIO_FROM)
 
     try {
@@ -182,7 +184,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       return reply.send({ success: true, sid: res.sids[0], to: waPhone })
     } catch (err) {
       console.error('❌ Twilio error code:', err.code)
-      console.error('❌ Twilio error msg:', err.message)
+      console.error('❌ Twilio error msg:', redactError(err))
 
       const TWILIO_ERRORS: Record<number, string> = {
         21608: "Ce numéro n'est pas inscrit sur WhatsApp",
@@ -240,7 +242,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       if (res.sent === 0) return reply.code(503).send({ error: 'Envoi WhatsApp impossible' })
       return { success: true, sid: res.sids[0] }
     } catch (err) {
-      console.error('Twilio alert error:', err.message)
+      console.error('Twilio alert error:', redactError(err))
       return reply.code(503).send({ error: err.message })
     }
   })
