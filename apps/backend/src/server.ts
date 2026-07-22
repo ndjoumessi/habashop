@@ -8,7 +8,6 @@ import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
 import { validatorCompiler, hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod'
 import { initTenantStore } from './lib/tenantContext'
-import { refundQuotaHook } from './middleware/costQuota'
 import { getAppVersion } from './lib/version'
 import * as Sentry from '@sentry/node'
 import { prisma } from './db'
@@ -119,10 +118,6 @@ async function start() {
   // Contexte tenant (item 8) : établi au plus tôt (contexte racine de la requête)
   // pour se propager jusqu'au handler ; `authenticate` y renseigne la boutique active.
   app.addHook('onRequest', (_req, _reply, done) => { initTenantStore(); done() })
-
-  // Rend l'unité de quota consommée quand la requête finit en 400 (validation) :
-  // aucun appel externe n'a été engagé, donc aucun coût à décompter.
-  app.addHook('onResponse', refundQuotaHook)
 
   // ─── CORS ───────────────────────────────
   const allowedOrigins = [

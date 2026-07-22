@@ -1,4 +1,4 @@
-import twilio from 'twilio'
+import { sendWhatsApp } from '../lib/spend/twilioClient'
 import { xofToCurrency } from '../lib/currency'
 import { pointsForAmount } from '../lib/loyalty'
 
@@ -29,7 +29,7 @@ function payLabel(mode: string, lang: string): string {
 export interface WaSale { id: string; total: number; paymentMode: string; createdAt: Date | string }
 export interface WaItem { qty: number; total: number; product?: { name?: string | null } | null; name?: string }
 export interface WaCustomer { name?: string | null; phone?: string | null }
-export interface WaTenant { name: string; currency: string; lang?: string | null; enableLoyalty?: boolean; pointsPerAmount?: number | null; enableAutoWhatsApp?: boolean }
+export interface WaTenant { id: string; name: string; currency: string; lang?: string | null; enableLoyalty?: boolean; pointsPerAmount?: number | null; enableAutoWhatsApp?: boolean }
 
 /** Construit le texte du reçu WhatsApp (pur, testable). Même structure que le ticket. */
 export function buildSaleMessage(sale: WaSale, items: WaItem[], customer: WaCustomer, tenant: WaTenant): string {
@@ -48,31 +48,27 @@ export function buildSaleMessage(sale: WaSale, items: WaItem[], customer: WaCust
   return msg
 }
 
-function getClient() {
-  const sid = (process.env.TWILIO_ACCOUNT_SID ?? '').trim()
-  const token = (process.env.TWILIO_AUTH_TOKEN ?? '').trim()
-  if (!sid || !token) return null
-  try { return twilio(sid, token) } catch { return null }
-}
-
 /**
  * Envoie le reçu WhatsApp après une vente — SI : client a un téléphone, tenant a activé
- * enableAutoWhatsApp, et les 3 vars Twilio sont présentes. Fail silencieux + warning sinon.
- * Ne doit JAMAIS throw vers l'appelant (la vente ne doit pas échouer si WhatsApp échoue).
+ * enableAutoWhatsApp, et l'envoi est AUTORISÉ (boutique non démo, essai valide, quota
+ * disponible). Fail silencieux sinon. Ne doit JAMAIS throw vers l'appelant : une vente
+ * ne doit pas échouer parce que WhatsApp est refusé ou indisponible.
+ *
+ * ⚠️ C'était LE plus gros poste Twilio non gardé : déclenché par POST /api/sales, il
+ * échappait aux gardes posées sur les routes /api/whatsapp/*. La garde vit désormais
+ * dans le client, donc ce chemin ne peut plus l'oublier.
  */
 export async function sendSaleWhatsApp(sale: WaSale, items: WaItem[], customer: WaCustomer, tenant: WaTenant): Promise<boolean> {
   try {
     if (!tenant.enableAutoWhatsApp) return false
     if (!customer?.phone) return false
-    const from = (process.env.TWILIO_WHATSAPP_FROM ?? '').trim()
-    const client = getClient()
-    if (!client || !from) {
-      console.warn('[whatsappSend] config Twilio incomplète (SID/TOKEN/FROM) → envoi auto ignoré')
+    const body = buildSaleMessage(sale, items, customer, tenant)
+    const res = await sendWhatsApp({ tenantId: tenant.id, to: customer.phone, body })
+    if (res.denied) {
+      console.warn(`[whatsappSend] reçu non envoyé (${res.code}) tenant=${tenant.id}`)
       return false
     }
-    const body = buildSaleMessage(sale, items, customer, tenant)
-    await client.messages.create({ from, to: `whatsapp:${customer.phone}`, body })
-    return true
+    return res.sent > 0
   } catch (e: any) {
     console.warn('[whatsappSend] échec envoi (non bloquant):', e?.message ?? e)
     return false

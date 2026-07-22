@@ -3,13 +3,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 // Mock du SDK twilio : capture les appels messages.create.
 const { createMock } = vi.hoisted(() => ({ createMock: vi.fn() }))
 vi.mock('twilio', () => ({ default: () => ({ messages: { create: createMock } }) }))
+// Le garde de dépense résout le tenant : boutique cliente saine, quota libre.
+vi.mock('../redis', () => ({ redis: null }))
+vi.mock('../db', () => ({ prisma: { tenant: { findUnique: vi.fn(async () => ({ isDemo: false, status: 'active', trialEnds: null })) } } }))
+vi.mock('@sentry/node', () => ({ captureMessage: vi.fn(), captureException: vi.fn() }))
 
 import { buildSaleMessage, sendSaleWhatsApp } from '../services/whatsappSend'
 
 const SALE = { id: 'cmqABC123456', total: 5900, paymentMode: 'cash', createdAt: new Date('2026-06-06') }
 const ITEMS = [{ qty: 2, total: 5900, product: { name: 'Bifaka' } }]
 const CUSTOMER = { name: 'Awa', phone: '+221770000000' }
-const TENANT = { name: 'Ma Boutique', currency: 'XOF', lang: 'fr', enableLoyalty: true, pointsPerAmount: 1000, enableAutoWhatsApp: true }
+const TENANT = { id: 'T', name: 'Ma Boutique', currency: 'XOF', lang: 'fr', enableLoyalty: true, pointsPerAmount: 1000, enableAutoWhatsApp: true }
 
 describe('buildSaleMessage', () => {
   it('contient boutique, article, total, paiement, points fidélité', () => {

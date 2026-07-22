@@ -1,4 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type Anthropic from '@anthropic-ai/sdk'
+import { createMessage, SpendDeniedError } from '../lib/spend/anthropicClient'
 
 export interface InvoiceItem {
   name: string
@@ -39,11 +40,7 @@ Règles :
 - Pour unitPrice : montant numérique brut dans la devise de la facture
 - notes : concatène ref commande, conditions de paiement, délai de livraison`
 
-export async function analyzeInvoice(buffer: Buffer, mimeType: string): Promise<InvoiceOcrResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY non configurée')
-
-  const client = new Anthropic({ apiKey })
+export async function analyzeInvoice(tenantId: string, buffer: Buffer, mimeType: string): Promise<InvoiceOcrResult> {
   const base64 = buffer.toString('base64')
 
   let contentBlock: Anthropic.ImageBlockParam | Record<string, unknown>
@@ -75,10 +72,12 @@ export async function analyzeInvoice(buffer: Buffer, mimeType: string): Promise<
     (requestOpts as any).betas = ['pdfs-2024-09-25']
   }
 
-  const response = await (mimeType === 'application/pdf'
-    ? (client.beta as any).messages.create(requestOpts)
-    : client.messages.create(requestOpts)
-  )
+  // Le quota OCR est réservé ICI, juste avant l'appel réel : un fichier trop lourd,
+  // un format refusé ou un rôle insuffisant n'atteignent jamais ce point et ne
+  // consomment donc rien.
+  const res = await createMessage({ tenantId, kind: 'ocr', params: requestOpts })
+  if (!res.ok) throw new SpendDeniedError(res.code, res.error)
+  const response = res.message
 
   const text: string = (response.content[0] as Anthropic.TextBlock).text?.trim() ?? ''
 

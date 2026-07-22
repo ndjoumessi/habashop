@@ -14,7 +14,7 @@ const { db, redisMock, authMock } = vi.hoisted(() => ({
     saleItem: { groupBy: vi.fn(), findMany: vi.fn() },
     product: { findMany: vi.fn() },
   },
-  redisMock: { incr: vi.fn(), expire: vi.fn() },
+  redisMock: { incr: vi.fn(), expire: vi.fn(), incrby: vi.fn(), decrby: vi.fn(), get: vi.fn(), setex: vi.fn() },
   authMock: vi.fn(async (req: any) => { req.user = { role: 'ADMIN', userId: 'u1' }; req.tenantId = 'T1' }),
 }))
 
@@ -29,6 +29,12 @@ vi.mock('../lib/loyalty', () => ({
 vi.mock('twilio', () => ({
   default: () => ({ messages: { create: vi.fn().mockResolvedValue({ sid: 'SM1' }) } }),
 }))
+vi.mock('@sentry/node', () => ({ captureMessage: vi.fn(), captureException: vi.fn() }))
+// Le client gardé exige un expéditeur configuré (l'ancienne route envoyait avec
+// `from: undefined`, ce qui échouerait contre le vrai Twilio).
+process.env.TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM ?? 'whatsapp:+14155238886'
+process.env.TWILIO_ACCOUNT_SID   = process.env.TWILIO_ACCOUNT_SID ?? 'AC_test'
+process.env.TWILIO_AUTH_TOKEN    = process.env.TWILIO_AUTH_TOKEN ?? 'token_test'
 
 import { reportsRoutes } from '../routes/reports'
 import { whatsappRoutes } from '../routes/whatsapp'

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import Anthropic from '@anthropic-ai/sdk'
+import { createMessage, textOf, isAnthropicConfigured } from '../lib/spend/anthropicClient'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { blockDemoTenant } from '../middleware/demoTenant'
@@ -23,8 +23,7 @@ export async function aiRoutes(app: FastifyInstance): Promise<void> {
     const { type, lang } = request.body as { type?: string; lang?: string }
     const { tenantId } = request.user
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
-    if (!apiKey) return reply.code(503).send({ error: 'Clé API Anthropic non configurée' })
+    if (!isAnthropicConfigured()) return reply.code(503).send({ error: 'Clé API Anthropic non configurée' })
 
     try {
       const [products, sales, expenses, employees] = await Promise.all([
@@ -138,14 +137,17 @@ En ${langLabel}, analyse :
 4. 🏆 RECOMMANDATIONS RH`,
       }
 
-      const anthropic = new Anthropic({ apiKey })
-      const message = await anthropic.messages.create({
-        model: 'claude-opus-4-5',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: PROMPTS[type] ?? PROMPTS.full }],
+      const res = await createMessage({
+        tenantId: request.tenantId, kind: 'ai',
+        params: {
+          model: 'claude-opus-4-5',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: PROMPTS[type] ?? PROMPTS.full }],
+        },
       })
+      if (!res.ok) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.error, code: res.code })
 
-      const analysis = message.content[0].type === 'text' ? message.content[0].text : 'Analyse non disponible'
+      const analysis = textOf(res.message, 'Analyse non disponible')
 
       return {
         success: true,
@@ -207,9 +209,7 @@ INSTRUCTIONS :
 - Si une question dépasse tes données, dis-le clairement
 - Maximum 300 mots par réponse`
 
-      const apiKey = process.env.ANTHROPIC_API_KEY
-      if (!apiKey) return reply.code(503).send({ error: 'Clé API Anthropic non configurée' })
-      const anthropic = new Anthropic({ apiKey })
+      if (!isAnthropicConfigured()) return reply.code(503).send({ error: 'Clé API Anthropic non configurée' })
 
       // Construit le tableau de messages pour Anthropic
       const msgsToSend = singleMsg?.trim()
@@ -225,18 +225,13 @@ INSTRUCTIONS :
         return reply.code(400).send({ error: 'Message ou historique requis' })
       }
 
-      const message = await anthropic.messages.create({
-        model: 'claude-opus-4-5',
-        max_tokens: 800,
-        system: systemPrompt,
-        messages: msgsToSend,
+      const res = await createMessage({
+        tenantId: request.tenantId, kind: 'ai',
+        params: { model: 'claude-opus-4-5', max_tokens: 800, system: systemPrompt, messages: msgsToSend },
       })
+      if (!res.ok) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.error, code: res.code })
 
-      return {
-        response: message.content[0].type === 'text'
-          ? message.content[0].text
-          : 'Désolé, je ne peux pas répondre pour le moment.'
-      }
+      return { response: textOf(res.message, 'Désolé, je ne peux pas répondre pour le moment.') }
     } catch (err) {
       console.error('Chat AI error:', err.message)
       return reply.code(500).send({ error: err.message })

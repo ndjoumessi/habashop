@@ -314,7 +314,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
             await sendSaleWhatsApp(
               { id: newSale.id, total: finalTotal, paymentMode: paymentMode ?? 'cash', createdAt: newSale.createdAt },
               saleItems, cust,
-              { name: tCfg.name, currency: tCfg.currency, lang: tCfg.lang, enableLoyalty: tCfg.enableLoyalty, pointsPerAmount: tCfg.pointsPerAmount, enableAutoWhatsApp: tCfg.enableAutoWhatsApp },
+              { id: tenantId, name: tCfg.name, currency: tCfg.currency, lang: tCfg.lang, enableLoyalty: tCfg.enableLoyalty, pointsPerAmount: tCfg.pointsPerAmount, enableAutoWhatsApp: tCfg.enableAutoWhatsApp },
             )
           }
         } catch { /* fail silent — déjà géré dans le service */ }

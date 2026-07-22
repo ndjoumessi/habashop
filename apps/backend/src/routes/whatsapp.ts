@@ -1,10 +1,10 @@
 import type { FastifyInstance } from 'fastify'
-import twilio from 'twilio'
 import { CronJob } from 'cron'
 import { prisma } from '../db'
 import { redis } from '../redis'
 import { authenticate } from '../middleware/authenticate'
 import { blockDemoTenant } from '../middleware/demoTenant'
+import { sendWhatsApp, isTwilioConfigured, twilioVersion } from '../lib/spend/twilioClient'
 import { costQuota, COST_ROUTE_RATE_LIMIT } from '../middleware/costQuota'
 import { authenticateAdmin } from '../middleware/superAdmin'
 import { fmtMoney, localeOf } from '../services/whatsappSend'
@@ -22,25 +22,17 @@ const TWILIO_FROM = process.env.TWILIO_WHATSAPP_FROM
 
 // ── Lazy init Twilio ──
 // Lu à chaque appel pour garantir les vars Railway
-function getTwilioClient() {
-  const sid   = (process.env.TWILIO_ACCOUNT_SID  ?? '').trim()
-  const token = (process.env.TWILIO_AUTH_TOKEN   ?? '').trim()
-  if (!sid || !token) {
-    console.error('[Twilio] vars manquantes sid:', !!sid, 'token:', !!token)
-    return null
-  }
-  try {
-    return twilio(sid, token)
-  } catch (e) {
-    console.error('[Twilio] init error:', e.message)
-    return null
-  }
-}
+// ⚠️ Plus de client Twilio local : tout envoi passe par `lib/spend/twilioClient`,
+// qui résout démo/statut/quota depuis le tenantId. Verrouillé par le méta-test
+// `spendGuardAllowlist.test.ts`.
 
 // ─── CRON: RÉSUMÉ SOIR ────────────────
 async function sendEveningReport() {
   try {
-    const tenants = await prisma.tenant.findMany()
+    // Skip COMPLET des boutiques de démo : le cron n'a pas de requête, donc aucune
+    // garde de route ne s'y applique — c'est ici que ça se joue (la garde du client
+    // reste le filet de sécurité).
+    const tenants = await prisma.tenant.findMany({ where: { isDemo: false } })
     for (const tenant of tenants) {
       // Opt-in strict : pas de numéro configuré → pas d'envoi pour ce tenant.
       const ownerPhone = (tenant.ownerPhone ?? '').trim()
@@ -69,18 +61,9 @@ async function sendEveningReport() {
           ? `⚠️ *${lowStock.length} ${i('produit(s) en rupture :', 'product(s) low on stock:', 'producto(s) con stock bajo:', 'prodotto/i in esaurimento:')}*\n${lowStock.slice(0, 5).map(p => `• ${p.name} (${p.stockQty}/${p.stockMin})`).join('\n')}\n\n`
           : `✅ ${i('Aucune rupture de stock', 'No stock shortage', 'Sin roturas de stock', 'Nessuna rottura di stock')}\n\n`) +
         `_${i('Bonne soirée !', 'Good evening!', '¡Buenas noches!', 'Buona serata!')}_ 🌙`
-      try {
-        const client = getTwilioClient()
-        if (!client) throw new Error('Twilio non configuré')
-        await client.messages.create({
-          from: TWILIO_FROM,
-          to: `whatsapp:${ownerPhone}`,
-          body: message,
-        })
-        console.log(`✅ Résumé soir envoyé pour ${tenant.name}`)
-      } catch (err) {
-        console.error(`❌ Erreur envoi résumé: ${err.message}`)
-      }
+      const res = await sendWhatsApp({ tenantId: tenant.id, to: ownerPhone, body: message })
+      if (res.sent > 0) console.log(`✅ Résumé soir envoyé pour ${tenant.name}`)
+      else if (res.denied) console.warn(`⏭️  Résumé soir ignoré (${res.code}) pour ${tenant.name}`)
     }
   } catch (err) {
     console.error('Cron evening error:', err.message)
@@ -90,7 +73,8 @@ async function sendEveningReport() {
 // ─── CRON: ALERTE MATIN ───────────────
 async function sendMorningStockAlert() {
   try {
-    const tenants = await prisma.tenant.findMany()
+    // Idem cron soir : les boutiques de démo sont exclues à la source.
+    const tenants = await prisma.tenant.findMany({ where: { isDemo: false } })
     for (const tenant of tenants) {
       // Opt-in strict : pas de numéro configuré → pas d'envoi pour ce tenant.
       const ownerPhone = (tenant.ownerPhone ?? '').trim()
@@ -108,18 +92,9 @@ async function sendMorningStockAlert() {
           return `${status} ${p.name}\n   ${i('Stock', 'Stock', 'Stock', 'Scorte')}: ${p.stockQty} / ${i('Seuil', 'Threshold', 'Umbral', 'Soglia')}: ${p.stockMin}`
         }).join('\n') +
         `\n\n💡 ${i("Pensez à commander dès aujourd'hui !", 'Remember to order today!', '¡Recuerde pedir hoy!', 'Ricordati di ordinare oggi!')}\n📦 ${i('Gérez votre stock sur HabaShop', 'Manage your stock on HabaShop', 'Gestione su stock en HabaShop', 'Gestisci le scorte su HabaShop')}`
-      try {
-        const client = getTwilioClient()
-        if (!client) throw new Error('Twilio non configuré')
-        await client.messages.create({
-          from: TWILIO_FROM,
-          to: `whatsapp:${ownerPhone}`,
-          body: message,
-        })
-        console.log(`✅ Alerte matin envoyée pour ${tenant.name}`)
-      } catch (err) {
-        console.error(`❌ Erreur alerte matin: ${err.message}`)
-      }
+      const res = await sendWhatsApp({ tenantId: tenant.id, to: ownerPhone, body: message })
+      if (res.sent > 0) console.log(`✅ Alerte matin envoyée pour ${tenant.name}`)
+      else if (res.denied) console.warn(`⏭️  Alerte matin ignorée (${res.code}) pour ${tenant.name}`)
     }
   } catch (err) {
     console.error('Cron morning error:', err.message)
@@ -139,9 +114,8 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'Numéro de téléphone requis' })
     }
 
-    const twClient = getTwilioClient()
-    if (!twClient) {
-      console.error('❌ getTwilioClient() returned null')
+    if (!isTwilioConfigured()) {
+      console.error('❌ Twilio non configuré (SID/TOKEN/FROM)')
       return reply.code(503).send({
         error:   'Service WhatsApp non disponible',
         details: 'Variables TWILIO_ACCOUNT_SID et TWILIO_AUTH_TOKEN manquantes dans Railway',
@@ -201,9 +175,11 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     console.log('📤 From:', TWILIO_FROM)
 
     try {
-      const msg = await twClient.messages.create({ from: TWILIO_FROM, to: waPhone, body })
-      console.log('✅ WhatsApp envoyé, SID:', msg.sid)
-      return reply.send({ success: true, sid: msg.sid, to: waPhone })
+      const res = await sendWhatsApp({ tenantId: request.tenantId, to: waPhone, body })
+      if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
+      if (res.sent === 0) return reply.code(503).send({ error: 'Envoi WhatsApp impossible' })
+      console.log('✅ WhatsApp envoyé, SID:', res.sids[0])
+      return reply.send({ success: true, sid: res.sids[0], to: waPhone })
     } catch (err) {
       console.error('❌ Twilio error code:', err.code)
       console.error('❌ Twilio error msg:', err.message)
@@ -228,14 +204,14 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.get('/api/whatsapp/test', async (_req, reply) => {
-    const client = getTwilioClient()
+    const configured = isTwilioConfigured()
     return reply.send({
-      configured:      !!client,
+      configured,
       sid_set:         !!(process.env.TWILIO_ACCOUNT_SID ?? '').trim(),
       token_set:       !!(process.env.TWILIO_AUTH_TOKEN  ?? '').trim(),
       from:            TWILIO_FROM,
-      twilio_version:  require('twilio/package.json').version,
-      status:          client ? '✅ Ready' : '❌ Not configured',
+      twilio_version:  twilioVersion(),
+      status:          configured ? '✅ Ready' : '❌ Not configured',
     })
   })
 
@@ -246,8 +222,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     const { phone, alertType, data, lang } = request.body as { phone?: string; alertType?: string; data?: any; lang?: string }
 
     try {
-      const client = getTwilioClient()
-      if (!client) return reply.code(503).send({ error: 'Service WhatsApp non configuré' })
+      if (!isTwilioConfigured()) return reply.code(503).send({ error: 'Service WhatsApp non configuré' })
       const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
       const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone.replace(/^0/, '')}`
 
@@ -260,12 +235,10 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
       if (!body) return reply.code(400).send({ error: 'alertType inconnu' })
 
-      const result = await client.messages.create({
-        from: TWILIO_FROM,
-        to:   `whatsapp:${formattedPhone}`,
-        body,
-      })
-      return { success: true, sid: result.sid }
+      const res = await sendWhatsApp({ tenantId: request.tenantId, to: formattedPhone, body })
+      if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
+      if (res.sent === 0) return reply.code(503).send({ error: 'Envoi WhatsApp impossible' })
+      return { success: true, sid: res.sids[0] }
     } catch (err) {
       console.error('Twilio alert error:', err.message)
       return reply.code(503).send({ error: err.message })
@@ -297,28 +270,12 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'Maximum 20 destinataires par envoi' })
     }
 
-    let sent = 0
-    let failed = 0
+    // Le quota est réservé pour les N destinataires AVANT le premier envoi : soit tout
+    // part, soit rien (pas de diffusion tronquée à mi-liste).
+    const res = await sendWhatsApp({ tenantId: request.tenantId, to: phones, body: message })
+    if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
 
-    for (const phone of phones) {
-      try {
-        const client = getTwilioClient()
-        if (!client) { failed++; continue }
-        const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
-        const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone.replace(/^0/, '')}`
-        await client.messages.create({
-          from: TWILIO_FROM,
-          to: `whatsapp:${formattedPhone}`,
-          body: message,
-        })
-        sent++
-        await new Promise(resolve => setTimeout(resolve, 500))
-      } catch {
-        failed++
-      }
-    }
-
-    return { sent, failed }
+    return { sent: res.sent, failed: res.failed ?? 0 }
   })
 
   // ─── CAMPAGNES WHATSAPP MARKETING ───────────────────────────────────────────
@@ -401,19 +358,17 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       .map(p => p.replace(/[\s\-\(\)]/g, ''))
       .map(p => p.startsWith('+') ? p : `+${p.replace(/^0/, '')}`)
 
-    let sent = 0, failed = 0
-
-    for (const phone of phones) {
-      try {
-        const client = getTwilioClient()
-        if (!client) { failed++; continue }
-        await client.messages.create({ from: TWILIO_FROM, to: `whatsapp:${phone}`, body: message })
-        sent++
-        await new Promise(r => setTimeout(r, 500))
-      } catch {
-        failed++
-      }
+    // ⚠️ Le quota compte des MESSAGES, pas des requêtes : une campagne de N destinataires
+    // réserve N unités AVANT la boucle. Si ça ne rentre pas, l'envoi entier est refusé
+    // (message nommant le restant et le requis) plutôt que tronqué à mi-cible.
+    const res = await sendWhatsApp({ tenantId, to: phones, body: message })
+    if (res.denied) {
+      return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({
+        error: res.message, code: res.code, recipientCount: phones.length,
+      })
     }
+    const sent = res.sent
+    const failed = res.failed ?? 0
 
     // Enregistre la campagne (idempotent — une seule ligne par envoi)
     await prisma.campaign.create({

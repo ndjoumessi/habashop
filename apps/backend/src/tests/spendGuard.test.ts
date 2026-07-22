@@ -19,8 +19,16 @@ const { db, redisMock, authMock, state } = vi.hoisted(() => {
   const state = { role: 'ADMIN', tenantId: 'T' }
   return {
     state,
-    db: { tenant: { findUnique: vi.fn() } },
-    redisMock: { incr: vi.fn(), decr: vi.fn(), expire: vi.fn(), get: vi.fn(), setex: vi.fn(), del: vi.fn() },
+    db: {
+    tenant:   { findUnique: vi.fn() },
+    // Lus par les handlers IA avant l'appel Claude — mockés pour que la route
+    // atteigne vraiment le point de dépense et rende son 429.
+    product:  { findMany: vi.fn(async () => []) },
+    sale:     { findMany: vi.fn(async () => []) },
+    employee: { findMany: vi.fn(async () => []) },
+    expense:  { findMany: vi.fn(async () => []) },
+  },
+    redisMock: { incrby: vi.fn(), decrby: vi.fn(), expire: vi.fn(), get: vi.fn(), setex: vi.fn(), del: vi.fn() },
     authMock: vi.fn(async (req: any) => {
       req.user = { userId: 'u1', role: state.role, tenantId: state.tenantId }
       req.tenantId = state.tenantId
@@ -44,19 +52,21 @@ vi.mock('@sentry/node', () => ({ captureMessage: vi.fn(), captureException: vi.f
 import { aiRoutes } from '../routes/ai'
 import { supplierRoutes } from '../routes/suppliers'
 import {
-  consumeQuota, quotaLimit, tenantSpendState, quotaKey,
-  QUOTA_EXCEEDED, TRIAL_EXPIRED, TENANT_INACTIVE, refundQuotaHook,
-} from '../middleware/costQuota'
+  authorizeSpend, quotaLimit, tenantSpendState, quotaKey,
+  QUOTA_EXCEEDED, TRIAL_EXPIRED, TENANT_INACTIVE,
+} from '../lib/spend/spendGuard'
 
 const DAY = 24 * 3600 * 1000
 /** Boutique en essai valide (14 j) par défaut. */
-function seedTenant(status = 'trial', trialEnds: Date | null = new Date(Date.now() + 7 * DAY)) {
-  db.tenant.findUnique.mockResolvedValue({ status, trialEnds })
+function seedTenant(status = 'trial', trialEnds: Date | null = new Date(Date.now() + 7 * DAY), isDemo = false) {
+  db.tenant.findUnique.mockResolvedValue({ isDemo, status, trialEnds })
 }
 /** Le compteur du jour vaut `n` APRÈS incrément (valeur renvoyée par INCR). */
 function seedCounter(n: number) {
-  redisMock.incr.mockResolvedValue(n)
+  redisMock.incrby.mockResolvedValue(n)
+  redisMock.decrby.mockResolvedValue(0)
   redisMock.expire.mockResolvedValue(1)
+  redisMock.get.mockResolvedValue(null) // pas de cache tenant → lecture DB à chaque test
 }
 
 async function buildApp(register: any) {
@@ -93,7 +103,7 @@ describe('(b) Rôle requis sur /api/ai/*', () => {
     state.role = 'CASHIER'
     const app = await buildApp(aiRoutes)
     await app.inject({ method: 'POST', url: '/api/ai/analyze', payload: { type: 'sales' } })
-    expect(redisMock.incr).not.toHaveBeenCalled()
+    expect(redisMock.incrby).not.toHaveBeenCalled()
   })
 
   it('un manager passe le garde de rôle', async () => {
@@ -112,7 +122,7 @@ describe('(c) Essai expiré et boutique suspendue', () => {
     const res = await app.inject({ method: 'POST', url: '/api/suppliers/scan-invoice' })
     expect(res.statusCode).toBe(403)
     expect(res.json().code).toBe(TRIAL_EXPIRED)
-    expect(redisMock.incr).not.toHaveBeenCalled()
+    expect(redisMock.incrby).not.toHaveBeenCalled()
   })
 
   it('boutique suspendue → 403 TENANT_INACTIVE', async () => {
@@ -132,10 +142,10 @@ describe('(c) Essai expiré et boutique suspendue', () => {
 
   it('la décision est pure et datable', () => {
     const now = new Date('2026-07-22T12:00:00Z')
-    expect(tenantSpendState({ status: 'trial', trialEnds: new Date('2026-07-21T00:00:00Z') }, now).ok).toBe(false)
-    expect(tenantSpendState({ status: 'trial', trialEnds: new Date('2026-07-23T00:00:00Z') }, now).ok).toBe(true)
-    expect(tenantSpendState({ status: 'active', trialEnds: null }, now).ok).toBe(true)
-    expect(tenantSpendState({ status: 'cancelled', trialEnds: null }, now).ok).toBe(false)
+    expect(tenantSpendState({ isDemo: false, status: 'trial', trialEnds: new Date('2026-07-21T00:00:00Z') }, now).ok).toBe(false)
+    expect(tenantSpendState({ isDemo: false, status: 'trial', trialEnds: new Date('2026-07-23T00:00:00Z') }, now).ok).toBe(true)
+    expect(tenantSpendState({ isDemo: false, status: 'active', trialEnds: null }, now).ok).toBe(true)
+    expect(tenantSpendState({ isDemo: false, status: 'cancelled', trialEnds: null }, now).ok).toBe(false)
     expect(tenantSpendState(null, now).ok).toBe(false)
   })
 })
@@ -143,19 +153,19 @@ describe('(c) Essai expiré et boutique suspendue', () => {
 // ── (a) Quota par tenant et par jour ─────────────────────────────────────────
 describe('(a) Quota quotidien par tenant', () => {
   it('le 21e appel IA d’un tenant à l’essai → 429 QUOTA_EXCEEDED (compte + plafond)', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key' // sinon 503 AVANT le point de dépense (et sans rien consommer)
     seedCounter(21) // 20 déjà consommés → celui-ci est le 21e
     const app = await buildApp(aiRoutes)
     const res = await app.inject({ method: 'POST', url: '/api/ai/chat', payload: { message: 'salut' } })
     expect(res.statusCode).toBe(429)
     const body = res.json()
     expect(body.code).toBe(QUOTA_EXCEEDED)
-    expect(body.kind).toBe('ai')
-    expect(body.used).toBe(20)
-    expect(body.limit).toBe(20)
-    expect(body.error).toContain('20/20')
+    expect(body.error).toContain('20/20') // « 20/20 utilisés aujourd'hui »
+    expect(body.error).toContain('1 requis')
   })
 
   it('le 20e appel passe encore (la borne est inclusive)', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key'
     seedCounter(20)
     const app = await buildApp(aiRoutes)
     const res = await app.inject({ method: 'POST', url: '/api/ai/chat', payload: { message: 'salut' } })
@@ -163,6 +173,7 @@ describe('(a) Quota quotidien par tenant', () => {
   })
 
   it('un tenant PAYANT garde une marge bien plus large (200/j)', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key'
     seedTenant('active', null)
     seedCounter(21)
     const app = await buildApp(aiRoutes)
@@ -188,51 +199,18 @@ describe('(a) Quota quotidien par tenant', () => {
 
   it('contrôle positif — la DÉCISION est « autorisé » et le compteur est posé', async () => {
     seedCounter(5)
-    const r = await consumeQuota('T', 'ocr', 'trial')
-    expect(r).toEqual({ allowed: true, used: 5, limit: 15, degraded: false })
-    expect(redisMock.incr).toHaveBeenCalledWith(quotaKey('T', 'ocr'))
+    const r = await authorizeSpend('T', 'ocr', 1)
+    expect(r).toMatchObject({ ok: true, used: 5, limit: 15, degraded: false })
+    expect(redisMock.incrby).toHaveBeenCalledWith(quotaKey('T', 'ocr'), 1)
   })
 
   it('le TTL n’est posé qu’au premier appel du jour', async () => {
     seedCounter(1)
-    await consumeQuota('T', 'ai', 'trial')
+    await authorizeSpend('T', 'ai', 1)
     expect(redisMock.expire).toHaveBeenCalled()
-    vi.clearAllMocks(); seedCounter(2)
-    await consumeQuota('T', 'ai', 'trial')
+    vi.clearAllMocks(); seedTenant(); seedCounter(2)
+    await authorizeSpend('T', 'ai', 1)
     expect(redisMock.expire).not.toHaveBeenCalled()
-  })
-})
-
-// ── Remboursement sur échec de validation ────────────────────────────────────
-describe('Aucun décompte sur un 400 (aucun coût engagé)', () => {
-  const reqWithKey = () => ({ __quotaKey: quotaKey('T', 'ocr') })
-
-  it('400 → l’unité est rendue', async () => {
-    await refundQuotaHook(reqWithKey(), { statusCode: 400 })
-    expect(redisMock.decr).toHaveBeenCalledWith(quotaKey('T', 'ocr'))
-  })
-
-  it('200 / 429 / 500 → aucun remboursement', async () => {
-    for (const statusCode of [200, 429, 500, 403]) {
-      await refundQuotaHook(reqWithKey(), { statusCode })
-    }
-    expect(redisMock.decr).not.toHaveBeenCalled()
-  })
-
-  it('requête sans quota consommé → rien à rendre', async () => {
-    await refundQuotaHook({}, { statusCode: 400 })
-    expect(redisMock.decr).not.toHaveBeenCalled()
-  })
-
-  it('bout en bout : scan-invoice sans fichier (400) ne consomme rien net', async () => {
-    process.env.ANTHROPIC_API_KEY = 'test-key' // pour dépasser le 503 et atteindre le 400
-    seedCounter(3)
-    const app = await buildApp(supplierRoutes)
-    const res = await app.inject({ method: 'POST', url: '/api/suppliers/scan-invoice' })
-    expect(res.statusCode).toBe(400)               // « Fichier manquant »
-    expect(redisMock.incr).toHaveBeenCalledTimes(1)
-    await refundQuotaHook({ __quotaKey: quotaKey('T', 'ocr') }, { statusCode: res.statusCode })
-    expect(redisMock.decr).toHaveBeenCalledTimes(1) // net = 0
   })
 })
 
@@ -240,9 +218,9 @@ describe('Aucun décompte sur un 400 (aucun coût engagé)', () => {
 describe('Fail-open (Redis KO) — autorisé mais TRACÉ', () => {
   it('laisse passer et journalise explicitement', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    redisMock.incr.mockRejectedValue(new Error('Redis down'))
-    const r = await consumeQuota('T', 'ai', 'trial')
-    expect(r.allowed).toBe(true)
+    redisMock.incrby.mockRejectedValue(new Error('Redis down'))
+    const r = await authorizeSpend('T', 'ai', 1)
+    expect(r.ok).toBe(true)
     expect(r.degraded).toBe(true)
     // La trace protège, pas la branche : sans elle, un fail-open exploité serait invisible.
     expect(warn).toHaveBeenCalled()
@@ -253,8 +231,8 @@ describe('Fail-open (Redis KO) — autorisé mais TRACÉ', () => {
   it('remonte aussi dans Sentry (visible après coup)', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     const Sentry = await import('@sentry/node')
-    redisMock.incr.mockRejectedValue(new Error('Redis down'))
-    await consumeQuota('T', 'ocr', 'trial')
+    redisMock.incrby.mockRejectedValue(new Error('Redis down'))
+    await authorizeSpend('T', 'ocr', 1)
     expect(Sentry.captureMessage).toHaveBeenCalled()
     vi.restoreAllMocks()
   })

@@ -5,6 +5,7 @@ import { authenticate } from '../middleware/authenticate'
 import { blockDemoTenant } from '../middleware/demoTenant'
 import { costQuota, COST_ROUTE_RATE_LIMIT } from '../middleware/costQuota'
 import { analyzeInvoice, ALLOWED_INVOICE_TYPES } from '../services/invoiceOcr'
+import { SpendDeniedError, isAnthropicConfigured } from '../lib/spend/anthropicClient'
 
 // ── Schémas (item 6) — liste blanche STRICTE (strip) : ferme le mass-assignment
 // (create/update faisaient `...body`/`data: body` dans Prisma → tenantId injectable). ──
@@ -60,7 +61,7 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(403).send({ error: 'Manager ou admin requis' })
     }
 
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!isAnthropicConfigured()) {
       return reply.code(503).send({ error: 'Service OCR non configuré (ANTHROPIC_API_KEY manquante)' })
     }
 
@@ -82,9 +83,13 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
     }
 
     try {
-      const result = await analyzeInvoice(buffer, file.mimetype)
+      const result = await analyzeInvoice(request.tenantId, buffer, file.mimetype)
       return result
     } catch (err: any) {
+      // Refus de dépense (démo / essai échu / quota) → code explicite, pas un 422 opaque.
+      if (err instanceof SpendDeniedError) {
+        return reply.code(err.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: err.message, code: err.code })
+      }
       request.log.error({ err, step: 'invoiceOcr' }, 'Erreur OCR facture')
       return reply.code(422).send({ error: err?.message ?? 'Erreur lors de l\'analyse de la facture' })
     }
