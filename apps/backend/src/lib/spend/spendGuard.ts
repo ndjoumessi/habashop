@@ -38,6 +38,8 @@ export type SpendDecision = {
   code?: string
   message?: string
   remaining?: number
+  /** Clé du compteur réservé — à repasser à `releaseQuota` (cf. bascule de minuit). */
+  quotaKey?: string
 }
 
 // Plafonds lus À L'APPEL (pas en constante de module) → ajustables par env sans
@@ -118,6 +120,8 @@ function logFailOpen(tenantId: string, kind: SpendKind, err: unknown): void {
  * Si la réservation dépasse le plafond, elle est intégralement rendue et refusée
  * (pas d'envoi tronqué à mi-cible).
  */
+const QUOTA_TTL = 36 * 3600 // > 24 h : couvre tous les fuseaux
+
 async function reserveQuota(tenantId: string, kind: SpendKind, units: number, status: string): Promise<SpendDecision> {
   const limit = quotaLimit(kind, status)
   if (!redis) {
@@ -127,21 +131,36 @@ async function reserveQuota(tenantId: string, kind: SpendKind, units: number, st
   try {
     const key = quotaKey(tenantId, kind)
     const used = await redis.incrby(key, units)
-    if (used === units) await redis.expire(key, 36 * 3600) // > 24 h : couvre tous les fuseaux
+    // ⚠️ TTL posé SYSTÉMATIQUEMENT, pas seulement au premier appel du jour.
+    // L'ancienne condition `used === units` laissait sans expiration toute clé créée
+    // par un DECRBY (libération à cheval sur minuit UTC) : elle démarrait la journée
+    // en négatif ET restait en base indéfiniment.
+    await redis.expire(key, QUOTA_TTL)
     if (used > limit) {
-      await redis.decrby(key, units).catch(() => {}) // rien n'a été envoyé → on rend tout
+      await releaseQuota(tenantId, kind, units, key) // rien n'a été envoyé → on rend tout
       const already = Math.max(0, used - units)
       return {
-        ok: false, code: QUOTA_EXCEEDED,
+        ok: false, code: QUOTA_EXCEEDED, quotaKey: key,
         message: `Plafond quotidien atteint : ${already}/${limit} utilisés aujourd'hui, ${units} requis, ${Math.max(0, limit - already)} restant. Réessayez demain ou activez un plan supérieur.`,
         used: already, limit, remaining: Math.max(0, limit - already),
       }
     }
-    return { ok: true, used, limit, degraded: false }
+    return { ok: true, used, limit, degraded: false, quotaKey: key }
   } catch (err) {
     logFailOpen(tenantId, kind, err)
     return { ok: true, used: 0, limit, degraded: true }
   }
+}
+
+/**
+ * Plafond de rafale, lu à l'appel. ⚠️ PAS de `|| 10` : `Number('0') || 10` vaut 10,
+ * ce qui rendait la désactivation explicite (`COST_BURST_PER_MIN=0`) inopérante.
+ */
+function burstMax(): number {
+  const raw = process.env.COST_BURST_PER_MIN
+  if (raw === undefined || raw.trim() === '') return 10
+  const n = Number(raw)
+  return Number.isFinite(n) && n >= 0 ? n : 10
 }
 
 /**
@@ -155,15 +174,41 @@ async function reserveQuota(tenantId: string, kind: SpendKind, units: number, st
  * par IP bloque des commerçants légitimes. Ici le tenant vient d'un JWT vérifié (ou de la
  * boucle du cron), donc la clé est exacte.
  */
+// ── Repli MÉMOIRE du plafond de rafale ───────────────────────────────────────
+// ⚠️ Sans lui, une panne Redis retirerait TOUT plafond par tenant sur les endpoints
+// payants : le quota quotidien est fail-open (choix assumé — ne pas couper un client
+// payant), et l'override `@fastify/rate-limit` retiré des routes assurait justement ce
+// filet grâce à son store mémoire. On le rétablit ici, mais keyé par TENANT et non par
+// IP (le CGNAT ouest-africain fait partager une IP à des boutiques sans lien).
+// Portée = ce process (comme le store mémoire de @fastify/rate-limit) : garantie
+// identique à celle d'avant, avec une clé juste.
+const memBurst = new Map<string, { minute: string; n: number }>()
+
+function memBurstOk(key: string, minute: string, max: number): boolean {
+  const cur = memBurst.get(key)
+  if (!cur || cur.minute !== minute) {
+    memBurst.set(key, { minute, n: 1 })
+    if (memBurst.size > 5000) {            // borne mémoire : purge des minutes révolues
+      for (const [k, v] of memBurst) if (v.minute !== minute) memBurst.delete(k)
+    }
+    return true
+  }
+  if (cur.n >= max) return false
+  cur.n++
+  return true
+}
+
 async function burstOk(tenantId: string, kind: SpendKind): Promise<boolean> {
-  const max = Number(process.env.COST_BURST_PER_MIN) || 10
-  if (!redis || max <= 0) return true
+  const max = burstMax()
+  if (max <= 0) return true // désactivé explicitement par l'exploitant
+  const minute = new Date().toISOString().slice(0, 16) // AAAA-MM-JJTHH:MM
+  const key = `burst:${kind}:${tenantId}:${minute}`
+
+  if (!redis) return memBurstOk(key, minute, max)
+
   try {
-    const minute = new Date().toISOString().slice(0, 16) // AAAA-MM-JJTHH:MM
-    const key = `burst:${kind}:${tenantId}:${minute}`
     // ⚠️ Compte des OPÉRATIONS, pas des unités : une campagne légitime de 500
     // destinataires est UNE opération (elle reste bornée par le quota quotidien).
-    // Compter les unités ici bloquerait tout envoi groupé au-delà de `max`.
     const n = await redis.incrby(key, 1)
     if (n === 1) await redis.expire(key, 120)
     if (n > max) {
@@ -172,14 +217,25 @@ async function burstOk(tenantId: string, kind: SpendKind): Promise<boolean> {
     }
     return true
   } catch {
-    return true // fail-open : borner le coût ne doit pas casser un client payant
+    return memBurstOk(key, minute, max) // Redis KO → filet mémoire, jamais « tout ouvert »
   }
 }
 
-/** Rend des unités réservées mais finalement NON consommées (envoi partiel/échoué). */
-export async function releaseQuota(tenantId: string, kind: SpendKind, units: number): Promise<void> {
+/**
+ * Rend des unités réservées mais finalement NON consommées (envoi partiel/échoué).
+ *
+ * ⚠️ `key` DOIT être celle rendue par la réservation. Recalculer `quotaKey()` ici
+ * viserait la clé du jour COURANT : une réservation faite à 23h59 et libérée à 00h01
+ * décrémentait le compteur du LENDEMAIN, offrant N unités gratuites au tenant. Le repli
+ * sur le calcul reste pour les appels historiques, mais tous les appelants passent la clé.
+ */
+export async function releaseQuota(tenantId: string, kind: SpendKind, units: number, key?: string): Promise<void> {
   if (!redis || units <= 0) return
-  try { await redis.decrby(quotaKey(tenantId, kind), units) } catch { /* au pire l'unité reste comptée */ }
+  const target = key ?? quotaKey(tenantId, kind)
+  try {
+    await redis.decrby(target, units)
+    await redis.expire(target, QUOTA_TTL) // si le DECRBY vient de créer la clé, elle expire quand même
+  } catch { /* au pire l'unité reste comptée */ }
 }
 
 /**

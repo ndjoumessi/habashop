@@ -44,7 +44,7 @@ vi.mock('../services/email', () => ({ sendUserInvitationEmail: vi.fn(async () =>
 
 import { tenantRoutes } from '../routes/tenant'
 import { AI_ROLES } from '../routes/ai'
-import { authorizeSpend, BURST_EXCEEDED, invalidateTenantSpendInfo, resolveTenantSpendInfo } from '../lib/spend/spendGuard'
+import { authorizeSpend, BURST_EXCEEDED, invalidateTenantSpendInfo, resolveTenantSpendInfo, releaseQuota } from '../lib/spend/spendGuard'
 
 const DAY = 24 * 3600 * 1000
 
@@ -200,5 +200,73 @@ describe('Invalidation du cache de statut', () => {
   it('liste vide : aucun appel Redis', async () => {
     await invalidateTenantSpendInfo([])
     expect(redisMock.del).not.toHaveBeenCalled()
+  })
+})
+
+// ═══ Revue des lots 1-2 — corrections #2, #6, #10 ═══════════════════════════
+describe('#2 — clé de quota : TTL systematique et liberation sur la BONNE journee', () => {
+  it('le TTL est pose meme quand le compteur n est pas au premier appel', async () => {
+    redisMock.incrby.mockImplementation(async (k: string) => (String(k).startsWith('burst:') ? 1 : 7))
+    await authorizeSpend('T', 'ai', 1)
+    const quotaExpire = redisMock.expire.mock.calls.filter(c => String(c[0]).startsWith('quota:'))
+    expect(quotaExpire).toHaveLength(1)
+  })
+
+  it('la decision remonte la cle reservee, pour la rendre au bon jour', async () => {
+    redisMock.incrby.mockImplementation(async (k: string) => (String(k).startsWith('burst:') ? 1 : 1))
+    const d = await authorizeSpend('T', 'whatsapp', 5)
+    expect(d.quotaKey).toMatch(/^quota:whatsapp:T:\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it('releaseQuota vise la cle FOURNIE et non celle du jour courant', async () => {
+    const hier = 'quota:whatsapp:T:2020-01-01'
+    await releaseQuota('T', 'whatsapp', 3, hier)
+    expect(redisMock.decrby).toHaveBeenCalledWith(hier, 3)
+    // et lui pose un TTL : sinon un DECRBY qui cree la cle la laisse sans expiration
+    expect(redisMock.expire).toHaveBeenCalledWith(hier, expect.any(Number))
+  })
+})
+
+describe('#6 — panne Redis : le plafond par tenant tient quand meme', () => {
+  it('Redis absent : les 10 premieres operations passent, la 11e est refusee', async () => {
+    // Redis KO -> incrby rejette -> repli memoire
+    redisMock.incrby.mockRejectedValue(new Error('Redis down'))
+    const tenant = 'panne-' + Math.floor(Date.now() / 1000)
+    const results: boolean[] = []
+    for (let i = 0; i < 12; i++) {
+      const d = await authorizeSpend(tenant, 'ai', 1)
+      results.push(d.ok)
+    }
+    expect(results.slice(0, 10).every(Boolean)).toBe(true)   // 10 passent
+    expect(results[10]).toBe(false)                          // la 11e est bornee
+    expect(results[11]).toBe(false)
+  })
+
+  it('deux boutiques distinctes ne partagent pas le compteur memoire', async () => {
+    redisMock.incrby.mockRejectedValue(new Error('Redis down'))
+    const a = 'shopA-' + Math.floor(Date.now() / 1000)
+    const b = 'shopB-' + Math.floor(Date.now() / 1000)
+    for (let i = 0; i < 10; i++) await authorizeSpend(a, 'ai', 1)
+    const dA = await authorizeSpend(a, 'ai', 1)
+    const dB = await authorizeSpend(b, 'ai', 1)
+    expect(dA.ok).toBe(false) // A a epuise sa minute
+    expect(dB.ok).toBe(true)  // B n est pas penalise (contrairement a une cle par IP)
+  })
+})
+
+describe('#10 — COST_BURST_PER_MIN=0 desactive reellement le plafond', () => {
+  it('la valeur 0 est honoree (Number("0") || 10 valait 10)', async () => {
+    process.env.COST_BURST_PER_MIN = '0'
+    redisMock.incrby.mockImplementation(async (k: string) => (String(k).startsWith('burst:') ? 9999 : 1))
+    const d = await authorizeSpend('T', 'ai', 1)
+    expect(d.ok).toBe(true) // aucun refus malgre un compteur tres au-dessus de 10
+  })
+
+  it('une valeur absente ou invalide retombe sur 10', async () => {
+    delete process.env.COST_BURST_PER_MIN
+    redisMock.incrby.mockImplementation(async (k: string) => (String(k).startsWith('burst:') ? 11 : 1))
+    const d = await authorizeSpend('T', 'ai', 1)
+    expect(d.ok).toBe(false)
+    expect(d.code).toBe(BURST_EXCEEDED)
   })
 })

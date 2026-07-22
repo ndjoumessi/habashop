@@ -52,6 +52,7 @@ export async function createMessage(opts: {
     return { ok: false, code: decision.code, error: decision.message }
   }
 
+  const reservedKey = decision.quotaKey
   const client = new Anthropic({ apiKey })
   try {
     // Les PDF passent par le canal beta (`betas: ['pdfs-...']`), les images par le canal
@@ -65,7 +66,7 @@ export async function createMessage(opts: {
   } catch (err: unknown) {
     // L'appel a échoué → rien de facturable côté fournisseur pour un refus amont ;
     // on rend l'unité pour ne pas pénaliser un incident réseau.
-    await releaseQuota(opts.tenantId!, opts.kind, 1)
+    await releaseQuota(opts.tenantId!, opts.kind, 1, reservedKey)
     throw err
   }
 }

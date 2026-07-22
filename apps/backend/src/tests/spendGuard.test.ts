@@ -207,14 +207,14 @@ describe('(a) Quota quotidien par tenant', () => {
     expect(redisMock.incrby).toHaveBeenCalledWith(quotaKey('T', 'ocr'), 1)
   })
 
-  it('le TTL n’est posé qu’au premier appel du jour', async () => {
+  it('le TTL est posé à CHAQUE appel (une clé créée par DECRBY doit expirer aussi)', async () => {
     const quotaExpires = () => redisMock.expire.mock.calls.filter(c => String(c[0]).startsWith('quota:'))
     seedCounter(1)
     await authorizeSpend('T', 'ai', 1)
-    expect(quotaExpires()).toHaveLength(1)      // 1er appel du jour → TTL posé
+    expect(quotaExpires()).toHaveLength(1)
     vi.clearAllMocks(); seedTenant(); seedCounter(2)
     await authorizeSpend('T', 'ai', 1)
-    expect(quotaExpires()).toHaveLength(0)      // appels suivants → pas de TTL
+    expect(quotaExpires()).toHaveLength(1)      // et non 0 : sinon clé sans expiration
   })
 })
 

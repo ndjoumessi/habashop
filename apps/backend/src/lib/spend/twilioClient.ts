@@ -68,11 +68,12 @@ export async function sendWhatsApp(opts: {
     return { sent: 0, denied: true, code: decision.code, message: decision.message, sids: [] }
   }
 
+  const reservedKey = decision.quotaKey // clé du jour de la RÉSERVATION (cf. bascule de minuit)
   const client = getClient()
   const from = (process.env.TWILIO_WHATSAPP_FROM ?? '').trim()
   if (!client || !from) {
     // Rien n'est parti : on rend les unités réservées.
-    await releaseQuota(opts.tenantId!, 'whatsapp', recipients.length)
+    await releaseQuota(opts.tenantId!, 'whatsapp', recipients.length, reservedKey)
     console.warn('[twilioClient] configuration Twilio incomplète (SID/TOKEN/FROM) → envoi ignoré')
     return { sent: 0, denied: false, code: 'TWILIO_NOT_CONFIGURED', sids: [] }
   }
@@ -91,7 +92,7 @@ export async function sendWhatsApp(opts: {
     }
   }
   // Le compteur mesure les envois RÉELS : on rend ce qui n'est pas parti.
-  if (failed > 0) await releaseQuota(opts.tenantId!, 'whatsapp', failed)
+  if (failed > 0) await releaseQuota(opts.tenantId!, 'whatsapp', failed, reservedKey)
 
   return { sent, denied: false, failed, sids }
 }
