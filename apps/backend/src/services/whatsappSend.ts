@@ -29,7 +29,7 @@ function payLabel(mode: string, lang: string): string {
 export interface WaSale { id: string; total: number; paymentMode: string; createdAt: Date | string }
 export interface WaItem { qty: number; total: number; product?: { name?: string | null } | null; name?: string }
 export interface WaCustomer { name?: string | null; phone?: string | null }
-export interface WaTenant { id: string; country?: string | null; name: string; currency: string; lang?: string | null; enableLoyalty?: boolean; pointsPerAmount?: number | null; enableAutoWhatsApp?: boolean }
+export interface WaTenant { id: string; name: string; currency: string; lang?: string | null; enableLoyalty?: boolean; pointsPerAmount?: number | null; enableAutoWhatsApp?: boolean }
 
 /** Construit le texte du reçu WhatsApp (pur, testable). Même structure que le ticket. */
 export function buildSaleMessage(sale: WaSale, items: WaItem[], customer: WaCustomer, tenant: WaTenant): string {
@@ -63,8 +63,7 @@ export async function sendSaleWhatsApp(sale: WaSale, items: WaItem[], customer: 
     if (!tenant.enableAutoWhatsApp) return false
     if (!customer?.phone) return false
     const body = buildSaleMessage(sale, items, customer, tenant)
-    // Reçu TRANSACTIONNEL : seau 'whatsapp' et AUCUN plafond minute (cf. spendGuard).
-    const res = await sendWhatsApp({ tenantId: tenant.id, to: customer.phone, body, country: tenant.country, burst: false })
+    const res = await sendWhatsApp({ tenantId: tenant.id, to: customer.phone, body })
     if (res.denied) {
       console.warn(`[whatsappSend] reçu non envoyé (${res.code}) tenant=${tenant.id}`)
       return false

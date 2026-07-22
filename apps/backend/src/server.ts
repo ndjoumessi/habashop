@@ -8,7 +8,7 @@ import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
 import { validatorCompiler, hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod'
 import { initTenantStore } from './lib/tenantContext'
-import { getAppVersion, getBuildId } from './lib/version'
+import { getAppVersion } from './lib/version'
 import * as Sentry from '@sentry/node'
 import { prisma } from './db'
 import { redis } from './redis'
@@ -219,9 +219,6 @@ async function start() {
   app.get('/health', { config: { rateLimit: false } }, async () => ({
     status: 'ok',
     version: getAppVersion(), // source unique = package.json racine (jamais un littéral)
-    // Empreinte du BINAIRE déployé : permet de vérifier QUEL build tourne quand la
-    // version ne change pas (un correctif backend ne bumpe pas forcément le semver).
-    build: getBuildId(),
     timestamp: new Date().toISOString(),
   }))
 

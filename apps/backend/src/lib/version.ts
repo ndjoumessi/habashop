@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { BAKED_APP_VERSION, BAKED_BUILD_ID } from '../version.generated'
+import { BAKED_APP_VERSION } from '../version.generated'
 
 // Version PRODUIT = SOURCE UNIQUE = package.json RACINE du monorepo (« habashop »).
 // ⚠️ BAKÉE AU BUILD (`version.generated.ts` via prebuild) → le binaire déployé ne fait
@@ -29,16 +29,4 @@ export function getAppVersion(): string {
   // Railway déploie depuis la racine). Non-semver volontaire → jamais confondu avec une vraie version.
   cached = process.env.npm_package_version || '0.0.0-unknown'
   return cached
-}
-
-/**
- * Empreinte du BINAIRE déployé (`AAAAMMJJTHHMMSSZ-<sha court>`).
- *
- * ⚠️ Complète la version, elle ne la remplace pas : deux correctifs successifs partagent
- * souvent le même semver, donc `/health.version` ne dit PAS quel build tourne. `railway up`
- * envoie des fichiers et non un dépôt → Railway n'injecte aucune variable git, et l'uptime
- * prouve qu'un redémarrage a eu lieu, pas lequel. D'où cette empreinte, bakée au build.
- */
-export function getBuildId(): string {
-  return BAKED_BUILD_ID || 'unknown'
 }

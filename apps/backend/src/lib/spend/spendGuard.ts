@@ -20,7 +20,7 @@ import { redis } from '../../redis'
  *    reçus d'un client payant). Sans la trace, un fail-open exploité serait invisible.
  */
 
-export type SpendKind = 'ai' | 'ocr' | 'whatsapp' | 'marketing' | 'email'
+export type SpendKind = 'ai' | 'ocr' | 'whatsapp' | 'email'
 
 export const DEMO_TENANT_FORBIDDEN = 'DEMO_TENANT_FORBIDDEN'
 export const TRIAL_EXPIRED         = 'TRIAL_EXPIRED'
@@ -47,14 +47,10 @@ export type SpendDecision = {
 const DEFAULTS: Record<SpendKind, { trial: number; active: number }> = {
   ai:       { trial: 20,  active: 200 },
   ocr:      { trial: 15,  active: 150 },
-  // ⚠️ `whatsapp` = TRANSACTIONNEL (reçu de vente, alerte, crons) et `marketing` =
-  // diffusion/campagne, dans des seaux SÉPARÉS. Partagés, une campagne de 300 vidait le
-  // quota du jour et coupait silencieusement tous les reçus clients jusqu'au lendemain.
-  whatsapp:  { trial: 30,  active: 300 },
-  marketing: { trial: 30,  active: 300 },
-  email:     { trial: 20,  active: 200 },
+  whatsapp: { trial: 30,  active: 300 },
+  email:    { trial: 20,  active: 200 },
 }
-const ENV_KEY: Record<SpendKind, string> = { ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP', marketing: 'MARKETING', email: 'EMAIL' }
+const ENV_KEY: Record<SpendKind, string> = { ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP', email: 'EMAIL' }
 
 export function quotaLimit(kind: SpendKind, status: string): number {
   const tier = status === 'trial' ? 'trial' : 'active'
@@ -250,7 +246,6 @@ export async function authorizeSpend(
   tenantId: string | null | undefined,
   kind: SpendKind,
   units = 1,
-  opts: { burst?: boolean } = {},
 ): Promise<SpendDecision> {
   const deny = (code: string, message: string): SpendDecision =>
     ({ ok: false, code, message, used: 0, limit: 0, remaining: 0 })
@@ -268,11 +263,7 @@ export async function authorizeSpend(
   const state = tenantSpendState(info)
   if (!state.ok) return deny(state.code!, state.message!)
 
-  // ⚠️ `burst: false` pour les envois TRANSACTIONNELS déclenchés par une vente : quatre
-  // caisses qui dépassent 10 ventes dans la même minute (heure de pointe, ou rejeu de
-  // ventes hors-ligne à la reconnexion) perdaient silencieusement leurs reçus. Le plafond
-  // journalier continue de borner la dépense ; c'est la rafale qui n'a pas de sens ici.
-  if (opts.burst !== false && !(await burstOk(tenantId, kind))) {
+  if (!(await burstOk(tenantId, kind))) {
     return deny(BURST_EXCEEDED, 'Trop de demandes en une minute pour cette boutique. Réessayez dans un instant.')
   }
 
