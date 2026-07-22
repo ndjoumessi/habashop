@@ -291,8 +291,8 @@ const BASE = 'https://habashop-production.up.railway.app'
 async function main() {
   // 1. Authentification
   const { data: { token } } = await axios.post(BASE + '/api/auth/login', {
-    email: 'admin@habashop.com',
-    password: 'demo1234'
+    email: 'vous@votre-boutique.com',
+    password: process.env.HABASHOP_PASSWORD
   })
   const headers = { Authorization: 'Bearer ' + token }
 

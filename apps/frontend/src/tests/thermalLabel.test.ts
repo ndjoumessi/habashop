@@ -95,7 +95,7 @@ describe('printThermalLabels — PDF 40×30 mm', () => {
   })
 
   it('popup bloqué → repli téléchargement', async () => {
-    ;(window.open as unknown as { mockReturnValue: (v: unknown) => void }).mockReturnValue(null)
+    (window.open as unknown as { mockReturnValue: (v: unknown) => void }).mockReturnValue(null)
     await printThermalLabels([{ name: 'Lait', sku: 'PRD-0001', price: 900, barcode: '4006381333931' }], fmt, baseOpts)
     expect(pdfInst.save).toHaveBeenCalled()
   })
