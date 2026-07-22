@@ -50,6 +50,21 @@ Auto-deploy GitHub sur push `main` (lag ~20-25 min → `railway up --ci` pour fo
 
 **Rituel commit** : `npx tsc --noEmit` (0) → `npm test` (verts) → `npm run build` (OK) → commit/push `main`. Git : push direct sur `main`, pas de feature branch.
 
+### ⚠️ Vérification en PROD — trois formes autorisées, pas une de plus
+
+**Un correctif de dépense ne se valide pas en dépensant.** La preuve en production se fait **UNIQUEMENT** par :
+- **(a) lecture seule** — `GET`, requête Prisma `findMany`/`findUnique`, `curl` sur une route non mutante ;
+- **(b) assertion sur la DÉCISION du garde, SDK mocké** — `expect(messages.create).not.toHaveBeenCalled()` ; c'est un test, pas un appel réseau ;
+- **(c) tenant JETABLE** créé pour la vérification puis **détruit** (cf. le motif `verif-guard-tmp` : écriture directe en base, aucun e-mail émis, suppression immédiate + état final vérifié).
+
+**JAMAIS** : muter l'état d'un tenant existant (`PATCH` sur `ownerPhone`, `enableAutoWhatsApp`, `status`…), ni déclencher un envoi/appel réel (Twilio, Anthropic, Resend) pour « prouver que ça marche ».
+
+**Deux incidents réels à l'origine de la règle** (2026-07-22) :
+1. Un « contrôle positif » sur `POST /api/whatsapp/send-ticket` a **réellement expédié** un message WhatsApp facturé vers le `ownerPhone` de la démo. L'endpoint choisi pour prouver qu'un garde laisse passer était… un endpoint qui envoie.
+2. Un `PATCH /api/tenant` exploratoire a mis `enableAutoWhatsApp=true` sur `demo-tenant-001` (remis à `false` ensuite). Vérifier un garde ne justifie pas de modifier la configuration d'une boutique réelle.
+
+**Corollaire — le smoke de version ne prouve pas un déploiement.** `npm run smoke:version` compare la version, donc reste **vert quand le déploiement n'a pas eu lieu** si la version n'a pas bougé (vu 2 fois : `railway up` avait échoué après « Failed to stream build logs »). Preuve réelle = **`uptime` de `/api/health-extended` remis à zéro** (poller jusqu'à ce qu'il redescende), ou une réponse dont le contenu a changé.
+
 ## Versionnage ⚠️ SOURCE UNIQUE
 
 **La version PRODUIT vit dans UN SEUL endroit : `version` du `package.json` RACINE** (actuellement **2.6.0**). Tout affichage/retour de version en dérive — **jamais de littéral en dur** (on a eu 6 versions divergentes : admin 2.6.0, /health 2.1.0, /health-extended 2.3.0, /api/docs 2.0.0, sidebar 1.0.0…).
