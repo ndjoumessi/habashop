@@ -22,6 +22,21 @@ const TWILIO_FROM = process.env.TWILIO_WHATSAPP_FROM
 
 // ── Lazy init Twilio ──
 // Lu à chaque appel pour garantir les vars Railway
+// Messages métier des codes d'erreur Twilio. ⚠️ Ils étaient devenus du CODE MORT quand
+// le client unifié avale les exceptions : le caissier recevait un 503 générique au lieu
+// de « Ce numéro n'est pas inscrit sur WhatsApp ». Le client remonte désormais
+// `errorCode`, ce qui les rend de nouveau atteignables.
+const TWILIO_ERRORS: Record<number, string> = {
+  21608: "Ce numéro n'est pas inscrit sur WhatsApp",
+  21211: 'Format de numéro invalide',
+  21614: 'Numéro non joignable sur WhatsApp',
+  63007: 'Canal WhatsApp non disponible',
+  63016: 'Message non livrable',
+  20003: 'Authentification Twilio échouée',
+  21401: 'Numéro expéditeur invalide',
+  21606: 'Numéro non activé pour WhatsApp',
+}
+
 // ⚠️ Plus de client Twilio local : tout envoi passe par `lib/spend/twilioClient`,
 // qui résout démo/statut/quota depuis le tenantId. Verrouillé par le méta-test
 // `spendGuardAllowlist.test.ts`.
@@ -122,9 +137,6 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       })
     }
 
-    const cleaned = phone.replace(/[\s\-\(\)]/g, '').replace(/^00/, '+')
-    const waPhone = cleaned.startsWith('+') ? `whatsapp:${cleaned}` : `whatsapp:+${cleaned}`
-
     // Devise + langue + nom = ceux de la boutique ACTIVE (les montants reçus sont en base XOF).
     // W2 — `request.tenantId` (boutique active, garantie non-null par authenticate) et non
     // `request.user.tenantId` (tenant principal du JWT) : sinon un reçu émis depuis la boutique B
@@ -171,35 +183,25 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       `_${i('Conservez-le comme justificatif.', 'Keep it as proof of purchase.', 'Consérvelo como justificante.', 'Conservalo come giustificativo.')}_`,
     ].filter(l => l !== null && l !== undefined).join('\n')
 
-    console.log('📱 Envoi WhatsApp vers:', waPhone)
-    console.log('📤 From:', TWILIO_FROM)
-
     try {
-      const res = await sendWhatsApp({ tenantId: request.tenantId, to: waPhone, body })
-      if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
-      if (res.sent === 0) return reply.code(503).send({ error: 'Envoi WhatsApp impossible' })
-      console.log('✅ WhatsApp envoyé, SID:', res.sids[0])
-      return reply.send({ success: true, sid: res.sids[0], to: waPhone })
-    } catch (err) {
-      console.error('❌ Twilio error code:', err.code)
-      console.error('❌ Twilio error msg:', err.message)
-
-      const TWILIO_ERRORS: Record<number, string> = {
-        21608: "Ce numéro n'est pas inscrit sur WhatsApp",
-        21211: 'Format de numéro invalide',
-        21614: 'Numéro non joignable sur WhatsApp',
-        63007: 'Canal WhatsApp non disponible',
-        63016: 'Message non livrable',
-        20003: 'Authentification Twilio échouée',
-        21401: 'Numéro expéditeur invalide',
-        21606: 'Numéro non activé pour WhatsApp',
+      const res = await sendWhatsApp({ tenantId: request.tenantId, to: phone, body, country: tenant?.country })
+      if (res.denied) {
+        return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
       }
-
-      return reply.code(500).send({
-        error:   TWILIO_ERRORS[err.code] ?? err.message ?? "Erreur lors de l'envoi",
-        code:    err.code ?? 0,
-        details: err.message,
+      if (res.sent > 0) {
+        return reply.send({ success: true, sid: res.sids[0], to: res.results.find(r => r.ok)?.to })
+      }
+      // Échec : on rend le motif PRÉCIS, pas un 503 générique.
+      const failure = res.results.find(r => !r.ok)
+      const mapped = failure?.errorCode ? TWILIO_ERRORS[failure.errorCode] : undefined
+      return reply.code(res.code === 'TWILIO_NOT_CONFIGURED' ? 503 : 502).send({
+        error: mapped ?? failure?.error ?? "Erreur lors de l'envoi",
+        code:  failure?.errorCode ?? res.code ?? 0,
       })
+    } catch (err: unknown) {
+      // Le client ne throw pas ; ce filet ne couvre qu'un imprévu de construction.
+      request.log.error({ err }, 'send-ticket')
+      return reply.code(500).send({ error: "Erreur lors de l'envoi" })
     }
   })
 
@@ -223,8 +225,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       if (!isTwilioConfigured()) return reply.code(503).send({ error: 'Service WhatsApp non configuré' })
-      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
-      const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone.replace(/^0/, '')}`
+      const alertTenant = await prisma.tenant.findUnique({ where: { id: request.tenantId as string }, select: { country: true } })
 
       let body = ''
       if (alertType === 'low_stock') {
@@ -235,7 +236,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
       if (!body) return reply.code(400).send({ error: 'alertType inconnu' })
 
-      const res = await sendWhatsApp({ tenantId: request.tenantId, to: formattedPhone, body })
+      const res = await sendWhatsApp({ tenantId: request.tenantId, to: phone, body, country: alertTenant?.country })
       if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
       if (res.sent === 0) return reply.code(503).send({ error: 'Envoi WhatsApp impossible' })
       return { success: true, sid: res.sids[0] }
@@ -272,10 +273,13 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
     // Le quota est réservé pour les N destinataires AVANT le premier envoi : soit tout
     // part, soit rien (pas de diffusion tronquée à mi-liste).
-    const res = await sendWhatsApp({ tenantId: request.tenantId, to: phones, body: message })
+    const bcTenant = await prisma.tenant.findUnique({ where: { id: request.tenantId as string }, select: { country: true } })
+    const res = await sendWhatsApp({ tenantId: request.tenantId, to: phones, body: message, country: bcTenant?.country })
     if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
 
-    return { sent: res.sent, failed: res.failed ?? 0 }
+    // `failed` inclut les destinataires JAMAIS contactés (Twilio non configuré, numéro
+    // inexploitable) : renvoyer 0 ferait passer un envoi totalement raté pour un succès.
+    return { sent: res.sent, failed: res.failed, skipped: res.skipped, code: res.code }
   })
 
   // ─── CAMPAGNES WHATSAPP MARKETING ───────────────────────────────────────────
@@ -352,23 +356,25 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       })
     }
 
-    const phones = customers
-      .map(c => c.phone!)
-      .filter(Boolean)
-      .map(p => p.replace(/[\s\-\(\)]/g, ''))
-      .map(p => p.startsWith('+') ? p : `+${p.replace(/^0/, '')}`)
+    // ⚠️ AUCUNE normalisation locale : `sendWhatsApp` applique la règle UNIQUE
+    // (`lib/spend/phone.ts`), sinon broadcast et campagne divergent — c'est
+    // exactement ce qui s'était produit.
+    const phones = customers.map(c => c.phone!).filter(Boolean)
 
     // ⚠️ Le quota compte des MESSAGES, pas des requêtes : une campagne de N destinataires
     // réserve N unités AVANT la boucle. Si ça ne rentre pas, l'envoi entier est refusé
     // (message nommant le restant et le requis) plutôt que tronqué à mi-cible.
-    const res = await sendWhatsApp({ tenantId, to: phones, body: message })
+    const campTenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { country: true } })
+    const res = await sendWhatsApp({ tenantId, to: phones, body: message, country: campTenant?.country })
     if (res.denied) {
       return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({
         error: res.message, code: res.code, recipientCount: phones.length,
       })
     }
     const sent = res.sent
-    const failed = res.failed ?? 0
+    // `failed` compte AUSSI les destinataires jamais contactés — l'historique de campagne
+    // doit refléter 180 échecs et non « 0 erreur » quand rien n'est parti.
+    const failed = res.failed
 
     // Enregistre la campagne (idempotent — une seule ligne par envoi)
     await prisma.campaign.create({
