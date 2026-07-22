@@ -2,11 +2,12 @@ import type { FastifyInstance } from 'fastify'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { blockDemoTenant } from '../middleware/demoTenant'
 import { deleteAccount, AccountDeletionError } from '../services/accountDeletion'
 
 export async function accountRoutes(app: FastifyInstance): Promise<void> {
   app.delete('/api/account/me', {
-    preHandler: authenticate,
+    preHandler: [authenticate, blockDemoTenant],
     config: {
       rateLimit: {
         max: 3,

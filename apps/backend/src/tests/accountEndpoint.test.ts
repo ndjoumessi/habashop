@@ -4,10 +4,16 @@ import jwt from '@fastify/jwt'
 import rateLimit from '@fastify/rate-limit'
 
 const { mocks } = vi.hoisted(() => ({
-  mocks: { findUnique: vi.fn(), compare: vi.fn(), deleteAccount: vi.fn() },
+  mocks: { findUnique: vi.fn(), compare: vi.fn(), deleteAccount: vi.fn(), tenantFindUnique: vi.fn() },
 }))
 
-vi.mock('../db', () => ({ prisma: { user: { findUnique: mocks.findUnique } } }))
+// `tenant.findUnique` alimente le garde boutique-démo (fail-closed) : sans lui, la
+// suppression de compte est refusée en 403 — cf. demoTenant.test.ts.
+vi.mock('../db', () => ({ prisma: {
+  user:   { findUnique: mocks.findUnique },
+  tenant: { findUnique: mocks.tenantFindUnique },
+} }))
+vi.mock('../redis', () => ({ redis: null }))
 vi.mock('bcryptjs', () => ({ default: { compare: mocks.compare } }))
 vi.mock('../lib/userStatus', () => ({ isUserActive: vi.fn().mockResolvedValue(true) }))
 vi.mock('../services/accountDeletion', () => ({
@@ -36,6 +42,7 @@ const del = (app: any, payload: any) =>
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.findUnique.mockResolvedValue({ id: 'u1', passwordHash: 'hash' })
+  mocks.tenantFindUnique.mockResolvedValue({ isDemo: false }) // boutique cliente par défaut
   mocks.compare.mockResolvedValue(true)
   mocks.deleteAccount.mockResolvedValue({ scope: 'user' })
 })
@@ -47,6 +54,18 @@ describe('DELETE /api/account/me', () => {
     expect(res.statusCode).toBe(200)
     expect(res.json()).toEqual({ deleted: true, scope: 'user' })
     expect(mocks.deleteAccount).toHaveBeenCalledWith('u1')
+    await app.close()
+  })
+
+  it('403 DEMO_TENANT_FORBIDDEN sur une boutique de démo (destructif, deleteAccount non appelé)', async () => {
+    // admin@ démo est SUPER_ADMIN → deleteAccount supprimerait TOUTE la boutique.
+    // Mot de passe et texte de confirmation sont publics : seul le garde serveur protège.
+    mocks.tenantFindUnique.mockResolvedValue({ isDemo: true })
+    const app = await buildApp()
+    const res = await del(app, { password: 'pw', confirmation: 'SUPPRIMER' })
+    expect(res.statusCode).toBe(403)
+    expect(res.json().code).toBe('DEMO_TENANT_FORBIDDEN')
+    expect(mocks.deleteAccount).not.toHaveBeenCalled()
     await app.close()
   })
 

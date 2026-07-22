@@ -12,6 +12,11 @@ model Tenant {
   // Tenant INTERNE plateforme (staff super-admin SaaS), PAS une boutique cliente.
   // Exclu des listings/quotas/agrégats de la console (/api/admin/*). Défaut false.
   isPlatform Boolean @default(false)
+  // Boutique de DÉMONSTRATION (comptes partagés, mot de passe public). Les actions à
+  // coût externe (Anthropic, Twilio, Resend) et destructives sont refusées côté SERVEUR
+  // (403 DEMO_TENANT_FORBIDDEN, cf. middleware/demoTenant.ts) — la seule protection qui
+  // résiste à un curl, le mot de passe démo étant public. Défaut false.
+  isDemo     Boolean @default(false)
   id        String   @id @default(cuid())
   name      String
   currency  String   @default("XOF")

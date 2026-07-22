@@ -4,6 +4,7 @@ import { isValidSlug, RESERVED_SLUGS } from '../utils/slug'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { blockDemoTenant } from '../middleware/demoTenant'
 import { sendUserInvitationEmail } from '../services/email'
 
 const VALID_ROLES = ['ADMIN', 'MANAGER', 'CASHIER', 'ACCOUNTANT', 'HR'] as const
@@ -31,7 +32,10 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
   // Le créateur (ADMIN/SUPER_ADMIN) est automatiquement lié comme ADMIN de la boutique.
   // Réconciliation spec : ADMIN autorisé (et pas seulement SUPER_ADMIN) pour permettre
   // à un propriétaire d'ouvrir une 2ᵉ boutique (cas d'usage central du multi-boutiques).
-  app.post('/api/tenants', { preHandler: authenticate }, async (request, reply) => {
+  // ⚠️ Gardé démo : sans ça, un compte démo crée une boutique NEUVE (isDemo=false par
+  // défaut), bascule dessus et retrouve OCR/WhatsApp — le garde serait contournable en
+  // deux appels. Cf. demoTenant.test.ts (« évasion par création de boutique »).
+  app.post('/api/tenants', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { userId } = request.user
     const body = (request.body ?? {}) as { name?: string; currency?: string; lang?: string; address?: string; country?: string; phone?: string }
@@ -62,7 +66,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
 
   // Invitation d'un employé dans une boutique CHOISIE (multi-boutiques).
   // Le caller doit être ADMIN de cette boutique (via UserTenant) ou SUPER_ADMIN.
-  app.post('/api/tenants/:id/invite', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/tenants/:id/invite', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
     const { id: targetTenantId } = request.params as { id: string }
     const { userId, role: callerRole } = request.user
     const { name, email, password, role } = (request.body ?? {}) as { name?: string; email?: string; password?: string; role?: string }
@@ -261,7 +265,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     return users.map(({ passwordHash, twoFASecret, ...u }) => u)
   })
 
-  app.post('/api/tenant/users', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/tenant/users', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
     if (!requireAdmin(request, reply)) return
     const { name, email, password, role } = request.body as InviteUserBody
     if (!name?.trim() || !email?.trim() || !password) {

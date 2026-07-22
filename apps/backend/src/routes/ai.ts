@@ -2,9 +2,10 @@ import type { FastifyInstance } from 'fastify'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { blockDemoTenant } from '../middleware/demoTenant'
 
 export async function aiRoutes(app: FastifyInstance): Promise<void> {
-  app.post('/api/ai/analyze', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/ai/analyze', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
     const { type, lang } = request.body as { type?: string; lang?: string }
     const { tenantId } = request.user
 
@@ -144,7 +145,7 @@ En ${langLabel}, analyse :
   })
 
   // ─── AI CHAT ──────────────────────────
-  app.post('/api/ai/chat', { preHandler: authenticate }, async (request, reply) => {
+  app.post('/api/ai/chat', { preHandler: [authenticate, blockDemoTenant] }, async (request, reply) => {
     // Accepte {message: string} (simple) ou {messages: array} (historique)
     const { message: singleMsg, messages: msgHistory, lang } = request.body as { message?: string; messages?: any[]; lang?: string }
     const { tenantId } = request.user
