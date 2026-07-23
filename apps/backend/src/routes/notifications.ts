@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId } from '../lib/tenantId'
 import { isUserActive } from '../lib/userStatus'
 import { decideWsAuth } from '../lib/wsAuth'
 
@@ -19,9 +20,10 @@ export function notifyTenant(tenantId: string, event: { type: string; data?: any
 export async function notificationRoutes(app: FastifyInstance): Promise<void> {
   // Enregistre / met à jour le token push Expo d'un appareil (app mobile).
   app.post('/api/notifications/token', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId, userId } = request.user
+    const { userId } = request.user
     const { token, platform, deviceId } = request.body as { token?: string; platform?: string; deviceId?: string }
     if (!token?.trim()) return reply.code(400).send({ error: 'Token requis' })
+    const tenantId = getTenantId(request)
     const saved = await prisma.pushToken.upsert({
       where: { token },
       create: { token, platform: platform ?? 'unknown', deviceId: deviceId ?? null, tenantId, userId },

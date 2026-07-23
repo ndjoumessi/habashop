@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId } from '../lib/tenantId'
 import { ID_PARAMS, GOAL_CREATE, GOAL_UPDATE } from '../schemas/writesB'
 
 interface GoalBody {
@@ -17,7 +18,7 @@ interface GoalBody {
 
 export async function goalsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/goals', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.goal.findMany({
       where: { tenantId, deletedAt: null },
       orderBy: { createdAt: 'asc' },
@@ -25,11 +26,12 @@ export async function goalsRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/goals', { preHandler: authenticate, schema: { body: GOAL_CREATE } }, async (request, reply) => {
-    const { tenantId, userId } = request.user
+    const { userId } = request.user
     const b = request.body as GoalBody
     if (!b.label?.trim() || b.target === undefined || b.target === null) {
       return reply.code(400).send({ error: 'label et target requis' })
     }
+    const tenantId = getTenantId(request)
     const goal = await prisma.goal.create({
       data: {
         tenantId,
@@ -55,7 +57,8 @@ export async function goalsRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.put('/api/goals/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: GOAL_UPDATE } }, async (request, reply) => {
-    const { tenantId, userId } = request.user
+    const { userId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const existing = await prisma.goal.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Objectif introuvable' })
@@ -85,7 +88,8 @@ export async function goalsRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.delete('/api/goals/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId, userId } = request.user
+    const { userId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const existing = await prisma.goal.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Objectif introuvable' })

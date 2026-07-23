@@ -2,11 +2,12 @@ import type { FastifyInstance } from 'fastify'
 import type { BonusBody, SalaryHistoryBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId } from '../lib/tenantId'
 
 export async function hrRoutes(app: FastifyInstance): Promise<void> {
   // ─── EMPLOYEE BONUSES ─────────────────
   app.get('/api/bonuses', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.employeeBonus.findMany({
       where: { tenantId },
       orderBy: { date: 'desc' },
@@ -14,7 +15,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.get('/api/bonuses/employee/:employeeId', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { employeeId } = request.params as { employeeId: string }
     return prisma.employeeBonus.findMany({
       where: { tenantId, employeeId },
@@ -23,9 +24,9 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/bonuses', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
     const { employeeId, amount, reason, date } = request.body as BonusBody
     if (!employeeId || !amount) return reply.code(400).send({ error: 'employeeId et amount requis' })
+    const tenantId = getTenantId(request)
     try {
       const bonus = await prisma.employeeBonus.create({
         data: {
@@ -43,7 +44,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.delete('/api/bonuses/:id', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     try {
       await prisma.employeeBonus.delete({ where: { id, tenantId } })
@@ -55,7 +56,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
 
   // ─── SALARY HISTORY ───────────────────
   app.get('/api/salary-history', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.salaryHistory.findMany({
       where: { tenantId },
       orderBy: { date: 'desc' },
@@ -63,7 +64,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.get('/api/salary-history/employee/:employeeId', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { employeeId } = request.params as { employeeId: string }
     return prisma.salaryHistory.findMany({
       where: { tenantId, employeeId },
@@ -72,9 +73,9 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/salary-history', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
     const { employeeId, oldSalary, newSalary, reason, date } = request.body as SalaryHistoryBody
     if (!employeeId || newSalary === undefined) return reply.code(400).send({ error: 'employeeId et newSalary requis' })
+    const tenantId = getTenantId(request)
     try {
       const entry = await prisma.salaryHistory.create({
         data: {
@@ -93,7 +94,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.delete('/api/salary-history/:id', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const entry = await prisma.salaryHistory.findFirst({ where: { id, tenantId } })
     if (!entry) return reply.code(404).send({ error: 'Entrée introuvable' })
