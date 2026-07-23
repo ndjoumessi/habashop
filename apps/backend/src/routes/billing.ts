@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { writeAudit } from '../lib/writeAudit'
+import { getTenantId } from '../lib/tenantId'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticate } from '../middleware/authenticate'
 import type { BillingBody } from '../types'
@@ -24,7 +25,7 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
    * @returns 201 demande créée · 400 plan/période/méthode invalide · 429 quota dépassé.
    */
   app.post('/api/billing/request-plan', { preHandler: authenticate, config: { rateLimit: { max: 3, timeWindow: '1 hour' } } }, async (request, reply) => {
-    const { tenantId, userId } = request.user
+    const { userId } = request.user
     const { plan, period, paymentMethod, paymentRef, notes } = (request.body ?? {}) as BillingBody
 
     if (!['pro', 'enterprise'].includes(plan)) {
@@ -36,6 +37,8 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     if (!VALID_PAYMENTS.includes(paymentMethod)) {
       return reply.code(400).send({ error: 'Méthode de paiement invalide.' })
     }
+    // Après les gardes 400 : `getTenantId` peut lever, l'ordre des sorties reste identique.
+    const tenantId = getTenantId(request)
     const amount = PLAN_PRICES[plan]?.[period] ?? PLAN_PRICES[plan]?.monthly ?? 24900
 
     const planRequest = await prisma.planRequest.create({
@@ -82,7 +85,7 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
 
   // Statut actuel du tenant + jours d'essai restants
   app.get('/api/billing/status', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
 
     const [tenant, pendingRequest] = await Promise.all([
       prisma.tenant.findUnique({
