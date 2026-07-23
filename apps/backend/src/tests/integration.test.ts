@@ -158,18 +158,40 @@ describe('Integration — Isolation multi-tenant', () => {
   })
 })
 
-// ── Super-Admin ───────────────────────────────
-describe('Integration — Super-Admin', () => {
-  it('GET /api/admin/stats → stats plateforme', async () => {
-    const { status, body } = await apiCall('/api/admin/stats', { headers: auth() })
-    expect(status).toBe(200)
-    expect(body.totalTenants).toBeGreaterThan(0)
+// ── Console PLATEFORME — isolation (P0) ──────────────────────────────────────
+// ⚠️ Ces deux tests attendaient 200. Ils encodaient la sémantique d'AVANT le P0,
+// où le rôle `SUPER_ADMIN` ouvrait `/api/admin/*` — c'est-à-dire la fuite
+// inter-tenants elle-même. Le 403 observé n'était pas une panne : c'était le garde
+// qui tient.
+//
+// `admin@habashop.com` est SUPER_ADMIN **de la boutique démo**, un rôle INTERNE au
+// tenant. Le seul critère d'accès à la console plateforme est `User.isPlatformAdmin`
+// (cf. `middleware/superAdmin.ts`). Mesuré sur son JWT de prod :
+// `role=SUPER_ADMIN`, `isPlatformAdmin=false` → 403 attendu et souhaitable.
+//
+// L'assertion est donc INVERSÉE pour être security-correcte : on vérifie que le gate
+// REFUSE. Accorder un jeton platform-admin pour forcer un 200 remplacerait un test
+// qui échoue par un test qui ment.
+//
+// Pas de cas positif ici : il exigerait des identifiants platform-admin réels, or ce
+// fichier porte des identifiants de DÉMO publics (dépôt public). Le chemin passant
+// est déjà couvert hors ligne par `adminPlatformIsolation.test.ts`.
+describe('Integration — Console plateforme refusée à un SUPER_ADMIN de boutique', () => {
+  it('GET /api/admin/stats → 403 (rôle tenant ≠ admin plateforme)', async () => {
+    const { status } = await apiCall('/api/admin/stats', { headers: auth() })
+    expect(status).toBe(403)
   })
 
-  it('GET /api/admin/plan-requests → liste', async () => {
-    const { status, body } = await apiCall('/api/admin/plan-requests', { headers: auth() })
-    expect(status).toBe(200)
-    expect(Array.isArray(body)).toBe(true)
+  it('GET /api/admin/plan-requests → 403', async () => {
+    const { status } = await apiCall('/api/admin/plan-requests', { headers: auth() })
+    expect(status).toBe(403)
+  })
+
+  it('le refus ne fuit AUCUNE donnée plateforme', async () => {
+    const { body } = await apiCall('/api/admin/stats', { headers: auth() })
+    // Un 403 qui renverrait quand même les agrégats serait un 403 décoratif.
+    expect(body?.totalTenants).toBeUndefined()
+    expect(Array.isArray(body)).toBe(false)
   })
 })
 
