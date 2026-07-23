@@ -1,7 +1,6 @@
 import twilio from 'twilio'
 import { authorizeSpend, releaseQuota } from './spendGuard'
 import { redactError } from '../redactPhone'
-import { normalizePhone } from '../phoneE164'
 
 /**
  * SEUL module autorisé à instancier le SDK Twilio.
@@ -43,15 +42,7 @@ export function isTwilioConfigured(): boolean {
   return !!getClient() && !!(process.env.TWILIO_WHATSAPP_FROM ?? '').trim()
 }
 
-/**
- * Met le numéro sous la forme attendue par Twilio (`whatsapp:+…`).
- *
- * ⚠️ Ne DEVINE rien : la mise en E.164 est faite en amont par `normalizePhone`, qui
- * rend le numéro inchangé dès que le pays est inconnu. Ici, un numéro resté national
- * reçoit un `+` qui ne le rend pas valide pour autant — Twilio le rejette, ce qui est
- * l'issue voulue (cf. l'invariant de `lib/phoneE164.ts`).
- */
-function toWhatsAppAddress(phone: string): string {
+function normalize(phone: string): string {
   const cleaned = phone.replace(/[\s\-()]/g, '').replace(/^00/, '+')
   return cleaned.startsWith('whatsapp:') ? cleaned : `whatsapp:${cleaned.startsWith('+') ? cleaned : '+' + cleaned}`
 }
@@ -93,11 +84,7 @@ export async function sendWhatsApp(opts: {
   const sids: string[] = []
   for (const phone of recipients) {
     try {
-      // Normalisation E.164 au POINT D'ENVOI : tous les appelants (reçu de vente, crons,
-      // routes) en bénéficient sans câbler le pays un par un. Pays inconnu ⇒ numéro
-      // INCHANGÉ, jamais réécrit au hasard (cf. `lib/phoneE164.ts`).
-      const e164 = normalizePhone(String(phone), decision.country).value
-      const msg = await client.messages.create({ from, to: toWhatsAppAddress(e164), body: opts.body })
+      const msg = await client.messages.create({ from, to: normalize(String(phone)), body: opts.body })
       if (msg?.sid) sids.push(msg.sid)
       sent++
     } catch (e: unknown) {
