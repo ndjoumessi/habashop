@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId, getActiveTenantId } from '../lib/tenantId'
 import { blockDemoTenant } from '../middleware/demoTenant'
 import { costQuota } from '../middleware/costQuota'
 import { analyzeInvoice, ALLOWED_INVOICE_TYPES } from '../services/invoiceOcr'
@@ -27,23 +28,24 @@ const SUPPLIER_UPDATE = z.object(SUPPLIER_FIELDS)
 
 export async function supplierRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/suppliers', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.supplier.findMany({ where: { tenantId, deletedAt: null } })
   })
 
   app.post('/api/suppliers', { preHandler: authenticate, schema: { body: SUPPLIER_CREATE } }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.supplier.create({ data: { ...(request.body as any), tenantId } })
   })
 
   app.put('/api/suppliers/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: SUPPLIER_UPDATE } }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     return prisma.supplier.update({ where: { id, tenantId }, data: request.body as any })
   })
 
   app.delete('/api/suppliers/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId, userId } = request.user
+    const { userId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     // Soft delete : la ligne reste (FK des commandes liées intacte) → plus de P2003/409
     const supplier = await prisma.supplier.findFirst({ where: { id, tenantId, deletedAt: null } })
@@ -83,8 +85,11 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(413).send({ error: 'Fichier trop volumineux (max 10 Mo)' })
     }
 
+    // Boutique ACTIVE (W2) — extraite AVANT le try : sa levée (théorique, route gardée)
+    // doit rester un 500 franc, pas être transformée en 422 par le catch OCR.
+    const tenantId = getActiveTenantId(request)
     try {
-      const result = await analyzeInvoice(request.tenantId, buffer, file.mimetype)
+      const result = await analyzeInvoice(tenantId, buffer, file.mimetype)
       return result
     } catch (err: any) {
       // Refus de dépense (démo / essai échu / quota) → code explicite, pas un 422 opaque.
@@ -98,8 +103,9 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
 
   // Restaurer un fournisseur soft-supprimé (ADMIN / SUPER_ADMIN)
   app.patch('/api/suppliers/:id/restore', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId, userId, role } = request.user
+    const { userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const supplier = await prisma.supplier.findFirst({ where: { id, tenantId } })
     if (!supplier) return reply.code(404).send({ error: 'Fournisseur introuvable' })
