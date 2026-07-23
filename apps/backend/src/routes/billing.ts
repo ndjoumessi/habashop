@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
+import { writeAudit } from '../lib/writeAudit'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticate } from '../middleware/authenticate'
 import type { BillingBody } from '../types'
@@ -61,7 +62,7 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
       },
     })
 
-    await prisma.auditLog.create({
+    await writeAudit('PLAN_REQUEST', prisma.auditLog.create({
       data: {
         tenantId,
         userId,
@@ -69,7 +70,7 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
         action: 'PLAN_REQUEST',
         description: JSON.stringify({ plan, period, amount, paymentMethod }),
       },
-    }).catch(() => {})
+    }))
 
     console.log(`💰 Demande plan ${plan} pour tenant ${planRequest.tenant.name}`)
 

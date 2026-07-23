@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
+import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { getTenantId } from '../lib/tenantId'
 import { ID_PARAMS, GOAL_CREATE, GOAL_UPDATE } from '../schemas/writesB'
@@ -46,13 +47,13 @@ export async function goalsRoutes(app: FastifyInstance): Promise<void> {
         linkedMetric: b.linkedMetric ?? null,
       },
     })
-    await prisma.auditLog.create({
+    await writeAudit('CREATE_GOAL', prisma.auditLog.create({
       data: {
         tenantId, userId, module: 'GOALS', action: 'CREATE_GOAL',
         description: JSON.stringify({ goalId: goal.id, label: goal.label }),
         severity: 'info',
       },
-    }).catch(() => {})
+    }))
     return reply.code(201).send(goal)
   })
 
@@ -77,13 +78,13 @@ export async function goalsRoutes(app: FastifyInstance): Promise<void> {
         linkedMetric: b.linkedMetric === null ? null : (b.linkedMetric ?? undefined),
       },
     })
-    await prisma.auditLog.create({
+    await writeAudit('UPDATE_GOAL', prisma.auditLog.create({
       data: {
         tenantId, userId, module: 'GOALS', action: 'UPDATE_GOAL',
         description: JSON.stringify({ goalId: id }),
         severity: 'info',
       },
-    }).catch(() => {})
+    }))
     return updated
   })
 
@@ -94,13 +95,13 @@ export async function goalsRoutes(app: FastifyInstance): Promise<void> {
     const existing = await prisma.goal.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Objectif introuvable' })
     await prisma.goal.update({ where: { id }, data: { deletedAt: new Date() } })
-    await prisma.auditLog.create({
+    await writeAudit('DELETE_GOAL', prisma.auditLog.create({
       data: {
         tenantId, userId, module: 'GOALS', action: 'DELETE_GOAL',
         description: JSON.stringify({ goalId: id, label: existing.label }),
         severity: 'info',
       },
-    }).catch(() => {})
+    }))
     return { success: true }
   })
 }

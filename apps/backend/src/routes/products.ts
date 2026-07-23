@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import type { ProductBody } from '../types'
 import { prisma } from '../db'
+import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { validatePriceTiers } from '../utils/pricing'
@@ -197,9 +198,9 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
     await prisma.product.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete
     invalidateTenantCache(tenantId).catch(() => {})
-    await prisma.auditLog.create({
+    await writeAudit('DELETE_PRODUCT', prisma.auditLog.create({
       data: { tenantId, userId, module: 'products', action: 'DELETE_PRODUCT', description: JSON.stringify({ id, name: product.name }) },
-    }).catch(() => {})
+    }))
     return { success: true }
   })
 
@@ -212,9 +213,9 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
     const restored = await prisma.product.update({ where: { id }, data: { deletedAt: null } })
     invalidateTenantCache(tenantId).catch(() => {})
-    await prisma.auditLog.create({
+    await writeAudit('RESTORE_PRODUCT', prisma.auditLog.create({
       data: { tenantId, userId, module: 'products', action: 'RESTORE_PRODUCT', description: JSON.stringify({ id, name: product.name }) },
-    }).catch(() => {})
+    }))
     return restored
   })
 
