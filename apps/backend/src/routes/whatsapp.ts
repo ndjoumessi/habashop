@@ -62,7 +62,8 @@ async function sendEveningReport() {
           ? `⚠️ *${lowStock.length} ${i('produit(s) en rupture :', 'product(s) low on stock:', 'producto(s) con stock bajo:', 'prodotto/i in esaurimento:')}*\n${lowStock.slice(0, 5).map(p => `• ${p.name} (${p.stockQty}/${p.stockMin})`).join('\n')}\n\n`
           : `✅ ${i('Aucune rupture de stock', 'No stock shortage', 'Sin roturas de stock', 'Nessuna rottura di stock')}\n\n`) +
         `_${i('Bonne soirée !', 'Good evening!', '¡Buenas noches!', 'Buona serata!')}_ 🌙`
-      const res = await sendWhatsApp({ tenantId: tenant.id, to: ownerPhone, body: message })
+      // `ownerPhone` vient de `Tenant` : le titulaire EST le commerçant → flux `owner`.
+      const res = await sendWhatsApp({ tenantId: tenant.id, to: ownerPhone, body: message, audience: 'owner' })
       if (res.sent > 0) console.log(`✅ Résumé soir envoyé pour ${tenant.name}`)
       else if (res.denied) console.warn(`⏭️  Résumé soir ignoré (${res.code}) pour ${tenant.name}`)
     }
@@ -93,7 +94,8 @@ async function sendMorningStockAlert() {
           return `${status} ${p.name}\n   ${i('Stock', 'Stock', 'Stock', 'Scorte')}: ${p.stockQty} / ${i('Seuil', 'Threshold', 'Umbral', 'Soglia')}: ${p.stockMin}`
         }).join('\n') +
         `\n\n💡 ${i("Pensez à commander dès aujourd'hui !", 'Remember to order today!', '¡Recuerde pedir hoy!', 'Ricordati di ordinare oggi!')}\n📦 ${i('Gérez votre stock sur HabaShop', 'Manage your stock on HabaShop', 'Gestione su stock en HabaShop', 'Gestisci le scorte su HabaShop')}`
-      const res = await sendWhatsApp({ tenantId: tenant.id, to: ownerPhone, body: message })
+      // `ownerPhone` vient de `Tenant` : le titulaire EST le commerçant → flux `owner`.
+      const res = await sendWhatsApp({ tenantId: tenant.id, to: ownerPhone, body: message, audience: 'owner' })
       if (res.sent > 0) console.log(`✅ Alerte matin envoyée pour ${tenant.name}`)
       else if (res.denied) console.warn(`⏭️  Alerte matin ignorée (${res.code}) pour ${tenant.name}`)
     }
@@ -180,11 +182,21 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     console.log('📤 From:', TWILIO_FROM)
 
     try {
-      const res = await sendWhatsApp({ tenantId: request.tenantId, to: waPhone, body })
+      const res = await sendWhatsApp({ tenantId: request.tenantId, to: waPhone, body, audience: 'customer' })
       if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
+      // Écarté ≠ panne : le numéro n'a pas pu être résolu en E.164 sûr (il faut le
+      // format international). Un 503 ferait croire à une indisponibilité Twilio.
+      if ((res.skipped ?? 0) > 0 && res.sent === 0) {
+        return reply.code(400).send({
+          error: 'Numéro non reconnu — saisissez-le au format international (ex. +221771234567)',
+          code:  'PHONE_NOT_INTERNATIONAL',
+        })
+      }
       if (res.sent === 0) return reply.code(503).send({ error: 'Envoi WhatsApp impossible' })
       console.log('✅ WhatsApp envoyé, SID:', res.sids[0])
-      return reply.send({ success: true, sid: res.sids[0], to: waPhone })
+      // `to` = l'adresse RÉELLEMENT remise à Twilio, pas la saisie : c'est ce qu'un
+      // support rapproche du journal Twilio quand un client dit n'avoir rien reçu.
+      return reply.send({ success: true, sid: res.sids[0], to: res.sentTo[0] })
     } catch (err) {
       console.error('❌ Twilio error code:', err.code)
       console.error('❌ Twilio error msg:', redactError(err))
@@ -226,6 +238,13 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     }
     const { phone, alertType, data, lang } = request.body as { phone?: string; alertType?: string; data?: any; lang?: string }
 
+    // Garde de nullité alignée sur `send-ticket` : sans elle, `phone.trim()` plus bas
+    // lève un TypeError que le catch transforme en 503 « service indisponible »,
+    // faisant lire une panne Twilio là où il y a une requête malformée.
+    if (!phone?.trim()) {
+      return reply.code(400).send({ error: 'Numéro de téléphone requis' })
+    }
+
     try {
       if (!isTwilioConfigured()) return reply.code(503).send({ error: 'Service WhatsApp non configuré' })
       // ⚠️ Numéro BRUT → le client d'envoi normalise. L'ancien `replace(/^0/, '')`
@@ -242,10 +261,18 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
       if (!body) return reply.code(400).send({ error: 'alertType inconnu' })
 
-      const res = await sendWhatsApp({ tenantId: request.tenantId, to: formattedPhone, body })
+      // Numéro fourni par l'appelant : rien ne prouve que c'est celui du commerçant
+      // (`Tenant.ownerPhone` n'est pas consulté) → traité comme un tiers.
+      const res = await sendWhatsApp({ tenantId: request.tenantId, to: formattedPhone, body, audience: 'customer' })
       if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
+      if ((res.skipped ?? 0) > 0 && res.sent === 0) {
+        return reply.code(400).send({
+          error: 'Numéro non reconnu — saisissez-le au format international (ex. +221771234567)',
+          code:  'PHONE_NOT_INTERNATIONAL',
+        })
+      }
       if (res.sent === 0) return reply.code(503).send({ error: 'Envoi WhatsApp impossible' })
-      return { success: true, sid: res.sids[0] }
+      return { success: true, sid: res.sids[0], to: res.sentTo[0] }
     } catch (err) {
       console.error('Twilio alert error:', redactError(err))
       return reply.code(503).send({ error: err.message })
@@ -279,10 +306,10 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
     // Le quota est réservé pour les N destinataires AVANT le premier envoi : soit tout
     // part, soit rien (pas de diffusion tronquée à mi-liste).
-    const res = await sendWhatsApp({ tenantId: request.tenantId, to: phones, body: message })
+    const res = await sendWhatsApp({ tenantId: request.tenantId, to: phones, body: message, audience: 'customer' })
     if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
 
-    return { sent: res.sent, failed: res.failed ?? 0 }
+    return { sent: res.sent, failed: res.failed ?? 0, skipped: res.skipped ?? 0 }
   })
 
   // ─── CAMPAGNES WHATSAPP MARKETING ───────────────────────────────────────────
@@ -367,7 +394,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     // ⚠️ Le quota compte des MESSAGES, pas des requêtes : une campagne de N destinataires
     // réserve N unités AVANT la boucle. Si ça ne rentre pas, l'envoi entier est refusé
     // (message nommant le restant et le requis) plutôt que tronqué à mi-cible.
-    const res = await sendWhatsApp({ tenantId, to: phones, body: message })
+    const res = await sendWhatsApp({ tenantId, to: phones, body: message, audience: 'customer' })
     if (res.denied) {
       return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({
         error: res.message, code: res.code, recipientCount: phones.length,
@@ -375,12 +402,16 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     }
     const sent = res.sent
     const failed = res.failed ?? 0
+    // Destinataires écartés faute de numéro international : ni envoyés, ni en échec
+    // Twilio. Non stockés en colonne dédiée (ce serait une migration, hors de cette
+    // surface) mais DÉDUCTIBLES de la ligne : recipientCount − sentCount − failedCount.
+    const skipped = res.skipped ?? 0
 
     // Enregistre la campagne (idempotent — une seule ligne par envoi)
     await prisma.campaign.create({
       data: { tenantId, sentBy: userId, message, segment, recipientCount: phones.length, sentCount: sent, failedCount: failed },
     }).catch(() => {})
 
-    return { sent, failed, recipientCount: phones.length }
+    return { sent, failed, skipped, recipientCount: phones.length }
   })
 }
