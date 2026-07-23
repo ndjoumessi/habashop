@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId, getActiveTenantId } from '../lib/tenantId'
 import { blockDemoTenant } from '../middleware/demoTenant'
 import { sendUserInvitationEmail } from '../services/email'
 
@@ -25,7 +26,7 @@ function requireAdmin(request: FastifyRequest, reply: FastifyReply): boolean {
 
 export async function tenantRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/tenant', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.tenant.findUnique({ where: { id: tenantId } })
   })
 
@@ -291,6 +292,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     }
     const existing = await prisma.user.findUnique({ where: { email: email.trim() } })
     if (existing) return reply.code(409).send({ error: 'Email déjà utilisé' })
+    const tenantId = getActiveTenantId(request)
     const passwordHash = await bcrypt.hash(password, 12)
     const user = await prisma.user.create({
       data: {
@@ -298,19 +300,19 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         email: email.trim(),
         passwordHash,
         role: (role as Role) ?? 'CASHIER',
-        tenantId: request.tenantId,
+        tenantId,
       },
     })
     // Liaison multi-boutiques : rattache l'employé à la boutique active.
     await prisma.userTenant.create({
-      data: { userId: user.id, tenantId: request.tenantId, role: (role as Role) ?? 'CASHIER' },
+      data: { userId: user.id, tenantId, role: (role as Role) ?? 'CASHIER' },
     }).catch(() => {})
     // Audit + email (best-effort, n'échoue pas l'invitation si l'email rate)
-    const tenant = await prisma.tenant.findUnique({ where: { id: request.tenantId } })
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } })
     const inviter = await prisma.user.findUnique({ where: { id: request.user.userId } })
     await writeAudit('INVITE_USER', prisma.auditLog.create({
       data: {
-        tenantId: request.tenantId,
+        tenantId,
         userId: request.user.userId,
         module: 'USERS',
         action: 'INVITE_USER',
@@ -319,7 +321,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       },
     }))
     sendUserInvitationEmail({
-      tenantId: request.tenantId,
+      tenantId,
       to: user.email,
       inviteeName: user.name,
       shopName: tenant?.name ?? 'HabaShop',
@@ -338,7 +340,8 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     if (body.role && !VALID_ROLES.includes(body.role as Role)) {
       return reply.code(400).send({ error: `Rôle invalide. Valides : ${VALID_ROLES.join(', ')}` })
     }
-    const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
+    const tenantId = getActiveTenantId(request)
+    const existing = await prisma.user.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Utilisateur introuvable' })
     // Si l'email change, vérifier unicité globale
     if (body.email && body.email.trim() !== existing.email) {
@@ -355,7 +358,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     })
     await writeAudit('UPDATE_USER', prisma.auditLog.create({
       data: {
-        tenantId: request.tenantId,
+        tenantId,
         userId: request.user.userId,
         module: 'USERS',
         action: 'UPDATE_USER',
@@ -373,19 +376,20 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     const { active } = request.body as { active?: boolean }
     if (typeof active !== 'boolean') return reply.code(400).send({ error: 'active (boolean) requis' })
     if (id === request.user.userId) return reply.code(403).send({ error: 'Vous ne pouvez pas désactiver votre propre compte' })
-    const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
+    const tenantId = getActiveTenantId(request)
+    const existing = await prisma.user.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Utilisateur introuvable' })
     // Empêcher la désactivation du dernier admin actif
     if (!active && isAdminRole(existing.role) && existing.isActive) {
       const remainingAdmins = await prisma.user.count({
-        where: { tenantId: request.tenantId, role: { in: [...ADMIN_ROLES] }, isActive: true, deletedAt: null, NOT: { id } },
+        where: { tenantId, role: { in: [...ADMIN_ROLES] }, isActive: true, deletedAt: null, NOT: { id } },
       })
       if (remainingAdmins === 0) return reply.code(403).send({ error: 'Impossible de désactiver le dernier administrateur actif' })
     }
     const updated = await prisma.user.update({ where: { id }, data: { isActive: active } })
     await writeAudit('TOGGLE_USER_ACTIVE', prisma.auditLog.create({
       data: {
-        tenantId: request.tenantId,
+        tenantId,
         userId: request.user.userId,
         module: 'USERS',
         action: 'TOGGLE_USER_ACTIVE',
@@ -405,12 +409,13 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     }
     const { twoFA } = request.body as { twoFA?: boolean }
     if (typeof twoFA !== 'boolean') return reply.code(400).send({ error: 'twoFA (boolean) requis' })
-    const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
+    const tenantId = getActiveTenantId(request)
+    const existing = await prisma.user.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Utilisateur introuvable' })
     const updated = await prisma.user.update({ where: { id }, data: { twoFAEnabled: twoFA } })
     await writeAudit('TOGGLE_USER_2FA', prisma.auditLog.create({
       data: {
-        tenantId: request.tenantId,
+        tenantId,
         userId: request.user.userId,
         module: 'USERS',
         action: 'TOGGLE_USER_2FA',
@@ -428,11 +433,12 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     if (!requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
     if (id === request.user.userId) return reply.code(403).send({ error: 'Vous ne pouvez pas supprimer votre propre compte' })
-    const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
+    const tenantId = getActiveTenantId(request)
+    const existing = await prisma.user.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Utilisateur introuvable' })
     if (isAdminRole(existing.role)) {
       const remainingAdmins = await prisma.user.count({
-        where: { tenantId: request.tenantId, role: { in: [...ADMIN_ROLES] }, isActive: true, deletedAt: null, NOT: { id } },
+        where: { tenantId, role: { in: [...ADMIN_ROLES] }, isActive: true, deletedAt: null, NOT: { id } },
       })
       if (remainingAdmins === 0) return reply.code(403).send({ error: 'Impossible de supprimer le dernier administrateur actif' })
     }
@@ -448,7 +454,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     })
     await writeAudit('DELETE_USER', prisma.auditLog.create({
       data: {
-        tenantId: request.tenantId,
+        tenantId,
         userId: request.user.userId,
         module: 'USERS',
         action: 'DELETE_USER',
