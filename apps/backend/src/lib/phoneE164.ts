@@ -39,41 +39,6 @@ export type NormalizedPhone = {
   normalized: boolean
 }
 
-/**
- * Numéro d'un TIERS (client du commerçant) : aucune inférence de pays, jamais.
- *
- * ⚠️ POURQUOI UNE FONCTION SÉPARÉE — c'est la leçon de la revue du commit 18cc6eb9.
- * `normalizePhone(raw, tenant.country)` était appliqué aux numéros des CLIENTS, alors
- * que le pays du commerçant n'est PAS une information sur son client. Mesuré :
- * `621234567` est valide en CM (`+237621234567`) ET en GN (`+224621234567`) ;
- * `76123456` est valide simultanément en ML, BF, NE et TG. Chez un commerçant
- * camerounais, le numéro national d'une cliente guinéenne devenait donc un
- * `+237…` VALIDE — un abonné camerounais sans aucun lien — et Twilio le livrait.
- * `isValid()` ne protège que des plans DISJOINTS ; il ne voit pas une collision.
- *
- * `Customer` n'a d'ailleurs aucun champ pays : il n'existe aucune donnée permettant
- * de résoudre un numéro national de client. La seule issue sûre est d'EXIGER
- * l'international et, à défaut, de ne pas envoyer.
- */
-export function requireInternational(raw: unknown): NormalizedPhone {
-  const input = typeof raw === 'string' ? raw : String(raw ?? '')
-  const unchanged: NormalizedPhone = { value: input, normalized: false }
-
-  // `00` → `+` est la convention IDD universelle, une réécriture PUREMENT syntaxique :
-  // elle ne suppose aucun pays (l'indicatif suit dans le numéro lui-même). C'est la
-  // seule transformation tolérée ici.
-  const trimmed = input.trim().replace(/^00/, '+')
-  if (!trimmed.startsWith('+')) return unchanged
-
-  try {
-    const parsed = parsePhoneNumberFromString(trimmed)
-    if (!parsed || !parsed.isValid()) return unchanged
-    return { value: parsed.number, normalized: true }
-  } catch {
-    return unchanged
-  }
-}
-
 /** Le pays n'est retenu que si la bibliothèque le reconnaît comme région ISO-2.
  *
  *  ⚠️ Volontairement AUCUNE table nom→code : `Tenant.country` contient un mélange
@@ -91,13 +56,6 @@ function resolveRegion(country: unknown): CountryCode | undefined {
 }
 
 /**
- * Numéro du COMMERÇANT LUI-MÊME (`Tenant.ownerPhone`), résolu avec le pays de SA
- * boutique — le seul cas où le pays du tenant est une information sur le titulaire
- * du numéro.
- *
- * ⚠️ NE JAMAIS APPELER sur le numéro d'un client : utiliser `requireInternational`.
- * Voir l'explication de la collision de plans dans son commentaire.
- *
  * `('771234567', 'SN')` → `{ value: '+221771234567', normalized: true }`
  * `('0701234567', 'SN')` → `{ value: '0701234567', normalized: false }` (ivoirien : INCHANGÉ)
  *

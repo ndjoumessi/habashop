@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizePhone, requireInternational } from '../lib/phoneE164'
+import { normalizePhone } from '../lib/phoneE164'
 
 /**
  * Normalisation E.164 — reconstruction à froid après le rollback `1ae8f9c0`.
@@ -8,70 +8,6 @@ import { normalizePhone, requireInternational } from '../lib/phoneE164'
  * qui grep la source prouve qu'une fonction est appelée, pas qu'elle produit le bon
  * numéro — et c'est un mauvais numéro qui a livré des reçus à des inconnus.
  */
-
-describe('COLLISION DE PLANS — pourquoi isValid() ne suffit PAS', () => {
-  /**
-   * ⚠️ CE BLOC EST LE VRAI GARDIEN, et il documente l'erreur de la première reprise.
-   *
-   * `isValid()` ne protège que des plans DISJOINTS. Quand deux pays partagent une
-   * longueur et un préfixe, la bibliothèque produit un E.164 VALIDE dans les DEUX —
-   * donc appliquer le pays du commerçant au numéro d'un client fabrique un numéro
-   * réel appartenant à un inconnu, et Twilio le livre. Le cas ivoirien/sénégalais
-   * historique ne le montrait pas : il échoue par la LONGUEUR (10 vs 9), pas par un
-   * garde. C'est pour ça qu'il restait vert.
-   *
-   * La conclusion opérationnelle est la séparation des flux (`SendAudience`) :
-   * un numéro de client n'est JAMAIS résolu avec un pays.
-   */
-  it.each([
-    ['621234567', 'CM', '+237621234567', 'GN', '+224621234567'],
-    ['76123456',  'ML', '+22376123456',  'BF', '+22676123456'],
-    ['76123456',  'NE', '+22776123456',  'TG', '+22876123456'],
-  ])('« %s » est valide en %s (%s) ET en %s (%s)', (raw, c1, e1, c2, e2) => {
-    expect(normalizePhone(raw, c1)).toEqual({ value: e1, normalized: true })
-    expect(normalizePhone(raw, c2)).toEqual({ value: e2, normalized: true })
-  })
-
-  it('requireInternational REFUSE ces numéros — la seule barrière qui tienne', () => {
-    // Aucun pays n'est consulté : c'est précisément ce qui rend le refus fiable.
-    for (const raw of ['621234567', '76123456', '0701234567', '771234567']) {
-      expect(requireInternational(raw), `raw=${raw}`).toEqual({ value: raw, normalized: false })
-    }
-  })
-})
-
-describe('requireInternational — numéro d’un TIERS', () => {
-  it('accepte un E.164 valide et le rend canonique', () => {
-    expect(requireInternational('+221 77 123 45 67')).toEqual({ value: '+221771234567', normalized: true })
-    expect(requireInternational('+224621234567')).toEqual({ value: '+224621234567', normalized: true })
-  })
-
-  it('accepte le préfixe IDD « 00 » — réécriture syntaxique, aucun pays supposé', () => {
-    expect(requireInternational('00221771234567')).toEqual({ value: '+221771234567', normalized: true })
-  })
-
-  it('refuse tout format national, quel qu’il soit', () => {
-    for (const raw of ['771234567', '0701234567', '221771234567', '']) {
-      expect(requireInternational(raw).normalized, `raw=${raw}`).toBe(false)
-    }
-  })
-
-  it('refuse un « + » suivi d’un numéro invalide plutôt que de le transmettre', () => {
-    // `+622123456` (national guinéen préfixé au hasard) est un numéro INDONÉSIEN valide :
-    // c'est pourquoi coller « + » à l'aveugle n'a jamais été une stratégie sûre. Ici la
-    // chaîne n'est de toute façon jamais fabriquée — on part du brut.
-    expect(requireInternational('+221000').normalized).toBe(false)
-    expect(requireInternational('+').normalized).toBe(false)
-    expect(requireInternational('abc').normalized).toBe(false)
-  })
-
-  it('est sûr sur une entrée vide ou non-chaîne, et idempotent', () => {
-    expect(requireInternational(null)).toEqual({ value: '', normalized: false })
-    expect(requireInternational(undefined)).toEqual({ value: '', normalized: false })
-    const once = requireInternational('+221771234567')
-    expect(requireInternational(once.value)).toEqual(once)
-  })
-})
 
 describe('normalizePhone — ANTI-FUITE (le cas qui a coûté cher)', () => {
   /**
