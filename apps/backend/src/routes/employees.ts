@@ -2,16 +2,16 @@ import type { FastifyInstance } from 'fastify'
 import type { EmployeeBody } from '../types'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId } from '../lib/tenantId'
 import { ID_PARAMS, EMPLOYEE_CREATE, EMPLOYEE_UPDATE } from '../schemas/writesB'
 
 export async function employeeRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/employees', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.employee.findMany({ where: { tenantId } })
   })
 
   app.post('/api/employees', { preHandler: authenticate, schema: { body: EMPLOYEE_CREATE } }, async (request, reply) => {
-    const { tenantId } = request.user
     const {
       name, role, dept, type, salary,
       phone, email, isActive, color,
@@ -21,6 +21,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
     if (!name?.trim()) {
       return reply.code(400).send({ error: 'Nom requis' })
     }
+    const tenantId = getTenantId(request)
 
     try {
       const emp = await prisma.employee.create({
@@ -48,7 +49,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.put('/api/employees/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: EMPLOYEE_UPDATE } }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const {
       name, role, dept, type, salary,
@@ -83,7 +84,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.delete('/api/employees/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     try {
       await prisma.employee.delete({ where: { id, tenantId } })

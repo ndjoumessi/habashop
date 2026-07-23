@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId } from '../lib/tenantId'
 import { ID_PARAMS, SUB_CREATE, SUB_UPDATE } from '../schemas/writesB'
 
 const MANAGER_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER']
@@ -8,7 +9,7 @@ const MANAGER_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER']
 export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/subscriptions — liste tenant (actifs + pausés)
   app.get('/api/subscriptions', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.subscription.findMany({
       where: { tenantId, status: { not: 'cancelled' } },
       include: {
@@ -25,7 +26,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
 
   // GET /api/subscriptions/due — abonnements dont le jour = aujourd'hui (UTC)
   app.get('/api/subscriptions/due', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const dow = new Date().getUTCDay()
     return prisma.subscription.findMany({
       where: { tenantId, status: 'active', dayOfWeek: dow },
@@ -43,7 +44,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
 
   // GET /api/subscriptions/customer/:customerId — abonnements d'un client
   app.get('/api/subscriptions/customer/:customerId', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { customerId } = request.params as { customerId: string }
     const customer = await prisma.customer.findFirst({ where: { id: customerId, tenantId, deletedAt: null }, select: { id: true } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
@@ -62,13 +63,14 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
 
   // POST /api/subscriptions — créer (MANAGER+)
   app.post('/api/subscriptions', { preHandler: authenticate, schema: { body: SUB_CREATE } }, async (request, reply) => {
-    const { tenantId, role } = request.user
+    const { role } = request.user
     if (!MANAGER_ROLES.includes(role)) return reply.code(403).send({ error: 'Accès réservé aux managers' })
     const { customerId, name, dayOfWeek, note, items } = request.body as any
 
     if (!customerId || !name || dayOfWeek == null || !Array.isArray(items) || items.length === 0) {
       return reply.code(400).send({ error: 'customerId, name, dayOfWeek et items requis' })
     }
+    const tenantId = getTenantId(request)
     const customer = await prisma.customer.findFirst({ where: { id: customerId, tenantId, deletedAt: null }, select: { id: true } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
 
@@ -98,8 +100,9 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
 
   // PUT /api/subscriptions/:id — mettre à jour (MANAGER+)
   app.put('/api/subscriptions/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: SUB_UPDATE } }, async (request, reply) => {
-    const { tenantId, role } = request.user
+    const { role } = request.user
     if (!MANAGER_ROLES.includes(role)) return reply.code(403).send({ error: 'Accès réservé aux managers' })
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const { name, dayOfWeek, status, note, items } = request.body as any
 
@@ -145,8 +148,9 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
 
   // DELETE /api/subscriptions/:id — annuler (soft: status=cancelled)
   app.delete('/api/subscriptions/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId, role } = request.user
+    const { role } = request.user
     if (!MANAGER_ROLES.includes(role)) return reply.code(403).send({ error: 'Accès réservé aux managers' })
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const existing = await prisma.subscription.findFirst({ where: { id, tenantId } })
     if (!existing) return reply.code(404).send({ error: 'Abonnement introuvable' })

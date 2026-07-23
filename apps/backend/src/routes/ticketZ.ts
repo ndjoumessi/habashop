@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId } from '../lib/tenantId'
 import { computeTicketZ, buildTicketZPdf } from '../lib/ticketZ'
 
 // Clôture journalière réservée MANAGER + ADMIN (+ SUPER_ADMIN superset).
@@ -17,8 +18,9 @@ function todayRangeUTC(now = new Date()): { dayStart: Date; dayEnd: Date } {
 export async function ticketZRoutes(app: FastifyInstance): Promise<void> {
   // ── Générer / regénérer la clôture du jour (idempotent = upsert) ──
   app.post('/api/ticket-z/generate', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId, userId, role } = request.user
+    const { userId, role } = request.user
     if (!canTicketZ(role)) return reply.code(403).send({ error: 'Accès réservé MANAGER/ADMIN' })
+    const tenantId = getTenantId(request)
 
     const { dayStart, dayEnd } = todayRangeUTC()
     const sales = await prisma.sale.findMany({
@@ -37,7 +39,7 @@ export async function ticketZRoutes(app: FastifyInstance): Promise<void> {
 
   // ── Clôture du jour (null si pas encore générée) ──
   app.get('/api/ticket-z/today', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { dayStart } = todayRangeUTC()
     // findUnique CONSERVÉ (revue item 8-B) : la clé composite contient tenantId → déjà scopé.
     return prisma.ticketZ.findUnique({ where: { tenantId_date: { tenantId, date: dayStart } } })
@@ -45,13 +47,13 @@ export async function ticketZRoutes(app: FastifyInstance): Promise<void> {
 
   // ── 30 dernières clôtures (desc) ──
   app.get('/api/ticket-z/history', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.ticketZ.findMany({ where: { tenantId }, orderBy: { date: 'desc' }, take: 30 })
   })
 
   // ── PDF d'un Ticket Z ──
   app.get('/api/ticket-z/:id/pdf', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const tz = await prisma.ticketZ.findFirst({ where: { id, tenantId } })
     if (!tz) return reply.code(404).send({ error: 'Ticket Z introuvable' })
