@@ -292,32 +292,102 @@ Méta-test `redactPhone.test.ts` : assertions sur le contenu **réellement journ
 (`console.warn` capturé), + scan ligne-par-ligne interdisant un numéro ou un `err.message`
 brut sur la surface d'envoi. Exclut les horodatages ISO (même silhouette qu'un numéro).
 
-### ⚠️ Chantier NORMALISATION téléphonique — ROLLBACK, à reprendre à froid
+### ⚠️ Chantier NORMALISATION téléphonique — 3 ÉCHECS, 3 ROLLBACKS. Lire avant de retoucher.
 
-Une tentative de normalisation E.164 (`lib/spend/phone.ts`, commits `7fe8b4e7`/`da26197e`)
-a été **annulée** (`1ae8f9c0`) : elle transformait un numéro mal formé en numéro sénégalais
-**valide**, donc livré. Avant, Twilio rejetait (21211) et rien ne partait. Résultat : des
-reçus clients et des résumés quotidiens de commerçants partaient vers des **tiers**.
+**Aucune normalisation n'est en place aujourd'hui**, et c'est un état voulu. Trois
+tentatives, trois fuites de données, trois annulations :
 
-**Invariant à respecter à la reprise** : *pays inconnu ou absent → on NE normalise PAS.*
-**Jamais de repli Sénégal.** Un numéro non normalisable doit échouer, pas être inventé.
-Utiliser **`libphonenumber-js`**, pas une table `trunkZero` écrite à la main (la mienne était
-fausse pour CG et GA — le zéro de tête n'est pas uniforme : CI et BJ le CONSERVENT).
-Et câbler réellement `Tenant.country` jusqu'aux appelants : `sales.ts` ne lit même pas le champ.
+| # | Commits | Annulé par | Ce qui fuyait |
+|---|---|---|---|
+| 1 | `7fe8b4e7`/`da26197e` (`lib/spend/phone.ts`) | `1ae8f9c0` | table `trunkZero` écrite à la main + repli Sénégal → numéro mal formé réécrit en **SN valide**, donc livré |
+| 2 | `18cc6eb9` (`lib/phoneE164.ts`) | `77d954f6` | `Tenant.country` appliqué au numéro du **DESTINATAIRE** |
+| 3 | `f447a462` (`SendAudience`) | `61f94c7d` | la réécriture `00`→`+`, pourtant documentée « sans supposition de pays » |
 
-**Dette rouverte par ce rollback** (connue, aucune ne livre de données à un tiers) :
-`broadcast` et `campaign` normalisent différemment · `failed: 0` quand Twilio n'est pas
-configuré · table `TWILIO_ERRORS` inatteignable (503 générique) · reçu de vente soumis au
-plafond minute · campagnes et reçus partagent un seau · créneau horaire brûlé sur un refus.
+Chaque fois : avant, Twilio rejetait (21211) et **rien ne partait** ; après, un numéro
+**valide d'un autre pays** était fabriqué et **livré**. Reçus clients et résumés de
+commerçants expédiés à des inconnus.
 
-**Méthode imposée par cet échec** : reprendre **une surface à la fois**, avec une revue
-entre chaque. Trois refactors successifs sur le même code, chacun corrigeant le précédent,
-ont produit à chaque tour des régressions plus graves que ce qu'ils réparaient. On ne clôt
-un chantier que sur une revue qui revient **vide**.
+#### Faits MESURÉS — ne pas les re-dériver, ils ont coûté trois fuites
+
+Vérifiés sur `libphonenumber-js` 1.13.9. Chacun infirme une garantie qui « allait de soi » :
+
+- **Le pays du commerçant n'est PAS une information sur le numéro de son CLIENT.**
+  `isValid()` ne sépare que des plans **disjoints**. Collisions réelles :
+  `621234567` est valide en **CM** (`+237…`) *et* en **GN** (`+224…`) ; `76123456` est
+  valide simultanément en **ML, BF, NE, TG**. Une boutique camerounaise avec une cliente
+  guinéenne fabriquait donc un `+237…` réel appartenant à un tiers.
+- **La bibliothèque FABRIQUE, elle ne refuse pas.**
+  `parsePhoneNumberFromString('0701234567','SN')` renvoie un objet **non nul** dont
+  `.number` vaut `+2210701234567`. Seul `isValid()` (faux ici) l'écarte. Renvoyer
+  `.number` sans exiger `isValid()` = la fuite d'origine, à l'identique.
+- **`00`→`+` n'est PAS une réécriture « purement syntaxique ».** Elle suppose que les
+  chiffres suivants commencent par un indicatif pays. `00622123456` → `+622123456`,
+  numéro **indonésien valide**. Une caissière à qui l'UI dit « format international »
+  tape le préfixe qu'elle connaît, et le reçu part à Jakarta.
+- **« Twilio rejettera un numéro mal formé » est FAUX.** `+622123456` est valide.
+  Préfixer `+` à l'aveugle produit des numéros étrangers **livrables**. Donc
+  *« on ne normalise pas »* ne vaut **jamais** *« on n'envoie pas »* : il faut refuser
+  d'envoyer explicitement.
+- **Le zéro de tête n'est pas uniforme** : CI/BJ/**CG** le CONSERVENT
+  (`061234567` → `+242061234567`), **GA** le RETIRE (`062345678` → `+24162345678`).
+  D'où l'interdiction de toute table écrite à la main.
+
+#### Invariants pour la reprise
+
+1. **Pays inconnu ou absent → on NE normalise PAS.** Jamais de repli, surtout pas SN.
+2. **On n'envoie QU'À un E.164 validé.** Non résolvable ⇒ destinataire écarté, pas un `+`
+   deviné. Un message non envoyé est bénin ; un message au mauvais destinataire est une fuite.
+3. **Séparer les flux** (fondation, validée avec Nelson) : numéro lu dans `Tenant.ownerPhone`
+   ⇒ normalisable avec le pays de la boutique ; **toute autre provenance** (fiche client,
+   corps de requête, liste de diffusion) ⇒ international EXIGÉ, aucun pays consulté. Le flux
+   se déduit de la **PROVENANCE**, jamais de l'intention — `send-alert` reçoit son numéro du
+   corps de requête, donc c'est un tiers.
+4. **`libphonenumber-js` est nécessaire mais PAS suffisant** : c'est le gate `isValid()` +
+   la séparation des flux qui protègent, pas la bibliothèque.
+
+#### État réel des données (lecture seule, 2026-07-23)
+
+- `Tenant.country` : `String @default("SN")` **non nullable**, + `country ?? 'SN'` dans
+  `auth.ts:166` / `admin.ts:62` / `tenant.ts:65`, + `SignupPage.tsx:29` pré-sélectionne SN.
+  « Pays absent » **n'existe pas en base** : un tenant ivoirien qui n'ouvre jamais la liste
+  est stocké « SN ». Pire, `Onboarding.tsx` PATCHe des **noms français** là où `SignupPage`
+  envoie de l'ISO-2 → prod contient `CI`, `SN` et **`France`**. `sales.ts` ne lit pas le champ.
+- **`Customer` n'a AUCUN champ pays** → aucune donnée ne permet de résoudre un national de client.
+- **9 téléphones clients sur 9 sont déjà internationaux** en prod → l'exposition actuelle est
+  nulle, mais rien ne la maintient ainsi.
+
+#### Défauts PRÉEXISTANTS restaurés par les rollbacks (à traiter en premier)
+
+Antérieurs aux trois tentatives, vivants depuis des mois, confirmés par revue automatique :
+
+- `twilioClient.normalize()` préfixe `+` à l'aveugle → peut produire un étranger livrable.
+- `routes/whatsapp.ts` send-alert : `replace(/^0/, '')` → `0622123456` devient `+622123456`
+  (**indonésien valide**). Ce n'est pas qu'un défaut de format, c'est un **détournement possible**.
+
+**Dette rouverte** (aucune ne livre de données à un tiers) : `broadcast` et `campaign`
+normalisent différemment · `failed: 0` quand Twilio n'est pas configuré · table
+`TWILIO_ERRORS` inatteignable · reçu de vente soumis au plafond minute · campagnes et reçus
+partagent un seau · créneau horaire brûlé sur un refus.
+
+#### ⚠️ Méthode — la leçon la plus chère
+
+**Ne JAMAIS poser une garantie de sûreté par RAISONNEMENT sur ce code.** Les trois échecs
+ont le même motif : une affirmation plausible (« un pays fiable protège », « Twilio
+rejettera », « `00` ne suppose rien ») écrite en commentaire et jamais exécutée. Les trois
+fois, un script de dix lignes appelant la bibliothèque l'aurait démentie **avant** le commit.
+**Mesurer d'abord, coder ensuite** — et si un commentaire affirme une propriété de sûreté,
+un test doit l'exercer.
+
+Corollaires : une surface à la fois, revue entre chaque, on ne clôt que sur une revue qui
+revient **vide**. Un test « gardien » doit être vérifié **dans les deux sens** — celui de la
+tentative 2 restait vert parce que son cas échouait par la **longueur** des plans (CI 10
+chiffres vs SN 9), pas par un garde réel : toute la moitié dangereuse (plans qui se
+recouvrent) n'était pas testée.
 
 ## Dette ouverte
 
 ### 🔴 Critique
+- **Numéros WhatsApp : deux chemins peuvent détourner un message** (préfixe `+` aveugle dans `twilioClient.normalize()`, `replace(/^0/,'')` dans send-alert) — préexistants, exposition actuellement nulle (tous les téléphones clients sont déjà internationaux). ⚠️ **Lire le § Chantier NORMALISATION téléphonique AVANT toute correction** : trois tentatives y ont chacune ajouté une fuite. **M**
 - **SMS** (`notifSmsSales`/`notifSmsStock`) : Africa's Talking reco. `services/sms.ts`, `SMS_API_KEY`. **XL**
 - **Push PWA** : VAPID keys, `PushToken` prêt inutilisé, SW sans handler. **XL**
 - **Wave webhook** : code **fail-CLOSED** (`if (!secret) return false`) ✅ — reste à poser `WAVE_WEBHOOK_SECRET` Railway pour activer la vérif en prod. **S**
