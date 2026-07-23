@@ -31,6 +31,14 @@ export type SendResult = {
    * l'illusion que le message est parti.
    */
   refused?: { reason: PhoneRefusal; count: number }[]
+  /**
+   * Codes d'erreur Twilio des envois ÉCHOUÉS, dans l'ordre. Remontés par la VALEUR
+   * de retour et non par exception : `sendWhatsApp` ne throw jamais (contrat
+   * fire-and-forget dont dépendent le reçu de vente et les crons). Sans eux, la
+   * table `TWILIO_ERRORS` vivait dans un `catch` mort et le caissier recevait un
+   * 503 générique au lieu de « Ce numéro n'est pas inscrit sur WhatsApp ».
+   */
+  errorCodes?: number[]
 }
 
 function getClient() {
@@ -118,12 +126,20 @@ export async function sendWhatsApp(opts: {
     // Rien n'est parti : on rend les unités réservées.
     await releaseQuota(opts.tenantId!, 'whatsapp', recipients.length, reservedKey)
     console.warn('[twilioClient] configuration Twilio incomplète (SID/TOKEN/FROM) → envoi ignoré')
-    return { sent: 0, denied: false, code: 'TWILIO_NOT_CONFIGURED', sids: [] }
+    // `failed: recipients.length` et non l'absence de clé : ces N destinataires
+    // n'ont JAMAIS été contactés. Rendre `failed: 0` faisait dire à une diffusion
+    // de 20 qu'aucun envoi n'avait échoué — un compte-rendu qui ment par omission.
+    return {
+      sent: 0, denied: false, failed: recipients.length,
+      code: 'TWILIO_NOT_CONFIGURED', sids: [],
+      ...(refused.length > 0 ? { refused } : {}),
+    }
   }
 
   let sent = 0
   let failed = 0
   const sids: string[] = []
+  const errorCodes: number[] = []
   for (const phone of recipients) {
     try {
       const msg = await client.messages.create({ from, to: toWhatsAppChannel(phone), body: opts.body })
@@ -131,6 +147,10 @@ export async function sendWhatsApp(opts: {
       sent++
     } catch (e: unknown) {
       failed++
+      // Le CODE est une donnée technique (pas de PII) : on le remonte pour que
+      // l'appelant puisse afficher un motif actionnable.
+      const code = Number((e as { code?: unknown })?.code)
+      if (Number.isFinite(code)) errorCodes.push(code)
       // ⚠️ Le message Twilio embarque le numéro destinataire → caviardé (CLAUDE.md § PII).
       console.warn('[twilioClient] échec envoi (non bloquant):', redactError(e))
     }
@@ -138,5 +158,9 @@ export async function sendWhatsApp(opts: {
   // Le compteur mesure les envois RÉELS : on rend ce qui n'est pas parti.
   if (failed > 0) await releaseQuota(opts.tenantId!, 'whatsapp', failed, reservedKey)
 
-  return { sent, denied: false, failed, sids, ...(refused.length > 0 ? { refused } : {}) }
+  return {
+    sent, denied: false, failed, sids,
+    ...(refused.length > 0 ? { refused } : {}),
+    ...(errorCodes.length > 0 ? { errorCodes } : {}),
+  }
 }
