@@ -9,6 +9,10 @@ export default defineConfig({
     environment: 'node',
     include: ['src/tests/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', 'src/tests/integration.test.ts'],
+    // Filet global : aucun test unitaire ne parle à un SDK payant (Anthropic/Twilio/
+    // Resend). Un `vi.mock` local reste prioritaire. La config d'intégration ne le
+    // charge PAS (elle appelle réellement le réseau, par conception).
+    setupFiles: ['src/tests/setup/mockPaidSdks.ts'],
     // Couverture rapportée (sans seuil bloquant) : les routes sont surtout
     // exercées par les tests d'intégration (API prod distante, non instrumentée).
     coverage: {
