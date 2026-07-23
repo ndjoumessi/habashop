@@ -46,3 +46,32 @@ export function getTenantId(request: FastifyRequest): string {
   }
   return tenantId
 }
+
+/**
+ * Renvoie la BOUTIQUE ACTIVE en `string` non-nullable.
+ *
+ * Lit `request.tenantId` — la boutique active résolue par `authenticate`
+ * (`active ?? null`, motif W2), typée `string | undefined` sur `FastifyRequest`
+ * mais `string | null` au runtime. Le check truthy couvre les DEUX (`undefined`
+ * comme `null`).
+ *
+ * ⚠️ CHAMP DISTINCT de `getTenantId`, qui lit `request.user.tenantId` (rétro-compat
+ * des anciens JWT). Les deux coexistent à cause de la divergence W2 documentée ;
+ * `request.tenantId` est le champ CORRECT (boutique active explicite), `request.user`
+ * la source héritée. Ce helper est la couture de la future convergence : quand tous
+ * les sites liront la boutique active, `getTenantId` s'alignera dessus ici, en un
+ * point.
+ *
+ * Même défense en profondeur que `getTenantId` : la branche absente est inatteignable
+ * derrière le garde `NO_ACTIVE_TENANT`, mais lève plutôt que de transmettre un
+ * scope vide à un traitement à coût (OCR) ou à Prisma.
+ */
+export function getActiveTenantId(request: FastifyRequest): string {
+  const tenantId = request.tenantId
+  if (!tenantId) {
+    const route = `${request.method} ${request.routeOptions?.url ?? 'route inconnue'}`
+    console.error(`[tenant-context] TENANT_CONTEXT_MISSING (active) — ${route}`)
+    throw new TenantContextMissingError(route)
+  }
+  return tenantId
+}

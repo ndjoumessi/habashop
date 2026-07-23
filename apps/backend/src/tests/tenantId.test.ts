@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { FastifyRequest } from 'fastify'
-import { getTenantId, TenantContextMissingError } from '../lib/tenantId'
+import { getTenantId, getActiveTenantId, TenantContextMissingError } from '../lib/tenantId'
 
 // Fabrique une requête minimale : seuls `user`, `method` et `routeOptions` sont lus.
 function req(tenantId: string | null | undefined, route = '/api/sales'): FastifyRequest {
@@ -9,6 +9,11 @@ function req(tenantId: string | null | undefined, route = '/api/sales'): Fastify
     method: 'GET',
     routeOptions: { url: route },
   } as unknown as FastifyRequest
+}
+
+// Requête portant `request.tenantId` (boutique ACTIVE) — le champ que lit getActiveTenantId.
+function activeReq(tenantId: string | null | undefined, route = '/api/suppliers/scan-invoice'): FastifyRequest {
+  return { tenantId, method: 'POST', routeOptions: { url: route } } as unknown as FastifyRequest
 }
 
 describe('getTenantId', () => {
@@ -57,6 +62,42 @@ describe('getTenantId', () => {
     const logged = spy.mock.calls.map((c) => c.join(' ')).join('\n')
     expect(logged).toContain('TENANT_CONTEXT_MISSING')
     expect(logged).toContain('/api/sales/:id/invoice')
+    expect(logged).not.toMatch(/\?|token|Bearer/)
+  })
+})
+
+describe('getActiveTenantId', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  // ── Sens 1 : lit request.tenantId (la boutique ACTIVE), pas request.user ──
+  it('renvoie request.tenantId quand il est présent', () => {
+    expect(getActiveTenantId(activeReq('tenant-actif'))).toBe('tenant-actif')
+  })
+
+  it('lit BIEN request.tenantId, pas request.user.tenantId', () => {
+    // Une requête avec un user.tenantId mais SANS request.tenantId → lève (le helper
+    // ne retombe pas sur request.user, contrairement à getTenantId).
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const r = { user: { tenantId: 'via-user' }, tenantId: null, method: 'POST', routeOptions: { url: '/x' } } as unknown as FastifyRequest
+    expect(() => getActiveTenantId(r)).toThrow(TenantContextMissingError)
+  })
+
+  // ── Sens 2 : la défense en profondeur LÈVE (null ET undefined) ──
+  it.each([
+    ['null (aucune boutique active)', null],
+    ['undefined (champ absent)', undefined],
+    ['chaîne vide', ''],
+  ])('lève TENANT_CONTEXT_MISSING quand request.tenantId vaut %s', (_label, value) => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(() => getActiveTenantId(activeReq(value))).toThrow(TenantContextMissingError)
+  })
+
+  it('journalise la route (marquée « active ») sans PII', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(() => getActiveTenantId(activeReq(null))).toThrow()
+    const logged = spy.mock.calls.map((c) => c.join(' ')).join('\n')
+    expect(logged).toContain('TENANT_CONTEXT_MISSING (active)')
+    expect(logged).toContain('/api/suppliers/scan-invoice')
     expect(logged).not.toMatch(/\?|token|Bearer/)
   })
 })
