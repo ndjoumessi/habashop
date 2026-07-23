@@ -15,6 +15,27 @@ import { tierForPoints } from '../lib/loyalty'
 const WHATSAPP_SEND_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'] as const
 export const canSendWhatsApp = (role?: string): boolean => WHATSAPP_SEND_ROLES.includes(role as never)
 
+/**
+ * Motifs Twilio actionnables. Cette table vivait DANS le `catch` de `send-ticket`,
+ * donc dans un bloc MORT : `sendWhatsApp` ne throw jamais (fire-and-forget). Les
+ * codes remontent maintenant par `SendResult.errorCodes`, ce qui la rend atteignable.
+ */
+export const TWILIO_ERRORS: Record<number, string> = {
+  21608: "Ce numéro n'est pas inscrit sur WhatsApp",
+  21211: 'Format de numéro invalide',
+  21614: 'Numéro non joignable sur WhatsApp',
+  63007: 'Canal WhatsApp non disponible',
+  63016: 'Message non livrable',
+  20003: 'Authentification Twilio échouée',
+  21401: 'Numéro expéditeur invalide',
+  21606: 'Numéro non activé pour WhatsApp',
+}
+
+/** Message actionnable pour un code Twilio, ou `null` si le code est inconnu. */
+export function twilioErrorMessage(code?: number): string | null {
+  return (code !== undefined && TWILIO_ERRORS[code]) || null
+}
+
 type I4 = (fr: string, en: string, es: string, it: string) => string
 const makeI = (lang: string): I4 => (fr, en, es, it) => lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
 
@@ -187,29 +208,25 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
           code:  res.refused[0].reason,
         })
       }
-      if (res.sent === 0) return reply.code(503).send({ error: 'Envoi WhatsApp impossible' })
+      // Échec d'ENVOI : le motif Twilio remonte par la valeur de retour. Un 503
+      // générique laisserait croire à une panne serveur là où le numéro n'est
+      // simplement pas inscrit sur WhatsApp — le caissier ne peut rien en faire.
+      if (res.sent === 0) {
+        const code = res.errorCodes?.[0]
+        const mapped = twilioErrorMessage(code)
+        return reply.code(mapped ? 502 : 503).send({
+          error: mapped ?? 'Envoi WhatsApp impossible',
+          ...(code !== undefined ? { code } : {}),
+        })
+      }
       console.log('✅ WhatsApp envoyé, SID:', res.sids[0])
       return reply.send({ success: true, sid: res.sids[0] })
     } catch (err) {
-      console.error('❌ Twilio error code:', err.code)
-      console.error('❌ Twilio error msg:', redactError(err))
-
-      const TWILIO_ERRORS: Record<number, string> = {
-        21608: "Ce numéro n'est pas inscrit sur WhatsApp",
-        21211: 'Format de numéro invalide',
-        21614: 'Numéro non joignable sur WhatsApp',
-        63007: 'Canal WhatsApp non disponible',
-        63016: 'Message non livrable',
-        20003: 'Authentification Twilio échouée',
-        21401: 'Numéro expéditeur invalide',
-        21606: 'Numéro non activé pour WhatsApp',
-      }
-
-      return reply.code(500).send({
-        error:   TWILIO_ERRORS[err.code] ?? err.message ?? "Erreur lors de l'envoi",
-        code:    err.code ?? 0,
-        details: err.message,
-      })
+      // Chemin résiduel : `sendWhatsApp` ne throw pas (contrat fire-and-forget), donc
+      // seule une erreur de CONSTRUCTION du message peut arriver ici. Les échecs
+      // d'ENVOI passent désormais par `res.errorCodes` au-dessus.
+      console.error('❌ Erreur send-ticket:', redactError(err))
+      return reply.code(500).send({ error: "Erreur lors de l'envoi" })
     }
   })
 
