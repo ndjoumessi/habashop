@@ -20,7 +20,11 @@ import { redis } from '../../redis'
  *    reçus d'un client payant). Sans la trace, un fail-open exploité serait invisible.
  */
 
-export type SpendKind = 'ai' | 'ocr' | 'whatsapp' | 'email'
+// `whatsapp` = flux TRANSACTIONNEL (reçus, alertes, crons) — seau SACRÉ, jamais
+// coupé par le marketing. `whatsapp_marketing` = diffusions/campagnes, seau SÉPARÉ à
+// plafond bas. La clé `whatsapp` est INCHANGÉE → aucun compteur existant n'est remis
+// à zéro en cours de journée par ce split.
+export type SpendKind = 'ai' | 'ocr' | 'whatsapp' | 'whatsapp_marketing' | 'email'
 
 export const DEMO_TENANT_FORBIDDEN = 'DEMO_TENANT_FORBIDDEN'
 export const TRIAL_EXPIRED         = 'TRIAL_EXPIRED'
@@ -48,9 +52,16 @@ const DEFAULTS: Record<SpendKind, { trial: number; active: number }> = {
   ai:       { trial: 20,  active: 200 },
   ocr:      { trial: 15,  active: 150 },
   whatsapp: { trial: 30,  active: 300 },
+  // ⚠️ PLACEHOLDER conservateur — chaque message marketing coûte de l'argent Twilio
+  // réel. Un refus + message honnête vaut mieux qu'une facture surprise. Le CHIFFRE
+  // exact relève du produit/facturation : à fixer via QUOTA_TRIAL_WHATSAPP_MARKETING
+  // / QUOTA_ACTIVE_WHATSAPP_MARKETING (lus à l'appel, sans redéploiement). On part bas.
+  whatsapp_marketing: { trial: 10, active: 50 },
   email:    { trial: 20,  active: 200 },
 }
-const ENV_KEY: Record<SpendKind, string> = { ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP', email: 'EMAIL' }
+const ENV_KEY: Record<SpendKind, string> = {
+  ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP', whatsapp_marketing: 'WHATSAPP_MARKETING', email: 'EMAIL',
+}
 
 export function quotaLimit(kind: SpendKind, status: string): number {
   const tier = status === 'trial' ? 'trial' : 'active'
@@ -246,6 +257,16 @@ export async function authorizeSpend(
   tenantId: string | null | undefined,
   kind: SpendKind,
   units = 1,
+  opts?: {
+    /**
+     * Exempte CET appel du plafond minute (`burstOk`). Réservé au reçu de vente
+     * AUTOMATIQUE : une caisse en heure de pointe enchaîne > 10 ventes/min et chaque
+     * vente déclenche son reçu — la rafale coupait le 11ᵉ. Le plafond JOURNALIER borne
+     * toujours ; l'exemption ne lève QUE la minute. Tout le reste (send-ticket manuel,
+     * diffusions, campagnes) y reste soumis.
+     */
+    skipBurst?: boolean
+  },
 ): Promise<SpendDecision> {
   const deny = (code: string, message: string): SpendDecision =>
     ({ ok: false, code, message, used: 0, limit: 0, remaining: 0 })
@@ -263,7 +284,7 @@ export async function authorizeSpend(
   const state = tenantSpendState(info)
   if (!state.ok) return deny(state.code!, state.message!)
 
-  if (!(await burstOk(tenantId, kind))) {
+  if (!opts?.skipBurst && !(await burstOk(tenantId, kind))) {
     return deny(BURST_EXCEEDED, 'Trop de demandes en une minute pour cette boutique. Réessayez dans un instant.')
   }
 

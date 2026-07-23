@@ -81,7 +81,7 @@ describe('Chemin réel — aucun numéro dans ce qui est journalisé', () => {
       new Error("The 'To' number whatsapp:+221771234567 is not a valid phone number"),
       { code: 21211 },
     ))
-    await sendWhatsApp({ tenantId: 'T', to: '+221771234567', body: 'x' , owner: { kind: 'customer' }})
+    await sendWhatsApp({ tenantId: 'T', to: '+221771234567', body: 'x' , owner: { kind: 'customer' }, flow: 'transactional'})
 
     const logged = warn.mock.calls.flat().map(String).join(' | ')
     expect(logged).not.toContain('221771234567')
@@ -93,7 +93,7 @@ describe('Chemin réel — aucun numéro dans ce qui est journalisé', () => {
   it('plusieurs destinataires en échec : aucun numéro ne fuit', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     createMock.mockRejectedValue(new Error('to +221770000001 failed'))
-    await sendWhatsApp({ tenantId: 'T', to: ['+221770000001', '+221770000002'], body: 'x' , owner: { kind: 'customer' }})
+    await sendWhatsApp({ tenantId: 'T', to: ['+221770000001', '+221770000002'], body: 'x' , owner: { kind: 'customer' }, flow: 'transactional'})
 
     const logged = warn.mock.calls.flat().map(String).join(' | ')
     expect(logged).not.toMatch(/\d{9,}/)

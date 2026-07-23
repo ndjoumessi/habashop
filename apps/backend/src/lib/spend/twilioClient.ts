@@ -1,5 +1,5 @@
 import twilio from 'twilio'
-import { authorizeSpend, releaseQuota } from './spendGuard'
+import { authorizeSpend, releaseQuota, type SpendKind } from './spendGuard'
 import { redactError } from '../redactPhone'
 import { resolveRecipient, type PhoneOwner, type PhoneRefusal } from './recipientPhone'
 
@@ -75,6 +75,24 @@ function toWhatsAppChannel(e164: string): string {
  * campagne de N numéros réserve N. Si ça ne rentre pas, tout est refusé — pas de
  * campagne tronquée à mi-cible — et les unités des envois échoués sont rendues.
  */
+/**
+ * Nature de l'envoi — pilote le SEAU de quota et l'exemption de rafale. Obligatoire
+ * et SANS défaut : comme `owner`, le compilateur force chaque appelant (présent et
+ * futur) à choisir. Un défaut permissif remettrait le marketing et le transactionnel
+ * dans le même seau — le défaut que ce split corrige.
+ *
+ *   • `sale_receipt`  — reçu de vente AUTOMATIQUE : seau transactionnel, rafale EXEMPTÉE.
+ *   • `transactional` — send-ticket manuel, alertes, crons : seau transactionnel, rafale appliquée.
+ *   • `marketing`     — diffusions, campagnes : seau MARKETING séparé, rafale appliquée.
+ */
+export type WhatsAppFlow = 'sale_receipt' | 'transactional' | 'marketing'
+
+const FLOW_SPEND: Record<WhatsAppFlow, { kind: SpendKind; skipBurst: boolean }> = {
+  sale_receipt:  { kind: 'whatsapp',           skipBurst: true  },
+  transactional: { kind: 'whatsapp',           skipBurst: false },
+  marketing:     { kind: 'whatsapp_marketing', skipBurst: false },
+}
+
 export async function sendWhatsApp(opts: {
   tenantId: string | null | undefined
   to: string | string[]
@@ -85,7 +103,8 @@ export async function sendWhatsApp(opts: {
    * quatre fuites précédentes, où un flux client empruntait la logique commerçant.
    */
   owner: PhoneOwner
-  kind?: 'whatsapp'
+  /** NATURE de l'envoi → seau de quota + exemption de rafale. Voir `WhatsAppFlow`. */
+  flow: WhatsAppFlow
 }): Promise<SendResult> {
   const raw = (Array.isArray(opts.to) ? opts.to : [opts.to]).filter(p => !!p && String(p).trim())
 
@@ -113,8 +132,11 @@ export async function sendWhatsApp(opts: {
     }
   }
 
+  // Seau + exemption de rafale dérivés de la NATURE de l'envoi (marketing ≠ reçu).
+  const spend = FLOW_SPEND[opts.flow]
+
   // Pré-check du N COMPLET avant la boucle.
-  const decision = await authorizeSpend(opts.tenantId, 'whatsapp', recipients.length)
+  const decision = await authorizeSpend(opts.tenantId, spend.kind, recipients.length, { skipBurst: spend.skipBurst })
   if (!decision.ok) {
     return { sent: 0, denied: true, code: decision.code, message: decision.message, sids: [] }
   }
@@ -124,7 +146,7 @@ export async function sendWhatsApp(opts: {
   const from = (process.env.TWILIO_WHATSAPP_FROM ?? '').trim()
   if (!client || !from) {
     // Rien n'est parti : on rend les unités réservées.
-    await releaseQuota(opts.tenantId!, 'whatsapp', recipients.length, reservedKey)
+    await releaseQuota(opts.tenantId!, spend.kind, recipients.length, reservedKey)
     console.warn('[twilioClient] configuration Twilio incomplète (SID/TOKEN/FROM) → envoi ignoré')
     // `failed: recipients.length` et non l'absence de clé : ces N destinataires
     // n'ont JAMAIS été contactés. Rendre `failed: 0` faisait dire à une diffusion
@@ -156,7 +178,7 @@ export async function sendWhatsApp(opts: {
     }
   }
   // Le compteur mesure les envois RÉELS : on rend ce qui n'est pas parti.
-  if (failed > 0) await releaseQuota(opts.tenantId!, 'whatsapp', failed, reservedKey)
+  if (failed > 0) await releaseQuota(opts.tenantId!, spend.kind, failed, reservedKey)
 
   return {
     sent, denied: false, failed, sids,

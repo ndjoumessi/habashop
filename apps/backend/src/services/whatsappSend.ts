@@ -64,7 +64,7 @@ export async function sendSaleWhatsApp(sale: WaSale, items: WaItem[], customer: 
     if (!tenant.enableAutoWhatsApp) return false
     if (!customer?.phone) return false
     const body = buildSaleMessage(sale, items, customer, tenant)
-    const res = await sendWhatsApp({ tenantId: tenant.id, to: customer.phone, body, owner: { kind: 'customer' } })
+    const res = await sendWhatsApp({ tenantId: tenant.id, to: customer.phone, body, owner: { kind: 'customer' }, flow: 'sale_receipt' })
     if (res.denied) {
       console.warn(`[whatsappSend] reçu non envoyé (${res.code}) tenant=${tenant.id}`)
       return false

@@ -78,7 +78,7 @@ afterEach(() => twilioConfigured(false))
 describe('[1] Aucun destinataire n’est compté comme « ni envoyé ni échoué »', () => {
   it('Twilio NON configuré → failed = N, jamais 0', async () => {
     twilioConfigured(false)
-    const res = await sendWhatsApp({ tenantId: 'T', to: TROIS, body: 'x', owner: { kind: 'customer' } })
+    const res = await sendWhatsApp({ tenantId: 'T', to: TROIS, body: 'x', owner: { kind: 'customer' }, flow: 'transactional' })
 
     expect(res.sent).toBe(0)
     expect(res.failed, 'N destinataires non contactés doivent être comptés en échec').toBe(3)
@@ -92,7 +92,7 @@ describe('[1] Aucun destinataire n’est compté comme « ni envoyé ni échoué
       .mockRejectedValueOnce(Object.assign(new Error('ko'), { code: 21608 }))
       .mockResolvedValueOnce({ sid: 'SM3' })
     // 4 fournis : 3 joignables + 1 national non résolvable (écarté par le garde).
-    const res = await sendWhatsApp({ tenantId: 'T', to: [...TROIS, '621234567'], body: 'x', owner: { kind: 'customer' } })
+    const res = await sendWhatsApp({ tenantId: 'T', to: [...TROIS, '621234567'], body: 'x', owner: { kind: 'customer' }, flow: 'transactional' })
 
     const refusedTotal = (res.refused ?? []).reduce((n, r) => n + r.count, 0)
     expect(res.sent).toBe(2)
@@ -120,7 +120,7 @@ describe('[5] Le code d’erreur Twilio remonte par la VALEUR de retour', () => 
     createMock.mockRejectedValue(Object.assign(new Error('not on whatsapp'), { code: 21608 }))
 
     // Le fire-and-forget est un CONTRAT : les crons et le reçu de vente en dépendent.
-    const res = await sendWhatsApp({ tenantId: 'T', to: TROIS[0], body: 'x', owner: { kind: 'customer' } })
+    const res = await sendWhatsApp({ tenantId: 'T', to: TROIS[0], body: 'x', owner: { kind: 'customer' }, flow: 'transactional' })
 
     expect(res.failed).toBe(1)
     expect(res.errorCodes, 'e.code est avalé au goulot').toContain(21608)
