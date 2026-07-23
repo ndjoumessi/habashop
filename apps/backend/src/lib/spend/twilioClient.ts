@@ -1,6 +1,7 @@
 import twilio from 'twilio'
 import { authorizeSpend, releaseQuota } from './spendGuard'
 import { redactError } from '../redactPhone'
+import { resolveRecipient, type PhoneOwner, type PhoneRefusal } from './recipientPhone'
 
 /**
  * SEUL module autorisé à instancier le SDK Twilio.
@@ -23,6 +24,13 @@ export type SendResult = {
   failed?: number
   /** SID Twilio des messages réellement partis (les routes les renvoient au client). */
   sids: string[]
+  /**
+   * Destinataires ÉCARTÉS faute d'E.164 certain, avec le motif. Non silencieux :
+   * les appelants doivent le surfacer (« reçu non envoyé — numéro pas au format
+   * international »), pas seulement le tracer. Un refus muet redonne au commerçant
+   * l'illusion que le message est parti.
+   */
+  refused?: { reason: PhoneRefusal; count: number }[]
 }
 
 function getClient() {
@@ -42,9 +50,14 @@ export function isTwilioConfigured(): boolean {
   return !!getClient() && !!(process.env.TWILIO_WHATSAPP_FROM ?? '').trim()
 }
 
-function normalize(phone: string): string {
-  const cleaned = phone.replace(/[\s\-()]/g, '').replace(/^00/, '+')
-  return cleaned.startsWith('whatsapp:') ? cleaned : `whatsapp:${cleaned.startsWith('+') ? cleaned : '+' + cleaned}`
+/**
+ * Préfixe le canal. Ne transforme PLUS le numéro : la résolution en E.164 est faite
+ * en amont par `resolveRecipient`, seule autorité. L'ancienne version collait un `+`
+ * à l'aveugle et réécrivait `00` → `+` — deux gestes qui fabriquent un numéro VALIDE
+ * d'un autre pays, donc livrable (mesuré : `621234567` → `+621234567`, Indonésie).
+ */
+function toWhatsAppChannel(e164: string): string {
+  return e164.startsWith('whatsapp:') ? e164 : `whatsapp:${e164}`
 }
 
 /**
@@ -58,10 +71,39 @@ export async function sendWhatsApp(opts: {
   tenantId: string | null | undefined
   to: string | string[]
   body: string
+  /**
+   * À QUI APPARTIENT LE NUMÉRO. Obligatoire et SANS défaut : le compilateur force
+   * chaque appelant à le déclarer. Un défaut permissif rejouerait exactement les
+   * quatre fuites précédentes, où un flux client empruntait la logique commerçant.
+   */
+  owner: PhoneOwner
   kind?: 'whatsapp'
 }): Promise<SendResult> {
-  const recipients = (Array.isArray(opts.to) ? opts.to : [opts.to]).filter(p => !!p && String(p).trim())
-  if (recipients.length === 0) return { sent: 0, denied: false, sids: [] }
+  const raw = (Array.isArray(opts.to) ? opts.to : [opts.to]).filter(p => !!p && String(p).trim())
+
+  // ── Résolution AVANT toute réservation de quota : un destinataire écarté ne doit
+  //    ni consommer d'unité, ni en faire rendre une ensuite. ──
+  const recipients: string[] = []
+  const refusedBy = new Map<PhoneRefusal, number>()
+  for (const phone of raw) {
+    const r = resolveRecipient(String(phone), opts.owner)
+    if (r.status === 'resolved') recipients.push(r.e164)
+    else refusedBy.set(r.reason, (refusedBy.get(r.reason) ?? 0) + 1)
+  }
+  const refused = [...refusedBy].map(([reason, count]) => ({ reason, count }))
+  if (refused.length > 0) {
+    // Tracé sans PII : le motif et le compte, jamais le numéro (CLAUDE.md § PII).
+    console.warn('[twilioClient] destinataire(s) écarté(s) — E.164 non certain :', JSON.stringify(refused))
+  }
+
+  if (recipients.length === 0) {
+    return {
+      sent: 0,
+      denied: false,
+      sids: [],
+      ...(refused.length > 0 ? { refused, code: refused[0].reason } : {}),
+    }
+  }
 
   // Pré-check du N COMPLET avant la boucle.
   const decision = await authorizeSpend(opts.tenantId, 'whatsapp', recipients.length)
@@ -84,7 +126,7 @@ export async function sendWhatsApp(opts: {
   const sids: string[] = []
   for (const phone of recipients) {
     try {
-      const msg = await client.messages.create({ from, to: normalize(String(phone)), body: opts.body })
+      const msg = await client.messages.create({ from, to: toWhatsAppChannel(phone), body: opts.body })
       if (msg?.sid) sids.push(msg.sid)
       sent++
     } catch (e: unknown) {
@@ -96,5 +138,5 @@ export async function sendWhatsApp(opts: {
   // Le compteur mesure les envois RÉELS : on rend ce qui n'est pas parti.
   if (failed > 0) await releaseQuota(opts.tenantId!, 'whatsapp', failed, reservedKey)
 
-  return { sent, denied: false, failed, sids }
+  return { sent, denied: false, failed, sids, ...(refused.length > 0 ? { refused } : {}) }
 }
