@@ -123,8 +123,11 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       })
     }
 
-    const cleaned = phone.replace(/[\s\-\(\)]/g, '').replace(/^00/, '+')
-    const waPhone = cleaned.startsWith('+') ? `whatsapp:${cleaned}` : `whatsapp:+${cleaned}`
+    // ⚠️ Numéro transmis BRUT au client d'envoi : c'est lui qui met en E.164 (avec le
+    // pays du tenant) puis en adresse `whatsapp:`. Le pré-formater ici court-circuiterait
+    // la normalisation — un numéro déjà préfixé « + » est considéré international et
+    // n'est plus rattachable à son pays.
+    const waPhone = phone.trim()
 
     // Devise + langue + nom = ceux de la boutique ACTIVE (les montants reçus sont en base XOF).
     // W2 — `request.tenantId` (boutique active, garantie non-null par authenticate) et non
@@ -225,8 +228,10 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       if (!isTwilioConfigured()) return reply.code(503).send({ error: 'Service WhatsApp non configuré' })
-      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
-      const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone.replace(/^0/, '')}`
+      // ⚠️ Numéro BRUT → le client d'envoi normalise. L'ancien `replace(/^0/, '')`
+      // retirait le zéro de tête pour TOUS les pays : faux pour CI/BJ/CG qui le
+      // conservent (`0701234567` devenait `+701234567`, rejeté par Twilio).
+      const formattedPhone = phone.trim()
 
       let body = ''
       if (alertType === 'low_stock') {
@@ -354,11 +359,10 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       })
     }
 
-    const phones = customers
-      .map(c => c.phone!)
-      .filter(Boolean)
-      .map(p => p.replace(/[\s\-\(\)]/g, ''))
-      .map(p => p.startsWith('+') ? p : `+${p.replace(/^0/, '')}`)
+    // ⚠️ Numéros BRUTS → le client d'envoi normalise (même règle que toutes les autres
+    // surfaces d'envoi). L'ancien `replace(/^0/, '')` divergeait de `broadcast` et
+    // cassait les numéros ivoiriens/béninois, qui conservent leur zéro de tête.
+    const phones = customers.map(c => c.phone!).filter(Boolean).map(p => p.trim())
 
     // ⚠️ Le quota compte des MESSAGES, pas des requêtes : une campagne de N destinataires
     // réserve N unités AVANT la boucle. Si ça ne rentre pas, l'envoi entier est refusé

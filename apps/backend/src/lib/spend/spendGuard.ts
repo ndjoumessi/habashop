@@ -40,6 +40,13 @@ export type SpendDecision = {
   remaining?: number
   /** Clé du compteur réservé — à repasser à `releaseQuota` (cf. bascule de minuit). */
   quotaKey?: string
+  /**
+   * Pays du tenant tel que stocké (ISO-2 « SN », mais aussi un nom français hérité
+   * d'Onboarding). Fourni ici pour que la normalisation E.164 se fasse au POINT
+   * D'ENVOI, sans que chaque appelant ait à câbler le pays. `null`/`undefined` =
+   * inconnu ⇒ aucune normalisation (cf. `lib/phoneE164.ts`).
+   */
+  country?: string | null
 }
 
 // Plafonds lus À L'APPEL (pas en constante de module) → ajustables par env sans
@@ -62,28 +69,41 @@ export function quotaKey(tenantId: string, kind: SpendKind, now: Date = new Date
   return `quota:${kind}:${tenantId}:${now.toISOString().slice(0, 10)}`
 }
 
-type TenantSpendInfo = { isDemo: boolean; status: string; trialEnds: Date | null }
+// `country` est OPTIONNEL à dessein : il ne participe PAS à la décision de dépense
+// (`tenantSpendState` l'ignore), il ne fait que voyager avec elle jusqu'au point d'envoi.
+type TenantSpendInfo = { isDemo: boolean; status: string; trialEnds: Date | null; country?: string | null }
 const CTX_KEY = (id: string) => `tenant:spend:${id}`
 const CTX_TTL = 60
 
-/** Lecture tenant unique (isDemo + statut + fin d'essai), cachée 60 s. */
+/**
+ * Lecture tenant unique (isDemo + statut + fin d'essai + pays), cachée 60 s.
+ *
+ * `country` voyage ici plutôt que dans une lecture séparée : il sort de la MÊME
+ * requête que l'autorisation, donc pas d'I/O supplémentaire ni de fenêtre où les deux
+ * divergeraient. Il sert à la normalisation E.164 (`lib/phoneE164.ts`), qui l'ignore
+ * s'il n'est pas un ISO-2 reconnu.
+ *
+ * ⚠️ Les entrées mises en cache AVANT ce déploiement n'ont pas la clé `c` → `country`
+ * vaut `undefined` pendant ≤60 s → pays inconnu → aucune normalisation. La dégradation
+ * va dans le sens sûr, aucune purge de cache n'est requise.
+ */
 export async function resolveTenantSpendInfo(tenantId: string): Promise<TenantSpendInfo | null> {
   if (redis) {
     try {
       const cached = await redis.get(CTX_KEY(tenantId))
       if (cached) {
         const p = JSON.parse(cached)
-        return { isDemo: p.d, status: p.s, trialEnds: p.t ? new Date(p.t) : null }
+        return { isDemo: p.d, status: p.s, trialEnds: p.t ? new Date(p.t) : null, country: p.c ?? null }
       }
     } catch { /* Redis indisponible → DB */ }
   }
   const t = await prisma.tenant.findUnique({
     where: { id: tenantId },
-    select: { isDemo: true, status: true, trialEnds: true },
+    select: { isDemo: true, status: true, trialEnds: true, country: true },
   })
   if (t && redis) {
     try {
-      await redis.setex(CTX_KEY(tenantId), CTX_TTL, JSON.stringify({ d: t.isDemo, s: t.status, t: t.trialEnds?.toISOString() ?? null }))
+      await redis.setex(CTX_KEY(tenantId), CTX_TTL, JSON.stringify({ d: t.isDemo, s: t.status, t: t.trialEnds?.toISOString() ?? null, c: t.country ?? null }))
     } catch { /* non bloquant */ }
   }
   return t
@@ -267,5 +287,7 @@ export async function authorizeSpend(
     return deny(BURST_EXCEEDED, 'Trop de demandes en une minute pour cette boutique. Réessayez dans un instant.')
   }
 
-  return reserveQuota(tenantId, kind, units, info!.status)
+  // Le pays accompagne la décision : il vient de la lecture qui vient d'autoriser la
+  // dépense, donc les deux ne peuvent pas diverger.
+  return { ...(await reserveQuota(tenantId, kind, units, info!.status)), country: info!.country }
 }
