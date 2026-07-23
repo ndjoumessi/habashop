@@ -5,6 +5,7 @@ import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 import { invalidateTenantCache } from '../lib/cache'
+import { getTenantId } from '../lib/tenantId'
 import { resolveTierPrice, type PriceTier } from '../utils/pricing'
 import { pointsForAmount, tierForPoints, discountForTier, computeLoyaltyDiscount } from '../lib/loyalty'
 import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
@@ -64,7 +65,7 @@ class RefundConflict extends Error {}
 
 export async function saleRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/sales', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { limit = 50, offset = 0, priceDivergence } = request.query as { limit?: number; offset?: number; priceDivergence?: string }
     // Filtre d'AUDIT : `?priceDivergence=true` → ventes dont un prix soumis ≠ prix catalogue
     // (le détail submitted/catalog vit sur chaque SaleItem, renvoyé via include). Rend la trace
@@ -81,7 +82,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/sales', { preHandler: authenticate, schema: { body: SALE_BODY } }, async (request, reply) => {
-    const { tenantId, userId } = request.user
+    const { userId } = request.user
     const { items, paymentMode, total, discount, customerId, mtnMomoReference, campayReference, paydunyaReference } = request.body as SaleBody
 
     if (!items?.length) {
@@ -90,6 +91,8 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     if (total == null || total < 0) {
       return reply.code(400).send({ error: 'Le total ne peut pas être négatif' })
     }
+    // Après les validations : `getTenantId` peut lever, l'ordre des sorties reste identique à l'existant.
+    const tenantId = getTenantId(request)
 
     const body = request.body as SaleBody
     const manualDiscount = Number(discount?.amount) || 0
@@ -329,10 +332,12 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
   // restock optionnel (pré-coché côté UI) · entrée d'audit · vente CONSERVÉE
   // (status='refunded' → exclue du CA). Wave/Orange = suivi only (mouvement réel externe).
   app.post('/api/sales/:id/refund', { preHandler: authenticate, schema: { params: REFUND_PARAMS, body: REFUND_BODY } }, async (request, reply) => {
-    const { tenantId, userId, role } = request.user
+    const { userId, role } = request.user
     if (!canRefund(role)) {
       return reply.code(403).send({ error: 'Seuls un manager ou un administrateur peuvent rembourser une vente' })
     }
+    // Après le RBAC : `getTenantId` peut lever, l'ordre des sorties reste identique à l'existant.
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const { reason, restock } = (request.body ?? {}) as { reason?: string; restock?: boolean }
 
@@ -433,7 +438,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
   // ── Facture PDF d'une vente (à la demande, non stockée ; numéro figé en DB) ──
   // RBAC : tout rôle authentifié. Scope tenant strict.
   app.get('/api/sales/:id/invoice', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
 
     const sale = await prisma.sale.findFirst({
