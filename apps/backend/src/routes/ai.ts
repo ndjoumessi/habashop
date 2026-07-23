@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { createMessage, textOf, isAnthropicConfigured } from '../lib/spend/anthropicClient'
 import { prisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId } from '../lib/tenantId'
 import { blockDemoTenant } from '../middleware/demoTenant'
 import { costQuota } from '../middleware/costQuota'
 
@@ -25,9 +26,10 @@ export async function requireAiRole(request: any, reply: any): Promise<void> {
 export async function aiRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/ai/analyze', { preHandler: [authenticate, blockDemoTenant, requireAiRole, costQuota('ai')] }, async (request, reply) => {
     const { type, lang } = request.body as { type?: string; lang?: string }
-    const { tenantId } = request.user
 
     if (!isAnthropicConfigured()) return reply.code(503).send({ error: 'Clé API Anthropic non configurée' })
+
+    const tenantId = getTenantId(request)
 
     try {
       const [products, sales, expenses, employees] = await Promise.all([
@@ -146,7 +148,7 @@ En ${langLabel}, analyse :
         params: {
           model: 'claude-opus-4-5',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: PROMPTS[type] ?? PROMPTS.full }],
+          messages: [{ role: 'user', content: PROMPTS[type ?? 'full'] ?? PROMPTS.full }],
         },
       })
       if (!res.ok) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.error, code: res.code })
@@ -168,11 +170,11 @@ En ${langLabel}, analyse :
   app.post('/api/ai/chat', { preHandler: [authenticate, blockDemoTenant, requireAiRole, costQuota('ai')] }, async (request, reply) => {
     // Accepte {message: string} (simple) ou {messages: array} (historique)
     const { message: singleMsg, messages: msgHistory, lang } = request.body as { message?: string; messages?: any[]; lang?: string }
-    const { tenantId } = request.user
 
     if (!singleMsg?.trim() && (!msgHistory || msgHistory.length === 0)) {
       return reply.code(400).send({ error: 'message ou messages requis' })
     }
+    const tenantId = getTenantId(request)
 
     try {
       const [products, sales, employees, expenses] = await Promise.all([
