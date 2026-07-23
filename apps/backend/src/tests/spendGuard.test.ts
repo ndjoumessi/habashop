@@ -45,6 +45,18 @@ vi.mock('../middleware/demoTenant', () => ({
   blockDemoTenant: vi.fn(async () => {}),
   DEMO_TENANT_FORBIDDEN: 'DEMO_TENANT_FORBIDDEN',
 }))
+// ⚠️ SANS ce mock, `/api/ai/chat` construisait un VRAI client Anthropic et partait sur
+// le réseau : mesuré, 2 requêtes à api.anthropic.com par exécution, avec un
+// `request_id` renvoyé par leur API. La clé du test est bidon (401, aucune dépense),
+// mais le test devenait dépendant du réseau — d'où un « Test timed out in 5000ms » en
+// CI là où il prend 325 ms en local. La config unitaire promet pourtant « hors ligne ».
+vi.mock('@anthropic-ai/sdk', () => ({
+  default: class MockAnthropic {
+    messages = { create: vi.fn(async () => ({ content: [{ type: 'text', text: 'ok' }] })) }
+    beta = { messages: { create: vi.fn(async () => ({ content: [{ type: 'text', text: 'ok' }] })) } }
+    constructor(_opts: unknown) {}
+  },
+}))
 vi.mock('twilio', () => ({ default: () => ({ messages: { create: vi.fn() } }) }))
 vi.mock('cron', () => ({ CronJob: class { start() {} } }))
 vi.mock('@sentry/node', () => ({ captureMessage: vi.fn(), captureException: vi.fn() }))
