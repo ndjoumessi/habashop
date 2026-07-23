@@ -72,7 +72,11 @@ export async function createMessage(opts: {
 }
 
 /** Extrait le texte d'une réponse Claude (bloc `text` en premier). */
-export function textOf(message: Anthropic.Message, fallback = ''): string {
-  const block = message.content[0]
+// `message` accepte `undefined` : `AnthropicResult.message` est optionnel (forme
+// unique, cf. commentaire du type — `strict: false` ne narrow pas sur `ok`), donc
+// après un `if (!res.ok) return` le type reste `Message | undefined`. Sémantique
+// inchangée : pas de message ⇒ fallback, comme un contenu non-texte.
+export function textOf(message: Anthropic.Message | undefined, fallback = ''): string {
+  const block = message?.content[0]
   return block && block.type === 'text' ? block.text : fallback
 }
