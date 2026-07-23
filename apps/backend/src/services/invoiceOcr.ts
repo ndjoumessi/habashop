@@ -76,10 +76,16 @@ export async function analyzeInvoice(tenantId: string, buffer: Buffer, mimeType:
   // un format refusé ou un rôle insuffisant n'atteignent jamais ce point et ne
   // consomment donc rien.
   const res = await createMessage({ tenantId, kind: 'ocr', params: requestOpts })
-  if (!res.ok) throw new SpendDeniedError(res.code, res.error)
+  // `code`/`error` sont optionnels sur `AnthropicResult` (forme unique, cf. son commentaire)
+  // mais toujours présents sur la branche `!res.ok`. Fallbacks pour le typage — jamais
+  // utilisés au runtime, où `decision` porte toujours un code et un message.
+  if (!res.ok) throw new SpendDeniedError(res.code ?? 'SPEND_DENIED', res.error ?? 'Dépense refusée')
   const response = res.message
 
-  const text: string = (response.content[0] as Anthropic.TextBlock).text?.trim() ?? ''
+  // `res.message` reste `Message | undefined` après le garde `ok` (l'union ne narrow pas
+  // sous strict:false) ; il est en fait toujours présent — `createMessage` renvoie
+  // `{ ok: true, message }`. `?.` couvre le cas théorique : contenu vide ⇒ '' ⇒ parse_error.
+  const text: string = (response?.content[0] as Anthropic.TextBlock | undefined)?.text?.trim() ?? ''
 
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
