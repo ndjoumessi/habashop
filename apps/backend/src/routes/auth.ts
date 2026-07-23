@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
+import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { sendWelcomeEmail } from '../services/email'
 import type { LoginBody, RegisterBody } from '../types'
@@ -248,7 +249,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.patch('/api/auth/password', { preHandler: authenticate, schema: { body: PASSWORD_BODY } }, async (request, reply) => {
-    const { userId, tenantId } = request.user
+    const { userId } = request.user
     const { currentPassword, newPassword } = request.body as { currentPassword?: string; newPassword?: string }
 
     if (!newPassword || newPassword.length < 8) {
@@ -264,9 +265,23 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const passwordHash = await bcrypt.hash(newPassword, 12)
     await prisma.user.update({ where: { id: userId }, data: { passwordHash } })
 
-    await prisma.auditLog.create({
-      data: { tenantId, userId, module: 'AUTH', action: 'CHANGE_PASSWORD', description: 'Mot de passe modifié', severity: 'info' },
-    }).catch(() => {})
+    // Événement d'échelle UTILISATEUR : il n'appartient à aucune boutique.
+    // Écrit dans UserAuditLog (jamais AuditLog, tenant-scopé) — c'est précisément
+    // l'écriture qui était silencieusement perdue pour un utilisateur
+    // multi-boutiques sans boutique active, cette route étant exemptée du garde
+    // NO_ACTIVE_TENANT. Les instantanés e-mail/nom gardent la ligne lisible si le
+    // compte est supprimé plus tard.
+    await writeAudit('USER_PASSWORD_CHANGE', prisma.userAuditLog.create({
+      data: {
+        userId,
+        userEmailSnapshot: user.email,
+        userNameSnapshot:  user.name,
+        action:            'PASSWORD_CHANGE',
+        description:       'Mot de passe modifié',
+        ip:                request.ip,
+        severity:          'info',
+      },
+    }))
 
     return { success: true, message: 'Mot de passe modifié' }
   })

@@ -647,6 +647,37 @@ model AuditLog {
   @@index([tenantId, action])
 }
 
+/// Audit d'échelle UTILISATEUR — hors boutique. Un changement de mot de passe
+/// n'appartient à aucune boutique : le tenant-scoper le rendrait dépendant du
+/// contexte de session (boutique active pour un mono-boutique, null pour un
+/// multi-boutiques n'ayant pas encore choisi) — le même événement enregistré à
+/// deux échelles selon qui le déclenche.
+///
+/// ⚠️ VOLONTAIREMENT SANS relation Prisma vers `User` : un audit de sécurité doit
+/// SURVIVRE à ce qu'il audite. Avec un CASCADE, un attaquant qui compromet un
+/// compte, change le mot de passe puis supprime le compte effacerait sa propre
+/// trace ; avec un RESTRICT, la suppression de compte deviendrait impossible.
+/// `userId` est donc une VALEUR HISTORIQUE sans contrainte, et les instantanés
+/// email/nom gardent la ligne lisible une fois le compte parti — un `userId`
+/// orphelin ne dit plus rien à lui seul.
+///
+/// ⚠️ Hors de la liste des modèles scopés de l'extension Prisma (`src/db.ts`) :
+/// cette table n'a pas de `tenantId` et ne doit jamais en recevoir un.
+model UserAuditLog {
+  id                String   @id @default(cuid())
+  userId            String
+  userEmailSnapshot String
+  userNameSnapshot  String
+  action            String
+  description       String
+  ip                String?
+  severity          String   @default("info")
+  createdAt         DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
 model PushToken {
   id        String   @id @default(cuid())
   tenantId  String

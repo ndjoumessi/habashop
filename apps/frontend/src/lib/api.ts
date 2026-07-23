@@ -471,6 +471,11 @@ export const adminApi = {
   planRequests: () => api.get<any[]>('/api/admin/plan-requests'),
   reviewPlanRequest: (id: string, data: { action: 'approve' | 'reject'; adminNotes?: string }) =>
     api.patch<any>(`/api/admin/plan-requests/${id}`, data),
+  securityEvents: (limit = 100) => api.get<any[]>(`/api/admin/security-events?limit=${limit}`),
+}
+
+export const accountApi = {
+  securityActivity: () => api.get<any[]>('/api/account/security-activity'),
 }
 
 export const billingApi = {
