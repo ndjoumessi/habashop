@@ -76,6 +76,20 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // SUPER_ADMIN : demandes en attente
+  // Vue TRANSVERSE des événements de sécurité utilisateur (supervision plateforme).
+  // `basePrisma` : UserAuditLog n'a pas de tenantId et n'est pas dans la liste
+  // scopée de l'extension — on passe par le client non étendu pour que ce soit
+  // explicite plutôt qu'implicite.
+  // ⚠️ L'échec REMONTE : une vue de supervision vide sur erreur ment.
+  app.get('/api/admin/security-events', { preHandler: authenticateAdmin }, async (request) => {
+    const { limit } = (request.query ?? {}) as { limit?: string }
+    const take = Math.min(Math.max(Number(limit) || 100, 1), 500)
+    return basePrisma.userAuditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take,
+    })
+  })
+
   app.get('/api/admin/plan-requests', { preHandler: authenticateAdmin }, async () => {
     return prisma.planRequest.findMany({
       where: { status: 'pending' },

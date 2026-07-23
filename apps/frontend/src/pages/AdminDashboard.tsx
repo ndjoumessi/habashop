@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import LogoMark from '@/components/ui/LogoMark'
 import OpsInfrastructure from '@/components/integrations/OpsInfrastructure'
+import SecurityEvents from '@/components/admin/SecurityEvents'
 import { Server, Rocket, CheckCircle2 } from 'lucide-react'
 
 // Version PRODUIT = SOURCE UNIQUE injectée au build (package.json racine), jamais un
@@ -420,6 +421,9 @@ export default function AdminDashboard() {
               <OpsInfrastructure />
             </div>
           </div>
+
+          {/* ══ ÉVÉNEMENTS DE SÉCURITÉ — échelle UTILISATEUR (hors boutique) ══ */}
+          <SecurityEvents />
           </div>
         )
       )}

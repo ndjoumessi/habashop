@@ -49,4 +49,19 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
       throw e
     }
   })
+
+  // Activité de sécurité de SON PROPRE compte. Strictement `userId` courant :
+  // aucun paramètre ne permet de viser un autre utilisateur.
+  // ⚠️ L'échec REMONTE (pas de `catch → []`) : un journal de sécurité qui affiche
+  // une liste vide sur erreur affirme qu'il ne s'est rien passé.
+  app.get('/api/account/security-activity', { preHandler: authenticate }, async (request) => {
+    const { userId } = request.user
+    const events = await prisma.userAuditLog.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: { id: true, action: true, description: true, ip: true, severity: true, createdAt: true },
+    })
+    return events
+  })
 }
