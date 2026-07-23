@@ -74,14 +74,14 @@ describe('Reçu automatique de vente — le plus gros poste Twilio', () => {
 
   it('la décision porte bien le code DEMO_TENANT_FORBIDDEN', async () => {
     seedTenant({ isDemo: true })
-    const res = await sendWhatsApp({ tenantId: 'T', to: CUSTOMER.phone, body: 'x' , owner: { kind: 'customer' }})
+    const res = await sendWhatsApp({ tenantId: 'T', to: CUSTOMER.phone, body: 'x' , owner: { kind: 'customer' }, flow: 'transactional'})
     expect(res).toMatchObject({ sent: 0, denied: true, code: DEMO_TENANT_FORBIDDEN })
     expect(createMock).not.toHaveBeenCalled()
   })
 
   it('essai expiré → refus, toujours sans envoi', async () => {
     seedTenant({ status: 'trial', trialEnds: new Date(Date.now() - 86400000) })
-    const res = await sendWhatsApp({ tenantId: 'T', to: CUSTOMER.phone, body: 'x' , owner: { kind: 'customer' }})
+    const res = await sendWhatsApp({ tenantId: 'T', to: CUSTOMER.phone, body: 'x' , owner: { kind: 'customer' }, flow: 'transactional'})
     expect(res.denied).toBe(true)
     expect(res.code).toBe(TRIAL_EXPIRED)
     expect(createMock).not.toHaveBeenCalled()
@@ -110,7 +110,7 @@ describe('Crons 20h / 8h — dépense hors requête HTTP', () => {
 
   it('même si un tenant démo passait, le client refuse sans envoyer', async () => {
     seedTenant({ isDemo: true })
-    const res = await sendWhatsApp({ tenantId: 'demo-tenant-001', to: '+221771234567', body: 'résumé du soir' , owner: { kind: 'customer' }})
+    const res = await sendWhatsApp({ tenantId: 'demo-tenant-001', to: '+221771234567', body: 'résumé du soir' , owner: { kind: 'customer' }, flow: 'transactional'})
     expect(res.denied).toBe(true)
     expect(res.code).toBe(DEMO_TENANT_FORBIDDEN)
     expect(createMock).not.toHaveBeenCalled()
@@ -121,7 +121,7 @@ describe('Quota par MESSAGE et non par requête (campagne)', () => {
   it('une campagne de N destinataires réserve N unités', async () => {
     const phones = Array.from({ length: 40 }, (_, i) => `+2217712345${String(i).padStart(2, '0')}`)
     seedCounter(40)
-    await sendWhatsApp({ tenantId: 'T', to: phones, body: 'promo' , owner: { kind: 'customer' }})
+    await sendWhatsApp({ tenantId: 'T', to: phones, body: 'promo' , owner: { kind: 'customer' }, flow: 'transactional'})
     expect(redisMock.incrby).toHaveBeenCalledWith(expect.stringContaining('quota:whatsapp:T:'), 40)
   })
 
@@ -129,7 +129,7 @@ describe('Quota par MESSAGE et non par requête (campagne)', () => {
     const phones = Array.from({ length: 40 }, (_, i) => `+2217712345${String(i).padStart(2, '0')}`)
     seedTenant({ status: 'trial', trialEnds: new Date(Date.now() + 86400000) }) // plafond 30
     seedCounter(40) // 0 déjà utilisés + 40 demandés > 30
-    const res = await sendWhatsApp({ tenantId: 'T', to: phones, body: 'promo' , owner: { kind: 'customer' }})
+    const res = await sendWhatsApp({ tenantId: 'T', to: phones, body: 'promo' , owner: { kind: 'customer' }, flow: 'transactional'})
 
     expect(res.denied).toBe(true)
     expect(res.code).toBe('QUOTA_EXCEEDED')
@@ -145,7 +145,7 @@ describe('Quota par MESSAGE et non par requête (campagne)', () => {
       .mockResolvedValueOnce({ sid: 'SM1' } as any)
       .mockRejectedValueOnce(new Error('numéro invalide') as any)
       .mockResolvedValueOnce({ sid: 'SM3' } as any)
-    const res = await sendWhatsApp({ tenantId: 'T', to: ['+221771234501', '+221771234502', '+221771234503'], body: 'x' , owner: { kind: 'customer' }})
+    const res = await sendWhatsApp({ tenantId: 'T', to: ['+221771234501', '+221771234502', '+221771234503'], body: 'x' , owner: { kind: 'customer' }, flow: 'transactional'})
     expect(res.sent).toBe(2)
     expect(res.failed).toBe(1)
     expect(redisMock.decrby).toHaveBeenCalledWith(expect.stringContaining('quota:whatsapp:T:'), 1)

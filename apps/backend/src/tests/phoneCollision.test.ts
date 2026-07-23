@@ -56,7 +56,7 @@ beforeEach(() => {
 
 describe('Flux CLIENT — pays inconnu, aucune inférence permise', () => {
   it.each(NATIONAUX_AMBIGUS)('n’envoie RIEN pour « $raw » ($note)', async ({ raw }) => {
-    const res = await sendWhatsApp({ tenantId: 'tenant-1', to: raw, body: 'test' , owner: { kind: 'customer' }})
+    const res = await sendWhatsApp({ tenantId: 'tenant-1', to: raw, body: 'test' , owner: { kind: 'customer' }, flow: 'transactional'})
 
     // Le refus est le comportement sûr : un message non envoyé est bénin,
     // un message au MAUVAIS destinataire est une fuite.
@@ -68,7 +68,7 @@ describe('Flux CLIENT — pays inconnu, aucune inférence permise', () => {
   it('ne fabrique JAMAIS un E.164 d’un pays non demandé', async () => {
     for (const { raw } of NATIONAUX_AMBIGUS) {
       messagesCreate.mockClear()
-      await sendWhatsApp({ tenantId: 'tenant-1', to: raw, body: 'test' , owner: { kind: 'customer' }})
+      await sendWhatsApp({ tenantId: 'tenant-1', to: raw, body: 'test' , owner: { kind: 'customer' }, flow: 'transactional'})
       const destinations = messagesCreate.mock.calls.map(c => String(c[0]?.to ?? ''))
       expect(destinations, `« ${raw} » a produit une destination : ${destinations.join(', ')}`).toEqual([])
     }
@@ -80,6 +80,7 @@ describe('Flux CLIENT — pays inconnu, aucune inférence permise', () => {
       to: ['+221771234567', '621234567', '76123456'],
       body: 'promo',
       owner: { kind: 'customer' },
+      flow: 'transactional',
     })
     const destinations = messagesCreate.mock.calls.map(c => String(c[0]?.to ?? ''))
     expect(destinations).toEqual(['whatsapp:+221771234567'])
@@ -91,6 +92,7 @@ describe('Flux COMMERÇANT — son numéro, son pays', () => {
     const res = await sendWhatsApp({
       tenantId: 't', to: '771234567', body: 'résumé',
       owner: { kind: 'merchant', country: 'SN' },
+      flow: 'transactional',
     })
     expect(String(messagesCreate.mock.calls[0][0].to)).toBe('whatsapp:+221771234567')
     expect(res.sent).toBe(1)
@@ -102,6 +104,7 @@ describe('Flux COMMERÇANT — son numéro, son pays', () => {
       const res = await sendWhatsApp({
         tenantId: 't', to: '771234567', body: 'résumé',
         owner: { kind: 'merchant', country },
+        flow: 'transactional',
       })
       expect(messagesCreate, `pays « ${country} » a laissé passer un envoi`).not.toHaveBeenCalled()
       expect(res.code).toBe('COUNTRY_UNKNOWN')
@@ -118,6 +121,7 @@ describe('Flux COMMERÇANT — son numéro, son pays', () => {
       const res = await sendWhatsApp({
         tenantId: 't', to: '+221771234567', body: 'résumé',
         owner: { kind: 'merchant', country },
+        flow: 'transactional',
       })
       expect(String(messagesCreate.mock.calls[0]?.[0]?.to)).toBe('whatsapp:+221771234567')
       expect(res.sent).toBe(1)
@@ -132,6 +136,7 @@ describe('Flux COMMERÇANT — son numéro, son pays', () => {
     const res = await sendWhatsApp({
       tenantId: 't', to: '771234567', body: 'reçu',
       owner: { kind: 'customer' },
+      flow: 'transactional',
     })
     expect(messagesCreate).not.toHaveBeenCalled()
     expect(res.code).toBe('PHONE_NOT_INTERNATIONAL')
@@ -140,7 +145,7 @@ describe('Flux COMMERÇANT — son numéro, son pays', () => {
 
 describe('Contrôle POSITIF — un E.164 explicite part normalement', () => {
   it.each(INTERNATIONAUX_VALIDES)('envoie bien vers %s', async (phone) => {
-    const res = await sendWhatsApp({ tenantId: 'tenant-1', to: phone, body: 'test' , owner: { kind: 'customer' }})
+    const res = await sendWhatsApp({ tenantId: 'tenant-1', to: phone, body: 'test' , owner: { kind: 'customer' }, flow: 'transactional'})
     expect(messagesCreate).toHaveBeenCalledTimes(1)
     expect(String(messagesCreate.mock.calls[0][0].to)).toBe(`whatsapp:${phone}`)
     expect(res.sent).toBe(1)

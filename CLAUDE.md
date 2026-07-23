@@ -276,6 +276,18 @@ déclenché par `POST /api/sales` (le plus gros poste Twilio) et les crons 20h/8
 - **Plafonds par env, lus À L'APPEL** (ajustables sans redéploiement) : `QUOTA_TRIAL_*` /
   `QUOTA_ACTIVE_*` (essai 20/15/30/20, payant 200/150/300/200), `COST_BURST_PER_MIN`
   (défaut 10 — ⚠️ pas de `|| 10`, sinon `Number('0') || 10` rend la désactivation inopérante).
+- **WhatsApp = DEUX seaux séparés** (`SpendKind`) : `whatsapp` TRANSACTIONNEL (reçus,
+  alertes, crons — 30/300, SACRÉ) et `whatsapp_marketing` (diffusions, campagnes —
+  `QUOTA_TRIAL_WHATSAPP_MARKETING`/`QUOTA_ACTIVE_WHATSAPP_MARKETING`, **défaut bas 10/50 =
+  PLACEHOLDER** à fixer par produit/facturation ; chaque message marketing coûte du Twilio
+  réel, on refuse plutôt qu'on surprend). La clé `whatsapp` est INCHANGÉE → le split ne
+  remet aucun compteur à zéro. `sendWhatsApp` exige un `flow` (`sale_receipt` |
+  `transactional` | `marketing`) — paramètre OBLIGATOIRE comme `owner` : le compilateur
+  force le choix de seau pour tout futur appelant. **Le reçu de vente AUTOMATIQUE
+  (`sale_receipt`) est le SEUL exempté de la rafale** (`authorizeSpend(..., {skipBurst:true})`) :
+  une caisse en heure de pointe enchaîne >10 ventes/min et perdait le 11ᵉ reçu ; le
+  journalier borne toujours. Verrous : `quotaSplit.test.ts` (seaux distincts + exemption,
+  3 sabotages), `campaignSlot.test.ts` (le créneau 1/h ne se consomme que sur un envoi réel).
 - **Asymétrie fail-open / fail-closed, assumée** : démo/statut **fail-CLOSED** (refuser une
   démo ne coûte rien de légitime) ; quota Redis **fail-OPEN TRACÉ** (`[spend-guard] FAIL-OPEN`
   console + Sentry) — un incident Redis ne doit pas couper l'OCR d'un payant. Le fail-open
@@ -421,6 +433,6 @@ recouvrent) n'était pas testée.
 - Campay : `CAMPAY_USERNAME/PASSWORD/TOKEN/WEBHOOK_KEY/ENVIRONMENT` · `CAMPAY_SANDBOX_AUTO_SUCCESS`
 - PayDunya : `PAYDUNYA_MASTER_KEY/PRIVATE_KEY/PUBLIC_KEY/TOKEN/MODE` · `PAYDUNYA_SANDBOX_AUTO_SUCCESS`
 
-- Garde de dépense : `QUOTA_TRIAL_AI/OCR/WHATSAPP/EMAIL` · `QUOTA_ACTIVE_*` (défauts 20/15/30/20 et 200/150/300/200) · `COST_BURST_PER_MIN` (défaut 10, `0` = désactivé) · `RATE_LIMIT_MAX` (global, défaut 300/min/IP). Tous **lus à l'appel** → ajustables sans redéploiement.
+- Garde de dépense : `QUOTA_TRIAL_AI/OCR/WHATSAPP/WHATSAPP_MARKETING/EMAIL` · `QUOTA_ACTIVE_*` (défauts 20/15/30/**10**/20 et 200/150/300/**50**/200 ; `WHATSAPP_MARKETING` = placeholder bas) · `COST_BURST_PER_MIN` (défaut 10, `0` = désactivé) · `RATE_LIMIT_MAX` (global, défaut 300/min/IP). Tous **lus à l'appel** → ajustables sans redéploiement.
 
 **Vercel** : `VITE_GOOGLE_MAPS_KEY` (.env tracké), `VITE_ENV`, `SENTRY_AUTH_TOKEN` (.env.local), `VITE_VAPID_PUBLIC_KEY` (à venir), `VITE_DEMO_MODE=1` (**déploiement DÉMO uniquement** — jamais en prod : sort le raccourci par rôle et `demo1234` du bundle).
