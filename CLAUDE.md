@@ -37,14 +37,22 @@ npm run lint --workspaces                    # eslint front+back
 
 ## Déploiement
 
-**Frontend Vercel** — **auto-déploiement prod sur push `main`** (vérifié 2026-07-19, Settings → Git : Production suit `main`). **NE PAS lancer `vercel --prod` manuel** — c'est redondant (la prod se déploie seule) et ça consomme le quota. Repli d'URGENCE seulement (si l'auto-deploy est cassé) : `vercel --prod --yes` depuis la **racine** (jamais `apps/frontend` → path doublé = échec).
+**Frontend Vercel** — **auto-déploiement prod sur push `main`** (vérifié 2026-07-19, Settings → Git : Production suit `main`). **NE PAS lancer `vercel --prod` manuel** — c'est redondant et ça consomme le quota (cf. § « Après un merge » ci-dessous).
 
-**Backend Railway** — service `habashop`, projet `grateful-happiness` :
-```bash
-railway up --ci   # depuis la racine
-```
-Auto-deploy GitHub sur push `main` (lag ~20-25 min → `railway up --ci` pour forcer). Après déploiement backend : `npm run smoke:version --workspace=apps/backend` (le `/health` DÉPLOYÉ doit renvoyer la version racine — cf. § Versionnage).
-**Déploiement couplé** : le push `main` déclenche les deux auto-deploys ; si le backend introduit une rupture d'API, forcer Railway (`railway up --ci`) **avant** que le front prod (auto) ne l'appelle.
+**Backend Railway** — service `habashop`, projet `grateful-happiness`. **Auto-deploy GitHub sur push `main`.** Après déploiement : `npm run smoke:version --workspace=apps/backend` (le `/health` DÉPLOYÉ doit renvoyer la version racine — cf. § Versionnage).
+
+### ⚠️ APRÈS UN MERGE : ne rien lancer. Vérifier, c'est tout.
+
+`main` auto-déploie **sur les DEUX** plateformes. Donc après un merge :
+
+- **NE PAS** lancer `railway up --ci` · **NE PAS** lancer `vercel --prod`.
+- **VÉRIFIER** : `/health` (version + build id) côté back · un déploiement `● Ready` **plus récent que le merge** côté front.
+
+Le geste manuel **double le déploiement** — deux redémarrages de conteneur au lieu d'un — et **brûle le quota Vercel** (free-tier = 100 déploiements/jour). Mesuré le 2026-07-23 : la prod servait déjà la version neuve **17 s** après le push, alors que le `railway up --ci` lancé « pour forcer » était encore en build ; il a produit un **second** déploiement du même commit. Le lag « ~20-25 min » qui justifiait le forçage n'a pas été observé.
+
+Repli d'URGENCE seulement, si l'auto-deploy est *démontré* cassé (pas supposé lent) : `railway up --ci` depuis la racine · `vercel --prod --yes` depuis la **racine** (jamais `apps/frontend` → path doublé = échec).
+
+**Déploiement couplé** : le push `main` déclenche les deux auto-deploys. Si le backend introduit une rupture d'API, l'ordre n'est pas garanti — vérifier que le back sert bien la version neuve **avant** de conclure que le front est bon.
 
 ⚠️ **Vercel — la PROD s'auto-déploie sur push `main`** (vérifié 2026-07-19). L'ancienne inférence « prod = manuelle » (basée sur PR #49 : déploiements prod sans métadonnée git) était **FAUSSE** : ces prod-là venaient bien du CLI **parce qu'on lançait `vercel --prod` en plus**, pas parce que l'auto-deploy manquait ; l'absence de prod après certains merges venait du **QUOTA épuisé**, pas d'une config absente. Donc : **rien à lancer à la main** — au prochain push sur `main` (quota revenu), la prod part seule. Le rôle de Claude = **VÉRIFIER** (`vercel ls --prod` → un déploiement **plus récent que le merge** et `Ready`), jamais conclure « déployé » sans ça, et **ne JAMAIS relancer `vercel --prod`**. **Preview branch tracking DÉSACTIVÉ** (Settings → Git) — il était sur « All unassigned git branches » = 1 preview par PR = la moitié du quota. Cible = **1 déploiement prod par merge, zéro preview, zéro geste manuel**. **Free-tier = 100 déploiements/jour.**
 
