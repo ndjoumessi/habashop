@@ -14,7 +14,7 @@ const { db, redisMock, authMock } = vi.hoisted(() => ({
     saleItem: { groupBy: vi.fn(), findMany: vi.fn() },
     product: { findMany: vi.fn() },
   },
-  redisMock: { incr: vi.fn(), expire: vi.fn(), incrby: vi.fn(), decrby: vi.fn(), get: vi.fn(), setex: vi.fn() },
+  redisMock: { incr: vi.fn(), decr: vi.fn(async () => 0), expire: vi.fn(), incrby: vi.fn(), decrby: vi.fn(), get: vi.fn(), setex: vi.fn() },
   authMock: vi.fn(async (req: any) => { req.user = { role: 'ADMIN', userId: 'u1' }; req.tenantId = 'T1' }),
 }))
 

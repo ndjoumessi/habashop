@@ -349,14 +349,32 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     const VALID_SEGMENTS = ['all', 'bronze', 'silver', 'gold', 'wholesale', 'retail', 'semi']
     if (!VALID_SEGMENTS.includes(segment)) return reply.code(400).send({ error: 'Segment invalide' })
 
-    // Rate-limit : 1 campagne/heure/tenant (Redis ou mémoire si Redis absent)
+    // Rate-limit : 1 campagne/heure/tenant. RÉSERVE-PUIS-LIBÈRE (finding [3]) : on
+    // incrémente d'abord — ce qui bloque une 2e campagne concurrente — mais on LIBÈRE
+    // le créneau si la campagne finit par n'envoyer aucun message (segment vide, tous
+    // non résolvables, Twilio absent, quota refusé). Le créneau ne doit se consommer
+    // que sur un envoi RÉEL.
+    //
+    // TTL : `expire` n'est (re)posé que sur la transition à 1. Un `decr` ramenant à 0
+    // laisse une clé « 0 » avec son TTL d'origine — inoffensif : `0` ne déclenche
+    // jamais le rejet `> 1`, et la campagne suivante ré-arme la fenêtre en repassant
+    // par 1. On ne réinitialise donc jamais le TTL à tort, et aucun TTL périmé ne bloque.
     const rlKey = `rl:campaign:${tenantId}`
+    let slotTaken = false
     if (redis) {
       const count = await redis.incr(rlKey).catch(() => null)
       if (count === 1) await redis.expire(rlKey, 3600).catch(() => {})
       if (count !== null && count > 1) {
+        // Cette tentative est rejetée : elle ne prend pas le créneau (déjà tenu par la
+        // campagne en cours). On rend son propre incrément pour ne pas gonfler le compteur.
+        await redis.decr(rlKey).catch(() => {})
         return reply.code(429).send({ error: 'Une campagne maximum par heure. Réessayez plus tard.' })
       }
+      slotTaken = count !== null
+    }
+    // Rend le créneau réservé si, au final, rien n'est parti.
+    const releaseSlot = async (): Promise<void> => {
+      if (slotTaken && redis) await redis.decr(rlKey).catch(() => {})
     }
 
     // Résolution du segment → liste de numéros de téléphone
@@ -401,12 +419,15 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
     // (message nommant le restant et le requis) plutôt que tronqué à mi-cible.
     const res = await sendWhatsApp({ tenantId, to: phones, body: message, owner: { kind: 'customer' } })
     if (res.denied) {
+      await releaseSlot() // refus quota/statut : aucun message parti → créneau rendu
       return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({
         error: res.message, code: res.code, recipientCount: phones.length,
       })
     }
     const sent = res.sent
     const failed = res.failed ?? 0
+    // Twilio absent, segment vide, tous non résolvables → rien n'est parti : créneau rendu.
+    if (sent === 0) await releaseSlot()
 
     // Enregistre la campagne (idempotent — une seule ligne par envoi)
     await prisma.campaign.create({
