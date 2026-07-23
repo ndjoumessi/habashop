@@ -3,6 +3,7 @@ import type { TenantUpdateBody, InviteUserBody } from '../types'
 import { isValidSlug, RESERVED_SLUGS } from '../utils/slug'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
+import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { blockDemoTenant } from '../middleware/demoTenant'
 import { sendUserInvitationEmail } from '../services/email'
@@ -307,7 +308,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     // Audit + email (best-effort, n'échoue pas l'invitation si l'email rate)
     const tenant = await prisma.tenant.findUnique({ where: { id: request.tenantId } })
     const inviter = await prisma.user.findUnique({ where: { id: request.user.userId } })
-    await prisma.auditLog.create({
+    await writeAudit('INVITE_USER', prisma.auditLog.create({
       data: {
         tenantId: request.tenantId,
         userId: request.user.userId,
@@ -316,7 +317,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         description: JSON.stringify({ invitedUserId: user.id, email: user.email, role: user.role }),
         severity: 'info',
       },
-    }).catch(() => {})
+    }))
     sendUserInvitationEmail({
       tenantId: request.tenantId,
       to: user.email,
@@ -352,7 +353,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         role:  (body.role as Role | undefined) ?? undefined,
       },
     })
-    await prisma.auditLog.create({
+    await writeAudit('UPDATE_USER', prisma.auditLog.create({
       data: {
         tenantId: request.tenantId,
         userId: request.user.userId,
@@ -361,7 +362,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         description: JSON.stringify({ targetUserId: id }),
         severity: 'info',
       },
-    }).catch(() => {})
+    }))
     const { passwordHash, twoFASecret, ...safe } = updated
     return safe
   })
@@ -382,7 +383,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
       if (remainingAdmins === 0) return reply.code(403).send({ error: 'Impossible de désactiver le dernier administrateur actif' })
     }
     const updated = await prisma.user.update({ where: { id }, data: { isActive: active } })
-    await prisma.auditLog.create({
+    await writeAudit('TOGGLE_USER_ACTIVE', prisma.auditLog.create({
       data: {
         tenantId: request.tenantId,
         userId: request.user.userId,
@@ -391,7 +392,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         description: JSON.stringify({ targetUserId: id, active }),
         severity: 'info',
       },
-    }).catch(() => {})
+    }))
     const { passwordHash, twoFASecret, ...safe } = updated
     return safe
   })
@@ -407,7 +408,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
     const existing = await prisma.user.findFirst({ where: { id, tenantId: request.tenantId, deletedAt: null } })
     if (!existing) return reply.code(404).send({ error: 'Utilisateur introuvable' })
     const updated = await prisma.user.update({ where: { id }, data: { twoFAEnabled: twoFA } })
-    await prisma.auditLog.create({
+    await writeAudit('TOGGLE_USER_2FA', prisma.auditLog.create({
       data: {
         tenantId: request.tenantId,
         userId: request.user.userId,
@@ -416,7 +417,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         description: JSON.stringify({ targetUserId: id, twoFA }),
         severity: 'info',
       },
-    }).catch(() => {})
+    }))
     const { passwordHash, twoFASecret, ...safe } = updated
     return safe
   })
@@ -445,7 +446,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         email: `${existing.email}_deleted_${Date.now()}`,
       },
     })
-    await prisma.auditLog.create({
+    await writeAudit('DELETE_USER', prisma.auditLog.create({
       data: {
         tenantId: request.tenantId,
         userId: request.user.userId,
@@ -454,7 +455,7 @@ export async function tenantRoutes(app: FastifyInstance): Promise<void> {
         description: JSON.stringify({ targetUserId: id, email: existing.email }),
         severity: 'warning',
       },
-    }).catch(() => {})
+    }))
     return { success: true }
   })
 }

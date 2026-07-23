@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import type { CustomerBody } from '../types'
 import { prisma } from '../db'
+import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 import { tierForPoints } from '../lib/loyalty'
@@ -133,9 +134,9 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
     await prisma.customer.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete
-    await prisma.auditLog.create({
+    await writeAudit('DELETE_CUSTOMER', prisma.auditLog.create({
       data: { tenantId, userId, module: 'customers', action: 'DELETE_CUSTOMER', description: JSON.stringify({ id, name: customer.name }) },
-    }).catch(() => {})
+    }))
     return reply.code(204).send()
   })
 
@@ -147,9 +148,9 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     const customer = await prisma.customer.findFirst({ where: { id, tenantId } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
     const restored = await prisma.customer.update({ where: { id }, data: { deletedAt: null } })
-    await prisma.auditLog.create({
+    await writeAudit('RESTORE_CUSTOMER', prisma.auditLog.create({
       data: { tenantId, userId, module: 'customers', action: 'RESTORE_CUSTOMER', description: JSON.stringify({ id, name: customer.name }) },
-    }).catch(() => {})
+    }))
     return restored
   })
 

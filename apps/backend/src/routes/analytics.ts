@@ -263,16 +263,14 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/api/audit-logs', { preHandler: authenticate }, async (request) => {
     const { tenantId } = request.user
-    try {
-      return await prisma.auditLog.findMany({
-        where: { tenantId },
-        orderBy: { createdAt: 'desc' },
-        take: 100,
-        include: { user: { select: { name: true } } },
-      })
-    } catch (err) {
-      console.error('Get audit-logs error:', err)
-      return []
-    }
+    // ⚠️ L'erreur REMONTE volontairement (500 via le handler global). Renvoyer []
+    // sur échec faisait AFFIRMER au journal qu'il ne s'était rien passé — un
+    // journal d'audit muet est pire qu'un journal indisponible, parce qu'on le croit.
+    return prisma.auditLog.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: { user: { select: { name: true } } },
+    })
   })
 }

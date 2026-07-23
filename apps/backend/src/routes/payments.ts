@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
+import { writeAudit } from '../lib/writeAudit'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
 import { authenticate } from '../middleware/authenticate'
 import {
@@ -403,7 +404,7 @@ async function activatePlan(opts: {
   // donc on ne logge que si un admin existe réellement.
   const admin = planReq.tenant?.users[0]
   if (admin?.id) {
-    await prisma.auditLog.create({
+    await writeAudit('PLAN_ACTIVATED', prisma.auditLog.create({
       data: {
         tenantId:    planReq.tenantId,
         userId:      admin.id,
@@ -416,7 +417,7 @@ async function activatePlan(opts: {
           ref:    opts.reference,
         }),
       },
-    }).catch(() => {})
+    }))
   }
 
   // Email de confirmation

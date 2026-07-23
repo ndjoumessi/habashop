@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import type { OrderBody } from '../types'
 import { prisma } from '../db'
+import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 
@@ -74,9 +75,9 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
     const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId, deletedAt: null }, select: { id: true, ref: true } })
     if (!order) return reply.code(404).send({ error: 'Commande introuvable' })
     await prisma.purchaseOrder.update({ where: { id }, data: { deletedAt: new Date() } }) // soft delete (lignes conservées)
-    await prisma.auditLog.create({
+    await writeAudit('DELETE_ORDER', prisma.auditLog.create({
       data: { tenantId, userId, module: 'orders', action: 'DELETE_ORDER', description: JSON.stringify({ id, ref: order.ref }) },
-    }).catch(() => {})
+    }))
     return reply.code(204).send()
   })
 
@@ -88,9 +89,9 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
     const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, select: { id: true, ref: true } })
     if (!order) return reply.code(404).send({ error: 'Commande introuvable' })
     const restored = await prisma.purchaseOrder.update({ where: { id }, data: { deletedAt: null } })
-    await prisma.auditLog.create({
+    await writeAudit('RESTORE_ORDER', prisma.auditLog.create({
       data: { tenantId, userId, module: 'orders', action: 'RESTORE_ORDER', description: JSON.stringify({ id, ref: order.ref }) },
-    }).catch(() => {})
+    }))
     return restored
   })
 }

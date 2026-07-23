@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
+import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
 import { blockDemoTenant } from '../middleware/demoTenant'
 import { costQuota } from '../middleware/costQuota'
@@ -48,9 +49,9 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
     const supplier = await prisma.supplier.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!supplier) return reply.code(404).send({ error: 'Fournisseur introuvable' })
     await prisma.supplier.update({ where: { id }, data: { deletedAt: new Date() } })
-    await prisma.auditLog.create({
+    await writeAudit('DELETE_SUPPLIER', prisma.auditLog.create({
       data: { tenantId, userId, module: 'suppliers', action: 'DELETE_SUPPLIER', description: JSON.stringify({ id, name: supplier.name }) },
-    }).catch(() => {})
+    }))
     return reply.code(204).send()
   })
 
@@ -103,9 +104,9 @@ export async function supplierRoutes(app: FastifyInstance): Promise<void> {
     const supplier = await prisma.supplier.findFirst({ where: { id, tenantId } })
     if (!supplier) return reply.code(404).send({ error: 'Fournisseur introuvable' })
     const restored = await prisma.supplier.update({ where: { id }, data: { deletedAt: null } })
-    await prisma.auditLog.create({
+    await writeAudit('RESTORE_SUPPLIER', prisma.auditLog.create({
       data: { tenantId, userId, module: 'suppliers', action: 'RESTORE_SUPPLIER', description: JSON.stringify({ id, name: supplier.name }) },
-    }).catch(() => {})
+    }))
     return restored
   })
 }
