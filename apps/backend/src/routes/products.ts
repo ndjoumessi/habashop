@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import type { ProductBody } from '../types'
 import { prisma } from '../db'
 import { writeAudit } from '../lib/writeAudit'
+import { getTenantId } from '../lib/tenantId'
 import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { validatePriceTiers } from '../utils/pricing'
@@ -88,12 +89,11 @@ const PRODUCT_UPDATE = z.object({
 
 export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/products', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.product.findMany({ where: { tenantId, deletedAt: null }, orderBy: { name: 'asc' } })
   })
 
   app.post('/api/products', { preHandler: authenticate, schema: { body: PRODUCT_CREATE } }, async (request, reply) => {
-    const { tenantId } = request.user
     const {
       name, category, buyPrice, sellPrice,
       stockQty, stockMin, unit, emoji, taxRate,
@@ -123,6 +123,8 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
     }
     const tiersOk = tiersResult as { ok: true; tiers: { minQty: number; price: number; label?: string }[] }
 
+    // Après les gardes 400 : `getTenantId` peut lever, l'ordre des sorties reste identique.
+    const tenantId = getTenantId(request)
     const bc = await checkBarcode(prisma, tenantId, barcode)
     if (bc.error) return reply.code(bc.error.code).send({ error: bc.error.message, code: bc.error.code === 409 ? 'DUPLICATE_BARCODE' : 'INVALID_BARCODE' })
 
@@ -168,7 +170,6 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.put('/api/products/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: PRODUCT_UPDATE } }, async (request, reply) => {
-    const { tenantId } = request.user
     const { id } = request.params as { id: string }
     // SKU est immutable (auto-généré à la création) — on retire tout sku envoyé par le client.
     const { sku: _ignored, priceTiers: rawTiers, ...data } = request.body as Record<string, unknown>
@@ -180,6 +181,8 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       const ok = r as { ok: true; tiers: { minQty: number; price: number; label?: string }[] }
       ;(data as any).priceTiers = ok.tiers.length ? ok.tiers : null
     }
+    // Après la garde 400 des paliers : `getTenantId` peut lever, ordre des sorties inchangé.
+    const tenantId = getTenantId(request)
     // Si barcode présent : EAN-13 valide + unique par tenant (hors soi-même).
     if (data.barcode !== undefined) {
       const bc = await checkBarcode(prisma, tenantId, data.barcode, id)
@@ -192,7 +195,8 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.delete('/api/products/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId, userId } = request.user
+    const { userId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const product = await prisma.product.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
@@ -206,8 +210,9 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
 
   // Restaurer un produit soft-supprimé (ADMIN / SUPER_ADMIN)
   app.patch('/api/products/:id/restore', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId, userId, role } = request.user
+    const { userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const product = await prisma.product.findFirst({ where: { id, tenantId } })
     if (!product) return reply.code(404).send({ error: 'Produit introuvable' })
@@ -220,7 +225,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.get('/api/products/low-stock', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const products = await prisma.product.findMany({ where: { tenantId, isActive: true, deletedAt: null } })
     return products.filter((p) => p.stockQty <= p.stockMin)
   })
