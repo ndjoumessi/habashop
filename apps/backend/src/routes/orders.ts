@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
-import type { OrderBody } from '../types'
 import { prisma } from '../db'
 import { writeAudit } from '../lib/writeAudit'
+import { getTenantId } from '../lib/tenantId'
 import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 
@@ -23,7 +23,7 @@ const ORDER_STATUS = z.object({ status: z.string().min(1) })
 
 export async function orderRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/orders', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return prisma.purchaseOrder.findMany({
       where: { tenantId, deletedAt: null },
       include: { items: true, supplier: true },
@@ -32,8 +32,12 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/orders', { preHandler: authenticate, schema: { body: ORDER_CREATE } }, async (request) => {
-    const { tenantId, userId } = request.user
-    const { supplierId, items, expectedAt, notes } = request.body as OrderBody
+    const { userId } = request.user
+    const tenantId = getTenantId(request)
+    // Type dérivé du schéma zod (ORDER_CREATE) → supplierId est `string` (garanti par
+    // `z.string().min(1)`, rejet 400 avant le handler), pas `string | undefined` comme le
+    // laissait croire le cast précédent. Aligne le type sur la garantie de validation.
+    const { supplierId, items, expectedAt, notes } = request.body as z.infer<typeof ORDER_CREATE>
 
     const ref = `CMD-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`
     const total = (items as any[]).reduce((s: number, i) => s + i.qty * i.unitPrice, 0)
@@ -60,17 +64,18 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.patch('/api/orders/:id/status', { preHandler: authenticate, schema: { params: ID_PARAMS, body: ORDER_STATUS } }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const { status } = request.body as { status?: string }
     return prisma.purchaseOrder.update({ where: { id, tenantId }, data: { status } })
   })
 
   app.delete('/api/orders/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId, userId, role } = request.user
+    const { userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
       return reply.code(403).send({ error: 'Admin requis pour supprimer une commande' })
     }
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId, deletedAt: null }, select: { id: true, ref: true } })
     if (!order) return reply.code(404).send({ error: 'Commande introuvable' })
@@ -83,8 +88,9 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
 
   // Restaurer une commande soft-supprimée (ADMIN / SUPER_ADMIN)
   app.patch('/api/orders/:id/restore', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId, userId, role } = request.user
+    const { userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const order = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, select: { id: true, ref: true } })
     if (!order) return reply.code(404).send({ error: 'Commande introuvable' })
