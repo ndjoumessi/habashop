@@ -4,6 +4,7 @@ import type { CustomerBody } from '../types'
 import { prisma } from '../db'
 import { writeAudit } from '../lib/writeAudit'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId } from '../lib/tenantId'
 import { notifyTenant } from './notifications'
 import { tierForPoints } from '../lib/loyalty'
 
@@ -25,7 +26,7 @@ const LOYALTY_BODY = z.object({ points: z.coerce.number(), reason: z.string().nu
 
 export async function customerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/customers', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { search } = request.query as { search?: string }
     try {
       // Mode recherche (sélecteur client POS) : filtre nom/téléphone, limité à 8, enrichi du palier.
@@ -63,7 +64,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
 
   // Détail d'un client (sélecteur POS : résolution après scan QR de la carte fidélité).
   app.get('/api/customers/:id', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
@@ -71,7 +72,6 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/customers', { preHandler: authenticate, schema: { body: CUSTOMER_CREATE } }, async (request, reply) => {
-    const { tenantId } = request.user
     const {
       name, type, phone, email, address,
       loyaltyPoints, totalRevenue,
@@ -80,6 +80,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     if (!name || !name.trim()) {
       return reply.code(400).send({ error: 'Le nom est requis' })
     }
+    const tenantId = getTenantId(request)
 
     try {
       const customer = await prisma.customer.create({
@@ -106,7 +107,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.put('/api/customers/:id', { preHandler: authenticate, schema: { params: ID_PARAMS, body: CUSTOMER_UPDATE } }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const data = request.body as CustomerBody
     try {
@@ -129,7 +130,8 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.delete('/api/customers/:id', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId, userId } = request.user
+    const { userId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const customer = await prisma.customer.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
@@ -142,8 +144,9 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
 
   // Restaurer un client soft-supprimé (ADMIN / SUPER_ADMIN)
   app.patch('/api/customers/:id/restore', { preHandler: authenticate, schema: { params: ID_PARAMS } }, async (request, reply) => {
-    const { tenantId, userId, role } = request.user
+    const { userId, role } = request.user
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return reply.code(403).send({ error: 'Admin requis' })
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const customer = await prisma.customer.findFirst({ where: { id, tenantId } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
@@ -156,7 +159,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
 
   // ─── LOYALTY ──────────────────────────
   app.get('/api/customers/:id/loyalty', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     // Scope tenant STRICT (fini le findUnique global = faille d'isolation).
     const customer = await prisma.customer.findFirst({ where: { id, tenantId } })
@@ -197,7 +200,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
 
   // ── Carte fidélité numérique (scope tenant strict, tout rôle authentifié) ──
   app.get('/api/customers/:id/loyalty-card', { preHandler: authenticate }, async (request, reply) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
     const customer = await prisma.customer.findFirst({ where: { id, tenantId }, select: { id: true, name: true, loyaltyPoints: true, totalRevenue: true } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
@@ -236,7 +239,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.post('/api/customers/:id/loyalty', { preHandler: authenticate, schema: { params: ID_PARAMS, body: LOYALTY_BODY } }, async (request, reply) => {
-    const { tenantId, role } = request.user as { tenantId: string; role?: string }
+    const { role } = request.user
     // Ajustement manuel de points = levier de remise → réservé aux rôles de gestion
     if (!['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(role ?? '')) {
       return reply.code(403).send({ error: 'Accès refusé — rôle MANAGER ou ADMIN requis' })
@@ -246,6 +249,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
     if (typeof points !== 'number' || !Number.isFinite(points) || points === 0) {
       return reply.code(400).send({ error: 'points doit être un entier non nul' })
     }
+    const tenantId = getTenantId(request)
     const customer = await prisma.customer.findFirst({ where: { id, tenantId } })
     if (!customer) return reply.code(404).send({ error: 'Client introuvable' })
     // Ajustement manuel : mute le solde + trace dans l'historique (même source de vérité).
