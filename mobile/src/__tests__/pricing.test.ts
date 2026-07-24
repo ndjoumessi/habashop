@@ -1,4 +1,4 @@
-import { resolveLinePrice, capToStock, vatBreakdown } from '@/stores/posStore'
+import { resolveLinePrice, capToStock, vatBreakdown, isPromotionActive } from '@/stores/posStore'
 import type { PriceTier } from '@/types'
 
 const TIERS: PriceTier[] = [
@@ -33,6 +33,28 @@ describe('resolveLinePrice (miroir backend resolveTierPrice)', () => {
 
   it('paliers vides → prix de base', () => {
     expect(resolveLinePrice(900, 5, [], false, null)).toEqual({ price: 900 })
+  })
+})
+
+describe('isPromotionActive + resolveLinePrice (expiration promo, miroir #125)', () => {
+  const FUTUR = new Date('2999-12-31T00:00:00.000Z')
+  const PASSE = new Date('2020-01-01T00:00:00.000Z')
+  const now = new Date('2026-07-24T09:00:00.000Z')
+
+  it('promo NON expirée → prix promo appliqué', () => {
+    const active = isPromotionActive(true, FUTUR.toISOString(), now)
+    expect(active).toBe(true)
+    expect(resolveLinePrice(2000, 1, null, active, 1500)).toEqual({ price: 1500 })
+  })
+
+  it('promo EXPIRÉE → prix de base (la promo ne s’applique plus)', () => {
+    const active = isPromotionActive(true, PASSE.toISOString(), now)
+    expect(active).toBe(false)
+    expect(resolveLinePrice(2000, 1, null, active, 1500)).toEqual({ price: 2000 })
+  })
+
+  it('promo sans date de fin → active (comportement historique)', () => {
+    expect(isPromotionActive(true, null, now)).toBe(true)
   })
 })
 

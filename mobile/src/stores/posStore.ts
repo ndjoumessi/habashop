@@ -18,6 +18,9 @@ export interface CartItem {
   basePrice?: number
   hasPromotion?: boolean
   promotionPrice?: number | null
+  // Date de fin de promo (ISO) conservée pour ré-évaluer l'expiration au recalcul de ligne :
+  // une promo peut expirer entre l'ajout et un changement de quantité.
+  promotionEnd?: string | null
   priceTiers?: PriceTier[] | null
   // Libellé du palier appliqué (si un palier — et non une promo — est actif), pour l'UI.
   tierLabel?: string
@@ -42,9 +45,28 @@ interface PosState {
   total: () => number
 }
 
+// Expiration d'une promo — MIROIR EXACT de apps/backend/src/utils/pricing.ts et
+// apps/frontend/src/lib/pricing.ts (cas partagés docs/shared-fixtures/promotion-active-cases.json).
+// Active tant que `hasPromotion` ET que le jour (UTC) n'a pas dépassé `promotionEnd` (INCLUSIF).
+// Pas d'échéance ('' / null) = promo sans fin. `now` INJECTÉ → fonction pure.
+function dayUTC(v: string | Date): string {
+  return (typeof v === 'string' ? v : v.toISOString()).slice(0, 10)
+}
+export function isPromotionActive(
+  hasPromotion: boolean | null | undefined,
+  promotionEnd: string | Date | null | undefined,
+  now: Date,
+): boolean {
+  if (!hasPromotion) return false
+  if (promotionEnd == null || promotionEnd === '') return true
+  return dayUTC(now) <= dayUTC(promotionEnd)
+}
+
 // Résout le prix unitaire selon (qty, base, paliers, promo) — MIROIR EXACT du backend
 // (apps/backend/src/utils/pricing.ts → resolveTierPrice). Priorité : promo active → palier
 // matchant la quantité (minQty le plus haut ≤ qty) → prix de base.
+// ⚠️ `hasPromotion` reçu ici doit DÉJÀ intégrer l'expiration (cf. isPromotionActive au point
+// d'appel) — cette fonction reste pure et sans notion de temps.
 export function resolveLinePrice(
   basePrice: number,
   qty: number,
@@ -80,7 +102,9 @@ export function capToStock(qty: number, stockQty?: number): number {
 // Recalcule les champs prix d'une ligne pour une nouvelle quantité (immutable).
 function repriceLine(item: CartItem, qty: number): CartItem {
   const base = item.basePrice ?? item.price
-  const r = resolveLinePrice(base, qty, item.priceTiers, item.hasPromotion, item.promotionPrice)
+  // Promo EFFECTIVE = non expirée (ré-évaluée à chaque recalcul, cf. isPromotionActive).
+  const promoActive = isPromotionActive(item.hasPromotion, item.promotionEnd, new Date())
+  const r = resolveLinePrice(base, qty, item.priceTiers, promoActive, item.promotionPrice)
   return { ...item, quantity: qty, price: r.price, tierLabel: r.tierLabel }
 }
 
@@ -100,11 +124,15 @@ export const usePosStore = create<PosState>((set, get) => ({
       const tiers = Array.isArray(p.priceTiers) ? (p.priceTiers as PriceTier[]) : null
       const hasPromotion = !!p.hasPromotion
       const promotionPrice = p.promotionPrice ?? null
-      const r = resolveLinePrice(base, 1, tiers, hasPromotion, promotionPrice)
+      const promotionEnd = p.promotionEnd ?? null
+      // Prix effectif = promo appliquée SEULEMENT si non expirée (miroir backend #125).
+      const promoActive = isPromotionActive(hasPromotion, promotionEnd, new Date())
+      const r = resolveLinePrice(base, 1, tiers, promoActive, promotionPrice)
       set({ cart:[...cart, {
         productId:p.id, name:p.name, price:r.price,
         quantity:1, emoji:p.emoji??'📦', stockQty:p.stockQty??0,
-        basePrice:base, hasPromotion, promotionPrice, priceTiers:tiers, tierLabel:r.tierLabel,
+        // On stocke hasPromotion + promotionEnd BRUTS → repriceLine ré-évalue l'expiration.
+        basePrice:base, hasPromotion, promotionPrice, promotionEnd, priceTiers:tiers, tierLabel:r.tierLabel,
       }]})
     }
   },
