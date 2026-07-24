@@ -443,7 +443,7 @@ recouvrent) n'était pas testée.
 ### 🔴 Critique
 - ✅ **Numéros WhatsApp : RÉSOLU** (sous-surface 1, PR #100) — la normalisation par « à qui appartient ce numéro » (`resolveRecipient`, param `owner` obligatoire) a remplacé le `+` aveugle et le `replace(/^0/)`. Cf. § Chantier NORMALISATION téléphonique (résolu à la 5ᵉ tentative). Le seul reste est la dette `Tenant.country` (noms FR en prod, dont `resolveRecipient` se protège par `isSupportedCountry()`).
 - **SMS** (`notifSmsSales`/`notifSmsStock`) : Africa's Talking reco. `services/sms.ts`, `SMS_API_KEY`. **XL**
-- **Push PWA** : VAPID keys, `PushToken` prêt inutilisé, SW sans handler. **XL**
+- ✅ **Push PWA : IMPLÉMENTÉ** (Web Push VAPID). Canal navigateur DISTINCT du push Expo mobile : `services/webPush.ts` (SEUL module important `web-push`, fail-silent, VAPID lu à chaud depuis l'env → no-op si absent) ; `pushService.dispatch()` fanne chaque notif vers Expo (mobile) ET web (subscriptions `platform='web'`, subscription JSON stockée dans `PushToken.token`). Front : `utils/webPush.ts` (permission → clé VAPID serveur → `pushManager.subscribe` → POST token), toggle « Recevoir sur cet appareil » dans `SectionNotif` (distinct de l'opt-in tenant `notifPushAll`), handlers SW dans `public/push-sw.js` (chargé via workbox `importScripts` — le SW généré n'accepte pas de listeners en config ; exclu du precache). Endpoint `GET /api/notifications/vapid-public-key`. ⚠️ **À ACTIVER (Nelson)** : poser `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (+ `VAPID_SUBJECT` optionnel) sur Railway — clés absentes = feature inerte (fail-safe). Verrous : `webPush.test.ts` (back : parse/fail-safe/purge 404-410) + `webPush.test.ts` (front : décodage base64url VAPID).
 - **Wave webhook** : code **fail-CLOSED** (`if (!secret) return false`) ✅ — reste à poser `WAVE_WEBHOOK_SECRET` Railway pour activer la vérif en prod. **S**
 - **Campay go-live** : `CAMPAY_WEBHOOK_KEY` + `CAMPAY_ENVIRONMENT=production`. **S**
 - **PayDunya go-live** : `PAYDUNYA_MODE=live` + clés live. Flux POS non validé end-to-end. **S**
@@ -462,11 +462,11 @@ recouvrent) n'était pas testée.
 
 ## Env vars
 
-**Railway** : `DATABASE_URL`, `TWILIO_ACCOUNT_SID/AUTH_TOKEN/WHATSAPP_FROM`, `WAVE_WEBHOOK_SECRET`, Resend, Redis, `ANTHROPIC_API_KEY`, `SENTRY_AUTH_TOKEN`.
+**Railway** : `DATABASE_URL`, `TWILIO_ACCOUNT_SID/AUTH_TOKEN/WHATSAPP_FROM`, `WAVE_WEBHOOK_SECRET`, Resend, Redis, `ANTHROPIC_API_KEY`, `SENTRY_AUTH_TOKEN`, `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (+ `VAPID_SUBJECT` optionnel — Web Push PWA ; absents = feature inerte).
 - MTN : `MTN_MOMO_SUBSCRIPTION_KEY/USER_ID/API_KEY/ENVIRONMENT` · `MTN_SANDBOX_AUTO_SUCCESS`
 - Campay : `CAMPAY_USERNAME/PASSWORD/TOKEN/WEBHOOK_KEY/ENVIRONMENT` · `CAMPAY_SANDBOX_AUTO_SUCCESS`
 - PayDunya : `PAYDUNYA_MASTER_KEY/PRIVATE_KEY/PUBLIC_KEY/TOKEN/MODE` · `PAYDUNYA_SANDBOX_AUTO_SUCCESS`
 
 - Garde de dépense : `QUOTA_TRIAL_AI/OCR/WHATSAPP/WHATSAPP_MARKETING/EMAIL` · `QUOTA_ACTIVE_*` (défauts 20/15/30/**10**/20 et 200/150/300/**50**/200 ; `WHATSAPP_MARKETING` = placeholder bas) · `COST_BURST_PER_MIN` (défaut 10, `0` = désactivé) · `RATE_LIMIT_MAX` (global, défaut 300/min/IP). Tous **lus à l'appel** → ajustables sans redéploiement.
 
-**Vercel** : `VITE_GOOGLE_MAPS_KEY` (.env tracké), `VITE_ENV`, `SENTRY_AUTH_TOKEN` (.env.local), `VITE_VAPID_PUBLIC_KEY` (à venir), `VITE_DEMO_MODE=1` (**déploiement DÉMO uniquement** — jamais en prod : sort le raccourci par rôle et `demo1234` du bundle).
+**Vercel** : `VITE_GOOGLE_MAPS_KEY` (.env tracké), `VITE_ENV`, `SENTRY_AUTH_TOKEN` (.env.local), `VITE_DEMO_MODE=1` (**déploiement DÉMO uniquement** — jamais en prod : sort le raccourci par rôle et `demo1234` du bundle).

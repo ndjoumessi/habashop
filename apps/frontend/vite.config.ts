@@ -46,9 +46,12 @@ export default defineConfig(({ mode }) => {
       manifest: false, // use public/manifest.json
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Handlers Web Push injectés dans le SW généré (workbox n'accepte pas de listeners
+        // dans sa config) → script séparé public/push-sw.js chargé via importScripts.
+        importScripts: ['/push-sw.js'],
         // Gros chunks lazy (recharts, @zxing/jsbarcode/qrcode, html2canvas, jspdf) : exclus
         // du precache (ils plombaient ~1 Mo) — servis à la demande via runtimeCaching ci-dessous.
-        globIgnores: ['**/assets/charts-*.js', '**/assets/barcode-*.js', '**/assets/canvas-*.js', '**/assets/pdf-*.js'],
+        globIgnores: ['**/assets/charts-*.js', '**/assets/barcode-*.js', '**/assets/canvas-*.js', '**/assets/pdf-*.js', '**/push-sw.js'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,

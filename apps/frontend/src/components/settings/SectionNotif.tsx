@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { useConfig } from '@/stores/appStore'
 import { tenantApi } from '@/lib/api'
 import { type L4, makeI, pick, panel, Head, ToggleCard, GroupLabel } from '@/components/settings/settingsShared'
+import { isWebPushSupported, getWebPushSubscription, enableWebPush, disableWebPush } from '@/utils/webPush'
 
 export default function SectionNotif() {
   const cfg = useConfig()
@@ -16,6 +17,35 @@ export default function SectionNotif() {
   const [ownerPhoneSaved, setOwnerPhoneSaved] = useState('')
   // Évite le flicker états par défaut → états serveur : skeleton tant que le tenant n'est pas chargé
   const [tenantLoaded, setTenantLoaded] = useState(false)
+  // Abonnement Web Push PAR NAVIGATEUR (distinct de l'opt-in tenant notifPushAll) : source de
+  // vérité = la PushSubscription du SW, relue au montage.
+  const pushSupported = isWebPushSupported()
+  const [devicePushOn, setDevicePushOn] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+  useEffect(() => {
+    if (!pushSupported) return
+    getWebPushSubscription().then(sub => setDevicePushOn(!!sub)).catch(() => undefined)
+  }, [pushSupported])
+
+  const toggleDevicePush = async () => {
+    if (pushBusy) return
+    setPushBusy(true)
+    try {
+      if (devicePushOn) {
+        await disableWebPush()
+        setDevicePushOn(false)
+        toast.success(i('Notifications désactivées sur cet appareil', 'Notifications disabled on this device', 'Notificaciones desactivadas en este dispositivo', 'Notifiche disattivate su questo dispositivo'))
+      } else {
+        const r = await enableWebPush()
+        if (r === 'ok') { setDevicePushOn(true); toast.success(i('Notifications activées sur cet appareil', 'Notifications enabled on this device', 'Notificaciones activadas en este dispositivo', 'Notifiche attivate su questo dispositivo')) }
+        else if (r === 'denied') toast.error(i('Permission refusée par le navigateur', 'Permission denied by the browser', 'Permiso denegado por el navegador', 'Permesso negato dal browser'))
+        else if (r === 'not-configured') toast.error(i('Push non configuré côté serveur', 'Push not configured on the server', 'Push no configurado en el servidor', 'Push non configurato sul server'))
+        else toast.error(i("Échec de l'activation", 'Enable failed', 'Error al activar', 'Attivazione non riuscita'))
+      }
+    } finally {
+      setPushBusy(false)
+    }
+  }
 
   // Charge depuis le tenant au mount
   useEffect(() => {
@@ -89,6 +119,15 @@ export default function SectionNotif() {
             ))}
           </div>
         ))}
+        {/* Abonnement Web Push de CE navigateur — sépare l'opt-in tenant (ce qu'on ENVOIE)
+            de l'abonnement appareil (ce navigateur REÇOIT-il ?). Masqué si non supporté. */}
+        {pushSupported && (
+          <ToggleCard icon={<BellRing size={18} />} color="var(--p2)"
+            label={i('Recevoir sur cet appareil', 'Receive on this device', 'Recibir en este dispositivo', 'Ricevi su questo dispositivo')}
+            desc={i('Notifications push dans ce navigateur (demande la permission)', 'Push notifications in this browser (asks permission)', 'Notificaciones push en este navegador (pide permiso)', 'Notifiche push in questo browser (chiede il permesso)')}
+            on={devicePushOn}
+            onChange={toggleDevicePush} />
+        )}
         </>
         )}
 
