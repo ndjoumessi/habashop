@@ -77,6 +77,34 @@ export type PosProduct = typeof PRODUCTS[0] & {
 /** Tarif du POS. La ligne de panier retient CELUI dont son prix est issu. */
 export type ClientTariff = 'retail' | 'semi' | 'wholesale'
 
+/**
+ * Mappe un produit d'API vers la forme POS. Source UNIQUE : la liste complète ET la
+ * résolution ciblée d'un code scanné passent par ici — deux mappings divergeraient
+ * silencieusement (un produit résolu par scan n'aurait pas les mêmes tarifs que le
+ * même produit venu de la liste).
+ *
+ * ⚠️ Le repli `?? sellPrice` sur les tarifs gros/demi-gros est MIROIR du serveur
+ * (`basePriceForTariff`) : diverger ici fabriquerait des divergences de prix.
+ */
+export function toPosProduct(p: Record<string, any>): PosProduct {
+  return {
+    id: p.id,
+    name: p.name,
+    sku: p.sku ?? '',
+    barcode: p.barcode ?? '',
+    price: p.sellPrice ?? 0,
+    priceWholesale: p.wholesalePrice ?? p.sellPrice ?? 0,
+    priceSemiWholesale: p.semiWholesalePrice ?? p.sellPrice ?? 0,
+    cat: (p.category || 'grocery').toLowerCase().replace(/[éè]/g, 'e').replace(/\s+/g, ''),
+    emoji: p.emoji || '📦',
+    stock: p.stockQty ?? 0,
+    promotion: p.hasPromotion ?? false,
+    promotionPrice: p.promotionPrice ?? 0,
+    promotionEnd: p.promotionEnd?.split('T')[0] ?? '',
+    priceTiers: Array.isArray(p.priceTiers) ? p.priceTiers : undefined,
+  }
+}
+
 export interface CartItem {
   id: number | string
   name: string

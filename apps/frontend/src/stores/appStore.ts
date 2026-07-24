@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { translations } from '@/i18n'
 import type { CartItem } from '@/components/pos/posShared'
+import type { FreshnessMap, FreshnessKind } from '@/lib/dataFreshness'
 
 export type Currency = 'XOF' | 'XAF' | 'EUR' | 'USD' | 'CAD' | 'GBP'
 export type Lang     = 'fr' | 'en' | 'es' | 'it'
@@ -359,6 +360,14 @@ interface AppStore extends AppConfig {
   // Taux de change live (runtime only, non persisté)
   currencyRates: Record<string, number>
   fetchExchangeRates: () => Promise<void>
+  // Fraîcheur des données à conséquence (Chantier B). Persisté : au rechargement,
+  // « il y a 3 h » reste vrai — remettre le compteur à zéro serait un mensonge.
+  freshness: FreshnessMap
+  markFresh: (kind: FreshnessKind, at?: number) => void
+  // Incrémenté par le rafraîchissement manuel : un POS monté recharge sa liste en
+  // mémoire, sinon l'horodatage dirait « à jour » devant un écran resté périmé.
+  catalogNonce: number
+  requestCatalogRefresh: () => void
 }
 
 export const useAppStore = create<AppStore>()(
@@ -462,12 +471,19 @@ export const useAppStore = create<AppStore>()(
       // Le price (et tierLabel) sont calculés par POS.tsx via resolveTierPrice
       // (logique métier qui dépend du tenant + clientType) et passés au store.
       cart: [],
+      freshness: {},
+      catalogNonce: 0,
 
       addCartItem: (item) => set(s => ({
         cart: s.cart.some(i => i.id === item.id)
           ? s.cart.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i)
           : [...s.cart, item],
       })),
+
+      // Horodate une classe de données qui vient d'être resynchronisée depuis le serveur.
+      // `at` injectable (tests) ; défaut = maintenant.
+      markFresh: (kind, at) => set(s => ({ freshness: { ...s.freshness, [kind]: at ?? Date.now() } })),
+      requestCatalogRefresh: () => set(s => ({ catalogNonce: s.catalogNonce + 1 })),
 
       updateCartQty: (id, delta, newPrice, tierLabel, clientType) => set(s => ({
         cart: s.cart
