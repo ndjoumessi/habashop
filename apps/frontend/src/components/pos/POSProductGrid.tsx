@@ -1,5 +1,5 @@
 import { memo, useMemo, useState, useRef, useCallback, type ReactNode } from 'react'
-import { User, Factory, Package, CreditCard, ClipboardList, AlertTriangle, RotateCcw, FileText, Loader2, Tag } from 'lucide-react'
+import { User, Factory, Package, CreditCard, ClipboardList, AlertTriangle, RotateCcw, FileText, Loader2, Tag, History } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
@@ -36,13 +36,15 @@ interface POSProductGridProps {
 
 // ── Audit des ÉCARTS de prix (ADMIN) ─────────────────────────────────────────────
 // Dérive, depuis les lignes stockées, chaque écart prix soumis/catalogue + son SENS :
-//  - « corrigé » (EN LIGNE) : le serveur a facturé SON prix (unitPrice === catalogPrice) →
-//    une tentative d'envoyer un autre prix, À REGARDER ;
-//  - « honoré » (HORS-LIGNE) : le montant encaissé a été gardé (unitPrice === submittedPrice) →
-//    bénin (le tarif avait changé entre la vente et la synchro).
-// Vocabulaire FACTUEL : « écart de prix », jamais « suspect »/« fraude ».
-type DivRow = { name: string; qty: number; submitted: number; catalog: number; corrected: boolean; deltaXOF: number }
-function priceDivergenceRows(sale: any): DivRow[] {
+//  - « corrigé » (EN LIGNE) : le serveur a facturé SON prix (unitPrice === catalogPrice) ;
+//  - « honoré » (HORS-LIGNE) : le montant encaissé a été gardé (unitPrice === submittedPrice).
+// … PLUS une QUALIFICATION serveur (`staleCatalogAt`, Chantier B) : le prix soumis était le
+// tarif catalogue jusqu'à cette date, assez récemment pour qu'un catalogue POS en cache
+// l'explique. Sans elle, un cache périmé produisait la MÊME ligne ambre qu'un prix forgé —
+// donc l'écran accusait un caissier honnête.
+// Vocabulaire FACTUEL : « écart de prix », « tarif précédent » ; jamais « suspect »/« fraude ».
+export type DivRow = { name: string; qty: number; submitted: number; catalog: number; corrected: boolean; deltaXOF: number; staleAt: string | null }
+export function priceDivergenceRows(sale: any): DivRow[] {
   return (sale?.items ?? [])
     .filter((it: any) => it?.submittedPrice != null && it?.catalogPrice != null && it.submittedPrice !== it.catalogPrice)
     .map((it: any) => ({
@@ -52,7 +54,29 @@ function priceDivergenceRows(sale: any): DivRow[] {
       catalog: it.catalogPrice,
       corrected: it.unitPrice === it.catalogPrice, // en ligne : prix serveur facturé (soumis rejeté)
       deltaXOF: (it.submittedPrice - it.catalogPrice) * it.qty, // signé (base XOF) : <0 = sous le catalogue
+      staleAt: it.staleCatalogAt ?? null,          // qualifié « tarif précédent » par le SERVEUR
     }))
+}
+
+// Traitement visuel d'une vente, dérivé des lignes. UNE seule source pour le badge, le
+// cadre de détail et le filtre → les trois ne peuvent pas diverger.
+//  - 'look'     : au moins un écart EN LIGNE que le serveur n'a PAS pu expliquer → ambre.
+//  - 'previous' : les écarts s'expliquent par un tarif précédent → bleu, factuel, pas une alerte.
+//  - 'offline'  : montant encaissé honoré hors-ligne → gris, bénin (comportement historique).
+// ⚠️ Prudence assumée : une vente qui MÊLE un écart expliqué et un inexpliqué reste 'look'.
+// « jusqu'au JJ/MM à HH:MM » — l'auditeur veut QUAND le tarif a changé, pas l'année.
+export function staleUntilLabel(iso: string, lang: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
+  return `${d.toLocaleDateString(loc, { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })}`
+}
+
+export type PriceGapLevel = 'look' | 'previous' | 'offline'
+export function priceGapLevel(rows: DivRow[]): PriceGapLevel {
+  if (rows.some(r => r.corrected && !r.staleAt)) return 'look'
+  if (rows.some(r => r.staleAt)) return 'previous'
+  return 'offline'
 }
 
 // Tuile produit mémoïsée : props primitives (labels pré-formatés) → seule la tuile dont
@@ -207,12 +231,16 @@ const ProductTile = memo(function ProductTile({ p, qty, priceLabel, amount, suff
 })
 
 export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, clientType, setClientType, fmt, amountLabel, curSuffix, filtered, cart, addItem, getPrice, posShowStockOnTile, loadingHistory, salesHistory, canAuditPrices, divergenceOnly, onToggleDivergence, canRefund, onRefundClick, canCloseDay, onCloseDay, isMobile, mobileView, totalProducts, loadingProducts, navigate }: POSProductGridProps) {
-  // Audit écarts (ADMIN) : « en ligne uniquement » = filtre CLIENT sur la liste chargée (le
-  // filtre serveur `divergenceOnly` renvoie en ligne ET hors-ligne ; on affine ici).
+  // Audit écarts (ADMIN) : « à regarder » = filtre CLIENT sur la liste chargée (le filtre
+  // serveur `divergenceOnly` renvoie TOUS les écarts ; on affine ici).
+  // ⚠️ Ce sous-filtre ne garde QUE les écarts que le serveur n'a pas su expliquer. Il visait
+  // déjà « ce qu'il faut regarder » — depuis la qualification `staleCatalogAt`, garder tous
+  // les écarts « en ligne » y ferait entrer des caches périmés, c.-à-d. du bruit qui ressemble
+  // à une tentative. Même dérivation que le badge (priceGapLevel) → jamais de désaccord.
   const [onlineGapsOnly, setOnlineGapsOnly] = useState(false)
   const historyToShow = useMemo(() => {
     if (!canAuditPrices || !onlineGapsOnly) return salesHistory
-    return salesHistory.filter(s => priceDivergenceRows(s).some(r => r.corrected))
+    return salesHistory.filter(s => priceGapLevel(priceDivergenceRows(s)) === 'look')
   }, [salesHistory, canAuditPrices, onlineGapsOnly])
   // Quantités panier indexées par produit (first-wins = même sémantique que cart.find)
   const qtyById = useMemo(() => {
@@ -432,7 +460,7 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                       style={{ fontSize:12, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer', borderRadius:'var(--r-full)', padding:'5px 12px', minHeight:32,
                         background: onlineGapsOnly ? 'var(--c-purple-bg)' : 'var(--card)', color: onlineGapsOnly ? 'var(--p2)' : 'var(--text2)',
                         border:`1px solid ${onlineGapsOnly ? 'var(--border3)' : 'var(--border)'}` }}>
-                      {lang === 'en' ? 'Online only' : lang === 'es' ? 'Solo en línea' : lang === 'it' ? 'Solo online' : 'En ligne uniquement'}
+                      {lang === 'en' ? 'Needs a look' : lang === 'es' ? 'Para revisar' : lang === 'it' ? 'Da verificare' : 'À regarder'}
                     </button>
                   )}
                 </div>
@@ -458,7 +486,12 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                     const refunded = sale.status === 'refunded'
                     // Écarts de prix (ADMIN) : lignes + sens (corrigé/honoré) + écart en argent.
                     const divRows = canAuditPrices && sale.priceDivergence ? priceDivergenceRows(sale) : []
-                    const hasCorrected = divRows.some(r => r.corrected)
+                    const gap = priceGapLevel(divRows)
+                    // Ambre = « à regarder » et RIEN d'autre. Un écart expliqué par un tarif
+                    // précédent est bleu (fait), un montant honoré hors-ligne reste gris (bénin).
+                    const gapBg = gap === 'look' ? 'var(--c-amber-bg)' : gap === 'previous' ? 'var(--c-blue-bg)' : 'var(--bg5)'
+                    const gapFg = gap === 'look' ? 'var(--warn)' : gap === 'previous' ? 'var(--info)' : 'var(--text3)'
+                    const gapBd = gap === 'look' ? 'var(--c-amber-border)' : gap === 'previous' ? 'var(--c-blue-border)' : 'var(--border)'
                     const totalDeltaXOF = divRows.reduce((s, r) => s + r.deltaXOF, 0)
                     return (
                       <div key={sale.id ?? i} style={{
@@ -474,15 +507,16 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                                   <RotateCcw size={10} /> {lang === 'en' ? 'Refunded' : lang === 'es' ? 'Reembolsada' : lang === 'it' ? 'Rimborsata' : 'Remboursé'}
                                 </span>
                               )}
-                              {/* Badge écart — traitement DISTINCT : corrigé (en ligne, ambre = à regarder)
-                                  vs honoré (hors-ligne, gris = bénin, tarif changé avant synchro). */}
+                              {/* Badge écart — TROIS traitements : à regarder (ambre) · tarif
+                                  précédent (bleu, fait établi par le serveur) · honoré hors-ligne (gris). */}
                               {divRows.length > 0 && (
                                 <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px',
-                                  background: hasCorrected ? 'var(--c-amber-bg)' : 'var(--bg5)',
-                                  color: hasCorrected ? 'var(--warn)' : 'var(--text3)',
-                                  border:`1px solid ${hasCorrected ? 'var(--c-amber-border)' : 'var(--border)'}` }}>
-                                  <Tag size={10} /> {lang === 'en' ? 'Price gap' : lang === 'es' ? 'Diferencia de precio' : lang === 'it' ? 'Scarto di prezzo' : 'Écart de prix'}
-                                  {!hasCorrected && ` · ${lang === 'en' ? 'offline' : lang === 'es' ? 'sin conexión' : lang === 'it' ? 'offline' : 'hors-ligne'}`}
+                                  background: gapBg, color: gapFg, border:`1px solid ${gapBd}` }}>
+                                  {gap === 'previous' ? <History size={10} /> : <Tag size={10} />}
+                                  {gap === 'previous'
+                                    ? (lang === 'en' ? 'Previous price' : lang === 'es' ? 'Tarifa anterior' : lang === 'it' ? 'Tariffa precedente' : 'Tarif précédent')
+                                    : (lang === 'en' ? 'Price gap' : lang === 'es' ? 'Diferencia de precio' : lang === 'it' ? 'Scarto di prezzo' : 'Écart de prix')}
+                                  {gap === 'offline' && ` · ${lang === 'en' ? 'offline' : lang === 'es' ? 'sin conexión' : lang === 'it' ? 'offline' : 'hors-ligne'}`}
                                 </span>
                               )}
                             </div>
@@ -527,12 +561,14 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                             l'écart EN ARGENT (signé) et le caissier → décide s'il faut une question. */}
                         {divRows.length > 0 && (
                           <div style={{ marginTop:8, padding:'8px 10px', borderRadius:'var(--r-md)',
-                            background: hasCorrected ? 'var(--c-amber-bg)' : 'var(--bg4)',
-                            border:`1px solid ${hasCorrected ? 'var(--c-amber-border)' : 'var(--border)'}` }}>
+                            background: gap === 'offline' ? 'var(--bg4)' : gapBg,
+                            border:`1px solid ${gapBd}` }}>
                             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:5, flexWrap:'wrap' }}>
-                              <span style={{ fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: hasCorrected ? 'var(--warn)' : 'var(--text3)' }}>
-                                {hasCorrected
+                              <span style={{ fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', color: gapFg }}>
+                                {gap === 'look'
                                   ? (lang === 'en' ? 'Price corrected (online)' : lang === 'es' ? 'Precio corregido (en línea)' : lang === 'it' ? 'Prezzo corretto (online)' : 'Prix corrigé (en ligne)')
+                                  : gap === 'previous'
+                                  ? (lang === 'en' ? 'Catalog price had just changed' : lang === 'es' ? 'La tarifa acababa de cambiar' : lang === 'it' ? 'La tariffa era appena cambiata' : 'Le tarif venait de changer')
                                   : (lang === 'en' ? 'Amount honored (offline)' : lang === 'es' ? 'Monto respetado (sin conexión)' : lang === 'it' ? 'Importo onorato (offline)' : 'Montant honoré (hors-ligne)')}
                               </span>
                               <span style={{ fontSize:13, fontWeight:'var(--fw-bold)', fontFamily:'var(--mono)', color: totalDeltaXOF < 0 ? 'var(--danger)' : 'var(--acc2)' }}>
@@ -540,12 +576,22 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
                               </span>
                             </div>
                             {divRows.map((r, k) => (
-                              <div key={k} style={{ display:'flex', justifyContent:'space-between', gap:8, fontSize:11, color:'var(--text2)', flexWrap:'wrap', padding:'2px 0' }}>
-                                <span>×{r.qty} {r.name}</span>
-                                <span style={{ fontFamily:'var(--mono)' }}>
-                                  {lang === 'en' ? 'submitted' : lang === 'es' ? 'enviado' : lang === 'it' ? 'inviato' : 'soumis'} {fmt(r.submitted)}
-                                  {' · '}{lang === 'en' ? 'catalog' : lang === 'es' ? 'catálogo' : lang === 'it' ? 'catalogo' : 'catalogue'} {fmt(r.catalog)}
-                                </span>
+                              <div key={k} style={{ padding:'2px 0' }}>
+                                <div style={{ display:'flex', justifyContent:'space-between', gap:8, fontSize:11, color:'var(--text2)', flexWrap:'wrap' }}>
+                                  <span>×{r.qty} {r.name}</span>
+                                  <span style={{ fontFamily:'var(--mono)' }}>
+                                    {lang === 'en' ? 'submitted' : lang === 'es' ? 'enviado' : lang === 'it' ? 'inviato' : 'soumis'} {fmt(r.submitted)}
+                                    {' · '}{lang === 'en' ? 'catalog' : lang === 'es' ? 'catálogo' : lang === 'it' ? 'catalogo' : 'catalogue'} {fmt(r.catalog)}
+                                  </span>
+                                </div>
+                                {/* Qualification SERVEUR de cette ligne — un fait daté, pas un verdict.
+                                    Son absence ne dit rien de plus qu'« inexpliqué » (cf. profondeur 1). */}
+                                {r.staleAt && (
+                                  <div style={{ fontSize:10, color:'var(--info)', display:'flex', alignItems:'center', gap:4, marginTop:1 }}>
+                                    <History size={10} style={{ flexShrink:0 }} />
+                                    {lang === 'en' ? 'was the catalog price until' : lang === 'es' ? 'era la tarifa del catálogo hasta el' : lang === 'it' ? 'era la tariffa a catalogo fino al' : 'était le tarif catalogue jusqu’au'} {staleUntilLabel(r.staleAt, lang)}
+                                  </div>
+                                )}
                               </div>
                             ))}
                             <div style={{ fontSize:10, color:'var(--text3)', marginTop:5 }}>
