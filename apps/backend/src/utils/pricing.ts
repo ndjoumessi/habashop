@@ -96,14 +96,44 @@ export function toPricingSet(src: Record<string, unknown> | null | undefined): P
 // n'émet pas de sous-unité, et la comparaison se fait sur des entiers des deux côtés.
 // ⚠️ Une promo active COURT-CIRCUITE les trois tarifs (cf. resolveTierPrice) : l'ensemble
 // se réduit alors au seul prix promo. C'est voulu, pas un oubli.
-export function legitimatePrices(qty: number, p: PricingSet): Set<number> {
-  const tiers = p.priceTiers?.length ? p.priceTiers : null
-  const promo = { active: !!p.hasPromotion, price: p.promotionPrice }
-  const out = new Set<number>()
-  for (const base of [p.sellPrice, p.semiWholesalePrice, p.wholesalePrice]) {
-    if (base != null) out.add(Math.round(resolveTierPrice(qty, base, tiers, promo).price))
-  }
-  return out
+// ── Tarif DÉCLARÉ par la ligne de vente ──────────────────────────────────────────────
+// Le POS a trois tarifs (Détail / Demi-gros / Grossiste). La ligne déclare celui depuis
+// lequel son prix a été calculé ; le serveur n'accepte QUE ce tarif-là.
+export type ClientTariff = 'retail' | 'semi' | 'wholesale'
+
+// Défaut RÉTRO-COMPATIBLE : un client qui ne déclare rien vend au détail. Ce n'est pas une
+// supposition — le POS web démarre sur 'retail' et le POS mobile n'a AUCUN sélecteur de
+// tarif (mobile/src/stores/posStore.ts lit `sellPrice` seul). Un défaut « n'importe lequel »
+// est précisément le trou qu'on ferme.
+export function normalizeTariff(v: unknown): ClientTariff {
+  return v === 'wholesale' || v === 'semi' ? v : 'retail'
+}
+
+// ⚠️ MIROIR EXACT du client (`getBasePrice`, POS.tsx) : un tarif non renseigné retombe sur
+// le détail — le POS fait `wholesalePrice ?? sellPrice`. Diverger ici fabriquerait une
+// divergence sur chaque vente de gros d'un produit sans prix de gros.
+export function basePriceForTariff(p: PricingSet, tariff: ClientTariff): number {
+  if (tariff === 'wholesale') return p.wholesalePrice ?? p.sellPrice
+  if (tariff === 'semi') return p.semiWholesalePrice ?? p.sellPrice
+  return p.sellPrice
+}
+
+/**
+ * LE prix attendu par le serveur pour cette ligne : le tarif déclaré, résolu par palier
+ * et promo à cette quantité. Miroir de `computePriceForItem` côté POS.
+ *
+ * Remplace `legitimatePrices`, qui renvoyait l'ENSEMBLE des tarifs et acceptait le prix
+ * soumis s'il appartenait à n'importe lequel. Un prix périmé coïncidant avec un autre
+ * tarif passait alors sans divergence ni trace : un client détail facturé au tarif de gros,
+ * en silence. Accepter « un tarif quelconque » n'est pas vérifier un prix.
+ */
+export function expectedPrice(qty: number, p: PricingSet, tariff: ClientTariff): { price: number; tierLabel?: string } {
+  return resolveTierPrice(
+    qty,
+    basePriceForTariff(p, tariff),
+    p.priceTiers?.length ? p.priceTiers : null,
+    { active: !!p.hasPromotion, price: p.promotionPrice },
+  )
 }
 
 // Deux jeux de tarifs produisent-ils la même tarification ? Sert à n'instantané­iser un

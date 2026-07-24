@@ -6,7 +6,7 @@ import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 import { invalidateTenantCache } from '../lib/cache'
 import { getTenantId } from '../lib/tenantId'
-import { resolveTierPrice, legitimatePrices, toPricingSet, isPromotionActive, type PriceTier } from '../utils/pricing'
+import { expectedPrice, normalizeTariff, toPricingSet, isPromotionActive, type PriceTier } from '../utils/pricing'
 import { pointsForAmount, tierForPoints, discountForTier, computeLoyaltyDiscount } from '../lib/loyalty'
 import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
 import { resolvePaymentSplit } from '../lib/paymentSplit'
@@ -23,6 +23,11 @@ const SALE_ITEM = z.object({
   qty:       z.coerce.number(),          // décrément stock ; le handler garde l'anti-survente
   price:     z.coerce.number().optional(),
   tierLabel: z.string().nullish(),
+  // Tarif DÉCLARÉ dont le prix de la ligne est issu (Détail / Demi-gros / Grossiste).
+  // Porté par la LIGNE et non par la vente : le POS n'applique la dérive de prix que sur
+  // action explicite du caissier, donc un panier peut légitimement mêler des lignes figées
+  // à des tarifs différents. Absent → détail (cf. normalizeTariff).
+  clientType: z.enum(['retail', 'semi', 'wholesale']).nullish(),
 }).passthrough()
 
 const SALE_BODY = z.object({
@@ -151,7 +156,21 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     })
     const productMap = new Map(productsList.map(p => [p.id, p]))
 
-    // ── Garde anti-survente (AVANT tx). Produit absent du map = démo/hors-catalogue → toléré. ──
+    // ── Produit inconnu du catalogue de CETTE boutique → REFUS (AVANT tx) ──────────────
+    // Il n'y a alors AUCUN prix serveur auquel comparer : accepter la ligne revenait à
+    // facturer le montant choisi par le client, sans vérification et sans trace — un
+    // montant faux encaissé en silence. Le serveur ne peut pas non plus substituer un
+    // prix : il refuse. Exposition mesurée avant correctif : 0 SaleItem orphelin en prod.
+    const unknown = (items as { productId: string }[]).find(item => !productMap.has(item.productId))
+    if (unknown) {
+      return reply.code(400).send({
+        error: 'Produit inconnu du catalogue — actualisez le catalogue puis reprenez la vente',
+        code: 'UNKNOWN_PRODUCT',
+        productId: unknown.productId,
+      })
+    }
+
+    // ── Garde anti-survente (AVANT tx). ──
     for (const item of items) {
       const p = productMap.get(item.productId)
       if (p && p.stockQty < item.qty) {
@@ -182,22 +201,25 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       }
       const tiers = Array.isArray(p.priceTiers) ? (p.priceTiers as unknown as PriceTier[]) : null
       // Promo EFFECTIVE = hasPromotion ET non expirée (échéance inclusive). Une promo dont la
-      // date de fin est dépassée ne s'applique NI au prix facturé NI à l'ensemble légitime →
+      // date de fin est dépassée ne s'applique NI au prix facturé NI au prix attendu →
       // le prix promo périmé n'est plus un tarif serveur valable.
       const promoActive = isPromotionActive(p.hasPromotion, p.promotionEnd, now)
-      const promo = { active: promoActive, price: p.promotionPrice }
-      const retail = resolveTierPrice(item.qty, p.sellPrice, tiers, promo) // référence catalogue (détail)
-      // Ensemble des prix LÉGITIMES = chaque tarif défini, résolu via palier/promo à cette qté.
-      // On passe le booléen EFFECTIF (pas p.hasPromotion brut) pour que l'expiration s'y reflète.
-      const legit = legitimatePrices(item.qty, { ...p, priceTiers: tiers, hasPromotion: promoActive })
-      if (legit.has(Math.round(submitted))) {
-        // Prix soumis = un tarif serveur légitime → autorisé, facturé tel quel (pas de trace).
-        return { productId: item.productId, qty: item.qty, unitPrice: submitted, total: submitted * item.qty, tierLabel: item.tierLabel ?? null }
+      const pricing = { ...p, priceTiers: tiers, hasPromotion: promoActive }
+      // Tarif DÉCLARÉ par la ligne → LE prix attendu (un seul, pas un ensemble). Accepter
+      // « n'importe lequel des trois tarifs » laissait un prix périmé coïncidant avec un
+      // autre tarif être facturé tel quel, sans divergence ni trace.
+      const tariff = normalizeTariff(item.clientType)
+      const expected = expectedPrice(item.qty, pricing, tariff)
+      if (Math.round(submitted) === Math.round(expected.price)) {
+        // Prix soumis = le tarif serveur DÉCLARÉ → autorisé, facturé tel quel (pas de trace).
+        // Le libellé de palier retenu est celui du SERVEUR : `item.tierLabel` est une chaîne
+        // fournie par le client, elle n'a pas à se retrouver telle quelle dans le registre.
+        return { productId: item.productId, qty: item.qty, unitPrice: submitted, total: submitted * item.qty, tierLabel: expected.tierLabel ?? null }
       }
       // DIVERGENCE : prix soumis hors de tout tarif serveur.
       anyDivergence = true
-      const charged = honorClientPrice ? submitted : retail.price
-      const tierLabel = honorClientPrice ? (item.tierLabel ?? null) : (retail.tierLabel ?? null)
+      const charged = honorClientPrice ? submitted : expected.price
+      const tierLabel = honorClientPrice ? (item.tierLabel ?? null) : (expected.tierLabel ?? null)
       // ── QUALIFICATION (n'influence RIEN de ce qui est facturé) : le prix soumis était-il un
       //    tarif catalogue LÉGITIME avant le dernier changement de prix, assez récemment pour
       //    qu'un catalogue POS en cache l'explique ? Entièrement serveur-autoritaire : instantané
@@ -209,13 +231,16 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       const changedAt = p.pricingChangedAt
       if (changedAt && Date.now() - changedAt.getTime() <= STALE_CATALOG_WINDOW_MS) {
         const prev = toPricingSet(p.previousPricing as Record<string, unknown> | null)
-        if (prev && legitimatePrices(item.qty, prev).has(Math.round(submitted))) staleCatalogAt = changedAt
+        // Comparé au MÊME tarif déclaré : « son prix était-il le prix de CE tarif avant le
+        // changement ? ». Comparer à l'ensemble des anciens tarifs rouvrirait ici le trou
+        // qu'on vient de fermer côté facturation.
+        if (prev && Math.round(expectedPrice(item.qty, prev, tariff).price) === Math.round(submitted)) staleCatalogAt = changedAt
       }
-      console.warn(`[sales][integrity] divergence prix ${p.id} par user ${userId}: soumis=${submitted} catalogue=${retail.price} → facturé=${charged}${honorClientPrice ? ' (offline honoré)' : ''}${staleCatalogAt ? ' [tarif précédent]' : ''}`)
+      console.warn(`[sales][integrity] divergence prix ${p.id} par user ${userId}: soumis=${submitted} attendu(${tariff})=${expected.price} → facturé=${charged}${honorClientPrice ? ' (offline honoré)' : ''}${staleCatalogAt ? ' [tarif précédent]' : ''}`)
       return {
         productId: item.productId, qty: item.qty,
         unitPrice: charged, total: charged * item.qty, tierLabel,
-        submittedPrice: submitted, catalogPrice: retail.price, // TRACE (audit)
+        submittedPrice: submitted, catalogPrice: expected.price, // TRACE (audit)
         staleCatalogAt,                                        // QUALIFICATION (audit)
       }
     })

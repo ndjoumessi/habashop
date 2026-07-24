@@ -59,6 +59,12 @@ describe('POST /api/sales — validation zod', () => {
 
   it('body valide (prix omis toléré) → passe la validation', async () => {
     db.sale.create.mockResolvedValue({ id: 's1' })
+    // Le produit doit EXISTER : depuis le durcissement d'intégrité, un productId inconnu
+    // est refusé (400 UNKNOWN_PRODUCT) — ce qui masquerait ce que ce test veut prouver
+    // (la couche zod laisse passer un `price` omis).
+    db.product.findMany.mockResolvedValue([{ id: 'p1', name: 'P', sellPrice: 100, semiWholesalePrice: null,
+      wholesalePrice: null, hasPromotion: false, promotionPrice: null, promotionEnd: null, priceTiers: null,
+      stockQty: 999, previousPricing: null, pricingChangedAt: null }])
     const app = await buildApp()
     const res = await app.inject({ method: 'POST', url: '/api/sales', payload: { items: [{ productId: 'p1', qty: 2 }], total: 0, paymentMode: 'cash' } })
     // Prix omis → handler applique Number(price)||0 ; la validation ne bloque pas.

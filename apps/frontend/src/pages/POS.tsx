@@ -23,7 +23,7 @@ import POSSuccessModal from '@/components/pos/POSSuccessModal'
 import POSPaydunyaOverlay from '@/components/pos/POSPaydunyaOverlay'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
 import { type PosProduct, type DiscountForm, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
-import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift } from '@/components/pos/saleReconcile'
+import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift, toSaleItemPayload } from '@/components/pos/saleReconcile'
 
 export default function POS() {
   const {
@@ -360,7 +360,9 @@ export default function POS() {
   // Applique les prix frais aux lignes concernées — action EXPLICITE du caissier (bouton),
   // jamais une mutation silencieuse : delta 0 = on ne touche que le prix + le tierLabel.
   const applyPriceDrift = () => {
-    for (const d of priceDrift) updateCartQty(d.id, 0, d.newPrice, d.tierLabel ?? undefined)
+    // Les prix frais sortent de computePriceForItem, donc du tarif COURANT : la ligne
+    // adopte ce tarif en même temps que le prix (sinon elle déclarerait l'ancien).
+    for (const d of priceDrift) updateCartQty(d.id, 0, d.newPrice, d.tierLabel ?? undefined, clientType)
   }
 
   // Actions panier — calcul price+tierLabel via computePriceForItem (logique métier
@@ -372,9 +374,9 @@ export default function POS() {
     const { price, tierLabel } = computePriceForItem(p, newQty)
     if (existing) {
       // produit déjà au panier → +1 et recalcule price (utile si on franchit un palier)
-      updateCartQty(p.id, 1, price, tierLabel)
+      updateCartQty(p.id, 1, price, tierLabel, clientType)
     } else {
-      addCartItem({ id: p.id, name: p.name, price, qty: 1, emoji: p.emoji, tierLabel })
+      addCartItem({ id: p.id, name: p.name, price, qty: 1, emoji: p.emoji, tierLabel, clientType })
     }
   }
 
@@ -402,7 +404,7 @@ export default function POS() {
         { id: `tier-${id}`, duration: 1800 },
       )
     }
-    updateCartQty(id, delta, price, tierLabel)
+    updateCartQty(id, delta, price, tierLabel, clientType)
   }
 
   // Calculs
@@ -811,14 +813,7 @@ export default function POS() {
     billedTotalRef.current = null // repart à zéro : ne jamais réutiliser le total d'une vente précédente
     try {
       createdSale = await salesApi.create({
-        items: cart.map(i => ({
-          productId: /^\d+$/.test(String(i.id))
-            ? `demo-PRD-${String(i.id).padStart(3, '0')}`
-            : String(i.id),
-          qty: i.qty,
-          price: i.price,
-          tierLabel: i.tierLabel ?? null,
-        })),
+        items: toSaleItemPayload(cart),
         paymentMode: mixedOn ? 'mixed' : payMode,
         total,  // BRUT — le backend applique la remise fidélité (Modèle A) → sale.total = net
         customerId: linkedCustomer?.id ?? null,

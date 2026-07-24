@@ -83,10 +83,14 @@ describe('POST /api/sales — garde anti-survente', () => {
     expect(tx.product.update).toHaveBeenCalledWith(expect.objectContaining({ data: { stockQty: { decrement: 2 } } }))
   })
 
-  it('produit hors-catalogue (absent du map) → toléré, pas de blocage', async () => {
+  it('produit hors-catalogue (absent du map) → REFUSÉ 400 UNKNOWN_PRODUCT', async () => {
+    // Anciennement « toléré » : sans données serveur, la ligne était facturée au prix
+    // CHOISI par le client, sans vérification ni trace. Le serveur n'ayant aucun prix
+    // auquel comparer, il refuse plutôt que d'encaisser un montant invérifiable.
     db.product.findMany.mockResolvedValue([]) // aucun produit trouvé
     const app = await buildApp()
     const res = await app.inject({ method: 'POST', url: '/api/sales', payload: body() })
-    expect(res.statusCode).toBe(200) // pas de garde possible sans données stock → comportement historique
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).code).toBe('UNKNOWN_PRODUCT')
   })
 })

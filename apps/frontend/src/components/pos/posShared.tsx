@@ -74,6 +74,9 @@ export type PosProduct = typeof PRODUCTS[0] & {
   priceTiers?: { minQty: number; price: number; label?: string }[]
 }
 
+/** Tarif du POS. La ligne de panier retient CELUI dont son prix est issu. */
+export type ClientTariff = 'retail' | 'semi' | 'wholesale'
+
 export interface CartItem {
   id: number | string
   name: string
@@ -81,6 +84,14 @@ export interface CartItem {
   qty: number
   emoji: string
   tierLabel?: string
+  /**
+   * Tarif depuis lequel `price` a été calculé, figé au moment du calcul — PAS le tarif
+   * couramment sélectionné. Le sélecteur peut changer sans que les lignes déjà au panier
+   * soient recalculées (la dérive s'applique sur action explicite du caissier) : envoyer
+   * le tarif courant ferait re-tarifer par le serveur des lignes légitimes. C'est ce que
+   * le serveur compare au prix soumis (cf. `expectedPrice`, backend).
+   */
+  clientType?: ClientTariff
 }
 
 // ─── INDICATIFS PAYS ────────────────────────

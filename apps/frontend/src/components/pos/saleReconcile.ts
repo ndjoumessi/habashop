@@ -76,6 +76,37 @@ export function detectCartPriceDrift(
   return out
 }
 
+// ── Lignes envoyées au serveur ──────────────────────────────────────────────────────────
+export type SaleItemPayload = {
+  productId: string; qty: number; price: number
+  tierLabel: string | null
+  clientType: 'retail' | 'semi' | 'wholesale'
+}
+
+/**
+ * Construit les lignes de `POST /api/sales` depuis le panier.
+ *
+ * ⚠️ Cette fonction ne reçoit PAS le tarif couramment sélectionné, et c'est délibéré :
+ * chaque ligne déclare le tarif dont SON prix est issu. Le sélecteur peut avoir changé
+ * depuis (la dérive ne s'applique que sur action explicite du caissier) — déclarer le
+ * tarif courant ferait re-tarifer par le serveur des lignes légitimes, à la baisse.
+ * En ne fournissant pas l'information, l'erreur devient impossible à écrire ici.
+ *
+ * Le repli `'retail'` reflète le POS : le sélecteur démarre sur Détail.
+ */
+export function toSaleItemPayload(
+  cart: { id: string | number; qty: number; price: number; tierLabel?: string; clientType?: 'retail' | 'semi' | 'wholesale' }[],
+): SaleItemPayload[] {
+  return cart.map(i => ({
+    // Catalogue de démonstration : ids numériques → identifiants serveur correspondants.
+    productId: /^\d+$/.test(String(i.id)) ? `demo-PRD-${String(i.id).padStart(3, '0')}` : String(i.id),
+    qty: i.qty,
+    price: i.price,
+    tierLabel: i.tierLabel ?? null,
+    clientType: i.clientType ?? 'retail',
+  }))
+}
+
 /**
  * Total à faire figurer sur les documents remis au CLIENT (ticket imprimé, reçu WhatsApp).
  * Le serveur fait foi dès qu'il a répondu — sinon la facture PDF (générée côté serveur)

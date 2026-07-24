@@ -100,14 +100,28 @@ describe('POST /api/sales — intégrité prix (trou de fraude fermé)', () => {
     expect(lastSale().priceDivergence).toBe(false)
   })
 
-  it('prix de gros LÉGITIME (= wholesalePrice) → accepté sans divergence (pas besoin du clientType)', async () => {
+  it('prix de gros LÉGITIME (= wholesalePrice) DÉCLARÉ → accepté sans divergence', async () => {
     db.product.findMany.mockResolvedValue([{ ...COFFEE, wholesalePrice: 1000 }])
     const app = await buildApp()
     await app.inject({
       method: 'POST', url: '/api/sales',
-      payload: { items: [{ productId: 'p1', qty: 1, price: 1000 }], paymentMode: 'cash', total: 1000, idempotencyKey: 'legit-2' },
+      payload: { items: [{ productId: 'p1', qty: 1, price: 1000, clientType: 'wholesale' }], paymentMode: 'cash', total: 1000, idempotencyKey: 'legit-2' },
     })
     expect(lastSaleItem()).toMatchObject({ unitPrice: 1000, total: 1000 })
     expect(lastSale().priceDivergence).toBe(false)
+  })
+
+  it('MÊME prix de gros mais ligne DÉTAIL → divergence, facturé au détail', async () => {
+    // Le trou d'origine : le prix était accepté parce qu'il appartenait à UN tarif, sans
+    // égard au tarif vendu. Un catalogue périmé dont l'ancien détail vaut le gros actuel
+    // facturait donc le tarif de gros à un client détail, sans divergence ni trace.
+    db.product.findMany.mockResolvedValue([{ ...COFFEE, wholesalePrice: 1000 }])
+    const app = await buildApp()
+    await app.inject({
+      method: 'POST', url: '/api/sales',
+      payload: { items: [{ productId: 'p1', qty: 1, price: 1000, clientType: 'retail' }], paymentMode: 'cash', total: 1000, idempotencyKey: 'legit-3' },
+    })
+    expect(lastSaleItem()).toMatchObject({ unitPrice: 1300, submittedPrice: 1000, catalogPrice: 1300 })
+    expect(lastSale().priceDivergence).toBe(true)
   })
 })
