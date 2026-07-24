@@ -65,12 +65,15 @@ export const SUB_CREATE = z.object({
   customerId: z.string().min(1),
   name:       z.string().min(1),
   dayOfWeek:  z.coerce.number(),
+  // Première livraison. Absente/null = pas de date de début (comportement historique).
+  startDate:  z.coerce.date().nullish(),
   note:       z.string().nullish(),
   items:      z.array(SUB_ITEM).min(1),
 }).passthrough()
 export const SUB_UPDATE = z.object({
   name:      z.string().optional(),
   dayOfWeek: z.coerce.number().optional(),
+  startDate: z.coerce.date().nullish(),
   status:    z.string().optional(),
   note:      z.string().nullish(),
   items:     z.array(SUB_ITEM).optional(),

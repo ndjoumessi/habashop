@@ -6,6 +6,27 @@ import { ID_PARAMS, SUB_CREATE, SUB_UPDATE } from '../schemas/writesB'
 
 const MANAGER_ROLES = ['ADMIN', 'SUPER_ADMIN', 'MANAGER']
 
+type StartedClause = { startDate: null } | { startDate: { lt: Date } }
+
+/**
+ * Clause `OR` : « l'abonnement a commencé ».
+ *
+ * `startDate` NULL = pas de date de début → dû dès le prochain `dayOfWeek`
+ * (comportement historique, préservé).
+ *
+ * La borne est le minuit UTC du LENDEMAIN, donc une date de début tombant
+ * aujourd'hui compte comme démarrée quelle que soit son heure : jour calendaire
+ * UTC **inclusif**, même convention que `promotionEnd` (cf. utils/pricing.ts).
+ * Sans ce filtre, une date « à partir du mois prochain » serait stockée puis
+ * ignorée, et l'abonnement s'afficherait « dû aujourd'hui ».
+ *
+ * `now` est INJECTÉ (fonction pure, pas de `new Date()` interne).
+ */
+export function subscriptionStartedFilter(now: Date): StartedClause[] {
+  const tomorrowUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
+  return [{ startDate: null }, { startDate: { lt: tomorrowUtc } }]
+}
+
 export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/subscriptions — liste tenant (actifs + pausés)
   app.get('/api/subscriptions', { preHandler: authenticate }, async (request) => {
@@ -27,9 +48,14 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/subscriptions/due — abonnements dont le jour = aujourd'hui (UTC)
   app.get('/api/subscriptions/due', { preHandler: authenticate }, async (request) => {
     const tenantId = getTenantId(request)
-    const dow = new Date().getUTCDay()
+    const now = new Date()
     return prisma.subscription.findMany({
-      where: { tenantId, status: 'active', dayOfWeek: dow },
+      where: {
+        tenantId,
+        status: 'active',
+        dayOfWeek: now.getUTCDay(),
+        OR: subscriptionStartedFilter(now),
+      },
       include: {
         customer: { select: { id: true, name: true, phone: true } },
         items: {
@@ -65,7 +91,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/subscriptions', { preHandler: authenticate, schema: { body: SUB_CREATE } }, async (request, reply) => {
     const { role } = request.user
     if (!MANAGER_ROLES.includes(role)) return reply.code(403).send({ error: 'Accès réservé aux managers' })
-    const { customerId, name, dayOfWeek, note, items } = request.body as any
+    const { customerId, name, dayOfWeek, startDate, note, items } = request.body as any
 
     if (!customerId || !name || dayOfWeek == null || !Array.isArray(items) || items.length === 0) {
       return reply.code(400).send({ error: 'customerId, name, dayOfWeek et items requis' })
@@ -78,6 +104,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
       data: {
         tenantId, customerId, name,
         dayOfWeek: Number(dayOfWeek),
+        startDate: startDate ?? null,
         note: note ?? null,
         items: {
           create: (items as any[]).map((it) => ({
@@ -104,7 +131,7 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
     if (!MANAGER_ROLES.includes(role)) return reply.code(403).send({ error: 'Accès réservé aux managers' })
     const tenantId = getTenantId(request)
     const { id } = request.params as { id: string }
-    const { name, dayOfWeek, status, note, items } = request.body as any
+    const { name, dayOfWeek, startDate, status, note, items } = request.body as any
 
     const existing = await prisma.subscription.findFirst({ where: { id, tenantId } })
     if (!existing) return reply.code(404).send({ error: 'Abonnement introuvable' })
@@ -127,6 +154,8 @@ export async function subscriptionRoutes(app: FastifyInstance): Promise<void> {
         data: {
           ...(name != null && { name }),
           ...(dayOfWeek != null && { dayOfWeek: Number(dayOfWeek) }),
+          // `undefined` = champ absent → inchangé ; `null` = date de début effacée.
+          ...(startDate !== undefined && { startDate }),
           ...(status != null && { status }),
           ...(note !== undefined && { note }),
         },

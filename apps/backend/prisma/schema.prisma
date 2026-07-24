@@ -736,6 +736,9 @@ model Subscription {
   customerId  String
   name        String
   dayOfWeek   Int      // 0=Dim 1=Lun 2=Mar 3=Mer 4=Jeu 5=Ven 6=Sam
+  // Première livraison. NULL = pas de date de début (comportement historique : dû dès le
+  // prochain dayOfWeek). Filtré par GET /api/subscriptions/due — cf. la migration.
+  startDate   DateTime?
   status      String   @default("active") // active | paused | cancelled
   note        String?
   createdAt   DateTime @default(now())
