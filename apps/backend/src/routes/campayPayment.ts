@@ -32,6 +32,27 @@ export function normalizeCameroonPhone(raw: string): string | null {
 }
 
 export async function campayPaymentRoutes(app: FastifyInstance): Promise<void> {
+  // ── Capture du corps BRUT (rawBody) pour la vérif de signature du webhook Campay. ──
+  // ⚠️ INDISPENSABLE : Campay signe son JSON en HMAC-SHA256(rawBody, clé). Sans ce parser,
+  // `request.rawBody` est undefined et le webhook retombait sur `JSON.stringify(request.body)`,
+  // qui ne reproduit PAS les octets signés (ordre des clés, espaces) → tous les webhooks
+  // Campay légitimes rejetés en 401 en prod. Le parser de `payments.ts` (Wave/Orange) est
+  // ENCAPSULÉ à son plugin et n'atteint pas ce plugin séparé — d'où cette copie ici.
+  // Encapsulé au plugin Campay : aucun effet sur les autres routes.
+  app.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- signature FastifyBodyParser
+    (req: any, body: string, done) => {
+      req.rawBody = body
+      try {
+        done(null, body ? JSON.parse(body) : {})
+      } catch (err) {
+        done(err as Error, undefined)
+      }
+    },
+  )
+
   // ── POST /api/payments/campay/request ────────────────────────────────
   // Initie un paiement Campay (Orange Money / MTN MoMo / cartes Cameroun).
   // RBAC : CASHIER et au-dessus.
