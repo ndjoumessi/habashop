@@ -58,6 +58,7 @@ import {
 import { runMonthlyPayrollReports } from './services/payrollReport'
 import { payrollRoutes } from './routes/payroll'
 import { sendTrialExpiring, sendStockAlertBatch } from './services/pushService'
+import { notifyStockAlertSms } from './services/sms'
 
 // ─── Validation des variables d'environnement obligatoires ───
 const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET']
@@ -491,6 +492,8 @@ async function runDailyStockAlerts(): Promise<void> {
       })
       if (ok) sent++
       void sendStockAlertBatch(tenant.id, lowStockProducts)
+      // SMS digest quotidien au gérant (gardé opt-in notifSmsStock + garde de dépense).
+      void notifyStockAlertSms(tenant.id, lowStockProducts)
     } catch (err: any) {
       console.warn(`⚠️ Stock alert failed for tenant ${tenant.id}:`, err?.message)
     }

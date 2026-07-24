@@ -45,3 +45,8 @@ vi.mock('resend', () => ({
     constructor(_key?: string) {}
   },
 }))
+
+// Africa's Talking (SMS) — `SMS.send` inerte (aucun SMS réel en test unitaire).
+vi.mock('africastalking', () => ({
+  default: () => ({ SMS: { send: vi.fn(async () => ({ SMSMessageData: { Message: 'Sent', Recipients: [] } })) } }),
+}))
