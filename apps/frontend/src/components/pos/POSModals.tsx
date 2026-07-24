@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { X, Smartphone, AlertTriangle, AlertCircle, Loader2, TestTube, CreditCard, Coins, Waves, Wallet, Split, Check, Printer, Percent } from 'lucide-react'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import toast from 'react-hot-toast'
 import { t, CURRENCY_SYMBOLS, CURRENCY_DECIMALS, formatInCurrency } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
 import { printableAmount } from '@/utils/export'
-import { COUNTRY_CODES, CountryItem } from '@/components/pos/posShared'
+import { COUNTRY_CODES, CountryItem, type DiscountForm } from '@/components/pos/posShared'
 import POSCashField from '@/components/pos/POSCashField'
 import { useModalFocus } from '@/hooks/useModalFocus'
 
 interface POSModalsProps {
   showDiscountModal: boolean; setShowDiscountModal: (b: boolean) => void
-  discountForm: any; setDiscountForm: (v: any) => void
+  discountForm: DiscountForm; setDiscountForm: Dispatch<SetStateAction<DiscountForm>>
   fmt: (n: number) => string
   subtotalBeforeDiscount: number
   setDiscount: (v: any) => void
@@ -29,9 +29,9 @@ interface POSModalsProps {
   sendWhatsApp: boolean; setSendWhatsApp: (b: boolean) => void
   waCountryFlag: string; waCountryCode: string
   setWaCountryCode: (v: string) => void; setWaCountryFlag: (v: string) => void
-  showCountryPicker: boolean; setShowCountryPicker: (v: any) => void
+  showCountryPicker: boolean; setShowCountryPicker: Dispatch<SetStateAction<boolean>>
   countrySearch: string; setCountrySearch: (v: string) => void
-  waNumber: string; setWaNumber: (v: any) => void
+  waNumber: string; setWaNumber: Dispatch<SetStateAction<string>>
   lang: string
   confirmSale: () => void
   isSaving: boolean; waSending: boolean

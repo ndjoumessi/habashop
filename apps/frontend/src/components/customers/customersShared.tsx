@@ -17,6 +17,11 @@ export function AmountCur({ xof, suffixSize = 10, suffixColor = 'var(--text3)' }
 
 export type ClientType = 'Grossiste' | 'Semi-gros' | 'Fidèle' | 'Détail'
 
+// État du formulaire client (Customers.tsx `useState` + prop `form`/`setForm` de CustomersModals).
+export type CustomerForm = { name: string; type: ClientType; phone: string; email: string; address: string }
+// Formulaire d'ÉDITION client — comme CustomerForm + notes (modale d'édition).
+export type EditCustomerForm = CustomerForm & { notes: string }
+
 export interface Purchase { ref: string; date: string; total: number; items: number }
 
 export interface Customer {

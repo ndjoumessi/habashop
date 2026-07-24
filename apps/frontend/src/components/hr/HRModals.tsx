@@ -13,7 +13,7 @@ interface HRModalsProps {
   salaryTarget: any
   lang: string
   fmt: (n: number) => string
-  employees: Employee[]; setEmployees: (v: any) => void
+  employees: Employee[]; setEmployees: import("react").Dispatch<import("react").SetStateAction<Employee[]>>
   handleConfirmRaise: (empId: string, newSalaryXOF: number, reason: string) => void
   handleConfirmBonus: (empId: string, amountXOF: number, type: string) => void
   showModal: boolean; setShowModal: (b: boolean) => void

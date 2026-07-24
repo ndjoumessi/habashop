@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useState, type Dispatch, type SetStateAction } from 'react'
 import { Search, Download, Plus, Tag, Package, Eye, Trash2, LayoutGrid, AlignJustify, Camera, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t, useAppStore, convertFromXOF } from '@/stores/appStore'
@@ -9,7 +9,7 @@ import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import FilterSelect, { type FilterOption } from '@/components/ui/FilterSelect'
 import { normCat } from '@/utils/normCat'
-import { type ProductItem, statusOf, stockCatLabel, isActivePromo } from '@/components/stock/stockShared'
+import { type ProductItem, type StockForm, statusOf, stockCatLabel, isActivePromo } from '@/components/stock/stockShared'
 // Chargé à la demande (@zxing) — uniquement à l'ouverture du scanner de recherche.
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -30,7 +30,7 @@ interface StockInventoryProps {
   setShowLabelModal: (b: boolean) => void
   setProductEditMode: (b: boolean) => void
   setShowModal: (b: boolean) => void
-  setForm: (v: any) => void
+  setForm: Dispatch<SetStateAction<StockForm>>
   setEditingSku: (v: string | null) => void
   setEditingId: (v: string | null) => void
   setModalTab: (v: any) => void
@@ -235,7 +235,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
           </div>
         ) : stockView === 'grid' ? (
           <ResponsiveGrid min={200} role="list" aria-label={i('Produits', 'Products', 'Productos', 'Prodotti')}>
-            {pg.paginated.map(p => {
+            {pg.paginated.map((p: ProductItem) => {
               const st = statusOf(p.stock, p.threshold)
               const pct = Math.min(100, (p.stock / Math.max(p.threshold, 1)) * 100)
               const isSelected = selectedSkus.has(p.sku)
@@ -344,7 +344,7 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                 </tr>
               </thead>
               <tbody>
-                {pg.paginated.map(p => {
+                {pg.paginated.map((p: ProductItem) => {
                   const st = statusOf(p.stock, p.threshold)
                   const isSelected = selectedSkus.has(p.sku)
                   return (

@@ -21,7 +21,7 @@ import HREmployeeGrid from '@/components/hr/HREmployeeGrid'
 import HRTabs from '@/components/hr/HRTabs'
 import HRModals from '@/components/hr/HRModals'
 import EmptyState from '@/components/ui/EmptyState'
-import { type Employee, type LeaveRequest, type AttendUiStatus, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi, mapApiLeave } from '@/components/hr/hrShared'
+import { type Employee, type LeaveRequest, type AttendUiStatus, type ContractForm, type LeaveForm, COLORS, toInputDate, roleLabel, deptLabel, contractLabel, attendStatusToApi, attendStatusFromApi, mapApiLeave } from '@/components/hr/hrShared'
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -55,7 +55,7 @@ export default function HR() {
   const [showNewContractModal, setShowNewContractModal] = useState(false)
   const [showContractDetailModal, setShowContractDetailModal] = useState(false)
   const [selectedContract, setSelectedContract] = useState<Employee | null>(null)
-  const [contractForm, setContractForm] = useState({ empId: '', type: 'CDI', hiredAt: new Date().toISOString().split('T')[0], contractEnd: '', salary: 0, role: '', dept: 'Ventes' })
+  const [contractForm, setContractForm] = useState<ContractForm>({ empId: '', type: 'CDI', hiredAt: new Date().toISOString().split('T')[0], contractEnd: '', salary: 0, role: '', dept: 'Ventes' })
 
   // Payroll
   const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -73,7 +73,7 @@ export default function HR() {
 
   // Leave modal
   const [showLeaveModal, setShowLeaveModal] = useState(false)
-  const [leaveForm, setLeaveForm] = useState({
+  const [leaveForm, setLeaveForm] = useState<LeaveForm>({
     empId: '' as string | number,  // id employé (cuid string en prod ; '' = aucun)
     type: lang === 'en' ? 'Annual leave' : lang === 'es' ? 'Permiso anual' : lang === 'it' ? 'Ferie annuali' : 'Congé annuel',
     startDate: new Date().toISOString().split('T')[0],

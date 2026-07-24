@@ -2,6 +2,10 @@ import React from 'react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+// Formulaires HR (états de HR.tsx, threadés dans les modales).
+export type ContractForm = { empId: string; type: string; hiredAt: string; contractEnd: string; salary: number; role: string; dept: string }
+export type LeaveForm = { empId: string | number; type: string; startDate: string; endDate: string; notes: string }
+
 export interface Employee {
   id: number
   name: string

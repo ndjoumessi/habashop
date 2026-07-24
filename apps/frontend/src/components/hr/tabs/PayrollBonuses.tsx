@@ -17,7 +17,7 @@ interface Props {
   fmt: (n: number) => string
   lang: string
   bonuses: Record<string, number>; setBonuses: (v: any) => void
-  bonusList: { id: string; empId: string; amount: number; reason: string; date: string }[]; setBonusList: (v: any) => void
+  bonusList: { id: string; empId: string; amount: number; reason: string; date: string }[]; setBonusList: import("react").Dispatch<import("react").SetStateAction<{ id: string; empId: string; amount: number; reason: string; date: string }[]>>
   setSalaryTarget: (v: any) => void; setShowSalaryModal: (b: boolean) => void
 }
 

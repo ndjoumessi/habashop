@@ -104,7 +104,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
                 </tr>
               </thead>
               <tbody>
-                {pg.paginated.map(c => (
+                {pg.paginated.map((c: import("@/components/customers/customersShared").Customer) => (
                   <tr key={c.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -182,7 +182,7 @@ export default function CustomersList({ customers, search, setSearch, typeFilter
         {/* Vue grille — cartes clients (Bento premium) */}
         {viewMode === 'grid' && (
           <ResponsiveGrid min={250} gap={12}>
-            {pg.paginated.map(c => {
+            {pg.paginated.map((c: import("@/components/customers/customersShared").Customer) => {
               const isSel = selectedId === c.id
               const initials = c.name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
               const tc = c.type === 'Grossiste' ? { h: '#6C47FF', rgb: '108,71,255' }

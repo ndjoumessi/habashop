@@ -20,7 +20,7 @@ import CustomerMap from '@/components/customers/CustomerMap'
 import CustomersList from '@/components/customers/CustomersList'
 import CustomersStats from '@/components/customers/CustomersStats'
 import CustomersModals from '@/components/customers/CustomersModals'
-import { type ClientType, type Customer, mapApiCustomer, useGoogleMaps, GMAPS_KEY, AmountCur } from '@/components/customers/customersShared'
+import { type ClientType, type Customer, type CustomerForm, type EditCustomerForm, mapApiCustomer, useGoogleMaps, GMAPS_KEY, AmountCur } from '@/components/customers/customersShared'
 
 export default function Customers() {
   const { lang } = useConfig()
@@ -53,12 +53,12 @@ export default function Customers() {
     name: '', type: 'Détail' as ClientType,
     phone: '', email: '', address: '',
   }
-  const [form, setForm] = useState(defaultCustForm)
+  const [form, setForm] = useState<CustomerForm>(defaultCustForm)
   const resetCustForm = () => setForm(defaultCustForm)
   const [editCustomer,     setEditCustomer]     = useState<Customer | null>(null)
   const [showEditCustModal, setShowEditCustModal] = useState(false)
   const [custEditMode,     setCustEditMode]     = useState(false)
-  const [editCustForm,     setEditCustForm]     = useState({
+  const [editCustForm,     setEditCustForm]     = useState<EditCustomerForm>({
     name: '', type: 'Détail' as ClientType, phone: '', email: '', address: '', notes: '',
   })
   const [digitalCardCustomerId, setDigitalCardCustomerId] = useState<string | null>(null)

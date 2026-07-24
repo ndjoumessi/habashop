@@ -20,7 +20,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
-import { type ProductItem, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc, isActivePromo } from '@/components/stock/stockShared'
+import { type ProductItem, type StockForm, type CatForm, type LabelConfig, type Category, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc, isActivePromo } from '@/components/stock/stockShared'
 import { normalizeBarcode, isValidBarcode, isAcceptableBarcode, barcodeMatches } from '@/lib/barcode'
 import StockBackfill from '@/components/stock/StockBackfill'
 
@@ -46,7 +46,7 @@ export default function Stock() {
   const [editingSku, setEditingSku] = useState<string | null>(null)
   const [editingId,  setEditingId]  = useState<string | null>(null)
   const [modalTab, setModalTab] = useState<'general'|'prix'|'avance'>('general')
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<StockForm>({
     sku: '', name: '', description: '', category: 'Céréales', unit: 'unité',
     buy: 0, sell: 0, priceWholesale: 0, priceSemiWholesale: 0,
     stock: 0, threshold: stockLowThreshold, supplier: '', supplierId: '',
@@ -55,11 +55,11 @@ export default function Stock() {
     image: '📦', notes: '',
     priceTiers: [] as { minQty: number; price: number; label?: string }[],
   })
-  const [categories, setCategories] = useState(CATEGORIES_INIT)
+  const [categories, setCategories] = useState<Category[]>(CATEGORIES_INIT)
   const [showCatModal, setShowCatModal] = useState(false)
   const [showLabelModal, setShowLabelModal] = useState(false)
   const [stockView, setStockView] = useState<'grid'|'list'>('list')
-  const [labelConfig, setLabelConfig] = useState({
+  const [labelConfig, setLabelConfig] = useState<LabelConfig>({
     size: 'medium' as 'small' | 'medium' | 'large',
     showPrice: true, showSku: true, showBarcode: true, copies: 1,
     averyPreset: 'L7160' as 'L7160' | 'L7163' | 'L7165' | 'L7651' | 'CUSTOM',
@@ -78,7 +78,7 @@ export default function Stock() {
   }
   const clearSelection = () => setSelectedSkus(new Set())
   const [editCat, setEditCat] = useState<typeof CATEGORIES_INIT[0] | null>(null)
-  const [catForm, setCatForm] = useState({ name:'', color:'#818CF8', icon:'📦', description:'' })
+  const [catForm, setCatForm] = useState<CatForm>({ name:'', color:'#818CF8', icon:'📦', description:'' })
 
   // ── Rattrapage codes-barres (PR5) : produits sans code valide.
   const [showBackfill, setShowBackfill] = useState(false)
