@@ -24,7 +24,7 @@ import { redis } from '../../redis'
 // coupé par le marketing. `whatsapp_marketing` = diffusions/campagnes, seau SÉPARÉ à
 // plafond bas. La clé `whatsapp` est INCHANGÉE → aucun compteur existant n'est remis
 // à zéro en cours de journée par ce split.
-export type SpendKind = 'ai' | 'ocr' | 'whatsapp' | 'whatsapp_marketing' | 'email'
+export type SpendKind = 'ai' | 'ocr' | 'whatsapp' | 'whatsapp_marketing' | 'email' | 'sms'
 
 export const DEMO_TENANT_FORBIDDEN = 'DEMO_TENANT_FORBIDDEN'
 export const TRIAL_EXPIRED         = 'TRIAL_EXPIRED'
@@ -58,9 +58,13 @@ const DEFAULTS: Record<SpendKind, { trial: number; active: number }> = {
   // / QUOTA_ACTIVE_WHATSAPP_MARKETING (lus à l'appel, sans redéploiement). On part bas.
   whatsapp_marketing: { trial: 10, active: 50 },
   email:    { trial: 20,  active: 200 },
+  // ⚠️ PLACEHOLDER bas — chaque SMS coûte de l'argent Africa's Talking réel. Comme le
+  // marketing WhatsApp : un refus honnête vaut mieux qu'une facture surprise. À fixer via
+  // QUOTA_TRIAL_SMS / QUOTA_ACTIVE_SMS (lus à l'appel, sans redéploiement).
+  sms:      { trial: 20,  active: 200 },
 }
 const ENV_KEY: Record<SpendKind, string> = {
-  ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP', whatsapp_marketing: 'WHATSAPP_MARKETING', email: 'EMAIL',
+  ai: 'AI', ocr: 'OCR', whatsapp: 'WHATSAPP', whatsapp_marketing: 'WHATSAPP_MARKETING', email: 'EMAIL', sms: 'SMS',
 }
 
 export function quotaLimit(kind: SpendKind, status: string): number {

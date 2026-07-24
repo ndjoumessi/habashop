@@ -24,6 +24,7 @@ const ALLOWLIST = [
   'lib/spend/twilioClient.ts',
   'lib/spend/anthropicClient.ts',
   'lib/spend/resendClient.ts',
+  'lib/spend/smsClient.ts',
 ]
 
 const FORBIDDEN: { label: string; re: RegExp }[] = [
@@ -33,6 +34,7 @@ const FORBIDDEN: { label: string; re: RegExp }[] = [
   { label: "appel twilio(...)",       re: /(^|[^.\w])twilio\s*\(/m },
   { label: "import du SDK Resend",    re: /(?:import\s+[\w{},\s*]*\s+from\s+['"]resend['"]|require\(\s*['"]resend['"]\s*\))/m },
   { label: "instanciation Resend",    re: /new\s+Resend\s*\(/ },
+  { label: "import du SDK Africa's Talking", re: /(?:import\s+[\w{},\s*]*\s+from\s+['"]africastalking['"]|require\(\s*['"]africastalking['"]\s*\))/m },
 ]
 
 /** `import type` ne tire aucun code à l'exécution → toléré (typage seul). */
@@ -91,5 +93,7 @@ describe('Méta-test — accès aux SDK facturés confiné aux clients gardés',
     expect(FORBIDDEN.some(f => f.re.test(sample2))).toBe(true)
     const sample3 = "import { Resend } from 'resend'\nconst r = new Resend(key)\n"
     expect(FORBIDDEN.some(f => f.re.test(sample3))).toBe(true)
+    const sample4 = "import AfricasTalking from 'africastalking'\nconst c = AfricasTalking({ apiKey, username })\n"
+    expect(FORBIDDEN.some(f => f.re.test(sample4))).toBe(true)
   })
 })
