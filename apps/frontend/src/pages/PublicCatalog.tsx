@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { ShoppingCart, MessageCircle, Minus, Plus, Search, Share2, AlertCircle } from 'lucide-react'
 import { publicApi } from '@/lib/api'
 import { convertAmount, formatInCurrency } from '@/stores/appStore'
+import { isPromotionActive } from '@/lib/pricing'
 
 type TenantPublic = {
   id: string
@@ -118,7 +119,9 @@ export default function PublicCatalog() {
       .map(p => ({
         ...p,
         qty: cart[p.id],
-        price: p.hasPromotion && p.promotionPrice != null ? p.promotionPrice : p.sellPrice,
+        // Promo respectée SEULEMENT si non expirée — sinon le client paierait un prix promo
+        // que le POS ne pratique plus (le backend est autoritaire sur le prix).
+        price: isPromotionActive(p.hasPromotion, p.promotionEnd, new Date()) && p.promotionPrice != null ? p.promotionPrice : p.sellPrice,
       }))
   }, [data, cart])
   const cartTotal = cartItems.reduce((s, i) => s + i.qty * i.price, 0)
@@ -243,7 +246,7 @@ export default function PublicCatalog() {
           </div>
         ) : filtered.map(p => {
           const inStock = p.stockQty > 0
-          const onPromo = p.hasPromotion && p.promotionPrice != null && p.promotionPrice < p.sellPrice
+          const onPromo = isPromotionActive(p.hasPromotion, p.promotionEnd, new Date()) && p.promotionPrice != null && p.promotionPrice < p.sellPrice
           const finalPrice = onPromo && p.promotionPrice != null ? p.promotionPrice : p.sellPrice
           const qty = cart[p.id] ?? 0
           return (

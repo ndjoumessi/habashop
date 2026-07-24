@@ -113,7 +113,7 @@ const CASES: LangCase[] = [
 
 for (const c of CASES) {
   test(`i18n ${c.code.toUpperCase()} — écrans modifiés rendent correctement`, async ({ page }) => {
-    // Backend live (api.habashop.com) + cold starts → marges généreuses.
+    // Backend live (Railway) + cold starts → marges généreuses.
     test.setTimeout(90_000)
     const SCREEN = 25_000
     const errors: string[] = []

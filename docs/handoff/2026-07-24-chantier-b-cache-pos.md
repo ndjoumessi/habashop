@@ -79,8 +79,12 @@ miroir `apps/frontend/src/lib/pricing.ts` (`resolveTierPrice` teste `promotion.a
 Une promo court jusqu'à ce qu'on décoche `hasPromotion`. Les prix ne bougent donc que sur
 **écriture admin explicite** — il n'existe aucun scénario où un prix change tout seul.
 
-> **Bug distinct, hors périmètre** : une « date de fin de promo » saisie dans `StockModals`
-> qui ne termine aucune promo.
+> **Bug distinct — RÉSOLU (PR promo)** : la « date de fin de promo » (`promotionEnd`) ne
+> terminait aucune promo. `isPromotionActive` (miroir back+front, fixture partagée) l'applique
+> désormais à la facturation (`sales.ts`), au POS (`computePriceForItem`) et au catalogue public.
+> Échéance inclusive, jour UTC, promo sans date = sans fin. Exposition prod mesurée = **0** promo
+> active. ⚠️ Miroir MOBILE non aligné (port séparé, hors CI). Interaction Chantier B documentée
+> dans CLAUDE.md § Produits (une promo qui expire → divergence non qualifiée, transitoire).
 
 ---
 
