@@ -23,6 +23,7 @@ import POSSuccessModal from '@/components/pos/POSSuccessModal'
 import POSPaydunyaOverlay from '@/components/pos/POSPaydunyaOverlay'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
 import { type PosProduct, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
+import { reconcileSaleTotal, authoritativeTotal } from '@/components/pos/saleReconcile'
 
 export default function POS() {
   const {
@@ -419,9 +420,15 @@ export default function POS() {
     { id: 'mtn',    label: 'MTN MoMo',      icon: '📶', color: '#FFCC00' },
   ] as { id: 'cash'|'card'|'wave'|'orange'|'mtn'; label: string; icon: string; color: string }[]
 
+  // Total réellement FACTURÉ par le serveur pour la vente en cours (null tant qu'il n'a pas
+  // répondu). En `ref` et non en state : `printTicket` est appelé dans la même passe que
+  // l'enregistrement, un state n'y serait pas encore à jour — et garder la signature à zéro
+  // argument évite le piège `onPrint={printTicket}` qui passerait l'événement en 1er argument.
+  const billedTotalRef = useRef<number | null>(null)
   const printTicket = () => buildAndPrintTicket({
     lang, locale, cart, discount, discountAmount,
-    totalHT, tva, posTaxRate, total: netTotal, payMode, cashGiven, currency, monnaie, fmt,
+    // Le serveur fait foi : sinon le ticket papier remis en main propre contredit la facture PDF.
+    totalHT, tva, posTaxRate, total: billedTotalRef.current ?? netTotal, payMode, cashGiven, currency, monnaie, fmt,
     mixed: mixedOn ? mixedSplit : null,
   })
 
@@ -768,8 +775,13 @@ export default function POS() {
       return
     }
     setIsSaving(true)
+    // Vente telle que le SERVEUR l'a enregistrée. Sa réponse était jetée : le serveur peut
+    // avoir re-tarifé (catalogue du terminal périmé) et facturé un autre montant que celui
+    // encaissé — cf. saleReconcile.ts.
+    let createdSale: unknown = null
+    billedTotalRef.current = null // repart à zéro : ne jamais réutiliser le total d'une vente précédente
     try {
-      await salesApi.create({
+      createdSale = await salesApi.create({
         items: cart.map(i => ({
           productId: /^\d+$/.test(String(i.id))
             ? `demo-PRD-${String(i.id).padStart(3, '0')}`
@@ -795,8 +807,32 @@ export default function POS() {
       return
     }
 
-    // Rafraîchit le catalogue → le stock affiché reflète la décrémentation serveur.
+    // Rafraîchit le catalogue → le stock affiché reflète la décrémentation serveur, ET le
+    // prochain encaissement repart de tarifs frais (un tarif changé ne mord qu'une vente).
     void loadProducts()
+
+    // ── Réconciliation : le serveur fait foi sur ce qui a été FACTURÉ ──────────────
+    // S'il a re-tarifé, la caisse est courte (ou longue) d'un montant que personne ne voyait
+    // avant la clôture. On le dit MAINTENANT, tant que le client est encore au comptoir.
+    const serverTotal = (createdSale as { total?: unknown } | null)?.total
+    const billedTotal = authoritativeTotal(serverTotal, netTotal)
+    billedTotalRef.current = billedTotal // ticket imprimé + reçu WhatsApp : le serveur fait foi
+    const gap = reconcileSaleTotal(serverTotal, netTotal)
+    if (gap) {
+      const amount = fmt(Math.abs(gap.gap))
+      const msg = gap.action === 'claim'
+        ? (lang === 'en' ? `Price changed — billed ${fmt(billedTotal)}. Claim ${amount} from the customer.`
+        :  lang === 'es' ? `La tarifa cambió — facturado ${fmt(billedTotal)}. Reclame ${amount} al cliente.`
+        :  lang === 'it' ? `La tariffa è cambiata — fatturato ${fmt(billedTotal)}. Richiedi ${amount} al cliente.`
+        :  `Le tarif a changé — facturé ${fmt(billedTotal)}. Réclamer ${amount} au client.`)
+        : (lang === 'en' ? `Price changed — billed ${fmt(billedTotal)}. Give ${amount} back to the customer.`
+        :  lang === 'es' ? `La tarifa cambió — facturado ${fmt(billedTotal)}. Devuelva ${amount} al cliente.`
+        :  lang === 'it' ? `La tariffa è cambiata — fatturato ${fmt(billedTotal)}. Restituisci ${amount} al cliente.`
+        :  `Le tarif a changé — facturé ${fmt(billedTotal)}. Rendre ${amount} au client.`)
+      // Durée longue + annonce : c'est de l'argent, ça ne doit pas filer sous les yeux.
+      toast.error(msg, { duration: 15000 })
+      announce(msg)
+    }
 
     // Envoi WhatsApp si activé
     const fullPhone = waNumber.trim() ? `${waCountryCode}${waNumber.replace(/[\s\-]/g, '')}` : ''
@@ -806,7 +842,9 @@ export default function POS() {
         await whatsappApi.sendTicket({
           phone:       fullPhone,
           items:       cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
-          total:       Math.round(total),
+          // Total SERVEUR (net). L'ancien `total` était le BRUT : le reçu ignorait la remise
+          // fidélité, et contredisait la facture PDF dès que le serveur avait re-tarifé.
+          total:       Math.round(billedTotal),
           paymentMode: payMode === 'cash'   ? (lang === 'en' ? 'Cash' : lang === 'es' ? 'Efectivo' : lang === 'it' ? 'Contanti' : 'Espèces')
                      : payMode === 'card'   ? (lang === 'en' ? 'Card' : lang === 'es' ? 'Tarjeta' : lang === 'it' ? 'Carta' : 'Carte')
                      : payMode === 'wave'   ? 'Wave'

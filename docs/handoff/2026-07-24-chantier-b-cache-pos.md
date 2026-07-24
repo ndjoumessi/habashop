@@ -98,9 +98,18 @@ Trois surfaces candidates, **une seule à la fois** :
   sens (règle occultée → « règle MORTE » ; règle mise en tête → mauvais cache détecté).
   Le TTL n'a **pas** été raccourci : il ne joue qu'hors-ligne / cold start, c'est-à-dire
   précisément là où l'on VEUT le cache pour ne jamais bloquer une vente.
-- **(c) Revalider les prix à l'encaissement** — échéance bornée fail-open, prévenir le caissier
-  **avant** qu'il encaisse. Corrige la cause, mais **touche le parcours de vente** (surface la
-  plus risquée du produit).
+- ~~**(c) Réconcilier le total encaissé**~~ — **FAIT** (PR4), sous une forme plus sûre que la
+  revalidation *avant* encaissement initialement envisagée. `confirmSale` jetait la réponse de
+  `POST /api/sales` : le serveur renvoie pourtant le total qu'il a RÉELLEMENT facturé. On le
+  compare au net encaissé (tolérance 1, comme le paiement mixte) et on dit au caissier, tant que
+  le client est au comptoir, combien réclamer ou rendre. Aucun appel réseau ajouté sur le chemin
+  critique, aucun nouveau mode d'échec : on exploite une réponse qui existait déjà.
+  Corrige aussi **deux documents qui mentaient** : le ticket imprimé et le reçu WhatsApp
+  affichaient le total client (et le reçu envoyait même le BRUT, remise fidélité ignorée) alors
+  que la facture PDF portait le total serveur.
+  **Non fait, décision produit ouverte** : prévenir *avant* l'encaissement suppose de décider ce
+  qu'il advient du panier quand un tarif bouge en cours de vente (mise à jour automatique ou
+  confirmation explicite) — à trancher avec Nelson, pas à inventer.
 
 ## Annexes — deux défauts trouvés au passage, hors périmètre
 
