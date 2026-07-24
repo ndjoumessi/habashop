@@ -17,7 +17,8 @@
     "concurrently": "^8.2.2"
   },
   "overrides": {
-    "axios": "^1.18.1"
+    "axios": "^1.18.1",
+    "joi": "^18.2.3"
   },
   "engines": {
     "node": ">=18.0.0"
