@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { priceDivergenceRows, priceGapLevel, staleUntilLabel, type DivRow } from './POSProductGrid'
+import { priceDivergenceRows, priceGapLevel, staleUntilLabel, promoBadgeVisible, type DivRow } from './POSProductGrid'
 
 // ⚠️ AUDIT DES ÉCARTS DE PRIX — Chantier B, PR2.
 // Avant la qualification serveur (`staleCatalogAt`), un catalogue POS périmé produisait la
@@ -71,6 +71,32 @@ describe('priceDivergenceRows — dérivation depuis les lignes stockées', () =
       { qty: 3, unitPrice: 1200, submittedPrice: 1000, catalogPrice: 1200, product: { name: 'Café' } },
     ]))
     expect(rows[0].deltaXOF).toBe(-600)
+  })
+})
+
+describe('promoBadgeVisible — le badge PROMO ne ment pas (bug #125)', () => {
+  const FUTUR = '2999-12-31'
+  const PASSE = '2020-01-01'
+  const now = new Date('2026-07-24T09:00:00.000Z')
+
+  it('promo active + client détail → badge', () => {
+    expect(promoBadgeVisible(true, FUTUR, 'retail', now)).toBe(true)
+  })
+
+  it('promo EXPIRÉE + client détail → PAS de badge (le prix est déjà normal)', () => {
+    expect(promoBadgeVisible(true, PASSE, 'retail', now)).toBe(false)
+  })
+
+  it('promo active mais client GROS → pas de badge (tarif de gros, pas la promo détail)', () => {
+    expect(promoBadgeVisible(true, FUTUR, 'wholesale', now)).toBe(false)
+  })
+
+  it('pas de promo → pas de badge', () => {
+    expect(promoBadgeVisible(false, null, 'retail', now)).toBe(false)
+  })
+
+  it('promo sans date de fin + détail → badge (comportement historique)', () => {
+    expect(promoBadgeVisible(true, null, 'retail', now)).toBe(true)
   })
 })
 
