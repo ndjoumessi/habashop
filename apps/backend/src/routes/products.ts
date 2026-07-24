@@ -99,7 +99,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       stockQty, stockMin, unit, emoji, taxRate,
       description, barcode, isActive,
       wholesalePrice, semiWholesalePrice,
-      hasPromotion, promotionPrice,
+      hasPromotion, promotionPrice, promotionEnd,
       supplierId, notes,
       priceTiers,
     } = request.body as ProductBody
@@ -153,6 +153,9 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
           semiWholesalePrice: semiWholesalePrice || null,
           hasPromotion: hasPromotion || false,
           promotionPrice: promotionPrice || null,
+          // Persisté à la création (le PUT le faisait déjà via la liste blanche) — sinon une
+          // promo créée d'emblée n'a jamais de date de fin donc n'expire jamais.
+          promotionEnd: promotionEnd ? new Date(promotionEnd) : null,
           supplierId: supplierId || null,
           notes: notes || '',
           priceTiers: tiersOk.tiers.length ? (tiersOk.tiers as any) : undefined,

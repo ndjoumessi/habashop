@@ -20,7 +20,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/skeleton'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import IconButton from '@/components/ui/IconButton'
-import { type ProductItem, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc } from '@/components/stock/stockShared'
+import { type ProductItem, CATEGORIES_INIT, statusOf, stockCatLabel, stockCatDesc, isActivePromo } from '@/components/stock/stockShared'
 import { normalizeBarcode, isValidBarcode, isAcceptableBarcode, barcodeMatches } from '@/lib/barcode'
 import StockBackfill from '@/components/stock/StockBackfill'
 
@@ -39,6 +39,7 @@ export default function Stock() {
   const [search, setSearch]     = useState('')
   const [cat, setCat]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [promoOnly, setPromoOnly] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [productEditMode, setProductEditMode] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
@@ -106,16 +107,18 @@ export default function Stock() {
   const ruptures = products.filter(p => p.stock <= p.threshold)
   const totalValue = products.reduce((s, p) => s + p.stock * p.sell, 0)
 
+  const promoCount = products.filter(p => isActivePromo(p)).length
   const filtered = products.filter(p => {
     const s = statusOf(p.stock, p.threshold)
     return (
       (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase()) || barcodeMatches(p.barcode, search)) &&
       (!cat || p.category === cat) &&
-      (!statusFilter || s.label === statusFilter)
+      (!statusFilter || s.label === statusFilter) &&
+      (!promoOnly || isActivePromo(p))
     )
   })
   const pg = usePagination(filtered, 24)
-  useEffect(() => { pg.reset() }, [search, cat, statusFilter])
+  useEffect(() => { pg.reset() }, [search, cat, statusFilter, promoOnly])
 
   const resetForm = () => {
     setForm({ sku:'', name:'', description:'', category:'Céréales', unit:'unité', buy:0, sell:0, priceWholesale:0, priceSemiWholesale:0, stock:0, threshold:stockLowThreshold, supplier:'', supplierId:'', barcode:'', taxRate:18, isActive:true, hasPromotion:false, promotionPrice:0, promotionEnd:'', image:'📦', notes:'', priceTiers:[] })
@@ -150,6 +153,9 @@ export default function Stock() {
           priceWholesale: p.wholesalePrice ?? 0,
           priceSemiWholesale: p.semiWholesalePrice ?? 0,
           priceTiers: Array.isArray(p.priceTiers) ? p.priceTiers : [],
+          hasPromotion: p.hasPromotion ?? false,
+          promotionPrice: p.promotionPrice ?? 0,
+          promotionEnd: p.promotionEnd ? String(p.promotionEnd).split('T')[0] : '',
         })))
       })
       .catch(() => {})
@@ -191,6 +197,9 @@ export default function Stock() {
       isActive: form.isActive,
       hasPromotion: form.hasPromotion,
       promotionPrice: dh.promotionPrice,
+      // ⚠️ promotionEnd n'était JAMAIS envoyé → la « DATE FIN PROMO » était un champ mort
+      // (une promo saisie ne pouvait pas expirer). Envoyé en ISO (minuit UTC) ou null.
+      promotionEnd: form.hasPromotion && form.promotionEnd ? new Date(form.promotionEnd).toISOString() : null,
       barcode: canonicalBarcode || null,
       supplierId: form.supplierId || null,
       description: form.description || '',
@@ -215,6 +224,9 @@ export default function Stock() {
           stock: form.stock, threshold: form.threshold,
           supplier: supplierName, supplierId: form.supplierId,
           barcode: canonicalBarcode, description: form.description, notes: form.notes,
+          hasPromotion: form.hasPromotion,
+          promotionPrice: dh.promotionPrice ?? 0,
+          promotionEnd: form.hasPromotion ? form.promotionEnd : '',
         } : p
       ))
       toast.success(`${form.name} mis à jour !`)
@@ -240,6 +252,9 @@ export default function Stock() {
         supplier: supplierName, supplierId: form.supplierId,
         barcode: canonicalBarcode,
         description: form.description, notes: form.notes,
+        hasPromotion: form.hasPromotion,
+        promotionPrice: dh.promotionPrice ?? 0,
+        promotionEnd: form.hasPromotion ? form.promotionEnd : '',
       }])
       toast.success('Produit ajouté !')
       announce(lang === 'en' ? 'Product added' : lang === 'es' ? 'Producto agregado' : lang === 'it' ? 'Prodotto aggiunto' : 'Produit ajouté')
@@ -386,6 +401,7 @@ export default function Stock() {
         search={search} setSearch={setSearch}
         cat={cat} setCat={setCat} cats={cats}
         statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+        promoOnly={promoOnly} setPromoOnly={setPromoOnly} promoCount={promoCount}
         pg={pg}
         setSelectedForLabel={setSelectedForLabel} setShowLabelModal={setShowLabelModal}
         setProductEditMode={setProductEditMode} setShowModal={setShowModal}

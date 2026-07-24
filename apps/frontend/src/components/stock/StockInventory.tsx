@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { Search, Download, Plus, Tag, Package, Eye, Trash2, LayoutGrid, AlignJustify, Camera } from 'lucide-react'
+import { Search, Download, Plus, Tag, Package, Eye, Trash2, LayoutGrid, AlignJustify, Camera, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t, useAppStore, convertFromXOF } from '@/stores/appStore'
 import { exportCSV, openPDF, htmlTable, htmlKPIs } from '@/utils/export'
@@ -9,7 +9,7 @@ import Pagination from '@/components/ui/Pagination'
 import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import FilterSelect, { type FilterOption } from '@/components/ui/FilterSelect'
 import { normCat } from '@/utils/normCat'
-import { type ProductItem, statusOf, stockCatLabel } from '@/components/stock/stockShared'
+import { type ProductItem, statusOf, stockCatLabel, isActivePromo } from '@/components/stock/stockShared'
 // Chargé à la demande (@zxing) — uniquement à l'ouverture du scanner de recherche.
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
 
@@ -24,6 +24,7 @@ interface StockInventoryProps {
   cat: string; setCat: (v: string) => void
   cats: string[]
   statusFilter: string; setStatusFilter: (v: string) => void
+  promoOnly: boolean; setPromoOnly: (b: boolean) => void; promoCount: number
   pg: any
   setSelectedForLabel: (v: any) => void
   setShowLabelModal: (b: boolean) => void
@@ -44,7 +45,7 @@ interface StockInventoryProps {
   onOpenBackfill: () => void
 }
 
-export default function StockInventory({ products, fmt, lang, stockShowSKU, navigate, stockView, setStockView, search, setSearch, cat, setCat, cats, statusFilter, setStatusFilter, pg, setSelectedForLabel, setShowLabelModal, setProductEditMode, setShowModal, setForm, setEditingSku, setEditingId, setModalTab, onDeleteProduct, selectedSkus, onToggleSelect, onSelectAllVisible, onClearSelection, missingBarcodeCount, onOpenBackfill }: StockInventoryProps) {
+export default function StockInventory({ products, fmt, lang, stockShowSKU, navigate, stockView, setStockView, search, setSearch, cat, setCat, cats, statusFilter, setStatusFilter, promoOnly, setPromoOnly, promoCount, pg, setSelectedForLabel, setShowLabelModal, setProductEditMode, setShowModal, setForm, setEditingSku, setEditingId, setModalTab, onDeleteProduct, selectedSkus, onToggleSelect, onSelectAllVisible, onClearSelection, missingBarcodeCount, onOpenBackfill }: StockInventoryProps) {
   const i = (fr: string, en: string, es: string, it: string) =>
     lang === 'en' ? en : lang === 'es' ? es : lang === 'it' ? it : fr
   const currency = useAppStore(s => s.currency)
@@ -198,6 +199,17 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
             options={statusOptions}
             minWidth={150}
           />
+          {/* Filtre « En promotion » — TOUJOURS visible (même à 0) pour NOMMER la fonction :
+              c'est le levier de découvrabilité, la promo produit étant sinon invisible en liste. */}
+          <button type="button" onClick={() => setPromoOnly(!promoOnly)} aria-pressed={promoOnly}
+            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:13, fontWeight:'var(--fw-semibold)', fontFamily:'var(--font)', cursor:'pointer',
+              borderRadius:'var(--r-full)', padding:'7px 13px', minHeight:36,
+              background: promoOnly ? 'var(--c-purple-bg)' : 'var(--card)', color: promoOnly ? 'var(--p2)' : 'var(--text2)',
+              border:`1px solid ${promoOnly ? 'var(--border3)' : 'var(--border)'}` }}>
+            <Sparkles size={14} style={{ flexShrink:0 }} />
+            {i('En promotion', 'On promotion', 'En promoción', 'In promozione')}
+            <span style={{ fontFamily:'var(--mono)', fontSize:12, opacity:.85 }}>{promoCount}</span>
+          </button>
         </div>
 
         {/* Compteur de résultats — annoncé aux lecteurs d'écran à chaque filtre/recherche */}
@@ -205,8 +217,23 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
           {pg.total} {i('produits affichés', 'products displayed', 'productos mostrados', 'prodotti visualizzati')}
         </div>
 
-        {/* Grid / List view */}
-        {stockView === 'grid' ? (
+        {/* Filtre promo actif mais AUCUNE promo → on NOMME la fonction et on dit comment
+            en créer une (c'est le cœur de la découvrabilité : sinon le marchand ignore
+            que la promo existe). */}
+        {promoOnly && pg.total === 0 ? (
+          <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text3)' }}>
+            <Sparkles size={32} style={{ color:'var(--p2)', marginBottom:12 }} />
+            <div style={{ fontSize:14, color:'var(--text2)', fontWeight:'var(--fw-semibold)', marginBottom:6 }}>
+              {i('Aucune promotion active', 'No active promotion', 'Sin promoción activa', 'Nessuna promozione attiva')}
+            </div>
+            <div style={{ fontSize:13, maxWidth:360, margin:'0 auto', lineHeight:1.5 }}>
+              {i('Pour mettre un produit en promotion : ouvrez sa fiche, cliquez sur « Modifier », puis activez « Produit en promotion » et fixez un prix promo + une date de fin.',
+                 'To put a product on promotion: open its details, click “Edit”, then turn on “Product on promotion” and set a promo price + end date.',
+                 'Para poner un producto en promoción: abra su ficha, haga clic en «Editar», active «Producto en promoción» y fije un precio promo + fecha de fin.',
+                 'Per mettere un prodotto in promozione: apri la scheda, clicca “Modifica”, attiva “Prodotto in promozione” e imposta un prezzo promo + data di fine.')}
+            </div>
+          </div>
+        ) : stockView === 'grid' ? (
           <ResponsiveGrid min={200}>
             {pg.paginated.map(p => {
               const st = statusOf(p.stock, p.threshold)
@@ -244,6 +271,11 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                       </div>
                       {stockShowSKU && <div style={{ fontSize:11, color:'var(--text4)', fontFamily:'var(--mono)' }}>{p.sku}</div>}
                     </div>
+                    {isActivePromo(p) && (
+                      <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'2px 7px', background:'var(--c-purple-bg)', color:'var(--p2)', border:'1px solid var(--border3)' }}>
+                        <Sparkles size={10} /> PROMO
+                      </span>
+                    )}
                     <span className={`badge ${st.cls}`} style={{ flexShrink:0 }}>{st.label}</span>
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
@@ -330,8 +362,13 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
                         <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }}>
                           <span aria-hidden="true" style={{ fontSize:18, flexShrink:0, lineHeight:1 }}>{p.name.match(/^\S+/)?.[0]}</span>
                           <span style={{ minWidth:0 }}>
-                            <span style={{ display:'block', fontSize:14, fontWeight:'var(--fw-regular)', color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                              {p.name.replace(/^\S+\s?/, '')}
+                            <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:14, fontWeight:'var(--fw-regular)', color:'var(--text)', minWidth:0 }}>
+                              <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name.replace(/^\S+\s?/, '')}</span>
+                              {isActivePromo(p) && (
+                                <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:3, fontSize:10, fontWeight:'var(--fw-bold)', textTransform:'uppercase', letterSpacing:'.4px', borderRadius:'var(--r-full)', padding:'1px 6px', background:'var(--c-purple-bg)', color:'var(--p2)', border:'1px solid var(--border3)' }}>
+                                  <Sparkles size={9} /> Promo
+                                </span>
+                              )}
                             </span>
                             {stockShowSKU && (
                               <span style={{ display:'block', fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)' }}>{p.sku}</span>

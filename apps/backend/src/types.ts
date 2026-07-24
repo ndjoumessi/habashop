@@ -33,7 +33,7 @@ export interface ProductBody {
   buyPrice?: number; sellPrice?: number; stockQty?: number; stockMin?: number
   taxRate?: number; description?: string; barcode?: string; isActive?: boolean
   emoji?: string; wholesalePrice?: number; semiWholesalePrice?: number
-  hasPromotion?: boolean; promotionPrice?: number
+  hasPromotion?: boolean; promotionPrice?: number; promotionEnd?: string | null
   supplierId?: string | null
   notes?: string
   priceTiers?: { minQty: number; price: number; label?: string }[] | null
