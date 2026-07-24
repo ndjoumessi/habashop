@@ -15,7 +15,8 @@
     "e2e:ui": "playwright test --ui",
     "e2e:debug": "playwright test --debug",
     "verify:demo-flag": "node scripts/verify-demo-flag.mjs",
-    "verify:sw-routes": "node scripts/verify-sw-routes.mjs"
+    "verify:sw-routes": "node scripts/verify-sw-routes.mjs",
+    "shot:subscriptions": "node e2e/subscriptions-modal.shot.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
