@@ -22,8 +22,10 @@ import TicketZModal from '@/components/pos/TicketZModal'
 import POSSuccessModal from '@/components/pos/POSSuccessModal'
 import POSPaydunyaOverlay from '@/components/pos/POSPaydunyaOverlay'
 import { printTicket as buildAndPrintTicket } from '@/components/pos/posTicket'
-import { type PosProduct, type DiscountForm, CASHIER_TEXTS, computePosVat } from '@/components/pos/posShared'
+import { type PosProduct, type DiscountForm, CASHIER_TEXTS, computePosVat, toPosProduct } from '@/components/pos/posShared'
 import { reconcileSaleTotal, authoritativeTotal, detectCartPriceDrift, toSaleItemPayload } from '@/components/pos/saleReconcile'
+import { resolveScannedCode } from '@/components/pos/scanResolve'
+import { freshnessAge, freshnessLabel, oldestFreshness } from '@/lib/dataFreshness'
 
 export default function POS() {
   const {
@@ -37,6 +39,8 @@ export default function POS() {
     // Panier persisté dans le store (survit nav + refresh)
     cart, addCartItem, updateCartQty, setCart, clearCart,
     updateConfig,
+    // Fraîcheur des données (Chantier B) : horodatage à chaque synchro réussie.
+    freshness, markFresh, catalogNonce,
   } = useAppStore()
   const fmt    = useFormatAmount()
   const toXOF  = useConvertToXOF()
@@ -57,28 +61,28 @@ export default function POS() {
   // (sinon l'UI affiche un stock périmé alors que le backend l'a bien décrémenté).
   const loadProducts = useCallback(() => {
     return productsApi.list()
-      .then(data => setPosProducts(data.map((p: any): PosProduct => ({
-        id: p.id,
-        name: p.name,
-        sku: p.sku ?? '',
-        barcode: p.barcode ?? '',
-        price: p.sellPrice ?? 0,
-        priceWholesale: p.wholesalePrice ?? p.sellPrice ?? 0,
-        priceSemiWholesale: p.semiWholesalePrice ?? p.sellPrice ?? 0,
-        cat: (p.category || 'grocery').toLowerCase().replace(/[éè]/g, 'e').replace(/\s+/g, ''),
-        emoji: p.emoji || '📦',
-        stock: p.stockQty ?? 0,
-        promotion: p.hasPromotion ?? false,
-        promotionPrice: p.promotionPrice ?? 0,
-        promotionEnd: p.promotionEnd?.split('T')[0] ?? '',
-        priceTiers: Array.isArray(p.priceTiers) ? p.priceTiers : undefined,
-      }))))
+      .then(data => {
+        setPosProducts(data.map(toPosProduct))
+        // Le catalogue vient du serveur → la classe « catalogue/prix » est fraîche.
+        // Horodaté SEULEMENT en cas de succès : un échec réseau ne rajeunit rien.
+        markFresh('catalog')
+      })
       .catch(() => {})
-  }, [])
+  }, [markFresh])
 
   useEffect(() => {
     loadProducts().finally(() => setLoadingProducts(false))
   }, [loadProducts])
+
+  // Rafraîchissement MANUEL depuis l'indicateur de synchro : la liste en mémoire suit,
+  // sinon on afficherait « à jour » devant un écran resté périmé. (Le nonce démarre à 0
+  // et le montage a déjà chargé → on saute la première valeur.)
+  const firstNonce = useRef(true)
+  useEffect(() => {
+    if (firstNonce.current) { firstNonce.current = false; return }
+    void loadProducts()
+  }, [catalogNonce, loadProducts])
+
 
   // cart est désormais dans useAppStore (persisté zustand). Voir destructuring ci-dessus.
   const [activeCat, setActiveCat] = useState('all')
@@ -224,12 +228,18 @@ export default function POS() {
   const prevOnlineRef = useRef(isOnline)
   useEffect(() => {
     if (prevOnlineRef.current !== isOnline) {
+      const backOnline = isOnline && !prevOnlineRef.current
       prevOnlineRef.current = isOnline
+      // Déclencheur CIBLÉ (Chantier B) : le catalogue a pu bouger pendant la coupure.
+      // UN refetch sur la TRANSITION, jamais de périodique — mesuré ~119 Mo/mois pour
+      // 3 terminaux en 2G, à transporter zéro changement l'écrasante majorité du temps.
+      // On se greffe sur la transition DÉJÀ détectée ici : un seul détecteur, pas deux.
+      if (backOnline) void loadProducts()
       announce(isOnline
         ? (lang === 'en' ? 'Back online' : lang === 'es' ? 'De nuevo en línea' : lang === 'it' ? 'Di nuovo online' : 'Connexion rétablie')
         : (lang === 'en' ? 'Offline — cash only' : lang === 'es' ? 'Sin conexión — solo efectivo' : lang === 'it' ? 'Offline — solo contanti' : 'Hors-ligne — espèces uniquement'))
     }
-  }, [isOnline, lang])
+  }, [isOnline, lang, loadProducts])
 
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
@@ -258,18 +268,38 @@ export default function POS() {
     }
   }
 
-  const handleScan = (raw: string) => {
+  // Scan : le cache local ne fait PAS autorité. S'il ne matche pas, on demande au
+  // serveur AVANT de conclure (échéance bornée, fail-open) — le produit a pu être créé
+  // depuis la dernière synchro. Aucun chemin ne bloque l'encaissement.
+  const handleScan = async (raw: string) => {
     setShowScanner(false)
     // Résolution EXACTE (brique partagée) : code-barres canonique OU SKU exact
     // (étiquettes CODE128-sur-SKU). Pas de match par NOM ici : à la caisse un faux
     // positif (mauvais produit ajouté) coûte plus cher qu'un échec de scan.
-    const found = posProducts.find(p => matchesScannedCode(p, raw) || String(p.id) === raw)
-    if (found) {
-      addItem(found)
-      toast.success(`${found.name} scanné`)
-    } else {
-      toast.error(`Produit non trouvé: ${raw}`)
+    const res = await resolveScannedCode<PosProduct>(
+      raw,
+      posProducts,
+      (p, code) => matchesScannedCode(p, code) || String(p.id) === code,
+      async (code) => {
+        const p = await productsApi.lookup(code)
+        return p ? toPosProduct(p) : null
+      },
+    )
+    if (res.kind !== 'unresolved') {
+      addItem(res.product)
+      toast.success(`${res.product.name} scanné`)
+      // Résolu par le serveur ⇒ le cache local était en retard : on le resynchronise
+      // en tâche de fond, sans rien dire au caissier (rien n'a échoué de son point de vue).
+      if (res.kind === 'remote') void loadProducts()
+      return
     }
+    // Ni local, ni serveur : on ne dit QUE ce qu'on sait.
+    const oldest = oldestFreshness(freshness)
+    const age = oldest && !oldest.neverSynced ? freshnessAge(oldest.at, Date.now()) : null
+    toast.error(
+      `${lang === 'en' ? 'Not in your local catalogue' : lang === 'es' ? 'No está en su catálogo local' : lang === 'it' ? 'Non è nel tuo catalogo locale' : 'Introuvable dans votre catalogue local'} (${lang === 'en' ? 'last sync' : lang === 'es' ? 'última sincronización' : lang === 'it' ? 'ultima sincronizzazione' : 'dernière synchro'} : ${freshnessLabel(age, lang)})`,
+      { id: 'scan-unresolved', duration: 6000 },
+    )
   }
 
   // ─── CAISSE (état local uniquement pour l'input) ─

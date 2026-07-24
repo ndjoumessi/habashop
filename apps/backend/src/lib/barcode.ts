@@ -87,3 +87,24 @@ export function normalizeBarcode(raw: unknown): string {
   if (isValidUPCA(digits)) return '0' + digits
   return digits
 }
+
+/**
+ * Résolution d'un code SCANNÉ vers un produit : code-barres canonique **OU SKU EXACT**
+ * (étiquettes CODE128-sur-SKU). JAMAIS de correspondance par sous-chaîne ni par nom :
+ * à la caisse, un faux positif (mauvais produit encaissé) coûte plus cher qu'un échec
+ * de scan.
+ *
+ * ⚠️ Troisième miroir de la règle canonique (web + mobile l'avaient déjà, le backend
+ * non) — les `scanCases` de `docs/shared-fixtures/barcode-cases.json` verrouillent
+ * l'identité des trois implémentations.
+ */
+export function matchesScannedCode(
+  p: { barcode?: string | null; sku?: string | null },
+  raw: string,
+): boolean {
+  const scanned = normalizeBarcode(raw)
+  if (scanned && normalizeBarcode(p.barcode) === scanned) return true
+  const sku = (p.sku ?? '').trim().toLowerCase()
+  const q = String(raw ?? '').trim().toLowerCase()
+  return !!sku && !!q && sku === q
+}

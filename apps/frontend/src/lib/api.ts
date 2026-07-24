@@ -165,6 +165,13 @@ export const productsApi = {
   update:   (id: string, data: any) => api.put<any>(`/api/products/${id}`, data),
   delete:   (id: string) => api.delete<any>(`/api/products/${id}`),
   lowStock: () => api.get<any[]>('/api/products/low-stock'),
+  /**
+   * Résolution CIBLÉE d'un code scanné absent du cache local (Chantier B).
+   * UN produit (~600 o), jamais la liste (~22 Ko gz pour 500 réf.). `null` si le
+   * serveur ne le connaît pas — l'appelant ne doit PAS en conclure « n'existe pas ».
+   */
+  lookup: (code: string) =>
+    api.get<any>(`/api/products/lookup?code=${encodeURIComponent(code)}`).catch(() => null),
 }
 
 export interface StockTransfer {
@@ -491,6 +498,13 @@ export const cronApi = {
 // backward-compat alias (used by Header.tsx)
 export const alertsApi = {
   lowStock: () => api.get<any[]>('/api/products/low-stock'),
+  /**
+   * Résolution CIBLÉE d'un code scanné absent du cache local (Chantier B).
+   * UN produit (~600 o), jamais la liste (~22 Ko gz pour 500 réf.). `null` si le
+   * serveur ne le connaît pas — l'appelant ne doit PAS en conclure « n'existe pas ».
+   */
+  lookup: (code: string) =>
+    api.get<any>(`/api/products/lookup?code=${encodeURIComponent(code)}`).catch(() => null),
 }
 
 export const shiftsApi = {

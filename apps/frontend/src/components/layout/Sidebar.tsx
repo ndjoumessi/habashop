@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import LogoMark from '@/components/ui/LogoMark'
+import SyncIndicator from '@/components/ui/SyncIndicator'
 import { useAuthStore, canAccess } from '@/stores/authStore'
 import { useConfig, useCashierIsOpen, t } from '@/stores/appStore'
 import { stockTransfersApi } from '@/lib/api'
@@ -308,6 +309,7 @@ export default function Sidebar() {
                 posera l'indicateur « dernière synchro » à côté, dans cette même rangée. */}
             <div className="footer-meta">
               <span className="footer-build" title={__BUILD_ID__}>{__BUILD_SHORT__}</span>
+              <SyncIndicator />
             </div>
 
             {/* Rangée 3 : actions espacées, cibles ≥ 44px */}

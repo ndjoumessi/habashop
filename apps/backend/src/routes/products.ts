@@ -7,7 +7,7 @@ import { getTenantId } from '../lib/tenantId'
 import { authenticate } from '../middleware/authenticate'
 import { invalidateTenantCache } from '../lib/cache'
 import { validatePriceTiers, toPricingSet, samePricing, PRICING_FIELDS } from '../utils/pricing'
-import { isValidBarcode, normalizeBarcode } from '../lib/barcode'
+import { isValidBarcode, normalizeBarcode, matchesScannedCode } from '../lib/barcode'
 
 // Valide un code-barres (EAN-13 + unicité par tenant) et renvoie sa forme
 // normalisée. `excludeId` : produit à ignorer dans le contrôle de doublon (PUT).
@@ -91,6 +91,39 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/products', { preHandler: authenticate }, async (request) => {
     const tenantId = getTenantId(request)
     return prisma.product.findMany({ where: { tenantId, deletedAt: null }, orderBy: { name: 'asc' } })
+  })
+
+  /**
+   * Résolution CIBLÉE d'un seul code scanné (Chantier B).
+   *
+   * Un scan qui ne matche pas le cache local du terminal ne prouve rien : le produit
+   * peut avoir été créé depuis la dernière synchro. Le POS interroge donc le serveur
+   * AVANT de conclure — mais il ne peut pas rapatrier tout le catalogue pour ça
+   * (mesuré : 22 Ko gz pour 500 produits, ~1,1 s en 2G, à comparer aux ~600 o d'un
+   * produit). D'où cette route : UN produit, jamais la liste.
+   *
+   * 404 = « pas dans le catalogue de CETTE boutique », un fait vérifié côté serveur —
+   * à ne pas confondre avec « ce produit n'existe pas », que le POS n'affirme jamais.
+   */
+  app.get('/api/products/lookup', { preHandler: authenticate }, async (request, reply) => {
+    const tenantId = getTenantId(request)
+    const raw = String((request.query as { code?: unknown })?.code ?? '').trim()
+    if (!raw) return reply.code(400).send({ error: 'code requis', code: 'CODE_REQUIRED' })
+
+    const canon = normalizeBarcode(raw)
+    // Présélection étroite (indexée) sur les formes de stockage plausibles, puis
+    // vérification par la RÈGLE CANONIQUE partagée — c'est elle qui tranche, pas le SQL.
+    const or: Record<string, string>[] = [{ barcode: raw }, { sku: raw }]
+    if (canon && canon !== raw) or.push({ barcode: canon })
+    if (canon.length === 13 && canon.startsWith('0')) or.push({ barcode: canon.slice(1) })
+
+    const candidates = await prisma.product.findMany({
+      where: { tenantId, deletedAt: null, OR: or },
+      take: 5,
+    })
+    const found = candidates.find(p => matchesScannedCode(p, raw))
+    if (!found) return reply.code(404).send({ error: 'Produit absent de ce catalogue', code: 'NOT_IN_CATALOG' })
+    return found
   })
 
   app.post('/api/products', { preHandler: authenticate, schema: { body: PRODUCT_CREATE } }, async (request, reply) => {
