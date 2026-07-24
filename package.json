@@ -16,6 +16,9 @@
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
+  "overrides": {
+    "axios": "^1.18.1"
+  },
   "engines": {
     "node": ">=18.0.0"
   }
