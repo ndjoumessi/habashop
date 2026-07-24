@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma, basePrisma } from '../db'
 import { authenticate } from '../middleware/authenticate'
+import { getTenantId } from '../lib/tenantId'
 import { getCached } from '../lib/cache'
 
 /**
@@ -14,7 +15,7 @@ export function computeTrend(value: number, prev: number): number | null {
 
 export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/dashboard/stats', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     return getCached(`analytics:${tenantId}:dashboard`, 300, async () => {
       const now = new Date()
       const today = new Date(now)
@@ -168,7 +169,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.get('/api/reports/sales', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     const { period = '7days' } = request.query as { period?: string }
 
     return getCached(`analytics:${tenantId}:reports:${period}`, 300, async () => {
@@ -262,7 +263,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
   })
 
   app.get('/api/audit-logs', { preHandler: authenticate }, async (request) => {
-    const { tenantId } = request.user
+    const tenantId = getTenantId(request)
     // ⚠️ L'erreur REMONTE volontairement (500 via le handler global). Renvoyer []
     // sur échec faisait AFFIRMER au journal qu'il ne s'était rien passé — un
     // journal d'audit muet est pire qu'un journal indisponible, parce qu'on le croit.
