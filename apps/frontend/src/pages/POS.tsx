@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore, useFormatAmount, useConvertToXOF, useConvertFromXOF, useCurrencyInfo, useCashierIsOpen, t, formatInCurrency } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
 import { salesApi, productsApi, whatsappApi, loyaltyApi, mtnMomoApi, campayApi, tenantApi, paydunyaApi } from '@/lib/api'
-import { resolveTierPrice } from '@/lib/pricing'
+import { resolveTierPrice, isPromotionActive } from '@/lib/pricing'
 import { barcodeMatches, matchesScannedCode } from '@/lib/barcode'
 // Chargé à la demande (114 kB gz / @zxing) — uniquement à l'ouverture du scanner
 const BarcodeScanner = lazy(() => import('@/components/ui/BarcodeScanner'))
@@ -311,9 +311,12 @@ export default function POS() {
     return p.price
   }
   // Calcule prix + tierLabel pour un produit à une quantité donnée (promo > tier > base).
+  // La promo n'est prise en compte que si elle n'est pas EXPIRÉE (échéance inclusive) —
+  // sinon la tuile et le panier afficheraient un prix promo que le backend ne facture plus.
   const computePriceForItem = (p: PosProduct, qty: number): { price: number; tierLabel?: string } => {
     const basePrice = getBasePrice(p)
-    return resolveTierPrice(qty, basePrice, p.priceTiers ?? null, { active: !!p.promotion, price: p.promotionPrice })
+    const promoActive = isPromotionActive(p.promotion, p.promotionEnd, new Date())
+    return resolveTierPrice(qty, basePrice, p.priceTiers ?? null, { active: promoActive, price: p.promotionPrice })
   }
   // Compat : getPrice(p) = qty=1 (utilisé pour affichage prix sur la tuile produit)
   const getPrice = (p: PosProduct) => computePriceForItem(p, 1).price

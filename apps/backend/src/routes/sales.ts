@@ -6,7 +6,7 @@ import { authenticate } from '../middleware/authenticate'
 import { notifyTenant } from './notifications'
 import { invalidateTenantCache } from '../lib/cache'
 import { getTenantId } from '../lib/tenantId'
-import { resolveTierPrice, legitimatePrices, toPricingSet, type PriceTier } from '../utils/pricing'
+import { resolveTierPrice, legitimatePrices, toPricingSet, isPromotionActive, type PriceTier } from '../utils/pricing'
 import { pointsForAmount, tierForPoints, discountForTier, computeLoyaltyDiscount } from '../lib/loyalty'
 import { buildInvoicePdf, nextInvoiceNumber } from '../lib/invoicePdf'
 import { resolvePaymentSplit } from '../lib/paymentSplit'
@@ -144,7 +144,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
       select: {
         id: true, name: true, stockQty: true,
         sellPrice: true, semiWholesalePrice: true, wholesalePrice: true,
-        hasPromotion: true, promotionPrice: true, priceTiers: true,
+        hasPromotion: true, promotionPrice: true, promotionEnd: true, priceTiers: true,
         // Tarifs PRÉCÉDENTS : servent uniquement à qualifier une divergence (jamais à facturer).
         previousPricing: true, pricingChangedAt: true,
       },
@@ -172,6 +172,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
     //    Dans TOUS les cas de divergence : TRACE (submitted/catalog) + flag pour l'audit. ──
     type ItemRow = { productId: string; qty: number; unitPrice: number; total: number; tierLabel: string | null; submittedPrice?: number; catalogPrice?: number; staleCatalogAt?: Date | null }
     let anyDivergence = false
+    const now = new Date() // une seule horloge serveur pour l'expiration des promos de la vente
     const itemsData: ItemRow[] = items.map((item: any): ItemRow => {
       const submitted = Number(item.price) || 0
       const p = productMap.get(item.productId)
@@ -180,10 +181,15 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
         return { productId: item.productId, qty: item.qty, unitPrice: submitted, total: submitted * item.qty, tierLabel: item.tierLabel ?? null }
       }
       const tiers = Array.isArray(p.priceTiers) ? (p.priceTiers as unknown as PriceTier[]) : null
-      const promo = { active: !!p.hasPromotion, price: p.promotionPrice }
+      // Promo EFFECTIVE = hasPromotion ET non expirée (échéance inclusive). Une promo dont la
+      // date de fin est dépassée ne s'applique NI au prix facturé NI à l'ensemble légitime →
+      // le prix promo périmé n'est plus un tarif serveur valable.
+      const promoActive = isPromotionActive(p.hasPromotion, p.promotionEnd, now)
+      const promo = { active: promoActive, price: p.promotionPrice }
       const retail = resolveTierPrice(item.qty, p.sellPrice, tiers, promo) // référence catalogue (détail)
       // Ensemble des prix LÉGITIMES = chaque tarif défini, résolu via palier/promo à cette qté.
-      const legit = legitimatePrices(item.qty, { ...p, priceTiers: tiers })
+      // On passe le booléen EFFECTIF (pas p.hasPromotion brut) pour que l'expiration s'y reflète.
+      const legit = legitimatePrices(item.qty, { ...p, priceTiers: tiers, hasPromotion: promoActive })
       if (legit.has(Math.round(submitted))) {
         // Prix soumis = un tarif serveur légitime → autorisé, facturé tel quel (pas de trace).
         return { productId: item.productId, qty: item.qty, unitPrice: submitted, total: submitted * item.qty, tierLabel: item.tierLabel ?? null }
