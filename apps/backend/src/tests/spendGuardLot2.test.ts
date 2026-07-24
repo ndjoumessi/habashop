@@ -194,7 +194,9 @@ describe('Invalidation du cache de statut', () => {
     redisMock.get.mockResolvedValue(JSON.stringify({ d: false, s: 'active', t: null }))
     db.tenant.findUnique.mockResolvedValue({ isDemo: true, status: 'active', trialEnds: null })
     const info = await resolveTenantSpendInfo('T')
-    expect(info.isDemo).toBe(false) // valeur perimee servie -> d ou les appels d invalidation
+    // `resolveTenantSpendInfo` peut renvoyer null ; `?.` narrow sans masquer un null
+    // (un null ferait échouer l'assertion, ce qui est le comportement voulu).
+    expect(info?.isDemo).toBe(false) // valeur perimee servie -> d ou les appels d invalidation
   })
 
   it('liste vide : aucun appel Redis', async () => {
