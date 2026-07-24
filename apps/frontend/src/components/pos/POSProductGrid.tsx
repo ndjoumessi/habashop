@@ -5,6 +5,7 @@ import ResponsiveGrid from '@/components/ui/ResponsiveGrid'
 import { t } from '@/stores/appStore'
 import { salesApi } from '@/lib/api'
 import { CATS, catLabel, payModeLabel, showStrikePrice, type PosProduct, type CartItem } from '@/components/pos/posShared'
+import { isPromotionActive } from '@/lib/pricing'
 
 interface POSProductGridProps {
   posTab: 'pos' | 'history'
@@ -70,6 +71,18 @@ export function staleUntilLabel(iso: string, lang: string): string {
   if (Number.isNaN(d.getTime())) return ''
   const loc = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : lang === 'it' ? 'it-IT' : 'fr-FR'
   return `${d.toLocaleDateString(loc, { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })}`
+}
+
+// Le badge « PROMO » de la tuile ne s'affiche que pour un client DÉTAIL ET une promo
+// EFFECTIVE (non expirée). Extrait pour être verrouillé : le bug de #125 était d'utiliser
+// le booléen brut `promotion`, laissant une promo périmée afficher le badge.
+export function promoBadgeVisible(
+  promotion: boolean | null | undefined,
+  promotionEnd: string | null | undefined,
+  clientType: string,
+  now: Date,
+): boolean {
+  return isPromotionActive(promotion, promotionEnd, now) && clientType === 'retail'
 }
 
 export type PriceGapLevel = 'look' | 'previous' | 'offline'
@@ -382,7 +395,10 @@ export default function POSProductGrid({ posTab, lang, activeCat, setActiveCat, 
             {/* Spec item 11 : grille auto-fill minmax(112px, 1fr) */}
             <ResponsiveGrid min={112} gap={10} style={{ paddingBottom: 8 }}>
               {filtered.map(p => {
-                const isPromoRetail = !!p.promotion && clientType === 'retail'
+                // ⚠️ Le badge PROMO doit refléter une promo EFFECTIVE (non expirée), pas le
+                // booléen brut : sinon une promo périmée affiche encore « PROMO » alors que le
+                // prix (effective) est déjà redevenu normal (incohérence laissée par #125).
+                const isPromoRetail = promoBadgeVisible(p.promotion, p.promotionEnd, clientType, new Date())
                 const effective = getPrice(p)
                 return (
                   <ProductTile
