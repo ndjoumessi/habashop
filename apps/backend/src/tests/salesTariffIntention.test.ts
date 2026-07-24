@@ -132,6 +132,57 @@ describe('Rétro-compatibilité — aucun client existant ne doit casser', () =>
   })
 })
 
+/**
+ * CHEMIN MOBILE — le client qui ne déclare RIEN doit continuer de passer.
+ *
+ * Payload mobile réel (`SaleItemInput`, mobile/src/types/index.ts) : `{ productId, qty,
+ * price, tierLabel? }` — aucune intention tarifaire, et il n'y a pas de sélecteur de tarif
+ * dans l'app (`posStore.ts` prend `sellPrice` pour base). Son `resolveLinePrice`
+ * (posStore.ts:70) applique promo puis palier puis base — même algorithme que le
+ * `resolveTierPrice` serveur. Le prix mobile est donc, par construction,
+ * `expectedPrice(qty, …, 'retail')` : le défaut serveur.
+ *
+ * Si l'un de ces cas rougissait, le correctif bloquerait des ventes mobiles légitimes.
+ */
+describe('Chemin MOBILE — aucune intention déclarée', () => {
+  const mobileLine = (price: number, qty = 1, tierLabel?: string) => ({ productId: 'p1', qty, price, ...(tierLabel ? { tierLabel } : {}) })
+
+  it('prix de BASE (sellPrice) sans intention → accepté, aucune divergence', async () => {
+    await post([mobileLine(1300)])
+    expect(item().unitPrice).toBe(1300)
+    expect(item().submittedPrice).toBeUndefined()
+    expect(sale().priceDivergence).toBeFalsy()
+  })
+
+  it('prix de PALIER résolu par le mobile → accepté, aucune divergence', async () => {
+    db.product.findMany.mockResolvedValue([PROD({ priceTiers: [{ minQty: 10, price: 1150, label: 'x10' }] })])
+    await post([mobileLine(1150, 12, 'x10')])
+    expect(item().unitPrice).toBe(1150)
+    expect(sale().priceDivergence).toBeFalsy()
+  })
+
+  it('prix PROMO (promo active) résolu par le mobile → accepté, aucune divergence', async () => {
+    db.product.findMany.mockResolvedValue([PROD({ hasPromotion: true, promotionPrice: 950 })])
+    await post([mobileLine(950)])
+    expect(item().unitPrice).toBe(950)
+    expect(sale().priceDivergence).toBeFalsy()
+  })
+
+  it('prix ≠ base (catalogue mobile périmé) → divergence TRACÉE, facturé au prix serveur', async () => {
+    await post([mobileLine(1100)])
+    expect(item().unitPrice).toBe(1300)
+    expect(item().submittedPrice).toBe(1100)
+    expect(item().catalogPrice).toBe(1300)
+    expect(sale().priceDivergence).toBe(true)
+  })
+
+  it('le prix de GROS soumis sans intention diverge — le défaut détail ne blanchit rien', async () => {
+    await post([mobileLine(1000)]) // 1000 = wholesalePrice courant
+    expect(item().unitPrice).toBe(1300)
+    expect(sale().priceDivergence).toBe(true)
+  })
+})
+
 describe('Miroir exact du client — sinon on fabrique de faux positifs', () => {
   it('gros déclaré mais wholesalePrice NULL → le détail fait foi (repli `?? sellPrice` du POS)', async () => {
     db.product.findMany.mockResolvedValue([PROD({ wholesalePrice: null })])
