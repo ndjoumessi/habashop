@@ -1,0 +1,15 @@
+-- Additive : date de PREMIÈRE livraison d'un abonnement hebdomadaire.
+--
+-- NULLABLE à dessein : `NULL` = « pas de date de début » = le comportement historique
+-- (l'abonnement est dû dès le prochain `dayOfWeek`). Aucune valeur par défaut, aucun
+-- backfill : les lignes existantes gardent exactement leur sémantique actuelle.
+--
+-- La colonne est FONCTIONNELLE, pas décorative : `GET /api/subscriptions/due` écarte
+-- désormais les abonnements dont la date de début est postérieure à aujourd'hui (UTC,
+-- jour calendaire inclusif — même convention que `promotionEnd`). Sans ce filtre, une
+-- date saisie « à partir du mois prochain » afficherait quand même « dû aujourd'hui » :
+-- un faux « prêt » de plus.
+--
+-- Exposition mesurée avant migration (lecture seule, 2026-07-24) : 0 Subscription,
+-- 0 SubscriptionItem en production. Aucune donnée à convertir.
+ALTER TABLE "Subscription" ADD COLUMN IF NOT EXISTS "startDate" TIMESTAMP(3);
