@@ -78,7 +78,41 @@ const browser = await chromium.launch()
   await ctx.close()
 }
 
-// ── 2. Mobile (sidebar en tiroir) ──
+// ── 2. Douchette : code absent du cache + lookup en échec → message HONNÊTE ──
+//    (contrairement à la caméra, ce chemin est pilotable : c'est un champ de saisie)
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 950 }, deviceScaleFactor: 2, serviceWorkers: 'block', locale: 'fr-FR' })
+  const page = await prepare(ctx)                       // catalogue OK, lookup en 404
+  await page.goto(`${BASE}/app/pos`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(1500)
+  const field = page.getByPlaceholder(/Rechercher ou scanner/)
+  await field.click()
+  // Frappe à cadence DOUCHETTE (~5 ms/caractère) puis Entrée, comme le matériel réel.
+  await field.pressSequentially('5901234123457', { delay: 5 })
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(2500)
+  await page.screenshot({ path: `${OUT}/desktop-douchette-introuvable.png` })
+  shots.push('desktop-douchette-introuvable.png')
+  await ctx.close()
+}
+
+// ── 3. Douchette : code absent du cache mais RÉSOLU par le serveur → ajout muet ──
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 950 }, deviceScaleFactor: 2, serviceWorkers: 'block', locale: 'fr-FR' })
+  const page = await prepare(ctx, { lookupFinds: true })
+  await page.goto(`${BASE}/app/pos`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(1500)
+  const field = page.getByPlaceholder(/Rechercher ou scanner/)
+  await field.click()
+  await field.pressSequentially('5901234123457', { delay: 5 })
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(2500)
+  await page.screenshot({ path: `${OUT}/desktop-douchette-resolue.png` })
+  shots.push('desktop-douchette-resolue.png')
+  await ctx.close()
+}
+
+// ── 4. Mobile (sidebar en tiroir) ──
 {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 840 }, deviceScaleFactor: 3, serviceWorkers: 'block', locale: 'fr-FR' })
   const page = await prepare(ctx, { syncedAgo: 26 * 3600_000, catalogFails: true })
