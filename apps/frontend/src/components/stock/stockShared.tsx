@@ -1,4 +1,5 @@
 import { t } from '@/stores/appStore'
+import { isPromotionActive } from '@/lib/pricing'
 
 export type ProductItem = {
   _id?: string; sku: string; name: string; category: string
@@ -9,7 +10,18 @@ export type ProductItem = {
   priceWholesale?: number
   priceSemiWholesale?: number
   priceTiers?: { minQty: number; price: number; label?: string }[]
+  // Promotion : nécessaire pour surfacer un badge PROMO dans la liste + filtrer les promos.
+  // promotionEnd au format 'YYYY-MM-DD' (ou '' = pas d'échéance = promo sans fin).
+  hasPromotion?: boolean
+  promotionPrice?: number
+  promotionEnd?: string
 }
+
+// Un produit a-t-il une promotion EFFECTIVE (activée + non expirée) ? Source unique pour
+// le badge PROMO de la liste ET le filtre « En promotion » → les deux ne peuvent pas
+// diverger. `now` injecté (défaut new Date()). Réutilise isPromotionActive (miroir back/front).
+export const isActivePromo = (p: ProductItem, now: Date = new Date()): boolean =>
+  isPromotionActive(p.hasPromotion, p.promotionEnd, now)
 
 export const CATEGORIES_INIT = [
   { id:1, name:'Céréales',   color:'#818CF8', icon:'🌾', productsCount:3, description:'Riz, farine, semoule...'     },
