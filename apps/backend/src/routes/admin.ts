@@ -1,5 +1,6 @@
+import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
-import type { AdminCreateTenantBody, AdminReviewBody } from '../types'
+import type { AdminReviewBody } from '../types'
 import bcrypt from 'bcryptjs'
 import { prisma, basePrisma } from '../db'
 import { invalidateTenantSpendInfo } from '../lib/spend/spendGuard'
@@ -12,6 +13,19 @@ import {
   sendTrialExpired,
   sendWeeklyReport,
 } from '../services/email'
+
+// Création de boutique par l'admin PLATEFORME. `name` requis (Tenant.name non-nullable
+// sans défaut) → rejet 400 propre au lieu d'un 500 Prisma. Le reste est optionnel :
+// currency/country/plan ont un @default en base ET un repli dans le handler ; on ne
+// resserre PAS leur validation (une valeur inédite était acceptée avant, elle le reste).
+const ADMIN_CREATE_TENANT = z.object({
+  name:          z.string().trim().min(1, { message: 'Le nom de la boutique est requis' }),
+  currency:      z.string().optional(),
+  country:       z.string().optional(),
+  plan:          z.string().optional(),
+  adminEmail:    z.string().optional(),
+  adminPassword: z.string().optional(),
+}).passthrough()
 
 export async function adminRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/admin/tenants', { preHandler: authenticateAdmin }, async () => {
@@ -56,8 +70,12 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
-  app.post('/api/admin/tenants', { preHandler: authenticateAdmin }, async (request) => {
-    const { name, currency, country, plan, adminEmail, adminPassword } = request.body as AdminCreateTenantBody
+  app.post('/api/admin/tenants', { preHandler: authenticateAdmin, schema: { body: ADMIN_CREATE_TENANT } }, async (request) => {
+    // Type DÉRIVÉ du schéma : `name` est `string` (garanti par `z.string().min(1)`),
+    // plus `string | undefined` comme le laissait croire l'ancien cast. Sans ce schéma,
+    // un POST sans `name` atteignait `prisma.tenant.create` (Tenant.name requis) → 500 ;
+    // il est désormais rejeté 400 { code:'VALIDATION' } avant le handler.
+    const { name, currency, country, plan, adminEmail, adminPassword } = request.body as z.infer<typeof ADMIN_CREATE_TENANT>
     const tenant = await prisma.tenant.create({
       data: { name, currency: currency ?? 'XOF', country: country ?? 'SN', plan: plan ?? 'starter' },
     })

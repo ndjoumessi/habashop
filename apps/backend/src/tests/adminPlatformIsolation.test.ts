@@ -43,7 +43,9 @@ let platformAdminToken: string     // vrai admin plateforme
 
 beforeAll(async () => {
   const { adminRoutes } = await import('../routes/admin')
+  const { validatorCompiler } = await import('fastify-type-provider-zod')
   app = Fastify()
+  app.setValidatorCompiler(validatorCompiler) // POST /api/admin/tenants a un schéma zod
   await app.register(jwt, { secret: SECRET })
   await app.register(adminRoutes)
   await app.ready()
