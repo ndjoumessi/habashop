@@ -210,6 +210,14 @@ model Product {
   // Paliers de prix par quantité — Format : [{ minQty: number, price: number, label?: string }]
   // null OU [] = pas de paliers, on utilise sellPrice (+ promotion si active)
   priceTiers         Json?
+  // ── Instantané du jeu de tarifs PRÉCÉDENT (profondeur 1) + date du changement. ──
+  // Permet au SERVEUR d'affirmer factuellement « ce prix ÉTAIT le tarif catalogue jusqu'au T »
+  // quand une vente arrive avec un prix hors des tarifs courants (cf. sales.ts § qualification).
+  // Écrit UNIQUEMENT côté serveur, jamais depuis le corps d'une requête (liste blanche PUT).
+  // ⚠️ Profondeur 1 assumée : deux changements de prix rapprochés perdent le plus ancien —
+  // la qualification retombe alors sur « non qualifiée », JAMAIS sur une fausse innocence.
+  previousPricing    Json?
+  pricingChangedAt   DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime? // null = actif (soft delete ; distinct de isActive)
@@ -351,6 +359,12 @@ model SaleItem {
   //    (le prix soumis ne correspond à aucun point de tarif serveur) ; null sinon. ──
   submittedPrice Float?  // prix unitaire envoyé par le client
   catalogPrice   Float?  // prix unitaire autoritaire serveur (référence détail)
+  // QUALIFICATION de la divergence, serveur-autoritaire (aucune donnée client) : non-null =
+  // le prix soumis appartenait au jeu de tarifs PRÉCÉDENT du produit, changé à cette date,
+  // et le changement est assez récent pour qu'un catalogue en cache POS l'explique.
+  // ⚠️ Ce n'est PAS une affirmation d'innocence — c'est un fait daté à présenter à l'auditeur.
+  // null = divergence NON qualifiée (comportement historique, à regarder).
+  staleCatalogAt DateTime?
 
   sale    Sale    @relation(fields: [saleId], references: [id])
   product Product @relation(fields: [productId], references: [id])
