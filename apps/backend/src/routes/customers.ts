@@ -101,7 +101,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
       console.error('Create customer error:', err)
       return reply.code(500).send({
         error: 'Erreur création client',
-        details: err.message,
+        details: (err as Error).message,
       })
     }
   })
@@ -125,7 +125,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
       // Aucun match sur { id, tenantId } (introuvable OU hors du tenant) → 404 cohérent
       // (le handler global mappe aussi P2025 → 404 ; on garde l'isolation sans fuite 500).
       if (err?.code === 'P2025') return reply.code(404).send({ error: 'Client introuvable' })
-      return reply.code(500).send({ error: err.message })
+      return reply.code(500).send({ error: (err as Error).message })
     }
   })
 

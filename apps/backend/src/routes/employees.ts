@@ -43,8 +43,8 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
       })
       return emp
     } catch (err) {
-      console.error('Create employee error:', err.message)
-      return reply.code(500).send({ error: 'Erreur création employé', details: err.message })
+      console.error('Create employee error:', (err as Error).message)
+      return reply.code(500).send({ error: 'Erreur création employé', details: (err as Error).message })
     }
   })
 
@@ -78,8 +78,8 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
       })
       return updated
     } catch (err) {
-      console.error('Update employee error:', err.message)
-      return reply.code(500).send({ error: 'Erreur mise à jour employé', details: err.message })
+      console.error('Update employee error:', (err as Error).message)
+      return reply.code(500).send({ error: 'Erreur mise à jour employé', details: (err as Error).message })
     }
   })
 
@@ -90,7 +90,7 @@ export async function employeeRoutes(app: FastifyInstance): Promise<void> {
       await prisma.employee.delete({ where: { id, tenantId } })
       return { success: true }
     } catch (err) {
-      return reply.code(500).send({ error: err.message })
+      return reply.code(500).send({ error: (err as Error).message })
     }
   })
 }

@@ -39,7 +39,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
       })
       return bonus
     } catch (err) {
-      return reply.code(500).send({ error: err.message })
+      return reply.code(500).send({ error: (err as Error).message })
     }
   })
 
@@ -50,7 +50,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
       await prisma.employeeBonus.delete({ where: { id, tenantId } })
       return { success: true }
     } catch (err) {
-      return reply.code(500).send({ error: err.message })
+      return reply.code(500).send({ error: (err as Error).message })
     }
   })
 
@@ -89,7 +89,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
       })
       return entry
     } catch (err) {
-      return reply.code(500).send({ error: err.message })
+      return reply.code(500).send({ error: (err as Error).message })
     }
   })
 

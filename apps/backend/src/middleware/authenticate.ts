@@ -1,3 +1,4 @@
+import type { FastifyRequest, FastifyReply } from 'fastify'
 import { isUserActive } from '../lib/userStatus'
 import { bindActiveTenant } from '../lib/tenantContext'
 
@@ -20,7 +21,7 @@ function allowsNoActiveTenant(url: string): boolean {
  *
  * @throws 401 token absent/invalide/expiré ou compte supprimé/inactif ; 400 si aucune boutique active.
  */
-export async function authenticate(request, reply): Promise<void> {
+export async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     await request.jwtVerify()
   } catch {
@@ -30,13 +31,15 @@ export async function authenticate(request, reply): Promise<void> {
   const u = request.user
   // Rétro-compat : anciens JWT sans champ activeTenantId → on utilise tenantId.
   const active = u && ('activeTenantId' in u) ? u.activeTenantId : u?.tenantId
-  request.tenantId = active ?? null
+  // `undefined` (pas `null`) pour coller au type augmenté `tenantId?: string` ; tous les
+  // lecteurs testent la falsité (getActiveTenantId, garde NO_ACTIVE_TENANT) → équivalent.
+  request.tenantId = active ?? undefined
 
   // Defense-in-depth (item 8) : renseigne la boutique active dans le store ALS
   // (établi par le hook onRequest) → l'extension Prisma auto-scope les modèles
   // tenant-scopés si un handler oublie `where:{ tenantId }`. `null` si aucune
   // boutique active (sélecteur multi-boutiques, dashboard consolidé) → pas d'injection.
-  bindActiveTenant(request.tenantId)
+  bindActiveTenant(request.tenantId ?? null) // frontière ALS : attend `string | null`
 
   if (!(await isUserActive(u?.userId))) {
     return reply.code(401).send({ error: 'Compte introuvable' })

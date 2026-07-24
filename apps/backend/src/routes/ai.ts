@@ -161,8 +161,8 @@ En ${langLabel}, analyse :
         data: { totalRevenue, avgDailySales, totalSales: sales.length, margin, lowStockCount: lowStockProducts.length, topProducts },
       }
     } catch (err) {
-      console.error('Claude AI error:', err.message)
-      return reply.code(500).send({ error: 'Analyse IA non disponible', details: err.message })
+      console.error('Claude AI error:', (err as Error).message)
+      return reply.code(500).send({ error: 'Analyse IA non disponible', details: (err as Error).message })
     }
   })
 
@@ -239,8 +239,8 @@ INSTRUCTIONS :
 
       return { response: textOf(res.message, 'Désolé, je ne peux pas répondre pour le moment.') }
     } catch (err) {
-      console.error('Chat AI error:', err.message)
-      return reply.code(500).send({ error: err.message })
+      console.error('Chat AI error:', (err as Error).message)
+      return reply.code(500).send({ error: (err as Error).message })
     }
   })
 }

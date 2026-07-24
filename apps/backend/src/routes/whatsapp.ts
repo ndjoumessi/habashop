@@ -256,8 +256,8 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       let body = ''
       if (alertType === 'low_stock') {
         body = lang === 'fr'
-          ? `⚠️ *HabaShop — Alerte Stock*\n\n🔴 *Rupture critique :*\n${(data.products ?? []).map((p) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Commander immédiatement pour éviter la rupture.`
-          : `⚠️ *HabaShop — Stock Alert*\n\n🔴 *Critical stock:*\n${(data.products ?? []).map((p) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Order immediately to avoid stockout.`
+          ? `⚠️ *HabaShop — Alerte Stock*\n\n🔴 *Rupture critique :*\n${(data.products ?? []).map((p: { name: string; stock: number; threshold: number }) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Commander immédiatement pour éviter la rupture.`
+          : `⚠️ *HabaShop — Stock Alert*\n\n🔴 *Critical stock:*\n${(data.products ?? []).map((p: { name: string; stock: number; threshold: number }) => `• ${p.name} — Stock: ${p.stock}/${p.threshold}`).join('\n')}\n\n📦 Order immediately to avoid stockout.`
       }
 
       if (!body) return reply.code(400).send({ error: 'alertType inconnu' })
@@ -279,7 +279,7 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
       return { success: true, sid: res.sids[0] }
     } catch (err) {
       console.error('Twilio alert error:', redactError(err))
-      return reply.code(503).send({ error: err.message })
+      return reply.code(503).send({ error: (err as Error).message })
     }
   })
 
