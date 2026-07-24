@@ -6,7 +6,8 @@ import jwt from '@fastify/jwt'
 import multipart from '@fastify/multipart'
 import websocket from '@fastify/websocket'
 import rateLimit from '@fastify/rate-limit'
-import { validatorCompiler, hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod'
+import { validatorCompiler } from 'fastify-type-provider-zod'
+import { errorHandler } from './lib/errorHandler'
 import { initTenantStore } from './lib/tenantContext'
 import { getAppVersion } from './lib/version'
 import * as Sentry from '@sentry/node'
@@ -195,25 +196,9 @@ async function start() {
   // Prisma P2025 = "record not found" → 404. Couvre les update/delete
   // scopés par tenant (where:{id, tenantId}) : un accès cross-tenant ne
   // matche aucun enregistrement et doit renvoyer 404, pas 500.
-  app.setErrorHandler((error: any, request, reply) => {
-    // Erreurs de validation Zod (schema.body/params/querystring) → 400 au format maison
-    // { error, code:'VALIDATION' } cohérent avec les 400 manuels existants.
-    if (hasZodFastifySchemaValidationErrors(error)) {
-      const first = error.validation?.[0]
-      const path = first?.params?.issue?.path?.join('.') || first?.instancePath || ''
-      const msg = first?.params?.issue?.message || first?.message || 'Requête invalide'
-      return reply.code(400).send({ error: path ? `${path}: ${msg}` : msg, code: 'VALIDATION' })
-    }
-    if (error?.code === 'P2025') {
-      return reply.code(404).send({ error: 'Ressource introuvable' })
-    }
-    const status = error?.statusCode ?? 500
-    if (status >= 500) {
-      Sentry.captureException(error, { extra: { url: request.url, method: request.method, tenantId: (request as any).tenantId } })
-    }
-    app.log.error(error)
-    return reply.code(status).send({ error: error?.message ?? 'Erreur serveur' })
-  })
+  // Handler extrait dans lib/errorHandler.ts (testable) — durci : un 500 ne fuite plus
+  // error.message brut au client (audit P1.6). Voir le fichier pour le détail.
+  app.setErrorHandler(errorHandler)
 
   // ─── HEALTH CHECK ───────────────────────
   // Exemptés du rate-limit global : sondes de monitoring / uptime pingées en continu.
