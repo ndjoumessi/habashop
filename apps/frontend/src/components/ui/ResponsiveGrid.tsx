@@ -9,6 +9,10 @@ interface ResponsiveGridProps {
   className?: string
   style?: React.CSSProperties
   children: React.ReactNode
+  /** A11y optionnel : `role="list"` + nom accessible quand la grille est une LISTE
+   *  d'éléments (ex. cartes produit). Additif — omis = grille purement visuelle inchangée. */
+  role?: string
+  'aria-label'?: string
 }
 
 /**
@@ -20,10 +24,12 @@ interface ResponsiveGridProps {
  *   <ResponsiveGrid min={220}>…cards…</ResponsiveGrid>   // 2-col form → 1-col mobile
  *   <ResponsiveGrid min={260} gap={12}>…panels…</ResponsiveGrid>
  */
-export default function ResponsiveGrid({ min = 240, gap = 12, className, style, children }: ResponsiveGridProps) {
+export default function ResponsiveGrid({ min = 240, gap = 12, className, style, children, role, 'aria-label': ariaLabel }: ResponsiveGridProps) {
   return (
     <div
       className={className}
+      role={role}
+      aria-label={ariaLabel}
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))`,

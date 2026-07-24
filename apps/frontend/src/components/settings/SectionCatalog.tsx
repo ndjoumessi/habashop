@@ -115,6 +115,7 @@ export default function SectionCatalog() {
             </span>
           </div>
           <input type="checkbox" checked={form.catalogVisible}
+            aria-label={i('Activer le catalogue public', 'Enable public catalog', 'Activar el catálogo público', 'Attiva il catalogo pubblico')}
             onChange={e => { const v = e.target.checked; setForm(f => ({ ...f, catalogVisible: v })); saveOther({ catalogVisible: v }) }}
             disabled={saving}
             style={{ width:18, height:18, accentColor:'var(--p)', cursor:'pointer' }} />
@@ -135,6 +136,7 @@ export default function SectionCatalog() {
                 {baseUrl.replace(/^https?:\/\//, '')}/c/
               </span>
               <input type="text" value={form.slug}
+                aria-label={i("Identifiant de la boutique (slug du catalogue)", 'Shop identifier (catalog slug)', 'Identificador de la tienda (slug del catálogo)', 'Identificatore del negozio (slug del catalogo)')}
                 onChange={e => { const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''); setForm(f => ({ ...f, slug: v })); setSlugErr(validateSlugClient(v)) }}
                 placeholder="ma-boutique"
                 style={{ flex:1, padding:'8px 10px', fontSize:13, background:'transparent', border:'none', color:'var(--text)', fontFamily:'var(--mono)', outline:'none' }} />
@@ -183,6 +185,7 @@ export default function SectionCatalog() {
         <Head icon={<Pencil size={16} />} title={i('Description', 'Description', 'Descripción', 'Descrizione')} sub={i('Tagline affichée en haut du catalogue', 'Tagline displayed at the top of the catalog', 'Eslogan mostrado en la parte superior del catálogo', 'Slogan mostrato in cima al catalogo')} tint="var(--acc)" />
         <div style={{ padding:'14px 16px', borderTop:'1px solid var(--border)' }}>
           <textarea value={form.description}
+            aria-label={i('Description du catalogue', 'Catalog description', 'Descripción del catálogo', 'Descrizione del catalogo')}
             onChange={e => setForm(f => ({ ...f, description: e.target.value.slice(0, 200) }))}
             onBlur={() => { if (form.description !== (tenant.description ?? '')) saveOther({ description: form.description }) }}
             placeholder={i('Ex : Supérette Yoff — fruits & légumes frais du marché', 'E.g.: Yoff Supermarket — fresh fruits & vegetables from the market', 'Ej: Supermercado Yoff — frutas y verduras frescas del mercado', 'Es: Supermercato Yoff — frutta e verdura fresca del mercato')}
@@ -198,6 +201,7 @@ export default function SectionCatalog() {
         <Head icon={<MessageCircle size={16} />} title={i('WhatsApp commercial', 'Sales WhatsApp', 'WhatsApp comercial', 'WhatsApp commerciale')} sub={i('Numéro qui recevra les commandes via le catalogue', 'Number that will receive orders via the catalog', 'Número que recibirá pedidos a través del catálogo', 'Numero che riceverà gli ordini tramite il catalogo')} tint="#25D366" />
         <div style={{ padding:'14px 16px', borderTop:'1px solid var(--border)' }}>
           <input type="tel" value={form.whatsappPhone}
+            aria-label={i('Numéro WhatsApp commercial', 'Sales WhatsApp number', 'Número de WhatsApp comercial', 'Numero WhatsApp commerciale')}
             onChange={e => setForm(f => ({ ...f, whatsappPhone: e.target.value }))}
             onBlur={() => { if (form.whatsappPhone !== (tenant.whatsappPhone ?? '')) saveOther({ whatsappPhone: form.whatsappPhone }) }}
             placeholder="+221 77 123 45 67"

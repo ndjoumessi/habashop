@@ -218,6 +218,8 @@ export function CountryItem({ c, selected, onSelect }: {
 }) {
   return (
     <button
+      role="option"
+      aria-selected={selected}
       onMouseDown={onSelect}
       style={{
         display:'flex', alignItems:'center', gap:10,
