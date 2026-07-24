@@ -681,6 +681,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                       {showCountryPicker && (
                         <div
                           data-phone-picker
+                          role="listbox"
+                          aria-label={lang==='en' ? 'Countries' : lang==='es' ? 'Países' : lang==='it' ? 'Paesi' : 'Pays'}
                           style={{
                             position:'absolute', top:'calc(100% + 6px)', left:0, zIndex:999,
                             width:280, maxHeight:320, overflowY:'auto',
@@ -715,8 +717,8 @@ export default function POSModals({ showDiscountModal, setShowDiscountModal, dis
                             )
                             const regions = Array.from(new Set(filtered.map(c => c.region)))
                             return regions.map(region => (
-                              <div key={region} style={{ padding:'4px 0' }}>
-                                <div style={{ padding:'6px 12px 2px', fontSize:11, fontWeight:'var(--fw-regular)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)' }}>
+                              <div key={region} role="group" aria-label={region} style={{ padding:'4px 0' }}>
+                                <div aria-hidden="true" style={{ padding:'6px 12px 2px', fontSize:11, fontWeight:'var(--fw-regular)', textTransform:'uppercase', letterSpacing:'.8px', color:'var(--text3)' }}>
                                   {region}
                                 </div>
                                 {filtered.filter(c => c.region === region).map(c => (

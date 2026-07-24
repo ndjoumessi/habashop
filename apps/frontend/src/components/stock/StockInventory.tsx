@@ -234,13 +234,13 @@ export default function StockInventory({ products, fmt, lang, stockShowSKU, navi
             </div>
           </div>
         ) : stockView === 'grid' ? (
-          <ResponsiveGrid min={200}>
+          <ResponsiveGrid min={200} role="list" aria-label={i('Produits', 'Products', 'Productos', 'Prodotti')}>
             {pg.paginated.map(p => {
               const st = statusOf(p.stock, p.threshold)
               const pct = Math.min(100, (p.stock / Math.max(p.threshold, 1)) * 100)
               const isSelected = selectedSkus.has(p.sku)
               return (
-                <div key={p.sku} style={{
+                <div key={p.sku} role="listitem" style={{
                   background: isSelected ? 'rgba(91,78,232,0.06)' : 'var(--card)',
                   border: `1px solid ${isSelected ? 'var(--p)' : 'var(--border)'}`,
                   borderLeft: `3px solid ${isSelected ? 'var(--p)' : 'var(--border)'}`,
