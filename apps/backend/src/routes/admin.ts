@@ -199,7 +199,10 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       upgrade: () => sendUpgradeConfirmation(testData),
       // Le rapport hebdo est un e-mail OPÉRATIONNEL (gardé) : le test l'émet au nom
       // du tenant de l'admin plateforme, exclu des quotas comme des listings.
-      weekly:  () => sendWeeklyReport({ ...testData, tenantId: request.user.tenantId }),
+      // ⚠️ Route platform-scopée (authenticateAdmin, dev-only) : un admin plateforme peut
+      // n'avoir AUCUNE boutique active → tenantId null. `?? ''` satisfait le typage sans
+      // changer le comportement (le garde de dépense refuse `''` comme `null` → non envoyé).
+      weekly:  () => sendWeeklyReport({ ...testData, tenantId: request.user.tenantId ?? '' }),
     }
 
     const fn = senders[type]

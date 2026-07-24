@@ -262,7 +262,10 @@ export async function whatsappRoutes(app: FastifyInstance): Promise<void> {
 
       if (!body) return reply.code(400).send({ error: 'alertType inconnu' })
 
-      const res = await sendWhatsApp({ tenantId: request.tenantId, to: phone, body, owner: { kind: 'customer' }, flow: 'transactional' })
+      // `phone` (corps de requête) est optionnel et non validé ici ; un `undefined` est
+      // déjà géré gracieusement en aval (recipients vides → 503). `?? ''` satisfait le
+      // typage sans changer ce comportement (`''` est filtré comme `undefined`).
+      const res = await sendWhatsApp({ tenantId: request.tenantId, to: phone ?? '', body, owner: { kind: 'customer' }, flow: 'transactional' })
       if (res.denied) return reply.code(res.code === 'QUOTA_EXCEEDED' ? 429 : 403).send({ error: res.message, code: res.code })
       // Refus de résolution : message EXPLICITE, jamais un 503 générique qui laisse
       // croire à une panne Twilio alors que le numéro n'est simplement pas exploitable.
